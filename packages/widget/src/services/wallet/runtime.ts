@@ -3,10 +3,11 @@ import {
   Duration,
   Effect,
   Equal,
+  Queue,
   Schedule,
   Schema,
   type Scope,
-  type Stream,
+  Stream,
 } from "effect";
 import type { Config } from "wagmi";
 import {
@@ -31,6 +32,7 @@ import { YieldApiService } from "../api/yield-api-service";
 import {
   normalizeWidgetBootstrapConfig,
   type WidgetBootstrapConfigValue,
+  type WidgetConfig,
   WidgetConfigService,
 } from "../config/widget-config";
 import { WidgetPersistence } from "../persistence/widget-persistence";
@@ -38,6 +40,8 @@ import {
   isLedgerDappBrowserProvider,
   isMobileWalletEnvironment,
 } from "./browser-environment";
+import { isExternalProviderConnector } from "./connectors/external-provider";
+import { WalletRuntimeInvariantError } from "./domain/errors";
 import {
   bootstrappingWalletRuntimeSnapshot,
   type WalletCoreProjection,
@@ -151,6 +155,57 @@ type WalletBootstrapSnapshot = {
   readonly enabledNetworks: EnabledNetworks;
   readonly externalProviders: CurrentRef<SKExternalProviders> | undefined;
   readonly initParams: InitParams;
+};
+
+type ExternalProviderSnapshot = Readonly<SKExternalProviders>;
+
+type MutableCurrentRef<A> = {
+  current: A;
+};
+
+type WalletRuntimeEvent =
+  | {
+      readonly _tag: "BootstrapFailed";
+      readonly cause: unknown;
+    }
+  | {
+      readonly _tag: "ConnectCompleted";
+      readonly address: string;
+      readonly key: string;
+      readonly succeeded: boolean;
+    }
+  | {
+      readonly _tag: "CoreChanged";
+      readonly projection: WalletCoreProjection;
+    }
+  | {
+      readonly _tag: "ExternalProviderChanged";
+      readonly snapshot: ExternalProviderSnapshot | undefined;
+    }
+  | {
+      readonly _tag: "Ready";
+      readonly controller: WalletController;
+      readonly externalProviderMode: boolean;
+      readonly externalProviders:
+        | MutableCurrentRef<SKExternalProviders>
+        | undefined;
+      readonly projection: WalletCoreProjection;
+    };
+
+const makeExternalProviderSnapshot = (
+  settings: WidgetConfig
+): ExternalProviderSnapshot | undefined => {
+  const externalProviders = settings.externalProviders;
+  if (!externalProviders) return undefined;
+
+  return Object.freeze({
+    ...externalProviders,
+    supportedChainIds: externalProviders.supportedChainIds
+      ? [...new Set(externalProviders.supportedChainIds)].sort(
+          (first, second) => first - second
+        )
+      : undefined,
+  });
 };
 
 const resolveWalletInitParams = Effect.fn("resolveWalletInitParams")(function* (
@@ -267,7 +322,291 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
   const source = makeCurrentValueStream<WalletRuntimeSnapshot>(
     bootstrappingWalletRuntimeSnapshot
   );
+  const coreChanges = makeCurrentValueStream<WalletCoreProjection | null>(null);
+  const events = yield* Effect.acquireRelease(
+    Queue.bounded<WalletRuntimeEvent>(32),
+    Queue.shutdown
+  );
   let legacyController: WalletController | null = null;
+  let controller: WalletController | null = null;
+  let projection: WalletCoreProjection | null = null;
+  let externalProviderMode: boolean | null = null;
+  let externalProviders: MutableCurrentRef<SKExternalProviders> | undefined;
+  let pendingExternalProviderSnapshot: ExternalProviderSnapshot | undefined;
+  let hasPendingExternalProviderSnapshot = false;
+  let pendingCoreProjection: WalletCoreProjection | null = null;
+  let connecting: {
+    readonly address: string;
+    readonly completed: boolean;
+    readonly key: string;
+  } | null = null;
+  let supportedChainsNotification: string | null = null;
+  let accountNotification: string | null = null;
+  let chainNotification: string | null = null;
+  let terminal = false;
+
+  const publishReady = () => {
+    if (terminal || !controller || !projection) return;
+
+    const current = source.get();
+    if (
+      current.phase === "Ready" &&
+      Equal.equals(current.projection.connection, projection.connection) &&
+      Equal.equals(current.projection.connectors, projection.connectors)
+    ) {
+      return;
+    }
+
+    source.set({
+      cause: null,
+      phase: "Ready",
+      projection,
+      wagmiConfig: controller.wagmiConfig,
+    });
+  };
+
+  const enterInvariant = Effect.fn("WalletRuntime.enterInvariant")(function* (
+    reason: WalletRuntimeInvariantError["reason"]
+  ) {
+    if (terminal) return;
+
+    terminal = true;
+    connecting = null;
+    const cause = new WalletRuntimeInvariantError({ reason });
+    yield* Effect.logError("Wallet Runtime invariant violated").pipe(
+      Effect.annotateLogs({
+        event: "wallet_runtime_invariant_violated",
+        reason,
+      })
+    );
+    source.set({
+      cause,
+      phase: "InvariantViolated",
+      projection,
+      wagmiConfig: controller?.wagmiConfig ?? null,
+    });
+  });
+
+  const runConnectorNotification = (notify: () => void) =>
+    Effect.try({
+      try: notify,
+      catch: () => undefined,
+    }).pipe(Effect.ignore);
+
+  const synchronizeExternalProvider = Effect.fn(
+    "WalletRuntime.synchronizeExternalProvider"
+  )(function* () {
+    if (
+      terminal ||
+      externalProviderMode !== true ||
+      !controller ||
+      !projection ||
+      !externalProviders
+    ) {
+      return;
+    }
+
+    const matchingConnectors = projection.connectors.filter(
+      isExternalProviderConnector
+    );
+    if (matchingConnectors.length === 0) {
+      return yield* enterInvariant("external-provider-connector-missing");
+    }
+    if (matchingConnectors.length !== 1) {
+      return yield* enterInvariant("external-provider-connector-mismatch");
+    }
+
+    const connector = matchingConnectors[0];
+    if (!connector) {
+      return yield* enterInvariant("external-provider-connector-missing");
+    }
+    const connection = projection.connection;
+    if (
+      connection.connector &&
+      !isExternalProviderConnector(connection.connector)
+    ) {
+      return yield* enterInvariant("external-provider-connector-mismatch");
+    }
+
+    const snapshot = externalProviders.current;
+    const currentChainId =
+      snapshot.currentChain ??
+      connection.chainId ??
+      controller.wagmiConfig.state.chainId;
+    const supportedChainIds = snapshot.supportedChainIds
+      ? [...snapshot.supportedChainIds]
+      : [];
+    const supportedChainsKey = `${connector.uid}:${currentChainId}:${
+      supportedChainIds.join(",") || "all"
+    }`;
+    if (supportedChainsNotification !== supportedChainsKey) {
+      supportedChainsNotification = supportedChainsKey;
+      yield* runConnectorNotification(() =>
+        connector.onSupportedChainsChanged({
+          currentChainId,
+          supportedChainIds,
+        })
+      );
+    }
+
+    if (
+      connection.status === "disconnected" &&
+      snapshot.currentAddress &&
+      connecting === null
+    ) {
+      const key = `${connector.uid}:${snapshot.currentAddress}`;
+      connecting = { address: snapshot.currentAddress, completed: false, key };
+      yield* controller.actions.connect({ connector }).pipe(
+        Effect.match({
+          onFailure: () => false,
+          onSuccess: () => true,
+        }),
+        Effect.flatMap((succeeded) =>
+          Queue.offer(events, {
+            _tag: "ConnectCompleted",
+            address: snapshot.currentAddress,
+            key,
+            succeeded,
+          })
+        ),
+        Effect.forkScoped
+      );
+      return;
+    }
+
+    if (
+      connection.status !== "connected" ||
+      connection.connector?.uid !== connector.uid
+    ) {
+      return;
+    }
+
+    if (connecting?.completed) connecting = null;
+    const accountKey = `${connector.uid}:${connection.address ?? ""}:${snapshot.currentAddress}`;
+    if (connection.address === snapshot.currentAddress) {
+      accountNotification = null;
+    } else if (accountNotification !== accountKey) {
+      accountNotification = accountKey;
+      yield* runConnectorNotification(() =>
+        connector.onAccountsChanged([snapshot.currentAddress])
+      );
+    }
+
+    const chainKey = `${connector.uid}:${connection.chainId ?? ""}:${
+      snapshot.currentChain ?? ""
+    }`;
+    if (
+      snapshot.currentChain === undefined ||
+      connection.chainId === snapshot.currentChain
+    ) {
+      chainNotification = null;
+    } else if (chainNotification !== chainKey) {
+      chainNotification = chainKey;
+      yield* runConnectorNotification(() =>
+        connector.onChainChanged(snapshot.currentChain!.toString())
+      );
+    }
+  });
+
+  const applyExternalProviderSnapshot = Effect.fn(
+    "WalletRuntime.applyExternalProviderSnapshot"
+  )(function* (snapshot: ExternalProviderSnapshot | undefined) {
+    if (terminal || externalProviderMode === null) return;
+
+    if ((snapshot !== undefined) !== externalProviderMode) {
+      return yield* enterInvariant("external-provider-presence-changed");
+    }
+    if (!snapshot || !externalProviders) return;
+
+    externalProviders.current = snapshot;
+    yield* synchronizeExternalProvider();
+  });
+
+  const handleEvent = Effect.fn("WalletRuntime.handleEvent")(function* (
+    event: WalletRuntimeEvent
+  ) {
+    if (terminal) return;
+
+    switch (event._tag) {
+      case "BootstrapFailed": {
+        terminal = true;
+        source.set({
+          cause: event.cause,
+          phase: "BootstrapFailed",
+          projection: null,
+          wagmiConfig: null,
+        });
+        return;
+      }
+      case "ConnectCompleted": {
+        if (connecting?.key !== event.key) return;
+
+        if (
+          externalProviders &&
+          externalProviders.current.currentAddress !== event.address
+        ) {
+          connecting = null;
+          yield* synchronizeExternalProvider();
+        } else if (!event.succeeded) {
+          connecting = null;
+        } else if (projection?.connection.status === "connected") {
+          connecting = null;
+        } else {
+          connecting = { ...connecting, completed: true };
+        }
+        return;
+      }
+      case "CoreChanged": {
+        if (!controller) {
+          pendingCoreProjection = event.projection;
+          return;
+        }
+
+        projection = event.projection;
+        yield* synchronizeExternalProvider();
+        publishReady();
+        return;
+      }
+      case "ExternalProviderChanged": {
+        if (externalProviderMode === null) {
+          pendingExternalProviderSnapshot = event.snapshot;
+          hasPendingExternalProviderSnapshot = true;
+          return;
+        }
+
+        yield* applyExternalProviderSnapshot(event.snapshot);
+        return;
+      }
+      case "Ready": {
+        controller = event.controller;
+        projection = pendingCoreProjection ?? event.projection;
+        pendingCoreProjection = null;
+        externalProviderMode = event.externalProviderMode;
+        externalProviders = event.externalProviders;
+
+        if (hasPendingExternalProviderSnapshot) {
+          yield* applyExternalProviderSnapshot(pendingExternalProviderSnapshot);
+        } else {
+          yield* synchronizeExternalProvider();
+        }
+        publishReady();
+      }
+    }
+  });
+
+  const coreEvents = coreChanges.changes.pipe(
+    Stream.filter((next): next is WalletCoreProjection => next !== null),
+    Stream.map(
+      (projection): WalletRuntimeEvent => ({
+        _tag: "CoreChanged",
+        projection,
+      })
+    )
+  );
+  yield* Stream.merge(Stream.fromQueue(events), coreEvents).pipe(
+    Stream.runForEach(handleEvent),
+    Effect.forkScoped
+  );
 
   const bootstrap = Effect.gen(function* () {
     const settings = yield* config.current;
@@ -285,19 +624,21 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
         normalizedConfig.wallet.externalProviderInitToken,
       href: browser.href,
     });
-    const externalProviderSnapshot = settings.externalProviders
-      ? Object.freeze({
-          ...settings.externalProviders,
-          supportedChainIds: settings.externalProviders.supportedChainIds
-            ? [...settings.externalProviders.supportedChainIds]
-            : undefined,
-        })
-      : undefined;
+    const externalProviderSnapshot = makeExternalProviderSnapshot(settings);
     const externalProviders = externalProviderSnapshot
       ? ({
           current: externalProviderSnapshot,
-        } satisfies CurrentRef<SKExternalProviders>)
+        } satisfies MutableCurrentRef<SKExternalProviders>)
       : undefined;
+    yield* config.changes.pipe(
+      Stream.runForEach((next) =>
+        Queue.offer(events, {
+          _tag: "ExternalProviderChanged",
+          snapshot: makeExternalProviderSnapshot(next),
+        })
+      ),
+      Effect.forkScoped
+    );
     const [enabledNetworks, queryParams] = yield* Effect.all([
       adapters.environment.getEnabledNetworks(),
       resolveWalletInitParams(initParams, adapters.environment.getInitialYield),
@@ -325,32 +666,20 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
       solanaConnection: solanaRuntime.connection,
       solanaWallets: [],
     });
-    const readySnapshot = (projection: WalletCoreProjection) =>
-      ({
-        cause: null,
-        phase: "Ready",
-        projection,
-        wagmiConfig: controller.wagmiConfig,
-      }) as const satisfies WalletRuntimeSnapshot;
-    const publishReady = (projection: WalletCoreProjection) => {
-      const current = source.get();
-      if (
-        current.phase === "Ready" &&
-        Equal.equals(current.projection.connection, projection.connection) &&
-        Equal.equals(current.projection.connectors, projection.connectors)
-      ) {
-        return;
-      }
-      source.set(readySnapshot(projection));
-    };
     const watched = yield* watchWalletCore({
       adapters,
       controller,
-      publish: publishReady,
+      publish: coreChanges.set,
     });
 
     legacyController = controller;
-    publishReady(watched.projection);
+    yield* Queue.offer(events, {
+      _tag: "Ready",
+      controller,
+      externalProviderMode: bootstrapSnapshot.config.wallet.hasExternalProvider,
+      externalProviders,
+      projection: watched.projection,
+    });
     yield* adapters.wagmi
       .initialize({
         hasExternalProvider:
@@ -366,14 +695,10 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
       onFailure: (cause) =>
         Cause.hasInterruptsOnly(cause)
           ? Effect.void
-          : Effect.sync(() =>
-              source.set({
-                cause: Cause.squash(cause),
-                phase: "BootstrapFailed",
-                projection: null,
-                wagmiConfig: null,
-              })
-            ),
+          : Queue.offer(events, {
+              _tag: "BootstrapFailed",
+              cause: Cause.squash(cause),
+            }),
       onSuccess: () => Effect.void,
     })
   );

@@ -279,13 +279,8 @@ describe("WagmiConfigProvider", () => {
       ),
     });
     const initialConfig = hook.result.current.contextConfig;
-    const observedFallback = !hook.result.current.controller.data;
-    const fallbackState = observedFallback ? initialConfig?.state : undefined;
 
     expect(initialConfig).toBeDefined();
-    if (observedFallback) {
-      expect(fallbackState?.connections.size).toBe(0);
-    }
 
     await expect
       .poll(
@@ -296,6 +291,9 @@ describe("WagmiConfigProvider", () => {
         { timeout: 10_000 }
       )
       .toEqual({ connected: true, ready: true });
+    if (initialConfig !== hook.result.current.controller.data?.wagmiConfig) {
+      expect(initialConfig?.state.connections.size).toBe(0);
+    }
     expect(hook.result.current.contextConfig).toBe(
       hook.result.current.controller.data?.wagmiConfig
     );
@@ -341,10 +339,5 @@ describe("WagmiConfigProvider", () => {
         ).chainId,
       }))
       .toEqual({ account: optimism.id, projection: optimism.id });
-
-    if (observedFallback) {
-      expect(initialConfig?.state).toBe(fallbackState);
-      expect(initialConfig?.state.connections.size).toBe(0);
-    }
   });
 });

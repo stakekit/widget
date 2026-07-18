@@ -3,10 +3,7 @@ import { Effect, Option, type Schema, Stream } from "effect";
 import type * as KeyValueStore from "effect/unstable/persistence/KeyValueStore";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import {
-  appRuntime,
-  dynamicExternalProviderInputAtom,
-} from "../../../app/runtime";
+import { appRuntime } from "../../../app/runtime";
 import type { AdditionalAddresses } from "../../../domain/schema/address-models";
 import { WalletRuntimeTerminalError } from "../../../services/wallet/domain/errors";
 import {
@@ -32,7 +29,6 @@ import {
   walletInitializationKeyAtom,
 } from "../wagmi/initialization";
 import { makeWalletServiceBindingAtom } from "./binding-atom";
-import { makeExternalProviderSyncAtom } from "./external-provider-sync";
 import { makeWalletLifecycleAtom } from "./lifecycle";
 
 const walletRuntimeSnapshotAtom = appRuntime
@@ -91,19 +87,6 @@ export const currentWalletConnectorsResultAtom = Atom.make((get) =>
 
 const walletConnectionAtom = (_key: WalletInitializationKey) =>
   currentWalletConnectionResultAtom;
-
-const walletConnectorsAtom = (_key: WalletInitializationKey) =>
-  currentWalletConnectorsResultAtom;
-
-const walletExternalProviderSyncAtom = Atom.family(
-  (key: WalletInitializationKey) =>
-    makeExternalProviderSyncAtom(
-      walletControllerAtom(key),
-      walletConnectorsAtom(key),
-      walletConnectionAtom(key),
-      dynamicExternalProviderInputAtom
-    )
-);
 
 const walletConnectorChainsAtom = Atom.family((key: WalletInitializationKey) =>
   makeConnectorChainsAtom(walletControllerAtom(key), walletConnectionAtom(key))
@@ -180,7 +163,6 @@ const walletRootAtom = Atom.make((get) => {
   const initializationKey = get(walletInitializationKeyAtom);
   const result = get(walletControllerAtom(initializationKey));
 
-  get(walletExternalProviderSyncAtom(initializationKey));
   get(walletLifecycleAtom(initializationKey));
   get(walletServiceBindingAtom(initializationKey));
 

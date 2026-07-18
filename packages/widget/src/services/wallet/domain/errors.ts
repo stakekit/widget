@@ -53,3 +53,12 @@ export class WalletRuntimeTerminalError extends Data.TaggedError(
   readonly cause: unknown;
   readonly phase: "BootstrapFailed" | "InvariantViolated";
 }> {}
+
+export class WalletRuntimeInvariantError extends Data.TaggedError(
+  "WalletRuntimeInvariantError"
+)<{
+  readonly reason:
+    | "external-provider-connector-mismatch"
+    | "external-provider-connector-missing"
+    | "external-provider-presence-changed";
+}> {}

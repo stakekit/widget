@@ -140,8 +140,15 @@ describe("WalletService Wallet Runtime", () => {
       Parameters<WalletRuntimeAdapters["wagmi"]["initialize"]>[0]
     > = [];
     const wagmiConfig = makeDefaultConfig();
+    const externalConnector = {
+      id: "externalProviderConnector",
+      onAccountsChanged: () => undefined,
+      onChainChanged: () => undefined,
+      onSupportedChainsChanged: () => undefined,
+      uid: "external-provider-uid",
+    } as unknown as Connector;
     const controller = {
-      actions: {},
+      actions: { connect: () => Effect.void },
       queryParamsInitChainId: undefined,
       wagmiConfig,
     } as unknown as WalletController;
@@ -163,7 +170,7 @@ describe("WalletService Wallet Runtime", () => {
             return controller;
           }),
         getConnection,
-        getConnectors,
+        getConnectors: () => [externalConnector],
         initialize: (input) =>
           Effect.sync(() => {
             initializationInputs.push(input);
