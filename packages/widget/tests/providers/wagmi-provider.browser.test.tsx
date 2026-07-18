@@ -1,6 +1,14 @@
-import { Array as EArray } from "effect";
+import { RegistryProvider, useAtomValue } from "@effect/atom-react";
+import { Array as EArray, Effect, Layer } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { HttpResponse, http } from "msw";
-import { StrictMode, useContext, useEffect } from "react";
+import {
+  Component,
+  type PropsWithChildren,
+  StrictMode,
+  useContext,
+  useEffect,
+} from "react";
 import type { Config } from "wagmi";
 import {
   useAccount,
@@ -14,15 +22,45 @@ import { optimism } from "wagmi/chains";
 import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
 import { SolanaProvider } from "../../src/app/composition/providers/solana";
 import { normalizeWidgetConfig } from "../../src/app/config";
+import { appRuntime } from "../../src/app/runtime";
 import { EvmNetworks } from "../../src/domain/types/chains/networks";
-import { useWalletController } from "../../src/features/wallet";
+import {
+  currentWalletConnectionResultAtom,
+  currentWalletConnectorsResultAtom,
+  useWalletController,
+} from "../../src/features/wallet";
 import { WagmiConfigProvider } from "../../src/features/wallet/react/provider";
+import {
+  bootstrappingWalletRuntimeSnapshot,
+  type WalletRuntimeSnapshot,
+} from "../../src/services/wallet/domain/runtime";
+import { WalletService } from "../../src/services/wallet/wallet-service";
+import { makeCurrentValueStream } from "../../src/shared/effect/current-value-stream";
 import { legacyApiRoute } from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { rkMockWallet } from "../utils/mock-connector";
 import { describe, expect, it, vi } from "../utils/test-extend";
 import { render, renderHook } from "../utils/test-utils";
+
+class RuntimeErrorBoundary extends Component<
+  PropsWithChildren<{ readonly onError: (error: unknown) => void }>,
+  { readonly failed: boolean }
+> {
+  override state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  override componentDidCatch(error: unknown) {
+    this.props.onError(error);
+  }
+
+  override render() {
+    return this.state.failed ? <div>runtime failed</div> : this.props.children;
+  }
+}
 
 const useWagmiProviderContract = () => ({
   contextConfig: useContext(WagmiContext) as Config | undefined,
@@ -38,7 +76,7 @@ const ConfigObserver = ({
 
   useEffect(() => {
     if (controller.data) onConfig(controller.data.wagmiConfig);
-  }, [controller.data, onConfig]);
+  });
 
   return null;
 };
@@ -46,7 +84,9 @@ const ConfigObserver = ({
 const useRainbowKitWagmiContract = () => ({
   account: useAccount(),
   connect: useConnect(),
+  connectionProjection: useAtomValue(currentWalletConnectionResultAtom),
   connectors: useConnectors(),
+  connectorsProjection: useAtomValue(currentWalletConnectorsResultAtom),
   contextConfig: useContext(WagmiContext) as Config | undefined,
   controller: useWalletController(),
   disconnect: useDisconnect(),
@@ -81,6 +121,50 @@ const ControllerHarness = ({
 );
 
 describe("WagmiConfigProvider", () => {
+  it("stops providing the fallback when wallet bootstrap fails", async () => {
+    const cause = new Error("wallet bootstrap failed");
+    const onError = vi.fn<(error: unknown) => void>();
+    const source = makeCurrentValueStream<WalletRuntimeSnapshot>(
+      bootstrappingWalletRuntimeSnapshot
+    );
+    const app = await render(
+      <RegistryProvider
+        initialValues={[
+          [
+            appRuntime.layer,
+            Layer.succeed(WalletService, {
+              changes: source.changes,
+              legacyController: Effect.succeed(null),
+            } as never) as never,
+          ],
+        ]}
+      >
+        <RuntimeErrorBoundary onError={onError}>
+          <WagmiConfigProvider>
+            <div>provider ready</div>
+          </WagmiConfigProvider>
+        </RuntimeErrorBoundary>
+      </RegistryProvider>
+    );
+
+    await expect.element(app.getByText("provider ready")).toBeVisible();
+    source.set({
+      cause,
+      phase: "BootstrapFailed",
+      projection: null,
+      wagmiConfig: null,
+    });
+
+    await expect.element(app.getByText("runtime failed")).toBeVisible();
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _tag: "WalletRuntimeTerminalError",
+        cause,
+        phase: "BootstrapFailed",
+      })
+    );
+  });
+
   it("uses the fallback only while loading, then provides the initialized config by reference", async ({
     worker,
   }) => {
@@ -131,7 +215,7 @@ describe("WagmiConfigProvider", () => {
     expect(hook.result.current.contextConfig).not.toBe(fallbackConfig);
   });
 
-  it("deduplicates equivalent StrictMode rerenders and replaces static topology", async ({
+  it("keeps the authoritative config across StrictMode and wallet-setting rerenders", async ({
     worker,
   }) => {
     worker.use(
@@ -156,12 +240,13 @@ describe("WagmiConfigProvider", () => {
     onConfig.mockClear();
 
     await app.rerender(renderHarness(false));
-    expect(onConfig).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(onConfig).toHaveBeenCalled());
+    expect(onConfig.mock.lastCall?.[0]).toBe(firstConfig);
+    onConfig.mockClear();
 
     await app.rerender(renderHarness(true));
-    await vi.waitFor(() => {
-      expect(onConfig.mock.lastCall?.[0]).not.toBe(firstConfig);
-    });
+    await vi.waitFor(() => expect(onConfig).toHaveBeenCalled());
+    expect(onConfig.mock.lastCall?.[0]).toBe(firstConfig);
   });
 
   it("keeps RainbowKit-facing actions on the authoritative config", async ({
@@ -214,23 +299,48 @@ describe("WagmiConfigProvider", () => {
     expect(hook.result.current.contextConfig).toBe(
       hook.result.current.controller.data?.wagmiConfig
     );
+    expect(
+      AsyncResult.getOrThrow(hook.result.current.connectionProjection)
+    ).toMatchObject({ address: account, status: "connected" });
+    expect(
+      AsyncResult.getOrThrow(hook.result.current.connectorsProjection).map(
+        (connector) => connector.uid
+      )
+    ).toEqual(hook.result.current.connectors.map((connector) => connector.uid));
 
     await hook.result.current.disconnect.disconnectAsync();
     await expect
-      .poll(() => hook.result.current.account.isDisconnected)
-      .toBe(true);
+      .poll(() => ({
+        account: hook.result.current.account.status,
+        projection: AsyncResult.getOrThrow(
+          hook.result.current.connectionProjection
+        ).status,
+      }))
+      .toEqual({ account: "disconnected", projection: "disconnected" });
 
     await hook.result.current.connect.connectAsync({
       connector: EArray.getUnsafe(hook.result.current.connectors, 0),
     });
-    await expect.poll(() => hook.result.current.account.isConnected).toBe(true);
+    await expect
+      .poll(() => ({
+        account: hook.result.current.account.status,
+        projection: AsyncResult.getOrThrow(
+          hook.result.current.connectionProjection
+        ).status,
+      }))
+      .toEqual({ account: "connected", projection: "connected" });
 
     await hook.result.current.switchChain.switchChainAsync({
       chainId: optimism.id,
     });
     await expect
-      .poll(() => hook.result.current.account.chainId)
-      .toBe(optimism.id);
+      .poll(() => ({
+        account: hook.result.current.account.chainId,
+        projection: AsyncResult.getOrThrow(
+          hook.result.current.connectionProjection
+        ).chainId,
+      }))
+      .toEqual({ account: optimism.id, projection: optimism.id });
 
     if (observedFallback) {
       expect(initialConfig?.state).toBe(fallbackState);

@@ -1,6 +1,5 @@
 import type { Connection } from "@solana/web3.js";
 import { Effect, Fiber, Schema } from "effect";
-import type { RefObject } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector, createConfig } from "wagmi";
 import { AdditionalAddresses } from "../../src/domain/schema/address-models";
@@ -9,11 +8,8 @@ import { EnabledNetworksResponse } from "../../src/domain/schema/wallet-models";
 import {
   initializeWallet,
   scopedMipdSubscription,
-  WalletInitializationKey,
   type WalletInitializationOperations,
-  walletControllerAtom,
 } from "../../src/features/wallet";
-import type { SKExternalProviders } from "../../src/public-api/types";
 import { getConfig as getEvmConfig } from "../../src/services/wallet/connectors/ethereum/config";
 import { buildWagmiConfig } from "../../src/services/wallet/wagmi-config";
 
@@ -316,99 +312,6 @@ describe("wallet Effect Atom boundaries", () => {
         )
       )
     ).rejects.toThrow(cause.message);
-  });
-
-  it("deduplicates equivalent lifecycle keys and replaces changed keys", () => {
-    const solanaConnection = {} as Connection;
-    const fields = {
-      chainIconMapping: undefined,
-      disableInjectedProviderDiscovery: true,
-      externalProviderInitToken: null,
-      forceWalletConnectOnly: false,
-      hasExternalProvider: false,
-      institutionalWallets: false,
-      isLedgerLive: false,
-      isSafe: false,
-      solanaConnection,
-      solanaWallets: [],
-      tonConnectManifestUrl: undefined,
-      variant: "default" as const,
-    };
-    const first = walletControllerAtom(new WalletInitializationKey(fields));
-    const equivalent = walletControllerAtom(
-      new WalletInitializationKey({ ...fields })
-    );
-    const changed = walletControllerAtom(
-      new WalletInitializationKey({
-        ...fields,
-        forceWalletConnectOnly: true,
-      })
-    );
-
-    expect(equivalent).toBe(first);
-    expect(walletControllerAtom(new WalletInitializationKey(fields))).toBe(
-      first
-    );
-    expect(changed).not.toBe(first);
-    expect(first.idleTTL).toBe(0);
-  });
-
-  it("keeps dynamic external-provider changes out of config identity", () => {
-    const externalProvidersRef: RefObject<SKExternalProviders> = {
-      current: {
-        currentAddress: "0x0000000000000000000000000000000000000001",
-        currentChain: 1,
-        initToken: "ethereum-eth",
-        provider: {
-          sendTransaction: vi.fn(async () => "first-hash"),
-          signMessage: vi.fn(async () => "first-signature"),
-          switchChain: vi.fn(async () => undefined),
-        },
-        supportedChainIds: [1],
-        type: "generic",
-      },
-    };
-    const fields = {
-      chainIconMapping: undefined,
-      disableInjectedProviderDiscovery: true,
-      externalProviderInitToken: "ethereum-eth",
-      externalProviders: externalProvidersRef,
-      forceWalletConnectOnly: false,
-      hasExternalProvider: true,
-      institutionalWallets: false,
-      isLedgerLive: false,
-      isSafe: false,
-      solanaConnection: {} as Connection,
-      solanaWallets: [],
-      tonConnectManifestUrl: undefined,
-      variant: "default" as const,
-    };
-    const first = walletControllerAtom(new WalletInitializationKey(fields));
-
-    externalProvidersRef.current = {
-      ...externalProvidersRef.current,
-      currentAddress: "0x0000000000000000000000000000000000000002",
-      currentChain: 10,
-      provider: {
-        sendTransaction: vi.fn(async () => "replacement-hash"),
-        signMessage: vi.fn(async () => "replacement-signature"),
-        switchChain: vi.fn(async () => undefined),
-      },
-      supportedChainIds: [10],
-    };
-
-    const dynamicUpdate = walletControllerAtom(
-      new WalletInitializationKey({ ...fields })
-    );
-    const topologyUpdate = walletControllerAtom(
-      new WalletInitializationKey({
-        ...fields,
-        externalProviderInitToken: "polygon-matic",
-      })
-    );
-
-    expect(dynamicUpdate).toBe(first);
-    expect(topologyUpdate).not.toBe(first);
   });
 
   it("disposes MIPD ownership and ignores callbacks from the released scope", async () => {

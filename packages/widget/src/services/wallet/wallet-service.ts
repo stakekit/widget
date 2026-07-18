@@ -89,6 +89,7 @@ const makeWalletService = Effect.fn("makeWalletService")(function* (
     changes: runtime.changes,
     config: runtime.config,
     current: runtime.current,
+    legacyController: runtime.legacyController,
     disconnect: (input?: WalletDisconnectInput) =>
       withCurrent(
         (binding) => binding.actions.disconnect(input),

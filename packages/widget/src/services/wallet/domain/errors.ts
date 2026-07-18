@@ -46,3 +46,10 @@ export class WalletCapabilityUnavailableError extends Data.TaggedError(
   readonly capability: WalletCapability;
   readonly connectorId: string | null;
 }> {}
+
+export class WalletRuntimeTerminalError extends Data.TaggedError(
+  "WalletRuntimeTerminalError"
+)<{
+  readonly cause: unknown;
+  readonly phase: "BootstrapFailed" | "InvariantViolated";
+}> {}

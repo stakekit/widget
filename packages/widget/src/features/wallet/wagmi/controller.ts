@@ -1,87 +1,46 @@
-import { Effect, Schema } from "effect";
+import { Effect, Stream } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime";
-import {
-  type InitParams,
-  InitParams as InitParamsSchema,
-} from "../../../domain/schema/init-params";
-import { YieldApiService } from "../../../services/api/yield-api-service";
-import { buildWagmiConfig } from "../../../services/wallet/wagmi-config";
+import { WalletRuntimeTerminalError } from "../../../services/wallet/domain/errors";
 import { WalletService } from "../../../services/wallet/wallet-service";
-import { initParamsAtom } from "../../init-params";
-import { enabledNetworksAtom } from "./enabled-networks";
-import {
-  initializeWallet,
-  WalletInitializationError,
-  type WalletInitializationKey,
-} from "./initialization";
+import type { WalletInitializationKey } from "./initialization";
 
-const resolveWalletInitParams = Effect.fn("resolveWalletInitParams")(function* (
-  initParams: InitParams
-) {
-  if (!initParams.yieldId) return initParams;
-
-  const api = yield* YieldApiService;
-  const yieldData = yield* api
-    .getInitialYield(initParams.yieldId)
-    .pipe(Effect.catch(() => Effect.succeed(null)));
-
-  if (!yieldData) return initParams;
-
-  const network = yield* Schema.decodeEffect(InitParamsSchema.fields.network)(
-    yieldData.token.network
-  );
-
-  return {
-    ...initParams,
-    network,
-    token: yieldData.token.symbol,
-  };
-});
-
-type WalletControllerDependencies = {
-  readonly buildConfig: typeof buildWagmiConfig;
-  readonly initialize: typeof initializeWallet;
-};
-
-export const makeWalletControllerAtom = ({
-  buildConfig = buildWagmiConfig,
-  initialize = initializeWallet,
-}: Partial<WalletControllerDependencies> = {}) =>
-  Atom.family((key: WalletInitializationKey) =>
-    appRuntime
-      .atom((get) =>
-        Effect.gen(function* () {
-          const wallet = yield* WalletService;
-          const enabledNetworks = yield* get.result(enabledNetworksAtom);
-          const queryParams = yield* resolveWalletInitParams(
-            get(initParamsAtom)
-          );
-          const result = yield* buildConfig({
-            ...key,
-            enabledNetworks,
-            persistPublicKey: (input) =>
-              Effect.runPromise(wallet.persistPublicKey(input)),
-            queryParams,
-          }).pipe(
-            Effect.mapError(
-              (cause) =>
-                new WalletInitializationError({
-                  cause,
-                  phase: "configuration",
+const serviceWalletControllerAtom = appRuntime
+  .atom(
+    WalletService.use((wallet) =>
+      Effect.succeed(
+        wallet.changes.pipe(
+          Stream.filter((snapshot) => snapshot.phase !== "Bootstrapping"),
+          Stream.changesWith(
+            (current, previous) => current.phase === previous.phase
+          ),
+          Stream.mapEffect((snapshot) => {
+            if (snapshot.phase !== "Ready") {
+              return Effect.fail(
+                new WalletRuntimeTerminalError({
+                  cause: snapshot.cause,
+                  phase: snapshot.phase,
                 })
-            )
-          );
-          yield* initialize({
-            hasExternalProvider: key.hasExternalProvider,
-            queryParamsInitChainId: result.queryParamsInitChainId,
-            wagmiConfig: result.wagmiConfig,
-          }).pipe(Effect.forkScoped);
+              );
+            }
 
-          return result;
-        })
+            return wallet.legacyController.pipe(
+              Effect.flatMap((controller) =>
+                controller === null
+                  ? Effect.die("Ready Wallet Runtime has no controller")
+                  : Effect.succeed(controller)
+              )
+            );
+          })
+        )
       )
-      .pipe(Atom.setIdleTTL(0))
-  );
+    ).pipe(Stream.unwrap)
+  )
+  .pipe(Atom.setIdleTTL(0), Atom.withLabel("serviceWalletControllerAtom"));
 
-export const walletControllerAtom = makeWalletControllerAtom();
+/**
+ * Temporary compatibility adapter for enrichment atoms removed by later
+ * wallet-runtime tickets. Every key resolves to the service-owned controller.
+ */
+export const walletControllerAtom = (_key: WalletInitializationKey) =>
+  serviceWalletControllerAtom;

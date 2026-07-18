@@ -12,7 +12,6 @@ import type { BuildWagmiConfigOptions } from "../../../services/wallet/wagmi-con
 
 export {
   initializeWallet,
-  WalletInitializationError,
   type WalletInitializationOperations,
 } from "../../../services/wallet/initialization";
 

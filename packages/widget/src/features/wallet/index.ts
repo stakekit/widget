@@ -11,6 +11,8 @@ export {
 } from "./react/wallet-scope-route";
 export { makeWalletScopedAtomRoute } from "./react/wallet-scoped-atom-route";
 export {
+  currentWalletConnectionResultAtom,
+  currentWalletConnectorsResultAtom,
   currentWalletLedgerStateAtom,
   currentWalletStateResultAtom,
   useWalletController,
@@ -31,10 +33,8 @@ export { AccountModal } from "./ui/account-modal";
 export { ChainModal } from "./ui/chain-modal";
 export { ConnectButton } from "./ui/connect-button";
 export { ZerionChainModal } from "./ui/zerion-chain-modal";
-export { walletControllerAtom } from "./wagmi/controller";
 export {
   initializeWallet,
-  WalletInitializationKey,
   type WalletInitializationOperations,
   walletInitializationKeyAtom,
 } from "./wagmi/initialization";

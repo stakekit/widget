@@ -7,6 +7,8 @@ export const WagmiConfigProvider = ({ children }: PropsWithChildren) => {
   const controller = useWalletController();
   const [fallbackConfig] = useState(makeDefaultConfig);
 
+  if (controller.error) throw controller.error;
+
   const value = controller.data?.wagmiConfig ?? fallbackConfig;
 
   return (

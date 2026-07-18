@@ -10,7 +10,7 @@ import {
   wagmiActionOperations,
 } from "./wagmi-actions";
 
-export class WalletInitializationError extends Data.TaggedError(
+class WalletInitializationError extends Data.TaggedError(
   "WalletInitializationError"
 )<{
   readonly cause: unknown;

@@ -137,6 +137,7 @@ export const makeDefaultWalletRuntimeAdapters = Effect.gen(function* () {
 export type WalletRuntime = {
   readonly changes: Stream.Stream<WalletRuntimeSnapshot>;
   readonly config: Effect.Effect<Config | null>;
+  readonly legacyController: Effect.Effect<WalletController | null>;
   readonly current: Effect.Effect<WalletRuntimeSnapshot>;
 };
 
@@ -266,6 +267,7 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
   const source = makeCurrentValueStream<WalletRuntimeSnapshot>(
     bootstrappingWalletRuntimeSnapshot
   );
+  let legacyController: WalletController | null = null;
 
   const bootstrap = Effect.gen(function* () {
     const settings = yield* config.current;
@@ -347,6 +349,7 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
       publish: publishReady,
     });
 
+    legacyController = controller;
     publishReady(watched.projection);
     yield* adapters.wagmi
       .initialize({
@@ -380,6 +383,7 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
   return {
     changes: source.changes,
     config: Effect.sync(() => source.get().wagmiConfig),
+    legacyController: Effect.sync(() => legacyController),
     current: Effect.sync(source.get),
   };
 });
@@ -392,6 +396,7 @@ export const makeBootstrappingWalletRuntime = (): WalletRuntime => {
   return {
     changes: source.changes,
     config: Effect.succeed(null),
+    legacyController: Effect.succeed(null),
     current: Effect.sync(source.get),
   };
 };
