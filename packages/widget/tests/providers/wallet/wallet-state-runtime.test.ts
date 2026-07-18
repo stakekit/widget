@@ -125,6 +125,114 @@ const waitForReadyState = (
   );
 
 describe("WalletService canonical Wallet State", () => {
+  it("keeps an active command on its captured state and routes the next command from the latest publication", async () => {
+    const firstStarted = await Effect.runPromise(Deferred.make<void>());
+    const firstRelease = await Effect.runPromise(Deferred.make<void>());
+    const firstConnector = {
+      id: "first",
+      name: "First",
+      type: "injected",
+      uid: "first-uid",
+    } as unknown as Connector;
+    const secondConnector = {
+      id: "second",
+      name: "Second",
+      type: "injected",
+      uid: "second-uid",
+    } as unknown as Connector;
+    const routedConnectors: Connector[] = [];
+    const wagmiConfig = makeDefaultConfig();
+    const controller = makeRuntimeTestController({
+      actions: {
+        signMessage: ({ connector }: { readonly connector: Connector }) =>
+          Effect.gen(function* () {
+            routedConnectors.push(connector);
+            if (connector.uid === firstConnector.uid) {
+              yield* Deferred.succeed(firstStarted, undefined);
+              yield* Deferred.await(firstRelease);
+            }
+            return connector.uid;
+          }),
+      },
+      evmConfig: {
+        evmChains: [mainnet],
+        evmChainsMap: {
+          ethereum: { skChainName: "ethereum", wagmiChain: mainnet },
+        },
+      },
+      queryParamsInitChainId: undefined,
+      wagmiConfig,
+    });
+    let currentConnection = connectedConnection(firstConnector);
+    let publishConnection: (
+      connection: WalletCoreProjection["connection"]
+    ) => void = () => undefined;
+    const adapters = {
+      environment: {
+        getEnabledNetworks: () => Effect.succeed(new Set(["ethereum"])),
+        getHref: () => "https://widget.test/",
+        getInitialYield: () => Effect.die("unused"),
+        isLedgerDappBrowser: () => false,
+        isMobileWallet: () => false,
+      },
+      wagmi: {
+        buildConfig: () => Effect.succeed(controller),
+        getConnection: () => currentConnection,
+        getConnectors: () => [firstConnector, secondConnector],
+        initialize: () => Effect.void,
+        watchConnection: (_config, onChange) => {
+          publishConnection = onChange;
+          return () => undefined;
+        },
+        watchConnectors: () => () => undefined,
+      },
+    } satisfies WalletRuntimeAdapters;
+    const layer = WalletService.layerWithRuntimeAdapters(adapters).pipe(
+      Layer.provide(
+        Layer.mergeAll(configLayer, persistenceLayer, trackingLayer)
+      )
+    );
+
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const wallet = yield* WalletService;
+          yield* waitForReadyState(wallet, "connected");
+          const first = yield* wallet
+            .signMessage({ message: "first" })
+            .pipe(Effect.forkChild({ startImmediately: true }));
+          yield* Deferred.await(firstStarted);
+
+          currentConnection = connectedConnection(secondConnector);
+          const nextState = yield* wallet.changes.pipe(
+            Stream.filter(
+              (snapshot) =>
+                snapshot.phase === "Ready" &&
+                snapshot.projection.state.status === "connected" &&
+                snapshot.projection.state.connector.uid === secondConnector.uid
+            ),
+            Stream.runHead,
+            Effect.map(Option.getOrThrow),
+            Effect.forkChild({ startImmediately: true })
+          );
+          publishConnection(currentConnection);
+          yield* Fiber.join(nextState);
+
+          const second = yield* wallet.signMessage({ message: "second" });
+          yield* Deferred.succeed(firstRelease, undefined);
+          const firstResult = yield* Fiber.join(first);
+          return { firstResult, second };
+        })
+      ).pipe(Effect.provide(layer))
+    );
+
+    expect(result).toEqual({
+      firstResult: firstConnector.uid,
+      second: secondConnector.uid,
+    });
+    expect(routedConnectors).toEqual([firstConnector, secondConnector]);
+  });
+
   it("publishes a connection only after its enrichment is complete", async () => {
     const enrichmentStarted = await Effect.runPromise(Deferred.make<void>());
     const enrichmentRelease = await Effect.runPromise(

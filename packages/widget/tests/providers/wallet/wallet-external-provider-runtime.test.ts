@@ -400,7 +400,7 @@ describe("WalletService external-provider ownership", () => {
       initialExternalProvider: initial,
     });
 
-    const snapshot = await Effect.runPromise(
+    const result = await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
           const wallet = yield* WalletService;
@@ -409,13 +409,22 @@ describe("WalletService external-provider ownership", () => {
             Effect.forkChild({ startImmediately: true })
           );
           harness.configSource.set(makeSettings(next));
-          return yield* Fiber.join(failed);
+          const snapshot = yield* Fiber.join(failed);
+          const commandFailure = yield* wallet
+            .signMessage({ message: "after-invariant" })
+            .pipe(Effect.flip);
+          return { commandFailure, snapshot };
         })
       ).pipe(Effect.provide(harness.layer))
     );
 
-    expect(snapshot).toMatchObject({
+    expect(result.snapshot).toMatchObject({
       cause: { _tag: "WalletRuntimeInvariantError" },
+      phase: "InvariantViolated",
+    });
+    expect(result.commandFailure).toMatchObject({
+      _tag: "WalletRuntimeTerminalError",
+      cause: result.snapshot.cause,
       phase: "InvariantViolated",
     });
   });

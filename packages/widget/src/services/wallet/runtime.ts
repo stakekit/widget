@@ -42,7 +42,10 @@ import {
   isMobileWalletEnvironment,
 } from "./browser-environment";
 import { isExternalProviderConnector } from "./connectors/external-provider";
-import { WalletRuntimeInvariantError } from "./domain/errors";
+import {
+  WalletRuntimeInvariantError,
+  WalletRuntimeTerminalError,
+} from "./domain/errors";
 import {
   bootstrappingWalletRuntimeSnapshot,
   type WalletCoreProjection,
@@ -145,12 +148,15 @@ export const makeDefaultWalletRuntimeAdapters = Effect.gen(function* () {
 });
 
 export type WalletRuntime = {
+  readonly captureRouting: Effect.Effect<
+    WalletRoutingContext | null,
+    WalletRuntimeTerminalError
+  >;
   readonly changes: Stream.Stream<WalletRuntimeSnapshot>;
   readonly config: Effect.Effect<Config | null>;
   readonly getState: () => WalletRoutingContext["state"];
   readonly legacyController: Effect.Effect<WalletController | null>;
   readonly current: Effect.Effect<WalletRuntimeSnapshot>;
-  readonly routing: Effect.Effect<WalletRoutingContext | null>;
 };
 
 type WalletBootstrapSnapshot = {
@@ -775,13 +781,28 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
   yield* bootstrap.pipe(Effect.forkScoped);
 
   return {
+    captureRouting: Effect.suspend(() => {
+      const snapshot = source.get();
+      if (
+        snapshot.phase === "BootstrapFailed" ||
+        snapshot.phase === "InvariantViolated"
+      ) {
+        return Effect.fail(
+          new WalletRuntimeTerminalError({
+            cause: snapshot.cause,
+            phase: snapshot.phase,
+          })
+        );
+      }
+
+      return Effect.succeed(snapshot.phase === "Ready" ? routing : null);
+    }),
     changes: source.changes,
     config: Effect.sync(() => source.get().wagmiConfig),
     getState: () =>
       publishedProjection?.state ?? disconnectedNormalizedWalletState,
     legacyController: Effect.sync(() => legacyController),
     current: Effect.sync(source.get),
-    routing: Effect.sync(() => routing),
   };
 });
 
@@ -791,11 +812,11 @@ export const makeBootstrappingWalletRuntime = (): WalletRuntime => {
   );
 
   return {
+    captureRouting: Effect.succeed(null),
     changes: source.changes,
     config: Effect.succeed(null),
     getState: () => disconnectedNormalizedWalletState,
     legacyController: Effect.succeed(null),
     current: Effect.sync(source.get),
-    routing: Effect.succeed(null),
   };
 };

@@ -88,6 +88,9 @@ describe("WalletService Wallet Runtime", () => {
           const wallet = yield* WalletService;
           const initial = yield* wallet.current;
           const bootstrapping = yield* wallet.changes.pipe(Stream.runHead);
+          const commandFailure = yield* wallet
+            .signMessage({ message: "before-ready" })
+            .pipe(Effect.flip);
           const readyFiber = yield* readySnapshot(wallet).pipe(
             Effect.forkChild({ startImmediately: true })
           );
@@ -95,7 +98,7 @@ describe("WalletService Wallet Runtime", () => {
           yield* Deferred.succeed(buildRelease, undefined);
           const ready = yield* Fiber.join(readyFiber);
 
-          return { bootstrapping, initial, ready };
+          return { bootstrapping, commandFailure, initial, ready };
         })
       ).pipe(Effect.provide(layer))
     );
@@ -107,6 +110,11 @@ describe("WalletService Wallet Runtime", () => {
       wagmiConfig: null,
     });
     expect(Option.getOrThrow(result.bootstrapping)).toEqual(result.initial);
+    expect(result.commandFailure).toMatchObject({
+      _tag: "WalletCapabilityUnavailableError",
+      capability: "message",
+      connectorId: null,
+    });
     expect(result.ready).toMatchObject({
       cause: null,
       phase: "Ready",
@@ -415,18 +423,26 @@ describe("WalletService Wallet Runtime", () => {
           const snapshot = yield* failedSnapshot(wallet);
           const current = yield* wallet.current;
           const authoritativeConfig = yield* wallet.config;
+          const commandFailure = yield* wallet
+            .signMessage({ message: "after-failure" })
+            .pipe(Effect.flip);
           expect(current).toBe(snapshot);
           expect(authoritativeConfig).toBeNull();
-          return snapshot;
+          return { commandFailure, snapshot };
         })
       ).pipe(Effect.provide(layer))
     );
 
-    expect(failed).toMatchObject({
+    expect(failed.snapshot).toMatchObject({
       cause,
       phase: "BootstrapFailed",
       projection: null,
       wagmiConfig: null,
+    });
+    expect(failed.commandFailure).toMatchObject({
+      _tag: "WalletRuntimeTerminalError",
+      cause,
+      phase: "BootstrapFailed",
     });
     expect(watches).toBe(0);
     expect(initializations).toBe(0);

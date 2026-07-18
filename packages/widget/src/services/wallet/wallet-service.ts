@@ -9,6 +9,7 @@ import type {
 import {
   WalletCapabilityUnavailableError,
   WalletConnectionError,
+  type WalletRuntimeTerminalError,
 } from "./domain/errors";
 import type { WalletSignTransactionInput } from "./domain/transactions";
 import type { WalletRoutingContext } from "./router";
@@ -43,8 +44,8 @@ const makeWalletService = Effect.fn("makeWalletService")(function* (
   const withCurrent = <A, E>(
     use: (routing: WalletRoutingContext) => Effect.Effect<A, E>,
     unavailable: () => E
-  ): Effect.Effect<A, E> =>
-    runtime.routing.pipe(
+  ): Effect.Effect<A, E | WalletRuntimeTerminalError> =>
+    runtime.captureRouting.pipe(
       Effect.flatMap((routing) =>
         routing ? use(routing) : Effect.fail(unavailable())
       )

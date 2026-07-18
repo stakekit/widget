@@ -6,6 +6,7 @@ import {
   WalletCapabilityUnavailableError,
   WalletConnectionError,
   WalletDecodeError,
+  type WalletRuntimeTerminalError,
   type WalletService,
   type WalletSignedPayloadResult,
   WalletSigningError,
@@ -66,6 +67,8 @@ describe("wallet service contract", () => {
   it("defines Effect commands without a React dependency", () => {
     expectTypeOf<
       WalletService["Service"]["disconnect"]
-    >().returns.toEqualTypeOf<Effect.Effect<void, WalletConnectionError>>();
+    >().returns.toEqualTypeOf<
+      Effect.Effect<void, WalletConnectionError | WalletRuntimeTerminalError>
+    >();
   });
 });
