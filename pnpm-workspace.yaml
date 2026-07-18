@@ -48,9 +48,11 @@ catalog:
   "@rolldown/plugin-babel": ^0.2.3
   "@safe-global/safe-apps-provider": ^0.18.6
   "@safe-global/safe-apps-sdk": ^9.1.0
+  "@solana-mobile/wallet-adapter-mobile": ^2.2.3
   "@solana/wallet-adapter-base": ^0.9.27
   "@solana/wallet-adapter-react": ^0.15.39
   "@solana/wallet-adapter-wallets": ^0.19.38
+  "@solana/wallet-standard-wallet-adapter-base": ^1.1.4
   "@solana/web3.js": ^1.98.4
   "@stakekit/rainbowkit": ^2.2.11
   "@tanstack/react-query": ^5.101.2
@@ -76,6 +78,8 @@ catalog:
   "@vanilla-extract/vite-plugin": ^5.2.4
   "@vitejs/plugin-react": ^6.0.3
   "@vitest/browser-playwright": ^4.1.10
+  "@wallet-standard/app": ^1.1.0
+  "@wallet-standard/base": ^1.1.0
   autoprefixer: ^10.5.2
   babel-plugin-react-compiler: 1.0.0
   bignumber.js: ^11.1.5

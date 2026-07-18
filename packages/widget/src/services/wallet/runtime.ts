@@ -1,4 +1,3 @@
-import { Connection, clusterApiUrl } from "@solana/web3.js";
 import {
   Cause,
   Duration,
@@ -45,6 +44,7 @@ import {
   type WalletRuntimeSnapshot,
 } from "./domain/runtime";
 import { initializeWallet } from "./initialization";
+import { makeDefaultHeadlessSolanaRuntime } from "./solana-runtime";
 import {
   type BuildWagmiConfigOptions,
   buildWagmiConfig,
@@ -312,6 +312,7 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
       externalProviders,
       initParams: Object.freeze(queryParams),
     } satisfies WalletBootstrapSnapshot);
+    const solanaRuntime = yield* makeDefaultHeadlessSolanaRuntime();
     const controller = yield* adapters.wagmi.buildConfig({
       ...bootstrapSnapshot.config.wallet,
       enabledNetworks: bootstrapSnapshot.enabledNetworks,
@@ -319,9 +320,7 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
       persistPublicKey: (input) =>
         Effect.runPromise(persistence.upsertStoredPublicKey(input)),
       queryParams: bootstrapSnapshot.initParams,
-      solanaConnection: new Connection(clusterApiUrl("mainnet-beta"), {
-        commitment: "confirmed",
-      }),
+      solanaConnection: solanaRuntime.connection,
       solanaWallets: [],
     });
     const readySnapshot = (projection: WalletCoreProjection) =>

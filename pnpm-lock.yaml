@@ -455,6 +455,9 @@ catalogs:
     '@safe-global/safe-apps-sdk':
       specifier: ^9.1.0
       version: 9.1.0
+    '@solana-mobile/wallet-adapter-mobile':
+      specifier: ^2.2.3
+      version: 2.2.3
     '@solana/wallet-adapter-base':
       specifier: ^0.9.27
       version: 0.9.27
@@ -464,6 +467,9 @@ catalogs:
     '@solana/wallet-adapter-wallets':
       specifier: ^0.19.38
       version: 0.19.38
+    '@solana/wallet-standard-wallet-adapter-base':
+      specifier: ^1.1.4
+      version: 1.1.4
     '@solana/web3.js':
       specifier: ^1.98.4
       version: 1.98.4
@@ -536,6 +542,12 @@ catalogs:
     '@vitest/browser-playwright':
       specifier: ^4.1.10
       version: 4.1.10
+    '@wallet-standard/app':
+      specifier: ^1.1.0
+      version: 1.1.0
+    '@wallet-standard/base':
+      specifier: ^1.1.0
+      version: 1.1.0
     autoprefixer:
       specifier: ^10.5.2
       version: 10.5.2
@@ -853,6 +865,9 @@ importers:
       '@safe-global/safe-apps-sdk':
         specifier: 'catalog:'
         version: 9.1.0(bufferutil@4.0.9)(typescript@7.0.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@solana-mobile/wallet-adapter-mobile':
+        specifier: 'catalog:'
+        version: 2.2.3(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@7.0.2)(utf-8-validate@5.0.10))(react-native@0.81.1(@babel/core@7.29.7)(@types/react@19.2.17)(bufferutil@4.0.9)(react@19.2.7)(utf-8-validate@5.0.10))(react@19.2.7)
       '@solana/wallet-adapter-base':
         specifier: 'catalog:'
         version: 0.9.27(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@7.0.2)(utf-8-validate@5.0.10))
@@ -862,6 +877,9 @@ importers:
       '@solana/wallet-adapter-wallets':
         specifier: 'catalog:'
         version: 0.19.38(@babel/runtime@7.29.7)(@react-native-async-storage/async-storage@1.24.0(react-native@0.81.1(@babel/core@7.29.7)(@types/react@19.2.17)(bufferutil@4.0.9)(react@19.2.7)(utf-8-validate@5.0.10)))(@solana/sysvars@5.5.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@7.0.2))(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@7.0.2)(utf-8-validate@5.0.10))(@types/react@19.2.17)(bs58@5.0.0)(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(ioredis@5.10.1)(react-dom@19.2.7(react@19.2.7))(react-native@0.81.1(@babel/core@7.29.7)(@types/react@19.2.17)(bufferutil@4.0.9)(react@19.2.7)(utf-8-validate@5.0.10))(react@19.2.7)(tslib@2.8.1)(typescript@7.0.2)(utf-8-validate@5.0.10)(ws@8.21.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76)
+      '@solana/wallet-standard-wallet-adapter-base':
+        specifier: 'catalog:'
+        version: 1.1.4(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@7.0.2)(utf-8-validate@5.0.10))(bs58@5.0.0)
       '@solana/web3.js':
         specifier: 'catalog:'
         version: 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@7.0.2)(utf-8-validate@5.0.10)
@@ -931,6 +949,12 @@ importers:
       '@vitest/browser-playwright':
         specifier: 'catalog:'
         version: 4.1.10(bufferutil@4.0.9)(msw@2.15.0(@types/node@26.1.1)(typescript@7.0.2))(playwright@1.61.1)(utf-8-validate@5.0.10)(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(less@4.2.2)(sass@1.85.0)(terser@5.48.0)(tsx@4.23.0)(yaml@2.9.0))(vitest@4.1.10)
+      '@wallet-standard/app':
+        specifier: 'catalog:'
+        version: 1.1.0
+      '@wallet-standard/base':
+        specifier: 'catalog:'
+        version: 1.1.0
       autoprefixer:
         specifier: 'catalog:'
         version: 10.5.2(postcss@8.5.16)
