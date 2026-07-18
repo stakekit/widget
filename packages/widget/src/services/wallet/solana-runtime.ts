@@ -24,19 +24,20 @@ import type { Wallet as StandardWallet } from "@wallet-standard/base";
 import { Effect, type Scope } from "effect";
 import { config } from "../../shared/config/widget-defaults";
 
-type SolanaWalletDescriptor = {
+export type SolanaWalletDescriptor = {
   readonly adapter: Adapter;
   readonly readyState: WalletReadyState;
+  readonly source: "fallback" | "standard";
 };
 
-type SolanaWalletSnapshot = {
+export type SolanaWalletSnapshot = {
   readonly wallets: ReadonlyArray<SolanaWalletDescriptor>;
 };
 
 export type HeadlessSolanaRuntime = {
   readonly connection: Connection;
   readonly getWalletSnapshot: () => SolanaWalletSnapshot;
-  readonly subscribe: (listener: () => void) => () => void;
+  readonly subscribe: (listener: () => Promise<void> | void) => () => void;
 };
 
 type StandardAdapter = WalletAdapter & {
@@ -76,6 +77,7 @@ export type HeadlessSolanaRuntimeDependencies = {
 type HeadlessSolanaRuntimeOptions = {
   readonly endpoint?: string;
   readonly includeFallbackAdapters?: boolean;
+  readonly includeWalletAdapters?: boolean;
   readonly network?: SolanaFallbackNetwork;
   readonly walletConnectProjectId?: string;
 };
@@ -170,7 +172,8 @@ const snapshotsEqual = (
     (wallet, index) =>
       wallet === right.wallets[index] ||
       (wallet.adapter === right.wallets[index]?.adapter &&
-        wallet.readyState === right.wallets[index]?.readyState)
+        wallet.readyState === right.wallets[index]?.readyState &&
+        wallet.source === right.wallets[index]?.source)
   );
 
 const disposeAdapter = (adapter: Adapter) => {
@@ -188,6 +191,7 @@ export const makeHeadlessSolanaRuntime = (
       const endpoint = options.endpoint ?? clusterApiUrl(network);
       const connection = deps.createConnection(endpoint);
       const fallbackAdapters =
+        (options.includeWalletAdapters ?? true) &&
         (options.includeFallbackAdapters ?? true)
           ? deps.createFallbackAdapters({
               network,
@@ -199,26 +203,35 @@ export const makeHeadlessSolanaRuntime = (
       const standardAdapters = new Map<StandardWallet, StandardAdapter>();
       const descriptorCache = new Map<Adapter, SolanaWalletDescriptor>();
       const adapterListeners = new Map<Adapter, () => void>();
-      const listeners = new Set<() => void>();
+      const listeners = new Set<() => Promise<void> | void>();
       const environment = deps.environment();
       let mobileAdapter: Adapter | null = null;
       let active = true;
       let snapshot: SolanaWalletSnapshot = Object.freeze({ wallets: [] });
 
-      const getOrCreateDescriptor = (adapter: Adapter) => {
+      const getOrCreateDescriptor = (
+        adapter: Adapter,
+        source: SolanaWalletDescriptor["source"]
+      ) => {
         const cached = descriptorCache.get(adapter);
-        if (cached?.readyState === adapter.readyState) return cached;
+        if (
+          cached?.readyState === adapter.readyState &&
+          cached.source === source
+        ) {
+          return cached;
+        }
 
         const descriptor = Object.freeze({
           adapter,
           readyState: adapter.readyState,
+          source,
         });
         descriptorCache.set(adapter, descriptor);
         return descriptor;
       };
 
       const publish = () => {
-        if (!active) return;
+        if (!active) return [];
 
         const baseAdapters = uniqueAdaptersByName(
           [...standardAdapters.values()],
@@ -263,16 +276,25 @@ export const makeHeadlessSolanaRuntime = (
         const nextSnapshot = Object.freeze({
           wallets: Object.freeze(
             visibleAdapters
-              .map(getOrCreateDescriptor)
+              .map((adapter) =>
+                getOrCreateDescriptor(
+                  adapter,
+                  [...standardAdapters.values()].includes(
+                    adapter as StandardAdapter
+                  )
+                    ? "standard"
+                    : "fallback"
+                )
+              )
               .filter(
                 ({ readyState }) => readyState !== WalletReadyState.Unsupported
               )
           ),
         });
-        if (snapshotsEqual(snapshot, nextSnapshot)) return;
+        if (snapshotsEqual(snapshot, nextSnapshot)) return [];
 
         snapshot = nextSnapshot;
-        for (const listener of listeners) listener();
+        return [...listeners].map((listener) => listener());
       };
 
       const addStandardWallets = (wallets: ReadonlyArray<StandardWallet>) => {
@@ -291,6 +313,7 @@ export const makeHeadlessSolanaRuntime = (
       const removeStandardWallets = (
         wallets: ReadonlyArray<StandardWallet>
       ) => {
+        const removedAdapters: StandardAdapter[] = [];
         for (const wallet of wallets) {
           const adapter = standardAdapters.get(wallet);
           if (!adapter) continue;
@@ -299,20 +322,38 @@ export const makeHeadlessSolanaRuntime = (
           adapterListeners.delete(adapter);
           descriptorCache.delete(adapter);
           standardAdapters.delete(wallet);
-          adapter.destroy();
+          removedAdapters.push(adapter);
         }
-        publish();
+        const pending = publish().filter(
+          (publication): publication is Promise<void> =>
+            publication instanceof Promise
+        );
+        if (pending.length === 0) {
+          for (const adapter of removedAdapters) adapter.destroy();
+          return;
+        }
+
+        void Promise.allSettled(pending).then(() => {
+          for (const adapter of removedAdapters) adapter.destroy();
+        });
       };
 
-      const unregisterListeners = [
-        deps.registry.on("register", (...wallets) =>
-          addStandardWallets(wallets)
-        ),
-        deps.registry.on("unregister", (...wallets) =>
-          removeStandardWallets(wallets)
-        ),
-      ];
-      addStandardWallets(deps.registry.get());
+      const includeWalletAdapters = options.includeWalletAdapters ?? true;
+      const unregisterListeners = includeWalletAdapters
+        ? [
+            deps.registry.on("register", (...wallets) =>
+              addStandardWallets(wallets)
+            ),
+            deps.registry.on("unregister", (...wallets) =>
+              removeStandardWallets(wallets)
+            ),
+          ]
+        : [];
+      if (includeWalletAdapters) {
+        addStandardWallets(deps.registry.get());
+      } else {
+        publish();
+      }
 
       return {
         runtime: {
@@ -345,7 +386,10 @@ export const makeHeadlessSolanaRuntime = (
     ({ dispose }) => Effect.sync(dispose)
   ).pipe(Effect.map(({ runtime }) => runtime));
 
-export const makeDefaultHeadlessSolanaRuntime = () =>
+export const makeDefaultHeadlessSolanaRuntime = (options?: {
+  readonly includeWalletAdapters?: boolean;
+}) =>
   makeHeadlessSolanaRuntime({
     includeFallbackAdapters: !config.env.isTestMode,
+    includeWalletAdapters: options?.includeWalletAdapters,
   });

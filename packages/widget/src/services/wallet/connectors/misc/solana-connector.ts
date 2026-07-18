@@ -1,4 +1,3 @@
-import type { Wallet } from "@solana/wallet-adapter-react";
 import { WalletConnectWalletAdapter } from "@solana/wallet-adapter-wallets";
 import {
   type Connection,
@@ -19,6 +18,7 @@ import { decodeSolanaTransactionToBuffer } from "../../../../domain/types/transa
 import type { VariantProps } from "../../../../public-api/types";
 import portoIcon from "../../../../shared/assets/images/porto.svg";
 import { getWalletNetworkLogo } from "../../assets";
+import type { SolanaWalletDescriptor } from "../../solana-runtime";
 import {
   type ExtraProps,
   getConfigMeta,
@@ -57,13 +57,15 @@ const createSolanaConnector = ({
   walletDetailsParams,
   connection,
 }: {
-  solanaWallet: Wallet;
+  solanaWallet: SolanaWalletDescriptor;
   walletDetailsParams: WalletDetailsParams;
   connection: Connection;
 }) =>
   createConnector<unknown, ExtraProps, StorageItem>((config) => ({
     ...walletDetailsParams,
     isSolanaConnector: true,
+    solanaAdapter: solanaWallet.adapter,
+    solanaAdapterSource: solanaWallet.source,
     id: solanaWallet.adapter.name,
     name: solanaWallet.adapter.name,
     type: solanaWallet.adapter.name,
@@ -155,7 +157,7 @@ export const getSolanaConnectors = ({
   connection,
   variant,
 }: {
-  wallets: Wallet[];
+  wallets: ReadonlyArray<SolanaWalletDescriptor>;
   forceWalletConnectOnly: boolean;
   connection: Connection;
   variant: VariantProps["variant"];

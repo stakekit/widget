@@ -56,7 +56,11 @@ import { disconnectedNormalizedWalletState } from "./domain/state";
 import { initializeWallet } from "./initialization";
 import { makeWalletLifecyclePolicy } from "./lifecycle";
 import type { WalletRoutingContext } from "./router";
-import { makeDefaultHeadlessSolanaRuntime } from "./solana-runtime";
+import { installSolanaConnectorMembership } from "./solana-connector-membership";
+import {
+  type HeadlessSolanaRuntime,
+  makeDefaultHeadlessSolanaRuntime,
+} from "./solana-runtime";
 import { makeCompleteWalletStateStream } from "./state-projection";
 import {
   type BuildWagmiConfigOptions,
@@ -101,8 +105,15 @@ type WalletRuntimeWagmiAdapter = {
   ) => () => void;
 };
 
+type WalletRuntimeSolanaAdapter = {
+  readonly makeRuntime: (options: {
+    readonly includeWalletAdapters: boolean;
+  }) => Effect.Effect<HeadlessSolanaRuntime, never, Scope.Scope>;
+};
+
 export type WalletRuntimeAdapters = {
   readonly environment: WalletRuntimeEnvironmentAdapter;
+  readonly solana?: WalletRuntimeSolanaAdapter;
   readonly wagmi: WalletRuntimeWagmiAdapter;
 };
 
@@ -133,6 +144,9 @@ export const makeDefaultWalletRuntimeAdapters = Effect.gen(function* () {
         typeof window !== "undefined" && isLedgerDappBrowserProvider(),
       isMobileWallet: () =>
         typeof window !== "undefined" && isMobileWalletEnvironment(),
+    },
+    solana: {
+      makeRuntime: makeDefaultHeadlessSolanaRuntime,
     },
     wagmi: {
       buildConfig: buildWagmiConfig,
@@ -730,7 +744,19 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
       externalProviders,
       initParams: Object.freeze(queryParams),
     } satisfies WalletBootstrapSnapshot);
-    const solanaRuntime = yield* makeDefaultHeadlessSolanaRuntime();
+    const walletConfig = bootstrapSnapshot.config.wallet;
+    const includeSolanaWalletAdapters =
+      bootstrapSnapshot.enabledNetworks.has("solana") &&
+      !walletConfig.hasExternalProvider &&
+      !walletConfig.forceWalletConnectOnly &&
+      !walletConfig.isLedgerLive &&
+      !walletConfig.isSafe &&
+      !walletConfig.customConnectors;
+    const solanaRuntime = yield* (
+      adapters.solana?.makeRuntime ?? makeDefaultHeadlessSolanaRuntime
+    )({
+      includeWalletAdapters: includeSolanaWalletAdapters,
+    });
     const controller = yield* adapters.wagmi.buildConfig({
       ...bootstrapSnapshot.config.wallet,
       enabledNetworks: bootstrapSnapshot.enabledNetworks,
@@ -739,8 +765,15 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
         Effect.runPromise(persistence.upsertStoredPublicKey(input)),
       queryParams: bootstrapSnapshot.initParams,
       solanaConnection: solanaRuntime.connection,
-      solanaWallets: [],
+      solanaWallets: solanaRuntime.getWalletSnapshot().wallets,
     });
+    if (includeSolanaWalletAdapters && controller.solanaConnectorMode) {
+      yield* installSolanaConnectorMembership({
+        config: controller.wagmiConfig,
+        createConnector: controller.createSolanaConnector,
+        runtime: solanaRuntime,
+      });
+    }
     const watched = yield* watchWalletCore({
       adapters,
       controller,

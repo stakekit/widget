@@ -1,9 +1,7 @@
-import type { Connection } from "@solana/web3.js";
 import { Data } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import {
   dynamicExternalProviderInputAtom,
-  solanaWalletInputAtom,
   widgetBootstrapConfigAtom,
 } from "../../../app/runtime";
 import type { CurrentRef } from "../../../domain/types/external-providers";
@@ -17,7 +15,11 @@ export {
 
 type WalletInitializationKeyFields = Omit<
   BuildWagmiConfigOptions,
-  "enabledNetworks" | "persistPublicKey" | "queryParams"
+  | "enabledNetworks"
+  | "persistPublicKey"
+  | "queryParams"
+  | "solanaConnection"
+  | "solanaWallets"
 > & {
   readonly externalProviderInitToken: string | null;
   readonly hasExternalProvider: boolean;
@@ -34,7 +36,6 @@ export const walletInitializationKeyAtom = (() => {
   return Atom.make((get) => {
     const { wallet: config } = get(widgetBootstrapConfigAtom);
     const dynamicExternalProvider = get(dynamicExternalProviderInputAtom);
-    const solana = get(solanaWalletInputAtom);
     const externalProviders = dynamicExternalProvider
       ? {
           ...dynamicExternalProvider,
@@ -69,8 +70,6 @@ export const walletInitializationKeyAtom = (() => {
       chainIconMapping: config.chainIconMapping,
       institutionalWallets: config.institutionalWallets,
       variant: config.variant,
-      solanaWallets: [...solana.wallets],
-      solanaConnection: solana.connection as Connection,
       mapWalletListFn: config.mapWalletListFn,
       tonConnectManifestUrl: config.tonConnectManifestUrl,
     });

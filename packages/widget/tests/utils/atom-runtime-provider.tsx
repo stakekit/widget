@@ -1,8 +1,5 @@
 import type { PropsWithChildren } from "react";
-import {
-  SKAtomRegistryProvider,
-  SKRootInputProvider,
-} from "../../src/app/composition/providers/atom-runtime";
+import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
 import type { WidgetConfig } from "../../src/app/config";
 
 export const TestAtomRuntimeProvider = ({
@@ -10,6 +7,6 @@ export const TestAtomRuntimeProvider = ({
   settings,
 }: PropsWithChildren<{ readonly settings: WidgetConfig }>) => (
   <SKAtomRegistryProvider settings={settings}>
-    <SKRootInputProvider>{children}</SKRootInputProvider>
+    {children}
   </SKAtomRegistryProvider>
 );

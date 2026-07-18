@@ -6,6 +6,7 @@ import {
 import type { Connector } from "wagmi";
 import type { ConnectorWithFilteredChains } from "../../../../domain/types/connectors";
 import type { DecodedSolanaTransaction } from "../../../../domain/types/transaction";
+import type { SolanaWalletDescriptor } from "../../solana-runtime";
 
 export const getConfigMeta = (adapter: Adapter) => {
   if (adapter instanceof PhantomWalletAdapter) {
@@ -41,12 +42,14 @@ export const getConfigMeta = (adapter: Adapter) => {
 };
 
 export type ExtraProps = ConnectorWithFilteredChains & {
+  readonly solanaAdapter: Adapter;
+  readonly solanaAdapterSource: SolanaWalletDescriptor["source"];
   sendTransaction: (tx: DecodedSolanaTransaction) => Promise<string>;
 };
 
 export type StorageItem = { "solana.disconnected": boolean };
 
-type SolanaConnector = Connector & ExtraProps;
+export type SolanaConnector = Connector & ExtraProps;
 
 export const isSolanaConnector = (
   connector: Connector

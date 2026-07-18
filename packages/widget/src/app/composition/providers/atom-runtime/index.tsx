@@ -1,8 +1,4 @@
 import { RegistryProvider, useAtomSet } from "@effect/atom-react";
-import {
-  useConnection as useSolanaConnection,
-  useWallet as useSolanaWallet,
-} from "@solana/wallet-adapter-react";
 import { type PropsWithChildren, useLayoutEffect } from "react";
 import { config } from "../../../../shared/config/widget-defaults";
 import {
@@ -10,10 +6,6 @@ import {
   type WidgetConfig,
   widgetConfigAtom,
 } from "../../../config";
-import {
-  normalizeSolanaWalletInput,
-  solanaWalletInputAtom,
-} from "../../../runtime/root-inputs";
 
 export const SKAtomRegistryProvider = ({
   children,
@@ -39,22 +31,6 @@ const WidgetConfigBinding = ({
   useLayoutEffect(() => {
     setWidgetConfig(settings);
   }, [setWidgetConfig, settings]);
-
-  return children;
-};
-
-export const SKRootInputProvider = ({ children }: PropsWithChildren) => {
-  const setSolanaInput = useAtomSet(solanaWalletInputAtom);
-  const solanaConnection = useSolanaConnection();
-  const solanaWallet = useSolanaWallet();
-  const solanaInput = normalizeSolanaWalletInput({
-    connection: solanaConnection.connection,
-    wallets: solanaWallet.wallets,
-  });
-
-  useLayoutEffect(() => {
-    setSolanaInput(solanaInput);
-  }, [setSolanaInput, solanaInput]);
 
   return children;
 };

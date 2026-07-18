@@ -8,10 +8,8 @@ import {
   widgetConfigAtom,
 } from "../../src/app/config";
 import {
-  defaultSolanaWalletInput,
   dynamicExternalProviderInputAtom,
   normalizeDynamicExternalProviderInput,
-  solanaWalletInputAtom,
 } from "../../src/app/runtime/root-inputs";
 import { walletInitializationKeyAtom } from "../../src/features/wallet";
 import type { SKExternalProviders } from "../../src/public-api/types";
@@ -116,35 +114,6 @@ describe("registry root input models", () => {
       defaultWidgetBootstrapConfig
     );
     expect(registry.get(dynamicExternalProviderInputAtom)).toBeNull();
-    expect(registry.get(solanaWalletInputAtom)).toBe(defaultSolanaWalletInput);
-  });
-
-  it("compares Solana identities while accepting equivalent array wrappers", () => {
-    const registry = AtomRegistry.make();
-    const onChange = vi.fn();
-    const wallet = {} as (typeof defaultSolanaWalletInput.wallets)[number];
-
-    registry.set(solanaWalletInputAtom, {
-      connection: null,
-      wallets: [wallet],
-    });
-    const unsubscribe = registry.subscribe(solanaWalletInputAtom, onChange);
-    registry.set(solanaWalletInputAtom, {
-      connection: null,
-      wallets: [wallet],
-    });
-    expect(onChange).not.toHaveBeenCalled();
-
-    const replacementWallet = {} as typeof wallet;
-    registry.set(solanaWalletInputAtom, {
-      connection: null,
-      wallets: [replacementWallet],
-    });
-    expect(registry.get(solanaWalletInputAtom).wallets[0]).toBe(
-      replacementWallet
-    );
-    expect(onChange).toHaveBeenCalledOnce();
-    unsubscribe();
   });
 
   it("derives wallet initialization from registry inputs with isolated provider refs", () => {

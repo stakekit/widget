@@ -1,4 +1,3 @@
-import type { Wallet } from "@solana/wallet-adapter-react";
 import type { Connection } from "@solana/web3.js";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import { Effect } from "effect";
@@ -13,6 +12,7 @@ import {
   typeSafeObjectEntries,
   typeSafeObjectFromEntries,
 } from "../../../../shared/lib/object";
+import type { SolanaWalletDescriptor } from "../../solana-runtime";
 
 const queryFn = async ({
   enabledNetworks,
@@ -24,7 +24,7 @@ const queryFn = async ({
 }: {
   enabledNetworks: ReadonlySet<Network>;
   forceWalletConnectOnly: boolean;
-  solanaWallets: Wallet[];
+  solanaWallets: ReadonlyArray<SolanaWalletDescriptor>;
   solanaConnection: Connection;
   variant: VariantProps["variant"];
   tonConnectManifestUrl: string | undefined;

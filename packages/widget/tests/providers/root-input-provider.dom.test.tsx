@@ -2,16 +2,12 @@ import { useAtomSubscribe, useAtomValue } from "@effect/atom-react";
 import { useLayoutEffect } from "react";
 import { mainnet, optimism } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
-import { SolanaProvider } from "../../src/app/composition/providers/solana";
 import {
   normalizeWidgetConfig,
   widgetBootstrapConfigAtom,
   widgetConfigAtom,
 } from "../../src/app/config";
-import {
-  dynamicExternalProviderInputAtom,
-  solanaWalletInputAtom,
-} from "../../src/app/runtime/root-inputs";
+import { dynamicExternalProviderInputAtom } from "../../src/app/runtime/root-inputs";
 import type { SKExternalProviders } from "../../src/public-api/types";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { render, renderHook } from "../utils/test-utils.dom";
@@ -19,7 +15,6 @@ import { render, renderHook } from "../utils/test-utils.dom";
 const useRootInputs = () => ({
   bootstrap: useAtomValue(widgetBootstrapConfigAtom),
   dynamicWallet: useAtomValue(dynamicExternalProviderInputAtom),
-  solana: useAtomValue(solanaWalletInputAtom),
 });
 
 type RootInputs = ReturnType<typeof useRootInputs>;
@@ -49,18 +44,16 @@ const RootInputHarness = ({
   readonly externalProviders: SKExternalProviders;
   readonly onValue: (value: RootInputs) => void;
 }) => (
-  <SolanaProvider>
-    <TestAtomRuntimeProvider
-      settings={normalizeWidgetConfig({
-        apiKey,
-        disableInjectedProviderDiscovery,
-        externalProviders,
-        variant: "default",
-      })}
-    >
-      <RootInputObserver onValue={onValue} />
-    </TestAtomRuntimeProvider>
-  </SolanaProvider>
+  <TestAtomRuntimeProvider
+    settings={normalizeWidgetConfig({
+      apiKey,
+      disableInjectedProviderDiscovery,
+      externalProviders,
+      variant: "default",
+    })}
+  >
+    <RootInputObserver onValue={onValue} />
+  </TestAtomRuntimeProvider>
 );
 
 const RootInputPublicationObserver = ({
@@ -102,21 +95,19 @@ describe("TestAtomRuntimeProvider root inputs", () => {
     });
     const hook = await renderHook(useRootInputs, {
       wrapper: ({ children }) => (
-        <SolanaProvider>
-          <TestAtomRuntimeProvider
-            settings={normalizeWidgetConfig({
-              apiKey: "api-key",
-              baseUrl: "https://legacy.example.com",
-              borrowApiUrl: "https://borrow.example.com",
-              disableInjectedProviderDiscovery: true,
-              externalProviders: provider,
-              variant: "default",
-              yieldsApiUrl: "https://yields.example.com",
-            })}
-          >
-            {children}
-          </TestAtomRuntimeProvider>
-        </SolanaProvider>
+        <TestAtomRuntimeProvider
+          settings={normalizeWidgetConfig({
+            apiKey: "api-key",
+            baseUrl: "https://legacy.example.com",
+            borrowApiUrl: "https://borrow.example.com",
+            disableInjectedProviderDiscovery: true,
+            externalProviders: provider,
+            variant: "default",
+            yieldsApiUrl: "https://yields.example.com",
+          })}
+        >
+          {children}
+        </TestAtomRuntimeProvider>
       ),
     });
 
@@ -138,8 +129,6 @@ describe("TestAtomRuntimeProvider root inputs", () => {
       provider: provider.provider,
       supportedChainIds: [mainnet.id, optimism.id],
     });
-    expect(hook.result.current.solana.connection).not.toBeNull();
-    expect(hook.result.current.solana.wallets).toEqual([]);
   });
 
   it("synchronizes configuration and external-provider live state", async () => {
@@ -208,21 +197,19 @@ describe("TestAtomRuntimeProvider root inputs", () => {
       externalProviders: SKExternalProviders,
       trackEvent = firstTrackEvent
     ) => (
-      <SolanaProvider>
-        <TestAtomRuntimeProvider
-          settings={normalizeWidgetConfig({
-            apiKey: "api-key",
-            externalProviders,
-            tracking: { trackEvent },
-            variant: "default",
-          })}
-        >
-          <RootInputPublicationObserver
-            onConfig={onConfig}
-            onDynamicWallet={onDynamicWallet}
-          />
-        </TestAtomRuntimeProvider>
-      </SolanaProvider>
+      <TestAtomRuntimeProvider
+        settings={normalizeWidgetConfig({
+          apiKey: "api-key",
+          externalProviders,
+          tracking: { trackEvent },
+          variant: "default",
+        })}
+      >
+        <RootInputPublicationObserver
+          onConfig={onConfig}
+          onDynamicWallet={onDynamicWallet}
+        />
+      </TestAtomRuntimeProvider>
     );
     const app = await render(renderHarness(firstProvider));
 

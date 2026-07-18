@@ -10,11 +10,9 @@ import {
   i18nInstance,
   widgetTranslationEffectsAtom,
 } from "../../../translation";
-import { SKRootInputProvider } from "./atom-runtime";
 import { MountAnimationEffects } from "./mount-animation";
 import { ThirdPartyQueryClientProvider } from "./query-client";
 import { RainbowProvider } from "./rainbow";
-import { SolanaProvider } from "./solana";
 import { ThemeWrapper } from "./theme-wrapper";
 
 export const Providers = ({
@@ -29,19 +27,13 @@ export const Providers = ({
           <ThirdPartyQueryClientProvider>
             <SKLocationProvider>
               <MountAnimationEffects />
-              <SolanaProvider>
-                <SKRootInputProvider>
-                  <WagmiConfigProvider>
-                    <RainbowProvider>
-                      <ThemeWrapper>
-                        <CurrentLayoutProvider>
-                          {children}
-                        </CurrentLayoutProvider>
-                      </ThemeWrapper>
-                    </RainbowProvider>
-                  </WagmiConfigProvider>
-                </SKRootInputProvider>
-              </SolanaProvider>
+              <WagmiConfigProvider>
+                <RainbowProvider>
+                  <ThemeWrapper>
+                    <CurrentLayoutProvider>{children}</CurrentLayoutProvider>
+                  </ThemeWrapper>
+                </RainbowProvider>
+              </WagmiConfigProvider>
             </SKLocationProvider>
           </ThirdPartyQueryClientProvider>
         </I18nextProvider>

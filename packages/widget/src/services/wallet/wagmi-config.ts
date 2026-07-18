@@ -1,4 +1,3 @@
-import type { Wallet as SolanaWallet } from "@solana/wallet-adapter-react";
 import type { Connection } from "@solana/web3.js";
 import type {
   Chain as RainbowkitChain,
@@ -37,6 +36,7 @@ import { getConfig as getSafeConnector } from "./connectors/safe/config";
 import { getConfig as getSubstrateConfig } from "./connectors/substrate/config";
 import { omitEnsUniversalResolver } from "./default-wagmi-config";
 import { getVariantNetworkUrl } from "./network-icon";
+import type { SolanaWalletDescriptor } from "./solana-runtime";
 import { makeWagmiActions } from "./wagmi-actions";
 
 type MipdProviders = ReturnType<MipdStore["getProviders"]>;
@@ -96,7 +96,7 @@ export type BuildWagmiConfigOptions = {
   chainIconMapping: SettingsProps["chainIconMapping"];
   institutionalWallets: boolean;
   variant: VariantProps["variant"];
-  solanaWallets: SolanaWallet[];
+  solanaWallets: ReadonlyArray<SolanaWalletDescriptor>;
   solanaConnection: Connection;
   mapWalletListFn?: (val: WalletList) => WalletList;
   persistPublicKey: (input: {
@@ -211,8 +211,66 @@ export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
       !val.ledgerLiveConnector &&
       !val.safeConnector &&
       opts.variant !== "porto";
+    const solanaConnectorMode =
+      !!val.miscConfig.miscChainsMap.solana &&
+      !opts.externalProviders &&
+      !val.safeConnector &&
+      !ledgerLiveConnector &&
+      !opts.customConnectors &&
+      !opts.forceWalletConnectOnly;
 
-    let walletList: WalletList = (() => {
+    const customizeWalletList = (input: WalletList): WalletList => {
+      let customized = input.map((group): WalletList[number] => ({
+        ...group,
+        wallets: group.wallets.map((createWalletFn) => (createWalletParams) => {
+          const wallet = createWalletFn(createWalletParams);
+
+          return opts.mapWalletFn
+            ? ({
+                ...wallet,
+                ...opts.mapWalletFn({
+                  iconBackground: wallet.iconBackground,
+                  iconUrl: wallet.iconUrl,
+                  id: wallet.id,
+                  name: wallet.name,
+                }),
+              } satisfies Wallet)
+            : wallet;
+        }),
+      }));
+      customized = opts.mapWalletListFn?.(customized) ?? customized;
+      customized = withoutEmptyWalletGroups(customized);
+
+      return customized.map((group) => ({
+        ...group,
+        wallets: group.wallets.map(
+          (createWalletFn): typeof createWalletFn =>
+            (details) => {
+              const wallet = createWalletFn(details);
+
+              return {
+                ...wallet,
+                createConnector: (walletDetails) => (connectorConfig) =>
+                  wallet.createConnector(walletDetails)({
+                    ...connectorConfig,
+                    chains:
+                      wallet.chainGroup.id === evmChainGroup.id
+                        ? (evmConfig.evmChains as [Chain, ...Chain[]])
+                        : connectorConfig.chains,
+                  }),
+              };
+            }
+        ),
+      }));
+    };
+
+    const connectorOptions = {
+      appName: config.appName,
+      appIcon: config.appIcon,
+      projectId: config.walletConnectV2.projectId,
+    } as const;
+
+    const rawWalletList: WalletList = (() => {
       if (evmConfig.institutionalWallets) {
         return [
           {
@@ -252,49 +310,7 @@ export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
         .filter((value): value is WalletList[number] => value !== null)
         .filter((value) => value.wallets.length > 0);
     })();
-    walletList = walletList.map((val): WalletList[number] => ({
-      ...val,
-      wallets: val.wallets.map((createWalletFn) => (createWalletParams) => {
-        const wallet = createWalletFn(createWalletParams);
-
-        const maybeMapped = opts.mapWalletFn
-          ? ({
-              ...wallet,
-              ...opts.mapWalletFn({
-                iconBackground: wallet.iconBackground,
-                iconUrl: wallet.iconUrl,
-                id: wallet.id,
-                name: wallet.name,
-              }),
-            } satisfies Wallet)
-          : wallet;
-
-        return maybeMapped;
-      }),
-    }));
-    walletList = opts.mapWalletListFn?.(walletList) ?? walletList;
-    walletList = withoutEmptyWalletGroups(walletList);
-    walletList = walletList.map((wg) => ({
-      ...wg,
-      wallets: wg.wallets.map(
-        (createWalletFn): typeof createWalletFn =>
-          (details) => {
-            const wallet = createWalletFn(details);
-
-            return {
-              ...wallet,
-              createConnector: (walletDetails) => (config) =>
-                wallet.createConnector(walletDetails)({
-                  ...config,
-                  chains:
-                    wallet.chainGroup.id === evmChainGroup.id
-                      ? (evmConfig.evmChains as [Chain, ...Chain[]])
-                      : config.chains,
-                }),
-            };
-          }
-      ),
-    }));
+    const walletList = customizeWalletList(rawWalletList);
 
     const queryNetwork = val.queryParams.network;
     const queryParamsInitChainId = queryNetwork
@@ -314,11 +330,7 @@ export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
       chains: chainsWithoutEnsProfileLookups,
       client: ({ chain }) => createClient({ chain, transport: http() }),
       multiInjectedProviderDiscovery: false,
-      connectors: connectorsForWallets(walletList, {
-        appName: config.appName,
-        appIcon: config.appIcon,
-        projectId: config.walletConnectV2.projectId,
-      }),
+      connectors: connectorsForWallets(walletList, connectorOptions),
     });
 
     if (multiInjectedProviderDiscovery && evmConfig.evmChains.length > 0) {
@@ -353,10 +365,41 @@ export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
     }
 
     const actions = makeWagmiActions({ config: wagmiConfig });
+    const createSolanaConnector = async (wallet: SolanaWalletDescriptor) => {
+      const { getSolanaConnectors } = await import(
+        "./connectors/misc/solana-connector"
+      );
+      const solanaGroup = getSolanaConnectors({
+        connection: opts.solanaConnection,
+        forceWalletConnectOnly: opts.forceWalletConnectOnly,
+        variant: opts.variant,
+        wallets: [wallet],
+      });
+      const hasSolanaGroup = rawWalletList.some(
+        (group) => group.groupName === solanaGroup.groupName
+      );
+      const dynamicWalletList = customizeWalletList(
+        hasSolanaGroup
+          ? rawWalletList.map((group) =>
+              group.groupName === solanaGroup.groupName ? solanaGroup : group
+            )
+          : [...rawWalletList, solanaGroup]
+      ).filter((group) => group.groupName === solanaGroup.groupName);
+      const connector = connectorsForWallets(
+        dynamicWalletList,
+        connectorOptions
+      )[0];
+      if (!connector) {
+        throw new Error(`Solana wallet ${wallet.adapter.name} was filtered`);
+      }
+      return connector;
+    };
 
     return {
       ...val,
       actions,
+      createSolanaConnector,
+      solanaConnectorMode,
       wagmiConfig,
       queryParamsInitChainId,
     };

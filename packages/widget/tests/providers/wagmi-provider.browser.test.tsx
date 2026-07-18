@@ -1,5 +1,11 @@
 import { RegistryProvider, useAtomValue } from "@effect/atom-react";
-import { Array as EArray, Effect, Layer } from "effect";
+import {
+  type Adapter,
+  type WalletName,
+  WalletReadyState,
+} from "@solana/wallet-adapter-base";
+import type { Connection } from "@solana/web3.js";
+import { Array as EArray, Effect, Layer, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { HttpResponse, http } from "msw";
 import {
@@ -9,20 +15,25 @@ import {
   useContext,
   useEffect,
 } from "react";
-import type { Config } from "wagmi";
+import type { Address } from "viem";
 import {
+  type Config,
+  createConfig,
+  createConnector,
   useAccount,
   useConnect,
   useConnectors,
   useDisconnect,
   useSwitchChain,
   WagmiContext,
+  http as wagmiHttp,
 } from "wagmi";
+import { watchConnectors } from "wagmi/actions";
 import { optimism } from "wagmi/chains";
 import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
-import { SolanaProvider } from "../../src/app/composition/providers/solana";
 import { normalizeWidgetConfig } from "../../src/app/config";
 import { appRuntime } from "../../src/app/runtime";
+import { solana } from "../../src/domain/types/chains/misc";
 import { EvmNetworks } from "../../src/domain/types/chains/networks";
 import {
   currentWalletConnectionResultAtom,
@@ -34,6 +45,12 @@ import {
   bootstrappingWalletRuntimeSnapshot,
   type WalletRuntimeSnapshot,
 } from "../../src/services/wallet/domain/runtime";
+import { installSolanaConnectorMembership } from "../../src/services/wallet/solana-connector-membership";
+import type {
+  HeadlessSolanaRuntime,
+  SolanaWalletDescriptor,
+  SolanaWalletSnapshot,
+} from "../../src/services/wallet/solana-runtime";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import { makeCurrentValueStream } from "../../src/shared/effect/current-value-stream";
 import { legacyApiRoute } from "../mocks/api-routes";
@@ -93,6 +110,71 @@ const useRainbowKitWagmiContract = () => ({
   switchChain: useSwitchChain(),
 });
 
+const solanaAccount = "0x0000000000000000000000000000000000000501" as Address;
+
+const makeSolanaAdapter = (name: string) =>
+  ({ name: name as WalletName }) as Adapter;
+
+const makeSolanaDescriptor = (
+  adapter: Adapter,
+  source: SolanaWalletDescriptor["source"],
+  readyState: WalletReadyState
+): SolanaWalletDescriptor => ({ adapter, readyState, source });
+
+const makeSolanaConnectorFactory = (wallet: SolanaWalletDescriptor) =>
+  createConnector((config) => ({
+    $filteredChains: Stream.succeed([solana]),
+    id: wallet.adapter.name,
+    isSolanaConnector: true,
+    name: wallet.adapter.name,
+    rkDetails: {
+      groupName: "Solana",
+      installed:
+        wallet.readyState === WalletReadyState.Installed ||
+        wallet.readyState === WalletReadyState.Loadable,
+    },
+    solanaAdapter: wallet.adapter,
+    solanaAdapterSource: wallet.source,
+    type: `solana-${wallet.source}`,
+    connect: async (parameters) =>
+      ({
+        accounts: parameters?.withCapabilities
+          ? [{ address: solanaAccount, capabilities: {} }]
+          : [solanaAccount],
+        chainId: solana.id,
+      }) as never,
+    disconnect: async () => undefined,
+    getAccounts: async () => [solanaAccount],
+    getChainId: async () => solana.id,
+    getProvider: async () => ({}),
+    isAuthorized: async () => false,
+    onAccountsChanged: () => undefined,
+    onChainChanged: () => undefined,
+    onDisconnect: () => config.emitter.emit("disconnect"),
+    sendTransaction: async () => "signature",
+  }));
+
+const makeSolanaRuntime = (initial: SolanaWalletSnapshot) => {
+  const listeners = new Set<() => Promise<void> | void>();
+  let snapshot = initial;
+  const runtime = {
+    connection: {} as Connection,
+    getWalletSnapshot: () => snapshot,
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  } satisfies HeadlessSolanaRuntime;
+
+  return {
+    emit: async (next: SolanaWalletSnapshot) => {
+      snapshot = next;
+      await Promise.all([...listeners].map((listener) => listener()));
+    },
+    runtime,
+  };
+};
+
 const ControllerHarness = ({
   forceWalletConnectOnly,
   onConfig,
@@ -101,26 +183,106 @@ const ControllerHarness = ({
   readonly onConfig: (config: Config) => void;
 }) => (
   <ThirdPartyQueryClientProvider>
-    <SolanaProvider>
-      <StrictMode>
-        <TestAtomRuntimeProvider
-          settings={normalizeWidgetConfig({
-            apiKey: import.meta.env.VITE_API_KEY,
-            disableInjectedProviderDiscovery: true,
-            variant: "default",
-            wagmi: { forceWalletConnectOnly },
-          })}
-        >
-          <WagmiConfigProvider>
-            <ConfigObserver onConfig={onConfig} />
-          </WagmiConfigProvider>
-        </TestAtomRuntimeProvider>
-      </StrictMode>
-    </SolanaProvider>
+    <StrictMode>
+      <TestAtomRuntimeProvider
+        settings={normalizeWidgetConfig({
+          apiKey: import.meta.env.VITE_API_KEY,
+          disableInjectedProviderDiscovery: true,
+          variant: "default",
+          wagmi: { forceWalletConnectOnly },
+        })}
+      >
+        <WagmiConfigProvider>
+          <ConfigObserver onConfig={onConfig} />
+        </WagmiConfigProvider>
+      </TestAtomRuntimeProvider>
+    </StrictMode>
   </ThirdPartyQueryClientProvider>
 );
 
 describe("WagmiConfigProvider", () => {
+  it("publishes dynamic Solana membership and same-uid readiness through useConnectors", async () => {
+    const fallbackAdapter = makeSolanaAdapter("Phantom");
+    const standardAdapter = makeSolanaAdapter("Phantom");
+    const fallback = makeSolanaDescriptor(
+      fallbackAdapter,
+      "fallback",
+      WalletReadyState.NotDetected
+    );
+    const standard = makeSolanaDescriptor(
+      standardAdapter,
+      "standard",
+      WalletReadyState.NotDetected
+    );
+    const readyStandard = makeSolanaDescriptor(
+      standardAdapter,
+      "standard",
+      WalletReadyState.Loadable
+    );
+    const runtime = makeSolanaRuntime({ wallets: [fallback] });
+    const config = createConfig({
+      chains: [solana],
+      connectors: [makeSolanaConnectorFactory(fallback)],
+      transports: { [solana.id]: wagmiHttp() },
+    });
+    const coreSnapshots: ReadonlyArray<unknown>[] = [];
+    const unsubscribeCore = watchConnectors(config, {
+      onChange: (connectors) => coreSnapshots.push(connectors),
+    });
+
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          yield* installSolanaConnectorMembership({
+            config,
+            createConnector: async (wallet) =>
+              makeSolanaConnectorFactory(wallet),
+            runtime: runtime.runtime,
+          });
+          const configIdentity = config;
+          const hook = yield* Effect.promise(() =>
+            renderHook(() => useConnectors(), {
+              wrapper: ({ children }) => (
+                <WagmiContext.Provider value={config}>
+                  {children}
+                </WagmiContext.Provider>
+              ),
+            })
+          );
+
+          yield* Effect.promise(() =>
+            hook.act(() => runtime.emit({ wallets: [standard] }))
+          );
+          const standardConnector = hook.result.current[0]!;
+          expect(standardConnector).toMatchObject({
+            rkDetails: { installed: false },
+            solanaAdapter: standardAdapter,
+          });
+
+          yield* Effect.promise(() =>
+            hook.act(() => runtime.emit({ wallets: [readyStandard] }))
+          );
+          const readyConnector = hook.result.current[0]!;
+          expect(readyConnector).not.toBe(standardConnector);
+          expect(readyConnector.uid).toBe(standardConnector.uid);
+          expect(readyConnector.emitter).toBe(standardConnector.emitter);
+          expect(readyConnector).toMatchObject({
+            rkDetails: { installed: true },
+            solanaAdapter: standardAdapter,
+          });
+          expect(config).toBe(configIdentity);
+        })
+      )
+    );
+
+    unsubscribeCore();
+    expect(coreSnapshots).toHaveLength(2);
+    expect(coreSnapshots.at(-1)?.[0]).toMatchObject({
+      rkDetails: { installed: true },
+      uid: config.connectors[0]?.uid,
+    });
+  });
+
   it("stops providing the fallback when wallet bootstrap fails", async () => {
     const cause = new Error("wallet bootstrap failed");
     const onError = vi.fn<(error: unknown) => void>();
@@ -178,19 +340,17 @@ describe("WagmiConfigProvider", () => {
     const hook = await renderHook(useWagmiProviderContract, {
       wrapper: ({ children }) => (
         <ThirdPartyQueryClientProvider>
-          <SolanaProvider>
-            <StrictMode>
-              <TestAtomRuntimeProvider
-                settings={normalizeWidgetConfig({
-                  apiKey: import.meta.env.VITE_API_KEY,
-                  disableInjectedProviderDiscovery: true,
-                  variant: "default",
-                })}
-              >
-                <WagmiConfigProvider>{children}</WagmiConfigProvider>
-              </TestAtomRuntimeProvider>
-            </StrictMode>
-          </SolanaProvider>
+          <StrictMode>
+            <TestAtomRuntimeProvider
+              settings={normalizeWidgetConfig({
+                apiKey: import.meta.env.VITE_API_KEY,
+                disableInjectedProviderDiscovery: true,
+                variant: "default",
+              })}
+            >
+              <WagmiConfigProvider>{children}</WagmiConfigProvider>
+            </TestAtomRuntimeProvider>
+          </StrictMode>
         </ThirdPartyQueryClientProvider>
       ),
     });
@@ -259,20 +419,18 @@ describe("WagmiConfigProvider", () => {
     const hook = await renderHook(useRainbowKitWagmiContract, {
       wrapper: ({ children }) => (
         <ThirdPartyQueryClientProvider>
-          <SolanaProvider>
-            <TestAtomRuntimeProvider
-              settings={normalizeWidgetConfig({
-                apiKey: import.meta.env.VITE_API_KEY,
-                disableInjectedProviderDiscovery: true,
-                variant: "default",
-                wagmi: {
-                  __customConnectors__: rkMockWallet({ accounts: [account] }),
-                },
-              })}
-            >
-              <WagmiConfigProvider>{children}</WagmiConfigProvider>
-            </TestAtomRuntimeProvider>
-          </SolanaProvider>
+          <TestAtomRuntimeProvider
+            settings={normalizeWidgetConfig({
+              apiKey: import.meta.env.VITE_API_KEY,
+              disableInjectedProviderDiscovery: true,
+              variant: "default",
+              wagmi: {
+                __customConnectors__: rkMockWallet({ accounts: [account] }),
+              },
+            })}
+          >
+            <WagmiConfigProvider>{children}</WagmiConfigProvider>
+          </TestAtomRuntimeProvider>
         </ThirdPartyQueryClientProvider>
       ),
     });

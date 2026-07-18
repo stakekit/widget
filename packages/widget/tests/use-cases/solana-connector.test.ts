@@ -1,4 +1,3 @@
-import type { Wallet } from "@solana/wallet-adapter-react";
 import {
   type Connection,
   Transaction,
@@ -11,6 +10,7 @@ import {
   deserializeSolanaTransaction,
   getSolanaConnectors,
 } from "../../src/services/wallet/connectors/misc/solana-connector";
+import type { SolanaWalletDescriptor } from "../../src/services/wallet/solana-runtime";
 
 const createConnectorForTest = ({
   sendTransaction = vi.fn(async () => "signed-hash"),
@@ -30,7 +30,9 @@ const createConnectorForTest = ({
       disconnect: vi.fn(),
       sendTransaction,
     },
-  } as unknown as Wallet;
+    readyState: "Installed",
+    source: "fallback",
+  } as unknown as SolanaWalletDescriptor;
 
   const walletFactory = EArray.getUnsafe(
     getSolanaConnectors({

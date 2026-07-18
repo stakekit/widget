@@ -209,6 +209,25 @@ const walletNames = (runtime: HeadlessSolanaRuntime) =>
   runtime.getWalletSnapshot().wallets.map(({ adapter }) => adapter.name);
 
 describe("headless Solana runtime", () => {
+  it("constructs only the connection when wallet adapters are disabled", async () => {
+    const registry = new FakeWalletRegistry([makeStandardWallet("Standard")]);
+    const setup = makeDependencies({
+      fallbacks: [makeAdapter("Fallback")],
+      registry,
+    });
+
+    await withRuntime(
+      setup.dependencies,
+      (runtime) => {
+        expect(walletNames(runtime)).toEqual([]);
+        expect(setup.fallbackFactoryCalls()).toBe(0);
+        expect(registry.listenerCount("register")).toBe(0);
+        expect(registry.listenerCount("unregister")).toBe(0);
+      },
+      { includeWalletAdapters: false }
+    );
+  });
+
   it("constructs one connection and discovers initial and late Standard wallets", async () => {
     const initialWallet = makeStandardWallet("Initial");
     const lateWallet = makeStandardWallet("Late");
@@ -282,6 +301,37 @@ describe("headless Solana runtime", () => {
       expect(standardAdapter?.destroyCount()).toBe(1);
       expect(standardAdapter?.listenerCount("readyStateChange")).toBe(0);
     });
+  });
+
+  it("waits for unregister publication work before destroying a Standard wrapper", async () => {
+    const standardWallet = makeStandardWallet("Standard");
+    const registry = new FakeWalletRegistry();
+    const unregister = registry.register(standardWallet);
+    const setup = makeDependencies({ registry });
+    let releasePublication: () => void = () => undefined;
+    const publication = new Promise<void>((resolve) => {
+      releasePublication = resolve;
+    });
+
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const runtime = yield* makeHeadlessSolanaRuntime(
+            {},
+            setup.dependencies
+          );
+          const standardAdapter = setup.standardAdapters.get(standardWallet)!;
+          runtime.subscribe(() => publication);
+
+          unregister();
+          expect(standardAdapter.destroyCount()).toBe(0);
+          releasePublication();
+          yield* Effect.promise(() => publication);
+          while (standardAdapter.destroyCount() === 0) yield* Effect.yieldNow;
+          expect(standardAdapter.destroyCount()).toBe(1);
+        })
+      )
+    );
   });
 
   it("publishes readiness changes without replacing adapters and filters Unsupported", async () => {

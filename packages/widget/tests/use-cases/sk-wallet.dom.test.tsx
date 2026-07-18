@@ -9,7 +9,6 @@ import {
 import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
-import { SolanaProvider } from "../../src/app/composition/providers/solana";
 import { normalizeWidgetConfig } from "../../src/app/config";
 import { appRuntime } from "../../src/app/runtime";
 import { ActionId, TransactionId } from "../../src/domain/schema/identifiers";
@@ -48,17 +47,15 @@ const renderHookWithExternalProvider = (
   renderHook(useTestWallet, {
     wrapper: ({ children }) => (
       <ThirdPartyQueryClientProvider>
-        <SolanaProvider>
-          <TestAtomRuntimeProvider
-            settings={normalizeWidgetConfig({
-              apiKey: import.meta.env.VITE_API_KEY,
-              externalProviders,
-              variant: options.variant ?? "default",
-            })}
-          >
-            <WagmiConfigProvider>{children}</WagmiConfigProvider>
-          </TestAtomRuntimeProvider>
-        </SolanaProvider>
+        <TestAtomRuntimeProvider
+          settings={normalizeWidgetConfig({
+            apiKey: import.meta.env.VITE_API_KEY,
+            externalProviders,
+            variant: options.variant ?? "default",
+          })}
+        >
+          <WagmiConfigProvider>{children}</WagmiConfigProvider>
+        </TestAtomRuntimeProvider>
       </ThirdPartyQueryClientProvider>
     ),
   });

@@ -103,7 +103,6 @@
     "@safe-global/safe-apps-sdk": "catalog:",
     "@solana-mobile/wallet-adapter-mobile": "catalog:",
     "@solana/wallet-adapter-base": "catalog:",
-    "@solana/wallet-adapter-react": "catalog:",
     "@solana/wallet-adapter-wallets": "catalog:",
     "@solana/wallet-standard-wallet-adapter-base": "catalog:",
     "@solana/web3.js": "catalog:",
