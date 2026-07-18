@@ -12,7 +12,7 @@ import {
 import {
   routeWalletAccountSwitch,
   routeWalletTransaction,
-  type WalletBinding,
+  type WalletRoutingContext,
 } from "../../../src/services/wallet/router";
 import type { WagmiActions } from "../../../src/services/wallet/wagmi-actions";
 
@@ -65,10 +65,10 @@ const actions = () =>
     switchChain: vi.fn(() => Effect.die("unused")),
   }) satisfies WagmiActions;
 
-const binding = (
+const routingContext = (
   state: NormalizedWalletState,
   walletActions = actions()
-): WalletBinding => ({
+): WalletRoutingContext => ({
   actions: walletActions,
   cosmosChainWallet: null,
   ledgerState: disconnectedLedgerConnectorState,
@@ -80,7 +80,7 @@ describe("wallet router", () => {
     const failure = await Effect.runPromise(
       Effect.flip(
         routeWalletTransaction(
-          binding(disconnectedNormalizedWalletState),
+          routingContext(disconnectedNormalizedWalletState),
           transactionInput
         )
       )
@@ -99,7 +99,7 @@ describe("wallet router", () => {
 
     await Effect.runPromise(
       routeWalletTransaction(
-        binding(connectedState(connector), walletActions),
+        routingContext(connectedState(connector), walletActions),
         transactionInput
       )
     );
@@ -114,7 +114,7 @@ describe("wallet router", () => {
     const second = makeConnector("second");
     const failure = await Effect.runPromise(
       Effect.flip(
-        routeWalletAccountSwitch(binding(connectedState(second)), {
+        routeWalletAccountSwitch(routingContext(connectedState(second)), {
           account: { id: "account" } as never,
           connector: first,
         })

@@ -12,11 +12,11 @@ import type { SKExternalProviders } from "../../../src/public-api/types";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
 import { makeDefaultConfig } from "../../../src/services/wallet/default-wagmi-config";
-import type { WalletController } from "../../../src/services/wallet/wagmi-config";
 import {
   type WalletRuntimeAdapters,
   WalletService,
 } from "../../../src/services/wallet/wallet-service";
+import { makeRuntimeTestController } from "./runtime-test-controller";
 
 const settings = normalizeWidgetConfig({
   apiKey: "api-key",
@@ -48,11 +48,11 @@ describe("WalletService Wallet Runtime", () => {
   it("is observable while bootstrapping and publishes the ready runtime", async () => {
     const buildRelease = await Effect.runPromise(Deferred.make<void>());
     const wagmiConfig = makeDefaultConfig();
-    const controller = {
+    const controller = makeRuntimeTestController({
       actions: {},
       queryParamsInitChainId: undefined,
       wagmiConfig,
-    } as unknown as WalletController;
+    });
     const adapters = {
       environment: {
         getEnabledNetworks: () => Effect.succeed(new Set(["ethereum"])),
@@ -147,11 +147,11 @@ describe("WalletService Wallet Runtime", () => {
       onSupportedChainsChanged: () => undefined,
       uid: "external-provider-uid",
     } as unknown as Connector;
-    const controller = {
+    const controller = makeRuntimeTestController({
       actions: { connect: () => Effect.void },
       queryParamsInitChainId: undefined,
       wagmiConfig,
-    } as unknown as WalletController;
+    });
     const adapters = {
       environment: {
         getEnabledNetworks: () => Effect.succeed(new Set(["ethereum"])),
@@ -259,11 +259,11 @@ describe("WalletService Wallet Runtime", () => {
     const pendingConnectors = [
       { id: "pending" } as unknown as Connector,
     ] as const;
-    const controller = {
+    const controller = makeRuntimeTestController({
       actions: {},
       queryParamsInitChainId: undefined,
       wagmiConfig,
-    } as unknown as WalletController;
+    });
     const adapters = {
       environment: {
         getEnabledNetworks: () => Effect.succeed(new Set(["ethereum"])),
@@ -418,11 +418,11 @@ describe("WalletService Wallet Runtime", () => {
     const cause = new Error("connector seed failed");
     let disposals = 0;
     const wagmiConfig = makeDefaultConfig();
-    const controller = {
+    const controller = makeRuntimeTestController({
       actions: {},
       queryParamsInitChainId: undefined,
       wagmiConfig,
-    } as unknown as WalletController;
+    });
     const adapters = {
       environment: {
         getEnabledNetworks: () => Effect.succeed(new Set(["ethereum"])),
@@ -471,11 +471,11 @@ describe("WalletService Wallet Runtime", () => {
       Deferred.make<void>()
     );
     const wagmiConfig = makeDefaultConfig();
-    const controller = {
+    const controller = makeRuntimeTestController({
       actions: {},
       queryParamsInitChainId: undefined,
       wagmiConfig,
-    } as unknown as WalletController;
+    });
     const adapters = {
       environment: {
         getEnabledNetworks: () => Effect.succeed(new Set(["ethereum"])),
@@ -539,11 +539,11 @@ describe("WalletService Wallet Runtime", () => {
         buildConfig: () =>
           Effect.sync(() => {
             builds += 1;
-            return {
+            return makeRuntimeTestController({
               actions: {},
               queryParamsInitChainId: undefined,
               wagmiConfig: makeDefaultConfig(),
-            } as unknown as WalletController;
+            });
           }),
         getConnection,
         getConnectors,

@@ -34,7 +34,7 @@ import { makeSafeWalletDriver } from "./drivers/safe";
 import { makeSubstrateWalletDriver } from "./drivers/substrate";
 import type { WagmiActions } from "./wagmi-actions";
 
-export type WalletBinding = {
+export type WalletRoutingContext = {
   readonly actions: WagmiActions;
   readonly cosmosChainWallet: ChainWalletBase | null;
   readonly ledgerState: LedgerConnectorState;
@@ -51,10 +51,10 @@ const unavailable = (
   });
 
 export const routeWalletMessage = Effect.fn("routeWalletMessage")(function* (
-  binding: WalletBinding,
+  routing: WalletRoutingContext,
   input: WalletSignMessageInput
 ) {
-  const { actions, state } = binding;
+  const { actions, state } = routing;
   if (state.status !== "connected") {
     return yield* unavailable("message", state);
   }
@@ -70,8 +70,8 @@ export const routeWalletMessage = Effect.fn("routeWalletMessage")(function* (
 });
 
 export const routeWalletTransaction = Effect.fn("routeWalletTransaction")(
-  function* (binding: WalletBinding, input: WalletSignTransactionInput) {
-    const { actions, cosmosChainWallet, ledgerState, state } = binding;
+  function* (routing: WalletRoutingContext, input: WalletSignTransactionInput) {
+    const { actions, cosmosChainWallet, ledgerState, state } = routing;
     if (state.status !== "connected") {
       return yield* unavailable("transaction", state);
     }
@@ -138,8 +138,8 @@ export const routeWalletTransaction = Effect.fn("routeWalletTransaction")(
 );
 
 export const routeWalletAccountSwitch = Effect.fn("routeWalletAccountSwitch")(
-  function* (binding: WalletBinding, input: WalletSwitchAccountInput) {
-    const { ledgerState, state } = binding;
+  function* (routing: WalletRoutingContext, input: WalletSwitchAccountInput) {
+    const { ledgerState, state } = routing;
     if (
       state.status !== "connected" ||
       state.connector.uid !== input.connector.uid

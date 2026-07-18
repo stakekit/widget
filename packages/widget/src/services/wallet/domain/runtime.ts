@@ -1,9 +1,15 @@
 import type { Config, Connector } from "wagmi";
 import type { getConnection } from "wagmi/actions";
+import type { LedgerConnectorState, NormalizedWalletState } from "./state";
 
 export type WalletCoreProjection = {
   readonly connection: ReturnType<typeof getConnection>;
   readonly connectors: ReadonlyArray<Connector>;
+};
+
+export type WalletProjection = WalletCoreProjection & {
+  readonly ledgerState: LedgerConnectorState;
+  readonly state: NormalizedWalletState;
 };
 
 type WalletRuntimeUnavailableSnapshot = {
@@ -19,7 +25,7 @@ export type WalletRuntimeSnapshot =
   | {
       readonly cause: null;
       readonly phase: "Ready";
-      readonly projection: WalletCoreProjection;
+      readonly projection: WalletProjection;
       readonly wagmiConfig: Config;
     }
   | (WalletRuntimeUnavailableSnapshot & {
@@ -29,7 +35,7 @@ export type WalletRuntimeSnapshot =
   | {
       readonly cause: unknown;
       readonly phase: "InvariantViolated";
-      readonly projection: WalletCoreProjection | null;
+      readonly projection: WalletProjection | null;
       readonly wagmiConfig: Config | null;
     };
 

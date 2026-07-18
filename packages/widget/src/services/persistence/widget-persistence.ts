@@ -77,7 +77,3 @@ export class WidgetPersistence extends Context.Service<WidgetPersistence>()(
     WidgetPersistence.make
   ).pipe(Layer.provide(BrowserKeyValueStore.layerLocalStorage));
 }
-
-export const readStoredPublicKeys = WidgetPersistence.use(
-  (persistence) => persistence.readStoredPublicKeys
-);

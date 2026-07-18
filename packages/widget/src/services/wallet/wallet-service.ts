@@ -1,4 +1,4 @@
-import { Context, Data, Deferred, Effect, Layer } from "effect";
+import { Context, Data, Effect, Layer } from "effect";
 import type { WalletAddress } from "../../domain/schema/identifiers";
 import { WidgetPersistence } from "../persistence/widget-persistence";
 import type {
@@ -10,9 +10,8 @@ import {
   WalletCapabilityUnavailableError,
   WalletConnectionError,
 } from "./domain/errors";
-import { disconnectedNormalizedWalletState } from "./domain/state";
 import type { WalletSignTransactionInput } from "./domain/transactions";
-import type { WalletBinding } from "./router";
+import type { WalletRoutingContext } from "./router";
 import {
   routeWalletAccountSwitch,
   routeWalletMessage,
@@ -40,73 +39,39 @@ const makeWalletService = Effect.fn("makeWalletService")(function* (
   runtime: WalletRuntime
 ) {
   const persistence = yield* WidgetPersistence;
-  let activeBinding: object | null = null;
-  const bindingReady = yield* Deferred.make<void>();
-  let hasBound = false;
-  let currentBinding: WalletBinding | null = null;
-
-  const bind = (binding: WalletBinding) =>
-    Effect.acquireRelease(
-      Effect.gen(function* () {
-        const identity = yield* Effect.sync(() => {
-          const identity = {};
-          activeBinding = identity;
-          currentBinding = binding;
-          hasBound = true;
-          return identity;
-        });
-        yield* Deferred.succeed(bindingReady, undefined);
-        return identity;
-      }),
-      (identity) =>
-        Effect.sync(() => {
-          if (activeBinding !== identity) return;
-
-          activeBinding = null;
-          currentBinding = null;
-        })
-    ).pipe(Effect.asVoid);
 
   const withCurrent = <A, E>(
-    use: (binding: WalletBinding) => Effect.Effect<A, E>,
+    use: (routing: WalletRoutingContext) => Effect.Effect<A, E>,
     unavailable: () => E
   ): Effect.Effect<A, E> =>
-    Effect.suspend(() => {
-      if (currentBinding) return use(currentBinding);
-      if (hasBound) return Effect.fail(unavailable());
-
-      return Deferred.await(bindingReady).pipe(
-        Effect.andThen(
-          Effect.suspend(() =>
-            currentBinding ? use(currentBinding) : Effect.fail(unavailable())
-          )
-        )
-      );
-    });
+    runtime.routing.pipe(
+      Effect.flatMap((routing) =>
+        routing ? use(routing) : Effect.fail(unavailable())
+      )
+    );
 
   return {
-    bind,
     changes: runtime.changes,
     config: runtime.config,
     current: runtime.current,
     legacyController: runtime.legacyController,
     disconnect: (input?: WalletDisconnectInput) =>
       withCurrent(
-        (binding) => binding.actions.disconnect(input),
+        (routing) => routing.actions.disconnect(input),
         () =>
           new WalletConnectionError({
             cause: serviceUnavailable(),
             operation: "disconnect",
           })
       ),
-    getState: () => currentBinding?.state ?? disconnectedNormalizedWalletState,
+    getState: runtime.getState,
     persistPublicKey: (input: {
       readonly address: WalletAddress;
       readonly publicKey: string;
     }) => persistence.upsertStoredPublicKey(input),
     signMessage: (input: WalletSignMessageInput) =>
       withCurrent(
-        (binding) => routeWalletMessage(binding, input),
+        (routing) => routeWalletMessage(routing, input),
         () =>
           new WalletCapabilityUnavailableError({
             capability: "message",
@@ -115,7 +80,7 @@ const makeWalletService = Effect.fn("makeWalletService")(function* (
       ),
     signTransaction: (input: WalletSignTransactionInput) =>
       withCurrent(
-        (binding) => routeWalletTransaction(binding, input),
+        (routing) => routeWalletTransaction(routing, input),
         () =>
           new WalletCapabilityUnavailableError({
             capability: "transaction",
@@ -124,7 +89,7 @@ const makeWalletService = Effect.fn("makeWalletService")(function* (
       ),
     switchAccount: (input: WalletSwitchAccountInput) =>
       withCurrent(
-        (binding) => routeWalletAccountSwitch(binding, input),
+        (routing) => routeWalletAccountSwitch(routing, input),
         () =>
           new WalletCapabilityUnavailableError({
             capability: "account",

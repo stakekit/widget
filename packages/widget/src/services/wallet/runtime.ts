@@ -45,10 +45,14 @@ import { WalletRuntimeInvariantError } from "./domain/errors";
 import {
   bootstrappingWalletRuntimeSnapshot,
   type WalletCoreProjection,
+  type WalletProjection,
   type WalletRuntimeSnapshot,
 } from "./domain/runtime";
+import { disconnectedNormalizedWalletState } from "./domain/state";
 import { initializeWallet } from "./initialization";
+import type { WalletRoutingContext } from "./router";
 import { makeDefaultHeadlessSolanaRuntime } from "./solana-runtime";
+import { makeCompleteWalletStateStream } from "./state-projection";
 import {
   type BuildWagmiConfigOptions,
   buildWagmiConfig,
@@ -141,8 +145,10 @@ export const makeDefaultWalletRuntimeAdapters = Effect.gen(function* () {
 export type WalletRuntime = {
   readonly changes: Stream.Stream<WalletRuntimeSnapshot>;
   readonly config: Effect.Effect<Config | null>;
+  readonly getState: () => WalletRoutingContext["state"];
   readonly legacyController: Effect.Effect<WalletController | null>;
   readonly current: Effect.Effect<WalletRuntimeSnapshot>;
+  readonly routing: Effect.Effect<WalletRoutingContext | null>;
 };
 
 type WalletBootstrapSnapshot = {
@@ -190,7 +196,19 @@ type WalletRuntimeEvent =
         | MutableCurrentRef<SKExternalProviders>
         | undefined;
       readonly projection: WalletCoreProjection;
+    }
+  | {
+      readonly _tag: "StateChanged";
+      readonly projection: WalletProjection;
+      readonly revision: number;
+      readonly routing: WalletRoutingContext;
     };
+
+type WalletStateInput = {
+  readonly controller: WalletController;
+  readonly projection: WalletCoreProjection;
+  readonly revision: number;
+};
 
 const makeExternalProviderSnapshot = (
   settings: WidgetConfig
@@ -323,13 +341,17 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
     bootstrappingWalletRuntimeSnapshot
   );
   const coreChanges = makeCurrentValueStream<WalletCoreProjection | null>(null);
+  const stateInputs = makeCurrentValueStream<WalletStateInput | null>(null);
   const events = yield* Effect.acquireRelease(
     Queue.bounded<WalletRuntimeEvent>(32),
     Queue.shutdown
   );
   let legacyController: WalletController | null = null;
   let controller: WalletController | null = null;
-  let projection: WalletCoreProjection | null = null;
+  let coreProjection: WalletCoreProjection | null = null;
+  let publishedProjection: WalletProjection | null = null;
+  let routing: WalletRoutingContext | null = null;
+  let stateRevision = 0;
   let externalProviderMode: boolean | null = null;
   let externalProviders: MutableCurrentRef<SKExternalProviders> | undefined;
   let pendingExternalProviderSnapshot: ExternalProviderSnapshot | undefined;
@@ -346,13 +368,12 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
   let terminal = false;
 
   const publishReady = () => {
-    if (terminal || !controller || !projection) return;
+    if (terminal || !controller || !publishedProjection) return;
 
     const current = source.get();
     if (
       current.phase === "Ready" &&
-      Equal.equals(current.projection.connection, projection.connection) &&
-      Equal.equals(current.projection.connectors, projection.connectors)
+      Equal.equals(current.projection, publishedProjection)
     ) {
       return;
     }
@@ -360,7 +381,7 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
     source.set({
       cause: null,
       phase: "Ready",
-      projection,
+      projection: publishedProjection,
       wagmiConfig: controller.wagmiConfig,
     });
   };
@@ -382,7 +403,7 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
     source.set({
       cause,
       phase: "InvariantViolated",
-      projection,
+      projection: publishedProjection,
       wagmiConfig: controller?.wagmiConfig ?? null,
     });
   });
@@ -400,13 +421,13 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
       terminal ||
       externalProviderMode !== true ||
       !controller ||
-      !projection ||
+      !coreProjection ||
       !externalProviders
     ) {
       return;
     }
 
-    const matchingConnectors = projection.connectors.filter(
+    const matchingConnectors = coreProjection.connectors.filter(
       isExternalProviderConnector
     );
     if (matchingConnectors.length === 0) {
@@ -420,7 +441,7 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
     if (!connector) {
       return yield* enterInvariant("external-provider-connector-missing");
     }
-    const connection = projection.connection;
+    const connection = coreProjection.connection;
     if (
       connection.connector &&
       !isExternalProviderConnector(connection.connector)
@@ -549,7 +570,7 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
           yield* synchronizeExternalProvider();
         } else if (!event.succeeded) {
           connecting = null;
-        } else if (projection?.connection.status === "connected") {
+        } else if (coreProjection?.connection.status === "connected") {
           connecting = null;
         } else {
           connecting = { ...connecting, completed: true };
@@ -562,9 +583,14 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
           return;
         }
 
-        projection = event.projection;
+        coreProjection = event.projection;
+        stateRevision += 1;
+        stateInputs.set({
+          controller,
+          projection: coreProjection,
+          revision: stateRevision,
+        });
         yield* synchronizeExternalProvider();
-        publishReady();
         return;
       }
       case "ExternalProviderChanged": {
@@ -579,16 +605,29 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
       }
       case "Ready": {
         controller = event.controller;
-        projection = pendingCoreProjection ?? event.projection;
+        coreProjection = pendingCoreProjection ?? event.projection;
         pendingCoreProjection = null;
         externalProviderMode = event.externalProviderMode;
         externalProviders = event.externalProviders;
+        stateRevision += 1;
+        stateInputs.set({
+          controller,
+          projection: coreProjection,
+          revision: stateRevision,
+        });
 
         if (hasPendingExternalProviderSnapshot) {
           yield* applyExternalProviderSnapshot(pendingExternalProviderSnapshot);
         } else {
           yield* synchronizeExternalProvider();
         }
+        return;
+      }
+      case "StateChanged": {
+        if (event.revision !== stateRevision) return;
+
+        publishedProjection = event.projection;
+        routing = event.routing;
         publishReady();
       }
     }
@@ -603,10 +642,29 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
       })
     )
   );
-  yield* Stream.merge(Stream.fromQueue(events), coreEvents).pipe(
-    Stream.runForEach(handleEvent),
-    Effect.forkScoped
+  const stateEvents = stateInputs.changes.pipe(
+    Stream.filter((input): input is WalletStateInput => input !== null),
+    Stream.switchMap((input) =>
+      makeCompleteWalletStateStream({
+        controller: input.controller,
+        projection: input.projection,
+        readStoredPublicKeys: persistence.readStoredPublicKeys,
+      }).pipe(
+        Stream.map(
+          ({ projection, routing }): WalletRuntimeEvent => ({
+            _tag: "StateChanged",
+            projection,
+            revision: input.revision,
+            routing,
+          })
+        )
+      )
+    )
   );
+  yield* Stream.mergeAll([Stream.fromQueue(events), coreEvents, stateEvents], {
+    bufferSize: 16,
+    concurrency: 3,
+  }).pipe(Stream.runForEach(handleEvent), Effect.forkScoped);
 
   const bootstrap = Effect.gen(function* () {
     const settings = yield* config.current;
@@ -708,8 +766,11 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
   return {
     changes: source.changes,
     config: Effect.sync(() => source.get().wagmiConfig),
+    getState: () =>
+      publishedProjection?.state ?? disconnectedNormalizedWalletState,
     legacyController: Effect.sync(() => legacyController),
     current: Effect.sync(source.get),
+    routing: Effect.sync(() => routing),
   };
 });
 
@@ -721,7 +782,9 @@ export const makeBootstrappingWalletRuntime = (): WalletRuntime => {
   return {
     changes: source.changes,
     config: Effect.succeed(null),
+    getState: () => disconnectedNormalizedWalletState,
     legacyController: Effect.succeed(null),
     current: Effect.sync(source.get),
+    routing: Effect.succeed(null),
   };
 };

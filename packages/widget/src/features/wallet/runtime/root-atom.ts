@@ -1,34 +1,27 @@
 import { useAtomValue } from "@effect/atom-react";
-import { Effect, Option, type Schema, Stream } from "effect";
-import type * as KeyValueStore from "effect/unstable/persistence/KeyValueStore";
+import { Effect, Option, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime";
-import type { AdditionalAddresses } from "../../../domain/schema/address-models";
 import { WalletRuntimeTerminalError } from "../../../services/wallet/domain/errors";
 import {
   bootstrappingWalletRuntimeSnapshot,
-  type WalletCoreProjection,
+  type WalletProjection,
   type WalletRuntimeSnapshot,
 } from "../../../services/wallet/domain/runtime";
+import {
+  disconnectedLedgerConnectorState,
+  disconnectedNormalizedWalletState,
+} from "../../../services/wallet/domain/state";
 import type { WalletController } from "../../../services/wallet/wagmi-config";
 import { WalletService } from "../../../services/wallet/wallet-service";
-import {
-  type AdditionalAddressesError,
-  makeAdditionalAddressesAtom,
-} from "../state/additional-addresses";
 import { disconnectedWalletConnection } from "../state/connection";
-import { makeConnectorChainsAtom } from "../state/connector-chains";
 import { disconnectedWalletConnectors } from "../state/connectors";
-import { makeCosmosChainWalletAtom } from "../state/cosmos";
-import { makeLedgerConnectorStateAtom } from "../state/ledger";
-import { makeWalletStateAtom } from "../state/wallet";
 import { walletControllerAtom } from "../wagmi/controller";
 import {
   type WalletInitializationKey,
   walletInitializationKeyAtom,
 } from "../wagmi/initialization";
-import { makeWalletServiceBindingAtom } from "./binding-atom";
 import { makeWalletLifecycleAtom } from "./lifecycle";
 
 const walletRuntimeSnapshotAtom = appRuntime
@@ -45,7 +38,7 @@ const walletRuntimeSnapshotAtom = appRuntime
 const projectWalletRuntime = <A, E>(
   result: AsyncResult.AsyncResult<WalletRuntimeSnapshot, E>,
   fallback: A,
-  project: (projection: WalletCoreProjection) => A
+  project: (projection: WalletProjection) => A
 ): AsyncResult.AsyncResult<A, E | WalletRuntimeTerminalError> => {
   const projected = result.pipe(
     AsyncResult.map((snapshot) =>
@@ -85,68 +78,27 @@ export const currentWalletConnectorsResultAtom = Atom.make((get) =>
   )
 ).pipe(Atom.withLabel("currentWalletConnectorsResultAtom"));
 
-const walletConnectionAtom = (_key: WalletInitializationKey) =>
-  currentWalletConnectionResultAtom;
-
-const walletConnectorChainsAtom = Atom.family((key: WalletInitializationKey) =>
-  makeConnectorChainsAtom(walletControllerAtom(key), walletConnectionAtom(key))
-);
-
-export const walletLedgerStateAtom = Atom.family(
-  (key: WalletInitializationKey) =>
-    makeLedgerConnectorStateAtom(walletConnectionAtom(key))
-);
-
-const walletCosmosChainWalletAtom = Atom.family(
-  (key: WalletInitializationKey) =>
-    makeCosmosChainWalletAtom(walletConnectionAtom(key))
-);
-
-const walletAdditionalAddressesAtom = Atom.family(
-  (
-    key: WalletInitializationKey
-  ): Atom.Atom<
-    AsyncResult.AsyncResult<
-      AdditionalAddresses | null,
-      | AdditionalAddressesError
-      | Atom.Failure<ReturnType<typeof walletConnectionAtom>>
-      | Atom.Failure<ReturnType<typeof walletCosmosChainWalletAtom>>
-      | KeyValueStore.KeyValueStoreError
-      | Schema.SchemaError
-    >
-  > =>
-    makeAdditionalAddressesAtom(
-      walletConnectionAtom(key),
-      walletCosmosChainWalletAtom(key)
-    )
-);
-
-export const walletStateAtom = Atom.family((key: WalletInitializationKey) =>
-  makeWalletStateAtom(
-    walletControllerAtom(key),
-    walletConnectionAtom(key),
-    walletConnectorChainsAtom(key),
-    walletLedgerStateAtom(key),
-    walletAdditionalAddressesAtom(key)
-  )
-);
-
 export const currentWalletStateResultAtom = Atom.make((get) =>
-  get(walletStateAtom(get(walletInitializationKeyAtom)))
+  projectWalletRuntime(
+    get(walletRuntimeSnapshotAtom),
+    disconnectedNormalizedWalletState,
+    (projection) => projection.state
+  )
 ).pipe(Atom.withLabel("currentWalletStateResultAtom"));
 
 export const currentWalletLedgerStateAtom = Atom.make((get) =>
-  get(walletLedgerStateAtom(get(walletInitializationKeyAtom)))
+  projectWalletRuntime(
+    get(walletRuntimeSnapshotAtom),
+    disconnectedLedgerConnectorState,
+    (projection) => projection.ledgerState
+  )
 ).pipe(Atom.withLabel("currentWalletLedgerStateAtom"));
 
-const walletServiceBindingAtom = Atom.family((key: WalletInitializationKey) =>
-  makeWalletServiceBindingAtom(
-    walletControllerAtom(key),
-    walletStateAtom(key),
-    walletLedgerStateAtom(key),
-    walletCosmosChainWalletAtom(key)
-  )
-);
+export const walletStateAtom = (_key: WalletInitializationKey) =>
+  currentWalletStateResultAtom;
+
+export const walletLedgerStateAtom = (_key: WalletInitializationKey) =>
+  currentWalletLedgerStateAtom;
 
 const walletLifecycleAtom = Atom.family((key: WalletInitializationKey) =>
   makeWalletLifecycleAtom(walletControllerAtom(key), walletStateAtom(key))
@@ -164,7 +116,6 @@ const walletRootAtom = Atom.make((get) => {
   const result = get(walletControllerAtom(initializationKey));
 
   get(walletLifecycleAtom(initializationKey));
-  get(walletServiceBindingAtom(initializationKey));
 
   return {
     data: result.pipe(AsyncResult.value, Option.getOrUndefined),

@@ -23,12 +23,12 @@ import type {
   WalletCoreProjection,
   WalletRuntimeSnapshot,
 } from "../../../src/services/wallet/domain/runtime";
-import type { WalletController } from "../../../src/services/wallet/wagmi-config";
 import {
   type WalletRuntimeAdapters,
   WalletService,
 } from "../../../src/services/wallet/wallet-service";
 import { makeCurrentValueStream } from "../../../src/shared/effect/current-value-stream";
+import { makeRuntimeTestController } from "./runtime-test-controller";
 
 const address = (suffix: string) =>
   `0x${suffix.padStart(40, "0")}` as `0x${string}`;
@@ -145,14 +145,14 @@ const makeRuntimeHarness = ({
   let capturedOptions:
     | Parameters<WalletRuntimeAdapters["wagmi"]["buildConfig"]>[0]
     | undefined;
-  const controller = {
+  const controller = makeRuntimeTestController({
     actions: {
       connect: ({ connector }: { readonly connector: Connector }) =>
         connect(connector),
     },
     queryParamsInitChainId: undefined,
     wagmiConfig,
-  } as unknown as WalletController;
+  });
   const adapters = {
     environment: {
       getEnabledNetworks: () => Effect.succeed(new Set(["ethereum"])),
