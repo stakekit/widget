@@ -3,8 +3,8 @@ import { base, mainnet } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import type { NormalizedWalletState } from "../../src/features/wallet/state/wallet";
 import { toBorrowWalletStateProjection } from "../../src/services/borrow/wallet-state-projection";
+import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

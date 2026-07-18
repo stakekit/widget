@@ -3,15 +3,27 @@ import { mainnet, optimism } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
 import { evmChainsMap } from "../../src/domain/types/chains/evm";
-import {
-  disconnectedWalletConnection,
-  type WalletConnectionSnapshot,
-} from "../../src/features/wallet/state/connection";
-import { disconnectedLedgerConnectorState } from "../../src/features/wallet/state/ledger";
+import type { WalletCoreProjection } from "../../src/services/wallet/domain/runtime";
+import { disconnectedLedgerConnectorState } from "../../src/services/wallet/domain/state";
 import {
   normalizeWalletState,
   type WalletStateController,
-} from "../../src/features/wallet/state/wallet";
+} from "../../src/services/wallet/state-projection";
+
+type WalletConnectionSnapshot = WalletCoreProjection["connection"];
+
+const disconnectedWalletConnection: WalletConnectionSnapshot = {
+  address: undefined,
+  addresses: undefined,
+  chain: undefined,
+  chainId: undefined,
+  connector: undefined,
+  isConnected: false,
+  isConnecting: false,
+  isDisconnected: true,
+  isReconnecting: false,
+  status: "disconnected",
+};
 
 const address = "0x0000000000000000000000000000000000000001";
 const forceAddress = "0x0000000000000000000000000000000000000002";

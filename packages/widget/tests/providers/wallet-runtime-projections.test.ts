@@ -1,14 +1,13 @@
-import { Effect, Layer, Option } from "effect";
+import { Layer, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime";
 import {
-  currentWalletConnectionResultAtom,
-  currentWalletConnectorsResultAtom,
+  currentWalletRuntimeConfigResultAtom,
+  currentWalletStateResultAtom,
 } from "../../src/features/wallet";
-import { walletControllerAtom } from "../../src/features/wallet/wagmi/controller";
-import type { WalletInitializationKey } from "../../src/features/wallet/wagmi/initialization";
+import { currentWalletLedgerStateAtom } from "../../src/features/wallet/runtime/root-atom";
 import {
   bootstrappingWalletRuntimeSnapshot,
   type WalletRuntimeSnapshot,
@@ -22,22 +21,20 @@ describe("WalletService read-only projections", () => {
     const source = makeCurrentValueStream<WalletRuntimeSnapshot>(
       bootstrappingWalletRuntimeSnapshot
     );
-    const controllerAtom = walletControllerAtom({} as WalletInitializationKey);
     const registry = AtomRegistry.make({
       initialValues: [
         [
           appRuntime.layer,
           Layer.succeed(WalletService, {
             changes: source.changes,
-            legacyController: Effect.succeed(null),
           } as never) as never,
         ],
       ],
     });
 
-    registry.mount(controllerAtom);
-    registry.mount(currentWalletConnectionResultAtom);
-    registry.mount(currentWalletConnectorsResultAtom);
+    registry.mount(currentWalletRuntimeConfigResultAtom);
+    registry.mount(currentWalletStateResultAtom);
+    registry.mount(currentWalletLedgerStateAtom);
     source.set({
       cause,
       phase: "BootstrapFailed",
@@ -47,12 +44,14 @@ describe("WalletService read-only projections", () => {
 
     await vi.waitFor(() => {
       const errors = [
-        Option.getOrThrow(AsyncResult.error(registry.get(controllerAtom))),
         Option.getOrThrow(
-          AsyncResult.error(registry.get(currentWalletConnectionResultAtom))
+          AsyncResult.error(registry.get(currentWalletRuntimeConfigResultAtom))
         ),
         Option.getOrThrow(
-          AsyncResult.error(registry.get(currentWalletConnectorsResultAtom))
+          AsyncResult.error(registry.get(currentWalletStateResultAtom))
+        ),
+        Option.getOrThrow(
+          AsyncResult.error(registry.get(currentWalletLedgerStateAtom))
         ),
       ];
 

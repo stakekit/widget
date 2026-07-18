@@ -59,7 +59,7 @@ import {
   currentWalletScopeAtom,
   useCloseChainModal,
   useSKWallet,
-  useWalletController,
+  useWalletRuntimeConfig,
 } from "../../../../../wallet";
 import type {
   NumberInputProps,
@@ -593,7 +593,7 @@ export const EarnPageModelBinding = ({
   const onSelectOpportunityClose = () => setStakeSearch("");
   const onSelectTokenClose = () => setTokenSearch("");
 
-  const wagmiConfig = useWalletController();
+  const walletRuntime = useWalletRuntimeConfig();
 
   const pendingActionDeepLink = usePendingActionDeepLink();
 
@@ -605,8 +605,8 @@ export const EarnPageModelBinding = ({
 
   const appLoading =
     !selectedToken ||
-    !wagmiConfig.data ||
-    wagmiConfig.isLoading ||
+    !walletRuntime.data ||
+    walletRuntime.isLoading ||
     pendingActionDeepLink.isLoading ||
     isConnecting ||
     !state.layout;

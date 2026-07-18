@@ -1,5 +1,5 @@
 export { WalletScopeKey } from "../../services/wallet/domain/scope";
-export { scopedMipdSubscription } from "../../services/wallet/wagmi-config";
+export { disconnectedNormalizedWalletState } from "../../services/wallet/domain/state";
 export { WagmiConfigProvider } from "./react/provider";
 export { useCloseChainModal } from "./react/use-close-chain-modal";
 export { useLedgerDisabledChain } from "./react/use-ledger-disabled-chains";
@@ -9,14 +9,10 @@ export {
   useWalletScopeRoute,
   WalletScopeRouteGuard,
 } from "./react/wallet-scope-route";
-export { makeWalletScopedAtomRoute } from "./react/wallet-scoped-atom-route";
 export {
-  currentWalletConnectionResultAtom,
-  currentWalletConnectorsResultAtom,
-  currentWalletLedgerStateAtom,
+  currentWalletRuntimeConfigResultAtom,
   currentWalletStateResultAtom,
-  useWalletController,
-  walletStateAtom,
+  useWalletRuntimeConfig,
 } from "./runtime/root-atom";
 export {
   currentWalletConnectedNetworkAtom,
@@ -24,7 +20,6 @@ export {
   currentWalletStateAtom,
   selectCurrentWalletAtom,
 } from "./runtime/selectors";
-export { disconnectedNormalizedWalletState } from "./state/wallet";
 export {
   addLedgerAccountAtom,
   runLogout,
@@ -33,8 +28,3 @@ export { AccountModal } from "./ui/account-modal";
 export { ChainModal } from "./ui/chain-modal";
 export { ConnectButton } from "./ui/connect-button";
 export { ZerionChainModal } from "./ui/zerion-chain-modal";
-export {
-  initializeWallet,
-  type WalletInitializationOperations,
-  walletInitializationKeyAtom,
-} from "./wagmi/initialization";

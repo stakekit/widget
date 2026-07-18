@@ -10,7 +10,7 @@ import { headerContainer, middleItem } from "./styles.css";
 export const Header = () => {
   const {
     onXPress,
-    wagmiConfig,
+    walletRuntime,
     hideChainSelector,
     isConnected,
     isConnecting,
@@ -20,8 +20,8 @@ export const Header = () => {
   } = useHeader();
 
   if (
-    wagmiConfig.isLoading ||
-    !wagmiConfig.data ||
+    walletRuntime.isLoading ||
+    !walletRuntime.data ||
     hideAccountAndChainSelector ||
     !isConnected
   ) {

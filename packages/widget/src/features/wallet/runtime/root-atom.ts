@@ -2,6 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { Effect, Option, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import type { Config } from "wagmi";
 import { appRuntime } from "../../../app/runtime";
 import { WalletRuntimeTerminalError } from "../../../services/wallet/domain/errors";
 import {
@@ -13,15 +14,7 @@ import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
 } from "../../../services/wallet/domain/state";
-import type { WalletController } from "../../../services/wallet/wagmi-config";
 import { WalletService } from "../../../services/wallet/wallet-service";
-import { disconnectedWalletConnection } from "../state/connection";
-import { disconnectedWalletConnectors } from "../state/connectors";
-import { walletControllerAtom } from "../wagmi/controller";
-import {
-  type WalletInitializationKey,
-  walletInitializationKeyAtom,
-} from "../wagmi/initialization";
 
 const walletRuntimeSnapshotAtom = appRuntime
   .atom(
@@ -61,22 +54,6 @@ const projectWalletRuntime = <A, E>(
   return projected;
 };
 
-export const currentWalletConnectionResultAtom = Atom.make((get) =>
-  projectWalletRuntime(
-    get(walletRuntimeSnapshotAtom),
-    disconnectedWalletConnection,
-    (projection) => projection.connection
-  )
-).pipe(Atom.withLabel("currentWalletConnectionResultAtom"));
-
-export const currentWalletConnectorsResultAtom = Atom.make((get) =>
-  projectWalletRuntime(
-    get(walletRuntimeSnapshotAtom),
-    disconnectedWalletConnectors,
-    (projection) => projection.connectors
-  )
-).pipe(Atom.withLabel("currentWalletConnectorsResultAtom"));
-
 export const currentWalletStateResultAtom = Atom.make((get) =>
   projectWalletRuntime(
     get(walletRuntimeSnapshotAtom),
@@ -93,30 +70,49 @@ export const currentWalletLedgerStateAtom = Atom.make((get) =>
   )
 ).pipe(Atom.withLabel("currentWalletLedgerStateAtom"));
 
-export const walletStateAtom = (_key: WalletInitializationKey) =>
-  currentWalletStateResultAtom;
+const projectWalletRuntimeConfig = <E>(
+  result: AsyncResult.AsyncResult<WalletRuntimeSnapshot, E>
+): AsyncResult.AsyncResult<Config | null, E | WalletRuntimeTerminalError> => {
+  const projected = result.pipe(
+    AsyncResult.map((snapshot) => snapshot.wagmiConfig)
+  );
 
-export const walletLedgerStateAtom = (_key: WalletInitializationKey) =>
-  currentWalletLedgerStateAtom;
+  if (result._tag !== "Success") return projected;
+  if (
+    result.value.phase === "BootstrapFailed" ||
+    result.value.phase === "InvariantViolated"
+  ) {
+    return AsyncResult.fail(
+      new WalletRuntimeTerminalError({
+        cause: result.value.cause,
+        phase: result.value.phase,
+      })
+    );
+  }
 
-type WalletControllerResource = {
-  readonly data: WalletController | undefined;
+  return projected;
+};
+
+export const currentWalletRuntimeConfigResultAtom = Atom.make((get) =>
+  projectWalletRuntimeConfig(get(walletRuntimeSnapshotAtom))
+).pipe(Atom.withLabel("currentWalletRuntimeConfigResultAtom"));
+
+type WalletRuntimeConfigResource = {
+  readonly data: Config | undefined;
   readonly error: unknown;
-  readonly initializationKey: WalletInitializationKey;
   readonly isLoading: boolean;
 };
 
-const walletRootAtom = Atom.make((get) => {
-  const initializationKey = get(walletInitializationKeyAtom);
-  const result = get(walletControllerAtom(initializationKey));
+const walletRuntimeConfigAtom = Atom.make((get) => {
+  const result = get(currentWalletRuntimeConfigResultAtom);
+  const data = result.pipe(AsyncResult.value, Option.getOrUndefined);
 
   return {
-    data: result.pipe(AsyncResult.value, Option.getOrUndefined),
+    data: data ?? undefined,
     error: result.pipe(AsyncResult.error, Option.getOrUndefined),
-    initializationKey,
-    isLoading: AsyncResult.isInitial(result),
-  } satisfies WalletControllerResource;
-}).pipe(Atom.withLabel("walletRootAtom"));
+    isLoading: AsyncResult.isInitial(result) || data === null,
+  } satisfies WalletRuntimeConfigResource;
+}).pipe(Atom.withLabel("walletRuntimeConfigAtom"));
 
-export const useWalletController = (): WalletControllerResource =>
-  useAtomValue(walletRootAtom);
+export const useWalletRuntimeConfig = (): WalletRuntimeConfigResource =>
+  useAtomValue(walletRuntimeConfigAtom);

@@ -4,11 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 import { WalletAddress } from "../../../src/domain/schema/identifiers";
 import type { Network } from "../../../src/domain/schema/network-model";
-import { disconnectedLedgerConnectorState } from "../../../src/features/wallet/state/ledger";
 import {
+  disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
-} from "../../../src/features/wallet/state/wallet";
+} from "../../../src/services/wallet/domain/state";
 import {
   routeWalletAccountSwitch,
   routeWalletTransaction,

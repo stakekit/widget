@@ -19,7 +19,6 @@ import {
   routeWalletTransaction,
 } from "./router";
 import {
-  makeBootstrappingWalletRuntime,
   makeDefaultWalletRuntimeAdapters,
   makeWalletRuntime,
   type WalletRuntime,
@@ -55,7 +54,6 @@ const makeWalletService = Effect.fn("makeWalletService")(function* (
     changes: runtime.changes,
     config: runtime.config,
     current: runtime.current,
-    legacyController: runtime.legacyController,
     disconnect: (input?: WalletDisconnectInput) =>
       withCurrent(
         (routing) => routing.actions.disconnect(input),
@@ -113,10 +111,6 @@ export class WalletService extends Context.Service<WalletService>()(
   }
 ) {
   static readonly layer = Layer.effect(WalletService, WalletService.make);
-  static readonly legacyLayer = Layer.effect(
-    WalletService,
-    makeWalletService(makeBootstrappingWalletRuntime())
-  );
 
   static layerWithRuntimeAdapters(adapters: WalletRuntimeAdapters) {
     return Layer.effect(

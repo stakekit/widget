@@ -15,10 +15,7 @@ import { createInstance } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { useEffect } from "react";
 import { initReactI18next, useTranslation } from "react-i18next";
-import { widgetConfigAtom } from "../app/config/settings";
 import { withApiResourcePolicy } from "../shared/effect/api-resource";
-import { selectAtom } from "../shared/effect/select-atom";
-import utilaTranslations from "./English/utila-variant.json";
 import { localResources } from "./resources";
 
 export const i18nInstance: ReturnType<typeof createInstance> = createInstance();
@@ -77,47 +74,6 @@ i18nInstance.on("languageChanged", (lng) => {
 i18nInstance.services.formatter?.add("lowercase", (value, _, __) =>
   value.toLowerCase()
 );
-
-const widgetTranslationConfigAtom = selectAtom(
-  widgetConfigAtom,
-  ({ customTranslations, language, variant }) => ({
-    customTranslations,
-    language,
-    variant,
-  })
-);
-
-export const widgetTranslationEffectsAtom = Atom.make((get) => {
-  const { customTranslations, language, variant } = get(
-    widgetTranslationConfigAtom
-  );
-
-  if (language) {
-    void i18nInstance.changeLanguage(language);
-  }
-
-  if (variant === "utila") {
-    i18nInstance.addResourceBundle(
-      "en",
-      "translation",
-      utilaTranslations,
-      true,
-      true
-    );
-  }
-
-  if (customTranslations) {
-    Object.entries(customTranslations).forEach(([language, value]) => {
-      i18nInstance.addResourceBundle(
-        language,
-        "translation",
-        value.translation,
-        true,
-        true
-      );
-    });
-  }
-}).pipe(Atom.withLabel("widgetTranslationEffectsAtom"));
 
 export const useLoadErrorTranslations = () => {
   const { i18n } = useTranslation();

@@ -1,15 +1,15 @@
 import { type PropsWithChildren, useState } from "react";
 import { WagmiContext } from "wagmi";
 import { makeDefaultConfig } from "../../../services/wallet/default-wagmi-config";
-import { useWalletController } from "../runtime/root-atom";
+import { useWalletRuntimeConfig } from "../runtime/root-atom";
 
 export const WagmiConfigProvider = ({ children }: PropsWithChildren) => {
-  const controller = useWalletController();
+  const runtimeConfig = useWalletRuntimeConfig();
   const [fallbackConfig] = useState(makeDefaultConfig);
 
-  if (controller.error) throw controller.error;
+  if (runtimeConfig.error) throw runtimeConfig.error;
 
-  const value = controller.data?.wagmiConfig ?? fallbackConfig;
+  const value = runtimeConfig.data ?? fallbackConfig;
 
   return (
     <WagmiContext.Provider value={value}>{children}</WagmiContext.Provider>

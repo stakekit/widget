@@ -11,7 +11,7 @@ import { useHeader } from "./use-header";
 export const Header = () => {
   const {
     containerRef,
-    wagmiConfig,
+    walletRuntime,
     variant,
     hideChainSelector,
     isConnected,
@@ -60,7 +60,9 @@ export const Header = () => {
           )}
         </Box>
 
-        {!wagmiConfig.isLoading && wagmiConfig.data && variant !== "zerion" ? (
+        {!walletRuntime.isLoading &&
+        walletRuntime.data &&
+        variant !== "zerion" ? (
           <ConnectButton.Custom>
             {({ account, chain, mounted }) => {
               return (

@@ -131,6 +131,11 @@ minimumReleaseAgeExclude:
   - "@typescript/typescript-*"
   - typescript
 
+packageExtensions:
+  "@fractalwagmi/solana-wallet-adapter@0.1.1":
+    peerDependencies:
+      "@solana/web3.js": ^1.98.4
+
 patchedDependencies:
   "@stakekit/rainbowkit@2.2.11": patches/@stakekit__rainbowkit@2.2.11.patch
 

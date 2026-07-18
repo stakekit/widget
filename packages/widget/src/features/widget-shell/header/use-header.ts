@@ -4,7 +4,7 @@ import { useWidgetConfig } from "../../../app/config";
 import { shouldShowDisconnect } from "../../../domain/types/connectors";
 import { useDetailsMatch } from "../../../shared/react/navigation/use-details-match";
 import { useTrackEvent } from "../../tracking";
-import { useLogout, useSKWallet, useWalletController } from "../../wallet";
+import { useLogout, useSKWallet, useWalletRuntimeConfig } from "../../wallet";
 import { useSyncHeaderHeight } from "./use-sync-header-height";
 
 export const useHeader = () => {
@@ -25,7 +25,7 @@ export const useHeader = () => {
     [connector]
   );
 
-  const wagmiConfig = useWalletController();
+  const walletRuntime = useWalletRuntimeConfig();
 
   const showBack = !useDetailsMatch();
 
@@ -49,7 +49,7 @@ export const useHeader = () => {
     onLeftIconPress,
     onXPress,
     containerRef,
-    wagmiConfig,
+    walletRuntime,
     variant,
     hideChainSelector,
     isConnected,

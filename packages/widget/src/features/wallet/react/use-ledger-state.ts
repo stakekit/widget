@@ -1,11 +1,11 @@
 import { useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { currentWalletLedgerStateAtom } from "../runtime/root-atom";
 import {
   disconnectedLedgerConnectorState,
   type LedgerConnectorState,
-} from "../state/ledger";
+} from "../../../services/wallet/domain/state";
+import { currentWalletLedgerStateAtom } from "../runtime/root-atom";
 
 export const useLedgerState = (): LedgerConnectorState => {
   return useAtomValue(currentWalletLedgerStateAtom).pipe(

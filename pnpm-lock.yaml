@@ -675,6 +675,8 @@ catalogs:
       specifier: ^2.9.0
       version: 2.9.0
 
+packageExtensionsChecksum: sha256-FZ9pA8g2+w7cg8p8CU69qpPAEhtGVHP/kzcJxOvNvcM=
+
 patchedDependencies:
   '@stakekit/rainbowkit@2.2.11': d028a8df4a214c19e07d959c285fb81eb54f4f1f3cbc199c7331e502cd94fbea
 
@@ -2077,6 +2079,8 @@ packages:
 
   '@fractalwagmi/solana-wallet-adapter@0.1.1':
     resolution: {integrity: sha512-oTZLEuD+zLKXyhZC5tDRMPKPj8iaxKLxXiCjqRfOo4xmSbS2izGRWLJbKMYYsJysn/OI3UJ3P6CWP8WUWi0dZg==}
+    peerDependencies:
+      '@solana/web3.js': ^1.98.4
 
   '@harmoniclabs/bigint-utils@1.0.0':
     resolution: {integrity: sha512-OhZMHcdtH2hHKMlxWFHf71PmKHdoi9ARpjS9mUu0/cd8VWDDjT7VQoQwC5NN/68iyO4O5Dojrvrp9tjG5BDABA==}
@@ -12432,9 +12436,9 @@ snapshots:
     dependencies:
       '@fractalwagmi/popup-connection': 1.1.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@solana/wallet-adapter-base': 0.9.27(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@7.0.2)(utf-8-validate@5.0.10))
+      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@7.0.2)(utf-8-validate@5.0.10)
       bs58: 5.0.0
     transitivePeerDependencies:
-      - '@solana/web3.js'
       - react
       - react-dom
 

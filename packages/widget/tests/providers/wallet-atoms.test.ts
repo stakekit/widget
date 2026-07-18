@@ -5,13 +5,15 @@ import type { Connector, createConfig } from "wagmi";
 import { AdditionalAddresses } from "../../src/domain/schema/address-models";
 import { InitParams } from "../../src/domain/schema/init-params";
 import { EnabledNetworksResponse } from "../../src/domain/schema/wallet-models";
+import { getConfig as getEvmConfig } from "../../src/services/wallet/connectors/ethereum/config";
 import {
   initializeWallet,
-  scopedMipdSubscription,
   type WalletInitializationOperations,
-} from "../../src/features/wallet";
-import { getConfig as getEvmConfig } from "../../src/services/wallet/connectors/ethereum/config";
-import { buildWagmiConfig } from "../../src/services/wallet/wagmi-config";
+} from "../../src/services/wallet/initialization";
+import {
+  buildWagmiConfig,
+  scopedMipdSubscription,
+} from "../../src/services/wallet/wagmi-config";
 
 const emptyInitParams = {
   accountId: null,

@@ -169,7 +169,6 @@ export type WalletRuntime = {
   readonly changes: Stream.Stream<WalletRuntimeSnapshot>;
   readonly config: Effect.Effect<Config | null>;
   readonly getState: () => WalletRoutingContext["state"];
-  readonly legacyController: Effect.Effect<WalletController | null>;
   readonly current: Effect.Effect<WalletRuntimeSnapshot>;
 };
 
@@ -370,7 +369,6 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
     Queue.bounded<WalletRuntimeEvent>(32),
     Queue.shutdown
   );
-  let legacyController: WalletController | null = null;
   let controller: WalletController | null = null;
   let coreProjection: WalletCoreProjection | null = null;
   let publishedProjection: WalletProjection | null = null;
@@ -780,7 +778,6 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
       publish: coreChanges.set,
     });
 
-    legacyController = controller;
     yield* Queue.offer(events, {
       _tag: "Ready",
       controller,
@@ -834,22 +831,6 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
     config: Effect.sync(() => source.get().wagmiConfig),
     getState: () =>
       publishedProjection?.state ?? disconnectedNormalizedWalletState,
-    legacyController: Effect.sync(() => legacyController),
     current: Effect.sync(source.get),
   };
 });
-
-export const makeBootstrappingWalletRuntime = (): WalletRuntime => {
-  const source = makeCurrentValueStream<WalletRuntimeSnapshot>(
-    bootstrappingWalletRuntimeSnapshot
-  );
-
-  return {
-    captureRouting: Effect.succeed(null),
-    changes: source.changes,
-    config: Effect.succeed(null),
-    getState: () => disconnectedNormalizedWalletState,
-    legacyController: Effect.succeed(null),
-    current: Effect.sync(source.get),
-  };
-};

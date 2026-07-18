@@ -36,9 +36,8 @@ import { appRuntime } from "../../src/app/runtime";
 import { solana } from "../../src/domain/types/chains/misc";
 import { EvmNetworks } from "../../src/domain/types/chains/networks";
 import {
-  currentWalletConnectionResultAtom,
-  currentWalletConnectorsResultAtom,
-  useWalletController,
+  currentWalletStateResultAtom,
+  useWalletRuntimeConfig,
 } from "../../src/features/wallet";
 import { WagmiConfigProvider } from "../../src/features/wallet/react/provider";
 import {
@@ -81,7 +80,7 @@ class RuntimeErrorBoundary extends Component<
 
 const useWagmiProviderContract = () => ({
   contextConfig: useContext(WagmiContext) as Config | undefined,
-  initializedConfig: useWalletController(),
+  runtimeConfig: useWalletRuntimeConfig(),
 });
 
 const ConfigObserver = ({
@@ -89,10 +88,10 @@ const ConfigObserver = ({
 }: {
   readonly onConfig: (config: Config) => void;
 }) => {
-  const controller = useWalletController();
+  const runtimeConfig = useWalletRuntimeConfig();
 
   useEffect(() => {
-    if (controller.data) onConfig(controller.data.wagmiConfig);
+    if (runtimeConfig.data) onConfig(runtimeConfig.data);
   });
 
   return null;
@@ -101,13 +100,12 @@ const ConfigObserver = ({
 const useRainbowKitWagmiContract = () => ({
   account: useAccount(),
   connect: useConnect(),
-  connectionProjection: useAtomValue(currentWalletConnectionResultAtom),
   connectors: useConnectors(),
-  connectorsProjection: useAtomValue(currentWalletConnectorsResultAtom),
   contextConfig: useContext(WagmiContext) as Config | undefined,
-  controller: useWalletController(),
+  runtimeConfig: useWalletRuntimeConfig(),
   disconnect: useDisconnect(),
   switchChain: useSwitchChain(),
+  walletProjection: useAtomValue(currentWalletStateResultAtom),
 });
 
 const solanaAccount = "0x0000000000000000000000000000000000000501" as Address;
@@ -296,7 +294,6 @@ describe("WagmiConfigProvider", () => {
             appRuntime.layer,
             Layer.succeed(WalletService, {
               changes: source.changes,
-              legacyController: Effect.succeed(null),
             } as never) as never,
           ],
         ]}
@@ -357,20 +354,20 @@ describe("WagmiConfigProvider", () => {
 
     const fallbackConfig = hook.result.current.contextConfig;
     expect(fallbackConfig).toBeDefined();
-    expect(hook.result.current.initializedConfig.isLoading).toBe(true);
+    expect(hook.result.current.runtimeConfig.isLoading).toBe(true);
 
     await expect
       .poll(
         () => ({
-          data: Boolean(hook.result.current.initializedConfig.data),
-          error: hook.result.current.initializedConfig.error,
+          data: Boolean(hook.result.current.runtimeConfig.data),
+          error: hook.result.current.runtimeConfig.error,
         }),
         { timeout: 10_000 }
       )
       .toEqual({ data: true, error: undefined });
 
     expect(hook.result.current.contextConfig).toBe(
-      hook.result.current.initializedConfig.data?.wagmiConfig
+      hook.result.current.runtimeConfig.data
     );
     expect(hook.result.current.contextConfig).not.toBe(fallbackConfig);
   });
@@ -442,33 +439,27 @@ describe("WagmiConfigProvider", () => {
       .poll(
         () => ({
           connected: hook.result.current.account.isConnected,
-          ready: Boolean(hook.result.current.controller.data),
+          ready: Boolean(hook.result.current.runtimeConfig.data),
         }),
         { timeout: 10_000 }
       )
       .toEqual({ connected: true, ready: true });
-    if (initialConfig !== hook.result.current.controller.data?.wagmiConfig) {
+    if (initialConfig !== hook.result.current.runtimeConfig.data) {
       expect(initialConfig?.state.connections.size).toBe(0);
     }
     expect(hook.result.current.contextConfig).toBe(
-      hook.result.current.controller.data?.wagmiConfig
+      hook.result.current.runtimeConfig.data
     );
     expect(
-      AsyncResult.getOrThrow(hook.result.current.connectionProjection)
+      AsyncResult.getOrThrow(hook.result.current.walletProjection)
     ).toMatchObject({ address: account, status: "connected" });
-    expect(
-      AsyncResult.getOrThrow(hook.result.current.connectorsProjection).map(
-        (connector) => connector.uid
-      )
-    ).toEqual(hook.result.current.connectors.map((connector) => connector.uid));
 
     await hook.result.current.disconnect.disconnectAsync();
     await expect
       .poll(() => ({
         account: hook.result.current.account.status,
-        projection: AsyncResult.getOrThrow(
-          hook.result.current.connectionProjection
-        ).status,
+        projection: AsyncResult.getOrThrow(hook.result.current.walletProjection)
+          .status,
       }))
       .toEqual({ account: "disconnected", projection: "disconnected" });
 
@@ -478,9 +469,8 @@ describe("WagmiConfigProvider", () => {
     await expect
       .poll(() => ({
         account: hook.result.current.account.status,
-        projection: AsyncResult.getOrThrow(
-          hook.result.current.connectionProjection
-        ).status,
+        projection: AsyncResult.getOrThrow(hook.result.current.walletProjection)
+          .status,
       }))
       .toEqual({ account: "connected", projection: "connected" });
 
@@ -490,9 +480,8 @@ describe("WagmiConfigProvider", () => {
     await expect
       .poll(() => ({
         account: hook.result.current.account.chainId,
-        projection: AsyncResult.getOrThrow(
-          hook.result.current.connectionProjection
-        ).chainId,
+        projection: AsyncResult.getOrThrow(hook.result.current.walletProjection)
+          .chain?.id,
       }))
       .toEqual({ account: optimism.id, projection: optimism.id });
   });

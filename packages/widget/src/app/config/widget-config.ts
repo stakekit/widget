@@ -5,7 +5,7 @@ import {
 } from "../../services/config/widget-config";
 import { widgetConfigAtom } from "./settings";
 
-export { normalizeWidgetApiConfig, normalizeWidgetBootstrapConfig };
+export { normalizeWidgetApiConfig };
 
 export const widgetBootstrapConfigAtom = Atom.make((get) => {
   const settings = get(widgetConfigAtom);

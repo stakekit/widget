@@ -33,11 +33,13 @@ import type {
 import { BorrowStepsPage } from "../../src/features/borrow/ui/steps";
 import { useBorrowExecution } from "../../src/features/borrow/ui/use-borrow-execution";
 import { currentWalletScopeAtom } from "../../src/features/wallet/runtime/selectors";
-import type { NormalizedWalletState } from "../../src/features/wallet/state/wallet";
-import { disconnectedNormalizedWalletState } from "../../src/features/wallet/state/wallet";
 import { BorrowApiService } from "../../src/services/api/borrow-api-service";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import {
+  disconnectedNormalizedWalletState,
+  type NormalizedWalletState,
+} from "../../src/services/wallet/domain/state";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import { TransactionWorkflowOperationsService } from "../../src/services/workflow/transaction-workflow-operations-service";
 import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
