@@ -45,7 +45,14 @@ const makeAppLayer = (
     Layer.provide(widgetConfigLayer)
   );
   const walletLayer = WalletService.layer.pipe(
-    Layer.provide(Layer.mergeAll(apiLayer, persistenceLayer, widgetConfigLayer))
+    Layer.provide(
+      Layer.mergeAll(
+        apiLayer,
+        persistenceLayer,
+        trackingLayer,
+        widgetConfigLayer
+      )
+    )
   );
   const transactionWorkflowLayer = TransactionWorkflowService.layer.pipe(
     Layer.provide(

@@ -22,7 +22,6 @@ import {
   type WalletInitializationKey,
   walletInitializationKeyAtom,
 } from "../wagmi/initialization";
-import { makeWalletLifecycleAtom } from "./lifecycle";
 
 const walletRuntimeSnapshotAtom = appRuntime
   .atom(
@@ -100,10 +99,6 @@ export const walletStateAtom = (_key: WalletInitializationKey) =>
 export const walletLedgerStateAtom = (_key: WalletInitializationKey) =>
   currentWalletLedgerStateAtom;
 
-const walletLifecycleAtom = Atom.family((key: WalletInitializationKey) =>
-  makeWalletLifecycleAtom(walletControllerAtom(key), walletStateAtom(key))
-);
-
 type WalletControllerResource = {
   readonly data: WalletController | undefined;
   readonly error: unknown;
@@ -114,8 +109,6 @@ type WalletControllerResource = {
 const walletRootAtom = Atom.make((get) => {
   const initializationKey = get(walletInitializationKeyAtom);
   const result = get(walletControllerAtom(initializationKey));
-
-  get(walletLifecycleAtom(initializationKey));
 
   return {
     data: result.pipe(AsyncResult.value, Option.getOrUndefined),

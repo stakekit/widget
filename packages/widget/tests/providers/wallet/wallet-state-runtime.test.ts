@@ -8,6 +8,7 @@ import type { Connector } from "wagmi";
 import { normalizeWidgetConfig } from "../../../src/app/config";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
+import { TrackingService } from "../../../src/services/tracking/tracking-service";
 import { makeDefaultConfig } from "../../../src/services/wallet/default-wagmi-config";
 import type {
   WalletCoreProjection,
@@ -44,6 +45,8 @@ const persistenceLayer = Layer.succeed(
     upsertStoredPublicKey: () => Effect.void,
   })
 );
+
+const trackingLayer = TrackingService.layer.pipe(Layer.provide(configLayer));
 
 const disconnectedConnection = {
   address: undefined,
@@ -101,7 +104,7 @@ const makeRuntimeLayer = ({
   } satisfies WalletRuntimeAdapters;
 
   return WalletService.layerWithRuntimeAdapters(adapters).pipe(
-    Layer.provide(Layer.mergeAll(configLayer, persistenceLayer))
+    Layer.provide(Layer.mergeAll(configLayer, persistenceLayer, trackingLayer))
   );
 };
 
@@ -193,7 +196,9 @@ describe("WalletService canonical Wallet State", () => {
       },
     } satisfies WalletRuntimeAdapters;
     const layer = WalletService.layerWithRuntimeAdapters(adapters).pipe(
-      Layer.provide(Layer.mergeAll(configLayer, persistenceLayer))
+      Layer.provide(
+        Layer.mergeAll(configLayer, persistenceLayer, trackingLayer)
+      )
     );
 
     const result = await Effect.runPromise(

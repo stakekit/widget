@@ -11,6 +11,7 @@ import { normalizeWidgetConfig } from "../../../src/app/config";
 import type { SKExternalProviders } from "../../../src/public-api/types";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
+import { TrackingService } from "../../../src/services/tracking/tracking-service";
 import { makeDefaultConfig } from "../../../src/services/wallet/default-wagmi-config";
 import {
   type WalletRuntimeAdapters,
@@ -29,6 +30,8 @@ const configLayer = WidgetConfigService.layer({
   current: Effect.succeed(settings),
   initial: settings,
 });
+
+const trackingLayer = TrackingService.layer.pipe(Layer.provide(configLayer));
 
 const readySnapshot = (wallet: WalletService["Service"]) =>
   wallet.changes.pipe(
@@ -74,7 +77,9 @@ describe("WalletService Wallet Runtime", () => {
       },
     } satisfies WalletRuntimeAdapters;
     const layer = WalletService.layerWithRuntimeAdapters(adapters).pipe(
-      Layer.provide(Layer.mergeAll(configLayer, WidgetPersistence.layer))
+      Layer.provide(
+        Layer.mergeAll(configLayer, trackingLayer, WidgetPersistence.layer)
+      )
     );
 
     const result = await Effect.runPromise(
@@ -186,8 +191,17 @@ describe("WalletService Wallet Runtime", () => {
       current: Effect.sync(() => currentSettings),
       initial: currentSettings,
     });
+    const mutableTrackingLayer = TrackingService.layer.pipe(
+      Layer.provide(mutableConfigLayer)
+    );
     const layer = WalletService.layerWithRuntimeAdapters(adapters).pipe(
-      Layer.provide(Layer.mergeAll(mutableConfigLayer, WidgetPersistence.layer))
+      Layer.provide(
+        Layer.mergeAll(
+          mutableConfigLayer,
+          mutableTrackingLayer,
+          WidgetPersistence.layer
+        )
+      )
     );
 
     const result = await Effect.runPromise(
@@ -304,7 +318,9 @@ describe("WalletService Wallet Runtime", () => {
       },
     } satisfies WalletRuntimeAdapters;
     const layer = WalletService.layerWithRuntimeAdapters(adapters).pipe(
-      Layer.provide(Layer.mergeAll(configLayer, WidgetPersistence.layer))
+      Layer.provide(
+        Layer.mergeAll(configLayer, trackingLayer, WidgetPersistence.layer)
+      )
     );
 
     const result = await Effect.runPromise(
@@ -387,7 +403,9 @@ describe("WalletService Wallet Runtime", () => {
       },
     } satisfies WalletRuntimeAdapters;
     const layer = WalletService.layerWithRuntimeAdapters(adapters).pipe(
-      Layer.provide(Layer.mergeAll(configLayer, WidgetPersistence.layer))
+      Layer.provide(
+        Layer.mergeAll(configLayer, trackingLayer, WidgetPersistence.layer)
+      )
     );
 
     const failed = await Effect.runPromise(
@@ -447,7 +465,9 @@ describe("WalletService Wallet Runtime", () => {
       },
     } satisfies WalletRuntimeAdapters;
     const layer = WalletService.layerWithRuntimeAdapters(adapters).pipe(
-      Layer.provide(Layer.mergeAll(configLayer, WidgetPersistence.layer))
+      Layer.provide(
+        Layer.mergeAll(configLayer, trackingLayer, WidgetPersistence.layer)
+      )
     );
 
     const failed = await Effect.runPromise(
@@ -501,7 +521,9 @@ describe("WalletService Wallet Runtime", () => {
       },
     } satisfies WalletRuntimeAdapters;
     const layer = WalletService.layerWithRuntimeAdapters(adapters).pipe(
-      Layer.provide(Layer.mergeAll(configLayer, WidgetPersistence.layer))
+      Layer.provide(
+        Layer.mergeAll(configLayer, trackingLayer, WidgetPersistence.layer)
+      )
     );
 
     const snapshots = await Effect.runPromise(
@@ -565,7 +587,9 @@ describe("WalletService Wallet Runtime", () => {
       },
     } satisfies WalletRuntimeAdapters;
     const layer = WalletService.layerWithRuntimeAdapters(adapters).pipe(
-      Layer.provide(Layer.mergeAll(configLayer, WidgetPersistence.layer))
+      Layer.provide(
+        Layer.mergeAll(configLayer, trackingLayer, WidgetPersistence.layer)
+      )
     );
     const mount = () =>
       Effect.runPromise(

@@ -240,9 +240,7 @@ describe("WagmiConfigProvider", () => {
     onConfig.mockClear();
 
     await app.rerender(renderHarness(false));
-    await vi.waitFor(() => expect(onConfig).toHaveBeenCalled());
-    expect(onConfig.mock.lastCall?.[0]).toBe(firstConfig);
-    onConfig.mockClear();
+    expect(onConfig).not.toHaveBeenCalled();
 
     await app.rerender(renderHarness(true));
     await vi.waitFor(() => expect(onConfig).toHaveBeenCalled());

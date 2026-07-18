@@ -36,6 +36,7 @@ import {
   WidgetConfigService,
 } from "../config/widget-config";
 import { WidgetPersistence } from "../persistence/widget-persistence";
+import { TrackingService } from "../tracking/tracking-service";
 import {
   isLedgerDappBrowserProvider,
   isMobileWalletEnvironment,
@@ -50,6 +51,7 @@ import {
 } from "./domain/runtime";
 import { disconnectedNormalizedWalletState } from "./domain/state";
 import { initializeWallet } from "./initialization";
+import { makeWalletLifecyclePolicy } from "./lifecycle";
 import type { WalletRoutingContext } from "./router";
 import { makeDefaultHeadlessSolanaRuntime } from "./solana-runtime";
 import { makeCompleteWalletStateStream } from "./state-projection";
@@ -333,10 +335,12 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
 ): Effect.fn.Return<
   WalletRuntime,
   never,
-  Scope.Scope | WidgetConfigService | WidgetPersistence
+  Scope.Scope | TrackingService | WidgetConfigService | WidgetPersistence
 > {
   const config = yield* WidgetConfigService;
   const persistence = yield* WidgetPersistence;
+  const tracking = yield* TrackingService;
+  const lifecycle = makeWalletLifecyclePolicy(tracking);
   const source = makeCurrentValueStream<WalletRuntimeSnapshot>(
     bootstrappingWalletRuntimeSnapshot
   );
@@ -629,6 +633,13 @@ export const makeWalletRuntime = Effect.fn("makeWalletRuntime")(function* (
         publishedProjection = event.projection;
         routing = event.routing;
         publishReady();
+        const lifecycleEffect = lifecycle.transition({
+          actions: event.routing.actions,
+          state: event.projection.state,
+        });
+        if (lifecycleEffect) {
+          yield* lifecycleEffect.pipe(Effect.forkScoped);
+        }
       }
     }
   });

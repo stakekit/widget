@@ -18,6 +18,7 @@ import {
   WidgetConfigService,
 } from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
+import { TrackingService } from "../../../src/services/tracking/tracking-service";
 import { makeDefaultConfig } from "../../../src/services/wallet/default-wagmi-config";
 import type {
   WalletCoreProjection,
@@ -185,8 +186,11 @@ const makeRuntimeHarness = ({
     current: Effect.sync(configSource.get),
     initial: configSource.get(),
   });
+  const trackingLayer = TrackingService.layer.pipe(Layer.provide(configLayer));
   const layer = WalletService.layerWithRuntimeAdapters(adapters).pipe(
-    Layer.provide(Layer.mergeAll(configLayer, WidgetPersistence.layer))
+    Layer.provide(
+      Layer.mergeAll(configLayer, trackingLayer, WidgetPersistence.layer)
+    )
   );
 
   return {
