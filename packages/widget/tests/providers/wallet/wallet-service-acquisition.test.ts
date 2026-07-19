@@ -325,6 +325,7 @@ describe("WalletService acquisition", () => {
 
   it("constructs fresh scoped services after remount", async () => {
     let builds = 0;
+    let initializations = 0;
     const layer = makeWalletLayer({
       buildConfig: () =>
         Effect.sync(() => {
@@ -335,7 +336,10 @@ describe("WalletService acquisition", () => {
             wagmiConfig: makeDefaultConfig(),
           });
         }),
-      initialize: () => Effect.void,
+      initialize: () =>
+        Effect.sync(() => {
+          initializations += 1;
+        }),
       observeCore: (controller) =>
         Effect.succeed(makeObservation(controller.wagmiConfig)),
     });
@@ -353,6 +357,7 @@ describe("WalletService acquisition", () => {
     const second = await mount();
 
     expect(builds).toBe(2);
+    expect(initializations).toBe(2);
     expect(second.wallet).not.toBe(first.wallet);
     expect(second.config).not.toBe(first.config);
   });

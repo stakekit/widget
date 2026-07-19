@@ -1,7 +1,7 @@
 import type { Connection as SolanaConnection } from "@solana/web3.js";
-import { Deferred, Effect, Fiber, Schema } from "effect";
+import { Effect, Schema } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import type { Connection, Connector, createConfig } from "wagmi";
+import type { Connector, createConfig } from "wagmi";
 import { AdditionalAddresses } from "../../src/domain/schema/address-models";
 import { InitParams } from "../../src/domain/schema/init-params";
 import { EnabledNetworksResponse } from "../../src/domain/schema/wallet-models";
@@ -182,62 +182,6 @@ describe("wallet Effect Atom boundaries", () => {
     expect(operations.reconnect).toHaveBeenCalledOnce();
     expect(operations.connect).toHaveBeenCalledOnce();
     expect(operations.switchChain).toHaveBeenCalledOnce();
-  });
-
-  it("does not start a queued reconnect after its initializer is interrupted", async () => {
-    const wagmiConfig = {
-      connectors: [],
-      state: { chainId: 1 },
-    } as unknown as ReturnType<typeof createConfig>;
-    const firstStarted = await Effect.runPromise(Deferred.make<void>());
-    const firstResult = await Effect.runPromise(
-      Deferred.make<ReadonlyArray<Connection>>()
-    );
-    const baseOperations = {
-      connect: vi.fn(() => Effect.succeed({ accounts: [], chainId: 1 })),
-      switchChain: vi.fn(() => Effect.succeed({ id: 1 })),
-    } satisfies Omit<InitialConnectionOperations, "reconnect">;
-    let reconnectCalls = 0;
-    const secondReconnect = vi.fn(() => Effect.succeed([]));
-    const initializeWallet = await makeInitializer({
-      ...baseOperations,
-      reconnect: () =>
-        Effect.gen(function* () {
-          reconnectCalls += 1;
-          if (reconnectCalls === 1) {
-            yield* Deferred.succeed(firstStarted, undefined);
-            return yield* Deferred.await(firstResult);
-          }
-          return yield* secondReconnect();
-        }),
-    });
-    const firstFiber = Effect.runFork(
-      initializeWallet({
-        hasExternalProvider: false,
-        isLedgerDappBrowser: false,
-        isMobileWallet: false,
-        queryParamsInitChainId: undefined,
-        wagmiConfig,
-      })
-    );
-    await Effect.runPromise(Deferred.await(firstStarted));
-    const secondFiber = Effect.runFork(
-      initializeWallet({
-        hasExternalProvider: false,
-        isLedgerDappBrowser: false,
-        isMobileWallet: false,
-        queryParamsInitChainId: undefined,
-        wagmiConfig,
-      })
-    );
-    await Promise.resolve();
-
-    await Effect.runPromise(Fiber.interrupt(secondFiber));
-    await Effect.runPromise(Deferred.succeed(firstResult, []));
-    await Effect.runPromise(Fiber.join(firstFiber));
-    await Promise.resolve();
-
-    expect(secondReconnect).not.toHaveBeenCalled();
   });
 
   it("continues after reconnect, fallback connect, and initial switch failures", async () => {

@@ -1,4 +1,4 @@
-import { Effect, Schema, Semaphore } from "effect";
+import { Effect, Schema } from "effect";
 import type { Connector, createConfig } from "wagmi";
 import { configMeta as safeConfigMeta } from "./connectors/safe/safe-connector-meta";
 import { WagmiOperations } from "./platform/wagmi-operations";
@@ -21,7 +21,6 @@ export type WalletInitialConnectionInput = {
 
 export const makeInitializeWallet = Effect.gen(function* () {
   const operations = yield* WagmiOperations;
-  const reconnectPermit = yield* Semaphore.make(1);
   const recover = Effect.fn("recover")(function* (
     error: WalletInitialConnectionError
   ) {
@@ -40,22 +39,17 @@ export const makeInitializeWallet = Effect.gen(function* () {
     queryParamsInitChainId,
     wagmiConfig,
   }: WalletInitialConnectionInput) {
-    const reconnectedCount = yield* reconnectPermit
-      .withPermit(
-        operations.reconnect(wagmiConfig).pipe(
-          Effect.mapError(
-            (error) =>
-              new WalletInitialConnectionError({
-                cause: error.cause,
-                operation: "reconnect",
-              })
-          )
-        )
-      )
-      .pipe(
-        Effect.catch((error) => recover(error).pipe(Effect.as([]))),
-        Effect.map((connections) => connections.length)
-      );
+    const reconnectedCount = yield* operations.reconnect(wagmiConfig).pipe(
+      Effect.mapError(
+        (error) =>
+          new WalletInitialConnectionError({
+            cause: error.cause,
+            operation: "reconnect",
+          })
+      ),
+      Effect.catch((error) => recover(error).pipe(Effect.as([]))),
+      Effect.map((connections) => connections.length)
+    );
 
     if (
       !hasExternalProvider &&
