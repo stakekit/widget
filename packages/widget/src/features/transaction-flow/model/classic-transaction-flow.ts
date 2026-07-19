@@ -256,10 +256,17 @@ export type ClassicTransactionFlowActionPreviewIntent =
   | "manage";
 
 type ClassicTransactionFlowActionPreviewInput = {
-  readonly command: ActionCommand | ManageActionCommand;
   readonly flowIdentity: ClassicTransactionFlowIdentity;
-  readonly intent: ClassicTransactionFlowActionPreviewIntent;
-};
+} & (
+  | {
+      readonly command: ActionCommand;
+      readonly intent: "enter" | "exit";
+    }
+  | {
+      readonly command: ManageActionCommand;
+      readonly intent: "manage";
+    }
+);
 
 export const getClassicTransactionFlowActionPreviewInput = (
   activeFlow: ClassicTransactionFlowState

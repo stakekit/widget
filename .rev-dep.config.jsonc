@@ -20,6 +20,7 @@
       "devEntryPoints": [
         "scripts/generate-effect-openapi.ts",
         "scripts/check-classic-flow-architecture.ts",
+        "src/features/transaction-flow/state/classic-flow-facade.ts",
         "tests/utils/setup.browser.ts",
         "tests/utils/setup.dom.ts",
         "tests/**/*.test.ts",
@@ -126,6 +127,7 @@
             "vite/*.ts",
             "scripts/generate-effect-openapi.ts",
             "scripts/check-classic-flow-architecture.ts",
+            "src/features/transaction-flow/state/classic-flow-facade.ts",
             "tests/**/*.ts",
             "tests/**/*.tsx"
           ],
