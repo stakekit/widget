@@ -1,0 +1,10 @@
+id: classic-flow-view-no-react-query
+valid:
+  - 'import { useAtomValue } from "@effect/atom-react"'
+  - 'const state = useAtomValue(viewAtom)'
+invalid:
+  - 'import { useQuery } from "@tanstack/react-query"'
+  - 'import * as ReactQuery from "@tanstack/react-query"'
+  - 'import { useQuery } from "@tanstack/react-query/build/modern"'
+  - 'const ReactQuery = require("@tanstack/react-query")'
+  - 'const ReactQuery = import("@tanstack/react-query")'

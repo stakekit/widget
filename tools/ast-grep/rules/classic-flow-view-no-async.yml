@@ -1,0 +1,39 @@
+id: classic-flow-view-no-async
+language: Tsx
+severity: error
+message: Classic Flow views must dispatch synchronous intent instead of owning asynchronous work.
+files:
+  - "**/src/features/transaction-flow/react/**/*.ts"
+  - "**/src/features/transaction-flow/react/**/*.tsx"
+  - "**/src/features/transaction-flow/ui/**/*.ts"
+  - "**/src/features/transaction-flow/ui/**/*.tsx"
+rule:
+  any:
+    - kind: await_expression
+    - kind: arrow_function
+      regex: ^async\b
+    - kind: function_declaration
+      regex: ^async\b
+    - kind: function_expression
+      regex: ^async\b
+    - kind: method_definition
+      regex: ^async\b
+    - pattern: $PROMISE.then($$$ARGS)
+    - pattern: $PROMISE.catch($$$ARGS)
+    - pattern: $PROMISE.finally($$$ARGS)
+    - pattern: $PROMISE?.then?.($$$ARGS)
+    - pattern: $PROMISE?.catch?.($$$ARGS)
+    - pattern: $PROMISE?.finally?.($$$ARGS)
+    - pattern: new Promise($$$ARGS)
+    - pattern: new globalThis.Promise($$$ARGS)
+    - pattern: new window.Promise($$$ARGS)
+    - pattern: Promise.all($$$ARGS)
+    - pattern: Promise.allSettled($$$ARGS)
+    - pattern: Promise.any($$$ARGS)
+    - pattern: Promise.race($$$ARGS)
+    - pattern: Promise.resolve($$$ARGS)
+    - pattern: Promise.reject($$$ARGS)
+    - pattern: Promise.withResolvers($$$ARGS)
+    - pattern: globalThis.Promise.$METHOD($$$ARGS)
+    - pattern: window.Promise.$METHOD($$$ARGS)
+    - pattern: void $CALL

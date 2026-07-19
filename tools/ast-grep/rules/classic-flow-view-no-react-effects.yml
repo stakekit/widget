@@ -1,0 +1,38 @@
+id: classic-flow-view-no-react-effects
+language: Tsx
+severity: error
+message: Classic Flow views render Atom state and dispatch intent; isolate React lifecycle hooks in a reviewed boundary.
+files:
+  - "**/src/features/transaction-flow/react/**/*.ts"
+  - "**/src/features/transaction-flow/react/**/*.tsx"
+  - "**/src/features/transaction-flow/ui/**/*.ts"
+  - "**/src/features/transaction-flow/ui/**/*.tsx"
+ignores:
+  - "**/src/features/transaction-flow/ui/steps/hooks/use-steps.hook.ts"
+  - "**/src/features/transaction-flow/ui/steps/pages/tx-state.tsx"
+rule:
+  any:
+    - all:
+        - kind: import_specifier
+        - regex: ^(?:useEffect|useLayoutEffect|useInsertionEffect)(?:\s+as\s+\w+)?$
+        - inside:
+            pattern: import { $$$IMPORTS } from "react"
+            stopBy: end
+    - pattern: $REACT.useEffect($$$ARGS)
+    - pattern: $REACT.useLayoutEffect($$$ARGS)
+    - pattern: $REACT.useInsertionEffect($$$ARGS)
+    - pattern: $REACT["useEffect"]($$$ARGS)
+    - pattern: $REACT["useLayoutEffect"]($$$ARGS)
+    - pattern: $REACT["useInsertionEffect"]($$$ARGS)
+    - pattern: $REACT.useEffect
+    - pattern: $REACT.useLayoutEffect
+    - pattern: $REACT.useInsertionEffect
+    - pattern: $REACT["useEffect"]
+    - pattern: $REACT["useLayoutEffect"]
+    - pattern: $REACT["useInsertionEffect"]
+    - pattern: 'const { useEffect: $HOOK } = $REACT'
+    - pattern: 'const { useLayoutEffect: $HOOK } = $REACT'
+    - pattern: 'const { useInsertionEffect: $HOOK } = $REACT'
+    - pattern: const { useEffect } = $REACT
+    - pattern: const { useLayoutEffect } = $REACT
+    - pattern: const { useInsertionEffect } = $REACT

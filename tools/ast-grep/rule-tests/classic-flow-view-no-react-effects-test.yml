@@ -1,0 +1,15 @@
+id: classic-flow-view-no-react-effects
+valid:
+  - 'import { useState } from "react"'
+  - 'const [open, setOpen] = useState(false)'
+  - 'const onClick = () => dispatch({ _tag: "Continue" })'
+invalid:
+  - 'import { useEffect } from "react"'
+  - 'import { useLayoutEffect as useLifecycle } from "react"'
+  - 'React.useEffect(() => dispatch({ _tag: "Continue" }), [])'
+  - 'React.useLayoutEffect(() => setOpen(false), [])'
+  - 'import * as R from "react"; R.useEffect(() => setOpen(false), [])'
+  - 'import ReactRuntime from "react"; ReactRuntime.useLayoutEffect(() => setOpen(false), [])'
+  - 'import * as R from "react"; R["useEffect"](() => setOpen(false), [])'
+  - 'import * as R from "react"; const lifecycle = R.useEffect; lifecycle(() => undefined, [])'
+  - 'import * as R from "react"; const { useEffect: lifecycle } = R; lifecycle(() => undefined, [])'

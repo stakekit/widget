@@ -1,0 +1,18 @@
+id: classic-flow-logic-no-react
+language: Tsx
+severity: error
+message: Classic Flow application modules must not depend on React or React-owned runtimes.
+files:
+  - "**/src/features/transaction-flow/**/*.ts"
+  - "**/src/features/transaction-flow/**/*.tsx"
+ignores:
+  - "**/src/features/transaction-flow/react/**"
+  - "**/src/features/transaction-flow/ui/**"
+rule:
+  any:
+    - kind: import_statement
+      regex: '(?:from\s+)?["''](?:react|react-dom|@effect/atom-react|@tanstack/react-query)(?:/[^"'']+)?["'']'
+    - kind: call_expression
+      regex: '^(?:import|require)\(["''](?:react|react-dom|@effect/atom-react|@tanstack/react-query)(?:/[^"'']+)?["'']\)'
+    - kind: jsx_element
+    - kind: jsx_self_closing_element

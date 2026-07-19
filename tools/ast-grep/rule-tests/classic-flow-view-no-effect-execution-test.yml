@@ -1,0 +1,18 @@
+id: classic-flow-view-no-effect-execution
+valid:
+  - 'const dispatch = useAtomSet(continueAtom)'
+  - 'const onClick = () => dispatch({ flowId })'
+invalid:
+  - 'Effect.runPromise(program)'
+  - 'Effect.runFork(program)'
+  - 'Effect.runSync(program)'
+  - 'Runtime.runPromise(runtime)(program)'
+  - 'import * as Fx from "effect"; Fx.runPromise(program)'
+  - 'import { runPromise as execute } from "effect/Effect"; execute(program)'
+  - 'import { runPromise as execute } from "effect"; execute(program)'
+  - 'import { Effect as Fx } from "effect"; Fx.runFork(program)'
+  - 'runtime.runPromise(program)'
+  - 'runtime["runPromise"](program)'
+  - 'runPromise(program)'
+  - 'const execute = runtime.runPromise; execute(program)'
+  - 'const { runPromise: execute } = runtime; execute(program)'

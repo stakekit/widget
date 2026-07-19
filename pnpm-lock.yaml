@@ -1035,6 +1035,9 @@ importers:
       tsx:
         specifier: 'catalog:'
         version: 4.23.0
+      typescript:
+        specifier: 'catalog:'
+        version: '@typescript/typescript6@6.0.2'
       unplugin-macros:
         specifier: 'catalog:'
         version: 0.20.2(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(less@4.2.2)(rolldown@1.1.5)(sass@1.85.0)(terser@5.48.0)(tsx@4.23.0)(yaml@2.9.0)
