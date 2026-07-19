@@ -1,4 +1,5 @@
 import { useTrackPage } from "../../../../tracking/react/use-track-page";
+import { ClassicFlowStepsNavigation } from "../../../react/classic-flow-navigation";
 import { usePendingActionReview } from "../hooks/use-pending-review.hook";
 import { ReviewPage } from "./common-page/common.page";
 
@@ -19,26 +20,29 @@ export const PendingReviewPage = () => {
   useTrackPage("pendingActionReview");
 
   return (
-    <ReviewPage
-      rewardTokenDetailsProps={rewardTokenDetailsProps}
-      title={title}
-      fee={fee}
-      depositFee={null}
-      managementFee={null}
-      performanceFee={null}
-      feeConfigLoading={false}
-      info={`${amount} ${token.symbol}`}
-      metadata={{
-        logoURI: integrationData.metadata.logoURI,
-        name: integrationData.metadata.name,
-        provider: integrationData.provider,
-      }}
-      token={token}
-      isGasCheckError={isGasCheckWarning}
-      loading={gasCheckLoading}
-      commissionFee={null}
-      cta={cta}
-      {...metaInfo}
-    />
+    <>
+      <ClassicFlowStepsNavigation />
+      <ReviewPage
+        rewardTokenDetailsProps={rewardTokenDetailsProps}
+        title={title}
+        fee={fee}
+        depositFee={null}
+        managementFee={null}
+        performanceFee={null}
+        feeConfigLoading={false}
+        info={`${amount} ${token.symbol}`}
+        metadata={{
+          logoURI: integrationData.metadata.logoURI,
+          name: integrationData.metadata.name,
+          provider: integrationData.provider,
+        }}
+        token={token}
+        isGasCheckError={isGasCheckWarning}
+        loading={gasCheckLoading}
+        commissionFee={null}
+        cta={cta}
+        {...metaInfo}
+      />
+    </>
   );
 };

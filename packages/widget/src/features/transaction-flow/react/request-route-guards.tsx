@@ -4,82 +4,91 @@ import { Navigate, Outlet } from "react-router";
 import type { ClassicTransactionWorkflowKey } from "../../../services/workflow/transaction-workflow-model";
 import { makeRequiredAtomRoute } from "../../../shared/react/required-atom-route";
 import { useWalletScopeRoute } from "../../wallet/react/wallet-scope-route";
-import { makeWalletScopedAtomRoute } from "../../wallet/react/wallet-scoped-atom-route";
 import {
   type ClassicTransactionFlow,
   isClassicTransactionFlowWalletScopeValid,
 } from "../model/classic-transaction-flow";
 import { classicTransactionFlowFacade } from "../state/classic-flow-facade";
-import {
-  exitStakeRequestAtom,
-  exitTransactionWorkflowLifecycleAtom,
-} from "../state/exit-request";
-import {
-  pendingActionRequestAtom,
-  pendingTransactionWorkflowLifecycleAtom,
-} from "../state/pending-action-request";
 
-const enterFlowRoute = makeRequiredAtomRoute(
+const makeClassicFlowRoute = <Flow extends ClassicTransactionFlow>(
+  flowAtom: Atom.Atom<Flow | null>,
+  name: string
+) => {
+  const requiredRoute = makeRequiredAtomRoute(flowAtom, name);
+
+  const Lifecycle = ({ flow }: { readonly flow: Flow }) => {
+    useAtomMount(classicTransactionFlowFacade.lifecycleAtom(flow.identity));
+
+    return (
+      <requiredRoute.Provider value={flow}>
+        <Outlet />
+      </requiredRoute.Provider>
+    );
+  };
+
+  const RouteGuard = () => {
+    const flow = useAtomValue(flowAtom);
+    const walletScope = useWalletScopeRoute();
+
+    if (!flow || !isClassicTransactionFlowWalletScopeValid(flow, walletScope)) {
+      return <Navigate to="/" replace />;
+    }
+
+    return <Lifecycle flow={flow} />;
+  };
+
+  Lifecycle.displayName = `${name}Lifecycle`;
+  RouteGuard.displayName = `${name}RouteGuard`;
+
+  return { RouteGuard, useRequiredValue: requiredRoute.useRequiredValue };
+};
+
+const enterFlowRoute = makeClassicFlowRoute(
   classicTransactionFlowFacade.enterFlowAtom,
   "EnterClassicTransactionFlow"
 );
-const exitStakeRequestRoute = makeWalletScopedAtomRoute(
-  exitStakeRequestAtom,
-  exitTransactionWorkflowLifecycleAtom,
-  "ExitStakeRequest"
+const exitFlowRoute = makeClassicFlowRoute(
+  classicTransactionFlowFacade.exitFlowAtom,
+  "ExitClassicTransactionFlow"
 );
-const pendingActionRequestRoute = makeWalletScopedAtomRoute(
-  pendingActionRequestAtom,
-  pendingTransactionWorkflowLifecycleAtom,
-  "PendingActionRequest"
+const manageFlowRoute = makeClassicFlowRoute(
+  classicTransactionFlowFacade.manageFlowAtom,
+  "ManageClassicTransactionFlow"
 );
 
-type EnterClassicTransactionFlow = Extract<
-  ClassicTransactionFlow,
-  { readonly _tag: "Enter" }
->;
-
-const EnterFlowLifecycle = ({
-  flow,
-}: {
-  readonly flow: EnterClassicTransactionFlow;
-}) => {
-  useAtomMount(classicTransactionFlowFacade.lifecycleAtom(flow.identity));
-
-  return (
-    <enterFlowRoute.Provider value={flow}>
-      <Outlet />
-    </enterFlowRoute.Provider>
-  );
-};
-
-export const EnterStakeRequestRouteGuard = () => {
-  const flow = useAtomValue(classicTransactionFlowFacade.enterFlowAtom);
-  const walletScope = useWalletScopeRoute();
-
-  if (!flow || !isClassicTransactionFlowWalletScopeValid(flow, walletScope)) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <EnterFlowLifecycle flow={flow} />;
-};
-export const ExitStakeRequestRouteGuard = exitStakeRequestRoute.RouteGuard;
-export const PendingActionRequestRouteGuard =
-  pendingActionRequestRoute.RouteGuard;
+export const EnterStakeRequestRouteGuard = enterFlowRoute.RouteGuard;
+export const ExitStakeRequestRouteGuard = exitFlowRoute.RouteGuard;
+export const PendingActionRequestRouteGuard = manageFlowRoute.RouteGuard;
 
 export const useRequiredEnterClassicTransactionFlow =
   enterFlowRoute.useRequiredValue;
-export const useRequiredExitStakeRequest =
-  exitStakeRequestRoute.useRequiredValue;
-export const useRequiredPendingActionRequest =
-  pendingActionRequestRoute.useRequiredValue;
+export const useRequiredExitClassicTransactionFlow =
+  exitFlowRoute.useRequiredValue;
+export const useRequiredManageClassicTransactionFlow =
+  manageFlowRoute.useRequiredValue;
 
-export const enterClassicFlowWorkflowKeyAtom: Atom.Atom<ClassicTransactionWorkflowKey | null> =
+const classicFlowWorkflowKeyAtom = <Flow extends ClassicTransactionFlow>(
+  flowAtom: Atom.Atom<Flow | null>,
+  label: string
+): Atom.Atom<ClassicTransactionWorkflowKey | null> =>
   Atom.make((get) => {
-    const flow = get(classicTransactionFlowFacade.enterFlowAtom);
+    const flow = get(flowAtom);
     const handoff = get(classicTransactionFlowFacade.workflowHandoffAtom);
 
     return flow && handoff?.flowIdentity === flow.identity
       ? handoff.workflowKey
       : null;
-  }).pipe(Atom.withLabel("enterClassicFlowWorkflowKeyAtom"));
+  }).pipe(Atom.withLabel(label));
+
+export const enterClassicFlowWorkflowKeyAtom = classicFlowWorkflowKeyAtom(
+  classicTransactionFlowFacade.enterFlowAtom,
+  "enterClassicFlowWorkflowKeyAtom"
+);
+export const exitClassicFlowWorkflowKeyAtom = classicFlowWorkflowKeyAtom(
+  classicTransactionFlowFacade.exitFlowAtom,
+  "exitClassicFlowWorkflowKeyAtom"
+);
+export const manageClassicFlowWorkflowKeyAtom = classicFlowWorkflowKeyAtom(
+  classicTransactionFlowFacade.manageFlowAtom,
+  "manageClassicFlowWorkflowKeyAtom"
+);

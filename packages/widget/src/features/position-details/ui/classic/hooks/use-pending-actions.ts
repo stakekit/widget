@@ -25,7 +25,7 @@ import {
 } from "../../../../../shared/react/navigation/use-unstake-or-pending-action-params";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import { useTrackEvent } from "../../../../tracking/react/use-track-event";
-import { useSetPendingActionRequest } from "../../../../transaction-flow/react/use-transaction-flow";
+import { useStartClassicTransactionFlow } from "../../../../transaction-flow/react/use-transaction-flow";
 import { useSKWallet } from "../../../../wallet/react/use-wallet";
 import type {
   PositionDetailsWorkflowAction as Actions,
@@ -148,7 +148,7 @@ export const usePendingActions = ({
   const { additionalAddresses, address } = useSKWallet();
   const pendingActionSelectValidatorMatch =
     usePendingActionSelectValidatorMatch();
-  const setPendingActionRequest = useSetPendingActionRequest();
+  const startClassicTransactionFlow = useStartClassicTransactionFlow();
 
   const continuePendingActionFlow = ({
     integrationData: selectedYield,
@@ -172,14 +172,14 @@ export const usePendingActions = ({
     });
     if (Result.isSuccess(prepared)) {
       const value = prepared.success;
-      setPendingActionRequest({
-        actionDto: null,
+      startClassicTransactionFlow({
+        _tag: "Manage",
         gasFeeToken: value.gasFeeToken,
-        integrationData: value.integrationData,
+        integration: value.integrationData,
         interactedToken: yieldBalance.token,
         pendingActionType: pendingActionDto.type,
         providersDetails,
-        requestDto: value.requestDto,
+        request: value.requestDto,
         walletScope: currentWalletScope,
       });
 

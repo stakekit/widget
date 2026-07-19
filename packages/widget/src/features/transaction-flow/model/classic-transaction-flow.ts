@@ -250,7 +250,7 @@ export const returnClassicTransactionFlowToReview = (
   };
 };
 
-export type ClassicTransactionFlowActionPreviewIntent =
+type ClassicTransactionFlowActionPreviewIntent =
   | "enter"
   | "exit"
   | "manage";

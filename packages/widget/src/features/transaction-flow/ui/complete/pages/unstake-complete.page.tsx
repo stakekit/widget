@@ -9,26 +9,26 @@ import {
   positionBalancesAtom,
 } from "../../../../portfolio/resources/positions";
 import { useTrackPage } from "../../../../tracking/react/use-track-page";
-import { useRequiredExitStakeRequest } from "../../../react/request-route-guards";
+import { useRequiredExitClassicTransactionFlow } from "../../../react/request-route-guards";
 import { CompletePage } from "./common.page";
 
 export const UnstakeCompletePage = () => {
   const { plain } = useUnstakeOrPendingActionParams();
-  const exitRequest = useRequiredExitStakeRequest();
+  const exitFlow = useRequiredExitClassicTransactionFlow();
   const positionBalances = AsyncResult.getOrElse(
     useAtomValue(
       positionBalancesAtom(
         new PositionBalancesKey({
           balanceId: plain.balanceId ?? null,
-          scope: exitRequest.walletScope,
+          scope: exitFlow.walletScope,
           yieldId: plain.integrationId ?? null,
         })
       )
     ),
     () => null
   );
-  const integrationData = exitRequest.integrationData;
-  const token = exitRequest.unstakeToken;
+  const integrationData = exitFlow.integration;
+  const token = exitFlow.unstakeToken;
 
   useTrackPage("unstakeComplete");
 
@@ -43,9 +43,7 @@ export const UnstakeCompletePage = () => {
 
   return (
     <CompletePage
-      amount={defaultFormattedNumber(
-        exitRequest.requestDto.arguments?.amount ?? 0
-      )}
+      amount={defaultFormattedNumber(exitFlow.request.arguments?.amount ?? 0)}
       integrationId={integrationData.id}
       metadata={{
         logoURI: integrationData.metadata.logoURI,

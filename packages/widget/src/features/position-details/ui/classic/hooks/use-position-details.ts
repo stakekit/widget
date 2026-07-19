@@ -23,7 +23,7 @@ import { useProvidersDetails } from "../../../../earn/react/use-provider-details
 import { useYieldKycGate } from "../../../../earn/react/use-yield-kyc-gate";
 import { useYieldValidators } from "../../../../earn/react/use-yield-validators";
 import { useTrackEvent } from "../../../../tracking/react/use-track-event";
-import { useSetExitStakeRequest } from "../../../../transaction-flow/react/use-transaction-flow";
+import { useStartClassicTransactionFlow } from "../../../../transaction-flow/react/use-transaction-flow";
 import { useUnstakeOrPendingAction } from "../state";
 import { usePendingActions } from "./use-pending-actions";
 import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
@@ -57,7 +57,7 @@ export const usePositionDetails = () => {
   const { plain } = useUnstakeOrPendingActionParams();
 
   const stakeExitRequestDto = useStakeExitRequestDto(positionWorkflow);
-  const setExitStakeRequest = useSetExitStakeRequest();
+  const startClassicTransactionFlow = useStartClassicTransactionFlow();
   const yieldKycGate = useYieldKycGate({
     yieldDto: integrationData,
   });
@@ -108,12 +108,12 @@ export const usePositionDetails = () => {
     if (kycGateIsBlocking) return;
 
     if (stakeExitRequestDto && integrationData && unstakeToken) {
-      setExitStakeRequest({
-        actionDto: null,
+      startClassicTransactionFlow({
+        _tag: "Exit",
         gasFeeToken: stakeExitRequestDto.gasFeeToken,
-        integrationData,
+        integration: integrationData,
         providersDetails: providersDetails ?? [],
-        requestDto: stakeExitRequestDto.dto,
+        request: stakeExitRequestDto.dto,
         unstakeAmount,
         unstakeToken,
         walletScope: currentWalletScope,

@@ -1,7 +1,8 @@
-import { Data, Duration, Effect } from "effect";
+import { Data, Duration, Effect, Result } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { classicFlowRuntime } from "../../../app/runtime/classic-flow-runtime";
+import { getValidStakeSessionTx } from "../../../domain";
 import type { YieldAction } from "../../../domain/schema/action-models";
 import type { ActionPreviewRequest } from "../../../services/api/yield-api-service";
 import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
@@ -186,10 +187,36 @@ export const makeClassicTransactionFlowFacade = (
             onSuccess: (action) =>
               Effect.sync(() => {
                 const latest = context.registry.get(stateAtom);
+                const executableAction =
+                  latest.activeFlow?._tag === "Exit"
+                    ? getValidStakeSessionTx(action)
+                    : Result.succeed(action);
+
+                if (Result.isFailure(executableAction)) {
+                  const error = new ClassicFlowInvariantError({
+                    flowIdentity,
+                    message:
+                      "Classic Transaction Flow Exit preview contains an invalid transaction.",
+                  });
+                  context.set(stateAtom, {
+                    ...latest,
+                    preparation: {
+                      _tag: "Failure",
+                      error,
+                      flowIdentity,
+                      retryable: false,
+                    },
+                  });
+                  return {
+                    _tag: "InvariantFailure" as const,
+                    error,
+                    flowIdentity,
+                  };
+                }
                 const attached = attachClassicTransactionFlowAction(
                   latest.activeFlow,
                   flowIdentity,
-                  action
+                  executableAction.success
                 );
 
                 if (attached._tag === "StaleFlow") {

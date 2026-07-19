@@ -1,10 +1,10 @@
-import { useAtomValue } from "@effect/atom-react";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
+import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import { getTransactionGasEstimate } from "../../../../../domain/types/action";
 import type { YieldPendingActionType } from "../../../../../domain/types/pending-action";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
@@ -13,51 +13,44 @@ import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import { getRewardTokenSymbols } from "../../../../earn/react/use-reward-token-details/get-reward-token-symbols";
 import type { RewardTokenDetails } from "../../../../earn/ui/components/reward-token-details";
 import type { PageCta } from "../../../../widget-shell/page-cta";
-import { useRequiredPendingActionRequest } from "../../../react/request-route-guards";
-import { useActionPreview } from "../../../react/use-action-preview";
-import { useGasWarningCheck } from "../../../react/use-gas-warning-check";
-import { useSetPendingActionRequest } from "../../../react/use-transaction-flow";
-import { currentReviewPricesAtom } from "../../../resources/review-prices";
+import { useRequiredManageClassicTransactionFlow } from "../../../react/request-route-guards";
+import { classicTransactionFlowFacade } from "../../../state/classic-flow-facade";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 
 export const usePendingActionReview = () => {
-  const setPendingActionRequest = useSetPendingActionRequest();
-
-  const pendingRequest = useRequiredPendingActionRequest();
-
-  const actionPreviewQuery = useActionPreview({
-    enabled: !!pendingRequest,
-    intent: "manage",
-  });
+  const manageFlow = useRequiredManageClassicTransactionFlow();
+  const continueFlow = useAtomSet(classicTransactionFlowFacade.continueAtom);
+  const retryFlow = useAtomSet(classicTransactionFlowFacade.retryAtom);
+  const preparation = useAtomValue(
+    classicTransactionFlowFacade.preparationAtom
+  );
+  const actionPreview = useAtomValue(
+    classicTransactionFlowFacade.actionPreviewAtom
+  );
+  const action = actionPreview.pipe(AsyncResult.value, Option.getOrUndefined);
 
   const pendingTxGas = useMemo(() => {
-    const total = actionPreviewQuery.data?.transactions.reduce(
-      (acc, transaction) => {
-        const decoded = getTransactionGasEstimate(transaction);
-        return acc.plus(decoded?.amount ?? 0);
-      },
-      new BigNumber(0)
-    );
+    const total = action?.transactions.reduce((acc, transaction) => {
+      const decoded = getTransactionGasEstimate(transaction);
+      return acc.plus(decoded?.amount ?? 0);
+    }, new BigNumber(0));
     return total && !total.isZero() ? total : null;
-  }, [actionPreviewQuery.data]);
+  }, [action]);
 
   const amount = useMemo(
-    () => new BigNumber(pendingRequest.requestDto.arguments?.amount ?? 0),
-    [pendingRequest.requestDto.arguments?.amount]
+    () => new BigNumber(manageFlow.request.arguments?.amount ?? 0),
+    [manageFlow.request.arguments?.amount]
   );
 
-  const interactedToken = pendingRequest.interactedToken;
-  const integrationData = pendingRequest.integrationData;
+  const interactedToken = manageFlow.interactedToken;
+  const integrationData = manageFlow.integration;
 
   const prices = AsyncResult.getOrElse(
-    useAtomValue(currentReviewPricesAtom("manage")),
+    useAtomValue(classicTransactionFlowFacade.reviewPricesAtom),
     () => null
   );
 
-  const gasWarningCheck = useGasWarningCheck({
-    enabled: true,
-    intent: "manage",
-  });
+  const gasWarning = useAtomValue(classicTransactionFlowFacade.gasWarningAtom);
 
   const { t } = useTranslation();
 
@@ -65,13 +58,11 @@ export const usePendingActionReview = () => {
     () =>
       t(
         `position_details.pending_action_button.${
-          pendingRequest.requestDto.action.toLowerCase() as Lowercase<YieldPendingActionType>
+          manageFlow.request.action.toLowerCase() as Lowercase<YieldPendingActionType>
         }` as const
       ),
-    [pendingRequest.requestDto.action, t]
+    [manageFlow.request.action, t]
   );
-
-  const navigate = useNavigate();
 
   const fee = useMemo(
     () =>
@@ -84,16 +75,14 @@ export const usePendingActionReview = () => {
   );
 
   const onClick = () => {
-    const action = actionPreviewQuery.data;
-    if (!action) {
-      actionPreviewQuery.refetch();
+    if (
+      preparation._tag === "Failure" &&
+      preparation.flowIdentity === manageFlow.identity
+    ) {
+      retryFlow(manageFlow.identity);
       return;
     }
-
-    setPendingActionRequest((request) =>
-      request ? { ...request, actionDto: action } : null
-    );
-    navigate("../steps", { relative: "path" });
+    continueFlow(manageFlow.identity);
   };
 
   const rewardTokenDetailsProps = useMemo(
@@ -111,12 +100,12 @@ export const usePendingActionReview = () => {
 
             return {
               type: "pendingAction",
-              pendingAction: pendingRequest.requestDto.action,
+              pendingAction: manageFlow.request.action,
               rewardToken,
             } satisfies ComponentProps<typeof RewardTokenDetails>;
           })()
         : null,
-    [integrationData, pendingRequest.requestDto.action]
+    [integrationData, manageFlow.request.action]
   );
 
   const onClickRef = useSavedRef(onClick);
@@ -126,9 +115,12 @@ export const usePendingActionReview = () => {
       label: t("shared.confirm"),
       onClick: () => onClickRef.current(),
       disabled: false,
-      isLoading: actionPreviewQuery.isLoading || actionPreviewQuery.isFetching,
+      isLoading:
+        AsyncResult.isInitial(actionPreview) ||
+        actionPreview.waiting ||
+        preparation._tag === "Loading",
     }),
-    [actionPreviewQuery.isFetching, actionPreviewQuery.isLoading, onClickRef, t]
+    [actionPreview, onClickRef, preparation._tag, t]
   );
 
   const metaInfo: MetaInfoProps = useMemo(() => ({ showMetaInfo: false }), []);
@@ -146,11 +138,15 @@ export const usePendingActionReview = () => {
     rewardTokenDetailsProps,
     token: interactedToken,
     metaInfo,
-    isGasCheckWarning: !!gasWarningCheck.data,
+    isGasCheckWarning: !!gasWarning.pipe(
+      AsyncResult.value,
+      Option.getOrUndefined
+    ),
     gasCheckLoading:
-      actionPreviewQuery.isLoading ||
-      actionPreviewQuery.isFetching ||
-      gasWarningCheck.isLoading,
+      AsyncResult.isInitial(actionPreview) ||
+      actionPreview.waiting ||
+      AsyncResult.isInitial(gasWarning) ||
+      gasWarning.waiting,
     cta,
   };
 };

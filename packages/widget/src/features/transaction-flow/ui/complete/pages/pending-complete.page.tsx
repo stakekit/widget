@@ -10,26 +10,26 @@ import {
   positionBalancesAtom,
 } from "../../../../portfolio/resources/positions";
 import { useTrackPage } from "../../../../tracking/react/use-track-page";
-import { useRequiredPendingActionRequest } from "../../../react/request-route-guards";
+import { useRequiredManageClassicTransactionFlow } from "../../../react/request-route-guards";
 import { CompletePage } from "./common.page";
 
 export const PendingCompletePage = () => {
   const { plain } = useUnstakeOrPendingActionParams();
-  const pendingRequest = useRequiredPendingActionRequest();
+  const manageFlow = useRequiredManageClassicTransactionFlow();
   const positionBalances = AsyncResult.getOrElse(
     useAtomValue(
       positionBalancesAtom(
         new PositionBalancesKey({
           balanceId: plain.balanceId ?? null,
-          scope: pendingRequest.walletScope,
+          scope: manageFlow.walletScope,
           yieldId: plain.integrationId ?? null,
         })
       )
     ),
     () => null
   );
-  const integrationData = pendingRequest.integrationData;
-  const token = pendingRequest.interactedToken;
+  const integrationData = manageFlow.integration;
+  const token = manageFlow.interactedToken;
 
   useTrackPage("pendingActionCompelete");
 
@@ -41,7 +41,7 @@ export const PendingCompletePage = () => {
         : null,
     selectedProviderYieldId: null,
   });
-  const rawAmount = pendingRequest.requestDto.arguments?.amount;
+  const rawAmount = manageFlow.request.arguments?.amount;
 
   return (
     <CompletePage
@@ -53,7 +53,7 @@ export const PendingCompletePage = () => {
         provider: integrationData.provider,
       }}
       network={token.symbol}
-      pendingActionType={pendingRequest.pendingActionType}
+      pendingActionType={manageFlow.pendingActionType}
       providersDetails={providerDetails}
       token={token}
       yieldType={useYieldType(integrationData)?.type ?? null}

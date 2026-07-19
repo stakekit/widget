@@ -5,14 +5,14 @@ import { getProvidersDetails } from "../../../features/earn/react/use-provider-d
 import { usePendingActionDeepLink } from "../../../features/earn/ui/classic/earn-page/state/use-pending-action-deep-link";
 import { initParamsAtom } from "../../../features/init-params/atoms";
 import { useMountAnimation } from "../../../features/mount-animation/react/use-mount-animation";
-import { useSetPendingActionRequest } from "../../../features/transaction-flow/react/use-transaction-flow";
+import { useStartClassicTransactionFlow } from "../../../features/transaction-flow/react/use-transaction-flow";
 import { useSKWallet } from "../../../features/wallet/react/use-wallet";
 import { useSavedRef } from "../../../shared/react/use-saved-ref";
 
 export const useHandleDeepLinks = () => {
   const pendingActionDeepLinkCheck = usePendingActionDeepLink();
   const navigateRef = useSavedRef(useNavigate());
-  const setPendingActionRequest = useSetPendingActionRequest();
+  const startClassicTransactionFlow = useStartClassicTransactionFlow();
   const initQueryParams = useAtomValue(initParamsAtom);
 
   const { mountAnimationFinished } = useMountAnimation();
@@ -49,11 +49,11 @@ export const useHandleDeepLinks = () => {
   useEffect(() => {
     const data = pendingActionDeepLinkCheck.data;
     if (appReady && data?.type === "review") {
-      setPendingActionRequest({
-        actionDto: null,
-        requestDto: data.pendingActionDto.requestDto,
+      startClassicTransactionFlow({
+        _tag: "Manage",
+        request: data.pendingActionDto.requestDto,
         gasFeeToken: data.pendingActionDto.gasFeeToken,
-        integrationData: data.pendingActionDto.integrationData,
+        integration: data.pendingActionDto.integrationData,
         interactedToken: data.balance.token,
         pendingActionType: data.pendingActionDto.requestDto.action,
         providersDetails:
@@ -70,7 +70,7 @@ export const useHandleDeepLinks = () => {
       );
     }
   }, [
-    setPendingActionRequest,
+    startClassicTransactionFlow,
     pendingActionDeepLinkCheck.data,
     appReady,
     navigateRef,

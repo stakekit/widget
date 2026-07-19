@@ -1,9 +1,13 @@
+import BigNumber from "bignumber.js";
 import { Effect, Latch, Layer, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import type { ActionCommand } from "../../src/domain/schema/action-models";
+import type {
+  ActionCommand,
+  ManageActionCommand,
+} from "../../src/domain/schema/action-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type {
   ClassicTransactionFlowIdentity,
@@ -17,7 +21,11 @@ import {
 } from "../../src/features/transaction-flow/runtime/classic-flow-services";
 import { makeClassicTransactionFlowFacade } from "../../src/features/transaction-flow/state/classic-flow-facade";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
-import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
+import {
+  yieldApiActionFixture,
+  yieldApiTransactionFixture,
+  yieldApiYieldFixture,
+} from "../fixtures";
 
 const walletScope = new WalletScopeKey({
   address: Schema.decodeSync(WalletAddress)(
@@ -52,6 +60,42 @@ const makeActivityIntake = (): ClassicTransactionFlowIntake => {
     providersDetails: [],
     selectedValidators: [],
     selectedYield,
+    walletScope,
+  };
+};
+
+const makeExitIntake = (): ClassicTransactionFlowIntake => {
+  const integration = yieldApiYieldFixture();
+  return {
+    _tag: "Exit",
+    gasFeeToken: integration.mechanics.gasFeeToken,
+    integration,
+    providersDetails: [],
+    request: {
+      address: walletScope.address,
+      arguments: { amount: "1" },
+      yieldId: integration.id,
+    } as ActionCommand,
+    unstakeAmount: new BigNumber(1),
+    unstakeToken: integration.token,
+    walletScope,
+  };
+};
+
+const makeManageIntake = (): ClassicTransactionFlowIntake => {
+  const integration = yieldApiYieldFixture();
+  return {
+    _tag: "Manage",
+    gasFeeToken: integration.mechanics.gasFeeToken,
+    integration,
+    interactedToken: integration.token,
+    pendingActionType: "CLAIM_REWARDS",
+    providersDetails: [],
+    request: {
+      action: "CLAIM_REWARDS",
+      address: walletScope.address,
+      yieldId: integration.id,
+    } as ManageActionCommand,
     walletScope,
   };
 };
@@ -137,6 +181,42 @@ describe("Classic Transaction Flow facade", () => {
     expect(registry.get(facade.activeFlowAtom)).toBe(activity);
     expect(registry.get(facade.enterFlowAtom)).toBeNull();
     expect(registry.get(facade.activityResumeFlowAtom)).toBe(activity);
+
+    unmount.forEach((dispose) => dispose());
+  });
+
+  it("starts narrow Exit and Manage flows and normalizes Exit execution", async () => {
+    const kept = yieldApiTransactionFixture({ id: "kept" });
+    const skipped = yieldApiTransactionFixture({
+      id: "skipped",
+      status: "SKIPPED",
+    });
+    const facade = makeTestFacade({
+      preview: () =>
+        Effect.succeed(
+          yieldApiActionFixture({
+            intent: "exit",
+            transactions: [kept, skipped],
+            type: "UNSTAKE",
+          })
+        ),
+    });
+    const registry = AtomRegistry.make();
+    const unmount = mountFacade(registry, facade);
+
+    const exit = await start(registry, facade, makeExitIntake());
+    expect(registry.get(facade.exitFlowAtom)).toBe(exit);
+    registry.set(facade.continueAtom, exit.identity);
+    await vi.waitFor(() =>
+      expect(registry.get(facade.exitFlowAtom)?.phase).toBe("Executable")
+    );
+    expect(registry.get(facade.exitFlowAtom)).toMatchObject({
+      action: { transactions: [{ id: "kept" }] },
+    });
+
+    const manage = await start(registry, facade, makeManageIntake());
+    expect(registry.get(facade.manageFlowAtom)).toBe(manage);
+    expect(registry.get(facade.exitFlowAtom)).toBeNull();
 
     unmount.forEach((dispose) => dispose());
   });

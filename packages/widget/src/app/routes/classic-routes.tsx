@@ -16,16 +16,10 @@ import {
   EnterStakeRequestRouteGuard,
   ExitStakeRequestRouteGuard,
   enterClassicFlowWorkflowKeyAtom,
+  exitClassicFlowWorkflowKeyAtom,
+  manageClassicFlowWorkflowKeyAtom,
   PendingActionRequestRouteGuard,
 } from "../../features/transaction-flow/react/request-route-guards";
-import {
-  exitTransactionWorkflowKeyAtom,
-  exitTransactionWorkflowLifecycleAtom,
-} from "../../features/transaction-flow/state/exit-request";
-import {
-  pendingTransactionWorkflowKeyAtom,
-  pendingTransactionWorkflowLifecycleAtom,
-} from "../../features/transaction-flow/state/pending-action-request";
 import { ActivityCompletePage } from "../../features/transaction-flow/ui/complete/pages/activity-complete.page";
 import { PendingCompletePage } from "../../features/transaction-flow/ui/complete/pages/pending-complete.page";
 import { StakeCompletePage } from "../../features/transaction-flow/ui/complete/pages/stake-complete.page";
@@ -204,11 +198,8 @@ export const ClassicRoutes = () => {
                           />
                           <Route
                             element={
-                              <ClassicTransactionWorkflowGuard
-                                workflowLifecycleAtom={
-                                  exitTransactionWorkflowLifecycleAtom
-                                }
-                                workflowKeyAtom={exitTransactionWorkflowKeyAtom}
+                              <ClassicFlowTransactionWorkflowGuard
+                                workflowKeyAtom={exitClassicFlowWorkflowKeyAtom}
                               />
                             }
                           >
@@ -233,12 +224,9 @@ export const ClassicRoutes = () => {
                           />
                           <Route
                             element={
-                              <ClassicTransactionWorkflowGuard
-                                workflowLifecycleAtom={
-                                  pendingTransactionWorkflowLifecycleAtom
-                                }
+                              <ClassicFlowTransactionWorkflowGuard
                                 workflowKeyAtom={
-                                  pendingTransactionWorkflowKeyAtom
+                                  manageClassicFlowWorkflowKeyAtom
                                 }
                               />
                             }

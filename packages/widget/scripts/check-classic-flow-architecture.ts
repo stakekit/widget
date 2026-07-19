@@ -16,12 +16,6 @@ const legacyClassicFlowViewBaselines: ReadonlyArray<ArchitectureBaseline> = [
       "Legacy presentation-state synchronization is outside the Classic Flow cutover until this view is touched.",
     sha256: "0617a6a80ab39b27f0a315a1c5a6603f53c544e448a6a5024c3da4bf4b55b8d6",
   },
-  {
-    path: "src/features/transaction-flow/react/use-gas-warning-check.ts",
-    reason:
-      "Legacy gas-warning application logic remains in a React adapter until the Classic Flow facade replaces it.",
-    sha256: "18976a40897e33aff976f183cfae6997bbdd02b558f8161156a2b1da2b12aea2",
-  },
 ];
 
 const reviewedExternalReactBoundaries: ReadonlyArray<ArchitectureBaseline> = [
