@@ -1,15 +1,15 @@
 import { Match } from "effect";
 import { startsWith } from "effect/String";
 import { useNavigate } from "react-router";
-import type { DashboardYieldCategory } from "../../../domain/types/yields";
 import { isBorrowFeatureEnabled } from "../../../features/borrow/availability";
-import { useEarnPageModel } from "../../../features/earn/support";
-import { useTrackEvent } from "../../../features/tracking";
-import { Divider } from "../../../features/widget-shell";
+import { useEarnPageModel } from "../../../features/earn/ui/classic/earn-page/state/earn-page-model";
+import { useTrackEvent } from "../../../features/tracking/react/use-track-event";
+import { Divider } from "../../../features/widget-shell/divider";
+import type { DashboardYieldCategory } from "../../../public-api/types";
 import { useSKLocation } from "../../../shared/react/location-history";
 import { combineRecipeWithVariant } from "../../../shared/styles/recipe-variant";
 import { Box } from "../../../shared/ui/primitives/box";
-import { useWidgetConfig } from "../../config";
+import { useWidgetConfig } from "../../config/use-widget-config";
 import {
   divider,
   tabsContainer,

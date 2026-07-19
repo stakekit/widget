@@ -1,6 +1,6 @@
 import type { EarnValidator } from "../../../../../../../domain/schema/earn-models";
 
-import { useTrackEvent } from "../../../../../../tracking";
+import { useTrackEvent } from "../../../../../../tracking/react/use-track-event";
 import { useEarnPageModel } from "../../state/earn-page-model";
 
 export const useSelectValidator = () => {

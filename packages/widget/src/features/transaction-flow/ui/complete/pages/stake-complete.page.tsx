@@ -1,10 +1,10 @@
 import BigNumber from "bignumber.js";
 import { getActionProviderYieldId } from "../../../../../domain/types/action";
-import { defaultFormattedNumber } from "../../../../../shared/lib";
-import { useProvidersDetails } from "../../../../earn";
-import { useYieldType } from "../../../../earn/support";
-import { useTrackPage } from "../../../../tracking";
-import { useRequiredEnterStakeRequest } from "../../..";
+import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
+import { useProvidersDetails } from "../../../../earn/react/use-provider-details";
+import { useYieldType } from "../../../../earn/react/use-yield-type";
+import { useTrackPage } from "../../../../tracking/react/use-track-page";
+import { useRequiredEnterStakeRequest } from "../../../react/request-route-guards";
 import { CompletePage } from "./common.page";
 
 export const StakeCompletePage = () => {

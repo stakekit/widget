@@ -23,7 +23,7 @@ import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import {
   SelectModalItem,
   SelectModalItemContainer,
-} from "../../../../widget-shell";
+} from "../../../../widget-shell/ui/select-modal";
 import { useMetaInfo } from "./meta-info";
 import {
   groupLabel,

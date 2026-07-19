@@ -1,12 +1,10 @@
 import { Effect, Layer } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
-import {
-  BorrowApiService,
-  LegacyApiService,
-  YieldApiService,
-} from "../../services/api";
+import { BorrowApiService } from "../../services/api/borrow-api-service";
+import { LegacyApiService } from "../../services/api/legacy-api-service";
 import { ApiTransportService } from "../../services/api/transport";
+import { YieldApiService } from "../../services/api/yield-api-service";
 import {
   type WidgetConfig,
   WidgetConfigService,
@@ -14,7 +12,7 @@ import {
 import { RichErrorService } from "../../services/errors/rich-error-service";
 import { WidgetPersistence } from "../../services/persistence/widget-persistence";
 import { TrackingService } from "../../services/tracking/tracking-service";
-import { widgetConfigAtom } from "../config";
+import { widgetConfigAtom } from "../config/settings";
 
 const makeAppLayer = (
   config: WidgetConfig,

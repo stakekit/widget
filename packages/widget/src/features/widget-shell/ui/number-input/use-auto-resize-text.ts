@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 import { useEffect } from "react";
-import { useWidgetConfig } from "../../../../app/config";
+import { useWidgetConfig } from "../../../../app/config/use-widget-config";
 import { usePrevious } from "../../../../shared/react/use-previous";
 import { vars } from "../../../../shared/styles/theme/contract.css";
 import { initialFontSizeVar } from "./styles.css";

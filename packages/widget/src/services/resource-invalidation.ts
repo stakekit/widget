@@ -1,5 +1,5 @@
 import { Data } from "effect";
-import type { BorrowNetwork } from "../domain/borrow";
+import type { BorrowNetwork } from "../domain/borrow/network";
 import type { WalletScopeKey } from "./wallet/domain/scope";
 
 export class WalletBalancesInvalidationKey extends Data.TaggedClass(

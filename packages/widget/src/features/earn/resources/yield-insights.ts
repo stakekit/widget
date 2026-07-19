@@ -1,7 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime";
+import { appRuntime } from "../../../app/runtime/app-runtime";
 import type {
   HistoryPeriod,
   RewardsAddresses,
@@ -15,7 +15,10 @@ import { isValidYieldIdForRewardsSummary } from "../../../domain/types/rewards";
 import { LegacyApiService } from "../../../services/api/legacy-api-service";
 import { YieldApiService } from "../../../services/api/yield-api-service";
 import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
-import { currentWalletStateAtom, selectCurrentWalletAtom } from "../../wallet";
+import {
+  currentWalletStateAtom,
+  selectCurrentWalletAtom,
+} from "../../wallet/state/selectors";
 
 const dashboardResourcePolicy = withApiResourcePolicy({
   idleTTL: Duration.minutes(5),

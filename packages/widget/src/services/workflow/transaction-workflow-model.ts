@@ -1,8 +1,6 @@
 import { Data } from "effect";
-import type {
-  Action as BorrowAction,
-  Transaction as BorrowTransaction,
-} from "../../domain/borrow";
+import type { Action as BorrowAction } from "../../domain/borrow/action";
+import type { Transaction as BorrowTransaction } from "../../domain/borrow/transaction";
 import type {
   ActionTransaction,
   YieldAction,

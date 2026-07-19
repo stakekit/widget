@@ -1,23 +1,23 @@
 import { Data, Duration, Effect } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime";
+import { appRuntime } from "../../../app/runtime/app-runtime";
+import type { MarketId } from "../../../domain/borrow/ids";
 import {
-  type BorrowIntegrationPositionsResponse,
   type BorrowNetwork,
-  deriveBorrowPositionItems,
   isBorrowNetwork,
-  type MarketId,
-  type Position,
-} from "../../../domain/borrow";
+} from "../../../domain/borrow/network";
+import type { Position } from "../../../domain/borrow/position";
+import { deriveBorrowPositionItems } from "../../../domain/borrow/position-items";
+import type { BorrowIntegrationPositionsResponse } from "../../../domain/borrow/responses";
 import { BorrowApiService } from "../../../services/api/borrow-api-service";
 import { resourceInvalidationKeys } from "../../../services/resource-invalidation";
 import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
-import { currentWalletScopeAtom } from "../../wallet";
+import { currentWalletScopeAtom } from "../../wallet/state/selectors";
 import type { MissingBorrowApiClient } from "../runtime";
 
-export type BorrowAtomOperation =
+type BorrowAtomOperation =
   | "borrow-integrations"
   | "borrow-markets"
   | "borrow-position"

@@ -13,9 +13,6 @@ import {
 
 import { equalTokens } from "./types/tokens";
 
-export { getTokenPriceInUSD } from "./types/price";
-export { equalTokens, tokenString } from "./types/tokens";
-
 export const stakeTokenSameAsGasToken = ({
   stakeToken,
   yieldDto,

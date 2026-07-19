@@ -1,15 +1,16 @@
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
-import { renderSKWidget, SKApp } from "../../src/App";
 import {
-  type BundledSKWidgetProps,
-  type SKWallet as BundledWallet,
   renderSKWidget as bundledRenderSKWidget,
-} from "../../src/index.bundle";
-import {
   SKApp as PackageSKApp,
-  type SKAppProps as PackageSKAppProps,
-  type SKWallet as PackageWallet,
-} from "../../src/index.package";
+  renderSKWidget,
+  SKApp,
+} from "../../src/App";
+import type {
+  BundledSKWidgetProps,
+  SKWallet as BundledWallet,
+  SKAppProps as PackageSKAppProps,
+  SKWallet as PackageWallet,
+} from "../../src/public-api/types";
 
 const genericWallet: PackageWallet = {
   signMessage: vi.fn(async () => "signed-message"),

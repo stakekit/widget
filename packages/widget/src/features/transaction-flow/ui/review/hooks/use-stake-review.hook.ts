@@ -5,27 +5,23 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { useWidgetConfig } from "../../../../../app/config";
+import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { getTransactionGasEstimate } from "../../../../../domain/types/action";
 import { getKycProviderName } from "../../../../../domain/types/kyc";
 import { isBittensorStaking } from "../../../../../domain/types/yields";
-import { defaultFormattedNumber } from "../../../../../shared/lib";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
+import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { usePositionDetailsStakeMatch } from "../../../../../shared/react/navigation/use-position-details-stake-match";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
-import { useYieldKycGate } from "../../../../earn";
-import {
-  useEstimatedRewards,
-  useRewardTokenDetails,
-  useYieldType,
-} from "../../../../earn/support";
-import type { PageCta } from "../../../../widget-shell";
-import {
-  useActionPreview,
-  useRequiredEnterStakeRequest,
-  useSetEnterStakeRequest,
-} from "../../..";
+import { useEstimatedRewards } from "../../../../earn/react/use-estimated-rewards";
+import { useRewardTokenDetails } from "../../../../earn/react/use-reward-token-details";
+import { useYieldKycGate } from "../../../../earn/react/use-yield-kyc-gate";
+import { useYieldType } from "../../../../earn/react/use-yield-type";
+import type { PageCta } from "../../../../widget-shell/page-cta";
+import { useRequiredEnterStakeRequest } from "../../../react/request-route-guards";
+import { useActionPreview } from "../../../react/use-action-preview";
 import { useGasWarningCheck } from "../../../react/use-gas-warning-check";
+import { useSetEnterStakeRequest } from "../../../react/use-transaction-flow";
 import { currentReviewPricesAtom } from "../../../resources/review-prices";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 import { useFees } from "./use-fees";

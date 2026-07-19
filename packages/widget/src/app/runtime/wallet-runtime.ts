@@ -1,10 +1,8 @@
 import { Effect, Layer } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type {
-  BorrowApiService,
-  LegacyApiService,
-  YieldApiService,
-} from "../../services/api";
+import type { BorrowApiService } from "../../services/api/borrow-api-service";
+import type { LegacyApiService } from "../../services/api/legacy-api-service";
+import type { YieldApiService } from "../../services/api/yield-api-service";
 import type { WidgetConfigService } from "../../services/config/widget-config";
 import type { RichErrorService } from "../../services/errors/rich-error-service";
 import type { WidgetPersistence } from "../../services/persistence/widget-persistence";

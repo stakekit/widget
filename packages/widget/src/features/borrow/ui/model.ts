@@ -2,14 +2,12 @@ import BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import type { Integration } from "../../../domain/borrow/integration";
-import { formatNumber } from "../../../shared/lib";
+import type { Market } from "../../../domain/borrow/market";
+import { projectLtvRatio } from "../../../domain/borrow/position-projection";
 import { formatCompactUsd } from "../../../shared/lib/formatters";
-import type {
-  BorrowFormProjection,
-  BorrowMarketWalletBalances,
-  Market,
-} from "../core";
-import { projectLtvRatio } from "../core";
+import { formatNumber } from "../../../shared/lib/number-format";
+import type { BorrowFormProjection } from "../atoms/form";
+import type { BorrowMarketWalletBalances } from "../balances";
 
 type BorrowDetailsRow = {
   readonly id: string;

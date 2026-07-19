@@ -3,11 +3,9 @@ import { I18nextProvider } from "react-i18next";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
-import { normalizeWidgetConfig } from "../../src/app/config";
-import {
-  type ActivityFilterOption,
-  useActivityFilter,
-} from "../../src/features/activity";
+import { normalizeWidgetConfig } from "../../src/app/config/settings";
+import type { ActivityFilterOption } from "../../src/features/activity/model/filters";
+import { useActivityFilter } from "../../src/features/activity/react/use-activity-filter";
 import { CompletePageComponent } from "../../src/features/transaction-flow/ui/complete/pages/common.page";
 import { i18nInstance } from "../../src/translation";
 import { render } from "../utils/test-utils.dom";

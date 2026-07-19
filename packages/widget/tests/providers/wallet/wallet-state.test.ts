@@ -10,8 +10,9 @@ import {
 import { mainnet, optimism } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
-import { normalizeWidgetConfig } from "../../../src/app/config";
-import { LegacyApiService, YieldApiService } from "../../../src/services/api";
+import { normalizeWidgetConfig } from "../../../src/app/config/settings";
+import { LegacyApiService } from "../../../src/services/api/legacy-api-service";
+import { YieldApiService } from "../../../src/services/api/yield-api-service";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";

@@ -21,10 +21,6 @@ import {
 } from "./router";
 import { makeWalletStateRuntime } from "./wallet-state";
 
-export * from "./domain/commands";
-export * from "./domain/errors";
-export * from "./domain/transactions";
-
 const makeWalletService = Effect.fn("makeWalletService")(function* () {
   const persistence = yield* WidgetPersistence;
   const bootstrap = yield* bootstrapWallet();

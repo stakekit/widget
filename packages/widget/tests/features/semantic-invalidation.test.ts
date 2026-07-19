@@ -4,12 +4,10 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import * as Reactivity from "effect/unstable/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../src/app/runtime";
-import {
-  BorrowAccountPosition,
-  Integration,
-  Market,
-} from "../../src/domain/borrow";
+import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { Integration } from "../../src/domain/borrow/integration";
+import { Market } from "../../src/domain/borrow/market";
+import { BorrowAccountPosition } from "../../src/domain/borrow/position";
 import {
   EarnLegacyTokenOptionsResponse,
   EarnTokenBalancesResponse,
@@ -24,7 +22,7 @@ import { ActivityActionsKey } from "../../src/features/activity/resources/activi
 import {
   BorrowPositionKey,
   borrowPositionAtom,
-} from "../../src/features/borrow/core";
+} from "../../src/features/borrow/atoms/resources";
 import {
   mergedTokenOptionsAtom,
   positionsDataAtom,

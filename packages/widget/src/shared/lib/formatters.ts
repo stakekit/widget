@@ -1,13 +1,10 @@
 import BigNumber from "bignumber.js";
-import { getTokenPriceInUSD } from "../../domain";
 import type { EarnYieldWithProvider } from "../../domain/schema/earn-models";
 import { Prices } from "../../domain/schema/health-price-models";
 import type { AppToken } from "../../domain/schema/legacy-models";
-import {
-  APToPercentage,
-  defaultFormattedNumber,
-  formatNumber,
-} from "./general";
+import { getTokenPriceInUSD } from "../../domain/types/price";
+import { APToPercentage } from "./general";
+import { defaultFormattedNumber, formatNumber } from "./number-format";
 
 export const formatCountryCode = ({
   language,

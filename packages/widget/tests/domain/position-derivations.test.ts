@@ -17,8 +17,8 @@ import {
   positionBalancesAtom,
   positionDataAtom,
   toPositionItems,
-  yieldBalancesScanResourceAtomFamily,
-} from "../../src/features/portfolio";
+} from "../../src/features/portfolio/resources/positions";
+import { yieldBalancesScanResourceAtomFamily } from "../../src/features/portfolio/resources/yield-balances";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 

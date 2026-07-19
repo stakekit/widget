@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
-import { useWidgetConfig } from "../../../../../app/config";
+import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import type { TronResource } from "../../../../../domain/schema/legacy-models";
 import { getYieldActionArg } from "../../../../../domain/types/yields";
 import { useUnstakeOrPendingActionParams } from "../../../../../shared/react/navigation/use-unstake-or-pending-action-params";
@@ -10,22 +10,20 @@ import { selectTokenButton } from "../../../../../shared/ui/primitives/button/st
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Spinner } from "../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import * as AmountToggle from "../../../../earn/support";
 import {
-  KycGateCard,
-  MetaInfo,
   minMaxContainer,
   priceTxt,
   selectTokenBalance,
   selectTokenSection,
-} from "../../../../earn/support";
-import {
-  Dropdown,
-  MaxButton,
-  NumberInput,
-  PageCtaButton,
-  TokenIcon,
-} from "../../../../widget-shell";
+} from "../../../../earn/ui/classic/earn-page/components/select-token-section/styles.css";
+import * as AmountToggle from "../../../../earn/ui/components/amount-toggle";
+import { KycGateCard } from "../../../../earn/ui/components/kyc-gate-card";
+import { MetaInfo } from "../../../../earn/ui/components/meta-info";
+import { PageCtaButton } from "../../../../widget-shell/page-cta";
+import { Dropdown } from "../../../../widget-shell/ui/dropdown";
+import { MaxButton } from "../../../../widget-shell/ui/max-button";
+import { NumberInput } from "../../../../widget-shell/ui/number-input";
+import { TokenIcon } from "../../../../widget-shell/ui/token-icon";
 import { usePositionDetailsStake } from "../hooks/use-position-details-stake";
 import { PositionDetailsActionTabs } from "./position-details-action-tabs";
 import {

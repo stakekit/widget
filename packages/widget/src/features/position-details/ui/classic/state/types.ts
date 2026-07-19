@@ -9,15 +9,9 @@ import type {
 } from "../../../../../domain/types/positions";
 import type { WalletScopeKey } from "../../../../../services/wallet/domain/scope";
 
-export type {
-  BalanceTokenActionType,
-  PendingActionAmountChange,
-  PositionDetailsWorkflowAction as Actions,
-  PositionDetailsWorkflowState as State,
-} from "../../../state";
-
-import type { pricesAtom, yieldOpportunityAtom } from "../../../../earn";
-import type { positionBalancesAtom } from "../../../../portfolio";
+import type { pricesAtom } from "../../../../earn/resources/prices";
+import type { yieldOpportunityAtom } from "../../../../earn/resources/yields";
+import type { positionBalancesAtom } from "../../../../portfolio/resources/positions";
 import type { useStakedOrLiquidBalance } from "../../../react/use-staked-or-liquid-balance";
 export type ExtraData = {
   currentWalletScope: WalletScopeKey;

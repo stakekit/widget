@@ -1,7 +1,7 @@
 import { animate, useMotionValue, useTransform } from "motion/react";
 import { useEffect } from "react";
 import { config } from "../../../../../../../shared/config/widget-defaults";
-import { APToPercentage } from "../../../../../../../shared/lib";
+import { APToPercentage } from "../../../../../../../shared/lib/general";
 import type { EarnPageModel } from "../../state/types";
 
 export const useAnimateYieldPercent = (

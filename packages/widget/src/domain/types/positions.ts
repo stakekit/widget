@@ -1,5 +1,4 @@
 import BigNumber from "bignumber.js";
-import { equalTokens } from "..";
 import type {
   EarnBalance,
   EarnPosition,
@@ -7,6 +6,7 @@ import type {
 } from "../schema/earn-models";
 import type { YieldId } from "../schema/identifiers";
 import type { YieldRewardRateDto } from "./reward-rate";
+import { equalTokens } from "./tokens";
 import type { ValidatorKey } from "./validators";
 
 export type YieldBalanceType = EarnBalance["type"];

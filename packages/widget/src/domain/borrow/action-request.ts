@@ -18,25 +18,25 @@ type BorrowFormBase = {
   readonly selectedMarket: Market;
 };
 
-export type BorrowPlusCollateralForm = BorrowFormBase & {
+type BorrowPlusCollateralForm = BorrowFormBase & {
   readonly _tag: "BorrowPlusCollateral";
   readonly borrowAmount: BigNumber;
   readonly collateralAmount: BigNumber;
   readonly selectedCollateralToken: CollateralToken;
 };
 
-export type BorrowOnlyForm = BorrowFormBase & {
+type BorrowOnlyForm = BorrowFormBase & {
   readonly _tag: "BorrowOnly";
   readonly borrowAmount: BigNumber;
 };
 
-export type CollateralOnlyForm = BorrowFormBase & {
+type CollateralOnlyForm = BorrowFormBase & {
   readonly _tag: "CollateralOnly";
   readonly collateralAmount: BigNumber;
   readonly selectedCollateralToken: CollateralToken;
 };
 
-export type DecodedBorrowForm =
+type DecodedBorrowForm =
   | BorrowPlusCollateralForm
   | BorrowOnlyForm
   | CollateralOnlyForm;
@@ -135,16 +135,6 @@ export const decodeBorrowForm = (
 
   return null;
 };
-
-export const isDecodedBorrow = (
-  form: DecodedBorrowForm
-): form is BorrowOnlyForm | BorrowPlusCollateralForm =>
-  form._tag === "BorrowOnly" || form._tag === "BorrowPlusCollateral";
-
-export const isDecodedCollateral = (
-  form: DecodedBorrowForm
-): form is CollateralOnlyForm | BorrowPlusCollateralForm =>
-  form._tag === "CollateralOnly" || form._tag === "BorrowPlusCollateral";
 
 export const buildBorrowActionRequest = ({
   address,

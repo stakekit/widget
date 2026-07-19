@@ -1,6 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { userEvent } from "vitest/browser";
-import { DashboardYieldCategory } from "../../src/domain/types/yields";
+import { DashboardYieldCategory } from "../../src/public-api/types";
 import { legacyYieldFixture, yieldApiYieldFixture } from "../fixtures";
 import {
   borrowApiRoute,

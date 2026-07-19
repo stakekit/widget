@@ -2,7 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { Data, Duration, Effect, Option, Result } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../../../../app/runtime";
+import { appRuntime } from "../../../../../../app/runtime/app-runtime";
 import {
   PAMultiValidatorsRequired,
   PASingleValidatorRequired,
@@ -13,10 +13,13 @@ import { getPositionBalanceDataKey } from "../../../../../../domain/types/positi
 import { YieldApiService } from "../../../../../../services/api/yield-api-service";
 import { walletScopeFromState } from "../../../../../../services/wallet/domain/scope";
 import { withApiResourcePolicy } from "../../../../../../shared/effect/api-resource";
-import { initParamsAtom } from "../../../../../init-params";
-import { preparePendingActionRequestDto } from "../../../../../position-details/support";
-import { currentWalletStateAtom } from "../../../../../wallet";
-import { YieldOpportunityKey, yieldOpportunityAtom } from "../../../..";
+import { initParamsAtom } from "../../../../../init-params/atoms";
+import { preparePendingActionRequestDto } from "../../../../../position-details/ui/classic/hooks/utils";
+import { currentWalletStateAtom } from "../../../../../wallet/state/selectors";
+import {
+  YieldOpportunityKey,
+  yieldOpportunityAtom,
+} from "../../../../resources/yields";
 
 class PendingActionDeepLinkRequestKey extends Data.Class<{
   readonly address: typeof WalletAddress.Type;

@@ -10,8 +10,8 @@ import type {
 import type { KycGate } from "../../../../../../domain/types/kyc";
 
 import type { ValidatorKey } from "../../../../../../domain/types/validators";
-import type { DashboardYieldCategory } from "../../../../../../domain/types/yields";
-import type { PageCta } from "../../../../../widget-shell";
+import type { DashboardYieldCategory } from "../../../../../../public-api/types";
+import type { PageCta } from "../../../../../widget-shell/page-cta";
 import type { useEstimatedRewards } from "../../../../react/use-estimated-rewards";
 import type { useProvidersDetails } from "../../../../react/use-provider-details";
 import type { useRewardTokenDetails } from "../../../../react/use-reward-token-details";

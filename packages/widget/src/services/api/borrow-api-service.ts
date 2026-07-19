@@ -1,15 +1,17 @@
 import { Context, Effect, Layer, Schema } from "effect";
+import { Action as BorrowAction } from "../../domain/borrow/action";
+import type { ActionRequest as BorrowActionRequest } from "../../domain/borrow/action-request";
+import type { Integration } from "../../domain/borrow/integration";
+import type { BorrowNetwork } from "../../domain/borrow/network";
 import {
-  Action as BorrowAction,
-  type ActionRequest as BorrowActionRequest,
   BorrowIntegrationPositionsResponse,
   BorrowIntegrationsResponse,
   BorrowMarketsResponse,
-  type BorrowNetwork,
+} from "../../domain/borrow/responses";
+import {
   type SubmitTransactionCommand as BorrowSubmitTransactionCommand,
   SubmitTransactionResult as BorrowSubmitTransactionResult,
-  type Integration,
-} from "../../domain/borrow";
+} from "../../domain/borrow/transaction";
 import { MissingBorrowApiConfig } from "../../domain/schema/api-errors";
 import type { WalletAddress } from "../../domain/schema/identifiers";
 import type * as BorrowApi from "../../generated/api/borrow-client";

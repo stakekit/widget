@@ -1,8 +1,11 @@
 import { Record as EffectRecord } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { PreferredTokenYieldsPerNetwork } from "../../domain/types/stake";
 import { normalizeDashboardYieldCategoryOrder } from "../../domain/types/yields";
-import type { SettingsProps, VariantProps } from "../../public-api/types";
+import type {
+  PreferredTokenYieldsPerNetwork,
+  SettingsProps,
+  VariantProps,
+} from "../../public-api/types";
 import {
   defaultWidgetBootstrapConfig,
   type WidgetConfig,
@@ -14,8 +17,6 @@ type TokenYieldPreferences = Exclude<
   PreferredTokenYieldsPerNetwork[keyof PreferredTokenYieldsPerNetwork],
   undefined
 >;
-
-export type { WidgetConfig } from "../../services/config/widget-config";
 
 export const normalizeWidgetConfig = (
   input: SettingsProps & VariantProps,

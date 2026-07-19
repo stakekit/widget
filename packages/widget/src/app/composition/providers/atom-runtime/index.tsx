@@ -1,11 +1,9 @@
 import { RegistryProvider, useAtomSet } from "@effect/atom-react";
 import { type PropsWithChildren, useLayoutEffect } from "react";
+import type { WidgetConfig } from "../../../../services/config/widget-config";
 import { config } from "../../../../shared/config/widget-defaults";
-import {
-  makeWidgetRuntimeGenerationKey,
-  type WidgetConfig,
-  widgetConfigAtom,
-} from "../../../config";
+import { makeWidgetRuntimeGenerationKey } from "../../../config/runtime-generation";
+import { widgetConfigAtom } from "../../../config/settings";
 
 export const SKAtomRegistryProvider = ({
   children,

@@ -2,13 +2,11 @@ import { useAtomSet } from "@effect/atom-react";
 import { AccountExtraInfoContext } from "@stakekit/rainbowkit";
 import type { PropsWithChildren } from "react";
 import type { Address } from "viem";
-import { useSKWallet } from "../../../../features/wallet";
-import {
-  WalletService,
-  type WalletSwitchAccountInput,
-} from "../../../../services/wallet/wallet-service";
+import { useSKWallet } from "../../../../features/wallet/react/use-wallet";
+import type { WalletSwitchAccountInput } from "../../../../services/wallet/domain/commands";
+import { WalletService } from "../../../../services/wallet/wallet-service";
 import { formatAddress } from "../../../../shared/lib/general";
-import { walletRuntime } from "../../../runtime";
+import { walletRuntime } from "../../../runtime/wallet-runtime";
 import { RainbowKitProviderWithTheme } from "../rainbow-kit";
 
 const switchLedgerAccountAtom = walletRuntime.fn(

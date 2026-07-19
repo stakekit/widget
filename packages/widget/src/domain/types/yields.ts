@@ -90,8 +90,6 @@ export type ValidatorsConfig = Map<
   }
 >;
 
-export { DashboardYieldCategory };
-
 export const dashboardYieldCategories = [
   DashboardYieldCategory.RWA,
   DashboardYieldCategory.DeFi,

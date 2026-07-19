@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "react";
-import { useWidgetConfig } from "../../app/config";
+import { useWidgetConfig } from "../../app/config/use-widget-config";
 import type { BoxProps } from "../../shared/ui/primitives/box";
 import { Box } from "../../shared/ui/primitives/box";
 import { BackButton } from "./dashboard/components/back-button";

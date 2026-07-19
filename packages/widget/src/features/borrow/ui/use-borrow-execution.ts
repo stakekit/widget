@@ -1,6 +1,7 @@
 import { useAtomSet } from "@effect/atom-react";
 import type * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import type { Action, Transaction } from "../../../domain/borrow";
+import type { Action } from "../../../domain/borrow/action";
+import type { Transaction } from "../../../domain/borrow/transaction";
 import {
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,

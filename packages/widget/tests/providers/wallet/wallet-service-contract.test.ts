@@ -2,16 +2,18 @@ import type { Effect } from "effect";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import {
   WalletBroadcastError,
-  type WalletBroadcastResult,
   WalletCapabilityUnavailableError,
   WalletConnectionError,
   WalletDecodeError,
   type WalletRuntimeInvariantError,
-  type WalletService,
-  type WalletSignedPayloadResult,
   WalletSigningError,
   WalletSwitchError,
-} from "../../../src/services/wallet/wallet-service";
+} from "../../../src/services/wallet/domain/errors";
+import type {
+  WalletBroadcastResult,
+  WalletSignedPayloadResult,
+} from "../../../src/services/wallet/domain/transactions";
+import type { WalletService } from "../../../src/services/wallet/wallet-service";
 
 type WalletTransactionResult =
   | WalletSignedPayloadResult

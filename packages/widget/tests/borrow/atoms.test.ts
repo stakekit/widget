@@ -1,15 +1,21 @@
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../src/app/runtime";
+import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { Integration } from "../../src/domain/borrow/integration";
+import { Market } from "../../src/domain/borrow/market";
+import { BorrowAccountPosition } from "../../src/domain/borrow/position";
+import { deriveBorrowPositionItems } from "../../src/domain/borrow/position-items";
 import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   applyBorrowFormAction,
-  BorrowAccountPosition,
-  BorrowAtomError,
   BorrowDashboardKey,
   type BorrowFormIntent,
+  resolveBorrowDashboardView,
+} from "../../src/features/borrow/atoms/form";
+import {
+  BorrowAtomError,
   BorrowMarketsKey,
   BorrowPositionKey,
   BorrowPositionNotFound,
@@ -19,12 +25,8 @@ import {
   borrowPositionAtom,
   borrowPositionsAtom,
   currentBorrowPositionsAtom,
-  deriveBorrowPositionItems,
-  Integration,
-  Market,
-  resolveBorrowDashboardView,
-} from "../../src/features/borrow/core";
-import { currentWalletScopeAtom } from "../../src/features/wallet";
+} from "../../src/features/borrow/atoms/resources";
+import { currentWalletScopeAtom } from "../../src/features/wallet/state/selectors";
 import { BorrowApiService } from "../../src/services/api/borrow-api-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 

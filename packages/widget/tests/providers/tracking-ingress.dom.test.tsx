@@ -1,7 +1,8 @@
 import type { PropsWithChildren } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { TrackingContextProvider } from "../../src/app/composition/providers/tracking";
-import { useTrackEvent, useTrackPage } from "../../src/features/tracking";
+import { useTrackEvent } from "../../src/features/tracking/react/use-track-event";
+import { useTrackPage } from "../../src/features/tracking/react/use-track-page";
 import { renderHook } from "../utils/test-utils.dom";
 
 describe("public tracking ingress", () => {

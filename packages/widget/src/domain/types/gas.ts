@@ -1,6 +1,6 @@
 import type BigNumber from "bignumber.js";
-import { equalTokens } from "..";
 import type { TokenBalance } from "../schema/financial-models";
+import { equalTokens } from "./tokens";
 
 type ComparableToken = {
   readonly address?: string;

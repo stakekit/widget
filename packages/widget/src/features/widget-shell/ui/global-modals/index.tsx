@@ -1,11 +1,9 @@
 import { useState } from "react";
-import {
-  HelpModal,
-  TosModal,
-  useGeoBlock,
-  useRegionCodeName,
-  useShowTOS,
-} from "../../../preferences";
+import { useGeoBlock } from "../../../preferences/react/use-geo-block";
+import { useRegionCodeName } from "../../../preferences/react/use-region-code-name";
+import { useShowTOS } from "../../../preferences/react/use-show-tos";
+import { HelpModal } from "../../../preferences/ui/help-modal";
+import { TosModal } from "../../../preferences/ui/tos-modal";
 import { RichErrorModal } from "../rich-error-modal";
 
 export const GlobalModals = () => {

@@ -1,6 +1,6 @@
 import { Option, Schema } from "effect";
-import { tokenString } from "../../../../../domain";
 import { YieldId } from "../../../../../domain/schema/identifiers";
+import { tokenString } from "../../../../../domain/types/tokens";
 import type { EarnEntry, EarnTokenKey, EarnTokenOption } from "../types";
 
 export const resolveToken = ({

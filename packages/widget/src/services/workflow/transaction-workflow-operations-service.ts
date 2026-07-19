@@ -1,6 +1,6 @@
 import { Context, Effect, Layer } from "effect";
 import * as Reactivity from "effect/unstable/reactivity/Reactivity";
-import { isBorrowNetwork } from "../../domain/borrow";
+import { isBorrowNetwork } from "../../domain/borrow/network";
 import { BorrowApiService } from "../api/borrow-api-service";
 import { YieldApiService } from "../api/yield-api-service";
 import { resourceInvalidationKeys } from "../resource-invalidation";

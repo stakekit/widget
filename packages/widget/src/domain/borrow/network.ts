@@ -11,13 +11,6 @@ export const BorrowNetwork = Schema.Literals([
 ]);
 export type BorrowNetwork = typeof BorrowNetwork.Type;
 
-export const supportedBorrowNetworks = [
-  "ethereum",
-  "base",
-  "arbitrum",
-  "optimism",
-] as const satisfies ReadonlyArray<BorrowNetwork>;
-
 export const borrowChainsByNetwork: Record<BorrowNetwork, Chain> = {
   ethereum: mainnet,
   base,
@@ -30,7 +23,7 @@ export const borrowChainEntries = Object.entries(borrowChainsByNetwork) as [
   Chain,
 ][];
 
-export const borrowChainIdsToNetworks = Object.fromEntries(
+const borrowChainIdsToNetworks = Object.fromEntries(
   borrowChainEntries.map(([network, chain]) => [
     decodeChainId(chain.id),
     network,

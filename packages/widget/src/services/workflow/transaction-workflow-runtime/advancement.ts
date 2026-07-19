@@ -1,5 +1,5 @@
 import { Effect, Match } from "effect";
-import type { Action as BorrowAction } from "../../../domain/borrow";
+import type { Action as BorrowAction } from "../../../domain/borrow/action";
 import {
   appendTransactionWorkflowBatch,
   getCurrentTransactionWorkflowBatch,

@@ -1,14 +1,14 @@
 import { useAtomValue } from "@effect/atom-react";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { defaultFormattedNumber } from "../../../../../shared/lib";
+import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useUnstakeOrPendingActionParams } from "../../../../../shared/react/navigation/use-unstake-or-pending-action-params";
-import { useProvidersDetails } from "../../../../earn";
-import { useYieldType } from "../../../../earn/support";
+import { useProvidersDetails } from "../../../../earn/react/use-provider-details";
+import { useYieldType } from "../../../../earn/react/use-yield-type";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
-} from "../../../../portfolio";
-import { useTrackPage } from "../../../../tracking";
+} from "../../../../portfolio/resources/positions";
+import { useTrackPage } from "../../../../tracking/react/use-track-page";
 import { useRequiredExitStakeRequest } from "../../../react/request-route-guards";
 import { CompletePage } from "./common.page";
 

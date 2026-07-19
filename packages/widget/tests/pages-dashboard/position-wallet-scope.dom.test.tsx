@@ -16,12 +16,12 @@ import {
   PositionBalancesKey,
   positionBalancesAtom,
   positionBalancesByTypeAtom,
-  yieldBalancesScanResourceAtomFamily,
-} from "../../src/features/portfolio";
+} from "../../src/features/portfolio/resources/positions";
+import { yieldBalancesScanResourceAtomFamily } from "../../src/features/portfolio/resources/yield-balances";
 import {
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
-} from "../../src/features/position-details/state";
+} from "../../src/features/position-details/state/workflow";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 import { render } from "../utils/test-utils.dom";

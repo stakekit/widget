@@ -5,13 +5,13 @@ import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
-} from "../../../../earn";
+} from "../../../../earn/resources/yield-insights";
 import {
   AddressRow,
   DetailRow,
   DetailsSection,
-  EarnDetailsHeader,
-} from "../../../../earn/support";
+} from "../../../../earn/ui/dashboard/earn-details/components/details-section";
+import { EarnDetailsHeader } from "../../../../earn/ui/dashboard/earn-details/components/earn-details-header";
 import { usePositionDetails } from "../../classic/hooks/use-position-details";
 import {
   type DashboardPositionMetricCard,

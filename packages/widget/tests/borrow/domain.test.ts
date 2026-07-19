@@ -1,12 +1,12 @@
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
+import { Market } from "../../src/domain/borrow/market";
 import {
   getBorrowNetworkForChainId,
   isBorrowNetwork,
-  Market,
-  Position,
-  projectLtvRatio,
-} from "../../src/features/borrow/core";
+} from "../../src/domain/borrow/network";
+import { Position } from "../../src/domain/borrow/position";
+import { projectLtvRatio } from "../../src/domain/borrow/position-projection";
 
 const marketDto = {
   id: "aave-v3-ethereum-usdc",

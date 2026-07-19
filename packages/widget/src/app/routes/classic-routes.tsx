@@ -2,21 +2,21 @@ import { useAtomValue } from "@effect/atom-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router";
-import { ActivitySelectionRouteGuard } from "../../features/activity";
+import { ActivitySelectionRouteGuard } from "../../features/activity/react/activity-selection-route";
 import {
   activityTransactionWorkflowKeyAtom,
   activityTransactionWorkflowLifecycleAtom,
 } from "../../features/activity/state/selection";
-import { AnimatedActivityPage } from "../../features/activity/ui";
-import { AnimatedEarnPage } from "../../features/earn/ui";
-import { initParamsAtom } from "../../features/init-params";
-import { AnimatedPositionsPage } from "../../features/portfolio/ui";
-import { ClassicPositionDetailsPage } from "../../features/position-details/ui";
+import { AnimatedActivityPage } from "../../features/activity/ui/classic/activity-page/activity.page";
+import { AnimatedEarnPage } from "../../features/earn/ui/classic/earn-page/earn.page";
+import { initParamsAtom } from "../../features/init-params/atoms";
+import { AnimatedPositionsPage } from "../../features/portfolio/ui/classic/positions-page/positions.page";
+import { PositionDetailsPage as ClassicPositionDetailsPage } from "../../features/position-details/ui/classic/position-details.page";
 import {
   EnterStakeRequestRouteGuard,
   ExitStakeRequestRouteGuard,
   PendingActionRequestRouteGuard,
-} from "../../features/transaction-flow";
+} from "../../features/transaction-flow/react/request-route-guards";
 import {
   enterTransactionWorkflowKeyAtom,
   enterTransactionWorkflowLifecycleAtom,
@@ -29,35 +29,30 @@ import {
   pendingTransactionWorkflowKeyAtom,
   pendingTransactionWorkflowLifecycleAtom,
 } from "../../features/transaction-flow/state/pending-action-request";
-import {
-  ActionReviewPage,
-  ActivityCompletePage,
-  ActivityStepsPage,
-  PendingCompletePage,
-  PendingReviewPage,
-  PendingStepsPage,
-  StakeCompletePage,
-  StakeReviewPage,
-  StakeStepsPage,
-  UnstakeCompletePage,
-  UnstakeReviewPage,
-  UnstakeStepsPage,
-} from "../../features/transaction-flow/ui";
-import { useSKWallet, WalletScopeRouteGuard } from "../../features/wallet";
-import {
-  AnimationLayout,
-  ClassicLayout,
-  container,
-  Header,
-  PoweredBy,
-} from "../../features/widget-shell";
-import {
-  Details,
-  GlobalModals,
-  headerContainer,
-  UnderMaintenance,
-  useUnderMaintenance,
-} from "../../features/widget-shell/screens";
+import { ActivityCompletePage } from "../../features/transaction-flow/ui/complete/pages/activity-complete.page";
+import { PendingCompletePage } from "../../features/transaction-flow/ui/complete/pages/pending-complete.page";
+import { StakeCompletePage } from "../../features/transaction-flow/ui/complete/pages/stake-complete.page";
+import { UnstakeCompletePage } from "../../features/transaction-flow/ui/complete/pages/unstake-complete.page";
+import { ActionReviewPage } from "../../features/transaction-flow/ui/review/pages/action-review.page";
+import { PendingReviewPage } from "../../features/transaction-flow/ui/review/pages/pending-review.page";
+import { StakeReviewPage } from "../../features/transaction-flow/ui/review/pages/stake-review.page";
+import { UnstakeReviewPage } from "../../features/transaction-flow/ui/review/pages/unstake-review.page";
+import { ActivityStepsPage } from "../../features/transaction-flow/ui/steps/pages/activity-steps.page";
+import { PendingStepsPage } from "../../features/transaction-flow/ui/steps/pages/pending-steps.page";
+import { StakeStepsPage } from "../../features/transaction-flow/ui/steps/pages/stake-steps.page";
+import { UnstakeStepsPage } from "../../features/transaction-flow/ui/steps/pages/unstake-steps.page";
+import { useSKWallet } from "../../features/wallet/react/use-wallet";
+import { WalletScopeRouteGuard } from "../../features/wallet/react/wallet-scope-route";
+import { AnimationLayout } from "../../features/widget-shell/animation-layout";
+import { ClassicLayout } from "../../features/widget-shell/classic-layout";
+import { headerContainer } from "../../features/widget-shell/classic-layout/styles.css";
+import { Details } from "../../features/widget-shell/details/details.page";
+import { Header } from "../../features/widget-shell/header";
+import { container } from "../../features/widget-shell/layout.css";
+import { PoweredBy } from "../../features/widget-shell/powered-by";
+import { useUnderMaintenance } from "../../features/widget-shell/react-use-under-maintenance";
+import { GlobalModals } from "../../features/widget-shell/ui/global-modals";
+import { default as UnderMaintenance } from "../../features/widget-shell/ui/under-maintenance";
 import { useSKLocation } from "../../shared/react/location-history";
 import { useDetailsMatch } from "../../shared/react/navigation/use-details-match";
 import { usePrevious } from "../../shared/react/use-previous";

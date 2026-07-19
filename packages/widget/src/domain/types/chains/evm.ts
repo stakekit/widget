@@ -22,7 +22,7 @@ import {
   viction,
 } from "viem/chains";
 import { EvmChainIds } from "../../../public-api/types";
-import { getNetworkLogo } from "../../../shared/lib";
+import { getNetworkLogo } from "../../../shared/lib/general";
 import type { KebabToCamelCase } from "../../../shared/types/utils";
 import { EvmNetworks } from "./networks";
 
@@ -261,8 +261,6 @@ export const evmChainsMap: EvmChainsMap = {
     },
   },
 };
-
-export { EvmChainIds } from "../../../public-api/types";
 
 EvmChainIds satisfies Record<
   Capitalize<KebabToCamelCase<SupportedEvmChain>>,

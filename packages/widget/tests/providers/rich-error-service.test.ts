@@ -2,9 +2,9 @@ import { Effect, Layer, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import { normalizeWidgetConfig } from "../../src/app/config";
-import { appRuntime } from "../../src/app/runtime";
-import { richErrorAtom } from "../../src/features/widget-shell";
+import { normalizeWidgetConfig } from "../../src/app/config/settings";
+import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { richErrorAtom } from "../../src/features/widget-shell/react/use-rich-errors";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
 

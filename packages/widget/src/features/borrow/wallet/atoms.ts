@@ -1,8 +1,8 @@
 import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { disconnectedNormalizedWalletState } from "../../../features/wallet";
 import { toBorrowWalletStateProjection } from "../../../services/borrow/wallet-state-projection";
-import { currentWalletStateResultAtom } from "../../wallet";
+import { disconnectedNormalizedWalletState } from "../../../services/wallet/domain/state";
+import { currentWalletStateResultAtom } from "../../wallet/state/root-atom";
 
 export const disconnectedBorrowWalletProjection = toBorrowWalletStateProjection(
   disconnectedNormalizedWalletState

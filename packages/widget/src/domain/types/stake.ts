@@ -12,8 +12,6 @@ import type { PositionsData } from "./positions";
 import type { ValidatorKey } from "./validators";
 import { getYieldActionArg, isBittensorStaking } from "./yields";
 
-export type { PreferredTokenYieldsPerNetwork } from "../../public-api/types";
-
 export const canBeInitialYield = (args: {
   initQueryParams: InitParams | null;
   yieldDto: EarnYieldWithProvider;

@@ -7,13 +7,13 @@ import { Button } from "../../../../shared/ui/primitives/button";
 import { Spinner } from "../../../../shared/ui/primitives/spinner";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import {
-  KycGateCard,
-  RewardRateBreakdown,
-  SelectValidator,
-} from "../../../earn/support";
-import { useTrackPage } from "../../../tracking";
-import { AnimationPage, PageContainer, TokenIcon } from "../../../widget-shell";
+import { KycGateCard } from "../../../earn/ui/components/kyc-gate-card";
+import { RewardRateBreakdown } from "../../../earn/ui/components/reward-rate-breakdown";
+import { SelectValidator } from "../../../earn/ui/components/select-validator";
+import { useTrackPage } from "../../../tracking/react/use-track-page";
+import { AnimationPage } from "../../../widget-shell/animation-page";
+import { PageContainer } from "../../../widget-shell/page-container";
+import { TokenIcon } from "../../../widget-shell/ui/token-icon";
 import { AmountBlock } from "./components/amount-block";
 import { PositionBalances } from "./components/position-balances";
 import { ProviderDetails } from "./components/provider-details";

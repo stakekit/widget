@@ -13,20 +13,18 @@ import {
   getExtendedYieldType,
   isUnstakeYieldType,
 } from "../../../../../domain/types/yields";
-import { defaultFormattedNumber } from "../../../../../shared/lib";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
+import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
-import { useYieldKycGate } from "../../../../earn";
-import type { RewardTokenDetails } from "../../../../earn/support";
-import { getRewardTokenSymbols } from "../../../../earn/support";
-import { useTrackEvent } from "../../../../tracking";
-import type { PageCta } from "../../../../widget-shell";
-import {
-  useActionPreview,
-  useRequiredExitStakeRequest,
-  useSetExitStakeRequest,
-} from "../../..";
+import { getRewardTokenSymbols } from "../../../../earn/react/use-reward-token-details/get-reward-token-symbols";
+import { useYieldKycGate } from "../../../../earn/react/use-yield-kyc-gate";
+import type { RewardTokenDetails } from "../../../../earn/ui/components/reward-token-details";
+import { useTrackEvent } from "../../../../tracking/react/use-track-event";
+import type { PageCta } from "../../../../widget-shell/page-cta";
+import { useRequiredExitStakeRequest } from "../../../react/request-route-guards";
+import { useActionPreview } from "../../../react/use-action-preview";
 import { useGasWarningCheck } from "../../../react/use-gas-warning-check";
+import { useSetExitStakeRequest } from "../../../react/use-transaction-flow";
 import { currentReviewPricesAtom } from "../../../resources/review-prices";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 

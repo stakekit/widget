@@ -1,6 +1,6 @@
 import { Effect, Stream } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { walletRuntime } from "../../../app/runtime";
+import { walletRuntime } from "../../../app/runtime/wallet-runtime";
 import type {
   ClassicTransactionWorkflowKey,
   TransactionWorkflowCommand,

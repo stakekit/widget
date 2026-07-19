@@ -3,7 +3,7 @@ import {
   type TransactionType,
 } from "../../../domain/types/action";
 import { Box } from "../../../shared/ui/primitives/box";
-import { useRequiredActivitySelection } from "../../activity";
+import { useRequiredActivitySelection } from "../../activity/react/activity-selection-route";
 import { useActivityComplete } from "./complete/hooks/use-activity-complete.hook";
 import { useComplete } from "./complete/hooks/use-complete.hook";
 import { CompletePageComponent } from "./complete/pages/common.page";

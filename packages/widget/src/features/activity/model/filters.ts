@@ -1,8 +1,6 @@
 import type { ActivityActionsQuery } from "../../../domain/schema/legacy-models";
-import {
-  type DashboardYieldCategory,
-  getApiYieldTypesForDashboardCategory,
-} from "../../../domain/types/yields";
+import { getApiYieldTypesForDashboardCategory } from "../../../domain/types/yields";
+import type { DashboardYieldCategory } from "../../../public-api/types";
 
 export type ActivityFilter = "all" | DashboardYieldCategory;
 

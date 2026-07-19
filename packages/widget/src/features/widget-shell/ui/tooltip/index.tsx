@@ -1,6 +1,6 @@
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { PropsWithChildren, ReactNode } from "react";
-import { useWidgetConfig } from "../../../../app/config";
+import { useWidgetConfig } from "../../../../app/config/use-widget-config";
 import { id } from "../../../../shared/styles/theme/ids";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { tooltipArrow, tooltipContent, triggerWrapper } from "./style.css";

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { formatAddress } from "../../../../../../shared/lib";
+import { formatAddress } from "../../../../../../shared/lib/general";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import * as CopyText from "../../../../../../shared/ui/primitives/copy-text";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
@@ -8,7 +8,7 @@ import {
   CollapsibleContent,
   CollapsibleRoot,
   CollapsibleTrigger,
-} from "../../../../../widget-shell";
+} from "../../../../../widget-shell/ui/collapsible";
 import type {
   EarnDetailAddressRow,
   EarnDetailRow,

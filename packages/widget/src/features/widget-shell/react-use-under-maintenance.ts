@@ -2,7 +2,7 @@ import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
 import { Duration, Effect, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useEffect } from "react";
-import { appRuntime } from "../../app/runtime";
+import { appRuntime } from "../../app/runtime/app-runtime";
 import { YieldApiService } from "../../services/api/yield-api-service";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 

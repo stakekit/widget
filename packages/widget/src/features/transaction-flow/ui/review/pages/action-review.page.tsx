@@ -3,14 +3,12 @@ import { capitalizeFirstLetters } from "../../../../../shared/lib/formatters";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../../tracking";
-import {
-  AnimationPage,
-  Divider,
-  PageContainer,
-  PageCtaButton,
-  ToolTip,
-} from "../../../../widget-shell";
+import { useTrackEvent } from "../../../../tracking/react/use-track-event";
+import { AnimationPage } from "../../../../widget-shell/animation-page";
+import { Divider } from "../../../../widget-shell/divider";
+import { PageContainer } from "../../../../widget-shell/page-container";
+import { PageCtaButton } from "../../../../widget-shell/page-cta";
+import { ToolTip } from "../../../../widget-shell/ui/tooltip";
 import { useActionReview } from "../hooks/use-action-review.hook";
 import ReviewTopSection from "./common-page/components/review-top-section";
 import { pointerStyles } from "./style.css";

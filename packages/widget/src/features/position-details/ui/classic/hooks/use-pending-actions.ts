@@ -4,7 +4,6 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router";
 import {
-  getTokenPriceInUSD,
   PAMultiValidatorsRequired,
   PASingleValidatorRequired,
 } from "../../../../../domain";
@@ -14,25 +13,26 @@ import type {
   EarnYieldWithProvider,
 } from "../../../../../domain/schema/earn-models";
 import { isPendingActionAmountRequired } from "../../../../../domain/types/pending-action";
+import { getTokenPriceInUSD } from "../../../../../domain/types/price";
 
 import type { ValidatorInput as ValidatorDto } from "../../../../../domain/types/validators";
 import type { ClassicTransactionWorkflowProviderDetail } from "../../../../../services/workflow/transaction-workflow-model";
-import { defaultFormattedNumber } from "../../../../../shared/lib";
+import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { usePendingActionSelectValidatorMatch } from "../../../../../shared/react/navigation/use-pending-action-select-validator-match";
 import {
   getPositionDetailsPendingActionReviewPath,
   useUnstakeOrPendingActionParams,
 } from "../../../../../shared/react/navigation/use-unstake-or-pending-action-params";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
-import { useTrackEvent } from "../../../../tracking";
-import { useSetPendingActionRequest } from "../../../../transaction-flow";
-import { useSKWallet } from "../../../../wallet";
+import { useTrackEvent } from "../../../../tracking/react/use-track-event";
+import { useSetPendingActionRequest } from "../../../../transaction-flow/react/use-transaction-flow";
+import { useSKWallet } from "../../../../wallet/react/use-wallet";
 import type {
-  Actions,
-  ExtraData,
+  PositionDetailsWorkflowAction as Actions,
   PendingActionAmountChange,
-  State,
-} from "../state/types";
+  PositionDetailsWorkflowState as State,
+} from "../../../state/workflow";
+import type { ExtraData } from "../state/types";
 import { getBalanceTokenActionType } from "../state/utils";
 import { useValidatorAddressesHandling } from "./use-validator-addresses-handling";
 import { preparePendingActionRequestDto } from "./utils";

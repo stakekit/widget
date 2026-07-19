@@ -1,4 +1,4 @@
-import { useWidgetConfig } from "../../../app/config";
+import { useWidgetConfig } from "../../../app/config/use-widget-config";
 import { isBorrowFeatureEnabled } from "../availability";
 
 export const useBorrowFeatureEnabled = () =>

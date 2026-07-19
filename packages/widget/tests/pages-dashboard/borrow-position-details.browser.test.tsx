@@ -1,6 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { userEvent } from "vitest/browser";
-import type { BorrowAccountPosition } from "../../src/features/borrow/core";
+import type { BorrowAccountPosition } from "../../src/domain/borrow/position";
 import { borrowApiRoute } from "../mocks/api-routes";
 import { rkMockWallet } from "../utils/mock-connector";
 import { describe, expect, it } from "../utils/test-extend";

@@ -1,6 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetConfigFieldAtom } from "../../../app/config";
+import { widgetConfigFieldAtom } from "../../../app/config/settings";
 import type { SupportedSKChains } from "../../../domain/types/chains";
 import type { ValidatorsConfig } from "../../../domain/types/yields";
 

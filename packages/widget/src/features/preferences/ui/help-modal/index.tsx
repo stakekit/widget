@@ -10,9 +10,9 @@ import { Button } from "../../../../shared/ui/primitives/button";
 import { HelpIcon } from "../../../../shared/ui/primitives/icons/help";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../tracking";
-import type { SelectModalProps } from "../../../widget-shell";
-import { SelectModal } from "../../../widget-shell";
+import { useTrackEvent } from "../../../tracking/react/use-track-event";
+import type { SelectModalProps } from "../../../widget-shell/ui/select-modal";
+import { SelectModal } from "../../../widget-shell/ui/select-modal";
 import type { useGeoBlock } from "../../react/use-geo-block";
 import { container, imageStyle } from "./style.css";
 

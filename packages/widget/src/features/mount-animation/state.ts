@@ -1,6 +1,6 @@
 import { Option } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetConfigAtom } from "../../app/config";
+import { widgetConfigAtom } from "../../app/config/settings";
 import { config } from "../../shared/config/widget-defaults";
 
 type MountAnimationState = {

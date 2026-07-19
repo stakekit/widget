@@ -1,8 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  makeWidgetRuntimeGenerationKey,
-  normalizeWidgetConfig,
-} from "../../src/app/config";
+import { makeWidgetRuntimeGenerationKey } from "../../src/app/config/runtime-generation";
+import { normalizeWidgetConfig } from "../../src/app/config/settings";
 
 const settings = normalizeWidgetConfig({
   apiKey: "api-key",

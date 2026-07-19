@@ -5,11 +5,20 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useNavigate } from "react-router";
-import { useWidgetConfig } from "../../../app/config";
+import { useWidgetConfig } from "../../../app/config/use-widget-config";
+import type { CollateralToken } from "../../../domain/borrow/collateral-token";
+import type { Market } from "../../../domain/borrow/market";
+import type { BorrowNetwork } from "../../../domain/borrow/network";
+import type { BorrowToken } from "../../../domain/borrow/token";
 import type { AppToken } from "../../../domain/schema/legacy-models";
-import { useTrackEvent, useTrackPage } from "../../../features/tracking";
-import { AnimationPage } from "../../../features/widget-shell";
-import { defaultFormattedNumber, formatNumber } from "../../../shared/lib";
+import type {
+  BorrowWalletBridgeState,
+  BorrowWalletConnectedBridgeState,
+} from "../../../services/borrow/wallet-state-projection";
+import {
+  defaultFormattedNumber,
+  formatNumber,
+} from "../../../shared/lib/number-format";
 import { combineRecipeWithVariant } from "../../../shared/styles/recipe-variant";
 import { Box } from "../../../shared/ui/primitives/box";
 import {
@@ -20,31 +29,28 @@ import { ContentLoaderSquare } from "../../../shared/ui/primitives/content-loade
 import { CaretDownIcon } from "../../../shared/ui/primitives/icons/caret-down";
 import { Image } from "../../../shared/ui/primitives/image";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import * as AmountToggle from "../../earn/support";
-import { AddressRow, DetailRow, DetailsSection } from "../../earn/support";
-import { ConnectButton } from "../../wallet";
+import * as AmountToggle from "../../earn/ui/components/amount-toggle";
 import {
-  MaxButton,
-  NumberInput,
-  PageCtaButton,
-  SelectModal,
-  TabPageContainer,
-  TokenIcon,
-  VerticalDivider,
-} from "../../widget-shell";
-import type {
-  BorrowMarketWalletBalances,
-  BorrowNetwork,
-  BorrowToken,
-  BorrowWalletBridgeState,
-  BorrowWalletConnectedBridgeState,
-  CollateralToken,
-  Market,
-} from "../core";
-import { useBorrowWalletBridge } from "./connected-wallet";
+  AddressRow,
+  DetailRow,
+  DetailsSection,
+} from "../../earn/ui/dashboard/earn-details/components/details-section";
+import { useTrackEvent } from "../../tracking/react/use-track-event";
+import { useTrackPage } from "../../tracking/react/use-track-page";
+import { ConnectButton } from "../../wallet/ui/connect-button";
+import { AnimationPage } from "../../widget-shell/animation-page";
+import { VerticalDivider } from "../../widget-shell/dashboard/components/divider";
+import { TabPageContainer } from "../../widget-shell/dashboard/components/tab-page-container";
+import { PageCtaButton } from "../../widget-shell/page-cta";
+import { MaxButton } from "../../widget-shell/ui/max-button";
+import { NumberInput } from "../../widget-shell/ui/number-input";
+import { SelectModal } from "../../widget-shell/ui/select-modal";
+import { TokenIcon } from "../../widget-shell/ui/token-icon";
+import type { BorrowMarketWalletBalances } from "../balances";
 import { getBorrowDetailsModel, getBorrowMarketPairLabel } from "./model";
 import * as styles from "./styles.css";
 import { useBorrowDashboard } from "./use-borrow-dashboard";
+import { useBorrowWalletBridge } from "./wallet-bridge";
 
 type DashboardBorrowToken = AppToken & { network: BorrowNetwork };
 

@@ -1,13 +1,11 @@
 import * as Schema from "effect/Schema";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
+import { Integration } from "../../src/domain/borrow/integration";
+import { Market } from "../../src/domain/borrow/market";
+import { BorrowAccountPosition } from "../../src/domain/borrow/position";
+import { deriveBorrowPositionItems } from "../../src/domain/borrow/position-items";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import {
-  BorrowAccountPosition,
-  deriveBorrowPositionItems,
-  Integration,
-  Market,
-} from "../../src/features/borrow/core";
 import {
   getBorrowPositionActions,
   getBorrowPositionDetailsModel,

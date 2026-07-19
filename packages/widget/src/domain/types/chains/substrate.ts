@@ -1,6 +1,6 @@
 import type { Chain } from "@stakekit/rainbowkit";
 import { SubstrateChainIds } from "../../../public-api/types";
-import { getNetworkLogo } from "../../../shared/lib";
+import { getNetworkLogo } from "../../../shared/lib/general";
 import type { KebabToCamelCase } from "../../../shared/types/utils";
 import { SubstrateNetworks } from "./networks";
 
@@ -86,8 +86,6 @@ export const substrateChainsMap: SubstrateChainsMap = {
     ss58Format: 0,
   },
 };
-
-export { SubstrateChainIds } from "../../../public-api/types";
 
 SubstrateChainIds satisfies Record<
   Capitalize<KebabToCamelCase<SupportedSubstrateChains>>,

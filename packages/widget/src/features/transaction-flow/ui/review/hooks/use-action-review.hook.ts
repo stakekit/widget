@@ -11,12 +11,12 @@ import {
   getExtendedYieldType,
   isUnstakeYieldType,
 } from "../../../../../domain/types/yields";
-import { defaultFormattedNumber } from "../../../../../shared/lib";
 import { dateOlderThen7Days } from "../../../../../shared/lib/date";
-import { useRequiredActivitySelection } from "../../../../activity";
-import { useYieldType } from "../../../../earn/support";
-import { useTrackPage } from "../../../../tracking";
-import type { PageCta } from "../../../../widget-shell";
+import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
+import { useRequiredActivitySelection } from "../../../../activity/react/activity-selection-route";
+import { useYieldType } from "../../../../earn/react/use-yield-type";
+import { useTrackPage } from "../../../../tracking/react/use-track-page";
+import type { PageCta } from "../../../../widget-shell/page-cta";
 import type { LabelKey } from "../types";
 
 export const useActionReview = () => {

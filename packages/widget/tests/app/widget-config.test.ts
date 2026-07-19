@@ -2,10 +2,10 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import {
   normalizeWidgetConfig,
-  widgetBootstrapConfigAtom,
   widgetConfigAtom,
-} from "../../src/app/config";
-import { widgetConfigFieldAtom } from "../../src/app/config/settings";
+  widgetConfigFieldAtom,
+} from "../../src/app/config/settings";
+import { widgetBootstrapConfigAtom } from "../../src/app/config/widget-config";
 
 describe("widget configuration", () => {
   it("normalizes defaults, category order, and token preference keys", () => {

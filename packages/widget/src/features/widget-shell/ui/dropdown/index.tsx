@@ -1,6 +1,6 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Fragment } from "react";
-import { useWidgetConfig } from "../../../../app/config";
+import { useWidgetConfig } from "../../../../app/config/use-widget-config";
 import { id } from "../../../../shared/styles/theme/ids";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { CaretDownIcon } from "../../../../shared/ui/primitives/icons/caret-down";

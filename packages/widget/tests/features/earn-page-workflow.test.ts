@@ -1,6 +1,6 @@
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
-import { widgetConfigAtom } from "../../src/app/config";
+import { widgetConfigAtom } from "../../src/app/config/settings";
 import {
   earnMachineEntryAtom,
   earnMachineIntentAtom,

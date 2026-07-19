@@ -1,20 +1,21 @@
 import BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { getTokenPriceInUSD } from "../../../domain";
 import type { RewardsSummary } from "../../../domain/schema/dashboard-models";
 import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
 import type { Prices } from "../../../domain/schema/health-price-models";
 import type { YieldId } from "../../../domain/schema/identifiers";
 import { getPositionTotalAmount } from "../../../domain/types/positions";
+import { getTokenPriceInUSD } from "../../../domain/types/price";
+import { PricesKey, pricesAtom } from "../../earn/resources/prices";
 import {
   CurrentRewardsSummaryKey,
+  positiveRewardsSummaryAtom,
+} from "../../earn/resources/yield-insights";
+import {
   MultiYieldsKey,
   multiYieldsByIdAtom,
-  PricesKey,
-  positiveRewardsSummaryAtom,
-  pricesAtom,
-} from "../../earn";
+} from "../../earn/resources/yields";
 import { type PositionItem, positionsTableDataAtom } from "./positions";
 import { tokenBalancesScanAtom } from "./token-balances";
 

@@ -5,9 +5,9 @@ import type { AppToken } from "../../../../../../../domain/schema/legacy-models"
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { Heading } from "../../../../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import type { RewardTokenDetails } from "../../../../../../earn/support";
-import { EstimatedRewardAmounts } from "../../../../../../earn/support";
-import { TokenIcon } from "../../../../../../widget-shell";
+import { EstimatedRewardAmounts } from "../../../../../../earn/ui/components/estimated-reward-amounts";
+import type { RewardTokenDetails } from "../../../../../../earn/ui/components/reward-token-details";
+import { TokenIcon } from "../../../../../../widget-shell/ui/token-icon";
 import { headingStyles } from "../../style.css";
 
 type Props = {

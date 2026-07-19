@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from "react";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
-import type { WidgetConfig } from "../../src/app/config";
+import type { WidgetConfig } from "../../src/services/config/widget-config";
 
 export const TestAtomRuntimeProvider = ({
   children,

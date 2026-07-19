@@ -1,6 +1,6 @@
 import React from "react";
-import { tokenString } from "../../../../domain";
 import type { AppToken } from "../../../../domain/schema/legacy-models";
+import { tokenString } from "../../../../domain/types/tokens";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { symbolIcon } from "./style.css";
 

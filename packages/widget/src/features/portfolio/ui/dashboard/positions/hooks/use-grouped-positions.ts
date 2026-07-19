@@ -1,10 +1,13 @@
 import { useAtomValue } from "@effect/atom-react";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { useWidgetConfig } from "../../../../../../app/config";
+import { useWidgetConfig } from "../../../../../../app/config/use-widget-config";
 import type { Position as BorrowPosition } from "../../../../../../domain/borrow/position";
-import type { DashboardYieldCategory } from "../../../../../../domain/types/yields";
-import { MultiYieldsKey, multiYieldCategoriesAtom } from "../../../../../earn";
-import type { PositionItem } from "../../../..";
+import type { DashboardYieldCategory } from "../../../../../../public-api/types";
+import {
+  MultiYieldsKey,
+  multiYieldCategoriesAtom,
+} from "../../../../../earn/resources/yields";
+import type { PositionItem } from "../../../../resources/positions";
 
 export type UnifiedPositionItem =
   | { readonly kind: "borrow"; readonly position: BorrowPosition }

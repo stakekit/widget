@@ -6,17 +6,17 @@ import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/cont
 import { InfoIcon } from "../../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import { WarningBox } from "../../../../../../shared/ui/primitives/warning-box";
-import type { RewardTokenDetails } from "../../../../../earn/support";
-import { MetaInfo } from "../../../../../earn/support";
-import { useTrackEvent } from "../../../../../tracking";
+import { MetaInfo } from "../../../../../earn/ui/components/meta-info";
+import type { RewardTokenDetails } from "../../../../../earn/ui/components/reward-token-details";
+import { useTrackEvent } from "../../../../../tracking/react/use-track-event";
+import { AnimationPage } from "../../../../../widget-shell/animation-page";
+import { Divider } from "../../../../../widget-shell/divider";
+import { PageContainer } from "../../../../../widget-shell/page-container";
 import {
-  AnimationPage,
-  Divider,
-  PageContainer,
   type PageCta,
   PageCtaButton,
-  ToolTip,
-} from "../../../../../widget-shell";
+} from "../../../../../widget-shell/page-cta";
+import { ToolTip } from "../../../../../widget-shell/ui/tooltip";
 import type { FeesBps } from "../../types";
 import { feeStyles, pointerStyles } from "../style.css";
 import ReviewTopSection from "./components/review-top-section";

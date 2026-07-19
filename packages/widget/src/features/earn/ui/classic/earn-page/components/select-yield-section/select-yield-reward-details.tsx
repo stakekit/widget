@@ -1,6 +1,6 @@
 import BigNumber from "bignumber.js";
 import { Trans, useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../../../app/config";
+import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
 import type { EarnValidator } from "../../../../../../../domain/schema/earn-models";
 import type { AppToken } from "../../../../../../../domain/schema/legacy-models";
 import { getEffectiveYieldRewardRateDetails } from "../../../../../../../domain/types/reward-rate";
@@ -8,12 +8,12 @@ import {
   getYieldOutputToken,
   getYieldTypeLabels,
 } from "../../../../../../../domain/types/yields";
-import { formatNumber } from "../../../../../../../shared/lib";
+import { formatNumber } from "../../../../../../../shared/lib/number-format";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { MorphoStarsIcon } from "../../../../../../../shared/ui/primitives/icons/morpho-stars";
 import { Image } from "../../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { Divider } from "../../../../../../widget-shell";
+import { Divider } from "../../../../../../widget-shell/divider";
 import { EstimatedRewardAmounts } from "../../../../components/estimated-reward-amounts";
 import { RewardRateBreakdown } from "../../../../components/reward-rate-breakdown";
 import { isMorphoProvider } from "../../../../components/reward-token-details";

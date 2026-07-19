@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { FallbackContent } from "../../../../widget-shell";
+import { FallbackContent } from "../../../../widget-shell/fallback-content";
 import { ActionListItem } from "../../classic/activity-page/components/action-list-item";
 import { ActivityFilters } from "../../classic/activity-page/components/activity-filters";
 import { useActivityPage } from "../../classic/activity-page/hooks/use-activity-page";

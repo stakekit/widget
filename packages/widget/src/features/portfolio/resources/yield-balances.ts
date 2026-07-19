@@ -1,16 +1,14 @@
 import { Clock, Duration, Effect, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime";
+import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { YieldBalancesCommand } from "../../../domain/schema/financial-models";
-import { actionHistoryTimestampAtom } from "../../../features/transaction-flow";
-import {
-  currentWalletScopeAtom,
-  type WalletScopeKey,
-} from "../../../features/wallet";
 import { YieldApiService } from "../../../services/api/yield-api-service";
 import { resourceInvalidationKeys } from "../../../services/resource-invalidation";
+import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
+import { actionHistoryTimestampAtom } from "../../transaction-flow/state/action-history";
+import { currentWalletScopeAtom } from "../../wallet/state/selectors";
 
 const scheduledRefreshInterval = Duration.minutes(1);
 const recentActionRefreshInterval = Duration.seconds(4);

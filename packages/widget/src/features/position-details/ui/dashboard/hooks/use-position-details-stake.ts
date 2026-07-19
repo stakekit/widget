@@ -4,12 +4,8 @@ import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../app/config";
-import {
-  equalTokens,
-  getTokenPriceInUSD,
-  stakeTokenSameAsGasToken,
-} from "../../../../../domain";
+import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
+import { stakeTokenSameAsGasToken } from "../../../../../domain";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
@@ -20,7 +16,9 @@ import type {
   BalanceDataKey,
   PositionsData,
 } from "../../../../../domain/types/positions";
+import { getTokenPriceInUSD } from "../../../../../domain/types/price";
 import { getInitSelectedValidators } from "../../../../../domain/types/stake";
+import { equalTokens } from "../../../../../domain/types/tokens";
 import type { ValidatorKey } from "../../../../../domain/types/validators";
 import {
   getYieldActionArg,
@@ -31,38 +29,35 @@ import { isLedgerLiveConnector } from "../../../../../services/wallet/connectors
 import {
   defaultFormattedNumber,
   formatNumber,
-} from "../../../../../shared/lib";
+} from "../../../../../shared/lib/number-format";
 import {
   getPositionDetailsStakeReviewPath,
   usePositionDetailsStakeMatch,
 } from "../../../../../shared/react/navigation/use-position-details-stake-match";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
+import { useEstimatedRewards } from "../../../../earn/react/use-estimated-rewards";
+import { useMaxMinYieldAmount } from "../../../../earn/react/use-max-min-yield-amount";
+import { useProvidersDetails } from "../../../../earn/react/use-provider-details";
+import { useYieldKycGate } from "../../../../earn/react/use-yield-kyc-gate";
+import { useYieldType } from "../../../../earn/react/use-yield-type";
+import { useYieldValidators } from "../../../../earn/react/use-yield-validators";
 import {
   getTokensPricesRequest,
   PricesKey,
   pricesAtom,
-  useProvidersDetails,
-  useYieldKycGate,
-  useYieldValidators,
-} from "../../../../earn";
-import {
-  useAmountValidation,
-  useEstimatedRewards,
-  useMaxMinYieldAmount,
-  useStakeEnterRequestDto,
-  useYieldType,
-} from "../../../../earn/support";
-import { useTokenBalancesScan } from "../../../../portfolio";
-import { useTrackEvent } from "../../../../tracking";
-import { useSetEnterStakeRequest } from "../../../../transaction-flow";
-import {
-  addLedgerAccountAtom,
-  useCloseChainModal,
-  useSKWallet,
-  useWalletScopeRoute,
-} from "../../../../wallet";
-import type { NumberInputProps, PageCta } from "../../../../widget-shell";
-import { useNavigateWithScrollToTop } from "../../../../widget-shell";
+} from "../../../../earn/resources/prices";
+import { useAmountValidation } from "../../../../earn/ui/classic/earn-page/state/use-amount-validation";
+import { useStakeEnterRequestDto } from "../../../../earn/ui/classic/earn-page/state/use-stake-enter-request-dto";
+import { useTokenBalancesScan } from "../../../../portfolio/react/use-token-balances-scan";
+import { useTrackEvent } from "../../../../tracking/react/use-track-event";
+import { useSetEnterStakeRequest } from "../../../../transaction-flow/react/use-transaction-flow";
+import { useCloseChainModal } from "../../../../wallet/react/use-close-chain-modal";
+import { useSKWallet } from "../../../../wallet/react/use-wallet";
+import { useWalletScopeRoute } from "../../../../wallet/react/wallet-scope-route";
+import { addLedgerAccountAtom } from "../../../../wallet/state/workflows";
+import type { PageCta } from "../../../../widget-shell/page-cta";
+import type { NumberInputProps } from "../../../../widget-shell/ui/number-input";
+import { useNavigateWithScrollToTop } from "../../../../widget-shell/use-navigate-with-scroll-to-top";
 import { usePositionDetails } from "../../classic/hooks/use-position-details";
 import { usePositionDetailsStakeMachine } from "../state/stake-machine";
 

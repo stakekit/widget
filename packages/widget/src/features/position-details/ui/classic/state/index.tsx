@@ -16,27 +16,30 @@ import {
 } from "../../../../../domain/types/yields";
 import { config } from "../../../../../shared/config/widget-defaults";
 import { useUnstakeOrPendingActionParams } from "../../../../../shared/react/navigation/use-unstake-or-pending-action-params";
+import { useMaxMinYieldAmount } from "../../../../earn/react/use-max-min-yield-amount";
+import { PricesKey, pricesAtom } from "../../../../earn/resources/prices";
 import {
-  PricesKey,
-  pricesAtom,
   YieldOpportunityKey,
   yieldOpportunityAtom,
-} from "../../../../earn";
-import { useMaxMinYieldAmount } from "../../../../earn/support";
+} from "../../../../earn/resources/yields";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
   positionBalancesByTypeAtom,
-} from "../../../../portfolio";
-import { useWalletScopeRoute } from "../../../../wallet";
+} from "../../../../portfolio/resources/positions";
+import { useWalletScopeRoute } from "../../../../wallet/react/wallet-scope-route";
 import { useStakedOrLiquidBalance } from "../../../react/use-staked-or-liquid-balance";
+import type {
+  BalanceTokenActionType,
+  PositionDetailsWorkflowState as State,
+} from "../../../state/workflow";
 import {
   type PositionDetailsWorkflowAction,
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
   reducePositionDetailsWorkflow,
-} from "../../../state";
-import type { BalanceTokenActionType, ExtraData, State } from "./types";
+} from "../../../state/workflow";
+import type { ExtraData } from "./types";
 import { getBalanceTokenActionType } from "./utils";
 
 export const useUnstakeOrPendingAction = () => {

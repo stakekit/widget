@@ -10,11 +10,11 @@ import {
   getExtendedYieldType,
   isDepositYieldType,
 } from "../../../../../domain/types/yields";
-import { defaultFormattedNumber } from "../../../../../shared/lib";
 import { formatDurationUntilDate } from "../../../../../shared/lib/date";
+import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { TokenIcon } from "../../../../widget-shell";
+import { TokenIcon } from "../../../../widget-shell/ui/token-icon";
 
 export const PositionBalances = ({
   yieldBalance,

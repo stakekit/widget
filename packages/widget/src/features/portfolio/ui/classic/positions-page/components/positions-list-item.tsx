@@ -7,8 +7,9 @@ import { SKLink } from "../../../../../../shared/ui/primitives/link";
 import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
 import { Spinner } from "../../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import { TokenIcon, ToolTip } from "../../../../../widget-shell";
-import type { PositionItem } from "../../../..";
+import { TokenIcon } from "../../../../../widget-shell/ui/token-icon";
+import { ToolTip } from "../../../../../widget-shell/ui/tooltip";
+import type { PositionItem } from "../../../../resources/positions";
 import { usePositionListItem } from "../hooks/use-position-list-item";
 import { listItemContainer, viaText } from "../style.css";
 import {

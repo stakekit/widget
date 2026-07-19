@@ -2,7 +2,7 @@ import { useAtomMount, useAtomValue } from "@effect/atom-react";
 import type * as Atom from "effect/unstable/reactivity/Atom";
 import { Navigate, Outlet } from "react-router";
 import { ClassicTransactionWorkflowContext } from "../../../features/transaction-flow/react/classic-transaction-workflow-context";
-import { currentWalletScopeAtom } from "../../../features/wallet";
+import { currentWalletScopeAtom } from "../../../features/wallet/state/selectors";
 import { sameWalletScopeOwner } from "../../../services/wallet/domain/scope";
 import type { ClassicTransactionWorkflowKey } from "../../../services/workflow/transaction-workflow-model";
 

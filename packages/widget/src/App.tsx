@@ -7,9 +7,11 @@ import ReactDOM from "react-dom/client";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { Providers } from "./app/composition/providers";
 import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";
-import { normalizeWidgetConfig, useWidgetConfig } from "./app/config";
-import { ClassicRoutes, DashboardRoutes } from "./app/routes";
-import { appContainer } from "./features/widget-shell";
+import { normalizeWidgetConfig } from "./app/config/settings";
+import { useWidgetConfig } from "./app/config/use-widget-config";
+import { ClassicRoutes } from "./app/routes/classic-routes";
+import { DashboardRoutes } from "./app/routes/dashboard-routes";
+import { appContainer } from "./features/widget-shell/layout.css";
 import type {
   BundledSKWidgetProps,
   SKAppProps,
@@ -35,8 +37,6 @@ const Root = () => (
     <App />
   </Providers>
 );
-
-export type { BundledSKWidgetProps, SKAppProps } from "./public-api/types";
 
 export const SKApp = (props: SKAppProps) => {
   const variantProps: VariantProps =

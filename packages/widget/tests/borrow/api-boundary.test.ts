@@ -1,12 +1,12 @@
 import { Effect, Logger, Schema } from "effect";
 import { describe, expect, it } from "vitest";
+import { Action } from "../../src/domain/borrow/action";
+import { Integration } from "../../src/domain/borrow/integration";
 import {
-  Action,
   BorrowIntegrationPositionsResponse,
   BorrowIntegrationsResponse,
   BorrowMarketsResponse,
-  Integration,
-} from "../../src/features/borrow/core";
+} from "../../src/domain/borrow/responses";
 
 const address = "0x0000000000000000000000000000000000000001";
 

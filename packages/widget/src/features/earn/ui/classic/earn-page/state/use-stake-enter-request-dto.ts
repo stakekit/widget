@@ -14,7 +14,7 @@ import type {
 
 import type { ValidatorKey } from "../../../../../../domain/types/validators";
 import { getYieldActionArg } from "../../../../../../domain/types/yields";
-import { useSKWallet } from "../../../../../wallet";
+import { useSKWallet } from "../../../../../wallet/react/use-wallet";
 
 export const useStakeEnterRequestDto = ({
   selectedProviderYieldId,

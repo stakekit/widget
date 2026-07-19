@@ -1,6 +1,6 @@
 import type { Chain } from "@stakekit/rainbowkit";
 import { MiscChainIds } from "../../../public-api/types";
-import { getTokenLogo } from "../../../shared/lib";
+import { getTokenLogo } from "../../../shared/lib/general";
 import type { KebabToCamelCase } from "../../../shared/types/utils";
 import { MiscNetworks } from "./networks";
 
@@ -147,8 +147,6 @@ export const miscChainsMap: MiscChainsMap = {
     wagmiChain: cardano,
   },
 };
-
-export { MiscChainIds } from "../../../public-api/types";
 
 MiscChainIds satisfies Record<
   Capitalize<KebabToCamelCase<SupportedMiscChains>>,

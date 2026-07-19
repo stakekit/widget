@@ -2,11 +2,11 @@ import { RegistryProvider, useAtomSet } from "@effect/atom-react";
 import type { PropsWithChildren } from "react";
 import { useLayoutEffect, useState } from "react";
 import type { TrackingConfig } from "../../../../public-api/types";
+import type { WidgetConfig } from "../../../../services/config/widget-config";
 import {
   normalizeWidgetConfig,
-  type WidgetConfig,
   widgetConfigAtom,
-} from "../../../config";
+} from "../../../config/settings";
 
 type TrackingProviderProps = PropsWithChildren<{
   readonly tracking: TrackingConfig | undefined;

@@ -14,7 +14,7 @@ import {
   type WalletScopeKey,
 } from "../../../../../services/wallet/domain/scope";
 import type { Action } from "../../../../../shared/types/utils";
-import type { SelectModalProps } from "../../../../widget-shell";
+import type { SelectModalProps } from "../../../../widget-shell/ui/select-modal";
 
 type State = {
   selectedValidators: Set<ValidatorDto["address"]>;

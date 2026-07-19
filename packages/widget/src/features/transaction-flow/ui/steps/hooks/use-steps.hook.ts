@@ -13,8 +13,8 @@ import {
   getCurrentTransactionWorkflowTransaction,
 } from "../../../../../services/workflow/transaction-workflow-model";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
-import { useTrackEvent } from "../../../../tracking";
-import type { PageCta } from "../../../../widget-shell";
+import { useTrackEvent } from "../../../../tracking/react/use-track-event";
+import type { PageCta } from "../../../../widget-shell/page-cta";
 import { useTransactionWorkflow } from "./use-transaction-workflow.hook";
 
 export const useSteps = () => {

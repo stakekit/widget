@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
-import { useMountAnimation } from "../../../../features/mount-animation";
+import { useMountAnimation } from "../../../../features/mount-animation/react/use-mount-animation";
 import { delayAPIRequests } from "../../../../services/api/delay-api-requests";
 import { useSKLocation } from "../../../../shared/react/location-history";
-import { useWidgetConfig } from "../../../config";
+import { useWidgetConfig } from "../../../config/use-widget-config";
 
 const removeDelay = delayAPIRequests();
 

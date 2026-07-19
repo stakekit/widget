@@ -1,9 +1,9 @@
 import { getActionInputToken } from "../../../../../domain/types/action";
-import { defaultFormattedNumber } from "../../../../../shared/lib";
-import { useRequiredActivitySelection } from "../../../../activity";
-import { useProvidersDetails } from "../../../../earn";
-import { useYieldType } from "../../../../earn/support";
-import { useTrackPage } from "../../../../tracking";
+import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
+import { useRequiredActivitySelection } from "../../../../activity/react/activity-selection-route";
+import { useProvidersDetails } from "../../../../earn/react/use-provider-details";
+import { useYieldType } from "../../../../earn/react/use-yield-type";
+import { useTrackPage } from "../../../../tracking/react/use-track-page";
 
 export const useActivityComplete = () => {
   useTrackPage("activityComplete");

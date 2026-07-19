@@ -2,7 +2,7 @@ import { Cause, Effect, Layer, Option, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import { appRuntime } from "../../src/app/runtime";
+import { appRuntime } from "../../src/app/runtime/app-runtime";
 import {
   ActionCommand,
   YieldAction,
@@ -10,7 +10,7 @@ import {
 import {
   ActionPreviewKey,
   actionPreviewAtom,
-} from "../../src/features/transaction-flow";
+} from "../../src/features/transaction-flow/resources/action-preview";
 import {
   type ActionPreviewRequest,
   makeYieldApiService,

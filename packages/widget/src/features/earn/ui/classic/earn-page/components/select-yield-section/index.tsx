@@ -1,11 +1,11 @@
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../../../app/config";
+import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { Divider } from "../../../../../../widget-shell";
+import { Divider } from "../../../../../../widget-shell/divider";
 import { YieldRiskRatingSummary } from "../../../../components/yield-risk";
 import { useEarnPageModel } from "../../state/earn-page-model";
 import { apyYield } from "../../styles.css";

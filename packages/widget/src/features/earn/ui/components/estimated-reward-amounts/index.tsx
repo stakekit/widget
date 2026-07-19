@@ -1,10 +1,10 @@
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../app/config";
+import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { VerticalDivider } from "../../../../widget-shell";
+import { VerticalDivider } from "../../../../widget-shell/dashboard/components/divider";
 import { selectYieldRewardsText } from "../../classic/earn-page/components/select-yield-section/styles.css";
 
 type EstimatedRewardAmountsProps = {

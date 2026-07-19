@@ -1,15 +1,13 @@
 import { Duration, Effect, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime";
+import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { TokenBalanceScanCommand } from "../../../domain/schema/financial-models";
-import {
-  currentWalletScopeAtom,
-  type WalletScopeKey,
-} from "../../../features/wallet";
 import { LegacyApiService } from "../../../services/api/legacy-api-service";
 import { resourceInvalidationKeys } from "../../../services/resource-invalidation";
+import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
+import { currentWalletScopeAtom } from "../../wallet/state/selectors";
 
 const scheduledRefreshInterval = Duration.minutes(1);
 

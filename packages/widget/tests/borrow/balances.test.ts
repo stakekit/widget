@@ -1,11 +1,11 @@
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
+import { Market } from "../../src/domain/borrow/market";
 import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
 import {
   deriveBorrowMarketWalletBalances,
   deriveBorrowTokenWalletBalance,
-  Market,
-} from "../../src/features/borrow/core";
+} from "../../src/features/borrow/balances";
 
 const market = Schema.decodeUnknownSync(Market)({
   id: "aave-v3-ethereum-usdc",

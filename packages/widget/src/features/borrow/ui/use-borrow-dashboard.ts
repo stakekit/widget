@@ -1,7 +1,8 @@
 import { useAtom } from "@effect/atom-react";
 import type BigNumber from "bignumber.js";
-import { borrowActionFormAtom, currentBorrowDashboardAtom } from "../core";
-import { useBorrowConnectedWalletBridge } from "./connected-wallet";
+import { borrowActionFormAtom } from "../atoms/action-form";
+import { currentBorrowDashboardAtom } from "../atoms/form";
+import { useBorrowConnectedWalletBridge } from "./wallet-bridge";
 
 export const useBorrowDashboard = () => {
   useBorrowConnectedWalletBridge();

@@ -5,15 +5,15 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import { PreferredIcon } from "../../../../../shared/ui/primitives/icons/preferred";
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import type { ProviderDetails as ProviderDetailsModel } from "../../../../earn";
-import { useMetaInfo } from "../../../../earn/support";
+import type { ProviderDetails as ProviderDetailsModel } from "../../../../earn/react/use-provider-details";
+import { useMetaInfo } from "../../../../earn/ui/components/select-validator/meta-info";
+import { Divider } from "../../../../widget-shell/divider";
 import {
   CollapsibleArrow,
   CollapsibleContent,
   CollapsibleRoot,
   CollapsibleTrigger,
-  Divider,
-} from "../../../../widget-shell";
+} from "../../../../widget-shell/ui/collapsible";
 import { inactiveContainer, noWrap } from "../styles.css";
 
 export const ProviderDetails = ({

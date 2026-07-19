@@ -3,7 +3,7 @@ import { Root as VisuallyHiddenRoot } from "@radix-ui/react-visually-hidden";
 import clsx from "clsx";
 import type { ChangeEvent, PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useWidgetConfig } from "../../../../app/config";
+import { useWidgetConfig } from "../../../../app/config/use-widget-config";
 import { useSavedRef } from "../../../../shared/react/use-saved-ref";
 import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-variant";
 import { id } from "../../../../shared/styles/theme/ids";

@@ -1,12 +1,13 @@
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../app/config";
-import { useMountAnimation } from "../../../../../features/mount-animation";
+import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useTrackPage } from "../../../../tracking";
-import { ZerionChainModal } from "../../../../wallet";
-import { PageContainer, PageCtaButton } from "../../../../widget-shell";
+import { useMountAnimation } from "../../../../mount-animation/react/use-mount-animation";
+import { useTrackPage } from "../../../../tracking/react/use-track-page";
+import { ZerionChainModal } from "../../../../wallet/ui/zerion-chain-modal";
+import { PageContainer } from "../../../../widget-shell/page-container";
+import { PageCtaButton } from "../../../../widget-shell/page-cta";
 import { KycGateCard } from "../../components/kyc-gate-card";
 import { ExtraArgsSelection } from "./components/extra-args-selection";
 import { Footer } from "./components/footer";

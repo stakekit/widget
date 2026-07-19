@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../app/config";
+import { useWidgetConfig } from "../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-variant";
 import { Box, type BoxProps } from "../../../../shared/ui/primitives/box";
 import { pressAnimation } from "../../../../shared/ui/primitives/button/styles.css";

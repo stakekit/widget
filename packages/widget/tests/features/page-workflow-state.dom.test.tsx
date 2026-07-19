@@ -4,17 +4,17 @@ import { Schema } from "effect";
 import { act, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
-import { normalizeWidgetConfig } from "../../src/app/config";
+import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   earnPageSubmittedAtom,
   getEarnPageValidation,
-} from "../../src/features/earn";
+} from "../../src/features/earn/state/page-workflow";
 import {
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
   reducePositionDetailsWorkflow,
-} from "../../src/features/position-details/state";
+} from "../../src/features/position-details/state/workflow";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { render } from "../utils/test-utils.dom";
 

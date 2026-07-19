@@ -1,10 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../../../app/config";
+import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
 import type { TronResource } from "../../../../../../../domain/schema/legacy-models";
 import { getYieldActionArg } from "../../../../../../../domain/types/yields";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { Divider, Dropdown } from "../../../../../../widget-shell";
+import { Divider } from "../../../../../../widget-shell/divider";
+import { Dropdown } from "../../../../../../widget-shell/ui/dropdown";
 import { useEarnPageModel } from "../../state/earn-page-model";
 
 export const ExtraArgsSelection = () => {

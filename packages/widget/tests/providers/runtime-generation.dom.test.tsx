@@ -5,8 +5,8 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
-import { normalizeWidgetConfig } from "../../src/app/config";
-import { appRuntime } from "../../src/app/runtime";
+import { normalizeWidgetConfig } from "../../src/app/config/settings";
+import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { render } from "../utils/test-utils.dom";
 

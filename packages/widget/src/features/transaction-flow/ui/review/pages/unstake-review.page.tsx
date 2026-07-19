@@ -1,6 +1,6 @@
-import { KycGateCard } from "../../../../earn/support";
-import { UnstakeSignPopup } from "../../../../position-details/support";
-import { useTrackPage } from "../../../../tracking";
+import { KycGateCard } from "../../../../earn/ui/components/kyc-gate-card";
+import { UnstakeSignPopup } from "../../../../position-details/ui/classic/components/unstake-sign-popup";
+import { useTrackPage } from "../../../../tracking/react/use-track-page";
 import { useUnstakeActionReview } from "../hooks/use-unstake-review.hook";
 import { ReviewPage } from "./common-page/common.page";
 

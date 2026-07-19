@@ -1,11 +1,11 @@
 import { Option } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetConfigAtom } from "../../../../../app/config";
-import { initParamsAtom } from "../../../../init-params";
+import { widgetConfigAtom } from "../../../../../app/config/settings";
+import { initParamsAtom } from "../../../../init-params/atoms";
 import {
   currentWalletScopeAtom,
   selectCurrentWalletAtom,
-} from "../../../../wallet";
+} from "../../../../wallet/state/selectors";
 import { resolveEarnView } from "../resolver/view";
 import {
   type EarnEntry,

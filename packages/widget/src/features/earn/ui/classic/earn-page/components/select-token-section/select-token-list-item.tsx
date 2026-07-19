@@ -3,12 +3,12 @@ import type { ComponentProps } from "react";
 import { memo } from "react";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../../../../tracking";
+import { useTrackEvent } from "../../../../../../tracking/react/use-track-event";
 import {
   SelectModalItem,
   SelectModalItemContainer,
-  TokenIcon,
-} from "../../../../../../widget-shell";
+} from "../../../../../../widget-shell/ui/select-modal";
+import { TokenIcon } from "../../../../../../widget-shell/ui/token-icon";
 import type { EarnTokenOption } from "../../../../../state/atoms-state/types";
 import { selectItemText } from "../../styles.css";
 

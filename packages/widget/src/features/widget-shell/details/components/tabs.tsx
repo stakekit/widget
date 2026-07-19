@@ -1,10 +1,10 @@
 import { motion } from "motion/react";
 import { useNavigate } from "react-router";
-import { useWidgetConfig } from "../../../../app/config";
-import { useMountAnimation } from "../../../../features/mount-animation";
+import { useWidgetConfig } from "../../../../app/config/use-widget-config";
 import { useSKLocation } from "../../../../shared/react/location-history";
 import { Box } from "../../../../shared/ui/primitives/box";
-import { useTrackEvent } from "../../../tracking";
+import { useMountAnimation } from "../../../mount-animation/react/use-mount-animation";
+import { useTrackEvent } from "../../../tracking/react/use-track-event";
 import { Divider } from "../../divider";
 import { divider } from "../styles.css";
 import { Tab } from "./tab";

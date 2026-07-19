@@ -1,4 +1,4 @@
-import type { WidgetConfig } from "../../app/config";
+import type { WidgetConfig } from "../../services/config/widget-config";
 
 export const isBorrowFeatureEnabled = ({
   borrowEnabled,

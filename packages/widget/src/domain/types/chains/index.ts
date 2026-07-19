@@ -1,19 +1,15 @@
 import type { ChainGroup } from "@stakekit/rainbowkit";
-import { getNetworkLogo } from "../../../shared/lib";
+import type {
+  EvmChainIds,
+  MiscChainIds,
+  SubstrateChainIds,
+} from "../../../public-api/types";
+import { getNetworkLogo } from "../../../shared/lib/general";
 import { type SupportedCosmosChains, supportedCosmosChainsSet } from "./cosmos";
-import {
-  type EvmChainIds,
-  type SupportedEvmChain,
-  supportedEVMChainsSet,
-} from "./evm";
-import {
-  type MiscChainIds,
-  type SupportedMiscChains,
-  supportedMiscChainsSet,
-} from "./misc";
+import { type SupportedEvmChain, supportedEVMChainsSet } from "./evm";
+import { type SupportedMiscChains, supportedMiscChainsSet } from "./misc";
 import { EvmNetworks, MiscNetworks, SubstrateNetworks } from "./networks";
 import {
-  type SubstrateChainIds,
   type SupportedSubstrateChains,
   supportedSubstrateChainsSet,
 } from "./substrate";

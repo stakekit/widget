@@ -4,21 +4,23 @@ import type { AsyncResult as AtomAsyncResult } from "effect/unstable/reactivity/
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import {
-  type BorrowNetwork,
   buildBorrowActionRequest,
-  type CollateralToken,
   decodeBorrowForm,
-  type Integration,
+} from "../../../domain/borrow/action-request";
+import type { CollateralToken } from "../../../domain/borrow/collateral-token";
+import type { Integration } from "../../../domain/borrow/integration";
+import type { Market } from "../../../domain/borrow/market";
+import {
+  type BorrowNetwork,
   isBorrowNetwork,
-  type Market,
-  type Position,
-  projectLtvRatio,
-} from "../../../domain/borrow";
+} from "../../../domain/borrow/network";
+import type { Position } from "../../../domain/borrow/position";
+import { projectLtvRatio } from "../../../domain/borrow/position-projection";
 import type { TokenBalance } from "../../../domain/schema/financial-models";
 import type { WalletAddress } from "../../../domain/schema/identifiers";
 import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
-import { tokenBalancesScanAtom } from "../../portfolio";
-import { currentWalletScopeAtom } from "../../wallet";
+import { tokenBalancesScanAtom } from "../../portfolio/resources/token-balances";
+import { currentWalletScopeAtom } from "../../wallet/state/selectors";
 import {
   type BorrowMarketWalletBalances,
   deriveBorrowMarketWalletBalances,
@@ -39,7 +41,7 @@ export type BorrowFormIntent = {
   readonly selectedMarketId: string | null;
 };
 
-export type BorrowFormAction =
+type BorrowFormAction =
   | {
       readonly type: "borrowAmount/set";
       readonly amount: BigNumber | number | string;
@@ -60,7 +62,7 @@ export type BorrowFormAction =
       readonly type: "reset";
     };
 
-export type BorrowPreparedReviewState = {
+type BorrowPreparedReviewState = {
   readonly request: ReturnType<typeof buildBorrowActionRequest>;
   readonly summary: {
     readonly action: "borrow" | "borrowAndSupply" | "supply";
@@ -80,7 +82,7 @@ export type BorrowPreparedReviewState = {
   };
 };
 
-export type BorrowFormValidation = {
+type BorrowFormValidation = {
   readonly borrowAmountGreaterThanAvailable: boolean;
   readonly collateralAmountGreaterThanBalance: boolean;
   readonly hasAmounts: boolean;
@@ -102,7 +104,7 @@ export type BorrowFormProjection = {
   readonly projectedLtv: number;
 };
 
-export type BorrowDashboardView = {
+type BorrowDashboardView = {
   readonly borrowAmount: BigNumber;
   readonly collateralAmount: BigNumber;
   readonly integrationsResult: AtomAsyncResult<
@@ -130,7 +132,7 @@ export type BorrowDashboardView = {
   readonly walletBalances: BorrowMarketWalletBalances | null;
 };
 
-export class BorrowFormScopeKey extends Data.Class<{
+class BorrowFormScopeKey extends Data.Class<{
   readonly scope: WalletScopeKey;
 }> {}
 
@@ -139,7 +141,7 @@ export class BorrowDashboardKey extends Data.Class<{
   readonly scope: WalletScopeKey;
 }> {}
 
-export const makeDefaultBorrowFormIntent = (): BorrowFormIntent => ({
+const makeDefaultBorrowFormIntent = (): BorrowFormIntent => ({
   borrowAmount: "0",
   collateralAmount: "0",
   selectedCollateralTokenAddress: null,
@@ -482,7 +484,7 @@ export const resolveBorrowDashboardView = ({
   };
 };
 
-export const borrowDashboardAtom = Atom.family((key: BorrowDashboardKey) => {
+const borrowDashboardAtom = Atom.family((key: BorrowDashboardKey) => {
   const scope = new BorrowFormScopeKey({
     scope: key.scope,
   });

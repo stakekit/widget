@@ -1,15 +1,13 @@
 import { Context, Effect, Layer, Stream, SubscriptionRef } from "effect";
 import { HttpResponse, http } from "msw";
 import { version as widgetVersion } from "../../package.json";
-import { normalizeWidgetConfig } from "../../src/app/config";
-import { useGeoBlock } from "../../src/features/preferences";
-import {
-  BorrowApiService,
-  LegacyApiService,
-  YieldApiService,
-} from "../../src/services/api";
+import { normalizeWidgetConfig } from "../../src/app/config/settings";
+import { useGeoBlock } from "../../src/features/preferences/react/use-geo-block";
+import { BorrowApiService } from "../../src/services/api/borrow-api-service";
 import { delayAPIRequests } from "../../src/services/api/delay-api-requests";
+import { LegacyApiService } from "../../src/services/api/legacy-api-service";
 import { ApiTransportService } from "../../src/services/api/transport";
+import { YieldApiService } from "../../src/services/api/yield-api-service";
 import {
   type WidgetApiConfig,
   WidgetConfigService,

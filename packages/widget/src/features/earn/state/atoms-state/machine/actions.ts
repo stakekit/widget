@@ -1,6 +1,6 @@
 import type { EarnValidatorKey } from "../../../../../domain/schema/earn-models";
 import type { YieldId } from "../../../../../domain/schema/identifiers";
-import type { DashboardYieldCategory } from "../../../../../domain/types/yields";
+import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import type { EarnTokenKey } from "../types";
 
 export type EarnAction =

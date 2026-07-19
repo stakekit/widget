@@ -7,18 +7,16 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { getTransactionGasEstimate } from "../../../../../domain/types/action";
 import type { YieldPendingActionType } from "../../../../../domain/types/pending-action";
-import { defaultFormattedNumber } from "../../../../../shared/lib";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
+import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
-import type { RewardTokenDetails } from "../../../../earn/support";
-import { getRewardTokenSymbols } from "../../../../earn/support";
-import type { PageCta } from "../../../../widget-shell";
-import {
-  useActionPreview,
-  useRequiredPendingActionRequest,
-  useSetPendingActionRequest,
-} from "../../..";
+import { getRewardTokenSymbols } from "../../../../earn/react/use-reward-token-details/get-reward-token-symbols";
+import type { RewardTokenDetails } from "../../../../earn/ui/components/reward-token-details";
+import type { PageCta } from "../../../../widget-shell/page-cta";
+import { useRequiredPendingActionRequest } from "../../../react/request-route-guards";
+import { useActionPreview } from "../../../react/use-action-preview";
 import { useGasWarningCheck } from "../../../react/use-gas-warning-check";
+import { useSetPendingActionRequest } from "../../../react/use-transaction-flow";
 import { currentReviewPricesAtom } from "../../../resources/review-prices";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 

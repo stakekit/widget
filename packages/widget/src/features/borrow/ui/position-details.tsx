@@ -11,10 +11,14 @@ import {
   useOutletContext,
   useParams,
 } from "react-router";
-import { useTrackPage } from "../../../features/tracking";
-import { AnimationPage } from "../../../features/widget-shell";
-import { formatNumber } from "../../../shared/lib";
+import {
+  buildCollateralToggleActionRequest,
+  buildRepayActionRequest,
+  buildWithdrawActionRequest,
+} from "../../../domain/borrow/action-request";
+import { projectLtvRatio } from "../../../domain/borrow/position-projection";
 import { formatCompactUsd } from "../../../shared/lib/formatters";
+import { formatNumber } from "../../../shared/lib/number-format";
 import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
 import {
@@ -24,39 +28,43 @@ import {
 import { Image } from "../../../shared/ui/primitives/image";
 import { ListItem } from "../../../shared/ui/primitives/list/list-item";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { AddressRow, DetailRow, DetailsSection } from "../../earn/support";
-import { useTokenBalancesScan } from "../../portfolio";
+import {
+  AddressRow,
+  DetailRow,
+  DetailsSection,
+} from "../../earn/ui/dashboard/earn-details/components/details-section";
+import { useTokenBalancesScan } from "../../portfolio/react/use-token-balances-scan";
+import * as positionDetailsStyles from "../../position-details/ui/dashboard/components/styles.css";
 import {
   breadcrumb,
   breadcrumbName,
   posistionDetailsInfoContainer,
   positionDetailsActionsContainer,
-  positionDetailsDashboardStyles as positionDetailsStyles,
-} from "../../position-details/support";
+} from "../../position-details/ui/dashboard/styles.css";
+import { useTrackPage } from "../../tracking/react/use-track-page";
+import { AnimationPage } from "../../widget-shell/animation-page";
 import {
   BackButton,
   BackButtonProvider,
+} from "../../widget-shell/dashboard/components/back-button";
+import { VerticalDivider } from "../../widget-shell/dashboard/components/divider";
+import { TabPageContainer } from "../../widget-shell/dashboard/components/tab-page-container";
+import { Divider } from "../../widget-shell/divider";
+import { PageCtaButton } from "../../widget-shell/page-cta";
+import {
   CollapsibleArrow,
   CollapsibleContent,
   CollapsibleRoot,
   CollapsibleTrigger,
-  Divider,
-  MaxButton,
-  NumberInput,
-  PageCtaButton,
-  TabPageContainer,
-  TokenIcon,
-  VerticalDivider,
-} from "../../widget-shell";
+} from "../../widget-shell/ui/collapsible";
+import { MaxButton } from "../../widget-shell/ui/max-button";
+import { NumberInput } from "../../widget-shell/ui/number-input";
+import { TokenIcon } from "../../widget-shell/ui/token-icon";
 import {
   type BorrowWithdrawTokenOption,
   borrowActionFormAtom,
-  buildCollateralToggleActionRequest,
-  buildRepayActionRequest,
-  buildWithdrawActionRequest,
-  deriveBorrowTokenWalletBalance,
-  projectLtvRatio,
-} from "../core";
+} from "../atoms/action-form";
+import { deriveBorrowTokenWalletBalance } from "../balances";
 import { getBorrowMarketPairLabel } from "./model";
 import {
   type BorrowPositionAction,

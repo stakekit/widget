@@ -1,15 +1,13 @@
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../app/config";
+import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { Heading } from "../../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import {
-  AnimationPage,
-  PageContainer,
-  PageCtaButton,
-} from "../../../../widget-shell";
+import { AnimationPage } from "../../../../widget-shell/animation-page";
+import { PageContainer } from "../../../../widget-shell/page-container";
+import { PageCtaButton } from "../../../../widget-shell/page-cta";
 import { useSteps } from "../hooks/use-steps.hook";
 import { stepsErrorBanner, utilaPendingApprovalsBanner } from "./styles.css";
 import { TxState } from "./tx-state";

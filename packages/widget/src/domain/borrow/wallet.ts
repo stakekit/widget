@@ -2,11 +2,9 @@ import { Schema } from "effect";
 import { ChainId, WalletAddress } from "./ids";
 import { BorrowNetwork } from "./network";
 
-export const WalletAccount = Schema.Struct({
+const WalletAccount = Schema.Struct({
   address: WalletAddress,
 });
-export type WalletAccount = typeof WalletAccount.Type;
-
 export const WalletChain = Schema.Struct({
   chainId: ChainId,
   name: Schema.String,

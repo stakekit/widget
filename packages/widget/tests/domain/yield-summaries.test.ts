@@ -2,7 +2,7 @@ import { Effect, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import { EarnYieldPage } from "../../src/domain/schema/earn-models";
 import { YieldId } from "../../src/domain/schema/identifiers";
-import { getUniqueYieldIdChunks } from "../../src/features/earn";
+import { getUniqueYieldIdChunks } from "../../src/features/earn/resources/yields";
 import { yieldApiYieldFixture } from "../fixtures";
 
 const id = Schema.decodeUnknownSync(YieldId);

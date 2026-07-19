@@ -1,4 +1,4 @@
-import { normalizeWidgetApiConfig } from "./widget-config";
+import { normalizeWidgetApiConfig } from "../../services/config/widget-config";
 
 /**
  * The complete identity of an application runtime generation.

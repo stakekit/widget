@@ -2,8 +2,7 @@ import BigNumber from "bignumber.js";
 import { Cause, Duration, Effect, Option, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../../../app/runtime";
-import { tokenString } from "../../../../../domain";
+import { appRuntime } from "../../../../../app/runtime/app-runtime";
 import type {
   EarnToken,
   EarnValidator,
@@ -17,11 +16,12 @@ import {
   type PositionsData,
   toPositionsData,
 } from "../../../../../domain/types/positions";
+import { tokenString } from "../../../../../domain/types/tokens";
 import {
-  type DashboardYieldCategory,
   getApiYieldTypesForDashboardCategory,
   isNonZeroRewardRateYield,
 } from "../../../../../domain/types/yields";
+import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import { LegacyApiService } from "../../../../../services/api/legacy-api-service";
 import { YieldApiService } from "../../../../../services/api/yield-api-service";
 import { resourceInvalidationKeys } from "../../../../../services/resource-invalidation";

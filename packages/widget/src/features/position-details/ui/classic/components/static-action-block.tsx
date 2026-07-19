@@ -7,8 +7,8 @@ import type {
 } from "../../../../../domain/schema/earn-models";
 import type { YieldPendingActionType } from "../../../../../domain/types/pending-action";
 import { isEthenaUsdeStaking } from "../../../../../domain/types/yields";
-import { defaultFormattedNumber } from "../../../../../shared/lib";
 import { humanizePendingActionType } from "../../../../../shared/lib/formatters";
+import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";

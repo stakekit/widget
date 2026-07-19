@@ -1,7 +1,10 @@
 import { useAtomValue } from "@effect/atom-react";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { useSKWallet } from "../../../../../wallet";
-import { type PositionItem, positionsTableDataAtom } from "../../../..";
+import { useSKWallet } from "../../../../../wallet/react/use-wallet";
+import {
+  type PositionItem,
+  positionsTableDataAtom,
+} from "../../../../resources/positions";
 
 export const usePositions = () => {
   const positionsResult = useAtomValue(positionsTableDataAtom);

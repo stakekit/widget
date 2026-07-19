@@ -4,8 +4,9 @@ import type { ActionCommand } from "../../../../../domain/schema/action-models";
 import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
 
 import { getYieldActionArg } from "../../../../../domain/types/yields";
-import { useSKWallet } from "../../../../wallet";
-import type { ExtraData, State } from "../state/types";
+import { useSKWallet } from "../../../../wallet/react/use-wallet";
+import type { PositionDetailsWorkflowState as State } from "../../../state/workflow";
+import type { ExtraData } from "../state/types";
 
 export const useStakeExitRequestDto = (
   workflow: Pick<

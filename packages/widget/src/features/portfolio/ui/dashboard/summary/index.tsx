@@ -1,13 +1,11 @@
 import BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../app/config";
+import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
-import {
-  useBorrowFeatureEnabled,
-  useBorrowPositions,
-} from "../../../../borrow/positions";
+import { useBorrowFeatureEnabled } from "../../../../borrow/ui/use-borrow-feature-enabled";
+import { useBorrowPositions } from "../../../../borrow/ui/use-borrow-positions";
 import { useSummary } from "../../../react/use-summary";
 import { SummaryItem } from "../../components/summary-item";
 import { summaryContainer } from "../../components/summary-item/index.css";

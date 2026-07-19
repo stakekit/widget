@@ -1,11 +1,11 @@
 import { Effect, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import { ActivityActionsPage } from "../../src/domain/schema/activity-models";
+import type { ActivityFilter } from "../../src/features/activity/model/filters";
 import {
   ActivityActionsKey,
   getActivityActionsRequestParams,
-} from "../../src/features/activity";
-import type { ActivityFilter } from "../../src/features/activity/model/filters";
+} from "../../src/features/activity/resources/activity-requests";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiActionFixture } from "../fixtures";
 

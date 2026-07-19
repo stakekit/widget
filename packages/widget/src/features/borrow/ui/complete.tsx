@@ -1,18 +1,20 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
-import { useTrackPage } from "../../../features/tracking";
-import { AnimationPage } from "../../../features/widget-shell";
 import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
 import { CheckCircleIcon } from "../../../shared/ui/primitives/icons/check-circle";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { DetailRow } from "../../earn/support";
-import { PageContainer, PageCtaButton } from "../../widget-shell";
-import { borrowActionFormAtom, currentBorrowDashboardAtom } from "../core";
+import { DetailRow } from "../../earn/ui/dashboard/earn-details/components/details-section";
+import { useTrackPage } from "../../tracking/react/use-track-page";
+import { AnimationPage } from "../../widget-shell/animation-page";
+import { PageContainer } from "../../widget-shell/page-container";
+import { PageCtaButton } from "../../widget-shell/page-cta";
+import { borrowActionFormAtom } from "../atoms/action-form";
+import { currentBorrowDashboardAtom } from "../atoms/form";
 import { useBorrowCompletionRouteState } from "./borrow-execution-route";
-import { useBorrowConnectedWalletBridge } from "./connected-wallet";
 import { getBorrowFlowRoutes } from "./flow-routes";
+import { useBorrowConnectedWalletBridge } from "./wallet-bridge";
 
 export const BorrowCompletePage = () => {
   useTrackPage("borrowComplete");

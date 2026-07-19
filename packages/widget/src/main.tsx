@@ -1,6 +1,6 @@
 import ReactDOM from "react-dom/client";
-import { SKApp, type SKAppProps } from "./App";
-import type { VariantProps } from "./public-api/types";
+import { SKApp } from "./App";
+import type { SKAppProps, VariantProps } from "./public-api/types";
 import {
   rootClassName,
   toggleThemeButtonClassName,

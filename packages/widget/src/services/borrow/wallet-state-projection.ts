@@ -1,16 +1,18 @@
 import type { Chain } from "viem";
+import { decodeChainId } from "../../domain/borrow/ids";
 import {
   type BorrowNetwork,
   borrowChainEntries,
   borrowChainsByNetwork,
   borrowViemChains,
-  type ConnectedWalletState,
-  type DisconnectedWalletState,
-  decodeChainId,
   getBorrowNetworkForChainId,
   isBorrowNetwork,
-  type WalletChain,
-} from "../../domain/borrow";
+} from "../../domain/borrow/network";
+import type {
+  ConnectedWalletState,
+  DisconnectedWalletState,
+  WalletChain,
+} from "../../domain/borrow/wallet";
 import type { WalletAddress } from "../../domain/schema/identifiers";
 import type { NormalizedWalletState } from "../wallet/domain/state";
 
@@ -22,12 +24,12 @@ type BorrowWalletBridgeInput = {
   readonly network: string | null;
 };
 
-export type BorrowWalletDisconnectedBridgeState = {
+type BorrowWalletDisconnectedBridgeState = {
   readonly status: "disconnected";
   readonly wallet: typeof DisconnectedWalletState.Type;
 };
 
-export type BorrowWalletUnsupportedNetworkBridgeState = {
+type BorrowWalletUnsupportedNetworkBridgeState = {
   readonly status: "unsupported-network";
   readonly chainId: number | null;
   readonly network: string | null;
@@ -54,7 +56,7 @@ const toWalletChain = ([network, chain]: readonly [
   network,
 });
 
-export const getSupportedBorrowWalletChains = (
+const getSupportedBorrowWalletChains = (
   connectorChains: ReadonlyArray<Chain>
 ): ReadonlyArray<WalletChain> => {
   const connectorChainIds = new Set(connectorChains.map((chain) => chain.id));

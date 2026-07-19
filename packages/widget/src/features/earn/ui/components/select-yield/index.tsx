@@ -6,12 +6,15 @@ import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-mo
 import type { YieldId } from "../../../../../domain/schema/identifiers";
 import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../shared/ui/primitives/box";
-import type { SelectModalProps } from "../../../../widget-shell";
+import type { SelectModalProps } from "../../../../widget-shell/ui/select-modal";
 import {
   SelectModal,
   SelectModalItemContainer,
-} from "../../../../widget-shell";
-import { MultiYieldsKey, visibleMultiYieldsAtom } from "../../..";
+} from "../../../../widget-shell/ui/select-modal";
+import {
+  MultiYieldsKey,
+  visibleMultiYieldsAtom,
+} from "../../../resources/yields";
 import { SelectOpportunityListItem } from "../select-opportunity-list-item";
 
 type SelectYieldProps = PropsWithChildren<

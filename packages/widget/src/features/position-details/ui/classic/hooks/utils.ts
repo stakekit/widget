@@ -18,7 +18,7 @@ import {
 import type { ValidatorInput as ValidatorDto } from "../../../../../domain/types/validators";
 import type { SKWallet } from "../../../../../domain/types/wallet";
 
-import type { State } from "../state/types";
+import type { PositionDetailsWorkflowState as State } from "../../../state/workflow";
 import { getBalanceTokenActionType } from "../state/utils";
 
 type AnyYieldBalanceDto = {

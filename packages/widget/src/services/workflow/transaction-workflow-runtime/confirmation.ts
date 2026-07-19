@@ -1,9 +1,7 @@
 import { Data, Duration, Effect, Match, pipe, Ref, Schedule } from "effect";
 import { isTxError } from "../../../domain";
-import type {
-  Action as BorrowAction,
-  Transaction as BorrowTransaction,
-} from "../../../domain/borrow";
+import type { Action as BorrowAction } from "../../../domain/borrow/action";
+import type { Transaction as BorrowTransaction } from "../../../domain/borrow/transaction";
 import type { ActionTransaction } from "../../../domain/schema/action-models";
 import {
   isTerminalBorrowActionStatus,

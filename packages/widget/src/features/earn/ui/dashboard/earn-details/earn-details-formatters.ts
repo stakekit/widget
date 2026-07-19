@@ -8,12 +8,13 @@ import {
   hasYieldBearingOutputToken,
   isNonZeroRewardRateYield,
 } from "../../../../../domain/types/yields";
-import { APToPercentage, formatNumber } from "../../../../../shared/lib";
 import {
   formatCompactNumber,
   formatCompactUsd,
   getRewardTypeFormatted,
 } from "../../../../../shared/lib/formatters";
+import { APToPercentage } from "../../../../../shared/lib/general";
+import { formatNumber } from "../../../../../shared/lib/number-format";
 
 export const formatNetworkName = (network: string) =>
   network

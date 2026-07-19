@@ -1,7 +1,7 @@
 import { globalStyle, style } from "@vanilla-extract/css";
 import { atoms } from "../../../shared/styles/theme/atoms.css";
 import { vars } from "../../../shared/styles/theme/contract.css";
-import { OUTLET_PADDING } from "../../widget-shell/layout-support";
+import { OUTLET_PADDING } from "../../widget-shell/dashboard/components/styles.css";
 
 export const pane = style({
   minWidth: 0,

@@ -1,7 +1,7 @@
 import { Data, Duration, Effect } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime";
+import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { ActionPreviewRequest } from "../../../services/api/yield-api-service";
 import { YieldApiService } from "../../../services/api/yield-api-service";
 import { withApiResourcePolicy } from "../../../shared/effect/api-resource";

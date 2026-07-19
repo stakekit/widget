@@ -3,7 +3,10 @@ import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { HistoryPeriod } from "../../../../../domain/schema/dashboard-models";
 import type { YieldId } from "../../../../../domain/schema/identifiers";
-import { YieldHistoryKey, yieldRewardRateHistoryAtom } from "../../..";
+import {
+  YieldHistoryKey,
+  yieldRewardRateHistoryAtom,
+} from "../../../resources/yield-insights";
 
 export const useYieldRewardRateHistory = ({
   period,

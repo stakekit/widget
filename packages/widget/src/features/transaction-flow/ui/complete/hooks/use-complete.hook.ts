@@ -9,9 +9,9 @@ import { useActivityUnstakeActionMatch } from "../../../../../shared/react/navig
 import { usePendingActionMatch } from "../../../../../shared/react/navigation/use-pending-action-match";
 import { useUnstakeMatch } from "../../../../../shared/react/navigation/use-unstake-match";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
-import { useTrackEvent } from "../../../../tracking";
-import { useSKWallet } from "../../../../wallet";
-import type { PageCta } from "../../../../widget-shell";
+import { useTrackEvent } from "../../../../tracking/react/use-track-event";
+import { useSKWallet } from "../../../../wallet/react/use-wallet";
+import type { PageCta } from "../../../../widget-shell/page-cta";
 
 export const useComplete = () => {
   const navigate = useNavigate();

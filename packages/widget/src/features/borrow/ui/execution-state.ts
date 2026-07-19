@@ -3,7 +3,7 @@ import { WalletScopeKey } from "../../../services/wallet/domain/scope";
 import { BorrowTransactionWorkflowKey } from "../../../services/workflow/transaction-workflow-model";
 import { selectAtom } from "../../../shared/effect/select-atom";
 import { makeTransactionWorkflowLifecycleAtom } from "../../transaction-flow/state/workflow-lifecycle";
-import { currentWalletScopeAtom } from "../../wallet";
+import { currentWalletScopeAtom } from "../../wallet/state/selectors";
 import type { BorrowExecutionInput } from "./review-state";
 
 export const borrowExecutionInputAtom = Atom.writable<

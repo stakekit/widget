@@ -1,6 +1,5 @@
 import BigNumber from "bignumber.js";
 import { Option, Schema } from "effect";
-import { tokenString } from "../../../../../domain";
 import type { EarnYield } from "../../../../../domain/schema/earn-models";
 import { YieldId } from "../../../../../domain/schema/identifiers";
 import {
@@ -9,6 +8,7 @@ import {
 } from "../../../../../domain/types/chains";
 import type { PositionsData } from "../../../../../domain/types/positions";
 import { canBeInitialYield } from "../../../../../domain/types/stake";
+import { tokenString } from "../../../../../domain/types/tokens";
 import { isNonZeroRewardRateYield } from "../../../../../domain/types/yields";
 import type { EarnEntry, EarnTokenOption } from "../types";
 

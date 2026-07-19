@@ -9,8 +9,8 @@ import type { ValidatorKey } from "../../../../../domain/types/validators";
 
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import type { SelectModalProps } from "../../../../widget-shell";
-import { SelectModal } from "../../../../widget-shell";
+import type { SelectModalProps } from "../../../../widget-shell/ui/select-modal";
+import { SelectModal } from "../../../../widget-shell/ui/select-modal";
 import type { GroupedItem } from "./select-validator-list";
 import { SelectValidatorList } from "./select-validator-list";
 import { emptyState } from "./styles.css";

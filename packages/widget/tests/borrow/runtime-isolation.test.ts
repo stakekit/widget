@@ -1,6 +1,6 @@
 import { Equal, Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { Action } from "../../src/domain/borrow";
+import { Action } from "../../src/domain/borrow/action";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import { transactionWorkflowMachineAtom } from "../../src/features/transaction-flow/state/transaction-workflow-atoms";
 import {

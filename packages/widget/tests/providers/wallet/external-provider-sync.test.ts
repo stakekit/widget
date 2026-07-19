@@ -2,7 +2,7 @@ import { Deferred, Effect, Stream, SubscriptionRef } from "effect";
 import { mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
-import { normalizeWidgetConfig } from "../../../src/app/config";
+import { normalizeWidgetConfig } from "../../../src/app/config/settings";
 import type { SKExternalProviders } from "../../../src/public-api/types";
 import {
   normalizeWidgetBootstrapConfig,

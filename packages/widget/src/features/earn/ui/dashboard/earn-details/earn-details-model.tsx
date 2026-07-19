@@ -6,7 +6,6 @@ import {
   type SelectedValidators,
 } from "../../../../../domain/types/reward-rate";
 import {
-  type DashboardYieldCategory,
   getDashboardYieldCategory,
   getExtendedYieldType,
   getYieldCooldownPeriod,
@@ -18,14 +17,15 @@ import {
   getYieldTypeLabels,
   getYieldWarmupPeriod,
 } from "../../../../../domain/types/yields";
-import { APToPercentage } from "../../../../../shared/lib";
+import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import { formatCompactUsd } from "../../../../../shared/lib/formatters";
+import { APToPercentage } from "../../../../../shared/lib/general";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import {
   RiskRatingBadge,
-  riskSummaryActions,
   YieldRiskInfoTooltip,
 } from "../../components/yield-risk";
+import { riskSummaryActions } from "../../components/yield-risk/styles.css";
 import { NetworkDetailValue } from "./components/network-detail-value";
 import {
   formatCooldownDays,

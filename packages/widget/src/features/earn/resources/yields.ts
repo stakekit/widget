@@ -2,17 +2,15 @@ import { Data, Duration, Effect, Option } from "effect";
 import { chunksOf } from "effect/Array";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime";
+import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
 import type { ProviderId, YieldId } from "../../../domain/schema/identifiers";
 import { isSupportedChain } from "../../../domain/types/chains";
-import {
-  type DashboardYieldCategory,
-  getDashboardYieldCategory,
-} from "../../../domain/types/yields";
+import { getDashboardYieldCategory } from "../../../domain/types/yields";
+import type { DashboardYieldCategory } from "../../../public-api/types";
 import { YieldApiService } from "../../../services/api/yield-api-service";
 import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
-import { currentWalletConnectedNetworkAtom } from "../../wallet";
+import { currentWalletConnectedNetworkAtom } from "../../wallet/state/selectors";
 
 const yieldResourcePolicy = withApiResourcePolicy({
   idleTTL: Duration.minutes(5),

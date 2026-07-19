@@ -2,7 +2,7 @@ import { useAtom, useAtomMount, useAtomValue } from "@effect/atom-react";
 import { Data, Duration, Effect, Option, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime";
+import { appRuntime } from "../../../app/runtime/app-runtime";
 import { getActionValidatorAddresses } from "../../../domain/types/action";
 import { YieldApiService } from "../../../services/api/yield-api-service";
 import { resourceInvalidationKeys } from "../../../services/resource-invalidation";
@@ -12,12 +12,12 @@ import {
   getPullResultItems,
   paginatedApiStream,
 } from "../../../shared/effect/pagination";
+import { getYieldValidatorsByAddressesEffect } from "../../earn/react/use-yield-validators";
 import {
-  getYieldValidatorsByAddressesEffect,
   YieldOpportunityKey,
   yieldOpportunityAtom,
-} from "../../earn";
-import { currentWalletScopeAtom } from "../../wallet";
+} from "../../earn/resources/yields";
+import { currentWalletScopeAtom } from "../../wallet/state/selectors";
 import {
   type ActivityFilter,
   type ActivityFilterOption,

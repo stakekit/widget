@@ -4,11 +4,11 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
 import { EarnPosition } from "../../src/domain/schema/earn-models";
 import { toPositionsData } from "../../src/domain/types/positions";
+import { toPositionItems } from "../../src/features/portfolio/resources/positions";
 import {
   getPositionsAverageApy,
   getPositionsTotal,
-  toPositionItems,
-} from "../../src/features/portfolio";
+} from "../../src/features/portfolio/resources/summary";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 
 const makePosition = ({

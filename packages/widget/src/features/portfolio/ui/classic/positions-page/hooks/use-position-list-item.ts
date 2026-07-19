@@ -4,14 +4,14 @@ import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { getPositionTotalAmount } from "../../../../../../domain/types/positions";
-import { defaultFormattedNumber } from "../../../../../../shared/lib";
 import { getRewardRateFormatted } from "../../../../../../shared/lib/formatters";
+import { defaultFormattedNumber } from "../../../../../../shared/lib/number-format";
+import { useProvidersDetails } from "../../../../../earn/react/use-provider-details";
 import {
-  useProvidersDetails,
   YieldOpportunityKey,
   yieldOpportunityAtom,
-} from "../../../../../earn";
-import type { PositionItem } from "../../../..";
+} from "../../../../../earn/resources/yields";
+import type { PositionItem } from "../../../../resources/positions";
 
 export const usePositionListItem = (item: PositionItem) => {
   const yieldOpportunityResult = useAtomValue(

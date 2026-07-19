@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   decodeBorrowTransactionForWallet,
   Transaction,
-} from "../../src/domain/borrow";
+} from "../../src/domain/borrow/transaction";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 
 const address = Schema.decodeSync(WalletAddress)(

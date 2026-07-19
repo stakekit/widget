@@ -1,10 +1,12 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
-import { useWidgetConfig } from "../../../app/config";
+import { useWidgetConfig } from "../../../app/config/use-widget-config";
 import { shouldShowDisconnect } from "../../../domain/types/connectors";
 import { useDetailsMatch } from "../../../shared/react/navigation/use-details-match";
-import { useTrackEvent } from "../../tracking";
-import { useLogout, useSKWallet, useWalletConfig } from "../../wallet";
+import { useTrackEvent } from "../../tracking/react/use-track-event";
+import { useLogout } from "../../wallet/react/use-logout";
+import { useSKWallet } from "../../wallet/react/use-wallet";
+import { useWalletConfig } from "../../wallet/state/root-atom";
 import { useSyncHeaderHeight } from "./use-sync-header-height";
 
 export const useHeader = () => {

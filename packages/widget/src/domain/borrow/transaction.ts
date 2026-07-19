@@ -16,7 +16,7 @@ export class Transaction extends Schema.Class<Transaction>("BorrowTransaction")(
 const HexString = Schema.TemplateLiteral([Schema.Literal("0x"), Schema.String]);
 const Numberish = Schema.Union([Schema.String, Schema.Number, Schema.BigInt]);
 
-export const BorrowWalletEvmSignablePayload = Schema.Struct({
+const BorrowWalletEvmSignablePayload = Schema.Struct({
   chainId: Schema.optionalKey(Numberish),
   data: HexString,
   from: HexString,
@@ -26,9 +26,6 @@ export const BorrowWalletEvmSignablePayload = Schema.Struct({
   type: Schema.optionalKey(Numberish),
   value: Schema.optionalKey(Numberish),
 });
-
-export type BorrowWalletEvmSignablePayload =
-  typeof BorrowWalletEvmSignablePayload.Type;
 
 const BorrowEvmSignablePayloadInput = Schema.Union([
   BorrowWalletEvmSignablePayload,

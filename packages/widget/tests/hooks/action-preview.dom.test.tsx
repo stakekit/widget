@@ -1,12 +1,10 @@
 import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import { type PropsWithChildren, useEffect } from "react";
-import { normalizeWidgetConfig } from "../../src/app/config";
+import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { ActionCommand } from "../../src/domain/schema/action-models";
-import {
-  useActionPreview,
-  useSetEnterStakeRequest,
-} from "../../src/features/transaction-flow";
+import { useActionPreview } from "../../src/features/transaction-flow/react/use-action-preview";
+import { useSetEnterStakeRequest } from "../../src/features/transaction-flow/react/use-transaction-flow";
 import type { EnterStakeRequest } from "../../src/features/transaction-flow/state/enter-request";
 import { yieldApiActionFixture, yieldApiTransactionFixture } from "../fixtures";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";

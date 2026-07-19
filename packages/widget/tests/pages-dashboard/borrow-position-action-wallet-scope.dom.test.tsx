@@ -5,18 +5,16 @@ import { act } from "react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { describe, expect, it } from "vitest";
+import { Integration } from "../../src/domain/borrow/integration";
+import { Market } from "../../src/domain/borrow/market";
+import { BorrowAccountPosition } from "../../src/domain/borrow/position";
+import { deriveBorrowPositionItems } from "../../src/domain/borrow/position-items";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import {
-  BorrowAccountPosition,
-  deriveBorrowPositionItems,
-  Integration,
-  Market,
-} from "../../src/features/borrow/core";
+import { BorrowPositionActionPage } from "../../src/features/borrow/ui/position-details";
 import {
   type BorrowPositionAction,
   getBorrowPositionActions,
 } from "../../src/features/borrow/ui/position-details-model";
-import { BorrowPositionActionPage } from "../../src/features/borrow/ui-entry";
 import { RootElementProvider } from "../../src/shared/react/root-element";
 import { i18nInstance } from "../../src/translation";
 import { render } from "../utils/test-utils.dom";

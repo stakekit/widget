@@ -1,4 +1,6 @@
-import type { Action, ActionRequest, BorrowNetwork } from "../core";
+import type { Action } from "../../../domain/borrow/action";
+import type { ActionRequest } from "../../../domain/borrow/action-request";
+import type { BorrowNetwork } from "../../../domain/borrow/network";
 
 export type BorrowReviewState = {
   readonly request: ActionRequest;

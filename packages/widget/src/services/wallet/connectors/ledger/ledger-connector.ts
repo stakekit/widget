@@ -14,12 +14,12 @@ import type { Address } from "viem";
 import type { CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
 import { skNormalizeChainId } from "../../../../domain";
+import type { InitParams } from "../../../../domain/schema/init-params";
 import type { SupportedSKChains } from "../../../../domain/types/chains";
 import {
   ledgerChainPriority,
   type SupportedLedgerLiveFamilies,
 } from "../../../../domain/types/chains/ledger";
-import type { InitParams } from "../../../../domain/types/init-params";
 import { makeCurrentValueStream } from "../../../../shared/effect/current-value-stream";
 import { walletImages } from "../../assets";
 import { isLedgerDappBrowserProvider } from "../../browser-environment";

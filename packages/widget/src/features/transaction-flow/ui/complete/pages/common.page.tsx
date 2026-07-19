@@ -13,12 +13,10 @@ import { CheckCircleIcon } from "../../../../../shared/ui/primitives/icons/check
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { Heading } from "../../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import {
-  AnimationPage,
-  PageContainer,
-  PageCtaButton,
-  TokenIcon,
-} from "../../../../widget-shell";
+import { AnimationPage } from "../../../../widget-shell/animation-page";
+import { PageContainer } from "../../../../widget-shell/page-container";
+import { PageCtaButton } from "../../../../widget-shell/page-cta";
+import { TokenIcon } from "../../../../widget-shell/ui/token-icon";
 import { useComplete } from "../hooks/use-complete.hook";
 
 type CompletePageModel = ReturnType<typeof useComplete>;

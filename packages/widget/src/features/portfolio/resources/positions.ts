@@ -2,7 +2,7 @@ import BigNumber from "bignumber.js";
 import { Data } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetBootstrapConfigAtom } from "../../../app/config";
+import { widgetBootstrapConfigAtom } from "../../../app/config/widget-config";
 import type { EarnBalance } from "../../../domain/schema/earn-models";
 import type { YieldId } from "../../../domain/schema/identifiers";
 import {

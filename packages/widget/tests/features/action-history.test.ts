@@ -4,7 +4,7 @@ import {
   actionHistoryTimestampAtom,
   markActionHistoryChanged,
   resetActionHistory,
-} from "../../src/features/transaction-flow";
+} from "../../src/features/transaction-flow/state/action-history";
 
 describe("action history atoms", () => {
   it("initializes, updates, and resets explicitly", () => {

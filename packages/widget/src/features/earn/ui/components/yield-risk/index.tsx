@@ -8,7 +8,7 @@ import {
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { ToolTip } from "../../../../widget-shell";
+import { ToolTip } from "../../../../widget-shell/ui/tooltip";
 import {
   riskInfoButton,
   riskRatingBadge,
@@ -16,8 +16,6 @@ import {
   riskSummaryActions,
   riskSummaryContainer,
 } from "./styles.css";
-
-export { riskSummaryActions } from "./styles.css";
 
 type RiskRatingBadgeProps = {
   risk: YieldRiskDisplay;

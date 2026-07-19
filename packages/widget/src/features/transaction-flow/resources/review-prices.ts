@@ -1,5 +1,9 @@
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { getTokensPricesRequest, PricesKey, pricesAtom } from "../../earn";
+import {
+  getTokensPricesRequest,
+  PricesKey,
+  pricesAtom,
+} from "../../earn/resources/prices";
 import { enterStakeRequestAtom } from "../state/enter-request";
 import { exitStakeRequestAtom } from "../state/exit-request";
 import { pendingActionRequestAtom } from "../state/pending-action-request";

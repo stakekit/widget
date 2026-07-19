@@ -12,7 +12,10 @@ import { ContentLoaderSquare } from "../../../../../../../shared/ui/primitives/c
 import { CaretDownIcon } from "../../../../../../../shared/ui/primitives/icons/caret-down";
 import { Image } from "../../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { MultiYieldsKey, visibleMultiYieldsAtom } from "../../../../..";
+import {
+  MultiYieldsKey,
+  visibleMultiYieldsAtom,
+} from "../../../../../resources/yields";
 import { SelectYield } from "../../../../components/select-yield";
 import { useEarnPageModel } from "../../state/earn-page-model";
 import {

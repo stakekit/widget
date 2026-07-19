@@ -7,13 +7,15 @@ import {
 } from "../../src/domain/schema/api-errors";
 import { RewardsAddresses } from "../../src/domain/schema/dashboard-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
+import { BorrowApiService } from "../../src/services/api/borrow-api-service";
 import {
-  BorrowApiService,
   LegacyApiService,
+  makeLegacyApiService,
+} from "../../src/services/api/legacy-api-service";
+import {
+  makeYieldApiService,
   YieldApiService,
-} from "../../src/services/api";
-import { makeLegacyApiService } from "../../src/services/api/legacy-api-service";
-import { makeYieldApiService } from "../../src/services/api/yield-api-service";
+} from "../../src/services/api/yield-api-service";
 import { makeTestStakeKitApiLayer } from "../utils/stakekit-api-layer";
 
 const config = {

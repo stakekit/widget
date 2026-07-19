@@ -10,9 +10,9 @@ import type { ClassicTransactionWorkflowProviderDetail } from "../../../../../..
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import { useTrackPage } from "../../../../../tracking";
-import { useSKWallet } from "../../../../../wallet";
-import { FallbackContent } from "../../../../../widget-shell";
+import { useTrackPage } from "../../../../../tracking/react/use-track-page";
+import { useSKWallet } from "../../../../../wallet/react/use-wallet";
+import { FallbackContent } from "../../../../../widget-shell/fallback-content";
 import type {
   ActivityFilter,
   ActivityFilterOption,

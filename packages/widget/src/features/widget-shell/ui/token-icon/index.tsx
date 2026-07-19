@@ -1,4 +1,4 @@
-import { useWidgetConfig } from "../../../../app/config";
+import { useWidgetConfig } from "../../../../app/config/use-widget-config";
 import type { AppToken } from "../../../../domain/schema/legacy-models";
 import type { YieldMetadata } from "../../../../domain/types/yields";
 import type { Atoms } from "../../../../shared/styles/theme/atoms.css";

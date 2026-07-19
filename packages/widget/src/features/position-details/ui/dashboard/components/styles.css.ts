@@ -2,7 +2,7 @@ import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../../../shared/styles/theme/atoms.css";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
-import { OUTLET_PADDING } from "../../../../widget-shell/layout-support";
+import { OUTLET_PADDING } from "../../../../widget-shell/dashboard/components/styles.css";
 
 export const container = style({ minHeight: "400px" });
 

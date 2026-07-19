@@ -1,27 +1,28 @@
 import BigNumber from "bignumber.js";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../app/config";
+import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
 import type { AppToken } from "../../../../../domain/schema/legacy-models";
 import type { ValidatorInput as ValidatorDto } from "../../../../../domain/types/validators";
 import {
   defaultFormattedNumber,
   formatNumber,
-} from "../../../../../shared/lib";
+} from "../../../../../shared/lib/number-format";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box, type BoxProps } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import * as AmountToggle from "../../../../earn/support";
-import { selectTokenSection, useYieldMetaInfo } from "../../../../earn/support";
+import { useYieldMetaInfo } from "../../../../earn/react/use-yield-meta-info";
+import { selectTokenSection } from "../../../../earn/ui/classic/earn-page/components/select-token-section/styles.css";
+import * as AmountToggle from "../../../../earn/ui/components/amount-toggle";
+import { MaxButton } from "../../../../widget-shell/ui/max-button";
 import {
-  MaxButton,
   NumberInput,
   type NumberInputProps,
-  TokenIcon,
-} from "../../../../widget-shell";
+} from "../../../../widget-shell/ui/number-input";
+import { TokenIcon } from "../../../../widget-shell/ui/token-icon";
 import { priceTxt } from "../styles.css";
 
 type AmountBlockProps = {

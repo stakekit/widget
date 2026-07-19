@@ -3,7 +3,7 @@ import { motion, useAnimation } from "motion/react";
 import type { ChangeEvent } from "react";
 import { memo, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { formatNumber } from "../../../../shared/lib";
+import { formatNumber } from "../../../../shared/lib/number-format";
 import { useRootElement } from "../../../../shared/react/root-element";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { container, numberInput, spanStyle } from "./styles.css";

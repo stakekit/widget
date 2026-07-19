@@ -1,6 +1,9 @@
 import { Data, Effect } from "effect";
-import type { SKTx, SKTxMeta } from "../../public-api/types";
-import type { SKExternalProviders } from "./wallets";
+import type {
+  SKExternalProviders,
+  SKTx,
+  SKTxMeta,
+} from "../../public-api/types";
 
 export class ExternalProviderError extends Data.TaggedError(
   "ExternalProviderError"

@@ -4,20 +4,18 @@ import type { PropsWithChildren } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { shouldShowDisconnect } from "../../../domain/types/connectors";
-import { useTrackEvent } from "../../../features/tracking";
-import {
-  addLedgerAccountAtom,
-  useCloseChainModal,
-  useLedgerDisabledChain,
-  useSKWallet,
-} from "../../../features/wallet";
+import { useTrackEvent } from "../../../features/tracking/react/use-track-event";
+import { useCloseChainModal } from "../../../features/wallet/react/use-close-chain-modal";
+import { useLedgerDisabledChain } from "../../../features/wallet/react/use-ledger-disabled-chains";
+import { useSKWallet } from "../../../features/wallet/react/use-wallet";
+import { addLedgerAccountAtom } from "../../../features/wallet/state/workflows";
 import { isLedgerLiveConnector } from "../../../services/wallet/connectors/ledger/ledger-live-connector-meta";
 import { vars } from "../../../shared/styles/theme/contract.css";
 import { id } from "../../../shared/styles/theme/ids";
 import type { ConnectKitTheme } from "../../../shared/styles/tokens/connect-kit";
 import { connectKitTheme } from "../../../shared/styles/tokens/connect-kit";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { useWidgetConfig } from "../../config";
+import { useWidgetConfig } from "../../config/use-widget-config";
 
 const finalTheme: ConnectKitTheme = {
   ...connectKitTheme.lightMode,

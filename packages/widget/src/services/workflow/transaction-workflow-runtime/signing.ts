@@ -1,8 +1,6 @@
 import { Effect, Match } from "effect";
-import {
-  type Action as BorrowAction,
-  decodeBorrowTransactionForWallet,
-} from "../../../domain/borrow";
+import type { Action as BorrowAction } from "../../../domain/borrow/action";
+import { decodeBorrowTransactionForWallet } from "../../../domain/borrow/transaction";
 import type { Network } from "../../../domain/schema/network-model";
 import type { SKTxMeta } from "../../../public-api/types";
 import { sameWalletScopeOwner } from "../../wallet/domain/scope";

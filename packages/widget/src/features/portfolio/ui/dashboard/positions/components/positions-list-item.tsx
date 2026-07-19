@@ -1,19 +1,18 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
+import type { Position as BorrowPosition } from "../../../../../../domain/borrow/position";
 import type { PositionDetailsLabelType } from "../../../../../../domain/types/positions";
-import { formatNumber } from "../../../../../../shared/lib";
 import { formatCompactUsd } from "../../../../../../shared/lib/formatters";
+import { formatNumber } from "../../../../../../shared/lib/number-format";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/content-loader";
 import { SKLink } from "../../../../../../shared/ui/primitives/link";
 import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
 import { Spinner } from "../../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import {
-  type Position as BorrowPosition,
-  borrowTokenToTokenDto,
-} from "../../../../../borrow/positions";
-import { TokenIcon, ToolTip } from "../../../../../widget-shell";
+import { borrowTokenToTokenDto } from "../../../../../borrow/ui/position-details-model";
+import { TokenIcon } from "../../../../../widget-shell/ui/token-icon";
+import { ToolTip } from "../../../../../widget-shell/ui/tooltip";
 import {
   listItem,
   noWrap,

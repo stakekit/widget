@@ -4,7 +4,7 @@ import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { isLedgerLiveConnector } from "../../../../services/wallet/connectors/ledger/ledger-live-connector-meta";
 import { Button } from "../../../../shared/ui/primitives/button";
-import { useTrackEvent } from "../../../tracking";
+import { useTrackEvent } from "../../../tracking/react/use-track-event";
 import { useCloseChainModal } from "../../react/use-close-chain-modal";
 import { useSKWallet } from "../../react/use-wallet";
 import { addLedgerAccountAtom } from "../../state/workflows";

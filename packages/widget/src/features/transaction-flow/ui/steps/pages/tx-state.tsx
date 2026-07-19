@@ -13,7 +13,7 @@ import {
   CollapsibleContent,
   CollapsibleRoot,
   CollapsibleTrigger,
-} from "../../../../widget-shell";
+} from "../../../../widget-shell/ui/collapsible";
 import type { useSteps } from "../hooks/use-steps.hook";
 import { TxStateEnum } from "../hooks/use-steps.hook";
 import {

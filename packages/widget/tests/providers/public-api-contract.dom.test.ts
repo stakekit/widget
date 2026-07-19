@@ -17,10 +17,16 @@ type PublicPackage = typeof import("../../src/public-api/index.package");
 
 describe("public declaration contracts", () => {
   it("keeps the package runtime exports compatible with the public facade", () => {
+    expectTypeOf<keyof typeof packageEntry>().toEqualTypeOf<
+      keyof PublicPackage
+    >();
     expectTypeOf<typeof packageEntry>().toExtend<PublicPackage>();
   });
 
   it("keeps the bundled runtime exports compatible with the public facade", () => {
+    expectTypeOf<keyof typeof bundleEntry>().toEqualTypeOf<
+      keyof PublicBundle
+    >();
     expectTypeOf<typeof bundleEntry>().toExtend<PublicBundle>();
   });
 

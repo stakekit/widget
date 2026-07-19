@@ -31,15 +31,15 @@ import {
 import { watchConnectors } from "wagmi/actions";
 import { optimism } from "wagmi/chains";
 import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
-import { normalizeWidgetConfig } from "../../src/app/config";
-import { walletRuntime } from "../../src/app/runtime";
+import { normalizeWidgetConfig } from "../../src/app/config/settings";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { solana } from "../../src/domain/types/chains/misc";
 import { EvmNetworks } from "../../src/domain/types/chains/networks";
+import { WagmiConfigProvider } from "../../src/features/wallet/react/provider";
 import {
   currentWalletStateResultAtom,
   useWalletConfig,
-} from "../../src/features/wallet";
-import { WagmiConfigProvider } from "../../src/features/wallet/react/provider";
+} from "../../src/features/wallet/state/root-atom";
 import type { SolanaRuntime } from "../../src/services/wallet/platform/solana-platform";
 import { installSolanaConnectorMembership } from "../../src/services/wallet/solana-connector-membership";
 import type {

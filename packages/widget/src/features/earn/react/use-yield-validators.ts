@@ -2,7 +2,7 @@ import { useAtom, useAtomRefresh, useAtomValue } from "@effect/atom-react";
 import { Data, Effect, Option, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime";
+import { appRuntime } from "../../../app/runtime/app-runtime";
 import { EarnValidator } from "../../../domain/schema/earn-models";
 import type {
   ValidatorAddress,

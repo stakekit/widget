@@ -6,8 +6,9 @@ import { humanizePendingActionType } from "../../../../../shared/lib/formatters"
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { Spinner } from "../../../../../shared/ui/primitives/spinner";
-import { KycGateCard, SelectValidator } from "../../../../earn/support";
-import { type PageCta, PageCtaButton } from "../../../../widget-shell";
+import { KycGateCard } from "../../../../earn/ui/components/kyc-gate-card";
+import { SelectValidator } from "../../../../earn/ui/components/select-validator";
+import { type PageCta, PageCtaButton } from "../../../../widget-shell/page-cta";
 import {
   AmountBlock,
   UnstakeInfo,

@@ -1,7 +1,10 @@
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import { normalizeWidgetConfig, widgetConfigAtom } from "../../src/app/config";
-import { mountAnimationStateAtom } from "../../src/features/mount-animation";
+import {
+  normalizeWidgetConfig,
+  widgetConfigAtom,
+} from "../../src/app/config/settings";
+import { mountAnimationStateAtom } from "../../src/features/mount-animation/state";
 
 vi.mock("../../src/shared/config/widget-defaults", async (importOriginal) => {
   const original =

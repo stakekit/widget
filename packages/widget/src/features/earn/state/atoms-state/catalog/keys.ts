@@ -1,7 +1,7 @@
 import { Data } from "effect";
 import type { YieldId } from "../../../../../domain/schema/identifiers";
 import type { Network } from "../../../../../domain/schema/network-model";
-import type { DashboardYieldCategory } from "../../../../../domain/types/yields";
+import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import type { WalletScopeKey } from "../../../../../services/wallet/domain/scope";
 
 export class AvailableYieldCategoriesKey extends Data.TaggedClass(

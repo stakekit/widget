@@ -1,4 +1,4 @@
-import { useTrackPage } from "../../../../tracking";
+import { useTrackPage } from "../../../../tracking/react/use-track-page";
 import { usePendingActionReview } from "../hooks/use-pending-review.hook";
 import { ReviewPage } from "./common-page/common.page";
 

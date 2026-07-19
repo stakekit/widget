@@ -1,9 +1,9 @@
 import { HttpResponse, http } from "msw";
 import { mainnet } from "viem/chains";
 import { userEvent } from "vitest/browser";
-import type { SKAppProps } from "../../src/App";
 import { KycGateCard } from "../../src/features/earn/ui/components/kyc-gate-card";
-import { formatAddress } from "../../src/shared/lib";
+import type { SKAppProps } from "../../src/public-api/types";
+import { formatAddress } from "../../src/shared/lib/general";
 import { yieldApiYieldFixture } from "../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";

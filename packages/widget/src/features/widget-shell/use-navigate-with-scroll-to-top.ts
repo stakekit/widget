@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { type NavigateOptions, type To, useNavigate } from "react-router";
-import { useWidgetConfig } from "../../app/config";
+import { useWidgetConfig } from "../../app/config/use-widget-config";
 
 export const useNavigateWithScrollToTop = () => {
   const navigate = useNavigate();

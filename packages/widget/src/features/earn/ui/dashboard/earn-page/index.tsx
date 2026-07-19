@@ -1,7 +1,8 @@
-import { useWidgetConfig } from "../../../../../app/config";
+import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
-import { Divider, PageCtaButton } from "../../../../widget-shell";
+import { Divider } from "../../../../widget-shell/divider";
+import { PageCtaButton } from "../../../../widget-shell/page-cta";
 import { ExtraArgsSelection } from "../../classic/earn-page/components/extra-args-selection";
 import { Footer } from "../../classic/earn-page/components/footer";
 import { SelectTokenSection } from "../../classic/earn-page/components/select-token-section";

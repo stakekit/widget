@@ -6,7 +6,7 @@ import {
   InitParams as InitParamsSchema,
 } from "../../domain/schema/init-params";
 import type { EnabledNetworks } from "../../domain/schema/wallet-models";
-import type { SKExternalProviders } from "../../domain/types/wallets";
+import type { SKExternalProviders } from "../../public-api/types";
 import { LegacyApiService } from "../api/legacy-api-service";
 import { YieldApiService } from "../api/yield-api-service";
 import {

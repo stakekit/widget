@@ -1,8 +1,6 @@
 import BigNumber from "bignumber.js";
 import type { Network } from "../../domain/schema/network-model";
-import { defaultFormattedNumber, formatNumber } from "./number-format";
-
-export { defaultFormattedNumber, formatNumber };
+import { formatNumber } from "./number-format";
 
 export const APToPercentage = (ap: number) =>
   formatNumber((ap * 100).toFixed(2));

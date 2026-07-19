@@ -20,7 +20,13 @@ import {
   getYieldTypeLabels,
   getYieldWarmupPeriod,
 } from "../../../../domain/types/yields";
-import { APToPercentage, defaultFormattedNumber } from "../../../../shared/lib";
+import { APToPercentage } from "../../../../shared/lib/general";
+import { defaultFormattedNumber } from "../../../../shared/lib/number-format";
+import {
+  RiskRatingBadge,
+  YieldRiskInfoTooltip,
+} from "../../../earn/ui/components/yield-risk";
+import { riskSummaryActions } from "../../../earn/ui/components/yield-risk/styles.css";
 import {
   formatCooldownDays,
   formatEnumValue,
@@ -32,10 +38,7 @@ import {
   formatRewardClaiming,
   formatRewardRateLabel,
   formatRewardTokenLabel,
-  RiskRatingBadge,
-  riskSummaryActions,
-  YieldRiskInfoTooltip,
-} from "../../../earn/support";
+} from "../../../earn/ui/dashboard/earn-details/earn-details-formatters";
 
 type DashboardPositionStatusTone = "action" | "claim" | "default";
 

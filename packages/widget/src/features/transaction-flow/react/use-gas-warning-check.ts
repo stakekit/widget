@@ -3,7 +3,7 @@ import BigNumber from "bignumber.js";
 import { Data, Duration, Effect, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime";
+import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { YieldAction } from "../../../domain/schema/action-models";
 import type { GasBalancesCommand } from "../../../domain/schema/financial-models";
 import type { AppToken } from "../../../domain/schema/legacy-models";

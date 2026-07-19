@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EarnYieldWithProvider } from "../../src/domain/schema/earn-models";
 import {
-  DashboardYieldCategory,
   dashboardYieldCategories,
   getApiYieldTypesForDashboardCategory,
   getDashboardYieldCategory,
@@ -9,6 +8,7 @@ import {
   getYieldTypesSortRank,
   normalizeDashboardYieldCategoryOrder,
 } from "../../src/domain/types/yields";
+import { DashboardYieldCategory } from "../../src/public-api/types";
 
 const allApiYieldTypes = [
   "staking",

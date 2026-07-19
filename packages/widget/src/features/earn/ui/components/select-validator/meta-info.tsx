@@ -5,14 +5,14 @@ import { useTranslation } from "react-i18next";
 import type { AppToken } from "../../../../../domain/schema/legacy-models";
 import type { ValidatorInput as ValidatorDto } from "../../../../../domain/types/validators";
 import {
-  APToPercentage,
-  formatAddress,
-  formatNumber,
-} from "../../../../../shared/lib";
-import {
   getRewardRateFormatted,
   getRewardTypeFormatted,
 } from "../../../../../shared/lib/formatters";
+import {
+  APToPercentage,
+  formatAddress,
+} from "../../../../../shared/lib/general";
+import { formatNumber } from "../../../../../shared/lib/number-format";
 import { SKAnchor } from "../../../../../shared/ui/primitives/anchor";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import * as CopyText from "../../../../../shared/ui/primitives/copy-text";

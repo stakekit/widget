@@ -1,11 +1,9 @@
 import BigNumber from "bignumber.js";
-import type {
-  BorrowNetwork,
-  BorrowToken,
-  CollateralToken,
-  Market,
-  TokenAddress,
-} from "../../../domain/borrow";
+import type { CollateralToken } from "../../../domain/borrow/collateral-token";
+import type { TokenAddress } from "../../../domain/borrow/ids";
+import type { Market } from "../../../domain/borrow/market";
+import type { BorrowNetwork } from "../../../domain/borrow/network";
+import type { BorrowToken } from "../../../domain/borrow/token";
 import type { TokenBalance } from "../../../domain/schema/financial-models";
 
 type BorrowBalanceToken = Pick<
@@ -13,7 +11,7 @@ type BorrowBalanceToken = Pick<
   "address" | "decimals" | "name" | "symbol"
 >;
 
-export type BorrowTokenWalletBalance = {
+type BorrowTokenWalletBalance = {
   readonly amount: string;
   readonly amountValue: BigNumber;
   readonly balance: TokenBalance | null;
@@ -21,7 +19,7 @@ export type BorrowTokenWalletBalance = {
   readonly token: BorrowBalanceToken;
 };
 
-export type BorrowCollateralWalletBalance = BorrowTokenWalletBalance & {
+type BorrowCollateralWalletBalance = BorrowTokenWalletBalance & {
   readonly collateralToken: CollateralToken;
 };
 
@@ -47,7 +45,7 @@ const sameNativeToken = (token: BorrowBalanceToken, balance: TokenBalance) =>
   !balance.token.address &&
   token.symbol.toLowerCase() === balance.token.symbol.toLowerCase();
 
-export const isBorrowTokenBalanceMatch = ({
+const isBorrowTokenBalanceMatch = ({
   balance,
   network,
   token,

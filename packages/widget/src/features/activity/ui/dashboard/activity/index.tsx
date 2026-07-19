@@ -1,9 +1,9 @@
 import { Outlet, useNavigate } from "react-router";
-import { useWidgetConfig } from "../../../../../app/config";
+import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../../../shared/ui/primitives/icons/caret-left";
-import { AnimationPage } from "../../../../widget-shell";
+import { AnimationPage } from "../../../../widget-shell/animation-page";
 import { ActivitySelectionProvider } from "../../../react/activity-selection-route";
 import {
   useActivitySelection,

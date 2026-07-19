@@ -4,7 +4,7 @@ import {
   availableBalanceSummaryAtom,
   averageApySummaryAtom,
   rewardsPositionsSummaryAtom,
-} from "..";
+} from "../resources/summary";
 
 export const useSummary = () => ({
   allPositionsQuery: useAtomValue(allPositionsSummaryAtom),

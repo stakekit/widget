@@ -1,4 +1,4 @@
-import { DashboardYieldCategory } from "../../../../../domain/types/yields";
+import { DashboardYieldCategory } from "../../../../../public-api/types";
 
 export const resolveCategory = ({
   availableCategories,

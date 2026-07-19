@@ -4,7 +4,7 @@ import { getDashboardYieldCategory } from "../../../../../../domain/types/yields
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { Image } from "../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import { TokenIcon } from "../../../../../widget-shell";
+import { TokenIcon } from "../../../../../widget-shell/ui/token-icon";
 import {
   formatDisplayTokenSymbol,
   formatNetworkName,

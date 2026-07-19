@@ -1,16 +1,18 @@
 import * as Atom from "effect/unstable/reactivity/Atom";
+import type { ActionRequest } from "../../../domain/borrow/action-request";
+import type { CollateralToken } from "../../../domain/borrow/collateral-token";
+import type { BorrowNetwork } from "../../../domain/borrow/network";
 import type {
-  ActionRequest,
-  BorrowNetwork,
-  CollateralToken,
-  DebtBalance,
   DisableCollateralPendingAction,
   EnableCollateralPendingAction,
-  Position,
   RepayPendingAction,
-  SupplyBalance,
   WithdrawPendingAction,
-} from "../../../domain/borrow";
+} from "../../../domain/borrow/pending-action";
+import type {
+  DebtBalance,
+  Position,
+  SupplyBalance,
+} from "../../../domain/borrow/position";
 
 export type BorrowWithdrawTokenOption = {
   readonly action: WithdrawPendingAction;
@@ -39,7 +41,7 @@ export type BorrowPositionPendingActionContext =
       readonly type: "disableCollateral" | "enableCollateral";
     };
 
-export type BorrowActionFormReviewState = {
+type BorrowActionFormReviewState = {
   readonly request: ActionRequest;
   readonly summary: {
     readonly action:
@@ -66,7 +68,7 @@ export type BorrowActionFormReviewState = {
   };
 };
 
-export type BorrowActionFormState =
+type BorrowActionFormState =
   | {
       readonly type: "idle";
     }
@@ -79,7 +81,7 @@ export type BorrowActionFormState =
       readonly type: "review";
     };
 
-export type BorrowActionFormAction =
+type BorrowActionFormAction =
   | {
       readonly context: BorrowPositionPendingActionContext;
       readonly type: "preparePositionAction";

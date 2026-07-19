@@ -1,19 +1,18 @@
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import {
-  type BorrowNetwork,
-  type BorrowToken,
   buildCollateralToggleActionRequest,
   buildRepayActionRequest,
   buildWithdrawActionRequest,
-  type PendingAction,
-  type Position,
-  type SupplyBalance,
-} from "../../../domain/borrow";
+} from "../../../domain/borrow/action-request";
+import type { BorrowNetwork } from "../../../domain/borrow/network";
+import type { PendingAction } from "../../../domain/borrow/pending-action";
+import type { Position, SupplyBalance } from "../../../domain/borrow/position";
+import type { BorrowToken } from "../../../domain/borrow/token";
 import type { WalletAddress } from "../../../domain/schema/identifiers";
 import type { AppToken } from "../../../domain/schema/legacy-models";
-import { formatNumber } from "../../../shared/lib";
 import { formatCompactUsd } from "../../../shared/lib/formatters";
+import { formatNumber } from "../../../shared/lib/number-format";
 import type {
   BorrowPositionPendingActionContext,
   BorrowWithdrawTokenOption,

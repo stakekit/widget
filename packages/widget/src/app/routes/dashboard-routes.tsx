@@ -1,37 +1,37 @@
 import { Navigate, Route, Routes } from "react-router";
-import { ActivitySelectionRouteGuard } from "../../features/activity";
+import { ActivitySelectionRouteGuard } from "../../features/activity/react/activity-selection-route";
 import {
   activityTransactionWorkflowKeyAtom,
   activityTransactionWorkflowLifecycleAtom,
 } from "../../features/activity/state/selection";
-import { ActivityTabPage } from "../../features/activity/ui";
+import { ActivityTabPage } from "../../features/activity/ui/dashboard/activity";
+import { BorrowFormPage, BorrowLayout } from "../../features/borrow/ui";
 import {
-  BorrowCompletePage,
   BorrowCompletionRouteGuard,
-  BorrowConnectedWalletRoute,
-  BorrowFormPage,
-  BorrowLayout,
+  BorrowTransactionWorkflowGuard,
+} from "../../features/borrow/ui/borrow-execution-route";
+import { BorrowCompletePage } from "../../features/borrow/ui/complete";
+import { BorrowConnectedWalletRoute } from "../../features/borrow/ui/connected-wallet";
+import {
   BorrowPositionActionPage,
   BorrowPositionActionsPage,
   BorrowPositionDetailsPage,
-  BorrowReviewPage,
-  BorrowStepsPage,
-  BorrowTransactionWorkflowGuard,
-  useBorrowFeatureEnabled,
-} from "../../features/borrow/ui-entry";
-import { EarnPageContent, EarnPageModelBinding } from "../../features/earn/ui";
-import { ManagePage } from "../../features/portfolio/ui";
-import {
-  DashboardPositionDetailsPage,
-  PositionDetailsActions,
-  PositionDetailsStakeActions,
-} from "../../features/position-details/ui";
+} from "../../features/borrow/ui/position-details";
+import { BorrowReviewPage } from "../../features/borrow/ui/review";
+import { BorrowStepsPage } from "../../features/borrow/ui/steps";
+import { useBorrowFeatureEnabled } from "../../features/borrow/ui/use-borrow-feature-enabled";
+import { EarnPageModelBinding } from "../../features/earn/ui/classic/earn-page/state/earn-page-model";
+import { EarnPageContent } from "../../features/earn/ui/dashboard/earn-page";
+import { ManagePage } from "../../features/portfolio/ui/dashboard/manage.page";
+import { PositionDetailsPage as DashboardPositionDetailsPage } from "../../features/position-details/ui/dashboard";
+import { PositionDetailsActions } from "../../features/position-details/ui/dashboard/components/position-details-actions";
+import { PositionDetailsStakeActions } from "../../features/position-details/ui/dashboard/components/position-details-stake-actions";
 // import { RewardsTabPage } from "../../domain/types/rewards";
 import {
   EnterStakeRequestRouteGuard,
   ExitStakeRequestRouteGuard,
   PendingActionRequestRouteGuard,
-} from "../../features/transaction-flow";
+} from "../../features/transaction-flow/react/request-route-guards";
 import {
   enterTransactionWorkflowKeyAtom,
   enterTransactionWorkflowLifecycleAtom,
@@ -44,21 +44,19 @@ import {
   pendingTransactionWorkflowKeyAtom,
   pendingTransactionWorkflowLifecycleAtom,
 } from "../../features/transaction-flow/state/pending-action-request";
-import {
-  ActivityDetailsPage,
-  ActivityStepsPage,
-  PendingCompletePage,
-  PendingReviewPage,
-  PendingStepsPage,
-  StakeCompletePage,
-  StakeReviewPage,
-  StakeStepsPage,
-  UnstakeCompletePage,
-  UnstakeReviewPage,
-  UnstakeStepsPage,
-} from "../../features/transaction-flow/ui";
-import { WalletScopeRouteGuard } from "../../features/wallet";
-import { GlobalModals } from "../../features/widget-shell/screens";
+import { ActivityDetailsPage } from "../../features/transaction-flow/ui/activity-details.page";
+import { PendingCompletePage } from "../../features/transaction-flow/ui/complete/pages/pending-complete.page";
+import { StakeCompletePage } from "../../features/transaction-flow/ui/complete/pages/stake-complete.page";
+import { UnstakeCompletePage } from "../../features/transaction-flow/ui/complete/pages/unstake-complete.page";
+import { PendingReviewPage } from "../../features/transaction-flow/ui/review/pages/pending-review.page";
+import { StakeReviewPage } from "../../features/transaction-flow/ui/review/pages/stake-review.page";
+import { UnstakeReviewPage } from "../../features/transaction-flow/ui/review/pages/unstake-review.page";
+import { ActivityStepsPage } from "../../features/transaction-flow/ui/steps/pages/activity-steps.page";
+import { PendingStepsPage } from "../../features/transaction-flow/ui/steps/pages/pending-steps.page";
+import { StakeStepsPage } from "../../features/transaction-flow/ui/steps/pages/stake-steps.page";
+import { UnstakeStepsPage } from "../../features/transaction-flow/ui/steps/pages/unstake-steps.page";
+import { WalletScopeRouteGuard } from "../../features/wallet/react/wallet-scope-route";
+import { GlobalModals } from "../../features/widget-shell/ui/global-modals";
 import { useSKLocation } from "../../shared/react/location-history";
 import { DashboardOverview } from "./dashboard-overview";
 import { DashboardShell } from "./dashboard-shell";

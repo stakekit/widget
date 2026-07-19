@@ -2,16 +2,15 @@ import { useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
-import { getTokenPriceInUSD } from "../../../../../../domain";
+import { getTokenPriceInUSD } from "../../../../../../domain/types/price";
 import { config } from "../../../../../../shared/config/widget-defaults";
-import { defaultFormattedNumber } from "../../../../../../shared/lib";
+import { defaultFormattedNumber } from "../../../../../../shared/lib/number-format";
+import { PricesKey, pricesAtom } from "../../../../../earn/resources/prices";
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
-  PricesKey,
-  pricesAtom,
-} from "../../../../../earn";
-import type { PositionItem } from "../../../..";
+} from "../../../../../earn/resources/yield-insights";
+import type { PositionItem } from "../../../../resources/positions";
 import { usePositionListItem as useBasePositionListItem } from "../../../classic/positions-page/hooks/use-position-list-item";
 
 export const usePositionListItem = (item: PositionItem) => {

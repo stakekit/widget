@@ -4,12 +4,14 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import {
   normalizeWidgetConfig,
-  type WidgetConfig,
   widgetConfigAtom,
-} from "../../src/app/config";
-import { appRuntime } from "../../src/app/runtime";
+} from "../../src/app/config/settings";
+import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { BorrowApiService } from "../../src/services/api/borrow-api-service";
-import { WidgetConfigService } from "../../src/services/config/widget-config";
+import {
+  type WidgetConfig,
+  WidgetConfigService,
+} from "../../src/services/config/widget-config";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 
 const firstTrackingProbeAtom = appRuntime.atom(

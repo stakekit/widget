@@ -1,5 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
-import { useWalletScopeRoute } from "../../wallet";
+import { useWalletScopeRoute } from "../../wallet/react/wallet-scope-route";
 import {
   BorrowPositionKey,
   borrowPositionAtom,

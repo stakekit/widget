@@ -12,14 +12,15 @@ import { base } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { Connector } from "wagmi";
-import { appRuntime, walletRuntime } from "../../src/app/runtime";
+import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
+import { Action as BorrowAction } from "../../src/domain/borrow/action";
+import { ActionRequest } from "../../src/domain/borrow/action-request";
+import type {
+  Transaction as BorrowTransaction,
+  SubmitTransactionCommand,
+} from "../../src/domain/borrow/transaction";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import {
-  ActionRequest,
-  Action as BorrowAction,
-  type Transaction as BorrowTransaction,
-  type SubmitTransactionCommand,
-} from "../../src/features/borrow/core";
 import {
   BorrowCompletionRouteGuard,
   BorrowTransactionWorkflowGuard,

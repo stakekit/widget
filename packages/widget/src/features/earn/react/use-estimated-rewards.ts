@@ -7,8 +7,8 @@ import type {
 import type { YieldId } from "../../../domain/schema/identifiers";
 import type { ValidatorKey } from "../../../domain/types/validators";
 import { isBittensorStaking } from "../../../domain/types/yields";
-import { formatNumber } from "../../../shared/lib";
 import { getRewardRateFormatted } from "../../../shared/lib/formatters";
+import { formatNumber } from "../../../shared/lib/number-format";
 import { useProvidersDetails } from "./use-provider-details";
 
 export const useEstimatedRewards = ({

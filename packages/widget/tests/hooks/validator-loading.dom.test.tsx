@@ -1,9 +1,9 @@
 import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import type { PropsWithChildren } from "react";
-import { normalizeWidgetConfig } from "../../src/app/config";
+import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { YieldId } from "../../src/domain/schema/identifiers";
-import { useYieldValidators } from "../../src/features/earn";
+import { useYieldValidators } from "../../src/features/earn/react/use-yield-validators";
 import { yieldApiValidatorFixture } from "../fixtures";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { describe, expect, it } from "../utils/test-extend.dom";

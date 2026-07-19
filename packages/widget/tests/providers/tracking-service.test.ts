@@ -1,6 +1,6 @@
 import { Effect, Layer, Stream } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { normalizeWidgetConfig } from "../../src/app/config";
+import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 

@@ -14,8 +14,10 @@ import type {
 import type { YieldId } from "../../../../domain/schema/identifiers";
 import type { InitParams } from "../../../../domain/schema/init-params";
 import type { PositionsData } from "../../../../domain/types/positions";
-import type { DashboardYieldCategory } from "../../../../domain/types/yields";
-import type { PreferredTokenYieldsPerNetwork } from "../../../../public-api/types";
+import type {
+  DashboardYieldCategory,
+  PreferredTokenYieldsPerNetwork,
+} from "../../../../public-api/types";
 import type { WalletScopeKey } from "../../../../services/wallet/domain/scope";
 import type { YieldValidatorsPullKey } from "./catalog/keys";
 

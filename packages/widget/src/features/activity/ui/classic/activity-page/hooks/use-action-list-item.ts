@@ -5,13 +5,13 @@ import {
   type ActionType,
   getActionInputToken,
 } from "../../../../../../domain/types/action";
-import { defaultFormattedNumber } from "../../../../../../shared/lib";
 import {
   getActivityDayKind,
   getActivityRelativeTime,
 } from "../../../../../../shared/lib/date";
 import { capitalizeFirstLetters } from "../../../../../../shared/lib/formatters";
-import { useProvidersDetails } from "../../../../../earn";
+import { defaultFormattedNumber } from "../../../../../../shared/lib/number-format";
+import { useProvidersDetails } from "../../../../../earn/react/use-provider-details";
 import type { ActivityIconType } from "../components/activity-icon";
 import type { ActionYieldDto } from "../types";
 

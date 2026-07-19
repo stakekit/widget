@@ -1,4 +1,4 @@
-import { useWidgetConfig } from "../../../app/config";
+import { useWidgetConfig } from "../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../shared/styles/recipe-variant";
 import type { BoxProps } from "../../../shared/ui/primitives/box";
 import { Box } from "../../../shared/ui/primitives/box";

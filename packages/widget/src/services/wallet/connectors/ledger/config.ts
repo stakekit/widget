@@ -1,6 +1,6 @@
 import type { WalletList } from "@stakekit/rainbowkit";
 import { Effect } from "effect";
-import type { InitParams } from "../../../../domain/types/init-params";
+import type { InitParams } from "../../../../domain/schema/init-params";
 import { isLedgerDappBrowserProvider } from "../../browser-environment";
 import type { EnabledChainsMap } from "./ledger-connector";
 

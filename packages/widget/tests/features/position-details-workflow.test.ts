@@ -8,7 +8,7 @@ import {
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
   reducePositionDetailsWorkflow,
-} from "../../src/features/position-details/state";
+} from "../../src/features/position-details/state/workflow";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 
 const scopeA = new WalletScopeKey({

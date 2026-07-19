@@ -1,6 +1,6 @@
 import type BigNumber from "bignumber.js";
-import { useWidgetConfig } from "../../../../../app/config";
-import { formatNumber } from "../../../../../shared/lib";
+import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
+import { formatNumber } from "../../../../../shared/lib/number-format";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Spinner } from "../../../../../shared/ui/primitives/spinner";

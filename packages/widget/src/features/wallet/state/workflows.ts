@@ -1,12 +1,12 @@
 import type { Chain } from "@stakekit/rainbowkit";
 import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { walletRuntime } from "../../../app/runtime";
+import { walletRuntime } from "../../../app/runtime/wallet-runtime";
+import { WalletService } from "../../../services/wallet/wallet-service";
 import {
   actionHistoryTimestampAtom,
   resetActionHistory,
-} from "../../../features/transaction-flow";
-import { WalletService } from "../../../services/wallet/wallet-service";
+} from "../../transaction-flow/state/action-history";
 
 type LedgerAccountConnector = {
   readonly requestAndSwitchAccount: (

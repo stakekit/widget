@@ -1,11 +1,9 @@
 import { Effect, Layer, Stream } from "effect";
-import { normalizeWidgetConfig } from "../../src/app/config";
-import {
-  BorrowApiService,
-  LegacyApiService,
-  YieldApiService,
-} from "../../src/services/api";
+import { normalizeWidgetConfig } from "../../src/app/config/settings";
+import { BorrowApiService } from "../../src/services/api/borrow-api-service";
+import { LegacyApiService } from "../../src/services/api/legacy-api-service";
 import { ApiTransportService } from "../../src/services/api/transport";
+import { YieldApiService } from "../../src/services/api/yield-api-service";
 import {
   type WidgetApiConfig,
   WidgetConfigService,

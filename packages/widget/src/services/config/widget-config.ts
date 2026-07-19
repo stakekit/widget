@@ -1,6 +1,9 @@
 import { Context, type Effect, Layer, type Stream } from "effect";
-import type { SKExternalProviders } from "../../domain/types/wallets";
-import type { SettingsProps, VariantProps } from "../../public-api/types";
+import type {
+  SettingsProps,
+  SKExternalProviders,
+  VariantProps,
+} from "../../public-api/types";
 import { config } from "../../shared/config/widget-defaults";
 
 type ResolvedSettingsProps = Omit<

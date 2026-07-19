@@ -1,5 +1,5 @@
 import { userEvent } from "vitest/browser";
-import { formatAddress } from "../../../src/shared/lib";
+import { formatAddress } from "../../../src/shared/lib/general";
 import { describe, expect, it } from "../../utils/test-extend";
 import { renderApp } from "../../utils/test-utils";
 import { setup } from "./setup";

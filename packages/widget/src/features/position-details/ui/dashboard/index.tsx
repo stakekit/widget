@@ -2,13 +2,13 @@ import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
+import { AnimationPage } from "../../../widget-shell/animation-page";
 import {
-  AnimationPage,
   BackButton,
   BackButtonProvider,
-  TabPageContainer,
-  VerticalDivider,
-} from "../../../widget-shell";
+} from "../../../widget-shell/dashboard/components/back-button";
+import { VerticalDivider } from "../../../widget-shell/dashboard/components/divider";
+import { TabPageContainer } from "../../../widget-shell/dashboard/components/tab-page-container";
 import { usePositionDetails } from "../classic/hooks/use-position-details";
 import {
   positionDetailsActionsHasContent,

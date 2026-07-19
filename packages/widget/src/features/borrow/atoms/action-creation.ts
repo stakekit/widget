@@ -1,9 +1,10 @@
 import { Data, Effect } from "effect";
-import { appRuntime } from "../../../app/runtime";
-import type { Action, ActionRequest } from "../../../domain/borrow";
+import { appRuntime } from "../../../app/runtime/app-runtime";
+import type { Action } from "../../../domain/borrow/action";
+import type { ActionRequest } from "../../../domain/borrow/action-request";
 import { BorrowApiService } from "../../../services/api/borrow-api-service";
 
-export class BorrowActionCreationError extends Data.TaggedError(
+class BorrowActionCreationError extends Data.TaggedError(
   "BorrowActionCreationError"
 )<{
   readonly cause?: unknown;

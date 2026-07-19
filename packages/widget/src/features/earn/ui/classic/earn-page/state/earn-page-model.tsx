@@ -13,12 +13,8 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../../app/config";
-import {
-  getTokenPriceInUSD,
-  stakeTokenSameAsGasToken,
-  tokenString,
-} from "../../../../../../domain";
+import { useWidgetConfig } from "../../../../../../app/config/use-widget-config";
+import { stakeTokenSameAsGasToken } from "../../../../../../domain";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
@@ -27,8 +23,9 @@ import type { YieldId } from "../../../../../../domain/schema/identifiers";
 import type { TronResource } from "../../../../../../domain/schema/legacy-models";
 import { getKycProviderName } from "../../../../../../domain/types/kyc";
 import type { PositionsData } from "../../../../../../domain/types/positions";
+import { getTokenPriceInUSD } from "../../../../../../domain/types/price";
+import { tokenString } from "../../../../../../domain/types/tokens";
 import {
-  type DashboardYieldCategory,
   type ExtendedYieldType,
   filterValidators,
   getDashboardYieldCategory,
@@ -40,51 +37,50 @@ import {
   isNonZeroRewardRateYield,
   isYieldActionArgRequired,
 } from "../../../../../../domain/types/yields";
-import { useMountAnimation } from "../../../../../../features/mount-animation";
+import type { DashboardYieldCategory } from "../../../../../../public-api/types";
 import { isLedgerLiveConnector } from "../../../../../../services/wallet/connectors/ledger/ledger-live-connector-meta";
 import {
   defaultFormattedNumber,
   formatNumber,
-} from "../../../../../../shared/lib";
+} from "../../../../../../shared/lib/number-format";
 import {
   getPositionDetailsStakeReviewPath,
   usePositionDetailsStakeMatch,
 } from "../../../../../../shared/react/navigation/use-position-details-stake-match";
 import { useDebouncedValue } from "../../../../../../shared/react/use-debounced-value";
 import { useSavedRef } from "../../../../../../shared/react/use-saved-ref";
-import { useTrackEvent } from "../../../../../tracking";
-import { useSetEnterStakeRequest } from "../../../../../transaction-flow";
+import { useMountAnimation } from "../../../../../mount-animation/react/use-mount-animation";
+import { useTrackEvent } from "../../../../../tracking/react/use-track-event";
+import { useSetEnterStakeRequest } from "../../../../../transaction-flow/react/use-transaction-flow";
+import { useCloseChainModal } from "../../../../../wallet/react/use-close-chain-modal";
+import { useSKWallet } from "../../../../../wallet/react/use-wallet";
+import { useWalletConfig } from "../../../../../wallet/state/root-atom";
+import { currentWalletScopeAtom } from "../../../../../wallet/state/selectors";
+import { addLedgerAccountAtom } from "../../../../../wallet/state/workflows";
+import type { PageCta } from "../../../../../widget-shell/page-cta";
+import type { NumberInputProps } from "../../../../../widget-shell/ui/number-input";
+import type { SelectModalProps } from "../../../../../widget-shell/ui/select-modal";
+import { useNavigateWithScrollToTop } from "../../../../../widget-shell/use-navigate-with-scroll-to-top";
+import { useEstimatedRewards } from "../../../../react/use-estimated-rewards";
+import { useMaxMinYieldAmount } from "../../../../react/use-max-min-yield-amount";
+import { useProvidersDetails } from "../../../../react/use-provider-details";
+import { useRewardTokenDetails } from "../../../../react/use-reward-token-details";
+import { useValidatorsConfig } from "../../../../react/use-validators-config";
+import { useYieldKycGate } from "../../../../react/use-yield-kyc-gate";
+import { useYieldType } from "../../../../react/use-yield-type";
 import {
-  addLedgerAccountAtom,
-  currentWalletScopeAtom,
-  useCloseChainModal,
-  useSKWallet,
-  useWalletConfig,
-} from "../../../../../wallet";
-import type {
-  NumberInputProps,
-  PageCta,
-  SelectModalProps,
-} from "../../../../../widget-shell";
-import { useNavigateWithScrollToTop } from "../../../../../widget-shell";
-import {
-  type EarnTokenOption,
-  earnPageSearchAtom,
-  earnPageSubmittedAtom,
-  getEarnPageValidation,
   getTokensPricesRequest,
   PricesKey,
   pricesAtom,
-  useEarnMachine,
-  useProvidersDetails,
-  useValidatorsConfig,
-  useYieldKycGate,
-  YieldValidatorsPullKey,
-} from "../../../..";
-import { useEstimatedRewards } from "../../../../react/use-estimated-rewards";
-import { useMaxMinYieldAmount } from "../../../../react/use-max-min-yield-amount";
-import { useRewardTokenDetails } from "../../../../react/use-reward-token-details";
-import { useYieldType } from "../../../../react/use-yield-type";
+} from "../../../../resources/prices";
+import { YieldValidatorsPullKey } from "../../../../state/atoms-state/catalog/keys";
+import { useEarnMachine } from "../../../../state/atoms-state/hooks/use-earn-machine";
+import type { EarnTokenOption } from "../../../../state/atoms-state/types";
+import {
+  earnPageSearchAtom,
+  earnPageSubmittedAtom,
+  getEarnPageValidation,
+} from "../../../../state/page-workflow";
 import type { SelectedStakeData } from "../types";
 import type { EarnPageModel } from "./types";
 import { useAmountValidation } from "./use-amount-validation";

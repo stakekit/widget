@@ -3,7 +3,7 @@ import { Effect, Option, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type { Config } from "wagmi";
-import { walletRuntime } from "../../../app/runtime";
+import { walletRuntime } from "../../../app/runtime/wallet-runtime";
 import { WalletService } from "../../../services/wallet/wallet-service";
 
 const walletStateAtom = walletRuntime
