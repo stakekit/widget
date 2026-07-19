@@ -9,15 +9,6 @@ type ArchitectureBaseline = {
   readonly sha256: string;
 };
 
-const legacyClassicFlowViewBaselines: ReadonlyArray<ArchitectureBaseline> = [
-  {
-    path: "src/features/transaction-flow/ui/steps/pages/tx-state.tsx",
-    reason:
-      "Legacy presentation-state synchronization is outside the Classic Flow cutover until this view is touched.",
-    sha256: "0617a6a80ab39b27f0a315a1c5a6603f53c544e448a6a5024c3da4bf4b55b8d6",
-  },
-];
-
 const reviewedExternalReactBoundaries: ReadonlyArray<ArchitectureBaseline> = [
   {
     path: "src/app/embedding/widget-instance-react-boundary.tsx",
@@ -267,12 +258,7 @@ const verifyBaseline = async ({
 
 const main = async () => {
   const failures = (
-    await Promise.all(
-      [
-        ...legacyClassicFlowViewBaselines,
-        ...reviewedExternalReactBoundaries,
-      ].map(verifyBaseline)
-    )
+    await Promise.all(reviewedExternalReactBoundaries.map(verifyBaseline))
   ).filter((failure): failure is string => failure !== null);
 
   const config = ts.readConfigFile("tsconfig.json", ts.sys.readFile);

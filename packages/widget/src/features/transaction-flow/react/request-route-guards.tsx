@@ -59,10 +59,11 @@ const activityResumeFlowRoute = makeClassicFlowRoute(
   "ActivityResumeClassicTransactionFlow"
 );
 
-export const EnterStakeRequestRouteGuard = enterFlowRoute.RouteGuard;
-export const ExitStakeRequestRouteGuard = exitFlowRoute.RouteGuard;
-export const PendingActionRequestRouteGuard = manageFlowRoute.RouteGuard;
-export const ActivitySelectionRouteGuard = activityResumeFlowRoute.RouteGuard;
+export const EnterClassicFlowRouteGuard = enterFlowRoute.RouteGuard;
+export const ExitClassicFlowRouteGuard = exitFlowRoute.RouteGuard;
+export const ManageClassicFlowRouteGuard = manageFlowRoute.RouteGuard;
+export const ActivityResumeClassicFlowRouteGuard =
+  activityResumeFlowRoute.RouteGuard;
 
 export const useRequiredEnterClassicTransactionFlow =
   enterFlowRoute.useRequiredValue;

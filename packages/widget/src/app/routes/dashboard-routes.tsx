@@ -23,10 +23,10 @@ import { PositionDetailsActions } from "../../features/position-details/ui/dashb
 import { PositionDetailsStakeActions } from "../../features/position-details/ui/dashboard/components/position-details-stake-actions";
 // import { RewardsTabPage } from "../../domain/types/rewards";
 import {
-  ActivitySelectionRouteGuard,
-  EnterStakeRequestRouteGuard,
-  ExitStakeRequestRouteGuard,
-  PendingActionRequestRouteGuard,
+  ActivityResumeClassicFlowRouteGuard,
+  EnterClassicFlowRouteGuard,
+  ExitClassicFlowRouteGuard,
+  ManageClassicFlowRouteGuard,
 } from "../../features/transaction-flow/react/request-route-guards";
 import { ActivityDetailsPage } from "../../features/transaction-flow/ui/activity-details.page";
 import { PendingCompletePage } from "../../features/transaction-flow/ui/complete/pages/pending-complete.page";
@@ -116,7 +116,7 @@ export const DashboardRoutes = () => {
               <Route index element={<EarnPageContent />} />
 
               <Route element={<WalletScopeRouteGuard fallbackPath="/" />}>
-                <Route element={<EnterStakeRequestRouteGuard />}>
+                <Route element={<EnterClassicFlowRouteGuard />}>
                   <Route path="review" element={<StakeReviewPage />} />
                   <Route element={<ClassicFlowTransactionWorkflowGuard />}>
                     <Route path="steps" element={<StakeStepsPage />} />
@@ -143,7 +143,7 @@ export const DashboardRoutes = () => {
                 {/* Staking */}
                 <Route path="stake">
                   <Route index element={<PositionDetailsStakeActions />} />
-                  <Route element={<EnterStakeRequestRouteGuard />}>
+                  <Route element={<EnterClassicFlowRouteGuard />}>
                     <Route path="review" element={<StakeReviewPage />} />
                     <Route element={<ClassicFlowTransactionWorkflowGuard />}>
                       <Route path="steps" element={<StakeStepsPage />} />
@@ -160,7 +160,7 @@ export const DashboardRoutes = () => {
                 {/* Unstaking */}
                 <Route path="unstake">
                   <Route index element={<PositionDetailsActions />} />
-                  <Route element={<ExitStakeRequestRouteGuard />}>
+                  <Route element={<ExitClassicFlowRouteGuard />}>
                     <Route path="review" element={<UnstakeReviewPage />} />
                     <Route element={<ClassicFlowTransactionWorkflowGuard />}>
                       <Route path="steps" element={<UnstakeStepsPage />} />
@@ -174,7 +174,7 @@ export const DashboardRoutes = () => {
 
                 {/* Pending Actions */}
                 <Route path="pending-action">
-                  <Route element={<PendingActionRequestRouteGuard />}>
+                  <Route element={<ManageClassicFlowRouteGuard />}>
                     <Route path="review" element={<PendingReviewPage />} />
                     <Route element={<ClassicFlowTransactionWorkflowGuard />}>
                       <Route path="steps" element={<PendingStepsPage />} />
@@ -196,7 +196,7 @@ export const DashboardRoutes = () => {
               <Route
                 element={<WalletScopeRouteGuard fallbackPath="/activity" />}
               >
-                <Route element={<ActivitySelectionRouteGuard />}>
+                <Route element={<ActivityResumeClassicFlowRouteGuard />}>
                   <Route index element={<ActivityDetailsPage />} />
                   <Route element={<ClassicFlowTransactionWorkflowGuard />}>
                     <Route

@@ -8,10 +8,10 @@ import { initParamsAtom } from "../../features/init-params/atoms";
 import { AnimatedPositionsPage } from "../../features/portfolio/ui/classic/positions-page/positions.page";
 import { PositionDetailsPage as ClassicPositionDetailsPage } from "../../features/position-details/ui/classic/position-details.page";
 import {
-  ActivitySelectionRouteGuard,
-  EnterStakeRequestRouteGuard,
-  ExitStakeRequestRouteGuard,
-  PendingActionRequestRouteGuard,
+  ActivityResumeClassicFlowRouteGuard,
+  EnterClassicFlowRouteGuard,
+  ExitClassicFlowRouteGuard,
+  ManageClassicFlowRouteGuard,
 } from "../../features/transaction-flow/react/request-route-guards";
 import { ActivityCompletePage } from "../../features/transaction-flow/ui/complete/pages/activity-complete.page";
 import { PendingCompletePage } from "../../features/transaction-flow/ui/complete/pages/pending-complete.page";
@@ -127,7 +127,7 @@ export const ClassicRoutes = () => {
                   <Route element={<WalletScopeRouteGuard fallbackPath="/" />}>
                     {/* Activity flow */}
                     <Route path="activity">
-                      <Route element={<ActivitySelectionRouteGuard />}>
+                      <Route element={<ActivityResumeClassicFlowRouteGuard />}>
                         <Route path="review" element={<ActionReviewPage />} />
                         <Route
                           element={<ClassicFlowTransactionWorkflowGuard />}
@@ -145,7 +145,7 @@ export const ClassicRoutes = () => {
                     </Route>
 
                     {/* Stake flow */}
-                    <Route element={<EnterStakeRequestRouteGuard />}>
+                    <Route element={<EnterClassicFlowRouteGuard />}>
                       <Route path="review" element={<StakeReviewPage />} />
                       <Route element={<ClassicFlowTransactionWorkflowGuard />}>
                         <Route path="steps" element={<StakeStepsPage />} />
@@ -166,7 +166,7 @@ export const ClassicRoutes = () => {
 
                       {/* Unstaking */}
                       <Route path="unstake">
-                        <Route element={<ExitStakeRequestRouteGuard />}>
+                        <Route element={<ExitClassicFlowRouteGuard />}>
                           <Route
                             path="review"
                             element={<UnstakeReviewPage />}
@@ -188,7 +188,7 @@ export const ClassicRoutes = () => {
 
                       {/* Pending Actions */}
                       <Route path="pending-action">
-                        <Route element={<PendingActionRequestRouteGuard />}>
+                        <Route element={<ManageClassicFlowRouteGuard />}>
                           <Route
                             path="review"
                             element={<PendingReviewPage />}
