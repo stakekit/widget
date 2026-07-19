@@ -15,12 +15,9 @@ import { PositionDetailsPage as ClassicPositionDetailsPage } from "../../feature
 import {
   EnterStakeRequestRouteGuard,
   ExitStakeRequestRouteGuard,
+  enterClassicFlowWorkflowKeyAtom,
   PendingActionRequestRouteGuard,
 } from "../../features/transaction-flow/react/request-route-guards";
-import {
-  enterTransactionWorkflowKeyAtom,
-  enterTransactionWorkflowLifecycleAtom,
-} from "../../features/transaction-flow/state/enter-request";
 import {
   exitTransactionWorkflowKeyAtom,
   exitTransactionWorkflowLifecycleAtom,
@@ -57,7 +54,10 @@ import { useSKLocation } from "../../shared/react/location-history";
 import { useDetailsMatch } from "../../shared/react/navigation/use-details-match";
 import { usePrevious } from "../../shared/react/use-previous";
 import { useSavedRef } from "../../shared/react/use-saved-ref";
-import { ClassicTransactionWorkflowGuard } from "./guards/classic-transaction-workflow";
+import {
+  ClassicFlowTransactionWorkflowGuard,
+  ClassicTransactionWorkflowGuard,
+} from "./guards/classic-transaction-workflow";
 import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
 
 export const ClassicRoutes = () => {
@@ -174,11 +174,8 @@ export const ClassicRoutes = () => {
                       <Route path="review" element={<StakeReviewPage />} />
                       <Route
                         element={
-                          <ClassicTransactionWorkflowGuard
-                            workflowLifecycleAtom={
-                              enterTransactionWorkflowLifecycleAtom
-                            }
-                            workflowKeyAtom={enterTransactionWorkflowKeyAtom}
+                          <ClassicFlowTransactionWorkflowGuard
+                            workflowKeyAtom={enterClassicFlowWorkflowKeyAtom}
                           />
                         }
                       >

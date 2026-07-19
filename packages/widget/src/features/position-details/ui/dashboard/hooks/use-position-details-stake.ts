@@ -50,7 +50,7 @@ import { useAmountValidation } from "../../../../earn/ui/classic/earn-page/state
 import { useStakeEnterRequestDto } from "../../../../earn/ui/classic/earn-page/state/use-stake-enter-request-dto";
 import { useTokenBalancesScan } from "../../../../portfolio/react/use-token-balances-scan";
 import { useTrackEvent } from "../../../../tracking/react/use-track-event";
-import { useSetEnterStakeRequest } from "../../../../transaction-flow/react/use-transaction-flow";
+import { useStartClassicTransactionFlow } from "../../../../transaction-flow/react/use-transaction-flow";
 import { useCloseChainModal } from "../../../../wallet/react/use-close-chain-modal";
 import { useSKWallet } from "../../../../wallet/react/use-wallet";
 import { useWalletScopeRoute } from "../../../../wallet/react/wallet-scope-route";
@@ -251,7 +251,7 @@ export const usePositionDetailsStake = () => {
     : null;
   const onKycStatusRefresh = () => yieldKycGate.refetch();
   const navigate = useNavigateWithScrollToTop();
-  const setEnterStakeRequest = useSetEnterStakeRequest();
+  const startClassicTransactionFlow = useStartClassicTransactionFlow();
   const { isLedgerLiveAccountPlaceholder, chain, connector } = useSKWallet();
 
   const {
@@ -275,9 +275,9 @@ export const usePositionDetailsStake = () => {
 
     if (kycGateIsBlocking) return;
 
-    setEnterStakeRequest({
-      actionDto: null,
-      requestDto: stakeEnterRequestDto.dto,
+    startClassicTransactionFlow({
+      _tag: "Enter",
+      request: stakeEnterRequestDto.dto,
       selectedToken: selectedTokenValue,
       gasFeeToken: stakeEnterRequestDto.gasFeeToken,
       providersDetails: providersDetails ?? [],

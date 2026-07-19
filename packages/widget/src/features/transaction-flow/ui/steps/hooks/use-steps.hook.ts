@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from "react";
+import { useAtomSet } from "@effect/atom-react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import type { YieldAction } from "../../../../../domain/schema/action-models";
@@ -15,6 +16,8 @@ import {
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import { useTrackEvent } from "../../../../tracking/react/use-track-event";
 import type { PageCta } from "../../../../widget-shell/page-cta";
+import { useClassicFlowExecutionIdentity } from "../../../react/classic-transaction-workflow-context";
+import { classicTransactionFlowFacade } from "../../../state/classic-flow-facade";
 import { useTransactionWorkflow } from "./use-transaction-workflow.hook";
 
 export const useSteps = () => {
@@ -25,34 +28,15 @@ export const useSteps = () => {
     state: machineState,
     workflowKey,
   } = useTransactionWorkflow();
-
-  /**
-   *
-   * @summary Navigate to next page
-   */
-  useEffect(() => {
-    if (machineState._tag === "Completed") {
-      navigate("../complete", {
-        state: {
-          urls: flattenTransactionWorkflowTransactions(machineState.context)
-            .filter((transaction) => transaction.source._tag === "Classic")
-            .map((transaction) => ({
-              type: transaction.source.transaction.type,
-              url: transaction.meta.url,
-            }))
-            .filter(
-              (val): val is { type: TransactionType; url: string } => !!val.url
-            ),
-        },
-        relative: "path",
-        replace: true,
-      });
-    }
-  }, [navigate, machineState.context, machineState._tag]);
+  const flowIdentity = useClassicFlowExecutionIdentity();
+  const returnFlowToReview = useAtomSet(
+    classicTransactionFlowFacade.returnToReviewAtom
+  );
 
   const trackEvent = useTrackEvent();
 
   const onClick = () => {
+    if (flowIdentity) returnFlowToReview(flowIdentity);
     trackEvent("actionStepsCancelled");
     navigate(-1);
   };
@@ -71,6 +55,23 @@ export const useSteps = () => {
   const workflowTransactions = flattenTransactionWorkflowTransactions(
     machineState.context
   );
+  const completionNavigation =
+    machineState._tag === "Completed"
+      ? {
+          state: {
+            urls: workflowTransactions
+              .filter((transaction) => transaction.source._tag === "Classic")
+              .map((transaction) => ({
+                type: transaction.source.transaction.type,
+                url: transaction.meta.url,
+              }))
+              .filter(
+                (value): value is { type: TransactionType; url: string } =>
+                  !!value.url
+              ),
+          },
+        }
+      : null;
   const currentTransaction = getCurrentTransactionWorkflowTransaction(
     machineState.context
   );
@@ -131,6 +132,7 @@ export const useSteps = () => {
     txStates,
     cta,
     customSignErrorMessage,
+    completionNavigation,
     yieldId: workflowKey.yieldId,
   };
 };

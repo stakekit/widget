@@ -30,12 +30,9 @@ import { PositionDetailsStakeActions } from "../../features/position-details/ui/
 import {
   EnterStakeRequestRouteGuard,
   ExitStakeRequestRouteGuard,
+  enterClassicFlowWorkflowKeyAtom,
   PendingActionRequestRouteGuard,
 } from "../../features/transaction-flow/react/request-route-guards";
-import {
-  enterTransactionWorkflowKeyAtom,
-  enterTransactionWorkflowLifecycleAtom,
-} from "../../features/transaction-flow/state/enter-request";
 import {
   exitTransactionWorkflowKeyAtom,
   exitTransactionWorkflowLifecycleAtom,
@@ -60,7 +57,10 @@ import { GlobalModals } from "../../features/widget-shell/ui/global-modals";
 import { useSKLocation } from "../../shared/react/location-history";
 import { DashboardOverview } from "./dashboard-overview";
 import { DashboardShell } from "./dashboard-shell";
-import { ClassicTransactionWorkflowGuard } from "./guards/classic-transaction-workflow";
+import {
+  ClassicFlowTransactionWorkflowGuard,
+  ClassicTransactionWorkflowGuard,
+} from "./guards/classic-transaction-workflow";
 
 const positionDetailsStakeFooterPath =
   /^\/positions\/[^/]+\/[^/]+(?:\/stake)?$/;
@@ -136,11 +136,8 @@ export const DashboardRoutes = () => {
                   <Route path="review" element={<StakeReviewPage />} />
                   <Route
                     element={
-                      <ClassicTransactionWorkflowGuard
-                        workflowLifecycleAtom={
-                          enterTransactionWorkflowLifecycleAtom
-                        }
-                        workflowKeyAtom={enterTransactionWorkflowKeyAtom}
+                      <ClassicFlowTransactionWorkflowGuard
+                        workflowKeyAtom={enterClassicFlowWorkflowKeyAtom}
                       />
                     }
                   >
@@ -172,11 +169,8 @@ export const DashboardRoutes = () => {
                     <Route path="review" element={<StakeReviewPage />} />
                     <Route
                       element={
-                        <ClassicTransactionWorkflowGuard
-                          workflowLifecycleAtom={
-                            enterTransactionWorkflowLifecycleAtom
-                          }
-                          workflowKeyAtom={enterTransactionWorkflowKeyAtom}
+                        <ClassicFlowTransactionWorkflowGuard
+                          workflowKeyAtom={enterClassicFlowWorkflowKeyAtom}
                         />
                       }
                     >

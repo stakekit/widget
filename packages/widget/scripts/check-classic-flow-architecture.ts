@@ -11,12 +11,6 @@ type ArchitectureBaseline = {
 
 const legacyClassicFlowViewBaselines: ReadonlyArray<ArchitectureBaseline> = [
   {
-    path: "src/features/transaction-flow/ui/steps/hooks/use-steps.hook.ts",
-    reason:
-      "Legacy completion navigation is outside the Classic Flow cutover until its view adapter is migrated.",
-    sha256: "8f9eef1389abfe457cda9c5844377f7e5b7e28a5f5facf507395ce9ceabf2977",
-  },
-  {
     path: "src/features/transaction-flow/ui/steps/pages/tx-state.tsx",
     reason:
       "Legacy presentation-state synchronization is outside the Classic Flow cutover until this view is touched.",

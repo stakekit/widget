@@ -51,7 +51,7 @@ import { useDebouncedValue } from "../../../../../../shared/react/use-debounced-
 import { useSavedRef } from "../../../../../../shared/react/use-saved-ref";
 import { useMountAnimation } from "../../../../../mount-animation/react/use-mount-animation";
 import { useTrackEvent } from "../../../../../tracking/react/use-track-event";
-import { useSetEnterStakeRequest } from "../../../../../transaction-flow/react/use-transaction-flow";
+import { useStartClassicTransactionFlow } from "../../../../../transaction-flow/react/use-transaction-flow";
 import { useCloseChainModal } from "../../../../../wallet/react/use-close-chain-modal";
 import { useSKWallet } from "../../../../../wallet/react/use-wallet";
 import { useWalletConfig } from "../../../../../wallet/state/root-atom";
@@ -499,7 +499,7 @@ export const EarnPageModelBinding = ({
     balanceId: positionDetailsStakeMatch?.params.balanceId,
     integrationId: positionDetailsStakeMatch?.params.integrationId,
   });
-  const setEnterStakeRequest = useSetEnterStakeRequest();
+  const startClassicTransactionFlow = useStartClassicTransactionFlow();
 
   const [submitted, setSubmitted] = useAtom(earnPageSubmittedAtom);
   const onClickHandler = () => {
@@ -511,9 +511,9 @@ export const EarnPageModelBinding = ({
     if (!isConnected || !walletScope) return openConnectModal?.();
     if (kycGateIsBlocking) return;
 
-    setEnterStakeRequest({
-      actionDto: null,
-      requestDto: stakeEnterRequestDto.dto,
+    startClassicTransactionFlow({
+      _tag: "Enter",
+      request: stakeEnterRequestDto.dto,
       selectedToken: selectedTokenValue,
       gasFeeToken: stakeEnterRequestDto.gasFeeToken,
       providersDetails: providersDetails ?? [],

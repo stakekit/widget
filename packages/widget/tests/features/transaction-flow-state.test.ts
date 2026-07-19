@@ -2,11 +2,6 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
 import {
-  type EnterStakeRequest,
-  enterStakeRequestAtom,
-  enterTransactionWorkflowKeyAtom,
-} from "../../src/features/transaction-flow/state/enter-request";
-import {
   type ExitStakeRequest,
   exitStakeRequestAtom,
   exitTransactionWorkflowKeyAtom,
@@ -20,7 +15,7 @@ import { makeTransactionWorkflowLifecycleAtom } from "../../src/features/transac
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiActionFixture } from "../fixtures";
 
-describe("transaction flow request atoms", () => {
+describe("legacy transaction flow request atoms", () => {
   it("does not let a stale lifecycle finalizer clear a newer flow", () => {
     const scheduledTasks: Array<() => void> = [];
     const registry = AtomRegistry.make({
@@ -58,33 +53,26 @@ describe("transaction flow request atoms", () => {
   it("supports initialization, transitions, resets, and fresh registries", () => {
     const firstRegistry = AtomRegistry.make();
     const remountedRegistry = AtomRegistry.make();
-    const enterRequest = { flow: "enter" } as unknown as EnterStakeRequest;
     const exitRequest = { flow: "exit" } as unknown as ExitStakeRequest;
     const pendingRequest = {
       flow: "pending-action",
     } as unknown as PendingActionRequest;
 
-    expect(firstRegistry.get(enterStakeRequestAtom)).toBeNull();
     expect(firstRegistry.get(exitStakeRequestAtom)).toBeNull();
     expect(firstRegistry.get(pendingActionRequestAtom)).toBeNull();
 
-    firstRegistry.set(enterStakeRequestAtom, enterRequest);
     firstRegistry.set(exitStakeRequestAtom, exitRequest);
     firstRegistry.set(pendingActionRequestAtom, pendingRequest);
 
-    expect(firstRegistry.get(enterStakeRequestAtom)).toBe(enterRequest);
     expect(firstRegistry.get(exitStakeRequestAtom)).toBe(exitRequest);
     expect(firstRegistry.get(pendingActionRequestAtom)).toBe(pendingRequest);
 
-    expect(remountedRegistry.get(enterStakeRequestAtom)).toBeNull();
     expect(remountedRegistry.get(exitStakeRequestAtom)).toBeNull();
     expect(remountedRegistry.get(pendingActionRequestAtom)).toBeNull();
 
-    firstRegistry.set(enterStakeRequestAtom, null);
     firstRegistry.set(exitStakeRequestAtom, null);
     firstRegistry.set(pendingActionRequestAtom, null);
 
-    expect(firstRegistry.get(enterStakeRequestAtom)).toBeNull();
     expect(firstRegistry.get(exitStakeRequestAtom)).toBeNull();
     expect(firstRegistry.get(pendingActionRequestAtom)).toBeNull();
   });
@@ -98,12 +86,6 @@ describe("transaction flow request atoms", () => {
     });
     const apiToken = { network: "starknet" };
 
-    registry.set(enterStakeRequestAtom, {
-      actionDto,
-      providersDetails: [],
-      selectedToken: apiToken,
-      walletScope,
-    } as unknown as EnterStakeRequest);
     registry.set(exitStakeRequestAtom, {
       actionDto,
       providersDetails: [],
@@ -117,9 +99,6 @@ describe("transaction flow request atoms", () => {
       walletScope,
     } as unknown as PendingActionRequest);
 
-    expect(registry.get(enterTransactionWorkflowKeyAtom)?.walletScope).toBe(
-      walletScope
-    );
     expect(registry.get(exitTransactionWorkflowKeyAtom)?.walletScope).toBe(
       walletScope
     );

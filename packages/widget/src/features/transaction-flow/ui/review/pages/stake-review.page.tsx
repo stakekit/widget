@@ -3,6 +3,7 @@ import { Trans } from "react-i18next";
 import { Highlight } from "../../../../../shared/ui/primitives/highlight";
 import { KycGateCard } from "../../../../earn/ui/components/kyc-gate-card";
 import { useTrackPage } from "../../../../tracking/react/use-track-page";
+import { ClassicFlowStepsNavigation } from "../../../react/classic-flow-navigation";
 import { useStakeReview } from "../hooks/use-stake-review.hook";
 import { ReviewPage } from "./common-page/common.page";
 
@@ -57,33 +58,36 @@ export const StakeReviewPage = () => {
   };
 
   return (
-    <ReviewPage
-      fee={fee}
-      depositFee={depositFee}
-      managementFee={managementFee}
-      performanceFee={performanceFee}
-      feeConfigLoading={feeConfigLoading}
-      title={yieldType}
-      metadata={metadata}
-      token={token}
-      info={info}
-      rewardTokenDetailsProps={rewardTokenDetailsProps}
-      estimatedRewardAmounts={estimatedRewardAmounts}
-      isGasCheckError={isGasCheckWarning}
-      loading={gasCheckLoading}
-      commissionFee={commissionFee}
-      cta={cta}
-      notice={
-        kycGate.state !== "pass" || kycStatusIsChecking ? (
-          <KycGateCard
-            gate={kycGate}
-            isChecking={kycStatusIsChecking}
-            onCheckStatus={onKycStatusRefresh}
-            providerName={kycProviderName}
-          />
-        ) : null
-      }
-      {...metaInfo}
-    />
+    <>
+      <ClassicFlowStepsNavigation />
+      <ReviewPage
+        fee={fee}
+        depositFee={depositFee}
+        managementFee={managementFee}
+        performanceFee={performanceFee}
+        feeConfigLoading={feeConfigLoading}
+        title={yieldType}
+        metadata={metadata}
+        token={token}
+        info={info}
+        rewardTokenDetailsProps={rewardTokenDetailsProps}
+        estimatedRewardAmounts={estimatedRewardAmounts}
+        isGasCheckError={isGasCheckWarning}
+        loading={gasCheckLoading}
+        commissionFee={commissionFee}
+        cta={cta}
+        notice={
+          kycGate.state !== "pass" || kycStatusIsChecking ? (
+            <KycGateCard
+              gate={kycGate}
+              isChecking={kycStatusIsChecking}
+              onCheckStatus={onKycStatusRefresh}
+              providerName={kycProviderName}
+            />
+          ) : null
+        }
+        {...metaInfo}
+      />
+    </>
   );
 };
