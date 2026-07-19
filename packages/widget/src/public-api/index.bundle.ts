@@ -19,6 +19,9 @@ export {
 
 export declare const renderSKWidget: (
   props: SKAppProps & { container: Element | DocumentFragment }
-) => { rerender: (newProps: SKAppProps) => void };
+) => {
+  rerender: (newProps: SKAppProps) => void;
+  unmount: () => void;
+};
 export declare const darkTheme: SKTheme;
 export declare const lightTheme: SKTheme;

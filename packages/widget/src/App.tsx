@@ -9,6 +9,8 @@ import { Providers } from "./app/composition/providers";
 import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";
 import { normalizeWidgetConfig } from "./app/config/settings";
 import { useWidgetConfig } from "./app/config/use-widget-config";
+import { acquireWidgetInstanceClaim } from "./app/embedding/widget-instance-claim";
+import { WidgetInstanceReactBoundary } from "./app/embedding/widget-instance-react-boundary";
 import { ClassicRoutes } from "./app/routes/classic-routes";
 import { DashboardRoutes } from "./app/routes/dashboard-routes";
 import { appContainer } from "./features/widget-shell/layout.css";
@@ -38,7 +40,7 @@ const Root = () => (
   </Providers>
 );
 
-export const SKApp = (props: SKAppProps) => {
+const SKAppContent = (props: SKAppProps) => {
   const variantProps: VariantProps =
     props.variant === "zerion"
       ? { variant: props.variant, chainModal: props.chainModal }
@@ -65,6 +67,12 @@ export const SKApp = (props: SKAppProps) => {
   );
 };
 
+export const SKApp = (props: SKAppProps) => (
+  <WidgetInstanceReactBoundary>
+    <SKAppContent {...props} />
+  </WidgetInstanceReactBoundary>
+);
+
 const BundledSKWidget = (_props: BundledSKWidgetProps) => {
   const [props, setProps] = useState(_props);
 
@@ -72,7 +80,7 @@ const BundledSKWidget = (_props: BundledSKWidgetProps) => {
     rerender: (newProps: BundledSKWidgetProps) => setProps(newProps),
   }));
 
-  return <SKApp {...props} />;
+  return <SKAppContent {...props} />;
 };
 
 export const renderSKWidget = ({
@@ -83,16 +91,38 @@ export const renderSKWidget = ({
 }) => {
   if (!rest.apiKey) throw new Error("API key is required");
 
-  const root = ReactDOM.createRoot(container);
+  const releaseClaim = acquireWidgetInstanceClaim(
+    container.ownerDocument ?? document
+  );
+  let root: ReturnType<typeof ReactDOM.createRoot>;
 
-  const appRef = createRef<{ rerender: () => void }>() as NonNullable<
-    BundledSKWidgetProps["ref"]
-  >;
+  try {
+    root = ReactDOM.createRoot(container);
 
-  root.render(<BundledSKWidget {...rest} ref={appRef} />);
+    const appRef = createRef<{ rerender: () => void }>() as NonNullable<
+      BundledSKWidgetProps["ref"]
+    >;
 
-  return {
-    rerender: (newProps: SKAppProps) =>
-      appRef.current.rerender({ ...newProps, ref: appRef }),
-  };
+    root.render(<BundledSKWidget {...rest} ref={appRef} />);
+
+    let unmounted = false;
+
+    return {
+      rerender: (newProps: SKAppProps) =>
+        appRef.current.rerender({ ...newProps, ref: appRef }),
+      unmount: () => {
+        if (unmounted) return;
+
+        unmounted = true;
+        try {
+          root.unmount();
+        } finally {
+          releaseClaim();
+        }
+      },
+    };
+  } catch (error) {
+    releaseClaim();
+    throw error;
+  }
 };

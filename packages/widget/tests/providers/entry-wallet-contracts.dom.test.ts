@@ -56,8 +56,9 @@ describe("package and bundled wallet entry contracts", () => {
     expectTypeOf(packageProps).toMatchTypeOf<PackageSKAppProps>();
   });
 
-  it("keeps bundled rerender props aligned with package SKApp props", () => {
+  it("keeps bundled lifecycle controls aligned with package SKApp props", () => {
     type BundledRenderProps = Parameters<typeof bundledRenderSKWidget>[0];
+    type BundledController = ReturnType<typeof bundledRenderSKWidget>;
     const bundledRenderProps = {
       ...packageProps,
       container: {} as HTMLElement,
@@ -65,5 +66,9 @@ describe("package and bundled wallet entry contracts", () => {
 
     expectTypeOf(packageProps).toMatchTypeOf<BundledSKWidgetProps>();
     expectTypeOf(bundledRenderProps).toMatchTypeOf<BundledRenderProps>();
+    expectTypeOf<BundledController>().toEqualTypeOf<{
+      rerender: (newProps: PackageSKAppProps) => void;
+      unmount: () => void;
+    }>();
   });
 });
