@@ -1,27 +1,19 @@
 import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { initializeTransactionWorkflow } from "../../../../../services/workflow/transaction-workflow-model";
-import { useClassicTransactionWorkflowKey } from "../../../react/classic-transaction-workflow-context";
+import { useClassicTransactionWorkflowHandoff } from "../../../react/classic-transaction-workflow-context";
 import {
   classicTransactionWorkflowCompletionAtom,
-  transactionWorkflowDispatchAtom,
-  transactionWorkflowStateAtom,
+  classicTransactionWorkflowDispatchAtom,
+  classicTransactionWorkflowViewAtom,
 } from "../../../state/transaction-workflow-atoms";
 
 export const useTransactionWorkflow = () => {
-  const workflowKey = useClassicTransactionWorkflowKey();
-  useAtomMount(classicTransactionWorkflowCompletionAtom(workflowKey));
-  const result = useAtomValue(transactionWorkflowStateAtom(workflowKey));
-  const dispatch = useAtomSet(transactionWorkflowDispatchAtom(workflowKey));
-  const state = Option.getOrElse(AsyncResult.value(result), () =>
-    initializeTransactionWorkflow(workflowKey)
-  );
+  const handoff = useClassicTransactionWorkflowHandoff();
+  useAtomMount(classicTransactionWorkflowCompletionAtom(handoff));
+  const view = useAtomValue(classicTransactionWorkflowViewAtom(handoff));
+  const dispatch = useAtomSet(classicTransactionWorkflowDispatchAtom(handoff));
 
   return {
     dispatch,
-    result,
-    state,
-    workflowKey,
+    ...view,
   } as const;
 };

@@ -9,12 +9,8 @@ import { AnimatedPositionsPage } from "../../features/portfolio/ui/classic/posit
 import { PositionDetailsPage as ClassicPositionDetailsPage } from "../../features/position-details/ui/classic/position-details.page";
 import {
   ActivitySelectionRouteGuard,
-  activityResumeClassicFlowWorkflowKeyAtom,
   EnterStakeRequestRouteGuard,
   ExitStakeRequestRouteGuard,
-  enterClassicFlowWorkflowKeyAtom,
-  exitClassicFlowWorkflowKeyAtom,
-  manageClassicFlowWorkflowKeyAtom,
   PendingActionRequestRouteGuard,
 } from "../../features/transaction-flow/react/request-route-guards";
 import { ActivityCompletePage } from "../../features/transaction-flow/ui/complete/pages/activity-complete.page";
@@ -134,13 +130,7 @@ export const ClassicRoutes = () => {
                       <Route element={<ActivitySelectionRouteGuard />}>
                         <Route path="review" element={<ActionReviewPage />} />
                         <Route
-                          element={
-                            <ClassicFlowTransactionWorkflowGuard
-                              workflowKeyAtom={
-                                activityResumeClassicFlowWorkflowKeyAtom
-                              }
-                            />
-                          }
+                          element={<ClassicFlowTransactionWorkflowGuard />}
                         >
                           <Route
                             path=":pendingActionType/steps"
@@ -157,13 +147,7 @@ export const ClassicRoutes = () => {
                     {/* Stake flow */}
                     <Route element={<EnterStakeRequestRouteGuard />}>
                       <Route path="review" element={<StakeReviewPage />} />
-                      <Route
-                        element={
-                          <ClassicFlowTransactionWorkflowGuard
-                            workflowKeyAtom={enterClassicFlowWorkflowKeyAtom}
-                          />
-                        }
-                      >
+                      <Route element={<ClassicFlowTransactionWorkflowGuard />}>
                         <Route path="steps" element={<StakeStepsPage />} />
                         <Route
                           path="complete"
@@ -188,11 +172,7 @@ export const ClassicRoutes = () => {
                             element={<UnstakeReviewPage />}
                           />
                           <Route
-                            element={
-                              <ClassicFlowTransactionWorkflowGuard
-                                workflowKeyAtom={exitClassicFlowWorkflowKeyAtom}
-                              />
-                            }
+                            element={<ClassicFlowTransactionWorkflowGuard />}
                           >
                             <Route
                               path="steps"
@@ -214,13 +194,7 @@ export const ClassicRoutes = () => {
                             element={<PendingReviewPage />}
                           />
                           <Route
-                            element={
-                              <ClassicFlowTransactionWorkflowGuard
-                                workflowKeyAtom={
-                                  manageClassicFlowWorkflowKeyAtom
-                                }
-                              />
-                            }
+                            element={<ClassicFlowTransactionWorkflowGuard />}
                           >
                             <Route
                               path="steps"

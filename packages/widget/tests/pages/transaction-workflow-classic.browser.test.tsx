@@ -17,6 +17,10 @@ import {
 import { describe, expect, it, vi } from "vitest";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
+import {
+  ClassicTransactionFlowWorkflowHandoff,
+  makeClassicTransactionFlowIdentity,
+} from "../../src/features/transaction-flow/model/classic-transaction-flow";
 import { ClassicTransactionWorkflowContext } from "../../src/features/transaction-flow/react/classic-transaction-workflow-context";
 import { makeTransactionWorkflowLifecycleAtom } from "../../src/features/transaction-flow/state/workflow-lifecycle";
 import { useTransactionWorkflow } from "../../src/features/transaction-flow/ui/steps/hooks/use-transaction-workflow.hook";
@@ -82,7 +86,14 @@ const ClassicTransactionWorkflowGuard = ({
   return workflowKey &&
     currentWalletScope &&
     sameWalletScopeOwner(workflowKey.walletScope, currentWalletScope) ? (
-    <ClassicTransactionWorkflowContext.Provider value={workflowKey}>
+    <ClassicTransactionWorkflowContext.Provider
+      value={
+        new ClassicTransactionFlowWorkflowHandoff({
+          flowIdentity: makeClassicTransactionFlowIdentity("test-flow"),
+          workflowKey,
+        })
+      }
+    >
       <Outlet />
     </ClassicTransactionWorkflowContext.Provider>
   ) : (

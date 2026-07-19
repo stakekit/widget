@@ -1,7 +1,6 @@
 import { useAtomMount, useAtomValue } from "@effect/atom-react";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import type * as Atom from "effect/unstable/reactivity/Atom";
 import { Navigate, Outlet } from "react-router";
-import type { ClassicTransactionWorkflowKey } from "../../../services/workflow/transaction-workflow-model";
 import { makeRequiredAtomRoute } from "../../../shared/react/required-atom-route";
 import { useWalletScopeRoute } from "../../wallet/react/wallet-scope-route";
 import {
@@ -73,34 +72,3 @@ export const useRequiredManageClassicTransactionFlow =
   manageFlowRoute.useRequiredValue;
 export const useRequiredActivityResumeClassicTransactionFlow =
   activityResumeFlowRoute.useRequiredValue;
-
-const classicFlowWorkflowKeyAtom = <Flow extends ClassicTransactionFlow>(
-  flowAtom: Atom.Atom<Flow | null>,
-  label: string
-): Atom.Atom<ClassicTransactionWorkflowKey | null> =>
-  Atom.make((get) => {
-    const flow = get(flowAtom);
-    const handoff = get(classicTransactionFlowFacade.workflowHandoffAtom);
-
-    return flow && handoff?.flowIdentity === flow.identity
-      ? handoff.workflowKey
-      : null;
-  }).pipe(Atom.withLabel(label));
-
-export const enterClassicFlowWorkflowKeyAtom = classicFlowWorkflowKeyAtom(
-  classicTransactionFlowFacade.enterFlowAtom,
-  "enterClassicFlowWorkflowKeyAtom"
-);
-export const exitClassicFlowWorkflowKeyAtom = classicFlowWorkflowKeyAtom(
-  classicTransactionFlowFacade.exitFlowAtom,
-  "exitClassicFlowWorkflowKeyAtom"
-);
-export const manageClassicFlowWorkflowKeyAtom = classicFlowWorkflowKeyAtom(
-  classicTransactionFlowFacade.manageFlowAtom,
-  "manageClassicFlowWorkflowKeyAtom"
-);
-export const activityResumeClassicFlowWorkflowKeyAtom =
-  classicFlowWorkflowKeyAtom(
-    classicTransactionFlowFacade.activityResumeFlowAtom,
-    "activityResumeClassicFlowWorkflowKeyAtom"
-  );

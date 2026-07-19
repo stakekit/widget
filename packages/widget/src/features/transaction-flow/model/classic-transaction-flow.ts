@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+import { Data } from "effect";
 import type {
   ActionCommand,
   ManageActionCommand,
@@ -376,10 +377,10 @@ export const getClassicTransactionFlowVariant = <
       >)
     : null;
 
-type ClassicTransactionFlowWorkflowHandoff = {
+export class ClassicTransactionFlowWorkflowHandoff extends Data.Class<{
   readonly flowIdentity: ClassicTransactionFlowIdentity;
   readonly workflowKey: ClassicTransactionWorkflowKey;
-};
+}> {}
 
 export const getClassicTransactionFlowWorkflowHandoff = (
   activeFlow: ClassicTransactionFlowState
@@ -398,7 +399,7 @@ export const getClassicTransactionFlowWorkflowHandoff = (
               yieldDto: activeFlow.selectedYield,
             });
 
-  return {
+  return new ClassicTransactionFlowWorkflowHandoff({
     flowIdentity: activeFlow.identity,
     workflowKey: makeClassicTransactionWorkflowKey({
       action: activeFlow.action,
@@ -406,5 +407,5 @@ export const getClassicTransactionFlowWorkflowHandoff = (
       providersDetails: activeFlow.providersDetails,
       walletScope: activeFlow.walletScope,
     }),
-  };
+  });
 };

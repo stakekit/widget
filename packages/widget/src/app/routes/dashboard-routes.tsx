@@ -24,12 +24,8 @@ import { PositionDetailsStakeActions } from "../../features/position-details/ui/
 // import { RewardsTabPage } from "../../domain/types/rewards";
 import {
   ActivitySelectionRouteGuard,
-  activityResumeClassicFlowWorkflowKeyAtom,
   EnterStakeRequestRouteGuard,
   ExitStakeRequestRouteGuard,
-  enterClassicFlowWorkflowKeyAtom,
-  exitClassicFlowWorkflowKeyAtom,
-  manageClassicFlowWorkflowKeyAtom,
   PendingActionRequestRouteGuard,
 } from "../../features/transaction-flow/react/request-route-guards";
 import { ActivityDetailsPage } from "../../features/transaction-flow/ui/activity-details.page";
@@ -122,13 +118,7 @@ export const DashboardRoutes = () => {
               <Route element={<WalletScopeRouteGuard fallbackPath="/" />}>
                 <Route element={<EnterStakeRequestRouteGuard />}>
                   <Route path="review" element={<StakeReviewPage />} />
-                  <Route
-                    element={
-                      <ClassicFlowTransactionWorkflowGuard
-                        workflowKeyAtom={enterClassicFlowWorkflowKeyAtom}
-                      />
-                    }
-                  >
+                  <Route element={<ClassicFlowTransactionWorkflowGuard />}>
                     <Route path="steps" element={<StakeStepsPage />} />
                     <Route path="complete" element={<StakeCompletePage />} />
                   </Route>
@@ -155,13 +145,7 @@ export const DashboardRoutes = () => {
                   <Route index element={<PositionDetailsStakeActions />} />
                   <Route element={<EnterStakeRequestRouteGuard />}>
                     <Route path="review" element={<StakeReviewPage />} />
-                    <Route
-                      element={
-                        <ClassicFlowTransactionWorkflowGuard
-                          workflowKeyAtom={enterClassicFlowWorkflowKeyAtom}
-                        />
-                      }
-                    >
+                    <Route element={<ClassicFlowTransactionWorkflowGuard />}>
                       <Route path="steps" element={<StakeStepsPage />} />
                       <Route path="complete" element={<StakeCompletePage />} />
                     </Route>
@@ -178,13 +162,7 @@ export const DashboardRoutes = () => {
                   <Route index element={<PositionDetailsActions />} />
                   <Route element={<ExitStakeRequestRouteGuard />}>
                     <Route path="review" element={<UnstakeReviewPage />} />
-                    <Route
-                      element={
-                        <ClassicFlowTransactionWorkflowGuard
-                          workflowKeyAtom={exitClassicFlowWorkflowKeyAtom}
-                        />
-                      }
-                    >
+                    <Route element={<ClassicFlowTransactionWorkflowGuard />}>
                       <Route path="steps" element={<UnstakeStepsPage />} />
                       <Route
                         path="complete"
@@ -198,13 +176,7 @@ export const DashboardRoutes = () => {
                 <Route path="pending-action">
                   <Route element={<PendingActionRequestRouteGuard />}>
                     <Route path="review" element={<PendingReviewPage />} />
-                    <Route
-                      element={
-                        <ClassicFlowTransactionWorkflowGuard
-                          workflowKeyAtom={manageClassicFlowWorkflowKeyAtom}
-                        />
-                      }
-                    >
+                    <Route element={<ClassicFlowTransactionWorkflowGuard />}>
                       <Route path="steps" element={<PendingStepsPage />} />
                       <Route
                         path="complete"
@@ -226,15 +198,7 @@ export const DashboardRoutes = () => {
               >
                 <Route element={<ActivitySelectionRouteGuard />}>
                   <Route index element={<ActivityDetailsPage />} />
-                  <Route
-                    element={
-                      <ClassicFlowTransactionWorkflowGuard
-                        workflowKeyAtom={
-                          activityResumeClassicFlowWorkflowKeyAtom
-                        }
-                      />
-                    }
-                  >
+                  <Route element={<ClassicFlowTransactionWorkflowGuard />}>
                     <Route
                       path=":pendingActionType/steps"
                       element={<ActivityStepsPage />}

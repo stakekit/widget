@@ -1,22 +1,15 @@
 import { createContext, useContext } from "react";
-import type { ClassicTransactionWorkflowKey } from "../../../services/workflow/transaction-workflow-model";
-import type { ClassicTransactionFlowIdentity } from "../model/classic-transaction-flow";
+import type { ClassicTransactionFlowWorkflowHandoff } from "../model/classic-transaction-flow";
 
 export const ClassicTransactionWorkflowContext =
-  createContext<ClassicTransactionWorkflowKey | null>(null);
+  createContext<ClassicTransactionFlowWorkflowHandoff | null>(null);
 
-export const ClassicFlowExecutionContext =
-  createContext<ClassicTransactionFlowIdentity | null>(null);
+export const useClassicTransactionWorkflowHandoff = () => {
+  const handoff = useContext(ClassicTransactionWorkflowContext);
 
-export const useClassicTransactionWorkflowKey = () => {
-  const workflowKey = useContext(ClassicTransactionWorkflowContext);
-
-  if (!workflowKey) {
+  if (!handoff) {
     throw new Error("Classic transaction workflow used outside its provider.");
   }
 
-  return workflowKey;
+  return handoff;
 };
-
-export const useClassicFlowExecutionIdentity = () =>
-  useContext(ClassicFlowExecutionContext);

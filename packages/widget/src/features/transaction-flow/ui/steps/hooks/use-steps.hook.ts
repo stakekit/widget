@@ -16,7 +16,6 @@ import {
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import { useTrackEvent } from "../../../../tracking/react/use-track-event";
 import type { PageCta } from "../../../../widget-shell/page-cta";
-import { useClassicFlowExecutionIdentity } from "../../../react/classic-transaction-workflow-context";
 import { classicTransactionFlowFacade } from "../../../state/classic-flow-facade";
 import { useTransactionWorkflow } from "./use-transaction-workflow.hook";
 
@@ -25,10 +24,10 @@ export const useSteps = () => {
 
   const {
     dispatch,
+    flowIdentity,
     state: machineState,
     workflowKey,
   } = useTransactionWorkflow();
-  const flowIdentity = useClassicFlowExecutionIdentity();
   const returnFlowToReview = useAtomSet(
     classicTransactionFlowFacade.returnToReviewAtom
   );
