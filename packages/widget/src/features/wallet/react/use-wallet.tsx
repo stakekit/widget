@@ -8,13 +8,13 @@ import {
 } from "../../../services/wallet/domain/state";
 import {
   currentWalletStateResultAtom,
-  useWalletRuntimeConfig,
-} from "../runtime/root-atom";
+  useWalletConfig,
+} from "../state/root-atom";
 
 export const useSKWallet = () => {
-  const runtimeConfig = useWalletRuntimeConfig();
+  const walletConfig = useWalletConfig();
   const walletStateResult = useAtomValue(currentWalletStateResultAtom);
-  const initialWalletState: NormalizedWalletState = runtimeConfig.isLoading
+  const initialWalletState: NormalizedWalletState = walletConfig.isLoading
     ? {
         additionalAddresses: null,
         address: null,

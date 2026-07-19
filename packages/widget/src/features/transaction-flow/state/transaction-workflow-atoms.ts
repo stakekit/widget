@@ -1,6 +1,6 @@
 import { Effect, Stream } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime";
+import { walletRuntime } from "../../../app/runtime";
 import type {
   ClassicTransactionWorkflowKey,
   TransactionWorkflowCommand,
@@ -17,7 +17,7 @@ export const transactionWorkflowMachineAtom = Atom.family(
   (workflowKey: TransactionWorkflowKey) => {
     const workflowId = getTransactionWorkflowId(workflowKey);
 
-    return appRuntime
+    return walletRuntime
       .atom(
         TransactionWorkflowService.use((service) => service.make(workflowKey))
       )
@@ -33,7 +33,7 @@ export const transactionWorkflowStateAtom = Atom.family(
     const machineAtom = transactionWorkflowMachineAtom(workflowKey);
     const workflowId = getTransactionWorkflowId(workflowKey);
 
-    return appRuntime
+    return walletRuntime
       .atom((context) =>
         context.result(machineAtom).pipe(
           Effect.map((machine) => machine.states),
@@ -52,7 +52,7 @@ export const classicTransactionWorkflowCompletionAtom = Atom.family(
     const machineAtom = transactionWorkflowMachineAtom(workflowKey);
     const workflowId = getTransactionWorkflowId(workflowKey);
 
-    return appRuntime
+    return walletRuntime
       .atom(
         (context) =>
           Effect.gen(function* () {
@@ -88,7 +88,7 @@ export const transactionWorkflowDispatchAtom = Atom.family(
   (workflowKey: TransactionWorkflowKey) => {
     const machineAtom = transactionWorkflowMachineAtom(workflowKey);
 
-    return appRuntime
+    return walletRuntime
       .fn(
         (command: TransactionWorkflowCommand, context) =>
           context

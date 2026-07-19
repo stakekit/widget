@@ -13,7 +13,7 @@ import {
 } from "../../../services/workflow/transaction-workflow-model";
 import { selectAtom } from "../../../shared/effect/select-atom";
 import { makeTransactionWorkflowLifecycleAtom } from "../../transaction-flow/state/workflow-lifecycle";
-import { currentWalletScopeAtom } from "../../wallet/runtime/selectors";
+import { currentWalletScopeAtom } from "../../wallet/state/selectors";
 
 type ActivitySelection = {
   readonly providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>;

@@ -18,12 +18,13 @@ import {
   isCosmosConnector,
 } from "./connectors/cosmos/cosmos-connector-meta";
 import { isLedgerLiveConnector } from "./connectors/ledger/ledger-live-connector-meta";
-import type { WalletCoreProjection, WalletProjection } from "./domain/runtime";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
   type LedgerConnectorState,
   type NormalizedWalletState,
+  type WalletCoreState,
+  type WalletState,
 } from "./domain/state";
 import { forcedWalletAddress } from "./environment";
 import { wagmiNetworkToSKNetwork } from "./network";
@@ -51,7 +52,7 @@ export const normalizeWalletState = ({
   ledgerState,
 }: {
   readonly additionalAddresses: typeof AdditionalAddresses.Type | null;
-  readonly connection: WalletCoreProjection["connection"];
+  readonly connection: WalletCoreState["connection"];
   readonly connectorChains: Chain[];
   readonly controller: WalletStateController;
   readonly forceAddress: string | undefined;
@@ -145,7 +146,7 @@ const makeConnectorChainsStream = ({
 };
 
 const makeLedgerConnectorStateStream = (
-  connector: WalletCoreProjection["connection"]["connector"]
+  connector: WalletCoreState["connection"]["connector"]
 ) => {
   if (!connector || !isLedgerLiveConnector(connector)) {
     return Stream.succeed(disconnectedLedgerConnectorState);
@@ -169,7 +170,7 @@ const makeLedgerConnectorStateStream = (
 };
 
 const makeCosmosChainWalletStream = (
-  connector: WalletCoreProjection["connection"]["connector"]
+  connector: WalletCoreState["connection"]["connector"]
 ) => {
   if (!connector || !isCosmosConnector(connector)) {
     return Stream.succeed<ChainWalletBase | null>(null);
@@ -178,18 +179,18 @@ const makeCosmosChainWalletStream = (
   return connector.$chainWallet.pipe(Stream.changes);
 };
 
-const getCosmosAdditionalAddresses = ({
-  address,
-  chainWallet,
-  connector,
-  readStoredPublicKeys,
-}: {
-  readonly address: WalletAddressType;
-  readonly chainWallet: ChainWalletBase;
-  readonly connector: CosmosConnector;
-  readonly readStoredPublicKeys: Effect.Effect<StoredPublicKeys, unknown>;
-}) =>
-  Effect.gen(function* () {
+const getCosmosAdditionalAddresses = Effect.fn("getCosmosAdditionalAddresses")(
+  function* ({
+    address,
+    chainWallet,
+    connector,
+    readStoredPublicKeys,
+  }: {
+    readonly address: WalletAddressType;
+    readonly chainWallet: ChainWalletBase;
+    readonly connector: CosmosConnector;
+    readonly readStoredPublicKeys: Effect.Effect<StoredPublicKeys, unknown>;
+  }) {
     const storedPublicKeys = yield* readStoredPublicKeys;
     const storedPublicKey = storedPublicKeys[address];
     const cosmosPubKey = storedPublicKey
@@ -203,40 +204,60 @@ const getCosmosAdditionalAddresses = ({
         });
 
     return yield* Schema.decodeEffect(AdditionalAddresses)({ cosmosPubKey });
-  });
-
-const makeAdditionalAddresses = ({
-  chainWallet,
-  connection,
-  readStoredPublicKeys,
-}: {
-  readonly chainWallet: ChainWalletBase | null;
-  readonly connection: WalletCoreProjection["connection"];
-  readonly readStoredPublicKeys: Effect.Effect<StoredPublicKeys, unknown>;
-}) => {
-  const connector = connection.connector;
-  if (
-    !connection.isConnected ||
-    !connection.address ||
-    !chainWallet ||
-    !connector ||
-    !isCosmosConnector(connector)
-  ) {
-    return Effect.succeed(null);
   }
+);
 
-  return getCosmosAdditionalAddresses({
-    address: Schema.decodeSync(WalletAddress)(connection.address),
+const makeAdditionalAddresses = Effect.fn("makeAdditionalAddresses")(
+  function* ({
     chainWallet,
-    connector,
+    connection,
     readStoredPublicKeys,
-  }).pipe(Effect.catch(() => Effect.succeed(null)));
-};
+  }: {
+    readonly chainWallet: ChainWalletBase | null;
+    readonly connection: WalletCoreState["connection"];
+    readonly readStoredPublicKeys: Effect.Effect<StoredPublicKeys, unknown>;
+  }) {
+    const connector = connection.connector;
+    if (
+      !connection.isConnected ||
+      !connection.address ||
+      !chainWallet ||
+      !connector ||
+      !isCosmosConnector(connector)
+    ) {
+      return null;
+    }
+
+    return yield* getCosmosAdditionalAddresses({
+      address: Schema.decodeSync(WalletAddress)(connection.address),
+      chainWallet,
+      connector,
+      readStoredPublicKeys,
+    }).pipe(
+      Effect.catchCause((cause) =>
+        Effect.logWarning("Wallet state enrichment degraded").pipe(
+          Effect.annotateLogs({ cause, slice: "cosmos-additional-addresses" }),
+          Effect.as(null)
+        )
+      )
+    );
+  }
+);
 
 type CompleteWalletState = {
-  readonly projection: WalletProjection;
   readonly routing: WalletRoutingContext;
+  readonly state: WalletState;
 };
+
+const recoverWalletStateSlice = <A>(slice: string, fallback: A) =>
+  Stream.catchCause((cause) =>
+    Stream.fromEffect(
+      Effect.logWarning("Wallet state enrichment degraded").pipe(
+        Effect.annotateLogs({ cause, slice }),
+        Effect.as(fallback)
+      )
+    )
+  );
 
 export const makeCompleteWalletStateStream = ({
   controller,
@@ -244,7 +265,7 @@ export const makeCompleteWalletStateStream = ({
   readStoredPublicKeys,
 }: {
   readonly controller: WalletController;
-  readonly projection: WalletCoreProjection;
+  readonly projection: WalletCoreState;
   readonly readStoredPublicKeys: Effect.Effect<StoredPublicKeys, unknown>;
 }): Stream.Stream<CompleteWalletState> => {
   const connector = projection.connection.connector;
@@ -252,13 +273,13 @@ export const makeCompleteWalletStateStream = ({
     connector,
     defaultEvmChains: controller.evmConfig.evmChains,
   }).pipe(
-    Stream.catchCause(() => Stream.succeed(controller.evmConfig.evmChains))
+    recoverWalletStateSlice("connector-chains", controller.evmConfig.evmChains)
   );
   const ledgerState = makeLedgerConnectorStateStream(connector).pipe(
-    Stream.catchCause(() => Stream.succeed(disconnectedLedgerConnectorState))
+    recoverWalletStateSlice("ledger-state", disconnectedLedgerConnectorState)
   );
   const cosmosChainWallet = makeCosmosChainWalletStream(connector).pipe(
-    Stream.catchCause(() => Stream.succeed(null))
+    recoverWalletStateSlice("cosmos-chain-wallet", null)
   );
 
   return Stream.zipLatestAll(
@@ -284,16 +305,15 @@ export const makeCompleteWalletStateStream = ({
             });
 
             return {
-              projection: {
-                ...projection,
-                ledgerState: ledger,
-                state,
-              },
               routing: {
                 actions: controller.actions,
                 cosmosChainWallet: chainWallet,
                 ledgerState: ledger,
                 state,
+              },
+              state: {
+                connection: state,
+                ledger,
               },
             } satisfies CompleteWalletState;
           })

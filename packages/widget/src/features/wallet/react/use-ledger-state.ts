@@ -5,7 +5,7 @@ import {
   disconnectedLedgerConnectorState,
   type LedgerConnectorState,
 } from "../../../services/wallet/domain/state";
-import { currentWalletLedgerStateAtom } from "../runtime/root-atom";
+import { currentWalletLedgerStateAtom } from "../state/root-atom";
 
 export const useLedgerState = (): LedgerConnectorState => {
   return useAtomValue(currentWalletLedgerStateAtom).pipe(

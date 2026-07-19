@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import { borrowExecutionInputAtom } from "../../src/features/borrow/ui/execution-state";
 import type { BorrowExecutionInput } from "../../src/features/borrow/ui/review-state";
-import { currentWalletScopeAtom } from "../../src/features/wallet/runtime/selectors";
+import { currentWalletScopeAtom } from "../../src/features/wallet/state/selectors";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 
 describe("borrow execution state", () => {

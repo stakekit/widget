@@ -6,7 +6,7 @@ import {
   WalletCapabilityUnavailableError,
   WalletConnectionError,
   WalletDecodeError,
-  type WalletRuntimeTerminalError,
+  type WalletRuntimeInvariantError,
   type WalletService,
   type WalletSignedPayloadResult,
   WalletSigningError,
@@ -68,7 +68,7 @@ describe("wallet service contract", () => {
     expectTypeOf<
       WalletService["Service"]["disconnect"]
     >().returns.toEqualTypeOf<
-      Effect.Effect<void, WalletConnectionError | WalletRuntimeTerminalError>
+      Effect.Effect<void, WalletConnectionError | WalletRuntimeInvariantError>
     >();
   });
 });

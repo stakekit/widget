@@ -1,14 +1,5 @@
 import { Effect } from "effect";
-import type { Address, Hash, Hex } from "viem";
-import type { Config, Connection } from "wagmi";
-import {
-  connect,
-  disconnect,
-  reconnect,
-  sendTransaction,
-  signMessage,
-  switchChain,
-} from "wagmi/actions";
+import type { Config } from "wagmi";
 import type {
   WalletConnectInput,
   WalletDisconnectInput,
@@ -26,91 +17,111 @@ import type {
   WalletBroadcastResult,
   WalletEvmTransactionInput,
 } from "./domain/transactions";
+import { WagmiOperations } from "./platform/wagmi-operations";
 
-export const wagmiActionOperations = {
-  connect: (
-    config: Config,
-    input: WalletConnectInput
-  ): Promise<{
-    readonly accounts: readonly Address[];
-    readonly chainId: number;
-  }> => connect(config, input),
-  disconnect: (config: Config, input?: WalletDisconnectInput): Promise<void> =>
-    disconnect(config, input),
-  reconnect: (
-    config: Config,
-    input?: WalletReconnectInput
-  ): Promise<ReadonlyArray<Connection>> => reconnect(config, input),
-  sendTransaction: (
-    config: Config,
-    input: WalletEvmTransactionInput
-  ): Promise<Hash> => sendTransaction(config, input),
-  signMessage: (config: Config, input: WalletSignMessageInput): Promise<Hex> =>
-    signMessage(config, input),
-  switchChain: (
-    config: Config,
-    input: WalletSwitchChainInput
-  ): Promise<{ readonly id: number }> => switchChain(config, input),
-};
-
-export type WagmiActionOperations = typeof wagmiActionOperations;
-
-export const makeWagmiActions = ({
+export const makeWagmiActions = Effect.fn("makeWagmiActions")(function* ({
   config,
-  operations = wagmiActionOperations,
 }: {
   readonly config: Config;
-  readonly operations?: WagmiActionOperations;
-}) => ({
-  connect: (input: WalletConnectInput) =>
-    Effect.tryPromise({
-      try: () => operations.connect(config, input),
-      catch: (cause) =>
-        new WalletConnectionError({ cause, operation: "connect" }),
+}) {
+  const operations = yield* WagmiOperations;
+  return {
+    connect: Effect.fn("connect")(function* (input: WalletConnectInput) {
+      return yield* operations.connect(config, input).pipe(
+        Effect.mapError(
+          (error) =>
+            new WalletConnectionError({
+              cause: error.cause,
+              operation: "connect",
+            })
+        )
+      );
     }),
-  disconnect: (input?: WalletDisconnectInput) =>
-    Effect.tryPromise({
-      try: () => operations.disconnect(config, input),
-      catch: (cause) =>
-        new WalletConnectionError({ cause, operation: "disconnect" }),
+    disconnect: Effect.fn("disconnect")(function* (
+      input?: WalletDisconnectInput
+    ) {
+      return yield* operations.disconnect(config, input).pipe(
+        Effect.mapError(
+          (error) =>
+            new WalletConnectionError({
+              cause: error.cause,
+              operation: "disconnect",
+            })
+        )
+      );
     }),
-  reconnect: (input?: WalletReconnectInput) =>
-    Effect.tryPromise({
-      try: () => operations.reconnect(config, input),
-      catch: (cause) =>
-        new WalletConnectionError({ cause, operation: "reconnect" }),
+    reconnect: Effect.fn("reconnect")(function* (input?: WalletReconnectInput) {
+      return yield* operations.reconnect(config, input).pipe(
+        Effect.mapError(
+          (error) =>
+            new WalletConnectionError({
+              cause: error.cause,
+              operation: "reconnect",
+            })
+        )
+      );
     }),
-  sendEvmTransaction: (input: WalletEvmTransactionInput) =>
-    Effect.tryPromise({
-      // Use Wagmi's current connection, as the compatibility hook did. Passing
-      // the connector makes Wagmi refetch accounts before every wallet action.
-      try: () =>
-        operations.sendTransaction(config, { ...input, connector: undefined }),
-      catch: (cause) =>
-        new WalletBroadcastError({ cause, customMessage: null }),
-    }).pipe(
-      Effect.map(
-        (signedTx) =>
-          ({ broadcasted: true, signedTx }) satisfies WalletBroadcastResult
-      )
-    ),
-  signMessage: (input: WalletSignMessageInput) =>
-    Effect.tryPromise({
-      // Keep connector selection aligned with the current Wagmi connection.
-      try: () =>
-        operations.signMessage(config, { ...input, connector: undefined }),
-      catch: (cause) => new WalletSigningError({ cause, operation: "message" }),
+    sendEvmTransaction: Effect.fn("sendEvmTransaction")(function* (
+      input: WalletEvmTransactionInput
+    ) {
+      return yield* operations
+        .sendTransaction(config, {
+          // Use Wagmi's current connection, as the compatibility hook did. Passing
+          // the connector makes Wagmi refetch accounts before every wallet action.
+          ...input,
+          connector: undefined,
+        })
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new WalletBroadcastError({
+                cause: error.cause,
+                customMessage: null,
+              })
+          ),
+          Effect.map(
+            (signedTx) =>
+              ({
+                broadcasted: true,
+                signedTx,
+              }) satisfies WalletBroadcastResult
+          )
+        );
     }),
-  switchChain: (input: WalletSwitchChainInput) =>
-    Effect.tryPromise({
-      try: () => operations.switchChain(config, input),
-      catch: (cause) =>
-        new WalletSwitchError({
-          cause,
-          operation: "chain",
-          target: input.chainId,
-        }),
+    signMessage: Effect.fn("signMessage")(function* (
+      input: WalletSignMessageInput
+    ) {
+      return yield* operations
+        .signMessage(config, {
+          // Keep connector selection aligned with the current Wagmi connection.
+          ...input,
+          connector: undefined,
+        })
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new WalletSigningError({
+                cause: error.cause,
+                operation: "message",
+              })
+          )
+        );
     }),
+    switchChain: Effect.fn("switchChain")(function* (
+      input: WalletSwitchChainInput
+    ) {
+      return yield* operations.switchChain(config, input).pipe(
+        Effect.mapError(
+          (error) =>
+            new WalletSwitchError({
+              cause: error.cause,
+              operation: "chain",
+              target: input.chainId,
+            })
+        )
+      );
+    }),
+  };
 });
 
-export type WagmiActions = ReturnType<typeof makeWagmiActions>;
+export type WagmiActions = Effect.Success<ReturnType<typeof makeWagmiActions>>;

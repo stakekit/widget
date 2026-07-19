@@ -10,16 +10,16 @@ export {
   WalletScopeRouteGuard,
 } from "./react/wallet-scope-route";
 export {
-  currentWalletRuntimeConfigResultAtom,
+  currentWalletConfigResultAtom,
   currentWalletStateResultAtom,
-  useWalletRuntimeConfig,
-} from "./runtime/root-atom";
+  useWalletConfig,
+} from "./state/root-atom";
 export {
   currentWalletConnectedNetworkAtom,
   currentWalletScopeAtom,
   currentWalletStateAtom,
   selectCurrentWalletAtom,
-} from "./runtime/selectors";
+} from "./state/selectors";
 export {
   addLedgerAccountAtom,
   runLogout,

@@ -58,7 +58,7 @@ type SolanaFallbackNetwork =
   | WalletAdapterNetwork.Mainnet
   | WalletAdapterNetwork.Devnet;
 
-export type HeadlessSolanaRuntimeDependencies = {
+type HeadlessSolanaRuntimeDependencies = {
   readonly createConnection: (endpoint: string) => Connection;
   readonly createFallbackAdapters: (input: {
     readonly network: SolanaFallbackNetwork;
@@ -180,13 +180,12 @@ const disposeAdapter = (adapter: Adapter) => {
   (adapter as DisposableAdapter).destroy?.();
 };
 
-export const makeHeadlessSolanaRuntime = (
-  options: HeadlessSolanaRuntimeOptions = {},
-  dependencies?: HeadlessSolanaRuntimeDependencies
+const makeHeadlessSolanaRuntime = (
+  options: HeadlessSolanaRuntimeOptions = {}
 ): Effect.Effect<HeadlessSolanaRuntime, never, Scope.Scope> =>
   Effect.acquireRelease(
     Effect.sync(() => {
-      const deps = dependencies ?? makeDefaultDependencies();
+      const deps = makeDefaultDependencies();
       const network = options.network ?? WalletAdapterNetwork.Mainnet;
       const endpoint = options.endpoint ?? clusterApiUrl(network);
       const connection = deps.createConnection(endpoint);

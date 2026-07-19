@@ -14,9 +14,6 @@ import {
 import { RichErrorService } from "../../services/errors/rich-error-service";
 import { WidgetPersistence } from "../../services/persistence/widget-persistence";
 import { TrackingService } from "../../services/tracking/tracking-service";
-import { WalletService } from "../../services/wallet/wallet-service";
-import { TransactionWorkflowOperationsService } from "../../services/workflow/transaction-workflow-operations-service";
-import { TransactionWorkflowService } from "../../services/workflow/transaction-workflow-service";
 import { widgetConfigAtom } from "../config";
 
 const makeAppLayer = (
@@ -44,32 +41,12 @@ const makeAppLayer = (
   const trackingLayer = TrackingService.layer.pipe(
     Layer.provide(widgetConfigLayer)
   );
-  const walletLayer = WalletService.layer.pipe(
-    Layer.provide(
-      Layer.mergeAll(
-        apiLayer,
-        persistenceLayer,
-        trackingLayer,
-        widgetConfigLayer
-      )
-    )
-  );
-  const transactionWorkflowLayer = TransactionWorkflowService.layer.pipe(
-    Layer.provide(
-      TransactionWorkflowOperationsService.layer.pipe(
-        Layer.provide(Layer.mergeAll(apiLayer, trackingLayer, walletLayer))
-      )
-    )
-  );
-
   return Layer.mergeAll(
     widgetConfigLayer,
     richErrorLayer,
     apiLayer,
     persistenceLayer,
-    trackingLayer,
-    walletLayer,
-    transactionWorkflowLayer
+    trackingLayer
   ).pipe(Layer.fresh);
 };
 

@@ -70,7 +70,9 @@ export class TransactionWorkflowOperationsService extends Context.Service<Transa
           ),
         getBorrowAction: borrowApi.getAction,
         getClassicStatus: yieldApi.getTransactionStatus,
-        getWalletState: wallet.getState,
+        getWalletState: wallet.state.pipe(
+          Effect.map((state) => state.connection)
+        ),
         signMessage: wallet.signMessage,
         signTransaction: wallet.signTransaction,
         stepBorrowAction: borrowApi.stepAction,

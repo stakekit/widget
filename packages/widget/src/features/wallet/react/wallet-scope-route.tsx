@@ -9,7 +9,7 @@ import {
   type WalletScopeKey,
   walletScopeFromState,
 } from "../../../services/wallet/domain/scope";
-import { currentWalletStateResultAtom } from "../runtime/root-atom";
+import { currentWalletStateResultAtom } from "../state/root-atom";
 
 const WalletScopeRouteContext = createContext<WalletScopeKey | null>(null);
 

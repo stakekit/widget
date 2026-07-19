@@ -5,7 +5,7 @@ import {
   WalletReadyState,
 } from "@solana/wallet-adapter-base";
 import type { Connection } from "@solana/web3.js";
-import { Array as EArray, Effect, Layer, Stream } from "effect";
+import { Array as EArray, Effect, Layer, Queue, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { HttpResponse, http } from "msw";
 import {
@@ -32,26 +32,21 @@ import { watchConnectors } from "wagmi/actions";
 import { optimism } from "wagmi/chains";
 import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
 import { normalizeWidgetConfig } from "../../src/app/config";
-import { appRuntime } from "../../src/app/runtime";
+import { walletRuntime } from "../../src/app/runtime";
 import { solana } from "../../src/domain/types/chains/misc";
 import { EvmNetworks } from "../../src/domain/types/chains/networks";
 import {
   currentWalletStateResultAtom,
-  useWalletRuntimeConfig,
+  useWalletConfig,
 } from "../../src/features/wallet";
 import { WagmiConfigProvider } from "../../src/features/wallet/react/provider";
-import {
-  bootstrappingWalletRuntimeSnapshot,
-  type WalletRuntimeSnapshot,
-} from "../../src/services/wallet/domain/runtime";
+import type { SolanaRuntime } from "../../src/services/wallet/platform/solana-platform";
 import { installSolanaConnectorMembership } from "../../src/services/wallet/solana-connector-membership";
 import type {
-  HeadlessSolanaRuntime,
   SolanaWalletDescriptor,
   SolanaWalletSnapshot,
 } from "../../src/services/wallet/solana-runtime";
 import { WalletService } from "../../src/services/wallet/wallet-service";
-import { makeCurrentValueStream } from "../../src/shared/effect/current-value-stream";
 import { legacyApiRoute } from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
@@ -80,7 +75,7 @@ class RuntimeErrorBoundary extends Component<
 
 const useWagmiProviderContract = () => ({
   contextConfig: useContext(WagmiContext) as Config | undefined,
-  runtimeConfig: useWalletRuntimeConfig(),
+  walletConfig: useWalletConfig(),
 });
 
 const ConfigObserver = ({
@@ -88,10 +83,10 @@ const ConfigObserver = ({
 }: {
   readonly onConfig: (config: Config) => void;
 }) => {
-  const runtimeConfig = useWalletRuntimeConfig();
+  const walletConfig = useWalletConfig();
 
   useEffect(() => {
-    if (runtimeConfig.data) onConfig(runtimeConfig.data);
+    if (walletConfig.data) onConfig(walletConfig.data);
   });
 
   return null;
@@ -102,7 +97,7 @@ const useRainbowKitWagmiContract = () => ({
   connect: useConnect(),
   connectors: useConnectors(),
   contextConfig: useContext(WagmiContext) as Config | undefined,
-  runtimeConfig: useWalletRuntimeConfig(),
+  walletConfig: useWalletConfig(),
   disconnect: useDisconnect(),
   switchChain: useSwitchChain(),
   walletProjection: useAtomValue(currentWalletStateResultAtom),
@@ -157,18 +152,27 @@ const makeSolanaRuntime = (initial: SolanaWalletSnapshot) => {
   let snapshot = initial;
   const runtime = {
     connection: {} as Connection,
-    getWalletSnapshot: () => snapshot,
-    subscribe: (listener) => {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-  } satisfies HeadlessSolanaRuntime;
+    current: Effect.sync(() => snapshot),
+    states: Stream.callback<SolanaWalletSnapshot>((queue) =>
+      Effect.acquireRelease(
+        Effect.sync(() => {
+          const listener = () => {
+            Queue.offerUnsafe(queue, snapshot);
+          };
+          listeners.add(listener);
+          return listener;
+        }),
+        (listener) => Effect.sync(() => listeners.delete(listener))
+      )
+    ),
+  } satisfies SolanaRuntime;
 
   return {
     emit: async (next: SolanaWalletSnapshot) => {
       snapshot = next;
       await Promise.all([...listeners].map((listener) => listener()));
     },
+    listenerCount: () => listeners.size,
     runtime,
   };
 };
@@ -232,11 +236,26 @@ describe("WagmiConfigProvider", () => {
       Effect.scoped(
         Effect.gen(function* () {
           yield* installSolanaConnectorMembership({
+            actions: { disconnect: () => Effect.void },
             config,
-            createConnector: async (wallet) =>
-              makeSolanaConnectorFactory(wallet),
+            core: {
+              current: Effect.succeed({
+                connection: {} as never,
+                connectors: config.connectors,
+              }),
+              states: Stream.concat(
+                Stream.succeed({
+                  connection: {} as never,
+                  connectors: config.connectors,
+                }),
+                Stream.never
+              ),
+            },
+            createConnector: (wallet) =>
+              Effect.succeed(makeSolanaConnectorFactory(wallet)),
             runtime: runtime.runtime,
           });
+          expect(runtime.listenerCount()).toBe(1);
           const configIdentity = config;
           const hook = yield* Effect.promise(() =>
             renderHook(() => useConnectors(), {
@@ -251,6 +270,11 @@ describe("WagmiConfigProvider", () => {
           yield* Effect.promise(() =>
             hook.act(() => runtime.emit({ wallets: [standard] }))
           );
+          yield* Effect.promise(() =>
+            expect
+              .poll(() => hook.result.current[0]?.solanaAdapterSource)
+              .toBe("standard")
+          );
           const standardConnector = hook.result.current[0]!;
           expect(standardConnector).toMatchObject({
             rkDetails: { installed: false },
@@ -259,6 +283,17 @@ describe("WagmiConfigProvider", () => {
 
           yield* Effect.promise(() =>
             hook.act(() => runtime.emit({ wallets: [readyStandard] }))
+          );
+          yield* Effect.promise(() =>
+            expect
+              .poll(() => {
+                const connector = hook.result.current[0];
+                return connector && "rkDetails" in connector
+                  ? (connector.rkDetails as { readonly installed: boolean })
+                      .installed
+                  : false;
+              })
+              .toBe(true)
           );
           const readyConnector = hook.result.current[0]!;
           expect(readyConnector).not.toBe(standardConnector);
@@ -284,17 +319,12 @@ describe("WagmiConfigProvider", () => {
   it("stops providing the fallback when wallet bootstrap fails", async () => {
     const cause = new Error("wallet bootstrap failed");
     const onError = vi.fn<(error: unknown) => void>();
-    const source = makeCurrentValueStream<WalletRuntimeSnapshot>(
-      bootstrappingWalletRuntimeSnapshot
-    );
     const app = await render(
       <RegistryProvider
         initialValues={[
           [
-            appRuntime.layer,
-            Layer.succeed(WalletService, {
-              changes: source.changes,
-            } as never) as never,
+            walletRuntime.layer,
+            Layer.effect(WalletService, Effect.fail(cause)) as never,
           ],
         ]}
       >
@@ -306,22 +336,8 @@ describe("WagmiConfigProvider", () => {
       </RegistryProvider>
     );
 
-    await expect.element(app.getByText("provider ready")).toBeVisible();
-    source.set({
-      cause,
-      phase: "BootstrapFailed",
-      projection: null,
-      wagmiConfig: null,
-    });
-
     await expect.element(app.getByText("runtime failed")).toBeVisible();
-    expect(onError).toHaveBeenCalledWith(
-      expect.objectContaining({
-        _tag: "WalletRuntimeTerminalError",
-        cause,
-        phase: "BootstrapFailed",
-      })
-    );
+    expect(onError).toHaveBeenCalledWith(cause);
   });
 
   it("uses the fallback only while loading, then provides the initialized config by reference", async ({
@@ -354,25 +370,25 @@ describe("WagmiConfigProvider", () => {
 
     const fallbackConfig = hook.result.current.contextConfig;
     expect(fallbackConfig).toBeDefined();
-    expect(hook.result.current.runtimeConfig.isLoading).toBe(true);
+    expect(hook.result.current.walletConfig.isLoading).toBe(true);
 
     await expect
       .poll(
         () => ({
-          data: Boolean(hook.result.current.runtimeConfig.data),
-          error: hook.result.current.runtimeConfig.error,
+          data: Boolean(hook.result.current.walletConfig.data),
+          error: hook.result.current.walletConfig.error,
         }),
         { timeout: 10_000 }
       )
       .toEqual({ data: true, error: undefined });
 
     expect(hook.result.current.contextConfig).toBe(
-      hook.result.current.runtimeConfig.data
+      hook.result.current.walletConfig.data
     );
     expect(hook.result.current.contextConfig).not.toBe(fallbackConfig);
   });
 
-  it("keeps the authoritative config across StrictMode and wallet-setting rerenders", async ({
+  it("keeps the authoritative config across StrictMode rerenders", async ({
     worker,
   }) => {
     worker.use(
@@ -398,10 +414,6 @@ describe("WagmiConfigProvider", () => {
 
     await app.rerender(renderHarness(false));
     expect(onConfig).not.toHaveBeenCalled();
-
-    await app.rerender(renderHarness(true));
-    await vi.waitFor(() => expect(onConfig).toHaveBeenCalled());
-    expect(onConfig.mock.lastCall?.[0]).toBe(firstConfig);
   });
 
   it("keeps RainbowKit-facing actions on the authoritative config", async ({
@@ -439,16 +451,16 @@ describe("WagmiConfigProvider", () => {
       .poll(
         () => ({
           connected: hook.result.current.account.isConnected,
-          ready: Boolean(hook.result.current.runtimeConfig.data),
+          ready: Boolean(hook.result.current.walletConfig.data),
         }),
         { timeout: 10_000 }
       )
       .toEqual({ connected: true, ready: true });
-    if (initialConfig !== hook.result.current.runtimeConfig.data) {
+    if (initialConfig !== hook.result.current.walletConfig.data) {
       expect(initialConfig?.state.connections.size).toBe(0);
     }
     expect(hook.result.current.contextConfig).toBe(
-      hook.result.current.runtimeConfig.data
+      hook.result.current.walletConfig.data
     );
     expect(
       AsyncResult.getOrThrow(hook.result.current.walletProjection)

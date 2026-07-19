@@ -1,6 +1,6 @@
 import type { WalletController } from "../../../src/services/wallet/wagmi-config";
 
-export const makeRuntimeTestController = (
+export const makeWalletTestController = (
   controller: Record<string, unknown>
 ): WalletController =>
   ({

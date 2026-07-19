@@ -4,7 +4,7 @@ import {
   activitySelectionAtom,
   activityTransactionWorkflowKeyAtom,
 } from "../../src/features/activity/state/selection";
-import { currentWalletScopeAtom } from "../../src/features/wallet/runtime/selectors";
+import { currentWalletScopeAtom } from "../../src/features/wallet/state/selectors";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
   yieldApiActionFixture,

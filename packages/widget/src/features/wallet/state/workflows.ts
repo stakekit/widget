@@ -1,7 +1,7 @@
 import type { Chain } from "@stakekit/rainbowkit";
 import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime";
+import { walletRuntime } from "../../../app/runtime";
 import {
   actionHistoryTimestampAtom,
   resetActionHistory,
@@ -51,7 +51,7 @@ export const runLogout = Effect.fn("runLogout")(function* ({
   yield* Effect.tryPromise(clearDatabases);
 });
 
-export const logoutAtom = appRuntime.fn((_, context) =>
+export const logoutAtom = walletRuntime.fn((_, context) =>
   WalletService.use((wallet) =>
     runLogout({
       disconnect: wallet.disconnect(),

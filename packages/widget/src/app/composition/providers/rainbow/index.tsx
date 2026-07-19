@@ -8,10 +8,10 @@ import {
   type WalletSwitchAccountInput,
 } from "../../../../services/wallet/wallet-service";
 import { formatAddress } from "../../../../shared/lib/general";
-import { appRuntime } from "../../../runtime";
+import { walletRuntime } from "../../../runtime";
 import { RainbowKitProviderWithTheme } from "../rainbow-kit";
 
-const switchLedgerAccountAtom = appRuntime.fn(
+const switchLedgerAccountAtom = walletRuntime.fn(
   (input: WalletSwitchAccountInput) =>
     WalletService.use((wallet) => wallet.switchAccount(input))
 );

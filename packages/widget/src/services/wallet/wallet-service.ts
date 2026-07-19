@@ -1,124 +1,118 @@
-import { Context, Data, Effect, Layer } from "effect";
+import { Context, Effect, Layer, Stream } from "effect";
 import type { WalletAddress } from "../../domain/schema/identifiers";
 import { WidgetPersistence } from "../persistence/widget-persistence";
+import { bootstrapWallet, WalletBootstrapError } from "./bootstrap";
 import type {
   WalletDisconnectInput,
   WalletSignMessageInput,
   WalletSwitchAccountInput,
 } from "./domain/commands";
-import {
-  WalletCapabilityUnavailableError,
-  WalletConnectionError,
-  type WalletRuntimeTerminalError,
-} from "./domain/errors";
 import type { WalletSignTransactionInput } from "./domain/transactions";
+import { installExternalProviderSynchronization } from "./external-provider-sync";
+import { makeWalletLifecyclePolicy } from "./lifecycle";
+import { SolanaPlatform } from "./platform/solana-platform";
+import { WagmiPlatform } from "./platform/wagmi-platform";
+import { WalletEnvironment } from "./platform/wallet-environment";
 import type { WalletRoutingContext } from "./router";
 import {
   routeWalletAccountSwitch,
   routeWalletMessage,
   routeWalletTransaction,
 } from "./router";
-import {
-  makeDefaultWalletRuntimeAdapters,
-  makeWalletRuntime,
-  type WalletRuntime,
-  type WalletRuntimeAdapters,
-} from "./runtime";
+import { makeWalletStateRuntime } from "./wallet-state";
 
 export * from "./domain/commands";
 export * from "./domain/errors";
 export * from "./domain/transactions";
 
-class WalletServiceUnavailableError extends Data.TaggedError(
-  "WalletServiceUnavailableError"
-) {}
-
-const serviceUnavailable = () => new WalletServiceUnavailableError();
-
-const makeWalletService = Effect.fn("makeWalletService")(function* (
-  runtime: WalletRuntime
-) {
+const makeWalletService = Effect.fn("makeWalletService")(function* () {
   const persistence = yield* WidgetPersistence;
+  const bootstrap = yield* bootstrapWallet();
+  const state = yield* makeWalletStateRuntime({
+    controller: bootstrap.controller,
+    core: bootstrap.core,
+    readStoredPublicKeys: persistence.readStoredPublicKeys,
+  }).pipe(
+    Effect.mapError(
+      (cause) => new WalletBootstrapError({ cause, stage: "wallet-state" })
+    )
+  );
+  const lifecycle = yield* makeWalletLifecyclePolicy;
 
-  const withCurrent = <A, E>(
-    use: (routing: WalletRoutingContext) => Effect.Effect<A, E>,
-    unavailable: () => E
-  ): Effect.Effect<A, E | WalletRuntimeTerminalError> =>
-    runtime.captureRouting.pipe(
-      Effect.flatMap((routing) =>
-        routing ? use(routing) : Effect.fail(unavailable())
-      )
-    );
+  yield* installExternalProviderSynchronization({ bootstrap, state });
+  yield* state.contexts.pipe(
+    Stream.runForEach((context) => {
+      return lifecycle.transition({
+        actions: context.routing.actions,
+        state: context.state.connection,
+      });
+    }),
+    Effect.forkScoped({ startImmediately: true })
+  );
+
+  const withContext = Effect.fn("withContext")(function* <A, E>(
+    use: (routing: WalletRoutingContext) => Effect.Effect<A, E>
+  ) {
+    const context = yield* state.context;
+    return yield* use(context.routing);
+  });
 
   return {
-    changes: runtime.changes,
-    config: runtime.config,
-    current: runtime.current,
-    disconnect: (input?: WalletDisconnectInput) =>
-      withCurrent(
-        (routing) => routing.actions.disconnect(input),
-        () =>
-          new WalletConnectionError({
-            cause: serviceUnavailable(),
-            operation: "disconnect",
-          })
-      ),
-    getState: runtime.getState,
-    persistPublicKey: (input: {
+    disconnect: Effect.fn("disconnect")(function* (
+      input?: WalletDisconnectInput
+    ) {
+      return yield* withContext((routing) => routing.actions.disconnect(input));
+    }),
+    persistPublicKey: Effect.fn("persistPublicKey")(function* (input: {
       readonly address: WalletAddress;
       readonly publicKey: string;
-    }) => persistence.upsertStoredPublicKey(input),
-    signMessage: (input: WalletSignMessageInput) =>
-      withCurrent(
-        (routing) => routeWalletMessage(routing, input),
-        () =>
-          new WalletCapabilityUnavailableError({
-            capability: "message",
-            connectorId: null,
-          })
-      ),
-    signTransaction: (input: WalletSignTransactionInput) =>
-      withCurrent(
-        (routing) => routeWalletTransaction(routing, input),
-        () =>
-          new WalletCapabilityUnavailableError({
-            capability: "transaction",
-            connectorId: null,
-          })
-      ),
-    switchAccount: (input: WalletSwitchAccountInput) =>
-      withCurrent(
-        (routing) => routeWalletAccountSwitch(routing, input),
-        () =>
-          new WalletCapabilityUnavailableError({
-            capability: "account",
-            connectorId: null,
-          })
-      ),
+    }) {
+      yield* persistence.upsertStoredPublicKey(input);
+    }),
+    signMessage: Effect.fn("signMessage")(function* (
+      input: WalletSignMessageInput
+    ) {
+      return yield* withContext((routing) =>
+        routeWalletMessage(routing, input)
+      );
+    }),
+    signTransaction: Effect.fn("signTransaction")(function* (
+      input: WalletSignTransactionInput
+    ) {
+      return yield* withContext((routing) =>
+        routeWalletTransaction(routing, input)
+      );
+    }),
+    state: state.context.pipe(Effect.map((context) => context.state)),
+    states: state.contexts.pipe(Stream.map((context) => context.state)),
+    switchAccount: Effect.fn("switchAccount")(function* (
+      input: WalletSwitchAccountInput
+    ) {
+      return yield* withContext((routing) =>
+        routeWalletAccountSwitch(routing, input)
+      );
+    }),
+    wagmiConfig: bootstrap.controller.wagmiConfig,
   } as const;
 });
-
-export type { WalletRuntimeAdapters } from "./runtime";
 
 export class WalletService extends Context.Service<WalletService>()(
   "stakekit/widget/WalletService",
   {
     make: Effect.gen(function* () {
-      const adapters = yield* makeDefaultWalletRuntimeAdapters;
-      const runtime = yield* makeWalletRuntime(adapters);
-      return yield* makeWalletService(runtime);
+      return yield* makeWalletService();
     }),
   }
 ) {
   static readonly layer = Layer.effect(WalletService, WalletService.make);
 
-  static layerWithRuntimeAdapters(adapters: WalletRuntimeAdapters) {
-    return Layer.effect(
-      WalletService,
-      Effect.gen(function* () {
-        const runtime = yield* makeWalletRuntime(adapters);
-        return yield* makeWalletService(runtime);
-      })
-    );
-  }
+  static readonly defaultLayer = WalletService.layer.pipe(
+    Layer.provide(
+      Layer.mergeAll(
+        SolanaPlatform.layer,
+        WagmiPlatform.defaultLayer,
+        WalletEnvironment.layer
+      )
+    )
+  );
 }

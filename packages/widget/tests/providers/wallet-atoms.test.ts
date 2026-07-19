@@ -1,15 +1,21 @@
-import type { Connection } from "@solana/web3.js";
-import { Effect, Fiber, Schema } from "effect";
+import type { Connection as SolanaConnection } from "@solana/web3.js";
+import { Deferred, Effect, Fiber, Schema } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import type { Connector, createConfig } from "wagmi";
+import type { Connection, Connector, createConfig } from "wagmi";
 import { AdditionalAddresses } from "../../src/domain/schema/address-models";
 import { InitParams } from "../../src/domain/schema/init-params";
 import { EnabledNetworksResponse } from "../../src/domain/schema/wallet-models";
 import { getConfig as getEvmConfig } from "../../src/services/wallet/connectors/ethereum/config";
 import {
-  initializeWallet,
-  type WalletInitializationOperations,
-} from "../../src/services/wallet/initialization";
+  makeInitializeWallet,
+  type WalletInitialConnectionInput,
+} from "../../src/services/wallet/initial-connection";
+import {
+  WagmiOperations,
+  WagmiOperationsError,
+  type WagmiOperationsService,
+  wagmiOperations,
+} from "../../src/services/wallet/platform/wagmi-operations";
 import {
   buildWagmiConfig,
   scopedMipdSubscription,
@@ -25,6 +31,44 @@ const emptyInitParams = {
   validator: null,
   yieldId: null,
 } as const;
+
+type InitialConnectionOperations = Pick<
+  WagmiOperationsService,
+  "connect" | "reconnect" | "switchChain"
+>;
+
+const operationFailure = (cause: unknown) =>
+  new WagmiOperationsError({ cause, operation: "reconnect" });
+
+const makeInitializer = (operations: InitialConnectionOperations) =>
+  Effect.runPromise(
+    makeInitializeWallet.pipe(
+      Effect.provideService(
+        WagmiOperations,
+        WagmiOperations.of({ ...wagmiOperations, ...operations })
+      )
+    )
+  );
+
+const initialize = async (
+  operations: InitialConnectionOperations,
+  input: Omit<
+    WalletInitialConnectionInput,
+    "isLedgerDappBrowser" | "isMobileWallet"
+  > & {
+    readonly isLedgerDappBrowser?: boolean;
+    readonly isMobileWallet?: boolean;
+  }
+) => {
+  const run = await makeInitializer(operations);
+  return Effect.runPromise(
+    run({
+      ...input,
+      isLedgerDappBrowser: input.isLedgerDappBrowser ?? false,
+      isMobileWallet: input.isMobileWallet ?? false,
+    })
+  );
+};
 
 describe("wallet Effect Atom boundaries", () => {
   it("decodes enabled networks into a validated set and rejects unknown values", () => {
@@ -103,27 +147,32 @@ describe("wallet Effect Atom boundaries", () => {
       connectors: [injectedConnector],
       state: { chainId: 1 },
     } as unknown as ReturnType<typeof createConfig>;
-    const operations: WalletInitializationOperations = {
-      reconnect: vi.fn(async () => {
-        calls.push("reconnect");
-        return [];
-      }),
-      connect: vi.fn(async () => {
-        calls.push("connect");
-        return { accounts: [], chainId: 1 };
-      }),
-      switchChain: vi.fn(async () => {
-        calls.push("switch");
-        return { id: 2 };
-      }),
-      isLedgerLive: () => false,
-      isMobile: () => true,
+    const operations: InitialConnectionOperations = {
+      reconnect: vi.fn(() =>
+        Effect.sync(() => {
+          calls.push("reconnect");
+          return [];
+        })
+      ),
+      connect: vi.fn(() =>
+        Effect.sync(() => {
+          calls.push("connect");
+          return { accounts: [], chainId: 1 };
+        })
+      ),
+      switchChain: vi.fn(() =>
+        Effect.sync(() => {
+          calls.push("switch");
+          return { id: 2 };
+        })
+      ),
     };
 
     await Effect.runPromise(
-      initializeWallet({
+      (await makeInitializer(operations))({
         hasExternalProvider: false,
-        operations,
+        isLedgerDappBrowser: false,
+        isMobileWallet: true,
         queryParamsInitChainId: 2,
         wagmiConfig,
       })
@@ -140,40 +189,43 @@ describe("wallet Effect Atom boundaries", () => {
       connectors: [],
       state: { chainId: 1 },
     } as unknown as ReturnType<typeof createConfig>;
-    let markFirstStarted: () => void = () => undefined;
-    const firstStarted = new Promise<void>((resolve) => {
-      markFirstStarted = resolve;
-    });
-    let releaseFirst: () => void = () => undefined;
-    const firstResult = new Promise<[]>((resolve) => {
-      releaseFirst = () => resolve([]);
-    });
-    const secondReconnect = vi.fn(async () => []);
+    const firstStarted = await Effect.runPromise(Deferred.make<void>());
+    const firstResult = await Effect.runPromise(
+      Deferred.make<ReadonlyArray<Connection>>()
+    );
     const baseOperations = {
-      connect: vi.fn(async () => ({ accounts: [], chainId: 1 })),
-      isLedgerLive: () => false,
-      isMobile: () => false,
-      switchChain: vi.fn(async () => ({ id: 1 })),
-    } satisfies Omit<WalletInitializationOperations, "reconnect">;
+      connect: vi.fn(() => Effect.succeed({ accounts: [], chainId: 1 })),
+      switchChain: vi.fn(() => Effect.succeed({ id: 1 })),
+    } satisfies Omit<InitialConnectionOperations, "reconnect">;
+    let reconnectCalls = 0;
+    const secondReconnect = vi.fn(() => Effect.succeed([]));
+    const initializeWallet = await makeInitializer({
+      ...baseOperations,
+      reconnect: () =>
+        Effect.gen(function* () {
+          reconnectCalls += 1;
+          if (reconnectCalls === 1) {
+            yield* Deferred.succeed(firstStarted, undefined);
+            return yield* Deferred.await(firstResult);
+          }
+          return yield* secondReconnect();
+        }),
+    });
     const firstFiber = Effect.runFork(
       initializeWallet({
         hasExternalProvider: false,
-        operations: {
-          ...baseOperations,
-          reconnect: async () => {
-            markFirstStarted();
-            return firstResult;
-          },
-        },
+        isLedgerDappBrowser: false,
+        isMobileWallet: false,
         queryParamsInitChainId: undefined,
         wagmiConfig,
       })
     );
-    await firstStarted;
+    await Effect.runPromise(Deferred.await(firstStarted));
     const secondFiber = Effect.runFork(
       initializeWallet({
         hasExternalProvider: false,
-        operations: { ...baseOperations, reconnect: secondReconnect },
+        isLedgerDappBrowser: false,
+        isMobileWallet: false,
         queryParamsInitChainId: undefined,
         wagmiConfig,
       })
@@ -181,7 +233,7 @@ describe("wallet Effect Atom boundaries", () => {
     await Promise.resolve();
 
     await Effect.runPromise(Fiber.interrupt(secondFiber));
-    releaseFirst();
+    await Effect.runPromise(Deferred.succeed(firstResult, []));
     await Effect.runPromise(Fiber.join(firstFiber));
     await Promise.resolve();
 
@@ -195,48 +247,49 @@ describe("wallet Effect Atom boundaries", () => {
       state: { chainId: 1 },
     } as unknown as ReturnType<typeof createConfig>;
     const cause = new Error("initialization failed");
-    const baseOperations: WalletInitializationOperations = {
-      connect: vi.fn(async () => ({ accounts: [], chainId: 1 })),
-      isLedgerLive: () => false,
-      isMobile: () => false,
-      reconnect: vi.fn(async () => [{} as never]),
-      switchChain: vi.fn(async () => ({ id: 2 })),
+    const baseOperations: InitialConnectionOperations = {
+      connect: vi.fn(() => Effect.succeed({ accounts: [], chainId: 1 })),
+      reconnect: vi.fn(() => Effect.succeed([{} as never])),
+      switchChain: vi.fn(() => Effect.succeed({ id: 2 })),
     };
-    const initialize = (operations: WalletInitializationOperations) =>
-      Effect.runPromise(
-        initializeWallet({
-          hasExternalProvider: false,
-          operations,
-          queryParamsInitChainId: 2,
-          wagmiConfig,
-        })
-      );
+    const run = (
+      operations: InitialConnectionOperations,
+      isMobileWallet = false
+    ) =>
+      initialize(operations, {
+        hasExternalProvider: false,
+        isMobileWallet,
+        queryParamsInitChainId: 2,
+        wagmiConfig,
+      });
 
-    const reconnectFailure = vi.fn(async () => {
-      throw cause;
-    });
-    const reconnectConnect = vi.fn(async () => ({ accounts: [], chainId: 1 }));
-    const reconnectSwitch = vi.fn(async () => ({ id: 2 }));
-    await initialize({
-      ...baseOperations,
-      connect: reconnectConnect,
-      isMobile: () => true,
-      reconnect: reconnectFailure,
-      switchChain: reconnectSwitch,
-    });
-    const fallbackConnectFailure = vi.fn(async () => {
-      throw cause;
-    });
-    await initialize({
-      ...baseOperations,
-      connect: fallbackConnectFailure,
-      isMobile: () => true,
-      reconnect: vi.fn(async () => []),
-    });
-    const switchFailure = vi.fn(async () => {
-      throw cause;
-    });
-    await initialize({
+    const reconnectFailure = vi.fn(() => Effect.fail(operationFailure(cause)));
+    const reconnectConnect = vi.fn(() =>
+      Effect.succeed({ accounts: [], chainId: 1 })
+    );
+    const reconnectSwitch = vi.fn(() => Effect.succeed({ id: 2 }));
+    await run(
+      {
+        ...baseOperations,
+        connect: reconnectConnect,
+        reconnect: reconnectFailure,
+        switchChain: reconnectSwitch,
+      },
+      true
+    );
+    const fallbackConnectFailure = vi.fn(() =>
+      Effect.fail(operationFailure(cause))
+    );
+    await run(
+      {
+        ...baseOperations,
+        connect: fallbackConnectFailure,
+        reconnect: vi.fn(() => Effect.succeed([])),
+      },
+      true
+    );
+    const switchFailure = vi.fn(() => Effect.fail(operationFailure(cause)));
+    await run({
       ...baseOperations,
       switchChain: switchFailure,
     });
@@ -258,21 +311,20 @@ describe("wallet Effect Atom boundaries", () => {
       connectors: [configuredConnector],
       state: { chainId: 1 },
     } as unknown as ReturnType<typeof createConfig>;
-    const connect = vi.fn(async () => ({ accounts: [], chainId: 1 }));
-    const operations: WalletInitializationOperations = {
+    const connect = vi.fn(() => Effect.succeed({ accounts: [], chainId: 1 }));
+    const operations: InitialConnectionOperations = {
       connect,
-      isLedgerLive: () => false,
-      isMobile: () => false,
-      reconnect: vi.fn(async () => [{} as never]),
-      switchChain: vi.fn(async () => {
-        throw new Error("switch rejected");
-      }),
+      reconnect: vi.fn(() => Effect.succeed([{} as never])),
+      switchChain: vi.fn(() =>
+        Effect.fail(operationFailure(new Error("switch rejected")))
+      ),
     };
 
     await Effect.runPromise(
-      initializeWallet({
+      (await makeInitializer(operations))({
         hasExternalProvider: false,
-        operations,
+        isLedgerDappBrowser: false,
+        isMobileWallet: false,
         queryParamsInitChainId: 2,
         wagmiConfig,
       })
@@ -280,9 +332,9 @@ describe("wallet Effect Atom boundaries", () => {
 
     expect(wagmiConfig.connectors).toEqual([configuredConnector]);
 
-    await operations.connect(wagmiConfig, {
-      connector: configuredConnector,
-    });
+    await Effect.runPromise(
+      operations.connect(wagmiConfig, { connector: configuredConnector })
+    );
     expect(connect).toHaveBeenCalledOnce();
   });
 
@@ -306,11 +358,11 @@ describe("wallet Effect Atom boundaries", () => {
             mapWalletListFn: undefined,
             persistPublicKey: async () => undefined,
             queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
-            solanaConnection: {} as Connection,
+            solanaConnection: {} as SolanaConnection,
             solanaWallets: [],
             tonConnectManifestUrl: undefined,
             variant: "default",
-          })
+          }).pipe(Effect.provide(WagmiOperations.layer))
         )
       )
     ).rejects.toThrow(cause.message);

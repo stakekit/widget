@@ -1,16 +1,17 @@
 import { WalletReadyState } from "@solana/wallet-adapter-base";
-import { Effect, type Scope } from "effect";
+import { Effect, Ref, type Scope, Semaphore, Stream } from "effect";
 import type { Config, Connector, CreateConnectorFn } from "wagmi";
-import { disconnect, watchConnection } from "wagmi/actions";
 import {
   isSolanaConnector,
   type SolanaConnector,
 } from "./connectors/misc/solana-connector-meta";
+import type { SolanaRuntime } from "./platform/solana-platform";
+import type { WagmiCoreObservation } from "./platform/wagmi-platform";
 import type {
-  HeadlessSolanaRuntime,
   SolanaWalletDescriptor,
   SolanaWalletSnapshot,
 } from "./solana-runtime";
+import type { WagmiActions } from "./wagmi-actions";
 
 type RainbowKitSolanaConnector = SolanaConnector & {
   readonly rkDetails: {
@@ -20,11 +21,13 @@ type RainbowKitSolanaConnector = SolanaConnector & {
 };
 
 type SolanaConnectorMembershipOptions = {
+  readonly actions: Pick<WagmiActions, "disconnect">;
   readonly config: Config;
+  readonly core: WagmiCoreObservation;
   readonly createConnector: (
     wallet: SolanaWalletDescriptor
-  ) => Promise<CreateConnectorFn>;
-  readonly runtime: HeadlessSolanaRuntime;
+  ) => Effect.Effect<CreateConnectorFn, unknown>;
+  readonly runtime: SolanaRuntime;
 };
 
 const isRainbowKitSolanaConnector = (
@@ -43,171 +46,172 @@ const sameConnectors = (
   current.length === next.length &&
   current.every((connector, index) => connector === next[index]);
 
-export const installSolanaConnectorMembership = ({
+export const installSolanaConnectorMembership = Effect.fn(
+  "installSolanaConnectorMembership"
+)(function* ({
   config,
+  core,
   createConnector,
   runtime,
-}: SolanaConnectorMembershipOptions): Effect.Effect<void, never, Scope.Scope> =>
-  Effect.acquireRelease(
-    Effect.sync(() => {
-      const initialConnectors = config.connectors;
-      const initialSolanaIndex = initialConnectors.findIndex(
-        isRainbowKitSolanaConnector
+  actions,
+}: SolanaConnectorMembershipOptions): Effect.fn.Return<
+  void,
+  never,
+  Scope.Scope
+> {
+  const initialConnectors = config.connectors;
+  const initialSolanaIndex = initialConnectors.findIndex(
+    isRainbowKitSolanaConnector
+  );
+  const initialCache = new Map<
+    SolanaWalletDescriptor["adapter"],
+    RainbowKitSolanaConnector
+  >();
+  for (const connector of initialConnectors) {
+    if (isRainbowKitSolanaConnector(connector)) {
+      initialCache.set(connector.solanaAdapter, connector);
+    }
+  }
+  const connectorCache = yield* Ref.make(initialCache);
+  const synchronizationPermit = yield* Semaphore.make(1);
+
+  const setupConnector = Effect.fn("setupConnector")(function* (
+    wallet: SolanaWalletDescriptor
+  ) {
+    const cached = (yield* Ref.get(connectorCache)).get(wallet.adapter);
+    if (cached) return cached;
+
+    const factory = yield* createConnector(wallet);
+    const connector = yield* Effect.try(() =>
+      config._internal.connectors.setup(factory)
+    );
+    if (!isRainbowKitSolanaConnector(connector)) {
+      return yield* Effect.fail(
+        new Error("Expected a Solana connector from membership factory")
       );
-      const connectorCache = new Map<
-        SolanaWalletDescriptor["adapter"],
-        RainbowKitSolanaConnector
-      >();
-      let active = true;
-      let latestSnapshot = runtime.getWalletSnapshot();
-      let sequence = Promise.resolve();
+    }
+    yield* Ref.update(connectorCache, (cache) => {
+      const next = new Map(cache);
+      next.set(wallet.adapter, connector);
+      return next;
+    });
+    return connector;
+  });
 
-      for (const connector of initialConnectors) {
-        if (isRainbowKitSolanaConnector(connector)) {
-          connectorCache.set(connector.solanaAdapter, connector);
+  const refreshConnector = Effect.fn("refreshConnector")(function* (
+    wallet: SolanaWalletDescriptor
+  ) {
+    const connector = yield* setupConnector(wallet);
+    const installed = isInstalled(wallet);
+    if (connector.rkDetails.installed === installed) return connector;
+
+    const refreshed = {
+      ...connector,
+      rkDetails: { ...connector.rkDetails, installed },
+    } satisfies RainbowKitSolanaConnector;
+    yield* Ref.update(connectorCache, (cache) => {
+      const next = new Map(cache);
+      next.set(wallet.adapter, refreshed);
+      return next;
+    });
+    return refreshed;
+  });
+
+  const synchronize = Effect.fn("synchronize")(function* (
+    snapshot: SolanaWalletSnapshot
+  ) {
+    const current = config.connectors.filter(isRainbowKitSolanaConnector);
+    const currentByName = new Map(
+      current.map((connector) => [connector.name, connector])
+    );
+    const desiredNames = new Set<string>(
+      snapshot.wallets.map((wallet) => wallet.adapter.name as string)
+    );
+    const activeUids = new Set(config.state.connections.keys());
+    const desired = yield* Effect.forEach(
+      snapshot.wallets,
+      Effect.fnUntraced(function* (wallet) {
+        const visible = currentByName.get(wallet.adapter.name);
+        if (!visible || visible.solanaAdapter === wallet.adapter) {
+          return yield* refreshConnector(wallet);
         }
-      }
+        if (!activeUids.has(visible.uid)) {
+          return yield* refreshConnector(wallet);
+        }
+        if (
+          visible.solanaAdapterSource === "fallback" &&
+          wallet.source === "standard"
+        ) {
+          return visible;
+        }
+        if (visible.solanaAdapterSource === "standard") {
+          yield* actions.disconnect({ connector: visible });
+          return yield* refreshConnector(wallet);
+        }
+        return visible;
+      }),
+      { concurrency: 1 }
+    );
+    const retained = yield* Effect.forEach(
+      current,
+      Effect.fnUntraced(function* (visible) {
+        if (desiredNames.has(visible.name)) return [];
+        if (
+          activeUids.has(visible.uid) &&
+          visible.solanaAdapterSource === "standard"
+        ) {
+          yield* actions.disconnect({ connector: visible });
+          return [];
+        }
+        return activeUids.has(visible.uid) ? [visible] : [];
+      }),
+      { concurrency: 1 }
+    ).pipe(Effect.map((groups) => groups.flat()));
+    const next = [...desired, ...retained];
+    if (sameConnectors(current, next)) return;
 
-      const currentSolanaConnectors = () =>
-        config.connectors.filter(isRainbowKitSolanaConnector);
-
-      const setupConnector = async (wallet: SolanaWalletDescriptor) => {
-        const cached = connectorCache.get(wallet.adapter);
-        if (cached) return cached;
-
-        const connector = config._internal.connectors.setup(
-          await createConnector(wallet)
+    yield* Effect.sync(() => {
+      config._internal.connectors.setState((all) => {
+        const nonSolana = all.filter(
+          (connector) => !isRainbowKitSolanaConnector(connector)
         );
-        if (!isRainbowKitSolanaConnector(connector)) {
-          throw new Error(
-            "Expected a Solana connector from membership factory"
-          );
-        }
-        connectorCache.set(wallet.adapter, connector);
-        return connector;
-      };
-
-      const refreshConnector = async (wallet: SolanaWalletDescriptor) => {
-        const connector = await setupConnector(wallet);
-        const installed = isInstalled(wallet);
-        if (connector.rkDetails.installed === installed) return connector;
-
-        const refreshed = {
-          ...connector,
-          rkDetails: {
-            ...connector.rkDetails,
-            installed,
-          },
-        } satisfies RainbowKitSolanaConnector;
-        connectorCache.set(wallet.adapter, refreshed);
-        return refreshed;
-      };
-
-      const publish = (solanaConnectors: ReadonlyArray<Connector>) => {
-        const currentSolana = currentSolanaConnectors();
-        if (sameConnectors(currentSolana, solanaConnectors)) return;
-
-        config._internal.connectors.setState((current) => {
-          const nonSolana = current.filter(
-            (connector) => !isRainbowKitSolanaConnector(connector)
-          );
-          const insertionIndex =
-            initialSolanaIndex < 0
-              ? nonSolana.length
-              : Math.min(initialSolanaIndex, nonSolana.length);
-          return [
-            ...nonSolana.slice(0, insertionIndex),
-            ...solanaConnectors,
-            ...nonSolana.slice(insertionIndex),
-          ];
-        });
-      };
-
-      const synchronize = async (snapshot: SolanaWalletSnapshot) => {
-        if (!active) return;
-
-        const current = currentSolanaConnectors();
-        const currentByName = new Map(
-          current.map((connector) => [connector.name, connector])
-        );
-        const desiredNames = new Set<string>(
-          snapshot.wallets.map((wallet) => wallet.adapter.name as string)
-        );
-        const activeUids = new Set(config.state.connections.keys());
-        const next: RainbowKitSolanaConnector[] = [];
-
-        for (const wallet of snapshot.wallets) {
-          const visible = currentByName.get(wallet.adapter.name);
-          if (!visible || visible.solanaAdapter === wallet.adapter) {
-            next.push(await refreshConnector(wallet));
-            continue;
-          }
-
-          if (!activeUids.has(visible.uid)) {
-            next.push(await refreshConnector(wallet));
-            continue;
-          }
-
-          if (
-            visible.solanaAdapterSource === "fallback" &&
-            wallet.source === "standard"
-          ) {
-            next.push(visible);
-            continue;
-          }
-
-          if (visible.solanaAdapterSource === "standard") {
-            await disconnect(config, { connector: visible });
-            next.push(await refreshConnector(wallet));
-            continue;
-          }
-
-          next.push(visible);
-        }
-
-        for (const visible of current) {
-          if (desiredNames.has(visible.name)) continue;
-          if (
-            activeUids.has(visible.uid) &&
-            visible.solanaAdapterSource === "standard"
-          ) {
-            await disconnect(config, { connector: visible });
-          } else if (activeUids.has(visible.uid)) {
-            next.push(visible);
-          }
-        }
-
-        publish(next);
-      };
-
-      const enqueue = (snapshot: SolanaWalletSnapshot) => {
-        latestSnapshot = snapshot;
-        sequence = sequence
-          .then(
-            () => synchronize(snapshot),
-            () => synchronize(snapshot)
-          )
-          .catch(() => undefined);
-        return sequence;
-      };
-
-      const unsubscribeRuntime = runtime.subscribe(() =>
-        enqueue(runtime.getWalletSnapshot())
-      );
-      const unsubscribeConnection = watchConnection(config, {
-        onChange: () => {
-          void enqueue(latestSnapshot);
-        },
+        const insertionIndex =
+          initialSolanaIndex < 0
+            ? nonSolana.length
+            : Math.min(initialSolanaIndex, nonSolana.length);
+        return [
+          ...nonSolana.slice(0, insertionIndex),
+          ...next,
+          ...nonSolana.slice(insertionIndex),
+        ];
       });
-      void enqueue(latestSnapshot);
+    });
+  });
 
-      return async () => {
-        active = false;
-        unsubscribeConnection();
-        unsubscribeRuntime();
-        await sequence;
-        connectorCache.clear();
-      };
-    }),
-    (dispose) => Effect.promise(dispose)
-  ).pipe(Effect.asVoid);
+  const runSynchronization = Effect.fn("runSynchronization")(function* (
+    snapshot: Parameters<typeof synchronize>[0]
+  ) {
+    yield* synchronizationPermit.withPermit(
+      synchronize(snapshot).pipe(
+        Effect.catch((cause) =>
+          Effect.logWarning("Solana connector synchronization failed").pipe(
+            Effect.annotateLogs({ cause })
+          )
+        )
+      )
+    );
+  });
+
+  yield* runtime.current.pipe(Effect.flatMap(runSynchronization));
+  yield* runtime.states.pipe(
+    Stream.runForEach(runSynchronization),
+    Effect.forkScoped({ startImmediately: true })
+  );
+  yield* core.states.pipe(
+    Stream.runForEach(() =>
+      runtime.current.pipe(Effect.flatMap(runSynchronization))
+    ),
+    Effect.forkScoped({ startImmediately: true })
+  );
+  yield* Effect.yieldNow;
+});

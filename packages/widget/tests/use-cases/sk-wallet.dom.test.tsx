@@ -10,7 +10,7 @@ import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
 import { normalizeWidgetConfig } from "../../src/app/config";
-import { appRuntime } from "../../src/app/runtime";
+import { walletRuntime } from "../../src/app/runtime";
 import { ActionId, TransactionId } from "../../src/domain/schema/identifiers";
 import { solana, ton } from "../../src/domain/types/chains/misc";
 import { MiscNetworks } from "../../src/domain/types/chains/networks";
@@ -27,8 +27,9 @@ import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { describe, expect, it, vi } from "../utils/test-extend.dom";
 import { renderHook } from "../utils/test-utils.dom";
 
-const signTransactionAtom = appRuntime.fn((input: WalletSignTransactionInput) =>
-  WalletService.use((wallet) => wallet.signTransaction(input))
+const signTransactionAtom = walletRuntime.fn(
+  (input: WalletSignTransactionInput) =>
+    WalletService.use((wallet) => wallet.signTransaction(input))
 );
 
 const useTestWallet = () => {

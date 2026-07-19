@@ -12,7 +12,7 @@ import { base } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { Connector } from "wagmi";
-import { appRuntime } from "../../src/app/runtime";
+import { appRuntime, walletRuntime } from "../../src/app/runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   ActionRequest,
@@ -32,7 +32,7 @@ import type {
 } from "../../src/features/borrow/ui/review-state";
 import { BorrowStepsPage } from "../../src/features/borrow/ui/steps";
 import { useBorrowExecution } from "../../src/features/borrow/ui/use-borrow-execution";
-import { currentWalletScopeAtom } from "../../src/features/wallet/runtime/selectors";
+import { currentWalletScopeAtom } from "../../src/features/wallet/state/selectors";
 import { BorrowApiService } from "../../src/services/api/borrow-api-service";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
@@ -134,7 +134,14 @@ const connectedWalletState = {
 } satisfies NormalizedWalletState;
 
 const wallet = {
-  getState: () => connectedWalletState,
+  state: Effect.succeed({
+    connection: connectedWalletState,
+    ledger: {
+      accounts: [],
+      currentAccountId: undefined,
+      disabledChains: [],
+    },
+  }),
   signTransaction: () =>
     Effect.succeed({
       broadcasted: true as const,
@@ -260,7 +267,9 @@ const renderExecution = (
     completeWorkflow: () => Effect.void,
     getBorrowAction: borrow.getAction,
     getClassicStatus: () => Effect.die("unexpected classic status"),
-    getWalletState: activeWallet.getState,
+    getWalletState: activeWallet.state.pipe(
+      Effect.map((state) => state.connection)
+    ),
     signMessage: () => Effect.die("unexpected message signing"),
     signTransaction: activeWallet.signTransaction,
     stepBorrowAction: borrow.stepAction,
@@ -284,11 +293,11 @@ const renderExecution = (
         [currentWalletScopeAtom, walletScope],
         [
           appRuntime.layer,
-          Layer.mergeAll(
-            Layer.succeed(BorrowApiService, borrow as never),
-            workflowLayer,
-            walletLayer
-          ).pipe(Layer.fresh),
+          Layer.succeed(BorrowApiService, borrow as never).pipe(Layer.fresh),
+        ],
+        [
+          walletRuntime.layer,
+          Layer.mergeAll(workflowLayer, walletLayer).pipe(Layer.fresh),
         ],
       ]}
     >
@@ -391,7 +400,14 @@ describe("borrow execution flow component", () => {
     );
     const reconnectingWallet = {
       ...wallet,
-      getState: () => state,
+      state: Effect.sync(() => ({
+        connection: state,
+        ledger: {
+          accounts: [],
+          currentAccountId: undefined,
+          disabledChains: [],
+        },
+      })),
       signTransaction,
     };
     const app = await renderExecution(
@@ -499,7 +515,9 @@ describe("borrow execution flow component", () => {
       completeWorkflow: () => Effect.void,
       getBorrowAction: borrow.getAction,
       getClassicStatus: () => Effect.die("unexpected classic status"),
-      getWalletState: activeWallet.getState,
+      getWalletState: activeWallet.state.pipe(
+        Effect.map((state) => state.connection)
+      ),
       signMessage: () => Effect.die("unexpected message signing"),
       signTransaction: activeWallet.signTransaction,
       stepBorrowAction: borrow.stepAction,
@@ -529,7 +547,17 @@ describe("borrow execution flow component", () => {
     const app = await render(
       <RegistryProvider
         initialValues={[
-          [appRuntime.layer, runtimeLayer],
+          [
+            appRuntime.layer,
+            Layer.mergeAll(
+              Layer.succeed(BorrowApiService, borrow as never),
+              Layer.succeed(TrackingService, {
+                trackEvent: () => Effect.void,
+                trackPageView: () => Effect.void,
+              } as TrackingService["Service"])
+            ).pipe(Layer.fresh),
+          ],
+          [walletRuntime.layer, runtimeLayer],
           [borrowExecutionInputAtom, executionInput],
           [currentWalletScopeAtom, walletScope],
         ]}

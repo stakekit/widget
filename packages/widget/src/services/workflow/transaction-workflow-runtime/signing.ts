@@ -34,21 +34,26 @@ const validateWallet = Effect.fn("TransactionWorkflow.validateWallet")(
   }) {
     const operations = yield* TransactionWorkflowOperationsService;
     const { batch, transaction, workflowId } = current;
-    const wallet = operations.getWalletState();
     const expectedAddress = Match.value(current).pipe(
       Match.tag("Classic", ({ domain }) => domain.actionMeta.address),
       Match.tag("Borrow", ({ domain }) => domain.action.address),
       Match.exhaustive
     );
-    const error = (message: string) =>
+    const error = (message: string, cause?: unknown) =>
       new TransactionSignError({
         batchId: batch.id,
+        cause,
         customMessage: null,
         message,
         network,
         transactionId: transaction.source.transaction.id,
         workflowId,
       });
+    const wallet = yield* operations.getWalletState.pipe(
+      Effect.mapError((cause) =>
+        error("Wallet state is unavailable for transaction signing.", cause)
+      )
+    );
 
     if (wallet.status !== "connected") {
       return yield* error("Wallet is not connected for transaction signing.");

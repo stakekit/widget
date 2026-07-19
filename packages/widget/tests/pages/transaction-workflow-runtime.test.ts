@@ -119,12 +119,14 @@ const borrowAction = ({
     ),
   });
 
-const walletState = (network: "base" | "ethereum", walletAddress = address) =>
-  ({
-    address: walletAddress,
-    network,
-    status: "connected",
-  }) as ReturnType<TransactionWorkflowOperations["getWalletState"]>;
+const walletState = (
+  network: "base" | "ethereum",
+  walletAddress = address
+) => ({
+  address: walletAddress,
+  network,
+  status: "connected",
+});
 
 const makeOperations = (
   overrides: Partial<Record<keyof TransactionWorkflowOperations, unknown>> = {}
@@ -137,7 +139,7 @@ const makeOperations = (
         explorerUrl: "https://explorer.test/tx",
         status: "CONFIRMED",
       }),
-    getWalletState: () => walletState("ethereum"),
+    getWalletState: Effect.succeed(walletState("ethereum")),
     signMessage: () => Effect.succeed(signedPayload),
     signTransaction: () =>
       Effect.succeed({ broadcasted: false, signedTx: signedPayload }),
@@ -447,7 +449,7 @@ describe("transaction workflow runtime", () => {
           const machine = yield* makeWorkflowFromService({
             key,
             operations: makeOperations({
-              getWalletState: () => walletState("base", otherAddress),
+              getWalletState: Effect.succeed(walletState("base", otherAddress)),
             }),
           });
           const failed = yield* waitForState(
@@ -478,7 +480,7 @@ describe("transaction workflow runtime", () => {
               walletScope: borrowWalletScope,
             }),
             operations: makeOperations({
-              getWalletState: () => walletState("base"),
+              getWalletState: Effect.succeed(walletState("base")),
             }),
           });
           const failed = yield* waitForState(
@@ -524,7 +526,7 @@ describe("transaction workflow runtime", () => {
         }),
         makeOperations({
           getBorrowAction: () => Effect.succeed(confirmed(action)),
-          getWalletState: () => walletState("base"),
+          getWalletState: Effect.succeed(walletState("base")),
           signTransaction: () =>
             Effect.succeed({
               broadcasted,
@@ -666,7 +668,7 @@ describe("transaction workflow runtime", () => {
           checks += 1;
           return Effect.succeed(checks === 1 ? firstConfirmed : completed);
         },
-        getWalletState: () => walletState("base"),
+        getWalletState: Effect.succeed(walletState("base")),
       })
     );
 
@@ -716,7 +718,7 @@ describe("transaction workflow runtime", () => {
             checks === 1 ? firstConfirmed : secondConfirmed
           );
         },
-        getWalletState: () => walletState("base"),
+        getWalletState: Effect.succeed(walletState("base")),
         stepBorrowAction: () => Effect.succeed(second),
       })
     );
@@ -768,7 +770,7 @@ describe("transaction workflow runtime", () => {
                   statusChecks === 1 ? firstConfirmed : second
                 );
               },
-              getWalletState: () => walletState("base"),
+              getWalletState: Effect.succeed(walletState("base")),
               stepBorrowAction: step,
             }),
           });
@@ -832,7 +834,7 @@ describe("transaction workflow runtime", () => {
                       : secondCompleted
                 );
               },
-              getWalletState: () => walletState("base"),
+              getWalletState: Effect.succeed(walletState("base")),
               stepBorrowAction: step,
             }),
           });

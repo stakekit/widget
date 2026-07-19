@@ -4,16 +4,18 @@ import { describe, expect, it, vi } from "vitest";
 import { createConfig, http } from "wagmi";
 import { mainnet } from "wagmi/chains";
 import {
-  makeWagmiActions,
-  type WagmiActionOperations,
-} from "../../../src/services/wallet/wagmi-actions";
+  WagmiOperations,
+  WagmiOperationsError,
+  type WagmiOperationsService,
+} from "../../../src/services/wallet/platform/wagmi-operations";
+import { makeWagmiActions } from "../../../src/services/wallet/wagmi-actions";
 
 const connector = {
   id: "test",
   name: "Test",
   type: "test",
   uid: "test-uid",
-} as Parameters<WagmiActionOperations["connect"]>[1]["connector"];
+} as Parameters<WagmiOperationsService["connect"]>[1]["connector"];
 
 const makeConfig = () =>
   createConfig({
@@ -22,23 +24,38 @@ const makeConfig = () =>
     transports: { [mainnet.id]: http() },
   });
 
-const makeOperations = (): WagmiActionOperations => ({
-  connect: vi.fn(async () => ({
-    accounts: [zeroAddress],
-    chainId: mainnet.id,
-  })),
-  disconnect: vi.fn(async () => undefined),
-  reconnect: vi.fn(async () => []),
-  sendTransaction: vi.fn(async () => `0x${"1".repeat(64)}` as Hash),
-  signMessage: vi.fn(async () => "0xsigned" as Hex),
-  switchChain: vi.fn(async () => mainnet),
+const makeOperations = (): WagmiOperationsService => ({
+  connect: vi.fn(() =>
+    Effect.succeed({
+      accounts: [zeroAddress],
+      chainId: mainnet.id,
+    })
+  ),
+  disconnect: vi.fn(() => Effect.void),
+  reconnect: vi.fn(() => Effect.succeed([])),
+  sendTransaction: vi.fn(() => Effect.succeed(`0x${"1".repeat(64)}` as Hash)),
+  signMessage: vi.fn(() => Effect.succeed("0xsigned" as Hex)),
+  switchChain: vi.fn(() => Effect.succeed(mainnet)),
 });
+
+const operationFailure = (cause: unknown) =>
+  new WagmiOperationsError({ cause, operation: "connect" });
+
+const makeCommands = (
+  config: ReturnType<typeof makeConfig>,
+  operations: WagmiOperationsService
+) =>
+  Effect.runPromise(
+    makeWagmiActions({ config }).pipe(
+      Effect.provideService(WagmiOperations, WagmiOperations.of(operations))
+    )
+  );
 
 describe("Wagmi actions", () => {
   it("uses the exact controller config for every core action", async () => {
     const config = makeConfig();
     const operations = makeOperations();
-    const commands = makeWagmiActions({ config, operations });
+    const commands = await makeCommands(config, operations);
 
     await Effect.runPromise(commands.connect({ connector }));
     await Effect.runPromise(commands.disconnect({ connector }));
@@ -60,10 +77,7 @@ describe("Wagmi actions", () => {
   });
 
   it("preserves action results and normalizes broadcast results", async () => {
-    const commands = makeWagmiActions({
-      config: makeConfig(),
-      operations: makeOperations(),
-    });
+    const commands = await makeCommands(makeConfig(), makeOperations());
 
     await expect(
       Effect.runPromise(commands.connect({ connector }))
@@ -88,10 +102,7 @@ describe("Wagmi actions", () => {
 
   it("uses the current Wagmi connection for EVM wallet actions", async () => {
     const operations = makeOperations();
-    const commands = makeWagmiActions({
-      config: makeConfig(),
-      operations,
-    });
+    const commands = await makeCommands(makeConfig(), operations);
 
     await Effect.runPromise(
       commands.sendEvmTransaction({
@@ -115,17 +126,22 @@ describe("Wagmi actions", () => {
     );
   });
 
-  it("maps Promise failures by operation", async () => {
+  it("maps platform failures by operation", async () => {
     const cause = new Error("rejected");
     const operations = makeOperations();
-    vi.mocked(operations.connect).mockRejectedValue(cause);
-    vi.mocked(operations.switchChain).mockRejectedValue(cause);
-    vi.mocked(operations.signMessage).mockRejectedValue(cause);
-    vi.mocked(operations.sendTransaction).mockRejectedValue(cause);
-    const commands = makeWagmiActions({
-      config: makeConfig(),
-      operations,
-    });
+    vi.mocked(operations.connect).mockReturnValue(
+      Effect.fail(operationFailure(cause))
+    );
+    vi.mocked(operations.switchChain).mockReturnValue(
+      Effect.fail(operationFailure(cause))
+    );
+    vi.mocked(operations.signMessage).mockReturnValue(
+      Effect.fail(operationFailure(cause))
+    );
+    vi.mocked(operations.sendTransaction).mockReturnValue(
+      Effect.fail(operationFailure(cause))
+    );
+    const commands = await makeCommands(makeConfig(), operations);
 
     const failures = await Promise.all([
       Effect.runPromise(Effect.flip(commands.connect({ connector }))),
@@ -155,17 +171,16 @@ describe("Wagmi actions", () => {
     expect(failures.every((failure) => failure.cause === cause)).toBe(true);
   });
 
-  it("does not publish a late result from an interrupted wallet Promise", async () => {
+  it("does not publish a late result from an interrupted wallet operation", async () => {
     let resolve!: (value: Hex) => void;
     let published = false;
     const operations = makeOperations();
-    vi.mocked(operations.signMessage).mockImplementation(
-      () => new Promise((resume) => (resolve = resume))
+    vi.mocked(operations.signMessage).mockImplementation(() =>
+      Effect.callback<Hex, WagmiOperationsError>((resume) => {
+        resolve = (value) => resume(Effect.succeed(value));
+      })
     );
-    const commands = makeWagmiActions({
-      config: makeConfig(),
-      operations,
-    });
+    const commands = await makeCommands(makeConfig(), operations);
     const fiber = Effect.runFork(
       commands.signMessage({ message: "hello" }).pipe(
         Effect.tap(() =>

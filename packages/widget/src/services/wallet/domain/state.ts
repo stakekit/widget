@@ -2,6 +2,7 @@ import type { Account } from "@ledgerhq/wallet-api-client";
 import type { Chain as RainbowKitChain } from "@stakekit/rainbowkit";
 import type { Chain } from "viem";
 import type { Connector } from "wagmi";
+import type { getConnection } from "wagmi/actions";
 import type { AdditionalAddresses } from "../../../domain/schema/address-models";
 import type { WalletAddress } from "../../../domain/schema/identifiers";
 import type { SupportedSKChains } from "../../../domain/types/chains";
@@ -10,6 +11,16 @@ export type LedgerConnectorState = {
   readonly accounts: Account[];
   readonly currentAccountId: string | undefined;
   readonly disabledChains: RainbowKitChain[];
+};
+
+export type WalletState = {
+  readonly connection: NormalizedWalletState;
+  readonly ledger: LedgerConnectorState;
+};
+
+export type WalletCoreState = {
+  readonly connection: ReturnType<typeof getConnection>;
+  readonly connectors: ReadonlyArray<Connector>;
 };
 
 export const disconnectedLedgerConnectorState: LedgerConnectorState = {

@@ -3,14 +3,14 @@ import { mainnet, optimism } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
 import { evmChainsMap } from "../../src/domain/types/chains/evm";
-import type { WalletCoreProjection } from "../../src/services/wallet/domain/runtime";
+import type { WalletCoreState } from "../../src/services/wallet/domain/state";
 import { disconnectedLedgerConnectorState } from "../../src/services/wallet/domain/state";
 import {
   normalizeWalletState,
   type WalletStateController,
 } from "../../src/services/wallet/state-projection";
 
-type WalletConnectionSnapshot = WalletCoreProjection["connection"];
+type WalletConnectionSnapshot = WalletCoreState["connection"];
 
 const disconnectedWalletConnection: WalletConnectionSnapshot = {
   address: undefined,

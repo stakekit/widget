@@ -364,10 +364,12 @@ export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
       });
     }
 
-    const actions = makeWagmiActions({ config: wagmiConfig });
-    const createSolanaConnector = async (wallet: SolanaWalletDescriptor) => {
-      const { getSolanaConnectors } = await import(
-        "./connectors/misc/solana-connector"
+    const actions = yield* makeWagmiActions({ config: wagmiConfig });
+    const createSolanaConnector = Effect.fn("createSolanaConnector")(function* (
+      wallet: SolanaWalletDescriptor
+    ) {
+      const { getSolanaConnectors } = yield* Effect.promise(
+        () => import("./connectors/misc/solana-connector")
       );
       const solanaGroup = getSolanaConnectors({
         connection: opts.solanaConnection,
@@ -390,10 +392,12 @@ export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
         connectorOptions
       )[0];
       if (!connector) {
-        throw new Error(`Solana wallet ${wallet.adapter.name} was filtered`);
+        return yield* Effect.fail(
+          new Error(`Solana wallet ${wallet.adapter.name} was filtered`)
+        );
       }
       return connector;
-    };
+    });
 
     return {
       ...val,

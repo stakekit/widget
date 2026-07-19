@@ -10,7 +10,7 @@ import { headerContainer, middleItem } from "./styles.css";
 export const Header = () => {
   const {
     onXPress,
-    walletRuntime,
+    walletConfig,
     hideChainSelector,
     isConnected,
     isConnecting,
@@ -20,8 +20,8 @@ export const Header = () => {
   } = useHeader();
 
   if (
-    walletRuntime.isLoading ||
-    !walletRuntime.data ||
+    walletConfig.isLoading ||
+    !walletConfig.data ||
     hideAccountAndChainSelector ||
     !isConnected
   ) {

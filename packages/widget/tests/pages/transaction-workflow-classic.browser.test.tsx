@@ -5,7 +5,7 @@ import { StrictMode } from "react";
 import { MemoryRouter, Route, Routes, useNavigate } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { ClassicTransactionWorkflowGuard } from "../../src/app/routes/guards/classic-transaction-workflow";
-import { appRuntime } from "../../src/app/runtime";
+import { walletRuntime } from "../../src/app/runtime";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
 import { makeTransactionWorkflowLifecycleAtom } from "../../src/features/transaction-flow/state/workflow-lifecycle";
 import { useTransactionWorkflow } from "../../src/features/transaction-flow/ui/steps/hooks/use-transaction-workflow.hook";
@@ -105,7 +105,7 @@ describe("classic transaction workflow browser integration", () => {
           explorerUrl: "https://explorer.test/tx",
           status: "CONFIRMED" as const,
         }),
-      getWalletState: () => ({
+      getWalletState: Effect.succeed({
         address,
         network: "ethereum",
         status: "connected",
@@ -127,7 +127,7 @@ describe("classic transaction workflow browser integration", () => {
     const app = await render(
       <RegistryProvider
         initialValues={[
-          [appRuntime.layer, workflowLayer.pipe(Layer.fresh)],
+          [walletRuntime.layer, workflowLayer.pipe(Layer.fresh)],
           [currentWalletScopeAtom, walletScope],
         ]}
       >
@@ -372,7 +372,7 @@ describe("classic transaction workflow browser integration", () => {
       completeWorkflow: () => Effect.void,
       getBorrowAction: () => Effect.die("unexpected borrow status"),
       getClassicStatus: () => Effect.die("unexpected confirmation"),
-      getWalletState: () => ({
+      getWalletState: Effect.succeed({
         address,
         network: "ethereum",
         status: "connected",
@@ -401,7 +401,7 @@ describe("classic transaction workflow browser integration", () => {
     const app = await render(
       <RegistryProvider
         initialValues={[
-          [appRuntime.layer, workflowLayer.pipe(Layer.fresh)],
+          [walletRuntime.layer, workflowLayer.pipe(Layer.fresh)],
           [currentWalletScopeAtom, walletScope],
         ]}
       >
@@ -472,7 +472,7 @@ describe("classic transaction workflow browser integration", () => {
       completeWorkflow: () => Effect.void,
       getBorrowAction: () => Effect.die("unexpected borrow status"),
       getClassicStatus,
-      getWalletState: () => ({
+      getWalletState: Effect.succeed({
         address,
         network: "ethereum",
         status: "connected",
@@ -501,7 +501,7 @@ describe("classic transaction workflow browser integration", () => {
     const app = await render(
       <RegistryProvider
         initialValues={[
-          [appRuntime.layer, workflowLayer.pipe(Layer.fresh)],
+          [walletRuntime.layer, workflowLayer.pipe(Layer.fresh)],
           [currentWalletScopeAtom, walletScope],
         ]}
       >

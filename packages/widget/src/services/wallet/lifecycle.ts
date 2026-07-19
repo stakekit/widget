@@ -1,11 +1,11 @@
-import { Effect } from "effect";
-import type { TrackingService } from "../tracking/tracking-service";
+import { Effect, Ref } from "effect";
+import { TrackingService } from "../tracking/tracking-service";
 import type { NormalizedWalletState } from "./domain/state";
 import type { WagmiActions } from "./wagmi-actions";
 
 type WalletLifecycleMemory = {
-  trackedConnection: string | null;
-  unsupportedConnection: string | null;
+  readonly trackedConnection: string | null;
+  readonly unsupportedConnection: string | null;
 };
 
 type WalletLifecycleInput = {
@@ -13,45 +13,63 @@ type WalletLifecycleInput = {
   readonly state: NormalizedWalletState;
 };
 
-export const makeWalletLifecyclePolicy = ({
-  trackEvent,
-}: Pick<TrackingService["Service"], "trackEvent">) => {
-  const memory: WalletLifecycleMemory = {
+export const makeWalletLifecyclePolicy = Effect.gen(function* () {
+  const initialMemory: WalletLifecycleMemory = {
     trackedConnection: null,
     unsupportedConnection: null,
   };
+  const tracking = yield* TrackingService;
+  const memory = yield* Ref.make(initialMemory);
 
-  const transition = ({
+  const transition = Effect.fn("transition")(function* ({
     actions,
     state,
-  }: WalletLifecycleInput): Effect.Effect<void> | null => {
-    if (state.status === "connected") {
-      const connectionKey = `${state.connector.uid}:${state.address}:${state.network}`;
-      memory.unsupportedConnection = null;
+  }: WalletLifecycleInput) {
+    const operation = yield* Ref.modify(memory, (current) => {
+      if (state.status === "connected") {
+        const connectionKey = `${state.connector.uid}:${state.address}:${state.network}`;
+        if (current.trackedConnection === connectionKey) {
+          return [null, { ...current, unsupportedConnection: null }];
+        }
+        return [
+          tracking.trackEvent("connectedWallet", {
+            address: state.address,
+            network: state.network,
+          }),
+          {
+            trackedConnection: connectionKey,
+            unsupportedConnection: null,
+          },
+        ];
+      }
 
-      if (memory.trackedConnection === connectionKey) return null;
-      memory.trackedConnection = connectionKey;
+      if (state.status !== "unsupported" || !state.connector || !state.chain) {
+        return [null, initialMemory];
+      }
 
-      return trackEvent("connectedWallet", {
-        address: state.address,
-        network: state.network,
-      }).pipe(Effect.catchCause(() => Effect.void));
+      const connectionKey = `${state.connector.uid}:${state.address}:${state.chain.id}`;
+      if (current.unsupportedConnection === connectionKey) {
+        return [null, { ...current, trackedConnection: null }];
+      }
+      return [
+        actions.disconnect({ connector: state.connector }),
+        {
+          trackedConnection: null,
+          unsupportedConnection: connectionKey,
+        },
+      ];
+    });
+
+    if (operation) {
+      yield* operation.pipe(
+        Effect.catchCause((cause) =>
+          Effect.logWarning("Wallet lifecycle operation failed").pipe(
+            Effect.annotateLogs({ cause })
+          )
+        )
+      );
     }
-
-    memory.trackedConnection = null;
-    if (state.status !== "unsupported" || !state.connector || !state.chain) {
-      memory.unsupportedConnection = null;
-      return null;
-    }
-
-    const connectionKey = `${state.connector.uid}:${state.address}:${state.chain.id}`;
-    if (memory.unsupportedConnection === connectionKey) return null;
-    memory.unsupportedConnection = connectionKey;
-
-    return actions
-      .disconnect({ connector: state.connector })
-      .pipe(Effect.catchCause(() => Effect.void));
-  };
+  });
 
   return { transition } as const;
-};
+});
