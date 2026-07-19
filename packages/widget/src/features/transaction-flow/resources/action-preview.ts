@@ -5,6 +5,7 @@ import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { ActionPreviewRequest } from "../../../services/api/yield-api-service";
 import { YieldApiService } from "../../../services/api/yield-api-service";
 import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
+import type { ClassicTransactionFlowActionPreviewIntent } from "../model/classic-transaction-flow";
 import { enterStakeRequestAtom } from "../state/enter-request";
 import { exitStakeRequestAtom } from "../state/exit-request";
 import { pendingActionRequestAtom } from "../state/pending-action-request";
@@ -32,7 +33,7 @@ export const actionPreviewAtom = Atom.family((key: ActionPreviewKey) =>
     )
 );
 
-export type ActionPreviewIntent = "enter" | "exit" | "manage";
+export type ActionPreviewIntent = ClassicTransactionFlowActionPreviewIntent;
 
 export class CurrentActionPreviewKey extends Data.Class<{
   readonly enabled: boolean;
