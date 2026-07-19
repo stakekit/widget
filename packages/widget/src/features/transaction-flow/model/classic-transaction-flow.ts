@@ -250,11 +250,6 @@ export const returnClassicTransactionFlowToReview = (
   };
 };
 
-type ClassicTransactionFlowActionPreviewIntent =
-  | "enter"
-  | "exit"
-  | "manage";
-
 type ClassicTransactionFlowActionPreviewInput = {
   readonly flowIdentity: ClassicTransactionFlowIdentity;
 } & (

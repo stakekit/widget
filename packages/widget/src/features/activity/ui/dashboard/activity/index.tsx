@@ -1,27 +1,26 @@
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Outlet, useNavigate } from "react-router";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../../../shared/ui/primitives/icons/caret-left";
+import { classicTransactionFlowFacade } from "../../../../transaction-flow/state/classic-flow-facade";
 import { AnimationPage } from "../../../../widget-shell/animation-page";
-import { ActivitySelectionProvider } from "../../../react/activity-selection-route";
-import {
-  useActivitySelection,
-  useSetActivitySelection,
-} from "../../../react/use-activity-selection";
 import { ActivityPage } from "./activity.page";
 import { activityDetailsContainer } from "./styles.css";
 
 export const ActivityTabPage = () => {
   const variant = useWidgetConfig("variant");
   const navigate = useNavigate();
-  const selection = useActivitySelection();
-  const setActivitySelection = useSetActivitySelection();
+  const selection = useAtomValue(
+    classicTransactionFlowFacade.activityResumeFlowAtom
+  );
+  const abandonFlow = useAtomSet(classicTransactionFlowFacade.abandonAtom);
 
   const showDetails = selection !== null;
 
   const onBack = () => {
-    setActivitySelection(null);
+    if (selection) abandonFlow(selection.identity);
     navigate("/activity");
   };
 
@@ -40,16 +39,14 @@ export const ActivityTabPage = () => {
               <CaretLeftIcon />
             </Box>
 
-            <ActivitySelectionProvider value={selection}>
-              <Box
-                className={combineRecipeWithVariant({
-                  rec: activityDetailsContainer,
-                  variant,
-                })}
-              >
-                <Outlet />
-              </Box>
-            </ActivitySelectionProvider>
+            <Box
+              className={combineRecipeWithVariant({
+                rec: activityDetailsContainer,
+                variant,
+              })}
+            >
+              <Outlet />
+            </Box>
           </>
         ) : (
           <Box display="flex" flex={1} flexDirection="column" width="full">

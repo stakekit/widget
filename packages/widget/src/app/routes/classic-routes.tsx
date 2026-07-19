@@ -2,17 +2,14 @@ import { useAtomValue } from "@effect/atom-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router";
-import { ActivitySelectionRouteGuard } from "../../features/activity/react/activity-selection-route";
-import {
-  activityTransactionWorkflowKeyAtom,
-  activityTransactionWorkflowLifecycleAtom,
-} from "../../features/activity/state/selection";
 import { AnimatedActivityPage } from "../../features/activity/ui/classic/activity-page/activity.page";
 import { AnimatedEarnPage } from "../../features/earn/ui/classic/earn-page/earn.page";
 import { initParamsAtom } from "../../features/init-params/atoms";
 import { AnimatedPositionsPage } from "../../features/portfolio/ui/classic/positions-page/positions.page";
 import { PositionDetailsPage as ClassicPositionDetailsPage } from "../../features/position-details/ui/classic/position-details.page";
 import {
+  ActivitySelectionRouteGuard,
+  activityResumeClassicFlowWorkflowKeyAtom,
   EnterStakeRequestRouteGuard,
   ExitStakeRequestRouteGuard,
   enterClassicFlowWorkflowKeyAtom,
@@ -48,10 +45,7 @@ import { useSKLocation } from "../../shared/react/location-history";
 import { useDetailsMatch } from "../../shared/react/navigation/use-details-match";
 import { usePrevious } from "../../shared/react/use-previous";
 import { useSavedRef } from "../../shared/react/use-saved-ref";
-import {
-  ClassicFlowTransactionWorkflowGuard,
-  ClassicTransactionWorkflowGuard,
-} from "./guards/classic-transaction-workflow";
+import { ClassicFlowTransactionWorkflowGuard } from "./guards/classic-transaction-workflow";
 import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
 
 export const ClassicRoutes = () => {
@@ -141,12 +135,9 @@ export const ClassicRoutes = () => {
                         <Route path="review" element={<ActionReviewPage />} />
                         <Route
                           element={
-                            <ClassicTransactionWorkflowGuard
-                              workflowLifecycleAtom={
-                                activityTransactionWorkflowLifecycleAtom
-                              }
+                            <ClassicFlowTransactionWorkflowGuard
                               workflowKeyAtom={
-                                activityTransactionWorkflowKeyAtom
+                                activityResumeClassicFlowWorkflowKeyAtom
                               }
                             />
                           }

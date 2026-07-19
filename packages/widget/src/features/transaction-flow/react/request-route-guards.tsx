@@ -55,10 +55,15 @@ const manageFlowRoute = makeClassicFlowRoute(
   classicTransactionFlowFacade.manageFlowAtom,
   "ManageClassicTransactionFlow"
 );
+const activityResumeFlowRoute = makeClassicFlowRoute(
+  classicTransactionFlowFacade.activityResumeFlowAtom,
+  "ActivityResumeClassicTransactionFlow"
+);
 
 export const EnterStakeRequestRouteGuard = enterFlowRoute.RouteGuard;
 export const ExitStakeRequestRouteGuard = exitFlowRoute.RouteGuard;
 export const PendingActionRequestRouteGuard = manageFlowRoute.RouteGuard;
+export const ActivitySelectionRouteGuard = activityResumeFlowRoute.RouteGuard;
 
 export const useRequiredEnterClassicTransactionFlow =
   enterFlowRoute.useRequiredValue;
@@ -66,6 +71,8 @@ export const useRequiredExitClassicTransactionFlow =
   exitFlowRoute.useRequiredValue;
 export const useRequiredManageClassicTransactionFlow =
   manageFlowRoute.useRequiredValue;
+export const useRequiredActivityResumeClassicTransactionFlow =
+  activityResumeFlowRoute.useRequiredValue;
 
 const classicFlowWorkflowKeyAtom = <Flow extends ClassicTransactionFlow>(
   flowAtom: Atom.Atom<Flow | null>,
@@ -92,3 +99,8 @@ export const manageClassicFlowWorkflowKeyAtom = classicFlowWorkflowKeyAtom(
   classicTransactionFlowFacade.manageFlowAtom,
   "manageClassicFlowWorkflowKeyAtom"
 );
+export const activityResumeClassicFlowWorkflowKeyAtom =
+  classicFlowWorkflowKeyAtom(
+    classicTransactionFlowFacade.activityResumeFlowAtom,
+    "activityResumeClassicFlowWorkflowKeyAtom"
+  );

@@ -1,17 +1,31 @@
-import { RegistryProvider, useAtomValue } from "@effect/atom-react";
+import {
+  RegistryProvider,
+  useAtomMount,
+  useAtomValue,
+} from "@effect/atom-react";
 import { Deferred, Effect, Layer, Schema } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { StrictMode } from "react";
-import { MemoryRouter, Route, Routes, useNavigate } from "react-router";
+import {
+  MemoryRouter,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useNavigate,
+} from "react-router";
 import { describe, expect, it, vi } from "vitest";
-import { ClassicTransactionWorkflowGuard } from "../../src/app/routes/guards/classic-transaction-workflow";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
+import { ClassicTransactionWorkflowContext } from "../../src/features/transaction-flow/react/classic-transaction-workflow-context";
 import { makeTransactionWorkflowLifecycleAtom } from "../../src/features/transaction-flow/state/workflow-lifecycle";
 import { useTransactionWorkflow } from "../../src/features/transaction-flow/ui/steps/hooks/use-transaction-workflow.hook";
 import { currentWalletScopeAtom } from "../../src/features/wallet/state/selectors";
 import type { ActionMeta } from "../../src/public-api/types";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import {
+  sameWalletScopeOwner,
+  WalletScopeKey,
+} from "../../src/services/wallet/domain/scope";
 import { ClassicTransactionWorkflowKey } from "../../src/services/workflow/transaction-workflow-model";
 import { TransactionWorkflowOperationsService } from "../../src/services/workflow/transaction-workflow-operations-service";
 import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
@@ -53,6 +67,28 @@ const missingWorkflowLifecycleAtom = makeTransactionWorkflowLifecycleAtom(
   missingWorkflowKeyAtom,
   "missingWorkflowLifecycleAtom"
 );
+
+const ClassicTransactionWorkflowGuard = ({
+  workflowLifecycleAtom: lifecycleAtom,
+  workflowKeyAtom: keyAtom,
+}: {
+  readonly workflowLifecycleAtom: Atom.Atom<void>;
+  readonly workflowKeyAtom: Atom.Atom<ClassicTransactionWorkflowKey | null>;
+}) => {
+  useAtomMount(lifecycleAtom);
+  const workflowKey = useAtomValue(keyAtom);
+  const currentWalletScope = useAtomValue(currentWalletScopeAtom);
+
+  return workflowKey &&
+    currentWalletScope &&
+    sameWalletScopeOwner(workflowKey.walletScope, currentWalletScope) ? (
+    <ClassicTransactionWorkflowContext.Provider value={workflowKey}>
+      <Outlet />
+    </ClassicTransactionWorkflowContext.Provider>
+  ) : (
+    <Navigate to="/" replace />
+  );
+};
 
 const WorkflowProbe = () => {
   const { state } = useTransactionWorkflow();

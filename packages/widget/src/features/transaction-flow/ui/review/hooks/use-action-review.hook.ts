@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import {
   type ActionType,
   ActionTypes,
@@ -13,18 +12,21 @@ import {
 } from "../../../../../domain/types/yields";
 import { dateOlderThen7Days } from "../../../../../shared/lib/date";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import { useRequiredActivitySelection } from "../../../../activity/react/activity-selection-route";
 import { useYieldType } from "../../../../earn/react/use-yield-type";
 import { useTrackPage } from "../../../../tracking/react/use-track-page";
 import type { PageCta } from "../../../../widget-shell/page-cta";
+import { useRequiredActivityResumeClassicTransactionFlow } from "../../../react/request-route-guards";
+import { classicTransactionFlowFacade } from "../../../state/classic-flow-facade";
 import type { LabelKey } from "../types";
 
 export const useActionReview = () => {
   useTrackPage("stakeReview");
-  const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const { selectedAction, selectedYield } = useRequiredActivitySelection();
+  const activityFlow = useRequiredActivityResumeClassicTransactionFlow();
+  const selectedAction = activityFlow.action;
+  const selectedYield = activityFlow.selectedYield;
+  const continueFlow = useAtomSet(classicTransactionFlowFacade.continueAtom);
 
   const inputToken = useMemo(
     () =>
@@ -112,12 +114,12 @@ export const useActionReview = () => {
   const cta = useMemo<PageCta>(
     () => ({
       label: t(`activity.review.${labelKey}`),
-      onClick: () => navigate(`/activity/${path}/steps`),
+      onClick: () => continueFlow(activityFlow.identity),
       disabled: false,
       isLoading: false,
       hide: actionOlderThan7Days,
     }),
-    [navigate, path, labelKey, actionOlderThan7Days, t]
+    [activityFlow.identity, continueFlow, labelKey, actionOlderThan7Days, t]
   );
 
   return {
@@ -130,6 +132,9 @@ export const useActionReview = () => {
     inputToken,
     actionOlderThan7Days,
     labelKey,
+    stepsPath: `/activity/${path}/steps`,
     cta,
   };
 };
+
+import { useAtomSet } from "@effect/atom-react";

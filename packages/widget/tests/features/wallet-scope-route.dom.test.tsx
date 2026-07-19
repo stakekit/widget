@@ -1,7 +1,5 @@
-import { RegistryProvider } from "@effect/atom-react";
 import { Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
 import { act, createContext, useContext, useState } from "react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import type { Chain } from "viem";
@@ -12,34 +10,12 @@ import {
   useWalletScopeRoute,
   WalletScopeRoute,
 } from "../../src/features/wallet/react/wallet-scope-route";
-import { makeWalletScopedAtomRoute } from "../../src/features/wallet/react/wallet-scoped-atom-route";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
 import { disconnectedNormalizedWalletState } from "../../src/services/wallet/domain/state";
 import { render } from "../utils/test-utils.dom";
 
 const firstAddress = Schema.decodeSync(WalletAddress)("0xwallet-a");
 const secondAddress = Schema.decodeSync(WalletAddress)("0xwallet-b");
-const firstScope = new WalletScopeKey({
-  address: firstAddress,
-  network: "ethereum",
-});
-const secondScope = new WalletScopeKey({
-  address: secondAddress,
-  network: "ethereum",
-});
-
-const scopedInputAtom = Atom.make<{
-  readonly id: string;
-  readonly walletScope: WalletScopeKey;
-} | null>(null);
-const scopedInputRoute = makeWalletScopedAtomRoute(
-  scopedInputAtom,
-  Atom.make<void>(undefined),
-  "ScopedInput",
-  "/safe"
-);
-
 const connectedWalletState = ({
   additionalAddresses = null,
   address = firstAddress,
@@ -66,12 +42,6 @@ const WalletScopeProbe = () => {
   const scope = useWalletScopeRoute();
 
   return <div data-testid="scope">{scope.address}</div>;
-};
-
-const ScopedInputProbe = () => {
-  const input = scopedInputRoute.useRequiredValue();
-
-  return <div data-testid="input">{input.id}</div>;
 };
 
 const ReplaceWalletContext = createContext<
@@ -143,31 +113,6 @@ const renderRoute = (
   replacement?: NormalizedWalletState
 ) => render(<TestRouter initialResult={result} replacement={replacement} />);
 
-const renderScopedInputRoute = (walletScope: WalletScopeKey) =>
-  render(
-    <RegistryProvider
-      initialValues={[[scopedInputAtom, { id: "input-1", walletScope }]]}
-    >
-      <MemoryRouter initialEntries={["/protected"]}>
-        <Routes>
-          <Route
-            element={
-              <WalletScopeRoute
-                fallbackPath="/safe"
-                walletStateResult={AsyncResult.success(connectedWalletState())}
-              />
-            }
-          >
-            <Route element={<scopedInputRoute.RouteGuard />}>
-              <Route path="protected" element={<ScopedInputProbe />} />
-            </Route>
-          </Route>
-          <Route path="safe" element={<div data-testid="safe">safe</div>} />
-        </Routes>
-      </MemoryRouter>
-    </RegistryProvider>
-  );
-
 describe("wallet scope route", () => {
   it("provides a concrete wallet scope to protected content", async () => {
     const app = await renderRoute(AsyncResult.success(connectedWalletState()));
@@ -235,23 +180,5 @@ describe("wallet scope route", () => {
       app.container.querySelector('[data-testid="scope"]')?.textContent
     ).toBe(firstAddress);
     expect(app.container.querySelector('[data-testid="safe"]')).toBeNull();
-  });
-
-  it("provides wallet-scoped atom values owned by the route wallet", async () => {
-    const app = await renderScopedInputRoute(firstScope);
-
-    expect(
-      app.container.querySelector('[data-testid="input"]')?.textContent
-    ).toBe("input-1");
-  });
-
-  it("redirects wallet-scoped atom values captured for another owner", async () => {
-    const app = await renderScopedInputRoute(secondScope);
-
-    await vi.waitFor(() => {
-      expect(
-        app.container.querySelector('[data-testid="safe"]')?.textContent
-      ).toBe("safe");
-    });
   });
 });

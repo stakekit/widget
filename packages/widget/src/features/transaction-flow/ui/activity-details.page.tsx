@@ -3,14 +3,15 @@ import {
   type TransactionType,
 } from "../../../domain/types/action";
 import { Box } from "../../../shared/ui/primitives/box";
-import { useRequiredActivitySelection } from "../../activity/react/activity-selection-route";
+import { useRequiredActivityResumeClassicTransactionFlow } from "../react/request-route-guards";
 import { useActivityComplete } from "./complete/hooks/use-activity-complete.hook";
 import { useComplete } from "./complete/hooks/use-complete.hook";
 import { CompletePageComponent } from "./complete/pages/common.page";
 import { ActionReviewPage } from "./review/pages/action-review.page";
 
 export const ActivityDetailsPage = () => {
-  const { selectedAction } = useRequiredActivitySelection();
+  const { action: selectedAction } =
+    useRequiredActivityResumeClassicTransactionFlow();
 
   if (
     selectedAction.status === ActionStatus.SUCCESS ||

@@ -11,6 +11,7 @@ import { Box } from "../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import { useTrackPage } from "../../../../../tracking/react/use-track-page";
+import { useStartClassicTransactionFlow } from "../../../../../transaction-flow/react/use-transaction-flow";
 import { useSKWallet } from "../../../../../wallet/react/use-wallet";
 import { FallbackContent } from "../../../../../widget-shell/fallback-content";
 import type {
@@ -23,7 +24,6 @@ import {
   usePrefetchActivityActionFilters,
 } from "../../../../react/use-activity-actions";
 import { useActivityFilter } from "../../../../react/use-activity-filter";
-import { useSetActivitySelection } from "../../../../react/use-activity-selection";
 import type { ActionYieldDto } from "../types";
 
 type UseActivityPageResult = {
@@ -54,7 +54,7 @@ export const useActivityPage = ({
   const { isConnected, isConnecting } = useSKWallet();
   const { openConnectModal } = useConnectModal();
   const navigate = useNavigate();
-  const setActivitySelection = useSetActivitySelection();
+  const startClassicTransactionFlow = useStartClassicTransactionFlow();
   const filterOptions = useActivityFilterOptions();
   const { selectedFilter, setSelectedFilter } =
     useActivityFilter(filterOptions);
@@ -68,9 +68,10 @@ export const useActivityPage = ({
     if (!isConnected) return openConnectModal?.();
     if (!data.yieldData) return;
 
-    setActivitySelection({
+    startClassicTransactionFlow({
+      _tag: "ActivityResume",
       providersDetails,
-      selectedAction: data.actionData,
+      action: data.actionData,
       selectedYield: data.yieldData,
       selectedValidators: data.validatorsData,
       walletScope: data.walletScope,

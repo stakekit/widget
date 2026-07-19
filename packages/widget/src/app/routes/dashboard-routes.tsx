@@ -1,9 +1,4 @@
 import { Navigate, Route, Routes } from "react-router";
-import { ActivitySelectionRouteGuard } from "../../features/activity/react/activity-selection-route";
-import {
-  activityTransactionWorkflowKeyAtom,
-  activityTransactionWorkflowLifecycleAtom,
-} from "../../features/activity/state/selection";
 import { ActivityTabPage } from "../../features/activity/ui/dashboard/activity";
 import { BorrowFormPage, BorrowLayout } from "../../features/borrow/ui";
 import {
@@ -28,6 +23,8 @@ import { PositionDetailsActions } from "../../features/position-details/ui/dashb
 import { PositionDetailsStakeActions } from "../../features/position-details/ui/dashboard/components/position-details-stake-actions";
 // import { RewardsTabPage } from "../../domain/types/rewards";
 import {
+  ActivitySelectionRouteGuard,
+  activityResumeClassicFlowWorkflowKeyAtom,
   EnterStakeRequestRouteGuard,
   ExitStakeRequestRouteGuard,
   enterClassicFlowWorkflowKeyAtom,
@@ -51,10 +48,7 @@ import { GlobalModals } from "../../features/widget-shell/ui/global-modals";
 import { useSKLocation } from "../../shared/react/location-history";
 import { DashboardOverview } from "./dashboard-overview";
 import { DashboardShell } from "./dashboard-shell";
-import {
-  ClassicFlowTransactionWorkflowGuard,
-  ClassicTransactionWorkflowGuard,
-} from "./guards/classic-transaction-workflow";
+import { ClassicFlowTransactionWorkflowGuard } from "./guards/classic-transaction-workflow";
 
 const positionDetailsStakeFooterPath =
   /^\/positions\/[^/]+\/[^/]+(?:\/stake)?$/;
@@ -234,11 +228,10 @@ export const DashboardRoutes = () => {
                   <Route index element={<ActivityDetailsPage />} />
                   <Route
                     element={
-                      <ClassicTransactionWorkflowGuard
-                        workflowLifecycleAtom={
-                          activityTransactionWorkflowLifecycleAtom
+                      <ClassicFlowTransactionWorkflowGuard
+                        workflowKeyAtom={
+                          activityResumeClassicFlowWorkflowKeyAtom
                         }
-                        workflowKeyAtom={activityTransactionWorkflowKeyAtom}
                       />
                     }
                   >
