@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Data } from "effect";
+import { Data, Schema } from "effect";
 import type {
   ActionCommand,
   ManageActionCommand,
@@ -23,15 +23,15 @@ import {
   makeClassicTransactionWorkflowKey,
 } from "../../../services/workflow/transaction-workflow-model";
 
-declare const classicTransactionFlowIdentityBrand: unique symbol;
+export const ClassicTransactionFlowIdentity = Schema.String.check(
+  Schema.isUUID(4)
+).pipe(Schema.brand("ClassicTransactionFlowIdentity"));
+export type ClassicTransactionFlowIdentity =
+  typeof ClassicTransactionFlowIdentity.Type;
 
-export type ClassicTransactionFlowIdentity = string & {
-  readonly [classicTransactionFlowIdentityBrand]: true;
-};
-
-export const makeClassicTransactionFlowIdentity = (
-  value: string
-): ClassicTransactionFlowIdentity => value as ClassicTransactionFlowIdentity;
+export const makeClassicTransactionFlowIdentity = Schema.decodeSync(
+  ClassicTransactionFlowIdentity
+);
 
 type ClassicTransactionFlowBase = {
   readonly identity: ClassicTransactionFlowIdentity;
@@ -321,6 +321,22 @@ export const getClassicTransactionFlowReviewPricingInput = (
       });
       return token ? { token, yield: activeFlow.selectedYield } : null;
     }
+  }
+};
+
+export const getClassicTransactionFlowKycYield = (
+  activeFlow: ClassicTransactionFlowState
+): EarnYieldWithProvider | null => {
+  if (!activeFlow) return null;
+
+  switch (activeFlow._tag) {
+    case "Enter":
+      return activeFlow.selectedStake;
+    case "Exit":
+      return activeFlow.integration;
+    case "Manage":
+    case "ActivityResume":
+      return null;
   }
 };
 

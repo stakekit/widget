@@ -17,10 +17,7 @@ import {
 import { describe, expect, it, vi } from "vitest";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
-import {
-  ClassicTransactionFlowWorkflowHandoff,
-  makeClassicTransactionFlowIdentity,
-} from "../../src/features/transaction-flow/model/classic-transaction-flow";
+import { ClassicTransactionFlowWorkflowHandoff } from "../../src/features/transaction-flow/model/classic-transaction-flow";
 import { ClassicTransactionWorkflowContext } from "../../src/features/transaction-flow/react/classic-transaction-workflow-context";
 import { makeTransactionWorkflowLifecycleAtom } from "../../src/features/transaction-flow/state/workflow-lifecycle";
 import { useTransactionWorkflow } from "../../src/features/transaction-flow/ui/steps/hooks/use-transaction-workflow.hook";
@@ -34,6 +31,7 @@ import { ClassicTransactionWorkflowKey } from "../../src/services/workflow/trans
 import { TransactionWorkflowOperationsService } from "../../src/services/workflow/transaction-workflow-operations-service";
 import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
 import { yieldApiTransactionFixture } from "../fixtures";
+import { classicFlowIdentityFixture } from "../utils/classic-flow";
 import { render } from "../utils/test-utils";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -89,7 +87,7 @@ const ClassicTransactionWorkflowGuard = ({
     <ClassicTransactionWorkflowContext.Provider
       value={
         new ClassicTransactionFlowWorkflowHandoff({
-          flowIdentity: makeClassicTransactionFlowIdentity("test-flow"),
+          flowIdentity: classicFlowIdentityFixture("test-flow"),
           workflowKey,
         })
       }

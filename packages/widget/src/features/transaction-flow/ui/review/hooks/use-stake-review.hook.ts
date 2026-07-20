@@ -1,11 +1,10 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
-import { getTransactionGasEstimate } from "../../../../../domain/types/action";
+import { getActionProviderYieldId } from "../../../../../domain/types/action";
 import { getKycProviderName } from "../../../../../domain/types/kyc";
 import { isBittensorStaking } from "../../../../../domain/types/yields";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
@@ -13,7 +12,6 @@ import { defaultFormattedNumber } from "../../../../../shared/lib/number-format"
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import { useEstimatedRewards } from "../../../../earn/react/use-estimated-rewards";
 import { useRewardTokenDetails } from "../../../../earn/react/use-reward-token-details";
-import { useYieldKycGate } from "../../../../earn/react/use-yield-kyc-gate";
 import { useYieldType } from "../../../../earn/react/use-yield-type";
 import type { PageCta } from "../../../../widget-shell/page-cta";
 import { useRequiredEnterClassicTransactionFlow } from "../../../react/request-route-guards";
@@ -23,14 +21,9 @@ import { useFees } from "./use-fees";
 
 export const useStakeReview = () => {
   const enterFlow = useRequiredEnterClassicTransactionFlow();
-  const continueFlow = useAtomSet(classicTransactionFlowFacade.continueAtom);
-  const retryFlow = useAtomSet(classicTransactionFlowFacade.retryAtom);
-  const preparation = useAtomValue(
-    classicTransactionFlowFacade.preparationAtom
-  );
-  const actionPreview = useAtomValue(
-    classicTransactionFlowFacade.actionPreviewAtom
-  );
+  const confirmFlow = useAtomSet(classicTransactionFlowFacade.confirmAtom);
+  const refreshKyc = useAtomSet(classicTransactionFlowFacade.refreshKycAtom);
+  const review = useAtomValue(classicTransactionFlowFacade.reviewViewAtom);
 
   const stakeAmount = useMemo(
     () => new BigNumber(enterFlow.request.arguments?.amount ?? 0),
@@ -39,20 +32,7 @@ export const useStakeReview = () => {
 
   const selectedStake = enterFlow.selectedStake;
   const selectedToken = enterFlow.selectedToken;
-  const yieldKycGate = useYieldKycGate({ yieldDto: selectedStake });
-  const kycGateIsBlocking = yieldKycGate.isGateBlocking;
-
-  const action = actionPreview.pipe(AsyncResult.value, Option.getOrUndefined);
-
-  const stakeEnterTxGas = useMemo(() => {
-    const total = action?.transactions.reduce((acc, transaction) => {
-      const decoded = getTransactionGasEstimate(transaction);
-      return acc.plus(decoded?.amount ?? 0);
-    }, new BigNumber(0));
-    return total && !total.isZero() ? total : null;
-  }, [action]);
-
-  const gasWarning = useAtomValue(classicTransactionFlowFacade.gasWarningAtom);
+  const stakeEnterTxGas = review.gasAmount;
 
   const selectedProviderYieldId = getActionProviderYieldId(enterFlow.request);
 
@@ -97,10 +77,7 @@ export const useStakeReview = () => {
     [estimatedRewards, rewardsTokenSymbol]
   );
 
-  const prices = AsyncResult.getOrElse(
-    useAtomValue(classicTransactionFlowFacade.reviewPricesAtom),
-    () => null
-  );
+  const prices = review.prices;
 
   const fee = useMemo(
     () =>
@@ -140,19 +117,9 @@ export const useStakeReview = () => {
     provider: selectedStake.provider,
   };
   const kycProviderName = getKycProviderName(selectedStake);
-  const onKycStatusRefresh = () => yieldKycGate.refetch();
+  const onKycStatusRefresh = () => refreshKyc(undefined);
 
-  const onClick = () => {
-    if (kycGateIsBlocking) return;
-    if (
-      preparation._tag === "Failure" &&
-      preparation.flowIdentity === enterFlow.identity
-    ) {
-      retryFlow(enterFlow.identity);
-      return;
-    }
-    continueFlow(enterFlow.identity);
-  };
+  const onClick = () => confirmFlow(enterFlow.identity);
 
   const onClickRef = useSavedRef(onClick);
 
@@ -160,23 +127,12 @@ export const useStakeReview = () => {
 
   const cta = useMemo<PageCta>(
     () => ({
-      disabled: kycGateIsBlocking,
-      isLoading:
-        AsyncResult.isInitial(actionPreview) ||
-        actionPreview.waiting ||
-        preparation._tag === "Loading" ||
-        yieldKycGate.isLoading,
+      disabled: review.confirmDisabled,
+      isLoading: review.confirmLoading,
       label: t("shared.confirm"),
       onClick: () => onClickRef.current(),
     }),
-    [
-      actionPreview,
-      preparation._tag,
-      kycGateIsBlocking,
-      onClickRef,
-      t,
-      yieldKycGate.isLoading,
-    ]
+    [onClickRef, review.confirmDisabled, review.confirmLoading, t]
   );
 
   const variant = useWidgetConfig("variant");
@@ -206,29 +162,18 @@ export const useStakeReview = () => {
     rewardToken,
     metadata,
     metaInfo,
-    isGasCheckWarning: !!gasWarning.pipe(
-      AsyncResult.value,
-      Option.getOrUndefined
-    ),
-    gasCheckLoading:
-      AsyncResult.isInitial(actionPreview) ||
-      actionPreview.waiting ||
-      AsyncResult.isInitial(gasWarning) ||
-      gasWarning.waiting,
+    isGasCheckWarning: review.isGasCheckWarning,
+    gasCheckLoading: review.gasCheckLoading,
     depositFee,
     managementFee,
     performanceFee,
-    feeConfigLoading: AsyncResult.isInitial(actionPreview),
+    feeConfigLoading: review.actionPreviewLoading,
     commissionFee: null,
-    kycGate: yieldKycGate.gate,
+    kycGate: review.kyc.gate,
     kycProviderName,
     kycStatusIsChecking:
-      yieldKycGate.isLoading ||
-      yieldKycGate.isFetching ||
-      yieldKycGate.isRefetching,
+      review.kyc.isLoading || review.kyc.isFetching || review.kyc.isRefetching,
     onKycStatusRefresh,
     cta,
   };
 };
-
-import { getActionProviderYieldId } from "../../../../../domain/types/action";

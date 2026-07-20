@@ -2,10 +2,7 @@ import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import type { ActionTransaction } from "../../src/domain/schema/action-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
-import {
-  ClassicTransactionFlowWorkflowHandoff,
-  makeClassicTransactionFlowIdentity,
-} from "../../src/features/transaction-flow/model/classic-transaction-flow";
+import { ClassicTransactionFlowWorkflowHandoff } from "../../src/features/transaction-flow/model/classic-transaction-flow";
 import {
   classicTransactionWorkflowCompletionAtom,
   classicTransactionWorkflowDispatchAtom,
@@ -20,6 +17,7 @@ import type { ActionMeta } from "../../src/public-api/types";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { ClassicTransactionWorkflowKey } from "../../src/services/workflow/transaction-workflow-model";
 import { yieldApiTransactionFixture } from "../fixtures";
+import { classicFlowIdentityFixture } from "../utils/classic-flow";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -61,7 +59,7 @@ describe("transaction workflow atoms", () => {
   it("separates Classic machine generations by flow identity", () => {
     const makeHandoff = (flowIdentity: string) =>
       new ClassicTransactionFlowWorkflowHandoff({
-        flowIdentity: makeClassicTransactionFlowIdentity(flowIdentity),
+        flowIdentity: classicFlowIdentityFixture(flowIdentity),
         workflowKey: new ClassicTransactionWorkflowKey({
           actionMeta,
           transactions: [transaction],

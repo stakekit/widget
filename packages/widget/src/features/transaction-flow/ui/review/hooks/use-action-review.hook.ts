@@ -1,3 +1,4 @@
+import { useAtomSet } from "@effect/atom-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -26,7 +27,7 @@ export const useActionReview = () => {
   const activityFlow = useRequiredActivityResumeClassicTransactionFlow();
   const selectedAction = activityFlow.action;
   const selectedYield = activityFlow.selectedYield;
-  const continueFlow = useAtomSet(classicTransactionFlowFacade.continueAtom);
+  const confirmFlow = useAtomSet(classicTransactionFlowFacade.confirmAtom);
 
   const inputToken = useMemo(
     () =>
@@ -114,12 +115,12 @@ export const useActionReview = () => {
   const cta = useMemo<PageCta>(
     () => ({
       label: t(`activity.review.${labelKey}`),
-      onClick: () => continueFlow(activityFlow.identity),
+      onClick: () => confirmFlow(activityFlow.identity),
       disabled: false,
       isLoading: false,
       hide: actionOlderThan7Days,
     }),
-    [activityFlow.identity, continueFlow, labelKey, actionOlderThan7Days, t]
+    [activityFlow.identity, confirmFlow, labelKey, actionOlderThan7Days, t]
   );
 
   return {
@@ -136,5 +137,3 @@ export const useActionReview = () => {
     cta,
   };
 };
-
-import { useAtomSet } from "@effect/atom-react";

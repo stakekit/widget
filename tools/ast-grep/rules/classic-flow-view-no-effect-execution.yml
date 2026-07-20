@@ -7,8 +7,6 @@ files:
   - "**/src/features/transaction-flow/react/**/*.tsx"
   - "**/src/features/transaction-flow/ui/**/*.ts"
   - "**/src/features/transaction-flow/ui/**/*.tsx"
-ignores:
-  - "**/src/features/transaction-flow/react/use-gas-warning-check.ts"
 rule:
   any:
     - pattern: $RUNTIME.runPromise($$$ARGS)

@@ -24,8 +24,9 @@ import {
 } from "../../src/features/transaction-flow/model/classic-transaction-flow";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
+import { classicFlowIdentityFixture } from "../utils/classic-flow";
 
-const identity = (value: string) => makeClassicTransactionFlowIdentity(value);
+const identity = classicFlowIdentityFixture;
 const address = (value: string) => Schema.decodeSync(WalletAddress)(value);
 
 const walletScope = new WalletScopeKey({
@@ -108,6 +109,10 @@ const attach = (
 };
 
 describe("Classic Transaction Flow core", () => {
+  it("rejects malformed Classic Transaction Flow identities", () => {
+    expect(() => makeClassicTransactionFlowIdentity("not-a-uuid")).toThrow();
+  });
+
   it.each([
     ["Enter", "Reviewing"],
     ["Exit", "Reviewing"],
@@ -126,7 +131,11 @@ describe("Classic Transaction Flow core", () => {
 
     const flow = startClassicTransactionFlow(null, identity("flow-1"), intake);
 
-    expect(flow).toMatchObject({ _tag: variant, phase, identity: "flow-1" });
+    expect(flow).toMatchObject({
+      _tag: variant,
+      phase,
+      identity: identity("flow-1"),
+    });
   });
 
   it("atomically replaces the previous variant and snapshots mutable collections", () => {
@@ -150,7 +159,7 @@ describe("Classic Transaction Flow core", () => {
 
     expect(second).toMatchObject({
       _tag: "ActivityResume",
-      identity: "flow-2",
+      identity: identity("flow-2"),
       phase: "Executable",
     });
     expect(first.providersDetails).toHaveLength(1);
@@ -255,7 +264,7 @@ describe("Classic Transaction Flow core", () => {
       _tag: "ReviewingStarted",
       activeFlow: {
         ...intake,
-        identity: "fresh",
+        identity: identity("fresh"),
         phase: "Reviewing",
       },
     });
@@ -336,7 +345,7 @@ describe("Classic Transaction Flow projections", () => {
 
     expect(getClassicTransactionFlowActionPreviewInput(flow)).toEqual({
       command: intake.request,
-      flowIdentity: "preview",
+      flowIdentity: identity("preview"),
       intent,
     });
   });
@@ -451,7 +460,7 @@ describe("Classic Transaction Flow projections", () => {
     expect(getClassicTransactionFlowVariant(reviewing, "Enter")).toBeNull();
     expect(getClassicTransactionFlowWorkflowHandoff(reviewing)).toBeNull();
     expect(getClassicTransactionFlowWorkflowHandoff(executable)).toMatchObject({
-      flowIdentity: "handoff",
+      flowIdentity: identity("handoff"),
       workflowKey: {
         actionMeta: { actionId: intakes.action.id },
         walletScope,

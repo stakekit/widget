@@ -9,11 +9,12 @@ import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { AnimationPage } from "../../../../widget-shell/animation-page";
 import { PageContainer } from "../../../../widget-shell/page-container";
 import { PageCtaButton } from "../../../../widget-shell/page-cta";
+import { ClassicFlowReviewNavigation } from "../../../react/classic-flow-navigation";
 import { useSteps } from "../hooks/use-steps.hook";
 import { stepsErrorBanner, utilaPendingApprovalsBanner } from "./styles.css";
 import { TxState } from "./tx-state";
 
-export const StepsPage = () => {
+export const StepsPage = ({ reviewTo }: { readonly reviewTo?: string }) => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");
   const variant = useWidgetConfig("variant");
 
@@ -31,6 +32,7 @@ export const StepsPage = () => {
 
   return (
     <>
+      <ClassicFlowReviewNavigation to={reviewTo} />
       {completionNavigation ? (
         <Navigate
           to="../complete"

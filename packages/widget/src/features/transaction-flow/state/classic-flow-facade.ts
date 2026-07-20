@@ -1,11 +1,20 @@
 import { Data, Duration, Effect, Result } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { classicFlowRuntime } from "../../../app/runtime/classic-flow-runtime";
+import { appRuntime } from "../../../app/runtime/app-runtime";
 import { getValidStakeSessionTx } from "../../../domain";
 import type { YieldAction } from "../../../domain/schema/action-models";
-import type { ActionPreviewRequest } from "../../../services/api/yield-api-service";
+import {
+  type ActionPreviewRequest,
+  YieldApiService,
+} from "../../../services/api/yield-api-service";
+import { TrackingService } from "../../../services/tracking/tracking-service";
 import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
+import {
+  CurrentYieldKycGateKey,
+  currentYieldKycGateAtom,
+  refreshCurrentYieldKycAtom,
+} from "../../earn/resources/yield-insights";
 import {
   abandonClassicTransactionFlow,
   attachClassicTransactionFlowAction,
@@ -13,31 +22,40 @@ import {
   type ClassicTransactionFlowIdentity,
   type ClassicTransactionFlowIntake,
   getClassicTransactionFlowActionPreviewInput,
+  getClassicTransactionFlowKycYield,
   getClassicTransactionFlowVariant,
   getClassicTransactionFlowWorkflowHandoff,
   returnClassicTransactionFlowToReview,
   startClassicTransactionFlow,
 } from "../model/classic-transaction-flow";
 import { makeClassicFlowReviewResources } from "../resources/classic-flow-review-resources";
-import {
-  ClassicFlowIdentityService,
-  type ClassicFlowPreviewError,
-  ClassicFlowPreviewService,
-} from "../runtime/classic-flow-services";
+import { ClassicFlowIdentityService } from "../runtime/classic-flow-services";
 
 type ClassicFlowRuntime = Atom.AtomRuntime<
-  ClassicFlowIdentityService | ClassicFlowPreviewService
+  ClassicFlowIdentityService | TrackingService | YieldApiService
 >;
 
-type ClassicFlowNavigationOutcome = {
-  readonly _tag: "NavigateToSteps";
-  readonly flowIdentity: ClassicTransactionFlowIdentity;
-};
+type ClassicFlowNavigationOutcome =
+  | {
+      readonly _tag: "NavigateToSteps";
+      readonly flowIdentity: ClassicTransactionFlowIdentity;
+    }
+  | {
+      readonly _tag: "NavigateToReview";
+      readonly flowIdentity: ClassicTransactionFlowIdentity;
+    };
 
 class ClassicFlowInvariantError extends Data.TaggedError(
   "ClassicFlowInvariantError"
 )<{
   readonly flowIdentity: ClassicTransactionFlowIdentity;
+  readonly message: string;
+}> {}
+
+export class ClassicFlowPreviewError extends Data.TaggedError(
+  "ClassicFlowPreviewError"
+)<{
+  readonly cause: unknown;
   readonly message: string;
 }> {}
 
@@ -72,8 +90,10 @@ class ClassicFlowPreviewKey extends Data.Class<{
 }> {}
 
 const getPreviewKey = (
-  activeFlow: ClassicTransactionFlow | null
+  activeFlow: ClassicTransactionFlow | null,
+  previewAllowed: boolean
 ): ClassicFlowPreviewKey | null => {
+  if (!previewAllowed) return null;
   const input = getClassicTransactionFlowActionPreviewInput(activeFlow);
   if (!input) return null;
 
@@ -99,8 +119,16 @@ export const makeClassicTransactionFlowFacade = (
     runtime
       .atom(
         Effect.gen(function* () {
-          const preview = yield* ClassicFlowPreviewService;
-          return yield* preview.preview(key.request);
+          const api = yield* YieldApiService;
+          return yield* api.previewAction(key.request).pipe(
+            Effect.mapError(
+              (cause) =>
+                new ClassicFlowPreviewError({
+                  cause,
+                  message: "Classic Transaction Flow Action preview failed.",
+                })
+            )
+          );
         })
       )
       .pipe(
@@ -129,8 +157,35 @@ export const makeClassicTransactionFlowFacade = (
   const navigationAtom = Atom.make((get) => get(stateAtom).navigation).pipe(
     Atom.withLabel("classicFlowNavigationAtom")
   );
+  const kycGateAtom = Atom.make((get) => {
+    const yieldDto = getClassicTransactionFlowKycYield(
+      get(stateAtom).activeFlow
+    );
+    return get(
+      currentYieldKycGateAtom(
+        new CurrentYieldKycGateKey({ enabled: true, yieldDto })
+      )
+    );
+  }).pipe(Atom.withLabel("classicFlowKycGateAtom"));
+  const refreshKycAtom = Atom.fnSync(
+    (_input: undefined, get) => {
+      const yieldDto = getClassicTransactionFlowKycYield(
+        get(stateAtom).activeFlow
+      );
+      get.set(
+        refreshCurrentYieldKycAtom(
+          new CurrentYieldKycGateKey({ enabled: true, yieldDto })
+        ),
+        undefined
+      );
+    },
+    { initialValue: undefined }
+  ).pipe(Atom.withLabel("refreshClassicFlowKycAtom"));
   const actionPreviewAtom = Atom.make((get) => {
-    const key = getPreviewKey(get(stateAtom).activeFlow);
+    const key = getPreviewKey(
+      get(stateAtom).activeFlow,
+      !get(kycGateAtom).isGateBlocking
+    );
     return key
       ? get(previewResourceAtom(key))
       : AsyncResult.success<YieldAction | null, ClassicFlowPreviewError>(null);
@@ -157,7 +212,10 @@ export const makeClassicTransactionFlowFacade = (
       context: Atom.FnContext
     ) {
       const before = context.registry.get(stateAtom);
-      const key = getPreviewKey(before.activeFlow);
+      const key = getPreviewKey(
+        before.activeFlow,
+        !context.registry.get(kycGateAtom).isGateBlocking
+      );
       if (!key || key.flowIdentity !== flowIdentity) {
         return { _tag: "StaleFlow" as const, flowIdentity };
       }
@@ -328,7 +386,10 @@ export const makeClassicTransactionFlowFacade = (
     (get) => get(runPreparationAtom),
     (context, flowIdentity: ClassicTransactionFlowIdentity) => {
       const state = context.get(stateAtom);
-      const key = getPreviewKey(state.activeFlow);
+      const key = getPreviewKey(
+        state.activeFlow,
+        !context.get(kycGateAtom).isGateBlocking
+      );
       if (
         !key ||
         key.flowIdentity !== flowIdentity ||
@@ -348,6 +409,48 @@ export const makeClassicTransactionFlowFacade = (
       context.set(runPreparationAtom, flowIdentity);
     }
   ).pipe(Atom.withLabel("retryClassicFlowAtom"));
+
+  const trackConfirmationAtom = runtime.fn(
+    Effect.fn("trackClassicFlowConfirmation")(function* (input: {
+      readonly amount?: string;
+      readonly yieldId: string;
+    }) {
+      const tracking = yield* TrackingService;
+      yield* tracking.trackEvent("unstakeClicked", input);
+    })
+  );
+
+  const confirmAtom = Atom.writable(
+    (get) => get(runPreparationAtom),
+    (context, flowIdentity: ClassicTransactionFlowIdentity) => {
+      const state = context.get(stateAtom);
+      if (
+        state.activeFlow?.identity !== flowIdentity ||
+        context.get(kycGateAtom).isGateBlocking
+      ) {
+        return;
+      }
+
+      if (
+        state.preparation._tag === "Failure" &&
+        state.preparation.flowIdentity === flowIdentity
+      ) {
+        context.set(retryAtom, flowIdentity);
+        return;
+      }
+
+      if (state.activeFlow._tag === "Exit") {
+        context.set(trackConfirmationAtom, {
+          yieldId: state.activeFlow.integration.id,
+          ...(state.activeFlow.request.arguments?.amount
+            ? { amount: state.activeFlow.request.arguments.amount }
+            : {}),
+        });
+      }
+
+      context.set(continueAtom, flowIdentity);
+    }
+  ).pipe(Atom.withLabel("confirmClassicFlowAtom"));
 
   const abandonAtom = Atom.fnSync(
     (flowIdentity: ClassicTransactionFlowIdentity, context) => {
@@ -393,7 +496,10 @@ export const makeClassicTransactionFlowFacade = (
         context.set(runPreparationAtom, Atom.Interrupt);
         context.set(stateAtom, {
           activeFlow: result.activeFlow,
-          navigation: null,
+          navigation: {
+            _tag: "NavigateToReview",
+            flowIdentity: result.activeFlow.identity,
+          },
           preparation: { _tag: "Idle" },
         });
       }
@@ -434,13 +540,16 @@ export const makeClassicTransactionFlowFacade = (
     actionPreviewAtom,
     activeFlowAtom,
     activityResumeFlowAtom,
+    confirmAtom,
     continueAtom,
     enterFlowAtom,
     exitFlowAtom,
     lifecycleAtom,
+    kycGateAtom,
     manageFlowAtom,
     navigationAtom,
     preparationAtom,
+    refreshKycAtom,
     retryAtom,
     returnToReviewAtom,
     startAtom,
@@ -449,7 +558,7 @@ export const makeClassicTransactionFlowFacade = (
 };
 
 const coreClassicTransactionFlowFacade =
-  makeClassicTransactionFlowFacade(classicFlowRuntime);
+  makeClassicTransactionFlowFacade(appRuntime);
 
 export const classicTransactionFlowFacade = {
   ...coreClassicTransactionFlowFacade,

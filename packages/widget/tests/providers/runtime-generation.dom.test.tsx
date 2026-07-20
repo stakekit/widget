@@ -1,5 +1,10 @@
-import { useAtom, useAtomValue } from "@effect/atom-react";
-import { Deferred, Effect } from "effect";
+import {
+  useAtom,
+  useAtomMount,
+  useAtomSet,
+  useAtomValue,
+} from "@effect/atom-react";
+import { Deferred, Effect, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { act } from "react";
@@ -7,7 +12,15 @@ import { describe, expect, it, vi } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
+import type {
+  ClassicTransactionFlowIdentity,
+  ClassicTransactionFlowIntake,
+} from "../../src/features/transaction-flow/model/classic-transaction-flow";
+import { classicTransactionFlowFacade } from "../../src/features/transaction-flow/state/classic-flow-facade";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
+import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 import { render } from "../utils/test-utils.dom";
 
 type LifecycleProbe = {
@@ -119,6 +132,49 @@ const RuntimeHarness = ({
   );
 };
 
+const activityIntake = (): ClassicTransactionFlowIntake => {
+  const selectedYield = yieldApiYieldFixture();
+  return {
+    _tag: "ActivityResume",
+    action: yieldApiActionFixture(),
+    providersDetails: [],
+    selectedValidators: [],
+    selectedYield,
+    walletScope: new WalletScopeKey({
+      address: Schema.decodeSync(WalletAddress)("0xWallet"),
+      network: "ethereum",
+    }),
+  };
+};
+
+const ActiveClassicFlowLifetime = ({
+  identity,
+}: {
+  identity: ClassicTransactionFlowIdentity;
+}) => {
+  useAtomMount(classicTransactionFlowFacade.lifecycleAtom(identity));
+  return null;
+};
+
+const ClassicFlowRuntimeHarness = () => {
+  const activeFlow = useAtomValue(classicTransactionFlowFacade.activeFlowAtom);
+  const start = useAtomSet(classicTransactionFlowFacade.startAtom);
+
+  return (
+    <>
+      <output data-testid="classic-flow-identity">
+        {activeFlow?.identity ?? "none"}
+      </output>
+      {activeFlow ? (
+        <ActiveClassicFlowLifetime identity={activeFlow.identity} />
+      ) : null}
+      <button type="button" onClick={() => start(activityIntake())}>
+        Start classic flow
+      </button>
+    </>
+  );
+};
+
 const settings = (trackEvent: (event: string) => void, apiKey = "api-key") =>
   normalizeWidgetConfig({
     apiKey,
@@ -127,6 +183,53 @@ const settings = (trackEvent: (event: string) => void, apiKey = "api-key") =>
   });
 
 describe("API runtime generations", () => {
+  it("retains a Classic Flow for live settings and clears it with the replaced runtime", async () => {
+    const firstTrack = vi.fn();
+    const secondTrack = vi.fn();
+    const app = await render(
+      <SKAtomRegistryProvider settings={settings(firstTrack)}>
+        <ClassicFlowRuntimeHarness />
+      </SKAtomRegistryProvider>
+    );
+
+    await act(async () =>
+      app.container.querySelector<HTMLButtonElement>("button")?.click()
+    );
+    await vi.waitFor(() =>
+      expect(
+        app.container.querySelector('[data-testid="classic-flow-identity"]')
+          ?.textContent
+      ).not.toBe("none")
+    );
+    const identity = app.container.querySelector(
+      '[data-testid="classic-flow-identity"]'
+    )?.textContent;
+
+    await app.rerender(
+      <SKAtomRegistryProvider settings={settings(secondTrack)}>
+        <ClassicFlowRuntimeHarness />
+      </SKAtomRegistryProvider>
+    );
+    expect(
+      app.container.querySelector('[data-testid="classic-flow-identity"]')
+        ?.textContent
+    ).toBe(identity);
+
+    await app.rerender(
+      <SKAtomRegistryProvider
+        settings={settings(secondTrack, "replacement-api-key")}
+      >
+        <ClassicFlowRuntimeHarness />
+      </SKAtomRegistryProvider>
+    );
+    await vi.waitFor(() =>
+      expect(
+        app.container.querySelector('[data-testid="classic-flow-identity"]')
+          ?.textContent
+      ).toBe("none")
+    );
+  });
+
   it("keeps the runtime and staged state while resolving new live callbacks", async () => {
     const firstTrack = vi.fn();
     const secondTrack = vi.fn();

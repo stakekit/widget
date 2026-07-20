@@ -40,6 +40,34 @@ describe("bundled widget renderer", () => {
     expect(reactRoot.unmount).toHaveBeenCalledOnce();
   });
 
+  it("rerenders through the mounted component without replacing its React root", () => {
+    const widget = renderSKWidget({
+      apiKey: "api-key",
+      container: document.createElement("div"),
+    });
+    const rendered = reactRoot.render.mock.calls[0]?.[0] as {
+      props: {
+        ref: {
+          current: { rerender: (props: unknown) => void } | null;
+        };
+      };
+    };
+    const rerender = vi.fn();
+    rendered.props.ref.current = { rerender };
+
+    widget.rerender({ apiKey: "replacement-api-key" });
+
+    expect(reactRoot.render).toHaveBeenCalledOnce();
+    expect(rerender).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apiKey: "replacement-api-key",
+        ref: rendered.props.ref,
+      })
+    );
+
+    widget.unmount();
+  });
+
   it("rejects a second Widget Instance without disturbing the active root", () => {
     const activeWidget = renderSKWidget({
       apiKey: "api-key",

@@ -7,25 +7,28 @@ import { describe, expect, it, vi } from "vitest";
 import type {
   ActionCommand,
   ManageActionCommand,
+  YieldAction,
 } from "../../src/domain/schema/action-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type {
   ClassicTransactionFlowIdentity,
   ClassicTransactionFlowIntake,
 } from "../../src/features/transaction-flow/model/classic-transaction-flow";
-import { makeClassicTransactionFlowIdentity } from "../../src/features/transaction-flow/model/classic-transaction-flow";
+import { ClassicFlowIdentityService } from "../../src/features/transaction-flow/runtime/classic-flow-services";
 import {
-  ClassicFlowIdentityService,
   ClassicFlowPreviewError,
-  ClassicFlowPreviewService,
-} from "../../src/features/transaction-flow/runtime/classic-flow-services";
-import { makeClassicTransactionFlowFacade } from "../../src/features/transaction-flow/state/classic-flow-facade";
+  makeClassicTransactionFlowFacade,
+} from "../../src/features/transaction-flow/state/classic-flow-facade";
+import type { ActionPreviewRequest } from "../../src/services/api/yield-api-service";
+import { YieldApiService } from "../../src/services/api/yield-api-service";
+import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,
   yieldApiYieldFixture,
 } from "../fixtures";
+import { classicFlowIdentityFixture } from "../utils/classic-flow";
 
 const walletScope = new WalletScopeKey({
   address: Schema.decodeSync(WalletAddress)(
@@ -102,8 +105,12 @@ const makeManageIntake = (): ClassicTransactionFlowIntake => {
 
 const makeTestFacade = ({
   preview,
+  trackEvent = () => Effect.void,
 }: {
-  readonly preview: ClassicFlowPreviewService["Service"]["preview"];
+  readonly preview: (
+    request: ActionPreviewRequest
+  ) => Effect.Effect<YieldAction, unknown>;
+  readonly trackEvent?: TrackingService["Service"]["trackEvent"];
 }) => {
   let identityCounter = 0;
   const runtime = Atom.context({ memoMap: Layer.makeMemoMapUnsafe() })(
@@ -112,13 +119,20 @@ const makeTestFacade = ({
         ClassicFlowIdentityService,
         ClassicFlowIdentityService.of({
           next: Effect.sync(() =>
-            makeClassicTransactionFlowIdentity(`flow-${++identityCounter}`)
+            classicFlowIdentityFixture(`flow-${++identityCounter}`)
           ),
         })
       ),
       Layer.succeed(
-        ClassicFlowPreviewService,
-        ClassicFlowPreviewService.of({ preview })
+        YieldApiService,
+        YieldApiService.of({ previewAction: preview } as never)
+      ),
+      Layer.succeed(
+        TrackingService,
+        TrackingService.of({
+          trackEvent,
+          trackPageView: () => Effect.void,
+        })
       )
     )
   );
@@ -132,6 +146,7 @@ const mountFacade = (
   registry.mount(facade.abandonAtom),
   registry.mount(facade.actionPreviewAtom),
   registry.mount(facade.activeFlowAtom),
+  registry.mount(facade.confirmAtom),
   registry.mount(facade.continueAtom),
   registry.mount(facade.navigationAtom),
   registry.mount(facade.preparationAtom),
@@ -153,7 +168,7 @@ const start = async (
 };
 
 const expectIdentity = (value: string): ClassicTransactionFlowIdentity =>
-  makeClassicTransactionFlowIdentity(value);
+  classicFlowIdentityFixture(value);
 
 describe("Classic Transaction Flow facade", () => {
   it("starts and atomically replaces tagged flows through read-only views", async () => {
@@ -166,7 +181,7 @@ describe("Classic Transaction Flow facade", () => {
     const enter = await start(registry, facade, makeEnterIntake());
     expect(enter).toMatchObject({
       _tag: "Enter",
-      identity: "flow-1",
+      identity: expectIdentity("flow-1"),
       phase: "Reviewing",
     });
     expect(registry.get(facade.enterFlowAtom)).toBe(enter);
@@ -175,7 +190,7 @@ describe("Classic Transaction Flow facade", () => {
     const activity = await start(registry, facade, makeActivityIntake());
     expect(activity).toMatchObject({
       _tag: "ActivityResume",
-      identity: "flow-2",
+      identity: expectIdentity("flow-2"),
       phase: "Executable",
     });
     expect(registry.get(facade.activeFlowAtom)).toBe(activity);
@@ -261,7 +276,7 @@ describe("Classic Transaction Flow facade", () => {
     unmount.forEach((dispose) => dispose());
   });
 
-  it("publishes typed preview failure and allows one explicit Retry", async () => {
+  it("publishes typed preview failure and retries through Confirm", async () => {
     let previewCalls = 0;
     const action = yieldApiActionFixture();
     const facade = makeTestFacade({
@@ -287,7 +302,7 @@ describe("Classic Transaction Flow facade", () => {
         AsyncResult.isFailure(registry.get(facade.actionPreviewAtom))
       ).toBe(true)
     );
-    registry.set(facade.continueAtom, flow.identity);
+    registry.set(facade.confirmAtom, flow.identity);
     await vi.waitFor(() =>
       expect(registry.get(facade.preparationAtom)).toMatchObject({
         _tag: "Failure",
@@ -296,9 +311,7 @@ describe("Classic Transaction Flow facade", () => {
       })
     );
 
-    registry.set(facade.continueAtom, flow.identity);
-    expect(previewCalls).toBe(1);
-    registry.set(facade.retryAtom, flow.identity);
+    registry.set(facade.confirmAtom, flow.identity);
 
     await vi.waitFor(() =>
       expect(registry.get(facade.activeFlowAtom)?.phase).toBe("Executable")
@@ -307,6 +320,49 @@ describe("Classic Transaction Flow facade", () => {
     expect(registry.get(facade.navigationAtom)?.flowIdentity).toBe(
       flow.identity
     );
+
+    unmount.forEach((dispose) => dispose());
+  });
+
+  it("preserves Exit confirmation tracking across a failed preview and Retry", async () => {
+    let previewCalls = 0;
+    const trackEvent = vi.fn(() => Effect.void);
+    const facade = makeTestFacade({
+      preview: () => {
+        previewCalls += 1;
+        return previewCalls === 1
+          ? Effect.fail(new Error("preview failed"))
+          : Effect.succeed(yieldApiActionFixture({ type: "UNSTAKE" }));
+      },
+      trackEvent,
+    });
+    const registry = AtomRegistry.make();
+    const unmount = mountFacade(registry, facade);
+    const intake = makeExitIntake();
+    if (intake._tag !== "Exit")
+      throw new Error("Expected Exit intake fixture.");
+    const flow = await start(registry, facade, intake);
+
+    await vi.waitFor(() =>
+      expect(
+        AsyncResult.isFailure(registry.get(facade.actionPreviewAtom))
+      ).toBe(true)
+    );
+    registry.set(facade.confirmAtom, flow.identity);
+    await vi.waitFor(() =>
+      expect(registry.get(facade.preparationAtom)._tag).toBe("Failure")
+    );
+    expect(trackEvent).toHaveBeenCalledOnce();
+    expect(trackEvent).toHaveBeenCalledWith("unstakeClicked", {
+      amount: "1",
+      yieldId: intake.integration.id,
+    });
+
+    registry.set(facade.confirmAtom, flow.identity);
+    await vi.waitFor(() =>
+      expect(registry.get(facade.activeFlowAtom)?.phase).toBe("Executable")
+    );
+    expect(trackEvent).toHaveBeenCalledOnce();
 
     unmount.forEach((dispose) => dispose());
   });
@@ -333,7 +389,7 @@ describe("Classic Transaction Flow facade", () => {
     registry.set(facade.continueAtom, first.identity);
     const replacement = await start(registry, facade, makeEnterIntake());
 
-    expect(replacement.identity).toBe("flow-2");
+    expect(replacement.identity).toBe(expectIdentity("flow-2"));
     await vi.waitFor(() => expect(interrupted).toBeGreaterThan(0));
     previewLatch.openUnsafe();
     await Effect.runPromise(Effect.yieldNow);
@@ -415,10 +471,14 @@ describe("Classic Transaction Flow facade", () => {
     registry.set(facade.returnToReviewAtom, enter.identity);
     await vi.waitFor(() =>
       expect(registry.get(facade.activeFlowAtom)).toMatchObject({
-        identity: "flow-2",
+        identity: expectIdentity("flow-2"),
         phase: "Reviewing",
       })
     );
+    expect(registry.get(facade.navigationAtom)).toEqual({
+      _tag: "NavigateToReview",
+      flowIdentity: expectIdentity("flow-2"),
+    });
     await vi.waitFor(() => expect(previewCalls).toBe(2));
 
     const activity = await start(registry, facade, makeActivityIntake());
@@ -426,6 +486,10 @@ describe("Classic Transaction Flow facade", () => {
     await vi.waitFor(() =>
       expect(registry.get(facade.activeFlowAtom)).toBe(activity)
     );
+    expect(registry.get(facade.navigationAtom)).toEqual({
+      _tag: "NavigateToReview",
+      flowIdentity: activity.identity,
+    });
 
     unmount.forEach((dispose) => dispose());
   });
@@ -467,7 +531,7 @@ describe("Classic Transaction Flow facade", () => {
     const secondUnmount = mountFacade(secondRegistry, facade);
 
     const first = await start(firstRegistry, facade, makeEnterIntake());
-    expect(first.identity).toBe("flow-1");
+    expect(first.identity).toBe(expectIdentity("flow-1"));
     expect(secondRegistry.get(facade.activeFlowAtom)).toBeNull();
 
     firstRegistry.set(facade.abandonAtom, first.identity);

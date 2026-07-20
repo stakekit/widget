@@ -19,3 +19,21 @@ export const ClassicFlowStepsNavigation = ({
 
   return <Navigate to={to} relative="path" />;
 };
+
+export const ClassicFlowReviewNavigation = ({
+  to = "../review",
+}: {
+  readonly to?: string;
+}) => {
+  const activeFlow = useAtomValue(classicTransactionFlowFacade.activeFlowAtom);
+  const navigation = useAtomValue(classicTransactionFlowFacade.navigationAtom);
+
+  if (
+    navigation?._tag !== "NavigateToReview" ||
+    activeFlow?.identity !== navigation.flowIdentity
+  ) {
+    return null;
+  }
+
+  return <Navigate to={to} relative="path" replace />;
+};
