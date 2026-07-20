@@ -1,9 +1,4 @@
-import {
-  useAtom,
-  useAtomMount,
-  useAtomSet,
-  useAtomValue,
-} from "@effect/atom-react";
+import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Deferred, Effect, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
@@ -14,11 +9,7 @@ import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { ClassicTransactionFlowIntake } from "../../src/features/transaction-flow/model/classic-transaction-flow";
-import { classicFlowSessionFacadeFamily } from "../../src/features/transaction-flow/state/classic-flow-session-facade";
-import {
-  type ClassicFlowSession,
-  classicFlowSessionStore,
-} from "../../src/features/transaction-flow/state/classic-flow-session-store";
+import { classicFlowSessionStore } from "../../src/features/transaction-flow/state/classic-flow-session-store";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
@@ -148,15 +139,6 @@ const activityIntake = (): ClassicTransactionFlowIntake => {
   };
 };
 
-const ActiveClassicFlowLifetime = ({
-  session,
-}: {
-  session: ClassicFlowSession;
-}) => {
-  useAtomMount(classicFlowSessionFacadeFamily(session).lifecycleAtom);
-  return null;
-};
-
 const ClassicFlowRuntimeHarness = () => {
   const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
   const start = useAtomSet(classicFlowSessionStore.startAtom);
@@ -166,7 +148,6 @@ const ClassicFlowRuntimeHarness = () => {
       <output data-testid="classic-flow-session">
         {session?.key ?? "none"}
       </output>
-      {session ? <ActiveClassicFlowLifetime session={session} /> : null}
       <button type="button" onClick={() => start(activityIntake())}>
         Start classic flow
       </button>
@@ -182,7 +163,7 @@ const settings = (trackEvent: (event: string) => void, apiKey = "api-key") =>
   });
 
 describe("API runtime generations", () => {
-  it("retains a Classic Flow for live settings and clears it with the replaced runtime", async () => {
+  it("retains intake for live settings and clears it on runtime replacement before routing", async () => {
     const firstTrack = vi.fn();
     const secondTrack = vi.fn();
     const app = await render(

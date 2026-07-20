@@ -75,6 +75,21 @@ const refreshSessionKycAtom = Atom.fnSync(
   },
   { initialValue: undefined }
 );
+const continueSessionAtom = Atom.fnSync(
+  (_input: undefined, get) => {
+    const session = get(classicFlowSessionStore.currentSessionAtom);
+    if (session) {
+      get.set(classicFlowSessionFacadeFamily(session).continueAtom, undefined);
+    }
+  },
+  { initialValue: undefined }
+);
+const sessionAttachedActionAtom = Atom.make((get) => {
+  const session = get(classicFlowSessionStore.currentSessionAtom);
+  return session
+    ? get(classicFlowSessionFacadeFamily(session).attachedActionAtom)
+    : null;
+});
 
 const ConnectedWrapper = ({ children }: PropsWithChildren) => (
   <RegistryProvider
@@ -215,6 +230,8 @@ describe("action preview", () => {
           kyc: useAtomValue(sessionKycGateAtom),
           preview: useAtomValue(sessionActionPreviewAtom),
           refreshKyc: useAtomSet(refreshSessionKycAtom),
+          continueFlow: useAtomSet(continueSessionAtom),
+          attachedAction: useAtomValue(sessionAttachedActionAtom),
         };
       },
       { wrapper: ConnectedWrapper }
@@ -228,6 +245,8 @@ describe("action preview", () => {
     expect(
       result.current.preview.pipe(AsyncResult.value, Option.getOrNull)
     ).toBeNull();
+    await act(async () => result.current.continueFlow(undefined));
+    expect(result.current.attachedAction).toBeNull();
 
     kycStatus = "approved";
     await act(async () => {

@@ -38,6 +38,7 @@ describe("Classic Flow architecture", () => {
       {
         content: [
           "ClassicTransactionFlowIdentity",
+          "ClassicTransactionFlowPhase",
           "ClassicTransactionFlowWorkflowHandoff",
           "const flowIdentity = 'old'",
           'const phase = { phase: "Reviewing" }',
@@ -51,6 +52,6 @@ describe("Classic Flow architecture", () => {
       },
     ]);
 
-    expect(failures).toHaveLength(5);
+    expect(failures).toHaveLength(6);
   });
 });

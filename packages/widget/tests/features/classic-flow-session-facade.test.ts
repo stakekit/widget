@@ -1,9 +1,10 @@
 import BigNumber from "bignumber.js";
-import { Effect, Layer, Option, Schema } from "effect";
+import { Effect, Layer, Option, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import type { ActionCommand } from "../../src/domain/schema/action-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { ClassicTransactionFlowIntake } from "../../src/features/transaction-flow/model/classic-transaction-flow";
@@ -16,6 +17,7 @@ import { makeClassicFlowSessionStore } from "../../src/features/transaction-flow
 import { YieldApiService } from "../../src/services/api/yield-api-service";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,
@@ -79,6 +81,8 @@ describe("Classic Flow Session facade", () => {
 
     const facade = makeClassicFlowSessionFacade({ runtime, session, store });
     const disposeLifecycle = registry.mount(facade.lifecycleAtom);
+    registry.set(facade.backAtom, undefined);
+    expect(registry.get(facade.navigationAtom)).toBeNull();
     const disposeFirstReview = registry.mount(facade.actionPreviewAtom);
 
     await vi.waitFor(() =>
@@ -201,6 +205,8 @@ describe("Classic Flow Session facade", () => {
     });
     const disposeSecond = registry.mount(secondFacade.lifecycleAtom);
 
+    expect(firstFacade.workflow).not.toBe(secondFacade.workflow);
+
     registry.set(firstFacade.backAtom, undefined);
     expect(registry.get(firstFacade.navigationAtom)).toBeNull();
     disposeFirst();
@@ -212,7 +218,7 @@ describe("Classic Flow Session facade", () => {
     );
   });
 
-  it("retains the Activity Resume action across Back without previewing", () => {
+  it("retains the Activity Resume action and machine across Back", async () => {
     const previewAction = vi.fn(() => Effect.succeed(yieldApiActionFixture()));
     const runtime = Atom.context({ memoMap: Layer.makeMemoMapUnsafe() })(
       Layer.mergeAll(
@@ -229,8 +235,31 @@ describe("Classic Flow Session facade", () => {
         )
       )
     );
+    const workflowProbe = { disposed: 0, started: 0 };
+    const workflowLayer = Layer.succeed(
+      TransactionWorkflowService,
+      TransactionWorkflowService.of({
+        make: () =>
+          Effect.acquireRelease(
+            Effect.sync(() => {
+              workflowProbe.started += 1;
+              return {
+                dispatch: () => Effect.void,
+                events: Stream.never,
+                states: Stream.never,
+              };
+            }),
+            () =>
+              Effect.sync(() => {
+                workflowProbe.disposed += 1;
+              })
+          ),
+      })
+    );
     const store = makeClassicFlowSessionStore();
-    const registry = AtomRegistry.make();
+    const registry = AtomRegistry.make({
+      initialValues: [[walletRuntime.layer, workflowLayer]],
+    });
     const selectedYield = yieldApiYieldFixture();
     const action = yieldApiActionFixture({ id: "activity-action" });
     registry.set(store.startAtom, {
@@ -244,15 +273,27 @@ describe("Classic Flow Session facade", () => {
     const session = registry.get(store.currentSessionAtom);
     if (!session) throw new Error("Expected an Activity Resume Flow Session");
     const facade = makeClassicFlowSessionFacade({ runtime, session, store });
+    const workflowKey = registry.get(facade.workflowKeyAtom);
+    const disposeWorkflow = registry.mount(facade.workflow.lifecycleAtom);
 
-    expect(registry.get(facade.attachedActionAtom)).toBe(action);
-    expect(registry.get(facade.actionPreviewAtom)).toEqual(
-      AsyncResult.success(null)
-    );
+    await vi.waitFor(() => expect(workflowProbe.started).toBe(1));
+
+    expect(registry.get(facade.attachedActionAtom)).toEqual(action);
+    expect(
+      registry
+        .get(facade.actionPreviewAtom)
+        .pipe(AsyncResult.value, Option.getOrUndefined)
+    ).toBeNull();
     registry.set(facade.backAtom, undefined);
-    expect(registry.get(facade.attachedActionAtom)).toBe(action);
+    expect(registry.get(facade.attachedActionAtom)).toEqual(action);
+    expect(registry.get(facade.workflowKeyAtom)).toEqual(workflowKey);
     expect(registry.get(facade.navigationAtom)).toBe("Review");
     expect(previewAction).not.toHaveBeenCalled();
+    expect(workflowProbe.started).toBe(1);
+    expect(workflowProbe.disposed).toBe(0);
+
+    disposeWorkflow();
+    await vi.waitFor(() => expect(workflowProbe.disposed).toBe(1));
   });
 
   it("publishes invalid Exit content as a non-retryable typed failure", async () => {

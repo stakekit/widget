@@ -23,6 +23,7 @@ import { classicFlowSessionStore } from "../../src/features/transaction-flow/sta
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
+import { disconnectedNormalizedWalletState } from "../../src/services/wallet/domain/state";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { describe, expect, it, vi } from "../utils/test-extend.dom";
@@ -39,7 +40,7 @@ const walletScope = new WalletScopeKey({
   address: command.address,
   network: "ethereum",
 });
-const walletState: NormalizedWalletState = {
+const connectedWalletState: NormalizedWalletState = {
   additionalAddresses: null,
   address: command.address,
   chain: {} as never,
@@ -129,7 +130,11 @@ const StepsPage = () => {
   );
 };
 
-const FlowRoutes = () => {
+const FlowRoutes = ({
+  walletState,
+}: {
+  readonly walletState: NormalizedWalletState;
+}) => {
   const location = useLocation();
   const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
   const key =
@@ -157,6 +162,25 @@ const FlowRoutes = () => {
   );
 };
 
+const FlowTestApp = ({
+  walletState = connectedWalletState,
+}: {
+  readonly walletState?: NormalizedWalletState;
+}) => (
+  <TestAtomRuntimeProvider
+    settings={normalizeWidgetConfig({
+      apiKey: "test-key",
+      baseUrl: legacyApiUrl,
+      variant: "default",
+      yieldsApiUrl: yieldApiUrl,
+    })}
+  >
+    <MemoryRouter initialEntries={["/"]}>
+      <FlowRoutes walletState={walletState} />
+    </MemoryRouter>
+  </TestAtomRuntimeProvider>
+);
+
 describe("Classic Transaction Flow navigation", () => {
   it("keeps the session and prepares a fresh action after Back", async ({
     worker,
@@ -178,20 +202,7 @@ describe("Classic Transaction Flow navigation", () => {
       })
     );
 
-    const app = await render(
-      <TestAtomRuntimeProvider
-        settings={normalizeWidgetConfig({
-          apiKey: "test-key",
-          baseUrl: legacyApiUrl,
-          variant: "default",
-          yieldsApiUrl: yieldApiUrl,
-        })}
-      >
-        <MemoryRouter initialEntries={["/"]}>
-          <FlowRoutes />
-        </MemoryRouter>
-      </TestAtomRuntimeProvider>
-    );
+    const app = await render(<FlowTestApp />);
 
     const buttons = () => [
       ...app.container.querySelectorAll<HTMLButtonElement>("button"),
@@ -238,5 +249,38 @@ describe("Classic Transaction Flow navigation", () => {
     expect(
       app.container.querySelector('[data-testid="review-session"]')?.textContent
     ).toBe(sessionKey);
+  });
+
+  it("ejects and disposes the session when the wallet disconnects", async ({
+    worker,
+  }) => {
+    worker.use(
+      http.post(`${yieldApiUrl}/v1/actions/enter`, () =>
+        HttpResponse.json(yieldApiActionFixture())
+      )
+    );
+    const app = await render(<FlowTestApp />);
+    const buttons = () => [
+      ...app.container.querySelectorAll<HTMLButtonElement>("button"),
+    ];
+
+    await act(async () => buttons()[0]?.click());
+    await vi.waitFor(() => expect(buttons()[1]?.disabled).toBe(false));
+    await act(async () => buttons()[1]?.click());
+    await vi.waitFor(() =>
+      expect(
+        app.container.querySelector('[data-testid="review-session"]')
+      ).not.toBeNull()
+    );
+
+    await app.rerender(
+      <FlowTestApp walletState={disconnectedNormalizedWalletState} />
+    );
+    await vi.waitFor(() =>
+      expect(
+        app.container.querySelector('[data-testid="review-session"]')
+      ).toBeNull()
+    );
+    await vi.waitFor(() => expect(buttons()[1]?.disabled).toBe(true));
   });
 });

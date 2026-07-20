@@ -201,9 +201,16 @@ export const makeClassicFlowSessionFacade = ({
   ).pipe(Atom.withLabel(`classicFlowSessionNavigation(${session.key})`));
 
   const continueAtom = Atom.fnSync((_input: undefined, context) => {
+    if (context(kycGateAtom).isGateBlocking) return;
+
     const state = context(stateAtom);
     if (state.attachedAction) {
-      context.set(stateAtom, { ...state, navigation: "Steps" });
+      if (
+        session.intake._tag === "ActivityResume" &&
+        state.navigation !== "Steps"
+      ) {
+        context.set(stateAtom, { ...state, navigation: "Steps" });
+      }
       return;
     }
 
@@ -222,6 +229,12 @@ export const makeClassicFlowSessionFacade = ({
 
   const backAtom = Atom.fnSync((_input: undefined, context) => {
     const state = context(stateAtom);
+    if (
+      session.intake._tag !== "ActivityResume" &&
+      state.attachedAction === null
+    ) {
+      return;
+    }
     if (state.navigation === "Review" && state.attachedAction === null) return;
 
     const detachAction =
@@ -312,22 +325,8 @@ export const makeClassicFlowSessionFacade = ({
     Atom.withLabel(`classicFlowSessionReviewRoute(${session.key})`)
   );
 
-  const runtimeLifecycleAtom = runtime
-    .atom((context) =>
-      Effect.acquireRelease(Effect.void, () =>
-        Effect.sync(() => {
-          context.set(store.clearAtom, session.key);
-        })
-      )
-    )
-    .pipe(
-      Atom.setIdleTTL(0),
-      Atom.withLabel(`classicFlowSessionRuntimeLifecycle(${session.key})`)
-    );
-
   const lifecycleAtom = Atom.make((context) => {
     context.once(stateAtom);
-    context.once(runtimeLifecycleAtom);
     const registry = context.registry;
 
     context.addFinalizer(() => {

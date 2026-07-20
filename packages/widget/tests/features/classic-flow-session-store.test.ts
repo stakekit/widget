@@ -2,7 +2,10 @@ import { Schema } from "effect";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import type { ClassicTransactionFlowIntake } from "../../src/features/transaction-flow/model/classic-transaction-flow";
+import {
+  type ClassicTransactionFlowIntake,
+  isClassicTransactionFlowWalletScopeValid,
+} from "../../src/features/transaction-flow/model/classic-transaction-flow";
 import { makeClassicFlowSessionStore } from "../../src/features/transaction-flow/state/classic-flow-session-store";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiYieldFixture } from "../fixtures";
@@ -49,14 +52,47 @@ describe("Classic Flow Session intake store", () => {
     expect(second).not.toBeNull();
     expect(second?.key).not.toBe(first?.key);
     expect(second?.intake).not.toBe(intake);
+    expect(second?.intake.walletScope).not.toBe(intake.walletScope);
     expect(
       second?.intake._tag === "Enter" ? second.intake.selectedValidators : null
     ).not.toBe(intake.selectedValidators);
+    expect(
+      second?.intake._tag === "Enter" ? second.intake.request : null
+    ).not.toBe(intake.request);
+    expect(
+      second?.intake._tag === "Enter" ? second.intake.selectedStake : null
+    ).not.toBe(intake.selectedStake);
 
     if (first) registry.set(store.clearAtom, first.key);
     expect(registry.get(store.currentSessionAtom)).toBe(second);
 
     if (second) registry.set(store.clearAtom, second.key);
     expect(registry.get(store.currentSessionAtom)).toBeNull();
+  });
+
+  it("validates wallet ownership without coupling to additional addresses", () => {
+    const intake = makeEnterIntake();
+    const sameEvmOwner = new WalletScopeKey({
+      additionalAddresses: {
+        lidoStakeAccounts: ["lido-account"],
+        stakeAccounts: ["stake-account"],
+      },
+      address: Schema.decodeSync(WalletAddress)(
+        walletScope.address.toUpperCase()
+      ),
+      network: walletScope.network,
+    });
+    const otherNetwork = new WalletScopeKey({
+      address: walletScope.address,
+      network: "base",
+    });
+
+    expect(isClassicTransactionFlowWalletScopeValid(intake, sameEvmOwner)).toBe(
+      true
+    );
+    expect(isClassicTransactionFlowWalletScopeValid(intake, null)).toBe(false);
+    expect(isClassicTransactionFlowWalletScopeValid(intake, otherNetwork)).toBe(
+      false
+    );
   });
 });

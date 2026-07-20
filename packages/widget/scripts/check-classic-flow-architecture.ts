@@ -35,6 +35,7 @@ export const checkFlowSessionArchitecture = (
     const normalizedPath = source.path.replaceAll("\\", "/");
     const forbiddenTerms = [
       "ClassicTransactionFlowIdentity",
+      "ClassicTransactionFlowPhase",
       "ClassicTransactionFlowWorkflowHandoff",
       "flowIdentity",
     ];

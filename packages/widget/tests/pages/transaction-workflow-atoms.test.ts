@@ -1,8 +1,12 @@
-import { Schema } from "effect";
-import { describe, expect, it } from "vitest";
+import { Effect, Layer, Schema, Stream } from "effect";
+import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
+import { describe, expect, it, vi } from "vitest";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import type { ActionTransaction } from "../../src/domain/schema/action-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
 import {
+  makeClassicTransactionWorkflowFacade,
   transactionWorkflowDispatchAtom,
   transactionWorkflowMachineAtom,
   transactionWorkflowStateAtom,
@@ -10,6 +14,7 @@ import {
 import type { ActionMeta } from "../../src/public-api/types";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { ClassicTransactionWorkflowKey } from "../../src/services/workflow/transaction-workflow-model";
+import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
 import { yieldApiTransactionFixture } from "../fixtures";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -47,5 +52,48 @@ describe("transaction workflow atoms", () => {
     expect(transactionWorkflowDispatchAtom(makeKey())).toBe(
       transactionWorkflowDispatchAtom(makeKey())
     );
+  });
+
+  it("creates isolated machines for equal keys owned by different sessions", async () => {
+    const probe = { disposed: 0, started: 0 };
+    const workflowLayer = Layer.succeed(
+      TransactionWorkflowService,
+      TransactionWorkflowService.of({
+        make: () =>
+          Effect.acquireRelease(
+            Effect.sync(() => {
+              probe.started += 1;
+              return {
+                dispatch: () => Effect.void,
+                events: Stream.never,
+                states: Stream.never,
+              };
+            }),
+            () =>
+              Effect.sync(() => {
+                probe.disposed += 1;
+              })
+          ),
+      })
+    );
+    const registry = AtomRegistry.make({
+      initialValues: [[walletRuntime.layer, workflowLayer]],
+    });
+    const key = new ClassicTransactionWorkflowKey({
+      actionMeta,
+      transactions: [transaction],
+      walletScope,
+      yieldId,
+    });
+    const first = makeClassicTransactionWorkflowFacade(Atom.make(key));
+    const second = makeClassicTransactionWorkflowFacade(Atom.make(key));
+
+    const disposeFirst = registry.mount(first.lifecycleAtom);
+    const disposeSecond = registry.mount(second.lifecycleAtom);
+    await vi.waitFor(() => expect(probe.started).toBe(2));
+
+    disposeFirst();
+    disposeSecond();
+    await vi.waitFor(() => expect(probe.disposed).toBe(2));
   });
 });
