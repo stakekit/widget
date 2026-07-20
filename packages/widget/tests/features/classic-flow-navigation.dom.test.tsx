@@ -1,5 +1,5 @@
 import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Schema } from "effect";
+import { Option, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { HttpResponse, http } from "msw";
 import { act } from "react";
@@ -87,10 +87,12 @@ const StartPage = () => {
 
 const ReviewPage = () => {
   const facade = useClassicFlowSessionFacade();
-  useAtomMount(facade.reviewRouteAtom);
+  const location = useLocation();
+  useAtomMount(facade.reviewRouteAtom(location.key));
   const review = useAtomValue(facade.reviewViewAtom);
   const preview = useAtomValue(facade.actionPreviewAtom);
   const confirm = useAtomSet(facade.confirmAtom);
+  const action = preview.pipe(AsyncResult.value, Option.getOrNull);
 
   return (
     <>
@@ -100,7 +102,7 @@ const ReviewPage = () => {
       </output>
       <button
         type="button"
-        disabled={!AsyncResult.isSuccess(preview)}
+        disabled={!action}
         onClick={() => confirm(undefined)}
       >
         Confirm
@@ -112,7 +114,8 @@ const ReviewPage = () => {
 
 const StepsPage = () => {
   const facade = useClassicFlowSessionFacade();
-  useAtomMount(facade.stepsRouteAtom);
+  const location = useLocation();
+  useAtomMount(facade.stepsRouteAtom(location.key));
   const back = useAtomSet(facade.backAtom);
   const navigate = useNavigate();
 

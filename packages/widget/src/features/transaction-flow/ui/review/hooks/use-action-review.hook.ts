@@ -1,6 +1,7 @@
 import { useAtomMount, useAtomSet } from "@effect/atom-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router";
 import {
   type ActionType,
   ActionTypes,
@@ -26,7 +27,8 @@ export const useActionReview = () => {
 
   const activityFlow = useRequiredActivityResumeClassicTransactionFlow();
   const facade = useClassicFlowSessionFacade();
-  useAtomMount(facade.reviewRouteAtom);
+  const location = useLocation();
+  useAtomMount(facade.reviewRouteAtom(location.key));
   const selectedAction = activityFlow.action;
   const selectedYield = activityFlow.selectedYield;
   const confirmFlow = useAtomSet(facade.confirmAtom);

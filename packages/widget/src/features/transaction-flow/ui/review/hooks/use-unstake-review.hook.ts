@@ -3,6 +3,7 @@ import BigNumber from "bignumber.js";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router";
 import { getKycProviderName } from "../../../../../domain/types/kyc";
 import {
   getExtendedYieldType,
@@ -21,7 +22,8 @@ import type { MetaInfoProps } from "../pages/common-page/common.page";
 export const useUnstakeActionReview = () => {
   const exitFlow = useRequiredExitClassicTransactionFlow();
   const facade = useClassicFlowSessionFacade();
-  useAtomMount(facade.reviewRouteAtom);
+  const location = useLocation();
+  useAtomMount(facade.reviewRouteAtom(location.key));
   const confirmFlow = useAtomSet(facade.confirmAtom);
   const refreshKyc = useAtomSet(facade.refreshKycAtom);
   const review = useAtomValue(facade.reviewViewAtom);

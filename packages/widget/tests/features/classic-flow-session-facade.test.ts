@@ -81,6 +81,9 @@ describe("Classic Flow Session facade", () => {
 
     const facade = makeClassicFlowSessionFacade({ runtime, session, store });
     const disposeLifecycle = registry.mount(facade.lifecycleAtom);
+    const disposeFirstReviewRoute = registry.mount(
+      facade.reviewRouteAtom("first-review")
+    );
     registry.set(facade.backAtom, undefined);
     expect(registry.get(facade.navigationAtom)).toBeNull();
     const disposeFirstReview = registry.mount(facade.actionPreviewAtom);
@@ -99,11 +102,17 @@ describe("Classic Flow Session facade", () => {
     expect(registry.get(facade.navigationAtom)).toBe("Steps");
 
     disposeFirstReview();
+    disposeFirstReviewRoute();
+    const disposeStepsRoute = registry.mount(facade.stepsRouteAtom("steps"));
     registry.set(facade.backAtom, undefined);
     registry.set(facade.backAtom, undefined);
     expect(registry.get(facade.attachedActionAtom)).toBeNull();
     expect(registry.get(facade.navigationAtom)).toBe("Review");
 
+    disposeStepsRoute();
+    const disposeSecondReviewRoute = registry.mount(
+      facade.reviewRouteAtom("second-review")
+    );
     const disposeSecondReview = registry.mount(facade.actionPreviewAtom);
     await vi.waitFor(() =>
       expect(
@@ -114,6 +123,7 @@ describe("Classic Flow Session facade", () => {
     );
 
     disposeSecondReview();
+    disposeSecondReviewRoute();
     disposeLifecycle();
   });
 
@@ -143,6 +153,9 @@ describe("Classic Flow Session facade", () => {
 
     const facade = makeClassicFlowSessionFacade({ runtime, session, store });
     const disposeLifecycle = registry.mount(facade.lifecycleAtom);
+    const disposeInitialReview = registry.mount(
+      facade.reviewRouteAtom("initial-review")
+    );
     const disposeReviewResource = registry.mount(facade.actionPreviewAtom);
     await vi.waitFor(() =>
       expect(
@@ -151,13 +164,16 @@ describe("Classic Flow Session facade", () => {
     );
 
     registry.set(facade.continueAtom, undefined);
-    const disposeSteps = registry.mount(facade.stepsRouteAtom);
+    disposeInitialReview();
+    const disposeSteps = registry.mount(facade.stepsRouteAtom("steps"));
     expect(registry.get(facade.navigationAtom)).toBeNull();
     expect(registry.get(facade.attachedActionAtom)).not.toBeNull();
 
     disposeReviewResource();
     disposeSteps();
-    const disposeReview = registry.mount(facade.reviewRouteAtom);
+    const disposeReview = registry.mount(
+      facade.reviewRouteAtom("returned-review")
+    );
     expect(registry.get(facade.navigationAtom)).toBeNull();
     expect(registry.get(facade.attachedActionAtom)).toBeNull();
 
@@ -275,6 +291,9 @@ describe("Classic Flow Session facade", () => {
     const facade = makeClassicFlowSessionFacade({ runtime, session, store });
     const workflowKey = registry.get(facade.workflowKeyAtom);
     const disposeWorkflow = registry.mount(facade.workflow.lifecycleAtom);
+    const disposeSteps = registry.mount(
+      facade.stepsRouteAtom("activity-steps")
+    );
 
     await vi.waitFor(() => expect(workflowProbe.started).toBe(1));
 
@@ -293,6 +312,7 @@ describe("Classic Flow Session facade", () => {
     expect(workflowProbe.disposed).toBe(0);
 
     disposeWorkflow();
+    disposeSteps();
     await vi.waitFor(() => expect(workflowProbe.disposed).toBe(1));
   });
 
@@ -344,6 +364,7 @@ describe("Classic Flow Session facade", () => {
     const session = registry.get(store.currentSessionAtom);
     if (!session) throw new Error("Expected an Exit Flow Session");
     const facade = makeClassicFlowSessionFacade({ runtime, session, store });
+    const disposeReview = registry.mount(facade.reviewRouteAtom("exit-review"));
     const disposePreview = registry.mount(facade.actionPreviewAtom);
 
     await vi.waitFor(() =>
@@ -360,6 +381,7 @@ describe("Classic Flow Session facade", () => {
     expect(registry.get(facade.attachedActionAtom)).toBeNull();
     expect(registry.get(facade.navigationAtom)).toBeNull();
     disposePreview();
+    disposeReview();
   });
 
   it("retries an ordinary preview failure without attaching partial state", async () => {
@@ -391,6 +413,9 @@ describe("Classic Flow Session facade", () => {
     const session = registry.get(store.currentSessionAtom);
     if (!session) throw new Error("Expected a Flow Session");
     const facade = makeClassicFlowSessionFacade({ runtime, session, store });
+    const disposeReview = registry.mount(
+      facade.reviewRouteAtom("retry-review")
+    );
     const disposePreview = registry.mount(facade.actionPreviewAtom);
 
     await vi.waitFor(() =>
@@ -413,5 +438,6 @@ describe("Classic Flow Session facade", () => {
     registry.set(facade.retryAtom, undefined);
     expect(previewAction).toHaveBeenCalledTimes(2);
     disposePreview();
+    disposeReview();
   });
 });

@@ -57,6 +57,12 @@ const sessionActionPreviewAtom = Atom.make((get) => {
     ? get(classicFlowSessionFacadeFamily(session).actionPreviewAtom)
     : AsyncResult.success(null);
 });
+const sessionReviewRouteAtom = Atom.make((get) => {
+  const session = get(classicFlowSessionStore.currentSessionAtom);
+  if (session) {
+    get(classicFlowSessionFacadeFamily(session).reviewRouteAtom("test-review"));
+  }
+});
 const sessionKycGateAtom = Atom.make((get) => {
   const session = get(classicFlowSessionStore.currentSessionAtom);
   return session
@@ -166,6 +172,7 @@ describe("action preview", () => {
           } satisfies ClassicTransactionFlowIntake);
         }, [startFlow]);
 
+        useAtomValue(sessionReviewRouteAtom);
         return useAtomValue(sessionActionPreviewAtom);
       },
       { wrapper: Wrapper }
@@ -226,6 +233,7 @@ describe("action preview", () => {
           });
         }, [startFlow]);
 
+        useAtomValue(sessionReviewRouteAtom);
         return {
           kyc: useAtomValue(sessionKycGateAtom),
           preview: useAtomValue(sessionActionPreviewAtom),

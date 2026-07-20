@@ -3,6 +3,7 @@ import BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { getActionProviderYieldId } from "../../../../../domain/types/action";
 import { getKycProviderName } from "../../../../../domain/types/kyc";
@@ -22,7 +23,8 @@ import { useFees } from "./use-fees";
 export const useStakeReview = () => {
   const enterFlow = useRequiredEnterClassicTransactionFlow();
   const facade = useClassicFlowSessionFacade();
-  useAtomMount(facade.reviewRouteAtom);
+  const location = useLocation();
+  useAtomMount(facade.reviewRouteAtom(location.key));
   const confirmFlow = useAtomSet(facade.confirmAtom);
   const refreshKyc = useAtomSet(facade.refreshKycAtom);
   const review = useAtomValue(facade.reviewViewAtom);

@@ -3,6 +3,7 @@ import BigNumber from "bignumber.js";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router";
 import type { YieldPendingActionType } from "../../../../../domain/types/pending-action";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
@@ -17,7 +18,8 @@ import type { MetaInfoProps } from "../pages/common-page/common.page";
 export const usePendingActionReview = () => {
   const manageFlow = useRequiredManageClassicTransactionFlow();
   const facade = useClassicFlowSessionFacade();
-  useAtomMount(facade.reviewRouteAtom);
+  const location = useLocation();
+  useAtomMount(facade.reviewRouteAtom(location.key));
   const confirmFlow = useAtomSet(facade.confirmAtom);
   const review = useAtomValue(facade.reviewViewAtom);
   const pendingTxGas = review.gasAmount;

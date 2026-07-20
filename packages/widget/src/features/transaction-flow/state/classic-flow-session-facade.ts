@@ -297,32 +297,39 @@ export const makeClassicFlowSessionFacade = ({
     context.set(continueAtom, undefined);
   }).pipe(Atom.setIdleTTL(0), Atom.withLabel("confirmClassicFlowSessionAtom"));
 
-  const stepsRouteAtom = Atom.make((context) => {
-    const state = context.once(stateAtom);
-    if (state.navigation !== null) {
-      context.set(stateAtom, { ...state, navigation: null });
-    }
-  }).pipe(
-    Atom.setIdleTTL(0),
-    Atom.withLabel(`classicFlowSessionStepsRoute(${session.key})`)
+  const stepsRouteAtom = Atom.family((entryKey: string) =>
+    Atom.make((context) => {
+      const state = context.once(stateAtom);
+      if (state.navigation !== null) {
+        context.set(stateAtom, { ...state, navigation: null });
+      }
+    }).pipe(
+      Atom.setIdleTTL(0),
+      Atom.withLabel(`classicFlowSessionStepsRoute(${session.key}:${entryKey})`)
+    )
   );
 
-  const reviewRouteAtom = Atom.make((context) => {
-    const state = context.once(stateAtom);
-    const resetAction =
-      session.intake._tag !== "ActivityResume" && state.attachedAction !== null;
-    if (!resetAction && state.navigation === null) return;
+  const reviewRouteAtom = Atom.family((entryKey: string) =>
+    Atom.make((context) => {
+      const state = context.once(stateAtom);
+      const resetAction =
+        session.intake._tag !== "ActivityResume" &&
+        state.attachedAction !== null;
+      if (!resetAction && state.navigation === null) return;
 
-    context.set(stateAtom, {
-      attachedAction: resetAction ? null : state.attachedAction,
-      navigation: null,
-      previewGeneration: resetAction
-        ? state.previewGeneration + 1
-        : state.previewGeneration,
-    });
-  }).pipe(
-    Atom.setIdleTTL(0),
-    Atom.withLabel(`classicFlowSessionReviewRoute(${session.key})`)
+      context.set(stateAtom, {
+        attachedAction: resetAction ? null : state.attachedAction,
+        navigation: null,
+        previewGeneration: resetAction
+          ? state.previewGeneration + 1
+          : state.previewGeneration,
+      });
+    }).pipe(
+      Atom.setIdleTTL(0),
+      Atom.withLabel(
+        `classicFlowSessionReviewRoute(${session.key}:${entryKey})`
+      )
+    )
   );
 
   const lifecycleAtom = Atom.make((context) => {
