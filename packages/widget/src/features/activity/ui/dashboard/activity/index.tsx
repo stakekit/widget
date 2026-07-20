@@ -4,7 +4,7 @@ import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../../../shared/ui/primitives/icons/caret-left";
-import { classicTransactionFlowFacade } from "../../../../transaction-flow/state/classic-flow-facade";
+import { classicFlowSessionStore } from "../../../../transaction-flow/state/classic-flow-session-store";
 import { AnimationPage } from "../../../../widget-shell/animation-page";
 import { ActivityPage } from "./activity.page";
 import { activityDetailsContainer } from "./styles.css";
@@ -12,15 +12,15 @@ import { activityDetailsContainer } from "./styles.css";
 export const ActivityTabPage = () => {
   const variant = useWidgetConfig("variant");
   const navigate = useNavigate();
-  const selection = useAtomValue(
-    classicTransactionFlowFacade.activityResumeFlowAtom
-  );
-  const abandonFlow = useAtomSet(classicTransactionFlowFacade.abandonAtom);
+  const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
+  const clearSession = useAtomSet(classicFlowSessionStore.clearAtom);
+  const selection =
+    session?.intake._tag === "ActivityResume" ? session.intake : null;
 
   const showDetails = selection !== null;
 
   const onBack = () => {
-    if (selection) abandonFlow(selection.identity);
+    if (session && selection) clearSession(session.key);
     navigate("/activity");
   };
 

@@ -1,4 +1,4 @@
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
@@ -14,15 +14,17 @@ import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import { getRewardTokenSymbols } from "../../../../earn/react/use-reward-token-details/get-reward-token-symbols";
 import type { RewardTokenDetails } from "../../../../earn/ui/components/reward-token-details";
 import type { PageCta } from "../../../../widget-shell/page-cta";
+import { useClassicFlowSessionFacade } from "../../../react/classic-flow-session-context";
 import { useRequiredExitClassicTransactionFlow } from "../../../react/request-route-guards";
-import { classicTransactionFlowFacade } from "../../../state/classic-flow-facade";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 
 export const useUnstakeActionReview = () => {
   const exitFlow = useRequiredExitClassicTransactionFlow();
-  const confirmFlow = useAtomSet(classicTransactionFlowFacade.confirmAtom);
-  const refreshKyc = useAtomSet(classicTransactionFlowFacade.refreshKycAtom);
-  const review = useAtomValue(classicTransactionFlowFacade.reviewViewAtom);
+  const facade = useClassicFlowSessionFacade();
+  useAtomMount(facade.reviewRouteAtom);
+  const confirmFlow = useAtomSet(facade.confirmAtom);
+  const refreshKyc = useAtomSet(facade.refreshKycAtom);
+  const review = useAtomValue(facade.reviewViewAtom);
 
   const integrationData = exitFlow.integration;
   const stakeExitTxGas = review.gasAmount;
@@ -76,7 +78,7 @@ export const useUnstakeActionReview = () => {
 
   const unstakeIsLoading = review.confirmLoading;
 
-  const onClick = () => confirmFlow(exitFlow.identity);
+  const onClick = () => confirmFlow(undefined);
 
   const onClickRef = useSavedRef(onClick);
 

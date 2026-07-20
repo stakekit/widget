@@ -5,6 +5,7 @@ import { walletRuntime } from "../../../app/runtime/wallet-runtime";
 import type { YieldAction } from "../../../domain/schema/action-models";
 import type { TransactionType } from "../../../domain/types/action";
 import type {
+  ClassicTransactionWorkflowKey,
   TransactionWorkflowCommand,
   TransactionWorkflowKey,
   TransactionWorkflowState,
@@ -17,7 +18,6 @@ import {
   initializeTransactionWorkflow,
 } from "../../../services/workflow/transaction-workflow-model";
 import { TransactionWorkflowService } from "../../../services/workflow/transaction-workflow-service";
-import type { ClassicTransactionFlowWorkflowHandoff } from "../model/classic-transaction-flow";
 import {
   actionHistoryTimestampAtom,
   markActionHistoryChanged,
@@ -82,7 +82,7 @@ const getClassicTransactionStepState = ({
 
 const getClassicTransactionStepsView = (
   machineState: TransactionWorkflowState,
-  workflowKey: ClassicTransactionFlowWorkflowHandoff["workflowKey"]
+  workflowKey: ClassicTransactionWorkflowKey
 ) => {
   const workflowTransactions = flattenTransactionWorkflowTransactions(
     machineState.context
@@ -162,23 +162,6 @@ export const transactionWorkflowMachineAtom = Atom.family(
   }
 );
 
-export const classicTransactionWorkflowMachineAtom = Atom.family(
-  (handoff: ClassicTransactionFlowWorkflowHandoff) => {
-    const workflowId = getTransactionWorkflowId(handoff.workflowKey);
-
-    return walletRuntime
-      .atom(
-        TransactionWorkflowService.use((service) =>
-          service.make(handoff.workflowKey)
-        )
-      )
-      .pipe(
-        Atom.setIdleTTL(0),
-        Atom.withLabel(`classicTransactionWorkflow(${workflowId})`)
-      );
-  }
-);
-
 export const transactionWorkflowStateAtom = Atom.family(
   (workflowKey: TransactionWorkflowKey) => {
     const machineAtom = transactionWorkflowMachineAtom(workflowKey);
@@ -194,81 +177,6 @@ export const transactionWorkflowStateAtom = Atom.family(
       .pipe(
         Atom.setIdleTTL(0),
         Atom.withLabel(`transactionWorkflowState(${workflowId})`)
-      );
-  }
-);
-
-export const classicTransactionWorkflowStateAtom = Atom.family(
-  (handoff: ClassicTransactionFlowWorkflowHandoff) => {
-    const machineAtom = classicTransactionWorkflowMachineAtom(handoff);
-    const workflowId = getTransactionWorkflowId(handoff.workflowKey);
-
-    return walletRuntime
-      .atom((context) =>
-        context.result(machineAtom).pipe(
-          Effect.map((machine) => machine.states),
-          Stream.unwrap
-        )
-      )
-      .pipe(
-        Atom.setIdleTTL(0),
-        Atom.withLabel(`classicTransactionWorkflowState(${workflowId})`)
-      );
-  }
-);
-
-export const classicTransactionWorkflowViewAtom = Atom.family(
-  (handoff: ClassicTransactionFlowWorkflowHandoff) =>
-    Atom.make((get) => {
-      const result = get(classicTransactionWorkflowStateAtom(handoff));
-
-      const state = Option.getOrElse(AsyncResult.value(result), () =>
-        initializeTransactionWorkflow(handoff.workflowKey)
-      );
-
-      return {
-        flowIdentity: handoff.flowIdentity,
-        result,
-        state,
-        steps: getClassicTransactionStepsView(state, handoff.workflowKey),
-        workflowKey: handoff.workflowKey,
-      } as const;
-    }).pipe(Atom.withLabel("classicTransactionWorkflowViewAtom"))
-);
-
-export const classicTransactionWorkflowCompletionAtom = Atom.family(
-  (handoff: ClassicTransactionFlowWorkflowHandoff) => {
-    const machineAtom = classicTransactionWorkflowMachineAtom(handoff);
-    const workflowId = getTransactionWorkflowId(handoff.workflowKey);
-
-    return walletRuntime
-      .atom(
-        (context) =>
-          Effect.gen(function* () {
-            const machine = yield* context.result(machineAtom);
-
-            return machine.events.pipe(
-              Stream.filter(
-                (event) =>
-                  event._tag === "TransactionWorkflowCompleted" &&
-                  event.context.domain._tag === "Classic"
-              ),
-              Stream.tap(() =>
-                Effect.sync(() => {
-                  context.set(
-                    actionHistoryTimestampAtom,
-                    markActionHistoryChanged()
-                  );
-                })
-              ),
-              Stream.map(() => undefined)
-            );
-          }).pipe(Stream.unwrap),
-        { initialValue: undefined }
-      )
-      .pipe(
-        Atom.setIdleTTL(0),
-        Atom.withLabel(`transactionWorkflowCompletion(${workflowId})`)
       );
   }
 );
@@ -289,18 +197,133 @@ export const transactionWorkflowDispatchAtom = Atom.family(
   }
 );
 
-export const classicTransactionWorkflowDispatchAtom = Atom.family(
-  (handoff: ClassicTransactionFlowWorkflowHandoff) => {
-    const machineAtom = classicTransactionWorkflowMachineAtom(handoff);
+export const makeClassicTransactionWorkflowFacade = (
+  workflowKeyAtom: Atom.Atom<ClassicTransactionWorkflowKey | null>
+) => {
+  const machineAtomFamily = Atom.family(
+    (workflowKey: ClassicTransactionWorkflowKey) => {
+      const workflowId = getTransactionWorkflowId(workflowKey);
 
-    return walletRuntime
-      .fn(
-        (command: TransactionWorkflowCommand, context) =>
-          context
-            .result(machineAtom)
-            .pipe(Effect.flatMap((machine) => machine.dispatch(command))),
-        { concurrent: false }
-      )
-      .pipe(Atom.setIdleTTL(0));
-  }
-);
+      return walletRuntime
+        .atom(
+          TransactionWorkflowService.use((service) => service.make(workflowKey))
+        )
+        .pipe(
+          Atom.setIdleTTL(0),
+          Atom.withLabel(`classicSessionWorkflow(${workflowId})`)
+        );
+    }
+  );
+  const stateAtomFamily = Atom.family(
+    (workflowKey: ClassicTransactionWorkflowKey) => {
+      const machineAtom = machineAtomFamily(workflowKey);
+      const workflowId = getTransactionWorkflowId(workflowKey);
+
+      return walletRuntime
+        .atom((context) =>
+          context.result(machineAtom).pipe(
+            Effect.map((machine) => machine.states),
+            Stream.unwrap
+          )
+        )
+        .pipe(
+          Atom.setIdleTTL(0),
+          Atom.withLabel(`classicSessionWorkflowState(${workflowId})`)
+        );
+    }
+  );
+  const completionAtomFamily = Atom.family(
+    (workflowKey: ClassicTransactionWorkflowKey) => {
+      const machineAtom = machineAtomFamily(workflowKey);
+      const workflowId = getTransactionWorkflowId(workflowKey);
+
+      return walletRuntime
+        .atom(
+          (context) =>
+            Effect.gen(function* () {
+              const machine = yield* context.result(machineAtom);
+
+              return machine.events.pipe(
+                Stream.filter(
+                  (event) =>
+                    event._tag === "TransactionWorkflowCompleted" &&
+                    event.context.domain._tag === "Classic"
+                ),
+                Stream.tap(() =>
+                  Effect.sync(() => {
+                    context.set(
+                      actionHistoryTimestampAtom,
+                      markActionHistoryChanged()
+                    );
+                  })
+                ),
+                Stream.map(() => undefined)
+              );
+            }).pipe(Stream.unwrap),
+          { initialValue: undefined }
+        )
+        .pipe(
+          Atom.setIdleTTL(0),
+          Atom.withLabel(`classicSessionWorkflowCompletion(${workflowId})`)
+        );
+    }
+  );
+
+  const viewAtom = Atom.make((get) => {
+    const workflowKey = get(workflowKeyAtom);
+    if (!workflowKey) return null;
+
+    const result = get(stateAtomFamily(workflowKey));
+    const state = Option.getOrElse(AsyncResult.value(result), () =>
+      initializeTransactionWorkflow(workflowKey)
+    );
+
+    return {
+      result,
+      state,
+      steps: getClassicTransactionStepsView(state, workflowKey),
+      workflowKey,
+    } as const;
+  }).pipe(Atom.withLabel("classicSessionWorkflowViewAtom"));
+
+  const dispatchAtom = walletRuntime
+    .fn(
+      (command: TransactionWorkflowCommand, context) => {
+        const workflowKey = context.registry.get(workflowKeyAtom);
+        if (!workflowKey) return Effect.void;
+
+        return context
+          .result(machineAtomFamily(workflowKey))
+          .pipe(Effect.flatMap((machine) => machine.dispatch(command)));
+      },
+      { concurrent: false }
+    )
+    .pipe(Atom.setIdleTTL(0));
+
+  const completionAtom = Atom.make((get) => {
+    const workflowKey = get(workflowKeyAtom);
+    if (workflowKey) get(completionAtomFamily(workflowKey));
+  }).pipe(
+    Atom.setIdleTTL(0),
+    Atom.withLabel("classicSessionWorkflowCompletionAtom")
+  );
+
+  const lifecycleAtom = Atom.make((get) => {
+    const workflowKey = get(workflowKeyAtom);
+    if (workflowKey) get(machineAtomFamily(workflowKey));
+  }).pipe(
+    Atom.setIdleTTL(0),
+    Atom.withLabel("classicSessionWorkflowLifecycleAtom")
+  );
+
+  return {
+    completionAtom,
+    dispatchAtom,
+    lifecycleAtom,
+    viewAtom,
+  } as const;
+};
+
+export type ClassicTransactionWorkflowFacade = ReturnType<
+  typeof makeClassicTransactionWorkflowFacade
+>;

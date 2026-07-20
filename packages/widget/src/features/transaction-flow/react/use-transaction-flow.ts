@@ -1,5 +1,5 @@
 import { useAtomSet } from "@effect/atom-react";
-import { classicTransactionFlowFacade } from "../state/classic-flow-facade";
+import { classicFlowSessionStore } from "../state/classic-flow-session-store";
 
 export const useStartClassicTransactionFlow = () =>
-  useAtomSet(classicTransactionFlowFacade.startAtom);
+  useAtomSet(classicFlowSessionStore.startAtom);

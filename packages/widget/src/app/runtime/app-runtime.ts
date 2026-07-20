@@ -1,7 +1,6 @@
 import { Effect, Layer } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
-import { ClassicFlowIdentityService } from "../../features/transaction-flow/runtime/classic-flow-services";
 import { BorrowApiService } from "../../services/api/borrow-api-service";
 import { LegacyApiService } from "../../services/api/legacy-api-service";
 import { ApiTransportService } from "../../services/api/transport";
@@ -41,7 +40,6 @@ const makeAppLayer = (
     Layer.provide(widgetConfigLayer)
   );
   return Layer.mergeAll(
-    ClassicFlowIdentityService.layer,
     widgetConfigLayer,
     richErrorLayer,
     apiLayer,

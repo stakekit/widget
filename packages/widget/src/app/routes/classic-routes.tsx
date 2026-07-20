@@ -13,6 +13,7 @@ import {
   ExitClassicFlowRouteGuard,
   ManageClassicFlowRouteGuard,
 } from "../../features/transaction-flow/react/request-route-guards";
+import { classicFlowSessionStore } from "../../features/transaction-flow/state/classic-flow-session-store";
 import { ActivityCompletePage } from "../../features/transaction-flow/ui/complete/pages/activity-complete.page";
 import { PendingCompletePage } from "../../features/transaction-flow/ui/complete/pages/pending-complete.page";
 import { StakeCompletePage } from "../../features/transaction-flow/ui/complete/pages/stake-complete.page";
@@ -41,6 +42,7 @@ import { useSKLocation } from "../../shared/react/location-history";
 import { useDetailsMatch } from "../../shared/react/navigation/use-details-match";
 import { usePrevious } from "../../shared/react/use-previous";
 import { useSavedRef } from "../../shared/react/use-saved-ref";
+import { isClassicFlowSessionPath } from "./classic-flow-session-path";
 import { ClassicFlowTransactionWorkflowGuard } from "./guards/classic-transaction-workflow";
 import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
 
@@ -53,6 +55,7 @@ export const ClassicRoutes = () => {
   const prevAddress = usePrevious(address);
 
   const { current } = useSKLocation();
+  const flowSession = useAtomValue(classicFlowSessionStore.currentSessionAtom);
 
   const pathnameRef = useSavedRef(current.pathname);
   const navigateRef = useSavedRef(useNavigate());
@@ -96,7 +99,13 @@ export const ClassicRoutes = () => {
    * Dont unmount details page with tabs
    * Handle position details pages in their own Routes
    */
-  const key = detailsMatch ? "/" : current.key;
+  const key =
+    flowSession &&
+    isClassicFlowSessionPath(current.pathname, flowSession.intake._tag)
+      ? `classic-flow-session-${flowSession.key}`
+      : detailsMatch
+        ? "/"
+        : current.key;
 
   if (underMaintenance) return <UnderMaintenance />;
 

@@ -1,5 +1,4 @@
 import BigNumber from "bignumber.js";
-import { Data, Schema } from "effect";
 import type {
   ActionCommand,
   ManageActionCommand,
@@ -22,22 +21,6 @@ import {
   type ClassicTransactionWorkflowProviderDetail,
   makeClassicTransactionWorkflowKey,
 } from "../../../services/workflow/transaction-workflow-model";
-
-export const ClassicTransactionFlowIdentity = Schema.String.check(
-  Schema.isUUID(4)
-).pipe(Schema.brand("ClassicTransactionFlowIdentity"));
-export type ClassicTransactionFlowIdentity =
-  typeof ClassicTransactionFlowIdentity.Type;
-
-export const makeClassicTransactionFlowIdentity = Schema.decodeSync(
-  ClassicTransactionFlowIdentity
-);
-
-type ClassicTransactionFlowBase = {
-  readonly identity: ClassicTransactionFlowIdentity;
-  readonly providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>;
-  readonly walletScope: WalletScopeKey;
-};
 
 type EnterClassicTransactionFlowIntake = {
   readonly _tag: "Enter";
@@ -87,253 +70,39 @@ export type ClassicTransactionFlowIntake =
   | ManageClassicTransactionFlowIntake
   | ActivityResumeClassicTransactionFlowIntake;
 
-type ReviewableClassicTransactionFlowIntake = Exclude<
-  ClassicTransactionFlowIntake,
-  ActivityResumeClassicTransactionFlowIntake
->;
-
-type ReviewingClassicTransactionFlow = ReviewableClassicTransactionFlowIntake &
-  ClassicTransactionFlowBase & {
-    readonly phase: "Reviewing";
-  };
-
-type ExecutableClassicTransactionFlow =
-  | (ReviewableClassicTransactionFlowIntake &
-      ClassicTransactionFlowBase & {
-        readonly action: YieldAction;
-        readonly phase: "Executable";
-      })
-  | (ActivityResumeClassicTransactionFlowIntake &
-      ClassicTransactionFlowBase & {
-        readonly phase: "Executable";
-      });
-
-export type ClassicTransactionFlow =
-  | ReviewingClassicTransactionFlow
-  | ExecutableClassicTransactionFlow;
-
-type ClassicTransactionFlowState = ClassicTransactionFlow | null;
-
-const copyIntake = (
-  intake: ClassicTransactionFlowIntake
-): ClassicTransactionFlowIntake => {
-  const providersDetails = [...intake.providersDetails];
-
-  switch (intake._tag) {
-    case "Enter":
-      return {
-        ...intake,
-        providersDetails,
-        selectedValidators: new Map(intake.selectedValidators),
-      };
-    case "ActivityResume":
-      return {
-        ...intake,
-        providersDetails,
-        selectedValidators: [...intake.selectedValidators],
-      };
-    case "Exit":
-    case "Manage":
-      return { ...intake, providersDetails };
-  }
-};
-
-export const startClassicTransactionFlow = (
-  _activeFlow: ClassicTransactionFlowState,
-  identity: ClassicTransactionFlowIdentity,
-  intake: ClassicTransactionFlowIntake
-): ClassicTransactionFlow => {
-  const facts = copyIntake(intake);
-
-  return facts._tag === "ActivityResume"
-    ? { ...facts, identity, phase: "Executable" }
-    : { ...facts, identity, phase: "Reviewing" };
-};
-
-type AttachClassicTransactionFlowActionResult =
-  | {
-      readonly _tag: "Attached";
-      readonly activeFlow: ExecutableClassicTransactionFlow;
-    }
-  | {
-      readonly _tag: "StaleFlow";
-      readonly activeFlow: ClassicTransactionFlowState;
-    }
-  | {
-      readonly _tag: "NotReviewing";
-      readonly activeFlow: ExecutableClassicTransactionFlow;
-    };
-
-export const attachClassicTransactionFlowAction = (
-  activeFlow: ClassicTransactionFlowState,
-  identity: ClassicTransactionFlowIdentity,
-  action: YieldAction
-): AttachClassicTransactionFlowActionResult => {
-  if (!activeFlow || activeFlow.identity !== identity) {
-    return { _tag: "StaleFlow", activeFlow };
-  }
-
-  if (activeFlow.phase === "Executable") {
-    return { _tag: "NotReviewing", activeFlow };
-  }
-
-  return {
-    _tag: "Attached",
-    activeFlow: { ...activeFlow, action, phase: "Executable" },
-  };
-};
-
-type AbandonClassicTransactionFlowResult =
-  | { readonly _tag: "Abandoned"; readonly activeFlow: null }
-  | {
-      readonly _tag: "StaleFlow";
-      readonly activeFlow: ClassicTransactionFlowState;
-    };
-
-export const abandonClassicTransactionFlow = (
-  activeFlow: ClassicTransactionFlowState,
-  identity: ClassicTransactionFlowIdentity
-): AbandonClassicTransactionFlowResult =>
-  activeFlow?.identity === identity
-    ? { _tag: "Abandoned", activeFlow: null }
-    : { _tag: "StaleFlow", activeFlow };
-
-type ReturnClassicTransactionFlowToReviewResult =
-  | {
-      readonly _tag: "ReviewingStarted";
-      readonly activeFlow: ReviewingClassicTransactionFlow;
-    }
-  | {
-      readonly _tag: "ActivityResumeRetained";
-      readonly activeFlow: Extract<
-        ExecutableClassicTransactionFlow,
-        { readonly _tag: "ActivityResume" }
-      >;
-    }
-  | {
-      readonly _tag: "StaleFlow";
-      readonly activeFlow: ClassicTransactionFlowState;
-    }
-  | {
-      readonly _tag: "NotExecutable" | "IdentityNotReplaced";
-      readonly activeFlow: ClassicTransactionFlow;
-    };
-
-export const returnClassicTransactionFlowToReview = (
-  activeFlow: ClassicTransactionFlowState,
-  identity: ClassicTransactionFlowIdentity,
-  nextIdentity: ClassicTransactionFlowIdentity
-): ReturnClassicTransactionFlowToReviewResult => {
-  if (!activeFlow || activeFlow.identity !== identity) {
-    return { _tag: "StaleFlow", activeFlow };
-  }
-
-  if (activeFlow.phase !== "Executable") {
-    return { _tag: "NotExecutable", activeFlow };
-  }
-
-  if (activeFlow._tag === "ActivityResume") {
-    return { _tag: "ActivityResumeRetained", activeFlow };
-  }
-
-  if (nextIdentity === identity) {
-    return { _tag: "IdentityNotReplaced", activeFlow };
-  }
-
-  const { action: _action, ...intake } = activeFlow;
-  return {
-    _tag: "ReviewingStarted",
-    activeFlow: {
-      ...intake,
-      identity: nextIdentity,
-      phase: "Reviewing",
-    },
-  };
-};
-
-type ClassicTransactionFlowActionPreviewInput = {
-  readonly flowIdentity: ClassicTransactionFlowIdentity;
-} & (
-  | {
-      readonly command: ActionCommand;
-      readonly intent: "enter" | "exit";
-    }
-  | {
-      readonly command: ManageActionCommand;
-      readonly intent: "manage";
-    }
-);
-
-export const getClassicTransactionFlowActionPreviewInput = (
-  activeFlow: ClassicTransactionFlowState
-): ClassicTransactionFlowActionPreviewInput | null => {
-  if (activeFlow?.phase !== "Reviewing") return null;
-
-  switch (activeFlow._tag) {
-    case "Enter":
-      return {
-        command: activeFlow.request,
-        flowIdentity: activeFlow.identity,
-        intent: "enter",
-      };
-    case "Exit":
-      return {
-        command: activeFlow.request,
-        flowIdentity: activeFlow.identity,
-        intent: "exit",
-      };
-    case "Manage":
-      return {
-        command: activeFlow.request,
-        flowIdentity: activeFlow.identity,
-        intent: "manage",
-      };
-  }
-};
-
 type ClassicTransactionFlowReviewPricingInput = {
   readonly token: AppToken;
   readonly yield: EarnYieldWithProvider;
 };
 
 export const getClassicTransactionFlowReviewPricingInput = (
-  activeFlow: ClassicTransactionFlowState
+  intake: ClassicTransactionFlowIntake
 ): ClassicTransactionFlowReviewPricingInput | null => {
-  if (!activeFlow) return null;
-
-  switch (activeFlow._tag) {
+  switch (intake._tag) {
     case "Enter":
-      return {
-        token: activeFlow.selectedToken,
-        yield: activeFlow.selectedStake,
-      };
+      return { token: intake.selectedToken, yield: intake.selectedStake };
     case "Exit":
-      return { token: activeFlow.unstakeToken, yield: activeFlow.integration };
+      return { token: intake.unstakeToken, yield: intake.integration };
     case "Manage":
-      return {
-        token: activeFlow.interactedToken,
-        yield: activeFlow.integration,
-      };
+      return { token: intake.interactedToken, yield: intake.integration };
     case "ActivityResume": {
       const token = getActionInputToken({
-        actionDto: activeFlow.action,
-        yieldDto: activeFlow.selectedYield,
+        actionDto: intake.action,
+        yieldDto: intake.selectedYield,
       });
-      return token ? { token, yield: activeFlow.selectedYield } : null;
+      return token ? { token, yield: intake.selectedYield } : null;
     }
   }
 };
 
 export const getClassicTransactionFlowKycYield = (
-  activeFlow: ClassicTransactionFlowState
+  intake: ClassicTransactionFlowIntake
 ): EarnYieldWithProvider | null => {
-  if (!activeFlow) return null;
-
-  switch (activeFlow._tag) {
+  switch (intake._tag) {
     case "Enter":
-      return activeFlow.selectedStake;
+      return intake.selectedStake;
     case "Exit":
-      return activeFlow.integration;
+      return intake.integration;
     case "Manage":
     case "ActivityResume":
       return null;
@@ -348,80 +117,65 @@ type ClassicTransactionFlowGasWarningInput = {
 };
 
 export const getClassicTransactionFlowGasWarningInput = (
-  activeFlow: ClassicTransactionFlowState
-): ClassicTransactionFlowGasWarningInput | null => {
-  if (!activeFlow) return null;
-
-  return activeFlow._tag === "Enter"
+  intake: ClassicTransactionFlowIntake
+): ClassicTransactionFlowGasWarningInput =>
+  intake._tag === "Enter"
     ? {
-        gasFeeToken: activeFlow.gasFeeToken,
-        stakeAmount: new BigNumber(activeFlow.request.arguments?.amount ?? 0),
-        stakeToken: activeFlow.selectedToken,
-        walletScope: activeFlow.walletScope,
+        gasFeeToken: intake.gasFeeToken,
+        stakeAmount: new BigNumber(intake.request.arguments?.amount ?? 0),
+        stakeToken: intake.selectedToken,
+        walletScope: intake.walletScope,
       }
     : {
         gasFeeToken:
-          activeFlow._tag === "ActivityResume"
-            ? activeFlow.selectedYield.mechanics.gasFeeToken
-            : activeFlow.gasFeeToken,
+          intake._tag === "ActivityResume"
+            ? intake.selectedYield.mechanics.gasFeeToken
+            : intake.gasFeeToken,
         stakeAmount: null,
         stakeToken: null,
-        walletScope: activeFlow.walletScope,
+        walletScope: intake.walletScope,
       };
-};
 
 export const isClassicTransactionFlowWalletScopeValid = (
-  activeFlow: ClassicTransactionFlowState,
+  intake: ClassicTransactionFlowIntake,
   currentWalletScope: WalletScopeKey | null
 ): boolean =>
-  activeFlow !== null &&
   currentWalletScope !== null &&
-  sameWalletScopeOwner(activeFlow.walletScope, currentWalletScope);
+  sameWalletScopeOwner(intake.walletScope, currentWalletScope);
 
-type ClassicTransactionFlowVariant = ClassicTransactionFlow["_tag"];
-
-export const getClassicTransactionFlowVariant = <
-  Variant extends ClassicTransactionFlowVariant,
+export const getClassicTransactionFlowIntakeVariant = <
+  Variant extends ClassicTransactionFlowIntake["_tag"],
 >(
-  activeFlow: ClassicTransactionFlowState,
+  intake: ClassicTransactionFlowIntake,
   variant: Variant
-): Extract<ClassicTransactionFlow, { readonly _tag: Variant }> | null =>
-  activeFlow?._tag === variant
-    ? (activeFlow as Extract<
-        ClassicTransactionFlow,
+): Extract<ClassicTransactionFlowIntake, { readonly _tag: Variant }> | null =>
+  intake._tag === variant
+    ? (intake as Extract<
+        ClassicTransactionFlowIntake,
         { readonly _tag: Variant }
       >)
     : null;
 
-export class ClassicTransactionFlowWorkflowHandoff extends Data.Class<{
-  readonly flowIdentity: ClassicTransactionFlowIdentity;
-  readonly workflowKey: ClassicTransactionWorkflowKey;
-}> {}
-
-export const getClassicTransactionFlowWorkflowHandoff = (
-  activeFlow: ClassicTransactionFlowState
-): ClassicTransactionFlowWorkflowHandoff | null => {
-  if (activeFlow?.phase !== "Executable") return null;
-
+export const getClassicTransactionWorkflowKey = (
+  intake: ClassicTransactionFlowIntake,
+  action: YieldAction
+): ClassicTransactionWorkflowKey => {
   const inputToken =
-    activeFlow._tag === "Enter"
-      ? activeFlow.selectedToken
-      : activeFlow._tag === "Exit"
-        ? activeFlow.unstakeToken
-        : activeFlow._tag === "Manage"
-          ? activeFlow.interactedToken
+    intake._tag === "Enter"
+      ? intake.selectedToken
+      : intake._tag === "Exit"
+        ? intake.unstakeToken
+        : intake._tag === "Manage"
+          ? intake.interactedToken
           : getActionInputToken({
-              actionDto: activeFlow.action,
-              yieldDto: activeFlow.selectedYield,
+              actionDto: intake.action,
+              yieldDto: intake.selectedYield,
             });
 
-  return new ClassicTransactionFlowWorkflowHandoff({
-    flowIdentity: activeFlow.identity,
-    workflowKey: makeClassicTransactionWorkflowKey({
-      action: activeFlow.action,
-      inputToken,
-      providersDetails: activeFlow.providersDetails,
-      walletScope: activeFlow.walletScope,
-    }),
+  return makeClassicTransactionWorkflowKey({
+    action,
+    inputToken,
+    providersDetails: intake.providersDetails,
+    walletScope: intake.walletScope,
   });
 };

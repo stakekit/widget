@@ -20,6 +20,51 @@ const reviewedExternalReactBoundaries: ReadonlyArray<ArchitectureBaseline> = [
 
 const classicFlowViewPath =
   /(?:^|\/)src\/features\/transaction-flow\/(?:react|ui)\//;
+const classicFlowSourcePath =
+  /(?:^|\/)src\/features\/transaction-flow\/.*\.(?:ts|tsx)$/;
+
+export const checkFlowSessionArchitecture = (
+  sources: ReadonlyArray<{
+    readonly content: string;
+    readonly path: string;
+  }>
+): ReadonlyArray<string> => {
+  const failures: string[] = [];
+
+  for (const source of sources) {
+    const normalizedPath = source.path.replaceAll("\\", "/");
+    const forbiddenTerms = [
+      "ClassicTransactionFlowIdentity",
+      "ClassicTransactionFlowWorkflowHandoff",
+      "flowIdentity",
+    ];
+
+    for (const term of forbiddenTerms) {
+      if (source.content.includes(term)) {
+        failures.push(
+          `${normalizedPath} reintroduces removed Classic Flow coordination term ${term}.`
+        );
+      }
+    }
+
+    if (/phase\s*:\s*["'](?:Reviewing|Executable)["']/.test(source.content)) {
+      failures.push(
+        `${normalizedPath} reintroduces stored Reviewing/Executable phase state.`
+      );
+    }
+
+    if (
+      source.content.includes("Atom.keepAlive") &&
+      !normalizedPath.endsWith("/state/classic-flow-session-store.ts")
+    ) {
+      failures.push(
+        `${normalizedPath} keeps Classic Flow state alive outside the intake store.`
+      );
+    }
+  }
+
+  return failures;
+};
 
 const isPromiseLike = (checker: ts.TypeChecker, type: ts.Type): boolean => {
   if (type.isUnion()) {
@@ -273,6 +318,14 @@ const main = async () => {
     );
     const program = ts.createProgram(viewFiles, parsed.options);
     failures.push(...checkPromiseOwnership(program));
+    const flowSessionSources = await Promise.all(
+      parsed.fileNames
+        .filter((fileName) =>
+          classicFlowSourcePath.test(fileName.replaceAll("\\", "/"))
+        )
+        .map(async (path) => ({ content: await readFile(path, "utf8"), path }))
+    );
+    failures.push(...checkFlowSessionArchitecture(flowSessionSources));
   }
 
   if (failures.length === 0) return;

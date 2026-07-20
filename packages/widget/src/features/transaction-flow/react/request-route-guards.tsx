@@ -1,61 +1,95 @@
 import { useAtomMount, useAtomValue } from "@effect/atom-react";
-import type * as Atom from "effect/unstable/reactivity/Atom";
+import { createContext, useContext } from "react";
 import { Navigate, Outlet } from "react-router";
-import { makeRequiredAtomRoute } from "../../../shared/react/required-atom-route";
 import { useWalletScopeRoute } from "../../wallet/react/wallet-scope-route";
 import {
-  type ClassicTransactionFlow,
+  type ClassicTransactionFlowIntake,
+  getClassicTransactionFlowIntakeVariant,
   isClassicTransactionFlowWalletScopeValid,
 } from "../model/classic-transaction-flow";
-import { classicTransactionFlowFacade } from "../state/classic-flow-facade";
+import { classicFlowSessionFacadeFamily } from "../state/classic-flow-session-facade";
+import {
+  type ClassicFlowSession,
+  classicFlowSessionStore,
+} from "../state/classic-flow-session-store";
+import { ClassicFlowSessionContext } from "./classic-flow-session-context";
 
-const makeClassicFlowRoute = <Flow extends ClassicTransactionFlow>(
-  flowAtom: Atom.Atom<Flow | null>,
+const makeClassicFlowRoute = <
+  Variant extends ClassicTransactionFlowIntake["_tag"],
+>(
+  variant: Variant,
   name: string
 ) => {
-  const requiredRoute = makeRequiredAtomRoute(flowAtom, name);
+  type Intake = Extract<
+    ClassicTransactionFlowIntake,
+    { readonly _tag: Variant }
+  >;
+  const IntakeContext = createContext<Intake | null>(null);
 
-  const Lifecycle = ({ flow }: { readonly flow: Flow }) => {
-    useAtomMount(classicTransactionFlowFacade.lifecycleAtom(flow.identity));
+  const SessionLifecycle = ({
+    intake,
+    session,
+  }: {
+    readonly intake: Intake;
+    readonly session: ClassicFlowSession;
+  }) => {
+    const facade = classicFlowSessionFacadeFamily(session);
+    useAtomMount(facade.lifecycleAtom);
+    useAtomMount(facade.workflow.lifecycleAtom);
 
     return (
-      <requiredRoute.Provider value={flow}>
-        <Outlet />
-      </requiredRoute.Provider>
+      <ClassicFlowSessionContext.Provider value={facade}>
+        <IntakeContext.Provider value={intake}>
+          <Outlet />
+        </IntakeContext.Provider>
+      </ClassicFlowSessionContext.Provider>
     );
   };
 
   const RouteGuard = () => {
-    const flow = useAtomValue(flowAtom);
+    const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
     const walletScope = useWalletScopeRoute();
+    const intake = session
+      ? getClassicTransactionFlowIntakeVariant(session.intake, variant)
+      : null;
 
-    if (!flow || !isClassicTransactionFlowWalletScopeValid(flow, walletScope)) {
+    if (
+      !session ||
+      !intake ||
+      !isClassicTransactionFlowWalletScopeValid(intake, walletScope)
+    ) {
       return <Navigate to="/" replace />;
     }
 
-    return <Lifecycle flow={flow} />;
+    return <SessionLifecycle intake={intake} session={session} />;
   };
 
-  Lifecycle.displayName = `${name}Lifecycle`;
+  const useRequiredValue = (): Intake => {
+    const intake = useContext(IntakeContext);
+    if (!intake) throw new Error(`${name} used outside its route guard.`);
+    return intake;
+  };
+
+  SessionLifecycle.displayName = `${name}Lifecycle`;
   RouteGuard.displayName = `${name}RouteGuard`;
 
-  return { RouteGuard, useRequiredValue: requiredRoute.useRequiredValue };
+  return { RouteGuard, useRequiredValue };
 };
 
 const enterFlowRoute = makeClassicFlowRoute(
-  classicTransactionFlowFacade.enterFlowAtom,
+  "Enter",
   "EnterClassicTransactionFlow"
 );
 const exitFlowRoute = makeClassicFlowRoute(
-  classicTransactionFlowFacade.exitFlowAtom,
+  "Exit",
   "ExitClassicTransactionFlow"
 );
 const manageFlowRoute = makeClassicFlowRoute(
-  classicTransactionFlowFacade.manageFlowAtom,
+  "Manage",
   "ManageClassicTransactionFlow"
 );
 const activityResumeFlowRoute = makeClassicFlowRoute(
-  classicTransactionFlowFacade.activityResumeFlowAtom,
+  "ActivityResume",
   "ActivityResumeClassicTransactionFlow"
 );
 

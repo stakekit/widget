@@ -1,9 +1,15 @@
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Option, Schema } from "effect";
+import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
+import { Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { HttpResponse, http } from "msw";
 import { act } from "react";
-import { MemoryRouter, Route, Routes, useNavigate } from "react-router";
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { ActionCommand } from "../../src/domain/schema/action-models";
 import type { ClassicTransactionFlowIntake } from "../../src/features/transaction-flow/model/classic-transaction-flow";
@@ -11,8 +17,9 @@ import {
   ClassicFlowReviewNavigation,
   ClassicFlowStepsNavigation,
 } from "../../src/features/transaction-flow/react/classic-flow-navigation";
+import { useClassicFlowSessionFacade } from "../../src/features/transaction-flow/react/classic-flow-session-context";
 import { EnterClassicFlowRouteGuard } from "../../src/features/transaction-flow/react/request-route-guards";
-import { classicTransactionFlowFacade } from "../../src/features/transaction-flow/state/classic-flow-facade";
+import { classicFlowSessionStore } from "../../src/features/transaction-flow/state/classic-flow-session-store";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
@@ -57,8 +64,8 @@ const intake: ClassicTransactionFlowIntake = {
 };
 
 const StartPage = () => {
-  const activeFlow = useAtomValue(classicTransactionFlowFacade.activeFlowAtom);
-  const start = useAtomSet(classicTransactionFlowFacade.startAtom);
+  const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
+  const start = useAtomSet(classicFlowSessionStore.startAtom);
   const navigate = useNavigate();
 
   return (
@@ -68,7 +75,7 @@ const StartPage = () => {
       </button>
       <button
         type="button"
-        disabled={!activeFlow}
+        disabled={!session}
         onClick={() => navigate("/review")}
       >
         Review
@@ -78,24 +85,22 @@ const StartPage = () => {
 };
 
 const ReviewPage = () => {
-  const activeFlow = useAtomValue(classicTransactionFlowFacade.activeFlowAtom);
-  const actionPreview = useAtomValue(
-    classicTransactionFlowFacade.actionPreviewAtom
-  );
-  const review = useAtomValue(classicTransactionFlowFacade.reviewViewAtom);
-  const confirm = useAtomSet(classicTransactionFlowFacade.confirmAtom);
-  const action = actionPreview.pipe(AsyncResult.value, Option.getOrNull);
+  const facade = useClassicFlowSessionFacade();
+  useAtomMount(facade.reviewRouteAtom);
+  const review = useAtomValue(facade.reviewViewAtom);
+  const preview = useAtomValue(facade.actionPreviewAtom);
+  const confirm = useAtomSet(facade.confirmAtom);
 
   return (
     <>
-      <output data-testid="review-identity">{activeFlow?.identity}</output>
+      <output data-testid="review-session">{facade.session.key}</output>
       <output data-testid="review-prices">
         {review.prices ? "ready" : "loading"}
       </output>
       <button
         type="button"
-        disabled={!activeFlow || !action}
-        onClick={() => activeFlow && confirm(activeFlow.identity)}
+        disabled={!AsyncResult.isSuccess(preview)}
+        onClick={() => confirm(undefined)}
       >
         Confirm
       </button>
@@ -105,27 +110,55 @@ const ReviewPage = () => {
 };
 
 const StepsPage = () => {
-  const activeFlow = useAtomValue(classicTransactionFlowFacade.activeFlowAtom);
-  const returnToReview = useAtomSet(
-    classicTransactionFlowFacade.returnToReviewAtom
-  );
+  const facade = useClassicFlowSessionFacade();
+  useAtomMount(facade.stepsRouteAtom);
+  const back = useAtomSet(facade.backAtom);
+  const navigate = useNavigate();
 
   return (
     <>
-      <output data-testid="steps-identity">{activeFlow?.identity}</output>
-      <button
-        type="button"
-        onClick={() => activeFlow && returnToReview(activeFlow.identity)}
-      >
+      <output data-testid="steps-session">{facade.session.key}</output>
+      <button type="button" onClick={() => back(undefined)}>
         Back
+      </button>
+      <button type="button" onClick={() => navigate(-1)}>
+        Browser Back
       </button>
       <ClassicFlowReviewNavigation to="/review" />
     </>
   );
 };
 
+const FlowRoutes = () => {
+  const location = useLocation();
+  const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
+  const key =
+    session && /^\/(?:review|steps)$/.test(location.pathname)
+      ? `flow-session-${session.key}`
+      : location.key;
+
+  return (
+    <Routes key={key}>
+      <Route path="/" element={<StartPage />} />
+      <Route
+        element={
+          <WalletScopeRoute
+            fallbackPath="/"
+            walletStateResult={AsyncResult.success(walletState)}
+          />
+        }
+      >
+        <Route element={<EnterClassicFlowRouteGuard />}>
+          <Route path="review" element={<ReviewPage />} />
+          <Route path="steps" element={<StepsPage />} />
+        </Route>
+      </Route>
+    </Routes>
+  );
+};
+
 describe("Classic Transaction Flow navigation", () => {
-  it("commits a fresh Reviewing flow before routing Back from steps", async ({
+  it("keeps the session and prepares a fresh action after Back", async ({
     worker,
   }) => {
     let actionPreviewCalls = 0;
@@ -155,22 +188,7 @@ describe("Classic Transaction Flow navigation", () => {
         })}
       >
         <MemoryRouter initialEntries={["/"]}>
-          <Routes>
-            <Route path="/" element={<StartPage />} />
-            <Route
-              element={
-                <WalletScopeRoute
-                  fallbackPath="/"
-                  walletStateResult={AsyncResult.success(walletState)}
-                />
-              }
-            >
-              <Route element={<EnterClassicFlowRouteGuard />}>
-                <Route path="review" element={<ReviewPage />} />
-                <Route path="steps" element={<StepsPage />} />
-              </Route>
-            </Route>
-          </Routes>
+          <FlowRoutes />
         </MemoryRouter>
       </TestAtomRuntimeProvider>
     );
@@ -185,27 +203,25 @@ describe("Classic Transaction Flow navigation", () => {
     expect(actionPreviewCalls).toBe(1);
     await vi.waitFor(() => expect(priceCalls).toBe(1));
 
-    const firstIdentity = app.container.querySelector(
-      '[data-testid="review-identity"]'
+    const sessionKey = app.container.querySelector(
+      '[data-testid="review-session"]'
     )?.textContent;
     await act(async () => buttons()[0]?.click());
     await vi.waitFor(() =>
       expect(
-        app.container.querySelector('[data-testid="steps-identity"]')
-      ).not.toBeNull()
+        app.container.querySelector('[data-testid="steps-session"]')
+          ?.textContent
+      ).toBe(sessionKey)
     );
 
     await act(async () => buttons()[0]?.click());
     await vi.waitFor(() =>
       expect(
-        app.container.querySelector('[data-testid="review-identity"]')
-      ).not.toBeNull()
+        app.container.querySelector('[data-testid="review-session"]')
+          ?.textContent
+      ).toBe(sessionKey)
     );
 
-    const secondIdentity = app.container.querySelector(
-      '[data-testid="review-identity"]'
-    )?.textContent;
-    expect(secondIdentity).not.toBe(firstIdentity);
     expect(priceCalls).toBe(1);
     await vi.waitFor(() => expect(actionPreviewCalls).toBe(2));
     await vi.waitFor(() => expect(buttons()[0]?.disabled).toBe(false));
@@ -213,9 +229,14 @@ describe("Classic Transaction Flow navigation", () => {
     await act(async () => buttons()[0]?.click());
     await vi.waitFor(() =>
       expect(
-        app.container.querySelector('[data-testid="steps-identity"]')
+        app.container.querySelector('[data-testid="steps-session"]')
           ?.textContent
-      ).toBe(secondIdentity)
+      ).toBe(sessionKey)
     );
+    await act(async () => buttons()[1]?.click());
+    await vi.waitFor(() => expect(actionPreviewCalls).toBe(3));
+    expect(
+      app.container.querySelector('[data-testid="review-session"]')?.textContent
+    ).toBe(sessionKey);
   });
 });

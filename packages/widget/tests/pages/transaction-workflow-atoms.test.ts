@@ -2,13 +2,7 @@ import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import type { ActionTransaction } from "../../src/domain/schema/action-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
-import { ClassicTransactionFlowWorkflowHandoff } from "../../src/features/transaction-flow/model/classic-transaction-flow";
 import {
-  classicTransactionWorkflowCompletionAtom,
-  classicTransactionWorkflowDispatchAtom,
-  classicTransactionWorkflowMachineAtom,
-  classicTransactionWorkflowStateAtom,
-  classicTransactionWorkflowViewAtom,
   transactionWorkflowDispatchAtom,
   transactionWorkflowMachineAtom,
   transactionWorkflowStateAtom,
@@ -17,7 +11,6 @@ import type { ActionMeta } from "../../src/public-api/types";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { ClassicTransactionWorkflowKey } from "../../src/services/workflow/transaction-workflow-model";
 import { yieldApiTransactionFixture } from "../fixtures";
-import { classicFlowIdentityFixture } from "../utils/classic-flow";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -53,41 +46,6 @@ describe("transaction workflow atoms", () => {
     );
     expect(transactionWorkflowDispatchAtom(makeKey())).toBe(
       transactionWorkflowDispatchAtom(makeKey())
-    );
-  });
-
-  it("separates Classic machine generations by flow identity", () => {
-    const makeHandoff = (flowIdentity: string) =>
-      new ClassicTransactionFlowWorkflowHandoff({
-        flowIdentity: classicFlowIdentityFixture(flowIdentity),
-        workflowKey: new ClassicTransactionWorkflowKey({
-          actionMeta,
-          transactions: [transaction],
-          walletScope,
-          yieldId,
-        }),
-      });
-    const first = makeHandoff("flow-1");
-    const equalFirst = makeHandoff("flow-1");
-    const second = makeHandoff("flow-2");
-
-    expect(classicTransactionWorkflowMachineAtom(first)).toBe(
-      classicTransactionWorkflowMachineAtom(equalFirst)
-    );
-    expect(classicTransactionWorkflowStateAtom(first)).toBe(
-      classicTransactionWorkflowStateAtom(equalFirst)
-    );
-    expect(classicTransactionWorkflowDispatchAtom(first)).toBe(
-      classicTransactionWorkflowDispatchAtom(equalFirst)
-    );
-    expect(classicTransactionWorkflowCompletionAtom(first)).toBe(
-      classicTransactionWorkflowCompletionAtom(equalFirst)
-    );
-    expect(classicTransactionWorkflowViewAtom(first)).toBe(
-      classicTransactionWorkflowViewAtom(equalFirst)
-    );
-    expect(classicTransactionWorkflowMachineAtom(first)).not.toBe(
-      classicTransactionWorkflowMachineAtom(second)
     );
   });
 });

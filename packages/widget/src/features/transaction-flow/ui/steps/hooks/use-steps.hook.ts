@@ -4,19 +4,18 @@ import { useTranslation } from "react-i18next";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import { useTrackEvent } from "../../../../tracking/react/use-track-event";
 import type { PageCta } from "../../../../widget-shell/page-cta";
-import { classicTransactionFlowFacade } from "../../../state/classic-flow-facade";
+import { useClassicFlowSessionFacade } from "../../../react/classic-flow-session-context";
 import { useTransactionWorkflow } from "./use-transaction-workflow.hook";
 
 export const useSteps = () => {
-  const { dispatch, flowIdentity, steps } = useTransactionWorkflow();
-  const returnFlowToReview = useAtomSet(
-    classicTransactionFlowFacade.returnToReviewAtom
-  );
+  const { dispatch, steps } = useTransactionWorkflow();
+  const facade = useClassicFlowSessionFacade();
+  const returnFlowToReview = useAtomSet(facade.backAtom);
 
   const trackEvent = useTrackEvent();
 
   const onClick = () => {
-    if (flowIdentity) returnFlowToReview(flowIdentity);
+    returnFlowToReview(undefined);
     trackEvent("actionStepsCancelled");
   };
 

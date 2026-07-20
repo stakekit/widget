@@ -1,15 +1,15 @@
 import { createContext, useContext } from "react";
-import type { ClassicTransactionFlowWorkflowHandoff } from "../model/classic-transaction-flow";
+import type { ClassicTransactionWorkflowFacade } from "../state/transaction-workflow-atoms";
 
 export const ClassicTransactionWorkflowContext =
-  createContext<ClassicTransactionFlowWorkflowHandoff | null>(null);
+  createContext<ClassicTransactionWorkflowFacade | null>(null);
 
-export const useClassicTransactionWorkflowHandoff = () => {
-  const handoff = useContext(ClassicTransactionWorkflowContext);
+export const useClassicTransactionWorkflowFacade = () => {
+  const facade = useContext(ClassicTransactionWorkflowContext);
 
-  if (!handoff) {
+  if (!facade) {
     throw new Error("Classic transaction workflow used outside its provider.");
   }
 
-  return handoff;
+  return facade;
 };

@@ -1,4 +1,4 @@
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import { useMemo } from "react";
@@ -14,16 +14,18 @@ import { useEstimatedRewards } from "../../../../earn/react/use-estimated-reward
 import { useRewardTokenDetails } from "../../../../earn/react/use-reward-token-details";
 import { useYieldType } from "../../../../earn/react/use-yield-type";
 import type { PageCta } from "../../../../widget-shell/page-cta";
+import { useClassicFlowSessionFacade } from "../../../react/classic-flow-session-context";
 import { useRequiredEnterClassicTransactionFlow } from "../../../react/request-route-guards";
-import { classicTransactionFlowFacade } from "../../../state/classic-flow-facade";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 import { useFees } from "./use-fees";
 
 export const useStakeReview = () => {
   const enterFlow = useRequiredEnterClassicTransactionFlow();
-  const confirmFlow = useAtomSet(classicTransactionFlowFacade.confirmAtom);
-  const refreshKyc = useAtomSet(classicTransactionFlowFacade.refreshKycAtom);
-  const review = useAtomValue(classicTransactionFlowFacade.reviewViewAtom);
+  const facade = useClassicFlowSessionFacade();
+  useAtomMount(facade.reviewRouteAtom);
+  const confirmFlow = useAtomSet(facade.confirmAtom);
+  const refreshKyc = useAtomSet(facade.refreshKycAtom);
+  const review = useAtomValue(facade.reviewViewAtom);
 
   const stakeAmount = useMemo(
     () => new BigNumber(enterFlow.request.arguments?.amount ?? 0),
@@ -119,7 +121,7 @@ export const useStakeReview = () => {
   const kycProviderName = getKycProviderName(selectedStake);
   const onKycStatusRefresh = () => refreshKyc(undefined);
 
-  const onClick = () => confirmFlow(enterFlow.identity);
+  const onClick = () => confirmFlow(undefined);
 
   const onClickRef = useSavedRef(onClick);
 

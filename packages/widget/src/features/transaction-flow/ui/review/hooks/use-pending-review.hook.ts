@@ -1,4 +1,4 @@
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
@@ -10,14 +10,16 @@ import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import { getRewardTokenSymbols } from "../../../../earn/react/use-reward-token-details/get-reward-token-symbols";
 import type { RewardTokenDetails } from "../../../../earn/ui/components/reward-token-details";
 import type { PageCta } from "../../../../widget-shell/page-cta";
+import { useClassicFlowSessionFacade } from "../../../react/classic-flow-session-context";
 import { useRequiredManageClassicTransactionFlow } from "../../../react/request-route-guards";
-import { classicTransactionFlowFacade } from "../../../state/classic-flow-facade";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 
 export const usePendingActionReview = () => {
   const manageFlow = useRequiredManageClassicTransactionFlow();
-  const confirmFlow = useAtomSet(classicTransactionFlowFacade.confirmAtom);
-  const review = useAtomValue(classicTransactionFlowFacade.reviewViewAtom);
+  const facade = useClassicFlowSessionFacade();
+  useAtomMount(facade.reviewRouteAtom);
+  const confirmFlow = useAtomSet(facade.confirmAtom);
+  const review = useAtomValue(facade.reviewViewAtom);
   const pendingTxGas = review.gasAmount;
 
   const amount = useMemo(
@@ -52,7 +54,7 @@ export const usePendingActionReview = () => {
     [integrationData, pendingTxGas, prices]
   );
 
-  const onClick = () => confirmFlow(manageFlow.identity);
+  const onClick = () => confirmFlow(undefined);
 
   const rewardTokenDetailsProps = useMemo(
     () =>

@@ -17,8 +17,8 @@ import {
 import { describe, expect, it, vi } from "vitest";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
-import { ClassicTransactionFlowWorkflowHandoff } from "../../src/features/transaction-flow/model/classic-transaction-flow";
 import { ClassicTransactionWorkflowContext } from "../../src/features/transaction-flow/react/classic-transaction-workflow-context";
+import { makeClassicTransactionWorkflowFacade } from "../../src/features/transaction-flow/state/transaction-workflow-atoms";
 import { makeTransactionWorkflowLifecycleAtom } from "../../src/features/transaction-flow/state/workflow-lifecycle";
 import { useTransactionWorkflow } from "../../src/features/transaction-flow/ui/steps/hooks/use-transaction-workflow.hook";
 import { currentWalletScopeAtom } from "../../src/features/wallet/state/selectors";
@@ -31,7 +31,6 @@ import { ClassicTransactionWorkflowKey } from "../../src/services/workflow/trans
 import { TransactionWorkflowOperationsService } from "../../src/services/workflow/transaction-workflow-operations-service";
 import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
 import { yieldApiTransactionFixture } from "../fixtures";
-import { classicFlowIdentityFixture } from "../utils/classic-flow";
 import { render } from "../utils/test-utils";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -69,6 +68,10 @@ const missingWorkflowLifecycleAtom = makeTransactionWorkflowLifecycleAtom(
   missingWorkflowKeyAtom,
   "missingWorkflowLifecycleAtom"
 );
+const workflowFacadeFamily = Atom.family(
+  (keyAtom: Atom.Atom<ClassicTransactionWorkflowKey | null>) =>
+    makeClassicTransactionWorkflowFacade(keyAtom)
+);
 
 const ClassicTransactionWorkflowGuard = ({
   workflowLifecycleAtom: lifecycleAtom,
@@ -80,18 +83,12 @@ const ClassicTransactionWorkflowGuard = ({
   useAtomMount(lifecycleAtom);
   const workflowKey = useAtomValue(keyAtom);
   const currentWalletScope = useAtomValue(currentWalletScopeAtom);
+  const workflow = workflowFacadeFamily(keyAtom);
 
   return workflowKey &&
     currentWalletScope &&
     sameWalletScopeOwner(workflowKey.walletScope, currentWalletScope) ? (
-    <ClassicTransactionWorkflowContext.Provider
-      value={
-        new ClassicTransactionFlowWorkflowHandoff({
-          flowIdentity: classicFlowIdentityFixture("test-flow"),
-          workflowKey,
-        })
-      }
-    >
+    <ClassicTransactionWorkflowContext.Provider value={workflow}>
       <Outlet />
     </ClassicTransactionWorkflowContext.Provider>
   ) : (

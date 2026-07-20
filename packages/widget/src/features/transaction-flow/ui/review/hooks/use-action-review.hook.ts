@@ -1,4 +1,4 @@
-import { useAtomSet } from "@effect/atom-react";
+import { useAtomMount, useAtomSet } from "@effect/atom-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -16,8 +16,8 @@ import { defaultFormattedNumber } from "../../../../../shared/lib/number-format"
 import { useYieldType } from "../../../../earn/react/use-yield-type";
 import { useTrackPage } from "../../../../tracking/react/use-track-page";
 import type { PageCta } from "../../../../widget-shell/page-cta";
+import { useClassicFlowSessionFacade } from "../../../react/classic-flow-session-context";
 import { useRequiredActivityResumeClassicTransactionFlow } from "../../../react/request-route-guards";
-import { classicTransactionFlowFacade } from "../../../state/classic-flow-facade";
 import type { LabelKey } from "../types";
 
 export const useActionReview = () => {
@@ -25,9 +25,11 @@ export const useActionReview = () => {
   const { t } = useTranslation();
 
   const activityFlow = useRequiredActivityResumeClassicTransactionFlow();
+  const facade = useClassicFlowSessionFacade();
+  useAtomMount(facade.reviewRouteAtom);
   const selectedAction = activityFlow.action;
   const selectedYield = activityFlow.selectedYield;
-  const confirmFlow = useAtomSet(classicTransactionFlowFacade.confirmAtom);
+  const confirmFlow = useAtomSet(facade.confirmAtom);
 
   const inputToken = useMemo(
     () =>
@@ -115,12 +117,12 @@ export const useActionReview = () => {
   const cta = useMemo<PageCta>(
     () => ({
       label: t(`activity.review.${labelKey}`),
-      onClick: () => confirmFlow(activityFlow.identity),
+      onClick: () => confirmFlow(undefined),
       disabled: false,
       isLoading: false,
       hide: actionOlderThan7Days,
     }),
-    [activityFlow.identity, confirmFlow, labelKey, actionOlderThan7Days, t]
+    [confirmFlow, labelKey, actionOlderThan7Days, t]
   );
 
   return {

@@ -16,6 +16,7 @@ import {
 } from "../../earn/resources/prices";
 import type { CurrentYieldKycGate } from "../../earn/resources/yield-insights";
 import {
+  type ClassicTransactionFlowIntake,
   getClassicTransactionFlowGasWarningInput,
   getClassicTransactionFlowReviewPricingInput,
 } from "../model/classic-transaction-flow";
@@ -73,50 +74,44 @@ const getGasBalancesCommand = (
   };
 };
 
-export const makeClassicFlowReviewResources = <
-  Preparation extends { readonly _tag: "Failure" | "Idle" | "Loading" },
->({
+export const makeClassicFlowSessionReviewResources = ({
   actionPreviewAtom,
-  activeFlowAtom,
+  attachedActionAtom,
+  intakeAtom,
   kycGateAtom,
-  preparationAtom,
 }: {
   readonly actionPreviewAtom: Atom.Atom<
     AsyncResult.AsyncResult<YieldAction | null, unknown>
   >;
-  readonly activeFlowAtom: Atom.Atom<
-    Parameters<typeof getClassicTransactionFlowReviewPricingInput>[0]
-  >;
+  readonly attachedActionAtom: Atom.Atom<YieldAction | null>;
+  readonly intakeAtom: Atom.Atom<ClassicTransactionFlowIntake>;
   readonly kycGateAtom: Atom.Atom<CurrentYieldKycGate>;
-  readonly preparationAtom: Atom.Atom<Preparation>;
 }) => {
   const reviewPricesAtom = Atom.make((get) => {
-    const input = getClassicTransactionFlowReviewPricingInput(
-      get(activeFlowAtom)
-    );
+    const input = getClassicTransactionFlowReviewPricingInput(get(intakeAtom));
     const request = input
       ? getTokensPricesRequest({ token: input.token, yieldDto: input.yield })
       : null;
 
     return get(pricesAtom(new PricesKey({ request })));
-  }).pipe(Atom.withLabel("classicFlowReviewPricesAtom"));
+  }).pipe(Atom.withLabel("classicFlowSessionReviewPricesAtom"));
 
   const reviewActionAtom = Atom.make((get) => {
-    const activeFlow = get(activeFlowAtom);
-    const preview = get(actionPreviewAtom);
-    const previewAction = preview.pipe(AsyncResult.value, Option.getOrNull);
+    const attachedAction = get(attachedActionAtom);
+    const previewAction = get(actionPreviewAtom).pipe(
+      AsyncResult.value,
+      Option.getOrNull
+    );
 
-    return activeFlow?.phase === "Executable"
-      ? activeFlow.action
-      : previewAction;
+    return attachedAction ?? previewAction;
   });
 
   const gasAmountAtom = Atom.make((get) =>
     getGasAmount(get(reviewActionAtom))
-  ).pipe(Atom.withLabel("classicFlowGasAmountAtom"));
+  ).pipe(Atom.withLabel("classicFlowSessionGasAmountAtom"));
 
   const gasWarningAtom = Atom.make((get) => {
-    const input = getClassicTransactionFlowGasWarningInput(get(activeFlowAtom));
+    const input = getClassicTransactionFlowGasWarningInput(get(intakeAtom));
     const gasAmount = get(gasAmountAtom);
 
     if (!input || !gasAmount) return AsyncResult.success(null);
@@ -142,13 +137,11 @@ export const makeClassicFlowReviewResources = <
         })
       )
     );
-  }).pipe(Atom.withLabel("classicFlowGasWarningAtom"));
+  }).pipe(Atom.withLabel("classicFlowSessionGasWarningAtom"));
 
   const refreshGasWarningAtom = Atom.fnSync(
     (_input: undefined, get) => {
-      const input = getClassicTransactionFlowGasWarningInput(
-        get(activeFlowAtom)
-      );
+      const input = getClassicTransactionFlowGasWarningInput(get(intakeAtom));
       if (input) {
         get.refresh(
           gasBalancesAtom(
@@ -160,21 +153,19 @@ export const makeClassicFlowReviewResources = <
       }
     },
     { initialValue: undefined }
-  ).pipe(Atom.withLabel("refreshClassicFlowGasWarningAtom"));
+  ).pipe(Atom.withLabel("refreshClassicFlowSessionGasWarningAtom"));
 
   const reviewViewAtom = Atom.make((get) => {
     const actionPreview = get(actionPreviewAtom);
     const gasWarning = get(gasWarningAtom);
     const kyc = get(kycGateAtom);
-    const preparation = get(preparationAtom);
     const actionPreviewLoading =
       AsyncResult.isInitial(actionPreview) || actionPreview.waiting;
 
     return {
       actionPreviewLoading,
       confirmDisabled: kyc.isGateBlocking,
-      confirmLoading:
-        actionPreviewLoading || preparation._tag === "Loading" || kyc.isLoading,
+      confirmLoading: actionPreviewLoading || kyc.isLoading,
       gasAmount: get(gasAmountAtom),
       gasCheckLoading:
         actionPreviewLoading ||
@@ -187,7 +178,7 @@ export const makeClassicFlowReviewResources = <
       kyc,
       prices: AsyncResult.getOrElse(get(reviewPricesAtom), () => null),
     } as const;
-  }).pipe(Atom.withLabel("classicFlowReviewViewAtom"));
+  }).pipe(Atom.withLabel("classicFlowSessionReviewViewAtom"));
 
   return {
     gasAmountAtom,

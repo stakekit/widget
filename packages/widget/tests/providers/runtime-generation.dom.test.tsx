@@ -13,11 +13,12 @@ import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import type {
-  ClassicTransactionFlowIdentity,
-  ClassicTransactionFlowIntake,
-} from "../../src/features/transaction-flow/model/classic-transaction-flow";
-import { classicTransactionFlowFacade } from "../../src/features/transaction-flow/state/classic-flow-facade";
+import type { ClassicTransactionFlowIntake } from "../../src/features/transaction-flow/model/classic-transaction-flow";
+import { classicFlowSessionFacadeFamily } from "../../src/features/transaction-flow/state/classic-flow-session-facade";
+import {
+  type ClassicFlowSession,
+  classicFlowSessionStore,
+} from "../../src/features/transaction-flow/state/classic-flow-session-store";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
@@ -148,26 +149,24 @@ const activityIntake = (): ClassicTransactionFlowIntake => {
 };
 
 const ActiveClassicFlowLifetime = ({
-  identity,
+  session,
 }: {
-  identity: ClassicTransactionFlowIdentity;
+  session: ClassicFlowSession;
 }) => {
-  useAtomMount(classicTransactionFlowFacade.lifecycleAtom(identity));
+  useAtomMount(classicFlowSessionFacadeFamily(session).lifecycleAtom);
   return null;
 };
 
 const ClassicFlowRuntimeHarness = () => {
-  const activeFlow = useAtomValue(classicTransactionFlowFacade.activeFlowAtom);
-  const start = useAtomSet(classicTransactionFlowFacade.startAtom);
+  const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
+  const start = useAtomSet(classicFlowSessionStore.startAtom);
 
   return (
     <>
-      <output data-testid="classic-flow-identity">
-        {activeFlow?.identity ?? "none"}
+      <output data-testid="classic-flow-session">
+        {session?.key ?? "none"}
       </output>
-      {activeFlow ? (
-        <ActiveClassicFlowLifetime identity={activeFlow.identity} />
-      ) : null}
+      {session ? <ActiveClassicFlowLifetime session={session} /> : null}
       <button type="button" onClick={() => start(activityIntake())}>
         Start classic flow
       </button>
@@ -197,12 +196,12 @@ describe("API runtime generations", () => {
     );
     await vi.waitFor(() =>
       expect(
-        app.container.querySelector('[data-testid="classic-flow-identity"]')
+        app.container.querySelector('[data-testid="classic-flow-session"]')
           ?.textContent
       ).not.toBe("none")
     );
-    const identity = app.container.querySelector(
-      '[data-testid="classic-flow-identity"]'
+    const sessionKey = app.container.querySelector(
+      '[data-testid="classic-flow-session"]'
     )?.textContent;
 
     await app.rerender(
@@ -211,9 +210,9 @@ describe("API runtime generations", () => {
       </SKAtomRegistryProvider>
     );
     expect(
-      app.container.querySelector('[data-testid="classic-flow-identity"]')
+      app.container.querySelector('[data-testid="classic-flow-session"]')
         ?.textContent
-    ).toBe(identity);
+    ).toBe(sessionKey);
 
     await app.rerender(
       <SKAtomRegistryProvider
@@ -224,7 +223,7 @@ describe("API runtime generations", () => {
     );
     await vi.waitFor(() =>
       expect(
-        app.container.querySelector('[data-testid="classic-flow-identity"]')
+        app.container.querySelector('[data-testid="classic-flow-session"]')
           ?.textContent
       ).toBe("none")
     );
