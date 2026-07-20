@@ -1,5 +1,20 @@
 # @stakekit/widget
 
+## [0.0.280](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.279...@stakekit/widget@0.0.280) (2026-06-25)
+
+
+### Features
+
+* **widget:** add configurable dashboard yield category tab order ([#544](https://github.com/stakekit/widget/issues/544)) ([9cb3e95](https://github.com/stakekit/widget/commit/9cb3e954944f449c2006cad0ab481fdd85889fe0))
+* **widget:** add multi-validator provider cards in dashboard earn details ([#547](https://github.com/stakekit/widget/issues/547)) ([bc3a842](https://github.com/stakekit/widget/commit/bc3a8429e4216ef7844bc8a9285bd86f32885308))
+* **widget:** expose solana transactions as hex for external providers ([#545](https://github.com/stakekit/widget/issues/545)) ([2de9c9f](https://github.com/stakekit/widget/commit/2de9c9fed666e8403b92b8ec0aed0226f1f8823f))
+* **widget:** normalize ton transactions to raw for external providers ([#549](https://github.com/stakekit/widget/issues/549)) ([f8e9e51](https://github.com/stakekit/widget/commit/f8e9e513d0e51e229f57a8d9105f7f6cd19fea15))
+
+
+### Bug Fixes
+
+* **widget:** add liquid_staking yield type support ([#543](https://github.com/stakekit/widget/issues/543)) ([8178593](https://github.com/stakekit/widget/commit/8178593f8e2f3ce9c18e4f7d43fa14c78b864cfc))
+
 ## [0.0.279](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.278...@stakekit/widget@0.0.279) (2026-06-18)
 
 
