@@ -39,12 +39,10 @@ describe("transaction workflow module", () => {
     const first = makeTransactionWorkflowModule(makeInput());
     const second = makeTransactionWorkflowModule(makeInput());
 
-    expect(first.rootAtom).not.toBe(second.rootAtom);
-    expect(first.stateAtom).not.toBe(second.stateAtom);
-    expect(first.commandAtom).not.toBe(second.commandAtom);
+    expect(first).not.toBe(second);
   });
 
-  it("acquires and disposes machines only through each module root", async () => {
+  it("disposes the machine with its scope while capabilities remain mounted", async () => {
     const probe = { disposed: 0, started: 0 };
     const workflowLayer = Layer.succeed(
       TransactionWorkflowService,
@@ -69,22 +67,27 @@ describe("transaction workflow module", () => {
     const registry = AtomRegistry.make({
       initialValues: [[walletRuntime.layer, workflowLayer]],
     });
-    const first = makeTransactionWorkflowModule(makeInput());
-    const second = makeTransactionWorkflowModule(makeInput());
+    const firstAtom = makeTransactionWorkflowModule(makeInput());
+    const secondAtom = makeTransactionWorkflowModule(makeInput());
 
-    const disposeState = registry.mount(first.stateAtom);
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(probe.started).toBe(0);
-
-    const disposeFirst = registry.mount(first.rootAtom);
-    const disposeSecond = registry.mount(second.rootAtom);
+    const disposeFirstScope = registry.mount(firstAtom);
+    const first = registry.get(firstAtom);
+    const disposeFirstState = registry.mount(first.stateAtom);
+    const disposeSecondScope = registry.mount(secondAtom);
+    const second = registry.get(secondAtom);
+    const disposeSecondEvents = registry.mount(second.eventsAtom);
     await vi.waitFor(() => expect(probe.started).toBe(2));
 
-    disposeState();
-    expect(probe.disposed).toBe(0);
-
-    disposeFirst();
-    disposeSecond();
+    disposeFirstScope();
+    disposeSecondScope();
     await vi.waitFor(() => expect(probe.disposed).toBe(2));
+
+    registry.set(first.commandAtom, { _tag: "Retry" });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(probe.disposed).toBe(2);
+    expect(probe.started).toBe(2);
+
+    disposeFirstState();
+    disposeSecondEvents();
   });
 });

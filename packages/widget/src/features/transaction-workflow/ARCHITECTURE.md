@@ -5,9 +5,11 @@ and Borrow Transaction Flows. `state.ts` creates one fresh module for one
 immutable `TransactionWorkflowInput`; equal inputs never share Atom graphs or
 machines.
 
-Only the module's `rootAtom` acquires, interrupts, and disposes the private
-workflow handle. The public state Atom, lifecycle-scoped event Atom, and
-serialized command Atom cannot acquire or revive a machine without that root.
+The module exposes one scoped Atom whose value contains passive read and
+serialized command capabilities. That scoped Atom alone acquires, interrupts,
+and disposes the workflow handle. Releasing it resets the passive state and
+event snapshots and revokes retained commands, so escaped capabilities cannot
+retain, acquire, or revive the machine.
 Input or runtime acquisition failures remain typed in the state Atom, while
 sign, submission, confirmation, and advancement failures remain workflow
 states and are retried through the command Atom.

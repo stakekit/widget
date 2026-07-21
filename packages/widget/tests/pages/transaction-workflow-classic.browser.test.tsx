@@ -4,7 +4,7 @@ import {
   useAtomValue,
 } from "@effect/atom-react";
 import { Deferred, Effect, Layer, Schema } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import type * as Atom from "effect/unstable/reactivity/Atom";
 import { createContext, useContext } from "react";
 import { MemoryRouter, Outlet, Route, Routes, useNavigate } from "react-router";
 import { describe, expect, it, vi } from "vitest";
@@ -43,14 +43,12 @@ const key = new ClassicTransactionWorkflowInput({
 });
 const WorkflowScopedAtom = makeScopedAtom(
   (workflowKey: ClassicTransactionWorkflowInput) =>
-    Atom.make((context) => {
-      const workflow = makeClassicTransactionWorkflowModule(workflowKey);
-      context.mount(workflow.rootAtom);
-      return workflow;
-    }).pipe(Atom.setIdleTTL(0))
+    makeClassicTransactionWorkflowModule(workflowKey)
 );
 const useWorkflowScopedAtom = WorkflowScopedAtom.use;
-type WorkflowModule = ReturnType<typeof makeClassicTransactionWorkflowModule>;
+type WorkflowModule = Atom.Type<
+  ReturnType<typeof makeClassicTransactionWorkflowModule>
+>;
 const WorkflowContext = createContext<WorkflowModule | null>(null);
 
 const ClassicTransactionWorkflowRoute = ({

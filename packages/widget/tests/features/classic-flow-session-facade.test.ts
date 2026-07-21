@@ -295,7 +295,7 @@ describe("Classic Flow Session module", () => {
     disposeSession();
   });
 
-  it("retains one workflow across Execution consumers until the scope exits", async () => {
+  it("disposes the workflow when its Execution scope exits", async () => {
     const probe = { disposed: 0, started: 0 };
     const registry = makeRegistry(
       () => Effect.succeed(yieldApiActionFixture()),
@@ -322,12 +322,11 @@ describe("Classic Flow Session module", () => {
     await vi.waitFor(() => expect(probe.started).toBe(1));
 
     const disposeStepsConsumer = registry.mount(execution.workflow.viewAtom);
-    disposeStepsConsumer();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(probe.disposed).toBe(0);
-
     disposeExecution();
     await vi.waitFor(() => expect(probe.disposed).toBe(1));
+
+    disposeStepsConsumer();
+    expect(probe.disposed).toBe(1);
     disposeReview();
     disposeSession();
   });

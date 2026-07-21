@@ -18,12 +18,7 @@ export type TransactionWorkflowLoadingError =
   | TransactionWorkflowInputError
   | WalletBootstrapError;
 
-/**
- * Owns one fresh workflow machine for one execution attempt.
- *
- * Only `rootAtom` acquires the machine. Reading state/events or dispatching a
- * command while the root is not mounted cannot create an execution resource.
- */
+/** Owns one fresh workflow machine for one execution attempt. */
 export const makeTransactionWorkflowModule = <
   Input extends TransactionWorkflowInput,
 >(
@@ -93,7 +88,14 @@ export const makeTransactionWorkflowModule = <
       Atom.withLabel(`transactionWorkflowCommand(${workflowId})`)
     );
 
-  const rootAtom = Atom.make((context) => {
+  const module = {
+    commandAtom,
+    eventsAtom,
+    input,
+    stateAtom,
+  } as const;
+
+  return Atom.make((context) => {
     const registry = context.registry;
     context.set(activeAtom, true);
     context.mount(activeAtom);
@@ -115,16 +117,10 @@ export const makeTransactionWorkflowModule = <
       registry.set(publishedStateAtom, AsyncResult.initial());
       registry.set(publishedEventAtom, Option.none());
     });
+
+    return module;
   }).pipe(
     Atom.setIdleTTL(0),
-    Atom.withLabel(`transactionWorkflowRoot(${workflowId})`)
+    Atom.withLabel(`transactionWorkflowScope(${workflowId})`)
   );
-
-  return {
-    commandAtom,
-    eventsAtom,
-    input,
-    rootAtom,
-    stateAtom,
-  } as const;
 };

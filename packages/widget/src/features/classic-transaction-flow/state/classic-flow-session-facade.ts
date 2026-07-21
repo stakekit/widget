@@ -340,7 +340,7 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
       makeActivityCompleteView(action)
     ).pipe(Atom.withLabel("classicFlowExecutionActivityCompleteView"));
 
-    const workflow = makeClassicTransactionWorkflowModule(
+    const workflowAtom = makeClassicTransactionWorkflowModule(
       getClassicTransactionWorkflowInput(session.intake, action)
     );
 
@@ -364,7 +364,7 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
       actionAtom,
       backAtom,
       navigationAtom,
-      workflow,
+      workflowAtom,
     } as const;
   };
 
@@ -380,9 +380,9 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
       const action = context.once(executionActionAtom);
       if (!action) return null;
 
-      const execution = makeExecutionFacade(action);
-      context.mount(execution.workflow.rootAtom);
-      return execution;
+      const { workflowAtom, ...execution } = makeExecutionFacade(action);
+      const workflow = context(workflowAtom);
+      return { ...execution, workflow } as const;
     }).pipe(Atom.setIdleTTL(0), Atom.withLabel("classicFlowExecutionScope"));
 
   const module = {

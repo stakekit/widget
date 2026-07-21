@@ -126,9 +126,9 @@ Transaction execution is split by ownership:
   intake and observes its read-only lifecycle outcomes; the flow never imports
   the Borrow feature.
 - `features/transaction-workflow` owns one fresh scoped execution machine per
-  immutable Transaction Workflow Input. Its dedicated root Atom is the only
-  lifecycle handle; state, events, and serialized commands are consumers of
-  that lifetime rather than alternate acquisition paths.
+  immutable Transaction Workflow Input. Its scoped Atom is the sole lifecycle
+  owner; returned read capabilities are passive and retained commands cannot
+  revive the machine after that scope exits.
 
 The shared Transaction Workflow contains execution mechanics only. Journey
 projection, routing, handoff cleanup, and completion behavior remain in the

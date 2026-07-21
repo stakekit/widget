@@ -52,16 +52,19 @@ const action = Schema.decodeUnknownSync(Action)({
 
 describe("borrow transaction workflow module", () => {
   it("creates a fresh module for every execution of equal inputs", () => {
-    const first = makeTransactionWorkflowModule(
-      new BorrowTransactionWorkflowInput({ action, walletScope })
-    );
-    const second = makeTransactionWorkflowModule(
-      new BorrowTransactionWorkflowInput({ action, walletScope })
-    );
+    const firstInput = new BorrowTransactionWorkflowInput({
+      action,
+      walletScope,
+    });
+    const secondInput = new BorrowTransactionWorkflowInput({
+      action,
+      walletScope,
+    });
+    const first = makeTransactionWorkflowModule(firstInput);
+    const second = makeTransactionWorkflowModule(secondInput);
 
-    expect(first.rootAtom).not.toBe(second.rootAtom);
-    expect(first.stateAtom).not.toBe(second.stateAtom);
-    expect(first.input.action).not.toBe(action);
+    expect(first).not.toBe(second);
+    expect(firstInput.action).not.toBe(action);
   });
 
   it("derives semantic refresh categories from the immutable workflow scope", () => {

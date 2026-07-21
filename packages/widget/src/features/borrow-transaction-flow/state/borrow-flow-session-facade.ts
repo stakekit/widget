@@ -172,8 +172,7 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
         action,
         walletScope: session.walletScope,
       });
-      const workflow = makeTransactionWorkflowModule(workflowInput);
-      context.mount(workflow.rootAtom);
+      const workflow = context(makeTransactionWorkflowModule(workflowInput));
       const viewAtom = Atom.make((get) => {
         const result = get(workflow.stateAtom);
         const state = Option.getOrElse(AsyncResult.value(result), () =>
@@ -251,7 +250,7 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
     ports: { makeExecutionScopeAtom },
   } as const;
 
-  const rootAtom = Atom.make((context) => {
+  return Atom.make((context) => {
     const registry = context.registry;
     context.mount(stateAtom);
     context.subscribe(createActionAtom, (result) => {
@@ -278,8 +277,6 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
     });
     return module;
   }).pipe(Atom.setIdleTTL(0), Atom.withLabel("borrowFlowSessionRoot"));
-
-  return rootAtom;
 };
 
 export type BorrowFlowSessionModule = Atom.Type<

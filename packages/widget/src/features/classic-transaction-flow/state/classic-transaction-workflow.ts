@@ -146,9 +146,11 @@ const getClassicTransactionStepsView = (
 export const makeClassicTransactionWorkflowModule = (
   workflowInput: ClassicTransactionWorkflowInput
 ) => {
-  const workflow = makeTransactionWorkflowModule(workflowInput);
-  const completionAtom = Atom.make((context) => {
+  const workflowAtom = makeTransactionWorkflowModule(workflowInput);
+
+  return Atom.make((context) => {
     const registry = context.registry;
+    const workflow = context(workflowAtom);
     context.subscribe(
       workflow.eventsAtom,
       Option.match({
@@ -167,30 +169,26 @@ export const makeClassicTransactionWorkflowModule = (
       }),
       { immediate: true }
     );
-  }).pipe(Atom.setIdleTTL(0));
+    const viewAtom = Atom.make((get) => {
+      const result = get(workflow.stateAtom);
+      const state = Option.getOrElse(AsyncResult.value(result), () =>
+        initializeTransactionWorkflow(workflowInput)
+      );
 
-  const rootAtom = Atom.make((context) => {
-    context.mount(workflow.rootAtom);
-    context.mount(completionAtom);
-  }).pipe(Atom.setIdleTTL(0));
-
-  const viewAtom = Atom.make((get) => {
-    const result = get(workflow.stateAtom);
-    const state = Option.getOrElse(AsyncResult.value(result), () =>
-      initializeTransactionWorkflow(workflowInput)
-    );
+      return {
+        result,
+        state,
+        steps: getClassicTransactionStepsView(state, workflowInput),
+        workflowInput,
+      } as const;
+    }).pipe(Atom.setIdleTTL(0), Atom.withLabel("classicExecutionWorkflowView"));
 
     return {
-      result,
-      state,
-      steps: getClassicTransactionStepsView(state, workflowInput),
-      workflowInput,
+      dispatchAtom: workflow.commandAtom,
+      viewAtom,
     } as const;
-  }).pipe(Atom.setIdleTTL(0), Atom.withLabel("classicExecutionWorkflowView"));
-
-  return {
-    dispatchAtom: workflow.commandAtom,
-    rootAtom,
-    viewAtom,
-  } as const;
+  }).pipe(
+    Atom.setIdleTTL(0),
+    Atom.withLabel("classicTransactionWorkflowScope")
+  );
 };
