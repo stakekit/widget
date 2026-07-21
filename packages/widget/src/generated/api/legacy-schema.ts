@@ -76,6 +76,7 @@ export type Networks =
   | "katana"
   | "hyperevm"
   | "tempo"
+  | "pharos"
   | "agoric"
   | "akash"
   | "axelar"
@@ -179,6 +180,7 @@ export const Networks = Schema.Literals([
   "katana",
   "hyperevm",
   "tempo",
+  "pharos",
   "agoric",
   "akash",
   "axelar",
@@ -955,8 +957,6 @@ export type Team = {
   readonly providerId: string | null;
   readonly oavEnabled: boolean;
   readonly isMfaEnforced: boolean;
-  readonly hyperliquidVerifyByClientOrderId: boolean;
-  readonly unifiedAccountModeEnabled: boolean;
   readonly referredBy: string | null;
   readonly referralCode: string | null;
 };
@@ -980,16 +980,6 @@ export const Team = Schema.Struct({
   }),
   isMfaEnforced: Schema.Boolean.annotate({
     description: "Whether MFA is required for all non-SSO team members",
-    default: false,
-  }),
-  hyperliquidVerifyByClientOrderId: Schema.Boolean.annotate({
-    description:
-      "When true, Hyperliquid duplicate-nonce verification matches wire client order ids (`c`) against ingested timeline rows for API keys under this team. Ledger partner teams use providerId `ledger` and are set to false.",
-    default: true,
-  }),
-  unifiedAccountModeEnabled: Schema.Boolean.annotate({
-    description:
-      "When true, Hyperliquid Unified Account Mode is enabled on a new user’s first open for API keys under this team. Defaults to false and is rolled out team by team during migration.",
     default: false,
   }),
   referredBy: Schema.Union([Schema.String, Schema.Null]),
@@ -1219,6 +1209,7 @@ export type UpdatePayoutAddressDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1330,6 +1321,7 @@ export const UpdatePayoutAddressDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -1947,7 +1939,9 @@ export type YieldProviders =
   | "ondo"
   | "superstate"
   | "securitize"
-  | "nest";
+  | "nest"
+  | "r25"
+  | "yuzu";
 export const YieldProviders = Schema.Literals([
   "aave",
   "edel",
@@ -2019,6 +2013,8 @@ export const YieldProviders = Schema.Literals([
   "superstate",
   "securitize",
   "nest",
+  "r25",
+  "yuzu",
 ]);
 export type YieldType =
   | "staking"
@@ -2231,6 +2227,7 @@ export type ProgrammaticPerpReportingTransactionDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2377,6 +2374,7 @@ export const ProgrammaticPerpReportingTransactionDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -2497,6 +2495,7 @@ export const CreateUserDto = Schema.Struct({
 export type UpdateUserDto = {
   readonly active?: boolean;
   readonly role?: "owner" | "admin" | "operator" | "member";
+  readonly isSsoExempt?: boolean;
 };
 export const UpdateUserDto = Schema.Struct({
   active: Schema.optionalKey(Schema.Boolean.annotate({ examples: [true] })),
@@ -2504,6 +2503,13 @@ export const UpdateUserDto = Schema.Struct({
     Schema.Literals(["owner", "admin", "operator", "member"]).annotate({
       description:
         "Role to assign. owner is valid here (role change) but cannot be set at invite time via CreateUserDto.",
+    })
+  ),
+  isSsoExempt: Schema.optionalKey(
+    Schema.Boolean.annotate({
+      description:
+        "When true, exempts this user from team-level SSO enforcement, allowing them to use the auth code flow.",
+      examples: [false],
     })
   ),
 });
@@ -2649,6 +2655,7 @@ export type CreateCustomUriDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2755,6 +2762,7 @@ export const CreateCustomUriDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -2864,6 +2872,7 @@ export type UpdateCustomUriDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2971,6 +2980,7 @@ export const UpdateCustomUriDto = Schema.Struct({
       "katana",
       "hyperevm",
       "tempo",
+      "pharos",
       "agoric",
       "akash",
       "axelar",
@@ -3180,6 +3190,7 @@ export type AllocationDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -3304,6 +3315,7 @@ export const AllocationDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -4936,6 +4948,7 @@ export type UserDto = {
   readonly serviceConditionsAcceptedAt: string;
   readonly teamId: string;
   readonly isMfaEnabled: boolean;
+  readonly isSsoExempt: boolean;
 };
 export const UserDto = Schema.Struct({
   email: Schema.String,
@@ -4953,6 +4966,7 @@ export const UserDto = Schema.Struct({
   ]),
   teamId: Schema.String,
   isMfaEnabled: Schema.Boolean,
+  isSsoExempt: Schema.Boolean,
 });
 export type SsoConfigResponseDto = {
   readonly id: string;
@@ -6059,6 +6073,7 @@ export type CreateOAVDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -6171,6 +6186,7 @@ export const CreateOAVDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -6739,6 +6755,7 @@ export type AddressWithTokenDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -6857,6 +6874,7 @@ export const AddressWithTokenDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -8006,6 +8024,7 @@ export type TokenBalanceScanDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -8112,6 +8131,7 @@ export const TokenBalanceScanDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -8229,6 +8249,7 @@ export type YieldBalanceScanRequestDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -8336,6 +8357,7 @@ export const YieldBalanceScanRequestDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -8444,7 +8466,8 @@ export type YieldBalanceScanEvmRequestDto = {
     | "plasma"
     | "katana"
     | "hyperevm"
-    | "tempo";
+    | "tempo"
+    | "pharos";
 };
 export const YieldBalanceScanEvmRequestDto = Schema.Struct({
   addresses: AddressesDto,
@@ -8486,6 +8509,7 @@ export const YieldBalanceScanEvmRequestDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
   ]).annotate({
     default: ["base", "ethereum", "arbitrum", "polygon", "binance"],
     examples: [["ethereum", "arbitrum"]],
@@ -10031,6 +10055,8 @@ export type HealthControllerHealthV2429 = StakeKitErrorDto;
 export const HealthControllerHealthV2429 = StakeKitErrorDto;
 export type HealthControllerHealthV2500 = StakeKitErrorDto;
 export const HealthControllerHealthV2500 = StakeKitErrorDto;
+export type HealthControllerHealthV2502 = StakeKitErrorDto;
+export const HealthControllerHealthV2502 = StakeKitErrorDto;
 export type HealthControllerHealthV2503 = StakeKitErrorDto;
 export const HealthControllerHealthV2503 = StakeKitErrorDto;
 export type PayoutAddressesControllerGet200 = {
@@ -10827,6 +10853,7 @@ export type UsersControllerFindAll200 = {
     readonly serviceConditionsAcceptedAt: string;
     readonly teamId: string;
     readonly isMfaEnabled: boolean;
+    readonly isSsoExempt: boolean;
   }>;
   readonly hasNextPage: boolean;
   readonly limit: number;
@@ -10850,6 +10877,7 @@ export const UsersControllerFindAll200 = Schema.Struct({
       ]),
       teamId: Schema.String,
       isMfaEnabled: Schema.Boolean,
+      isSsoExempt: Schema.Boolean,
     })
   ).annotate({ description: "Array of data items" }),
   hasNextPage: Schema.Boolean,
@@ -10890,6 +10918,8 @@ export type ActionControllerGetAction429 = StakeKitErrorDto;
 export const ActionControllerGetAction429 = StakeKitErrorDto;
 export type ActionControllerGetAction500 = StakeKitErrorDto;
 export const ActionControllerGetAction500 = StakeKitErrorDto;
+export type ActionControllerGetAction502 = StakeKitErrorDto;
+export const ActionControllerGetAction502 = StakeKitErrorDto;
 export type ActionControllerGetAction503 = StakeKitErrorDto;
 export const ActionControllerGetAction503 = StakeKitErrorDto;
 export type ActionControllerGetGasEstimateParams = {
@@ -10918,6 +10948,8 @@ export type ActionControllerGetGasEstimate429 = StakeKitErrorDto;
 export const ActionControllerGetGasEstimate429 = StakeKitErrorDto;
 export type ActionControllerGetGasEstimate500 = StakeKitErrorDto;
 export const ActionControllerGetGasEstimate500 = StakeKitErrorDto;
+export type ActionControllerGetGasEstimate502 = StakeKitErrorDto;
+export const ActionControllerGetGasEstimate502 = StakeKitErrorDto;
 export type ActionControllerGetGasEstimate503 = StakeKitErrorDto;
 export const ActionControllerGetGasEstimate503 = StakeKitErrorDto;
 export type ActionControllerEnterParams = { readonly "X-API-KEY"?: string };
@@ -10948,6 +10980,8 @@ export type ActionControllerEnter429 = StakeKitErrorDto;
 export const ActionControllerEnter429 = StakeKitErrorDto;
 export type ActionControllerEnter500 = StakeKitErrorDto;
 export const ActionControllerEnter500 = StakeKitErrorDto;
+export type ActionControllerEnter502 = StakeKitErrorDto;
+export const ActionControllerEnter502 = StakeKitErrorDto;
 export type ActionControllerEnter503 = StakeKitErrorDto;
 export const ActionControllerEnter503 = StakeKitErrorDto;
 export type ActionControllerExitParams = { readonly "X-API-KEY"?: string };
@@ -10978,6 +11012,8 @@ export type ActionControllerExit429 = StakeKitErrorDto;
 export const ActionControllerExit429 = StakeKitErrorDto;
 export type ActionControllerExit500 = StakeKitErrorDto;
 export const ActionControllerExit500 = StakeKitErrorDto;
+export type ActionControllerExit502 = StakeKitErrorDto;
+export const ActionControllerExit502 = StakeKitErrorDto;
 export type ActionControllerExit503 = StakeKitErrorDto;
 export const ActionControllerExit503 = StakeKitErrorDto;
 export type ActionControllerPendingParams = { readonly "X-API-KEY"?: string };
@@ -11008,6 +11044,8 @@ export type ActionControllerPending429 = StakeKitErrorDto;
 export const ActionControllerPending429 = StakeKitErrorDto;
 export type ActionControllerPending500 = StakeKitErrorDto;
 export const ActionControllerPending500 = StakeKitErrorDto;
+export type ActionControllerPending502 = StakeKitErrorDto;
+export const ActionControllerPending502 = StakeKitErrorDto;
 export type ActionControllerPending503 = StakeKitErrorDto;
 export const ActionControllerPending503 = StakeKitErrorDto;
 export type ActionControllerEnterGasEstimationParams = {
@@ -11040,6 +11078,8 @@ export type ActionControllerEnterGasEstimation429 = StakeKitErrorDto;
 export const ActionControllerEnterGasEstimation429 = StakeKitErrorDto;
 export type ActionControllerEnterGasEstimation500 = StakeKitErrorDto;
 export const ActionControllerEnterGasEstimation500 = StakeKitErrorDto;
+export type ActionControllerEnterGasEstimation502 = StakeKitErrorDto;
+export const ActionControllerEnterGasEstimation502 = StakeKitErrorDto;
 export type ActionControllerEnterGasEstimation503 = StakeKitErrorDto;
 export const ActionControllerEnterGasEstimation503 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimateParams = {
@@ -11072,6 +11112,8 @@ export type ActionControllerExitGasEstimate429 = StakeKitErrorDto;
 export const ActionControllerExitGasEstimate429 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimate500 = StakeKitErrorDto;
 export const ActionControllerExitGasEstimate500 = StakeKitErrorDto;
+export type ActionControllerExitGasEstimate502 = StakeKitErrorDto;
+export const ActionControllerExitGasEstimate502 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimate503 = StakeKitErrorDto;
 export const ActionControllerExitGasEstimate503 = StakeKitErrorDto;
 export type ActionControllerListParams = {
@@ -11254,6 +11296,8 @@ export type ActionControllerList429 = StakeKitErrorDto;
 export const ActionControllerList429 = StakeKitErrorDto;
 export type ActionControllerList500 = StakeKitErrorDto;
 export const ActionControllerList500 = StakeKitErrorDto;
+export type ActionControllerList502 = StakeKitErrorDto;
+export const ActionControllerList502 = StakeKitErrorDto;
 export type ActionControllerList503 = StakeKitErrorDto;
 export const ActionControllerList503 = StakeKitErrorDto;
 export type ActionControllerPendingGasEstimateParams = {
@@ -11286,6 +11330,8 @@ export type ActionControllerPendingGasEstimate429 = StakeKitErrorDto;
 export const ActionControllerPendingGasEstimate429 = StakeKitErrorDto;
 export type ActionControllerPendingGasEstimate500 = StakeKitErrorDto;
 export const ActionControllerPendingGasEstimate500 = StakeKitErrorDto;
+export type ActionControllerPendingGasEstimate502 = StakeKitErrorDto;
+export const ActionControllerPendingGasEstimate502 = StakeKitErrorDto;
 export type ActionControllerPendingGasEstimate503 = StakeKitErrorDto;
 export const ActionControllerPendingGasEstimate503 = StakeKitErrorDto;
 export type NetworkAddressActionV2ControllerCreateParams = {
@@ -11340,6 +11386,8 @@ export type TransactionControllerGetTransaction429 = StakeKitErrorDto;
 export const TransactionControllerGetTransaction429 = StakeKitErrorDto;
 export type TransactionControllerGetTransaction500 = StakeKitErrorDto;
 export const TransactionControllerGetTransaction500 = StakeKitErrorDto;
+export type TransactionControllerGetTransaction502 = StakeKitErrorDto;
+export const TransactionControllerGetTransaction502 = StakeKitErrorDto;
 export type TransactionControllerGetTransaction503 = StakeKitErrorDto;
 export const TransactionControllerGetTransaction503 = StakeKitErrorDto;
 export type TransactionControllerConstructParams = {
@@ -11374,6 +11422,8 @@ export type TransactionControllerConstruct429 = StakeKitErrorDto;
 export const TransactionControllerConstruct429 = StakeKitErrorDto;
 export type TransactionControllerConstruct500 = StakeKitErrorDto;
 export const TransactionControllerConstruct500 = StakeKitErrorDto;
+export type TransactionControllerConstruct502 = StakeKitErrorDto;
+export const TransactionControllerConstruct502 = StakeKitErrorDto;
 export type TransactionControllerConstruct503 = StakeKitErrorDto;
 export const TransactionControllerConstruct503 = StakeKitErrorDto;
 export type TransactionControllerSubmitParams = {
@@ -11406,6 +11456,8 @@ export type TransactionControllerSubmit429 = StakeKitErrorDto;
 export const TransactionControllerSubmit429 = StakeKitErrorDto;
 export type TransactionControllerSubmit500 = StakeKitErrorDto;
 export const TransactionControllerSubmit500 = StakeKitErrorDto;
+export type TransactionControllerSubmit502 = StakeKitErrorDto;
+export const TransactionControllerSubmit502 = StakeKitErrorDto;
 export type TransactionControllerSubmit503 = StakeKitErrorDto;
 export const TransactionControllerSubmit503 = StakeKitErrorDto;
 export type TransactionControllerSubmitHashParams = {
@@ -11436,6 +11488,8 @@ export type TransactionControllerSubmitHash429 = StakeKitErrorDto;
 export const TransactionControllerSubmitHash429 = StakeKitErrorDto;
 export type TransactionControllerSubmitHash500 = StakeKitErrorDto;
 export const TransactionControllerSubmitHash500 = StakeKitErrorDto;
+export type TransactionControllerSubmitHash502 = StakeKitErrorDto;
+export const TransactionControllerSubmitHash502 = StakeKitErrorDto;
 export type TransactionControllerSubmitHash503 = StakeKitErrorDto;
 export const TransactionControllerSubmitHash503 = StakeKitErrorDto;
 export type TransactionControllerGetTransactionStatusFromIdParams = {
@@ -11483,6 +11537,10 @@ export type TransactionControllerGetTransactionStatusFromId500 =
   StakeKitErrorDto;
 export const TransactionControllerGetTransactionStatusFromId500 =
   StakeKitErrorDto;
+export type TransactionControllerGetTransactionStatusFromId502 =
+  StakeKitErrorDto;
+export const TransactionControllerGetTransactionStatusFromId502 =
+  StakeKitErrorDto;
 export type TransactionControllerGetTransactionStatusFromId503 =
   StakeKitErrorDto;
 export const TransactionControllerGetTransactionStatusFromId503 =
@@ -11514,6 +11572,8 @@ export type TransactionControllerGetGasForNetwork429 = StakeKitErrorDto;
 export const TransactionControllerGetGasForNetwork429 = StakeKitErrorDto;
 export type TransactionControllerGetGasForNetwork500 = StakeKitErrorDto;
 export const TransactionControllerGetGasForNetwork500 = StakeKitErrorDto;
+export type TransactionControllerGetGasForNetwork502 = StakeKitErrorDto;
+export const TransactionControllerGetGasForNetwork502 = StakeKitErrorDto;
 export type TransactionControllerGetGasForNetwork503 = StakeKitErrorDto;
 export const TransactionControllerGetGasForNetwork503 = StakeKitErrorDto;
 export type TransactionControllerGetTransactionStatusByNetworkAndHashParams = {
@@ -11560,6 +11620,10 @@ export const TransactionControllerGetTransactionStatusByNetworkAndHash429 =
 export type TransactionControllerGetTransactionStatusByNetworkAndHash500 =
   StakeKitErrorDto;
 export const TransactionControllerGetTransactionStatusByNetworkAndHash500 =
+  StakeKitErrorDto;
+export type TransactionControllerGetTransactionStatusByNetworkAndHash502 =
+  StakeKitErrorDto;
+export const TransactionControllerGetTransactionStatusByNetworkAndHash502 =
   StakeKitErrorDto;
 export type TransactionControllerGetTransactionStatusByNetworkAndHash503 =
   StakeKitErrorDto;
@@ -11617,6 +11681,10 @@ export type TransactionControllerGetTransactionVerificationMessageForNetwork500 
   StakeKitErrorDto;
 export const TransactionControllerGetTransactionVerificationMessageForNetwork500 =
   StakeKitErrorDto;
+export type TransactionControllerGetTransactionVerificationMessageForNetwork502 =
+  StakeKitErrorDto;
+export const TransactionControllerGetTransactionVerificationMessageForNetwork502 =
+  StakeKitErrorDto;
 export type TransactionControllerGetTransactionVerificationMessageForNetwork503 =
   StakeKitErrorDto;
 export const TransactionControllerGetTransactionVerificationMessageForNetwork503 =
@@ -11666,6 +11734,10 @@ export type NetworkAddressesTokenV2ControllerGetTokenBalances500 =
   StakeKitErrorDto;
 export const NetworkAddressesTokenV2ControllerGetTokenBalances500 =
   StakeKitErrorDto;
+export type NetworkAddressesTokenV2ControllerGetTokenBalances502 =
+  StakeKitErrorDto;
+export const NetworkAddressesTokenV2ControllerGetTokenBalances502 =
+  StakeKitErrorDto;
 export type NetworkAddressesTokenV2ControllerGetTokenBalances503 =
   StakeKitErrorDto;
 export const NetworkAddressesTokenV2ControllerGetTokenBalances503 =
@@ -11701,6 +11773,8 @@ export type NetworkTokensV2ControllerGetTokens429 = StakeKitErrorDto;
 export const NetworkTokensV2ControllerGetTokens429 = StakeKitErrorDto;
 export type NetworkTokensV2ControllerGetTokens500 = StakeKitErrorDto;
 export const NetworkTokensV2ControllerGetTokens500 = StakeKitErrorDto;
+export type NetworkTokensV2ControllerGetTokens502 = StakeKitErrorDto;
+export const NetworkTokensV2ControllerGetTokens502 = StakeKitErrorDto;
 export type NetworkTokensV2ControllerGetTokens503 = StakeKitErrorDto;
 export const NetworkTokensV2ControllerGetTokens503 = StakeKitErrorDto;
 export type TokenControllerGetTokensParams = {
@@ -11736,6 +11810,8 @@ export type TokenControllerGetTokens429 = StakeKitErrorDto;
 export const TokenControllerGetTokens429 = StakeKitErrorDto;
 export type TokenControllerGetTokens500 = StakeKitErrorDto;
 export const TokenControllerGetTokens500 = StakeKitErrorDto;
+export type TokenControllerGetTokens502 = StakeKitErrorDto;
+export const TokenControllerGetTokens502 = StakeKitErrorDto;
 export type TokenControllerGetTokens503 = StakeKitErrorDto;
 export const TokenControllerGetTokens503 = StakeKitErrorDto;
 export type TokenControllerGetTokenPricesParams = {
@@ -11766,6 +11842,8 @@ export type TokenControllerGetTokenPrices429 = StakeKitErrorDto;
 export const TokenControllerGetTokenPrices429 = StakeKitErrorDto;
 export type TokenControllerGetTokenPrices500 = StakeKitErrorDto;
 export const TokenControllerGetTokenPrices500 = StakeKitErrorDto;
+export type TokenControllerGetTokenPrices502 = StakeKitErrorDto;
+export const TokenControllerGetTokenPrices502 = StakeKitErrorDto;
 export type TokenControllerGetTokenPrices503 = StakeKitErrorDto;
 export const TokenControllerGetTokenPrices503 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalancesParams = {
@@ -11798,6 +11876,8 @@ export type TokenControllerGetTokenBalances429 = StakeKitErrorDto;
 export const TokenControllerGetTokenBalances429 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances500 = StakeKitErrorDto;
 export const TokenControllerGetTokenBalances500 = StakeKitErrorDto;
+export type TokenControllerGetTokenBalances502 = StakeKitErrorDto;
+export const TokenControllerGetTokenBalances502 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances503 = StakeKitErrorDto;
 export const TokenControllerGetTokenBalances503 = StakeKitErrorDto;
 export type TokenControllerTokenBalancesScanParams = {
@@ -11831,6 +11911,8 @@ export type TokenControllerTokenBalancesScan429 = StakeKitErrorDto;
 export const TokenControllerTokenBalancesScan429 = StakeKitErrorDto;
 export type TokenControllerTokenBalancesScan500 = StakeKitErrorDto;
 export const TokenControllerTokenBalancesScan500 = StakeKitErrorDto;
+export type TokenControllerTokenBalancesScan502 = StakeKitErrorDto;
+export const TokenControllerTokenBalancesScan502 = StakeKitErrorDto;
 export type TokenControllerTokenBalancesScan503 = StakeKitErrorDto;
 export const TokenControllerTokenBalancesScan503 = StakeKitErrorDto;
 export type CustomUrisControllerGet200 = {
@@ -11986,6 +12068,8 @@ export type OAVControllerFindAllTokens429 = StakeKitErrorDto;
 export const OAVControllerFindAllTokens429 = StakeKitErrorDto;
 export type OAVControllerFindAllTokens500 = StakeKitErrorDto;
 export const OAVControllerFindAllTokens500 = StakeKitErrorDto;
+export type OAVControllerFindAllTokens502 = StakeKitErrorDto;
+export const OAVControllerFindAllTokens502 = StakeKitErrorDto;
 export type OAVControllerFindAllTokens503 = StakeKitErrorDto;
 export const OAVControllerFindAllTokens503 = StakeKitErrorDto;
 export type OAVControllerFindYieldsByTokenParams = {
@@ -12012,6 +12096,8 @@ export type OAVControllerFindYieldsByToken429 = StakeKitErrorDto;
 export const OAVControllerFindYieldsByToken429 = StakeKitErrorDto;
 export type OAVControllerFindYieldsByToken500 = StakeKitErrorDto;
 export const OAVControllerFindYieldsByToken500 = StakeKitErrorDto;
+export type OAVControllerFindYieldsByToken502 = StakeKitErrorDto;
+export const OAVControllerFindYieldsByToken502 = StakeKitErrorDto;
 export type OAVControllerFindYieldsByToken503 = StakeKitErrorDto;
 export const OAVControllerFindYieldsByToken503 = StakeKitErrorDto;
 export type OAVControllerFindAllParams = { readonly active?: boolean };
@@ -12038,6 +12124,8 @@ export type OAVControllerFindAll429 = StakeKitErrorDto;
 export const OAVControllerFindAll429 = StakeKitErrorDto;
 export type OAVControllerFindAll500 = StakeKitErrorDto;
 export const OAVControllerFindAll500 = StakeKitErrorDto;
+export type OAVControllerFindAll502 = StakeKitErrorDto;
+export const OAVControllerFindAll502 = StakeKitErrorDto;
 export type OAVControllerFindAll503 = StakeKitErrorDto;
 export const OAVControllerFindAll503 = StakeKitErrorDto;
 export type OAVControllerCreateRequestJson = CreateOAVDto;
@@ -12060,6 +12148,8 @@ export type OAVControllerCreate429 = StakeKitErrorDto;
 export const OAVControllerCreate429 = StakeKitErrorDto;
 export type OAVControllerCreate500 = StakeKitErrorDto;
 export const OAVControllerCreate500 = StakeKitErrorDto;
+export type OAVControllerCreate502 = StakeKitErrorDto;
+export const OAVControllerCreate502 = StakeKitErrorDto;
 export type OAVControllerCreate503 = StakeKitErrorDto;
 export const OAVControllerCreate503 = StakeKitErrorDto;
 export type OAVControllerRemove400 = StakeKitErrorDto;
@@ -12078,6 +12168,8 @@ export type OAVControllerRemove429 = StakeKitErrorDto;
 export const OAVControllerRemove429 = StakeKitErrorDto;
 export type OAVControllerRemove500 = StakeKitErrorDto;
 export const OAVControllerRemove500 = StakeKitErrorDto;
+export type OAVControllerRemove502 = StakeKitErrorDto;
+export const OAVControllerRemove502 = StakeKitErrorDto;
 export type OAVControllerRemove503 = StakeKitErrorDto;
 export const OAVControllerRemove503 = StakeKitErrorDto;
 export type OAVControllerUpdateRequestJson = UpdateOAVDto;
@@ -12098,6 +12190,8 @@ export type OAVControllerUpdate429 = StakeKitErrorDto;
 export const OAVControllerUpdate429 = StakeKitErrorDto;
 export type OAVControllerUpdate500 = StakeKitErrorDto;
 export const OAVControllerUpdate500 = StakeKitErrorDto;
+export type OAVControllerUpdate502 = StakeKitErrorDto;
+export const OAVControllerUpdate502 = StakeKitErrorDto;
 export type OAVControllerUpdate503 = StakeKitErrorDto;
 export const OAVControllerUpdate503 = StakeKitErrorDto;
 export type NetworkAddressesPositionsV2ControllerGetPositionsParams = {
@@ -12248,6 +12342,8 @@ export type YieldControllerYields429 = StakeKitErrorDto;
 export const YieldControllerYields429 = StakeKitErrorDto;
 export type YieldControllerYields500 = StakeKitErrorDto;
 export const YieldControllerYields500 = StakeKitErrorDto;
+export type YieldControllerYields502 = StakeKitErrorDto;
+export const YieldControllerYields502 = StakeKitErrorDto;
 export type YieldControllerYields503 = StakeKitErrorDto;
 export const YieldControllerYields503 = StakeKitErrorDto;
 export type YieldControllerGetMultipleYieldBalancesParams = {
@@ -12284,6 +12380,8 @@ export type YieldControllerGetMultipleYieldBalances429 = StakeKitErrorDto;
 export const YieldControllerGetMultipleYieldBalances429 = StakeKitErrorDto;
 export type YieldControllerGetMultipleYieldBalances500 = StakeKitErrorDto;
 export const YieldControllerGetMultipleYieldBalances500 = StakeKitErrorDto;
+export type YieldControllerGetMultipleYieldBalances502 = StakeKitErrorDto;
+export const YieldControllerGetMultipleYieldBalances502 = StakeKitErrorDto;
 export type YieldControllerGetMultipleYieldBalances503 = StakeKitErrorDto;
 export const YieldControllerGetMultipleYieldBalances503 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanParams = {
@@ -12319,6 +12417,8 @@ export type YieldControllerYieldBalancesScan429 = StakeKitErrorDto;
 export const YieldControllerYieldBalancesScan429 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScan500 = StakeKitErrorDto;
 export const YieldControllerYieldBalancesScan500 = StakeKitErrorDto;
+export type YieldControllerYieldBalancesScan502 = StakeKitErrorDto;
+export const YieldControllerYieldBalancesScan502 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScan503 = StakeKitErrorDto;
 export const YieldControllerYieldBalancesScan503 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanEvmParams = {
@@ -12354,6 +12454,8 @@ export type YieldControllerYieldBalancesScanEvm429 = StakeKitErrorDto;
 export const YieldControllerYieldBalancesScanEvm429 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanEvm500 = StakeKitErrorDto;
 export const YieldControllerYieldBalancesScanEvm500 = StakeKitErrorDto;
+export type YieldControllerYieldBalancesScanEvm502 = StakeKitErrorDto;
+export const YieldControllerYieldBalancesScanEvm502 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanEvm503 = StakeKitErrorDto;
 export const YieldControllerYieldBalancesScanEvm503 = StakeKitErrorDto;
 export type YieldControllerGetMyYieldsParams = {
@@ -12485,6 +12587,8 @@ export type YieldControllerGetMyYields429 = StakeKitErrorDto;
 export const YieldControllerGetMyYields429 = StakeKitErrorDto;
 export type YieldControllerGetMyYields500 = StakeKitErrorDto;
 export const YieldControllerGetMyYields500 = StakeKitErrorDto;
+export type YieldControllerGetMyYields502 = StakeKitErrorDto;
+export const YieldControllerGetMyYields502 = StakeKitErrorDto;
 export type YieldControllerGetMyYields503 = StakeKitErrorDto;
 export const YieldControllerGetMyYields503 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworksParams = {
@@ -12511,6 +12615,8 @@ export type YieldControllerGetMyNetworks429 = StakeKitErrorDto;
 export const YieldControllerGetMyNetworks429 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworks500 = StakeKitErrorDto;
 export const YieldControllerGetMyNetworks500 = StakeKitErrorDto;
+export type YieldControllerGetMyNetworks502 = StakeKitErrorDto;
+export const YieldControllerGetMyNetworks502 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworks503 = StakeKitErrorDto;
 export const YieldControllerGetMyNetworks503 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworksdefault = ReadonlyArray<string>;
@@ -12550,6 +12656,8 @@ export type YieldControllerFindValidators429 = StakeKitErrorDto;
 export const YieldControllerFindValidators429 = StakeKitErrorDto;
 export type YieldControllerFindValidators500 = StakeKitErrorDto;
 export const YieldControllerFindValidators500 = StakeKitErrorDto;
+export type YieldControllerFindValidators502 = StakeKitErrorDto;
+export const YieldControllerFindValidators502 = StakeKitErrorDto;
 export type YieldControllerFindValidators503 = StakeKitErrorDto;
 export const YieldControllerFindValidators503 = StakeKitErrorDto;
 export type YieldControllerYieldOpportunityParams = {
@@ -12582,6 +12690,8 @@ export type YieldControllerYieldOpportunity429 = StakeKitErrorDto;
 export const YieldControllerYieldOpportunity429 = StakeKitErrorDto;
 export type YieldControllerYieldOpportunity500 = StakeKitErrorDto;
 export const YieldControllerYieldOpportunity500 = StakeKitErrorDto;
+export type YieldControllerYieldOpportunity502 = StakeKitErrorDto;
+export const YieldControllerYieldOpportunity502 = StakeKitErrorDto;
 export type YieldControllerYieldOpportunity503 = StakeKitErrorDto;
 export const YieldControllerYieldOpportunity503 = StakeKitErrorDto;
 export type YieldControllerGetValidatorsParams = {
@@ -12614,6 +12724,8 @@ export type YieldControllerGetValidators429 = StakeKitErrorDto;
 export const YieldControllerGetValidators429 = StakeKitErrorDto;
 export type YieldControllerGetValidators500 = StakeKitErrorDto;
 export const YieldControllerGetValidators500 = StakeKitErrorDto;
+export type YieldControllerGetValidators502 = StakeKitErrorDto;
+export const YieldControllerGetValidators502 = StakeKitErrorDto;
 export type YieldControllerGetValidators503 = StakeKitErrorDto;
 export const YieldControllerGetValidators503 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalancesParams = {
@@ -12650,6 +12762,8 @@ export type YieldControllerGetSingleYieldBalances429 = StakeKitErrorDto;
 export const YieldControllerGetSingleYieldBalances429 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalances500 = StakeKitErrorDto;
 export const YieldControllerGetSingleYieldBalances500 = StakeKitErrorDto;
+export type YieldControllerGetSingleYieldBalances502 = StakeKitErrorDto;
+export const YieldControllerGetSingleYieldBalances502 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalances503 = StakeKitErrorDto;
 export const YieldControllerGetSingleYieldBalances503 = StakeKitErrorDto;
 export type YieldControllerGetBalanceTransferEventsParams = {
@@ -12699,6 +12813,8 @@ export type YieldControllerGetBalanceTransferEvents429 = StakeKitErrorDto;
 export const YieldControllerGetBalanceTransferEvents429 = StakeKitErrorDto;
 export type YieldControllerGetBalanceTransferEvents500 = StakeKitErrorDto;
 export const YieldControllerGetBalanceTransferEvents500 = StakeKitErrorDto;
+export type YieldControllerGetBalanceTransferEvents502 = StakeKitErrorDto;
+export const YieldControllerGetBalanceTransferEvents502 = StakeKitErrorDto;
 export type YieldControllerGetBalanceTransferEvents503 = StakeKitErrorDto;
 export const YieldControllerGetBalanceTransferEvents503 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldRewardsSummaryParams = {
@@ -12733,6 +12849,8 @@ export type YieldControllerGetSingleYieldRewardsSummary429 = StakeKitErrorDto;
 export const YieldControllerGetSingleYieldRewardsSummary429 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldRewardsSummary500 = StakeKitErrorDto;
 export const YieldControllerGetSingleYieldRewardsSummary500 = StakeKitErrorDto;
+export type YieldControllerGetSingleYieldRewardsSummary502 = StakeKitErrorDto;
+export const YieldControllerGetSingleYieldRewardsSummary502 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldRewardsSummary503 = StakeKitErrorDto;
 export const YieldControllerGetSingleYieldRewardsSummary503 = StakeKitErrorDto;
 export type YieldControllerGetFeeConfiguration200 = FeeConfigurationDto;
@@ -12753,6 +12871,8 @@ export type YieldControllerGetFeeConfiguration429 = StakeKitErrorDto;
 export const YieldControllerGetFeeConfiguration429 = StakeKitErrorDto;
 export type YieldControllerGetFeeConfiguration500 = StakeKitErrorDto;
 export const YieldControllerGetFeeConfiguration500 = StakeKitErrorDto;
+export type YieldControllerGetFeeConfiguration502 = StakeKitErrorDto;
+export const YieldControllerGetFeeConfiguration502 = StakeKitErrorDto;
 export type YieldControllerGetFeeConfiguration503 = StakeKitErrorDto;
 export const YieldControllerGetFeeConfiguration503 = StakeKitErrorDto;
 export type YieldControllerCreateFeeConfigurationParams = {
@@ -12785,6 +12905,8 @@ export type YieldControllerCreateFeeConfiguration429 = StakeKitErrorDto;
 export const YieldControllerCreateFeeConfiguration429 = StakeKitErrorDto;
 export type YieldControllerCreateFeeConfiguration500 = StakeKitErrorDto;
 export const YieldControllerCreateFeeConfiguration500 = StakeKitErrorDto;
+export type YieldControllerCreateFeeConfiguration502 = StakeKitErrorDto;
+export const YieldControllerCreateFeeConfiguration502 = StakeKitErrorDto;
 export type YieldControllerCreateFeeConfiguration503 = StakeKitErrorDto;
 export const YieldControllerCreateFeeConfiguration503 = StakeKitErrorDto;
 export type YieldV2ControllerYieldsParams = {
@@ -12858,7 +12980,9 @@ export type YieldV2ControllerYieldsParams = {
     | "ondo"
     | "superstate"
     | "securitize"
-    | "nest";
+    | "nest"
+    | "r25"
+    | "yuzu";
   readonly inputToken?: string;
   readonly enterStatus?: boolean;
   readonly preferredValidatorsOnly?: boolean;
@@ -12921,6 +13045,7 @@ export type YieldV2ControllerYieldsParams = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -13063,6 +13188,8 @@ export const YieldV2ControllerYieldsParams = Schema.Struct({
       "superstate",
       "securitize",
       "nest",
+      "r25",
+      "yuzu",
     ])
   ),
   inputToken: Schema.optionalKey(Schema.String),
@@ -13136,6 +13263,7 @@ export const YieldV2ControllerYieldsParams = Schema.Struct({
       "katana",
       "hyperevm",
       "tempo",
+      "pharos",
       "agoric",
       "akash",
       "axelar",
@@ -13276,6 +13404,8 @@ export type YieldV2ControllerYields429 = StakeKitErrorDto;
 export const YieldV2ControllerYields429 = StakeKitErrorDto;
 export type YieldV2ControllerYields500 = StakeKitErrorDto;
 export const YieldV2ControllerYields500 = StakeKitErrorDto;
+export type YieldV2ControllerYields502 = StakeKitErrorDto;
+export const YieldV2ControllerYields502 = StakeKitErrorDto;
 export type YieldV2ControllerYields503 = StakeKitErrorDto;
 export const YieldV2ControllerYields503 = StakeKitErrorDto;
 export type YieldV2ControllerGetYieldByIdParams = {
@@ -13304,6 +13434,8 @@ export type YieldV2ControllerGetYieldById429 = StakeKitErrorDto;
 export const YieldV2ControllerGetYieldById429 = StakeKitErrorDto;
 export type YieldV2ControllerGetYieldById500 = StakeKitErrorDto;
 export const YieldV2ControllerGetYieldById500 = StakeKitErrorDto;
+export type YieldV2ControllerGetYieldById502 = StakeKitErrorDto;
+export const YieldV2ControllerGetYieldById502 = StakeKitErrorDto;
 export type YieldV2ControllerGetYieldById503 = StakeKitErrorDto;
 export const YieldV2ControllerGetYieldById503 = StakeKitErrorDto;
 export type YieldV2ControllerFindYieldValidatorsParams = {
@@ -13341,6 +13473,8 @@ export type YieldV2ControllerFindYieldValidators429 = StakeKitErrorDto;
 export const YieldV2ControllerFindYieldValidators429 = StakeKitErrorDto;
 export type YieldV2ControllerFindYieldValidators500 = StakeKitErrorDto;
 export const YieldV2ControllerFindYieldValidators500 = StakeKitErrorDto;
+export type YieldV2ControllerFindYieldValidators502 = StakeKitErrorDto;
+export const YieldV2ControllerFindYieldValidators502 = StakeKitErrorDto;
 export type YieldV2ControllerFindYieldValidators503 = StakeKitErrorDto;
 export const YieldV2ControllerFindYieldValidators503 = StakeKitErrorDto;
 export type YieldV2ControllerFindValidatorsParams = {
@@ -13380,6 +13514,8 @@ export type YieldV2ControllerFindValidators429 = StakeKitErrorDto;
 export const YieldV2ControllerFindValidators429 = StakeKitErrorDto;
 export type YieldV2ControllerFindValidators500 = StakeKitErrorDto;
 export const YieldV2ControllerFindValidators500 = StakeKitErrorDto;
+export type YieldV2ControllerFindValidators502 = StakeKitErrorDto;
+export const YieldV2ControllerFindValidators502 = StakeKitErrorDto;
 export type YieldV2ControllerFindValidators503 = StakeKitErrorDto;
 export const YieldV2ControllerFindValidators503 = StakeKitErrorDto;
 export type YieldV2ControllerGetFeeConfigurationsParams = {
@@ -13484,6 +13620,8 @@ export type YieldV2ControllerGetFeeConfigurations429 = StakeKitErrorDto;
 export const YieldV2ControllerGetFeeConfigurations429 = StakeKitErrorDto;
 export type YieldV2ControllerGetFeeConfigurations500 = StakeKitErrorDto;
 export const YieldV2ControllerGetFeeConfigurations500 = StakeKitErrorDto;
+export type YieldV2ControllerGetFeeConfigurations502 = StakeKitErrorDto;
+export const YieldV2ControllerGetFeeConfigurations502 = StakeKitErrorDto;
 export type YieldV2ControllerGetFeeConfigurations503 = StakeKitErrorDto;
 export const YieldV2ControllerGetFeeConfigurations503 = StakeKitErrorDto;
 export type EarnControllerGetStakesParams = {

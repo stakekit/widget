@@ -300,6 +300,7 @@ export type LiquidationDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -444,6 +445,7 @@ export const LiquidationDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -674,6 +676,7 @@ export type TransactionDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -811,6 +814,7 @@ export const TransactionDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -1169,6 +1173,7 @@ export type IntegrationDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1294,6 +1299,7 @@ export const IntegrationDto = Schema.Struct({
       "katana",
       "hyperevm",
       "tempo",
+      "pharos",
       "agoric",
       "akash",
       "axelar",
@@ -1427,6 +1433,7 @@ export type MarketDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1563,6 +1570,7 @@ export const MarketDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -2141,6 +2149,7 @@ export type PositionDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2264,6 +2273,7 @@ export const PositionDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -2493,6 +2503,7 @@ export type MarketsControllerGetMarketsV1Params = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2614,6 +2625,7 @@ export const MarketsControllerGetMarketsV1Params = Schema.Struct({
       "katana",
       "hyperevm",
       "tempo",
+      "pharos",
       "agoric",
       "akash",
       "axelar",
@@ -2823,6 +2835,7 @@ export type PositionsControllerGetPositionsV1Params = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2930,6 +2943,7 @@ export const PositionsControllerGetPositionsV1Params = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -3080,6 +3094,7 @@ export type PositionsControllerGetLiquidationsV1Params = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -3199,6 +3214,7 @@ export const PositionsControllerGetLiquidationsV1Params = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",

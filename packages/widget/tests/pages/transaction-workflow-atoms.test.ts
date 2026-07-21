@@ -87,9 +87,14 @@ describe("transaction workflow atoms", () => {
     const first = makeClassicTransactionWorkflowModule(key);
     const second = makeClassicTransactionWorkflowModule(key);
 
-    const disposeFirst = registry.mount(first.viewAtom);
-    const disposeSecond = registry.mount(second.viewAtom);
+    const disposeFirst = registry.mount(first.rootAtom);
+    const disposeSecond = registry.mount(second.rootAtom);
     await vi.waitFor(() => expect(probe.started).toBe(2));
+
+    const disposeFirstView = registry.mount(first.viewAtom);
+    disposeFirstView();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(probe.disposed).toBe(0);
 
     disposeFirst();
     disposeSecond();

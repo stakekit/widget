@@ -1,6 +1,6 @@
 import { Array as EArray, Option } from "effect";
 import { useMemo } from "react";
-import type { ActionCommand } from "../../../../../domain/schema/action-models";
+import { ActionCommand } from "../../../../../domain/schema/action-models";
 import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
 
 import { getYieldActionArg } from "../../../../../domain/types/yields";
@@ -37,7 +37,8 @@ export const useStakeExitRequestDto = (
           NonNullable<ActionCommand["arguments"]>,
           "validatorAddress" | "subnetId"
         >
-      | Record<string, never> = (() => {
+      | Record<string, never>
+      | null = (() => {
       if (
         getYieldActionArg(integrationData, "exit", "validatorAddresses")
           ?.required
@@ -61,10 +62,15 @@ export const useStakeExitRequestDto = (
           (b) => !!b.validator?.address
         ).pipe(Option.getOrNull);
         if (!balance?.validator?.address) return {};
-        const subnetId = getYieldActionArg(integrationData, "exit", "subnetId")
-          ?.required
+        const subnetIdRequired = !!getYieldActionArg(
+          integrationData,
+          "exit",
+          "subnetId"
+        )?.required;
+        const subnetId = subnetIdRequired
           ? balance.validator.subnet?.id
           : undefined;
+        if (subnetIdRequired && subnetId === undefined) return null;
         return {
           validatorAddress: balance.validator.address,
           ...(subnetId === undefined ? {} : { subnetId }),
@@ -73,10 +79,11 @@ export const useStakeExitRequestDto = (
 
       return {};
     })();
+    if (!validatorsOrProvider) return null;
 
     return {
       gasFeeToken: integrationData.mechanics.gasFeeToken,
-      dto: {
+      dto: ActionCommand.make({
         address,
         yieldId: integrationData.id,
         arguments: {
@@ -85,7 +92,7 @@ export const useStakeExitRequestDto = (
           ...validatorsOrProvider,
           ...(additionalAddresses ?? {}),
         },
-      },
+      }),
     };
   }, [
     additionalAddresses,

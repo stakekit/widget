@@ -19,7 +19,6 @@
       ],
       "devEntryPoints": [
         "scripts/generate-effect-openapi.ts",
-        "scripts/check-classic-flow-architecture.ts",
         "tests/utils/setup.browser.ts",
         "tests/utils/setup.dom.ts",
         "tests/**/*.test.ts",
@@ -125,7 +124,6 @@
             "public/mockServiceWorker.js",
             "vite/*.ts",
             "scripts/generate-effect-openapi.ts",
-            "scripts/check-classic-flow-architecture.ts",
             "tests/**/*.ts",
             "tests/**/*.tsx"
           ],
@@ -146,6 +144,7 @@
           "postcss",
           "swagger2openapi",
           "tsx",
+          "typescript",
           "yaml"
         ],
         "pkgJsonFieldsWithBinaries": ["scripts"]

@@ -58,12 +58,12 @@
 - Keep deterministic domain constructors, transitions, invariant checks, and projections as plain TypeScript. Use Atom for reactive state and commands, and Effect for typed asynchronous work, dependencies, concurrency, and scoped resources.
 - Feature facades should expose read-only view Atoms and writable command Atoms while keeping mutable storage private. React convenience hooks must be zero-logic adapters rather than places for derivation, variant branching, or orchestration.
 - Effect-backed resources and command Atoms own loading, typed failure normalization, retry eligibility, and stale-result suppression. React renders the published state and dispatches Retry; it does not catch promises, normalize raw errors, or maintain duplicate loading flags.
-- Enforce these boundaries with architecture or hygiene tests: application-logic modules must not import React, and touched view adapters must not use `useEffect`. Any unavoidable external lifecycle exception must be isolated in a named boundary adapter and explicitly allowlisted.
-- Prefer a scoped Effect exposed through an Atom lifecycle for the document-level Widget Instance claim. If React mount semantics require a hook bridge, isolate and allowlist one embedding-boundary hook that only acquires/releases the claim and contains no wallet or feature logic.
+- Treat these as review constraints: application-logic modules must not import React, and touched view adapters must not use `useEffect`. Any unavoidable external lifecycle exception must be isolated in a named boundary adapter and explicitly documented.
+- Prefer a scoped Effect exposed through an Atom lifecycle for the document-level Widget Instance claim. If React mount semantics require a hook bridge, isolate and document one embedding-boundary hook that only acquires/releases the claim and contains no wallet or feature logic.
 - Do not introduce React Query, hook-owned fetches, or Promise caches for new or materially refactored feature resources. Use Effect services/resources exposed through Atom; leave unrelated existing React Query usage unchanged unless it is in scope.
 - Run feature Effects through the existing scoped application or wallet Atom runtimes and injected Effect services. Feature code must not create ad hoc runtimes or call `Effect.runPromise`; runtime generations own interruption and cleanup.
 - Prefer headless Effect services over React-only third-party APIs. When no headless API exists, isolate the hook in a named boundary adapter that normalizes external values/callbacks into Atom; keep decisions, sequencing, errors, and non-library cleanup in Effect/Atom.
-- Classic Transaction Flow code follows `packages/widget/src/features/transaction-flow/ARCHITECTURE.md`. Do not refresh a legacy-effect or reviewed-boundary hash merely to make `lint:architecture` pass; remove the legacy exception or re-review the external boundary.
+- Classic Transaction Flow code follows `packages/widget/src/features/transaction-flow/ARCHITECTURE.md`. Re-review any external boundary when its lifecycle responsibilities change.
 - When changing user-facing copy, update both:
   - `packages/widget/src/translation/English/translations.json`
   - `packages/widget/src/translation/French/translations.json`
@@ -90,3 +90,17 @@ This project vendors external repositories under `@repos/`.
 - Before writing any Effect code, inspect `@repos/effect/LLMS.md`
 - Before writing code that interacts with Effect `HttpClient`, inspect `agent-patterns/effect-http-client.md`
 - Before writing code that uses Effect `Stream`, inspect `agent-patterns/effect-stream.md`
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked as local Markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Triage state uses the five default canonical role strings. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Domain documentation uses a single-context layout. See `docs/agents/domain.md`.

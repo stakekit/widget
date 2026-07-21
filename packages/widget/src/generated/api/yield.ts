@@ -48,6 +48,7 @@ export type TokenDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -163,6 +164,7 @@ export type RewardDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -315,6 +317,10 @@ export type InvestorEligibilityEntryDto = {
     | "third_party_attestation";
   readonly expiresAfterDays?: number;
 };
+export type SelfAttestationDocumentDto = {
+  readonly name: string;
+  readonly url: string;
+};
 export type ArgumentFieldDto = {
   readonly name:
     | "amount"
@@ -400,6 +406,7 @@ export type AllocationDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -578,6 +585,7 @@ export type BalancesQueryDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -700,6 +708,7 @@ export type TransactionDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -924,6 +933,7 @@ export type TokenWithAvailableYieldsDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -1047,6 +1057,7 @@ export type CreateActionDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -1151,6 +1162,7 @@ export type CreateActionDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -1289,6 +1301,7 @@ export type CreateManageActionDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -1393,6 +1406,7 @@ export type CreateManageActionDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -1554,6 +1568,7 @@ export type NetworkDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1703,6 +1718,7 @@ export type KycEligibilityDto = {
   readonly blockedCountries: ReadonlyArray<string>;
   readonly blockedSubdivisions: ReadonlyArray<string>;
   readonly usPersonAllowed: boolean;
+  readonly geoBlockingEnforced?: boolean;
   readonly investorEligibility: ReadonlyArray<InvestorEligibilityEntryDto>;
   readonly subjectTypes: ReadonlyArray<"KYC" | "KYB">;
 };
@@ -1825,6 +1841,7 @@ export type ActionDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -1929,6 +1946,7 @@ export type ActionDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -2122,6 +2140,7 @@ export type YieldCampaignDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -2233,6 +2252,7 @@ export type YieldDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2342,6 +2362,7 @@ export type YieldDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -2454,6 +2475,7 @@ export type YieldDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -2598,6 +2620,7 @@ export type YieldDto = {
         | "katana"
         | "hyperevm"
         | "tempo"
+        | "pharos"
         | "agoric"
         | "akash"
         | "axelar"
@@ -2697,6 +2720,10 @@ export type YieldDto = {
         readonly authorizeUrl?: string;
         readonly notes?: string;
         readonly eligibility: KycEligibilityDto;
+        readonly selfAttestation?: {
+          readonly documents: ReadonlyArray<SelfAttestationDocumentDto>;
+          readonly notes?: string;
+        };
         readonly mandatoryDisclosureUrl?: string;
       };
     };
@@ -2772,6 +2799,7 @@ export type YieldDto = {
           | "katana"
           | "hyperevm"
           | "tempo"
+          | "pharos"
           | "agoric"
           | "akash"
           | "axelar"
@@ -2884,6 +2912,7 @@ export type YieldDto = {
           | "katana"
           | "hyperevm"
           | "tempo"
+          | "pharos"
           | "agoric"
           | "akash"
           | "axelar"
@@ -3007,6 +3036,7 @@ export type YieldDto = {
           | "katana"
           | "hyperevm"
           | "tempo"
+          | "pharos"
           | "agoric"
           | "akash"
           | "axelar"
@@ -3119,6 +3149,7 @@ export type YieldDto = {
           | "katana"
           | "hyperevm"
           | "tempo"
+          | "pharos"
           | "agoric"
           | "akash"
           | "axelar"
@@ -3262,6 +3293,7 @@ export type BalanceDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -3498,6 +3530,7 @@ export type BalanceDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -3627,6 +3660,7 @@ export type YieldBalancesDto = {
         | "katana"
         | "hyperevm"
         | "tempo"
+        | "pharos"
         | "agoric"
         | "akash"
         | "axelar"
@@ -3863,6 +3897,7 @@ export type YieldBalancesDto = {
         | "katana"
         | "hyperevm"
         | "tempo"
+        | "pharos"
         | "agoric"
         | "akash"
         | "axelar"
@@ -3998,6 +4033,7 @@ export type YieldsControllerGetYieldsParams = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -4461,6 +4497,7 @@ export type TokensControllerGetTokensParams = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -4663,6 +4700,7 @@ export type ActionsControllerGetActionsParams = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"

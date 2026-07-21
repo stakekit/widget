@@ -10,6 +10,7 @@ import { MemoryRouter, Outlet, Route, Routes, useNavigate } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
+import { actionHistoryTimestampAtom } from "../../src/features/transaction-flow/state/action-history";
 import { makeClassicTransactionWorkflowModule } from "../../src/features/transaction-flow/state/transaction-workflow-atoms";
 import type { ActionMeta } from "../../src/public-api/types";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
@@ -42,9 +43,11 @@ const key = new ClassicTransactionWorkflowKey({
 });
 const WorkflowScopedAtom = makeScopedAtom(
   (workflowKey: ClassicTransactionWorkflowKey) =>
-    Atom.make(makeClassicTransactionWorkflowModule(workflowKey)).pipe(
-      Atom.setIdleTTL(0)
-    )
+    Atom.make((context) => {
+      const workflow = makeClassicTransactionWorkflowModule(workflowKey);
+      context.mount(workflow.rootAtom);
+      return workflow;
+    }).pipe(Atom.setIdleTTL(0))
 );
 const useWorkflowScopedAtom = WorkflowScopedAtom.use;
 type WorkflowModule = ReturnType<typeof makeClassicTransactionWorkflowModule>;
@@ -75,6 +78,7 @@ const WorkflowProbe = () => {
   const workflow = useContext(WorkflowContext);
   if (!workflow) throw new Error("Expected a workflow");
   const view = useAtomValue(workflow.viewAtom);
+  const actionHistoryTimestamp = useAtomValue(actionHistoryTimestampAtom);
   if (!view) throw new Error("Expected workflow input");
   const { state } = view;
   const navigate = useNavigate();
@@ -82,6 +86,9 @@ const WorkflowProbe = () => {
   return (
     <>
       <div data-testid="state">{state._tag}</div>
+      <div data-testid="action-history">
+        {actionHistoryTimestamp === null ? "unchanged" : "changed"}
+      </div>
       <button type="button" onClick={() => navigate(-1)}>
         Leave workflow
       </button>
@@ -144,6 +151,9 @@ describe("classic transaction workflow browser integration", () => {
     await expect
       .element(app.getByTestId("state"))
       .toHaveTextContent("Completed");
+    await expect
+      .element(app.getByTestId("action-history"))
+      .toHaveTextContent("changed");
     expect(signTransaction).toHaveBeenCalledOnce();
     expect(submitClassicSigned).toHaveBeenCalledOnce();
 

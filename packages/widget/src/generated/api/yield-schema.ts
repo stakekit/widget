@@ -43,6 +43,7 @@ export type TokenDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -164,6 +165,7 @@ export const TokenDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -300,6 +302,7 @@ export type RewardDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -443,6 +446,7 @@ export const RewardDto = Schema.Struct({
       "katana",
       "hyperevm",
       "tempo",
+      "pharos",
       "agoric",
       "akash",
       "axelar",
@@ -803,6 +807,19 @@ export const InvestorEligibilityEntryDto = Schema.Struct({
     }).check(Schema.isFinite())
   ),
 });
+export type SelfAttestationDocumentDto = {
+  readonly name: string;
+  readonly url: string;
+};
+export const SelfAttestationDocumentDto = Schema.Struct({
+  name: Schema.String.annotate({
+    description: "Human-readable document name",
+    examples: ["Risk Disclosures"],
+  }),
+  url: Schema.String.annotate({
+    description: "URL of the document the user must accept (HTTPS)",
+  }),
+});
 export type ArgumentFieldDto = {
   readonly name:
     | "amount"
@@ -983,6 +1000,7 @@ export type AllocationDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1107,6 +1125,7 @@ export const AllocationDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -1572,6 +1591,7 @@ export type BalancesQueryDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1694,6 +1714,7 @@ export const BalancesQueryDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -1889,6 +1910,7 @@ export type TransactionDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2083,6 +2105,7 @@ export const TransactionDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -2482,6 +2505,7 @@ export type TokenWithAvailableYieldsDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -2606,6 +2630,7 @@ export const TokenWithAvailableYieldsDto = Schema.Struct({
       "katana",
       "hyperevm",
       "tempo",
+      "pharos",
       "agoric",
       "akash",
       "axelar",
@@ -2754,6 +2779,7 @@ export type CreateActionDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -2858,6 +2884,7 @@ export type CreateActionDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -3052,6 +3079,7 @@ export const CreateActionDto = Schema.Struct({
           "katana",
           "hyperevm",
           "tempo",
+          "pharos",
           "agoric",
           "akash",
           "axelar",
@@ -3168,6 +3196,7 @@ export const CreateActionDto = Schema.Struct({
           "katana",
           "hyperevm",
           "tempo",
+          "pharos",
           "agoric",
           "akash",
           "axelar",
@@ -3423,6 +3452,7 @@ export type CreateManageActionDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -3527,6 +3557,7 @@ export type CreateManageActionDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -3745,6 +3776,7 @@ export const CreateManageActionDto = Schema.Struct({
           "katana",
           "hyperevm",
           "tempo",
+          "pharos",
           "agoric",
           "akash",
           "axelar",
@@ -3861,6 +3893,7 @@ export const CreateManageActionDto = Schema.Struct({
           "katana",
           "hyperevm",
           "tempo",
+          "pharos",
           "agoric",
           "akash",
           "axelar",
@@ -4180,6 +4213,7 @@ export type NetworkDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -4288,6 +4322,7 @@ export const NetworkDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -4795,6 +4830,7 @@ export type KycEligibilityDto = {
   readonly blockedCountries: ReadonlyArray<string>;
   readonly blockedSubdivisions: ReadonlyArray<string>;
   readonly usPersonAllowed: boolean;
+  readonly geoBlockingEnforced?: boolean;
   readonly investorEligibility: ReadonlyArray<InvestorEligibilityEntryDto>;
   readonly subjectTypes: ReadonlyArray<"KYC" | "KYB">;
 };
@@ -4820,6 +4856,12 @@ export const KycEligibilityDto = Schema.Struct({
   usPersonAllowed: Schema.Boolean.annotate({
     description: "Whether US persons are eligible",
   }),
+  geoBlockingEnforced: Schema.optionalKey(
+    Schema.Boolean.annotate({
+      description:
+        'Whether eligibility is IP-enforced at action creation: the blocked lists always, plus the countries allow-list when defaultPolicy is "deny". Absent or false means informational only',
+    })
+  ),
   investorEligibility: Schema.Array(InvestorEligibilityEntryDto).annotate({
     description:
       "Investor-tier requirements per jurisdiction. Empty means no tier requirement.",
@@ -5038,6 +5080,7 @@ export type ActionDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -5142,6 +5185,7 @@ export type ActionDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -5406,6 +5450,7 @@ export const ActionDto = Schema.Struct({
           "katana",
           "hyperevm",
           "tempo",
+          "pharos",
           "agoric",
           "akash",
           "axelar",
@@ -5522,6 +5567,7 @@ export const ActionDto = Schema.Struct({
           "katana",
           "hyperevm",
           "tempo",
+          "pharos",
           "agoric",
           "akash",
           "axelar",
@@ -5933,6 +5979,7 @@ export type YieldCampaignDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -6129,6 +6176,7 @@ export const YieldCampaignDto = Schema.Struct({
       "katana",
       "hyperevm",
       "tempo",
+      "pharos",
       "agoric",
       "akash",
       "axelar",
@@ -6261,6 +6309,7 @@ export type YieldDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -6370,6 +6419,7 @@ export type YieldDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -6482,6 +6532,7 @@ export type YieldDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -6626,6 +6677,7 @@ export type YieldDto = {
         | "katana"
         | "hyperevm"
         | "tempo"
+        | "pharos"
         | "agoric"
         | "akash"
         | "axelar"
@@ -6725,6 +6777,10 @@ export type YieldDto = {
         readonly authorizeUrl?: string;
         readonly notes?: string;
         readonly eligibility: KycEligibilityDto;
+        readonly selfAttestation?: {
+          readonly documents: ReadonlyArray<SelfAttestationDocumentDto>;
+          readonly notes?: string;
+        };
         readonly mandatoryDisclosureUrl?: string;
       };
     };
@@ -6800,6 +6856,7 @@ export type YieldDto = {
           | "katana"
           | "hyperevm"
           | "tempo"
+          | "pharos"
           | "agoric"
           | "akash"
           | "axelar"
@@ -6912,6 +6969,7 @@ export type YieldDto = {
           | "katana"
           | "hyperevm"
           | "tempo"
+          | "pharos"
           | "agoric"
           | "akash"
           | "axelar"
@@ -7035,6 +7093,7 @@ export type YieldDto = {
           | "katana"
           | "hyperevm"
           | "tempo"
+          | "pharos"
           | "agoric"
           | "akash"
           | "axelar"
@@ -7147,6 +7206,7 @@ export type YieldDto = {
           | "katana"
           | "hyperevm"
           | "tempo"
+          | "pharos"
           | "agoric"
           | "akash"
           | "axelar"
@@ -7283,6 +7343,7 @@ export const YieldDto = Schema.Struct({
     "katana",
     "hyperevm",
     "tempo",
+    "pharos",
     "agoric",
     "akash",
     "axelar",
@@ -7410,6 +7471,7 @@ export const YieldDto = Schema.Struct({
         "katana",
         "hyperevm",
         "tempo",
+        "pharos",
         "agoric",
         "akash",
         "axelar",
@@ -7553,6 +7615,7 @@ export const YieldDto = Schema.Struct({
       "katana",
       "hyperevm",
       "tempo",
+      "pharos",
       "agoric",
       "akash",
       "axelar",
@@ -7840,6 +7903,7 @@ export const YieldDto = Schema.Struct({
         "katana",
         "hyperevm",
         "tempo",
+        "pharos",
         "agoric",
         "akash",
         "axelar",
@@ -8046,6 +8110,22 @@ export const YieldDto = Schema.Struct({
               })
             ),
             eligibility: KycEligibilityDto,
+            selfAttestation: Schema.optionalKey(
+              Schema.Struct({
+                documents: Schema.Array(SelfAttestationDocumentDto).annotate({
+                  description: "Documents the user must accept before entering",
+                }),
+                notes: Schema.optionalKey(
+                  Schema.String.annotate({
+                    description:
+                      "Human-readable notes about the self-attestation requirement",
+                  })
+                ),
+              }).annotate({
+                description:
+                  "Issuer-enforced self-attestation the user must complete before entering",
+              })
+            ),
             mandatoryDisclosureUrl: Schema.optionalKey(
               Schema.String.annotate({
                 description:
@@ -8224,6 +8304,7 @@ export const YieldDto = Schema.Struct({
               "katana",
               "hyperevm",
               "tempo",
+              "pharos",
               "agoric",
               "akash",
               "axelar",
@@ -8371,6 +8452,7 @@ export const YieldDto = Schema.Struct({
               "katana",
               "hyperevm",
               "tempo",
+              "pharos",
               "agoric",
               "akash",
               "axelar",
@@ -8567,6 +8649,7 @@ export const YieldDto = Schema.Struct({
               "katana",
               "hyperevm",
               "tempo",
+              "pharos",
               "agoric",
               "akash",
               "axelar",
@@ -8712,6 +8795,7 @@ export const YieldDto = Schema.Struct({
               "katana",
               "hyperevm",
               "tempo",
+              "pharos",
               "agoric",
               "akash",
               "axelar",
@@ -8963,6 +9047,7 @@ export type BalanceDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -9199,6 +9284,7 @@ export type BalanceDto = {
       | "katana"
       | "hyperevm"
       | "tempo"
+      | "pharos"
       | "agoric"
       | "akash"
       | "axelar"
@@ -9353,6 +9439,7 @@ export const BalanceDto = Schema.Struct({
       "katana",
       "hyperevm",
       "tempo",
+      "pharos",
       "agoric",
       "akash",
       "axelar",
@@ -10165,6 +10252,7 @@ export const BalanceDto = Schema.Struct({
         "katana",
         "hyperevm",
         "tempo",
+        "pharos",
         "agoric",
         "akash",
         "axelar",
@@ -10327,6 +10415,7 @@ export type YieldBalancesDto = {
         | "katana"
         | "hyperevm"
         | "tempo"
+        | "pharos"
         | "agoric"
         | "akash"
         | "axelar"
@@ -10563,6 +10652,7 @@ export type YieldBalancesDto = {
         | "katana"
         | "hyperevm"
         | "tempo"
+        | "pharos"
         | "agoric"
         | "akash"
         | "axelar"
@@ -10733,6 +10823,7 @@ export const YieldBalancesDto = Schema.Struct({
             "katana",
             "hyperevm",
             "tempo",
+            "pharos",
             "agoric",
             "akash",
             "axelar",
@@ -11579,6 +11670,7 @@ export const YieldBalancesDto = Schema.Struct({
               "katana",
               "hyperevm",
               "tempo",
+              "pharos",
               "agoric",
               "akash",
               "axelar",
@@ -11812,6 +11904,7 @@ export type YieldsControllerGetYieldsParams = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -11970,6 +12063,7 @@ export const YieldsControllerGetYieldsParams = Schema.Struct({
       "katana",
       "hyperevm",
       "tempo",
+      "pharos",
       "agoric",
       "akash",
       "axelar",
@@ -13146,6 +13240,7 @@ export type TokensControllerGetTokensParams = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -13267,6 +13362,7 @@ export const TokensControllerGetTokensParams = Schema.Struct({
         "katana",
         "hyperevm",
         "tempo",
+        "pharos",
         "agoric",
         "akash",
         "axelar",
@@ -13545,6 +13641,7 @@ export type ActionsControllerGetActionsParams = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -13730,6 +13827,7 @@ export const ActionsControllerGetActionsParams = Schema.Struct({
       "katana",
       "hyperevm",
       "tempo",
+      "pharos",
       "agoric",
       "akash",
       "axelar",

@@ -62,7 +62,7 @@ export const useClassicFlowIntake = <
   return session.getIntake(variant);
 };
 
-export const ClassicFlowRoute = ({
+const ClassicFlowRoute = ({
   expected,
 }: {
   readonly expected: ClassicTransactionFlowIntake["_tag"];

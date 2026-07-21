@@ -26,7 +26,7 @@ import {
 } from "./classic-flow-session-store";
 import { makeClassicTransactionWorkflowModule } from "./transaction-workflow-atoms";
 
-export class ClassicFlowPreviewError extends Data.TaggedError(
+class ClassicFlowPreviewError extends Data.TaggedError(
   "ClassicFlowPreviewError"
 )<{
   readonly cause: unknown;
@@ -34,7 +34,7 @@ export class ClassicFlowPreviewError extends Data.TaggedError(
   readonly retryable: true;
 }> {}
 
-export class ClassicFlowInvalidExitPreviewError extends Data.TaggedError(
+class ClassicFlowInvalidExitPreviewError extends Data.TaggedError(
   "ClassicFlowInvalidExitPreviewError"
 )<{
   readonly cause: unknown;
@@ -42,7 +42,7 @@ export class ClassicFlowInvalidExitPreviewError extends Data.TaggedError(
   readonly retryable: false;
 }> {}
 
-export class ClassicFlowUnsupportedActivityPreviewError extends Data.TaggedError(
+class ClassicFlowUnsupportedActivityPreviewError extends Data.TaggedError(
   "ClassicFlowUnsupportedActivityPreviewError"
 )<{
   readonly message: string;
@@ -381,7 +381,7 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
       if (!action) return null;
 
       const execution = makeExecutionFacade(action);
-      context.mount(execution.workflow.viewAtom);
+      context.mount(execution.workflow.rootAtom);
       return execution;
     }).pipe(Atom.setIdleTTL(0), Atom.withLabel("classicFlowExecutionScope"));
 

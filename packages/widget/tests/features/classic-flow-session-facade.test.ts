@@ -258,19 +258,18 @@ describe("Classic Flow Session module", () => {
       )
     );
     registry.set(firstReview.confirmAtom, undefined);
-    const firstExecution = registry.get(makeClassicFlowExecutionScope(flow));
+    const firstExecutionAtom = makeClassicFlowExecutionScope(flow);
+    const disposeFirstExecution = registry.mount(firstExecutionAtom);
+    const firstExecution = registry.get(firstExecutionAtom);
     if (!firstExecution) throw new Error("Expected the first Execution module");
     expect(registry.get(firstExecution.actionAtom).id).toBe("fresh-action-1");
     expect(
       registry.get(firstExecution.activityCompleteViewAtom).selectedAction.id
     ).toBe("fresh-action-1");
-    const disposeFirstWorkflow = registry.mount(
-      firstExecution.workflow.viewAtom
-    );
     await vi.waitFor(() => expect(probe.started).toBe(1));
 
     registry.set(firstExecution.backAtom, undefined);
-    disposeFirstWorkflow();
+    disposeFirstExecution();
     disposeFirstReview();
     await vi.waitFor(() => expect(probe.disposed).toBe(1));
 
@@ -282,16 +281,15 @@ describe("Classic Flow Session module", () => {
       )
     );
     registry.set(secondReview.confirmAtom, undefined);
-    const secondExecution = registry.get(makeClassicFlowExecutionScope(flow));
+    const secondExecutionAtom = makeClassicFlowExecutionScope(flow);
+    const disposeSecondExecution = registry.mount(secondExecutionAtom);
+    const secondExecution = registry.get(secondExecutionAtom);
     if (!secondExecution) throw new Error("Expected a second Execution module");
     expect(registry.get(secondExecution.actionAtom).id).toBe("fresh-action-2");
-    const disposeSecondWorkflow = registry.mount(
-      secondExecution.workflow.viewAtom
-    );
     await vi.waitFor(() => expect(probe.started).toBe(2));
     expect(previewAction).toHaveBeenCalledTimes(2);
 
-    disposeSecondWorkflow();
+    disposeSecondExecution();
     disposeSecondReview();
     await vi.waitFor(() => expect(probe.disposed).toBe(2));
     disposeSession();

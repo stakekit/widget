@@ -77,8 +77,7 @@ atoms or derived read models, not alternate state owners.
 
 Use React Context only when the value is inherently tree-scoped, such as a
 compound component, host DOM element, router history adapter, or required
-third-party provider. New page or application-state contexts are rejected by
-the architecture check.
+third-party provider. Do not introduce new page or application-state contexts.
 
 ## Supported lifecycle
 

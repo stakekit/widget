@@ -94,8 +94,4 @@ export const makeClassicFlowSessionStore = () => {
   } as const;
 };
 
-export type ClassicFlowSessionStore = ReturnType<
-  typeof makeClassicFlowSessionStore
->;
-
 export const classicFlowSessionStore = makeClassicFlowSessionStore();

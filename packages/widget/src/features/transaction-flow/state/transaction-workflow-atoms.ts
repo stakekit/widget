@@ -250,8 +250,15 @@ export const makeClassicTransactionWorkflowModule = (
       Atom.withLabel(`classicExecutionWorkflowCompletion(${workflowId})`)
     );
 
+  const rootAtom = Atom.make((context) => {
+    context.mount(stateAtom);
+    context.mount(completionAtom);
+  }).pipe(
+    Atom.setIdleTTL(0),
+    Atom.withLabel(`classicExecutionWorkflowRoot(${workflowId})`)
+  );
+
   const viewAtom = Atom.make((get) => {
-    get(completionAtom);
     const result = get(stateAtom);
     const state = Option.getOrElse(AsyncResult.value(result), () =>
       initializeTransactionWorkflow(workflowKey)
@@ -277,6 +284,7 @@ export const makeClassicTransactionWorkflowModule = (
 
   return {
     dispatchAtom,
+    rootAtom,
     viewAtom,
   } as const;
 };

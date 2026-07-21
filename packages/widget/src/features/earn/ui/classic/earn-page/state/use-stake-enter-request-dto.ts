@@ -1,7 +1,7 @@
 import type BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import { useMemo } from "react";
-import type { ActionCommand } from "../../../../../../domain/schema/action-models";
+import { ActionCommand } from "../../../../../../domain/schema/action-models";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
@@ -74,12 +74,15 @@ export const useStakeEnterRequestDto = ({
       if (!validatorAddressRequired && !subnetIdRequired) return {};
 
       const validator = EArray.head(validators).pipe(Option.getOrNull);
-      return validator
-        ? {
-            validatorAddress: validator.address,
-            subnetId: subnetIdRequired ? validator.subnet?.id : undefined,
-          }
-        : null;
+      if (!validator) return null;
+
+      const subnetId = subnetIdRequired ? validator.subnet?.id : undefined;
+      if (subnetIdRequired && subnetId === undefined) return null;
+
+      return {
+        validatorAddress: validator.address,
+        ...(subnetId === undefined ? {} : { subnetId }),
+      };
     })();
     if (!validatorArguments) return null;
 
@@ -87,7 +90,7 @@ export const useStakeEnterRequestDto = ({
       selectedValidators,
       selectedStake,
       gasFeeToken: selectedStake.mechanics.gasFeeToken,
-      dto: {
+      dto: ActionCommand.make({
         address,
         yieldId: selectedStake.id,
         arguments: {
@@ -104,7 +107,7 @@ export const useStakeEnterRequestDto = ({
           ...validatorArguments,
           ...(additionalAddresses ?? {}),
         },
-      },
+      }),
     };
   }, [
     additionalAddresses,
