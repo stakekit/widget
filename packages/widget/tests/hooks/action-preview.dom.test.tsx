@@ -9,17 +9,17 @@ import {
   widgetConfigAtom,
 } from "../../src/app/config/settings";
 import { ActionCommand } from "../../src/domain/schema/action-models";
-import type { ClassicTransactionFlowIntake } from "../../src/features/transaction-flow/model/classic-transaction-flow";
-import { useStartClassicTransactionFlow } from "../../src/features/transaction-flow/react/use-transaction-flow";
+import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import { useStartClassicTransactionFlow } from "../../src/features/classic-transaction-flow/react/use-transaction-flow";
 import {
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
   makeClassicFlowSessionModule,
-} from "../../src/features/transaction-flow/state/classic-flow-session-facade";
+} from "../../src/features/classic-transaction-flow/state/classic-flow-session-facade";
 import {
   type ClassicFlowSession,
   classicFlowSessionStore,
-} from "../../src/features/transaction-flow/state/classic-flow-session-store";
+} from "../../src/features/classic-transaction-flow/state/classic-flow-session-store";
 import { currentWalletStateResultAtom } from "../../src/features/wallet/state/root-atom";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {

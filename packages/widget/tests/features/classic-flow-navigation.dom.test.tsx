@@ -12,7 +12,7 @@ import {
 } from "react-router";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { ActionCommand } from "../../src/domain/schema/action-models";
-import type { ClassicTransactionFlowIntake } from "../../src/features/transaction-flow/model/classic-transaction-flow";
+import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
   ClassicFlowExecutionScope,
   ClassicFlowReviewScope,
@@ -20,8 +20,8 @@ import {
   useClassicFlowExecution,
   useClassicFlowReview,
   useClassicFlowSession,
-} from "../../src/features/transaction-flow/react/classic-flow-route";
-import { classicFlowSessionStore } from "../../src/features/transaction-flow/state/classic-flow-session-store";
+} from "../../src/features/classic-transaction-flow/react/classic-flow-route";
+import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state/classic-flow-session-store";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";

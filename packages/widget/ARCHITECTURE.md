@@ -114,3 +114,22 @@ contracts and remain at application composition boundaries.
 Page workflows must not introduce React contexts. Earn, position details,
 activity, completion, transaction flow, tracking, summary, configuration, and
 mount-animation state are registry-scoped atoms or models derived from atoms.
+
+## Transaction flows
+
+Transaction execution is split by ownership:
+
+- `features/classic-transaction-flow` owns the Classic Review, Steps, and
+  Complete journey and its Flow Session.
+- `features/borrow-transaction-flow` owns the Borrow Review, Steps, and Complete
+  journey and its Flow Session. `features/borrow` starts it through immutable
+  intake and observes its read-only lifecycle outcomes; the flow never imports
+  the Borrow feature.
+- `features/transaction-workflow` owns one fresh scoped execution machine per
+  immutable Transaction Workflow Input. Its dedicated root Atom is the only
+  lifecycle handle; state, events, and serialized commands are consumers of
+  that lifetime rather than alternate acquisition paths.
+
+The shared Transaction Workflow contains execution mechanics only. Journey
+projection, routing, handoff cleanup, and completion behavior remain in the
+Classic and Borrow adapters.

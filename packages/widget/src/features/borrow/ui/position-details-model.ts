@@ -13,12 +13,12 @@ import type { WalletAddress } from "../../../domain/schema/identifiers";
 import type { AppToken } from "../../../domain/schema/legacy-models";
 import { formatCompactUsd } from "../../../shared/lib/formatters";
 import { formatNumber } from "../../../shared/lib/number-format";
+import type { BorrowTransactionFlowReview } from "../../borrow-transaction-flow/state";
 import type {
   BorrowPositionPendingActionContext,
   BorrowWithdrawTokenOption,
 } from "../atoms/action-form";
 import { getBorrowMarketPairLabel } from "./model";
-import type { BorrowReviewState } from "./review-state";
 
 type BorrowPositionMetricCard = {
   readonly id: string;
@@ -44,7 +44,7 @@ export type BorrowPositionAction = {
   readonly id: string;
   readonly label: string;
   readonly pendingContext: BorrowPositionPendingActionContext;
-  readonly reviewState: BorrowReviewState;
+  readonly reviewState: BorrowTransactionFlowReview;
   readonly type:
     | "disableCollateral"
     | "enableCollateral"

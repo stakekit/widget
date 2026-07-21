@@ -6,7 +6,7 @@ import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import type { ActivityFilterOption } from "../../src/features/activity/model/filters";
 import { useActivityFilter } from "../../src/features/activity/react/use-activity-filter";
-import { CompletePageComponent } from "../../src/features/transaction-flow/ui/complete/pages/common.page";
+import { CompletePageComponent } from "../../src/features/classic-transaction-flow/ui/complete/pages/common.page";
 import { i18nInstance } from "../../src/translation";
 import { render } from "../utils/test-utils.dom";
 

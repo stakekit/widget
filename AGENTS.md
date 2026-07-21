@@ -63,7 +63,7 @@
 - Do not introduce React Query, hook-owned fetches, or Promise caches for new or materially refactored feature resources. Use Effect services/resources exposed through Atom; leave unrelated existing React Query usage unchanged unless it is in scope.
 - Run feature Effects through the existing scoped application or wallet Atom runtimes and injected Effect services. Feature code must not create ad hoc runtimes or call `Effect.runPromise`; runtime generations own interruption and cleanup.
 - Prefer headless Effect services over React-only third-party APIs. When no headless API exists, isolate the hook in a named boundary adapter that normalizes external values/callbacks into Atom; keep decisions, sequencing, errors, and non-library cleanup in Effect/Atom.
-- Classic Transaction Flow code follows `packages/widget/src/features/transaction-flow/ARCHITECTURE.md`. Re-review any external boundary when its lifecycle responsibilities change.
+- Classic Transaction Flow code follows `packages/widget/src/features/classic-transaction-flow/ARCHITECTURE.md`. Re-review any external boundary when its lifecycle responsibilities change.
 - When changing user-facing copy, update both:
   - `packages/widget/src/translation/English/translations.json`
   - `packages/widget/src/translation/French/translations.json`

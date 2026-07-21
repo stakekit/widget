@@ -6,14 +6,27 @@ import type {
   YieldAction,
 } from "../../domain/schema/action-models";
 import type { ActionMeta } from "../../public-api/types";
-import type { WalletScopeKey } from "../wallet/domain/scope";
+import { sameWalletScopeOwner, WalletScopeKey } from "../wallet/domain/scope";
 
-export class ClassicTransactionWorkflowKey extends Data.TaggedClass("Classic")<{
+type ClassicTransactionWorkflowInputFields = {
   readonly actionMeta: ActionMeta;
   readonly transactions: YieldAction["transactions"];
   readonly walletScope: WalletScopeKey;
   readonly yieldId: YieldAction["yieldId"];
-}> {}
+};
+
+export class ClassicTransactionWorkflowInput extends Data.TaggedClass(
+  "Classic"
+)<ClassicTransactionWorkflowInputFields> {
+  constructor(input: ClassicTransactionWorkflowInputFields) {
+    super({
+      actionMeta: structuredClone(input.actionMeta),
+      transactions: structuredClone(input.transactions),
+      walletScope: new WalletScopeKey(input.walletScope),
+      yieldId: input.yieldId,
+    });
+  }
+}
 
 export type ClassicTransactionWorkflowProviderDetail = {
   readonly address?: string;
@@ -24,7 +37,7 @@ export type ClassicTransactionWorkflowProviderDetail = {
   readonly website?: string;
 };
 
-export const makeClassicTransactionWorkflowKey = ({
+export const makeClassicTransactionWorkflowInput = ({
   action,
   inputToken,
   providersDetails,
@@ -38,7 +51,7 @@ export const makeClassicTransactionWorkflowKey = ({
     | undefined;
   readonly walletScope: WalletScopeKey;
 }) =>
-  new ClassicTransactionWorkflowKey({
+  new ClassicTransactionWorkflowInput({
     actionMeta: {
       actionId: action.id,
       actionType: action.type,
@@ -63,14 +76,32 @@ export const makeClassicTransactionWorkflowKey = ({
     yieldId: action.yieldId,
   });
 
-export class BorrowTransactionWorkflowKey extends Data.TaggedClass("Borrow")<{
+type BorrowTransactionWorkflowInputFields = {
   readonly action: BorrowAction;
   readonly walletScope: WalletScopeKey;
-}> {}
+};
 
-export type TransactionWorkflowKey =
-  | ClassicTransactionWorkflowKey
-  | BorrowTransactionWorkflowKey;
+export class BorrowTransactionWorkflowInput extends Data.TaggedClass(
+  "Borrow"
+)<BorrowTransactionWorkflowInputFields> {
+  constructor(input: BorrowTransactionWorkflowInputFields) {
+    super({
+      action: structuredClone(input.action),
+      walletScope: new WalletScopeKey(input.walletScope),
+    });
+  }
+}
+
+export type TransactionWorkflowInput =
+  | ClassicTransactionWorkflowInput
+  | BorrowTransactionWorkflowInput;
+
+export class TransactionWorkflowInputError extends Data.TaggedError(
+  "TransactionWorkflowInputError"
+)<{
+  readonly message: string;
+  readonly workflowId: string;
+}> {}
 
 type TransactionWorkflowSource =
   | {
@@ -155,7 +186,7 @@ export type TransactionWorkflowTransactionFor<
   readonly source: Extract<TransactionWorkflowSource, { readonly _tag: Kind }>;
 };
 
-export type TransactionWorkflowBatch = {
+type TransactionWorkflowBatch = {
   readonly currentStep: number;
   readonly id: string;
   readonly totalSteps: number;
@@ -285,14 +316,73 @@ export const makeBorrowTransactionWorkflowBatch = (
 });
 
 export const getTransactionWorkflowId = (
-  key: TransactionWorkflowKey
-): string => (key._tag === "Classic" ? key.actionMeta.actionId : key.action.id);
+  input: TransactionWorkflowInput
+): string =>
+  input._tag === "Classic" ? input.actionMeta.actionId : input.action.id;
+
+export const validateTransactionWorkflowInput = (
+  input: TransactionWorkflowInput
+): TransactionWorkflowInputError | null => {
+  const workflowId = getTransactionWorkflowId(input);
+  const fail = (message: string) =>
+    new TransactionWorkflowInputError({ message, workflowId });
+  const actionAddress =
+    input._tag === "Classic" ? input.actionMeta.address : input.action.address;
+
+  if (!actionAddress) {
+    return fail("The transaction workflow has no action wallet address.");
+  }
+
+  if (
+    !sameWalletScopeOwner(input.walletScope, {
+      address: actionAddress,
+      network: input.walletScope.network,
+    })
+  ) {
+    return fail(
+      "The transaction workflow action does not belong to its captured wallet scope."
+    );
+  }
+
+  const mismatchedNetwork =
+    input._tag === "Classic"
+      ? input.transactions.find(
+          (transaction) => transaction.network !== input.walletScope.network
+        )
+      : input.action.transactions.find(
+          (transaction) => transaction.network !== input.walletScope.network
+        );
+
+  if (mismatchedNetwork) {
+    return fail(
+      "The transaction workflow contains a transaction outside its captured wallet network."
+    );
+  }
+
+  if (input._tag === "Borrow") {
+    const mismatchedOwner = input.action.transactions.find(
+      (transaction) =>
+        !sameWalletScopeOwner(input.walletScope, {
+          address: transaction.address,
+          network: transaction.network,
+        })
+    );
+
+    if (mismatchedOwner) {
+      return fail(
+        "The transaction workflow contains a transaction outside its captured wallet scope."
+      );
+    }
+  }
+
+  return null;
+};
 
 const initializeTransactionWorkflowContext = (
-  key: TransactionWorkflowKey
+  input: TransactionWorkflowInput
 ): TransactionWorkflowContext => {
-  if (key._tag === "Classic") {
-    const batch = makeClassicTransactionWorkflowBatch(key.transactions);
+  if (input._tag === "Classic") {
+    const batch = makeClassicTransactionWorkflowBatch(input.transactions);
     const currentTransactionIndex = batch.transactions.findIndex(
       ({ meta }) => !meta.done
     );
@@ -304,14 +394,14 @@ const initializeTransactionWorkflowContext = (
         currentTransactionIndex === -1 ? null : currentTransactionIndex,
       domain: {
         _tag: "Classic",
-        actionMeta: key.actionMeta,
-        yieldId: key.yieldId,
+        actionMeta: input.actionMeta,
+        yieldId: input.yieldId,
       },
       submissions: [],
     };
   }
 
-  const batch = makeBorrowTransactionWorkflowBatch(key.action);
+  const batch = makeBorrowTransactionWorkflowBatch(input.action);
   const currentTransactionIndex = batch.transactions.findIndex(
     ({ meta }) => !meta.done
   );
@@ -321,7 +411,7 @@ const initializeTransactionWorkflowContext = (
     currentBatchIndex: currentTransactionIndex === -1 ? null : 0,
     currentTransactionIndex:
       currentTransactionIndex === -1 ? null : currentTransactionIndex,
-    domain: { _tag: "Borrow", action: key.action },
+    domain: { _tag: "Borrow", action: input.action },
     submissions: [],
   };
 };
@@ -334,19 +424,19 @@ const shouldConfirmWithoutSigning = (
     transaction.source.transaction.signablePayload == null);
 
 export const initializeTransactionWorkflow = (
-  key: TransactionWorkflowKey
+  input: TransactionWorkflowInput
 ): TransactionWorkflowState => {
-  const context = initializeTransactionWorkflowContext(key);
+  const context = initializeTransactionWorkflowContext(input);
 
-  if (key._tag === "Borrow" && key.action.status === "SUCCESS") {
+  if (input._tag === "Borrow" && input.action.status === "SUCCESS") {
     return { _tag: "Completed", context };
   }
 
   const current = getCurrentTransactionWorkflowTransaction(context);
 
   if (!current) {
-    if (key._tag === "Borrow") {
-      if (key.action.hasNextStep) {
+    if (input._tag === "Borrow") {
+      if (input.action.hasNextStep) {
         return { _tag: "Advancing", context };
       }
     }

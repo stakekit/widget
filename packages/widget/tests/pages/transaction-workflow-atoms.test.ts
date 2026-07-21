@@ -4,15 +4,10 @@ import { describe, expect, it, vi } from "vitest";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import type { ActionTransaction } from "../../src/domain/schema/action-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
-import {
-  makeClassicTransactionWorkflowModule,
-  transactionWorkflowDispatchAtom,
-  transactionWorkflowMachineAtom,
-  transactionWorkflowStateAtom,
-} from "../../src/features/transaction-flow/state/transaction-workflow-atoms";
+import { makeTransactionWorkflowModule } from "../../src/features/transaction-workflow/state";
 import type { ActionMeta } from "../../src/public-api/types";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
-import { ClassicTransactionWorkflowKey } from "../../src/services/workflow/transaction-workflow-model";
+import { ClassicTransactionWorkflowInput } from "../../src/services/workflow/transaction-workflow-model";
 import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
 import { yieldApiTransactionFixture } from "../fixtures";
 
@@ -31,29 +26,25 @@ const transaction = yieldApiTransactionFixture({
   status: "CREATED",
   unsignedTransaction: "unsigned",
 }) as ActionTransaction;
-
-describe("transaction workflow atoms", () => {
-  it("returns one atom graph for value-equal workflow keys", () => {
-    const makeKey = () =>
-      new ClassicTransactionWorkflowKey({
-        actionMeta,
-        transactions: [transaction],
-        walletScope,
-        yieldId,
-      });
-
-    expect(transactionWorkflowMachineAtom(makeKey())).toBe(
-      transactionWorkflowMachineAtom(makeKey())
-    );
-    expect(transactionWorkflowStateAtom(makeKey())).toBe(
-      transactionWorkflowStateAtom(makeKey())
-    );
-    expect(transactionWorkflowDispatchAtom(makeKey())).toBe(
-      transactionWorkflowDispatchAtom(makeKey())
-    );
+const makeInput = () =>
+  new ClassicTransactionWorkflowInput({
+    actionMeta,
+    transactions: [transaction],
+    walletScope,
+    yieldId,
   });
 
-  it("creates isolated machines for equal keys owned by different sessions", async () => {
+describe("transaction workflow module", () => {
+  it("creates a fresh atom graph for every equal execution input", () => {
+    const first = makeTransactionWorkflowModule(makeInput());
+    const second = makeTransactionWorkflowModule(makeInput());
+
+    expect(first.rootAtom).not.toBe(second.rootAtom);
+    expect(first.stateAtom).not.toBe(second.stateAtom);
+    expect(first.commandAtom).not.toBe(second.commandAtom);
+  });
+
+  it("acquires and disposes machines only through each module root", async () => {
     const probe = { disposed: 0, started: 0 };
     const workflowLayer = Layer.succeed(
       TransactionWorkflowService,
@@ -78,22 +69,18 @@ describe("transaction workflow atoms", () => {
     const registry = AtomRegistry.make({
       initialValues: [[walletRuntime.layer, workflowLayer]],
     });
-    const key = new ClassicTransactionWorkflowKey({
-      actionMeta,
-      transactions: [transaction],
-      walletScope,
-      yieldId,
-    });
-    const first = makeClassicTransactionWorkflowModule(key);
-    const second = makeClassicTransactionWorkflowModule(key);
+    const first = makeTransactionWorkflowModule(makeInput());
+    const second = makeTransactionWorkflowModule(makeInput());
+
+    const disposeState = registry.mount(first.stateAtom);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(probe.started).toBe(0);
 
     const disposeFirst = registry.mount(first.rootAtom);
     const disposeSecond = registry.mount(second.rootAtom);
     await vi.waitFor(() => expect(probe.started).toBe(2));
 
-    const disposeFirstView = registry.mount(first.viewAtom);
-    disposeFirstView();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    disposeState();
     expect(probe.disposed).toBe(0);
 
     disposeFirst();

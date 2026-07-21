@@ -49,9 +49,9 @@ import {
 } from "../../../../../../shared/react/navigation/use-position-details-stake-match";
 import { useDebouncedValue } from "../../../../../../shared/react/use-debounced-value";
 import { useSavedRef } from "../../../../../../shared/react/use-saved-ref";
+import { useStartClassicTransactionFlow } from "../../../../../classic-transaction-flow/react/use-transaction-flow";
 import { useMountAnimation } from "../../../../../mount-animation/react/use-mount-animation";
 import { useTrackEvent } from "../../../../../tracking/react/use-track-event";
-import { useStartClassicTransactionFlow } from "../../../../../transaction-flow/react/use-transaction-flow";
 import { useCloseChainModal } from "../../../../../wallet/react/use-close-chain-modal";
 import { useSKWallet } from "../../../../../wallet/react/use-wallet";
 import { useWalletConfig } from "../../../../../wallet/state/root-atom";

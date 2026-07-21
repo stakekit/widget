@@ -1,4 +1,6 @@
 import { useAtomSet } from "@effect/atom-react";
+import { Option } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
@@ -8,7 +10,7 @@ import { useClassicFlowExecution } from "../../../react/classic-flow-route";
 import { useTransactionWorkflow } from "./use-transaction-workflow.hook";
 
 export const useSteps = () => {
-  const { dispatch, steps } = useTransactionWorkflow();
+  const { dispatch, result, steps } = useTransactionWorkflow();
   const facade = useClassicFlowExecution();
   const returnFlowToReview = useAtomSet(facade.backAtom);
 
@@ -20,6 +22,7 @@ export const useSteps = () => {
   };
 
   const retry = steps.retryable ? () => dispatch({ _tag: "Retry" }) : undefined;
+  const setupError = Option.getOrNull(AsyncResult.error(result));
 
   const { t } = useTranslation();
 
@@ -43,7 +46,7 @@ export const useSteps = () => {
     retry,
     txStates: steps.txStates,
     cta,
-    customSignErrorMessage: steps.customSignErrorMessage,
+    customSignErrorMessage: setupError?.message ?? steps.customSignErrorMessage,
     completionNavigation: steps.completionNavigation,
     yieldId: steps.yieldId,
   };

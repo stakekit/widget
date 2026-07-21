@@ -14,7 +14,7 @@ import {
   CollapsibleRoot,
   CollapsibleTrigger,
 } from "../../../../widget-shell/ui/collapsible";
-import { ClassicTransactionStepState } from "../../../state/transaction-workflow-atoms";
+import { ClassicTransactionStepState } from "../../../state/classic-transaction-workflow";
 import type { useSteps } from "../hooks/use-steps.hook";
 import {
   halfOpacityAfter,

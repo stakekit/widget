@@ -17,14 +17,14 @@ import {
   type ClassicTransactionFlowIntake,
   getClassicTransactionFlowIntakeVariant,
   getClassicTransactionFlowKycYield,
-  getClassicTransactionWorkflowKey,
+  getClassicTransactionWorkflowInput,
 } from "../model/classic-transaction-flow";
 import { makeClassicFlowSessionReviewResources } from "../resources/classic-flow-review-resources";
 import {
   type ClassicFlowSession,
   classicFlowSessionStore,
 } from "./classic-flow-session-store";
-import { makeClassicTransactionWorkflowModule } from "./transaction-workflow-atoms";
+import { makeClassicTransactionWorkflowModule } from "./classic-transaction-workflow";
 
 class ClassicFlowPreviewError extends Data.TaggedError(
   "ClassicFlowPreviewError"
@@ -341,7 +341,7 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
     ).pipe(Atom.withLabel("classicFlowExecutionActivityCompleteView"));
 
     const workflow = makeClassicTransactionWorkflowModule(
-      getClassicTransactionWorkflowKey(session.intake, action)
+      getClassicTransactionWorkflowInput(session.intake, action)
     );
 
     const navigationAtom = Atom.make((get) =>

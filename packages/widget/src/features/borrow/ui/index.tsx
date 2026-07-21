@@ -1,3 +1,4 @@
+import { useAtomSet } from "@effect/atom-react";
 import { Trigger } from "@radix-ui/react-dialog";
 import type BigNumber from "bignumber.js";
 import clsx from "clsx";
@@ -29,6 +30,7 @@ import { ContentLoaderSquare } from "../../../shared/ui/primitives/content-loade
 import { CaretDownIcon } from "../../../shared/ui/primitives/icons/caret-down";
 import { Image } from "../../../shared/ui/primitives/image";
 import { Text } from "../../../shared/ui/primitives/typography/text";
+import { startBorrowTransactionFlowAtom } from "../../borrow-transaction-flow/state";
 import * as AmountToggle from "../../earn/ui/components/amount-toggle";
 import {
   AddressRow,
@@ -278,6 +280,7 @@ const BorrowFormPanel = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const trackEvent = useTrackEvent();
+  const startBorrowTransactionFlow = useAtomSet(startBorrowTransactionFlowAtom);
   const {
     borrowAmountGreaterThanAvailable,
     collateralAmountGreaterThanBalance,
@@ -324,6 +327,10 @@ const BorrowFormPanel = ({
     }
 
     stageReviewState();
+    startBorrowTransactionFlow({
+      ...preparedReviewState,
+      entry: { _tag: "BorrowDashboard" },
+    });
     trackEvent("borrowReviewClicked", {
       borrowAmount: borrowAmount.toString(10),
       collateralAmount: collateralAmount.toString(10),
@@ -331,7 +338,7 @@ const BorrowFormPanel = ({
       collateralTokenSymbol: selectedCollateralToken?.token.symbol,
       marketId: selectedMarket.id,
     });
-    navigate("/borrow/review", { state: preparedReviewState });
+    navigate("/borrow/review");
   };
   const integrations = AsyncResult.getOrElse(integrationsResult, () => []);
 

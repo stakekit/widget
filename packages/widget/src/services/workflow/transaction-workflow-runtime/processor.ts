@@ -7,8 +7,8 @@ import {
   type TransactionWorkflowAction,
   type TransactionWorkflowContext,
   type TransactionWorkflowEvent,
+  type TransactionWorkflowInput,
   TransactionWorkflowInvariantError,
-  type TransactionWorkflowKey,
   type TransactionWorkflowState,
   updateCurrentTransactionWorkflowTransaction,
 } from "../transaction-workflow-model";
@@ -20,18 +20,18 @@ import { submitCurrent } from "./submission";
 
 export const makeTransactionWorkflowProcessor = ({
   events,
-  key,
+  input,
   queue,
   stateRef,
 }: {
   readonly events: PubSub.PubSub<TransactionWorkflowEvent>;
-  readonly key: TransactionWorkflowKey;
+  readonly input: TransactionWorkflowInput;
   readonly queue: Queue.Queue<TransactionWorkflowAction>;
   readonly stateRef: SubscriptionRef.SubscriptionRef<TransactionWorkflowState>;
 }) => {
   const complete = (context: TransactionWorkflowContext) =>
     TransactionWorkflowOperationsService.use((operations) =>
-      operations.completeWorkflow(key)
+      operations.completeWorkflow(input)
     ).pipe(
       Effect.andThen(
         SubscriptionRef.set(stateRef, { _tag: "Completed", context })
@@ -82,7 +82,7 @@ export const makeTransactionWorkflowProcessor = ({
 
       return yield* confirmCurrent({
         context,
-        key,
+        input,
         latestContextRef,
       }).pipe(
         Effect.matchEffect({
@@ -124,7 +124,7 @@ export const makeTransactionWorkflowProcessor = ({
           }),
         onSuccess: ({ context: submitted, submission }) =>
           TransactionWorkflowOperationsService.use((operations) =>
-            operations.submitWorkflow(key)
+            operations.submitWorkflow(input)
           ).pipe(
             Effect.andThen(
               PubSub.publish(events, {
@@ -169,7 +169,7 @@ export const makeTransactionWorkflowProcessor = ({
             return Effect.die(
               new TransactionWorkflowInvariantError({
                 message: "Signing completed without a current transaction.",
-                workflowId: getTransactionWorkflowId(key),
+                workflowId: getTransactionWorkflowId(input),
               })
             );
           }
@@ -179,7 +179,7 @@ export const makeTransactionWorkflowProcessor = ({
             batchId: batch.id,
             source: current.source,
             transactionId: current.source.transaction.id,
-            workflowId: getTransactionWorkflowId(key),
+            workflowId: getTransactionWorkflowId(input),
           }).pipe(Effect.andThen(runSubmission(signed)), Effect.asVoid);
         },
       })

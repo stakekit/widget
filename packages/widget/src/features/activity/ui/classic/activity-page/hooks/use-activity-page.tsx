@@ -10,8 +10,8 @@ import type { ClassicTransactionWorkflowProviderDetail } from "../../../../../..
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
+import { useStartClassicTransactionFlow } from "../../../../../classic-transaction-flow/react/use-transaction-flow";
 import { useTrackPage } from "../../../../../tracking/react/use-track-page";
-import { useStartClassicTransactionFlow } from "../../../../../transaction-flow/react/use-transaction-flow";
 import { useSKWallet } from "../../../../../wallet/react/use-wallet";
 import { FallbackContent } from "../../../../../widget-shell/fallback-content";
 import type {

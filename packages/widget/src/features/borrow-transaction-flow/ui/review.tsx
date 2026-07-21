@@ -1,9 +1,7 @@
-import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Cause, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate, useParams } from "react-router";
 import { formatNumber } from "../../../shared/lib/number-format";
 import { Box } from "../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
@@ -14,11 +12,7 @@ import { AnimationPage } from "../../widget-shell/animation-page";
 import { Divider } from "../../widget-shell/divider";
 import { PageContainer } from "../../widget-shell/page-container";
 import { PageCtaButton } from "../../widget-shell/page-cta";
-import { borrowCreateActionAtom } from "../atoms/action-creation";
-import { borrowActionFormAtom } from "../atoms/action-form";
-import { borrowExecutionInputAtom } from "./execution-state";
-import { getBorrowFlowRoutes } from "./flow-routes";
-import { isBorrowReviewState } from "./review-state";
+import { useBorrowTransactionFlow } from "../react/borrow-flow-route";
 import * as styles from "./styles.css";
 
 const formatPercentSummary = (value: string | undefined) => {
@@ -57,61 +51,16 @@ export const BorrowReviewPage = () => {
   useTrackPage("borrowReview");
 
   const { t } = useTranslation();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { marketId } = useParams();
-  const routes = getBorrowFlowRoutes(marketId);
-  const stageBorrowActionForm = useAtomSet(borrowActionFormAtom);
-  const setBorrowExecutionInput = useAtomSet(borrowExecutionInputAtom);
-  const [createActionResult, createAction] = useAtom(borrowCreateActionAtom, {
-    mode: "promise",
-  });
-  const actionFormState = useAtomValue(borrowActionFormAtom);
-  const locationReviewState = isBorrowReviewState(location.state)
-    ? location.state
-    : null;
-  const reviewState =
-    locationReviewState ??
-    (actionFormState.type === "review" ? actionFormState.reviewState : null);
-  const [confirmAttempted, setConfirmAttempted] = useState(false);
-
-  useEffect(() => {
-    if (!reviewState) {
-      return;
-    }
-
-    setConfirmAttempted(false);
-  }, [reviewState]);
-
-  if (!reviewState) {
-    return (
-      <AnimationPage>
-        <PageContainer>
-          <Box display="flex" flexDirection="column" gap="4">
-            <Text variant={{ weight: "bold" }}>
-              {t("dashboard.borrow.review_page.unavailable_title")}
-            </Text>
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {t("dashboard.borrow.review_page.unavailable_description")}
-            </Text>
-            <PageCtaButton
-              cta={{
-                disabled: false,
-                isLoading: false,
-                label: t("dashboard.borrow.review_page.back"),
-                onClick: () => navigate(routes.basePath),
-              }}
-            />
-          </Box>
-        </PageContainer>
-      </AnimationPage>
-    );
-  }
+  const flow = useBorrowTransactionFlow();
+  const createActionResult = useAtomValue(flow.createActionResultAtom);
+  const confirm = useAtomSet(flow.confirmAtom);
+  const back = useAtomSet(flow.backAtom);
+  const reviewState = flow.intake;
+  const isPositionFlow = flow.intake.entry._tag === "BorrowPosition";
 
   const { request, summary } = reviewState;
   const createActionErrorMessage = (() => {
     if (
-      !confirmAttempted ||
       !AsyncResult.isFailure(createActionResult) ||
       AsyncResult.isWaiting(createActionResult)
     ) {
@@ -132,19 +81,6 @@ export const BorrowReviewPage = () => {
 
     return t("dashboard.borrow.error_description");
   })();
-  const onConfirm = () => {
-    setConfirmAttempted(true);
-
-    void createAction(request)
-      .then((action) => {
-        const executionState = { ...reviewState, action };
-
-        setBorrowExecutionInput(executionState);
-        stageBorrowActionForm({ type: "reset" });
-        navigate(routes.stepsPath);
-      })
-      .catch(() => undefined);
-  };
   const projectedLtv = formatTransition({
     current: null,
     projected: formatPercentSummary(summary.projectedLtv),
@@ -237,13 +173,13 @@ export const BorrowReviewPage = () => {
           <Box display="flex" flexDirection="column" gap="2">
             <Box
               aria-label={
-                marketId
+                isPositionFlow
                   ? t("dashboard.borrow.review_page.back_to_position")
                   : t("dashboard.borrow.review_page.back")
               }
               as="button"
               className={styles.flowBackButton}
-              onClick={() => navigate(routes.basePath)}
+              onClick={() => back(undefined)}
               type="button"
             >
               <CaretLeftIcon />
@@ -304,7 +240,7 @@ export const BorrowReviewPage = () => {
               disabled: createActionResult.waiting,
               isLoading: createActionResult.waiting,
               label: t("dashboard.borrow.review_page.confirm"),
-              onClick: onConfirm,
+              onClick: () => confirm(undefined),
             }}
           />
         </Box>

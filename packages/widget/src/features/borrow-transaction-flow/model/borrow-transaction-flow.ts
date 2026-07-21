@@ -1,8 +1,7 @@
-import type { Action } from "../../../domain/borrow/action";
 import type { ActionRequest } from "../../../domain/borrow/action-request";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
 
-export type BorrowReviewState = {
+export type BorrowTransactionFlowReview = {
   readonly request: ActionRequest;
   readonly summary: {
     readonly action:
@@ -29,23 +28,26 @@ export type BorrowReviewState = {
   };
 };
 
-export type BorrowExecutionInput = BorrowReviewState & {
-  readonly action: Action;
+export type BorrowTransactionFlowEntry =
+  | { readonly _tag: "BorrowDashboard" }
+  | { readonly _tag: "BorrowPosition"; readonly marketId: string };
+
+export type BorrowTransactionFlowIntake = BorrowTransactionFlowReview & {
+  readonly entry: BorrowTransactionFlowEntry;
 };
 
-export const isBorrowReviewState = (
-  value: unknown
-): value is BorrowReviewState => {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
+export const getBorrowTransactionFlowRoutes = (
+  entry: BorrowTransactionFlowEntry
+) => {
+  const basePath =
+    entry._tag === "BorrowDashboard"
+      ? "/borrow"
+      : `/positions/borrow/${entry.marketId}`;
 
-  const maybeState = value as Partial<BorrowReviewState>;
-
-  return (
-    !!maybeState.request &&
-    !!maybeState.summary &&
-    typeof maybeState.summary.marketLabel === "string" &&
-    typeof maybeState.summary.providerName === "string"
-  );
+  return {
+    basePath,
+    completePath: `${basePath}/complete`,
+    reviewPath: `${basePath}/review`,
+    stepsPath: `${basePath}/steps`,
+  } as const;
 };

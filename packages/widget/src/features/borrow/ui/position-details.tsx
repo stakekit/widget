@@ -29,6 +29,10 @@ import { Image } from "../../../shared/ui/primitives/image";
 import { ListItem } from "../../../shared/ui/primitives/list/list-item";
 import { Text } from "../../../shared/ui/primitives/typography/text";
 import {
+  type BorrowTransactionFlowReview,
+  startBorrowTransactionFlowAtom,
+} from "../../borrow-transaction-flow/state";
+import {
   AddressRow,
   DetailRow,
   DetailsSection,
@@ -72,7 +76,6 @@ import {
   getBorrowPositionActions,
   getBorrowPositionDetailsModel,
 } from "./position-details-model";
-import type { BorrowReviewState } from "./review-state";
 import * as styles from "./styles.css";
 import { useBorrowPosition } from "./use-borrow-positions";
 
@@ -609,13 +612,21 @@ const getCommonSummary = (
 const usePrepareReview = () => {
   const navigate = useNavigate();
   const stageBorrowActionForm = useAtomSet(borrowActionFormAtom);
+  const startBorrowTransactionFlow = useAtomSet(startBorrowTransactionFlowAtom);
 
-  return (reviewState: BorrowReviewState) => {
+  return (reviewState: BorrowTransactionFlowReview) => {
     stageBorrowActionForm({
       reviewState,
       type: "prepareReview",
     });
-    navigate("../review", { state: reviewState });
+    startBorrowTransactionFlow({
+      ...reviewState,
+      entry: {
+        _tag: "BorrowPosition",
+        marketId: reviewState.request.args.marketId,
+      },
+    });
+    navigate("../review");
   };
 };
 
@@ -673,7 +684,7 @@ const RepayActionForm = ({
       return;
     }
 
-    const reviewState: BorrowReviewState = {
+    const reviewState: BorrowTransactionFlowReview = {
       request: buildRepayActionRequest({
         address: action.reviewState.request.address,
         integrationId: position.integration.id,
@@ -879,7 +890,7 @@ const WithdrawActionForm = ({
       return;
     }
 
-    const reviewState: BorrowReviewState = {
+    const reviewState: BorrowTransactionFlowReview = {
       request: buildWithdrawActionRequest({
         address: action.reviewState.request.address,
         amount,
@@ -979,7 +990,7 @@ const ToggleCollateralActionForm = ({
   const healthFactor = position.getHealthFactor();
 
   const onContinue = () => {
-    const reviewState: BorrowReviewState = {
+    const reviewState: BorrowTransactionFlowReview = {
       request: buildCollateralToggleActionRequest({
         action: context.type,
         address: action.reviewState.request.address,

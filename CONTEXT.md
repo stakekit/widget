@@ -11,7 +11,7 @@ _Avoid_: Concurrent widgets, multiple widget instances
 ## Wallet Language
 
 **Wallet Scope**:
-An immutable snapshot of a connected wallet's network, primary address, and relevant additional addresses for execution inputs. Its owner identity is the network plus primary address (with case-insensitive EVM address comparison); disconnecting or changing that owner invalidates Wallet Scope-bound flows, while additional-address changes alone do not.
+An immutable snapshot of a connected wallet's network, primary address, and relevant additional addresses for execution inputs. Its owner identity is the network plus primary address (with case-insensitive EVM address comparison); a prepared action can enter execution only when its owner matches the captured Wallet Scope, and disconnecting or changing that owner invalidates Wallet Scope-bound flows while additional-address changes alone do not.
 _Avoid_: Connector scope
 
 **Wallet Runtime**:
@@ -45,13 +45,21 @@ _Avoid_: External provider configuration
 
 ## Transaction Flow Language
 
+**Transaction Flow**:
+A Wallet Scope-bound user journey through Review, Steps, and Complete, owned by one fresh Flow Session. Classic and Borrow Transaction Flows share this lifecycle language while retaining distinct intake, action preparation, and execution behavior.
+_Avoid_: Transaction Workflow, shared flow implementation
+
 **Classic Transaction Flow**:
 The Wallet Scope-bound journey from action review to execution handoff. It has Enter, Exit, Manage, and Activity Resume variants; a widget instance owns at most one active Flow Session, whose captured intake facts remain immutable for that entire journey.
 _Avoid_: Classic transaction request
 
+**Borrow Transaction Flow**:
+The Wallet Scope-bound journey from prepared borrow-action intake through Review, action creation, execution, and Complete. Borrow market and position actions enter through the same flow while retaining their distinct immutable intake facts.
+_Avoid_: Borrow workflow, borrow dashboard flow
+
 **Flow Session**:
-One user attempt to complete a Classic Transaction Flow. Every explicit start creates a fresh Flow Session even when its intake facts equal those of another attempt; Review, Steps, and Complete share that session until the entire journey is exited or replaced.
-_Avoid_: Classic Transaction Flow Identity, request object identity
+One user attempt to complete a Transaction Flow. Every explicit Start creates a fresh Flow Session even when its intake facts equal those of another attempt; Review, Steps, and Complete share its immutable intake and Wallet Scope until the entire journey is exited or replaced.
+_Avoid_: Transaction Flow Identity, request object identity
 
 **Action Command**:
 The prepared instruction describing the yield action the user intends to perform before that action is created.
@@ -66,8 +74,12 @@ The created yield action containing the transactions required to carry out an Ac
 _Avoid_: Action DTO
 
 **Execution Attempt**:
-The Steps-and-Complete portion of a Flow Session for one reviewed Yield Action. Returning to Review ends that attempt and its Transaction Workflow permanently.
+The Steps-and-Complete portion of a Flow Session for one reviewed action. It owns one Transaction Workflow and ends permanently when execution is left; a later execution always creates a fresh attempt.
 _Avoid_: Executable phase, attached action
+
+**Transaction Workflow**:
+A single execution of a prepared transaction plan, covering signing, submission, confirmation, multi-step advancement, retry, and completion. It is fresh each time an action enters execution and ends permanently when that execution is left, even when a later execution has equal inputs.
+_Avoid_: Workflow identity, resumable workflow, workflow family
 
 **Classic Transaction Flow Abandonment**:
 The end of an active Flow Session when its journey is exited, its Wallet Scope no longer matches, or a new session begins. Returning from execution to Review ends only the current Execution Attempt and does not abandon the Flow Session.

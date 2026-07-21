@@ -8,7 +8,7 @@ import {
   selectNextTransactionWorkflowTransaction,
   TransactionConfirmationError,
   type TransactionWorkflowContext,
-  type TransactionWorkflowKey,
+  type TransactionWorkflowInput,
   updateCurrentTransactionWorkflowTransaction,
 } from "../transaction-workflow-model";
 import { TransactionWorkflowOperationsService } from "../transaction-workflow-operations-service";
@@ -34,11 +34,11 @@ type ConfirmationCheckResult =
 export const confirmCurrent = Effect.fn("TransactionWorkflow.confirmCurrent")(
   function* ({
     context,
-    key,
+    input,
     latestContextRef,
   }: {
     readonly context: TransactionWorkflowContext;
-    readonly key: TransactionWorkflowKey;
+    readonly input: TransactionWorkflowInput;
     readonly latestContextRef: Ref.Ref<TransactionWorkflowContext>;
   }) {
     const operations = yield* TransactionWorkflowOperationsService;
@@ -169,13 +169,13 @@ export const confirmCurrent = Effect.fn("TransactionWorkflow.confirmCurrent")(
       Match.exhaustive
     );
 
-    const pollAttempts = key._tag === "Classic" ? 75 : 20;
+    const pollAttempts = input._tag === "Classic" ? 75 : 20;
     const result = yield* check.pipe(
       Effect.retry({
         schedule: Schedule.spaced(
           Duration.max(
             Duration.zero,
-            key._tag === "Classic" ? Duration.seconds(4) : Duration.seconds(2)
+            input._tag === "Classic" ? Duration.seconds(4) : Duration.seconds(2)
           )
         ),
         times: pollAttempts - 1,

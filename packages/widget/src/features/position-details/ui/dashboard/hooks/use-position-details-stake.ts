@@ -35,6 +35,7 @@ import {
   usePositionDetailsStakeMatch,
 } from "../../../../../shared/react/navigation/use-position-details-stake-match";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
+import { useStartClassicTransactionFlow } from "../../../../classic-transaction-flow/react/use-transaction-flow";
 import { useEstimatedRewards } from "../../../../earn/react/use-estimated-rewards";
 import { useMaxMinYieldAmount } from "../../../../earn/react/use-max-min-yield-amount";
 import { useProvidersDetails } from "../../../../earn/react/use-provider-details";
@@ -50,7 +51,6 @@ import { useAmountValidation } from "../../../../earn/ui/classic/earn-page/state
 import { useStakeEnterRequestDto } from "../../../../earn/ui/classic/earn-page/state/use-stake-enter-request-dto";
 import { useTokenBalancesScan } from "../../../../portfolio/react/use-token-balances-scan";
 import { useTrackEvent } from "../../../../tracking/react/use-track-event";
-import { useStartClassicTransactionFlow } from "../../../../transaction-flow/react/use-transaction-flow";
 import { useCloseChainModal } from "../../../../wallet/react/use-close-chain-modal";
 import { useSKWallet } from "../../../../wallet/react/use-wallet";
 import { useWalletScopeRoute } from "../../../../wallet/react/wallet-scope-route";

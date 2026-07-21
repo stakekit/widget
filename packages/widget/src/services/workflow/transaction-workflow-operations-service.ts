@@ -6,12 +6,12 @@ import { YieldApiService } from "../api/yield-api-service";
 import { resourceInvalidationKeys } from "../resource-invalidation";
 import { TrackingService } from "../tracking/tracking-service";
 import { WalletService } from "../wallet/wallet-service";
-import type { TransactionWorkflowKey } from "./transaction-workflow-model";
+import type { TransactionWorkflowInput } from "./transaction-workflow-model";
 
 export const getTransactionWorkflowInvalidationKeys = (
-  key: TransactionWorkflowKey
+  input: TransactionWorkflowInput
 ): ReadonlyArray<unknown> => {
-  const scope = key.walletScope;
+  const scope = input.walletScope;
 
   const keys: unknown[] = [
     ...resourceInvalidationKeys.walletBalances(scope),
@@ -19,7 +19,7 @@ export const getTransactionWorkflowInvalidationKeys = (
     ...resourceInvalidationKeys.activity(scope),
   ];
 
-  if (key._tag === "Borrow" && isBorrowNetwork(scope.network)) {
+  if (input._tag === "Borrow" && isBorrowNetwork(scope.network)) {
     keys.push(
       ...resourceInvalidationKeys.borrowPositions(scope),
       ...resourceInvalidationKeys.borrowMarkets(scope.network)
@@ -30,10 +30,10 @@ export const getTransactionWorkflowInvalidationKeys = (
 };
 
 export const getTransactionWorkflowSubmissionInvalidationKeys = (
-  key: TransactionWorkflowKey
+  input: TransactionWorkflowInput
 ): ReadonlyArray<unknown> => {
-  const scope = key.walletScope;
-  if (key._tag === "Classic") {
+  const scope = input.walletScope;
+  if (input._tag === "Classic") {
     return [
       ...resourceInvalidationKeys.walletBalances(scope),
       ...resourceInvalidationKeys.yieldPositions(scope),
@@ -64,9 +64,9 @@ export class TransactionWorkflowOperationsService extends Context.Service<Transa
       const reactivity = yield* Reactivity.Reactivity;
 
       return {
-        completeWorkflow: (key: TransactionWorkflowKey) =>
+        completeWorkflow: (input: TransactionWorkflowInput) =>
           reactivity.withBatch(
-            reactivity.invalidate(getTransactionWorkflowInvalidationKeys(key))
+            reactivity.invalidate(getTransactionWorkflowInvalidationKeys(input))
           ),
         getBorrowAction: borrowApi.getAction,
         getClassicStatus: yieldApi.getTransactionStatus,
@@ -79,10 +79,10 @@ export class TransactionWorkflowOperationsService extends Context.Service<Transa
         submitBorrowTransaction: borrowApi.submitTransaction,
         submitClassicHash: yieldApi.submitTransactionHash,
         submitClassicSigned: yieldApi.submitSignedTransaction,
-        submitWorkflow: (key: TransactionWorkflowKey) =>
+        submitWorkflow: (input: TransactionWorkflowInput) =>
           reactivity.withBatch(
             reactivity.invalidate(
-              getTransactionWorkflowSubmissionInvalidationKeys(key)
+              getTransactionWorkflowSubmissionInvalidationKeys(input)
             )
           ),
         trackEvent: tracking.trackEvent,

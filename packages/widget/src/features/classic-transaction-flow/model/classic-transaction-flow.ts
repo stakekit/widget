@@ -18,9 +18,9 @@ import {
   type WalletScopeKey,
 } from "../../../services/wallet/domain/scope";
 import {
-  type ClassicTransactionWorkflowKey,
+  type ClassicTransactionWorkflowInput,
   type ClassicTransactionWorkflowProviderDetail,
-  makeClassicTransactionWorkflowKey,
+  makeClassicTransactionWorkflowInput,
 } from "../../../services/workflow/transaction-workflow-model";
 
 type EnterClassicTransactionFlowIntake = {
@@ -157,10 +157,10 @@ export const getClassicTransactionFlowIntakeVariant = <
       >)
     : null;
 
-export const getClassicTransactionWorkflowKey = (
+export const getClassicTransactionWorkflowInput = (
   intake: ClassicTransactionFlowIntake,
   action: YieldAction
-): ClassicTransactionWorkflowKey => {
+): ClassicTransactionWorkflowInput => {
   const inputToken = Match.value(intake).pipe(
     Match.tag("Enter", ({ selectedToken }) => selectedToken),
     Match.tag("Exit", ({ unstakeToken }) => unstakeToken),
@@ -174,7 +174,7 @@ export const getClassicTransactionWorkflowKey = (
     Match.exhaustive
   );
 
-  return makeClassicTransactionWorkflowKey({
+  return makeClassicTransactionWorkflowInput({
     action,
     inputToken,
     providersDetails: intake.providersDetails,

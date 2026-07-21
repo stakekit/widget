@@ -5,8 +5,8 @@ import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   type ClassicTransactionFlowIntake,
   isClassicTransactionFlowWalletScopeValid,
-} from "../../src/features/transaction-flow/model/classic-transaction-flow";
-import { makeClassicFlowSessionStore } from "../../src/features/transaction-flow/state/classic-flow-session-store";
+} from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import { makeClassicFlowSessionStore } from "../../src/features/classic-transaction-flow/state/classic-flow-session-store";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiYieldFixture } from "../fixtures";
 

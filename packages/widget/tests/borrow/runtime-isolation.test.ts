@@ -1,8 +1,8 @@
-import { Equal, Schema } from "effect";
+import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import { Action } from "../../src/domain/borrow/action";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import { transactionWorkflowMachineAtom } from "../../src/features/transaction-flow/state/transaction-workflow-atoms";
+import { makeTransactionWorkflowModule } from "../../src/features/transaction-workflow/state";
 import {
   ActivityInvalidationKey,
   BorrowMarketsInvalidationKey,
@@ -11,7 +11,7 @@ import {
   YieldPositionsInvalidationKey,
 } from "../../src/services/resource-invalidation";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
-import { BorrowTransactionWorkflowKey } from "../../src/services/workflow/transaction-workflow-model";
+import { BorrowTransactionWorkflowInput } from "../../src/services/workflow/transaction-workflow-model";
 import {
   getTransactionWorkflowInvalidationKeys,
   getTransactionWorkflowSubmissionInvalidationKeys,
@@ -50,19 +50,22 @@ const action = Schema.decodeUnknownSync(Action)({
   transactions: [transactionInput],
 });
 
-describe("borrow transaction workflow atom identity", () => {
-  it("shares one machine for value-equal keys without a global event service", () => {
-    const firstKey = new BorrowTransactionWorkflowKey({ action, walletScope });
-    const secondKey = new BorrowTransactionWorkflowKey({ action, walletScope });
-
-    expect(Equal.equals(firstKey, secondKey)).toBe(true);
-    expect(transactionWorkflowMachineAtom(firstKey)).toBe(
-      transactionWorkflowMachineAtom(secondKey)
+describe("borrow transaction workflow module", () => {
+  it("creates a fresh module for every execution of equal inputs", () => {
+    const first = makeTransactionWorkflowModule(
+      new BorrowTransactionWorkflowInput({ action, walletScope })
     );
+    const second = makeTransactionWorkflowModule(
+      new BorrowTransactionWorkflowInput({ action, walletScope })
+    );
+
+    expect(first.rootAtom).not.toBe(second.rootAtom);
+    expect(first.stateAtom).not.toBe(second.stateAtom);
+    expect(first.input.action).not.toBe(action);
   });
 
   it("derives semantic refresh categories from the immutable workflow scope", () => {
-    const key = new BorrowTransactionWorkflowKey({ action, walletScope });
+    const key = new BorrowTransactionWorkflowInput({ action, walletScope });
 
     expect(getTransactionWorkflowInvalidationKeys(key)).toEqual([
       new WalletBalancesInvalidationKey({ scope: walletScope }),

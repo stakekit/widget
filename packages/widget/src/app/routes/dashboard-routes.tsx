@@ -1,26 +1,22 @@
 import { Navigate, Route, Routes } from "react-router";
 import { ActivityTabPage } from "../../features/activity/ui/dashboard/activity";
 import { BorrowFormPage, BorrowLayout } from "../../features/borrow/ui";
-import {
-  BorrowCompletionRouteGuard,
-  BorrowTransactionWorkflowGuard,
-} from "../../features/borrow/ui/borrow-execution-route";
-import { BorrowCompletePage } from "../../features/borrow/ui/complete";
 import { BorrowConnectedWalletRoute } from "../../features/borrow/ui/connected-wallet";
 import {
   BorrowPositionActionPage,
   BorrowPositionActionsPage,
   BorrowPositionDetailsPage,
 } from "../../features/borrow/ui/position-details";
-import { BorrowReviewPage } from "../../features/borrow/ui/review";
-import { BorrowStepsPage } from "../../features/borrow/ui/steps";
 import { useBorrowFeatureEnabled } from "../../features/borrow/ui/use-borrow-feature-enabled";
-import { EarnPageModelBinding } from "../../features/earn/ui/classic/earn-page/state/earn-page-model";
-import { EarnPageContent } from "../../features/earn/ui/dashboard/earn-page";
-import { ManagePage } from "../../features/portfolio/ui/dashboard/manage.page";
-import { PositionDetailsPage as DashboardPositionDetailsPage } from "../../features/position-details/ui/dashboard";
-import { PositionDetailsActions } from "../../features/position-details/ui/dashboard/components/position-details-actions";
-import { PositionDetailsStakeActions } from "../../features/position-details/ui/dashboard/components/position-details-stake-actions";
+import {
+  BorrowCompletePage,
+  BorrowReviewPage,
+  BorrowStepsPage,
+  BorrowTransactionFlowCompletionGuard,
+  BorrowTransactionFlowExecutionScope,
+  BorrowTransactionFlowReviewRoute,
+  BorrowTransactionFlowRoute,
+} from "../../features/borrow-transaction-flow/ui";
 // import { RewardsTabPage } from "../../domain/types/rewards";
 import {
   ActivityResumeClassicFlowRoute,
@@ -29,18 +25,24 @@ import {
   EnterClassicFlowRoute,
   ExitClassicFlowRoute,
   ManageClassicFlowRoute,
-} from "../../features/transaction-flow/react/classic-flow-route";
-import { ActivityDetailsPage } from "../../features/transaction-flow/ui/activity-details.page";
-import { PendingCompletePage } from "../../features/transaction-flow/ui/complete/pages/pending-complete.page";
-import { StakeCompletePage } from "../../features/transaction-flow/ui/complete/pages/stake-complete.page";
-import { UnstakeCompletePage } from "../../features/transaction-flow/ui/complete/pages/unstake-complete.page";
-import { PendingReviewPage } from "../../features/transaction-flow/ui/review/pages/pending-review.page";
-import { StakeReviewPage } from "../../features/transaction-flow/ui/review/pages/stake-review.page";
-import { UnstakeReviewPage } from "../../features/transaction-flow/ui/review/pages/unstake-review.page";
-import { ActivityStepsPage } from "../../features/transaction-flow/ui/steps/pages/activity-steps.page";
-import { PendingStepsPage } from "../../features/transaction-flow/ui/steps/pages/pending-steps.page";
-import { StakeStepsPage } from "../../features/transaction-flow/ui/steps/pages/stake-steps.page";
-import { UnstakeStepsPage } from "../../features/transaction-flow/ui/steps/pages/unstake-steps.page";
+} from "../../features/classic-transaction-flow/react/classic-flow-route";
+import { ActivityDetailsPage } from "../../features/classic-transaction-flow/ui/activity-details.page";
+import { PendingCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/pending-complete.page";
+import { StakeCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/stake-complete.page";
+import { UnstakeCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/unstake-complete.page";
+import { PendingReviewPage } from "../../features/classic-transaction-flow/ui/review/pages/pending-review.page";
+import { StakeReviewPage } from "../../features/classic-transaction-flow/ui/review/pages/stake-review.page";
+import { UnstakeReviewPage } from "../../features/classic-transaction-flow/ui/review/pages/unstake-review.page";
+import { ActivityStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/activity-steps.page";
+import { PendingStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/pending-steps.page";
+import { StakeStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/stake-steps.page";
+import { UnstakeStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/unstake-steps.page";
+import { EarnPageModelBinding } from "../../features/earn/ui/classic/earn-page/state/earn-page-model";
+import { EarnPageContent } from "../../features/earn/ui/dashboard/earn-page";
+import { ManagePage } from "../../features/portfolio/ui/dashboard/manage.page";
+import { PositionDetailsPage as DashboardPositionDetailsPage } from "../../features/position-details/ui/dashboard";
+import { PositionDetailsActions } from "../../features/position-details/ui/dashboard/components/position-details-actions";
+import { PositionDetailsStakeActions } from "../../features/position-details/ui/dashboard/components/position-details-stake-actions";
 import { WalletScopeRouteGuard } from "../../features/wallet/react/wallet-scope-route";
 import { GlobalModals } from "../../features/widget-shell/ui/global-modals";
 import { useSKLocation } from "../../shared/react/location-history";
@@ -65,11 +67,19 @@ export const DashboardRoutes = () => {
         <Route index element={<BorrowFormPage />} />
         <Route element={<WalletScopeRouteGuard fallbackPath="/borrow" />}>
           <Route element={<BorrowConnectedWalletRoute />}>
-            <Route path="review" element={<BorrowReviewPage />} />
-            <Route element={<BorrowTransactionWorkflowGuard />}>
-              <Route path="steps" element={<BorrowStepsPage />} />
-              <Route element={<BorrowCompletionRouteGuard />}>
-                <Route path="complete" element={<BorrowCompletePage />} />
+            <Route
+              element={
+                <BorrowTransactionFlowRoute expected="BorrowDashboard" />
+              }
+            >
+              <Route element={<BorrowTransactionFlowReviewRoute />}>
+                <Route path="review" element={<BorrowReviewPage />} />
+              </Route>
+              <Route element={<BorrowTransactionFlowExecutionScope />}>
+                <Route path="steps" element={<BorrowStepsPage />} />
+                <Route element={<BorrowTransactionFlowCompletionGuard />}>
+                  <Route path="complete" element={<BorrowCompletePage />} />
+                </Route>
               </Route>
             </Route>
           </Route>
@@ -86,11 +96,17 @@ export const DashboardRoutes = () => {
               path="action/:actionId"
               element={<BorrowPositionActionPage />}
             />
-            <Route path="review" element={<BorrowReviewPage />} />
-            <Route element={<BorrowTransactionWorkflowGuard />}>
-              <Route path="steps" element={<BorrowStepsPage />} />
-              <Route element={<BorrowCompletionRouteGuard />}>
-                <Route path="complete" element={<BorrowCompletePage />} />
+            <Route
+              element={<BorrowTransactionFlowRoute expected="BorrowPosition" />}
+            >
+              <Route element={<BorrowTransactionFlowReviewRoute />}>
+                <Route path="review" element={<BorrowReviewPage />} />
+              </Route>
+              <Route element={<BorrowTransactionFlowExecutionScope />}>
+                <Route path="steps" element={<BorrowStepsPage />} />
+                <Route element={<BorrowTransactionFlowCompletionGuard />}>
+                  <Route path="complete" element={<BorrowCompletePage />} />
+                </Route>
               </Route>
             </Route>
           </Route>

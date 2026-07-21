@@ -10,13 +10,13 @@ import type {
   YieldAction,
 } from "../../src/domain/schema/action-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import type { ClassicTransactionFlowIntake } from "../../src/features/transaction-flow/model/classic-transaction-flow";
+import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
   makeClassicFlowSessionModule,
-} from "../../src/features/transaction-flow/state/classic-flow-session-facade";
-import { classicFlowSessionStore } from "../../src/features/transaction-flow/state/classic-flow-session-store";
+} from "../../src/features/classic-transaction-flow/state/classic-flow-session-facade";
+import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state/classic-flow-session-store";
 import type { ActionPreviewRequest } from "../../src/services/api/yield-api-service";
 import { YieldApiService } from "../../src/services/api/yield-api-service";
 import { TrackingService } from "../../src/services/tracking/tracking-service";

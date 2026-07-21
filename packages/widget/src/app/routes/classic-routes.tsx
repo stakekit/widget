@@ -3,10 +3,6 @@ import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { AnimatedActivityPage } from "../../features/activity/ui/classic/activity-page/activity.page";
-import { AnimatedEarnPage } from "../../features/earn/ui/classic/earn-page/earn.page";
-import { initParamsAtom } from "../../features/init-params/atoms";
-import { AnimatedPositionsPage } from "../../features/portfolio/ui/classic/positions-page/positions.page";
-import { PositionDetailsPage as ClassicPositionDetailsPage } from "../../features/position-details/ui/classic/position-details.page";
 import {
   ActivityResumeClassicFlowRoute,
   ClassicFlowExecutionScope,
@@ -14,20 +10,24 @@ import {
   EnterClassicFlowRoute,
   ExitClassicFlowRoute,
   ManageClassicFlowRoute,
-} from "../../features/transaction-flow/react/classic-flow-route";
-import { classicFlowSessionStore } from "../../features/transaction-flow/state/classic-flow-session-store";
-import { ActivityCompletePage } from "../../features/transaction-flow/ui/complete/pages/activity-complete.page";
-import { PendingCompletePage } from "../../features/transaction-flow/ui/complete/pages/pending-complete.page";
-import { StakeCompletePage } from "../../features/transaction-flow/ui/complete/pages/stake-complete.page";
-import { UnstakeCompletePage } from "../../features/transaction-flow/ui/complete/pages/unstake-complete.page";
-import { ActionReviewPage } from "../../features/transaction-flow/ui/review/pages/action-review.page";
-import { PendingReviewPage } from "../../features/transaction-flow/ui/review/pages/pending-review.page";
-import { StakeReviewPage } from "../../features/transaction-flow/ui/review/pages/stake-review.page";
-import { UnstakeReviewPage } from "../../features/transaction-flow/ui/review/pages/unstake-review.page";
-import { ActivityStepsPage } from "../../features/transaction-flow/ui/steps/pages/activity-steps.page";
-import { PendingStepsPage } from "../../features/transaction-flow/ui/steps/pages/pending-steps.page";
-import { StakeStepsPage } from "../../features/transaction-flow/ui/steps/pages/stake-steps.page";
-import { UnstakeStepsPage } from "../../features/transaction-flow/ui/steps/pages/unstake-steps.page";
+} from "../../features/classic-transaction-flow/react/classic-flow-route";
+import { classicFlowSessionStore } from "../../features/classic-transaction-flow/state/classic-flow-session-store";
+import { ActivityCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/activity-complete.page";
+import { PendingCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/pending-complete.page";
+import { StakeCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/stake-complete.page";
+import { UnstakeCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/unstake-complete.page";
+import { ActionReviewPage } from "../../features/classic-transaction-flow/ui/review/pages/action-review.page";
+import { PendingReviewPage } from "../../features/classic-transaction-flow/ui/review/pages/pending-review.page";
+import { StakeReviewPage } from "../../features/classic-transaction-flow/ui/review/pages/stake-review.page";
+import { UnstakeReviewPage } from "../../features/classic-transaction-flow/ui/review/pages/unstake-review.page";
+import { ActivityStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/activity-steps.page";
+import { PendingStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/pending-steps.page";
+import { StakeStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/stake-steps.page";
+import { UnstakeStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/unstake-steps.page";
+import { AnimatedEarnPage } from "../../features/earn/ui/classic/earn-page/earn.page";
+import { initParamsAtom } from "../../features/init-params/atoms";
+import { AnimatedPositionsPage } from "../../features/portfolio/ui/classic/positions-page/positions.page";
+import { PositionDetailsPage as ClassicPositionDetailsPage } from "../../features/position-details/ui/classic/position-details.page";
 import { useSKWallet } from "../../features/wallet/react/use-wallet";
 import { WalletScopeRouteGuard } from "../../features/wallet/react/wallet-scope-route";
 import { AnimationLayout } from "../../features/widget-shell/animation-layout";

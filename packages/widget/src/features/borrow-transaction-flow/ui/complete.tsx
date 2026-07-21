@@ -1,6 +1,5 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router";
 import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
 import { CheckCircleIcon } from "../../../shared/ui/primitives/icons/check-circle";
@@ -10,29 +9,21 @@ import { useTrackPage } from "../../tracking/react/use-track-page";
 import { AnimationPage } from "../../widget-shell/animation-page";
 import { PageContainer } from "../../widget-shell/page-container";
 import { PageCtaButton } from "../../widget-shell/page-cta";
-import { borrowActionFormAtom } from "../atoms/action-form";
-import { currentBorrowDashboardAtom } from "../atoms/form";
-import { useBorrowCompletionRouteState } from "./borrow-execution-route";
-import { getBorrowFlowRoutes } from "./flow-routes";
-import { useBorrowConnectedWalletBridge } from "./wallet-bridge";
+import { useBorrowTransactionFlow } from "../react/borrow-flow-route";
+import { useBorrowExecution } from "./use-borrow-execution";
 
 export const BorrowCompletePage = () => {
   useTrackPage("borrowComplete");
 
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { marketId } = useParams();
-  const { basePath } = getBorrowFlowRoutes(marketId);
-  useBorrowConnectedWalletBridge();
-  const resetActionForm = useAtomSet(borrowActionFormAtom);
-  const resetBorrowDashboard = useAtomSet(currentBorrowDashboardAtom);
-  const { input, result } = useBorrowCompletionRouteState();
-  const { summary } = input;
-  const onDone = () => {
-    resetActionForm({ type: "reset" });
-    resetBorrowDashboard({ type: "reset" });
-    navigate(basePath, { replace: true });
-  };
+  const flow = useBorrowTransactionFlow();
+  const execution = useBorrowExecution();
+  const done = useAtomSet(flow.doneAtom);
+  const result = execution.completionResult;
+  const { summary } = flow.intake;
+  const isPositionFlow = flow.intake.entry._tag === "BorrowPosition";
+
+  if (!result) return null;
 
   const rows = [
     summary.borrowAmount && summary.loanTokenSymbol
@@ -83,10 +74,10 @@ export const BorrowCompletePage = () => {
           </Box>
 
           <Box display="flex" flexDirection="column" gap="2">
-            {marketId ? (
+            {isPositionFlow ? (
               <Box display="flex" justifyContent="center">
                 <Button
-                  onClick={() => navigate(basePath)}
+                  onClick={() => done(undefined)}
                   variant={{ color: "secondary", size: "small" }}
                 >
                   {t("dashboard.borrow.review_page.back_to_position")}
@@ -136,7 +127,7 @@ export const BorrowCompletePage = () => {
               disabled: false,
               isLoading: false,
               label: t("dashboard.borrow.success_page.done"),
-              onClick: onDone,
+              onClick: () => done(undefined),
             }}
           />
         </Box>

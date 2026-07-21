@@ -24,8 +24,8 @@ import {
   useUnstakeOrPendingActionParams,
 } from "../../../../../shared/react/navigation/use-unstake-or-pending-action-params";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
+import { useStartClassicTransactionFlow } from "../../../../classic-transaction-flow/react/use-transaction-flow";
 import { useTrackEvent } from "../../../../tracking/react/use-track-event";
-import { useStartClassicTransactionFlow } from "../../../../transaction-flow/react/use-transaction-flow";
 import { useSKWallet } from "../../../../wallet/react/use-wallet";
 import type {
   PositionDetailsWorkflowAction as Actions,

@@ -1,6 +1,5 @@
-import { useEffect } from "react";
+import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router";
 import { useWidgetConfig } from "../../../app/config/use-widget-config";
 import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
@@ -11,7 +10,7 @@ import { useTrackPage } from "../../tracking/react/use-track-page";
 import { AnimationPage } from "../../widget-shell/animation-page";
 import { PageContainer } from "../../widget-shell/page-container";
 import { PageCtaButton } from "../../widget-shell/page-cta";
-import { getBorrowFlowRoutes } from "./flow-routes";
+import { useBorrowTransactionFlow } from "../react/borrow-flow-route";
 import * as styles from "./styles.css";
 import { useBorrowExecution } from "./use-borrow-execution";
 
@@ -20,23 +19,16 @@ export const BorrowStepsPage = () => {
 
   const dashboardVariant = useWidgetConfig("dashboardVariant");
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { marketId } = useParams();
-  const { basePath, completePath } = getBorrowFlowRoutes(marketId);
+  const flow = useBorrowTransactionFlow();
+  const back = useAtomSet(flow.backAtom);
   const execution = useBorrowExecution();
-  const executionState = execution.input;
+  const executionState = flow.intake;
+  const executionError = execution.error ?? execution.setupError;
+  const isPositionFlow = flow.intake.entry._tag === "BorrowPosition";
   const transactionPosition =
     execution.currentTransactionIndex == null
       ? null
       : execution.currentTransactionIndex + 1;
-
-  useEffect(() => {
-    if (!execution.completionResult) {
-      return;
-    }
-
-    navigate(completePath, { replace: true });
-  }, [completePath, execution.completionResult, navigate]);
 
   return (
     <AnimationPage>
@@ -48,12 +40,12 @@ export const BorrowStepsPage = () => {
           gap="4"
         >
           <Box display="flex" flexDirection="column" gap="2">
-            {marketId ? (
+            {isPositionFlow ? (
               <Box
                 aria-label={t("dashboard.borrow.review_page.back_to_position")}
                 as="button"
                 className={styles.flowBackButton}
-                onClick={() => navigate(basePath)}
+                onClick={() => back(undefined)}
                 type="button"
               >
                 <CaretLeftIcon />
@@ -91,13 +83,13 @@ export const BorrowStepsPage = () => {
             </Box>
           </Box>
 
-          {execution.error && (
+          {executionError && (
             <Box className={styles.executionError}>
               <Text variant={{ type: "danger" }}>
                 {t("dashboard.borrow.execution_page.error_title")}
               </Text>
               <Text variant={{ type: "muted", weight: "normal" }}>
-                {execution.error.message}
+                {executionError.message}
               </Text>
             </Box>
           )}
@@ -197,7 +189,7 @@ export const BorrowStepsPage = () => {
             </Box>
           ) : null}
 
-          {execution.error && (
+          {executionError && (
             <Button
               data-rk="borrow-steps-retry"
               onClick={execution.retry}
@@ -212,7 +204,7 @@ export const BorrowStepsPage = () => {
               disabled: execution.isRunning,
               isLoading: false,
               label: t("shared.cancel"),
-              onClick: () => navigate(basePath),
+              onClick: () => back(undefined),
               variant: "secondary",
             }}
           />

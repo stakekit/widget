@@ -7,7 +7,7 @@ import { YieldApiService } from "../../../services/api/yield-api-service";
 import { resourceInvalidationKeys } from "../../../services/resource-invalidation";
 import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
-import { actionHistoryTimestampAtom } from "../../transaction-flow/state/action-history";
+import { actionHistoryTimestampAtom } from "../../classic-transaction-flow/state/action-history";
 import { currentWalletScopeAtom } from "../../wallet/state/selectors";
 
 const scheduledRefreshInterval = Duration.minutes(1);

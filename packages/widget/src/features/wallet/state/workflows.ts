@@ -6,7 +6,7 @@ import { WalletService } from "../../../services/wallet/wallet-service";
 import {
   actionHistoryTimestampAtom,
   resetActionHistory,
-} from "../../transaction-flow/state/action-history";
+} from "../../classic-transaction-flow/state/action-history";
 
 type LedgerAccountConnector = {
   readonly requestAndSwitchAccount: (

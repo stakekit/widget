@@ -8,8 +8,8 @@ import type { ActionMeta } from "../../src/public-api/types";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
   appendTransactionWorkflowBatch,
-  BorrowTransactionWorkflowKey,
-  ClassicTransactionWorkflowKey,
+  BorrowTransactionWorkflowInput,
+  ClassicTransactionWorkflowInput,
   getCurrentTransactionWorkflowTransaction,
   getTransactionWorkflowAction,
   initializeTransactionWorkflow,
@@ -19,6 +19,7 @@ import {
   TransactionSignError,
   TransactionSubmissionError,
   updateCurrentTransactionWorkflowTransaction,
+  validateTransactionWorkflowInput,
 } from "../../src/services/workflow/transaction-workflow-model";
 import { yieldApiTransactionFixture } from "../fixtures";
 
@@ -92,7 +93,7 @@ const borrowAction = ({
   });
 
 describe("transaction workflow model", () => {
-  it("uses value equality for classic and borrow keys", () => {
+  it("captures immutable inputs while retaining structural equality", () => {
     const classicInput = {
       actionMeta,
       transactions: [classicTransaction("classic-1", "CREATED", 0)],
@@ -101,29 +102,58 @@ describe("transaction workflow model", () => {
     };
     const action = borrowAction();
 
+    const classic = new ClassicTransactionWorkflowInput(classicInput);
+    const borrow = new BorrowTransactionWorkflowInput({
+      action,
+      walletScope: borrowWalletScope,
+    });
+
     expect(
       Equal.equals(
-        new ClassicTransactionWorkflowKey(classicInput),
-        new ClassicTransactionWorkflowKey({ ...classicInput })
+        classic,
+        new ClassicTransactionWorkflowInput({ ...classicInput })
       )
     ).toBe(true);
     expect(
       Equal.equals(
-        new BorrowTransactionWorkflowKey({
+        new BorrowTransactionWorkflowInput({
           action,
           walletScope: borrowWalletScope,
         }),
-        new BorrowTransactionWorkflowKey({
+        new BorrowTransactionWorkflowInput({
           action,
           walletScope: borrowWalletScope,
         })
       )
     ).toBe(true);
+    expect(classic.transactions).not.toBe(classicInput.transactions);
+    expect(classic.walletScope).not.toBe(classicWalletScope);
+    expect(borrow.action).not.toBe(action);
+    expect(borrow.walletScope).not.toBe(borrowWalletScope);
+  });
+
+  it("rejects transactions outside the captured wallet network", () => {
+    const input = new ClassicTransactionWorkflowInput({
+      actionMeta,
+      transactions: [
+        yieldApiTransactionFixture({
+          id: "wrong-network",
+          network: "base",
+          status: "CREATED",
+        }),
+      ],
+      walletScope: classicWalletScope,
+      yieldId,
+    });
+
+    expect(validateTransactionWorkflowInput(input)?._tag).toBe(
+      "TransactionWorkflowInputError"
+    );
   });
 
   it("sorts a fixed classic batch and selects its first incomplete transaction", () => {
     const state = initializeTransactionWorkflow(
-      new ClassicTransactionWorkflowKey({
+      new ClassicTransactionWorkflowInput({
         actionMeta,
         transactions: [
           classicTransaction("third", "CREATED", 3),
@@ -149,7 +179,7 @@ describe("transaction workflow model", () => {
 
   it("starts broadcast transactions in confirmation and disables completed fixed batches", () => {
     const makeKey = (status: ActionTransaction["status"]) =>
-      new ClassicTransactionWorkflowKey({
+      new ClassicTransactionWorkflowInput({
         actionMeta,
         transactions: [classicTransaction("classic-1", status, 0)],
         walletScope: classicWalletScope,
@@ -164,7 +194,7 @@ describe("transaction workflow model", () => {
     );
     expect(
       initializeTransactionWorkflow(
-        new BorrowTransactionWorkflowKey({
+        new BorrowTransactionWorkflowInput({
           action: borrowAction({ status: "SUCCESS" }),
           walletScope: borrowWalletScope,
         })
@@ -174,7 +204,7 @@ describe("transaction workflow model", () => {
 
   it("updates the current transaction without mutating prior context", () => {
     const initial = initializeTransactionWorkflow(
-      new BorrowTransactionWorkflowKey({
+      new BorrowTransactionWorkflowInput({
         action: borrowAction(),
         walletScope: borrowWalletScope,
       })
@@ -194,7 +224,7 @@ describe("transaction workflow model", () => {
   it("appends a borrow batch while retaining history and deduplicating a server step", () => {
     const firstAction = borrowAction();
     const initial = initializeTransactionWorkflow(
-      new BorrowTransactionWorkflowKey({
+      new BorrowTransactionWorkflowInput({
         action: firstAction,
         walletScope: borrowWalletScope,
       })
@@ -229,7 +259,7 @@ describe("transaction workflow model", () => {
 
   it("allows the one retry command only from the matching failed phase", () => {
     const context = initializeTransactionWorkflow(
-      new ClassicTransactionWorkflowKey({
+      new ClassicTransactionWorkflowInput({
         actionMeta,
         transactions: [classicTransaction("classic-1", "CREATED", 0)],
         walletScope: classicWalletScope,

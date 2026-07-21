@@ -1,6 +1,7 @@
-import { RegistryProvider } from "@effect/atom-react";
+import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Deferred, Effect, Layer, Schema } from "effect";
-import { useEffect } from "react";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import type { ReactNode } from "react";
 import {
   MemoryRouter,
   Route,
@@ -22,18 +23,19 @@ import type {
 } from "../../src/domain/borrow/transaction";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
-  BorrowCompletionRouteGuard,
-  BorrowTransactionWorkflowGuard,
-  useBorrowCompletionRouteState,
-} from "../../src/features/borrow/ui/borrow-execution-route";
-import { borrowExecutionInputAtom } from "../../src/features/borrow/ui/execution-state";
-import type {
-  BorrowExecutionInput,
-  BorrowReviewState,
-} from "../../src/features/borrow/ui/review-state";
-import { BorrowStepsPage } from "../../src/features/borrow/ui/steps";
-import { useBorrowExecution } from "../../src/features/borrow/ui/use-borrow-execution";
-import { currentWalletScopeAtom } from "../../src/features/wallet/state/selectors";
+  BorrowTransactionFlowCompletionGuard,
+  BorrowTransactionFlowExecutionScope,
+  BorrowTransactionFlowReviewRoute,
+  BorrowTransactionFlowRoute,
+  useBorrowTransactionFlow,
+  useBorrowTransactionFlowExecution,
+} from "../../src/features/borrow-transaction-flow/react/borrow-flow-route";
+import type { BorrowTransactionFlowReview } from "../../src/features/borrow-transaction-flow/state";
+import type { BorrowFlowSession } from "../../src/features/borrow-transaction-flow/state/borrow-flow-session-store";
+import { borrowFlowSessionStore } from "../../src/features/borrow-transaction-flow/state/borrow-flow-session-store";
+import { BorrowStepsPage } from "../../src/features/borrow-transaction-flow/ui/steps";
+import { useBorrowExecution } from "../../src/features/borrow-transaction-flow/ui/use-borrow-execution";
+import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { BorrowApiService } from "../../src/services/api/borrow-api-service";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
@@ -69,7 +71,7 @@ const request = Schema.decodeUnknownSync(ActionRequest)({
   integrationId: "morpho-blue",
 });
 
-const reviewState: BorrowReviewState = {
+const reviewState: BorrowTransactionFlowReview = {
   request,
   summary: {
     action: "borrow",
@@ -81,6 +83,14 @@ const reviewState: BorrowReviewState = {
     network: "base",
     providerName: "Morpho Blue",
   },
+};
+const session: BorrowFlowSession = {
+  epoch: 1,
+  intake: {
+    ...reviewState,
+    entry: { _tag: "BorrowDashboard" },
+  },
+  walletScope,
 };
 
 const transaction = (
@@ -192,15 +202,6 @@ const makeBorrowApi = ({
 
 const ExecutionProbe = () => {
   const execution = useBorrowExecution();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!execution.completionResult) {
-      return;
-    }
-
-    navigate("/borrow/complete", { replace: true });
-  }, [execution.completionResult, navigate]);
 
   return (
     <div>
@@ -222,13 +223,29 @@ const ExecutionProbe = () => {
   );
 };
 
+const StartExecutionProbe = () => {
+  const flow = useBorrowTransactionFlow();
+  const confirm = useAtomSet(flow.confirmAtom);
+
+  return (
+    <button
+      data-testid="start-execution"
+      onClick={() => confirm(undefined)}
+      type="button"
+    >
+      Start
+    </button>
+  );
+};
+
 const CompleteProbe = () => {
   const location = useLocation();
-  const { result } = useBorrowCompletionRouteState();
+  const execution = useBorrowTransactionFlowExecution();
+  const result = useAtomValue(execution.viewAtom).completionResult;
 
   return (
     <div data-testid="complete">
-      {location.pathname} {result.action.id}
+      {location.pathname} {result?.action.id}
     </div>
   );
 };
@@ -250,16 +267,21 @@ const HistoryControls = () => {
   );
 };
 
-const renderExecution = (
+const renderExecution = async (
   borrow: ReturnType<typeof makeBorrowApi>,
   options: {
     readonly action?: BorrowAction;
+    readonly historyControls?: boolean;
+    readonly initialEntries?: ReadonlyArray<string>;
+    readonly initialIndex?: number;
     readonly initialPath?: string;
+    readonly stepsElement?: ReactNode;
     readonly wallet?: WalletOperations;
   } = {}
 ) => {
   const activeWallet = options.wallet ?? wallet;
-  const action = options.action ?? decodedAction();
+  const workflowAction = options.action ?? decodedAction();
+  borrow.executeAction.mockImplementation(() => Effect.succeed(workflowAction));
   const walletLayer = Layer.succeed(
     WalletService,
     activeWallet as WalletService["Service"]
@@ -287,14 +309,22 @@ const renderExecution = (
     )
   );
 
-  return render(
+  const app = await render(
     <RegistryProvider
       initialValues={[
-        [borrowExecutionInputAtom, { ...reviewState, action }],
-        [currentWalletScopeAtom, walletScope],
+        [
+          borrowFlowSessionStore.stateAtom,
+          { current: session, nextEpoch: session.epoch + 1 },
+        ],
         [
           appRuntime.layer,
-          Layer.succeed(BorrowApiService, borrow as never).pipe(Layer.fresh),
+          Layer.mergeAll(
+            Layer.succeed(BorrowApiService, borrow as never),
+            Layer.succeed(TrackingService, {
+              trackEvent: () => Effect.void,
+              trackPageView: () => Effect.void,
+            } as TrackingService["Service"])
+          ).pipe(Layer.fresh),
         ],
         [
           walletRuntime.layer,
@@ -302,22 +332,61 @@ const renderExecution = (
         ],
       ]}
     >
-      <MemoryRouter initialEntries={[options.initialPath ?? "/borrow/steps"]}>
+      <MemoryRouter
+        initialEntries={
+          options.initialEntries
+            ? [...options.initialEntries]
+            : [options.initialPath ?? "/borrow/review"]
+        }
+        initialIndex={options.initialIndex}
+      >
+        {options.historyControls ? <HistoryControls /> : null}
         <Routes>
-          <Route element={<BorrowTransactionWorkflowGuard />}>
-            <Route path="/borrow/steps" element={<ExecutionProbe />} />
-            <Route element={<BorrowCompletionRouteGuard />}>
-              <Route path="/borrow/complete" element={<CompleteProbe />} />
+          <Route
+            element={
+              <WalletScopeRoute
+                fallbackPath="/borrow"
+                walletStateResult={AsyncResult.success(connectedWalletState)}
+              />
+            }
+          >
+            <Route path="/borrow" element={<div>Borrow home</div>} />
+            <Route
+              element={
+                <BorrowTransactionFlowRoute expected="BorrowDashboard" />
+              }
+            >
+              <Route element={<BorrowTransactionFlowReviewRoute />}>
+                <Route
+                  path="/borrow/review"
+                  element={<StartExecutionProbe />}
+                />
+              </Route>
+              <Route element={<BorrowTransactionFlowExecutionScope />}>
+                <Route
+                  path="/borrow/steps"
+                  element={options.stepsElement ?? <ExecutionProbe />}
+                />
+                <Route element={<BorrowTransactionFlowCompletionGuard />}>
+                  <Route path="/borrow/complete" element={<CompleteProbe />} />
+                </Route>
+              </Route>
             </Route>
           </Route>
         </Routes>
       </MemoryRouter>
     </RegistryProvider>
   );
+
+  if (options.initialPath !== "/borrow/complete") {
+    await userEvent.click(app.getByTestId("start-execution"));
+  }
+
+  return app;
 };
 
 describe("borrow execution flow component", () => {
-  it("routes an incomplete completion page back to execution", async () => {
+  it("routes an incomplete direct completion page back to Borrow", async () => {
     const app = await renderExecution(makeBorrowApi({}), {
       initialPath: "/borrow/complete",
       wallet: {
@@ -326,7 +395,7 @@ describe("borrow execution flow component", () => {
       },
     });
 
-    await expect.element(app.getByTestId("phase")).toHaveTextContent("signing");
+    await expect.element(app.getByText("Borrow home")).toBeInTheDocument();
 
     app.unmount();
   });
@@ -488,7 +557,7 @@ describe("borrow execution flow component", () => {
     app.unmount();
   });
 
-  it("does not restart a submitted workflow after Back and Forward navigation", async () => {
+  it("does not restart an abandoned submitted workflow from browser history", async () => {
     const confirmationInterrupted = await Effect.runPromise(
       Deferred.make<void>()
     );
@@ -507,76 +576,18 @@ describe("borrow execution flow component", () => {
       )
     );
     const activeWallet = { ...wallet, signTransaction };
-    const workflowAction = decodedAction();
-    const executionInput: BorrowExecutionInput = {
-      ...reviewState,
-      action: workflowAction,
-    };
-    const operations = {
-      completeWorkflow: () => Effect.void,
-      getBorrowAction: borrow.getAction,
-      getClassicStatus: () => Effect.die("unexpected classic status"),
-      getWalletState: activeWallet.state.pipe(
-        Effect.map((state) => state.connection)
-      ),
-      signMessage: () => Effect.die("unexpected message signing"),
-      signTransaction: activeWallet.signTransaction,
-      stepBorrowAction: borrow.stepAction,
-      submitBorrowTransaction: borrow.submitTransaction,
-      submitClassicHash: () => Effect.die("unexpected classic hash submission"),
-      submitClassicSigned: () =>
-        Effect.die("unexpected classic signed submission"),
-      submitWorkflow: () => Effect.void,
-      trackEvent: () => Effect.void,
-    } as unknown as TransactionWorkflowOperationsService["Service"];
-    const runtimeLayer = Layer.mergeAll(
-      Layer.succeed(BorrowApiService, borrow as never),
-      Layer.succeed(TrackingService, {
-        trackEvent: () => Effect.void,
-        trackPageView: () => Effect.void,
-      } as TrackingService["Service"]),
-      Layer.succeed(
-        WalletService,
-        activeWallet as unknown as WalletService["Service"]
-      ),
-      TransactionWorkflowService.layer.pipe(
-        Layer.provide(
-          Layer.succeed(TransactionWorkflowOperationsService, operations)
-        )
-      )
-    ).pipe(Layer.fresh);
-    const app = await render(
-      <RegistryProvider
-        initialValues={[
-          [
-            appRuntime.layer,
-            Layer.mergeAll(
-              Layer.succeed(BorrowApiService, borrow as never),
-              Layer.succeed(TrackingService, {
-                trackEvent: () => Effect.void,
-                trackPageView: () => Effect.void,
-              } as TrackingService["Service"])
-            ).pipe(Layer.fresh),
-          ],
-          [walletRuntime.layer, runtimeLayer],
-          [borrowExecutionInputAtom, executionInput],
-          [currentWalletScopeAtom, walletScope],
-        ]}
-      >
-        <MemoryRouter
-          initialEntries={["/borrow", "/borrow/steps"]}
-          initialIndex={1}
-        >
-          <HistoryControls />
-          <Routes>
-            <Route path="/borrow" element={<div>Borrow home</div>} />
-            <Route element={<BorrowTransactionWorkflowGuard />}>
-              <Route path="/borrow/steps" element={<BorrowStepsPage />} />
-            </Route>
-          </Routes>
-        </MemoryRouter>
-      </RegistryProvider>
-    );
+    const app = await renderExecution(borrow, {
+      action: decodedAction(),
+      historyControls: true,
+      initialEntries: ["/borrow", "/borrow/review"],
+      initialIndex: 1,
+      stepsElement: <BorrowStepsPage />,
+      wallet: activeWallet,
+    });
+
+    await expect
+      .element(app.getByTestId("history-path"))
+      .toHaveTextContent("/borrow/steps");
 
     await vi.waitFor(() => {
       expect(signTransaction).toHaveBeenCalledOnce();
@@ -587,9 +598,13 @@ describe("borrow execution flow component", () => {
     await userEvent.click(app.getByRole("button", { name: "Back" }));
     await expect
       .element(app.getByTestId("history-path"))
-      .toHaveTextContent("/borrow");
+      .toHaveTextContent("/borrow/review");
     await Effect.runPromise(Deferred.await(confirmationInterrupted));
 
+    await userEvent.click(app.getByRole("button", { name: "Back" }));
+    await expect
+      .element(app.getByTestId("history-path"))
+      .toHaveTextContent("/borrow");
     await userEvent.click(app.getByRole("button", { name: "Forward" }));
     await expect
       .element(app.getByTestId("history-path"))

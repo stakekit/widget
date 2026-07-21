@@ -1,11 +1,11 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
+import { useStartClassicTransactionFlow } from "../../../features/classic-transaction-flow/react/use-transaction-flow";
 import { getProvidersDetails } from "../../../features/earn/react/use-provider-details";
 import { usePendingActionDeepLink } from "../../../features/earn/ui/classic/earn-page/state/use-pending-action-deep-link";
 import { initParamsAtom } from "../../../features/init-params/atoms";
 import { useMountAnimation } from "../../../features/mount-animation/react/use-mount-animation";
-import { useStartClassicTransactionFlow } from "../../../features/transaction-flow/react/use-transaction-flow";
 import { useSKWallet } from "../../../features/wallet/react/use-wallet";
 import { useSavedRef } from "../../../shared/react/use-saved-ref";
 

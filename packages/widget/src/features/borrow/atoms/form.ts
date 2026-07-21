@@ -19,6 +19,7 @@ import { projectLtvRatio } from "../../../domain/borrow/position-projection";
 import type { TokenBalance } from "../../../domain/schema/financial-models";
 import type { WalletAddress } from "../../../domain/schema/identifiers";
 import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
+import type { BorrowTransactionFlowReview } from "../../borrow-transaction-flow/state";
 import { tokenBalancesScanAtom } from "../../portfolio/resources/token-balances";
 import { currentWalletScopeAtom } from "../../wallet/state/selectors";
 import {
@@ -62,25 +63,7 @@ type BorrowFormAction =
       readonly type: "reset";
     };
 
-type BorrowPreparedReviewState = {
-  readonly request: ReturnType<typeof buildBorrowActionRequest>;
-  readonly summary: {
-    readonly action: "borrow" | "borrowAndSupply" | "supply";
-    readonly borrowAmount?: string;
-    readonly collateralAmount?: string;
-    readonly collateralTokenSymbol?: string;
-    readonly existingCollateralUsd?: string;
-    readonly existingDebtUsd?: string;
-    readonly projectedCollateralUsd?: string;
-    readonly projectedDebtUsd?: string;
-    readonly projectedHealthFactor?: string;
-    readonly projectedLtv?: string;
-    readonly loanTokenSymbol?: string;
-    readonly marketLabel: string;
-    readonly network: BorrowNetwork;
-    readonly providerName: string;
-  };
-};
+type BorrowPreparedReviewState = BorrowTransactionFlowReview;
 
 type BorrowFormValidation = {
   readonly borrowAmountGreaterThanAvailable: boolean;

@@ -37,8 +37,8 @@ import { YieldApiService } from "../../src/services/api/yield-api-service";
 import { ActivityInvalidationKey } from "../../src/services/resource-invalidation";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
-  BorrowTransactionWorkflowKey,
-  ClassicTransactionWorkflowKey,
+  BorrowTransactionWorkflowInput,
+  ClassicTransactionWorkflowInput,
 } from "../../src/services/workflow/transaction-workflow-model";
 import { getTransactionWorkflowInvalidationKeys } from "../../src/services/workflow/transaction-workflow-operations-service";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
@@ -169,7 +169,7 @@ const reactivityAtom = appRuntime.atom(
 
 const workflowInvalidationKeys = (scope: WalletScopeKey) =>
   getTransactionWorkflowInvalidationKeys(
-    new ClassicTransactionWorkflowKey({
+    new ClassicTransactionWorkflowInput({
       actionMeta: {
         actionId: "completed-action",
         address: scope.address,
@@ -538,7 +538,7 @@ describe("semantic resource invalidation", () => {
       transactions: [],
     } as never;
     const keys = getTransactionWorkflowInvalidationKeys(
-      new BorrowTransactionWorkflowKey({ action, walletScope: scopeA })
+      new BorrowTransactionWorkflowInput({ action, walletScope: scopeA })
     );
     const reactivity = AsyncResult.getOrThrow(registry.get(reactivityAtom));
 

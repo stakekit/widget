@@ -14,8 +14,10 @@ import {
   type TransactionWorkflowAction,
   type TransactionWorkflowCommand,
   type TransactionWorkflowEvent,
-  type TransactionWorkflowKey,
+  type TransactionWorkflowInput,
+  type TransactionWorkflowInputError,
   type TransactionWorkflowState,
+  validateTransactionWorkflowInput,
 } from "./transaction-workflow-model";
 import { TransactionWorkflowOperationsService } from "./transaction-workflow-operations-service";
 import { makeTransactionWorkflowProcessor } from "./transaction-workflow-runtime/processor";
@@ -35,11 +37,18 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
       const operations = yield* TransactionWorkflowOperationsService;
 
       const make = Effect.fn("TransactionWorkflowService.make")(function* (
-        key: TransactionWorkflowKey
-      ): Effect.fn.Return<TransactionWorkflowHandle, never, Scope.Scope> {
+        input: TransactionWorkflowInput
+      ): Effect.fn.Return<
+        TransactionWorkflowHandle,
+        TransactionWorkflowInputError,
+        Scope.Scope
+      > {
+        const inputError = validateTransactionWorkflowInput(input);
+        if (inputError) return yield* inputError;
+
         const queue = yield* Queue.dropping<TransactionWorkflowAction>(16);
         const stateRef = yield* SubscriptionRef.make(
-          initializeTransactionWorkflow(key)
+          initializeTransactionWorkflow(input)
         );
         const events = yield* PubSub.sliding<TransactionWorkflowEvent>({
           capacity: 32,
@@ -54,7 +63,7 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
 
         yield* makeTransactionWorkflowProcessor({
           events,
-          key,
+          input,
           queue,
           stateRef,
         }).pipe(

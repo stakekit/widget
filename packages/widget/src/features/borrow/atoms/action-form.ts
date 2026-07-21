@@ -1,7 +1,5 @@
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { ActionRequest } from "../../../domain/borrow/action-request";
 import type { CollateralToken } from "../../../domain/borrow/collateral-token";
-import type { BorrowNetwork } from "../../../domain/borrow/network";
 import type {
   DisableCollateralPendingAction,
   EnableCollateralPendingAction,
@@ -13,6 +11,7 @@ import type {
   Position,
   SupplyBalance,
 } from "../../../domain/borrow/position";
+import type { BorrowTransactionFlowReview } from "../../borrow-transaction-flow/state";
 
 export type BorrowWithdrawTokenOption = {
   readonly action: WithdrawPendingAction;
@@ -41,33 +40,6 @@ export type BorrowPositionPendingActionContext =
       readonly type: "disableCollateral" | "enableCollateral";
     };
 
-type BorrowActionFormReviewState = {
-  readonly request: ActionRequest;
-  readonly summary: {
-    readonly action:
-      | "borrow"
-      | "borrowAndSupply"
-      | "disableCollateral"
-      | "enableCollateral"
-      | "repay"
-      | "supply"
-      | "withdraw";
-    readonly borrowAmount?: string;
-    readonly collateralAmount?: string;
-    readonly collateralTokenSymbol?: string;
-    readonly existingCollateralUsd?: string;
-    readonly existingDebtUsd?: string;
-    readonly loanTokenSymbol?: string;
-    readonly marketLabel: string;
-    readonly network: BorrowNetwork;
-    readonly projectedCollateralUsd?: string;
-    readonly projectedDebtUsd?: string;
-    readonly projectedHealthFactor?: string;
-    readonly projectedLtv?: string;
-    readonly providerName: string;
-  };
-};
-
 type BorrowActionFormState =
   | {
       readonly type: "idle";
@@ -77,7 +49,7 @@ type BorrowActionFormState =
       readonly type: "positionAction";
     }
   | {
-      readonly reviewState: BorrowActionFormReviewState;
+      readonly reviewState: BorrowTransactionFlowReview;
       readonly type: "review";
     };
 
@@ -87,7 +59,7 @@ type BorrowActionFormAction =
       readonly type: "preparePositionAction";
     }
   | {
-      readonly reviewState: BorrowActionFormReviewState;
+      readonly reviewState: BorrowTransactionFlowReview;
       readonly type: "prepareReview";
     }
   | {

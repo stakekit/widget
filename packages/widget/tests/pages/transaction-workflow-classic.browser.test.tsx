@@ -10,11 +10,11 @@ import { MemoryRouter, Outlet, Route, Routes, useNavigate } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
-import { actionHistoryTimestampAtom } from "../../src/features/transaction-flow/state/action-history";
-import { makeClassicTransactionWorkflowModule } from "../../src/features/transaction-flow/state/transaction-workflow-atoms";
+import { actionHistoryTimestampAtom } from "../../src/features/classic-transaction-flow/state/action-history";
+import { makeClassicTransactionWorkflowModule } from "../../src/features/classic-transaction-flow/state/classic-transaction-workflow";
 import type { ActionMeta } from "../../src/public-api/types";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
-import { ClassicTransactionWorkflowKey } from "../../src/services/workflow/transaction-workflow-model";
+import { ClassicTransactionWorkflowInput } from "../../src/services/workflow/transaction-workflow-model";
 import { TransactionWorkflowOperationsService } from "../../src/services/workflow/transaction-workflow-operations-service";
 import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
 import { yieldApiTransactionFixture } from "../fixtures";
@@ -25,7 +25,7 @@ const address = Schema.decodeSync(WalletAddress)(
 );
 const yieldId = Schema.decodeSync(YieldId)("yield-1");
 const walletScope = new WalletScopeKey({ address, network: "ethereum" });
-const key = new ClassicTransactionWorkflowKey({
+const key = new ClassicTransactionWorkflowInput({
   actionMeta: {
     actionId: "action-1",
     address,
@@ -42,7 +42,7 @@ const key = new ClassicTransactionWorkflowKey({
   yieldId,
 });
 const WorkflowScopedAtom = makeScopedAtom(
-  (workflowKey: ClassicTransactionWorkflowKey) =>
+  (workflowKey: ClassicTransactionWorkflowInput) =>
     Atom.make((context) => {
       const workflow = makeClassicTransactionWorkflowModule(workflowKey);
       context.mount(workflow.rootAtom);
@@ -56,7 +56,7 @@ const WorkflowContext = createContext<WorkflowModule | null>(null);
 const ClassicTransactionWorkflowRoute = ({
   workflowKey,
 }: {
-  readonly workflowKey: ClassicTransactionWorkflowKey;
+  readonly workflowKey: ClassicTransactionWorkflowInput;
 }) => (
   <WorkflowScopedAtom.Provider value={workflowKey}>
     <ClassicTransactionWorkflowBinding />
@@ -232,7 +232,7 @@ describe("classic transaction workflow browser integration", () => {
     const confirmationInterrupted = await Effect.runPromise(
       Deferred.make<void>()
     );
-    const twoTransactionKey = new ClassicTransactionWorkflowKey({
+    const twoTransactionKey = new ClassicTransactionWorkflowInput({
       ...key,
       transactions: [
         ...key.transactions,

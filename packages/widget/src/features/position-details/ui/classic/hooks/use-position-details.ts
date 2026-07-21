@@ -19,11 +19,11 @@ import {
   getPositionDetailsUnstakeReviewPath,
   useUnstakeOrPendingActionParams,
 } from "../../../../../shared/react/navigation/use-unstake-or-pending-action-params";
+import { useStartClassicTransactionFlow } from "../../../../classic-transaction-flow/react/use-transaction-flow";
 import { useProvidersDetails } from "../../../../earn/react/use-provider-details";
 import { useYieldKycGate } from "../../../../earn/react/use-yield-kyc-gate";
 import { useYieldValidators } from "../../../../earn/react/use-yield-validators";
 import { useTrackEvent } from "../../../../tracking/react/use-track-event";
-import { useStartClassicTransactionFlow } from "../../../../transaction-flow/react/use-transaction-flow";
 import { useUnstakeOrPendingAction } from "../state";
 import { usePendingActions } from "./use-pending-actions";
 import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
