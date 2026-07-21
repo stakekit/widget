@@ -17,7 +17,7 @@ export const TokenIconImage = ({
   <Image
     data-rk="token-logo"
     wrapperProps={{ hw: tokenLogoHw, "data-rk": "token-logo" }}
-    imgProps={{ hw: tokenLogoHw }}
+    imgProps={{ hw: "full" }}
     src={mainUrl ?? fallbackUrl}
     fallbackName={name}
   />
