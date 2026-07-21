@@ -1,15 +1,10 @@
-import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { useClassicTransactionWorkflowFacade } from "../../../react/classic-transaction-workflow-context";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useClassicFlowExecution } from "../../../react/classic-flow-route";
 
 export const useTransactionWorkflow = () => {
-  const facade = useClassicTransactionWorkflowFacade();
-  useAtomMount(facade.completionAtom);
+  const facade = useClassicFlowExecution().workflow;
   const view = useAtomValue(facade.viewAtom);
   const dispatch = useAtomSet(facade.dispatchAtom);
-
-  if (!view) {
-    throw new Error("Classic transaction workflow has no attached action.");
-  }
 
   return {
     dispatch,

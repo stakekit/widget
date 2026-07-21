@@ -8,11 +8,13 @@ import { initParamsAtom } from "../../features/init-params/atoms";
 import { AnimatedPositionsPage } from "../../features/portfolio/ui/classic/positions-page/positions.page";
 import { PositionDetailsPage as ClassicPositionDetailsPage } from "../../features/position-details/ui/classic/position-details.page";
 import {
-  ActivityResumeClassicFlowRouteGuard,
-  EnterClassicFlowRouteGuard,
-  ExitClassicFlowRouteGuard,
-  ManageClassicFlowRouteGuard,
-} from "../../features/transaction-flow/react/request-route-guards";
+  ActivityResumeClassicFlowRoute,
+  ClassicFlowExecutionScope,
+  ClassicFlowReviewScope,
+  EnterClassicFlowRoute,
+  ExitClassicFlowRoute,
+  ManageClassicFlowRoute,
+} from "../../features/transaction-flow/react/classic-flow-route";
 import { classicFlowSessionStore } from "../../features/transaction-flow/state/classic-flow-session-store";
 import { ActivityCompletePage } from "../../features/transaction-flow/ui/complete/pages/activity-complete.page";
 import { PendingCompletePage } from "../../features/transaction-flow/ui/complete/pages/pending-complete.page";
@@ -43,7 +45,6 @@ import { useDetailsMatch } from "../../shared/react/navigation/use-details-match
 import { usePrevious } from "../../shared/react/use-previous";
 import { useSavedRef } from "../../shared/react/use-saved-ref";
 import { isClassicFlowSessionPath } from "./classic-flow-session-path";
-import { ClassicFlowTransactionWorkflowGuard } from "./guards/classic-transaction-workflow";
 import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
 
 export const ClassicRoutes = () => {
@@ -102,7 +103,7 @@ export const ClassicRoutes = () => {
   const key =
     flowSession &&
     isClassicFlowSessionPath(current.pathname, flowSession.intake._tag)
-      ? `classic-flow-session-${flowSession.key}`
+      ? "classic-flow-session"
       : detailsMatch
         ? "/"
         : current.key;
@@ -136,11 +137,16 @@ export const ClassicRoutes = () => {
                   <Route element={<WalletScopeRouteGuard fallbackPath="/" />}>
                     {/* Activity flow */}
                     <Route path="activity">
-                      <Route element={<ActivityResumeClassicFlowRouteGuard />}>
-                        <Route path="review" element={<ActionReviewPage />} />
+                      <Route element={<ActivityResumeClassicFlowRoute />}>
                         <Route
-                          element={<ClassicFlowTransactionWorkflowGuard />}
-                        >
+                          path="review"
+                          element={
+                            <ClassicFlowReviewScope>
+                              <ActionReviewPage />
+                            </ClassicFlowReviewScope>
+                          }
+                        />
+                        <Route element={<ClassicFlowExecutionScope />}>
                           <Route
                             path=":pendingActionType/steps"
                             element={<ActivityStepsPage />}
@@ -154,9 +160,16 @@ export const ClassicRoutes = () => {
                     </Route>
 
                     {/* Stake flow */}
-                    <Route element={<EnterClassicFlowRouteGuard />}>
-                      <Route path="review" element={<StakeReviewPage />} />
-                      <Route element={<ClassicFlowTransactionWorkflowGuard />}>
+                    <Route element={<EnterClassicFlowRoute />}>
+                      <Route
+                        path="review"
+                        element={
+                          <ClassicFlowReviewScope>
+                            <StakeReviewPage />
+                          </ClassicFlowReviewScope>
+                        }
+                      />
+                      <Route element={<ClassicFlowExecutionScope />}>
                         <Route path="steps" element={<StakeStepsPage />} />
                         <Route
                           path="complete"
@@ -175,14 +188,16 @@ export const ClassicRoutes = () => {
 
                       {/* Unstaking */}
                       <Route path="unstake">
-                        <Route element={<ExitClassicFlowRouteGuard />}>
+                        <Route element={<ExitClassicFlowRoute />}>
                           <Route
                             path="review"
-                            element={<UnstakeReviewPage />}
+                            element={
+                              <ClassicFlowReviewScope>
+                                <UnstakeReviewPage />
+                              </ClassicFlowReviewScope>
+                            }
                           />
-                          <Route
-                            element={<ClassicFlowTransactionWorkflowGuard />}
-                          >
+                          <Route element={<ClassicFlowExecutionScope />}>
                             <Route
                               path="steps"
                               element={<UnstakeStepsPage />}
@@ -197,14 +212,16 @@ export const ClassicRoutes = () => {
 
                       {/* Pending Actions */}
                       <Route path="pending-action">
-                        <Route element={<ManageClassicFlowRouteGuard />}>
+                        <Route element={<ManageClassicFlowRoute />}>
                           <Route
                             path="review"
-                            element={<PendingReviewPage />}
+                            element={
+                              <ClassicFlowReviewScope>
+                                <PendingReviewPage />
+                              </ClassicFlowReviewScope>
+                            }
                           />
-                          <Route
-                            element={<ClassicFlowTransactionWorkflowGuard />}
-                          >
+                          <Route element={<ClassicFlowExecutionScope />}>
                             <Route
                               path="steps"
                               element={<PendingStepsPage />}

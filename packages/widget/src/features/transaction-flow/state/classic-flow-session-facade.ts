@@ -20,22 +20,18 @@ import {
   getClassicTransactionWorkflowKey,
 } from "../model/classic-transaction-flow";
 import { makeClassicFlowSessionReviewResources } from "../resources/classic-flow-review-resources";
-import type {
-  ClassicFlowSession,
-  ClassicFlowSessionStore,
+import {
+  type ClassicFlowSession,
+  classicFlowSessionStore,
 } from "./classic-flow-session-store";
-import { classicFlowSessionStore } from "./classic-flow-session-store";
-import { makeClassicTransactionWorkflowFacade } from "./transaction-workflow-atoms";
-
-type ClassicFlowSessionRuntime = Atom.AtomRuntime<
-  TrackingService | YieldApiService
->;
+import { makeClassicTransactionWorkflowModule } from "./transaction-workflow-atoms";
 
 export class ClassicFlowPreviewError extends Data.TaggedError(
   "ClassicFlowPreviewError"
 )<{
   readonly cause: unknown;
   readonly message: string;
+  readonly retryable: true;
 }> {}
 
 export class ClassicFlowInvalidExitPreviewError extends Data.TaggedError(
@@ -46,12 +42,20 @@ export class ClassicFlowInvalidExitPreviewError extends Data.TaggedError(
   readonly retryable: false;
 }> {}
 
-type ClassicFlowNavigation = "Review" | "Steps" | null;
+export class ClassicFlowUnsupportedActivityPreviewError extends Data.TaggedError(
+  "ClassicFlowUnsupportedActivityPreviewError"
+)<{
+  readonly message: string;
+  readonly retryable: false;
+}> {}
+
+type ClassicFlowReviewError =
+  | ClassicFlowInvalidExitPreviewError
+  | ClassicFlowPreviewError
+  | ClassicFlowUnsupportedActivityPreviewError;
 
 type ClassicFlowSessionState = {
-  readonly attachedAction: YieldAction | null;
-  readonly navigation: ClassicFlowNavigation;
-  readonly previewGeneration: number;
+  readonly executionAction: YieldAction | null;
 };
 
 const getPreviewRequest = (
@@ -64,101 +68,78 @@ const getPreviewRequest = (
       return { command: intake.request, intent: "exit" };
     case "Manage":
       return { command: intake.request, intent: "manage" };
-    case "ActivityResume":
-      return null;
+    case "ActivityResume": {
+      if (intake.action.intent === "manage") return null;
+
+      const command = {
+        address: intake.action.address,
+        ...(intake.action.rawArguments
+          ? { arguments: intake.action.rawArguments }
+          : {}),
+        yieldId: intake.action.yieldId,
+      };
+
+      return { command, intent: intake.action.intent };
+    }
   }
 };
 
-export const makeClassicFlowSessionFacade = ({
-  runtime,
-  session,
-  store,
-}: {
-  readonly runtime: ClassicFlowSessionRuntime;
-  readonly session: ClassicFlowSession;
-  readonly store: ClassicFlowSessionStore;
-}) => {
-  const initialState: ClassicFlowSessionState = {
-    attachedAction:
-      session.intake._tag === "ActivityResume" ? session.intake.action : null,
-    navigation: null,
-    previewGeneration: 0,
-  };
-  const stateAtom = Atom.make<ClassicFlowSessionState>(initialState).pipe(
-    Atom.setIdleTTL(0),
-    Atom.withLabel(`classicFlowSessionState(${session.key})`)
-  );
+export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
+  const stateAtom = Atom.make<ClassicFlowSessionState>({
+    executionAction: null,
+  }).pipe(Atom.setIdleTTL(0), Atom.withLabel("classicFlowSessionState"));
+
   const isCurrentSessionAtom = Atom.make(
-    (get) => get(store.currentSessionAtom)?.key === session.key
-  ).pipe(Atom.withLabel(`isCurrentClassicFlowSession(${session.key})`));
-  const previewResourceAtom = Atom.family(
-    (
-      generation: number
-    ): Atom.Atom<AsyncResult.AsyncResult<YieldAction | null, unknown>> => {
-      const request = getPreviewRequest(session.intake);
+    (get) =>
+      get(classicFlowSessionStore.currentSessionAtom)?.epoch === session.epoch
+  ).pipe(Atom.withLabel("isCurrentClassicFlowSession"));
 
-      return request
-        ? runtime
-            .atom(
-              YieldApiService.use((api) =>
-                api.previewAction(request).pipe(
-                  Effect.flatMap((action) => {
-                    if (session.intake._tag !== "Exit") {
-                      return Effect.succeed<YieldAction | null>(action);
-                    }
+  const canPublishSharedOutputAtom = Atom.make((get) =>
+    get(isCurrentSessionAtom)
+  ).pipe(Atom.withLabel("canPublishClassicFlowSharedOutput"));
 
-                    const validation = getValidStakeSessionTx(action);
-                    return Result.isFailure(validation)
-                      ? Effect.fail(
-                          new ClassicFlowInvalidExitPreviewError({
-                            cause: validation.failure,
-                            message:
-                              "Classic Transaction Flow Exit preview is not executable.",
-                            retryable: false,
-                          })
-                        )
-                      : Effect.succeed<YieldAction | null>(validation.success);
-                  }),
-                  Effect.mapError((cause) =>
-                    cause instanceof ClassicFlowInvalidExitPreviewError
-                      ? cause
-                      : new ClassicFlowPreviewError({
-                          cause,
-                          message:
-                            "Classic Transaction Flow Action preview failed.",
-                        })
-                  )
-                )
-              ).pipe(Effect.withSpan("previewClassicFlowSessionAction"))
-            )
-            .pipe(
-              withApiResourcePolicy({
-                idleTTL: Duration.zero,
-                revalidateOnMount: false,
-                staleTime: Duration.infinity,
-              }),
-              Atom.withLabel(
-                `classicFlowSessionPreview(${session.key}:${generation})`
-              )
-            )
-        : Atom.make(
-            AsyncResult.success<YieldAction | null, unknown>(null)
-          ).pipe(Atom.setIdleTTL(0));
-    }
-  );
-  const attachedActionAtom = Atom.make(
-    (get) => get(stateAtom).attachedAction
-  ).pipe(Atom.withLabel(`classicFlowSessionAction(${session.key})`));
+  const executionActionAtom = Atom.make(
+    (get) => get(stateAtom).executionAction
+  ).pipe(Atom.withLabel("classicFlowSessionExecutionAction"));
+
+  const getIntake = <Variant extends ClassicTransactionFlowIntake["_tag"]>(
+    variant: Variant
+  ): Extract<ClassicTransactionFlowIntake, { readonly _tag: Variant }> => {
+    const intake = getClassicTransactionFlowIntakeVariant(
+      session.intake,
+      variant
+    );
+    if (!intake) throw new Error(`Expected Classic Flow ${variant} intake.`);
+    return intake;
+  };
+
+  const makeActivityCompleteView = (selectedAction: YieldAction) => {
+    const activity = getIntake("ActivityResume");
+    return {
+      selectedAction,
+      selectedValidators: activity.selectedValidators,
+      selectedYield: activity.selectedYield,
+    } as const;
+  };
+
+  const activityHistoryViewAtom = Atom.make(() => {
+    const activity = getIntake("ActivityResume");
+    return makeActivityCompleteView(activity.action);
+  }).pipe(Atom.withLabel("classicFlowSessionActivityHistoryView"));
+
+  const clearExecutionAtom = Atom.fnSync(
+    (_input: undefined, context) => {
+      if (context(stateAtom).executionAction === null) return;
+
+      context.set(stateAtom, { executionAction: null });
+    },
+    { initialValue: undefined }
+  ).pipe(Atom.setIdleTTL(0), Atom.withLabel("clearClassicFlowExecution"));
+
   const intakeAtom = Atom.make(session.intake).pipe(
-    Atom.withLabel(`classicFlowSessionIntake(${session.key})`)
+    Atom.withLabel("classicFlowSessionIntake")
   );
-  const workflowKeyAtom = Atom.make((get) => {
-    const action = get(attachedActionAtom);
-    return action
-      ? getClassicTransactionWorkflowKey(session.intake, action)
-      : null;
-  }).pipe(Atom.withLabel(`classicFlowSessionWorkflowKey(${session.key})`));
-  const workflow = makeClassicTransactionWorkflowFacade(workflowKeyAtom);
+
   const kycGateAtom = Atom.make((get) =>
     get(
       currentYieldKycGateAtom(
@@ -168,7 +149,8 @@ export const makeClassicFlowSessionFacade = ({
         })
       )
     )
-  ).pipe(Atom.withLabel(`classicFlowSessionKycGate(${session.key})`));
+  ).pipe(Atom.withLabel("classicFlowSessionKycGate"));
+
   const refreshKycAtom = Atom.fnSync(
     (_input: undefined, get) => {
       get.set(
@@ -183,216 +165,268 @@ export const makeClassicFlowSessionFacade = ({
     },
     { initialValue: undefined }
   ).pipe(Atom.withLabel("refreshClassicFlowSessionKycAtom"));
-  const actionPreviewAtom = Atom.make((get) => {
-    if (get(kycGateAtom).isGateBlocking) {
-      return AsyncResult.success<YieldAction | null, ClassicFlowPreviewError>(
-        null
-      );
-    }
 
-    const state = get(stateAtom);
-    return get(previewResourceAtom(state.previewGeneration));
-  }).pipe(
-    Atom.setIdleTTL(0),
-    Atom.withLabel(`classicFlowSessionActionPreview(${session.key})`)
-  );
-  const navigationAtom = Atom.make((get) =>
-    get(isCurrentSessionAtom) ? get(stateAtom).navigation : null
-  ).pipe(Atom.withLabel(`classicFlowSessionNavigation(${session.key})`));
+  const makeReviewFacade = () => {
+    const previewRequest = getPreviewRequest(session.intake);
+    const previewResourceAtom = previewRequest
+      ? appRuntime
+          .atom(
+            YieldApiService.use((api) =>
+              api.previewAction(previewRequest).pipe(
+                Effect.flatMap((action) => {
+                  if (session.intake._tag !== "Exit") {
+                    return Effect.succeed<YieldAction | null>(action);
+                  }
 
-  const continueAtom = Atom.fnSync((_input: undefined, context) => {
-    if (context(kycGateAtom).isGateBlocking) return;
+                  const validation = getValidStakeSessionTx(action);
+                  return Result.isFailure(validation)
+                    ? Effect.fail(
+                        new ClassicFlowInvalidExitPreviewError({
+                          cause: validation.failure,
+                          message:
+                            "Classic Transaction Flow Exit preview is not executable.",
+                          retryable: false,
+                        })
+                      )
+                    : Effect.succeed(validation.success);
+                }),
+                Effect.mapError((error) =>
+                  error._tag === "ClassicFlowInvalidExitPreviewError"
+                    ? error
+                    : new ClassicFlowPreviewError({
+                        cause: error,
+                        message:
+                          "Classic Transaction Flow Action preview failed.",
+                        retryable: true,
+                      })
+                )
+              )
+            ).pipe(Effect.withSpan("previewClassicFlowSessionAction"))
+          )
+          .pipe(
+            withApiResourcePolicy({
+              idleTTL: Duration.zero,
+              revalidateOnMount: false,
+              staleTime: Duration.infinity,
+            }),
+            Atom.withLabel("classicFlowReviewPreview")
+          )
+      : Atom.make<
+          AsyncResult.AsyncResult<YieldAction | null, ClassicFlowReviewError>
+        >(
+          AsyncResult.fail<
+            ClassicFlowUnsupportedActivityPreviewError,
+            YieldAction | null
+          >(
+            new ClassicFlowUnsupportedActivityPreviewError({
+              message:
+                "This Activity action cannot be recreated as a fresh Action preview.",
+              retryable: false,
+            })
+          )
+        ).pipe(Atom.setIdleTTL(0));
 
-    const state = context(stateAtom);
-    if (state.attachedAction) {
-      if (
-        session.intake._tag === "ActivityResume" &&
-        state.navigation !== "Steps"
-      ) {
-        context.set(stateAtom, { ...state, navigation: "Steps" });
-      }
-      return;
-    }
-
-    const candidate = context(actionPreviewAtom).pipe(
-      AsyncResult.value,
-      Option.getOrNull
-    );
-    if (!candidate) return;
-
-    context.set(stateAtom, {
-      ...state,
-      attachedAction: candidate,
-      navigation: "Steps",
-    });
-  }).pipe(Atom.setIdleTTL(0), Atom.withLabel("continueClassicFlowSessionAtom"));
-
-  const backAtom = Atom.fnSync((_input: undefined, context) => {
-    const state = context(stateAtom);
-    if (
-      session.intake._tag !== "ActivityResume" &&
-      state.attachedAction === null
-    ) {
-      return;
-    }
-    if (state.navigation === "Review" && state.attachedAction === null) return;
-
-    const detachAction =
-      session.intake._tag !== "ActivityResume" && state.attachedAction !== null;
-    context.set(stateAtom, {
-      attachedAction:
-        session.intake._tag === "ActivityResume" ? session.intake.action : null,
-      navigation: "Review",
-      previewGeneration: detachAction
-        ? state.previewGeneration + 1
-        : state.previewGeneration,
-    });
-  }).pipe(Atom.setIdleTTL(0), Atom.withLabel("backClassicFlowSessionAtom"));
-
-  const retryAtom = Atom.fnSync((_input: undefined, context) => {
-    const error = context(actionPreviewAtom).pipe(
-      AsyncResult.error,
-      Option.getOrNull
-    );
-    if (!(error instanceof ClassicFlowPreviewError)) {
-      return;
-    }
-
-    const state = context(stateAtom);
-    context.set(stateAtom, {
-      ...state,
-      previewGeneration: state.previewGeneration + 1,
-    });
-  }).pipe(Atom.setIdleTTL(0), Atom.withLabel("retryClassicFlowSessionAtom"));
-
-  const trackConfirmationAtom = runtime.fn(
-    Effect.fn("trackClassicFlowSessionConfirmation")(function* (input: {
-      readonly amount?: string;
-      readonly yieldId: string;
-    }) {
-      const tracking = yield* TrackingService;
-      yield* tracking.trackEvent("unstakeClicked", input);
-    })
-  );
-
-  const confirmAtom = Atom.fnSync((_input: undefined, context) => {
-    if (!context(isCurrentSessionAtom) || context(kycGateAtom).isGateBlocking) {
-      return;
-    }
-
-    if (AsyncResult.isFailure(context(actionPreviewAtom))) {
-      context.set(retryAtom, undefined);
-      return;
-    }
-
-    if (session.intake._tag === "Exit") {
-      context.set(trackConfirmationAtom, {
-        yieldId: session.intake.integration.id,
-        ...(session.intake.request.arguments?.amount
-          ? { amount: session.intake.request.arguments.amount }
-          : {}),
-      });
-    }
-
-    context.set(continueAtom, undefined);
-  }).pipe(Atom.setIdleTTL(0), Atom.withLabel("confirmClassicFlowSessionAtom"));
-
-  const stepsRouteAtom = Atom.family((entryKey: string) =>
-    Atom.make((context) => {
-      const state = context.once(stateAtom);
-      if (state.navigation !== null) {
-        context.set(stateAtom, { ...state, navigation: null });
-      }
-    }).pipe(
+    const actionPreviewAtom = Atom.make((get) =>
+      get(kycGateAtom).isGateBlocking
+        ? AsyncResult.success(null)
+        : get(previewResourceAtom)
+    ).pipe(
       Atom.setIdleTTL(0),
-      Atom.withLabel(`classicFlowSessionStepsRoute(${session.key}:${entryKey})`)
-    )
-  );
+      Atom.withLabel("classicFlowReviewActionPreview")
+    );
 
-  const reviewRouteAtom = Atom.family((entryKey: string) =>
-    Atom.make((context) => {
-      const state = context.once(stateAtom);
-      const resetAction =
-        session.intake._tag !== "ActivityResume" &&
-        state.attachedAction !== null;
-      if (!resetAction && state.navigation === null) return;
-
-      context.set(stateAtom, {
-        attachedAction: resetAction ? null : state.attachedAction,
-        navigation: null,
-        previewGeneration: resetAction
-          ? state.previewGeneration + 1
-          : state.previewGeneration,
-      });
-    }).pipe(
+    const navigationStateAtom = Atom.make<"Steps" | null>(null).pipe(
       Atom.setIdleTTL(0),
-      Atom.withLabel(
-        `classicFlowSessionReviewRoute(${session.key}:${entryKey})`
-      )
-    )
-  );
+      Atom.withLabel("classicFlowReviewNavigationState")
+    );
 
-  const lifecycleAtom = Atom.make((context) => {
-    context.once(stateAtom);
-    const registry = context.registry;
+    const navigationAtom = Atom.make((get) =>
+      get(canPublishSharedOutputAtom) ? get(navigationStateAtom) : null
+    ).pipe(Atom.withLabel("classicFlowReviewNavigation"));
 
-    context.addFinalizer(() => {
-      registry.set(store.clearAtom, session.key);
+    const retryAtom = Atom.fnSync(
+      (_input: undefined, context) => {
+        const error = context(actionPreviewAtom).pipe(
+          AsyncResult.error,
+          Option.getOrNull
+        );
+        if (!error?.retryable) return;
+
+        context.refresh(previewResourceAtom);
+      },
+      { initialValue: undefined }
+    ).pipe(Atom.setIdleTTL(0), Atom.withLabel("retryClassicFlowReviewAtom"));
+
+    const trackConfirmationAtom = appRuntime.fn(
+      (
+        input: {
+          readonly amount?: string;
+          readonly yieldId: string;
+        },
+        context
+      ) => {
+        if (!context(canPublishSharedOutputAtom)) return Effect.void;
+
+        return Effect.gen(function* () {
+          const tracking = yield* TrackingService;
+          yield* tracking.trackEvent("unstakeClicked", input);
+        }).pipe(Effect.withSpan("trackClassicFlowSessionConfirmation"));
+      }
+    );
+
+    const confirmAtom = Atom.fnSync(
+      (_input: undefined, context) => {
+        if (context(kycGateAtom).isGateBlocking) return;
+
+        if (AsyncResult.isFailure(context(actionPreviewAtom))) {
+          context.set(retryAtom, undefined);
+          return;
+        }
+
+        if (
+          context(navigationStateAtom) === "Steps" ||
+          context(executionActionAtom) !== null
+        ) {
+          return;
+        }
+
+        const action = context(actionPreviewAtom).pipe(
+          AsyncResult.value,
+          Option.getOrNull
+        );
+        if (!action) return;
+
+        context.set(stateAtom, { executionAction: action });
+        context.set(navigationStateAtom, "Steps");
+
+        if (session.intake._tag === "Exit") {
+          context.set(trackConfirmationAtom, {
+            yieldId: session.intake.integration.id,
+            ...(session.intake.request.arguments?.amount
+              ? { amount: session.intake.request.arguments.amount }
+              : {}),
+          });
+        }
+      },
+      { initialValue: undefined }
+    ).pipe(Atom.setIdleTTL(0), Atom.withLabel("confirmClassicFlowReviewAtom"));
+
+    const reviewResources = makeClassicFlowSessionReviewResources({
+      actionPreviewAtom,
+      intakeAtom,
+      kycGateAtom,
     });
-  }).pipe(
-    Atom.setIdleTTL(0),
-    Atom.withLabel(`classicFlowSessionLifecycle(${session.key})`)
-  );
 
-  const variantAtom = <Variant extends ClassicTransactionFlowIntake["_tag"]>(
-    variant: Variant
-  ) =>
-    Atom.make(() =>
-      getClassicTransactionFlowIntakeVariant(session.intake, variant)
-    ).pipe(Atom.withLabel(`classicFlowSession${variant}Intake`));
+    return {
+      activityReviewViewAtom: reviewResources.activityReviewViewAtom,
+      confirmAtom,
+      navigationAtom,
+      refreshKycAtom,
+      reviewViewAtom: reviewResources.reviewViewAtom,
+    } as const;
+  };
 
-  const reviewResources = makeClassicFlowSessionReviewResources({
-    actionPreviewAtom,
-    attachedActionAtom,
-    intakeAtom,
-    kycGateAtom,
-  });
+  const makeExecutionFacade = (action: YieldAction) => {
+    const navigationStateAtom = Atom.make<"Review" | null>(null).pipe(
+      Atom.setIdleTTL(0),
+      Atom.withLabel("classicFlowExecutionNavigationState")
+    );
 
-  return {
-    ...reviewResources,
-    actionPreviewAtom,
-    attachedActionAtom,
-    backAtom,
-    confirmAtom,
-    continueAtom,
-    enterIntakeAtom: variantAtom("Enter"),
-    exitIntakeAtom: variantAtom("Exit"),
-    activityResumeIntakeAtom: variantAtom("ActivityResume"),
-    intakeAtom,
-    isCurrentSessionAtom,
-    kycGateAtom,
-    lifecycleAtom,
-    navigationAtom,
-    reviewRouteAtom,
-    refreshKycAtom,
-    retryAtom,
-    manageIntakeAtom: variantAtom("Manage"),
-    session,
-    stepsRouteAtom,
-    workflow,
-    workflowKeyAtom,
+    const actionAtom = Atom.make(action).pipe(
+      Atom.withLabel("classicFlowExecutionAction")
+    );
+
+    const activityCompleteViewAtom = Atom.make(() =>
+      makeActivityCompleteView(action)
+    ).pipe(Atom.withLabel("classicFlowExecutionActivityCompleteView"));
+
+    const workflow = makeClassicTransactionWorkflowModule(
+      getClassicTransactionWorkflowKey(session.intake, action)
+    );
+
+    const navigationAtom = Atom.make((get) =>
+      get(canPublishSharedOutputAtom) && get(executionActionAtom) === action
+        ? get(navigationStateAtom)
+        : null
+    ).pipe(Atom.withLabel("classicFlowExecutionNavigation"));
+
+    const backAtom = Atom.fnSync(
+      (_input: undefined, context) => {
+        if (context(navigationStateAtom) === "Review") return;
+
+        context.set(navigationStateAtom, "Review");
+      },
+      { initialValue: undefined }
+    ).pipe(Atom.setIdleTTL(0), Atom.withLabel("backClassicFlowExecutionAtom"));
+
+    return {
+      activityCompleteViewAtom,
+      actionAtom,
+      backAtom,
+      navigationAtom,
+      workflow,
+    } as const;
+  };
+
+  const makeReviewScopeAtom = () =>
+    Atom.make((context) => {
+      context.set(clearExecutionAtom, undefined);
+
+      return makeReviewFacade();
+    }).pipe(Atom.setIdleTTL(0), Atom.withLabel("classicFlowReviewScope"));
+
+  const makeExecutionScopeAtom = () =>
+    Atom.make((context) => {
+      const action = context.once(executionActionAtom);
+      if (!action) return null;
+
+      const execution = makeExecutionFacade(action);
+      context.mount(execution.workflow.viewAtom);
+      return execution;
+    }).pipe(Atom.setIdleTTL(0), Atom.withLabel("classicFlowExecutionScope"));
+
+  const module = {
+    facade: {
+      activityHistoryViewAtom,
+      getIntake,
+      intake: session.intake,
+    },
+    ports: {
+      makeExecutionScopeAtom,
+      makeReviewScopeAtom,
+    },
   } as const;
+
+  const rootAtom = Atom.make((context) => {
+    const registry = context.registry;
+    context.mount(stateAtom);
+    context.addFinalizer(() => {
+      registry.set(classicFlowSessionStore.clearAtom, session.epoch);
+    });
+
+    return module;
+  }).pipe(Atom.setIdleTTL(0), Atom.withLabel("classicFlowSessionRoot"));
+
+  return rootAtom;
 };
 
-export type ClassicFlowSessionFacade = ReturnType<
-  typeof makeClassicFlowSessionFacade
+export type ClassicFlowSessionModule = Atom.Type<
+  ReturnType<typeof makeClassicFlowSessionModule>
 >;
 
-export const classicFlowSessionFacadeFamily = Atom.family(
-  (session: ClassicFlowSession) =>
-    makeClassicFlowSessionFacade({
-      runtime: appRuntime,
-      session,
-      store: classicFlowSessionStore,
-    })
-);
+export type ClassicFlowSessionFacade = ClassicFlowSessionModule["facade"];
+
+export const makeClassicFlowReviewScope = (session: ClassicFlowSessionModule) =>
+  session.ports.makeReviewScopeAtom();
+
+export const makeClassicFlowExecutionScope = (
+  session: ClassicFlowSessionModule
+) => session.ports.makeExecutionScopeAtom();
+
+export type ClassicFlowReviewFacade = Atom.Type<
+  ReturnType<typeof makeClassicFlowReviewScope>
+>;
+
+export type ClassicFlowExecutionFacade = NonNullable<
+  Atom.Type<ReturnType<typeof makeClassicFlowExecutionScope>>
+>;

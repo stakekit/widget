@@ -1,19 +1,23 @@
 import BigNumber from "bignumber.js";
-import { Effect, Layer, Option, Schema, Stream } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import { Effect, Layer, Schema, Stream } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
+import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import type { ActionCommand } from "../../src/domain/schema/action-models";
+import type {
+  ActionCommand,
+  YieldAction,
+} from "../../src/domain/schema/action-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { ClassicTransactionFlowIntake } from "../../src/features/transaction-flow/model/classic-transaction-flow";
 import {
-  ClassicFlowInvalidExitPreviewError,
-  ClassicFlowPreviewError,
-  makeClassicFlowSessionFacade,
+  makeClassicFlowExecutionScope,
+  makeClassicFlowReviewScope,
+  makeClassicFlowSessionModule,
 } from "../../src/features/transaction-flow/state/classic-flow-session-facade";
-import { makeClassicFlowSessionStore } from "../../src/features/transaction-flow/state/classic-flow-session-store";
+import { classicFlowSessionStore } from "../../src/features/transaction-flow/state/classic-flow-session-store";
+import type { ActionPreviewRequest } from "../../src/services/api/yield-api-service";
 import { YieldApiService } from "../../src/services/api/yield-api-service";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
@@ -49,274 +53,347 @@ const makeEnterIntake = (): ClassicTransactionFlowIntake => {
   };
 };
 
-describe("Classic Flow Session facade", () => {
-  it("attaches the reviewed candidate and prepares a fresh one after Back", async () => {
+const makeExitIntake = (): ClassicTransactionFlowIntake => {
+  const integration = yieldApiYieldFixture();
+  return {
+    _tag: "Exit",
+    gasFeeToken: integration.mechanics.gasFeeToken,
+    integration,
+    providersDetails: [],
+    request: {
+      address: walletScope.address,
+      arguments: { amount: "1" },
+      yieldId: integration.id,
+    } as ActionCommand,
+    unstakeAmount: new BigNumber(1),
+    unstakeToken: integration.token,
+    walletScope,
+  };
+};
+
+const makeAppLayer = (
+  previewAction: (
+    request: ActionPreviewRequest
+  ) => Effect.Effect<YieldAction, unknown>,
+  trackEvent: TrackingService["Service"]["trackEvent"] = () => Effect.void
+) =>
+  Layer.mergeAll(
+    Layer.succeed(
+      YieldApiService,
+      YieldApiService.of({ previewAction } as never)
+    ),
+    Layer.succeed(
+      TrackingService,
+      TrackingService.of({
+        trackEvent,
+        trackPageView: () => Effect.void,
+      })
+    )
+  );
+
+const makeWorkflowLayer = (probe?: { disposed: number; started: number }) =>
+  Layer.succeed(
+    TransactionWorkflowService,
+    TransactionWorkflowService.of({
+      make: () =>
+        Effect.acquireRelease(
+          Effect.sync(() => {
+            if (probe) probe.started += 1;
+            return {
+              dispatch: () => Effect.void,
+              events: Stream.never,
+              states: Stream.never,
+            };
+          }),
+          () =>
+            Effect.sync(() => {
+              if (probe) probe.disposed += 1;
+            })
+        ),
+    })
+  );
+
+const makeRegistry = (
+  previewAction: (
+    request: ActionPreviewRequest
+  ) => Effect.Effect<YieldAction, unknown>,
+  probe?: { disposed: number; started: number },
+  trackEvent?: TrackingService["Service"]["trackEvent"]
+) =>
+  AtomRegistry.make({
+    initialValues: [
+      Atom.initialValue(
+        appRuntime.layer,
+        makeAppLayer(previewAction, trackEvent) as never
+      ),
+      Atom.initialValue(walletRuntime.layer, makeWorkflowLayer(probe) as never),
+    ],
+  });
+
+describe("Classic Flow Session module", () => {
+  it("hands Review into Execution and creates a fresh attempt on Back", async () => {
     const actions = [
       yieldApiActionFixture({ id: "action-1" }),
       yieldApiActionFixture({ id: "action-2" }),
     ];
     let previewCalls = 0;
-    const runtime = Atom.context({ memoMap: Layer.makeMemoMapUnsafe() })(
-      Layer.mergeAll(
-        Layer.succeed(
-          YieldApiService,
-          YieldApiService.of({
-            previewAction: () => Effect.succeed(actions[previewCalls++]!),
-          } as never)
-        ),
-        Layer.succeed(
-          TrackingService,
-          TrackingService.of({
-            trackEvent: () => Effect.void,
-            trackPageView: () => Effect.void,
-          })
-        )
-      )
+    const store = classicFlowSessionStore;
+    const registry = makeRegistry(() =>
+      Effect.succeed(actions[previewCalls++]!)
     );
-    const store = makeClassicFlowSessionStore();
-    const registry = AtomRegistry.make();
     registry.set(store.startAtom, makeEnterIntake());
     const session = registry.get(store.currentSessionAtom);
     if (!session) throw new Error("Expected a Flow Session");
 
-    const facade = makeClassicFlowSessionFacade({ runtime, session, store });
-    const disposeLifecycle = registry.mount(facade.lifecycleAtom);
-    const disposeFirstReviewRoute = registry.mount(
-      facade.reviewRouteAtom("first-review")
-    );
-    registry.set(facade.backAtom, undefined);
-    expect(registry.get(facade.navigationAtom)).toBeNull();
-    const disposeFirstReview = registry.mount(facade.actionPreviewAtom);
+    const rootAtom = makeClassicFlowSessionModule(session);
+    const disposeSession = registry.mount(rootAtom);
+    const flow = registry.get(rootAtom);
 
+    const firstReviewAtom = makeClassicFlowReviewScope(flow);
+    const firstReview = registry.get(firstReviewAtom);
+    const disposeFirstReview = registry.mount(firstReview.reviewViewAtom);
     await vi.waitFor(() =>
-      expect(
-        registry
-          .get(facade.actionPreviewAtom)
-          .pipe(AsyncResult.value, Option.getOrNull)?.id
-      ).toBe("action-1")
+      expect(registry.get(firstReview.reviewViewAtom).action?.id).toBe(
+        "action-1"
+      )
     );
 
-    registry.set(facade.continueAtom, undefined);
-    registry.set(facade.continueAtom, undefined);
-    expect(registry.get(facade.attachedActionAtom)?.id).toBe("action-1");
-    expect(registry.get(facade.navigationAtom)).toBe("Steps");
+    registry.set(firstReview.confirmAtom, undefined);
+    expect(registry.get(firstReview.navigationAtom)).toBe("Steps");
+
+    const firstExecutionAtom = makeClassicFlowExecutionScope(flow);
+    const firstExecution = registry.get(firstExecutionAtom);
+    if (!firstExecution) throw new Error("Expected an Execution module");
+    expect(registry.get(firstExecution.actionAtom).id).toBe("action-1");
 
     disposeFirstReview();
-    disposeFirstReviewRoute();
-    const disposeStepsRoute = registry.mount(facade.stepsRouteAtom("steps"));
-    registry.set(facade.backAtom, undefined);
-    registry.set(facade.backAtom, undefined);
-    expect(registry.get(facade.attachedActionAtom)).toBeNull();
-    expect(registry.get(facade.navigationAtom)).toBe("Review");
+    registry.set(firstExecution.backAtom, undefined);
+    registry.set(firstExecution.backAtom, undefined);
+    expect(registry.get(firstExecution.navigationAtom)).toBe("Review");
 
-    disposeStepsRoute();
-    const disposeSecondReviewRoute = registry.mount(
-      facade.reviewRouteAtom("second-review")
-    );
-    const disposeSecondReview = registry.mount(facade.actionPreviewAtom);
+    const secondReviewAtom = makeClassicFlowReviewScope(flow);
+    const secondReview = registry.get(secondReviewAtom);
+    const disposeSecondReview = registry.mount(secondReview.reviewViewAtom);
     await vi.waitFor(() =>
-      expect(
-        registry
-          .get(facade.actionPreviewAtom)
-          .pipe(AsyncResult.value, Option.getOrNull)?.id
-      ).toBe("action-2")
+      expect(registry.get(secondReview.reviewViewAtom).action?.id).toBe(
+        "action-2"
+      )
     );
+
+    registry.set(secondReview.confirmAtom, undefined);
+    const secondExecution = registry.get(makeClassicFlowExecutionScope(flow));
+    if (!secondExecution) throw new Error("Expected a second Execution module");
+    expect(registry.get(secondExecution.actionAtom).id).toBe("action-2");
 
     disposeSecondReview();
-    disposeSecondReviewRoute();
-    disposeLifecycle();
-  });
-
-  it("normalizes regular actions when routing from Steps back into Review", async () => {
-    const runtime = Atom.context({ memoMap: Layer.makeMemoMapUnsafe() })(
-      Layer.mergeAll(
-        Layer.succeed(
-          YieldApiService,
-          YieldApiService.of({
-            previewAction: () => Effect.succeed(yieldApiActionFixture()),
-          } as never)
-        ),
-        Layer.succeed(
-          TrackingService,
-          TrackingService.of({
-            trackEvent: () => Effect.void,
-            trackPageView: () => Effect.void,
-          })
-        )
-      )
-    );
-    const store = makeClassicFlowSessionStore();
-    const registry = AtomRegistry.make();
-    registry.set(store.startAtom, makeEnterIntake());
-    const session = registry.get(store.currentSessionAtom);
-    if (!session) throw new Error("Expected a Flow Session");
-
-    const facade = makeClassicFlowSessionFacade({ runtime, session, store });
-    const disposeLifecycle = registry.mount(facade.lifecycleAtom);
-    const disposeInitialReview = registry.mount(
-      facade.reviewRouteAtom("initial-review")
-    );
-    const disposeReviewResource = registry.mount(facade.actionPreviewAtom);
-    await vi.waitFor(() =>
-      expect(
-        registry.get(facade.actionPreviewAtom).pipe(AsyncResult.isSuccess)
-      ).toBe(true)
-    );
-
-    registry.set(facade.continueAtom, undefined);
-    disposeInitialReview();
-    const disposeSteps = registry.mount(facade.stepsRouteAtom("steps"));
-    expect(registry.get(facade.navigationAtom)).toBeNull();
-    expect(registry.get(facade.attachedActionAtom)).not.toBeNull();
-
-    disposeReviewResource();
-    disposeSteps();
-    const disposeReview = registry.mount(
-      facade.reviewRouteAtom("returned-review")
-    );
-    expect(registry.get(facade.navigationAtom)).toBeNull();
-    expect(registry.get(facade.attachedActionAtom)).toBeNull();
-
-    disposeReview();
-    disposeLifecycle();
-  });
-
-  it("keeps stale cleanup and navigation inside the exiting session", async () => {
-    const runtime = Atom.context({ memoMap: Layer.makeMemoMapUnsafe() })(
-      Layer.mergeAll(
-        Layer.succeed(
-          YieldApiService,
-          YieldApiService.of({
-            previewAction: () => Effect.succeed(yieldApiActionFixture()),
-          } as never)
-        ),
-        Layer.succeed(
-          TrackingService,
-          TrackingService.of({
-            trackEvent: () => Effect.void,
-            trackPageView: () => Effect.void,
-          })
-        )
-      )
-    );
-    const store = makeClassicFlowSessionStore();
-    const registry = AtomRegistry.make();
-    registry.set(store.startAtom, makeEnterIntake());
-    const first = registry.get(store.currentSessionAtom);
-    if (!first) throw new Error("Expected the first Flow Session");
-    const firstFacade = makeClassicFlowSessionFacade({
-      runtime,
-      session: first,
-      store,
-    });
-    const disposeFirst = registry.mount(firstFacade.lifecycleAtom);
-
-    registry.set(store.startAtom, makeEnterIntake());
-    const second = registry.get(store.currentSessionAtom);
-    if (!second) throw new Error("Expected the replacement Flow Session");
-    const secondFacade = makeClassicFlowSessionFacade({
-      runtime,
-      session: second,
-      store,
-    });
-    const disposeSecond = registry.mount(secondFacade.lifecycleAtom);
-
-    expect(firstFacade.workflow).not.toBe(secondFacade.workflow);
-
-    registry.set(firstFacade.backAtom, undefined);
-    expect(registry.get(firstFacade.navigationAtom)).toBeNull();
-    disposeFirst();
-    expect(registry.get(store.currentSessionAtom)).toBe(second);
-
-    disposeSecond();
+    disposeSession();
     await vi.waitFor(() =>
       expect(registry.get(store.currentSessionAtom)).toBeNull()
     );
   });
 
-  it("retains the Activity Resume action and machine across Back", async () => {
-    const previewAction = vi.fn(() => Effect.succeed(yieldApiActionFixture()));
-    const runtime = Atom.context({ memoMap: Layer.makeMemoMapUnsafe() })(
-      Layer.mergeAll(
-        Layer.succeed(
-          YieldApiService,
-          YieldApiService.of({ previewAction } as never)
-        ),
-        Layer.succeed(
-          TrackingService,
-          TrackingService.of({
-            trackEvent: () => Effect.void,
-            trackPageView: () => Effect.void,
-          })
-        )
-      )
+  it("does not let an exiting session clear or navigate a replacement", () => {
+    const store = classicFlowSessionStore;
+    const registry = makeRegistry(() =>
+      Effect.succeed(yieldApiActionFixture())
     );
-    const workflowProbe = { disposed: 0, started: 0 };
-    const workflowLayer = Layer.succeed(
-      TransactionWorkflowService,
-      TransactionWorkflowService.of({
-        make: () =>
-          Effect.acquireRelease(
-            Effect.sync(() => {
-              workflowProbe.started += 1;
-              return {
-                dispatch: () => Effect.void,
-                events: Stream.never,
-                states: Stream.never,
-              };
-            }),
-            () =>
-              Effect.sync(() => {
-                workflowProbe.disposed += 1;
-              })
-          ),
-      })
+    registry.set(store.startAtom, makeEnterIntake());
+    const first = registry.get(store.currentSessionAtom);
+    if (!first) throw new Error("Expected the first Flow Session");
+    const firstRoot = makeClassicFlowSessionModule(first);
+    const disposeFirst = registry.mount(firstRoot);
+    const firstReview = registry.get(
+      makeClassicFlowReviewScope(registry.get(firstRoot))
     );
-    const store = makeClassicFlowSessionStore();
-    const registry = AtomRegistry.make({
-      initialValues: [[walletRuntime.layer, workflowLayer]],
-    });
+
+    registry.set(store.startAtom, makeEnterIntake());
+    const second = registry.get(store.currentSessionAtom);
+    if (!second) throw new Error("Expected the replacement Flow Session");
+    const secondRoot = makeClassicFlowSessionModule(second);
+    const disposeSecond = registry.mount(secondRoot);
+
+    registry.set(firstReview.confirmAtom, undefined);
+    expect(registry.get(firstReview.navigationAtom)).toBeNull();
+    disposeFirst();
+    expect(registry.get(store.currentSessionAtom)).toBe(second);
+
+    disposeSecond();
+  });
+
+  it("previews a new Activity action and disposes each scoped workflow", async () => {
+    const previews = [
+      yieldApiActionFixture({ id: "fresh-action-1" }),
+      yieldApiActionFixture({ id: "fresh-action-2" }),
+    ];
+    let previewCalls = 0;
+    const previewAction = vi.fn(() =>
+      Effect.succeed(previews[previewCalls++]!)
+    );
+    const probe = { disposed: 0, started: 0 };
+    const store = classicFlowSessionStore;
+    const registry = makeRegistry(previewAction, probe);
     const selectedYield = yieldApiYieldFixture();
-    const action = yieldApiActionFixture({ id: "activity-action" });
     registry.set(store.startAtom, {
       _tag: "ActivityResume",
-      action,
+      action: yieldApiActionFixture({ id: "old-action" }),
       providersDetails: [],
       selectedValidators: [],
       selectedYield,
       walletScope,
     });
     const session = registry.get(store.currentSessionAtom);
-    if (!session) throw new Error("Expected an Activity Resume Flow Session");
-    const facade = makeClassicFlowSessionFacade({ runtime, session, store });
-    const workflowKey = registry.get(facade.workflowKeyAtom);
-    const disposeWorkflow = registry.mount(facade.workflow.lifecycleAtom);
-    const disposeSteps = registry.mount(
-      facade.stepsRouteAtom("activity-steps")
-    );
-
-    await vi.waitFor(() => expect(workflowProbe.started).toBe(1));
-
-    expect(registry.get(facade.attachedActionAtom)).toEqual(action);
+    if (!session) throw new Error("Expected an Activity Flow Session");
+    const rootAtom = makeClassicFlowSessionModule(session);
+    const disposeSession = registry.mount(rootAtom);
+    const flow = registry.get(rootAtom);
     expect(
-      registry
-        .get(facade.actionPreviewAtom)
-        .pipe(AsyncResult.value, Option.getOrUndefined)
-    ).toBeNull();
-    registry.set(facade.backAtom, undefined);
-    expect(registry.get(facade.attachedActionAtom)).toEqual(action);
-    expect(registry.get(facade.workflowKeyAtom)).toEqual(workflowKey);
-    expect(registry.get(facade.navigationAtom)).toBe("Review");
-    expect(previewAction).not.toHaveBeenCalled();
-    expect(workflowProbe.started).toBe(1);
-    expect(workflowProbe.disposed).toBe(0);
+      registry.get(flow.facade.activityHistoryViewAtom).selectedAction.id
+    ).toBe("old-action");
 
-    disposeWorkflow();
-    disposeSteps();
-    await vi.waitFor(() => expect(workflowProbe.disposed).toBe(1));
+    const firstReview = registry.get(makeClassicFlowReviewScope(flow));
+    const disposeFirstReview = registry.mount(firstReview.reviewViewAtom);
+    await vi.waitFor(() =>
+      expect(registry.get(firstReview.reviewViewAtom).action?.id).toBe(
+        "fresh-action-1"
+      )
+    );
+    registry.set(firstReview.confirmAtom, undefined);
+    const firstExecution = registry.get(makeClassicFlowExecutionScope(flow));
+    if (!firstExecution) throw new Error("Expected the first Execution module");
+    expect(registry.get(firstExecution.actionAtom).id).toBe("fresh-action-1");
+    expect(
+      registry.get(firstExecution.activityCompleteViewAtom).selectedAction.id
+    ).toBe("fresh-action-1");
+    const disposeFirstWorkflow = registry.mount(
+      firstExecution.workflow.viewAtom
+    );
+    await vi.waitFor(() => expect(probe.started).toBe(1));
+
+    registry.set(firstExecution.backAtom, undefined);
+    disposeFirstWorkflow();
+    disposeFirstReview();
+    await vi.waitFor(() => expect(probe.disposed).toBe(1));
+
+    const secondReview = registry.get(makeClassicFlowReviewScope(flow));
+    const disposeSecondReview = registry.mount(secondReview.reviewViewAtom);
+    await vi.waitFor(() =>
+      expect(registry.get(secondReview.reviewViewAtom).action?.id).toBe(
+        "fresh-action-2"
+      )
+    );
+    registry.set(secondReview.confirmAtom, undefined);
+    const secondExecution = registry.get(makeClassicFlowExecutionScope(flow));
+    if (!secondExecution) throw new Error("Expected a second Execution module");
+    expect(registry.get(secondExecution.actionAtom).id).toBe("fresh-action-2");
+    const disposeSecondWorkflow = registry.mount(
+      secondExecution.workflow.viewAtom
+    );
+    await vi.waitFor(() => expect(probe.started).toBe(2));
+    expect(previewAction).toHaveBeenCalledTimes(2);
+
+    disposeSecondWorkflow();
+    disposeSecondReview();
+    await vi.waitFor(() => expect(probe.disposed).toBe(2));
+    disposeSession();
   });
 
-  it("publishes invalid Exit content as a non-retryable typed failure", async () => {
+  it("retains one workflow across Execution consumers until the scope exits", async () => {
+    const probe = { disposed: 0, started: 0 };
+    const registry = makeRegistry(
+      () => Effect.succeed(yieldApiActionFixture()),
+      probe
+    );
+    registry.set(classicFlowSessionStore.startAtom, makeEnterIntake());
+    const session = registry.get(classicFlowSessionStore.currentSessionAtom);
+    if (!session) throw new Error("Expected a Flow Session");
+
+    const rootAtom = makeClassicFlowSessionModule(session);
+    const disposeSession = registry.mount(rootAtom);
+    const flow = registry.get(rootAtom);
+    const review = registry.get(makeClassicFlowReviewScope(flow));
+    const disposeReview = registry.mount(review.reviewViewAtom);
+    await vi.waitFor(() =>
+      expect(registry.get(review.reviewViewAtom).action).not.toBeNull()
+    );
+    registry.set(review.confirmAtom, undefined);
+
+    const executionAtom = makeClassicFlowExecutionScope(flow);
+    const disposeExecution = registry.mount(executionAtom);
+    const execution = registry.get(executionAtom);
+    if (!execution) throw new Error("Expected an Execution module");
+    await vi.waitFor(() => expect(probe.started).toBe(1));
+
+    const disposeStepsConsumer = registry.mount(execution.workflow.viewAtom);
+    disposeStepsConsumer();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(probe.disposed).toBe(0);
+
+    disposeExecution();
+    await vi.waitFor(() => expect(probe.disposed).toBe(1));
+    disposeReview();
+    disposeSession();
+  });
+
+  it("promotes and tracks Exit confirmation only once", async () => {
+    const trackEvent = vi.fn(() => Effect.void);
+    const registry = makeRegistry(
+      () => Effect.succeed(yieldApiActionFixture()),
+      undefined,
+      trackEvent
+    );
+    registry.set(classicFlowSessionStore.startAtom, makeExitIntake());
+    const session = registry.get(classicFlowSessionStore.currentSessionAtom);
+    if (!session) throw new Error("Expected an Exit Flow Session");
+    const rootAtom = makeClassicFlowSessionModule(session);
+    const disposeSession = registry.mount(rootAtom);
+    const review = registry.get(
+      makeClassicFlowReviewScope(registry.get(rootAtom))
+    );
+    const disposeReview = registry.mount(review.reviewViewAtom);
+    await vi.waitFor(() =>
+      expect(registry.get(review.reviewViewAtom).action).not.toBeNull()
+    );
+
+    registry.set(review.confirmAtom, undefined);
+    registry.set(review.confirmAtom, undefined);
+
+    expect(registry.get(review.navigationAtom)).toBe("Steps");
+    await vi.waitFor(() => expect(trackEvent).toHaveBeenCalledOnce());
+    disposeReview();
+    disposeSession();
+  });
+
+  it("suppresses tracking from an exiting Review scope", async () => {
+    const trackEvent = vi.fn(() => Effect.void);
+    const registry = makeRegistry(
+      () => Effect.succeed(yieldApiActionFixture()),
+      undefined,
+      trackEvent
+    );
+    registry.set(classicFlowSessionStore.startAtom, makeExitIntake());
+    const session = registry.get(classicFlowSessionStore.currentSessionAtom);
+    if (!session) throw new Error("Expected an Exit Flow Session");
+    const rootAtom = makeClassicFlowSessionModule(session);
+    const disposeSession = registry.mount(rootAtom);
+    const review = registry.get(
+      makeClassicFlowReviewScope(registry.get(rootAtom))
+    );
+    const disposeReview = registry.mount(review.reviewViewAtom);
+    await vi.waitFor(() =>
+      expect(registry.get(review.reviewViewAtom).action).not.toBeNull()
+    );
+
+    registry.set(classicFlowSessionStore.startAtom, makeEnterIntake());
+    registry.set(review.confirmAtom, undefined);
+
+    expect(registry.get(review.navigationAtom)).toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(trackEvent).not.toHaveBeenCalled();
+    disposeReview();
+    disposeSession();
+  });
+
+  it("does not promote an invalid Exit preview", async () => {
     const previewAction = vi.fn(() =>
       Effect.succeed(
         yieldApiActionFixture({
@@ -329,62 +406,32 @@ describe("Classic Flow Session facade", () => {
         })
       )
     );
-    const runtime = Atom.context({ memoMap: Layer.makeMemoMapUnsafe() })(
-      Layer.mergeAll(
-        Layer.succeed(
-          YieldApiService,
-          YieldApiService.of({ previewAction } as never)
-        ),
-        Layer.succeed(
-          TrackingService,
-          TrackingService.of({
-            trackEvent: () => Effect.void,
-            trackPageView: () => Effect.void,
-          })
-        )
-      )
-    );
-    const store = makeClassicFlowSessionStore();
-    const registry = AtomRegistry.make();
-    const integration = yieldApiYieldFixture();
-    registry.set(store.startAtom, {
-      _tag: "Exit",
-      gasFeeToken: integration.mechanics.gasFeeToken,
-      integration,
-      providersDetails: [],
-      request: {
-        address: walletScope.address,
-        arguments: { amount: "1" },
-        yieldId: integration.id,
-      } as ActionCommand,
-      unstakeAmount: new BigNumber(1),
-      unstakeToken: integration.token,
-      walletScope,
-    });
+    const store = classicFlowSessionStore;
+    const registry = makeRegistry(previewAction);
+    registry.set(store.startAtom, makeExitIntake());
     const session = registry.get(store.currentSessionAtom);
     if (!session) throw new Error("Expected an Exit Flow Session");
-    const facade = makeClassicFlowSessionFacade({ runtime, session, store });
-    const disposeReview = registry.mount(facade.reviewRouteAtom("exit-review"));
-    const disposePreview = registry.mount(facade.actionPreviewAtom);
+    const rootAtom = makeClassicFlowSessionModule(session);
+    const disposeSession = registry.mount(rootAtom);
+    const review = registry.get(
+      makeClassicFlowReviewScope(registry.get(rootAtom))
+    );
+    const disposeReview = registry.mount(review.reviewViewAtom);
 
     await vi.waitFor(() =>
-      expect(
-        registry
-          .get(facade.actionPreviewAtom)
-          .pipe(AsyncResult.error, Option.getOrNull)
-      ).toBeInstanceOf(ClassicFlowInvalidExitPreviewError)
+      expect(registry.get(review.reviewViewAtom).actionPreviewLoading).toBe(
+        false
+      )
     );
-
-    registry.set(facade.retryAtom, undefined);
-    registry.set(facade.continueAtom, undefined);
+    registry.set(review.confirmAtom, undefined);
+    expect(registry.get(review.navigationAtom)).toBeNull();
     expect(previewAction).toHaveBeenCalledOnce();
-    expect(registry.get(facade.attachedActionAtom)).toBeNull();
-    expect(registry.get(facade.navigationAtom)).toBeNull();
-    disposePreview();
+
     disposeReview();
+    disposeSession();
   });
 
-  it("retries an ordinary preview failure without attaching partial state", async () => {
+  it("retries an ordinary preview failure through Confirm", async () => {
     let previewCalls = 0;
     const previewAction = vi.fn(() => {
       previewCalls += 1;
@@ -392,52 +439,35 @@ describe("Classic Flow Session facade", () => {
         ? Effect.fail(new Error("preview unavailable"))
         : Effect.succeed(yieldApiActionFixture({ id: "retried-action" }));
     });
-    const runtime = Atom.context({ memoMap: Layer.makeMemoMapUnsafe() })(
-      Layer.mergeAll(
-        Layer.succeed(
-          YieldApiService,
-          YieldApiService.of({ previewAction } as never)
-        ),
-        Layer.succeed(
-          TrackingService,
-          TrackingService.of({
-            trackEvent: () => Effect.void,
-            trackPageView: () => Effect.void,
-          })
-        )
-      )
-    );
-    const store = makeClassicFlowSessionStore();
-    const registry = AtomRegistry.make();
+    const store = classicFlowSessionStore;
+    const registry = makeRegistry(previewAction);
     registry.set(store.startAtom, makeEnterIntake());
     const session = registry.get(store.currentSessionAtom);
     if (!session) throw new Error("Expected a Flow Session");
-    const facade = makeClassicFlowSessionFacade({ runtime, session, store });
-    const disposeReview = registry.mount(
-      facade.reviewRouteAtom("retry-review")
+    const rootAtom = makeClassicFlowSessionModule(session);
+    const disposeSession = registry.mount(rootAtom);
+    const review = registry.get(
+      makeClassicFlowReviewScope(registry.get(rootAtom))
     );
-    const disposePreview = registry.mount(facade.actionPreviewAtom);
+    const disposeReview = registry.mount(review.reviewViewAtom);
 
     await vi.waitFor(() =>
-      expect(
-        registry
-          .get(facade.actionPreviewAtom)
-          .pipe(AsyncResult.error, Option.getOrNull)
-      ).toBeInstanceOf(ClassicFlowPreviewError)
+      expect(registry.get(review.reviewViewAtom).actionPreviewLoading).toBe(
+        false
+      )
     );
-    expect(registry.get(facade.attachedActionAtom)).toBeNull();
-
-    registry.set(facade.retryAtom, undefined);
+    registry.set(review.confirmAtom, undefined);
+    registry.set(review.confirmAtom, undefined);
     await vi.waitFor(() =>
-      expect(
-        registry
-          .get(facade.actionPreviewAtom)
-          .pipe(AsyncResult.value, Option.getOrNull)?.id
-      ).toBe("retried-action")
+      expect(registry.get(review.reviewViewAtom).action?.id).toBe(
+        "retried-action"
+      )
     );
-    registry.set(facade.retryAtom, undefined);
+    registry.set(review.confirmAtom, undefined);
+    expect(registry.get(review.navigationAtom)).toBe("Steps");
     expect(previewAction).toHaveBeenCalledTimes(2);
-    disposePreview();
+
     disposeReview();
+    disposeSession();
   });
 });

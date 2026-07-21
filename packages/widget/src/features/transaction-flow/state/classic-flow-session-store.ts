@@ -1,20 +1,22 @@
 import BigNumber from "bignumber.js";
-import { Data, Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime/app-runtime";
 import { WalletScopeKey } from "../../../services/wallet/domain/scope";
 import type { ClassicTransactionFlowIntake } from "../model/classic-transaction-flow";
 
-declare const ClassicFlowSessionKeyTypeId: unique symbol;
-
-type ClassicFlowSessionKey = number & {
-  readonly [ClassicFlowSessionKeyTypeId]: typeof ClassicFlowSessionKeyTypeId;
-};
-
-export class ClassicFlowSession extends Data.Class<{
+export type ClassicFlowSession = Readonly<{
+  readonly epoch: number;
   readonly intake: ClassicTransactionFlowIntake;
-  readonly key: ClassicFlowSessionKey;
-}> {}
+}>;
+
+type ClassicFlowSessionStoreState = Readonly<{
+  readonly current: ClassicFlowSession | null;
+  readonly nextEpoch: number;
+}>;
+
+const initialState: ClassicFlowSessionStoreState = {
+  current: null,
+  nextEpoch: 1,
+};
 
 const copyIntake = (
   intake: ClassicTransactionFlowIntake
@@ -52,58 +54,35 @@ const copyIntake = (
   }
 };
 
-type ClassicFlowSessionStoreState = {
-  readonly current: ClassicFlowSession | null;
-  readonly generation: number;
-};
-
-const initialState: ClassicFlowSessionStoreState = {
-  current: null,
-  generation: 0,
-};
-
-export const makeClassicFlowSessionStore = ({
-  runtime,
-}: {
-  readonly runtime?: typeof appRuntime;
-} = {}) => {
+export const makeClassicFlowSessionStore = () => {
   const stateAtom = Atom.make<ClassicFlowSessionStoreState>(initialState).pipe(
     Atom.keepAlive,
     Atom.withLabel("classicFlowSessionStoreAtom")
   );
-  const runtimeLifecycleAtom = runtime
-    ?.atom((context) =>
-      Effect.acquireRelease(Effect.void, () =>
-        Effect.sync(() => {
-          context.set(stateAtom, initialState);
-        })
-      )
-    )
-    .pipe(Atom.keepAlive, Atom.withLabel("classicFlowSessionStoreLifecycle"));
 
-  const currentSessionAtom = Atom.make((get) => {
-    if (runtimeLifecycleAtom) get(runtimeLifecycleAtom);
-    return get(stateAtom).current;
-  }).pipe(Atom.withLabel("currentClassicFlowSessionAtom"));
+  const currentSessionAtom = Atom.make((get) => get(stateAtom).current).pipe(
+    Atom.withLabel("currentClassicFlowSessionAtom")
+  );
 
   const startAtom = Atom.fnSync(
     (intake: ClassicTransactionFlowIntake, context) => {
-      if (runtimeLifecycleAtom) context(runtimeLifecycleAtom);
       const state = context(stateAtom);
-      const generation = state.generation + 1;
-      const session = new ClassicFlowSession({
+      const session: ClassicFlowSession = {
+        epoch: state.nextEpoch,
         intake: copyIntake(intake),
-        key: generation as ClassicFlowSessionKey,
-      });
+      };
 
-      context.set(stateAtom, { current: session, generation });
+      context.set(stateAtom, {
+        current: session,
+        nextEpoch: state.nextEpoch + 1,
+      });
       return session;
     }
   ).pipe(Atom.withLabel("startClassicFlowSessionAtom"));
 
-  const clearAtom = Atom.fnSync((key: ClassicFlowSessionKey, context) => {
+  const clearAtom = Atom.fnSync((epoch: number, context) => {
     const state = context(stateAtom);
-    if (state.current?.key !== key) return;
+    if (state.current?.epoch !== epoch) return;
 
     context.set(stateAtom, { ...state, current: null });
   }).pipe(Atom.withLabel("clearClassicFlowSessionAtom"));
@@ -119,6 +98,4 @@ export type ClassicFlowSessionStore = ReturnType<
   typeof makeClassicFlowSessionStore
 >;
 
-export const classicFlowSessionStore = makeClassicFlowSessionStore({
-  runtime: appRuntime,
-});
+export const classicFlowSessionStore = makeClassicFlowSessionStore();

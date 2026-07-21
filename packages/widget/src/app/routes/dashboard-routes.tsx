@@ -23,11 +23,13 @@ import { PositionDetailsActions } from "../../features/position-details/ui/dashb
 import { PositionDetailsStakeActions } from "../../features/position-details/ui/dashboard/components/position-details-stake-actions";
 // import { RewardsTabPage } from "../../domain/types/rewards";
 import {
-  ActivityResumeClassicFlowRouteGuard,
-  EnterClassicFlowRouteGuard,
-  ExitClassicFlowRouteGuard,
-  ManageClassicFlowRouteGuard,
-} from "../../features/transaction-flow/react/request-route-guards";
+  ActivityResumeClassicFlowRoute,
+  ClassicFlowExecutionScope,
+  ClassicFlowReviewScope,
+  EnterClassicFlowRoute,
+  ExitClassicFlowRoute,
+  ManageClassicFlowRoute,
+} from "../../features/transaction-flow/react/classic-flow-route";
 import { ActivityDetailsPage } from "../../features/transaction-flow/ui/activity-details.page";
 import { PendingCompletePage } from "../../features/transaction-flow/ui/complete/pages/pending-complete.page";
 import { StakeCompletePage } from "../../features/transaction-flow/ui/complete/pages/stake-complete.page";
@@ -44,7 +46,6 @@ import { GlobalModals } from "../../features/widget-shell/ui/global-modals";
 import { useSKLocation } from "../../shared/react/location-history";
 import { DashboardOverview } from "./dashboard-overview";
 import { DashboardShell } from "./dashboard-shell";
-import { ClassicFlowTransactionWorkflowGuard } from "./guards/classic-transaction-workflow";
 
 const positionDetailsStakeFooterPath =
   /^\/positions\/[^/]+\/[^/]+(?:\/stake)?$/;
@@ -116,9 +117,16 @@ export const DashboardRoutes = () => {
               <Route index element={<EarnPageContent />} />
 
               <Route element={<WalletScopeRouteGuard fallbackPath="/" />}>
-                <Route element={<EnterClassicFlowRouteGuard />}>
-                  <Route path="review" element={<StakeReviewPage />} />
-                  <Route element={<ClassicFlowTransactionWorkflowGuard />}>
+                <Route element={<EnterClassicFlowRoute />}>
+                  <Route
+                    path="review"
+                    element={
+                      <ClassicFlowReviewScope>
+                        <StakeReviewPage />
+                      </ClassicFlowReviewScope>
+                    }
+                  />
+                  <Route element={<ClassicFlowExecutionScope />}>
                     <Route path="steps" element={<StakeStepsPage />} />
                     <Route path="complete" element={<StakeCompletePage />} />
                   </Route>
@@ -143,9 +151,16 @@ export const DashboardRoutes = () => {
                 {/* Staking */}
                 <Route path="stake">
                   <Route index element={<PositionDetailsStakeActions />} />
-                  <Route element={<EnterClassicFlowRouteGuard />}>
-                    <Route path="review" element={<StakeReviewPage />} />
-                    <Route element={<ClassicFlowTransactionWorkflowGuard />}>
+                  <Route element={<EnterClassicFlowRoute />}>
+                    <Route
+                      path="review"
+                      element={
+                        <ClassicFlowReviewScope>
+                          <StakeReviewPage />
+                        </ClassicFlowReviewScope>
+                      }
+                    />
+                    <Route element={<ClassicFlowExecutionScope />}>
                       <Route path="steps" element={<StakeStepsPage />} />
                       <Route path="complete" element={<StakeCompletePage />} />
                     </Route>
@@ -160,9 +175,16 @@ export const DashboardRoutes = () => {
                 {/* Unstaking */}
                 <Route path="unstake">
                   <Route index element={<PositionDetailsActions />} />
-                  <Route element={<ExitClassicFlowRouteGuard />}>
-                    <Route path="review" element={<UnstakeReviewPage />} />
-                    <Route element={<ClassicFlowTransactionWorkflowGuard />}>
+                  <Route element={<ExitClassicFlowRoute />}>
+                    <Route
+                      path="review"
+                      element={
+                        <ClassicFlowReviewScope>
+                          <UnstakeReviewPage />
+                        </ClassicFlowReviewScope>
+                      }
+                    />
+                    <Route element={<ClassicFlowExecutionScope />}>
                       <Route path="steps" element={<UnstakeStepsPage />} />
                       <Route
                         path="complete"
@@ -174,9 +196,16 @@ export const DashboardRoutes = () => {
 
                 {/* Pending Actions */}
                 <Route path="pending-action">
-                  <Route element={<ManageClassicFlowRouteGuard />}>
-                    <Route path="review" element={<PendingReviewPage />} />
-                    <Route element={<ClassicFlowTransactionWorkflowGuard />}>
+                  <Route element={<ManageClassicFlowRoute />}>
+                    <Route
+                      path="review"
+                      element={
+                        <ClassicFlowReviewScope>
+                          <PendingReviewPage />
+                        </ClassicFlowReviewScope>
+                      }
+                    />
+                    <Route element={<ClassicFlowExecutionScope />}>
                       <Route path="steps" element={<PendingStepsPage />} />
                       <Route
                         path="complete"
@@ -196,9 +225,9 @@ export const DashboardRoutes = () => {
               <Route
                 element={<WalletScopeRouteGuard fallbackPath="/activity" />}
               >
-                <Route element={<ActivityResumeClassicFlowRouteGuard />}>
+                <Route element={<ActivityResumeClassicFlowRoute />}>
                   <Route index element={<ActivityDetailsPage />} />
-                  <Route element={<ClassicFlowTransactionWorkflowGuard />}>
+                  <Route element={<ClassicFlowExecutionScope />}>
                     <Route
                       path=":pendingActionType/steps"
                       element={<ActivityStepsPage />}

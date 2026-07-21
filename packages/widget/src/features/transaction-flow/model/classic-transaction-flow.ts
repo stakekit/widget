@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+import { Match } from "effect";
 import type {
   ActionCommand,
   ManageActionCommand,
@@ -160,17 +161,18 @@ export const getClassicTransactionWorkflowKey = (
   intake: ClassicTransactionFlowIntake,
   action: YieldAction
 ): ClassicTransactionWorkflowKey => {
-  const inputToken =
-    intake._tag === "Enter"
-      ? intake.selectedToken
-      : intake._tag === "Exit"
-        ? intake.unstakeToken
-        : intake._tag === "Manage"
-          ? intake.interactedToken
-          : getActionInputToken({
-              actionDto: intake.action,
-              yieldDto: intake.selectedYield,
-            });
+  const inputToken = Match.value(intake).pipe(
+    Match.tag("Enter", ({ selectedToken }) => selectedToken),
+    Match.tag("Exit", ({ unstakeToken }) => unstakeToken),
+    Match.tag("Manage", ({ interactedToken }) => interactedToken),
+    Match.tag("ActivityResume", ({ selectedYield }) =>
+      getActionInputToken({
+        actionDto: action,
+        yieldDto: selectedYield,
+      })
+    ),
+    Match.exhaustive
+  );
 
   return makeClassicTransactionWorkflowKey({
     action,

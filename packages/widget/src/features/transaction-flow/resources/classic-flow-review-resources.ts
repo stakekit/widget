@@ -76,14 +76,12 @@ const getGasBalancesCommand = (
 
 export const makeClassicFlowSessionReviewResources = ({
   actionPreviewAtom,
-  attachedActionAtom,
   intakeAtom,
   kycGateAtom,
 }: {
   readonly actionPreviewAtom: Atom.Atom<
-    AsyncResult.AsyncResult<YieldAction | null, unknown>
+    AsyncResult.AsyncResult<YieldAction | null, { readonly retryable: boolean }>
   >;
-  readonly attachedActionAtom: Atom.Atom<YieldAction | null>;
   readonly intakeAtom: Atom.Atom<ClassicTransactionFlowIntake>;
   readonly kycGateAtom: Atom.Atom<CurrentYieldKycGate>;
 }) => {
@@ -96,15 +94,9 @@ export const makeClassicFlowSessionReviewResources = ({
     return get(pricesAtom(new PricesKey({ request })));
   }).pipe(Atom.withLabel("classicFlowSessionReviewPricesAtom"));
 
-  const reviewActionAtom = Atom.make((get) => {
-    const attachedAction = get(attachedActionAtom);
-    const previewAction = get(actionPreviewAtom).pipe(
-      AsyncResult.value,
-      Option.getOrNull
-    );
-
-    return attachedAction ?? previewAction;
-  });
+  const reviewActionAtom = Atom.make((get) =>
+    get(actionPreviewAtom).pipe(AsyncResult.value, Option.getOrNull)
+  );
 
   const gasAmountAtom = Atom.make((get) =>
     getGasAmount(get(reviewActionAtom))
@@ -139,32 +131,21 @@ export const makeClassicFlowSessionReviewResources = ({
     );
   }).pipe(Atom.withLabel("classicFlowSessionGasWarningAtom"));
 
-  const refreshGasWarningAtom = Atom.fnSync(
-    (_input: undefined, get) => {
-      const input = getClassicTransactionFlowGasWarningInput(get(intakeAtom));
-      if (input) {
-        get.refresh(
-          gasBalancesAtom(
-            new ClassicFlowGasBalancesKey({
-              command: getGasBalancesCommand(input),
-            })
-          )
-        );
-      }
-    },
-    { initialValue: undefined }
-  ).pipe(Atom.withLabel("refreshClassicFlowSessionGasWarningAtom"));
-
   const reviewViewAtom = Atom.make((get) => {
     const actionPreview = get(actionPreviewAtom);
     const gasWarning = get(gasWarningAtom);
     const kyc = get(kycGateAtom);
+    const previewError = actionPreview.pipe(
+      AsyncResult.error,
+      Option.getOrNull
+    );
     const actionPreviewLoading =
       AsyncResult.isInitial(actionPreview) || actionPreview.waiting;
 
     return {
+      action: get(reviewActionAtom),
       actionPreviewLoading,
-      confirmDisabled: kyc.isGateBlocking,
+      confirmDisabled: kyc.isGateBlocking || previewError?.retryable === false,
       confirmLoading: actionPreviewLoading || kyc.isLoading,
       gasAmount: get(gasAmountAtom),
       gasCheckLoading:
@@ -180,11 +161,19 @@ export const makeClassicFlowSessionReviewResources = ({
     } as const;
   }).pipe(Atom.withLabel("classicFlowSessionReviewViewAtom"));
 
-  return {
-    gasAmountAtom,
-    gasWarningAtom,
-    refreshGasWarningAtom,
-    reviewPricesAtom,
-    reviewViewAtom,
-  } as const;
+  const activityReviewViewAtom = Atom.make((get) => {
+    const intake = get(intakeAtom);
+    if (intake._tag !== "ActivityResume") {
+      throw new Error("Expected Classic Flow ActivityResume intake.");
+    }
+
+    const view = get(reviewViewAtom);
+    return {
+      ...view,
+      action: view.action ?? intake.action,
+      selectedYield: intake.selectedYield,
+    } as const;
+  }).pipe(Atom.withLabel("classicFlowSessionActivityReviewViewAtom"));
+
+  return { activityReviewViewAtom, reviewViewAtom } as const;
 };

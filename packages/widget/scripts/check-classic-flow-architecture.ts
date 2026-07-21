@@ -37,6 +37,7 @@ export const checkFlowSessionArchitecture = (
       "ClassicTransactionFlowIdentity",
       "ClassicTransactionFlowPhase",
       "ClassicTransactionFlowWorkflowHandoff",
+      "ClassicFlowContext",
       "flowIdentity",
     ];
 
@@ -60,6 +61,44 @@ export const checkFlowSessionArchitecture = (
     ) {
       failures.push(
         `${normalizedPath} keeps Classic Flow state alive outside the intake store.`
+      );
+    }
+
+    if (
+      normalizedPath.endsWith("/react/classic-flow-route.tsx") &&
+      source.content.includes("WeakMap")
+    ) {
+      failures.push(
+        `${normalizedPath} derives the Session boundary key from object references instead of the intake-store epoch.`
+      );
+    }
+
+    if (
+      normalizedPath.endsWith("/state/classic-flow-session-facade.ts") &&
+      source.content.includes("Atom.family")
+    ) {
+      failures.push(
+        `${normalizedPath} keys the Session module through structural Atom family equality.`
+      );
+    }
+
+    if (
+      normalizedPath.endsWith("/state/classic-flow-session-facade.ts") &&
+      /context\(isCurrentSessionAtom\)/.test(source.content)
+    ) {
+      failures.push(
+        `${normalizedPath} uses the private session epoch as a descendant command input.`
+      );
+    }
+
+    if (
+      normalizedPath.endsWith("/resources/classic-flow-review-resources.ts") &&
+      /AsyncResult\.AsyncResult<YieldAction\s*\|\s*null,\s*unknown>/.test(
+        source.content
+      )
+    ) {
+      failures.push(
+        `${normalizedPath} erases the typed Action Preview failure at the review resource boundary.`
       );
     }
   }

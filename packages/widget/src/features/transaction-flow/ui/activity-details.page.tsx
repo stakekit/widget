@@ -3,15 +3,17 @@ import {
   type TransactionType,
 } from "../../../domain/types/action";
 import { Box } from "../../../shared/ui/primitives/box";
-import { useRequiredActivityResumeClassicTransactionFlow } from "../react/request-route-guards";
-import { useActivityComplete } from "./complete/hooks/use-activity-complete.hook";
+import {
+  ClassicFlowReviewScope,
+  useClassicFlowIntake,
+} from "../react/classic-flow-route";
+import { useActivityHistoryComplete } from "./complete/hooks/use-activity-complete.hook";
 import { useComplete } from "./complete/hooks/use-complete.hook";
 import { CompletePageComponent } from "./complete/pages/common.page";
 import { ActionReviewPage } from "./review/pages/action-review.page";
 
 export const ActivityDetailsPage = () => {
-  const { action: selectedAction } =
-    useRequiredActivityResumeClassicTransactionFlow();
+  const { action: selectedAction } = useClassicFlowIntake("ActivityResume");
 
   if (
     selectedAction.status === ActionStatus.SUCCESS ||
@@ -31,7 +33,9 @@ export const ActivityDetailsPage = () => {
   ) {
     return (
       <Box flex={1} px="4">
-        <ActionReviewPage key={selectedAction.id} />
+        <ClassicFlowReviewScope>
+          <ActionReviewPage key={selectedAction.id} />
+        </ClassicFlowReviewScope>
       </Box>
     );
   }
@@ -48,7 +52,7 @@ const ActivityCompletePage = () => {
     network,
     providerDetails,
     selectedAction,
-  } = useActivityComplete();
+  } = useActivityHistoryComplete();
 
   const { onViewTransactionClick } = useComplete();
 

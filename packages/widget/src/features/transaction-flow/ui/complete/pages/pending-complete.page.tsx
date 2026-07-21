@@ -10,12 +10,12 @@ import {
   positionBalancesAtom,
 } from "../../../../portfolio/resources/positions";
 import { useTrackPage } from "../../../../tracking/react/use-track-page";
-import { useRequiredManageClassicTransactionFlow } from "../../../react/request-route-guards";
+import { useClassicFlowIntake } from "../../../react/classic-flow-route";
 import { CompletePage } from "./common.page";
 
 export const PendingCompletePage = () => {
   const { plain } = useUnstakeOrPendingActionParams();
-  const manageFlow = useRequiredManageClassicTransactionFlow();
+  const manageFlow = useClassicFlowIntake("Manage");
   const positionBalances = AsyncResult.getOrElse(
     useAtomValue(
       positionBalancesAtom(

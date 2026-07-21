@@ -1,12 +1,11 @@
 import { Effect, Layer, Schema, Stream } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import type { ActionTransaction } from "../../src/domain/schema/action-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
 import {
-  makeClassicTransactionWorkflowFacade,
+  makeClassicTransactionWorkflowModule,
   transactionWorkflowDispatchAtom,
   transactionWorkflowMachineAtom,
   transactionWorkflowStateAtom,
@@ -85,11 +84,11 @@ describe("transaction workflow atoms", () => {
       walletScope,
       yieldId,
     });
-    const first = makeClassicTransactionWorkflowFacade(Atom.make(key));
-    const second = makeClassicTransactionWorkflowFacade(Atom.make(key));
+    const first = makeClassicTransactionWorkflowModule(key);
+    const second = makeClassicTransactionWorkflowModule(key);
 
-    const disposeFirst = registry.mount(first.lifecycleAtom);
-    const disposeSecond = registry.mount(second.lifecycleAtom);
+    const disposeFirst = registry.mount(first.viewAtom);
+    const disposeSecond = registry.mount(second.viewAtom);
     await vi.waitFor(() => expect(probe.started).toBe(2));
 
     disposeFirst();

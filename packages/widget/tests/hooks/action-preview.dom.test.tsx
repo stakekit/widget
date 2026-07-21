@@ -1,5 +1,5 @@
 import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Option, Schema } from "effect";
+import { Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { HttpResponse, http } from "msw";
@@ -11,8 +11,15 @@ import {
 import { ActionCommand } from "../../src/domain/schema/action-models";
 import type { ClassicTransactionFlowIntake } from "../../src/features/transaction-flow/model/classic-transaction-flow";
 import { useStartClassicTransactionFlow } from "../../src/features/transaction-flow/react/use-transaction-flow";
-import { classicFlowSessionFacadeFamily } from "../../src/features/transaction-flow/state/classic-flow-session-facade";
-import { classicFlowSessionStore } from "../../src/features/transaction-flow/state/classic-flow-session-store";
+import {
+  makeClassicFlowExecutionScope,
+  makeClassicFlowReviewScope,
+  makeClassicFlowSessionModule,
+} from "../../src/features/transaction-flow/state/classic-flow-session-facade";
+import {
+  type ClassicFlowSession,
+  classicFlowSessionStore,
+} from "../../src/features/transaction-flow/state/classic-flow-session-store";
 import { currentWalletStateResultAtom } from "../../src/features/wallet/state/root-atom";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
@@ -51,50 +58,54 @@ const settings = normalizeWidgetConfig({
   yieldsApiUrl: yieldApiUrl,
 });
 
-const sessionActionPreviewAtom = Atom.make((get) => {
+const sessionRootAtomFamily = Atom.family((session: ClassicFlowSession) =>
+  makeClassicFlowSessionModule(session)
+);
+
+const reviewScopeAtomFamily = Atom.family((session: ClassicFlowSession) =>
+  (() => {
+    const rootAtom = sessionRootAtomFamily(session);
+    let reviewAtom: ReturnType<typeof makeClassicFlowReviewScope> | undefined;
+
+    return Atom.make((get) => {
+      const flow = get(rootAtom);
+      reviewAtom ??= makeClassicFlowReviewScope(flow);
+      return get(reviewAtom);
+    });
+  })()
+);
+const sessionReviewFacadeAtom = Atom.make((get) => {
   const session = get(classicFlowSessionStore.currentSessionAtom);
-  return session
-    ? get(classicFlowSessionFacadeFamily(session).actionPreviewAtom)
-    : AsyncResult.success(null);
+  return session ? get(reviewScopeAtomFamily(session)) : null;
 });
-const sessionReviewRouteAtom = Atom.make((get) => {
-  const session = get(classicFlowSessionStore.currentSessionAtom);
-  if (session) {
-    get(classicFlowSessionFacadeFamily(session).reviewRouteAtom("test-review"));
-  }
+const sessionReviewViewAtom = Atom.make((get) => {
+  const review = get(sessionReviewFacadeAtom);
+  return review ? get(review.reviewViewAtom) : null;
 });
 const sessionKycGateAtom = Atom.make((get) => {
-  const session = get(classicFlowSessionStore.currentSessionAtom);
-  return session
-    ? get(classicFlowSessionFacadeFamily(session).kycGateAtom)
-    : null;
+  return get(sessionReviewViewAtom)?.kyc ?? null;
 });
 const refreshSessionKycAtom = Atom.fnSync(
   (_input: undefined, get) => {
-    const session = get(classicFlowSessionStore.currentSessionAtom);
-    if (session) {
-      get.set(
-        classicFlowSessionFacadeFamily(session).refreshKycAtom,
-        undefined
-      );
-    }
+    const review = get(sessionReviewFacadeAtom);
+    if (review) get.set(review.refreshKycAtom, undefined);
   },
   { initialValue: undefined }
 );
-const continueSessionAtom = Atom.fnSync(
+const confirmSessionAtom = Atom.fnSync(
   (_input: undefined, get) => {
-    const session = get(classicFlowSessionStore.currentSessionAtom);
-    if (session) {
-      get.set(classicFlowSessionFacadeFamily(session).continueAtom, undefined);
-    }
+    const review = get(sessionReviewFacadeAtom);
+    if (review) get.set(review.confirmAtom, undefined);
   },
   { initialValue: undefined }
 );
 const sessionAttachedActionAtom = Atom.make((get) => {
   const session = get(classicFlowSessionStore.currentSessionAtom);
-  return session
-    ? get(classicFlowSessionFacadeFamily(session).attachedActionAtom)
-    : null;
+  if (!session) return null;
+
+  const flow = get(sessionRootAtomFamily(session));
+  const execution = get(makeClassicFlowExecutionScope(flow));
+  return execution ? get(execution.actionAtom) : null;
 });
 
 const ConnectedWrapper = ({ children }: PropsWithChildren) => (
@@ -172,14 +183,12 @@ describe("action preview", () => {
           } satisfies ClassicTransactionFlowIntake);
         }, [startFlow]);
 
-        useAtomValue(sessionReviewRouteAtom);
-        return useAtomValue(sessionActionPreviewAtom);
+        return useAtomValue(sessionReviewViewAtom);
       },
       { wrapper: Wrapper }
     );
 
-    const getAction = () =>
-      result.current.pipe(AsyncResult.value, Option.getOrNull);
+    const getAction = () => result.current?.action;
     await expect.poll(() => getAction()?.id).toBe("action-1");
     expect(getAction()?.transactions[0]?.gasEstimate).toBe(
       transaction.gasEstimate
@@ -233,12 +242,11 @@ describe("action preview", () => {
           });
         }, [startFlow]);
 
-        useAtomValue(sessionReviewRouteAtom);
         return {
           kyc: useAtomValue(sessionKycGateAtom),
-          preview: useAtomValue(sessionActionPreviewAtom),
+          review: useAtomValue(sessionReviewViewAtom),
           refreshKyc: useAtomSet(refreshSessionKycAtom),
-          continueFlow: useAtomSet(continueSessionAtom),
+          confirmFlow: useAtomSet(confirmSessionAtom),
           attachedAction: useAtomValue(sessionAttachedActionAtom),
         };
       },
@@ -250,10 +258,8 @@ describe("action preview", () => {
     });
     expect(actionPreviewCalls).toBe(0);
     expect(result.current.kyc?.isGateBlocking).toBe(true);
-    expect(
-      result.current.preview.pipe(AsyncResult.value, Option.getOrNull)
-    ).toBeNull();
-    await act(async () => result.current.continueFlow(undefined));
+    expect(result.current.review?.action).toBeNull();
+    await act(async () => result.current.confirmFlow(undefined));
     expect(result.current.attachedAction).toBeNull();
 
     kycStatus = "approved";
@@ -262,11 +268,7 @@ describe("action preview", () => {
       await expect.poll(() => kycStatusCalls).toBe(2);
       await expect.poll(() => actionPreviewCalls).toBe(1);
     });
-    await expect
-      .poll(() =>
-        result.current.preview.pipe(AsyncResult.value, Option.getOrNull)
-      )
-      .not.toBeNull();
+    await expect.poll(() => result.current.review?.action).not.toBeNull();
     expect(result.current.kyc?.isGateBlocking).toBe(false);
   });
 });

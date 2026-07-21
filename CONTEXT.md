@@ -58,17 +58,21 @@ The prepared instruction describing the yield action the user intends to perform
 _Avoid_: Request DTO
 
 **Action Preview**:
-A freshly prepared Yield Action candidate derived from an Action Command and inspected during Review. Continuing to Steps attaches the current candidate to the Flow Session; returning to Review invalidates it for Enter, Exit, and Manage.
-_Avoid_: Attached action
+A freshly prepared Yield Action candidate derived from the Flow Session intake and inspected during Review. Continuing promotes that candidate into one Execution attempt; returning to Review always requires a fresh candidate.
+_Avoid_: Attached action, prepared action
 
 **Yield Action**:
-The created yield action containing the transactions required to carry out an Action Command. A Flow Session has at most one Yield Action attached at a time; Enter, Exit, and Manage detach it when returning to review and require a freshly prepared action before execution resumes.
+The created yield action containing the transactions required to carry out an Action Command. A Flow Session hands at most one reviewed Yield Action into its current Execution attempt.
 _Avoid_: Action DTO
 
+**Execution Attempt**:
+The Steps-and-Complete portion of a Flow Session for one reviewed Yield Action. Returning to Review ends that attempt and its Transaction Workflow permanently.
+_Avoid_: Executable phase, attached action
+
 **Classic Transaction Flow Abandonment**:
-The end of an active Flow Session when its journey is exited, its Wallet Scope no longer matches, or a new session begins. Returning from execution to review does not abandon the Flow Session; for Enter, Exit, and Manage it removes the prepared Yield Action and requires fresh preparation before execution can resume.
+The end of an active Flow Session when its journey is exited, its Wallet Scope no longer matches, or a new session begins. Returning from execution to Review ends only the current Execution Attempt and does not abandon the Flow Session.
 _Avoid_: Request cleanup
 
 **Activity Resume**:
-A Classic Transaction Flow that continues an existing Yield Action selected from activity history. Its Flow Session retains that Yield Action when moving between review and execution because it has no Action Command from which to prepare a replacement.
+A Classic Transaction Flow started from a Yield Action selected in activity history. Review reconstructs a fresh Action Preview when the historical action contains enough intake; unsupported historical actions remain non-executable.
 _Avoid_: Activity selection

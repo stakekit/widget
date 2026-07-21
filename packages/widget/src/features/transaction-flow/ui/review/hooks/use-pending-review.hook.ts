@@ -1,9 +1,8 @@
-import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router";
 import type { YieldPendingActionType } from "../../../../../domain/types/pending-action";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
@@ -11,15 +10,15 @@ import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import { getRewardTokenSymbols } from "../../../../earn/react/use-reward-token-details/get-reward-token-symbols";
 import type { RewardTokenDetails } from "../../../../earn/ui/components/reward-token-details";
 import type { PageCta } from "../../../../widget-shell/page-cta";
-import { useClassicFlowSessionFacade } from "../../../react/classic-flow-session-context";
-import { useRequiredManageClassicTransactionFlow } from "../../../react/request-route-guards";
+import {
+  useClassicFlowIntake,
+  useClassicFlowReview,
+} from "../../../react/classic-flow-route";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 
 export const usePendingActionReview = () => {
-  const manageFlow = useRequiredManageClassicTransactionFlow();
-  const facade = useClassicFlowSessionFacade();
-  const location = useLocation();
-  useAtomMount(facade.reviewRouteAtom(location.key));
+  const manageFlow = useClassicFlowIntake("Manage");
+  const facade = useClassicFlowReview();
   const confirmFlow = useAtomSet(facade.confirmAtom);
   const review = useAtomValue(facade.reviewViewAtom);
   const pendingTxGas = review.gasAmount;

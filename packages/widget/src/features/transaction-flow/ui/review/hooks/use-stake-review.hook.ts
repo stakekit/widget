@@ -1,9 +1,8 @@
-import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { getActionProviderYieldId } from "../../../../../domain/types/action";
 import { getKycProviderName } from "../../../../../domain/types/kyc";
@@ -15,16 +14,16 @@ import { useEstimatedRewards } from "../../../../earn/react/use-estimated-reward
 import { useRewardTokenDetails } from "../../../../earn/react/use-reward-token-details";
 import { useYieldType } from "../../../../earn/react/use-yield-type";
 import type { PageCta } from "../../../../widget-shell/page-cta";
-import { useClassicFlowSessionFacade } from "../../../react/classic-flow-session-context";
-import { useRequiredEnterClassicTransactionFlow } from "../../../react/request-route-guards";
+import {
+  useClassicFlowIntake,
+  useClassicFlowReview,
+} from "../../../react/classic-flow-route";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 import { useFees } from "./use-fees";
 
 export const useStakeReview = () => {
-  const enterFlow = useRequiredEnterClassicTransactionFlow();
-  const facade = useClassicFlowSessionFacade();
-  const location = useLocation();
-  useAtomMount(facade.reviewRouteAtom(location.key));
+  const enterFlow = useClassicFlowIntake("Enter");
+  const facade = useClassicFlowReview();
   const confirmFlow = useAtomSet(facade.confirmAtom);
   const refreshKyc = useAtomSet(facade.refreshKycAtom);
   const review = useAtomValue(facade.reviewViewAtom);

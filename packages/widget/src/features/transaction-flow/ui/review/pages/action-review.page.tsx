@@ -9,7 +9,6 @@ import { Divider } from "../../../../widget-shell/divider";
 import { PageContainer } from "../../../../widget-shell/page-container";
 import { PageCtaButton } from "../../../../widget-shell/page-cta";
 import { ToolTip } from "../../../../widget-shell/ui/tooltip";
-import { ClassicFlowStepsNavigation } from "../../../react/classic-flow-navigation";
 import { useActionReview } from "../hooks/use-action-review.hook";
 import ReviewTopSection from "./common-page/components/review-top-section";
 import { pointerStyles } from "./style.css";
@@ -25,84 +24,80 @@ export const ActionReviewPage = () => {
     inputToken,
     actionOlderThan7Days,
     labelKey,
-    stepsPath,
     cta,
   } = useActionReview();
 
   const info = `${amount} ${selectedYield.token.symbol}`;
 
   return (
-    <>
-      <ClassicFlowStepsNavigation to={stepsPath} />
-      <AnimationPage>
-        <PageContainer>
-          <ReviewTopSection
-            info={info}
-            metadata={{
-              logoURI: selectedYield.metadata.logoURI,
-              name: selectedYield.metadata.name,
-              provider: selectedYield.provider,
-            }}
-            token={inputToken}
-            title={title}
-          />
-          <Divider />
-          <Text marginTop="4" marginBottom="2">
-            {t("activity.review.transactions")}:
-          </Text>
-          {transactions.map((tx) => (
+    <AnimationPage>
+      <PageContainer>
+        <ReviewTopSection
+          info={info}
+          metadata={{
+            logoURI: selectedYield.metadata.logoURI,
+            name: selectedYield.metadata.name,
+            provider: selectedYield.provider,
+          }}
+          token={inputToken}
+          title={title}
+        />
+        <Divider />
+        <Text marginTop="4" marginBottom="2">
+          {t("activity.review.transactions")}:
+        </Text>
+        {transactions.map((tx) => (
+          <Box
+            marginBottom="2"
+            display="flex"
+            justifyContent="space-between"
+            key={tx.id}
+          >
+            <Text as="span" color="textMuted">
+              {capitalizeFirstLetters(tx.type)}
+            </Text>
             <Box
-              marginBottom="2"
               display="flex"
-              justifyContent="space-between"
-              key={tx.id}
+              justifyContent="center"
+              alignItems="center"
+              gap="1"
             >
-              <Text as="span" color="textMuted">
-                {capitalizeFirstLetters(tx.type)}
+              <Text color="textMuted">
+                {capitalizeFirstLetters(tx.status.replaceAll("_", " "))}
               </Text>
-              <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                gap="1"
-              >
-                <Text color="textMuted">
-                  {capitalizeFirstLetters(tx.status.replaceAll("_", " "))}
-                </Text>
-                {tx.error ? (
-                  <ToolTip maxWidth={300} label={tx.error}>
-                    <InfoIcon />
-                  </ToolTip>
-                ) : null}
-              </Box>
+              {tx.error ? (
+                <ToolTip maxWidth={300} label={tx.error}>
+                  <InfoIcon />
+                </ToolTip>
+              ) : null}
             </Box>
-          ))}
-          <Divider my="2" />
-          {!actionOlderThan7Days && (
-            <Box marginTop="4" marginBottom="4">
-              <Text variant={{ weight: "normal", type: "muted" }}>
-                <Trans
-                  i18nKey="activity.review.terms_of_use"
-                  values={{ action: t(`activity.review.${labelKey}`) }}
-                  components={{
-                    underline0: (
-                      // biome-ignore lint: false
-                      <a
-                        target="_blank"
-                        onClick={() => trackEvent("termsClicked")}
-                        href="https://docs.yield.xyz/docs/terms-of-use"
-                        className={pointerStyles}
-                        rel="noreferrer"
-                      />
-                    ),
-                  }}
-                />
-              </Text>
-            </Box>
-          )}
-          <PageCtaButton cta={cta} />
-        </PageContainer>
-      </AnimationPage>
-    </>
+          </Box>
+        ))}
+        <Divider my="2" />
+        {!actionOlderThan7Days && (
+          <Box marginTop="4" marginBottom="4">
+            <Text variant={{ weight: "normal", type: "muted" }}>
+              <Trans
+                i18nKey="activity.review.terms_of_use"
+                values={{ action: t(`activity.review.${labelKey}`) }}
+                components={{
+                  underline0: (
+                    // biome-ignore lint: false
+                    <a
+                      target="_blank"
+                      onClick={() => trackEvent("termsClicked")}
+                      href="https://docs.yield.xyz/docs/terms-of-use"
+                      className={pointerStyles}
+                      rel="noreferrer"
+                    />
+                  ),
+                }}
+              />
+            </Text>
+          </Box>
+        )}
+        <PageCtaButton cta={cta} />
+      </PageContainer>
+    </AnimationPage>
   );
 };

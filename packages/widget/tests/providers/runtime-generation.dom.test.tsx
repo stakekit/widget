@@ -146,7 +146,7 @@ const ClassicFlowRuntimeHarness = () => {
   return (
     <>
       <output data-testid="classic-flow-session">
-        {session?.key ?? "none"}
+        {session ? "present" : "none"}
       </output>
       <button type="button" onClick={() => start(activityIntake())}>
         Start classic flow

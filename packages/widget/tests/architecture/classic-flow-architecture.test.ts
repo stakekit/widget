@@ -33,7 +33,7 @@ describe("Classic Flow architecture", () => {
     ).toEqual([8, 10, 13, 14, 21, 22, 24, 25, 31]);
   });
 
-  it("rejects the removed global identity, phase, handoff, and keepAlive model", () => {
+  it("rejects removed coordination and route-lifetime workarounds", () => {
     const failures = checkFlowSessionArchitecture([
       {
         content: [
@@ -50,8 +50,26 @@ describe("Classic Flow architecture", () => {
         content: "Atom.keepAlive",
         path: "src/features/transaction-flow/state/classic-flow-session-store.ts",
       },
+      {
+        content: [
+          "const ClassicFlowContext = createContext(null)",
+          "const sessionBoundaryKeys = new WeakMap()",
+        ].join("\n"),
+        path: "src/features/transaction-flow/react/classic-flow-route.tsx",
+      },
+      {
+        content: [
+          "const sessionFacadeFamily = Atom.family(makeSession)",
+          "context(isCurrentSessionAtom)",
+        ].join("\n"),
+        path: "src/features/transaction-flow/state/classic-flow-session-facade.ts",
+      },
+      {
+        content: "AsyncResult.AsyncResult<YieldAction | null, unknown>",
+        path: "src/features/transaction-flow/resources/classic-flow-review-resources.ts",
+      },
     ]);
 
-    expect(failures).toHaveLength(6);
+    expect(failures).toHaveLength(11);
   });
 });

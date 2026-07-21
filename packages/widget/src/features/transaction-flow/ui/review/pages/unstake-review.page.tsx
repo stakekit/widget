@@ -1,7 +1,6 @@
 import { KycGateCard } from "../../../../earn/ui/components/kyc-gate-card";
 import { UnstakeSignPopup } from "../../../../position-details/ui/classic/components/unstake-sign-popup";
 import { useTrackPage } from "../../../../tracking/react/use-track-page";
-import { ClassicFlowStepsNavigation } from "../../../react/classic-flow-navigation";
 import { useUnstakeActionReview } from "../hooks/use-unstake-review.hook";
 import { ReviewPage } from "./common-page/common.page";
 
@@ -30,7 +29,6 @@ export const UnstakeReviewPage = () => {
 
   return (
     <>
-      <ClassicFlowStepsNavigation />
       <ReviewPage
         rewardTokenDetailsProps={rewardTokenDetailsProps}
         title={title}

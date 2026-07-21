@@ -1,9 +1,8 @@
-import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router";
 import { getKycProviderName } from "../../../../../domain/types/kyc";
 import {
   getExtendedYieldType,
@@ -15,15 +14,15 @@ import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import { getRewardTokenSymbols } from "../../../../earn/react/use-reward-token-details/get-reward-token-symbols";
 import type { RewardTokenDetails } from "../../../../earn/ui/components/reward-token-details";
 import type { PageCta } from "../../../../widget-shell/page-cta";
-import { useClassicFlowSessionFacade } from "../../../react/classic-flow-session-context";
-import { useRequiredExitClassicTransactionFlow } from "../../../react/request-route-guards";
+import {
+  useClassicFlowIntake,
+  useClassicFlowReview,
+} from "../../../react/classic-flow-route";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 
 export const useUnstakeActionReview = () => {
-  const exitFlow = useRequiredExitClassicTransactionFlow();
-  const facade = useClassicFlowSessionFacade();
-  const location = useLocation();
-  useAtomMount(facade.reviewRouteAtom(location.key));
+  const exitFlow = useClassicFlowIntake("Exit");
+  const facade = useClassicFlowReview();
   const confirmFlow = useAtomSet(facade.confirmAtom);
   const refreshKyc = useAtomSet(facade.refreshKycAtom);
   const review = useAtomValue(facade.reviewViewAtom);

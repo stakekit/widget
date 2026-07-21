@@ -4,12 +4,12 @@ import { useTranslation } from "react-i18next";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import { useTrackEvent } from "../../../../tracking/react/use-track-event";
 import type { PageCta } from "../../../../widget-shell/page-cta";
-import { useClassicFlowSessionFacade } from "../../../react/classic-flow-session-context";
+import { useClassicFlowExecution } from "../../../react/classic-flow-route";
 import { useTransactionWorkflow } from "./use-transaction-workflow.hook";
 
 export const useSteps = () => {
   const { dispatch, steps } = useTransactionWorkflow();
-  const facade = useClassicFlowSessionFacade();
+  const facade = useClassicFlowExecution();
   const returnFlowToReview = useAtomSet(facade.backAtom);
 
   const trackEvent = useTrackEvent();

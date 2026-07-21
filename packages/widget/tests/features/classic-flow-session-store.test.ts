@@ -37,7 +37,7 @@ const makeEnterIntake = (): ClassicTransactionFlowIntake => {
 };
 
 describe("Classic Flow Session intake store", () => {
-  it("isolates equal attempts and ignores cleanup from the replaced session", () => {
+  it("isolates equal sessions and ignores cleanup from the replaced session", () => {
     const store = makeClassicFlowSessionStore();
     const registry = AtomRegistry.make();
     const intake = makeEnterIntake();
@@ -50,7 +50,8 @@ describe("Classic Flow Session intake store", () => {
 
     expect(first).not.toBeNull();
     expect(second).not.toBeNull();
-    expect(second?.key).not.toBe(first?.key);
+    expect(first?.epoch).toBe(1);
+    expect(second?.epoch).toBe(2);
     expect(second?.intake).not.toBe(intake);
     expect(second?.intake.walletScope).not.toBe(intake.walletScope);
     expect(
@@ -63,10 +64,10 @@ describe("Classic Flow Session intake store", () => {
       second?.intake._tag === "Enter" ? second.intake.selectedStake : null
     ).not.toBe(intake.selectedStake);
 
-    if (first) registry.set(store.clearAtom, first.key);
+    if (first) registry.set(store.clearAtom, first.epoch);
     expect(registry.get(store.currentSessionAtom)).toBe(second);
 
-    if (second) registry.set(store.clearAtom, second.key);
+    if (second) registry.set(store.clearAtom, second.epoch);
     expect(registry.get(store.currentSessionAtom)).toBeNull();
   });
 

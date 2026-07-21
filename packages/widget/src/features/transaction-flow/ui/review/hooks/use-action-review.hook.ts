@@ -1,7 +1,6 @@
-import { useAtomMount, useAtomSet } from "@effect/atom-react";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router";
 import {
   type ActionType,
   ActionTypes,
@@ -17,20 +16,17 @@ import { defaultFormattedNumber } from "../../../../../shared/lib/number-format"
 import { useYieldType } from "../../../../earn/react/use-yield-type";
 import { useTrackPage } from "../../../../tracking/react/use-track-page";
 import type { PageCta } from "../../../../widget-shell/page-cta";
-import { useClassicFlowSessionFacade } from "../../../react/classic-flow-session-context";
-import { useRequiredActivityResumeClassicTransactionFlow } from "../../../react/request-route-guards";
+import { useClassicFlowReview } from "../../../react/classic-flow-route";
 import type { LabelKey } from "../types";
 
 export const useActionReview = () => {
   useTrackPage("stakeReview");
   const { t } = useTranslation();
 
-  const activityFlow = useRequiredActivityResumeClassicTransactionFlow();
-  const facade = useClassicFlowSessionFacade();
-  const location = useLocation();
-  useAtomMount(facade.reviewRouteAtom(location.key));
-  const selectedAction = activityFlow.action;
-  const selectedYield = activityFlow.selectedYield;
+  const facade = useClassicFlowReview();
+  const review = useAtomValue(facade.activityReviewViewAtom);
+  const selectedAction = review.action;
+  const selectedYield = review.selectedYield;
   const confirmFlow = useAtomSet(facade.confirmAtom);
 
   const inputToken = useMemo(
@@ -90,16 +86,6 @@ export const useActionReview = () => {
     [selectedAction]
   );
 
-  const path = useMemo(
-    () =>
-      selectedAction.type === ActionTypes.UNSTAKE
-        ? "unstake"
-        : selectedAction.type === ActionTypes.STAKE
-          ? "stake"
-          : "pending",
-    [selectedAction]
-  );
-
   const labelKey: LabelKey = useMemo(() => {
     const waitingIndex = transactions.findIndex(
       (transaction) =>
@@ -120,11 +106,18 @@ export const useActionReview = () => {
     () => ({
       label: t(`activity.review.${labelKey}`),
       onClick: () => confirmFlow(undefined),
-      disabled: false,
-      isLoading: false,
+      disabled: review.confirmDisabled,
+      isLoading: review.confirmLoading,
       hide: actionOlderThan7Days,
     }),
-    [confirmFlow, labelKey, actionOlderThan7Days, t]
+    [
+      confirmFlow,
+      labelKey,
+      actionOlderThan7Days,
+      review.confirmDisabled,
+      review.confirmLoading,
+      t,
+    ]
   );
 
   return {
@@ -137,7 +130,6 @@ export const useActionReview = () => {
     inputToken,
     actionOlderThan7Days,
     labelKey,
-    stepsPath: `/activity/${path}/steps`,
     cta,
   };
 };

@@ -20,7 +20,7 @@ export const ActivityTabPage = () => {
   const showDetails = selection !== null;
 
   const onBack = () => {
-    if (session && selection) clearSession(session.key);
+    if (session && selection) clearSession(session.epoch);
     navigate("/activity");
   };
 
