@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.281](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.280...@stakekit/widget@0.0.281) (2026-07-21)
+
+
+### Bug Fixes
+
+* **widget:** inherit token icon wrapper dimensions ([#553](https://github.com/stakekit/widget/issues/553)) ([326156f](https://github.com/stakekit/widget/commit/326156f19f400d3472c127aca30c0ca9d6a5351e))
+
 ## [0.0.280](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.279...@stakekit/widget@0.0.280) (2026-06-25)
 
 
