@@ -38,6 +38,7 @@ export const EvmNetworks = {
   Sonic: "sonic",
   HyperEVM: "hyperevm",
   Plasma: "plasma",
+  Pharos: "pharos",
 } as const satisfies NetworkMap;
 
 export type EvmNetworks = (typeof EvmNetworks)[keyof typeof EvmNetworks];
