@@ -25,6 +25,7 @@ export enum EvmChainIds {
   Plasma = 9745,
   Monad = 143,
   MonadTestnet = 10_143,
+  Pharos = 1672,
 }
 
 export enum SubstrateChainIds {

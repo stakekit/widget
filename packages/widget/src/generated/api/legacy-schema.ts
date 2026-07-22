@@ -957,6 +957,7 @@ export type Team = {
   readonly providerId: string | null;
   readonly oavEnabled: boolean;
   readonly isMfaEnforced: boolean;
+  readonly isMultiTenant: boolean;
   readonly referredBy: string | null;
   readonly referralCode: string | null;
 };
@@ -980,6 +981,11 @@ export const Team = Schema.Struct({
   }),
   isMfaEnforced: Schema.Boolean.annotate({
     description: "Whether MFA is required for all non-SSO team members",
+    default: false,
+  }),
+  isMultiTenant: Schema.Boolean.annotate({
+    description:
+      "Whether the team is a multi-tenant (partner) team that can own end-client teams. Not self-serve — enabled by internal admins only.",
     default: false,
   }),
   referredBy: Schema.Union([Schema.String, Schema.Null]),
@@ -1941,6 +1947,7 @@ export type YieldProviders =
   | "securitize"
   | "nest"
   | "r25"
+  | "rocksolid"
   | "yuzu";
 export const YieldProviders = Schema.Literals([
   "aave",
@@ -2014,6 +2021,7 @@ export const YieldProviders = Schema.Literals([
   "securitize",
   "nest",
   "r25",
+  "rocksolid",
   "yuzu",
 ]);
 export type YieldType =
@@ -5618,6 +5626,7 @@ export type UpdateTeamDto = {
   readonly category?: KeyCategory;
   readonly name?: string;
   readonly isMfaEnforced?: boolean;
+  readonly isMultiTenant?: boolean;
 };
 export const UpdateTeamDto = Schema.Struct({
   activated: Schema.optionalKey(
@@ -5632,6 +5641,12 @@ export const UpdateTeamDto = Schema.Struct({
     Schema.Boolean.annotate({
       description:
         "Require MFA for all non-SSO team members. Only team owners and super admins may change this.",
+    })
+  ),
+  isMultiTenant: Schema.optionalKey(
+    Schema.Boolean.annotate({
+      description:
+        "Mark the team as a multi-tenant (partner) team that can own end-client teams. Only super admins may change this.",
     })
   ),
 });
@@ -9904,6 +9919,7 @@ export type TeamsControllerFindAll200 = {
     readonly name: string;
     readonly serviceConditionsAcceptedAt: string;
     readonly oavEnabled: boolean;
+    readonly isMultiTenant: boolean;
   }>;
   readonly hasNextPage: boolean;
   readonly limit: number;
@@ -9927,6 +9943,7 @@ export const TeamsControllerFindAll200 = Schema.Struct({
         Schema.String.annotate({ format: "date-time" }),
       ]),
       oavEnabled: Schema.Boolean.annotate({ default: false }),
+      isMultiTenant: Schema.Boolean.annotate({ default: false }),
     })
   ).annotate({ description: "Array of data items" }),
   hasNextPage: Schema.Boolean,
@@ -12982,6 +12999,7 @@ export type YieldV2ControllerYieldsParams = {
     | "securitize"
     | "nest"
     | "r25"
+    | "rocksolid"
     | "yuzu";
   readonly inputToken?: string;
   readonly enterStatus?: boolean;
@@ -13189,6 +13207,7 @@ export const YieldV2ControllerYieldsParams = Schema.Struct({
       "securitize",
       "nest",
       "r25",
+      "rocksolid",
       "yuzu",
     ])
   ),

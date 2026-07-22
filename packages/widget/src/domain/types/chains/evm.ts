@@ -50,6 +50,7 @@ const supportedEVMChains = [
   EvmNetworks.Plasma,
   EvmNetworks.Monad,
   EvmNetworks.MonadTestnet,
+  EvmNetworks.Pharos,
 ] as const;
 
 export const supportedEVMChainsSet = new Set(supportedEVMChains);
@@ -256,6 +257,31 @@ export const evmChainsMap: EvmChainsMap = {
           http: [
             "https://rpc-mainnet.monadinfra.com/rpc/wibIOSEgRVbSCBJwHBho3mLEQODJvzd2",
           ],
+        },
+      },
+    },
+  },
+  [EvmNetworks.Pharos]: {
+    type: "evm",
+    skChainName: EvmNetworks.Pharos,
+    wagmiChain: {
+      id: 1672,
+      name: "Pharos",
+      iconUrl: getNetworkLogo(EvmNetworks.Pharos),
+      nativeCurrency: {
+        name: "PROS",
+        symbol: "PROS",
+        decimals: 18,
+      },
+      rpcUrls: {
+        default: {
+          http: ["https://rpc.pharos.xyz"],
+        },
+      },
+      blockExplorers: {
+        default: {
+          name: "Pharos Explorer",
+          url: "https://pharosscan.xyz",
         },
       },
     },

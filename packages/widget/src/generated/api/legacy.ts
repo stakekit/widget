@@ -384,6 +384,7 @@ export type Team = {
   readonly providerId: string | null;
   readonly oavEnabled: boolean;
   readonly isMfaEnforced: boolean;
+  readonly isMultiTenant: boolean;
   readonly referredBy: string | null;
   readonly referralCode: string | null;
 };
@@ -798,6 +799,7 @@ export type YieldProviders =
   | "securitize"
   | "nest"
   | "r25"
+  | "rocksolid"
   | "yuzu";
 export type YieldType =
   | "staking"
@@ -2158,6 +2160,7 @@ export type UpdateTeamDto = {
   readonly category?: KeyCategory;
   readonly name?: string;
   readonly isMfaEnforced?: boolean;
+  readonly isMultiTenant?: boolean;
 };
 export type IntegrationRevenueRowDto = {
   readonly integration_id: string;
@@ -3858,6 +3861,7 @@ export type TeamsControllerFindAll200 = {
     readonly name: string;
     readonly serviceConditionsAcceptedAt: string;
     readonly oavEnabled: boolean;
+    readonly isMultiTenant: boolean;
   }>;
   readonly hasNextPage: boolean;
   readonly limit: number;
@@ -5319,6 +5323,7 @@ export type YieldV2ControllerYieldsParams = {
     | "securitize"
     | "nest"
     | "r25"
+    | "rocksolid"
     | "yuzu";
   readonly inputToken?: string;
   readonly enterStatus?: boolean;
