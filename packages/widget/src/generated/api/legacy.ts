@@ -38,6 +38,7 @@ export type Networks =
   | "unichain"
   | "monad-testnet"
   | "monad"
+  | "robinhood"
   | "robinhood-testnet"
   | "avalanche-c"
   | "avalanche-c-atomic"
@@ -55,6 +56,7 @@ export type Networks =
   | "katana"
   | "hyperevm"
   | "tempo"
+  | "pharos"
   | "agoric"
   | "akash"
   | "axelar"
@@ -382,8 +384,7 @@ export type Team = {
   readonly providerId: string | null;
   readonly oavEnabled: boolean;
   readonly isMfaEnforced: boolean;
-  readonly hyperliquidVerifyByClientOrderId: boolean;
-  readonly unifiedAccountModeEnabled: boolean;
+  readonly isMultiTenant: boolean;
   readonly referredBy: string | null;
   readonly referralCode: string | null;
 };
@@ -476,6 +477,7 @@ export type UpdatePayoutAddressDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -493,6 +495,7 @@ export type UpdatePayoutAddressDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -726,6 +729,7 @@ export type AnnotatedFieldDto = {
 };
 export type YieldProviders =
   | "aave"
+  | "edel"
   | "anchor"
   | "benqi"
   | "compound"
@@ -793,7 +797,10 @@ export type YieldProviders =
   | "ondo"
   | "superstate"
   | "securitize"
-  | "nest";
+  | "nest"
+  | "r25"
+  | "rocksolid"
+  | "yuzu";
 export type YieldType =
   | "staking"
   | "liquid-staking"
@@ -905,6 +912,7 @@ export type ProgrammaticPerpReportingTransactionDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -922,6 +930,7 @@ export type ProgrammaticPerpReportingTransactionDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1008,6 +1017,7 @@ export type CreateUserDto = {
 export type UpdateUserDto = {
   readonly active?: boolean;
   readonly role?: "owner" | "admin" | "operator" | "member";
+  readonly isSsoExempt?: boolean;
 };
 export type ApeNativeArgumentsDto = {
   readonly baycId?: string;
@@ -1069,6 +1079,7 @@ export type CreateCustomUriDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -1086,6 +1097,7 @@ export type CreateCustomUriDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1174,6 +1186,7 @@ export type UpdateCustomUriDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -1191,6 +1204,7 @@ export type UpdateCustomUriDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1322,6 +1336,7 @@ export type AllocationDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -1339,6 +1354,7 @@ export type AllocationDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1630,7 +1646,6 @@ export type MfaSetupResponseDto = {
 export type MfaVerifySetupDto = { readonly code: string };
 export type MfaVerifySetupResponseDto = {
   readonly recoveryCodes: ReadonlyArray<string>;
-  readonly token: string;
 };
 export type MfaBeginReenrollmentDto = { readonly code: string };
 export type MfaStatusResponseDto = { readonly isMfaEnabled: boolean };
@@ -1861,6 +1876,19 @@ export type YieldStatusOverrideResponseDto = {
   readonly exit: boolean;
   readonly updatedAt: string;
 };
+export type PerpsOverrideResponseDto = {
+  readonly providerId: string;
+  readonly state: "down" | "degraded";
+  readonly reason: string;
+  readonly setByUserId: string;
+  readonly setAt: string;
+  readonly clearedByUserId: string | null;
+  readonly clearedAt: string | null;
+};
+export type SetPerpsOverrideDto = {
+  readonly state: "down" | "degraded";
+  readonly reason: string;
+};
 export type AvalancheCAdditionalAddressesDto = {
   readonly cAddressBech: string;
   readonly pAddressBech: string;
@@ -1901,6 +1929,7 @@ export type UserDto = {
   readonly serviceConditionsAcceptedAt: string;
   readonly teamId: string;
   readonly isMfaEnabled: boolean;
+  readonly isSsoExempt: boolean;
 };
 export type SsoConfigResponseDto = {
   readonly id: string;
@@ -2112,7 +2141,7 @@ export type CampaignConfigurationRequestDto = {
   readonly reviewedBy?: string | null;
   readonly reviewedAt?: string;
   readonly rejectionReason?: string | null;
-  readonly requestedChanges: { readonly [x: string]: unknown };
+  readonly requestedChanges: { readonly [x: string]: Schema.Json };
   readonly previousValues?: {};
   readonly version: number;
   readonly metadata?: {};
@@ -2131,6 +2160,7 @@ export type UpdateTeamDto = {
   readonly category?: KeyCategory;
   readonly name?: string;
   readonly isMfaEnforced?: boolean;
+  readonly isMultiTenant?: boolean;
 };
 export type IntegrationRevenueRowDto = {
   readonly integration_id: string;
@@ -2254,6 +2284,23 @@ export type FeeConfigurationDto = {
   readonly status: FeeConfigurationStatus;
   readonly layerzeroOVaultConfig?: {} | null;
 };
+export type AdminFeeConfigurationDto = {
+  readonly id: string;
+  readonly projectId: string;
+  readonly integrationId: string;
+  readonly managementFeeBps: number;
+  readonly performanceFeeBps: number;
+  readonly depositFeeBps: number;
+  readonly chargeOnFirstDepositOnly: boolean;
+  readonly allocatorVaultContractAddress: string | null;
+  readonly feeWrapperContractAddress: string | null;
+  readonly feeRecipientAddress: string | null;
+  readonly status: FeeConfigurationStatus;
+  readonly layerzeroOVaultConfig?: {} | null;
+  readonly teamId?: string | null;
+  readonly teamName?: string | null;
+  readonly projectName?: string | null;
+};
 export type CreateOAVDto = {
   readonly network:
     | "ethereum"
@@ -2274,6 +2321,7 @@ export type CreateOAVDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -2291,6 +2339,7 @@ export type CreateOAVDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2517,6 +2566,7 @@ export type AddressWithTokenDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -2534,6 +2584,7 @@ export type AddressWithTokenDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2603,20 +2654,13 @@ export type AddressWithTokenDto = {
   readonly tokenAddress?: string;
 };
 export type AuthEmailLoginResponseDto = {
-  readonly token?: string;
   readonly user?: UserDto;
   readonly mfaRequired?: boolean;
   readonly challengeToken?: string;
   readonly mfaSetupRequired?: boolean;
 };
-export type MfaVerifyResponseDto = {
-  readonly token: string;
-  readonly user: UserDto;
-};
-export type MfaRecoverResponseDto = {
-  readonly token: string;
-  readonly user: UserDto;
-};
+export type MfaVerifyResponseDto = { readonly user: UserDto };
+export type MfaRecoverResponseDto = { readonly user: UserDto };
 export type CampaignSafeBalanceDto = {
   readonly safeAddress: string;
   readonly network: Networks;
@@ -2674,6 +2718,23 @@ export type ActionArgumentsDto = {
   readonly subnetId?: number;
   readonly receiverAddress?: string;
   readonly useMaxAmount?: boolean;
+};
+export type ExitActionArgumentsDto = {
+  readonly validatorAddress?: string;
+  readonly validatorAddresses?: ReadonlyArray<string>;
+  readonly providerId?: string;
+  readonly duration?: number;
+  readonly nfts?: ApeNativeArgumentsDto;
+  readonly ledgerWalletAPICompatible?: boolean;
+  readonly tronResource?: TronResourceType;
+  readonly signatureVerification?: SignatureVerificationArgumentsDto;
+  readonly inputToken?: TokenDto;
+  readonly outputToken?: TokenDto;
+  readonly feeConfigurationId?: string;
+  readonly subnetId?: number;
+  readonly receiverAddress?: string;
+  readonly useMaxAmount?: boolean;
+  readonly amount?: string;
 };
 export type TokenBalanceScanResponseDto = {
   readonly token: TokenDto;
@@ -2847,7 +2908,7 @@ export type CreateCampaignConfigurationRequestDto = {
     readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
     readonly status?: CampaignStatus;
   };
-  readonly metadata?: { readonly [x: string]: unknown };
+  readonly metadata?: { readonly [x: string]: Schema.Json };
 };
 export type AdminCampaignDto = {
   readonly id: string;
@@ -2995,6 +3056,12 @@ export type ValidatorSearchResultDto = {
   readonly integrationId: string;
   readonly validators: ReadonlyArray<ValidatorDto>;
 };
+export type PaginatedAdminFeeConfigurationDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<AdminFeeConfigurationDto>;
+};
 export type StakeResponseDto = {
   readonly id: WalletViewDto;
   readonly stake: StakeViewSuccessDto | StakeFailureDto;
@@ -3023,6 +3090,7 @@ export type TokenBalanceScanDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -3040,6 +3108,7 @@ export type TokenBalanceScanDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -3133,6 +3202,7 @@ export type YieldBalanceScanRequestDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -3150,6 +3220,7 @@ export type YieldBalanceScanRequestDto = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -3240,6 +3311,7 @@ export type YieldBalanceScanEvmRequestDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -3256,7 +3328,8 @@ export type YieldBalanceScanEvmRequestDto = {
     | "plasma"
     | "katana"
     | "hyperevm"
-    | "tempo";
+    | "tempo"
+    | "pharos";
 };
 export type YieldBalanceRequestDto = {
   readonly addresses: AddressesDto;
@@ -3327,6 +3400,24 @@ export type ActionGasEstimateRequestDto = {
   readonly args: ActionArgumentsDto;
   readonly referralCode?: string;
   readonly skipPrechecks?: boolean;
+  readonly gasArgs?:
+    | CosmosGasArgsDto
+    | EvmEIP1559GasArgsDto
+    | EvmLegacyGasArgsDto;
+};
+export type ExitActionRequestDto = {
+  readonly integrationId: string;
+  readonly addresses: AddressesDto;
+  readonly referralCode?: string;
+  readonly skipPrechecks?: boolean;
+  readonly args: ExitActionArgumentsDto;
+};
+export type ExitActionGasEstimateRequestDto = {
+  readonly integrationId: string;
+  readonly addresses: AddressesDto;
+  readonly referralCode?: string;
+  readonly skipPrechecks?: boolean;
+  readonly args: ExitActionArgumentsDto;
   readonly gasArgs?:
     | CosmosGasArgsDto
     | EvmEIP1559GasArgsDto
@@ -3770,6 +3861,7 @@ export type TeamsControllerFindAll200 = {
     readonly name: string;
     readonly serviceConditionsAcceptedAt: string;
     readonly oavEnabled: boolean;
+    readonly isMultiTenant: boolean;
   }>;
   readonly hasNextPage: boolean;
   readonly limit: number;
@@ -3835,6 +3927,7 @@ export type HealthControllerHealthV2410 = StakeKitErrorDto;
 export type HealthControllerHealthV2412 = StakeKitErrorDto;
 export type HealthControllerHealthV2429 = StakeKitErrorDto;
 export type HealthControllerHealthV2500 = StakeKitErrorDto;
+export type HealthControllerHealthV2502 = StakeKitErrorDto;
 export type HealthControllerHealthV2503 = StakeKitErrorDto;
 export type PayoutAddressesControllerGet200 = {
   readonly data: ReadonlyArray<{
@@ -4187,6 +4280,7 @@ export type UsersControllerFindAll200 = {
     readonly serviceConditionsAcceptedAt: string;
     readonly teamId: string;
     readonly isMfaEnabled: boolean;
+    readonly isSsoExempt: boolean;
   }>;
   readonly hasNextPage: boolean;
   readonly limit: number;
@@ -4208,6 +4302,7 @@ export type ActionControllerGetAction410 = StakeKitErrorDto;
 export type ActionControllerGetAction412 = StakeKitErrorDto;
 export type ActionControllerGetAction429 = StakeKitErrorDto;
 export type ActionControllerGetAction500 = StakeKitErrorDto;
+export type ActionControllerGetAction502 = StakeKitErrorDto;
 export type ActionControllerGetAction503 = StakeKitErrorDto;
 export type ActionControllerGetGasEstimateParams = {
   readonly "X-API-KEY"?: string;
@@ -4222,6 +4317,7 @@ export type ActionControllerGetGasEstimate410 = StakeKitErrorDto;
 export type ActionControllerGetGasEstimate412 = StakeKitErrorDto;
 export type ActionControllerGetGasEstimate429 = StakeKitErrorDto;
 export type ActionControllerGetGasEstimate500 = StakeKitErrorDto;
+export type ActionControllerGetGasEstimate502 = StakeKitErrorDto;
 export type ActionControllerGetGasEstimate503 = StakeKitErrorDto;
 export type ActionControllerEnterParams = { readonly "X-API-KEY"?: string };
 export type ActionControllerEnterRequestJson = ActionRequestDto;
@@ -4236,9 +4332,10 @@ export type ActionControllerEnter410 = StakeKitErrorDto;
 export type ActionControllerEnter412 = StakeKitErrorDto;
 export type ActionControllerEnter429 = StakeKitErrorDto;
 export type ActionControllerEnter500 = StakeKitErrorDto;
+export type ActionControllerEnter502 = StakeKitErrorDto;
 export type ActionControllerEnter503 = StakeKitErrorDto;
 export type ActionControllerExitParams = { readonly "X-API-KEY"?: string };
-export type ActionControllerExitRequestJson = ActionRequestDto;
+export type ActionControllerExitRequestJson = ExitActionRequestDto;
 export type ActionControllerExit201 = ActionDto;
 export type ActionControllerExit400 = StakeKitErrorDto;
 export type ActionControllerExit401 = StakeKitErrorDto;
@@ -4250,6 +4347,7 @@ export type ActionControllerExit410 = StakeKitErrorDto;
 export type ActionControllerExit412 = StakeKitErrorDto;
 export type ActionControllerExit429 = StakeKitErrorDto;
 export type ActionControllerExit500 = StakeKitErrorDto;
+export type ActionControllerExit502 = StakeKitErrorDto;
 export type ActionControllerExit503 = StakeKitErrorDto;
 export type ActionControllerPendingParams = { readonly "X-API-KEY"?: string };
 export type ActionControllerPendingRequestJson = PendingActionRequestDto;
@@ -4264,6 +4362,7 @@ export type ActionControllerPending410 = StakeKitErrorDto;
 export type ActionControllerPending412 = StakeKitErrorDto;
 export type ActionControllerPending429 = StakeKitErrorDto;
 export type ActionControllerPending500 = StakeKitErrorDto;
+export type ActionControllerPending502 = StakeKitErrorDto;
 export type ActionControllerPending503 = StakeKitErrorDto;
 export type ActionControllerEnterGasEstimationParams = {
   readonly "X-API-KEY"?: string;
@@ -4280,12 +4379,13 @@ export type ActionControllerEnterGasEstimation410 = StakeKitErrorDto;
 export type ActionControllerEnterGasEstimation412 = StakeKitErrorDto;
 export type ActionControllerEnterGasEstimation429 = StakeKitErrorDto;
 export type ActionControllerEnterGasEstimation500 = StakeKitErrorDto;
+export type ActionControllerEnterGasEstimation502 = StakeKitErrorDto;
 export type ActionControllerEnterGasEstimation503 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimateParams = {
   readonly "X-API-KEY"?: string;
 };
 export type ActionControllerExitGasEstimateRequestJson =
-  ActionGasEstimateRequestDto;
+  ExitActionGasEstimateRequestDto;
 export type ActionControllerExitGasEstimate201 = ActionGasEstimateDto;
 export type ActionControllerExitGasEstimate400 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimate401 = StakeKitErrorDto;
@@ -4296,6 +4396,7 @@ export type ActionControllerExitGasEstimate410 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimate412 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimate429 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimate500 = StakeKitErrorDto;
+export type ActionControllerExitGasEstimate502 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimate503 = StakeKitErrorDto;
 export type ActionControllerListParams = {
   readonly walletAddress: string;
@@ -4378,6 +4479,7 @@ export type ActionControllerList410 = StakeKitErrorDto;
 export type ActionControllerList412 = StakeKitErrorDto;
 export type ActionControllerList429 = StakeKitErrorDto;
 export type ActionControllerList500 = StakeKitErrorDto;
+export type ActionControllerList502 = StakeKitErrorDto;
 export type ActionControllerList503 = StakeKitErrorDto;
 export type ActionControllerPendingGasEstimateParams = {
   readonly "X-API-KEY"?: string;
@@ -4394,6 +4496,7 @@ export type ActionControllerPendingGasEstimate410 = StakeKitErrorDto;
 export type ActionControllerPendingGasEstimate412 = StakeKitErrorDto;
 export type ActionControllerPendingGasEstimate429 = StakeKitErrorDto;
 export type ActionControllerPendingGasEstimate500 = StakeKitErrorDto;
+export type ActionControllerPendingGasEstimate502 = StakeKitErrorDto;
 export type ActionControllerPendingGasEstimate503 = StakeKitErrorDto;
 export type NetworkAddressActionV2ControllerCreateParams = {
   readonly "X-API-KEY"?: string;
@@ -4421,6 +4524,7 @@ export type TransactionControllerGetTransaction410 = StakeKitErrorDto;
 export type TransactionControllerGetTransaction412 = StakeKitErrorDto;
 export type TransactionControllerGetTransaction429 = StakeKitErrorDto;
 export type TransactionControllerGetTransaction500 = StakeKitErrorDto;
+export type TransactionControllerGetTransaction502 = StakeKitErrorDto;
 export type TransactionControllerGetTransaction503 = StakeKitErrorDto;
 export type TransactionControllerConstructParams = {
   readonly "X-API-KEY"?: string;
@@ -4438,6 +4542,7 @@ export type TransactionControllerConstruct410 = StakeKitErrorDto;
 export type TransactionControllerConstruct412 = StakeKitErrorDto;
 export type TransactionControllerConstruct429 = StakeKitErrorDto;
 export type TransactionControllerConstruct500 = StakeKitErrorDto;
+export type TransactionControllerConstruct502 = StakeKitErrorDto;
 export type TransactionControllerConstruct503 = StakeKitErrorDto;
 export type TransactionControllerSubmitParams = {
   readonly "X-API-KEY"?: string;
@@ -4454,6 +4559,7 @@ export type TransactionControllerSubmit410 = StakeKitErrorDto;
 export type TransactionControllerSubmit412 = StakeKitErrorDto;
 export type TransactionControllerSubmit429 = StakeKitErrorDto;
 export type TransactionControllerSubmit500 = StakeKitErrorDto;
+export type TransactionControllerSubmit502 = StakeKitErrorDto;
 export type TransactionControllerSubmit503 = StakeKitErrorDto;
 export type TransactionControllerSubmitHashParams = {
   readonly "X-API-KEY"?: string;
@@ -4469,6 +4575,7 @@ export type TransactionControllerSubmitHash410 = StakeKitErrorDto;
 export type TransactionControllerSubmitHash412 = StakeKitErrorDto;
 export type TransactionControllerSubmitHash429 = StakeKitErrorDto;
 export type TransactionControllerSubmitHash500 = StakeKitErrorDto;
+export type TransactionControllerSubmitHash502 = StakeKitErrorDto;
 export type TransactionControllerSubmitHash503 = StakeKitErrorDto;
 export type TransactionControllerGetTransactionStatusFromIdParams = {
   readonly "X-API-KEY"?: string;
@@ -4493,6 +4600,8 @@ export type TransactionControllerGetTransactionStatusFromId429 =
   StakeKitErrorDto;
 export type TransactionControllerGetTransactionStatusFromId500 =
   StakeKitErrorDto;
+export type TransactionControllerGetTransactionStatusFromId502 =
+  StakeKitErrorDto;
 export type TransactionControllerGetTransactionStatusFromId503 =
   StakeKitErrorDto;
 export type TransactionControllerGetGasForNetworkParams = {
@@ -4508,6 +4617,7 @@ export type TransactionControllerGetGasForNetwork410 = StakeKitErrorDto;
 export type TransactionControllerGetGasForNetwork412 = StakeKitErrorDto;
 export type TransactionControllerGetGasForNetwork429 = StakeKitErrorDto;
 export type TransactionControllerGetGasForNetwork500 = StakeKitErrorDto;
+export type TransactionControllerGetGasForNetwork502 = StakeKitErrorDto;
 export type TransactionControllerGetGasForNetwork503 = StakeKitErrorDto;
 export type TransactionControllerGetTransactionStatusByNetworkAndHashParams = {
   readonly "X-API-KEY"?: string;
@@ -4531,6 +4641,8 @@ export type TransactionControllerGetTransactionStatusByNetworkAndHash412 =
 export type TransactionControllerGetTransactionStatusByNetworkAndHash429 =
   StakeKitErrorDto;
 export type TransactionControllerGetTransactionStatusByNetworkAndHash500 =
+  StakeKitErrorDto;
+export type TransactionControllerGetTransactionStatusByNetworkAndHash502 =
   StakeKitErrorDto;
 export type TransactionControllerGetTransactionStatusByNetworkAndHash503 =
   StakeKitErrorDto;
@@ -4560,6 +4672,8 @@ export type TransactionControllerGetTransactionVerificationMessageForNetwork429 
   StakeKitErrorDto;
 export type TransactionControllerGetTransactionVerificationMessageForNetwork500 =
   StakeKitErrorDto;
+export type TransactionControllerGetTransactionVerificationMessageForNetwork502 =
+  StakeKitErrorDto;
 export type TransactionControllerGetTransactionVerificationMessageForNetwork503 =
   StakeKitErrorDto;
 export type NetworkAddressesTokenV2ControllerGetTokenBalancesParams = {
@@ -4585,6 +4699,8 @@ export type NetworkAddressesTokenV2ControllerGetTokenBalances429 =
   StakeKitErrorDto;
 export type NetworkAddressesTokenV2ControllerGetTokenBalances500 =
   StakeKitErrorDto;
+export type NetworkAddressesTokenV2ControllerGetTokenBalances502 =
+  StakeKitErrorDto;
 export type NetworkAddressesTokenV2ControllerGetTokenBalances503 =
   StakeKitErrorDto;
 export type NetworkTokensV2ControllerGetTokensParams = {
@@ -4602,6 +4718,7 @@ export type NetworkTokensV2ControllerGetTokens410 = StakeKitErrorDto;
 export type NetworkTokensV2ControllerGetTokens412 = StakeKitErrorDto;
 export type NetworkTokensV2ControllerGetTokens429 = StakeKitErrorDto;
 export type NetworkTokensV2ControllerGetTokens500 = StakeKitErrorDto;
+export type NetworkTokensV2ControllerGetTokens502 = StakeKitErrorDto;
 export type NetworkTokensV2ControllerGetTokens503 = StakeKitErrorDto;
 export type TokenControllerGetTokensParams = {
   readonly enabledYieldsOnly?: boolean;
@@ -4619,6 +4736,7 @@ export type TokenControllerGetTokens410 = StakeKitErrorDto;
 export type TokenControllerGetTokens412 = StakeKitErrorDto;
 export type TokenControllerGetTokens429 = StakeKitErrorDto;
 export type TokenControllerGetTokens500 = StakeKitErrorDto;
+export type TokenControllerGetTokens502 = StakeKitErrorDto;
 export type TokenControllerGetTokens503 = StakeKitErrorDto;
 export type TokenControllerGetTokenPricesParams = {
   readonly "X-API-KEY"?: string;
@@ -4634,6 +4752,7 @@ export type TokenControllerGetTokenPrices410 = StakeKitErrorDto;
 export type TokenControllerGetTokenPrices412 = StakeKitErrorDto;
 export type TokenControllerGetTokenPrices429 = StakeKitErrorDto;
 export type TokenControllerGetTokenPrices500 = StakeKitErrorDto;
+export type TokenControllerGetTokenPrices502 = StakeKitErrorDto;
 export type TokenControllerGetTokenPrices503 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalancesParams = {
   readonly "X-API-KEY"?: string;
@@ -4650,6 +4769,7 @@ export type TokenControllerGetTokenBalances410 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances412 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances429 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances500 = StakeKitErrorDto;
+export type TokenControllerGetTokenBalances502 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances503 = StakeKitErrorDto;
 export type TokenControllerTokenBalancesScanParams = {
   readonly "X-API-KEY"?: string;
@@ -4666,6 +4786,7 @@ export type TokenControllerTokenBalancesScan410 = StakeKitErrorDto;
 export type TokenControllerTokenBalancesScan412 = StakeKitErrorDto;
 export type TokenControllerTokenBalancesScan429 = StakeKitErrorDto;
 export type TokenControllerTokenBalancesScan500 = StakeKitErrorDto;
+export type TokenControllerTokenBalancesScan502 = StakeKitErrorDto;
 export type TokenControllerTokenBalancesScan503 = StakeKitErrorDto;
 export type CustomUrisControllerGet200 = {
   readonly data: ReadonlyArray<{
@@ -4735,6 +4856,7 @@ export type OAVControllerFindAllTokens410 = StakeKitErrorDto;
 export type OAVControllerFindAllTokens412 = StakeKitErrorDto;
 export type OAVControllerFindAllTokens429 = StakeKitErrorDto;
 export type OAVControllerFindAllTokens500 = StakeKitErrorDto;
+export type OAVControllerFindAllTokens502 = StakeKitErrorDto;
 export type OAVControllerFindAllTokens503 = StakeKitErrorDto;
 export type OAVControllerFindYieldsByTokenParams = {
   readonly address?: string;
@@ -4748,6 +4870,7 @@ export type OAVControllerFindYieldsByToken410 = StakeKitErrorDto;
 export type OAVControllerFindYieldsByToken412 = StakeKitErrorDto;
 export type OAVControllerFindYieldsByToken429 = StakeKitErrorDto;
 export type OAVControllerFindYieldsByToken500 = StakeKitErrorDto;
+export type OAVControllerFindYieldsByToken502 = StakeKitErrorDto;
 export type OAVControllerFindYieldsByToken503 = StakeKitErrorDto;
 export type OAVControllerFindAllParams = { readonly active?: boolean };
 export type OAVControllerFindAll200 = ReadonlyArray<OAVResponseDto>;
@@ -4760,6 +4883,7 @@ export type OAVControllerFindAll410 = StakeKitErrorDto;
 export type OAVControllerFindAll412 = StakeKitErrorDto;
 export type OAVControllerFindAll429 = StakeKitErrorDto;
 export type OAVControllerFindAll500 = StakeKitErrorDto;
+export type OAVControllerFindAll502 = StakeKitErrorDto;
 export type OAVControllerFindAll503 = StakeKitErrorDto;
 export type OAVControllerCreateRequestJson = CreateOAVDto;
 export type OAVControllerCreate201 = OAVResponseDto;
@@ -4771,6 +4895,7 @@ export type OAVControllerCreate410 = StakeKitErrorDto;
 export type OAVControllerCreate412 = StakeKitErrorDto;
 export type OAVControllerCreate429 = StakeKitErrorDto;
 export type OAVControllerCreate500 = StakeKitErrorDto;
+export type OAVControllerCreate502 = StakeKitErrorDto;
 export type OAVControllerCreate503 = StakeKitErrorDto;
 export type OAVControllerRemove400 = StakeKitErrorDto;
 export type OAVControllerRemove401 = StakeKitErrorDto;
@@ -4780,6 +4905,7 @@ export type OAVControllerRemove410 = StakeKitErrorDto;
 export type OAVControllerRemove412 = StakeKitErrorDto;
 export type OAVControllerRemove429 = StakeKitErrorDto;
 export type OAVControllerRemove500 = StakeKitErrorDto;
+export type OAVControllerRemove502 = StakeKitErrorDto;
 export type OAVControllerRemove503 = StakeKitErrorDto;
 export type OAVControllerUpdateRequestJson = UpdateOAVDto;
 export type OAVControllerUpdate200 = OAVResponseDto;
@@ -4790,6 +4916,7 @@ export type OAVControllerUpdate410 = StakeKitErrorDto;
 export type OAVControllerUpdate412 = StakeKitErrorDto;
 export type OAVControllerUpdate429 = StakeKitErrorDto;
 export type OAVControllerUpdate500 = StakeKitErrorDto;
+export type OAVControllerUpdate502 = StakeKitErrorDto;
 export type OAVControllerUpdate503 = StakeKitErrorDto;
 export type NetworkAddressesPositionsV2ControllerGetPositionsParams = {
   readonly "X-API-KEY"?: string;
@@ -4855,6 +4982,7 @@ export type YieldControllerYields410 = StakeKitErrorDto;
 export type YieldControllerYields412 = StakeKitErrorDto;
 export type YieldControllerYields429 = StakeKitErrorDto;
 export type YieldControllerYields500 = StakeKitErrorDto;
+export type YieldControllerYields502 = StakeKitErrorDto;
 export type YieldControllerYields503 = StakeKitErrorDto;
 export type YieldControllerGetMultipleYieldBalancesParams = {
   readonly "X-API-KEY"?: string;
@@ -4872,6 +5000,7 @@ export type YieldControllerGetMultipleYieldBalances410 = StakeKitErrorDto;
 export type YieldControllerGetMultipleYieldBalances412 = StakeKitErrorDto;
 export type YieldControllerGetMultipleYieldBalances429 = StakeKitErrorDto;
 export type YieldControllerGetMultipleYieldBalances500 = StakeKitErrorDto;
+export type YieldControllerGetMultipleYieldBalances502 = StakeKitErrorDto;
 export type YieldControllerGetMultipleYieldBalances503 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanParams = {
   readonly "X-API-KEY"?: string;
@@ -4889,6 +5018,7 @@ export type YieldControllerYieldBalancesScan410 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScan412 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScan429 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScan500 = StakeKitErrorDto;
+export type YieldControllerYieldBalancesScan502 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScan503 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanEvmParams = {
   readonly "X-API-KEY"?: string;
@@ -4906,6 +5036,7 @@ export type YieldControllerYieldBalancesScanEvm410 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanEvm412 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanEvm429 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanEvm500 = StakeKitErrorDto;
+export type YieldControllerYieldBalancesScanEvm502 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanEvm503 = StakeKitErrorDto;
 export type YieldControllerGetMyYieldsParams = {
   readonly preferredValidatorsOnly?: boolean;
@@ -4963,6 +5094,7 @@ export type YieldControllerGetMyYields410 = StakeKitErrorDto;
 export type YieldControllerGetMyYields412 = StakeKitErrorDto;
 export type YieldControllerGetMyYields429 = StakeKitErrorDto;
 export type YieldControllerGetMyYields500 = StakeKitErrorDto;
+export type YieldControllerGetMyYields502 = StakeKitErrorDto;
 export type YieldControllerGetMyYields503 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworksParams = {
   readonly "X-API-KEY"?: string;
@@ -4976,6 +5108,7 @@ export type YieldControllerGetMyNetworks410 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworks412 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworks429 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworks500 = StakeKitErrorDto;
+export type YieldControllerGetMyNetworks502 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworks503 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworksdefault = ReadonlyArray<string>;
 export type YieldControllerFindValidatorsParams = {
@@ -4995,6 +5128,7 @@ export type YieldControllerFindValidators410 = StakeKitErrorDto;
 export type YieldControllerFindValidators412 = StakeKitErrorDto;
 export type YieldControllerFindValidators429 = StakeKitErrorDto;
 export type YieldControllerFindValidators500 = StakeKitErrorDto;
+export type YieldControllerFindValidators502 = StakeKitErrorDto;
 export type YieldControllerFindValidators503 = StakeKitErrorDto;
 export type YieldControllerYieldOpportunityParams = {
   readonly "X-API-KEY"?: string;
@@ -5011,6 +5145,7 @@ export type YieldControllerYieldOpportunity410 = StakeKitErrorDto;
 export type YieldControllerYieldOpportunity412 = StakeKitErrorDto;
 export type YieldControllerYieldOpportunity429 = StakeKitErrorDto;
 export type YieldControllerYieldOpportunity500 = StakeKitErrorDto;
+export type YieldControllerYieldOpportunity502 = StakeKitErrorDto;
 export type YieldControllerYieldOpportunity503 = StakeKitErrorDto;
 export type YieldControllerGetValidatorsParams = {
   readonly "X-API-KEY"?: string;
@@ -5027,6 +5162,7 @@ export type YieldControllerGetValidators410 = StakeKitErrorDto;
 export type YieldControllerGetValidators412 = StakeKitErrorDto;
 export type YieldControllerGetValidators429 = StakeKitErrorDto;
 export type YieldControllerGetValidators500 = StakeKitErrorDto;
+export type YieldControllerGetValidators502 = StakeKitErrorDto;
 export type YieldControllerGetValidators503 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalancesParams = {
   readonly ledgerWalletAPICompatible?: boolean;
@@ -5045,6 +5181,7 @@ export type YieldControllerGetSingleYieldBalances410 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalances412 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalances429 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalances500 = StakeKitErrorDto;
+export type YieldControllerGetSingleYieldBalances502 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalances503 = StakeKitErrorDto;
 export type YieldControllerGetBalanceTransferEventsParams = {
   readonly address: string;
@@ -5065,6 +5202,7 @@ export type YieldControllerGetBalanceTransferEvents410 = StakeKitErrorDto;
 export type YieldControllerGetBalanceTransferEvents412 = StakeKitErrorDto;
 export type YieldControllerGetBalanceTransferEvents429 = StakeKitErrorDto;
 export type YieldControllerGetBalanceTransferEvents500 = StakeKitErrorDto;
+export type YieldControllerGetBalanceTransferEvents502 = StakeKitErrorDto;
 export type YieldControllerGetBalanceTransferEvents503 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldRewardsSummaryParams = {
   readonly "X-API-KEY"?: string;
@@ -5082,6 +5220,7 @@ export type YieldControllerGetSingleYieldRewardsSummary410 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldRewardsSummary412 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldRewardsSummary429 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldRewardsSummary500 = StakeKitErrorDto;
+export type YieldControllerGetSingleYieldRewardsSummary502 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldRewardsSummary503 = StakeKitErrorDto;
 export type YieldControllerGetFeeConfiguration200 = FeeConfigurationDto;
 export type YieldControllerGetFeeConfiguration400 = StakeKitErrorDto;
@@ -5092,6 +5231,7 @@ export type YieldControllerGetFeeConfiguration410 = StakeKitErrorDto;
 export type YieldControllerGetFeeConfiguration412 = StakeKitErrorDto;
 export type YieldControllerGetFeeConfiguration429 = StakeKitErrorDto;
 export type YieldControllerGetFeeConfiguration500 = StakeKitErrorDto;
+export type YieldControllerGetFeeConfiguration502 = StakeKitErrorDto;
 export type YieldControllerGetFeeConfiguration503 = StakeKitErrorDto;
 export type YieldControllerCreateFeeConfigurationParams = {
   readonly "X-API-KEY": string;
@@ -5108,10 +5248,12 @@ export type YieldControllerCreateFeeConfiguration410 = StakeKitErrorDto;
 export type YieldControllerCreateFeeConfiguration412 = StakeKitErrorDto;
 export type YieldControllerCreateFeeConfiguration429 = StakeKitErrorDto;
 export type YieldControllerCreateFeeConfiguration500 = StakeKitErrorDto;
+export type YieldControllerCreateFeeConfiguration502 = StakeKitErrorDto;
 export type YieldControllerCreateFeeConfiguration503 = StakeKitErrorDto;
 export type YieldV2ControllerYieldsParams = {
   readonly providerId?:
     | "aave"
+    | "edel"
     | "anchor"
     | "benqi"
     | "compound"
@@ -5179,7 +5321,10 @@ export type YieldV2ControllerYieldsParams = {
     | "ondo"
     | "superstate"
     | "securitize"
-    | "nest";
+    | "nest"
+    | "r25"
+    | "rocksolid"
+    | "yuzu";
   readonly inputToken?: string;
   readonly enterStatus?: boolean;
   readonly preferredValidatorsOnly?: boolean;
@@ -5224,6 +5369,7 @@ export type YieldV2ControllerYieldsParams = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -5241,6 +5387,7 @@ export type YieldV2ControllerYieldsParams = {
     | "katana"
     | "hyperevm"
     | "tempo"
+    | "pharos"
     | "agoric"
     | "akash"
     | "axelar"
@@ -5339,6 +5486,7 @@ export type YieldV2ControllerYields410 = StakeKitErrorDto;
 export type YieldV2ControllerYields412 = StakeKitErrorDto;
 export type YieldV2ControllerYields429 = StakeKitErrorDto;
 export type YieldV2ControllerYields500 = StakeKitErrorDto;
+export type YieldV2ControllerYields502 = StakeKitErrorDto;
 export type YieldV2ControllerYields503 = StakeKitErrorDto;
 export type YieldV2ControllerGetYieldByIdParams = {
   readonly "X-API-KEY"?: string;
@@ -5353,6 +5501,7 @@ export type YieldV2ControllerGetYieldById410 = StakeKitErrorDto;
 export type YieldV2ControllerGetYieldById412 = StakeKitErrorDto;
 export type YieldV2ControllerGetYieldById429 = StakeKitErrorDto;
 export type YieldV2ControllerGetYieldById500 = StakeKitErrorDto;
+export type YieldV2ControllerGetYieldById502 = StakeKitErrorDto;
 export type YieldV2ControllerGetYieldById503 = StakeKitErrorDto;
 export type YieldV2ControllerFindYieldValidatorsParams = {
   readonly ledgerWalletAPICompatible?: boolean;
@@ -5371,6 +5520,7 @@ export type YieldV2ControllerFindYieldValidators410 = StakeKitErrorDto;
 export type YieldV2ControllerFindYieldValidators412 = StakeKitErrorDto;
 export type YieldV2ControllerFindYieldValidators429 = StakeKitErrorDto;
 export type YieldV2ControllerFindYieldValidators500 = StakeKitErrorDto;
+export type YieldV2ControllerFindYieldValidators502 = StakeKitErrorDto;
 export type YieldV2ControllerFindYieldValidators503 = StakeKitErrorDto;
 export type YieldV2ControllerFindValidatorsParams = {
   readonly preferredValidatorsOnly?: boolean;
@@ -5390,6 +5540,7 @@ export type YieldV2ControllerFindValidators410 = StakeKitErrorDto;
 export type YieldV2ControllerFindValidators412 = StakeKitErrorDto;
 export type YieldV2ControllerFindValidators429 = StakeKitErrorDto;
 export type YieldV2ControllerFindValidators500 = StakeKitErrorDto;
+export type YieldV2ControllerFindValidators502 = StakeKitErrorDto;
 export type YieldV2ControllerFindValidators503 = StakeKitErrorDto;
 export type YieldV2ControllerGetFeeConfigurationsParams = {
   readonly page?: number;
@@ -5422,6 +5573,7 @@ export type YieldV2ControllerGetFeeConfigurations410 = StakeKitErrorDto;
 export type YieldV2ControllerGetFeeConfigurations412 = StakeKitErrorDto;
 export type YieldV2ControllerGetFeeConfigurations429 = StakeKitErrorDto;
 export type YieldV2ControllerGetFeeConfigurations500 = StakeKitErrorDto;
+export type YieldV2ControllerGetFeeConfigurations502 = StakeKitErrorDto;
 export type YieldV2ControllerGetFeeConfigurations503 = StakeKitErrorDto;
 export type EarnControllerGetStakesParams = {
   readonly stake_addresses: string;
@@ -5513,6 +5665,16 @@ export type ProgrammaticFeeConfigurationControllerUpdateParams = {
 };
 export type ProgrammaticFeeConfigurationControllerUpdateRequestJson =
   UpdateFeeConfigurationDto;
+export type FeeConfigurationAdminControllerListParams = {
+  readonly teamId?: string;
+  readonly projectId?: string;
+  readonly status?: FeeConfigurationStatus;
+  readonly integrationId?: string;
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type FeeConfigurationAdminControllerList200 =
+  PaginatedAdminFeeConfigurationDto;
 export type RiskParametersControllerFindManyParams = {
   readonly limit?: number;
   readonly page?: number;
@@ -5854,6 +6016,10 @@ export type YieldStatusControllerFindAllParams = {
 };
 export type YieldStatusControllerFindAll200 =
   PaginatedYieldStatusOverrideResponseDto;
+export type PerpsOverridesControllerList200 =
+  ReadonlyArray<PerpsOverrideResponseDto>;
+export type PerpsOverridesControllerSetRequestJson = SetPerpsOverrideDto;
+export type PerpsOverridesControllerSet200 = PerpsOverrideResponseDto;
 export type NetworksV2ControllerGetNetworksParams = {
   readonly limit?: number;
   readonly page?: number;
@@ -5993,6 +6159,10 @@ export const make = (
       HttpClientRequest.post(`/v1/auth/login/verify-code`).pipe(
         HttpClientRequest.bodyJsonUnsafe(options.payload),
         onRequest(options.config)(["2xx"])
+      ),
+    AuthControllerLogout: (options) =>
+      HttpClientRequest.post(`/v1/auth/logout`).pipe(
+        onRequest(options?.config)([])
       ),
     AuthControllerConfirmEmail: (options) =>
       HttpClientRequest.post(`/v1/auth/email/confirm`).pipe(
@@ -6806,6 +6976,7 @@ export const make = (
           "412": "HealthControllerHealthV2412",
           "429": "HealthControllerHealthV2429",
           "500": "HealthControllerHealthV2500",
+          "502": "HealthControllerHealthV2502",
           "503": "HealthControllerHealthV2503",
         })
       ),
@@ -7127,6 +7298,7 @@ export const make = (
           "412": "ActionControllerGetAction412",
           "429": "ActionControllerGetAction429",
           "500": "ActionControllerGetAction500",
+          "502": "ActionControllerGetAction502",
           "503": "ActionControllerGetAction503",
         })
       ),
@@ -7145,6 +7317,7 @@ export const make = (
           "412": "ActionControllerGetGasEstimate412",
           "429": "ActionControllerGetGasEstimate429",
           "500": "ActionControllerGetGasEstimate500",
+          "502": "ActionControllerGetGasEstimate502",
           "503": "ActionControllerGetGasEstimate503",
         })
       ),
@@ -7165,6 +7338,7 @@ export const make = (
           "412": "ActionControllerEnter412",
           "429": "ActionControllerEnter429",
           "500": "ActionControllerEnter500",
+          "502": "ActionControllerEnter502",
           "503": "ActionControllerEnter503",
         })
       ),
@@ -7185,6 +7359,7 @@ export const make = (
           "412": "ActionControllerExit412",
           "429": "ActionControllerExit429",
           "500": "ActionControllerExit500",
+          "502": "ActionControllerExit502",
           "503": "ActionControllerExit503",
         })
       ),
@@ -7205,6 +7380,7 @@ export const make = (
           "412": "ActionControllerPending412",
           "429": "ActionControllerPending429",
           "500": "ActionControllerPending500",
+          "502": "ActionControllerPending502",
           "503": "ActionControllerPending503",
         })
       ),
@@ -7224,6 +7400,7 @@ export const make = (
           "412": "ActionControllerEnterGasEstimation412",
           "429": "ActionControllerEnterGasEstimation429",
           "500": "ActionControllerEnterGasEstimation500",
+          "502": "ActionControllerEnterGasEstimation502",
           "503": "ActionControllerEnterGasEstimation503",
         })
       ),
@@ -7243,6 +7420,7 @@ export const make = (
           "412": "ActionControllerExitGasEstimate412",
           "429": "ActionControllerExitGasEstimate429",
           "500": "ActionControllerExitGasEstimate500",
+          "502": "ActionControllerExitGasEstimate502",
           "503": "ActionControllerExitGasEstimate503",
         })
       ),
@@ -7271,6 +7449,7 @@ export const make = (
           "412": "ActionControllerList412",
           "429": "ActionControllerList429",
           "500": "ActionControllerList500",
+          "502": "ActionControllerList502",
           "503": "ActionControllerList503",
         })
       ),
@@ -7290,6 +7469,7 @@ export const make = (
           "412": "ActionControllerPendingGasEstimate412",
           "429": "ActionControllerPendingGasEstimate429",
           "500": "ActionControllerPendingGasEstimate500",
+          "502": "ActionControllerPendingGasEstimate502",
           "503": "ActionControllerPendingGasEstimate503",
         })
       ),
@@ -7340,6 +7520,7 @@ export const make = (
           "412": "TransactionControllerGetTransaction412",
           "429": "TransactionControllerGetTransaction429",
           "500": "TransactionControllerGetTransaction500",
+          "502": "TransactionControllerGetTransaction502",
           "503": "TransactionControllerGetTransaction503",
         })
       ),
@@ -7360,6 +7541,7 @@ export const make = (
           "412": "TransactionControllerConstruct412",
           "429": "TransactionControllerConstruct429",
           "500": "TransactionControllerConstruct500",
+          "502": "TransactionControllerConstruct502",
           "503": "TransactionControllerConstruct503",
         })
       ),
@@ -7380,6 +7562,7 @@ export const make = (
           "412": "TransactionControllerSubmit412",
           "429": "TransactionControllerSubmit429",
           "500": "TransactionControllerSubmit500",
+          "502": "TransactionControllerSubmit502",
           "503": "TransactionControllerSubmit503",
         })
       ),
@@ -7402,6 +7585,7 @@ export const make = (
           "412": "TransactionControllerSubmitHash412",
           "429": "TransactionControllerSubmitHash429",
           "500": "TransactionControllerSubmitHash500",
+          "502": "TransactionControllerSubmitHash502",
           "503": "TransactionControllerSubmitHash503",
         })
       ),
@@ -7420,6 +7604,7 @@ export const make = (
           "412": "TransactionControllerGetTransactionStatusFromId412",
           "429": "TransactionControllerGetTransactionStatusFromId429",
           "500": "TransactionControllerGetTransactionStatusFromId500",
+          "502": "TransactionControllerGetTransactionStatusFromId502",
           "503": "TransactionControllerGetTransactionStatusFromId503",
         })
       ),
@@ -7438,6 +7623,7 @@ export const make = (
           "412": "TransactionControllerGetGasForNetwork412",
           "429": "TransactionControllerGetGasForNetwork429",
           "500": "TransactionControllerGetGasForNetwork500",
+          "502": "TransactionControllerGetGasForNetwork502",
           "503": "TransactionControllerGetGasForNetwork503",
         })
       ),
@@ -7460,6 +7646,7 @@ export const make = (
           "412": "TransactionControllerGetTransactionStatusByNetworkAndHash412",
           "429": "TransactionControllerGetTransactionStatusByNetworkAndHash429",
           "500": "TransactionControllerGetTransactionStatusByNetworkAndHash500",
+          "502": "TransactionControllerGetTransactionStatusByNetworkAndHash502",
           "503": "TransactionControllerGetTransactionStatusByNetworkAndHash503",
         })
       ),
@@ -7493,6 +7680,8 @@ export const make = (
             "TransactionControllerGetTransactionVerificationMessageForNetwork429",
           "500":
             "TransactionControllerGetTransactionVerificationMessageForNetwork500",
+          "502":
+            "TransactionControllerGetTransactionVerificationMessageForNetwork502",
           "503":
             "TransactionControllerGetTransactionVerificationMessageForNetwork503",
         })
@@ -7518,6 +7707,7 @@ export const make = (
           "412": "NetworkAddressesTokenV2ControllerGetTokenBalances412",
           "429": "NetworkAddressesTokenV2ControllerGetTokenBalances429",
           "500": "NetworkAddressesTokenV2ControllerGetTokenBalances500",
+          "502": "NetworkAddressesTokenV2ControllerGetTokenBalances502",
           "503": "NetworkAddressesTokenV2ControllerGetTokenBalances503",
         })
       ),
@@ -7539,6 +7729,7 @@ export const make = (
           "412": "NetworkTokensV2ControllerGetTokens412",
           "429": "NetworkTokensV2ControllerGetTokens429",
           "500": "NetworkTokensV2ControllerGetTokens500",
+          "502": "NetworkTokensV2ControllerGetTokens502",
           "503": "NetworkTokensV2ControllerGetTokens503",
         })
       ),
@@ -7561,6 +7752,7 @@ export const make = (
           "412": "TokenControllerGetTokens412",
           "429": "TokenControllerGetTokens429",
           "500": "TokenControllerGetTokens500",
+          "502": "TokenControllerGetTokens502",
           "503": "TokenControllerGetTokens503",
         })
       ),
@@ -7580,6 +7772,7 @@ export const make = (
           "412": "TokenControllerGetTokenPrices412",
           "429": "TokenControllerGetTokenPrices429",
           "500": "TokenControllerGetTokenPrices500",
+          "502": "TokenControllerGetTokenPrices502",
           "503": "TokenControllerGetTokenPrices503",
         })
       ),
@@ -7599,6 +7792,7 @@ export const make = (
           "412": "TokenControllerGetTokenBalances412",
           "429": "TokenControllerGetTokenBalances429",
           "500": "TokenControllerGetTokenBalances500",
+          "502": "TokenControllerGetTokenBalances502",
           "503": "TokenControllerGetTokenBalances503",
         })
       ),
@@ -7618,6 +7812,7 @@ export const make = (
           "412": "TokenControllerTokenBalancesScan412",
           "429": "TokenControllerTokenBalancesScan429",
           "500": "TokenControllerTokenBalancesScan500",
+          "502": "TokenControllerTokenBalancesScan502",
           "503": "TokenControllerTokenBalancesScan503",
         })
       ),
@@ -7731,6 +7926,7 @@ export const make = (
           "412": "OAVControllerFindAllTokens412",
           "429": "OAVControllerFindAllTokens429",
           "500": "OAVControllerFindAllTokens500",
+          "502": "OAVControllerFindAllTokens502",
           "503": "OAVControllerFindAllTokens503",
         })
       ),
@@ -7750,6 +7946,7 @@ export const make = (
           "412": "OAVControllerFindYieldsByToken412",
           "429": "OAVControllerFindYieldsByToken429",
           "500": "OAVControllerFindYieldsByToken500",
+          "502": "OAVControllerFindYieldsByToken502",
           "503": "OAVControllerFindYieldsByToken503",
         })
       ),
@@ -7770,6 +7967,7 @@ export const make = (
           "412": "OAVControllerFindAll412",
           "429": "OAVControllerFindAll429",
           "500": "OAVControllerFindAll500",
+          "502": "OAVControllerFindAll502",
           "503": "OAVControllerFindAll503",
         })
       ),
@@ -7787,6 +7985,7 @@ export const make = (
           "412": "OAVControllerCreate412",
           "429": "OAVControllerCreate429",
           "500": "OAVControllerCreate500",
+          "502": "OAVControllerCreate502",
           "503": "OAVControllerCreate503",
         })
       ),
@@ -7803,6 +8002,7 @@ export const make = (
           "412": "OAVControllerRemove412",
           "429": "OAVControllerRemove429",
           "500": "OAVControllerRemove500",
+          "502": "OAVControllerRemove502",
           "503": "OAVControllerRemove503",
         })
       ),
@@ -7819,6 +8019,7 @@ export const make = (
           "412": "OAVControllerUpdate412",
           "429": "OAVControllerUpdate429",
           "500": "OAVControllerUpdate500",
+          "502": "OAVControllerUpdate502",
           "503": "OAVControllerUpdate503",
         })
       ),
@@ -7868,6 +8069,7 @@ export const make = (
           "412": "YieldControllerYields412",
           "429": "YieldControllerYields429",
           "500": "YieldControllerYields500",
+          "502": "YieldControllerYields502",
           "503": "YieldControllerYields503",
         })
       ),
@@ -7887,6 +8089,7 @@ export const make = (
           "412": "YieldControllerGetMultipleYieldBalances412",
           "429": "YieldControllerGetMultipleYieldBalances429",
           "500": "YieldControllerGetMultipleYieldBalances500",
+          "502": "YieldControllerGetMultipleYieldBalances502",
           "503": "YieldControllerGetMultipleYieldBalances503",
         })
       ),
@@ -7906,6 +8109,7 @@ export const make = (
           "412": "YieldControllerYieldBalancesScan412",
           "429": "YieldControllerYieldBalancesScan429",
           "500": "YieldControllerYieldBalancesScan500",
+          "502": "YieldControllerYieldBalancesScan502",
           "503": "YieldControllerYieldBalancesScan503",
         })
       ),
@@ -7925,6 +8129,7 @@ export const make = (
           "412": "YieldControllerYieldBalancesScanEvm412",
           "429": "YieldControllerYieldBalancesScanEvm429",
           "500": "YieldControllerYieldBalancesScanEvm500",
+          "502": "YieldControllerYieldBalancesScanEvm502",
           "503": "YieldControllerYieldBalancesScanEvm503",
         })
       ),
@@ -7956,6 +8161,7 @@ export const make = (
           "412": "YieldControllerGetMyYields412",
           "429": "YieldControllerGetMyYields429",
           "500": "YieldControllerGetMyYields500",
+          "502": "YieldControllerGetMyYields502",
           "503": "YieldControllerGetMyYields503",
         })
       ),
@@ -7974,6 +8180,7 @@ export const make = (
           "412": "YieldControllerGetMyNetworks412",
           "429": "YieldControllerGetMyNetworks429",
           "500": "YieldControllerGetMyNetworks500",
+          "502": "YieldControllerGetMyNetworks502",
           "503": "YieldControllerGetMyNetworks503",
         })
       ),
@@ -7999,6 +8206,7 @@ export const make = (
           "412": "YieldControllerFindValidators412",
           "429": "YieldControllerFindValidators429",
           "500": "YieldControllerFindValidators500",
+          "502": "YieldControllerFindValidators502",
           "503": "YieldControllerFindValidators503",
         })
       ),
@@ -8025,6 +8233,7 @@ export const make = (
           "412": "YieldControllerYieldOpportunity412",
           "429": "YieldControllerYieldOpportunity429",
           "500": "YieldControllerYieldOpportunity500",
+          "502": "YieldControllerYieldOpportunity502",
           "503": "YieldControllerYieldOpportunity503",
         })
       ),
@@ -8051,6 +8260,7 @@ export const make = (
           "412": "YieldControllerGetValidators412",
           "429": "YieldControllerGetValidators429",
           "500": "YieldControllerGetValidators500",
+          "502": "YieldControllerGetValidators502",
           "503": "YieldControllerGetValidators503",
         })
       ),
@@ -8075,6 +8285,7 @@ export const make = (
           "412": "YieldControllerGetSingleYieldBalances412",
           "429": "YieldControllerGetSingleYieldBalances429",
           "500": "YieldControllerGetSingleYieldBalances500",
+          "502": "YieldControllerGetSingleYieldBalances502",
           "503": "YieldControllerGetSingleYieldBalances503",
         })
       ),
@@ -8102,6 +8313,7 @@ export const make = (
           "412": "YieldControllerGetBalanceTransferEvents412",
           "429": "YieldControllerGetBalanceTransferEvents429",
           "500": "YieldControllerGetBalanceTransferEvents500",
+          "502": "YieldControllerGetBalanceTransferEvents502",
           "503": "YieldControllerGetBalanceTransferEvents503",
         })
       ),
@@ -8123,6 +8335,7 @@ export const make = (
           "412": "YieldControllerGetSingleYieldRewardsSummary412",
           "429": "YieldControllerGetSingleYieldRewardsSummary429",
           "500": "YieldControllerGetSingleYieldRewardsSummary500",
+          "502": "YieldControllerGetSingleYieldRewardsSummary502",
           "503": "YieldControllerGetSingleYieldRewardsSummary503",
         })
       ),
@@ -8139,6 +8352,7 @@ export const make = (
           "412": "YieldControllerGetFeeConfiguration412",
           "429": "YieldControllerGetFeeConfiguration429",
           "500": "YieldControllerGetFeeConfiguration500",
+          "502": "YieldControllerGetFeeConfiguration502",
           "503": "YieldControllerGetFeeConfiguration503",
         })
       ),
@@ -8160,6 +8374,7 @@ export const make = (
           "412": "YieldControllerCreateFeeConfiguration412",
           "429": "YieldControllerCreateFeeConfiguration429",
           "500": "YieldControllerCreateFeeConfiguration500",
+          "502": "YieldControllerCreateFeeConfiguration502",
           "503": "YieldControllerCreateFeeConfiguration503",
         })
       ),
@@ -8195,6 +8410,7 @@ export const make = (
           "412": "YieldV2ControllerYields412",
           "429": "YieldV2ControllerYields429",
           "500": "YieldV2ControllerYields500",
+          "502": "YieldV2ControllerYields502",
           "503": "YieldV2ControllerYields503",
         })
       ),
@@ -8213,6 +8429,7 @@ export const make = (
           "412": "YieldV2ControllerGetYieldById412",
           "429": "YieldV2ControllerGetYieldById429",
           "500": "YieldV2ControllerGetYieldById500",
+          "502": "YieldV2ControllerGetYieldById502",
           "503": "YieldV2ControllerGetYieldById503",
         })
       ),
@@ -8238,6 +8455,7 @@ export const make = (
           "412": "YieldV2ControllerFindYieldValidators412",
           "429": "YieldV2ControllerFindYieldValidators429",
           "500": "YieldV2ControllerFindYieldValidators500",
+          "502": "YieldV2ControllerFindYieldValidators502",
           "503": "YieldV2ControllerFindYieldValidators503",
         })
       ),
@@ -8266,6 +8484,7 @@ export const make = (
           "412": "YieldV2ControllerFindValidators412",
           "429": "YieldV2ControllerFindValidators429",
           "500": "YieldV2ControllerFindValidators500",
+          "502": "YieldV2ControllerFindValidators502",
           "503": "YieldV2ControllerFindValidators503",
         })
       ),
@@ -8286,6 +8505,7 @@ export const make = (
           "412": "YieldV2ControllerGetFeeConfigurations412",
           "429": "YieldV2ControllerGetFeeConfigurations429",
           "500": "YieldV2ControllerGetFeeConfigurations500",
+          "502": "YieldV2ControllerGetFeeConfigurations502",
           "503": "YieldV2ControllerGetFeeConfigurations503",
         })
       ),
@@ -8403,6 +8623,18 @@ export const make = (
         }),
         HttpClientRequest.bodyJsonUnsafe(options.payload),
         onRequest(options.config)([])
+      ),
+    FeeConfigurationAdminControllerList: (options) =>
+      HttpClientRequest.get(`/v1/admin/fee-configuration`).pipe(
+        HttpClientRequest.setUrlParams({
+          teamId: options?.params?.["teamId"] as any,
+          projectId: options?.params?.["projectId"] as any,
+          status: options?.params?.["status"] as any,
+          integrationId: options?.params?.["integrationId"] as any,
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
       ),
     RiskParametersControllerFindMany: (options) =>
       HttpClientRequest.get(`/v1/risk-parameters`).pipe(
@@ -8825,6 +9057,21 @@ export const make = (
         }),
         onRequest(options?.config)(["2xx"])
       ),
+    PerpsOverridesControllerList: (options) =>
+      HttpClientRequest.get(`/v1/admin/perps/providers/overrides`).pipe(
+        onRequest(options?.config)(["2xx"])
+      ),
+    PerpsOverridesControllerSet: (providerId, options) =>
+      HttpClientRequest.put(
+        `/v1/admin/perps/providers/${providerId}/override`
+      ).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"])
+      ),
+    PerpsOverridesControllerClear: (providerId, options) =>
+      HttpClientRequest.delete(
+        `/v1/admin/perps/providers/${providerId}/override`
+      ).pipe(onRequest(options?.config)([])),
     NetworksV2ControllerGetNetworks: (options) =>
       HttpClientRequest.get(`/v2/networks`).pipe(
         HttpClientRequest.setUrlParams({
@@ -8857,6 +9104,15 @@ export interface LegacyApi {
     readonly config?: Config | undefined;
   }) => Effect.Effect<
     WithOptionalResponse<AuthControllerVerifyLoginCode200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Clear dashboard session cookie
+   */
+  readonly AuthControllerLogout: <Config extends OperationConfig>(
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<void, Config>,
     HttpClientError.HttpClientError
   >;
   readonly AuthControllerConfirmEmail: <
@@ -9931,6 +10187,7 @@ export interface LegacyApi {
     | LegacyApiError<"HealthControllerHealthV2412", HealthControllerHealthV2412>
     | LegacyApiError<"HealthControllerHealthV2429", HealthControllerHealthV2429>
     | LegacyApiError<"HealthControllerHealthV2500", HealthControllerHealthV2500>
+    | LegacyApiError<"HealthControllerHealthV2502", HealthControllerHealthV2502>
     | LegacyApiError<"HealthControllerHealthV2503", HealthControllerHealthV2503>
   >;
   readonly HomeControllerAppInfo: <Config extends OperationConfig>(
@@ -10347,6 +10604,10 @@ export interface LegacyApi {
         ActionControllerGetAction500
       >
     | LegacyApiError<
+        "ActionControllerGetAction502",
+        ActionControllerGetAction502
+      >
+    | LegacyApiError<
         "ActionControllerGetAction503",
         ActionControllerGetAction503
       >
@@ -10402,6 +10663,10 @@ export interface LegacyApi {
         ActionControllerGetGasEstimate500
       >
     | LegacyApiError<
+        "ActionControllerGetGasEstimate502",
+        ActionControllerGetGasEstimate502
+      >
+    | LegacyApiError<
         "ActionControllerGetGasEstimate503",
         ActionControllerGetGasEstimate503
       >
@@ -10426,6 +10691,7 @@ export interface LegacyApi {
     | LegacyApiError<"ActionControllerEnter412", ActionControllerEnter412>
     | LegacyApiError<"ActionControllerEnter429", ActionControllerEnter429>
     | LegacyApiError<"ActionControllerEnter500", ActionControllerEnter500>
+    | LegacyApiError<"ActionControllerEnter502", ActionControllerEnter502>
     | LegacyApiError<"ActionControllerEnter503", ActionControllerEnter503>
   >;
   /**
@@ -10448,6 +10714,7 @@ export interface LegacyApi {
     | LegacyApiError<"ActionControllerExit412", ActionControllerExit412>
     | LegacyApiError<"ActionControllerExit429", ActionControllerExit429>
     | LegacyApiError<"ActionControllerExit500", ActionControllerExit500>
+    | LegacyApiError<"ActionControllerExit502", ActionControllerExit502>
     | LegacyApiError<"ActionControllerExit503", ActionControllerExit503>
   >;
   /**
@@ -10470,6 +10737,7 @@ export interface LegacyApi {
     | LegacyApiError<"ActionControllerPending412", ActionControllerPending412>
     | LegacyApiError<"ActionControllerPending429", ActionControllerPending429>
     | LegacyApiError<"ActionControllerPending500", ActionControllerPending500>
+    | LegacyApiError<"ActionControllerPending502", ActionControllerPending502>
     | LegacyApiError<"ActionControllerPending503", ActionControllerPending503>
   >;
   /**
@@ -10519,6 +10787,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "ActionControllerEnterGasEstimation500",
         ActionControllerEnterGasEstimation500
+      >
+    | LegacyApiError<
+        "ActionControllerEnterGasEstimation502",
+        ActionControllerEnterGasEstimation502
       >
     | LegacyApiError<
         "ActionControllerEnterGasEstimation503",
@@ -10574,6 +10846,10 @@ export interface LegacyApi {
         ActionControllerExitGasEstimate500
       >
     | LegacyApiError<
+        "ActionControllerExitGasEstimate502",
+        ActionControllerExitGasEstimate502
+      >
+    | LegacyApiError<
         "ActionControllerExitGasEstimate503",
         ActionControllerExitGasEstimate503
       >
@@ -10596,6 +10872,7 @@ export interface LegacyApi {
     | LegacyApiError<"ActionControllerList412", ActionControllerList412>
     | LegacyApiError<"ActionControllerList429", ActionControllerList429>
     | LegacyApiError<"ActionControllerList500", ActionControllerList500>
+    | LegacyApiError<"ActionControllerList502", ActionControllerList502>
     | LegacyApiError<"ActionControllerList503", ActionControllerList503>
   >;
   /**
@@ -10645,6 +10922,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "ActionControllerPendingGasEstimate500",
         ActionControllerPendingGasEstimate500
+      >
+    | LegacyApiError<
+        "ActionControllerPendingGasEstimate502",
+        ActionControllerPendingGasEstimate502
       >
     | LegacyApiError<
         "ActionControllerPendingGasEstimate503",
@@ -10768,6 +11049,10 @@ export interface LegacyApi {
         TransactionControllerGetTransaction500
       >
     | LegacyApiError<
+        "TransactionControllerGetTransaction502",
+        TransactionControllerGetTransaction502
+      >
+    | LegacyApiError<
         "TransactionControllerGetTransaction503",
         TransactionControllerGetTransaction503
       >
@@ -10824,6 +11109,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "TransactionControllerConstruct500",
         TransactionControllerConstruct500
+      >
+    | LegacyApiError<
+        "TransactionControllerConstruct502",
+        TransactionControllerConstruct502
       >
     | LegacyApiError<
         "TransactionControllerConstruct503",
@@ -10884,6 +11173,10 @@ export interface LegacyApi {
         TransactionControllerSubmit500
       >
     | LegacyApiError<
+        "TransactionControllerSubmit502",
+        TransactionControllerSubmit502
+      >
+    | LegacyApiError<
         "TransactionControllerSubmit503",
         TransactionControllerSubmit503
       >
@@ -10940,6 +11233,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "TransactionControllerSubmitHash500",
         TransactionControllerSubmitHash500
+      >
+    | LegacyApiError<
+        "TransactionControllerSubmitHash502",
+        TransactionControllerSubmitHash502
       >
     | LegacyApiError<
         "TransactionControllerSubmitHash503",
@@ -11004,6 +11301,10 @@ export interface LegacyApi {
         TransactionControllerGetTransactionStatusFromId500
       >
     | LegacyApiError<
+        "TransactionControllerGetTransactionStatusFromId502",
+        TransactionControllerGetTransactionStatusFromId502
+      >
+    | LegacyApiError<
         "TransactionControllerGetTransactionStatusFromId503",
         TransactionControllerGetTransactionStatusFromId503
       >
@@ -11061,6 +11362,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "TransactionControllerGetGasForNetwork500",
         TransactionControllerGetGasForNetwork500
+      >
+    | LegacyApiError<
+        "TransactionControllerGetGasForNetwork502",
+        TransactionControllerGetGasForNetwork502
       >
     | LegacyApiError<
         "TransactionControllerGetGasForNetwork503",
@@ -11124,6 +11429,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "TransactionControllerGetTransactionStatusByNetworkAndHash500",
         TransactionControllerGetTransactionStatusByNetworkAndHash500
+      >
+    | LegacyApiError<
+        "TransactionControllerGetTransactionStatusByNetworkAndHash502",
+        TransactionControllerGetTransactionStatusByNetworkAndHash502
       >
     | LegacyApiError<
         "TransactionControllerGetTransactionStatusByNetworkAndHash503",
@@ -11191,6 +11500,10 @@ export interface LegacyApi {
         TransactionControllerGetTransactionVerificationMessageForNetwork500
       >
     | LegacyApiError<
+        "TransactionControllerGetTransactionVerificationMessageForNetwork502",
+        TransactionControllerGetTransactionVerificationMessageForNetwork502
+      >
+    | LegacyApiError<
         "TransactionControllerGetTransactionVerificationMessageForNetwork503",
         TransactionControllerGetTransactionVerificationMessageForNetwork503
       >
@@ -11254,6 +11567,10 @@ export interface LegacyApi {
         NetworkAddressesTokenV2ControllerGetTokenBalances500
       >
     | LegacyApiError<
+        "NetworkAddressesTokenV2ControllerGetTokenBalances502",
+        NetworkAddressesTokenV2ControllerGetTokenBalances502
+      >
+    | LegacyApiError<
         "NetworkAddressesTokenV2ControllerGetTokenBalances503",
         NetworkAddressesTokenV2ControllerGetTokenBalances503
       >
@@ -11311,6 +11628,10 @@ export interface LegacyApi {
         NetworkTokensV2ControllerGetTokens500
       >
     | LegacyApiError<
+        "NetworkTokensV2ControllerGetTokens502",
+        NetworkTokensV2ControllerGetTokens502
+      >
+    | LegacyApiError<
         "NetworkTokensV2ControllerGetTokens503",
         NetworkTokensV2ControllerGetTokens503
       >
@@ -11337,6 +11658,7 @@ export interface LegacyApi {
     | LegacyApiError<"TokenControllerGetTokens412", TokenControllerGetTokens412>
     | LegacyApiError<"TokenControllerGetTokens429", TokenControllerGetTokens429>
     | LegacyApiError<"TokenControllerGetTokens500", TokenControllerGetTokens500>
+    | LegacyApiError<"TokenControllerGetTokens502", TokenControllerGetTokens502>
     | LegacyApiError<"TokenControllerGetTokens503", TokenControllerGetTokens503>
   >;
   /**
@@ -11386,6 +11708,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "TokenControllerGetTokenPrices500",
         TokenControllerGetTokenPrices500
+      >
+    | LegacyApiError<
+        "TokenControllerGetTokenPrices502",
+        TokenControllerGetTokenPrices502
       >
     | LegacyApiError<
         "TokenControllerGetTokenPrices503",
@@ -11441,6 +11767,10 @@ export interface LegacyApi {
         TokenControllerGetTokenBalances500
       >
     | LegacyApiError<
+        "TokenControllerGetTokenBalances502",
+        TokenControllerGetTokenBalances502
+      >
+    | LegacyApiError<
         "TokenControllerGetTokenBalances503",
         TokenControllerGetTokenBalances503
       >
@@ -11492,6 +11822,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "TokenControllerTokenBalancesScan500",
         TokenControllerTokenBalancesScan500
+      >
+    | LegacyApiError<
+        "TokenControllerTokenBalancesScan502",
+        TokenControllerTokenBalancesScan502
       >
     | LegacyApiError<
         "TokenControllerTokenBalancesScan503",
@@ -11697,6 +12031,10 @@ export interface LegacyApi {
         OAVControllerFindAllTokens500
       >
     | LegacyApiError<
+        "OAVControllerFindAllTokens502",
+        OAVControllerFindAllTokens502
+      >
+    | LegacyApiError<
         "OAVControllerFindAllTokens503",
         OAVControllerFindAllTokens503
       >
@@ -11750,6 +12088,10 @@ export interface LegacyApi {
         OAVControllerFindYieldsByToken500
       >
     | LegacyApiError<
+        "OAVControllerFindYieldsByToken502",
+        OAVControllerFindYieldsByToken502
+      >
+    | LegacyApiError<
         "OAVControllerFindYieldsByToken503",
         OAVControllerFindYieldsByToken503
       >
@@ -11778,6 +12120,7 @@ export interface LegacyApi {
     | LegacyApiError<"OAVControllerFindAll412", OAVControllerFindAll412>
     | LegacyApiError<"OAVControllerFindAll429", OAVControllerFindAll429>
     | LegacyApiError<"OAVControllerFindAll500", OAVControllerFindAll500>
+    | LegacyApiError<"OAVControllerFindAll502", OAVControllerFindAll502>
     | LegacyApiError<"OAVControllerFindAll503", OAVControllerFindAll503>
   >;
   /**
@@ -11801,6 +12144,7 @@ export interface LegacyApi {
     | LegacyApiError<"OAVControllerCreate412", OAVControllerCreate412>
     | LegacyApiError<"OAVControllerCreate429", OAVControllerCreate429>
     | LegacyApiError<"OAVControllerCreate500", OAVControllerCreate500>
+    | LegacyApiError<"OAVControllerCreate502", OAVControllerCreate502>
     | LegacyApiError<"OAVControllerCreate503", OAVControllerCreate503>
   >;
   /**
@@ -11822,6 +12166,7 @@ export interface LegacyApi {
     | LegacyApiError<"OAVControllerRemove412", OAVControllerRemove412>
     | LegacyApiError<"OAVControllerRemove429", OAVControllerRemove429>
     | LegacyApiError<"OAVControllerRemove500", OAVControllerRemove500>
+    | LegacyApiError<"OAVControllerRemove502", OAVControllerRemove502>
     | LegacyApiError<"OAVControllerRemove503", OAVControllerRemove503>
   >;
   /**
@@ -11845,6 +12190,7 @@ export interface LegacyApi {
     | LegacyApiError<"OAVControllerUpdate412", OAVControllerUpdate412>
     | LegacyApiError<"OAVControllerUpdate429", OAVControllerUpdate429>
     | LegacyApiError<"OAVControllerUpdate500", OAVControllerUpdate500>
+    | LegacyApiError<"OAVControllerUpdate502", OAVControllerUpdate502>
     | LegacyApiError<"OAVControllerUpdate503", OAVControllerUpdate503>
   >;
   /**
@@ -11888,6 +12234,7 @@ export interface LegacyApi {
     | LegacyApiError<"YieldControllerYields412", YieldControllerYields412>
     | LegacyApiError<"YieldControllerYields429", YieldControllerYields429>
     | LegacyApiError<"YieldControllerYields500", YieldControllerYields500>
+    | LegacyApiError<"YieldControllerYields502", YieldControllerYields502>
     | LegacyApiError<"YieldControllerYields503", YieldControllerYields503>
   >;
   /**
@@ -11937,6 +12284,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldControllerGetMultipleYieldBalances500",
         YieldControllerGetMultipleYieldBalances500
+      >
+    | LegacyApiError<
+        "YieldControllerGetMultipleYieldBalances502",
+        YieldControllerGetMultipleYieldBalances502
       >
     | LegacyApiError<
         "YieldControllerGetMultipleYieldBalances503",
@@ -11992,6 +12343,10 @@ export interface LegacyApi {
         YieldControllerYieldBalancesScan500
       >
     | LegacyApiError<
+        "YieldControllerYieldBalancesScan502",
+        YieldControllerYieldBalancesScan502
+      >
+    | LegacyApiError<
         "YieldControllerYieldBalancesScan503",
         YieldControllerYieldBalancesScan503
       >
@@ -12043,6 +12398,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldControllerYieldBalancesScanEvm500",
         YieldControllerYieldBalancesScanEvm500
+      >
+    | LegacyApiError<
+        "YieldControllerYieldBalancesScanEvm502",
+        YieldControllerYieldBalancesScanEvm502
       >
     | LegacyApiError<
         "YieldControllerYieldBalancesScanEvm503",
@@ -12099,6 +12458,10 @@ export interface LegacyApi {
         YieldControllerGetMyYields500
       >
     | LegacyApiError<
+        "YieldControllerGetMyYields502",
+        YieldControllerGetMyYields502
+      >
+    | LegacyApiError<
         "YieldControllerGetMyYields503",
         YieldControllerGetMyYields503
       >
@@ -12153,6 +12516,10 @@ export interface LegacyApi {
         YieldControllerGetMyNetworks500
       >
     | LegacyApiError<
+        "YieldControllerGetMyNetworks502",
+        YieldControllerGetMyNetworks502
+      >
+    | LegacyApiError<
         "YieldControllerGetMyNetworks503",
         YieldControllerGetMyNetworks503
       >
@@ -12205,6 +12572,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldControllerFindValidators500",
         YieldControllerFindValidators500
+      >
+    | LegacyApiError<
+        "YieldControllerFindValidators502",
+        YieldControllerFindValidators502
       >
     | LegacyApiError<
         "YieldControllerFindValidators503",
@@ -12262,6 +12633,10 @@ export interface LegacyApi {
         YieldControllerYieldOpportunity500
       >
     | LegacyApiError<
+        "YieldControllerYieldOpportunity502",
+        YieldControllerYieldOpportunity502
+      >
+    | LegacyApiError<
         "YieldControllerYieldOpportunity503",
         YieldControllerYieldOpportunity503
       >
@@ -12315,6 +12690,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldControllerGetValidators500",
         YieldControllerGetValidators500
+      >
+    | LegacyApiError<
+        "YieldControllerGetValidators502",
+        YieldControllerGetValidators502
       >
     | LegacyApiError<
         "YieldControllerGetValidators503",
@@ -12373,6 +12752,10 @@ export interface LegacyApi {
         YieldControllerGetSingleYieldBalances500
       >
     | LegacyApiError<
+        "YieldControllerGetSingleYieldBalances502",
+        YieldControllerGetSingleYieldBalances502
+      >
+    | LegacyApiError<
         "YieldControllerGetSingleYieldBalances503",
         YieldControllerGetSingleYieldBalances503
       >
@@ -12426,6 +12809,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldControllerGetBalanceTransferEvents500",
         YieldControllerGetBalanceTransferEvents500
+      >
+    | LegacyApiError<
+        "YieldControllerGetBalanceTransferEvents502",
+        YieldControllerGetBalanceTransferEvents502
       >
     | LegacyApiError<
         "YieldControllerGetBalanceTransferEvents503",
@@ -12489,6 +12876,10 @@ export interface LegacyApi {
         YieldControllerGetSingleYieldRewardsSummary500
       >
     | LegacyApiError<
+        "YieldControllerGetSingleYieldRewardsSummary502",
+        YieldControllerGetSingleYieldRewardsSummary502
+      >
+    | LegacyApiError<
         "YieldControllerGetSingleYieldRewardsSummary503",
         YieldControllerGetSingleYieldRewardsSummary503
       >
@@ -12533,6 +12924,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldControllerGetFeeConfiguration500",
         YieldControllerGetFeeConfiguration500
+      >
+    | LegacyApiError<
+        "YieldControllerGetFeeConfiguration502",
+        YieldControllerGetFeeConfiguration502
       >
     | LegacyApiError<
         "YieldControllerGetFeeConfiguration503",
@@ -12591,6 +12986,10 @@ export interface LegacyApi {
         YieldControllerCreateFeeConfiguration500
       >
     | LegacyApiError<
+        "YieldControllerCreateFeeConfiguration502",
+        YieldControllerCreateFeeConfiguration502
+      >
+    | LegacyApiError<
         "YieldControllerCreateFeeConfiguration503",
         YieldControllerCreateFeeConfiguration503
       >
@@ -12617,6 +13016,7 @@ export interface LegacyApi {
     | LegacyApiError<"YieldV2ControllerYields412", YieldV2ControllerYields412>
     | LegacyApiError<"YieldV2ControllerYields429", YieldV2ControllerYields429>
     | LegacyApiError<"YieldV2ControllerYields500", YieldV2ControllerYields500>
+    | LegacyApiError<"YieldV2ControllerYields502", YieldV2ControllerYields502>
     | LegacyApiError<"YieldV2ControllerYields503", YieldV2ControllerYields503>
   >;
   /**
@@ -12668,6 +13068,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldV2ControllerGetYieldById500",
         YieldV2ControllerGetYieldById500
+      >
+    | LegacyApiError<
+        "YieldV2ControllerGetYieldById502",
+        YieldV2ControllerGetYieldById502
       >
     | LegacyApiError<
         "YieldV2ControllerGetYieldById503",
@@ -12729,6 +13133,10 @@ export interface LegacyApi {
         YieldV2ControllerFindYieldValidators500
       >
     | LegacyApiError<
+        "YieldV2ControllerFindYieldValidators502",
+        YieldV2ControllerFindYieldValidators502
+      >
+    | LegacyApiError<
         "YieldV2ControllerFindYieldValidators503",
         YieldV2ControllerFindYieldValidators503
       >
@@ -12781,6 +13189,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldV2ControllerFindValidators500",
         YieldV2ControllerFindValidators500
+      >
+    | LegacyApiError<
+        "YieldV2ControllerFindValidators502",
+        YieldV2ControllerFindValidators502
       >
     | LegacyApiError<
         "YieldV2ControllerFindValidators503",
@@ -12836,6 +13248,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldV2ControllerGetFeeConfigurations500",
         YieldV2ControllerGetFeeConfigurations500
+      >
+    | LegacyApiError<
+        "YieldV2ControllerGetFeeConfigurations502",
+        YieldV2ControllerGetFeeConfigurations502
       >
     | LegacyApiError<
         "YieldV2ControllerGetFeeConfigurations503",
@@ -13013,6 +13429,24 @@ export interface LegacyApi {
     HttpClientError.HttpClientError
   >;
   /**
+   * List all fee configurations across all projects and teams (SuperAdmin).
+   */
+  readonly FeeConfigurationAdminControllerList: <
+    Config extends OperationConfig,
+  >(
+    options:
+      | {
+          readonly params?:
+            | FeeConfigurationAdminControllerListParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<FeeConfigurationAdminControllerList200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
    * List risk parameters
    */
   readonly RiskParametersControllerFindMany: <Config extends OperationConfig>(
@@ -13093,7 +13527,7 @@ export interface LegacyApi {
     HttpClientError.HttpClientError
   >;
   /**
-   * OIDC SSO callback — exchanges code for JWT and redirects to frontend
+   * OIDC SSO callback — sets HttpOnly session cookie and redirects to frontend
    */
   readonly SsoControllerOidcCallback: <
     Config extends OperationConfig,
@@ -13143,6 +13577,9 @@ export interface LegacyApi {
     WithOptionalResponse<MfaControllerSetup200, Config>,
     HttpClientError.HttpClientError
   >;
+  /**
+   * Verifies the TOTP code, enables MFA, and refreshes the HttpOnly session cookie. Returns one-time recovery codes.
+   */
   readonly MfaControllerVerifySetup: <Config extends OperationConfig>(options: {
     readonly payload: MfaControllerVerifySetupRequestJson;
     readonly config?: Config | undefined;
@@ -13168,6 +13605,9 @@ export interface LegacyApi {
     WithOptionalResponse<MfaControllerGetStatus200, Config>,
     HttpClientError.HttpClientError
   >;
+  /**
+   * Completes MFA login by verifying the TOTP code; issues the HttpOnly session cookie.
+   */
   readonly MfaControllerVerify: <Config extends OperationConfig>(options: {
     readonly payload: MfaControllerVerifyRequestJson;
     readonly config?: Config | undefined;
@@ -13175,6 +13615,9 @@ export interface LegacyApi {
     WithOptionalResponse<MfaControllerVerify200, Config>,
     HttpClientError.HttpClientError
   >;
+  /**
+   * Uses a one-time recovery code to complete MFA login; issues the HttpOnly session cookie.
+   */
   readonly MfaControllerRecover: <Config extends OperationConfig>(options: {
     readonly payload: MfaControllerRecoverRequestJson;
     readonly config?: Config | undefined;
@@ -13809,6 +14252,38 @@ export interface LegacyApi {
       | undefined
   ) => Effect.Effect<
     WithOptionalResponse<YieldStatusControllerFindAll200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * List all perps provider overrides (including cleared history)
+   */
+  readonly PerpsOverridesControllerList: <Config extends OperationConfig>(
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<PerpsOverridesControllerList200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Set a manual health override for a perps provider
+   */
+  readonly PerpsOverridesControllerSet: <Config extends OperationConfig>(
+    providerId: string,
+    options: {
+      readonly payload: PerpsOverridesControllerSetRequestJson;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<PerpsOverridesControllerSet200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Clear the manual override for a perps provider
+   */
+  readonly PerpsOverridesControllerClear: <Config extends OperationConfig>(
+    providerId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<void, Config>,
     HttpClientError.HttpClientError
   >;
   readonly NetworksV2ControllerGetNetworks: <Config extends OperationConfig>(
