@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.282](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.281...@stakekit/widget@0.0.282) (2026-07-22)
+
+
+### Features
+
+* **widget:** add pharos network support ([#555](https://github.com/stakekit/widget/issues/555)) ([fbd43cb](https://github.com/stakekit/widget/commit/fbd43cbebbb1658ca8015a5af8fa010c60cc2f2d))
+
 ## [0.0.281](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.280...@stakekit/widget@0.0.281) (2026-07-21)
 
 
