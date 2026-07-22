@@ -21,7 +21,9 @@ const ActivityPageComponent = () => {
     showingCount,
     total,
     onActionSelect,
-    activityActions,
+    hasNextPage,
+    isFetchingNextPage,
+    onLoadMore,
     showActivityContent,
     showActivityControls,
     showActivityList,
@@ -63,9 +65,9 @@ const ActivityPageComponent = () => {
 
                 <VirtualList
                   data={allData ?? []}
-                  hasNextPage={activityActions.hasNextPage}
-                  isFetchingNextPage={activityActions.isFetchingNextPage}
-                  fetchNextPage={activityActions.fetchNextPage}
+                  hasNextPage={hasNextPage}
+                  isFetchingNextPage={isFetchingNextPage}
+                  fetchNextPage={onLoadMore}
                   estimateSize={() => 80}
                   itemContent={(_index, item) => (
                     <ActionListItem

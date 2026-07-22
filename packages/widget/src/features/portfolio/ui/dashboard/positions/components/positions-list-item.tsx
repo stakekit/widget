@@ -13,6 +13,7 @@ import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import { borrowTokenToTokenDto } from "../../../../../borrow/ui/position-details-model";
 import { TokenIcon } from "../../../../../widget-shell/ui/token-icon";
 import { ToolTip } from "../../../../../widget-shell/ui/tooltip";
+import type { UnifiedPositionItem } from "../../../../resources/positions";
 import {
   listItem,
   noWrap,
@@ -20,7 +21,6 @@ import {
   positionName,
   rewardRateText,
 } from "../../../classic/positions-page/components/styles.css";
-import type { UnifiedPositionItem } from "../hooks/use-grouped-positions";
 import { usePositionListItem } from "../hooks/use-position-list-item";
 import { listItemContainer, viaText } from "../styles.css";
 

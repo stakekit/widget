@@ -113,6 +113,26 @@
           }
         }
       }
+    },
+    {
+      "includes": ["packages/widget/src/resources/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["react", "react/**", "react-dom", "react-dom/**"],
+                    "message": "Authoritative Resources are headless Atom/Effect modules and must not import React."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   ],
   "javascript": {

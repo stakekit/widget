@@ -30,6 +30,39 @@ const emptyBorrowPosition = {
   totalSuppliedUsd: "0",
 } as const;
 
+const dashboardCategoryYieldsHandler = () => {
+  const stakeYield = yieldApiYieldFixture({
+    id: "ethereum-eth-native-staking",
+  });
+  const defiYield = yieldApiYieldFixture({
+    id: "ethereum-usdc-lending",
+    mechanics: {
+      ...stakeYield.mechanics,
+      type: "lending",
+    },
+  });
+  const rwaYield = yieldApiYieldFixture({
+    id: "ethereum-usdc-real-world-asset",
+    mechanics: {
+      ...stakeYield.mechanics,
+      type: "real_world_asset",
+    },
+  });
+
+  return http.get(yieldApiRoute("/v1/yields"), async () => {
+    await mockDelay();
+
+    const items = [stakeYield, defiYield, rwaYield];
+
+    return HttpResponse.json({
+      items,
+      total: items.length,
+      offset: 0,
+      limit: items.length,
+    });
+  });
+};
+
 describe("Renders initial page", () => {
   it("Works as expected", async ({ worker }) => {
     const avalancheCToken: LegacyTokenDto = {
@@ -179,7 +212,11 @@ describe("Renders initial page", () => {
     app.unmount();
   });
 
-  it("uses category dashboard yield grouping by default with Borrow disabled", async () => {
+  it("uses category dashboard yield grouping by default with Borrow disabled", async ({
+    worker,
+  }) => {
+    worker.use(dashboardCategoryYieldsHandler());
+
     const app = await renderApp({
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
@@ -205,7 +242,11 @@ describe("Renders initial page", () => {
     app.unmount();
   });
 
-  it("shows Borrow when enabled with dashboard category grouping", async () => {
+  it("shows Borrow when enabled with dashboard category grouping", async ({
+    worker,
+  }) => {
+    worker.use(dashboardCategoryYieldsHandler());
+
     const app = await renderApp({
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
@@ -253,7 +294,9 @@ describe("Renders initial page", () => {
     app.unmount();
   });
 
-  it("uses the configured dashboard category tab order", async () => {
+  it("uses the configured dashboard category tab order", async ({ worker }) => {
+    worker.use(dashboardCategoryYieldsHandler());
+
     const app = await renderApp({
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
@@ -300,7 +343,11 @@ describe("Renders initial page", () => {
     app.unmount();
   });
 
-  it("updates the selected dashboard category after route tab changes", async () => {
+  it("updates the selected dashboard category after route tab changes", async ({
+    worker,
+  }) => {
+    worker.use(dashboardCategoryYieldsHandler());
+
     const app = await renderApp({
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,

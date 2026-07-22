@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
@@ -14,6 +15,7 @@ import {
   getYieldActionArg,
   isYieldValidatorSelectionRequired,
 } from "../../../../../domain/types/yields";
+import { getPullResultItems } from "../../../../../shared/effect/pagination";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import {
   getPositionDetailsUnstakeReviewPath,
@@ -137,10 +139,23 @@ export const usePositionDetails = () => {
     yieldId: integrationData?.id,
     network: integrationData?.token.network,
   });
+  const validatorPages = getPullResultItems(yieldValidators.result);
+  const loadedValidators = EArray.flatMap(validatorPages, (page) =>
+    EArray.fromIterable(page.items)
+  );
+  const hasMoreValidators = yieldValidators.result.pipe(
+    AsyncResult.value,
+    Option.exists(({ done }) => !done)
+  );
+  const isLoadingMoreValidators =
+    yieldValidators.result.waiting && loadedValidators.length > 0;
+  const onLoadMoreValidators = () => {
+    if (!yieldValidators.result.waiting && hasMoreValidators) {
+      yieldValidators.pull();
+    }
+  };
 
-  const validatorsData = shouldFetchValidators
-    ? yieldValidators.data
-    : undefined;
+  const validatorsData = shouldFetchValidators ? loadedValidators : undefined;
 
   const providersDetails = useProvidersDetails({
     integrationData,
@@ -239,14 +254,14 @@ export const usePositionDetails = () => {
     AsyncResult.isInitial(positionBalancesResult) ||
     AsyncResult.isInitial(positionBalancePrices) ||
     AsyncResult.isInitial(yieldOpportunity) ||
-    yieldValidators.isLoading;
+    (shouldFetchValidators && AsyncResult.isInitial(yieldValidators.result));
 
   return {
     integrationData,
     validatorsData: validatorsData ?? [],
-    hasMoreValidators: !!yieldValidators.hasNextPage,
-    isLoadingMoreValidators: yieldValidators.isFetchingNextPage,
-    onLoadMoreValidators: yieldValidators.fetchNextPage,
+    hasMoreValidators,
+    isLoadingMoreValidators,
+    onLoadMoreValidators,
     reducedStakedOrLiquidBalance,
     positionBalancesByType,
     canUnstake,

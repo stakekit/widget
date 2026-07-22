@@ -26,6 +26,7 @@ import {
   isYieldValidatorSelectionRequired,
 } from "../../../../../domain/types/yields";
 import { isLedgerLiveConnector } from "../../../../../services/wallet/connectors/ledger/ledger-live-connector-meta";
+import { getPullResultItems } from "../../../../../shared/effect/pagination";
 import {
   defaultFormattedNumber,
   formatNumber,
@@ -184,17 +185,20 @@ export const usePositionDetailsStake = () => {
     yieldId: selectedStake?.id,
     network: selectedStake?.token.network,
   });
+  const loadedValidators = EArray.flatMap(
+    getPullResultItems(yieldValidators.result),
+    (page) => EArray.fromIterable(page.items)
+  );
   const selectedValidators = useMemo(() => {
     if (!validatorsRequired) {
       return new Map<ValidatorKey, EarnValidator>();
     }
 
-    const validators = yieldValidators.data ?? [];
     return getInitSelectedValidators({
       initQueryParams: null,
-      validators,
+      validators: loadedValidators,
     });
-  }, [validatorsRequired, yieldValidators.data]);
+  }, [validatorsRequired, loadedValidators]);
   const providersDetails = useProvidersDetails({
     integrationData: selectedStake,
     validators: selectedValidators,
@@ -357,7 +361,7 @@ export const usePositionDetailsStake = () => {
   const isFetching =
     positionDetails.isLoading ||
     tokenBalancesScan.isLoading ||
-    yieldValidators.isLoading ||
+    (validatorsRequired && AsyncResult.isInitial(yieldValidators.result)) ||
     (!!pricesRequest && AsyncResult.isInitial(pricesResult));
   const buttonCTAText = useYieldType(selectedStake)?.cta ?? "";
   const buttonDisabled =

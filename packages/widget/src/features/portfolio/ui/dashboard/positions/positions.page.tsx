@@ -27,10 +27,6 @@ export const PositionsPage = () => {
   const variant = useWidgetConfig("variant");
   const borrowManageEnabled = borrowEnabled && !!dashboardVariant;
   const borrowPositions = useBorrowPositions({ enabled: borrowManageEnabled });
-  const borrowPositionItems = AsyncResult.getOrElse(
-    borrowPositions.positionsResult,
-    () => []
-  );
   const { isConnected, isConnecting } = useSKWallet();
   const manageState = getUnifiedManagePositionsState({
     borrowPositionsResult: borrowPositions.positionsResult,
@@ -46,10 +42,7 @@ export const PositionsPage = () => {
     showEarnPositions: showPositions,
   });
 
-  const listData = useGroupedPositions({
-    borrowPositions: borrowPositionItems,
-    earnPositions: positions,
-  });
+  const listData = useGroupedPositions();
 
   const { t } = useTranslation();
   const content = useMemo(() => {

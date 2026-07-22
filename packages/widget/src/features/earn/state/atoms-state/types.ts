@@ -19,6 +19,7 @@ import type {
   PreferredTokenYieldsPerNetwork,
 } from "../../../../public-api/types";
 import type { WalletScopeKey } from "../../../../services/wallet/domain/scope";
+import type { PullPage } from "../../../../shared/effect/pagination";
 import type { YieldValidatorsPullKey } from "./catalog/keys";
 
 export type EarnTokenOption = {
@@ -102,7 +103,7 @@ export type EarnTokenOptionsState = AsyncResult<
 type EarnTokenOptionsResource = {
   readonly loadedTokenOptionsAtom: Atom<EarnTokenOptionsState>;
   readonly tokenOptionsPullAtom: Writable<
-    PullResult<EarnTokenOption, EarnCatalogError>,
+    PullResult<PullPage<EarnTokenOption>, EarnCatalogError>,
     void
   >;
 };
@@ -115,7 +116,7 @@ export type EarnValidatorsResource = {
   >;
   readonly validatorsPullAtom: (
     key: YieldValidatorsPullKey
-  ) => Writable<PullResult<EarnValidator, EarnCatalogError>, void>;
+  ) => Writable<PullResult<PullPage<EarnValidator>, EarnCatalogError>, void>;
 };
 
 export type EarnMachineView = {

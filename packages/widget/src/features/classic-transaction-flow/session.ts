@@ -1,7 +1,7 @@
 import BigNumber from "bignumber.js";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { WalletScopeKey } from "../../../services/wallet/domain/scope";
-import type { ClassicTransactionFlowIntake } from "../model/classic-transaction-flow";
+import { WalletScopeKey } from "../../services/wallet/domain/scope";
+import type { ClassicTransactionFlowIntake } from "./model/classic-transaction-flow";
 
 export type ClassicFlowSession = Readonly<{
   readonly epoch: number;

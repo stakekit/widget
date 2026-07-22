@@ -11,7 +11,7 @@ import {
   ExitClassicFlowRoute,
   ManageClassicFlowRoute,
 } from "../../features/classic-transaction-flow/react/classic-flow-route";
-import { classicFlowSessionStore } from "../../features/classic-transaction-flow/state/classic-flow-session-store";
+import { classicFlowSessionStore } from "../../features/classic-transaction-flow/session";
 import { ActivityCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/activity-complete.page";
 import { PendingCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/pending-complete.page";
 import { StakeCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/stake-complete.page";

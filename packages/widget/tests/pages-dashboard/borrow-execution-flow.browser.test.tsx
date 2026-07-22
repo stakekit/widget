@@ -36,7 +36,7 @@ import { borrowFlowSessionStore } from "../../src/features/borrow-transaction-fl
 import { BorrowStepsPage } from "../../src/features/borrow-transaction-flow/ui/steps";
 import { useBorrowExecution } from "../../src/features/borrow-transaction-flow/ui/use-borrow-execution";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
-import { BorrowApiService } from "../../src/services/api/borrow-api-service";
+import { BorrowOperations } from "../../src/services/api/borrow-operations";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
@@ -319,7 +319,7 @@ const renderExecution = async (
         [
           appRuntime.layer,
           Layer.mergeAll(
-            Layer.succeed(BorrowApiService, borrow as never),
+            Layer.succeed(BorrowOperations, borrow as never),
             Layer.succeed(TrackingService, {
               trackEvent: () => Effect.void,
               trackPageView: () => Effect.void,

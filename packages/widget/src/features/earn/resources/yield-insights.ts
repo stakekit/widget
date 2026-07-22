@@ -1,11 +1,9 @@
 import BigNumber from "bignumber.js";
-import { Data, Duration, Effect, Option } from "effect";
+import { Data, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime/app-runtime";
 import type {
   HistoryPeriod,
-  RewardsAddresses,
   RewardsSummary,
 } from "../../../domain/schema/dashboard-models";
 import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
@@ -18,19 +16,21 @@ import {
   mapKycStatusToGate,
 } from "../../../domain/types/kyc";
 import { isValidYieldIdForRewardsSummary } from "../../../domain/types/rewards";
-import { LegacyApiService } from "../../../services/api/legacy-api-service";
-import { YieldApiService } from "../../../services/api/yield-api-service";
-import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
+import {
+  RewardSummariesKey,
+  rewardSummariesResourceAtom,
+} from "../../../resources/reward-summaries/reward-summaries";
+import {
+  YieldHistoryResourceKey,
+  YieldKycStatusKey,
+  yieldKycStatusResourceAtom,
+  yieldRewardRateHistoryResourceAtom,
+  yieldTvlHistoryResourceAtom,
+} from "../../../resources/yield-insights/yield-insights";
 import {
   currentWalletStateAtom,
   selectCurrentWalletAtom,
 } from "../../wallet/state/selectors";
-
-const dashboardResourcePolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(5),
-  staleTime: Duration.minutes(2),
-  revalidateOnMount: true,
-});
 
 class YieldKycKey extends Data.Class<{
   readonly address: WalletAddress | null;
@@ -38,19 +38,31 @@ class YieldKycKey extends Data.Class<{
 }> {}
 
 const yieldKycStatusAtom = Atom.family((key: YieldKycKey) =>
-  appRuntime
-    .atom(() =>
-      Effect.gen(function* () {
-        if (!key.address || !key.yieldId) return null;
-
-        const api = yield* YieldApiService;
-        return yield* api.getKycStatus({
-          address: key.address,
-          yieldId: key.yieldId,
-        });
-      })
-    )
-    .pipe(dashboardResourcePolicy)
+  Atom.readable(
+    (get) =>
+      key.address && key.yieldId
+        ? get(
+            yieldKycStatusResourceAtom(
+              new YieldKycStatusKey({
+                address: key.address,
+                yieldId: key.yieldId,
+              })
+            )
+          )
+        : AsyncResult.success(null),
+    (refresh) => {
+      if (key.address && key.yieldId) {
+        refresh(
+          yieldKycStatusResourceAtom(
+            new YieldKycStatusKey({
+              address: key.address,
+              yieldId: key.yieldId,
+            })
+          )
+        );
+      }
+    }
+  )
 );
 
 class CurrentYieldKycKey extends Data.Class<{
@@ -165,66 +177,35 @@ const getYieldHistoryInterval = (period: HistoryPeriod) =>
   period === "1y" || period === "all" ? "week" : "day";
 
 export const yieldRewardRateHistoryAtom = Atom.family((key: YieldHistoryKey) =>
-  appRuntime
-    .atom(() =>
-      Effect.gen(function* () {
-        if (!key.yieldId) return null;
-
-        const api = yield* YieldApiService;
-        return yield* api.getRewardRateHistory({
-          interval: getYieldHistoryInterval(key.period),
-          period: key.period,
-          yieldId: key.yieldId,
-        });
-      })
-    )
-    .pipe(dashboardResourcePolicy)
+  Atom.make((get) =>
+    key.yieldId
+      ? get(
+          yieldRewardRateHistoryResourceAtom(
+            new YieldHistoryResourceKey({
+              interval: getYieldHistoryInterval(key.period),
+              period: key.period,
+              yieldId: key.yieldId,
+            })
+          )
+        )
+      : AsyncResult.success(null)
+  )
 );
 
 export const yieldTvlHistoryAtom = Atom.family((key: YieldHistoryKey) =>
-  appRuntime
-    .atom(() =>
-      Effect.gen(function* () {
-        if (!key.yieldId) return null;
-
-        const api = yield* YieldApiService;
-        return yield* api.getTvlHistory({
-          interval: getYieldHistoryInterval(key.period),
-          period: key.period,
-          yieldId: key.yieldId,
-        });
-      })
-    )
-    .pipe(dashboardResourcePolicy)
-);
-
-class RewardsSummaryKey extends Data.Class<{
-  readonly addresses: RewardsAddresses | null;
-  readonly yieldIds: ReadonlyArray<YieldId>;
-}> {}
-
-const rewardsSummaryAtom = Atom.family((key: RewardsSummaryKey) =>
-  appRuntime
-    .atom(() =>
-      Effect.gen(function* () {
-        if (!key.addresses || key.yieldIds.length === 0) {
-          return null;
-        }
-
-        const api = yield* LegacyApiService;
-        return yield* api.getRewardsSummaries({
-          addresses: key.addresses,
-          yieldIds: key.yieldIds,
-        });
-      })
-    )
-    .pipe(
-      withApiResourcePolicy({
-        idleTTL: Duration.minutes(5),
-        staleTime: Duration.zero,
-        revalidateOnMount: true,
-      })
-    )
+  Atom.make((get) =>
+    key.yieldId
+      ? get(
+          yieldTvlHistoryResourceAtom(
+            new YieldHistoryResourceKey({
+              interval: getYieldHistoryInterval(key.period),
+              period: key.period,
+              yieldId: key.yieldId,
+            })
+          )
+        )
+      : AsyncResult.success(null)
+  )
 );
 
 type RewardsSummaryResult = Record<string, RewardsSummary>;
@@ -254,14 +235,16 @@ export const currentRewardsSummaryAtom = Atom.family(
       const filteredIds = key.yieldIds.filter(isValidYieldIdForRewardsSummary);
       const addresses = get(currentRewardsAddressesAtom);
 
-      return get(
-        rewardsSummaryAtom(
-          new RewardsSummaryKey({
-            addresses,
-            yieldIds: filteredIds,
-          })
-        )
-      );
+      return addresses && filteredIds.length > 0
+        ? get(
+            rewardSummariesResourceAtom(
+              new RewardSummariesKey({
+                addresses,
+                yieldIds: filteredIds,
+              })
+            )
+          )
+        : AsyncResult.success(null);
     })
 );
 

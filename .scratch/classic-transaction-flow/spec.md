@@ -103,7 +103,7 @@ Atom resource interruption, refresh generations, and disposal suppress stale asy
 - Continue publishes Steps from the Review scope. Back publishes Review from the Execution scope. Unmounting the producing scope permanently removes its navigation outcome, so destination-entry consumption is unnecessary.
 - The single route adapter renders navigation declaratively and only while the producing scope belongs to the current Flow Session. No session or route-entry identity is carried in the navigation outcome.
 - Steps and Complete routes require an action handoff. Review routes are valid from immutable intake and acquire a new Review scope.
-- Each Execution scope privately creates and mounts its Classic Transaction Workflow from its captured action. The Execution root, rather than the Steps page subscription, retains that workflow through both Steps and Complete. It does not pass a session identity through a global workflow-family handoff.
+- Each Execution scope privately creates its Classic Transaction Workflow from its captured action and mounts the workflow module's dedicated root Atom. That root, rather than the `viewAtom` or a Steps page subscription, retains workflow state and completion subscriptions through both Steps and Complete. It does not pass a session identity through a global workflow-family handoff.
 - Unmounting Execution disposes the corresponding machine. A later Continue uses a new previewed action and creates a new machine.
 - Yield Action ID remains the workflow diagnostic, API, and history identity. Classic Flow introduces no additional numeric ownership key.
 - Signing, submission, confirmation, retry, pending, failure, action-history invalidation, and completion stay inside Transaction Workflow. Steps-to-Complete navigation remains derived from workflow completion.
@@ -121,7 +121,7 @@ Atom resource interruption, refresh generations, and disposal suppress stale asy
 - Preserve existing classic and dashboard routes, deep links, Review, Steps, Complete, tracking, KYC, warning behavior, translations, and published copy unless explicitly changed above.
 - Preserve the public React and bundled entry APIs, the one-concurrent-Widget-Instance rule, bundled `rerender` and `unmount`, and sequential unmount/remount behavior.
 - Perform the scoped-facade conversion atomically. Do not retain the current global facade, phase model, identity service, identity-keyed workflow wrappers, or compatibility mirrors alongside the new authority.
-- Update the Classic Transaction Flow architecture checks so touched application logic remains React-free, view adapters remain synchronous, and no new React effects own session resources or transitions.
+- Keep the Classic Transaction Flow architecture guidance aligned with the implementation: application logic remains React-free, view adapters remain synchronous, and no new React effects own session resources or transitions.
 
 ## Testing Decisions
 
@@ -137,7 +137,7 @@ Atom resource interruption, refresh generations, and disposal suppress stale asy
 - Route tests cover missing intake, missing action handoff on Steps, scoped navigation disposal, route-page remounts, animation overlap, and cleanup only after the owning subtree exits.
 - Wallet tests cover disconnect, owner change, EVM address casing, additional-address-only changes, and immutable captured execution inputs.
 - Runtime tests cover ordinary prop updates, live configuration changes, bundled `rerender`, application-runtime replacement, Widget unmount, and sequential remount.
-- Architecture tests reject reintroduction of global `keepAlive` flow state, domain flow identity, stored phases, keyed descendant commands, React-owned asynchronous orchestration, or unreviewed React lifecycle cleanup.
+- Focused behavior and lifecycle tests protect against reintroducing global `keepAlive` flow state, domain flow identity, stored phases, keyed descendant commands, or React-owned asynchronous orchestration.
 - Focused DOM route tests cover the production Session, Review, and Execution boundaries, while focused Chromium tests cover real Transaction Workflow execution and interruption. The existing classic and dashboard regression suites continue to protect route, KYC, warning, tracking, completion, and copy behavior outside this lifetime seam.
 - Focused unit and DOM suites, representative Chromium suites, widget lint/type checking, and relevant hygiene checks form the validation ladder.
 

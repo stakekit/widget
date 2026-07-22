@@ -1,5 +1,7 @@
 import { useConnectModal } from "@stakekit/rainbowkit";
-import { type ReactNode, useMemo } from "react";
+import { Array as EArray, Option } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import {
@@ -14,52 +16,32 @@ import { useStartClassicTransactionFlow } from "../../../../../classic-transacti
 import { useTrackPage } from "../../../../../tracking/react/use-track-page";
 import { useSKWallet } from "../../../../../wallet/react/use-wallet";
 import { FallbackContent } from "../../../../../widget-shell/fallback-content";
-import type {
-  ActivityFilter,
-  ActivityFilterOption,
-} from "../../../../model/filters";
 import {
   useActivityActions,
   useActivityFilterOptions,
-  usePrefetchActivityActionFilters,
 } from "../../../../react/use-activity-actions";
 import { useActivityFilter } from "../../../../react/use-activity-filter";
 import type { ActionYieldDto } from "../types";
-
-type UseActivityPageResult = {
-  content: ReactNode;
-  onActionSelect: (
-    val: ActionYieldDto,
-    providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
-  ) => void;
-  showingCount: number;
-  total: number;
-  allData: ReturnType<typeof useActivityActions>["allItems"];
-  filterOptions: ActivityFilterOption[];
-  selectedFilter: ActivityFilter;
-  onFilterSelect: (filter: ActivityFilter) => void;
-  activityActions: ReturnType<typeof useActivityActions>;
-  showActivityContent: boolean;
-  showActivityControls: boolean;
-  showActivityList: boolean;
-};
 
 export const useActivityPage = ({
   selectionMode = "navigate",
 }: {
   readonly selectionMode?: "navigate" | "select";
-} = {}): UseActivityPageResult => {
+} = {}) => {
   useTrackPage("activity");
 
   const { isConnected, isConnecting } = useSKWallet();
   const { openConnectModal } = useConnectModal();
   const navigate = useNavigate();
   const startClassicTransactionFlow = useStartClassicTransactionFlow();
-  const filterOptions = useActivityFilterOptions();
+  const filterOptionsResult = useActivityFilterOptions();
+  const filterOptions = filterOptionsResult.pipe(
+    AsyncResult.value,
+    Option.getOrElse(() => [])
+  );
   const { selectedFilter, setSelectedFilter } =
     useActivityFilter(filterOptions);
   const activityActions = useActivityActions(selectedFilter);
-  usePrefetchActivityActionFilters();
 
   const onActionSelect = (
     data: ActionYieldDto,
@@ -117,20 +99,26 @@ export const useActivityPage = ({
     }
   };
 
-  const allData = activityActions.allItems;
-
-  const showingCount = allData?.length ?? 0;
-
-  const apiTotal =
-    (activityActions.data as { pages: { total?: number }[] } | undefined)
-      ?.pages?.[0]?.total ??
-    allData?.length ??
-    0;
-  const total = apiTotal;
-  const hasRenderableActivity = !!allData?.length;
+  const activityValue = activityActions.result.pipe(
+    AsyncResult.value,
+    Option.getOrUndefined
+  );
+  const allData = activityValue
+    ? EArray.flatMap(activityValue.items, (batch) => batch.actions)
+    : [];
+  const showingCount = allData.length;
+  const total = activityValue?.items.at(-1)?.total ?? allData.length;
+  const hasNextPage = activityValue !== undefined && !activityValue.done;
+  const isFetchingNextPage =
+    activityActions.result.waiting && allData.length > 0;
+  const isPending = AsyncResult.isInitial(activityActions.result);
+  const onLoadMore = () => {
+    if (!activityActions.result.waiting && hasNextPage) activityActions.pull();
+  };
+  const hasRenderableActivity = allData.length > 0;
   const hasActivityFilters = filterOptions.length > 0;
-  const showActivityControls = !activityActions.isPending && hasActivityFilters;
-  const showActivityList = !activityActions.isPending && hasRenderableActivity;
+  const showActivityControls = !isPending && hasActivityFilters;
+  const showActivityList = !isPending && hasRenderableActivity;
   const showActivityContent = showActivityControls || showActivityList;
 
   const { t } = useTranslation();
@@ -154,7 +142,7 @@ export const useActivityPage = ({
       );
     }
 
-    if (isConnected && !showActivityContent && !activityActions.isPending) {
+    if (isConnected && !showActivityContent && !isPending) {
       return (
         <Box my="4">
           <FallbackContent type="no_previous_activity" />
@@ -162,11 +150,7 @@ export const useActivityPage = ({
       );
     }
 
-    if (
-      isConnected &&
-      activityActions.isPending &&
-      !activityActions.isFetchingNextPage
-    ) {
+    if (isConnected && isPending && !isFetchingNextPage) {
       return (
         <Box display="flex" gap="1" flexDirection="column">
           {[...Array(5).keys()].map((item) => (
@@ -181,8 +165,8 @@ export const useActivityPage = ({
     isConnected,
     isConnecting,
     showActivityContent,
-    activityActions.isPending,
-    activityActions.isFetchingNextPage,
+    isPending,
+    isFetchingNextPage,
     t,
   ]);
 
@@ -195,7 +179,9 @@ export const useActivityPage = ({
     filterOptions,
     selectedFilter,
     onFilterSelect: setSelectedFilter,
-    activityActions,
+    hasNextPage,
+    isFetchingNextPage,
+    onLoadMore,
     showActivityContent,
     showActivityControls,
     showActivityList,

@@ -4,7 +4,7 @@ import {
   normalizeWidgetConfig,
   widgetConfigAtom,
 } from "../../src/app/config/settings";
-import { mountAnimationStateAtom } from "../../src/features/mount-animation/state";
+import { mountAnimationStateAtom } from "../../src/features/mount-animation/public-state";
 
 vi.mock("../../src/shared/config/widget-defaults", async (importOriginal) => {
   const original =

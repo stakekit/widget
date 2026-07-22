@@ -147,12 +147,6 @@ const makeEarnYieldPage = (operation: string) =>
 
 export const EarnYieldPage = makeEarnYieldPage("earn-yield-catalog");
 
-export const AvailableYieldCategoriesPage = makeEarnYieldPage(
-  "available-yield-categories"
-);
-
-export const TokenYieldScopePage = makeEarnYieldPage("token-yield-scope");
-
 const EarnTokenWithAvailableYields = Schema.Struct({
   token: EarnToken,
   availableYields: Schema.Array(YieldId),
@@ -169,16 +163,6 @@ export const EarnTokenPage = Schema.Struct({
 });
 
 export const EarnLegacyTokenOptionsResponse = EarnTokenWithAvailableYieldItems;
-
-const EarnTokenBalance = Schema.Struct({
-  ...EarnTokenWithAvailableYields.fields,
-  amount: PrecisionDecimalFromString,
-});
-
-export const EarnTokenBalancesResponse = TolerantTopLevelArray(
-  EarnTokenBalance,
-  { operation: "token-balances-scan" }
-);
 
 const EarnValidatorItems = TolerantTopLevelArray(EarnValidator, {
   operation: "validators",

@@ -13,6 +13,10 @@ import type {
   EarnYieldWithProvider,
 } from "../../../../../domain/schema/earn-models";
 import { isPendingActionAmountRequired } from "../../../../../domain/types/pending-action";
+import {
+  getBalanceTokenActionType,
+  preparePendingActionRequestDto,
+} from "../../../../../domain/types/pending-action-request";
 import { getTokenPriceInUSD } from "../../../../../domain/types/price";
 
 import type { ValidatorInput as ValidatorDto } from "../../../../../domain/types/validators";
@@ -33,9 +37,7 @@ import type {
   PositionDetailsWorkflowState as State,
 } from "../../../state/workflow";
 import type { ExtraData } from "../state/types";
-import { getBalanceTokenActionType } from "../state/utils";
 import { useValidatorAddressesHandling } from "./use-validator-addresses-handling";
-import { preparePendingActionRequestDto } from "./utils";
 
 export const usePendingActions = ({
   dispatch: pendingActionDispatch,

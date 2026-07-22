@@ -1,10 +1,12 @@
 import { Effect, Layer } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
-import { BorrowApiService } from "../../services/api/borrow-api-service";
-import { LegacyApiService } from "../../services/api/legacy-api-service";
+import { BorrowOperations } from "../../services/api/borrow-operations";
+import { BorrowResourceSource } from "../../services/api/borrow-resource-source";
+import { LegacyResourceSource } from "../../services/api/legacy-resource-source";
 import { ApiTransportService } from "../../services/api/transport";
-import { YieldApiService } from "../../services/api/yield-api-service";
+import { YieldOperations } from "../../services/api/yield-operations";
+import { YieldResourceSource } from "../../services/api/yield-resource-source";
 import {
   type WidgetConfig,
   WidgetConfigService,
@@ -31,9 +33,11 @@ const makeAppLayer = (
     Layer.provide(widgetConfigLayer)
   );
   const apiLayer = Layer.mergeAll(
-    BorrowApiService.layer,
-    LegacyApiService.layer,
-    YieldApiService.layer
+    BorrowOperations.layer,
+    BorrowResourceSource.layer,
+    LegacyResourceSource.layer,
+    YieldOperations.layer,
+    YieldResourceSource.layer
   ).pipe(Layer.provide(apiTransportLayer));
   const persistenceLayer = WidgetPersistence.layer;
   const trackingLayer = TrackingService.layer.pipe(

@@ -18,7 +18,7 @@ import {
   positionDataAtom,
   toPositionItems,
 } from "../../src/features/portfolio/resources/positions";
-import { yieldBalancesScanResourceAtomFamily } from "../../src/features/portfolio/resources/yield-balances";
+import { yieldPositionsResourceAtom } from "../../src/resources/yield-positions/yield-positions";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 
@@ -95,7 +95,7 @@ describe("position derivations", () => {
       ),
       network: "ethereum",
     });
-    const resource = yieldBalancesScanResourceAtomFamily(scope);
+    const resource = yieldPositionsResourceAtom(scope);
     const balances = positionBalancesAtom(
       new PositionBalancesKey({
         balanceId: "default",
@@ -129,8 +129,8 @@ describe("position derivations", () => {
       network: "ethereum",
     });
     const response = { errors: [], items: [position] };
-    const resourceA = yieldBalancesScanResourceAtomFamily(scopeA);
-    const resourceB = yieldBalancesScanResourceAtomFamily(scopeB);
+    const resourceA = yieldPositionsResourceAtom(scopeA);
+    const resourceB = yieldPositionsResourceAtom(scopeB);
     const selectedA = positionDataAtom(
       new PositionDataKey({ scope: scopeA, yieldId: position.yieldId })
     );

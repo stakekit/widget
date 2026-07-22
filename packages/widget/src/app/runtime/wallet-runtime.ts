@@ -1,8 +1,10 @@
 import { Effect, Layer } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { BorrowApiService } from "../../services/api/borrow-api-service";
-import type { LegacyApiService } from "../../services/api/legacy-api-service";
-import type { YieldApiService } from "../../services/api/yield-api-service";
+import type { BorrowOperations } from "../../services/api/borrow-operations";
+import type { BorrowResourceSource } from "../../services/api/borrow-resource-source";
+import type { LegacyResourceSource } from "../../services/api/legacy-resource-source";
+import type { YieldOperations } from "../../services/api/yield-operations";
+import type { YieldResourceSource } from "../../services/api/yield-resource-source";
 import type { WidgetConfigService } from "../../services/config/widget-config";
 import type { RichErrorService } from "../../services/errors/rich-error-service";
 import type { WidgetPersistence } from "../../services/persistence/widget-persistence";
@@ -13,13 +15,15 @@ import { TransactionWorkflowService } from "../../services/workflow/transaction-
 import { appRuntime } from "./app-runtime";
 
 type AppServices =
-  | BorrowApiService
-  | LegacyApiService
+  | BorrowOperations
+  | BorrowResourceSource
+  | LegacyResourceSource
   | RichErrorService
   | TrackingService
   | WidgetConfigService
   | WidgetPersistence
-  | YieldApiService;
+  | YieldOperations
+  | YieldResourceSource;
 
 const appServicesAtom = appRuntime.atom(Effect.context<AppServices>());
 

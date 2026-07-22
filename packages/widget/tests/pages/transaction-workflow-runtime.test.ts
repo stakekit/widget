@@ -8,6 +8,7 @@ import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
 import type { ActionMeta } from "../../src/public-api/types";
 import {
   ActivityInvalidationKey,
+  SingleYieldBalancesInvalidationKey,
   WalletBalancesInvalidationKey,
   YieldPositionsInvalidationKey,
 } from "../../src/services/resource-invalidation";
@@ -254,6 +255,9 @@ describe("transaction workflow runtime", () => {
     expect(invalidatedKeys).toEqual([
       new WalletBalancesInvalidationKey({ scope: classicWalletScope }),
       new YieldPositionsInvalidationKey({ scope: classicWalletScope }),
+      new SingleYieldBalancesInvalidationKey({
+        address: classicWalletScope.address,
+      }),
       new ActivityInvalidationKey({ scope: classicWalletScope }),
     ]);
     expect(getClassicStatus).toHaveBeenCalledOnce();

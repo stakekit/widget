@@ -1,9 +1,11 @@
+import { Atom } from "effect/unstable/reactivity";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
 import { widgetConfigAtom } from "../../src/app/config/settings";
 import {
   earnMachineEntryAtom,
   earnMachineIntentAtom,
+  earnMachineViewAtom,
 } from "../../src/features/earn/state/atoms-state/machine/atoms";
 import {
   earnPageInputAtom,
@@ -42,6 +44,31 @@ describe("earn page workflow atoms", () => {
       true
     );
     expect(registry.get(earnMachineIntentAtom).selectedCategory).toBe("defi");
+  });
+
+  it("retains the current machine view while wallet resolution is pending", () => {
+    const previousRegistry = AtomRegistry.make();
+    const previousView = previousRegistry.get(earnMachineViewAtom);
+    previousRegistry.dispose();
+    const registry = AtomRegistry.make({
+      initialValues: [
+        Atom.initialValue(earnMachineEntryAtom, {
+          categoryOrder: ["stake", "defi", "rwa"],
+          dashboardVariant: true,
+          initParams: null,
+          preferredTokenYieldsPerNetwork: null,
+          tokensForEnabledYieldsOnly: false,
+          walletResolution: "pending",
+          walletScope: null,
+        }),
+        Atom.initialValue(earnMachineViewAtom, previousView),
+      ],
+    });
+
+    registry.refresh(earnMachineViewAtom);
+
+    expect(registry.get(earnMachineViewAtom)).toBe(previousView);
+    registry.dispose();
   });
 
   it("isolates machine intent between widget registries", () => {

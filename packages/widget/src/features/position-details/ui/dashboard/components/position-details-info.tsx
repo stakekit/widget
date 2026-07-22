@@ -102,7 +102,7 @@ export const PositionDetailsInfo = () => {
       reducedStakedOrLiquidBalance:
         positionDetails.reducedStakedOrLiquidBalance,
       rewardsSummary: rewardsYieldId
-        ? rewardsSummaries?.[rewardsYieldId]
+        ? (rewardsSummaries?.[rewardsYieldId] ?? undefined)
         : undefined,
       t,
     });

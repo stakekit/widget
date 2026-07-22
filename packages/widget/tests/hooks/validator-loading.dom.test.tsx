@@ -1,9 +1,11 @@
-import { Schema } from "effect";
-import { HttpResponse, http } from "msw";
+import { Array as EArray, Option, Schema } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import { delay, HttpResponse, http } from "msw";
 import type { PropsWithChildren } from "react";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { YieldId } from "../../src/domain/schema/identifiers";
 import { useYieldValidators } from "../../src/features/earn/react/use-yield-validators";
+import { getPullResultItems } from "../../src/shared/effect/pagination";
 import { yieldApiValidatorFixture } from "../fixtures";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { describe, expect, it } from "../utils/test-extend.dom";
@@ -25,16 +27,19 @@ const Wrapper = ({ children }: PropsWithChildren) => (
 );
 
 describe("validator loading", () => {
-  it("pulls validators with raw pagination and omits malformed entries", async ({
+  it("loads one page per Pull, exposes waiting state, and omits malformed entries", async ({
     worker,
   }) => {
+    let requestCount = 0;
     worker.use(
       http.get(
         `${yieldApiUrl}/v1/yields/:yieldId/validators`,
-        ({ request }) => {
+        async ({ request }) => {
+          requestCount += 1;
           const offset = Number(
             new URL(request.url).searchParams.get("offset")
           );
+          if (offset > 0) await delay(50);
           const valid = yieldApiValidatorFixture({
             address: `validator-${offset}`,
           });
@@ -58,16 +63,30 @@ describe("validator loading", () => {
         }),
       { wrapper: Wrapper }
     );
+    const validators = () =>
+      EArray.flatMap(
+        getPullResultItems(hook.result.current.result),
+        (page) => page.items
+      );
+    const hasNextPage = () =>
+      hook.result.current.result.pipe(
+        AsyncResult.value,
+        Option.exists(({ done }) => !done)
+      );
 
     await hook.act(async () => {
-      await expect.poll(() => hook.result.current.data.length).toBe(1);
+      await expect.poll(() => validators().length).toBe(1);
     });
-    expect(hook.result.current.hasNextPage).toBe(true);
+    expect(hasNextPage()).toBe(true);
+    expect(requestCount).toBe(1);
 
     await hook.act(async () => {
-      hook.result.current.fetchNextPage();
-      await expect.poll(() => hook.result.current.data.length).toBe(2);
-      await expect.poll(() => hook.result.current.hasNextPage).toBe(false);
+      hook.result.current.pull();
+      await expect.poll(() => hook.result.current.result.waiting).toBe(true);
+      await expect.poll(() => validators().length).toBe(2);
     });
+    expect(requestCount).toBe(2);
+    expect(hasNextPage()).toBe(false);
+    expect(requestCount).toBe(2);
   });
 });

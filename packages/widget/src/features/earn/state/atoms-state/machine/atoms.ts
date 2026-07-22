@@ -53,10 +53,17 @@ export const earnMachineIntentAtom = Atom.writable<
   }
 ).pipe(Atom.withLabel("earnMachineIntentAtom"));
 
-export const earnMachineViewAtom = Atom.readable<EarnMachineView>((context) =>
-  resolveEarnView({
+export const earnMachineViewAtom = Atom.readable<EarnMachineView>((context) => {
+  const entry = context.get(earnMachineEntryAtom);
+  const previous = context.self<EarnMachineView>();
+
+  if (entry.walletResolution === "pending" && Option.isSome(previous)) {
+    return previous.value;
+  }
+
+  return resolveEarnView({
     context,
-    entry: context.get(earnMachineEntryAtom),
+    entry,
     intent: context.get(earnMachineIntentAtom),
-  })
-).pipe(Atom.withLabel("earnMachineViewAtom"));
+  });
+}).pipe(Atom.withLabel("earnMachineViewAtom"));

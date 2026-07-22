@@ -17,11 +17,11 @@ import {
   positionBalancesAtom,
   positionBalancesByTypeAtom,
 } from "../../src/features/portfolio/resources/positions";
-import { yieldBalancesScanResourceAtomFamily } from "../../src/features/portfolio/resources/yield-balances";
 import {
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
 } from "../../src/features/position-details/state/workflow";
+import { yieldPositionsResourceAtom } from "../../src/resources/yield-positions/yield-positions";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 import { render } from "../utils/test-utils.dom";
@@ -135,8 +135,8 @@ const PositionRouteHarness = ({
 
 describe("dashboard position wallet ownership", () => {
   it("clears wallet A data and action state before wallet B can stage an action", async () => {
-    const resourceA = yieldBalancesScanResourceAtomFamily(scopeA);
-    const resourceB = yieldBalancesScanResourceAtomFamily(scopeB);
+    const resourceA = yieldPositionsResourceAtom(scopeA);
+    const resourceB = yieldPositionsResourceAtom(scopeB);
     const wrapper = (scope: WalletScopeKey) => (
       <RegistryProvider
         initialValues={[

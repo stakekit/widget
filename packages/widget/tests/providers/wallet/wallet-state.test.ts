@@ -11,8 +11,8 @@ import { mainnet, optimism } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
 import { normalizeWidgetConfig } from "../../../src/app/config/settings";
-import { LegacyApiService } from "../../../src/services/api/legacy-api-service";
-import { YieldApiService } from "../../../src/services/api/yield-api-service";
+import { LegacyResourceSource } from "../../../src/services/api/legacy-resource-source";
+import { YieldResourceSource } from "../../../src/services/api/yield-resource-source";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
@@ -124,11 +124,11 @@ describe("WalletService authoritative Wallet State", () => {
       Layer.provide(
         Layer.mergeAll(
           configLayer,
-          Layer.succeed(LegacyApiService, {
+          Layer.succeed(LegacyResourceSource, {
             getEnabledNetworks: () => Effect.succeed(new Set(["ethereum"])),
           } as never),
-          Layer.succeed(YieldApiService, {
-            getInitialYield: () => Effect.die("unused"),
+          Layer.succeed(YieldResourceSource, {
+            getOpportunity: () => Effect.die("unused"),
           } as never),
           Layer.succeed(
             WalletEnvironment,

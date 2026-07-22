@@ -20,7 +20,7 @@ Feature facades expose read-only view Atoms and writable command Atoms while ret
 
 Effect-backed resources and command Atoms own loading, typed failure normalization, retry eligibility, and stale-result suppression. React pattern-matches published view state and dispatches Retry rather than catching promises, translating raw exceptions, or inferring asynchronous state with local flags.
 
-Architecture checks enforce the boundary: application-logic modules do not import React, and materially touched view adapters do not use `useEffect`. An unavoidable external lifecycle exception is isolated in a named boundary adapter and explicitly allowlisted rather than becoming precedent for feature orchestration.
+Application-logic modules do not import React, and materially touched view adapters do not use `useEffect`. An unavoidable external lifecycle exception is isolated and documented in a named boundary adapter rather than becoming precedent for feature orchestration.
 
 The document-level Widget Instance claim prefers scoped Effect ownership exposed through an Atom lifecycle. If safe React mount and unmount semantics require a hook, one isolated embedding-boundary adapter may bridge only claim acquisition and release; it cannot own wallet or feature behavior.
 

@@ -1,9 +1,11 @@
 import { Effect, Layer, Stream } from "effect";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
-import { BorrowApiService } from "../../src/services/api/borrow-api-service";
-import { LegacyApiService } from "../../src/services/api/legacy-api-service";
+import { BorrowOperations } from "../../src/services/api/borrow-operations";
+import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
+import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
 import { ApiTransportService } from "../../src/services/api/transport";
-import { YieldApiService } from "../../src/services/api/yield-api-service";
+import { YieldOperations } from "../../src/services/api/yield-operations";
+import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
 import {
   type WidgetApiConfig,
   WidgetConfigService,
@@ -25,9 +27,11 @@ const makeTestLayers = (api: WidgetApiConfig) => {
     Layer.provide(configLayer)
   );
   const apiLayer = Layer.mergeAll(
-    BorrowApiService.layer,
-    LegacyApiService.layer,
-    YieldApiService.layer
+    BorrowOperations.layer,
+    BorrowResourceSource.layer,
+    LegacyResourceSource.layer,
+    YieldOperations.layer,
+    YieldResourceSource.layer
   ).pipe(Layer.provide(transportLayer));
 
   return { apiLayer, richErrorLayer } as const;

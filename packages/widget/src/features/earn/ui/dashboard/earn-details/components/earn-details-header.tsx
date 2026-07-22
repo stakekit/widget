@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../../domain/schema/earn-models";
 import { getDashboardYieldCategory } from "../../../../../../domain/types/yields";
 import { Box } from "../../../../../../shared/ui/primitives/box";
+import { HeaderBadge } from "../../../../../../shared/ui/primitives/header-badge";
 import { Image } from "../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import { TokenIcon } from "../../../../../widget-shell/ui/token-icon";
@@ -61,22 +62,11 @@ export const EarnDetailsHeader = ({
         ) : null}
 
         {headerBadges.map((badge) => (
-          <Box
-            className={
-              badge.tone === "auto"
-                ? styles.headerAutoBadge
-                : styles.headerBadge
-            }
+          <HeaderBadge
             key={badge.label}
-          >
-            <Text
-              as="span"
-              className={styles.headerBadgeText}
-              variant={{ type: "base", weight: "bold", size: "small" }}
-            >
-              {badge.label}
-            </Text>
-          </Box>
+            label={badge.label}
+            tone={badge.tone}
+          />
         ))}
       </Box>
     </Box>

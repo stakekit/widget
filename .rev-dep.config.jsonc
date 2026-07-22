@@ -31,6 +31,7 @@
           "allow": [
             "src/app/**",
             "src/features/**",
+            "src/resources/**",
             "src/services/**",
             "src/domain/**",
             "src/shared/**",
@@ -45,10 +46,34 @@
             "src/features/**",
             "src/app/config/**",
             "src/app/runtime/**",
+            "src/resources/**",
             "src/services/**",
             "src/domain/**",
             "src/shared/**",
             "src/public-api/**"
+          ],
+          "deny": [
+            "src/generated/**",
+            "src/services/api/*-resource-source.ts",
+            "src/services/api/transport.ts"
+          ]
+        },
+        {
+          "name": "resources",
+          "pattern": "src/resources/**",
+          "allow": [
+            "src/resources/**",
+            "src/app/runtime/**",
+            "src/services/**",
+            "src/domain/**",
+            "src/shared/**",
+            "src/public-api/**"
+          ],
+          "deny": [
+            "src/features/**",
+            "src/generated/**",
+            "src/services/api/*-operations.ts",
+            "src/services/api/transport.ts"
           ]
         },
         {
@@ -93,17 +118,78 @@
           "allow": ["src/public-api/**"]
         }
       ],
-      "restrictedDirectImportersDetection": {
-        "enabled": true,
-        "files": ["src/generated/api/**"],
-        "allowImporters": [
-          "src/domain/borrow/**",
-          "src/domain/schema/**",
-          "src/services/api/**",
-          "scripts/**",
-          "tests/generated/**"
-        ]
-      },
+      "restrictedDirectImportersDetection": [
+        {
+          "enabled": true,
+          "files": ["src/generated/api/**"],
+          "allowImporters": [
+            "src/domain/borrow/**",
+            "src/domain/schema/**",
+            "src/services/api/**",
+            "scripts/**",
+            "tests/generated/**"
+          ]
+        },
+        {
+          "enabled": true,
+          "files": ["src/services/api/yield-resource-source.ts"],
+          "allowImporters": [
+            "src/app/runtime/**",
+            "src/resources/**",
+            "src/services/wallet/bootstrap.ts",
+            "tests/**"
+          ]
+        },
+        {
+          "enabled": true,
+          "files": ["src/services/api/legacy-resource-source.ts"],
+          "allowImporters": [
+            "src/app/runtime/**",
+            "src/resources/**",
+            "src/services/wallet/bootstrap.ts",
+            "tests/**"
+          ]
+        },
+        {
+          "enabled": true,
+          "files": ["src/services/api/borrow-resource-source.ts"],
+          "allowImporters": [
+            "src/app/runtime/**",
+            "src/resources/**",
+            "tests/**"
+          ]
+        },
+        {
+          "enabled": true,
+          "files": ["src/services/api/yield-operations.ts"],
+          "allowImporters": [
+            "src/app/runtime/**",
+            "src/features/classic-transaction-flow/state/classic-flow-session-facade.ts",
+            "src/services/workflow/transaction-workflow-operations-service.ts",
+            "tests/**"
+          ]
+        },
+        {
+          "enabled": true,
+          "files": ["src/services/api/borrow-operations.ts"],
+          "allowImporters": [
+            "src/app/runtime/**",
+            "src/features/borrow-transaction-flow/state/borrow-flow-session-facade.ts",
+            "src/services/workflow/transaction-workflow-operations-service.ts",
+            "tests/**"
+          ]
+        },
+        {
+          "enabled": true,
+          "files": ["src/services/api/transport.ts"],
+          "allowImporters": [
+            "src/app/runtime/app-runtime.ts",
+            "src/services/api/*-operations.ts",
+            "src/services/api/*-resource-source.ts",
+            "tests/**"
+          ]
+        }
+      ],
       "orphanFilesDetection": [
         {
           "enabled": true

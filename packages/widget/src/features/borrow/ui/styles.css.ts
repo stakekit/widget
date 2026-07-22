@@ -340,16 +340,6 @@ export const metricCard = style([
   }),
 ]);
 
-export const badge = style([
-  atoms({
-    borderRadius: "base",
-    px: "2",
-  }),
-  {
-    background: `color-mix(in srgb, ${vars.color.text} 8%, transparent)`,
-  },
-]);
-
 export const errorText = style({
   color: vars.color.textDanger,
 });

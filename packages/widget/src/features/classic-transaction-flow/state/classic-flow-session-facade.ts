@@ -4,8 +4,10 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import { getValidStakeSessionTx } from "../../../domain";
 import type { YieldAction } from "../../../domain/schema/action-models";
-import type { ActionPreviewRequest } from "../../../services/api/yield-api-service";
-import { YieldApiService } from "../../../services/api/yield-api-service";
+import {
+  type ActionPreviewRequest,
+  YieldOperations,
+} from "../../../services/api/yield-operations";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
 import {
@@ -20,10 +22,7 @@ import {
   getClassicTransactionWorkflowInput,
 } from "../model/classic-transaction-flow";
 import { makeClassicFlowSessionReviewResources } from "../resources/classic-flow-review-resources";
-import {
-  type ClassicFlowSession,
-  classicFlowSessionStore,
-} from "./classic-flow-session-store";
+import { type ClassicFlowSession, classicFlowSessionStore } from "../session";
 import { makeClassicTransactionWorkflowModule } from "./classic-transaction-workflow";
 
 class ClassicFlowPreviewError extends Data.TaggedError(
@@ -171,7 +170,7 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
     const previewResourceAtom = previewRequest
       ? appRuntime
           .atom(
-            YieldApiService.use((api) =>
+            YieldOperations.use((api) =>
               api.previewAction(previewRequest).pipe(
                 Effect.flatMap((action) => {
                   if (session.intake._tag !== "Exit") {

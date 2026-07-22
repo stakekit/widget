@@ -27,7 +27,7 @@ import {
   currentBorrowPositionsAtom,
 } from "../../src/features/borrow/atoms/resources";
 import { currentWalletScopeAtom } from "../../src/features/wallet/state/selectors";
-import { BorrowApiService } from "../../src/services/api/borrow-api-service";
+import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -125,7 +125,7 @@ const makeRegistry = (borrow: Record<string, unknown>) =>
     initialValues: [
       Atom.initialValue(
         appRuntime.layer,
-        Layer.mergeAll(Layer.succeed(BorrowApiService, borrow as never))
+        Layer.mergeAll(Layer.succeed(BorrowResourceSource, borrow as never))
       ),
     ],
   });
@@ -175,7 +175,7 @@ describe("borrow atoms", () => {
         Atom.initialValue(
           appRuntime.layer,
           Layer.mergeAll(
-            Layer.succeed(BorrowApiService, {
+            Layer.succeed(BorrowResourceSource, {
               getIntegrations: () => Effect.succeed([integration]),
               getMarkets: () =>
                 Effect.succeed({
@@ -247,6 +247,91 @@ describe("borrow atoms", () => {
     expect(getIntegrations).toHaveBeenCalledOnce();
     expect(getMarkets).toHaveBeenCalledOnce();
     expect(getPositionData).toHaveBeenCalledOnce();
+  });
+
+  it("shares positions when only unused additional addresses differ", () => {
+    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const position = Schema.decodeUnknownSync(BorrowAccountPosition)(
+      positionDto
+    );
+    const getPositionData = vi.fn(() =>
+      Effect.succeed([{ integration, position }])
+    );
+    const registry = makeRegistry({
+      getIntegrations: () => Effect.succeed([integration]),
+      getMarkets: () =>
+        Effect.succeed({
+          items: [market],
+          limit: 100,
+          offset: 0,
+          total: 1,
+        }),
+      getPositionData,
+    });
+    const scopeWithAdditionalAddress = new WalletScopeKey({
+      additionalAddresses: { binanceBeaconAddress: "bnb-address" },
+      address,
+      network: "ethereum",
+    });
+    const first = borrowPositionsAtom(
+      new BorrowPositionsKey({ scope: walletScope })
+    );
+    const second = borrowPositionsAtom(
+      new BorrowPositionsKey({ scope: scopeWithAdditionalAddress })
+    );
+
+    expect(second).toBe(first);
+    expect(AsyncResult.getOrThrow(registry.get(first))).toHaveLength(1);
+    expect(AsyncResult.getOrThrow(registry.get(second))).toHaveLength(1);
+    expect(getPositionData).toHaveBeenCalledOnce();
+  });
+
+  it("loads complete market pages and keeps network identities separate", () => {
+    const ethereumMarket = Schema.decodeUnknownSync(Market)(marketDto);
+    const baseMarket = Schema.decodeUnknownSync(Market)({
+      ...marketDto,
+      id: "aave-v3-base-usdc",
+      network: "base",
+    });
+    const getMarkets = vi.fn(
+      ({ network, offset }: { network: "base" | "ethereum"; offset: number }) =>
+        Effect.succeed({
+          items:
+            network === "base"
+              ? [baseMarket]
+              : offset === 0
+                ? [ethereumMarket]
+                : [
+                    Schema.decodeUnknownSync(Market)({
+                      ...marketDto,
+                      id: "aave-v3-ethereum-usdt",
+                    }),
+                  ],
+          limit: 100,
+          offset,
+          total: network === "base" ? 1 : 101,
+        })
+    );
+    const registry = makeRegistry({ getMarkets });
+    const ethereum = borrowMarketsAtom(
+      new BorrowMarketsKey({ network: "ethereum" })
+    );
+    const equivalentEthereum = borrowMarketsAtom(
+      new BorrowMarketsKey({ network: "ethereum" })
+    );
+    const base = borrowMarketsAtom(new BorrowMarketsKey({ network: "base" }));
+
+    expect(AsyncResult.getOrThrow(registry.get(ethereum))).toHaveLength(2);
+    expect(
+      AsyncResult.getOrThrow(registry.get(equivalentEthereum))
+    ).toHaveLength(2);
+    expect(AsyncResult.getOrThrow(registry.get(base))).toEqual([baseMarket]);
+    expect(getMarkets.mock.calls.map(([request]) => request)).toEqual([
+      { limit: 100, network: "ethereum", offset: 0, scope: "all" },
+      { limit: 100, network: "ethereum", offset: 100, scope: "all" },
+      { limit: 100, network: "base", offset: 0, scope: "all" },
+    ]);
   });
 
   it("preserves base previous values and errors while typing absent details", () => {

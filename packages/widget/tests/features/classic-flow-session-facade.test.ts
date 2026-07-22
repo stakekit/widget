@@ -11,14 +11,16 @@ import type {
 } from "../../src/domain/schema/action-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/session";
 import {
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
   makeClassicFlowSessionModule,
 } from "../../src/features/classic-transaction-flow/state/classic-flow-session-facade";
-import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state/classic-flow-session-store";
-import type { ActionPreviewRequest } from "../../src/services/api/yield-api-service";
-import { YieldApiService } from "../../src/services/api/yield-api-service";
+import {
+  type ActionPreviewRequest,
+  YieldOperations,
+} from "../../src/services/api/yield-operations";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
@@ -79,8 +81,8 @@ const makeAppLayer = (
 ) =>
   Layer.mergeAll(
     Layer.succeed(
-      YieldApiService,
-      YieldApiService.of({ previewAction } as never)
+      YieldOperations,
+      YieldOperations.of({ previewAction } as never)
     ),
     Layer.succeed(
       TrackingService,

@@ -6,7 +6,7 @@ import {
   type ClassicTransactionFlowIntake,
   isClassicTransactionFlowWalletScopeValid,
 } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { makeClassicFlowSessionStore } from "../../src/features/classic-transaction-flow/state/classic-flow-session-store";
+import { makeClassicFlowSessionStore } from "../../src/features/classic-transaction-flow/session";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiYieldFixture } from "../fixtures";
 

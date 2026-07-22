@@ -4,11 +4,9 @@ import { Action } from "../../src/domain/borrow/action";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import { makeTransactionWorkflowModule } from "../../src/features/transaction-workflow/state";
 import {
-  ActivityInvalidationKey,
   BorrowMarketsInvalidationKey,
   BorrowPositionsInvalidationKey,
   WalletBalancesInvalidationKey,
-  YieldPositionsInvalidationKey,
 } from "../../src/services/resource-invalidation";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { BorrowTransactionWorkflowInput } from "../../src/services/workflow/transaction-workflow-model";
@@ -72,8 +70,6 @@ describe("borrow transaction workflow module", () => {
 
     expect(getTransactionWorkflowInvalidationKeys(key)).toEqual([
       new WalletBalancesInvalidationKey({ scope: walletScope }),
-      new YieldPositionsInvalidationKey({ scope: walletScope }),
-      new ActivityInvalidationKey({ scope: walletScope }),
       new BorrowPositionsInvalidationKey({ scope: walletScope }),
       new BorrowMarketsInvalidationKey({ network: "base" }),
     ]);

@@ -12,8 +12,8 @@ import { describe, expect, it } from "vitest";
 import type { Config } from "wagmi";
 import { getConnection, getConnectors } from "wagmi/actions";
 import { normalizeWidgetConfig } from "../../../src/app/config/settings";
-import { LegacyApiService } from "../../../src/services/api/legacy-api-service";
-import { YieldApiService } from "../../../src/services/api/yield-api-service";
+import { LegacyResourceSource } from "../../../src/services/api/legacy-resource-source";
+import { YieldResourceSource } from "../../../src/services/api/yield-resource-source";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
@@ -59,11 +59,11 @@ const solanaLayer = Layer.succeed(
 );
 
 const apiLayer = Layer.mergeAll(
-  Layer.succeed(LegacyApiService, {
+  Layer.succeed(LegacyResourceSource, {
     getEnabledNetworks: () => Effect.succeed(new Set(["ethereum"])),
   } as never),
-  Layer.succeed(YieldApiService, {
-    getInitialYield: () => Effect.die("unused"),
+  Layer.succeed(YieldResourceSource, {
+    getOpportunity: () => Effect.die("unused"),
   } as never)
 );
 
@@ -236,11 +236,11 @@ describe("WalletService acquisition", () => {
   it("fails acquisition after bounded enabled-network retries", async () => {
     const cause = new Error("enabled networks unavailable");
     const failingApiLayer = Layer.mergeAll(
-      Layer.succeed(LegacyApiService, {
+      Layer.succeed(LegacyResourceSource, {
         getEnabledNetworks: () => Effect.fail(cause),
       } as never),
-      Layer.succeed(YieldApiService, {
-        getInitialYield: () => Effect.die("unused"),
+      Layer.succeed(YieldResourceSource, {
+        getOpportunity: () => Effect.die("unused"),
       } as never)
     );
     const layer = makeWalletLayer(

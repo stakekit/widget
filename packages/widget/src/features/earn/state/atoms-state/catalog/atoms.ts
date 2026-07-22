@@ -1,15 +1,13 @@
 import BigNumber from "bignumber.js";
-import { Cause, Duration, Effect, Option, Stream } from "effect";
+import { Cause, Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../../../app/runtime/app-runtime";
 import type {
   EarnToken,
   EarnValidator,
   EarnValidatorKey,
   EarnYield,
 } from "../../../../../domain/schema/earn-models";
-import type { TokenBalanceScanCommand } from "../../../../../domain/schema/financial-models";
 import type { YieldId } from "../../../../../domain/schema/identifiers";
 import type { Network } from "../../../../../domain/schema/network-model";
 import {
@@ -22,14 +20,27 @@ import {
   isNonZeroRewardRateYield,
 } from "../../../../../domain/types/yields";
 import type { DashboardYieldCategory } from "../../../../../public-api/types";
-import { LegacyApiService } from "../../../../../services/api/legacy-api-service";
-import { YieldApiService } from "../../../../../services/api/yield-api-service";
-import { resourceInvalidationKeys } from "../../../../../services/resource-invalidation";
-import { withApiResourcePolicy } from "../../../../../shared/effect/api-resource";
+import { legacyTokenOptionsResourceAtom } from "../../../../../resources/legacy-token-options/legacy-token-options";
+import { tokenBalancesResourceAtom } from "../../../../../resources/token-balances/token-balances";
 import {
-  loadAllPages,
-  paginatedApiStream,
-} from "../../../../../shared/effect/pagination";
+  preferredValidatorsResourceAtom,
+  ValidatorsKey,
+  validatorsPullAtom as validatorsResourcePullAtom,
+} from "../../../../../resources/validator-directory/validator-directory";
+import {
+  YieldDirectoryKey,
+  YieldFirstPageKey,
+  yieldDirectoryResourceAtom,
+  yieldFirstPageResourceAtom,
+} from "../../../../../resources/yield-directory/yield-directory";
+import { yieldOpportunityResourceAtom } from "../../../../../resources/yield-opportunity/yield-opportunity";
+import { yieldPositionsResourceAtom } from "../../../../../resources/yield-positions/yield-positions";
+import {
+  YieldTokensKey,
+  yieldTokensPullAtom,
+} from "../../../../../resources/yield-token-directory/yield-token-directory";
+import { mapAsyncResultError } from "../../../../../shared/effect/async-result";
+import type { PullPage } from "../../../../../shared/effect/pagination";
 import {
   EarnCatalogError,
   type EarnCatalogOperation,
@@ -51,34 +62,10 @@ import {
   type YieldValidatorsKey,
   type YieldValidatorsPullKey,
 } from "./keys";
-import { loadAllPagesByIdChunks } from "./utilities";
 
-const catalogSWR = withApiResourcePolicy({
-  staleTime: Duration.minutes(5),
-  idleTTL: Duration.minutes(5),
-  revalidateOnMount: true,
-});
-
-const DEFAULT_PAGE_SIZE = 100;
-const YIELD_IDS_CHUNK_SIZE = 100;
-const PREFERRED_PAGE_CONCURRENCY = 5;
 const toCatalogError =
   (operation: EarnCatalogOperation) => (cause: EarnCatalogUnderlyingError) =>
     new EarnCatalogError({ operation, cause });
-
-const withCatalogError =
-  (operation: EarnCatalogOperation) =>
-  <A, E extends EarnCatalogUnderlyingError, R>(
-    effect: Effect.Effect<A, E, R>
-  ) =>
-    effect.pipe(Effect.mapError(toCatalogError(operation)));
-
-const mapCatalogStreamError =
-  (operation: EarnCatalogOperation) =>
-  <A, E extends EarnCatalogUnderlyingError, R>(
-    stream: Stream.Stream<A, E, R>
-  ) =>
-    stream.pipe(Stream.mapError(toCatalogError(operation)));
 
 const toNetworksParam = (network: Network | null) =>
   network ? ([network] as const) : undefined;
@@ -96,101 +83,74 @@ const shouldUseYieldTokensApi = ({
 
 export const availableYieldCategoriesAtom = Atom.family(
   (key: AvailableYieldCategoriesKey) =>
-    appRuntime
-      .atom(() =>
-        Effect.gen(function* () {
-          const api = yield* YieldApiService;
+    Atom.make((get) => {
+      const categoryResults = key.categoryOrder.map((category) =>
+        get(
+          yieldFirstPageResourceAtom(
+            new YieldFirstPageKey({
+              network: key.network,
+              types: getApiYieldTypesForDashboardCategory(category),
+            })
+          )
+        )
+      );
 
-          const availability = yield* Effect.all(
-            key.categoryOrder.map((category) =>
-              Effect.gen(function* () {
-                const page = yield* api.getAvailableYields({
-                  ...(key.network && { network: key.network }),
-                  limit: DEFAULT_PAGE_SIZE,
-                  types: getApiYieldTypesForDashboardCategory(category),
-                });
-                const hasVisibleYield = (page.items ?? []).some(
-                  (yieldDto) =>
-                    yieldDto.status.enter && isNonZeroRewardRateYield(yieldDto)
-                );
-
-                return hasVisibleYield ? category : null;
-              })
-            ),
-            { concurrency: PREFERRED_PAGE_CONCURRENCY }
-          );
-
-          return availability.filter(
-            (category): category is DashboardYieldCategory => category !== null
-          );
-        }).pipe(withCatalogError("available-yield-categories"))
-      )
-      .pipe(catalogSWR)
+      return mapAsyncResultError(
+        AsyncResult.all(categoryResults).pipe(
+          AsyncResult.map((pages) =>
+            key.categoryOrder.filter((_, index) =>
+              pages[index]?.some(
+                (yieldModel) =>
+                  yieldModel.status.enter &&
+                  isNonZeroRewardRateYield(yieldModel)
+              )
+            )
+          )
+        ),
+        toCatalogError("available-yield-categories")
+      );
+    }).pipe(Atom.withLabel("availableYieldCategoriesAtom"))
 );
 
 export const earnYieldCatalogAtom = Atom.family((key: YieldCatalogKey) => {
-  return appRuntime
-    .atom(() =>
-      Effect.gen(function* () {
-        const api = yield* YieldApiService;
-
-        return yield* loadAllPagesByIdChunks({
-          chunkSize: YIELD_IDS_CHUNK_SIZE,
-          concurrency: PREFERRED_PAGE_CONCURRENCY,
-          fetchPage: ({ ids, offset }) =>
-            api.getYields({
-              limit: DEFAULT_PAGE_SIZE,
-              offset,
-              types: toYieldTypesParam(key.category),
-              network: key.network,
-              yieldIds: ids,
-            }),
-          getItemId: (yieldDto) => yieldDto.id,
-          ids: key.yieldIds,
-          pageSize: DEFAULT_PAGE_SIZE,
-        });
-      }).pipe(withCatalogError("earn-yield-catalog"))
+  return Atom.make((get) =>
+    mapAsyncResultError(
+      get(
+        yieldDirectoryResourceAtom(
+          new YieldDirectoryKey({
+            network: key.network,
+            types: toYieldTypesParam(key.category),
+            yieldIds: key.yieldIds,
+          })
+        )
+      ).pipe(AsyncResult.map((directory) => directory.items)),
+      toCatalogError("earn-yield-catalog")
     )
-    .pipe(catalogSWR);
+  ).pipe(Atom.withLabel("earnYieldCatalogAtom"));
 });
 
 export const initYieldAtom = Atom.family((key: InitYieldKey) =>
-  appRuntime
-    .atom(() =>
-      Effect.gen(function* () {
-        if (!key.yieldId) {
-          return null;
-        }
-
-        const api = yield* YieldApiService;
-
-        return yield* api.getInitialYield(key.yieldId);
-      }).pipe(withCatalogError("init-yield"))
-    )
-    .pipe(catalogSWR)
+  Atom.make((get) =>
+    key.yieldId
+      ? mapAsyncResultError(
+          get(yieldOpportunityResourceAtom(key.yieldId)),
+          toCatalogError("init-yield")
+        )
+      : AsyncResult.success(null)
+  ).pipe(Atom.withLabel("initYieldAtom"))
 );
 
 export const positionsDataAtom = Atom.family((key: PositionsDataKey) =>
-  appRuntime
-    .atom(() =>
-      Effect.gen(function* () {
-        if (!key.scope) {
-          return new Map() as PositionsData;
-        }
-
-        const api = yield* YieldApiService;
-        const positions = yield* api.getCatalogPositions({
-          address: key.scope.address,
-          network: key.scope.network,
-        });
-
-        return toPositionsData(positions.items);
-      }).pipe(withCatalogError("positions-data"))
-    )
-    .pipe(
-      Atom.withReactivity(resourceInvalidationKeys.yieldPositions(key.scope)),
-      catalogSWR
-    )
+  Atom.make((get) =>
+    key.scope
+      ? mapAsyncResultError(
+          get(yieldPositionsResourceAtom(key.scope)).pipe(
+            AsyncResult.map((positions) => toPositionsData(positions.items))
+          ),
+          toCatalogError("positions-data")
+        )
+      : AsyncResult.success(new Map() as PositionsData)
+  ).pipe(Atom.withLabel("earnPositionsDataAtom"))
 );
 
 const toDefaultTokenOption = (tokenWithYields: {
@@ -260,13 +220,15 @@ const scopeTokenOptions = ({
     .filter(hasAvailableYields);
 
 const getPullItemsResult = (
-  result: Atom.PullResult<EarnTokenOption, EarnCatalogError>
+  result: Atom.PullResult<PullPage<EarnTokenOption>, EarnCatalogError>
 ): AsyncResult.AsyncResult<
   ReadonlyArray<EarnTokenOption>,
   EarnCatalogError
 > => {
   const itemsResult = result.pipe(
-    AsyncResult.map((value) => value.items as ReadonlyArray<EarnTokenOption>)
+    AsyncResult.map((value) =>
+      EArray.flatMap(value.items, (page) => page.items)
+    )
   );
   const error = itemsResult.pipe(AsyncResult.error, Option.getOrNull);
 
@@ -298,63 +260,67 @@ const findInitTokenOption = ({
   }) ?? null;
 
 const legacyTokenOptionsAtom = Atom.family((network: Network | null) =>
-  appRuntime
-    .atom(() =>
-      Effect.gen(function* () {
-        const api = yield* LegacyApiService;
-        return yield* api.getLegacyTokenOptions(network ?? undefined);
-      }).pipe(withCatalogError("legacy-token-options"))
+  Atom.make((get) =>
+    mapAsyncResultError(
+      get(legacyTokenOptionsResourceAtom(network)),
+      toCatalogError("legacy-token-options")
     )
-    .pipe(catalogSWR)
+  ).pipe(Atom.withLabel("earnLegacyTokenOptionsAtom"))
 );
 
-const defaultTokenOptionsPullAtom = Atom.family((key: DefaultTokenOptionsKey) =>
-  appRuntime.pull((context) =>
-    paginatedApiStream({
-      fetchPage: (offset) =>
-        Effect.gen(function* () {
-          if (
-            shouldUseYieldTokensApi({
-              category: key.category,
-              tokensForEnabledYieldsOnly: key.tokensForEnabledYieldsOnly,
-            })
-          ) {
-            const api = yield* YieldApiService;
-            const page = yield* api
-              .getYieldTokens({
-                limit: DEFAULT_PAGE_SIZE,
-                offset,
-                networks: toNetworksParam(key.network),
-                yieldTypes: toYieldTypesParam(key.category),
-              })
-              .pipe(withCatalogError("default-token-options"));
-            const items = (page.items ?? []).map(toDefaultTokenOption);
+const legacyTokenOptionsPullAtom = Atom.family((network: Network | null) => {
+  const source = legacyTokenOptionsAtom(network);
 
-            return {
-              items,
-              limit: page.limit,
-              offset: page.offset,
-              total: page.total,
-            };
-          }
+  return Atom.writable<
+    Atom.PullResult<PullPage<EarnTokenOption>, EarnCatalogError>,
+    void
+  >(
+    (get) =>
+      get(source).pipe(
+        AsyncResult.map((items) => ({
+          done: true,
+          items: EArray.of({
+            hasNextPage: false,
+            items: EArray.map(items, toDefaultTokenOption),
+          }),
+        }))
+      ),
+    () => {},
+    (refresh) => refresh(source)
+  );
+});
 
-          if (offset > 0) {
-            return { items: [], limit: 1, offset, total: 0 };
-          }
+const defaultTokenOptionsPullAtom = Atom.family(
+  (key: DefaultTokenOptionsKey) => {
+    const useYieldTokens = shouldUseYieldTokensApi({
+      category: key.category,
+      tokensForEnabledYieldsOnly: key.tokensForEnabledYieldsOnly,
+    });
 
-          const tokens = yield* context.result(
-            legacyTokenOptionsAtom(key.network)
-          );
+    if (!useYieldTokens) return legacyTokenOptionsPullAtom(key.network);
 
-          return {
-            items: tokens.map(toDefaultTokenOption),
-            limit: Math.max(1, tokens.length),
-            offset: 0,
-            total: tokens.length,
-          };
-        }),
-    })
-  )
+    return yieldTokensPullAtom(
+      new YieldTokensKey({
+        networks: toNetworksParam(key.network),
+        yieldTypes: toYieldTypesParam(key.category),
+      })
+    ).pipe(
+      Atom.map((result) =>
+        mapAsyncResultError(
+          result.pipe(
+            AsyncResult.map(({ done, items }) => ({
+              done,
+              items: EArray.map(items, (page) => ({
+                ...page,
+                items: EArray.map(page.items, toDefaultTokenOption),
+              })),
+            }))
+          ),
+          toCatalogError("default-token-options")
+        )
+      )
+    );
+  }
 );
 
 const initTokenOptionAtom = Atom.family((key: InitTokenOptionKey) => {
@@ -376,57 +342,39 @@ const initTokenOptionAtom = Atom.family((key: InitTokenOptionKey) => {
 });
 
 const tokenBalancesScanAtom = Atom.family((key: TokenBalancesScanKey) =>
-  appRuntime
-    .atom(() =>
-      Effect.gen(function* () {
-        if (!key.scope) {
-          return [];
-        }
-
-        const api = yield* LegacyApiService;
-        const balances = yield* api.scanEarnTokenBalances({
-          address: key.scope.address,
-          additionalAddresses: key.scope.additionalAddresses ?? undefined,
-          network: key.scope.network as TokenBalanceScanCommand["network"],
-        });
-
-        return balances.map(toBalanceTokenOption);
-      }).pipe(withCatalogError("token-balances-scan"))
-    )
-    .pipe(
-      Atom.withReactivity(resourceInvalidationKeys.walletBalances(key.scope)),
-      catalogSWR
-    )
+  Atom.make((get) =>
+    key.scope
+      ? mapAsyncResultError(
+          get(tokenBalancesResourceAtom(key.scope)).pipe(
+            AsyncResult.map((balances) => balances.map(toBalanceTokenOption))
+          ),
+          toCatalogError("token-balances-scan")
+        )
+      : AsyncResult.success([])
+  ).pipe(Atom.withLabel("earnTokenBalancesScanAtom"))
 );
 
 const tokenYieldScopeAtom = Atom.family((key: TokenYieldScopeKey) =>
-  appRuntime
-    .atom(() =>
-      Effect.gen(function* () {
-        if (!key.category || key.yieldIds.length === 0) {
-          return new Set<YieldId>();
-        }
-
-        const api = yield* YieldApiService;
-        const yields = yield* loadAllPagesByIdChunks({
-          chunkSize: YIELD_IDS_CHUNK_SIZE,
-          concurrency: PREFERRED_PAGE_CONCURRENCY,
-          fetchPage: ({ ids, offset }) =>
-            api.getTokenScopeYields({
-              limit: DEFAULT_PAGE_SIZE,
-              offset,
-              types: toYieldTypesParam(key.category),
-              yieldIds: ids,
-            }),
-          getItemId: (yieldDto) => yieldDto.id,
-          ids: key.yieldIds,
-          pageSize: DEFAULT_PAGE_SIZE,
-        });
-
-        return new Set(yields.map((yieldDto) => yieldDto.id));
-      }).pipe(withCatalogError("token-yield-scope"))
-    )
-    .pipe(catalogSWR)
+  Atom.make((get) =>
+    !key.category || key.yieldIds.length === 0
+      ? AsyncResult.success(new Set<YieldId>())
+      : mapAsyncResultError(
+          get(
+            yieldDirectoryResourceAtom(
+              new YieldDirectoryKey({
+                types: toYieldTypesParam(key.category),
+                yieldIds: key.yieldIds,
+              })
+            )
+          ).pipe(
+            AsyncResult.map(
+              ({ items: yields }) =>
+                new Set(yields.map((yieldModel) => yieldModel.id))
+            )
+          ),
+          toCatalogError("token-yield-scope")
+        )
+  ).pipe(Atom.withLabel("tokenYieldScopeAtom"))
 );
 
 const getTokenOptionRank = (token: EarnTokenOption) => {
@@ -617,28 +565,22 @@ export const tokenOptionsPullAtom = defaultTokenOptionsPullAtom;
 
 export const yieldValidatorsAtom = Atom.family(
   ({ selectedYieldId }: YieldValidatorsKey) => {
-    const preferredValidatorsAtom = appRuntime
-      .atom(() =>
-        Effect.gen(function* () {
-          const api = yield* YieldApiService;
-
-          const validators = yield* loadAllPages({
-            concurrency: PREFERRED_PAGE_CONCURRENCY,
-            fetchPage: (offset: number) =>
-              api.getValidators({
-                limit: DEFAULT_PAGE_SIZE,
-                offset,
-                preferred: true,
-                status: "active",
-                yieldId: selectedYieldId,
-              }),
-            pageSize: DEFAULT_PAGE_SIZE,
-          });
-
-          return validators;
-        }).pipe(withCatalogError("preferred-validators"))
+    const preferredValidatorsAtom = Atom.make((get) =>
+      mapAsyncResultError(
+        get(preferredValidatorsResourceAtom(selectedYieldId)),
+        toCatalogError("preferred-validators")
       )
-      .pipe(catalogSWR);
+    );
+    const defaultValidatorsPullAtom = validatorsResourcePullAtom(
+      new ValidatorsKey({
+        preferred: false,
+        status: "active",
+        yieldId: selectedYieldId,
+      })
+    );
+    const rememberedValidatorsAtom = Atom.make(
+      new Map<EarnValidatorKey, EarnValidator>()
+    );
 
     const loadedValidatorsAtom = Atom.writable<
       Map<EarnValidatorKey, EarnValidator>,
@@ -649,28 +591,32 @@ export const yieldValidatorsAtom = Atom.family(
           AsyncResult.value,
           Option.getOrElse(() => [])
         );
-        const loadedValidators = new Map(
-          context
-            .self<Map<EarnValidatorKey, EarnValidator>>()
-            .pipe(
-              Option.getOrElse(() => new Map<EarnValidatorKey, EarnValidator>())
-            )
+        const defaultValidators = context.get(defaultValidatorsPullAtom).pipe(
+          AsyncResult.value,
+          Option.map(({ items }) => items.flatMap((page) => page.items)),
+          Option.getOrElse(() => [])
+        );
+        const loadedValidators = new Map<EarnValidatorKey, EarnValidator>(
+          [...preferredValidators, ...defaultValidators].map((validator) => [
+            validator.key,
+            validator,
+          ])
         );
 
-        preferredValidators.forEach((validator) => {
+        context.get(rememberedValidatorsAtom).forEach((validator) => {
           loadedValidators.set(validator.key, validator);
         });
 
         return loadedValidators;
       },
       (context, value) => {
-        const newValue = new Map(context.get(loadedValidatorsAtom));
+        const newValue = new Map(context.get(rememberedValidatorsAtom));
 
         value.forEach((validator) => {
           newValue.set(validator.key, validator);
         });
 
-        context.setSelf(newValue);
+        context.set(rememberedValidatorsAtom, newValue);
       }
     );
 
@@ -679,37 +625,22 @@ export const yieldValidatorsAtom = Atom.family(
      * If search is not provided, we pull only non-preferred validators
      */
     const validatorsPullAtom = Atom.family(
-      ({ search }: YieldValidatorsPullKey) =>
-        appRuntime.pull(
-          (context) => {
-            return paginatedApiStream({
-              fetchPage: (offset) =>
-                Effect.gen(function* () {
-                  const api = yield* YieldApiService;
-                  const page = yield* api.getValidators({
-                    limit: DEFAULT_PAGE_SIZE,
-                    name: search || undefined,
-                    address: search || undefined,
-                    offset,
-                    status: "active",
-                    ...(search ? {} : { preferred: false }),
-                    yieldId: selectedYieldId,
-                  });
-                  const items = page.items ?? [];
+      ({ search }: YieldValidatorsPullKey) => {
+        const source = validatorsResourcePullAtom(
+          new ValidatorsKey({
+            preferred: search ? null : false,
+            search,
+            status: "active",
+            yieldId: selectedYieldId,
+          })
+        );
 
-                  context.set(loadedValidatorsAtom, items);
-
-                  return {
-                    items,
-                    limit: page.limit,
-                    offset: page.offset,
-                    total: page.total,
-                  };
-                }),
-            }).pipe(mapCatalogStreamError("validators"));
-          },
-          { initialValue: [] }
-        )
+        return source.pipe(
+          Atom.map((result) =>
+            mapAsyncResultError(result, toCatalogError("validators"))
+          )
+        );
+      }
     );
 
     return {

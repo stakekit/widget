@@ -3,11 +3,13 @@ import { HttpResponse, http } from "msw";
 import { version as widgetVersion } from "../../package.json";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { useGeoBlock } from "../../src/features/preferences/react/use-geo-block";
-import { BorrowApiService } from "../../src/services/api/borrow-api-service";
+import { BorrowOperations } from "../../src/services/api/borrow-operations";
+import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
 import { delayAPIRequests } from "../../src/services/api/delay-api-requests";
-import { LegacyApiService } from "../../src/services/api/legacy-api-service";
+import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
 import { ApiTransportService } from "../../src/services/api/transport";
-import { YieldApiService } from "../../src/services/api/yield-api-service";
+import { YieldOperations } from "../../src/services/api/yield-operations";
+import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
 import {
   type WidgetApiConfig,
   WidgetConfigService,
@@ -39,9 +41,11 @@ const createTestClient = async (options: Partial<WidgetApiConfig> = {}) => {
     Layer.provide(configLayer)
   );
   const clientLayer = Layer.mergeAll(
-    BorrowApiService.layer,
-    LegacyApiService.layer,
-    YieldApiService.layer
+    BorrowOperations.layer,
+    BorrowResourceSource.layer,
+    LegacyResourceSource.layer,
+    YieldOperations.layer,
+    YieldResourceSource.layer
   ).pipe(Layer.provide(transportLayer));
   const context = await Effect.runPromise(
     Layer.build(Layer.merge(clientLayer, richErrorLayer)).pipe(Effect.scoped)
@@ -49,9 +53,11 @@ const createTestClient = async (options: Partial<WidgetApiConfig> = {}) => {
 
   return {
     client: {
-      borrow: Context.get(context, BorrowApiService),
-      legacy: Context.get(context, LegacyApiService),
-      yield: Context.get(context, YieldApiService),
+      borrowOperations: Context.get(context, BorrowOperations),
+      borrowSource: Context.get(context, BorrowResourceSource),
+      legacySource: Context.get(context, LegacyResourceSource),
+      yieldOperations: Context.get(context, YieldOperations),
+      yieldSource: Context.get(context, YieldResourceSource),
     },
     richErrors: Context.get(context, RichErrorService),
   };
@@ -81,9 +87,9 @@ describe("Effect API client", () => {
     );
     const { client } = await createTestClient();
 
-    await Effect.runPromise(client.legacy.getLegacyTokenOptions());
-    await Effect.runPromise(client.yield.getHealth());
-    await Effect.runPromise(client.borrow.getIntegrations());
+    await Effect.runPromise(client.legacySource.getTokenOptions());
+    await Effect.runPromise(client.yieldSource.getHealth());
+    await Effect.runPromise(client.borrowSource.getIntegrations());
 
     expect(calls.map((call) => call.url)).toEqual([
       "https://api.example.com/v1/tokens",
@@ -103,7 +109,7 @@ describe("Effect API client", () => {
   it("keeps Borrow operations unavailable when configuration is missing", async () => {
     const { client } = await createTestClient({ borrowApiUrl: " " });
     await expect(
-      Effect.runPromise(client.borrow.getIntegrations())
+      Effect.runPromise(client.borrowSource.getIntegrations())
     ).rejects.toBeTruthy();
   });
 
@@ -139,7 +145,7 @@ describe("Effect API client", () => {
     try {
       await geoBlock.act(async () => {
         await expect(
-          Effect.runPromise(client.legacy.getLegacyTokenOptions())
+          Effect.runPromise(client.legacySource.getTokenOptions())
         ).rejects.toBeTruthy();
         await expect
           .poll(() =>
@@ -151,7 +157,7 @@ describe("Effect API client", () => {
 
         response = "geo";
         await expect(
-          Effect.runPromise(client.legacy.getLegacyTokenOptions())
+          Effect.runPromise(client.legacySource.getTokenOptions())
         ).rejects.toBeTruthy();
         await expect
           .poll(() => {
@@ -209,9 +215,9 @@ describe("Effect API client", () => {
     );
     const { client } = await createTestClient();
 
-    await Effect.runPromise(client.legacy.getLegacyTokenOptions());
-    await Effect.runPromise(client.yield.getHealth());
-    await Effect.runPromise(client.borrow.getIntegrations());
+    await Effect.runPromise(client.legacySource.getTokenOptions());
+    await Effect.runPromise(client.yieldSource.getHealth());
+    await Effect.runPromise(client.borrowSource.getIntegrations());
     expect(transientAttempts).toEqual({ borrow: 3, legacy: 3, yield: 3 });
 
     worker.use(
@@ -224,7 +230,7 @@ describe("Effect API client", () => {
       })
     );
     await expect(
-      Effect.runPromise(client.legacy.getLegacyTokenOptions())
+      Effect.runPromise(client.legacySource.getTokenOptions())
     ).rejects.toBeTruthy();
     expect(badRequestAttempts).toBe(1);
   });
@@ -242,7 +248,7 @@ describe("Effect API client", () => {
 
     try {
       const request = Effect.runPromise(
-        client.legacy.getLegacyTokenOptions()
+        client.legacySource.getTokenOptions()
       ).then(() => {
         resolved = true;
       });

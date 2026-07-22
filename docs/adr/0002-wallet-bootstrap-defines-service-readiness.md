@@ -1,0 +1,43 @@
+---
+status: accepted
+---
+
+# Wallet Bootstrap defines service readiness
+
+`WalletService` acquisition blocks until Wallet Bootstrap has established its scoped Solana and Wagmi resources, installed internal change observation, completed initial connection behavior, and derived the first Wallet State. Consumers observe service acquisition as loading or failure rather than receiving public bootstrapping, ready, or bootstrap-failed phases; after acquisition, the service exposes only current wallet capabilities and ongoing state changes. Long-lived connector and provider events remain scoped implementation details. This supersedes ADR-0001's non-blocking bootstrap and public four-phase snapshot decisions while retaining service ownership of the Wallet Runtime.
+
+Wallet Bootstrap awaits reconnect, mobile fallback connection, and initial chain switching, but failures of those wallet operations are recoverable: the service records them and becomes available with the actual resulting Wallet State. Failures to establish Wallet Topology, acquire runtime resources, install state observation, or derive the first Wallet State fail `WalletService` acquisition.
+
+After acquisition, violating a fixed Wallet Runtime Invariant is terminal for that Wallet Runtime. Ongoing wallet-state observation and subsequent commands fail through the typed Effect error channel with the invariant cause; consumers do not receive an invariant-violated phase. The last Wallet State may be retained for diagnostics, and runtime resources remain owned by and are released with the enclosing scope.
+
+The internal `WalletService` contract is Effect-native: it exposes current Wallet State as an `Effect`, ongoing Wallet State changes as a `Stream`, and wallet commands as Effects. It does not expose synchronous state getters, lifecycle-bearing runtime snapshots, or mutable Effect primitives. Synchronous access required by a third-party callback is confined to a boundary adapter and does not shape the core service API.
+
+Replaceable external wallet capabilities are injected through Context services and Layers rather than aggregate adapter arguments, optional operation arguments, or test-only dependency parameters. The capability boundaries cover the browser environment, Wagmi integration, and Solana integration; existing API, configuration, persistence, and tracking services remain dependencies. Pure normalization, routing, comparison, and snapshot functions continue to accept explicit data and are not promoted to services.
+
+After Wallet Bootstrap, ongoing behavior is implemented as focused scoped stream pipelines rather than a central wallet-runtime event queue and reducer. Wagmi observations feed state enrichment and one authoritative `SubscriptionRef`; Solana discovery feeds serialized connector-membership synchronization; external-provider changes feed serialized provider synchronization; and Wallet State changes feed lifecycle effects. The authoritative reference carries terminal invariant failure as an `Exit`, so state reads, state streams, and commands observe one consistent result without a public lifecycle protocol.
+
+Post-bootstrap connector and enrichment failures remain local to their state slice: Cosmos additional-address failure omits additional addresses, Ledger and filtered-chain enrichment use their defined defaults, Solana discovery or membership failure retains the last valid membership, and tracking or connector-notification failure does not affect Wallet State. Each recovery is explicit and structurally logged; only fixed-topology invariant violations terminate the Wallet Runtime.
+
+Each wallet command reads the authoritative runtime result once when it begins and captures one immutable routing context for its duration. Later account, connector, network, or state changes affect subsequent commands and do not reroute an in-flight wallet operation across wallet identities.
+
+Reconnect serialization is scoped to one Wallet Runtime and uses an effectfully acquired semaphore with automatic permit management. Independent widget instances do not share a module-global reconnect lock. Any future requirement for page-wide Wagmi serialization must be represented as an explicitly shared capability backed by a reproduced constraint and focused test.
+
+There is no separate consumer-facing `WalletRuntime` abstraction. `WalletService` construction is the scoped top-down composition root, and bootstrap helpers return private resource bundles where useful. State projection, Solana membership, external-provider synchronization, and lifecycle behavior remain focused private modules; the existing `runtime.ts` coordinator and its service-like interface are removed.
+
+The Wagmi configuration is an immutable, non-null property of the acquired `WalletService`, not a nullable Effect or live runtime snapshot field. React may use a temporary fallback configuration while the service is being acquired, then switches to the single configuration established by Wallet Bootstrap.
+
+`WalletService` owns and publishes one cohesive Wallet State containing normalized connection, account, chain, and connector-specific details such as Ledger state. Raw Wagmi connection and connector observations are private platform inputs, React atoms are selectors over Wallet State, and command-routing handles remain private alongside the captured state. There is no separate Wallet Projection domain model.
+
+Wallet Bootstrap captures a normalized Wallet Topology fingerprint. Any later change to topology-defining configuration, including connector mode or connector-construction policy, violates the fixed-topology invariant instead of being silently ignored or rebuilding the runtime. Live external-provider address, chain, supported-chain, and operation values remain updateable while external-provider mode is unchanged; tracking callbacks and other explicitly live non-wallet settings are excluded from topology identity.
+
+Platform capability services translate foreign asynchronous APIs into Effect-native contracts rather than exposing dependency bags with imperative APIs. Wagmi Promise actions become typed Effects and callback watchers become scoped Streams; Solana registry and adapter events become scoped Streams with service-owned cleanup. Required Promise callbacks and unsubscription machinery remain inside platform implementations, while wallet bootstrap, state, synchronization, lifecycle, and routing modules use only Effects and Streams.
+
+Wallet construction and platform operations preserve narrowly tagged errors, including their operation or bootstrap stage and original cause, until an explicit policy handles them. Wallet Bootstrap has a typed error channel, recoverable initialization and enrichment errors are matched at their policy boundary, invariant violations remain the typed post-bootstrap terminal error, and unexpected defects remain defects. The design avoids both `unknown`/`never` laundering and a single undifferentiated wallet-error union.
+
+Wallet and platform resource lifetimes are owned by scoped Layers and scoped Effects. `WalletService` is built with `Layer.scoped`; foreign resources use acquisition/release or service finalizers; long-lived synchronization and lifecycle fibers are scoped; and listener Streams own callback registration and unsubscription. Manual active flags and coordinated cleanup remain only where a foreign boundary cannot be represented directly, and do not leak into wallet orchestration.
+
+Wallet tests substitute capability Layers and assert service acquisition, typed failures, degradation, state changes, command snapshotting, and scoped cleanup. End-to-end tests retain coverage of external-provider, Solana, lifecycle, and React behavior. Tests do not preserve removed lifecycle phases, pending-event ordering, aggregate adapters, or internal queue mechanics.
+
+The implementation is divided into deep platform services for environment, Wagmi, and Solana; a top-down bootstrap program; focused initial-connection, Wallet State, external-provider synchronization, routing, and lifecycle modules; and a small `wallet-service.ts` scoped composition root. The existing `runtime.ts`, runtime domain snapshot, aggregate adapters, and central event protocol are removed rather than redistributed across similarly shallow files.
+
+The refactor is delivered as one atomic cutover. Platform services, Wallet Bootstrap, authoritative Wallet State, synchronization pipelines, `WalletService`, React adapters, and tests change together, and the obsolete runtime is deleted in the same change. No staged compatibility architecture or parallel wallet authority is introduced.

@@ -27,6 +27,7 @@ import {
   selectTokenButton,
 } from "../../../shared/ui/primitives/button/styles.css";
 import { ContentLoaderSquare } from "../../../shared/ui/primitives/content-loader";
+import { HeaderBadge } from "../../../shared/ui/primitives/header-badge";
 import { CaretDownIcon } from "../../../shared/ui/primitives/icons/caret-down";
 import { Image } from "../../../shared/ui/primitives/image";
 import { Text } from "../../../shared/ui/primitives/typography/text";
@@ -1117,11 +1118,9 @@ const BorrowDetailsPanel = ({
               {" · "}
               {selectedMarket.network}
             </Text>
-            <Box className={styles.badge}>
-              <Text variant={{ type: "muted", weight: "bold", size: "small" }}>
-                {t(`dashboard.borrow.market_type.${selectedMarket.type}`)}
-              </Text>
-            </Box>
+            <HeaderBadge
+              label={t(`dashboard.borrow.market_type.${selectedMarket.type}`)}
+            />
           </Box>
         </Box>
       </Box>

@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import { loadAllPagesByIdChunks } from "../../src/features/earn/state/atoms-state/catalog/utilities";
+import { loadAllPagesByIdChunks } from "../../src/shared/effect/pagination";
 
 type Item = {
   id: string;

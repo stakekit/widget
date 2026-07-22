@@ -4,12 +4,12 @@ import {
   EarnLegacyTokenOptionsResponse,
   EarnPositionsResponse,
   EarnProvider,
-  EarnTokenBalancesResponse,
   EarnTokenPage,
   EarnValidatorPage,
   EarnYield,
   EarnYieldPage,
 } from "../../src/domain/schema/earn-models";
+import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
 import { resolveYieldOptions } from "../../src/features/earn/state/atoms-state/resolver/yield";
 import { yieldApiYieldFixture } from "../fixtures";
 
@@ -105,7 +105,7 @@ describe("Earn API boundary policies", () => {
         total: 2,
       }),
       decode(EarnLegacyTokenOptionsResponse, [validOption, malformedOption]),
-      decode(EarnTokenBalancesResponse, [
+      decode(TokenBalancesResponse, [
         { ...validOption, amount: "1.5" },
         { ...malformedOption, amount: "2" },
       ]),

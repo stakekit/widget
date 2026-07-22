@@ -8,17 +8,20 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { Integration } from "../../src/domain/borrow/integration";
 import { Market } from "../../src/domain/borrow/market";
 import { BorrowAccountPosition } from "../../src/domain/borrow/position";
+import { EarnLegacyTokenOptionsResponse } from "../../src/domain/schema/earn-models";
 import {
-  EarnLegacyTokenOptionsResponse,
-  EarnTokenBalancesResponse,
-} from "../../src/domain/schema/earn-models";
+  TokenBalancesResponse,
+  type YieldBalancesCommand,
+} from "../../src/domain/schema/financial-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
 import {
   ActivityFilterOptionsKey,
-  activityActionsPullAtom,
   activityFilterOptionsAtom,
-} from "../../src/features/activity/react/use-activity-actions";
-import { ActivityActionsKey } from "../../src/features/activity/resources/activity-requests";
+} from "../../src/features/activity/resources/activity-actions";
+import {
+  ActivityActionsKey,
+  getActivityHistoryKey,
+} from "../../src/features/activity/resources/activity-requests";
 import {
   BorrowPositionKey,
   borrowPositionAtom,
@@ -31,9 +34,13 @@ import {
   PositionsDataKey,
   TokenOptionsKey,
 } from "../../src/features/earn/state/atoms-state/catalog/keys";
-import { BorrowApiService } from "../../src/services/api/borrow-api-service";
-import { LegacyApiService } from "../../src/services/api/legacy-api-service";
-import { YieldApiService } from "../../src/services/api/yield-api-service";
+import { activityHistoryPullAtom } from "../../src/resources/activity-history/activity-history";
+import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
+import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
+import {
+  type YieldDirectoryRequest,
+  YieldResourceSource,
+} from "../../src/services/api/yield-resource-source";
 import { ActivityInvalidationKey } from "../../src/services/resource-invalidation";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
@@ -54,6 +61,10 @@ const scopeB = new WalletScopeKey({
   address: address("2"),
   network: "ethereum",
 });
+
+const getActivityActionViews = (
+  result: Atom.Type<ReturnType<typeof activityHistoryPullAtom>>
+) => getPullResultItems(result).flatMap((batch) => batch.actions);
 const sameWalletCachedScope = new WalletScopeKey({
   additionalAddresses: {
     lidoStakeAccounts: ["cached-lido-account"],
@@ -195,14 +206,18 @@ describe("semantic resource invalidation", () => {
         ])
       )
     );
-    const scanEarnTokenBalances = vi.fn(
-      ({ address: walletAddress }: { readonly address: WalletAddress }) => {
+    const scanTokenBalances = vi.fn(
+      ({
+        addresses: { address: walletAddress },
+      }: {
+        readonly addresses: { readonly address: WalletAddress };
+      }) => {
         balanceCalls.set(
           walletAddress,
           (balanceCalls.get(walletAddress) ?? 0) + 1
         );
         return Effect.succeed(
-          Schema.decodeUnknownSync(EarnTokenBalancesResponse)([
+          Schema.decodeUnknownSync(TokenBalancesResponse)([
             {
               amount: versions.get(walletAddress.toLowerCase()) ?? "0",
               availableYields: [yieldId],
@@ -212,26 +227,25 @@ describe("semantic resource invalidation", () => {
         );
       }
     );
-    const getCatalogPositions = vi.fn(
-      ({ address: walletAddress }: { readonly address: WalletAddress }) => {
-        positionCalls.set(
-          walletAddress,
-          (positionCalls.get(walletAddress) ?? 0) + 1
-        );
-        return Effect.succeed({ errors: [], items: [] });
-      }
-    );
+    const getPositions = vi.fn((command: YieldBalancesCommand) => {
+      const walletAddress = command.queries[0]!.address;
+      positionCalls.set(
+        walletAddress,
+        (positionCalls.get(walletAddress) ?? 0) + 1
+      );
+      return Effect.succeed({ errors: [], items: [] });
+    });
     const registry = AtomRegistry.make({
       initialValues: [
         Atom.initialValue(
           appRuntime.layer,
           Layer.mergeAll(
             Reactivity.layer,
-            Layer.succeed(LegacyApiService, {
-              getLegacyTokenOptions,
-              scanEarnTokenBalances,
+            Layer.succeed(LegacyResourceSource, {
+              getTokenOptions: getLegacyTokenOptions,
+              scanTokenBalances,
             } as never),
-            Layer.succeed(YieldApiService, { getCatalogPositions } as never)
+            Layer.succeed(YieldResourceSource, { getPositions } as never)
           ) as never
         ),
       ],
@@ -301,13 +315,14 @@ describe("semantic resource invalidation", () => {
     registry.dispose();
   });
 
-  it("restarts accumulated Activity pages and filter counts from the first page", async () => {
+  it("refreshes Activity Pull and bounded filter counts from the first page", async () => {
     let version = 1;
     const activityRequests: Array<{
       address: WalletAddress;
       limit: number;
       network: string;
       offset: number;
+      yieldTypes?: ReadonlyArray<string>;
     }> = [];
     const getActivityActions = vi.fn(
       (request: {
@@ -315,12 +330,14 @@ describe("semantic resource invalidation", () => {
         readonly limit: number;
         readonly network: string;
         readonly offset: number;
+        readonly yieldTypes?: ReadonlyArray<string>;
       }) => {
         activityRequests.push({
           address: request.address,
           limit: request.limit,
           network: request.network,
           offset: request.offset,
+          yieldTypes: request.yieldTypes,
         });
         if (request.limit === 1) {
           return Effect.succeed({
@@ -351,29 +368,31 @@ describe("semantic resource invalidation", () => {
           appRuntime.layer,
           Layer.mergeAll(
             Reactivity.layer,
-            Layer.succeed(YieldApiService, {
-              getActivityActions,
+            Layer.succeed(YieldResourceSource, {
+              getOpportunity: () => Effect.succeed(yieldDto),
               getProvider: () => Effect.fail("no provider"),
-              getYield: () => Effect.succeed(yieldDto),
+              listActivity: getActivityActions,
+              listYields: ({ limit, offset }: YieldDirectoryRequest) =>
+                Effect.succeed({
+                  items: [yieldDto],
+                  limit,
+                  offset,
+                  total: 1,
+                }),
             } as never)
           ) as never
         ),
       ],
     });
-    const actions = activityActionsPullAtom(
-      new ActivityActionsKey({ filter: "all", scope: sameWalletCachedScope })
-    );
+    const historyKey = (scope: WalletScopeKey) =>
+      getActivityHistoryKey(new ActivityActionsKey({ filter: "all", scope }))!;
+    const actions = activityHistoryPullAtom(historyKey(sameWalletCachedScope));
     const filters = activityFilterOptionsAtom(
       new ActivityFilterOptionsKey({ scope: sameWalletCachedScope })
     );
-    const otherWalletActions = activityActionsPullAtom(
-      new ActivityActionsKey({ filter: "all", scope: scopeB })
-    );
-    const otherNetworkActions = activityActionsPullAtom(
-      new ActivityActionsKey({
-        filter: "all",
-        scope: sameAddressOtherNetworkScope,
-      })
+    const otherWalletActions = activityHistoryPullAtom(historyKey(scopeB));
+    const otherNetworkActions = activityHistoryPullAtom(
+      historyKey(sameAddressOtherNetworkScope)
     );
     const unmountActions = registry.mount(actions);
     const unmountFilters = registry.mount(filters);
@@ -383,37 +402,54 @@ describe("semantic resource invalidation", () => {
 
     await vi.waitFor(() => {
       expect(
-        getPullResultItems(registry.get(actions)).map(
-          ({ actionData }) => actionData.id
+        getActivityActionViews(registry.get(actions)).map(({ id }) => id)
+      ).toEqual(["old-action-1"]);
+      expect(
+        getActivityActionViews(registry.get(otherWalletActions)).map(
+          ({ id }) => id
         )
       ).toEqual(["old-action-1"]);
       expect(
-        getPullResultItems(registry.get(otherWalletActions)).map(
-          ({ actionData }) => actionData.id
-        )
-      ).toEqual(["old-action-1"]);
-      expect(
-        getPullResultItems(registry.get(otherNetworkActions)).map(
-          ({ actionData }) => actionData.id
+        getActivityActionViews(registry.get(otherNetworkActions)).map(
+          ({ id }) => id
         )
       ).toEqual(["old-action-1"]);
     });
     registry.set(actions, undefined);
-    await vi.waitFor(() =>
+    registry.set(otherWalletActions, undefined);
+    registry.set(otherNetworkActions, undefined);
+    await vi.waitFor(() => {
       expect(
-        getPullResultItems(registry.get(actions)).map(
-          ({ actionData }) => actionData.id
+        getActivityActionViews(registry.get(actions)).map(({ id }) => id)
+      ).toEqual(["old-action-1", "old-action-2"]);
+      expect(
+        getActivityActionViews(registry.get(otherWalletActions)).map(
+          ({ id }) => id
         )
-      ).toEqual(["old-action-1", "old-action-2"])
-    );
+      ).toEqual(["old-action-1", "old-action-2"]);
+      expect(
+        getActivityActionViews(registry.get(otherNetworkActions)).map(
+          ({ id }) => id
+        )
+      ).toEqual(["old-action-1", "old-action-2"]);
+    });
     await vi.waitFor(() =>
       expect(AsyncResult.isSuccess(registry.get(filters))).toBe(true)
     );
+    expect(
+      activityRequests
+        .filter(
+          ({ address: requestAddress, limit, network }) =>
+            requestAddress === sameWalletCachedScope.address &&
+            network === sameWalletCachedScope.network &&
+            limit > 1
+        )
+        .every(({ yieldTypes }) => yieldTypes === undefined)
+    ).toBe(true);
     const countRequestsBefore = activityRequests.filter(
-      ({ address: requestAddress, limit, network }) =>
+      ({ address: requestAddress, network }) =>
         requestAddress === sameWalletCachedScope.address &&
-        network === sameWalletCachedScope.network &&
-        limit === 1
+        network === sameWalletCachedScope.network
     ).length;
     const otherWalletRequestsBefore = activityRequests.filter(
       ({ address: requestAddress }) => requestAddress === scopeB.address
@@ -433,28 +469,16 @@ describe("semantic resource invalidation", () => {
     );
     await vi.waitFor(() =>
       expect(
-        getPullResultItems(registry.get(actions)).map(
-          ({ actionData }) => actionData.id
-        )
+        getActivityActionViews(registry.get(actions)).map(({ id }) => id)
       ).toEqual(["updated-action"])
     );
     expect(
       activityRequests.filter(
-        ({ address: requestAddress, limit, network }) =>
+        ({ address: requestAddress, network }) =>
           requestAddress === sameWalletCachedScope.address &&
-          network === sameWalletCachedScope.network &&
-          limit === 1
+          network === sameWalletCachedScope.network
       ).length
     ).toBeGreaterThan(countRequestsBefore);
-    expect(
-      activityRequests.filter(
-        ({ address: requestAddress, limit, network, offset }) =>
-          requestAddress === sameWalletCachedScope.address &&
-          network === sameWalletCachedScope.network &&
-          limit === 50 &&
-          offset === 0
-      ).length
-    ).toBe(2);
     expect(
       activityRequests.filter(
         ({ address: requestAddress }) => requestAddress === scopeB.address
@@ -501,7 +525,7 @@ describe("semantic resource invalidation", () => {
           appRuntime.layer,
           Layer.mergeAll(
             Reactivity.layer,
-            Layer.succeed(BorrowApiService, {
+            Layer.succeed(BorrowResourceSource, {
               getIntegrations,
               getMarkets,
               getPositionData,

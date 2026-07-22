@@ -87,7 +87,7 @@ const getProviderDetails = ({
   };
 };
 
-export const getProvidersDetails = ({
+const getProvidersDetails = ({
   integrationData,
   validators,
   yields,

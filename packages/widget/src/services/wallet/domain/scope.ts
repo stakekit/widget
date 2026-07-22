@@ -45,6 +45,23 @@ export class WalletScopeKey extends Data.TaggedClass("WalletScopeKey")<{
   }
 }
 
+export class WalletScopeOwnerKey extends Data.TaggedClass(
+  "WalletScopeOwnerKey"
+)<{
+  readonly address: WalletAddress;
+  readonly network: SupportedSKChains;
+}> {}
+
+export const walletScopeOwnerKey = (
+  scope: Pick<WalletScopeKey, "address" | "network">
+) =>
+  new WalletScopeOwnerKey({
+    address: isEvmChain(scope.network)
+      ? (scope.address.toLowerCase() as WalletAddress)
+      : scope.address,
+    network: scope.network,
+  });
+
 type WalletScopeOwner = {
   readonly address: string;
   readonly network: SupportedSKChains;

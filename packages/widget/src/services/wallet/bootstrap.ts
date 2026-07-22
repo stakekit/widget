@@ -7,8 +7,8 @@ import {
 } from "../../domain/schema/init-params";
 import type { EnabledNetworks } from "../../domain/schema/wallet-models";
 import type { SKExternalProviders } from "../../public-api/types";
-import { LegacyApiService } from "../api/legacy-api-service";
-import { YieldApiService } from "../api/yield-api-service";
+import { LegacyResourceSource } from "../api/legacy-resource-source";
+import { YieldResourceSource } from "../api/yield-resource-source";
 import {
   normalizeWidgetBootstrapConfig,
   type WidgetBootstrapConfigValue,
@@ -119,22 +119,22 @@ export const bootstrapWallet = Effect.fn("bootstrapWallet")(
   function* (): Effect.fn.Return<
     WalletBootstrapResult,
     WalletBootstrapError,
-    | LegacyApiService
+    | LegacyResourceSource
     | Scope.Scope
     | SolanaPlatform
     | WagmiPlatform
     | WalletEnvironment
     | WidgetConfigService
     | WidgetPersistence
-    | YieldApiService
+    | YieldResourceSource
   > {
     const config = yield* WidgetConfigService;
     const environment = yield* WalletEnvironment;
-    const legacyApi = yield* LegacyApiService;
+    const legacySource = yield* LegacyResourceSource;
     const persistence = yield* WidgetPersistence;
     const solana = yield* SolanaPlatform;
     const wagmi = yield* WagmiPlatform;
-    const yieldApi = yield* YieldApiService;
+    const yieldSource = yield* YieldResourceSource;
     const settings = yield* config.current;
     const [href, isLedgerDappBrowser, isMobileWallet] = yield* Effect.all([
       environment.href,
@@ -161,7 +161,7 @@ export const bootstrapWallet = Effect.fn("bootstrapWallet")(
           current: externalProviderSnapshot,
         } satisfies MutableExternalProviderRef)
       : undefined;
-    const enabledNetworks = yield* legacyApi.getEnabledNetworks().pipe(
+    const enabledNetworks = yield* legacySource.getEnabledNetworks().pipe(
       Effect.retry(enabledNetworksRetrySchedule),
       Effect.mapError(
         (cause) =>
@@ -170,7 +170,7 @@ export const bootstrapWallet = Effect.fn("bootstrapWallet")(
     );
     const queryParams = yield* resolveWalletInitParams(
       initParams,
-      yieldApi.getInitialYield
+      yieldSource.getOpportunity
     ).pipe(
       Effect.mapError(
         (cause) =>

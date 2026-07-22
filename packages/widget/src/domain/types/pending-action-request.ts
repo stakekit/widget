@@ -1,25 +1,22 @@
 import type BigNumber from "bignumber.js";
 import { Array as EArray, Option, Result } from "effect";
-import type { ManageActionCommand } from "../../../../../domain/schema/action-models";
-import type {
-  EarnBalance,
-  EarnYieldWithProvider,
-} from "../../../../../domain/schema/earn-models";
-import type { AppToken } from "../../../../../domain/schema/legacy-models";
-
+import type { ManageActionCommand } from "../schema/action-models";
+import type { EarnBalance, EarnYieldWithProvider } from "../schema/earn-models";
+import type { AppToken } from "../schema/legacy-models";
 import {
   type AnyPendingActionDto,
   isPendingActionAmountRequired,
   isPendingActionValidatorAddressesRequired,
   isPendingActionValidatorAddressRequired,
   type YieldPendingActionType,
-} from "../../../../../domain/types/pending-action";
+} from "./pending-action";
+import type { YieldBalanceType } from "./positions";
+import { type TokenString, tokenString } from "./tokens";
+import type { ValidatorInput as ValidatorDto } from "./validators";
+import type { SKWallet } from "./wallet";
 
-import type { ValidatorInput as ValidatorDto } from "../../../../../domain/types/validators";
-import type { SKWallet } from "../../../../../domain/types/wallet";
-
-import type { PositionDetailsWorkflowState as State } from "../../../state/workflow";
-import { getBalanceTokenActionType } from "../state/utils";
+type BalanceTokenActionType =
+  `${YieldBalanceType}-${TokenString}-${YieldPendingActionType}`;
 
 type AnyYieldBalanceDto = {
   amount: BigNumber;
@@ -33,6 +30,17 @@ type PreparedPendingAction = {
   gasFeeToken: EarnYieldWithProvider["token"];
 };
 
+export const getBalanceTokenActionType = ({
+  actionType,
+  balanceType,
+  token,
+}: {
+  balanceType: YieldBalanceType;
+  token: AppToken;
+  actionType: YieldPendingActionType;
+}): BalanceTokenActionType =>
+  `${balanceType}-${tokenString(token)}-${actionType}`;
+
 export const preparePendingActionRequestDto = ({
   pendingActionsState,
   additionalAddresses,
@@ -42,7 +50,7 @@ export const preparePendingActionRequestDto = ({
   yieldBalance,
   selectedValidators,
 }: {
-  pendingActionsState: State["pendingActions"];
+  pendingActionsState: ReadonlyMap<BalanceTokenActionType, BigNumber>;
   address: SKWallet["address"];
   additionalAddresses: SKWallet["additionalAddresses"];
   pendingActionDto: AnyPendingActionDto;
@@ -61,9 +69,7 @@ export const preparePendingActionRequestDto = ({
       ? { validatorAddresses: selectedValidators }
       : selectedValidator &&
           isPendingActionValidatorAddressRequired(pendingActionDto)
-        ? {
-            validatorAddress: selectedValidator,
-          }
+        ? { validatorAddress: selectedValidator }
         : {};
   const stateAmount = isPendingActionAmountRequired(pendingActionDto)
     ? pendingActionsState.get(

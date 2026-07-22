@@ -10,6 +10,7 @@ import {
   getPendingActionAmountConfig,
   type YieldPendingActionType,
 } from "../../../../../domain/types/pending-action";
+import { getBalanceTokenActionType } from "../../../../../domain/types/pending-action-request";
 import {
   getYieldActionArg,
   isERC4626,
@@ -40,7 +41,6 @@ import {
   reducePositionDetailsWorkflow,
 } from "../../../state/workflow";
 import type { ExtraData } from "./types";
-import { getBalanceTokenActionType } from "./utils";
 
 export const useUnstakeOrPendingAction = () => {
   const { plain, pendingActionType } = useUnstakeOrPendingActionParams();

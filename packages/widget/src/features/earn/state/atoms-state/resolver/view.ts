@@ -1,4 +1,4 @@
-import { Option, pipe, Schema } from "effect";
+import { Option, pipe, Schema, Stream } from "effect";
 import type { AsyncResult as AsyncResultValue } from "effect/unstable/reactivity/AsyncResult";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
@@ -13,6 +13,10 @@ import {
   getDashboardYieldCategory,
   isYieldValidatorSelectionRequired,
 } from "../../../../../domain/types/yields";
+import {
+  type PullPage,
+  withPullPageDone,
+} from "../../../../../shared/effect/pagination";
 import {
   availableYieldCategoriesAtom,
   earnYieldCatalogAtom,
@@ -80,17 +84,10 @@ const emptyValidatorsMapAtom = Atom.writable<
   () => {}
 );
 
-const emptyValidatorsPullAtom = Atom.writable<
-  Atom.PullResult<EarnValidator, EarnCatalogError>,
-  void
->(
-  () =>
-    AsyncResult.success({
-      done: true,
-      items: [] as unknown as [EarnValidator, ...EarnValidator[]],
-    }),
-  () => {}
-);
+const emptyValidatorsPullAtom = Atom.pull<
+  PullPage<EarnValidator>,
+  EarnCatalogError
+>(Stream.succeed({ hasNextPage: false, items: [] })).pipe(withPullPageDone);
 
 const disabledValidatorsResource = {
   enabled: false,

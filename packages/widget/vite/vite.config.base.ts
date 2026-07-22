@@ -61,7 +61,16 @@ export const getConfig = (
         nodePolyfills({ include: ["buffer", "crypto"] }),
         macros(),
         react(),
-        babel({ presets: [reactCompilerPreset()] }),
+        babel({
+          presets: [reactCompilerPreset()],
+          // Skip large non-React modules; they trip Babel's 500KB styling note and gain nothing from React Compiler.
+          exclude: [
+            /[/\\]node_modules[/\\]|^\0rolldown\/runtime\.js$/,
+            /[/\\]src[/\\]generated[/\\]/,
+            // Macro-inlined cosmos chain registry data.
+            /[/\\]connectors[/\\]cosmos[/\\]chains[/\\]chain-registry\.ts$/,
+          ],
+        }),
         vanillaExtractPlugin(),
         vanillaExtractEmptyCssFallback,
       ],

@@ -1,14 +1,15 @@
 import BigNumber from "bignumber.js";
-import { Data, Duration, Effect, Option } from "effect";
+import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { YieldAction } from "../../../domain/schema/action-models";
 import type { GasBalancesCommand } from "../../../domain/schema/financial-models";
 import { getTransactionGasEstimate } from "../../../domain/types/action";
 import { checkGasAmount } from "../../../domain/types/gas";
-import { LegacyApiService } from "../../../services/api/legacy-api-service";
-import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
+import {
+  GasTokenBalancesKey,
+  gasTokenBalancesResourceAtom,
+} from "../../../resources/gas-token-balances/gas-token-balances";
 import {
   getTokensPricesRequest,
   PricesKey,
@@ -20,27 +21,6 @@ import {
   getClassicTransactionFlowGasWarningInput,
   getClassicTransactionFlowReviewPricingInput,
 } from "../model/classic-transaction-flow";
-
-class ClassicFlowGasBalancesKey extends Data.Class<{
-  readonly command: GasBalancesCommand;
-}> {}
-
-const gasBalancesAtom = Atom.family((key: ClassicFlowGasBalancesKey) =>
-  appRuntime
-    .atom(
-      Effect.gen(function* () {
-        const api = yield* LegacyApiService;
-        return yield* api.getGasTokenBalances(key.command);
-      })
-    )
-    .pipe(
-      withApiResourcePolicy({
-        idleTTL: Duration.minutes(5),
-        revalidateOnMount: true,
-        staleTime: Duration.zero,
-      })
-    )
-);
 
 const getGasAmount = (action: YieldAction | null) => {
   if (!action) return null;
@@ -109,8 +89,8 @@ export const makeClassicFlowSessionReviewResources = ({
     if (!input || !gasAmount) return AsyncResult.success(null);
 
     return get(
-      gasBalancesAtom(
-        new ClassicFlowGasBalancesKey({
+      gasTokenBalancesResourceAtom(
+        new GasTokenBalancesKey({
           command: getGasBalancesCommand(input),
         })
       )

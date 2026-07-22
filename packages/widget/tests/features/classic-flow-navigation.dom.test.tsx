@@ -21,7 +21,7 @@ import {
   useClassicFlowReview,
   useClassicFlowSession,
 } from "../../src/features/classic-transaction-flow/react/classic-flow-route";
-import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state/classic-flow-session-store";
+import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/session";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";

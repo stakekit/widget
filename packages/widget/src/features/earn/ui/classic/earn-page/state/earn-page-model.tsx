@@ -39,6 +39,7 @@ import {
 } from "../../../../../../domain/types/yields";
 import type { DashboardYieldCategory } from "../../../../../../public-api/types";
 import { isLedgerLiveConnector } from "../../../../../../services/wallet/connectors/ledger/ledger-live-connector-meta";
+import type { PullPage } from "../../../../../../shared/effect/pagination";
 import {
   defaultFormattedNumber,
   formatNumber,
@@ -95,8 +96,10 @@ const earnPageModelAtom = Atom.make<EarnPageModel | null>(null).pipe(
 const getAsyncValue = <A, E>(result: AsyncResult.AsyncResult<A, E>) =>
   AsyncResult.getOrElse(result, () => null as A | null);
 
-const getPullItems = <A, E>(result: Atom.PullResult<A, E>): A[] =>
-  getAsyncValue(result)?.items ?? [];
+const getPullItems = <A, E>(
+  result: Atom.PullResult<PullPage<A>, E>
+): ReadonlyArray<A> =>
+  getAsyncValue(result)?.items.flatMap((page) => page.items) ?? [];
 
 const isAsyncErrorWithoutValue = <A, E>(
   result: AsyncResult.AsyncResult<A, E>
@@ -263,7 +266,7 @@ export const EarnPageModelBinding = ({
       search: debouncedValidatorSearch || null,
     })
   );
-  const loadedValidatorsMap = useAtomValue(
+  const [loadedValidatorsMap, rememberValidators] = useAtom(
     validatorsResource.loadedValidatorsAtom
   );
   const [validatorsPullResult, pullMoreValidators] =
@@ -452,6 +455,7 @@ export const EarnPageModelBinding = ({
 
   const onValidatorSelect = (item: EarnValidator) => {
     if (!selectedStake) return;
+    rememberValidators([item]);
     isYieldActionArgRequired(selectedStake, "enter", "validatorAddresses")
       ? dispatch({
           type: "validator/multiselect",
@@ -686,8 +690,14 @@ export const EarnPageModelBinding = ({
   const isLoadingMoreValidators =
     validatorsPullResult.waiting &&
     getPullItems(validatorsPullResult).length > 0;
-  const onLoadMoreTokens = () => pullMoreTokens();
-  const onLoadMoreValidators = () => pullMoreValidators();
+  const onLoadMoreTokens = () => {
+    if (!tokenOptionsPull.waiting && hasMoreTokens) pullMoreTokens();
+  };
+  const onLoadMoreValidators = () => {
+    if (!validatorsPullResult.waiting && hasMoreValidators) {
+      pullMoreValidators();
+    }
+  };
 
   const selectTokenIsLoading =
     machine.status === "resolving-wallet" ||

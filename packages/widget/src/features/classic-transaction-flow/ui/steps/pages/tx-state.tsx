@@ -84,7 +84,7 @@ const TxStateContent = ({
                     ? "ETHENA_USDE"
                     : undefined,
                 } as never
-              ) as unknown as string,
+              ),
             })}
           </Text>
 

@@ -10,6 +10,7 @@ import {
   getClassicTransactionFlowIntakeVariant,
   isClassicTransactionFlowWalletScopeValid,
 } from "../model/classic-transaction-flow";
+import { classicFlowSessionStore } from "../session";
 import {
   type ClassicFlowExecutionFacade,
   type ClassicFlowReviewFacade,
@@ -19,7 +20,6 @@ import {
   makeClassicFlowReviewScope,
   makeClassicFlowSessionModule,
 } from "../state/classic-flow-session-facade";
-import { classicFlowSessionStore } from "../state/classic-flow-session-store";
 
 const SessionScopedAtom = makeScopedAtom(makeClassicFlowSessionModule);
 

@@ -12,14 +12,14 @@ import { ActionCommand } from "../../src/domain/schema/action-models";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { useStartClassicTransactionFlow } from "../../src/features/classic-transaction-flow/react/use-transaction-flow";
 import {
+  type ClassicFlowSession,
+  classicFlowSessionStore,
+} from "../../src/features/classic-transaction-flow/session";
+import {
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
   makeClassicFlowSessionModule,
 } from "../../src/features/classic-transaction-flow/state/classic-flow-session-facade";
-import {
-  type ClassicFlowSession,
-  classicFlowSessionStore,
-} from "../../src/features/classic-transaction-flow/state/classic-flow-session-store";
 import { currentWalletStateResultAtom } from "../../src/features/wallet/state/root-atom";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {

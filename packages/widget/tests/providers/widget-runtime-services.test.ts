@@ -7,7 +7,7 @@ import {
   widgetConfigAtom,
 } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { BorrowApiService } from "../../src/services/api/borrow-api-service";
+import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
 import {
   type WidgetConfig,
   WidgetConfigService,
@@ -21,7 +21,7 @@ const secondTrackingProbeAtom = appRuntime.atom(
   TrackingService.use((tracking) => Effect.succeed(tracking))
 );
 const borrowIntegrationsProbeAtom = appRuntime.atom(
-  BorrowApiService.use((borrow) => borrow.getIntegrations())
+  BorrowResourceSource.use((borrow) => borrow.getIntegrations())
 );
 const widgetConfigProbeAtom = appRuntime.atom(
   WidgetConfigService.use((config) => Effect.succeed(config))

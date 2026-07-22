@@ -4,7 +4,7 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { Action } from "../../../domain/borrow/action";
 import type { Transaction } from "../../../domain/borrow/transaction";
-import { BorrowApiService } from "../../../services/api/borrow-api-service";
+import { BorrowOperations } from "../../../services/api/borrow-operations";
 import {
   BorrowTransactionWorkflowInput,
   getCurrentTransactionWorkflowBatch,
@@ -109,7 +109,7 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
 
   const createActionAtom = appRuntime.fn(
     (_input: undefined) =>
-      BorrowApiService.use((api) =>
+      BorrowOperations.use((api) =>
         api.executeAction(session.intake.request)
       ).pipe(
         Effect.mapError(

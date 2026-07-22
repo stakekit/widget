@@ -16,8 +16,6 @@ const inlineTestDependencies = [
 export default defineConfig(
   getConfig({
     test: {
-      retry: process.env.CI ? 2 : 0,
-      testTimeout: 60000,
       projects: [
         {
           extends: true,
@@ -26,6 +24,7 @@ export default defineConfig(
             environment: "node",
             exclude: [browserTestPattern, domTestPattern],
             include: ["tests/**/*.test.{ts,tsx}"],
+            testTimeout: 5_000,
             server: {
               deps: {
                 inline: inlineTestDependencies,
@@ -42,6 +41,7 @@ export default defineConfig(
             setupFiles: [
               path.resolve(__dirname, "..", "tests/utils/setup.dom.ts"),
             ],
+            testTimeout: 10_000,
             server: {
               deps: {
                 inline: inlineTestDependencies,
@@ -57,6 +57,7 @@ export default defineConfig(
             setupFiles: [
               path.resolve(__dirname, "..", "tests/utils/setup.browser.ts"),
             ],
+            testTimeout: 20_000,
             browser: {
               enabled: true,
               screenshotFailures: false,

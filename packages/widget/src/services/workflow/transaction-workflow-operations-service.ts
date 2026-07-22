@@ -1,8 +1,8 @@
 import { Context, Effect, Layer } from "effect";
 import * as Reactivity from "effect/unstable/reactivity/Reactivity";
 import { isBorrowNetwork } from "../../domain/borrow/network";
-import { BorrowApiService } from "../api/borrow-api-service";
-import { YieldApiService } from "../api/yield-api-service";
+import { BorrowOperations } from "../api/borrow-operations";
+import { YieldOperations } from "../api/yield-operations";
 import { resourceInvalidationKeys } from "../resource-invalidation";
 import { TrackingService } from "../tracking/tracking-service";
 import { WalletService } from "../wallet/wallet-service";
@@ -12,21 +12,24 @@ export const getTransactionWorkflowInvalidationKeys = (
   input: TransactionWorkflowInput
 ): ReadonlyArray<unknown> => {
   const scope = input.walletScope;
-
-  const keys: unknown[] = [
-    ...resourceInvalidationKeys.walletBalances(scope),
-    ...resourceInvalidationKeys.yieldPositions(scope),
-    ...resourceInvalidationKeys.activity(scope),
-  ];
-
-  if (input._tag === "Borrow" && isBorrowNetwork(scope.network)) {
-    keys.push(
-      ...resourceInvalidationKeys.borrowPositions(scope),
-      ...resourceInvalidationKeys.borrowMarkets(scope.network)
-    );
+  if (input._tag === "Classic") {
+    return [
+      ...resourceInvalidationKeys.walletBalances(scope),
+      ...resourceInvalidationKeys.yieldPositions(scope),
+      ...resourceInvalidationKeys.singleYieldBalances(scope.address),
+      ...resourceInvalidationKeys.activity(scope),
+    ];
   }
 
-  return keys;
+  return [
+    ...resourceInvalidationKeys.walletBalances(scope),
+    ...(isBorrowNetwork(scope.network)
+      ? [
+          ...resourceInvalidationKeys.borrowPositions(scope),
+          ...resourceInvalidationKeys.borrowMarkets(scope.network),
+        ]
+      : []),
+  ];
 };
 
 export const getTransactionWorkflowSubmissionInvalidationKeys = (
@@ -37,6 +40,7 @@ export const getTransactionWorkflowSubmissionInvalidationKeys = (
     return [
       ...resourceInvalidationKeys.walletBalances(scope),
       ...resourceInvalidationKeys.yieldPositions(scope),
+      ...resourceInvalidationKeys.singleYieldBalances(scope.address),
       ...resourceInvalidationKeys.activity(scope),
     ];
   }
@@ -56,10 +60,10 @@ export class TransactionWorkflowOperationsService extends Context.Service<Transa
   {
     make: Effect.gen(function* () {
       const [borrowApi, tracking, wallet, yieldApi] = yield* Effect.all([
-        BorrowApiService,
+        BorrowOperations,
         TrackingService,
         WalletService,
-        YieldApiService,
+        YieldOperations,
       ]);
       const reactivity = yield* Reactivity.Reactivity;
 
