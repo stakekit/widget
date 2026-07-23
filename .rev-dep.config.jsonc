@@ -19,6 +19,8 @@
       ],
       "devEntryPoints": [
         "scripts/generate-effect-openapi.ts",
+        "scripts/prepare-canary-release.ts",
+        "scripts/*.test.ts",
         "tests/utils/setup.browser.ts",
         "tests/utils/setup.dom.ts",
         "tests/**/*.test.ts",
@@ -210,10 +212,16 @@
             "public/mockServiceWorker.js",
             "vite/*.ts",
             "scripts/generate-effect-openapi.ts",
+            "scripts/prepare-canary-release.ts",
+            "scripts/*.test.ts",
             "tests/**/*.ts",
             "tests/**/*.tsx"
           ],
-          "graphExclude": ["tests/**/*.ts", "tests/**/*.tsx"]
+          "graphExclude": [
+            "scripts/*.test.ts",
+            "tests/**/*.ts",
+            "tests/**/*.tsx"
+          ]
         }
       ],
       "unusedExportsDetection": {

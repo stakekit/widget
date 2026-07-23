@@ -45,8 +45,16 @@ const knipConfig = {
         "tests/utils/setup.dom.ts",
         "tests/**/*.test.ts",
         "tests/**/*.test.tsx",
+        "scripts/*.test.ts",
+        "scripts/prepare-canary-release.ts!",
+        "scripts/generate-effect-openapi.ts!",
       ],
-      project: ["src/**/*.{ts,tsx}!", "tests/**/*.{ts,tsx}", "vite/**/*.ts!"],
+      project: [
+        "src/**/*.{ts,tsx}!",
+        "scripts/*.{ts,tsx}",
+        "tests/**/*.{ts,tsx}",
+        "vite/**/*.ts!",
+      ],
       ignoreIssues: {
         "src/generated/api/legacy-schema.ts": ["exports", "types"],
         "src/types/yield-api-schema.d.ts": ["exports", "types"],

@@ -5,6 +5,10 @@ import { getConfig } from "./vite.config.base";
 
 const browserTestPattern = "tests/**/*.browser.test.{ts,tsx}";
 const domTestPattern = "tests/**/*.dom.test.{ts,tsx}";
+const unitTestPatterns = [
+  "tests/**/*.test.{ts,tsx}",
+  "scripts/**/*.test.ts",
+] as const;
 const inlineTestDependencies = [
   /@ledgerhq/,
   /@luno-kit/,
@@ -23,7 +27,7 @@ export default defineConfig(
             name: "unit",
             environment: "node",
             exclude: [browserTestPattern, domTestPattern],
-            include: ["tests/**/*.test.{ts,tsx}"],
+            include: [...unitTestPatterns],
             testTimeout: 5_000,
             server: {
               deps: {
