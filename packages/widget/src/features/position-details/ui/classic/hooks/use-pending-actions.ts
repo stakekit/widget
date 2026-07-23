@@ -21,7 +21,7 @@ import { getTokenPriceInUSD } from "../../../../../domain/types/price";
 
 import type { ValidatorInput as ValidatorDto } from "../../../../../domain/types/validators";
 import type { ClassicTransactionWorkflowProviderDetail } from "../../../../../services/workflow/transaction-workflow-model";
-import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
+import { formatUsd } from "../../../../../shared/lib/formatters";
 import { usePendingActionSelectValidatorMatch } from "../../../../../shared/react/navigation/use-pending-action-select-validator-match";
 import {
   getPositionDetailsPendingActionReviewPath,
@@ -86,7 +86,7 @@ export const usePendingActions = ({
                   amount &&
                   reducedStakedOrLiquidBalance &&
                   baseToken
-                    ? `$${defaultFormattedNumber(
+                    ? formatUsd(
                         getTokenPriceInUSD({
                           amount,
                           token: reducedStakedOrLiquidBalance.token,
@@ -94,7 +94,7 @@ export const usePendingActions = ({
                           pricePerShare: null,
                           baseToken,
                         })
-                      )}`
+                      )
                     : "";
 
                 return {

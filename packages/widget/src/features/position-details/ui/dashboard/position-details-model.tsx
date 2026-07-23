@@ -20,6 +20,11 @@ import {
   getYieldTypeLabels,
   getYieldWarmupPeriod,
 } from "../../../../domain/types/yields";
+import {
+  formatNetworkName,
+  formatUsd,
+  humanizeEnumValue,
+} from "../../../../shared/lib/formatters";
 import { APToPercentage } from "../../../../shared/lib/general";
 import { defaultFormattedNumber } from "../../../../shared/lib/number-format";
 import {
@@ -29,10 +34,8 @@ import {
 import { riskSummaryActions } from "../../../earn/ui/components/yield-risk/styles.css";
 import {
   formatCooldownDays,
-  formatEnumValue,
   formatMinStake,
   formatMinStakeLabel,
-  formatNetworkName,
   formatOptionalDays,
   formatPricePerShare,
   formatRewardClaiming,
@@ -291,7 +294,7 @@ const getBalanceMetric = ({
   return {
     id: "balance",
     label: t("dashboard.position_details.balance"),
-    value: formatUsdValue(totalUsd),
+    value: formatUsd(totalUsd),
   };
 };
 
@@ -542,7 +545,7 @@ const getDetailRows = ({
     {
       id: "reward-schedule",
       label: t("dashboard.earn_details.reward_schedule"),
-      value: formatEnumValue(integrationData.mechanics.rewardSchedule),
+      value: humanizeEnumValue(integrationData.mechanics.rewardSchedule),
     },
     {
       id: "reward-claiming",
@@ -652,7 +655,7 @@ const formatBalanceTypeLabel = (type: YieldBalanceType, t: TFunction) =>
 // the card never renders a raw translation key.
 const formatPendingActionLabel = (type: PendingAction["type"], t: TFunction) =>
   t(`position_details.pending_action.${type.toLowerCase()}`, {
-    defaultValue: formatEnumValue(type),
+    defaultValue: humanizeEnumValue(type),
   });
 
 const formatUsdSubValue = (
@@ -662,11 +665,8 @@ const formatUsdSubValue = (
 
   const amount = BigNumber(value);
 
-  return amount.isGreaterThan(0) ? formatUsdValue(amount) : undefined;
+  return amount.isGreaterThan(0) ? formatUsd(amount) : undefined;
 };
-
-const formatUsdValue = (value: BigNumber) =>
-  `$${defaultFormattedNumber(value)}`;
 
 export const getPositionHeaderBadges = (
   integrationData: EarnYieldWithProvider,

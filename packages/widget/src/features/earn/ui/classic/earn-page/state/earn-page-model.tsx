@@ -31,6 +31,7 @@ import {
 import type { DashboardYieldCategory } from "../../../../../../public-api/types";
 import { isLedgerLiveConnector } from "../../../../../../services/wallet/connectors/ledger/ledger-live-connector-meta";
 import type { PullPage } from "../../../../../../shared/effect/pagination";
+import { formatUsd } from "../../../../../../shared/lib/formatters";
 import {
   defaultFormattedNumber,
   formatNumber,
@@ -187,7 +188,7 @@ export const EarnPageModelBinding = ({
   const formattedPrice = useMemo(
     () =>
       prices && selectedToken && selectedStake
-        ? `$${defaultFormattedNumber(
+        ? formatUsd(
             getTokenPriceInUSD({
               baseToken: selectedStake.token,
               amount: stakeAmount,
@@ -195,7 +196,7 @@ export const EarnPageModelBinding = ({
               prices,
               pricePerShare: null,
             })
-          )}`
+          )
         : "",
     [prices, selectedToken, stakeAmount, selectedStake]
   );

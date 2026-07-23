@@ -4,7 +4,7 @@ import { Prices } from "../../domain/schema/health-price-models";
 import type { AppToken } from "../../domain/schema/legacy-models";
 import { getTokenPriceInUSD } from "../../domain/types/price";
 import { APToPercentage } from "./general";
-import { defaultFormattedNumber, formatNumber } from "./number-format";
+import { formatNumber } from "./number-format";
 
 export const formatCountryCode = ({
   language,
@@ -61,9 +61,7 @@ export const getGasFeeInUSD = ({
   });
 
   return `${formatNumber(gas, 10)} ${yieldDto.mechanics.gasFeeToken.symbol} ${
-    gasFeeInUSD.isGreaterThan(0)
-      ? ` ($${defaultFormattedNumber(gasFeeInUSD)})`
-      : ""
+    gasFeeInUSD.isGreaterThan(0) ? ` (${formatUsd(gasFeeInUSD)})` : ""
   }`;
 };
 
@@ -87,13 +85,25 @@ export const getFeesInUSD = ({
   });
 
   return `${formatNumber(amount, 10)} ${token.symbol} ${
-    feeInUSD.isGreaterThan(0) ? ` ($${defaultFormattedNumber(feeInUSD)})` : ""
+    feeInUSD.isGreaterThan(0) ? ` (${formatUsd(feeInUSD)})` : ""
   }`;
 };
 
+const usdFormatter = new Intl.NumberFormat("en-US", {
+  currency: "USD",
+  currencyDisplay: "narrowSymbol",
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+  style: "currency",
+});
+
 const compactUsdFormatter = new Intl.NumberFormat("en-US", {
+  currency: "USD",
+  currencyDisplay: "narrowSymbol",
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 0,
   notation: "compact",
-  maximumFractionDigits: 0,
+  style: "currency",
 });
 
 const compactNumberFormatter = new Intl.NumberFormat("en-US", {
@@ -101,10 +111,14 @@ const compactNumberFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+const isMissingNumericInput = (
+  value: string | BigNumber | number | null | undefined
+) => value == null || value === "";
+
 export const formatCompactNumber = (
   value: string | number | null | undefined
 ) => {
-  if (value == null || value === "") return "-";
+  if (isMissingNumericInput(value)) return "-";
 
   const amount = BigNumber(value);
 
@@ -113,25 +127,72 @@ export const formatCompactNumber = (
   return compactNumberFormatter.format(amount.toNumber());
 };
 
-export const formatCompactUsd = (value: string | number | null | undefined) => {
-  if (value == null || value === "") return "-";
+export const formatUsd = (
+  value: string | BigNumber | number | null | undefined
+) => {
+  if (isMissingNumericInput(value)) return "-";
 
   const amount = BigNumber(value);
 
   if (!amount.isFinite()) return "-";
 
-  return `$${compactUsdFormatter.format(amount.toNumber())}`;
+  if (amount.isZero()) return "$0.00";
+
+  const absoluteAmount = amount.abs();
+
+  if (absoluteAmount.lt(0.01)) {
+    return amount.isNegative() ? ">-$0.01" : "<$0.01";
+  }
+
+  const formatter = absoluteAmount.lt(1000)
+    ? usdFormatter
+    : compactUsdFormatter;
+
+  return formatter.format(amount.toNumber());
 };
 
-// Pending action types come straight from the API and can outpace our
-// translation maps (e.g. RWA-specific actions like WITHDRAWAL_REQUEST). Use this
-// as the i18n `defaultValue`/`defaults` so we never render a raw translation key.
-export const humanizePendingActionType = (type: string): string =>
-  type
+export const formatHealthFactor = (
+  value: string | BigNumber | number | null | undefined
+) => {
+  if (isMissingNumericInput(value)) return "-";
+
+  const amount = BigNumber(value);
+
+  return amount.isFinite() ? formatNumber(amount, 4) : "-";
+};
+
+/** Formats a decimal ratio (e.g. 0.75) as a percent string (e.g. "75%"). */
+export const formatPercent = (
+  value: string | BigNumber | number | null | undefined
+) => {
+  if (isMissingNumericInput(value)) return "-";
+
+  const amount = BigNumber(value);
+
+  return amount.isFinite() ? `${formatNumber(amount.times(100), 2)}%` : "-";
+};
+
+export const formatNetworkName = (network: string) =>
+  network
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+
+export const formatBorrowProviderName = (providerName: string) =>
+  providerName.replace(/\s+borrow$/iu, "");
+
+/** Title-cases snake_case / SCREAMING_SNAKE enum-like strings (e.g. "FOO_BAR" → "Foo Bar"). */
+export const humanizeEnumValue = (value: string): string =>
+  value
     .split("_")
     .filter(Boolean)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
+
+// Pending action types come straight from the API and can outpace our
+// translation maps (e.g. RWA-specific actions like WITHDRAWAL_REQUEST). Use this
+// as the i18n `defaultValue`/`defaults` so we never render a raw translation key.
+export const humanizePendingActionType = humanizeEnumValue;
 
 export const capitalizeFirstLetters = (text: string): string =>
   text

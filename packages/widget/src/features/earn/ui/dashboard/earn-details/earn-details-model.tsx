@@ -18,7 +18,11 @@ import {
   getYieldWarmupPeriod,
 } from "../../../../../domain/types/yields";
 import type { DashboardYieldCategory } from "../../../../../public-api/types";
-import { formatCompactUsd } from "../../../../../shared/lib/formatters";
+import {
+  formatNetworkName,
+  formatUsd,
+  humanizeEnumValue,
+} from "../../../../../shared/lib/formatters";
 import { APToPercentage } from "../../../../../shared/lib/general";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import {
@@ -29,12 +33,10 @@ import { riskSummaryActions } from "../../components/yield-risk/styles.css";
 import { NetworkDetailValue } from "./components/network-detail-value";
 import {
   formatCooldownDays,
-  formatEnumValue,
   formatMeaningfulCompactNumber,
   formatMeaningfulCompactUsd,
   formatMinStake,
   formatMinStakeLabel,
-  formatNetworkName,
   formatOptionalDays,
   formatPricePerShare,
   formatRequirementStatus,
@@ -174,7 +176,7 @@ export const getEarnDetailsModel = ({
       yieldDto,
     }),
     rewardRateFormatted: formatRewardRate(effectiveRewardRate, yieldDto) ?? "-",
-    tvlChartValue: formatCompactUsd(yieldDto.statistics?.tvlUsd),
+    tvlChartValue: formatUsd(yieldDto.statistics?.tvlUsd),
   };
 };
 
@@ -532,7 +534,7 @@ const getRewardScheduleFact = (
   kpiEligible: false,
   kpiPrimaryEligible: false,
   label: t("dashboard.earn_details.reward_schedule"),
-  value: formatEnumValue(yieldDto.mechanics.rewardSchedule),
+  value: humanizeEnumValue(yieldDto.mechanics.rewardSchedule),
 });
 
 const getRewardClaimingFact = ({

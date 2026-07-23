@@ -27,6 +27,7 @@ import {
 } from "../../../../../domain/types/yields";
 import { isLedgerLiveConnector } from "../../../../../services/wallet/connectors/ledger/ledger-live-connector-meta";
 import { getPullResultItems } from "../../../../../shared/effect/pagination";
+import { formatUsd } from "../../../../../shared/lib/formatters";
 import {
   defaultFormattedNumber,
   formatNumber,
@@ -228,7 +229,7 @@ export const usePositionDetailsStake = () => {
   const formattedPrice = useMemo(
     () =>
       prices && selectedStake && selectedToken
-        ? `$${defaultFormattedNumber(
+        ? formatUsd(
             getTokenPriceInUSD({
               baseToken: selectedStake.token,
               amount: stakeAmount,
@@ -236,7 +237,7 @@ export const usePositionDetailsStake = () => {
               prices,
               pricePerShare: null,
             })
-          )}`
+          )
         : "",
     [prices, selectedStake, selectedToken, stakeAmount]
   );

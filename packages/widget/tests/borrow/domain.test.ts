@@ -110,6 +110,7 @@ const positionDto = {
     },
   ],
   debtPendingActions: [repayPendingAction],
+  positionState: null,
   supplyPendingActions: [withdrawPendingAction],
 } as const;
 

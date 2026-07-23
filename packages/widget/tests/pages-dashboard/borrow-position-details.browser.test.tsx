@@ -13,7 +13,7 @@ type PositionDto = typeof BorrowAccountPosition.Encoded;
 const integration = {
   id: "aave-borrow",
   providerId: "aave",
-  name: "Aave V3",
+  name: "Aave V3 Borrow",
   networks: ["ethereum"],
   metadata: {
     description: "Aave lending and borrowing",
@@ -122,6 +122,12 @@ const position: PositionDto = {
           type: "disableCollateral",
         },
       ],
+      positionState: {
+        availableToBorrowUsd: "450",
+        currentLtv: "0.4",
+        healthFactor: "2.125",
+        liquidationThreshold: "0.85",
+      },
       tokenAddress: market.collateralTokens[0].token.address,
       tokenSymbol: "WETH",
     },
@@ -146,6 +152,90 @@ const emptyPosition: PositionDto = {
 };
 
 describe("Borrow position details", () => {
+  it("does not present market liquidity or collateral APY as user capacity", async ({
+    worker,
+  }) => {
+    const marketWithCollateralChoices = {
+      ...market,
+      collateralTokens: [
+        market.collateralTokens[0],
+        {
+          ...market.collateralTokens[0],
+          supplyRate: "0.03",
+          token: {
+            address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+            decimals: 8,
+            name: "Wrapped Bitcoin",
+            symbol: "WBTC",
+          },
+        },
+      ],
+    };
+    const usdtMarket = {
+      ...marketWithCollateralChoices,
+      id: "aave-v3-ethereum-usdt",
+      loanToken: {
+        address: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        decimals: 6,
+        name: "Tether USD",
+        symbol: "USDT",
+      },
+    };
+
+    worker.use(
+      http.get(borrowApiRoute("/v1/integrations"), () =>
+        HttpResponse.json([integration])
+      ),
+      http.get(borrowApiRoute("/v1/markets"), () =>
+        HttpResponse.json({
+          items: [marketWithCollateralChoices, usdtMarket],
+          limit: 100,
+          offset: 0,
+          total: 2,
+        })
+      ),
+      http.get(borrowApiRoute("/v1/positions"), () =>
+        HttpResponse.json(emptyPosition)
+      )
+    );
+
+    const app = await renderApp({
+      wagmi: {
+        __customConnectors__: rkMockWallet({ accounts: [account] }),
+      },
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        borrowEnabled: true,
+        dashboardVariant: true,
+      },
+    });
+
+    await userEvent.click(app.getByText("Borrow"));
+    await expect.element(app.getByText("Borrow APY")).toBeInTheDocument();
+    expect(app.getByText("Supply APY").length).toBe(0);
+
+    const borrowSection = app.container.querySelector(
+      '[data-rk="borrow-amount-section"]'
+    );
+    expect(borrowSection?.textContent).not.toContain("available");
+    expect(borrowSection?.textContent).not.toContain("Max");
+
+    await app.getByTestId("borrow-market-select").click();
+    await app.getByTestId("borrow-market-select__group_usdc").click();
+    expect(app.container.textContent).not.toContain("Max:");
+    await app
+      .getByTestId(
+        `borrow-market-select__item_${marketWithCollateralChoices.id}`
+      )
+      .click();
+
+    await app.getByTestId("borrow-collateral-select").click();
+    expect(app.container.textContent).not.toContain("2%");
+    expect(app.container.textContent).not.toContain("3%");
+
+    app.unmount();
+  });
+
   it("renders borrow positions in Manage and opens borrow details", async ({
     worker,
   }) => {
@@ -188,8 +278,12 @@ describe("Borrow position details", () => {
 
     await expect.element(app.getByText("Borrow details")).toBeInTheDocument();
     await expect.element(app.getByText("Health factor")).toBeInTheDocument();
+    await expect.element(app.getByText("2.125")).toBeInTheDocument();
     await expect.element(app.getByText("Loan to value")).toBeInTheDocument();
     await expect.element(app.getByText("Collateral value")).toBeInTheDocument();
+    await expect.element(app.getByText("Borrow APY")).toBeInTheDocument();
+    expect(app.container.textContent).toContain("Ethereum");
+    expect(app.container.textContent).toContain("$400.00");
     await expect
       .element(app.getByTestId("borrow-position-action__repay"))
       .toBeInTheDocument();

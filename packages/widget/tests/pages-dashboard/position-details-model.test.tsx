@@ -164,14 +164,14 @@ describe("getDashboardPositionDetailsModel", () => {
       model.metricCards.find((card) => card.id === "balance")
     ).toMatchObject({
       label: "Balance",
-      subValue: "$41,400",
+      subValue: "$41.4K",
       value: "12 ETH",
     });
     expect(
       model.metricCards.find((card) => card.id === "rewards")
     ).toMatchObject({
       label: "Rewards",
-      subValue: "$862",
+      subValue: "$862.00",
       value: "0.25 ETH",
     });
     expect(model.metricCards.find((card) => card.id === "apy")).toMatchObject({
@@ -307,13 +307,13 @@ describe("getDashboardPositionDetailsModel", () => {
       {
         id: "active-ETH-0",
         label: "Active",
-        subValue: "$41,400",
+        subValue: "$41.4K",
         value: "12 ETH",
       },
       {
         id: "claimable-ETH-1",
         label: "Claimable",
-        subValue: "$862",
+        subValue: "$862.00",
         value: "0.25 ETH",
       },
       {

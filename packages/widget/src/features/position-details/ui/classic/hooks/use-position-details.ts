@@ -16,6 +16,7 @@ import {
   isYieldValidatorSelectionRequired,
 } from "../../../../../domain/types/yields";
 import { getPullResultItems } from "../../../../../shared/effect/pagination";
+import { formatUsd } from "../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import {
   getPositionDetailsUnstakeReviewPath,
@@ -194,7 +195,7 @@ export const usePositionDetails = () => {
   const unstakeFormattedAmount = useMemo(
     () =>
       reducedStakedOrLiquidBalance
-        ? `$${defaultFormattedNumber(reducedStakedOrLiquidBalance.amountUsd)}`
+        ? formatUsd(reducedStakedOrLiquidBalance.amountUsd)
         : "",
     [reducedStakedOrLiquidBalance]
   );

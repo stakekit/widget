@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import * as Schema from "effect/Schema";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
@@ -6,6 +7,7 @@ import { Market } from "../../src/domain/borrow/market";
 import { BorrowAccountPosition } from "../../src/domain/borrow/position";
 import { deriveBorrowPositionItems } from "../../src/domain/borrow/position-items";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { getBorrowDetailsModel } from "../../src/features/borrow/ui/model";
 import {
   getBorrowPositionActions,
   getBorrowPositionDetailsModel,
@@ -219,7 +221,7 @@ describe("borrow position items", () => {
       `supply-${marketDto.collateralTokens[0].token.address.toLowerCase()}`,
       `debt-${marketDto.loanToken.address.toLowerCase()}`,
     ]);
-    expect(model.detailRows.map((row) => row.id)).toContain("net-apy");
+    expect(model.detailRows.map((row) => row.id)).toContain("borrow-apy");
     expect(model.currentLtv).toBe(0.4);
     expect(model.healthFactor).toBe(2.125);
     expect(model.liquidationThreshold).toBe(0.85);
@@ -229,5 +231,185 @@ describe("borrow position items", () => {
         label: "WETH",
       }),
     ]);
+  });
+
+  it("shows only borrowing metrics on the entry details screen", () => {
+    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const model = getBorrowDetailsModel({
+      balances: null,
+      borrowAmount: new BigNumber(0),
+      collateralAmount: new BigNumber(0),
+      integration,
+      market,
+      t,
+    });
+
+    expect(model.metricCards.map((card) => card.id)).toEqual([
+      "borrow-apy",
+      "max-ltv",
+    ]);
+    expect(model.protocolRows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "network", value: "Ethereum" }),
+        expect.objectContaining({ id: "provider", value: "Aave V3" }),
+      ])
+    );
+  });
+
+  it("keeps same-token collateral isolated by market and preserves API risk state", () => {
+    const collateralAddress = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
+    const usdcMarketId = "morpho-blue-borrow-ethereum-cbbtc-usdc";
+    const usdtMarketId = "morpho-blue-borrow-ethereum-cbbtc-usdt";
+    const morphoIntegration = Schema.decodeUnknownSync(Integration)({
+      ...integrationDto,
+      id: "morpho-blue-borrow",
+      name: "Morpho Blue Borrow",
+      providerId: "morpho-blue",
+    });
+    const makeMarket = ({
+      id,
+      loanTokenAddress,
+      loanTokenSymbol,
+    }: {
+      readonly id: string;
+      readonly loanTokenAddress: string;
+      readonly loanTokenSymbol: string;
+    }) =>
+      Schema.decodeUnknownSync(Market)({
+        ...marketDto,
+        borrowRate: "0.03856649526282294",
+        collateralTokens: [
+          {
+            ...marketDto.collateralTokens[0],
+            liquidationThreshold: "0.86",
+            priceUsd: "63500",
+            supplyRate: "0",
+            token: {
+              address: collateralAddress,
+              decimals: 8,
+              name: "Coinbase Wrapped BTC",
+              symbol: "cbBTC",
+            },
+          },
+        ],
+        id,
+        integrationId: morphoIntegration.id,
+        loanToken: {
+          address: loanTokenAddress,
+          decimals: 6,
+          name: loanTokenSymbol,
+          symbol: loanTokenSymbol,
+        },
+      });
+    const usdcMarket = makeMarket({
+      id: usdcMarketId,
+      loanTokenAddress: marketDto.loanToken.address,
+      loanTokenSymbol: "USDC",
+    });
+    const usdtMarket = makeMarket({
+      id: usdtMarketId,
+      loanTokenAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      loanTokenSymbol: "USDT",
+    });
+    const accountPosition = Schema.decodeUnknownSync(BorrowAccountPosition)({
+      ...positionDto,
+      availableToBorrowUsd: null,
+      currentLtv: "0.1462",
+      debtBalances: [
+        {
+          apy: "0.03856649526282294",
+          balance: "0.500001",
+          balanceRaw: "500001",
+          balanceUsd: "0.50",
+          marketId: usdcMarketId,
+          pendingActions: [],
+          tokenAddress: marketDto.loanToken.address,
+          tokenSymbol: "USDC",
+        },
+      ],
+      healthFactor: null,
+      integrationId: morphoIntegration.id,
+      netApy: "0.031224",
+      netWorthUsd: "2.92",
+      supplyBalances: [
+        {
+          apy: "0",
+          balance: "0.00004000",
+          balanceRaw: "4000",
+          balanceUsd: "2.54",
+          isCollateral: true,
+          marketId: usdcMarketId,
+          pendingActions: [],
+          positionState: {
+            availableToBorrowUsd: "1.69",
+            currentLtv: "0.1968",
+            healthFactor: "4.3708",
+            liquidationThreshold: "0.8600",
+          },
+          tokenAddress: collateralAddress,
+          tokenSymbol: "cbBTC",
+        },
+        {
+          apy: "0",
+          balance: "0.00001378",
+          balanceRaw: "1378",
+          balanceUsd: "0.88",
+          isCollateral: true,
+          marketId: usdtMarketId,
+          pendingActions: [],
+          positionState: {
+            availableToBorrowUsd: "0.75",
+            currentLtv: "0",
+            healthFactor: null,
+            liquidationThreshold: "0.8600",
+          },
+          tokenAddress: collateralAddress,
+          tokenSymbol: "cbBTC",
+        },
+      ],
+      totalBorrowedUsd: "0.50",
+      totalCollateralUsd: "3.42",
+      totalSuppliedUsd: "3.42",
+    });
+    const positions = deriveBorrowPositionItems({
+      integrationPositions: [
+        { integration: morphoIntegration, position: accountPosition },
+      ],
+      markets: [usdcMarket, usdtMarket],
+    });
+    const usdcPosition = positions.find(
+      (position) => position.id === usdcMarket.id
+    );
+
+    expect(usdcPosition?.supplyBalances).toEqual([
+      expect.objectContaining({
+        balanceUsd: 2.54,
+        marketId: usdcMarket.id,
+      }),
+    ]);
+    expect(usdcPosition?.getTotalCollateralUsd()).toBe(2.54);
+    expect(usdcPosition?.getTotalBorrowedUsd()).toBe(0.5);
+    expect(usdcPosition?.getCurrentLtv()).toBe(0.1968);
+    expect(usdcPosition?.getHealthFactor()).toBe(4.3708);
+    expect(usdcPosition?.getBorrowApy()).toBeCloseTo(0.0385665);
+
+    if (!usdcPosition) {
+      throw new Error("Expected USDC position");
+    }
+
+    const model = getBorrowPositionDetailsModel({ position: usdcPosition, t });
+    expect(model.providerName).toBe("Morpho Blue");
+    expect(model.healthFactor).toBe(4.3708);
+    expect(model.totalCollateralUsd).toBe("$2.54");
+    expect(model.metricCards.find((card) => card.id === "debt")?.value).toBe(
+      "$0.50"
+    );
+    expect(model.detailRows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "network", value: "Ethereum" }),
+        expect.objectContaining({ id: "borrow-apy", value: "3.85%" }),
+      ])
+    );
   });
 });

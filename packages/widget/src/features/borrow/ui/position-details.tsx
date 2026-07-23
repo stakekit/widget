@@ -17,7 +17,11 @@ import {
   buildWithdrawActionRequest,
 } from "../../../domain/borrow/action-request";
 import { projectLtvRatio } from "../../../domain/borrow/position-projection";
-import { formatCompactUsd } from "../../../shared/lib/formatters";
+import {
+  formatHealthFactor,
+  formatPercent,
+  formatUsd,
+} from "../../../shared/lib/formatters";
 import { formatNumber } from "../../../shared/lib/number-format";
 import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
@@ -92,11 +96,6 @@ const getPositionFromResult = (
   AsyncResult.isSuccess(borrowPosition.positionResult)
     ? borrowPosition.positionResult.value
     : null;
-
-const formatPercent = (value: number | null | undefined) =>
-  value == null || !Number.isFinite(value)
-    ? "-"
-    : `${formatNumber(value * 100, 2)}%`;
 
 const BorrowPositionBreadcrumb = ({
   backPath = "/manage",
@@ -583,7 +582,7 @@ const AmountInputCard = ({
 
       <Box className={styles.amountCardFooter}>
         <Text variant={{ type: "muted", weight: "normal" }}>
-          {usdValue?.gt(0) ? `$${formatNumber(usdValue, 2)}` : "$0"}
+          {formatUsd(usdValue)}
         </Text>
         <Box className={styles.amountBalanceGroup}>
           <Text variant={{ type: "muted", weight: "normal" }}>
@@ -831,9 +830,7 @@ const WithdrawTokenPicker = ({
                     {token.supplyBalance.tokenSymbol}
                   </Text>
                   <Text variant={{ type: "muted", weight: "normal" }}>
-                    {formatCompactUsd(
-                      token.supplyBalance.balanceUsd.toString()
-                    )}
+                    {formatUsd(token.supplyBalance.balanceUsd.toString())}
                   </Text>
                 </Box>
                 {selected ? (
@@ -960,9 +957,9 @@ const WithdrawActionForm = ({
         <DetailRow
           id="collateral"
           label={t("dashboard.borrow.form.collateral_value")}
-          value={`${formatCompactUsd(
+          value={`${formatUsd(
             position.getTotalCollateralUsd().toString()
-          )} -> ${formatCompactUsd(projectedCollateralUsd.toString())}`}
+          )} -> ${formatUsd(projectedCollateralUsd.toString())}`}
         />
       </Box>
 
@@ -1048,7 +1045,7 @@ const ToggleCollateralActionForm = ({
         <DetailRow
           id="health"
           label={t("dashboard.borrow.position_details.health_factor")}
-          value={healthFactor == null ? "-" : formatNumber(healthFactor, 2)}
+          value={formatHealthFactor(healthFactor)}
         />
         <DetailRow
           id="collateral"

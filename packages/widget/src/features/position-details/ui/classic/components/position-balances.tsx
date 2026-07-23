@@ -12,6 +12,7 @@ import {
 } from "../../../../../domain/types/yields";
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
 import { getDisplayDurationUntil } from "../../../../../shared/lib/date";
+import { formatUsd } from "../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
@@ -96,7 +97,7 @@ export const PositionBalances = ({
             {defaultFormattedNumber(new BigNumber(yieldBalance.amount ?? 0))}{" "}
             {yieldBalance.token.symbol}
             {!yieldBalance.token.isPoints &&
-              ` ($${defaultFormattedNumber(yieldBalance.tokenPriceInUsd)})`}
+              ` (${formatUsd(yieldBalance.tokenPriceInUsd)})`}
           </Text>
         </Box>
 

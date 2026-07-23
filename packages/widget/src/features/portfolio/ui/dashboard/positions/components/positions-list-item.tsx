@@ -2,7 +2,11 @@ import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Position as BorrowPosition } from "../../../../../../domain/borrow/position";
 import type { PositionDetailsLabelType } from "../../../../../../domain/types/positions";
-import { formatCompactUsd } from "../../../../../../shared/lib/formatters";
+import {
+  formatBorrowProviderName,
+  formatPercent,
+  formatUsd,
+} from "../../../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../../../shared/lib/number-format";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/content-loader";
@@ -43,11 +47,11 @@ const BorrowPositionsListItem = ({
     ? `${formatNumber(position.debtBalance.balance, 6)} ${
         position.debtBalance.tokenSymbol
       }`
-    : formatCompactUsd(position.getTotalSuppliedUsd().toString());
+    : formatUsd(position.getTotalSuppliedUsd().toString());
   const subValue = position.debtBalance
     ? `${formatPercent(currentLtv)} ${t(
         "dashboard.borrow.position_details.ltv"
-      )} · ${formatCompactUsd(
+      )} · ${formatUsd(
         position.debtBalance.balanceUsd.toString()
       )} ${t("dashboard.borrow.position_details.debt").toLowerCase()}`
     : t("dashboard.borrow.position_details.supplied");
@@ -87,7 +91,9 @@ const BorrowPositionsListItem = ({
                   variant={{ type: "muted", weight: "normal" }}
                 >
                   {t("positions.via", {
-                    providerName: position.integration.name,
+                    providerName: formatBorrowProviderName(
+                      position.integration.name
+                    ),
                     count: 1,
                   })}
                 </Text>
@@ -96,7 +102,7 @@ const BorrowPositionsListItem = ({
 
             <Box display="flex" alignItems="center" gap="4" flexShrink={0}>
               <Text className={rewardRateText}>
-                {formatPercent(position.getNetApy())}
+                {formatPercent(position.getBorrowApy())}
               </Text>
 
               <Box
@@ -121,11 +127,6 @@ const BorrowPositionsListItem = ({
     </SKLink>
   );
 };
-
-const formatPercent = (value: number | null | undefined) =>
-  value == null || !Number.isFinite(value)
-    ? "-"
-    : `${formatNumber(value * 100, 2)}%`;
 
 const EarnPositionsListItem = ({
   item,

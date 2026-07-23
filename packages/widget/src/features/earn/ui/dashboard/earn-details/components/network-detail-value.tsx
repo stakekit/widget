@@ -1,10 +1,10 @@
 import type { Network } from "../../../../../../domain/schema/network-model";
+import { formatNetworkName } from "../../../../../../shared/lib/formatters";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { Image } from "../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import { useVariantNetworkUrls } from "../../../../../widget-shell/ui/token-icon/token-icon-container/hooks/use-variant-network-urls";
 
-import { formatNetworkName } from "../earn-details-formatters";
 import * as styles from "../styles.css";
 
 export const NetworkDetailValue = ({ network }: { network: string }) => {

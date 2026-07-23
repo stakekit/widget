@@ -2,7 +2,13 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Cause, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
-import { formatNumber } from "../../../shared/lib/number-format";
+import {
+  formatBorrowProviderName,
+  formatHealthFactor,
+  formatNetworkName,
+  formatPercent,
+  formatUsd,
+} from "../../../shared/lib/formatters";
 import { Box } from "../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
 import { Text } from "../../../shared/ui/primitives/typography/text";
@@ -15,20 +21,20 @@ import { PageCtaButton } from "../../widget-shell/page-cta";
 import { useBorrowTransactionFlow } from "../react/borrow-flow-route";
 import * as styles from "./styles.css";
 
-const formatPercentSummary = (value: string | undefined) => {
-  const numericValue = Number(value);
+const formatOptionalSummary = (value: string | undefined) => {
+  if (!value) return null;
 
-  return Number.isFinite(numericValue)
-    ? `${formatNumber(numericValue * 100, 2)}%`
-    : null;
+  const formatted = formatUsd(value);
+
+  return formatted === "-" ? null : formatted;
 };
 
-const formatUsdSummary = (value: string | undefined) => {
-  const numericValue = Number(value);
+const formatOptionalPercentSummary = (value: string | undefined) => {
+  if (!value) return null;
 
-  return Number.isFinite(numericValue)
-    ? `$${formatNumber(numericValue, 2)}`
-    : null;
+  const formatted = formatPercent(value);
+
+  return formatted === "-" ? null : formatted;
 };
 
 const formatTransition = ({
@@ -83,18 +89,18 @@ export const BorrowReviewPage = () => {
   })();
   const projectedLtv = formatTransition({
     current: null,
-    projected: formatPercentSummary(summary.projectedLtv),
+    projected: formatOptionalPercentSummary(summary.projectedLtv),
   });
   const projectedHealthFactor = summary.projectedHealthFactor
-    ? formatNumber(Number(summary.projectedHealthFactor), 2)
+    ? formatHealthFactor(summary.projectedHealthFactor)
     : null;
   const collateralValue = formatTransition({
-    current: formatUsdSummary(summary.existingCollateralUsd),
-    projected: formatUsdSummary(summary.projectedCollateralUsd),
+    current: formatOptionalSummary(summary.existingCollateralUsd),
+    projected: formatOptionalSummary(summary.projectedCollateralUsd),
   });
   const debtValue = formatTransition({
-    current: formatUsdSummary(summary.existingDebtUsd),
-    projected: formatUsdSummary(summary.projectedDebtUsd),
+    current: formatOptionalSummary(summary.existingDebtUsd),
+    projected: formatOptionalSummary(summary.projectedDebtUsd),
   });
   const actionRows = [
     {
@@ -124,12 +130,12 @@ export const BorrowReviewPage = () => {
     {
       id: "provider",
       label: t("dashboard.borrow.review_page.provider"),
-      value: summary.providerName,
+      value: formatBorrowProviderName(summary.providerName),
     },
     {
       id: "network",
       label: t("dashboard.borrow.review_page.network"),
-      value: summary.network,
+      value: formatNetworkName(summary.network),
     },
     collateralValue
       ? {

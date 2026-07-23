@@ -1,4 +1,4 @@
-import type { MarketId } from "./ids";
+import type { MarketId, TokenAddress } from "./ids";
 import type { Integration } from "./integration";
 import type { Market } from "./market";
 import type { PendingAction } from "./pending-action";
@@ -23,13 +23,20 @@ export const deriveBorrowPositionItems = ({
   for (const integrationPosition of integrationPositions) {
     const debtBalances = integrationPosition.position.debtBalances;
     const supplyBalances = integrationPosition.position.supplyBalances;
-    const supplyBalancesByTokenAddress = new Map(
-      supplyBalances.map((supplyBalance) => [
-        supplyBalance.tokenAddress,
-        supplyBalance,
-      ])
-    );
-    const supplyBalancesAddedToDebtPositions = new Set<string>();
+    const supplyBalancesByMarketId = new Map<
+      MarketId,
+      Map<TokenAddress, SupplyBalance>
+    >();
+    for (const supplyBalance of supplyBalances) {
+      const balancesByTokenAddress =
+        supplyBalancesByMarketId.get(supplyBalance.marketId) ?? new Map();
+      balancesByTokenAddress.set(supplyBalance.tokenAddress, supplyBalance);
+      supplyBalancesByMarketId.set(
+        supplyBalance.marketId,
+        balancesByTokenAddress
+      );
+    }
+    const supplyBalancesAddedToDebtPositions = new Set<SupplyBalance>();
 
     for (const debtBalance of debtBalances) {
       const market = marketsById.get(debtBalance.marketId);
@@ -46,9 +53,9 @@ export const deriveBorrowPositionItems = ({
           continue;
         }
 
-        const supplyBalance = supplyBalancesByTokenAddress.get(
-          collateralToken.token.address
-        );
+        const supplyBalance = supplyBalancesByMarketId
+          .get(debtBalance.marketId)
+          ?.get(collateralToken.token.address);
 
         if (!supplyBalance) {
           continue;
@@ -56,7 +63,7 @@ export const deriveBorrowPositionItems = ({
 
         positionSupplyBalances.push(supplyBalance);
         supplyPendingActions.push(...supplyBalance.pendingActions);
-        supplyBalancesAddedToDebtPositions.add(supplyBalance.tokenAddress);
+        supplyBalancesAddedToDebtPositions.add(supplyBalance);
       }
 
       positionsByMarketId.set(
@@ -67,6 +74,10 @@ export const deriveBorrowPositionItems = ({
           id: debtBalance.marketId,
           integration: integrationPosition.integration,
           market,
+          positionState:
+            positionSupplyBalances.find(
+              (supplyBalance) => supplyBalance.positionState
+            )?.positionState ?? null,
           supplyBalances: positionSupplyBalances,
           supplyPendingActions,
         })
@@ -74,7 +85,7 @@ export const deriveBorrowPositionItems = ({
     }
 
     for (const supplyBalance of supplyBalances) {
-      if (supplyBalancesAddedToDebtPositions.has(supplyBalance.tokenAddress)) {
+      if (supplyBalancesAddedToDebtPositions.has(supplyBalance)) {
         continue;
       }
 
@@ -95,6 +106,10 @@ export const deriveBorrowPositionItems = ({
             id: existingPosition.id,
             integration: existingPosition.integration,
             market: existingPosition.market,
+            positionState:
+              existingPosition.positionState ??
+              supplyBalance.positionState ??
+              null,
             supplyBalances: [...existingPosition.supplyBalances, supplyBalance],
             supplyPendingActions: [
               ...existingPosition.supplyPendingActions,
@@ -113,6 +128,7 @@ export const deriveBorrowPositionItems = ({
           id: supplyBalance.marketId,
           integration: integrationPosition.integration,
           market,
+          positionState: supplyBalance.positionState ?? null,
           supplyBalances: [supplyBalance],
           supplyPendingActions: supplyBalance.pendingActions,
         })

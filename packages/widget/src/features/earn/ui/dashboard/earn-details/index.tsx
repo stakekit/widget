@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { HistoryPeriod } from "../../../../../domain/schema/dashboard-models";
 import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
 import type { SelectedValidators } from "../../../../../domain/types/reward-rate";
-import { formatCompactUsd } from "../../../../../shared/lib/formatters";
+import { formatUsd } from "../../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
@@ -136,7 +136,7 @@ const EarnDetailsView = ({
           history={tvlHistory}
           onPeriodChange={setTvlPeriod}
           period={tvlPeriod}
-          tickFormatter={formatCompactUsd}
+          tickFormatter={formatUsd}
           title={t("dashboard.earn_details.tvl")}
           value={tvlChartValue}
         />

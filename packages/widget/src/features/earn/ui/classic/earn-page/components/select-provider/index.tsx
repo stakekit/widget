@@ -6,7 +6,7 @@ import {
   getYieldProviderYieldIds,
   isYieldWithProviderOptions,
 } from "../../../../../../../domain/types/yields";
-import { formatCompactUsd } from "../../../../../../../shared/lib/formatters";
+import { formatUsd } from "../../../../../../../shared/lib/formatters";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../../shared/ui/primitives/content-loader";
 import { CaretDownIcon } from "../../../../../../../shared/ui/primitives/icons/caret-down";
@@ -39,7 +39,7 @@ const getDisplayWebsite = (website: string) => {
 const getProviderTvl = (tvlUsd: unknown) => {
   if (typeof tvlUsd !== "string" && typeof tvlUsd !== "number") return null;
 
-  const formatted = formatCompactUsd(tvlUsd);
+  const formatted = formatUsd(tvlUsd);
 
   return formatted === "-" ? null : formatted;
 };

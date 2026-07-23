@@ -10,17 +10,12 @@ import {
 } from "../../../../../domain/types/yields";
 import {
   formatCompactNumber,
-  formatCompactUsd,
+  formatPercent,
+  formatUsd,
   getRewardTypeFormatted,
 } from "../../../../../shared/lib/formatters";
 import { APToPercentage } from "../../../../../shared/lib/general";
 import { formatNumber } from "../../../../../shared/lib/number-format";
-
-export const formatNetworkName = (network: string) =>
-  network
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
 
 export const formatDisplayTokenSymbol = (yieldDto: EarnYieldWithProvider) =>
   yieldDto.outputToken?.symbol ?? yieldDto.token.symbol;
@@ -108,13 +103,11 @@ export const formatRequirementStatus = (
 export const formatCommission = (
   commission: string | number | null | undefined
 ) => {
-  if (commission === null || commission === undefined) return null;
+  if (commission == null) return null;
 
-  const amount = BigNumber(commission);
+  const formatted = formatPercent(commission);
 
-  return amount.isFinite()
-    ? `Commission ${amount.multipliedBy(100).toFixed(2)}%`
-    : null;
+  return formatted === "-" ? null : `Commission ${formatted}`;
 };
 
 export const formatProviderTvl = (
@@ -212,7 +205,7 @@ export const formatMeaningfulCompactUsd = (
 ) => {
   if (!isPositiveFinite(value)) return null;
 
-  const formatted = formatCompactUsd(value);
+  const formatted = formatUsd(value);
 
   return formatted === "-" ? null : formatted;
 };
@@ -234,9 +227,3 @@ const isPositiveFinite = (value: string | number | null | undefined) => {
 
   return amount.isFinite() && amount.isGreaterThan(0);
 };
-
-export const formatEnumValue = (value: string) =>
-  value
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(" ");

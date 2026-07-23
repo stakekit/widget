@@ -17,6 +17,11 @@ import type {
   BorrowWalletConnectedBridgeState,
 } from "../../../services/borrow/wallet-state-projection";
 import {
+  formatBorrowProviderName,
+  formatNetworkName,
+  formatUsd,
+} from "../../../shared/lib/formatters";
+import {
   defaultFormattedNumber,
   formatNumber,
 } from "../../../shared/lib/number-format";
@@ -300,16 +305,6 @@ const BorrowFormPanel = ({
       marketId: selectedMarket?.id,
     });
   };
-  const onBorrowMaxClick =
-    selectedMarket && projection.borrowMaxAmount.gt(0)
-      ? () => {
-          setBorrowAmount(projection.borrowMaxAmount);
-          trackEvent("borrowPageMaxClicked", {
-            field: "borrow",
-            marketId: selectedMarket.id,
-          });
-        }
-      : null;
   const onCollateralMaxClick =
     selectedMarket && projection.collateralMaxAmount.gt(0)
       ? () => {
@@ -369,17 +364,11 @@ const BorrowFormPanel = ({
       <>
         <AmountField
           amount={borrowAmount}
-          balanceLabel={
-            <BorrowBalanceLabel
-              amount={selectedMarket.availableLiquidity}
-              symbol={selectedMarket.loanToken.symbol}
-              translationKey="dashboard.borrow.form.available"
-            />
-          }
+          balanceLabel={null}
           isInvalid={borrowAmountGreaterThanAvailable}
           label={t("dashboard.borrow.form.borrow")}
           highlight
-          onMaxClick={onBorrowMaxClick}
+          onMaxClick={null}
           onAmountChange={setBorrowAmount}
           tokenSelector={
             <MarketSelectModal
@@ -403,7 +392,6 @@ const BorrowFormPanel = ({
             <BorrowBalanceLabel
               amount={selectedCollateralBalance?.amount ?? "0"}
               symbol={selectedCollateralToken.token.symbol}
-              translationKey="dashboard.borrow.form.wallet_balance"
             />
           }
           isInvalid={collateralAmountGreaterThanBalance}
@@ -510,7 +498,7 @@ const AmountField = ({
 
       <Box className={styles.amountCardFooter}>
         <Text variant={{ type: "muted", weight: "normal" }}>
-          {usdValue.gt(0) ? `$${formatNumber(usdValue, 2)}` : "$0"}
+          {formatUsd(usdValue)}
         </Text>
         <Box className={styles.amountBalanceGroup}>
           <Text variant={{ type: "muted", weight: "normal" }}>
@@ -530,13 +518,9 @@ const AmountField = ({
 
 const BorrowBalanceLabel = ({
   amount,
-  translationKey,
   symbol,
 }: {
   readonly amount: string | number | BigNumber;
-  readonly translationKey:
-    | "dashboard.borrow.form.available"
-    | "dashboard.borrow.form.wallet_balance";
   readonly symbol: string;
 }) => {
   const { t } = useTranslation();
@@ -545,7 +529,7 @@ const BorrowBalanceLabel = ({
     <AmountToggle.Root>
       <AmountToggle.Amount>
         {({ state }) =>
-          t(translationKey, {
+          t("dashboard.borrow.form.wallet_balance", {
             amount:
               state === "full"
                 ? formatNumber(amount)
@@ -773,14 +757,10 @@ const MarketSelectModal = ({
                         indented
                         key={market.id}
                         label={getBorrowMarketPairLabel(market)}
-                        maxAmount={`${t("shared.max")}: ${formatNumber(
-                          market.availableLiquidity,
-                          0
-                        )}`}
-                        meta={
+                        meta={formatBorrowProviderName(
                           integrationsById.get(market.integrationId)?.name ??
-                          market.integrationId
-                        }
+                            market.integrationId
+                        )}
                         onClick={() => {
                           onSelect(market.id);
                           onOpenChange(false);
@@ -919,7 +899,6 @@ const CollateralSelectModal = ({
                 onSelect(collateralToken);
                 onOpenChange(false);
               }}
-              rate={`${formatNumber(collateralToken.supplyRate * 100, 2)}%`}
               selected={
                 collateralToken.token.address === selectedCollateralTokenAddress
               }
@@ -967,7 +946,6 @@ const BorrowAssetSelectorRow = ({
   expanded = false,
   indented = false,
   label,
-  maxAmount,
   meta,
   onClick,
   rate,
@@ -979,10 +957,9 @@ const BorrowAssetSelectorRow = ({
   readonly expanded?: boolean;
   readonly indented?: boolean;
   readonly label: string;
-  readonly maxAmount?: string;
   readonly meta?: string;
   readonly onClick: () => void;
-  readonly rate: string;
+  readonly rate?: string;
   readonly selected?: boolean;
   readonly testId?: string;
   readonly token: DashboardBorrowToken;
@@ -1019,17 +996,11 @@ const BorrowAssetSelectorRow = ({
         </Text>
       ) : null}
     </Box>
-    <Box className={styles.assetSelectorRate}>
-      <Text variant={{ weight: "normal" }}>{rate}</Text>
-      {maxAmount ? (
-        <Text
-          className={styles.assetSelectorMeta}
-          variant={{ type: "muted", weight: "bold" }}
-        >
-          {maxAmount}
-        </Text>
-      ) : null}
-    </Box>
+    {rate ? (
+      <Box className={styles.assetSelectorRate}>
+        <Text variant={{ weight: "normal" }}>{rate}</Text>
+      </Box>
+    ) : null}
   </Box>
 );
 
@@ -1107,6 +1078,9 @@ const BorrowDetailsPanel = ({
     network: selectedMarket.network,
     token: selectedMarket.loanToken,
   });
+  const providerName = formatBorrowProviderName(
+    selectedIntegration?.name ?? selectedMarket.integrationId
+  );
 
   return (
     <Box
@@ -1125,14 +1099,12 @@ const BorrowDetailsPanel = ({
               wrapperProps={{ hw: "5" }}
               imgProps={{ borderRadius: "base" }}
               src={selectedIntegration?.metadata.logoURI}
-              fallbackName={
-                selectedIntegration?.name ?? selectedMarket.integrationId
-              }
+              fallbackName={providerName}
             />
             <Text variant={{ type: "muted", weight: "normal" }}>
-              {selectedIntegration?.name ?? selectedMarket.integrationId}
+              {providerName}
               {" · "}
-              {selectedMarket.network}
+              {formatNetworkName(selectedMarket.network)}
             </Text>
             <HeaderBadge
               label={t(`dashboard.borrow.market_type.${selectedMarket.type}`)}
@@ -1148,8 +1120,7 @@ const BorrowDetailsPanel = ({
           {selectedIntegration?.metadata.description ??
             t("dashboard.borrow.details.about_fallback", {
               market: model.title,
-              provider:
-                selectedIntegration?.name ?? selectedMarket.integrationId,
+              provider: providerName,
             })}
         </Text>
       </DetailsSection>

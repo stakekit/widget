@@ -1,5 +1,9 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
+import {
+  formatBorrowProviderName,
+  formatNetworkName,
+} from "../../../shared/lib/formatters";
 import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
 import { CheckCircleIcon } from "../../../shared/ui/primitives/icons/check-circle";
@@ -48,12 +52,12 @@ export const BorrowCompletePage = () => {
     {
       id: "provider",
       label: t("dashboard.borrow.review_page.provider"),
-      value: summary.providerName,
+      value: formatBorrowProviderName(summary.providerName),
     },
     {
       id: "network",
       label: t("dashboard.borrow.review_page.network"),
-      value: summary.network,
+      value: formatNetworkName(summary.network),
     },
   ].filter((row): row is NonNullable<typeof row> => !!row);
 

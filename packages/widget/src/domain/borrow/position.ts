@@ -69,11 +69,16 @@ export class Position extends Schema.Class<Position>("BorrowPosition")({
   market: Market,
   integration: Integration,
   debtBalance: Schema.NullOr(DebtBalance),
+  positionState: Schema.NullOr(PositionState),
   supplyBalances: Schema.Array(SupplyBalance),
   debtPendingActions: PendingActions,
   supplyPendingActions: PendingActions,
 }) {
   getCurrentLtv() {
+    if (this.positionState) {
+      return this.positionState.currentLtv;
+    }
+
     if (this.debtBalance == null) {
       return null;
     }
@@ -178,6 +183,10 @@ export class Position extends Schema.Class<Position>("BorrowPosition")({
   }
 
   getHealthFactor() {
+    if (this.positionState) {
+      return this.positionState.healthFactor;
+    }
+
     if (this.debtBalance == null) {
       return null;
     }
@@ -215,5 +224,9 @@ export class Position extends Schema.Class<Position>("BorrowPosition")({
       (this.debtBalance?.balanceUsd ?? 0) * (this.debtBalance?.apy ?? 0);
 
     return (totalSupplyEarnings - totalBorrowCosts) / netWorthUsd;
+  }
+
+  getBorrowApy() {
+    return this.debtBalance?.apy ?? null;
   }
 }

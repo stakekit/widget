@@ -4,7 +4,13 @@ import type { ReactNode } from "react";
 import type { Integration } from "../../../domain/borrow/integration";
 import type { Market } from "../../../domain/borrow/market";
 import { projectLtvRatio } from "../../../domain/borrow/position-projection";
-import { formatCompactUsd } from "../../../shared/lib/formatters";
+import {
+  formatBorrowProviderName,
+  formatHealthFactor,
+  formatNetworkName,
+  formatPercent,
+  formatUsd,
+} from "../../../shared/lib/formatters";
 import { formatNumber } from "../../../shared/lib/number-format";
 import type { BorrowFormProjection } from "../atoms/form";
 import type { BorrowMarketWalletBalances } from "../balances";
@@ -21,14 +27,6 @@ type BorrowMetricCard = {
   readonly subValue?: string;
   readonly value: string;
 };
-
-const formatDecimalPercent = (value: number | null | undefined) =>
-  value == null || !Number.isFinite(value)
-    ? "-"
-    : `${formatNumber(value * 100, 2)}%`;
-
-const formatUsd = (value: BigNumber) =>
-  value.isFinite() ? `$${formatNumber(value, 2)}` : "$0";
 
 const formatTransition = ({
   current,
@@ -110,29 +108,23 @@ export const getBorrowDetailsModel = ({
       id: "borrow-apy",
       label: t("dashboard.borrow.details.borrow_apy"),
       subValue: market.loanToken.symbol,
-      value: formatDecimalPercent(market.borrowRate),
-    },
-    {
-      id: "supply-apy",
-      label: t("dashboard.borrow.details.supply_apy"),
-      subValue: collateralToken?.token.symbol,
-      value: formatDecimalPercent(collateralToken?.supplyRate),
+      value: formatPercent(market.borrowRate),
     },
     {
       id: "max-ltv",
       label: t("dashboard.borrow.details.max_ltv"),
-      value: formatDecimalPercent(maxLtv),
+      value: formatPercent(maxLtv),
     },
   ];
 
   const getLtvValue = (): ReactNode => {
     if (displayedCollateralUsd.isZero()) return "-";
     if (!hasExistingPosition) {
-      return formatDecimalPercent(displayedProjectedLtv);
+      return formatPercent(displayedProjectedLtv);
     }
     return formatTransition({
-      current: formatDecimalPercent(existingLtv),
-      projected: formatDecimalPercent(displayedProjectedLtv),
+      current: formatPercent(existingLtv),
+      projected: formatPercent(displayedProjectedLtv),
     });
   };
   const ltvValue = getLtvValue();
@@ -159,7 +151,7 @@ export const getBorrowDetailsModel = ({
     {
       id: "max-ltv",
       label: t("dashboard.borrow.details.max_ltv"),
-      value: formatDecimalPercent(maxLtv),
+      value: formatPercent(maxLtv),
     },
     {
       id: "collateral-value",
@@ -179,12 +171,12 @@ export const getBorrowDetailsModel = ({
     {
       id: "borrow-rate",
       label: t("dashboard.borrow.form.borrow_rate"),
-      value: formatDecimalPercent(market.borrowRate),
+      value: formatPercent(market.borrowRate),
     },
     {
       id: "health-factor",
       label: t("dashboard.borrow.form.health_factor"),
-      value: healthFactor == null ? "-" : formatNumber(healthFactor, 2),
+      value: formatHealthFactor(healthFactor),
     },
   ];
 
@@ -192,7 +184,7 @@ export const getBorrowDetailsModel = ({
     {
       id: "total-supply",
       label: t("dashboard.borrow.details.total_supply"),
-      value: formatCompactUsd(
+      value: formatUsd(
         new BigNumber(market.totalSupply)
           .multipliedBy(market.loanTokenPriceUsd)
           .toString()
@@ -201,7 +193,7 @@ export const getBorrowDetailsModel = ({
     {
       id: "total-borrow",
       label: t("dashboard.borrow.details.total_borrow"),
-      value: formatCompactUsd(
+      value: formatUsd(
         new BigNumber(market.totalBorrow)
           .multipliedBy(market.loanTokenPriceUsd)
           .toString()
@@ -217,7 +209,7 @@ export const getBorrowDetailsModel = ({
     {
       id: "utilization",
       label: t("dashboard.borrow.details.utilization"),
-      value: formatDecimalPercent(market.utilizationRate),
+      value: formatPercent(market.utilizationRate),
     },
   ];
 
@@ -225,12 +217,14 @@ export const getBorrowDetailsModel = ({
     {
       id: "provider",
       label: t("dashboard.borrow.details.provider"),
-      value: integration?.name ?? market.integrationId,
+      value: formatBorrowProviderName(
+        integration?.name ?? market.integrationId
+      ),
     },
     {
       id: "network",
       label: t("dashboard.borrow.details.network"),
-      value: market.network,
+      value: formatNetworkName(market.network),
     },
     {
       id: "market-type",

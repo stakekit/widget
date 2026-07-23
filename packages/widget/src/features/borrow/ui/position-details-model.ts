@@ -11,7 +11,13 @@ import type { Position, SupplyBalance } from "../../../domain/borrow/position";
 import type { BorrowToken } from "../../../domain/borrow/token";
 import type { WalletAddress } from "../../../domain/schema/identifiers";
 import type { AppToken } from "../../../domain/schema/legacy-models";
-import { formatCompactUsd } from "../../../shared/lib/formatters";
+import {
+  formatBorrowProviderName,
+  formatHealthFactor,
+  formatNetworkName,
+  formatPercent,
+  formatUsd,
+} from "../../../shared/lib/formatters";
 import { formatNumber } from "../../../shared/lib/number-format";
 import type { BorrowTransactionFlowReview } from "../../borrow-transaction-flow/state";
 import type {
@@ -51,16 +57,6 @@ export type BorrowPositionAction = {
     | "repay"
     | "withdraw";
 };
-
-const formatPercent = (value: number | null | undefined) =>
-  value == null || !Number.isFinite(value)
-    ? "-"
-    : `${formatNumber(value * 100, 2)}%`;
-
-const formatUsd = (value: number | null | undefined) =>
-  value == null || !Number.isFinite(value)
-    ? "-"
-    : formatCompactUsd(value.toString());
 
 export const borrowTokenToTokenDto = ({
   network,
@@ -305,7 +301,7 @@ export const getBorrowPositionDetailsModel = ({
     {
       id: "health-factor",
       label: t("dashboard.borrow.position_details.health_factor"),
-      value: healthFactor == null ? "-" : formatNumber(healthFactor, 2),
+      value: formatHealthFactor(healthFactor),
     },
   ];
   const breakdownRows: BorrowPositionRow[] = [
@@ -334,12 +330,12 @@ export const getBorrowPositionDetailsModel = ({
     {
       id: "provider",
       label: t("dashboard.borrow.details.provider"),
-      value: position.integration.name,
+      value: formatBorrowProviderName(position.integration.name),
     },
     {
       id: "network",
       label: t("dashboard.borrow.details.network"),
-      value: position.market.network,
+      value: formatNetworkName(position.market.network),
     },
     {
       id: "market-type",
@@ -374,9 +370,9 @@ export const getBorrowPositionDetailsModel = ({
       ),
     },
     {
-      id: "net-apy",
-      label: t("dashboard.borrow.position_details.net_apy"),
-      value: formatPercent(position.getNetApy()),
+      id: "borrow-apy",
+      label: t("dashboard.borrow.details.borrow_apy"),
+      value: formatPercent(position.getBorrowApy()),
     },
   ];
   const collateralItems = position.supplyBalances.map((balance) => {
@@ -422,7 +418,7 @@ export const getBorrowPositionDetailsModel = ({
     liquidationThreshold,
     marketLabel: getBorrowMarketPairLabel(position.market),
     metricCards,
-    providerName: position.integration.name,
+    providerName: formatBorrowProviderName(position.integration.name),
     totalCollateralUsd: formatUsd(position.getTotalCollateralUsd()),
     title: meta.name,
   };

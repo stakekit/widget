@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
+import { formatUsd } from "../../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../../shared/lib/number-format";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
@@ -28,10 +29,11 @@ export const SummaryItem = ({
 
   const isApyType = type === "apy";
   const getFormattedValue = () => {
-    if (!value?.gt(0)) return "-";
-    return isApyType
-      ? `${formatNumber(value, 2)}%`
-      : `$${formatNumber(value, 3)}`;
+    if (!value) return "-";
+    if (isApyType) {
+      return value.gt(0) ? `${formatNumber(value, 2)}%` : "-";
+    }
+    return formatUsd(value);
   };
   const formattedValue = getFormattedValue();
 
