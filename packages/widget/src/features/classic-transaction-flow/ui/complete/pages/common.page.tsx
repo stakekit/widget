@@ -58,6 +58,30 @@ export const CompletePageComponent = ({
     pendingActionMatch,
     urls,
   } = completion;
+  const translationContext = isEthenaUsdeStaking(integrationId)
+    ? "ethena_usde"
+    : undefined;
+  const getSuccessKey = () => {
+    if (unstakeMatch) return "complete.successfully_unstaked" as const;
+    if (pendingActionMatch) {
+      return "complete.successfully_pending_action" as const;
+    }
+    return "complete.successfully_staked" as const;
+  };
+  const successKey = getSuccessKey();
+
+  const getAction = () => {
+    if (!yieldType) return "";
+    if (unstakeMatch) {
+      return t(`complete.unstake.${yieldType}`, {
+        context: translationContext,
+      });
+    }
+    return t(`complete.stake.${yieldType}`, {
+      context: translationContext,
+    });
+  };
+  const action = getAction();
 
   return (
     <AnimationPage>
@@ -106,40 +130,19 @@ export const CompletePageComponent = ({
               }}
             >
               <Heading overflowWrap="anywhere" variant={{ level: "h3" }}>
-                {t(
-                  unstakeMatch
-                    ? "complete.successfully_unstaked"
-                    : pendingActionMatch
-                      ? "complete.successfully_pending_action"
-                      : "complete.successfully_staked",
-                  {
-                    action: yieldType
-                      ? unstakeMatch
-                        ? t(`complete.unstake.${yieldType}`, {
-                            context: isEthenaUsdeStaking(integrationId)
-                              ? "ethena_usde"
-                              : undefined,
-                          })
-                        : t(`complete.stake.${yieldType}`, {
-                            context: isEthenaUsdeStaking(integrationId)
-                              ? "ethena_usde"
-                              : undefined,
-                          })
-                      : "",
-                    amount,
-                    tokenNetwork: network,
-                    pendingAction: t(
-                      `complete.pending_action.${
-                        pendingActionType?.toLowerCase() as Lowercase<YieldPendingActionType>
-                      }` as const,
-                      {
-                        context: isEthenaUsdeStaking(integrationId)
-                          ? "ethena_usde"
-                          : undefined,
-                      }
-                    ),
-                  }
-                )}
+                {t(successKey, {
+                  action,
+                  amount,
+                  tokenNetwork: network,
+                  pendingAction: t(
+                    `complete.pending_action.${
+                      pendingActionType?.toLowerCase() as Lowercase<YieldPendingActionType>
+                    }` as const,
+                    {
+                      context: translationContext,
+                    }
+                  ),
+                })}
               </Heading>
             </motion.div>
 

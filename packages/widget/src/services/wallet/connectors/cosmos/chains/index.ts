@@ -5,18 +5,23 @@ import type { CosmosChainsAssets } from "../../../../../domain/types/chains/cosm
 import { CosmosNetworks } from "../../../../../domain/types/chains/networks";
 import { getWalletNetworkLogo, getWalletTokenLogo } from "../../../assets";
 
+const getChainIconUrl = (chain: CosmosChainsAssets) => {
+  if (chain.chain_id === "osmosis-1") {
+    return getWalletNetworkLogo(CosmosNetworks.Osmosis);
+  }
+  if (chain.chain_id === "mars-1") return getWalletTokenLogo("mars");
+  return (
+    chain.logo_URIs?.png ??
+    chain.logo_URIs?.svg ??
+    getWalletNetworkLogo(chain.chain_name as Network)
+  );
+};
+
 export const getWagmiChain = (
   chain: CosmosChainsAssets
 ): Chain & { cosmosChainName: string } => ({
   id: chain.chain_id as unknown as number,
-  iconUrl:
-    chain.chain_id === "osmosis-1"
-      ? getWalletNetworkLogo(CosmosNetworks.Osmosis)
-      : chain.chain_id === "mars-1"
-        ? getWalletTokenLogo("mars")
-        : (chain.logo_URIs?.png ??
-          chain.logo_URIs?.svg ??
-          getWalletNetworkLogo(chain.chain_name as Network)),
+  iconUrl: getChainIconUrl(chain),
 
   name: chain.wagmiName,
   cosmosChainName: chain.chain_name,

@@ -85,11 +85,16 @@ export const TolerantTopLevelRecord = <
             );
           }
 
-          const issue = Result.isFailure(decodedKey)
-            ? `key: ${decodedKey.failure.message}`
-            : Result.isFailure(decodedValue)
-              ? `value: ${decodedValue.failure.message}`
-              : "Unknown key-value decode failure";
+          const getIssue = () => {
+            if (Result.isFailure(decodedKey)) {
+              return `key: ${decodedKey.failure.message}`;
+            }
+            if (Result.isFailure(decodedValue)) {
+              return `value: ${decodedValue.failure.message}`;
+            }
+            return "Unknown key-value decode failure";
+          };
+          const issue = getIssue();
 
           return logDecodeRejection({
             operation: options.operation,

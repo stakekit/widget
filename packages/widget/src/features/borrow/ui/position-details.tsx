@@ -2,7 +2,7 @@ import { useAtomSet } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
 import clsx from "clsx";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Outlet,
@@ -143,14 +143,13 @@ const MetricCards = ({
   <Box className={positionDetailsStyles.metricGrid}>
     {cards.map((card) => {
       const isHealthCard = card.id === "health-factor";
-      const toneClass =
-        !isHealthCard || healthFactor == null
-          ? undefined
-          : healthFactor < 1
-            ? styles.healthValueDanger
-            : healthFactor < 2
-              ? styles.healthValueWarning
-              : styles.healthValue;
+      const getToneClass = () => {
+        if (!isHealthCard || healthFactor == null) return undefined;
+        if (healthFactor < 1) return styles.healthValueDanger;
+        if (healthFactor < 2) return styles.healthValueWarning;
+        return styles.healthValue;
+      };
+      const toneClass = getToneClass();
 
       return (
         <Box
@@ -673,11 +672,16 @@ const RepayActionForm = ({
       : null;
   const hasAmount = repayAll || repayAmount.gt(0);
   const canSubmit = hasAmount && !exceedsDebt && !insufficientWalletBalance;
-  const error = exceedsDebt
-    ? t("dashboard.borrow.position_details.validation.repay_debt")
-    : insufficientWalletBalance
-      ? t("dashboard.borrow.position_details.validation.wallet_balance")
-      : null;
+  const getError = () => {
+    if (exceedsDebt) {
+      return t("dashboard.borrow.position_details.validation.repay_debt");
+    }
+    if (insufficientWalletBalance) {
+      return t("dashboard.borrow.position_details.validation.wallet_balance");
+    }
+    return null;
+  };
+  const error = getError();
 
   const onContinue = () => {
     if (!canSubmit) {
@@ -879,11 +883,16 @@ const WithdrawActionForm = ({
   const ltvTooHigh =
     position.getTotalBorrowedUsd() > 0 && amount.gt(0) && projectedLtv > maxLtv;
   const canSubmit = amount.gt(0) && !exceedsBalance && !ltvTooHigh;
-  const error = exceedsBalance
-    ? t("dashboard.borrow.position_details.validation.withdraw_balance")
-    : ltvTooHigh
-      ? t("dashboard.borrow.position_details.validation.withdraw_ltv")
-      : null;
+  const getError = () => {
+    if (exceedsBalance) {
+      return t("dashboard.borrow.position_details.validation.withdraw_balance");
+    }
+    if (ltvTooHigh) {
+      return t("dashboard.borrow.position_details.validation.withdraw_ltv");
+    }
+    return null;
+  };
+  const error = getError();
 
   const onContinue = () => {
     if (!canSubmit) {
@@ -1065,6 +1074,33 @@ export const BorrowPositionActionPage = () => {
   const { t } = useTranslation();
   const { actions, model, position } = useBorrowPositionContext();
   const action = actions.find((candidate) => candidate.id === actionId);
+  const getActionContent = (): ReactNode => {
+    if (!position || !action) {
+      return (
+        <Text variant={{ type: "muted", weight: "normal" }}>
+          {t("dashboard.borrow.position_details.empty")}
+        </Text>
+      );
+    }
+    if (action.type === "repay") {
+      return (
+        <RepayActionForm
+          action={action}
+          key={`${action.reviewState.summary.network}:${action.reviewState.request.address.toLowerCase()}`}
+        />
+      );
+    }
+    if (action.type === "withdraw") {
+      return (
+        <WithdrawActionForm
+          action={action}
+          key={`${action.reviewState.summary.network}:${action.reviewState.request.address.toLowerCase()}`}
+        />
+      );
+    }
+    return <ToggleCollateralActionForm action={action} />;
+  };
+  const actionContent = getActionContent();
 
   return (
     <>
@@ -1084,23 +1120,7 @@ export const BorrowPositionActionPage = () => {
           </Text>
         </Box>
 
-        {!position || !action ? (
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {t("dashboard.borrow.position_details.empty")}
-          </Text>
-        ) : action.type === "repay" ? (
-          <RepayActionForm
-            action={action}
-            key={`${action.reviewState.summary.network}:${action.reviewState.request.address.toLowerCase()}`}
-          />
-        ) : action.type === "withdraw" ? (
-          <WithdrawActionForm
-            action={action}
-            key={`${action.reviewState.summary.network}:${action.reviewState.request.address.toLowerCase()}`}
-          />
-        ) : (
-          <ToggleCollateralActionForm action={action} />
-        )}
+        {actionContent}
       </Box>
     </>
   );

@@ -295,23 +295,34 @@ describe("borrow atoms", () => {
       network: "base",
     });
     const getMarkets = vi.fn(
-      ({ network, offset }: { network: "base" | "ethereum"; offset: number }) =>
-        Effect.succeed({
-          items:
-            network === "base"
-              ? [baseMarket]
-              : offset === 0
-                ? [ethereumMarket]
-                : [
-                    Schema.decodeUnknownSync(Market)({
-                      ...marketDto,
-                      id: "aave-v3-ethereum-usdt",
-                    }),
-                  ],
+      ({
+        network,
+        offset,
+      }: {
+        network: "base" | "ethereum";
+        offset: number;
+      }) => {
+        const getItems = () => {
+          if (network === "base") return [baseMarket];
+          if (offset !== 0) {
+            return [
+              Schema.decodeUnknownSync(Market)({
+                ...marketDto,
+                id: "aave-v3-ethereum-usdt",
+              }),
+            ];
+          }
+          return [ethereumMarket];
+        };
+        const items = getItems();
+
+        return Effect.succeed({
+          items,
           limit: 100,
           offset,
           total: network === "base" ? 1 : 101,
-        })
+        });
+      }
     );
     const registry = makeRegistry({ getMarkets });
     const ethereum = borrowMarketsAtom(

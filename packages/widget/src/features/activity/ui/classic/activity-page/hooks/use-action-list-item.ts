@@ -1,5 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
-import { DateTime } from "effect";
+import { DateTime, Match } from "effect";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -190,30 +190,40 @@ export const useActionListItem = (action: ActionYieldDto) => {
       hour12: false,
     });
 
-    const absolute =
-      dayKind === "today"
-        ? `${t("activity.date_group_labels.today")} · ${time}`
-        : dayKind === "yesterday"
-          ? t("activity.date_group_labels.yesterday")
-          : DateTime.formatLocal(createdAt, {
-              locale,
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            });
+    const absolute = Match.value(dayKind).pipe(
+      Match.when(
+        "today",
+        () => `${t("activity.date_group_labels.today")} · ${time}`
+      ),
+      Match.when("yesterday", () => t("activity.date_group_labels.yesterday")),
+      Match.when("other", () =>
+        DateTime.formatLocal(createdAt, {
+          locale,
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      ),
+      Match.exhaustive
+    );
 
     const relativeParts = getActivityRelativeTime(
       createdAt,
       presentationTime.now
     );
-    const relative =
-      relativeParts.unit === "now"
-        ? t("activity.time.now")
-        : relativeParts.unit === "minutes"
-          ? t("activity.time.minutes_ago", { count: relativeParts.value })
-          : relativeParts.unit === "hours"
-            ? t("activity.time.hours_ago", { count: relativeParts.value })
-            : t("activity.time.days_ago", { count: relativeParts.value });
+    const relative = Match.value(relativeParts).pipe(
+      Match.when({ unit: "now" }, () => t("activity.time.now")),
+      Match.when({ unit: "minutes" }, ({ value }) =>
+        t("activity.time.minutes_ago", { count: value })
+      ),
+      Match.when({ unit: "hours" }, ({ value }) =>
+        t("activity.time.hours_ago", { count: value })
+      ),
+      Match.when({ unit: "days" }, ({ value }) =>
+        t("activity.time.days_ago", { count: value })
+      ),
+      Match.exhaustive
+    );
 
     return { timestampAbsolute: absolute, timestampRelative: relative };
   }, [action.actionData.createdAt, locale, presentationTime, t]);

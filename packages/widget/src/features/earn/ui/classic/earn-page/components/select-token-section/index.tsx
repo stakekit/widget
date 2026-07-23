@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
@@ -91,6 +92,43 @@ export const SelectTokenSection = ({
         </Text>
       </Box>
     ) : null;
+  const getBalanceContent = (): ReactNode => {
+    if (!selectedTokenAvailableAmount) return null;
+    if (variant === "zerion") {
+      return (
+        <>
+          <span>{t("shared.balance")}:&nbsp;</span>
+          <Box
+            {...(isStakeTokenSameAsGasToken
+              ? { as: "span" }
+              : {
+                  onClick: onMaxClick,
+                  as: "button",
+                })}
+          >
+            {selectedTokenAvailableAmount.shortFormattedAmount}&nbsp;
+            {selectedTokenAvailableAmount.symbol}
+          </Box>
+        </>
+      );
+    }
+    return (
+      <AmountToggle.Root>
+        <AmountToggle.Amount>
+          {({ state }) => (
+            <span>
+              {state === "full"
+                ? selectedTokenAvailableAmount.fullFormattedAmount
+                : selectedTokenAvailableAmount.shortFormattedAmount}
+              &nbsp;{selectedTokenAvailableAmount.symbol}&nbsp;
+              {t("shared.available")}
+            </span>
+          )}
+        </AmountToggle.Amount>
+      </AmountToggle.Root>
+    );
+  };
+  const balanceContent = getBalanceContent();
 
   return isLoading ? (
     <Box marginTop={sectionMarginTop}>
@@ -175,38 +213,7 @@ export const SelectTokenSection = ({
                   variant,
                 })}
               >
-                {selectedTokenAvailableAmount ? (
-                  variant === "zerion" ? (
-                    <>
-                      <span>{t("shared.balance")}:&nbsp;</span>
-                      <Box
-                        {...(isStakeTokenSameAsGasToken
-                          ? { as: "span" }
-                          : {
-                              onClick: onMaxClick,
-                              as: "button",
-                            })}
-                      >
-                        {selectedTokenAvailableAmount.shortFormattedAmount}
-                        &nbsp;{selectedTokenAvailableAmount.symbol}
-                      </Box>
-                    </>
-                  ) : (
-                    <AmountToggle.Root>
-                      <AmountToggle.Amount>
-                        {({ state }) => (
-                          <span>
-                            {state === "full"
-                              ? selectedTokenAvailableAmount.fullFormattedAmount
-                              : selectedTokenAvailableAmount.shortFormattedAmount}
-                            &nbsp;{selectedTokenAvailableAmount.symbol}&nbsp;
-                            {t("shared.available")}
-                          </span>
-                        )}
-                      </AmountToggle.Amount>
-                    </AmountToggle.Root>
-                  )
-                ) : null}
+                {balanceContent}
               </Text>
             </Box>
 

@@ -30,26 +30,23 @@ export const useMaxMinYieldAmount = ({
     integration: yieldOpportunity,
   });
 
-  const minIntegrationAmount = useMemo(
-    () =>
-      isForceMax
-        ? availableAmount
-        : yieldOpportunity
-          ? new BigNumber(
-              type === "enter"
-                ? getMinStakeAmount(yieldOpportunity, positionsData)
-                : getMinUnstakeAmount(yieldOpportunity, pricePerShare)
-            )
-          : null,
-    [
-      availableAmount,
-      isForceMax,
-      type,
-      yieldOpportunity,
-      positionsData,
-      pricePerShare,
-    ]
-  );
+  const minIntegrationAmount = useMemo(() => {
+    if (isForceMax) return availableAmount;
+    if (!yieldOpportunity) return null;
+
+    return new BigNumber(
+      type === "enter"
+        ? getMinStakeAmount(yieldOpportunity, positionsData)
+        : getMinUnstakeAmount(yieldOpportunity, pricePerShare)
+    );
+  }, [
+    availableAmount,
+    isForceMax,
+    type,
+    yieldOpportunity,
+    positionsData,
+    pricePerShare,
+  ]);
 
   const maxIntegrationAmount = useMemo(() => {
     return isForceMax

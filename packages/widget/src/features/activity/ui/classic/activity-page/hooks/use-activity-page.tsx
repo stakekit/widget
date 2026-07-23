@@ -78,12 +78,12 @@ export const useActivityPage = ({
             url: string;
           } => !!transaction.url
         );
-      const path =
-        data.actionData.type === "UNSTAKE"
-          ? "unstake"
-          : data.actionData.type === "STAKE"
-            ? "stake"
-            : "pending";
+      const getReviewPath = () => {
+        if (data.actionData.type === "UNSTAKE") return "unstake";
+        if (data.actionData.type === "STAKE") return "stake";
+        return "pending";
+      };
+      const path = getReviewPath();
 
       return navigate(`/activity/${path}-review/complete`, {
         state: { urls },

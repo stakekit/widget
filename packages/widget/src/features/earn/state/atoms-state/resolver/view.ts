@@ -216,14 +216,18 @@ export const resolveEarnView = ({
       (tokenOptions.length === 0 &&
         tokenInput.observation._tag === "available" &&
         tokenInput.observation.waiting);
+    const getStatus = (): EarnMachineView["status"] => {
+      if (failed) return "failed";
+      if (explicitTokenPending || tokenOptionsResolving) {
+        return "loading-token-options";
+      }
+      return "no-tokens";
+    };
+    const status = getStatus();
 
     return makeEarnView({
       intent,
-      status: failed
-        ? "failed"
-        : explicitTokenPending || tokenOptionsResolving
-          ? "loading-token-options"
-          : "no-tokens",
+      status,
       failure: failed ? makeFailure(failureStage, failed) : null,
       retryTargetAtom: failed ? tokenInput.retryTargetAtom : null,
       availableCategories,
@@ -265,14 +269,16 @@ export const resolveEarnView = ({
   if (!selectedYield) {
     const failed =
       yieldObservation._tag === "failed" ? yieldObservation.error : null;
+    const getStatus = (): EarnMachineView["status"] => {
+      if (failed) return "failed";
+      if (isResolving(yieldObservation)) return "loading-yields";
+      return "no-yields";
+    };
+    const status = getStatus();
 
     return makeEarnView({
       intent,
-      status: failed
-        ? "failed"
-        : isResolving(yieldObservation)
-          ? "loading-yields"
-          : "no-yields",
+      status,
       failure: failed ? makeFailure("yields", failed) : null,
       retryTargetAtom: failed ? yieldCatalogInput.retryTargetAtom : null,
       availableCategories,

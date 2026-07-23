@@ -1,4 +1,5 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { Match } from "effect";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -69,11 +70,11 @@ export const useActionReview = () => {
 
   const title = useMemo(
     () =>
-      selectedAction.type === ActionTypes.STAKE
-        ? stakeTitle
-        : selectedAction.type === ActionTypes.UNSTAKE
-          ? unstakeTitle
-          : pendingActionTitle,
+      Match.value(selectedAction.type).pipe(
+        Match.when(ActionTypes.STAKE, () => stakeTitle),
+        Match.when(ActionTypes.UNSTAKE, () => unstakeTitle),
+        Match.orElse(() => pendingActionTitle)
+      ),
     [selectedAction, stakeTitle, unstakeTitle, pendingActionTitle]
   );
 

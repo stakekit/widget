@@ -63,14 +63,22 @@ export const preparePendingActionRequestDto = ({
   const selectedValidator = EArray.head(selectedValidators).pipe(
     Option.getOrUndefined
   );
-  const validatorArgs =
-    selectedValidators.length > 0 &&
-    isPendingActionValidatorAddressesRequired(pendingActionDto)
-      ? { validatorAddresses: selectedValidators }
-      : selectedValidator &&
-          isPendingActionValidatorAddressRequired(pendingActionDto)
-        ? { validatorAddress: selectedValidator }
-        : {};
+  const resolveValidatorArgs = () => {
+    if (
+      selectedValidators.length > 0 &&
+      isPendingActionValidatorAddressesRequired(pendingActionDto)
+    ) {
+      return { validatorAddresses: selectedValidators };
+    }
+    if (
+      selectedValidator &&
+      isPendingActionValidatorAddressRequired(pendingActionDto)
+    ) {
+      return { validatorAddress: selectedValidator };
+    }
+    return {};
+  };
+  const validatorArgs = resolveValidatorArgs();
   const stateAmount = isPendingActionAmountRequired(pendingActionDto)
     ? pendingActionsState.get(
         getBalanceTokenActionType({

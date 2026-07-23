@@ -50,6 +50,7 @@
 ## Agent Working Guidelines (short)
 - Keep public API compatibility in `src/index.package.ts` and `src/index.bundle.ts`.
 - React Compiler is enabled. Do not add `useMemo`, `useCallback`, or `React.memo` only for render-performance optimization; prefer plain values/functions.
+- Do not use nested ternaries or mutable bindings for value selection. Prefer immutable `const` results from pure resolvers for boolean precedence and Effect `Match` for closed domain alternatives or clear multi-branch projections.
 - Treat React as the view layer. Put new or materially refactored business state, transitions, asynchronous work, retries, concurrency, and resource lifetimes in Effect and Effect Atom; React should read Atom state and dispatch user intent.
 - Use `useEffect` only for unavoidable React, DOM, or third-party lifecycle boundaries that cannot be expressed safely with scoped Effects or lifecycle Atoms. Do not use it for data fetching, duplicated-state synchronization, workflow advancement, or domain-resource cleanup.
 - Local synchronous presentation state may remain in React when it has no domain meaning, asynchronous behavior, persistence, route lifetime, or cross-component coordination, such as focus, hover, disclosure, or element refs.

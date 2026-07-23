@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { YieldAction } from "../../../../../domain/schema/action-models";
 import { isEthenaUsdeStaking } from "../../../../../domain/types/yields";
@@ -29,6 +29,23 @@ type Props = {
   position: "SINGLE" | "FIRST" | "LAST" | "ELSE";
   count: { current: number; total: number };
   yieldId: YieldAction["yieldId"];
+};
+
+const getStepIcon = ({
+  error,
+  loading,
+  state,
+  success,
+}: {
+  readonly error: ClassicTransactionStepState;
+  readonly loading: ClassicTransactionStepState;
+  readonly state: ClassicTransactionStepState;
+  readonly success: ClassicTransactionStepState;
+}): ReactNode => {
+  if (state === loading) return <Spinner variant={{ color: "inverted" }} />;
+  if (state === error) return <XIcon color="background" />;
+  if (state >= success) return <CheckSteps hw={18} />;
+  return null;
 };
 
 export const TxState = ({ txState, position, count, yieldId }: Props) => {
@@ -137,14 +154,12 @@ const TxStateContent = ({
                     : "pending"
                 }
               >
-                {txState.state === ClassicTransactionStepState.SIGN_LOADING ? (
-                  <Spinner variant={{ color: "inverted" }} />
-                ) : txState.state === ClassicTransactionStepState.SIGN_ERROR ? (
-                  <XIcon color="background" />
-                ) : txState.state >=
-                  ClassicTransactionStepState.SIGN_SUCCESS ? (
-                  <CheckSteps hw={18} />
-                ) : null}
+                {getStepIcon({
+                  error: ClassicTransactionStepState.SIGN_ERROR,
+                  loading: ClassicTransactionStepState.SIGN_LOADING,
+                  state: txState.state,
+                  success: ClassicTransactionStepState.SIGN_SUCCESS,
+                })}
               </Box>
             </Box>
 
@@ -219,16 +234,12 @@ const TxStateContent = ({
                     : "pending"
                 }
               >
-                {txState.state ===
-                ClassicTransactionStepState.BROADCAST_LOADING ? (
-                  <Spinner variant={{ color: "inverted" }} />
-                ) : txState.state ===
-                  ClassicTransactionStepState.BROADCAST_ERROR ? (
-                  <XIcon color="background" />
-                ) : txState.state >=
-                  ClassicTransactionStepState.BROADCAST_SUCCESS ? (
-                  <CheckSteps hw={18} />
-                ) : null}
+                {getStepIcon({
+                  error: ClassicTransactionStepState.BROADCAST_ERROR,
+                  loading: ClassicTransactionStepState.BROADCAST_LOADING,
+                  state: txState.state,
+                  success: ClassicTransactionStepState.BROADCAST_SUCCESS,
+                })}
               </Box>
             </Box>
 
@@ -304,16 +315,12 @@ const TxStateContent = ({
                     : "pending"
                 }
               >
-                {txState.state ===
-                ClassicTransactionStepState.CHECK_TX_STATUS_LOADING ? (
-                  <Spinner variant={{ color: "inverted" }} />
-                ) : txState.state ===
-                  ClassicTransactionStepState.CHECK_TX_STATUS_ERROR ? (
-                  <XIcon color="background" />
-                ) : txState.state >=
-                  ClassicTransactionStepState.CHECK_TX_STATUS_SUCCESS ? (
-                  <CheckSteps hw={18} />
-                ) : null}
+                {getStepIcon({
+                  error: ClassicTransactionStepState.CHECK_TX_STATUS_ERROR,
+                  loading: ClassicTransactionStepState.CHECK_TX_STATUS_LOADING,
+                  state: txState.state,
+                  success: ClassicTransactionStepState.CHECK_TX_STATUS_SUCCESS,
+                })}
               </Box>
             </Box>
 

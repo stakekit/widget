@@ -199,14 +199,20 @@ const createLedgerLiveConnector = ({
         } as never;
       }
 
-      const preferredAccount = queryParams.accountId
-        ? queryParams.accountId.startsWith("js:")
-          ? ({
-              type: "address",
-              address: queryParams.accountId.split(":")[3],
-            } as const)
-          : ({ type: "accountId", accountId: queryParams.accountId } as const)
-        : null;
+      const getPreferredAccount = () => {
+        if (!queryParams.accountId) return null;
+        if (queryParams.accountId.startsWith("js:")) {
+          return {
+            type: "address",
+            address: queryParams.accountId.split(":")[3],
+          } as const;
+        }
+        return {
+          type: "accountId",
+          accountId: queryParams.accountId,
+        } as const;
+      };
+      const preferredAccount = getPreferredAccount();
       const accountWithChain =
         (preferredAccount
           ? accountsWithChain.find((value) =>

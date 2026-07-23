@@ -116,18 +116,18 @@ export const PositionsPage = () => {
             <VirtualList
               estimateSize={() => 60}
               data={listData}
-              itemContent={(_, row) =>
-                row.kind === "chain-modal" ? (
-                  <ZerionChainModal />
-                ) : row.kind === "section" ? (
-                  <PositionsSectionHeader
-                    category={row.category}
-                    count={row.count}
-                  />
-                ) : (
-                  <PositionsListItem item={row.item} />
-                )
-              }
+              itemContent={(_, row) => {
+                if (row.kind === "chain-modal") return <ZerionChainModal />;
+                if (row.kind === "section") {
+                  return (
+                    <PositionsSectionHeader
+                      category={row.category}
+                      count={row.count}
+                    />
+                  );
+                }
+                return <PositionsListItem item={row.item} />;
+              }}
             />
 
             {manageState.showEmptyPositions && (

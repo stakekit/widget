@@ -280,9 +280,7 @@ export const yieldApiActionDtoFixture = (
   overrides?: Partial<typeof YieldAction.Encoded>
 ): typeof YieldAction.Encoded => {
   const type = overrides?.type ?? "STAKE";
-  const intent =
-    overrides?.intent ??
-    (type === "STAKE" ? "enter" : type === "UNSTAKE" ? "exit" : "manage");
+  const intent = overrides?.intent ?? getYieldActionIntent(type);
 
   return {
     id: faker.string.uuid(),
@@ -332,9 +330,7 @@ export const yieldApiActionFixture = (
   overrides?: ActionFixtureOverrides
 ): typeof YieldAction.Type => {
   const type = overrides?.type ?? "STAKE";
-  const intent =
-    overrides?.intent ??
-    (type === "STAKE" ? "enter" : type === "UNSTAKE" ? "exit" : "manage");
+  const intent = overrides?.intent ?? getYieldActionIntent(type);
   const { completedAt, createdAt, transactions, ...rest } = overrides ?? {};
 
   return Schema.decodeUnknownSync(YieldAction)({
@@ -359,4 +355,10 @@ export const yieldApiActionFixture = (
       : {}),
     type,
   });
+};
+
+const getYieldActionIntent = (type: (typeof YieldAction.Type)["type"]) => {
+  if (type === "STAKE") return "enter" as const;
+  if (type === "UNSTAKE") return "exit" as const;
+  return "manage" as const;
 };

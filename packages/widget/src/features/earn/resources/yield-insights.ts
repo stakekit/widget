@@ -142,11 +142,17 @@ export const currentYieldKycGateAtom = Atom.family(
       const result = get(currentYieldKycStatusAtom(resourceKey));
       const status = result.pipe(AsyncResult.value, Option.getOrUndefined);
       const isFetching = queryEnabled && result.waiting;
-      const gate = !queryEnabled
-        ? ({ state: "pass" } as const)
-        : AsyncResult.isFailure(result)
-          ? mapKycStatusToGate({ status: null, yieldDto: key.yieldDto })
-          : mapKycStatusToGate({ status, yieldDto: key.yieldDto });
+      const getGate = () => {
+        if (!queryEnabled) return { state: "pass" } as const;
+        if (AsyncResult.isFailure(result)) {
+          return mapKycStatusToGate({
+            status: null,
+            yieldDto: key.yieldDto,
+          });
+        }
+        return mapKycStatusToGate({ status, yieldDto: key.yieldDto });
+      };
+      const gate = getGate();
 
       return {
         data: status === null ? undefined : status,

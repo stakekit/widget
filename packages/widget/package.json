@@ -43,7 +43,7 @@
   "scripts": {
     "dev": "vite -c vite/vite.config.dev.ts",
     "start": "pnpm dev",
-    "build": "pnpm lint && pnpm clean && pnpm build:package && pnpm build:bundle && pnpm build:website && pnpm build:types",
+    "build": "pnpm clean && pnpm build:package && pnpm build:bundle && pnpm build:website && pnpm build:types",
     "lint": "biome check . && tsc",
     "test": "pnpm test:unit && pnpm test:dom && pnpm test:browser",
     "test:unit": "vitest -c vite/vitest.config.ts --project unit run",

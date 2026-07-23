@@ -55,19 +55,20 @@ const queryFn = async ({
     name: "Porto",
   });
 
-  const wallets: WalletList[number]["wallets"] = (
-    variant === "porto"
-      ? [portoWallet]
-      : forceWalletConnectOnly
-        ? [walletConnectWallet]
-        : [
-            metaMaskWallet,
-            injectedWallet,
-            walletConnectWallet,
-            coinbaseWallet,
-            ledgerWallet,
-          ]
-  )
+  const getConfiguredWallets = (): WalletList[number]["wallets"] => {
+    if (variant === "porto") return [portoWallet];
+    if (forceWalletConnectOnly) return [walletConnectWallet];
+    return [
+      metaMaskWallet,
+      injectedWallet,
+      walletConnectWallet,
+      coinbaseWallet,
+      ledgerWallet,
+    ];
+  };
+  const configuredWallets = getConfiguredWallets();
+
+  const wallets: WalletList[number]["wallets"] = configuredWallets
     .map((w) => passCorrectChainsToWallet(w, evmChains))
     .map((w) => (props) => ({ ...w(props), chainGroup: evmChainGroup }));
 

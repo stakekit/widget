@@ -78,7 +78,8 @@ const PositionDetails = () => {
           >
             <Spinner />
           </Box>
-        ) : integrationDataValue && positionBalancesByTypeValue ? (
+        ) : null}
+        {!isLoading && integrationDataValue && positionBalancesByTypeValue ? (
           <Box
             className={container}
             flex={1}

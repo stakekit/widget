@@ -68,34 +68,34 @@ export const PositionDetailsActions = () => {
   } = usePositionDetails();
 
   const { t } = useTranslation();
-  const unstakeCta = useMemo<PageCta>(
-    () =>
-      isLoading
-        ? null
-        : integrationDataValue &&
-            reducedStakedOrLiquidBalanceValue &&
-            canChangeUnstakeAmountValue !== null &&
-            unstakeTokenValue
-          ? {
-              disabled: unstakeDisabled,
-              isLoading: false,
-              label: t(
-                `position_details.unstake_label.${getExtendedYieldType(integrationDataValue)}`
-              ),
-              onClick: onUnstakeClick,
-            }
-          : null,
-    [
-      canChangeUnstakeAmountValue,
-      integrationDataValue,
-      isLoading,
-      onUnstakeClick,
-      reducedStakedOrLiquidBalanceValue,
-      t,
-      unstakeDisabled,
-      unstakeTokenValue,
-    ]
-  );
+  const unstakeCta = useMemo<PageCta>(() => {
+    if (
+      isLoading ||
+      !integrationDataValue ||
+      !reducedStakedOrLiquidBalanceValue ||
+      canChangeUnstakeAmountValue === null ||
+      !unstakeTokenValue
+    ) {
+      return null;
+    }
+    return {
+      disabled: unstakeDisabled,
+      isLoading: false,
+      label: t(
+        `position_details.unstake_label.${getExtendedYieldType(integrationDataValue)}`
+      ),
+      onClick: onUnstakeClick,
+    };
+  }, [
+    canChangeUnstakeAmountValue,
+    integrationDataValue,
+    isLoading,
+    onUnstakeClick,
+    reducedStakedOrLiquidBalanceValue,
+    t,
+    unstakeDisabled,
+    unstakeTokenValue,
+  ]);
 
   if (isLoading) {
     return (

@@ -117,11 +117,9 @@ export const StepsPage = () => {
   );
 };
 
-const getPosition = (txStatesLength: number, currentIdx: number) =>
-  txStatesLength === 1
-    ? "SINGLE"
-    : currentIdx === 0
-      ? "FIRST"
-      : currentIdx === txStatesLength - 1
-        ? "LAST"
-        : "ELSE";
+const getPosition = (txStatesLength: number, currentIdx: number) => {
+  if (txStatesLength === 1) return "SINGLE";
+  if (currentIdx === 0) return "FIRST";
+  if (currentIdx === txStatesLength - 1) return "LAST";
+  return "ELSE";
+};

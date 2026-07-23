@@ -371,40 +371,35 @@ export const usePositionDetailsStake = () => {
   const buttonDisabled =
     isFetching || !stakeEnterRequestDto || kycGateIsBlocking;
   const appLoading = positionDetails.isLoading || !selectedStake;
-  const cta = useMemo<PageCta>(
-    () =>
-      !isLedgerLiveAccountPlaceholder
-        ? {
-            disabled: buttonDisabled,
-            isLoading: !buttonCTAText || isFetching || yieldKycGate.isLoading,
-            onClick: () => onClickRef.current(),
-            label: buttonCTAText,
-          }
-        : externalProviders
-          ? null
-          : {
-              disabled: appLoading,
-              isLoading: appLoading,
-              label: t(
-                isLedgerLiveAccountPlaceholder
-                  ? "init.ledger_add_account"
-                  : "init.connect_wallet"
-              ),
-              onClick: () => connectClickRef.current(),
-            },
-    [
-      appLoading,
-      buttonCTAText,
-      buttonDisabled,
-      connectClickRef,
-      externalProviders,
-      isFetching,
-      isLedgerLiveAccountPlaceholder,
-      onClickRef,
-      t,
-      yieldKycGate.isLoading,
-    ]
-  );
+  const cta = useMemo<PageCta>(() => {
+    if (!isLedgerLiveAccountPlaceholder) {
+      return {
+        disabled: buttonDisabled,
+        isLoading: !buttonCTAText || isFetching || yieldKycGate.isLoading,
+        onClick: () => onClickRef.current(),
+        label: buttonCTAText,
+      };
+    }
+    if (externalProviders) return null;
+
+    return {
+      disabled: appLoading,
+      isLoading: appLoading,
+      label: t("init.ledger_add_account"),
+      onClick: () => connectClickRef.current(),
+    };
+  }, [
+    appLoading,
+    buttonCTAText,
+    buttonDisabled,
+    connectClickRef,
+    externalProviders,
+    isFetching,
+    isLedgerLiveAccountPlaceholder,
+    onClickRef,
+    t,
+    yieldKycGate.isLoading,
+  ]);
 
   const stakeMaxAmount =
     selectedStake && maxIntegrationAmount && !isForceMax

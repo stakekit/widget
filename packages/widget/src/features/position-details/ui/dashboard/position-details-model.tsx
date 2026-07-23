@@ -438,19 +438,21 @@ const getStatusSummary = ({
   );
 
   if (statusBalance) {
+    const actionAvailable =
+      statusBalance.type === "claimable" ||
+      statusBalance.type === "withdrawable";
+    const getTone = (): DashboardPositionStatusTone => {
+      if (actionAvailable) return "claim";
+      if (statusBalance.type === "locked") return "action";
+      return "default";
+    };
+    const tone = getTone();
+
     return {
-      label:
-        statusBalance.type === "claimable" ||
-        statusBalance.type === "withdrawable"
-          ? t("dashboard.position_details.action_available")
-          : t("dashboard.position_details.status"),
-      tone:
-        statusBalance.type === "claimable" ||
-        statusBalance.type === "withdrawable"
-          ? "claim"
-          : statusBalance.type === "locked"
-            ? "action"
-            : "default",
+      label: actionAvailable
+        ? t("dashboard.position_details.action_available")
+        : t("dashboard.position_details.status"),
+      tone,
       value: formatBalanceTypeLabel(statusBalance.type, t),
     };
   }

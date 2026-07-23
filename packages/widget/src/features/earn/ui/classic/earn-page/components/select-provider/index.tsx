@@ -77,14 +77,23 @@ export const SelectProvider = () => {
       : null;
   const provider = selectedProviderYield?.provider;
 
-  return appLoading ? (
-    <Box marginTop="2">
-      <ContentLoaderSquare heightPx={20} variant={{ size: "medium" }} />
-    </Box>
-  ) : selectedStake &&
-    providerYieldIdOptions &&
-    selectedProviderYield &&
-    provider ? (
+  if (appLoading) {
+    return (
+      <Box marginTop="2">
+        <ContentLoaderSquare heightPx={20} variant={{ size: "medium" }} />
+      </Box>
+    );
+  }
+  if (
+    !selectedStake ||
+    !providerYieldIdOptions ||
+    !selectedProviderYield ||
+    !provider
+  ) {
+    return null;
+  }
+
+  return (
     <SelectYield
       onItemClick={(yieldDto) => onProviderYieldIdSelect(yieldDto.id)}
       providerYieldIds={providerYieldIdOptions}
@@ -140,5 +149,5 @@ export const SelectProvider = () => {
         </Box>
       }
     />
-  ) : null;
+  );
 };

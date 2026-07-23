@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from "react";
+import type { PropsWithChildren, ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
@@ -183,6 +183,28 @@ export const SelectValidator = ({
   const emptyMessage = rest.searchValue?.trim().length
     ? t("details.validators_no_results")
     : t("details.validators_empty");
+  const getModalContent = (): ReactNode => {
+    if (data.groupCounts.length) {
+      return (
+        <SelectValidatorList
+          {...data}
+          selectedValidators={selectedValidators}
+          multiSelect={multiSelect}
+          onItemClick={onItemClick}
+          onViewMoreClick={_onViewMoreClick}
+          selectedStake={selectedStake}
+          {...infiniteScrollProps}
+        />
+      );
+    }
+    if (isLoading) return null;
+    return (
+      <Box className={emptyState}>
+        <Text variant={{ type: "muted" }}>{emptyMessage}</Text>
+      </Box>
+    );
+  };
+  const modalContent = getModalContent();
 
   return (
     <SelectModal
@@ -196,21 +218,7 @@ export const SelectValidator = ({
       isLoading={isLoading}
       {...searchProps}
     >
-      {data.groupCounts.length ? (
-        <SelectValidatorList
-          {...data}
-          selectedValidators={selectedValidators}
-          multiSelect={multiSelect}
-          onItemClick={onItemClick}
-          onViewMoreClick={_onViewMoreClick}
-          selectedStake={selectedStake}
-          {...infiniteScrollProps}
-        />
-      ) : isLoading ? null : (
-        <Box className={emptyState}>
-          <Text variant={{ type: "muted" }}>{emptyMessage}</Text>
-        </Box>
-      )}
+      {modalContent}
 
       {children}
     </SelectModal>

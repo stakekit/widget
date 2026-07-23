@@ -100,13 +100,17 @@ export const ClassicRoutes = () => {
    * Dont unmount details page with tabs
    * Handle position details pages in their own Routes
    */
-  const key =
-    flowSession &&
-    isClassicFlowSessionPath(current.pathname, flowSession.intake._tag)
-      ? "classic-flow-session"
-      : detailsMatch
-        ? "/"
-        : current.key;
+  const resolveRouteKey = () => {
+    if (
+      flowSession &&
+      isClassicFlowSessionPath(current.pathname, flowSession.intake._tag)
+    ) {
+      return "classic-flow-session";
+    }
+    if (detailsMatch) return "/";
+    return current.key;
+  };
+  const key = resolveRouteKey();
 
   if (underMaintenance) return <UnderMaintenance />;
 

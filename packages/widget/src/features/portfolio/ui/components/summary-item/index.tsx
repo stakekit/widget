@@ -27,6 +27,13 @@ export const SummaryItem = ({
   const variant = useWidgetConfig("variant");
 
   const isApyType = type === "apy";
+  const getFormattedValue = () => {
+    if (!value?.gt(0)) return "-";
+    return isApyType
+      ? `${formatNumber(value, 2)}%`
+      : `$${formatNumber(value, 3)}`;
+  };
+  const formattedValue = getFormattedValue();
 
   return (
     <Box
@@ -44,11 +51,7 @@ export const SummaryItem = ({
             variant,
           })}
         >
-          {value?.gt(0)
-            ? isApyType
-              ? `${formatNumber(value, 2)}%`
-              : `$${formatNumber(value, 3)}`
-            : "-"}
+          {formattedValue}
         </Text>
       )}
 

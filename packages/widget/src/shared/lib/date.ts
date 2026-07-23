@@ -25,11 +25,9 @@ export const getActivityDayKind = (
   const localNow = DateTime.setZone(now, timeZone);
   const localYesterday = DateTime.subtract(localNow, { days: 1 });
 
-  return isSameCalendarDay(localDate, localNow)
-    ? "today"
-    : isSameCalendarDay(localDate, localYesterday)
-      ? "yesterday"
-      : "other";
+  if (isSameCalendarDay(localDate, localNow)) return "today";
+  if (isSameCalendarDay(localDate, localYesterday)) return "yesterday";
+  return "other";
 };
 
 type ActivityRelativeTime =

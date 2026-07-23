@@ -335,13 +335,10 @@ export const setup = async (
 
       const yieldId = info.params.yieldId as string;
       const validators =
-        yieldId === avaxLiquidStaking.id
-          ? avaxLiquidStakingValidators.length
-            ? yieldApiValidatorsFixture(avaxLiquidStakingValidators)
-            : []
-          : yieldId === avaxNativeStaking.id
-            ? []
-            : [];
+        yieldId === avaxLiquidStaking.id &&
+        avaxLiquidStakingValidators.length > 0
+          ? yieldApiValidatorsFixture(avaxLiquidStakingValidators)
+          : [];
 
       return HttpResponse.json({
         items: validators,

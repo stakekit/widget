@@ -1,4 +1,5 @@
 import { Trigger } from "@radix-ui/react-dialog";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   EarnValidator,
@@ -125,6 +126,37 @@ const ProviderCardsTrigger = ({
       {items.map((item) => {
         const removableValidator =
           multiSelect && items.length > 1 ? item.validator : undefined;
+        const getProviderAction = (): ReactNode => {
+          if (removableValidator) {
+            return (
+              <Box
+                aria-label={`Remove ${item.name}`}
+                as="button"
+                className={styles.providerRemoveButton}
+                onClick={() => onRemoveValidator(removableValidator)}
+                type="button"
+              >
+                <XIcon hw={12} strokeWidth={4.9} />
+              </Box>
+            );
+          }
+          if (multiSelect) return null;
+          return (
+            <Trigger asChild>
+              <Box
+                as="button"
+                className={styles.providerChangeButton}
+                type="button"
+              >
+                <Text variant={{ weight: "bold", size: "small" }}>
+                  {t("shared.change")}
+                </Text>
+                <CaretDownIcon />
+              </Box>
+            </Trigger>
+          );
+        };
+        const providerAction = getProviderAction();
 
         return (
           <Box className={styles.providerCard} key={item.key}>
@@ -160,30 +192,7 @@ const ProviderCardsTrigger = ({
                 <ProviderMetaLine item={item} tokenSymbol={tokenSymbol} />
               </Box>
 
-              {removableValidator ? (
-                <Box
-                  aria-label={`Remove ${item.name}`}
-                  as="button"
-                  className={styles.providerRemoveButton}
-                  onClick={() => onRemoveValidator(removableValidator)}
-                  type="button"
-                >
-                  <XIcon hw={12} strokeWidth={4.9} />
-                </Box>
-              ) : !multiSelect ? (
-                <Trigger asChild>
-                  <Box
-                    as="button"
-                    className={styles.providerChangeButton}
-                    type="button"
-                  >
-                    <Text variant={{ weight: "bold", size: "small" }}>
-                      {t("shared.change")}
-                    </Text>
-                    <CaretDownIcon />
-                  </Box>
-                </Trigger>
-              ) : null}
+              {providerAction}
             </Box>
 
             {item.website ? (

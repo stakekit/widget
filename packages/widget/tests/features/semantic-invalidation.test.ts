@@ -348,12 +348,12 @@ describe("semantic resource invalidation", () => {
           });
         }
 
-        const id =
-          version === 2
-            ? "updated-action"
-            : request.offset === 0
-              ? "old-action-1"
-              : "old-action-2";
+        const getId = () => {
+          if (version === 2) return "updated-action";
+          if (request.offset === 0) return "old-action-1";
+          return "old-action-2";
+        };
+        const id = getId();
         return Effect.succeed({
           items: [yieldApiActionFixture({ id, yieldId })],
           limit: version === 1 ? 1 : 50,

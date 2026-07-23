@@ -96,11 +96,13 @@ export const formatRequirementStatus = (
   yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): string => {
-  return !yieldDto.status.enter
-    ? t("dashboard.earn_details.unavailable")
-    : yieldDto.mechanics.requirements?.kycRequired
-      ? t("dashboard.earn_details.kyc_required")
-      : t("dashboard.earn_details.active");
+  if (!yieldDto.status.enter) {
+    return t("dashboard.earn_details.unavailable");
+  }
+  if (yieldDto.mechanics.requirements?.kycRequired) {
+    return t("dashboard.earn_details.kyc_required");
+  }
+  return t("dashboard.earn_details.active");
 };
 
 export const formatCommission = (

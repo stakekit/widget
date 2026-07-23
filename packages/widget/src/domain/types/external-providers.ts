@@ -66,19 +66,18 @@ export class ExternalProvider {
   }
 }
 
-const toExternalProviderError = (error: unknown) =>
-  new ExternalProviderError({
+const getExternalProviderErrorMessage = (error: unknown) => {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string" && error) return error;
+  return null;
+};
+
+const toExternalProviderError = (error: unknown) => {
+  const customMessage = getExternalProviderErrorMessage(error);
+
+  return new ExternalProviderError({
     cause: error,
-    customMessage:
-      error instanceof Error && error.message
-        ? error.message
-        : typeof error === "string" && error
-          ? error
-          : null,
-    message:
-      error instanceof Error && error.message
-        ? error.message
-        : typeof error === "string" && error
-          ? error
-          : "External provider failed",
+    customMessage,
+    message: customMessage ?? "External provider failed",
   });
+};

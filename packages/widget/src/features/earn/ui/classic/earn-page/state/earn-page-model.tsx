@@ -678,45 +678,43 @@ export const EarnPageModelBinding = ({
 
   const footerIsLoading = tokenOptionsLoading || yieldOpportunityLoading;
 
-  const cta = useMemo<PageCta>(
-    () =>
-      !registerFooterButton || hasNotYieldsForToken
-        ? null
-        : isConnected && !isLedgerLiveAccountPlaceholder
-          ? {
-              disabled: buttonDisabled,
-              isLoading: !buttonCTAText || isFetching || yieldKycGate.isLoading,
-              onClick: () => onClickRef.current(),
-              label: buttonCTAText,
-            }
-          : externalProviders
-            ? null
-            : {
-                disabled: appLoading,
-                isLoading: appLoading,
-                label: t(
-                  isLedgerLiveAccountPlaceholder
-                    ? "init.ledger_add_account"
-                    : "init.connect_wallet"
-                ),
-                onClick: () => connectClickRef.current(),
-              },
-    [
-      appLoading,
-      buttonCTAText,
-      buttonDisabled,
-      connectClickRef,
-      isConnected,
-      isLedgerLiveAccountPlaceholder,
-      onClickRef,
-      externalProviders,
-      isFetching,
-      yieldKycGate.isLoading,
-      t,
-      hasNotYieldsForToken,
-      registerFooterButton,
-    ]
-  );
+  const cta = useMemo<PageCta>(() => {
+    if (!registerFooterButton || hasNotYieldsForToken) return null;
+    if (isConnected && !isLedgerLiveAccountPlaceholder) {
+      return {
+        disabled: buttonDisabled,
+        isLoading: !buttonCTAText || isFetching || yieldKycGate.isLoading,
+        onClick: () => onClickRef.current(),
+        label: buttonCTAText,
+      };
+    }
+    if (externalProviders) return null;
+
+    return {
+      disabled: appLoading,
+      isLoading: appLoading,
+      label: t(
+        isLedgerLiveAccountPlaceholder
+          ? "init.ledger_add_account"
+          : "init.connect_wallet"
+      ),
+      onClick: () => connectClickRef.current(),
+    };
+  }, [
+    appLoading,
+    buttonCTAText,
+    buttonDisabled,
+    connectClickRef,
+    isConnected,
+    isLedgerLiveAccountPlaceholder,
+    onClickRef,
+    externalProviders,
+    isFetching,
+    yieldKycGate.isLoading,
+    t,
+    hasNotYieldsForToken,
+    registerFooterButton,
+  ]);
 
   const value = {
     machine,

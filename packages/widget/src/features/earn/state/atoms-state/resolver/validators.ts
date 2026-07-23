@@ -34,9 +34,6 @@ export const resolveValidators = ({
       )
     : undefined;
 
-  return initialValidator
-    ? [initialValidator]
-    : validatorOptions[0]
-      ? [validatorOptions[0]]
-      : [];
+  if (initialValidator) return [initialValidator];
+  return validatorOptions.slice(0, 1);
 };

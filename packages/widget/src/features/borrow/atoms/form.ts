@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Data } from "effect";
+import { Data, Match } from "effect";
 import type { AsyncResult as AtomAsyncResult } from "effect/unstable/reactivity/AsyncResult";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
@@ -241,12 +241,12 @@ const getPreparedReviewState = ({
     return null;
   }
 
-  const summaryAction =
-    form._tag === "BorrowPlusCollateral"
-      ? "borrowAndSupply"
-      : form._tag === "BorrowOnly"
-        ? "borrow"
-        : "supply";
+  const summaryAction = Match.value(form).pipe(
+    Match.tag("BorrowPlusCollateral", () => "borrowAndSupply" as const),
+    Match.tag("BorrowOnly", () => "borrow" as const),
+    Match.tag("CollateralOnly", () => "supply" as const),
+    Match.exhaustive
+  );
 
   return {
     request: buildBorrowActionRequest({

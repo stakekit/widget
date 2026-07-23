@@ -132,11 +132,14 @@ describe("Yield Directory resource", () => {
 
   it("issues one max-size Yield request per category", () => {
     const listYields = vi.fn((request: YieldDirectoryRequest) => {
-      const items = request.types?.includes("staking")
-        ? [makeYield("stake")]
-        : request.types?.includes("lending")
-          ? [makeYield("defi", "lending")]
-          : [];
+      const getItems = (): Array<ReturnType<typeof makeYield>> => {
+        if (request.types?.includes("staking")) return [makeYield("stake")];
+        if (request.types?.includes("lending")) {
+          return [makeYield("defi", "lending")];
+        }
+        return [];
+      };
+      const items = getItems();
 
       return Effect.succeed({
         items,

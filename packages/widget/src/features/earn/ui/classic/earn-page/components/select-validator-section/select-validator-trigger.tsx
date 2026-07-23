@@ -176,12 +176,16 @@ export const SelectValidatorTrigger = ({
           const nameOrAddress = sv.name ?? sv.address;
           const commission = formatCommission(sv.commission);
           const tvl = formatValidatorTvl(sv, selectedStake);
-          const statusLabel: string =
-            sv.status === "jailed"
-              ? t("details.validators_jailed")
-              : sv.status && sv.status !== "active"
-                ? t("details.validators_inactive")
-                : t("position_details.balance_type.active");
+          const getStatusLabel = () => {
+            if (sv.status === "jailed") {
+              return t("details.validators_jailed");
+            }
+            if (sv.status && sv.status !== "active") {
+              return t("details.validators_inactive");
+            }
+            return t("position_details.balance_type.active");
+          };
+          const statusLabel = getStatusLabel();
 
           return (
             <Box

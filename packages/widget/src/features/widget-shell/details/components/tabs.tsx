@@ -26,6 +26,12 @@ const Tabs = ({ pendingActionsCount }: TabsProps) => {
   const navigate = useNavigate();
 
   const { current } = useSKLocation();
+  const getSelectedTab = (): TabsList => {
+    if (current.pathname.startsWith("/positions")) return "positions";
+    if (current.pathname.startsWith("/activity")) return "activity";
+    return "earn";
+  };
+  const selectedTab = getSelectedTab();
 
   const onTabPress = (selected: TabsList) => {
     if (selectedTab === selected) return;
@@ -34,12 +40,6 @@ const Tabs = ({ pendingActionsCount }: TabsProps) => {
 
     navigate(TABS_MAP[selected]);
   };
-
-  const selectedTab = current.pathname.startsWith("/positions")
-    ? "positions"
-    : current.pathname.startsWith("/activity")
-      ? "activity"
-      : "earn";
 
   return (
     <Box position="relative" display="flex" justifyContent="center">

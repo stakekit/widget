@@ -110,20 +110,25 @@ export const AnimatedEarnPage = () => {
     "disableInitLayoutAnimation"
   );
 
-  const animation = mountAnimationFinished
-    ? {
+  const getAnimation = () => {
+    if (mountAnimationFinished) {
+      return {
         transition: { duration: 0.3, delay: 0 },
-        initial: { opacity: 0, translateY: "-10px" },
-      }
-    : disableInitLayoutAnimation
-      ? {
-          transition: { duration: 0 },
-          initial: { opacity: 1, translateY: 0 },
-        }
-      : {
-          transition: { duration: 1, delay: 0.8 },
-          initial: { opacity: 0, translateY: "-40px" },
-        };
+        initial: { opacity: 0, translateY: "-10px" as string | number },
+      };
+    }
+    if (disableInitLayoutAnimation) {
+      return {
+        transition: { duration: 0, delay: 0 },
+        initial: { opacity: 1, translateY: 0 },
+      };
+    }
+    return {
+      transition: { duration: 1, delay: 0.8 },
+      initial: { opacity: 0, translateY: "-40px" },
+    };
+  };
+  const animation = getAnimation();
   const initial = animation.initial;
   const animate = {
     opacity: 1,

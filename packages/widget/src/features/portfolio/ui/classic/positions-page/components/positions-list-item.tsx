@@ -29,6 +29,17 @@ export const PositionsListItem = memo(({ item }: { item: PositionItem }) => {
     totalAmountFormatted,
     totalAmountPriceFormatted,
   } = usePositionListItem(item);
+  const actionBadgeType =
+    item.actionRequired || inactiveValidator ? "actionRequired" : "claim";
+  const getActionBadgeLabel = () => {
+    if (item.actionRequired) return t("positions.action_required");
+    if (inactiveValidator === "jailed") {
+      return t("details.validators_jailed");
+    }
+    if (inactiveValidator) return t("details.validators_inactive");
+    return t("positions.claim_rewards");
+  };
+  const actionBadgeLabel = getActionBadgeLabel();
 
   return (
     <SKLink
@@ -103,23 +114,11 @@ export const PositionsListItem = memo(({ item }: { item: PositionItem }) => {
                       !!inactiveValidator) && (
                       <Box
                         className={listItemContainer({
-                          type: item.actionRequired
-                            ? "actionRequired"
-                            : inactiveValidator
-                              ? "actionRequired"
-                              : "claim",
+                          type: actionBadgeType,
                         })}
                       >
                         <Text variant={{ type: "white" }} className={noWrap}>
-                          {t(
-                            item.actionRequired
-                              ? "positions.action_required"
-                              : inactiveValidator
-                                ? inactiveValidator === "jailed"
-                                  ? "details.validators_jailed"
-                                  : "details.validators_inactive"
-                                : "positions.claim_rewards"
-                          )}
+                          {actionBadgeLabel}
                         </Text>
                       </Box>
                     )}

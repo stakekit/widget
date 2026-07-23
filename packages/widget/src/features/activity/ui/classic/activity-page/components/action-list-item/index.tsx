@@ -53,6 +53,9 @@ export const ActionListItem = ({
         count: Math.max((providersDetails?.length ?? 0) - 1, 1),
       })
     : null;
+  const viaLabel =
+    providerLabel ||
+    (showUnavailableYieldDetails ? unavailableYieldLabel : null);
 
   return (
     <Box py="1" width="full">
@@ -97,19 +100,12 @@ export const ActionListItem = ({
                 )}
               </Box>
 
-              {providerLabel ? (
+              {viaLabel ? (
                 <Text
                   className={viaText}
                   variant={{ type: "muted", weight: "normal" }}
                 >
-                  {providerLabel}
-                </Text>
-              ) : showUnavailableYieldDetails ? (
-                <Text
-                  className={viaText}
-                  variant={{ type: "muted", weight: "normal" }}
-                >
-                  {unavailableYieldLabel}
+                  {viaLabel}
                 </Text>
               ) : null}
             </Box>

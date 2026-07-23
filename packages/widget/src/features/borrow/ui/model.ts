@@ -125,18 +125,36 @@ export const getBorrowDetailsModel = ({
     },
   ];
 
+  const getLtvValue = (): ReactNode => {
+    if (displayedCollateralUsd.isZero()) return "-";
+    if (!hasExistingPosition) {
+      return formatDecimalPercent(displayedProjectedLtv);
+    }
+    return formatTransition({
+      current: formatDecimalPercent(existingLtv),
+      projected: formatDecimalPercent(displayedProjectedLtv),
+    });
+  };
+  const ltvValue = getLtvValue();
+
+  const getLoanValue = (): ReactNode => {
+    if (hasExistingPosition) {
+      return formatTransition({
+        current: formatUsd(projection.existingDebtUsd),
+        projected: formatUsd(displayedDebtUsd),
+      });
+    }
+    return borrowAmount.isZero()
+      ? "-"
+      : `${formatNumber(borrowAmount, 6)} ${market.loanToken.symbol}`;
+  };
+  const loanValue = getLoanValue();
+
   const formRows: BorrowDetailsRow[] = [
     {
       id: "ltv",
       label: t("dashboard.borrow.form.ltv_ratio"),
-      value: displayedCollateralUsd.isZero()
-        ? "-"
-        : hasExistingPosition
-          ? formatTransition({
-              current: formatDecimalPercent(existingLtv),
-              projected: formatDecimalPercent(displayedProjectedLtv),
-            })
-          : formatDecimalPercent(displayedProjectedLtv),
+      value: ltvValue,
     },
     {
       id: "max-ltv",
@@ -156,14 +174,7 @@ export const getBorrowDetailsModel = ({
     {
       id: "loan",
       label: t("dashboard.borrow.form.loan"),
-      value: hasExistingPosition
-        ? formatTransition({
-            current: formatUsd(projection.existingDebtUsd),
-            projected: formatUsd(displayedDebtUsd),
-          })
-        : borrowAmount.isZero()
-          ? "-"
-          : `${formatNumber(borrowAmount, 6)} ${market.loanToken.symbol}`,
+      value: loanValue,
     },
     {
       id: "borrow-rate",

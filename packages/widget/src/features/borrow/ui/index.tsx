@@ -343,104 +343,120 @@ const BorrowFormPanel = ({
   };
   const integrations = AsyncResult.getOrElse(integrationsResult, () => []);
 
-  return (
-    <>
-      {AsyncResult.isInitial(marketsResult) ||
-      AsyncResult.isWaiting(marketsResult) ? (
-        <ContentLoaderSquare heightPx={340} />
-      ) : AsyncResult.isFailure(marketsResult) ? (
+  const getFormContent = (): ReactNode => {
+    if (
+      AsyncResult.isInitial(marketsResult) ||
+      AsyncResult.isWaiting(marketsResult)
+    ) {
+      return <ContentLoaderSquare heightPx={340} />;
+    }
+    if (AsyncResult.isFailure(marketsResult)) {
+      return (
         <BorrowNotice tone="error" title={t("dashboard.borrow.error_title")}>
           {t("dashboard.borrow.error_description")}
         </BorrowNotice>
-      ) : selectedMarket && selectedCollateralToken ? (
-        <>
-          <AmountField
-            amount={borrowAmount}
-            balanceLabel={
-              <BorrowBalanceLabel
-                amount={selectedMarket.availableLiquidity}
-                symbol={selectedMarket.loanToken.symbol}
-                translationKey="dashboard.borrow.form.available"
-              />
-            }
-            isInvalid={borrowAmountGreaterThanAvailable}
-            label={t("dashboard.borrow.form.borrow")}
-            highlight
-            onMaxClick={onBorrowMaxClick}
-            onAmountChange={setBorrowAmount}
-            tokenSelector={
-              <MarketSelectModal
-                integrations={integrations}
-                markets={markets}
-                onSelect={onSelectMarket}
-                selectedMarketId={selectedMarketId}
-              />
-            }
-            usdValue={borrowAmount.multipliedBy(
-              selectedMarket.loanTokenPriceUsd
-            )}
-            validationText={
-              borrowAmountGreaterThanAvailable
-                ? t("dashboard.borrow.form.validation.available_liquidity")
-                : null
-            }
-          />
-
-          <AmountField
-            amount={collateralAmount}
-            balanceLabel={
-              <BorrowBalanceLabel
-                amount={selectedCollateralBalance?.amount ?? "0"}
-                symbol={selectedCollateralToken.token.symbol}
-                translationKey="dashboard.borrow.form.wallet_balance"
-              />
-            }
-            isInvalid={collateralAmountGreaterThanBalance}
-            label={t("dashboard.borrow.form.collateral")}
-            onMaxClick={onCollateralMaxClick}
-            onAmountChange={setCollateralAmount}
-            tokenSelector={
-              <CollateralSelectModal
-                collateralTokens={selectedMarket.collateralTokens}
-                marketNetwork={selectedMarket.network}
-                onSelect={onSelectCollateral}
-                selectedCollateralTokenAddress={selectedCollateralTokenAddress}
-              />
-            }
-            usdValue={collateralAmount.multipliedBy(
-              selectedCollateralToken.priceUsd
-            )}
-            validationText={
-              collateralAmountGreaterThanBalance
-                ? t("dashboard.borrow.form.validation.wallet_balance")
-                : null
-            }
-          />
-
-          <BorrowFormDetails
-            borrowAmount={borrowAmount}
-            collateralAmount={collateralAmount}
-            ltvGreaterThanMax={ltvGreaterThanMax}
-            market={selectedMarket}
-            projection={projection}
-            walletBalances={walletBalances}
-          />
-        </>
-      ) : (
+      );
+    }
+    if (!selectedMarket || !selectedCollateralToken) {
+      return (
         <BorrowNotice title={t("dashboard.borrow.empty_title")}>
           {t("dashboard.borrow.empty_description")}
         </BorrowNotice>
-      )}
+      );
+    }
+
+    return (
+      <>
+        <AmountField
+          amount={borrowAmount}
+          balanceLabel={
+            <BorrowBalanceLabel
+              amount={selectedMarket.availableLiquidity}
+              symbol={selectedMarket.loanToken.symbol}
+              translationKey="dashboard.borrow.form.available"
+            />
+          }
+          isInvalid={borrowAmountGreaterThanAvailable}
+          label={t("dashboard.borrow.form.borrow")}
+          highlight
+          onMaxClick={onBorrowMaxClick}
+          onAmountChange={setBorrowAmount}
+          tokenSelector={
+            <MarketSelectModal
+              integrations={integrations}
+              markets={markets}
+              onSelect={onSelectMarket}
+              selectedMarketId={selectedMarketId}
+            />
+          }
+          usdValue={borrowAmount.multipliedBy(selectedMarket.loanTokenPriceUsd)}
+          validationText={
+            borrowAmountGreaterThanAvailable
+              ? t("dashboard.borrow.form.validation.available_liquidity")
+              : null
+          }
+        />
+
+        <AmountField
+          amount={collateralAmount}
+          balanceLabel={
+            <BorrowBalanceLabel
+              amount={selectedCollateralBalance?.amount ?? "0"}
+              symbol={selectedCollateralToken.token.symbol}
+              translationKey="dashboard.borrow.form.wallet_balance"
+            />
+          }
+          isInvalid={collateralAmountGreaterThanBalance}
+          label={t("dashboard.borrow.form.collateral")}
+          onMaxClick={onCollateralMaxClick}
+          onAmountChange={setCollateralAmount}
+          tokenSelector={
+            <CollateralSelectModal
+              collateralTokens={selectedMarket.collateralTokens}
+              marketNetwork={selectedMarket.network}
+              onSelect={onSelectCollateral}
+              selectedCollateralTokenAddress={selectedCollateralTokenAddress}
+            />
+          }
+          usdValue={collateralAmount.multipliedBy(
+            selectedCollateralToken.priceUsd
+          )}
+          validationText={
+            collateralAmountGreaterThanBalance
+              ? t("dashboard.borrow.form.validation.wallet_balance")
+              : null
+          }
+        />
+
+        <BorrowFormDetails
+          borrowAmount={borrowAmount}
+          collateralAmount={collateralAmount}
+          ltvGreaterThanMax={ltvGreaterThanMax}
+          market={selectedMarket}
+          projection={projection}
+          walletBalances={walletBalances}
+        />
+      </>
+    );
+  };
+  const formContent = getFormContent();
+
+  const getCtaLabel = () => {
+    if (isActionReady) return t("dashboard.borrow.review");
+    if (hasValidationError) return t("dashboard.borrow.fix_errors");
+    return t("dashboard.borrow.enter_amounts");
+  };
+  const ctaLabel = getCtaLabel();
+
+  return (
+    <>
+      {formContent}
 
       <PageCtaButton
         cta={{
           disabled: !isActionReady,
           isLoading: false,
-          label: isActionReady
-            ? t("dashboard.borrow.review")
-            : hasValidationError
-              ? t("dashboard.borrow.fix_errors")
-              : t("dashboard.borrow.enter_amounts"),
+          label: ctaLabel,
           onClick: onReviewClick,
         }}
       />

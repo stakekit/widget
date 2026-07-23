@@ -125,6 +125,21 @@ export const useYieldMetaInfo = ({
           : undefined,
     };
 
+    const getVaultDescriptionContext = () => {
+      if (haveFeeConfigurationEnabled) {
+        return "with_fee_configuration" as const;
+      }
+      if (isEthenaUsdeStaking(y.id)) return "ethena_usde" as const;
+      return undefined;
+    };
+    const vaultDescriptionContext = getVaultDescriptionContext();
+    const restakingWithdrawnTime =
+      cooldownPeriodDays > 0
+        ? t("details.restake.unstake_time", {
+            count: cooldownPeriodDays,
+          })
+        : t("details.restake.unstake_time_immediately");
+
     switch (yieldType) {
       case "staking":
       case "liquid_staking":
@@ -201,11 +216,7 @@ export const useYieldMetaInfo = ({
           description: t("details.vault.description", {
             stakeToken,
             depositToken: rewardTokens,
-            context: haveFeeConfigurationEnabled
-              ? "with_fee_configuration"
-              : isEthenaUsdeStaking(y.id)
-                ? "ethena_usde"
-                : undefined,
+            context: vaultDescriptionContext,
           }),
           earnPeriod:
             warmupPeriodDays > 0
@@ -243,13 +254,7 @@ export const useYieldMetaInfo = ({
             rewardClaiming === "manual"
               ? t("details.restake.earn_rewards_manual", { rewardSchedule })
               : t("details.restake.earn_rewards_auto", { rewardSchedule }),
-          withdrawnTime: y.status.exit
-            ? cooldownPeriodDays > 0
-              ? t("details.restake.unstake_time", {
-                  count: cooldownPeriodDays,
-                })
-              : t("details.restake.unstake_time_immediately")
-            : null,
+          withdrawnTime: y.status.exit ? restakingWithdrawnTime : null,
           withdrawnNotAvailable: !y.status.exit
             ? t("details.restake.withdrawn_not_available", {
                 rewardTokens,

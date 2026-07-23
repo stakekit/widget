@@ -28,12 +28,16 @@ describe("Earn validator search", () => {
       key: "address-match" as never,
     };
     const listValidators = vi.fn((request: ValidatorDirectoryRequest) => {
-      const items =
-        request.name === search && request.address === undefined
-          ? [byName]
-          : request.address === search && request.name === undefined
-            ? [byAddress]
-            : [];
+      const getItems = (): Array<typeof byName> => {
+        if (request.name === search && request.address === undefined) {
+          return [byName];
+        }
+        if (request.address === search && request.name === undefined) {
+          return [byAddress];
+        }
+        return [];
+      };
+      const items = getItems();
 
       return Effect.succeed({
         items,

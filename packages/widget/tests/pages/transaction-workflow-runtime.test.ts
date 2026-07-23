@@ -836,13 +836,9 @@ describe("transaction workflow runtime", () => {
             operations: makeOperations({
               getBorrowAction: () => {
                 statusChecks += 1;
-                return Effect.succeed(
-                  statusChecks === 1
-                    ? firstConfirmed
-                    : statusChecks === 2
-                      ? second
-                      : secondCompleted
-                );
+                if (statusChecks === 1) return Effect.succeed(firstConfirmed);
+                if (statusChecks === 2) return Effect.succeed(second);
+                return Effect.succeed(secondCompleted);
               },
               getWalletState: Effect.succeed(walletState("base")),
               stepBorrowAction: step,
