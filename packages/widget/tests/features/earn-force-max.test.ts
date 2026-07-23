@@ -4,7 +4,7 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
 import type { EarnYield } from "../../src/domain/schema/earn-models";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
 import type { PositionsData } from "../../src/domain/types/positions";
 import { getEnterAmountConstraint } from "../../src/domain/types/stake";
 import {
@@ -19,7 +19,10 @@ import {
   TokenOptionsKey,
   YieldCatalogKey,
 } from "../../src/features/earn/state/atoms-state/catalog/keys";
-import { resolveForm } from "../../src/features/earn/state/atoms-state/resolver/form";
+import {
+  canSubmitEarnForm,
+  resolveForm,
+} from "../../src/features/earn/state/atoms-state/resolver/form";
 import { resolveEarnView } from "../../src/features/earn/state/atoms-state/resolver/view";
 import {
   type EarnEntry,
@@ -27,13 +30,13 @@ import {
   makeDefaultEarnIntent,
 } from "../../src/features/earn/state/atoms-state/types";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
-import { yieldApiYieldFixture } from "../fixtures";
+import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
 
 const positionsData: PositionsData = new Map();
 const address = Schema.decodeSync(WalletAddress)("0xwallet");
 
 const withAmountRange = (minimum: number, maximum: number): EarnYield => {
-  const yieldDto = yieldApiYieldFixture();
+  const yieldDto = yieldApiYieldDtoFixture();
 
   return yieldApiYieldFixture({
     mechanics: {
@@ -48,7 +51,7 @@ const withAmountRange = (minimum: number, maximum: number): EarnYield => {
               minimum: minimum.toString(),
               name: "amount",
               required: true,
-              type: "number",
+              type: "string",
             },
           ],
         },
@@ -133,7 +136,7 @@ describe("Earn force-max amount resolution", () => {
             mergedTokenOptionsAtom(tokenOptionsKey),
             AsyncResult.success([
               {
-                amount: "10",
+                amount: source === "balance" ? "10" : "0",
                 availableYields: [forceMaxYield.id],
                 source,
                 token: forceMaxYield.token,
@@ -203,9 +206,95 @@ describe("Earn force-max amount resolution", () => {
     expect(
       resolve({
         availableAmount: "10",
-        intent: { ...makeDefaultEarnIntent(), stakeAmount: "7" },
+        intent: {
+          ...makeDefaultEarnIntent(),
+          amountInput: "manual",
+          stakeAmount: "7",
+        },
         selectedYield: rangeYield,
       }).stakeAmount
     ).toBe("7");
+  });
+
+  it("preserves an explicit zero so validation can reject it", () => {
+    const rangeYield = withAmountRange(2, 20);
+
+    expect(
+      resolve({
+        availableAmount: "10",
+        intent: {
+          ...makeDefaultEarnIntent(),
+          amountInput: "manual",
+          stakeAmount: "0",
+        },
+        selectedYield: rangeYield,
+      }).stakeAmount
+    ).toBe("0");
+  });
+
+  it("rejects zero, below-minimum, above-maximum, and above-balance amounts", () => {
+    const rangeYield = withAmountRange(2, 20);
+    const canSubmit = (stakeAmount: string) =>
+      canSubmitEarnForm({
+        availableAmount: "10",
+        form: {
+          providerYieldId: null,
+          stakeAmount,
+          tronResource: null,
+          useMaxAmount: false,
+        },
+        positionsData,
+        selectedYield: rangeYield,
+      });
+
+    expect(canSubmit("0")).toBe(false);
+    expect(canSubmit("1")).toBe(false);
+    expect(canSubmit("21")).toBe(false);
+    expect(canSubmit("11")).toBe(false);
+    expect(canSubmit("7")).toBe(true);
+  });
+
+  it("uses only advertised provider and Tron options", () => {
+    const base = yieldApiYieldDtoFixture();
+    const selectedYield = yieldApiYieldFixture({
+      mechanics: {
+        ...base.mechanics,
+        arguments: {
+          ...base.mechanics.arguments,
+          enter: {
+            fields: [
+              {
+                label: "Provider",
+                name: "providerId",
+                options: ["ethereum-provider-a"],
+                required: true,
+                type: "string",
+              },
+              {
+                label: "Resource",
+                name: "tronResource",
+                options: ["BANDWIDTH"],
+                required: true,
+                type: "enum",
+              },
+            ],
+          },
+        },
+      },
+    });
+    const form = resolve({
+      availableAmount: "10",
+      intent: {
+        ...makeDefaultEarnIntent(),
+        selectedProviderYieldId: Schema.decodeSync(YieldId)(
+          "ethereum-provider-b"
+        ),
+        tronResource: "ENERGY",
+      },
+      selectedYield,
+    });
+
+    expect(form.providerYieldId).toBe("ethereum-provider-a");
+    expect(form.tronResource).toBe("BANDWIDTH");
   });
 });

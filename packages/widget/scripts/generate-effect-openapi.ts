@@ -10,6 +10,24 @@ type JsonPatchOperation = {
   value: unknown;
 };
 
+const nullableScalarPatch = ({
+  description,
+  example,
+  property,
+  schema,
+  type,
+}: {
+  description: string;
+  example: unknown;
+  property: string;
+  schema: string;
+  type: "number" | "string";
+}): JsonPatchOperation => ({
+  op: "replace",
+  path: `/components/schemas/${schema}/properties/${property}`,
+  value: { description, example, nullable: true, type },
+});
+
 type SpecOutputConfig = {
   format: "httpclient" | "httpclient-type-only";
   outputPath: string;
@@ -85,6 +103,233 @@ const specs: SpecConfig[] = [
       },
     ],
     patches: [
+      // These DTO properties have concrete scalar types in the Yield API
+      // source, but their Swagger decorators omit the explicit property type.
+      // Patch the spec so openapigen does not emit `{}` placeholders.
+      nullableScalarPatch({
+        schema: "LiquidityStateDto",
+        property: "liquidity",
+        type: "string",
+        description: "Available liquidity in underlying token units",
+        example: "250000.00",
+      }),
+      nullableScalarPatch({
+        schema: "LiquidityStateDto",
+        property: "utilization",
+        type: "string",
+        description: "Utilization rate as a decimal (e.g., 0.8 = 80%)",
+        example: "0.80",
+      }),
+      nullableScalarPatch({
+        schema: "YieldFeeConfigurationDto",
+        property: "managementFeeBps",
+        type: "number",
+        description: "Management fee in basis points",
+        example: 100,
+      }),
+      nullableScalarPatch({
+        schema: "YieldFeeConfigurationDto",
+        property: "performanceFeeBps",
+        type: "number",
+        description: "Performance fee in basis points",
+        example: 1000,
+      }),
+      nullableScalarPatch({
+        schema: "YieldFeeConfigurationDto",
+        property: "depositFeeBps",
+        type: "number",
+        description: "Deposit fee in basis points",
+        example: 0,
+      }),
+      nullableScalarPatch({
+        schema: "YieldFeeConfigurationDto",
+        property: "allocatorVaultContractAddress",
+        type: "string",
+        description: "Partner allocator vault contract address",
+        example: "0x80ac24aa929eaf5013f6436cda2a7ba190f5cc0b",
+      }),
+      nullableScalarPatch({
+        schema: "ProviderDto",
+        property: "tvlUsd",
+        type: "string",
+        description: "Total TVL across the entire provider in USD",
+        example: "10,200,000",
+      }),
+      nullableScalarPatch({
+        schema: "ValidatorProviderDto",
+        property: "tvlUsd",
+        type: "string",
+        description: "Total TVL across the entire provider in USD",
+        example: "10,200,000",
+      }),
+      nullableScalarPatch({
+        schema: "CuratorDto",
+        property: "name",
+        type: "string",
+        description: "Curator name",
+        example: "Steakhouse Financial",
+      }),
+      nullableScalarPatch({
+        schema: "CuratorDto",
+        property: "description",
+        type: "string",
+        description: "Curator description",
+        example: "Vault curator",
+      }),
+      nullableScalarPatch({
+        schema: "CuratorDto",
+        property: "logoURI",
+        type: "string",
+        description: "Curator logo URI",
+        example: "https://example.com/curator.svg",
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskCredoraDto",
+        property: "rating",
+        type: "string",
+        description: "Credora rating",
+        example: "A",
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskCredoraDto",
+        property: "score",
+        type: "number",
+        description: "Credora score (1-5)",
+        example: 4.5,
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskCredoraDto",
+        property: "psl",
+        type: "number",
+        description: "Probability of Significant Loss (annualized)",
+        example: 0.01,
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskCredoraDto",
+        property: "publishDate",
+        type: "string",
+        description: "Credora publish date",
+        example: "2026-01-01",
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskCredoraDto",
+        property: "curator",
+        type: "string",
+        description: "Credora curator name",
+        example: "Credora",
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskStakingRewardsMetricsDto",
+        property: "users",
+        type: "number",
+        description: "Users count from Staking Rewards risk metrics",
+        example: 1000,
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskStakingRewardsDto",
+        property: "rating",
+        type: "string",
+        description: "Staking Rewards rating",
+        example: "A",
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskStakingRewardsDto",
+        property: "score",
+        type: "number",
+        description: "Staking Rewards score (1-5)",
+        example: 4,
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskStakingRewardsDto",
+        property: "potentialRating",
+        type: "string",
+        description: "Staking Rewards potential rating",
+        example: "A+",
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskStakingRewardsDto",
+        property: "potentialScore",
+        type: "number",
+        description: "Staking Rewards potential score (1-5)",
+        example: 4.5,
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskStakingRewardsDto",
+        property: "ratedAt",
+        type: "string",
+        description: "Date when rating was assessed",
+        example: "2026-01-01",
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskStakingRewardsDto",
+        property: "ratedSince",
+        type: "string",
+        description: "Date since product has been rated",
+        example: "2025-01-01",
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskStakingRewardsDto",
+        property: "profileUrl",
+        type: "string",
+        description: "Staking Rewards product profile URL",
+        example: "https://stakingrewards.com/provider",
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskStakingRewardsDto",
+        property: "reportUrl",
+        type: "string",
+        description: "Staking Rewards full report URL",
+        example: "https://stakingrewards.com/report",
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskStakingRewardsDto",
+        property: "providerName",
+        type: "string",
+        description: "Staking Rewards provider name",
+        example: "Provider",
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskStakingRewardsDto",
+        property: "version",
+        type: "string",
+        description: "Staking Rewards methodology version",
+        example: "v1",
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskStakingRewardsDto",
+        property: "type",
+        type: "string",
+        description: "Staking Rewards product type",
+        example: "validator",
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskStakingRewardsDto",
+        property: "chain",
+        type: "string",
+        description: "Chain label returned by Staking Rewards",
+        example: "ethereum",
+      }),
+      nullableScalarPatch({
+        schema: "YieldRiskStakingRewardsDto",
+        property: "contractAddress",
+        type: "string",
+        description: "Contract address returned by Staking Rewards",
+        example: "0x0000000000000000000000000000000000000001",
+      }),
+      {
+        op: "replace",
+        path: "/components/schemas/BalanceDto/properties/priceRange",
+        value: {
+          type: "object",
+          description:
+            "Price range for concentrated liquidity positions in tokens[1]/tokens[0] format",
+          properties: {
+            min: { type: "string" },
+            max: { type: "string" },
+          },
+          required: ["min", "max"],
+        },
+      },
       // The spec marks these date-time fields as nullable, but openapigen beta
       // currently drops null for nullable date-time strings. Replacing the
       // property without format preserves the production response shape.

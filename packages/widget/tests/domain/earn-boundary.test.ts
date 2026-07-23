@@ -11,7 +11,7 @@ import {
 } from "../../src/domain/schema/earn-models";
 import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
 import { resolveYieldOptions } from "../../src/features/earn/state/atoms-state/resolver/yield";
-import { yieldApiYieldFixture } from "../fixtures";
+import { yieldApiYieldDtoFixture } from "../fixtures";
 
 const token = {
   name: "Ethereum",
@@ -33,7 +33,7 @@ const decode = <S extends Schema.ConstraintDecoder<unknown>>(
 
 describe("Earn API boundary policies", () => {
   it("keeps valid catalog entries and omits a complete nested-invalid yield", async () => {
-    const valid = yieldApiYieldFixture({ prime: false });
+    const valid = yieldApiYieldDtoFixture({ prime: false });
     const result = await decode(EarnYieldPage, {
       items: [
         valid,
@@ -52,8 +52,41 @@ describe("Earn API boundary policies", () => {
     expect(result.total).toBe(2);
   });
 
+  it("omits only the yield with an invalid consumed mechanic argument", async () => {
+    const valid = yieldApiYieldDtoFixture({ prime: false });
+    const result = await decode(EarnYieldPage, {
+      items: [
+        valid,
+        {
+          ...valid,
+          id: "invalid-mechanic-yield",
+          mechanics: {
+            ...valid.mechanics,
+            arguments: {
+              enter: {
+                fields: [
+                  {
+                    label: "Amount",
+                    minimum: "not-a-number",
+                    name: "amount",
+                    type: "string",
+                  },
+                ],
+              },
+            },
+          },
+        },
+      ],
+      limit: 100,
+      offset: 0,
+      total: 2,
+    });
+
+    expect(result.items?.map((item) => item.id)).toEqual([valid.id]);
+  });
+
   it("returns an empty catalog when every top-level yield is invalid", async () => {
-    const valid = yieldApiYieldFixture({ prime: false });
+    const valid = yieldApiYieldDtoFixture({ prime: false });
     const result = await decode(EarnYieldPage, {
       items: [{ ...valid, id: "invalid-yield", prime: "no" }],
       limit: 100,
@@ -67,7 +100,7 @@ describe("Earn API boundary policies", () => {
   it("strictly rejects a malformed initial yield", async () => {
     await expect(
       decode(EarnYield, {
-        ...yieldApiYieldFixture({ prime: false }),
+        ...yieldApiYieldDtoFixture({ prime: false }),
         metadata: null,
       })
     ).rejects.toThrow();
@@ -168,7 +201,25 @@ describe("Earn API boundary policies", () => {
   it("preserves existing token-scoped yield selection behavior", async () => {
     const yieldModel = await decode(
       EarnYield,
-      yieldApiYieldFixture({ prime: false })
+      yieldApiYieldDtoFixture({ prime: false })
+    );
+    const options = resolveYieldOptions({
+      selectedToken: {
+        token: yieldModel.token,
+        availableYields: [yieldModel.id],
+        amount: "0",
+        source: "default",
+      },
+      yieldsById: [yieldModel],
+    });
+
+    expect(options.map((option) => option.id)).toEqual([yieldModel.id]);
+  });
+
+  it("does not hide an API-scoped yield by hard-coded identifier", async () => {
+    const yieldModel = await decode(
+      EarnYield,
+      yieldApiYieldDtoFixture({ id: "avax-native-staking" })
     );
     const options = resolveYieldOptions({
       selectedToken: {

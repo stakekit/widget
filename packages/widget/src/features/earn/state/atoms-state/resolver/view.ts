@@ -1,99 +1,83 @@
-import { Option, pipe, Schema, Stream } from "effect";
-import type { AsyncResult as AsyncResultValue } from "effect/unstable/reactivity/AsyncResult";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
-import type {
-  EarnValidator,
-  EarnValidatorKey,
-  EarnYield,
-} from "../../../../../domain/schema/earn-models";
-import { YieldId } from "../../../../../domain/schema/identifiers";
-import { getEnterAmountConstraint } from "../../../../../domain/types/stake";
+import type * as Atom from "effect/unstable/reactivity/Atom";
+import type { EarnYield } from "../../../../../domain/schema/earn-models";
+import type { YieldId } from "../../../../../domain/schema/identifiers";
+import type { PositionsData } from "../../../../../domain/types/positions";
+import { tokenString } from "../../../../../domain/types/tokens";
 import {
   getDashboardYieldCategory,
   isYieldValidatorSelectionRequired,
 } from "../../../../../domain/types/yields";
-import {
-  type PullPage,
-  withPullPageDone,
-} from "../../../../../shared/effect/pagination";
-import {
-  availableYieldCategoriesAtom,
-  earnYieldCatalogAtom,
-  initYieldAtom,
-  mergedTokenOptionsAtom,
-  positionsDataAtom,
-  tokenOptionsPullAtom,
-  yieldValidatorsAtom,
-} from "../catalog/atoms";
-import {
-  AvailableYieldCategoriesKey,
-  DefaultTokenOptionsKey,
-  InitYieldKey,
-  PositionsDataKey,
-  TokenOptionsKey,
-  YieldCatalogKey,
-  YieldValidatorsKey,
-} from "../catalog/keys";
 import type {
   EarnCatalogError,
   EarnEntry,
-  EarnMachineForm,
   EarnMachineIntent,
   EarnMachineView,
-  EarnValidatorsResource,
 } from "../types";
 import { resolveCategory } from "./category";
-import { resolveForm } from "./form";
-import {
-  isResolvingInitialSelection,
-  isResolvingTokenOptions,
-  isResolvingYields,
-} from "./status";
+import { canSubmitEarnForm, resolveForm } from "./form";
 import { resolveToken } from "./token";
 import { resolveValidators } from "./validators";
+import {
+  type ResourceObservation,
+  readCategoryInput,
+  readInitialViewInputs,
+  readTokenOptionsInput,
+  readValidatorInput,
+  readYieldCatalogInput,
+} from "./view-inputs";
+import { makeEarnView } from "./view-model";
 import { resolveYield, resolveYieldOptions } from "./yield";
 
-const getAsyncValue = <A>(result: AsyncResultValue<A, EarnCatalogError>) =>
-  pipe(result, AsyncResult.value, Option.getOrNull);
+const makeEmptyPositionsData = (): PositionsData => new Map();
 
-const getIntentForm = (intent: EarnMachineIntent): EarnMachineForm => ({
-  providerYieldId: intent.selectedProviderYieldId,
-  stakeAmount: intent.stakeAmount,
-  tronResource: intent.tronResource,
-  useMaxAmount: intent.useMaxAmount,
-});
+const getAvailableValue = <A>(
+  observation: ResourceObservation<A>,
+  fallback: A
+): A => (observation._tag === "available" ? observation.value : fallback);
+
+const mapAvailableValue = <A, B>(
+  observation: ResourceObservation<A>,
+  map: (value: A) => B
+): ResourceObservation<B> =>
+  observation._tag === "available"
+    ? { ...observation, value: map(observation.value) }
+    : observation;
+
+const isResolving = <A>(observation: ResourceObservation<A>) =>
+  observation._tag === "loading" ||
+  (observation._tag === "available" && observation.waiting);
+
+const getInitYieldCategory = ({
+  dashboardVariant,
+  initYield,
+  initYieldId,
+}: {
+  readonly dashboardVariant: boolean;
+  readonly initYield: EarnYield | null;
+  readonly initYieldId: EarnYield["id"] | null;
+}) =>
+  dashboardVariant && initYieldId && initYield
+    ? getDashboardYieldCategory(initYield)
+    : null;
 
 const mergeYieldOptions = (yields: ReadonlyArray<EarnYield | null>) => {
   const byId = new Map<YieldId, EarnYield>();
 
-  yields.forEach((yieldDto) => {
-    if (yieldDto) {
-      byId.set(yieldDto.id, yieldDto);
-    }
-  });
+  for (const yieldModel of yields) {
+    if (yieldModel) byId.set(yieldModel.id, yieldModel);
+  }
 
   return [...byId.values()];
 };
 
-const emptyValidatorsMapAtom = Atom.writable<
-  Map<EarnValidatorKey, EarnValidator>,
-  ReadonlyArray<EarnValidator>
->(
-  () => new Map<EarnValidatorKey, EarnValidator>(),
-  () => {}
-);
-
-const emptyValidatorsPullAtom = Atom.pull<
-  PullPage<EarnValidator>,
-  EarnCatalogError
->(Stream.succeed({ hasNextPage: false, items: [] })).pipe(withPullPageDone);
-
-const disabledValidatorsResource = {
-  enabled: false,
-  loadedValidatorsAtom: emptyValidatorsMapAtom,
-  validatorsPullAtom: () => emptyValidatorsPullAtom,
-} satisfies EarnValidatorsResource;
+const makeFailure = (
+  stage: NonNullable<EarnMachineView["failure"]>["stage"],
+  error: EarnCatalogError
+): NonNullable<EarnMachineView["failure"]> => ({
+  _tag: "ResourceFailure",
+  error,
+  stage,
+});
 
 export const resolveEarnView = ({
   context,
@@ -104,39 +88,65 @@ export const resolveEarnView = ({
   entry: EarnEntry;
   intent: EarnMachineIntent;
 }): EarnMachineView => {
-  const walletScope = entry.walletScope;
-  const network = walletScope?.network ?? null;
-  const initYieldId = entry.initParams?.yieldId
-    ? Schema.decodeOption(YieldId)(entry.initParams.yieldId).pipe(
-        Option.getOrNull
-      )
-    : null;
-  const initYieldAtomValue = initYieldAtom(
-    new InitYieldKey({ yieldId: initYieldId })
+  const initial = readInitialViewInputs({ context, entry, intent });
+  const initYield = getAvailableValue(initial.initYield.observation, null);
+  const positionsForSelection = getAvailableValue(
+    initial.positions.observation,
+    makeEmptyPositionsData()
   );
-  const initYieldResult = context.get(initYieldAtomValue);
-  const initYield = getAsyncValue(initYieldResult);
-  const initYieldCategory = entry.dashboardVariant
-    ? initYield
-      ? getDashboardYieldCategory(initYield)
-      : null
-    : null;
-  const availableCategoriesAtom = entry.dashboardVariant
-    ? availableYieldCategoriesAtom(
-        new AvailableYieldCategoriesKey({
-          network,
-          categoryOrder: entry.categoryOrder,
-        })
-      )
-    : null;
+  const positionsResource = {
+    data: positionsForSelection,
+    waiting: initial.positions.waiting,
+  };
+  const initYieldCategory = getInitYieldCategory({
+    dashboardVariant: entry.dashboardVariant,
+    initYield,
+    initYieldId: initial.initYieldId,
+  });
+  const categoryInput = readCategoryInput({
+    context,
+    entry,
+    network: initial.network,
+  });
+  const availableCategories =
+    categoryInput._tag === "enabled"
+      ? getAvailableValue(categoryInput.observation, [])
+      : [];
 
-  const availableCategories = availableCategoriesAtom
-    ? pipe(
-        context.get(availableCategoriesAtom),
-        AsyncResult.value,
-        Option.getOrElse(() => [])
-      )
-    : [];
+  if (
+    categoryInput._tag === "enabled" &&
+    categoryInput.observation._tag === "failed"
+  ) {
+    return makeEarnView({
+      intent,
+      status: "failed",
+      failure: makeFailure("categories", categoryInput.observation.error),
+      retryTargetAtom: categoryInput.retryTargetAtom,
+      availableCategories,
+      resources: { positions: positionsResource },
+    });
+  }
+
+  if (
+    categoryInput._tag === "enabled" &&
+    categoryInput.observation._tag === "loading"
+  ) {
+    return makeEarnView({
+      intent,
+      status: "loading-categories",
+      availableCategories,
+      resources: { positions: positionsResource },
+    });
+  }
+
+  if (categoryInput._tag === "enabled" && availableCategories.length === 0) {
+    return makeEarnView({
+      intent,
+      status: "no-categories",
+      availableCategories,
+      resources: { positions: positionsResource },
+    });
+  }
 
   const category = resolveCategory({
     availableCategories,
@@ -144,174 +154,233 @@ export const resolveEarnView = ({
     selectedCategory: intent.selectedCategory ?? initYieldCategory,
     dashboardVariant: entry.dashboardVariant,
   });
-
-  const tokenOptionsPullAtomValue = tokenOptionsPullAtom(
-    new DefaultTokenOptionsKey({
-      network,
-      category,
-      tokensForEnabledYieldsOnly: !!entry.tokensForEnabledYieldsOnly,
-    })
-  );
-  const tokenOptionsAtom = mergedTokenOptionsAtom(
-    new TokenOptionsKey({
-      scope: walletScope,
-      category,
-      initToken: entry.initParams?.token ?? null,
-      initTokenNetwork: entry.initParams?.network ?? null,
-      initYieldId,
-      tokensForEnabledYieldsOnly: !!entry.tokensForEnabledYieldsOnly,
-    })
-  );
-  const tokenOptionsResult = context.get(tokenOptionsAtom);
-  const tokenOptions = getAsyncValue(tokenOptionsResult) ?? [];
+  const tokenInput = readTokenOptionsInput({
+    category,
+    context,
+    entry,
+    selectionSeedYieldId: initial.selectionSeedYieldId,
+  });
+  const tokenOptions = getAvailableValue(tokenInput.observation, []);
   const tokenOptionsResource = {
-    loadedTokenOptionsAtom: tokenOptionsAtom,
-    tokenOptionsPullAtom: tokenOptionsPullAtomValue,
+    items: tokenOptions,
+    waiting: tokenInput.waiting,
+    pullAtom: tokenInput.pullAtom,
   };
-  const positionsDataAtomValue = positionsDataAtom(
-    new PositionsDataKey({
-      scope: walletScope,
-    })
-  );
-  const positionsData =
-    getAsyncValue(context.get(positionsDataAtomValue)) ?? new Map();
+  const stageResources = {
+    positions: positionsResource,
+    tokenOptions: tokenOptionsResource,
+  };
 
   if (
     !intent.selectedTokenKey &&
     !intent.selectedYieldId &&
-    isResolvingInitialSelection({ entry, tokenOptions: tokenOptionsResult })
+    (!!entry.initParams?.token || !!entry.initParams?.yieldId) &&
+    isResolving(tokenInput.observation)
   ) {
-    return {
+    return makeEarnView({
+      intent,
       status: "loading-initial-selection",
       availableCategories,
-      selection: {
-        category,
-        token: null,
-        validators: [],
-        yield: null,
-      },
-      form: getIntentForm(intent),
-      resources: {
-        yieldsResult: null,
-        positionsDataAtom: positionsDataAtomValue,
-        tokenOptions: tokenOptionsResource,
-        validators: disabledValidatorsResource,
-      },
-      can: {
-        selectToken: tokenOptions.length > 0,
-        selectYield: false,
-        selectValidator: false,
-        submit: false,
-      },
-    };
+      selection: { category },
+      resources: stageResources,
+      can: { selectToken: tokenOptions.length > 0 },
+    });
   }
 
-  const selectedToken = resolveToken({
-    entry,
-    selectedTokenKey: intent.selectedTokenKey,
-    tokenOptions,
-  });
+  const explicitTokenPending =
+    !!intent.selectedTokenKey &&
+    !tokenOptions.some(
+      (option) => tokenString(option.token) === intent.selectedTokenKey
+    ) &&
+    isResolving(tokenInput.observation);
+  const selectedToken = explicitTokenPending
+    ? null
+    : resolveToken({
+        entry,
+        selectedTokenKey: intent.selectedTokenKey,
+        tokenOptions,
+      });
 
   if (!selectedToken) {
-    return {
-      status: isResolvingTokenOptions(tokenOptionsResult)
-        ? "loading-token-options"
-        : "no-tokens",
+    const failed =
+      tokenInput.observation._tag === "failed"
+        ? tokenInput.observation.error
+        : null;
+    const failureStage =
+      failed?.operation === "init-yield" ||
+      failed?.operation === "init-token-option"
+        ? "initial-selection"
+        : "token-options";
+    const tokenOptionsResolving =
+      tokenInput.observation._tag === "loading" ||
+      (tokenOptions.length === 0 &&
+        tokenInput.observation._tag === "available" &&
+        tokenInput.observation.waiting);
+
+    return makeEarnView({
+      intent,
+      status: failed
+        ? "failed"
+        : explicitTokenPending || tokenOptionsResolving
+          ? "loading-token-options"
+          : "no-tokens",
+      failure: failed ? makeFailure(failureStage, failed) : null,
+      retryTargetAtom: failed ? tokenInput.retryTargetAtom : null,
       availableCategories,
-      selection: {
-        category,
-        token: null,
-        validators: [],
-        yield: null,
-      },
-      form: getIntentForm(intent),
-      resources: {
-        yieldsResult: null,
-        positionsDataAtom: positionsDataAtomValue,
-        tokenOptions: tokenOptionsResource,
-        validators: disabledValidatorsResource,
-      },
-      can: {
-        selectToken: tokenOptions.length > 0,
-        selectYield: false,
-        selectValidator: false,
-        submit: false,
-      },
-    };
+      selection: { category },
+      resources: stageResources,
+      can: { selectToken: tokenOptions.length > 0 },
+    });
   }
 
-  const yieldCatalogAtom = earnYieldCatalogAtom(
-    new YieldCatalogKey({
-      category,
-      network: selectedToken.token.network,
-      yieldIds: selectedToken.availableYields,
-    })
-  );
-  const yieldCatalogResult = context.get(yieldCatalogAtom);
-  const yieldsResult = yieldCatalogResult.pipe(
-    AsyncResult.map((catalogYieldOptions) =>
+  const yieldCatalogInput = readYieldCatalogInput({
+    category,
+    context,
+    selectedToken,
+  });
+  const yieldObservation = mapAvailableValue(
+    yieldCatalogInput.observation,
+    (catalogYieldOptions) =>
       resolveYieldOptions({
         selectedToken,
         yieldsById: mergeYieldOptions([...catalogYieldOptions, initYield]),
       })
-    )
   );
-  const yieldOptions = getAsyncValue(yieldsResult) ?? [];
+  const yieldOptions = getAvailableValue(yieldObservation, []);
   const selectedYield = resolveYield({
     entry,
-    positionsData,
+    positionsData: positionsForSelection,
     selectedToken,
     selectedYieldId: intent.selectedYieldId,
     yieldOptions,
   });
+  const yieldResources = {
+    ...stageResources,
+    yields: {
+      items: yieldOptions,
+      waiting: yieldCatalogInput.waiting,
+    },
+  };
 
   if (!selectedYield) {
-    return {
-      status: isResolvingYields(yieldsResult) ? "loading-yields" : "no-yields",
+    const failed =
+      yieldObservation._tag === "failed" ? yieldObservation.error : null;
+
+    return makeEarnView({
+      intent,
+      status: failed
+        ? "failed"
+        : isResolving(yieldObservation)
+          ? "loading-yields"
+          : "no-yields",
+      failure: failed ? makeFailure("yields", failed) : null,
+      retryTargetAtom: failed ? yieldCatalogInput.retryTargetAtom : null,
       availableCategories,
-      selection: {
-        category,
-        token: selectedToken,
-        validators: [],
-        yield: null,
-      },
-      form: getIntentForm(intent),
-      resources: {
-        yieldsResult,
-        positionsDataAtom: positionsDataAtomValue,
-        tokenOptions: tokenOptionsResource,
-        validators: disabledValidatorsResource,
-      },
+      selection: { category, token: selectedToken },
+      resources: yieldResources,
       can: {
         selectToken: tokenOptions.length > 0,
         selectYield: yieldOptions.length > 0,
-        selectValidator: false,
-        submit: false,
       },
-    };
+    });
   }
 
-  const validators = isYieldValidatorSelectionRequired(selectedYield)
-    ? yieldValidatorsAtom(
-        new YieldValidatorsKey({ selectedYieldId: selectedYield.id })
-      )
-    : disabledValidatorsResource;
-  const validatorOptions = validators.enabled
-    ? [...context.get(validators.loadedValidatorsAtom).values()]
-    : [];
+  if (initial.positions.observation._tag !== "available") {
+    const failed =
+      initial.positions.observation._tag === "failed"
+        ? initial.positions.observation.error
+        : null;
+
+    return makeEarnView({
+      intent,
+      status: failed ? "failed" : "loading-positions",
+      failure: failed ? makeFailure("positions", failed) : null,
+      retryTargetAtom: failed ? initial.positions.retryTargetAtom : null,
+      availableCategories,
+      selection: { category, token: selectedToken },
+      resources: yieldResources,
+      can: {
+        selectToken: tokenOptions.length > 0,
+        selectYield: yieldOptions.length > 0,
+      },
+    });
+  }
+
+  const validatorInput = readValidatorInput({
+    context,
+    selectedYield,
+    validatorSelectionRequired:
+      isYieldValidatorSelectionRequired(selectedYield),
+  });
+  const validatorOptions =
+    validatorInput._tag === "enabled" ? validatorInput.options : [];
   const selectedValidators = resolveValidators({
     entry,
     selectedValidatorKeys: intent.selectedValidatorKeys,
     validatorOptions,
   });
-  const availableAmount =
-    selectedToken.source === "balance" ? selectedToken.amount : null;
-  const amountConstraint = getEnterAmountConstraint(
+  const availableAmount = entry.walletScope ? selectedToken.amount : null;
+  const form = resolveForm({
+    availableAmount,
+    intent,
+    positionsData: positionsForSelection,
     selectedYield,
-    positionsData
-  );
+  });
+  const validatorResources = {
+    ...yieldResources,
+    validators: validatorInput.resource,
+  };
 
-  return {
+  if (
+    validatorInput._tag === "enabled" &&
+    validatorInput.initial.observation._tag !== "available"
+  ) {
+    const failed =
+      validatorInput.initial.observation._tag === "failed"
+        ? validatorInput.initial.observation.error
+        : null;
+
+    return makeEarnView({
+      intent,
+      status: failed ? "failed" : "loading-validators",
+      failure: failed ? makeFailure("validators", failed) : null,
+      retryTargetAtom: failed ? validatorInput.initial.retryTargetAtom : null,
+      availableCategories,
+      selection: {
+        category,
+        token: selectedToken,
+        yield: selectedYield,
+      },
+      form,
+      resources: validatorResources,
+      can: {
+        selectToken: tokenOptions.length > 0,
+        selectYield: yieldOptions.length > 0,
+      },
+    });
+  }
+
+  if (validatorInput._tag === "enabled" && validatorOptions.length === 0) {
+    return makeEarnView({
+      intent,
+      status: "no-validators",
+      availableCategories,
+      selection: {
+        category,
+        token: selectedToken,
+        yield: selectedYield,
+      },
+      form,
+      resources: validatorResources,
+      can: {
+        selectToken: tokenOptions.length > 0,
+        selectYield: yieldOptions.length > 0,
+      },
+    });
+  }
+
+  return makeEarnView({
+    intent,
     status: "ready",
     availableCategories,
     selection: {
@@ -320,25 +389,21 @@ export const resolveEarnView = ({
       validators: selectedValidators,
       yield: selectedYield,
     },
-    form: resolveForm({
-      availableAmount,
-      intent,
-      positionsData,
-      selectedYield,
-    }),
-    resources: {
-      yieldsResult,
-      positionsDataAtom: positionsDataAtomValue,
-      tokenOptions: tokenOptionsResource,
-      validators,
-    },
+    form,
+    resources: validatorResources,
     can: {
       selectToken: tokenOptions.length > 0,
       selectYield: yieldOptions.length > 0,
-      selectValidator: validators.enabled,
+      selectValidator: validatorInput._tag === "enabled",
       submit:
-        (!validators.enabled || selectedValidators.length > 0) &&
-        (amountConstraint.type !== "force-max" || availableAmount !== null),
+        entry.walletScope !== null &&
+        (validatorInput._tag === "disabled" || selectedValidators.length > 0) &&
+        canSubmitEarnForm({
+          availableAmount,
+          form,
+          positionsData: positionsForSelection,
+          selectedYield,
+        }),
     },
-  };
+  });
 };

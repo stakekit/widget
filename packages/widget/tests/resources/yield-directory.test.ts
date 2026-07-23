@@ -20,10 +20,10 @@ import { yieldApiProviderFixture, yieldApiYieldFixture } from "../fixtures";
 
 const makeYield = (id: string, type: "lending" | "staking" = "staking") => {
   const base = yieldApiYieldFixture({ id });
-  return yieldApiYieldFixture({
-    id,
+  return {
+    ...base,
     mechanics: { ...base.mechanics, type },
-  });
+  };
 };
 
 const makeRegistry = (source: YieldResourceSource["Service"]) =>

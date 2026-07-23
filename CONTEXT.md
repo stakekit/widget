@@ -43,6 +43,28 @@ The authoritative current connection, account, chain, and connector-specific det
 The latest host-supplied external wallet identity, supported chains, and wallet operations. It may be replaced during a Wallet Runtime without changing Wallet Topology.
 _Avoid_: External provider configuration
 
+## Earn Language
+
+**Earn Selection**:
+The category, token, yield, validators, and entry form values currently resolved for starting an Earn journey. It is valid only against the authoritative facts for the active Wallet Scope Owner.
+_Avoid_: Atom state, selected stake data
+
+**Earn Initialization**:
+The one-time use of host or deep-link initialization parameters to seed the first Earn Selection of a Widget Instance. A consumed or invalidated initialization target does not run again after user intent or a Wallet Scope Owner change.
+_Avoid_: Permanent default, init fallback
+
+**Earn Readiness**:
+The condition in which every authoritative fact needed to resolve the Earn Selection and determine whether it may be submitted has settled with a usable value. Pagination and later refreshes may continue without ending Earn Readiness.
+_Avoid_: Page loaded, no spinner
+
+**Earn Mechanic Arguments**:
+The yield-advertised action inputs whose constraints and options determine additional Earn form and transaction values. Only arguments understood by the Widget participate in Earn Selection.
+_Avoid_: Raw mechanic fields, yield contract
+
+**Wallet Scope Owner**:
+The owner identity of a Wallet Scope, consisting only of its network and primary address. Additional-address changes do not change the Wallet Scope Owner.
+_Avoid_: Wallet Scope key, connector identity
+
 ## Transaction Flow Language
 
 **Transaction Flow**:

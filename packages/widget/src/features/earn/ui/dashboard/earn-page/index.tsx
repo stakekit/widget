@@ -1,6 +1,9 @@
+import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
+import { Button } from "../../../../../shared/ui/primitives/button";
+import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { Divider } from "../../../../widget-shell/divider";
 import { PageCtaButton } from "../../../../widget-shell/page-cta";
 import { ExtraArgsSelection } from "../../classic/earn-page/components/extra-args-selection";
@@ -31,9 +34,10 @@ const EarnKycGateSection = () => {
 };
 
 export const EarnPageContent = () => {
+  const { t } = useTranslation();
   const dashboardVariant = useWidgetConfig("dashboardVariant");
   const variant = useWidgetConfig("variant");
-  const { cta } = useEarnPageModel();
+  const { canRetry, cta, isError, onRetry } = useEarnPageModel();
 
   return (
     <Box className={container}>
@@ -63,6 +67,19 @@ export const EarnPageContent = () => {
       <Box>
         <Footer />
       </Box>
+
+      {isError && (
+        <Box alignItems="center" display="flex" flexDirection="column" gap="2">
+          <Text textAlign="center" variant={{ type: "danger" }}>
+            {t("shared.something_went_wrong")}
+          </Text>
+          {canRetry && (
+            <Button data-rk="earn-dashboard-retry" onClick={onRetry}>
+              {t("shared.retry")}
+            </Button>
+          )}
+        </Box>
+      )}
 
       <PageCtaButton cta={cta} />
     </Box>

@@ -1,8 +1,7 @@
-import { DashboardYieldCategory } from "../../../../../public-api/types";
+import type { DashboardYieldCategory } from "../../../../../public-api/types";
 
 export const resolveCategory = ({
   availableCategories,
-  categoryOrder,
   selectedCategory,
   dashboardVariant,
 }: {
@@ -15,15 +14,9 @@ export const resolveCategory = ({
     return null;
   }
 
-  if (
-    selectedCategory &&
-    (availableCategories.length === 0 ||
-      availableCategories.includes(selectedCategory))
-  ) {
+  if (selectedCategory && availableCategories.includes(selectedCategory)) {
     return selectedCategory;
   }
 
-  return (
-    availableCategories[0] ?? categoryOrder[0] ?? DashboardYieldCategory.Stake
-  );
+  return availableCategories[0] ?? null;
 };

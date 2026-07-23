@@ -1,7 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { userEvent } from "vitest/browser";
 import { DashboardYieldCategory } from "../../src/public-api/types";
-import { legacyYieldFixture, yieldApiYieldFixture } from "../fixtures";
+import { legacyYieldFixture, yieldApiYieldDtoFixture } from "../fixtures";
 import {
   borrowApiRoute,
   legacyApiRoute,
@@ -31,17 +31,17 @@ const emptyBorrowPosition = {
 } as const;
 
 const dashboardCategoryYieldsHandler = () => {
-  const stakeYield = yieldApiYieldFixture({
+  const stakeYield = yieldApiYieldDtoFixture({
     id: "ethereum-eth-native-staking",
   });
-  const defiYield = yieldApiYieldFixture({
+  const defiYield = yieldApiYieldDtoFixture({
     id: "ethereum-usdc-lending",
     mechanics: {
       ...stakeYield.mechanics,
       type: "lending",
     },
   });
-  const rwaYield = yieldApiYieldFixture({
+  const rwaYield = yieldApiYieldDtoFixture({
     id: "ethereum-usdc-real-world-asset",
     mechanics: {
       ...stakeYield.mechanics,
@@ -84,7 +84,7 @@ describe("Renders initial page", () => {
     };
 
     const legacyYieldBase = legacyYieldFixture();
-    const yieldApiYieldBase = yieldApiYieldFixture();
+    const yieldApiYieldBase = yieldApiYieldDtoFixture();
     const avalancheAvaxNativeStaking = legacyYieldFixture({
       id: "avalanche-avax-native-staking",
       token: avalancheCToken,
@@ -106,7 +106,7 @@ describe("Renders initial page", () => {
       },
     });
 
-    const avalancheAvaxNativeStakingYieldApi = yieldApiYieldFixture({
+    const avalancheAvaxNativeStakingYieldApi = yieldApiYieldDtoFixture({
       id: avalancheAvaxNativeStaking.id,
       network: avalancheCToken.network,
       token: avalancheCToken,
@@ -119,7 +119,7 @@ describe("Renders initial page", () => {
         gasFeeToken: avalancheCToken,
       },
     });
-    const etherNativeStakingYieldApi = yieldApiYieldFixture({
+    const etherNativeStakingYieldApi = yieldApiYieldDtoFixture({
       id: etherNativeStaking.id,
       network: ether.network,
       token: ether,

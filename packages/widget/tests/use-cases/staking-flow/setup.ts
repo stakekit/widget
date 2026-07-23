@@ -1,15 +1,16 @@
-import { Array as EArray } from "effect";
+import { Array as EArray, Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
 import type { ActionCommand } from "../../../src/domain/schema/action-models";
+import { EarnYieldWithProvider } from "../../../src/domain/schema/earn-models";
 import type { LegacyTransaction } from "../../../src/domain/schema/legacy-models";
 import {
   yieldApiActionFixture,
   yieldApiProviderFixture,
   yieldApiTransactionFixture,
   yieldApiValidatorsFixture,
-  yieldApiYieldFixture,
+  yieldApiYieldDtoFixture,
 } from "../../fixtures";
 import type {
   ActionDto,
@@ -132,8 +133,8 @@ export const setup = async (worker: TestWorker) => {
     validators: [],
     isAvailable: true,
   };
-  const yieldApiYieldBase = yieldApiYieldFixture();
-  const yieldApiYieldOp = yieldApiYieldFixture({
+  const yieldApiYieldBase = yieldApiYieldDtoFixture();
+  const yieldApiYieldOp = yieldApiYieldDtoFixture({
     id: yieldOp.id,
     network: token.network,
     providerId: yieldOp.metadata.provider?.id ?? "benqi",
@@ -440,7 +441,7 @@ export const setup = async (worker: TestWorker) => {
 
   return {
     customConnectors,
-    yieldOp: mergedYieldOp,
+    yieldOp: Schema.decodeUnknownSync(EarnYieldWithProvider)(mergedYieldOp),
     enterAction,
     transactionConstruct,
     account,

@@ -42,8 +42,27 @@ export class TokenOptionsKey extends Data.TaggedClass("TokenOptionsKey")<{
   initToken: string | null;
   initTokenNetwork: Network | null;
   initYieldId: YieldId | null;
+  preferredTokenNetwork: Network | null;
+  preferredTokenKeys: ReadonlyArray<string>;
   tokensForEnabledYieldsOnly: boolean;
-}> {}
+}> {
+  constructor(input: {
+    readonly scope: WalletScopeKey | null;
+    readonly category: DashboardYieldCategory | null;
+    readonly initToken: string | null;
+    readonly initTokenNetwork: Network | null;
+    readonly initYieldId: YieldId | null;
+    readonly preferredTokenNetwork?: Network | null;
+    readonly preferredTokenKeys?: ReadonlyArray<string>;
+    readonly tokensForEnabledYieldsOnly: boolean;
+  }) {
+    super({
+      ...input,
+      preferredTokenNetwork: input.preferredTokenNetwork ?? null,
+      preferredTokenKeys: [...new Set(input.preferredTokenKeys ?? [])].sort(),
+    });
+  }
+}
 
 export class TokenYieldScopeKey extends Data.TaggedClass("TokenYieldScopeKey")<{
   category: DashboardYieldCategory | null;
@@ -80,8 +99,16 @@ export class InitTokenOptionKey extends Data.TaggedClass("InitTokenOptionKey")<{
 }> {}
 
 export class YieldValidatorsKey extends Data.TaggedClass("YieldValidatorsKey")<{
+  network: Network | null;
   selectedYieldId: YieldId;
-}> {}
+}> {
+  constructor(input: {
+    readonly network?: Network | null;
+    readonly selectedYieldId: YieldId;
+  }) {
+    super({ ...input, network: input.network ?? null });
+  }
+}
 
 export class YieldValidatorsPullKey extends Data.TaggedClass(
   "YieldValidatorsPullKey"

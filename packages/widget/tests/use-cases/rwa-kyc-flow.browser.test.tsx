@@ -4,7 +4,7 @@ import { userEvent } from "vitest/browser";
 import { KycGateCard } from "../../src/features/earn/ui/components/kyc-gate-card";
 import type { SKAppProps } from "../../src/public-api/types";
 import { formatAddress } from "../../src/shared/lib/general";
-import { yieldApiYieldFixture } from "../fixtures";
+import { yieldApiYieldDtoFixture } from "../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";
 import { describe, expect, it, vi } from "../utils/test-extend";
@@ -59,8 +59,8 @@ const mockKycStatus = ({ status }: { status: string }) => {
 };
 
 const mockKycRequiredDefaultYield = () => {
-  const baseYield = yieldApiYieldFixture();
-  const kycRequiredYield = yieldApiYieldFixture({
+  const baseYield = yieldApiYieldDtoFixture();
+  const kycRequiredYield = yieldApiYieldDtoFixture({
     ...baseYield,
     mechanics: {
       ...baseYield.mechanics,

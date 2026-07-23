@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { Box } from "../../../../../shared/ui/primitives/box";
+import { Button } from "../../../../../shared/ui/primitives/button";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useMountAnimation } from "../../../../mount-animation/react/use-mount-animation";
 import { useTrackPage } from "../../../../tracking/react/use-track-page";
@@ -46,7 +47,7 @@ const EarnPageComponent = () => {
 
   const variant = useWidgetConfig("variant");
 
-  const { cta, isError } = useEarnPageModel();
+  const { canRetry, cta, isError, onRetry } = useEarnPageModel();
 
   return (
     <PageContainer>
@@ -69,10 +70,22 @@ const EarnPageComponent = () => {
       </Box>
 
       {isError && (
-        <Box display="flex" alignItems="center" justifyContent="center" my="4">
+        <Box
+          display="flex"
+          alignItems="center"
+          flexDirection="column"
+          gap="2"
+          justifyContent="center"
+          my="4"
+        >
           <Text variant={{ type: "danger" }} textAlign="center">
             {t("shared.something_went_wrong")}
           </Text>
+          {canRetry && (
+            <Button data-rk="earn-retry" onClick={onRetry}>
+              {t("shared.retry")}
+            </Button>
+          )}
         </Box>
       )}
 

@@ -65,8 +65,8 @@ export const getInitSelectedValidators = (args: {
 };
 
 export const isForceMaxAmount = (
-  args: { minimum?: number | null; maximum?: number | null } | null | undefined
-) => args?.minimum === -1 && args?.maximum === -1;
+  args: { minimum?: string | null; maximum?: string | null } | null | undefined
+) => args?.minimum === "-1" && args?.maximum === "-1";
 
 type EnterAmountConstraint =
   | { readonly type: "force-max" }

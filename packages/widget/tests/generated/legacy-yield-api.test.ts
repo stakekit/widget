@@ -6,6 +6,7 @@ import * as LegacyClient from "../../src/generated/api/legacy";
 import * as LegacySchema from "../../src/generated/api/legacy-schema";
 import * as YieldClient from "../../src/generated/api/yield";
 import * as YieldSchema from "../../src/generated/api/yield-schema";
+import { yieldApiYieldDtoFixture, yieldBalanceFixture } from "../fixtures";
 
 const httpClient = HttpClient.make(() =>
   Effect.die("generated operation must not execute")
@@ -57,5 +58,123 @@ describe("generated Yield API", () => {
     expect(Effect.isEffect(client.YieldsControllerGetYields(undefined))).toBe(
       true
     );
+  });
+
+  it("decodes concrete nullable DTO fields without empty-object placeholders", () => {
+    expect(
+      Schema.decodeUnknownSync(YieldSchema.YieldFeeConfigurationDto)({
+        id: "66f299cd-aaaa-4bbb-8ccc-d1f26e3a02db",
+        default: true,
+        managementFeeBps: 100,
+        performanceFeeBps: 1000,
+        depositFeeBps: 0,
+        allocatorVaultContractAddress:
+          "0x80ac24aa929eaf5013f6436cda2a7ba190f5cc0b",
+      })
+    ).toEqual({
+      id: "66f299cd-aaaa-4bbb-8ccc-d1f26e3a02db",
+      default: true,
+      managementFeeBps: 100,
+      performanceFeeBps: 1000,
+      depositFeeBps: 0,
+      allocatorVaultContractAddress:
+        "0x80ac24aa929eaf5013f6436cda2a7ba190f5cc0b",
+    });
+
+    expect(
+      Schema.decodeUnknownSync(YieldSchema.ProviderDto)({
+        name: "StakeKit",
+        id: "stakekit",
+        logoURI: "https://stakek.it/logo.svg",
+        description: "Infrastructure provider",
+        website: "https://stakek.it",
+        tvlUsd: "10200000",
+        type: "protocol",
+      }).tvlUsd
+    ).toBe("10200000");
+
+    expect(
+      Schema.decodeUnknownSync(YieldSchema.ValidatorDto)({
+        address: "validator-address",
+        provider: {
+          name: "StakeKit",
+          id: "stakekit",
+          logoURI: "https://stakek.it/logo.svg",
+          description: "Infrastructure provider",
+          website: "https://stakek.it",
+          tvlUsd: "10200000",
+          type: "validator_provider",
+          rank: 1,
+          preferred: true,
+        },
+      }).provider?.tvlUsd
+    ).toBe("10200000");
+
+    expect(
+      Schema.decodeUnknownSync(YieldSchema.YieldDto)({
+        ...yieldApiYieldDtoFixture(),
+        curator: {
+          name: "Curator",
+          description: "Curated vault",
+          logoURI: "https://stakek.it/curator.svg",
+        },
+      }).curator
+    ).toEqual({
+      name: "Curator",
+      description: "Curated vault",
+      logoURI: "https://stakek.it/curator.svg",
+    });
+  });
+
+  it("decodes concrete risk metrics and validates balance price ranges", () => {
+    expect(
+      Schema.decodeUnknownSync(YieldSchema.YieldRiskCredoraDto)({
+        rating: "A",
+        score: 4.5,
+        psl: 0.01,
+        publishDate: "2026-01-01",
+        curator: "Credora",
+      })
+    ).toEqual({
+      rating: "A",
+      score: 4.5,
+      psl: 0.01,
+      publishDate: "2026-01-01",
+      curator: "Credora",
+    });
+
+    expect(
+      Schema.decodeUnknownSync(YieldSchema.YieldRiskStakingRewardsDto)({
+        rating: "A",
+        score: 4,
+        potentialRating: "A+",
+        potentialScore: 4.5,
+        ratedAt: "2026-01-01",
+        ratedSince: "2025-01-01",
+        profileUrl: "https://stakingrewards.com/provider",
+        reportUrl: "https://stakingrewards.com/report",
+        providerName: "Provider",
+        version: "v1",
+        type: "validator",
+        chain: "ethereum",
+        contractAddress: "0x0000000000000000000000000000000000000001",
+        riskMetrics: { users: 1000 },
+      }).riskMetrics
+    ).toEqual({ users: 1000 });
+
+    expect(
+      Schema.decodeUnknownSync(YieldSchema.BalanceDto)(
+        yieldBalanceFixture({
+          priceRange: { min: "2700", max: "3310" },
+        })
+      ).priceRange
+    ).toEqual({ min: "2700", max: "3310" });
+    expect(() =>
+      Schema.decodeUnknownSync(YieldSchema.BalanceDto)(
+        yieldBalanceFixture({
+          priceRange: { min: 2700, max: 3310 } as never,
+        })
+      )
+    ).toThrow();
   });
 });

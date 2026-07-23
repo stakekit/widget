@@ -54,9 +54,6 @@ export const visibleMultiYieldsAtom = Atom.family((key: MultiYieldsKey) =>
         (yields) =>
           yields?.filter((yieldModel) => {
             const visible =
-              yieldModel.id !== "binance-bnb-native-staking" &&
-              yieldModel.id !== "binance-testnet-bnb-native-staking" &&
-              yieldModel.id !== "avax-native-staking" &&
               yieldModel.status.enter &&
               isSupportedChain(yieldModel.token.network);
 

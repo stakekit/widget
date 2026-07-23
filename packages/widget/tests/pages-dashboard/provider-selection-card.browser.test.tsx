@@ -48,18 +48,15 @@ const multiSelectStake = {
     arguments: {
       ...baseYield.mechanics.arguments,
       enter: {
-        fields: [
-          {
-            label: "Validators",
-            name: "validatorAddresses",
+        fields: {
+          validatorAddresses: {
             required: true,
-            type: "address",
           },
-        ],
+        },
       },
     },
   },
-} as EarnYieldWithProvider;
+} satisfies EarnYieldWithProvider;
 
 const createHookValue = (
   overrides: Partial<ReturnType<typeof useSelectValidator>> = {}

@@ -31,6 +31,7 @@ import {
 import {
   yieldApiActionFixture,
   yieldApiProviderFixture,
+  yieldApiYieldDtoFixture,
   yieldApiYieldFixture,
 } from "../fixtures";
 import { makeTestStakeKitApiLayer } from "../utils/stakekit-api-layer";
@@ -379,9 +380,10 @@ describe("application API services", () => {
   });
 
   it("maps opportunity and provider lookups through the narrow read capability", async () => {
-    const yieldModel = yieldApiYieldFixture();
+    const yieldDto = yieldApiYieldDtoFixture();
+    const yieldModel = yieldApiYieldFixture(yieldDto);
     const provider = yieldApiProviderFixture({ id: yieldModel.providerId });
-    const getYield = vi.fn(() => Effect.succeed(yieldModel));
+    const getYield = vi.fn(() => Effect.succeed(yieldDto));
     const getProvider = vi.fn(() => Effect.succeed(provider));
     const source = makeYieldResourceSource({
       ProvidersControllerGetProvider: getProvider,
@@ -396,6 +398,37 @@ describe("application API services", () => {
     );
     expect(getYield).toHaveBeenCalledWith(yieldModel.id, undefined);
     expect(getProvider).toHaveBeenCalledWith(provider.id, undefined);
+  });
+
+  it("reports invalid consumed opportunity arguments as response decode errors", async () => {
+    const valid = yieldApiYieldDtoFixture();
+    const getYield = vi.fn(() =>
+      Effect.succeed({
+        ...valid,
+        mechanics: {
+          ...valid.mechanics,
+          arguments: {
+            enter: {
+              fields: [
+                {
+                  label: "Amount",
+                  minimum: "not-a-number",
+                  name: "amount",
+                  type: "string",
+                },
+              ],
+            },
+          },
+        },
+      })
+    );
+    const source = makeYieldResourceSource({
+      YieldsControllerGetYield: getYield,
+    } as never);
+
+    await expect(
+      Effect.runPromise(source.getOpportunity(firstYieldId))
+    ).rejects.toBeInstanceOf(ResponseDecodeError);
   });
 
   it("maps a provider 404 to explicit absence at the source boundary", async () => {

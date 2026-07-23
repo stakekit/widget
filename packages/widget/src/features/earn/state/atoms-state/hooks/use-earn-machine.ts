@@ -1,14 +1,20 @@
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomRefresh, useAtomSet, useAtomValue } from "@effect/atom-react";
 import {
   earnPageInputAtom,
   earnPageQuoteAtom,
   earnPageSelectionAtom,
 } from "../../page-workflow";
-import { earnMachineIntentAtom, earnMachineViewAtom } from "../machine/atoms";
+import {
+  earnMachineIntentAtom,
+  earnMachineRetryTargetAtom,
+  earnMachineViewAtom,
+} from "../machine/atoms";
 
 export const useEarnMachine = () => {
   const view = useAtomValue(earnMachineViewAtom);
   const dispatch = useAtomSet(earnMachineIntentAtom);
+  const retryTarget = useAtomValue(earnMachineRetryTargetAtom);
+  const retry = useAtomRefresh(retryTarget);
   const input = useAtomValue(earnPageInputAtom);
   const quote = useAtomValue(earnPageQuoteAtom);
   const selection = useAtomValue(earnPageSelectionAtom);
@@ -19,5 +25,6 @@ export const useEarnMachine = () => {
     selection,
     view,
     dispatch,
+    retry,
   };
 };

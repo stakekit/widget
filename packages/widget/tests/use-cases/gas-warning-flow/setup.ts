@@ -6,7 +6,7 @@ import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,
   yieldApiValidatorsFixture,
-  yieldApiYieldFixture,
+  yieldApiYieldDtoFixture,
 } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
@@ -36,7 +36,7 @@ export const setup = (worker: TestWorker) => {
   };
 
   const legacyYieldBase = legacyYieldFixture();
-  const yieldApiYieldBase = yieldApiYieldFixture();
+  const yieldApiYieldBase = yieldApiYieldDtoFixture();
   const createLegacyYield = ({
     id,
     token,
@@ -66,7 +66,7 @@ export const setup = (worker: TestWorker) => {
     token: LegacyTokenDto;
     gasFeeToken: LegacyTokenDto;
   }) =>
-    yieldApiYieldFixture({
+    yieldApiYieldDtoFixture({
       id,
       network: token.network,
       token,

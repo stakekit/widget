@@ -567,10 +567,10 @@ export const RewardDto = Schema.Struct({
 export type YieldFeeConfigurationDto = {
   readonly id: string;
   readonly default: boolean;
-  readonly managementFeeBps?: {} | null;
-  readonly performanceFeeBps?: {} | null;
-  readonly depositFeeBps?: {} | null;
-  readonly allocatorVaultContractAddress?: {} | null;
+  readonly managementFeeBps?: number | null;
+  readonly performanceFeeBps?: number | null;
+  readonly depositFeeBps?: number | null;
+  readonly allocatorVaultContractAddress?: string | null;
   readonly statistics?: {
     readonly tvlUsd?: string | null;
     readonly tvl?: string | null;
@@ -591,25 +591,31 @@ export const YieldFeeConfigurationDto = Schema.Struct({
     examples: [true],
   }),
   managementFeeBps: Schema.optionalKey(
-    Schema.Union([Schema.Struct({}), Schema.Null]).annotate({
+    Schema.Union([
+      Schema.Number.check(Schema.isFinite()),
+      Schema.Null,
+    ]).annotate({
       description: "Management fee in basis points",
       examples: [100],
     })
   ),
   performanceFeeBps: Schema.optionalKey(
-    Schema.Union([Schema.Struct({}), Schema.Null]).annotate({
+    Schema.Union([
+      Schema.Number.check(Schema.isFinite()),
+      Schema.Null,
+    ]).annotate({
       description: "Performance fee in basis points",
       examples: [1000],
     })
   ),
   depositFeeBps: Schema.optionalKey(
-    Schema.Union([Schema.Struct({}), Schema.Null]).annotate({
-      description: "Deposit fee in basis points",
-      examples: [0],
-    })
+    Schema.Union([
+      Schema.Number.check(Schema.isFinite()),
+      Schema.Null,
+    ]).annotate({ description: "Deposit fee in basis points", examples: [0] })
   ),
   allocatorVaultContractAddress: Schema.optionalKey(
-    Schema.Union([Schema.Struct({}), Schema.Null]).annotate({
+    Schema.Union([Schema.String, Schema.Null]).annotate({
       description: "Partner allocator vault contract address",
       examples: ["0x80ac24aa929eaf5013f6436cda2a7ba190f5cc0b"],
     })
@@ -2355,36 +2361,58 @@ export const PaginatedResponseDto = Schema.Struct({
   }).check(Schema.isFinite()),
 });
 export type YieldRiskCredoraDto = {
-  readonly rating?: {};
-  readonly score?: {};
-  readonly psl?: {};
-  readonly publishDate?: {};
-  readonly curator?: {};
+  readonly rating?: string | null;
+  readonly score?: number | null;
+  readonly psl?: number | null;
+  readonly publishDate?: string | null;
+  readonly curator?: string | null;
 };
 export const YieldRiskCredoraDto = Schema.Struct({
   rating: Schema.optionalKey(
-    Schema.Struct({}).annotate({ description: "Credora rating" })
+    Schema.Union([Schema.String, Schema.Null]).annotate({
+      description: "Credora rating",
+      examples: ["A"],
+    })
   ),
   score: Schema.optionalKey(
-    Schema.Struct({}).annotate({ description: "Credora score (1-5)" })
+    Schema.Union([
+      Schema.Number.check(Schema.isFinite()),
+      Schema.Null,
+    ]).annotate({ description: "Credora score (1-5)", examples: [4.5] })
   ),
   psl: Schema.optionalKey(
-    Schema.Struct({}).annotate({
+    Schema.Union([
+      Schema.Number.check(Schema.isFinite()),
+      Schema.Null,
+    ]).annotate({
       description: "Probability of Significant Loss (annualized)",
+      examples: [0.01],
     })
   ),
   publishDate: Schema.optionalKey(
-    Schema.Struct({}).annotate({ description: "Credora publish date" })
+    Schema.Union([Schema.String, Schema.Null]).annotate({
+      description: "Credora publish date",
+      examples: ["2026-01-01"],
+    })
   ),
   curator: Schema.optionalKey(
-    Schema.Struct({}).annotate({ description: "Credora curator name" })
+    Schema.Union([Schema.String, Schema.Null]).annotate({
+      description: "Credora curator name",
+      examples: ["Credora"],
+    })
   ),
 });
-export type YieldRiskStakingRewardsMetricsDto = { readonly users?: {} };
+export type YieldRiskStakingRewardsMetricsDto = {
+  readonly users?: number | null;
+};
 export const YieldRiskStakingRewardsMetricsDto = Schema.Struct({
   users: Schema.optionalKey(
-    Schema.Struct({}).annotate({
+    Schema.Union([
+      Schema.Number.check(Schema.isFinite()),
+      Schema.Null,
+    ]).annotate({
       description: "Users count from Staking Rewards risk metrics",
+      examples: [1000],
     })
   ),
 });
@@ -4412,7 +4440,7 @@ export type ProviderDto = {
   readonly logoURI: string;
   readonly description: string;
   readonly website: string;
-  readonly tvlUsd: {} | null;
+  readonly tvlUsd: string | null;
   readonly type: "protocol" | "validator_provider";
   readonly references?: ReadonlyArray<string>;
 };
@@ -4437,7 +4465,7 @@ export const ProviderDto = Schema.Struct({
     description: "Provider website",
     examples: ["https://morpho.xyz"],
   }),
-  tvlUsd: Schema.Union([Schema.Struct({}), Schema.Null]).annotate({
+  tvlUsd: Schema.Union([Schema.String, Schema.Null]).annotate({
     description: "Total TVL across the entire provider in USD",
     examples: ["10,200,000"],
   }),
@@ -4484,7 +4512,7 @@ export type ValidatorDto = {
     readonly logoURI: string;
     readonly description: string;
     readonly website: string;
-    readonly tvlUsd: {} | null;
+    readonly tvlUsd: string | null;
     readonly type: "protocol" | "validator_provider";
     readonly references?: ReadonlyArray<string>;
     readonly rank: number;
@@ -4620,7 +4648,7 @@ export const ValidatorDto = Schema.Struct({
         description: "Provider website",
         examples: ["https://morpho.xyz"],
       }),
-      tvlUsd: Schema.Union([Schema.Struct({}), Schema.Null]).annotate({
+      tvlUsd: Schema.Union([Schema.String, Schema.Null]).annotate({
         description: "Total TVL across the entire provider in USD",
         examples: ["10,200,000"],
       }),
@@ -5794,75 +5822,101 @@ export const ActionDto = Schema.Struct({
   ]).annotate({ description: "Current status of the action" }),
 });
 export type YieldRiskStakingRewardsDto = {
-  readonly rating?: {};
-  readonly score?: {};
-  readonly potentialRating?: {};
-  readonly potentialScore?: {};
-  readonly ratedAt?: {};
-  readonly ratedSince?: {};
-  readonly profileUrl?: {};
-  readonly reportUrl?: {};
-  readonly providerName?: {};
-  readonly version?: {};
-  readonly type?: {};
-  readonly chain?: {};
-  readonly contractAddress?: {};
+  readonly rating?: string | null;
+  readonly score?: number | null;
+  readonly potentialRating?: string | null;
+  readonly potentialScore?: number | null;
+  readonly ratedAt?: string | null;
+  readonly ratedSince?: string | null;
+  readonly profileUrl?: string | null;
+  readonly reportUrl?: string | null;
+  readonly providerName?: string | null;
+  readonly version?: string | null;
+  readonly type?: string | null;
+  readonly chain?: string | null;
+  readonly contractAddress?: string | null;
   readonly riskMetrics?: YieldRiskStakingRewardsMetricsDto;
 };
 export const YieldRiskStakingRewardsDto = Schema.Struct({
   rating: Schema.optionalKey(
-    Schema.Struct({}).annotate({ description: "Staking Rewards rating" })
+    Schema.Union([Schema.String, Schema.Null]).annotate({
+      description: "Staking Rewards rating",
+      examples: ["A"],
+    })
   ),
   score: Schema.optionalKey(
-    Schema.Struct({}).annotate({ description: "Staking Rewards score (1-5)" })
+    Schema.Union([
+      Schema.Number.check(Schema.isFinite()),
+      Schema.Null,
+    ]).annotate({ description: "Staking Rewards score (1-5)", examples: [4] })
   ),
   potentialRating: Schema.optionalKey(
-    Schema.Struct({}).annotate({
+    Schema.Union([Schema.String, Schema.Null]).annotate({
       description: "Staking Rewards potential rating",
+      examples: ["A+"],
     })
   ),
   potentialScore: Schema.optionalKey(
-    Schema.Struct({}).annotate({
+    Schema.Union([
+      Schema.Number.check(Schema.isFinite()),
+      Schema.Null,
+    ]).annotate({
       description: "Staking Rewards potential score (1-5)",
+      examples: [4.5],
     })
   ),
   ratedAt: Schema.optionalKey(
-    Schema.Struct({}).annotate({ description: "Date when rating was assessed" })
+    Schema.Union([Schema.String, Schema.Null]).annotate({
+      description: "Date when rating was assessed",
+      examples: ["2026-01-01"],
+    })
   ),
   ratedSince: Schema.optionalKey(
-    Schema.Struct({}).annotate({
+    Schema.Union([Schema.String, Schema.Null]).annotate({
       description: "Date since product has been rated",
+      examples: ["2025-01-01"],
     })
   ),
   profileUrl: Schema.optionalKey(
-    Schema.Struct({}).annotate({
+    Schema.Union([Schema.String, Schema.Null]).annotate({
       description: "Staking Rewards product profile URL",
+      examples: ["https://stakingrewards.com/provider"],
     })
   ),
   reportUrl: Schema.optionalKey(
-    Schema.Struct({}).annotate({
+    Schema.Union([Schema.String, Schema.Null]).annotate({
       description: "Staking Rewards full report URL",
+      examples: ["https://stakingrewards.com/report"],
     })
   ),
   providerName: Schema.optionalKey(
-    Schema.Struct({}).annotate({ description: "Staking Rewards provider name" })
+    Schema.Union([Schema.String, Schema.Null]).annotate({
+      description: "Staking Rewards provider name",
+      examples: ["Provider"],
+    })
   ),
   version: Schema.optionalKey(
-    Schema.Struct({}).annotate({
+    Schema.Union([Schema.String, Schema.Null]).annotate({
       description: "Staking Rewards methodology version",
+      examples: ["v1"],
     })
   ),
   type: Schema.optionalKey(
-    Schema.Struct({}).annotate({ description: "Staking Rewards product type" })
+    Schema.Union([Schema.String, Schema.Null]).annotate({
+      description: "Staking Rewards product type",
+      examples: ["validator"],
+    })
   ),
   chain: Schema.optionalKey(
-    Schema.Struct({}).annotate({
+    Schema.Union([Schema.String, Schema.Null]).annotate({
       description: "Chain label returned by Staking Rewards",
+      examples: ["ethereum"],
     })
   ),
   contractAddress: Schema.optionalKey(
-    Schema.Struct({}).annotate({
+    Schema.Union([Schema.String, Schema.Null]).annotate({
       description: "Contract address returned by Staking Rewards",
+      examples: ["0x0000000000000000000000000000000000000001"],
     })
   ),
   riskMetrics: Schema.optionalKey(YieldRiskStakingRewardsMetricsDto),
@@ -6807,9 +6861,9 @@ export type YieldDto = {
   readonly providerId: string;
   readonly prime: boolean;
   readonly curator?: {
-    readonly name?: {} | null;
-    readonly description?: {} | null;
-    readonly logoURI?: {} | null;
+    readonly name?: string | null;
+    readonly description?: string | null;
+    readonly logoURI?: string | null;
   };
   readonly tags?: ReadonlyArray<string>;
   readonly state?: {
@@ -7285,8 +7339,8 @@ export type YieldDto = {
       readonly remaining?: string | null;
     };
     readonly liquidityState?: {
-      readonly liquidity?: {} | null;
-      readonly utilization?: {} | null;
+      readonly liquidity?: string | null;
+      readonly utilization?: string | null;
     };
     readonly allocations?: ReadonlyArray<AllocationDto>;
   };
@@ -8221,18 +8275,21 @@ export const YieldDto = Schema.Struct({
   curator: Schema.optionalKey(
     Schema.Struct({
       name: Schema.optionalKey(
-        Schema.Union([Schema.Struct({}), Schema.Null]).annotate({
+        Schema.Union([Schema.String, Schema.Null]).annotate({
           description: "Curator name",
+          examples: ["Steakhouse Financial"],
         })
       ),
       description: Schema.optionalKey(
-        Schema.Union([Schema.Struct({}), Schema.Null]).annotate({
+        Schema.Union([Schema.String, Schema.Null]).annotate({
           description: "Curator description",
+          examples: ["Vault curator"],
         })
       ),
       logoURI: Schema.optionalKey(
-        Schema.Union([Schema.Struct({}), Schema.Null]).annotate({
+        Schema.Union([Schema.String, Schema.Null]).annotate({
           description: "Curator logo URI",
+          examples: ["https://example.com/curator.svg"],
         })
       ),
     }).annotate({
@@ -8915,13 +8972,13 @@ export const YieldDto = Schema.Struct({
       liquidityState: Schema.optionalKey(
         Schema.Struct({
           liquidity: Schema.optionalKey(
-            Schema.Union([Schema.Struct({}), Schema.Null]).annotate({
+            Schema.Union([Schema.String, Schema.Null]).annotate({
               description: "Available liquidity in underlying token units",
               examples: ["250000.00"],
             })
           ),
           utilization: Schema.optionalKey(
-            Schema.Union([Schema.Struct({}), Schema.Null]).annotate({
+            Schema.Union([Schema.String, Schema.Null]).annotate({
               description: "Utilization rate as a decimal (e.g., 0.8 = 80%)",
               examples: ["0.80"],
             })
@@ -9135,7 +9192,7 @@ export type BalanceDto = {
       readonly logoURI: string;
       readonly description: string;
       readonly website: string;
-      readonly tvlUsd: {} | null;
+      readonly tvlUsd: string | null;
       readonly type: "protocol" | "validator_provider";
       readonly references?: ReadonlyArray<string>;
       readonly rank: number;
@@ -9194,7 +9251,7 @@ export type BalanceDto = {
       readonly logoURI: string;
       readonly description: string;
       readonly website: string;
-      readonly tvlUsd: {} | null;
+      readonly tvlUsd: string | null;
       readonly type: "protocol" | "validator_provider";
       readonly references?: ReadonlyArray<string>;
       readonly rank: number;
@@ -9239,7 +9296,7 @@ export type BalanceDto = {
   }>;
   readonly amountUsd?: string | null;
   readonly isEarning: boolean;
-  readonly priceRange?: {};
+  readonly priceRange?: { readonly min: string; readonly max: string };
   readonly tokenId?: string;
   readonly shareAmount?: string;
   readonly shareAmountRaw?: string;
@@ -9627,7 +9684,7 @@ export const BalanceDto = Schema.Struct({
               description: "Provider website",
               examples: ["https://morpho.xyz"],
             }),
-            tvlUsd: Schema.Union([Schema.Struct({}), Schema.Null]).annotate({
+            tvlUsd: Schema.Union([Schema.String, Schema.Null]).annotate({
               description: "Total TVL across the entire provider in USD",
               examples: ["10,200,000"],
             }),
@@ -9940,7 +9997,7 @@ export const BalanceDto = Schema.Struct({
                 description: "Provider website",
                 examples: ["https://morpho.xyz"],
               }),
-              tvlUsd: Schema.Union([Schema.Struct({}), Schema.Null]).annotate({
+              tvlUsd: Schema.Union([Schema.String, Schema.Null]).annotate({
                 description: "Total TVL across the entire provider in USD",
                 examples: ["10,200,000"],
               }),
@@ -10176,10 +10233,9 @@ export const BalanceDto = Schema.Struct({
     examples: [true],
   }),
   priceRange: Schema.optionalKey(
-    Schema.Struct({}).annotate({
+    Schema.Struct({ min: Schema.String, max: Schema.String }).annotate({
       description:
-        "Price range for concentrated liquidity positions in tokens[1]/tokens[0] format (e.g., if tokens[0]=WETH and tokens[1]=USDC, then priceRange represents USDC/WETH)",
-      examples: [{ min: "2700", max: "3310" }],
+        "Price range for concentrated liquidity positions in tokens[1]/tokens[0] format",
     })
   ),
   tokenId: Schema.optionalKey(
@@ -10503,7 +10559,7 @@ export type YieldBalancesDto = {
         readonly logoURI: string;
         readonly description: string;
         readonly website: string;
-        readonly tvlUsd: {} | null;
+        readonly tvlUsd: string | null;
         readonly type: "protocol" | "validator_provider";
         readonly references?: ReadonlyArray<string>;
         readonly rank: number;
@@ -10562,7 +10618,7 @@ export type YieldBalancesDto = {
         readonly logoURI: string;
         readonly description: string;
         readonly website: string;
-        readonly tvlUsd: {} | null;
+        readonly tvlUsd: string | null;
         readonly type: "protocol" | "validator_provider";
         readonly references?: ReadonlyArray<string>;
         readonly rank: number;
@@ -10607,7 +10663,7 @@ export type YieldBalancesDto = {
     }>;
     readonly amountUsd?: string | null;
     readonly isEarning: boolean;
-    readonly priceRange?: {};
+    readonly priceRange?: { readonly min: string; readonly max: string };
     readonly tokenId?: string;
     readonly shareAmount?: string;
     readonly shareAmountRaw?: string;
@@ -11012,10 +11068,7 @@ export const YieldBalancesDto = Schema.Struct({
                     description: "Provider website",
                     examples: ["https://morpho.xyz"],
                   }),
-                  tvlUsd: Schema.Union([
-                    Schema.Struct({}),
-                    Schema.Null,
-                  ]).annotate({
+                  tvlUsd: Schema.Union([Schema.String, Schema.Null]).annotate({
                     description: "Total TVL across the entire provider in USD",
                     examples: ["10,200,000"],
                   }),
@@ -11343,14 +11396,13 @@ export const YieldBalancesDto = Schema.Struct({
                       description: "Provider website",
                       examples: ["https://morpho.xyz"],
                     }),
-                    tvlUsd: Schema.Union([
-                      Schema.Struct({}),
-                      Schema.Null,
-                    ]).annotate({
-                      description:
-                        "Total TVL across the entire provider in USD",
-                      examples: ["10,200,000"],
-                    }),
+                    tvlUsd: Schema.Union([Schema.String, Schema.Null]).annotate(
+                      {
+                        description:
+                          "Total TVL across the entire provider in USD",
+                        examples: ["10,200,000"],
+                      }
+                    ),
                     type: Schema.Literals([
                       "protocol",
                       "validator_provider",
@@ -11594,10 +11646,9 @@ export const YieldBalancesDto = Schema.Struct({
           examples: [true],
         }),
         priceRange: Schema.optionalKey(
-          Schema.Struct({}).annotate({
+          Schema.Struct({ min: Schema.String, max: Schema.String }).annotate({
             description:
-              "Price range for concentrated liquidity positions in tokens[1]/tokens[0] format (e.g., if tokens[0]=WETH and tokens[1]=USDC, then priceRange represents USDC/WETH)",
-            examples: [{ min: "2700", max: "3310" }],
+              "Price range for concentrated liquidity positions in tokens[1]/tokens[0] format",
           })
         ),
         tokenId: Schema.optionalKey(

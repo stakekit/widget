@@ -13,6 +13,7 @@ import type {
 } from "../../../../domain/schema/earn-models";
 import type { YieldId } from "../../../../domain/schema/identifiers";
 import type { InitParams } from "../../../../domain/schema/init-params";
+import type { TronResource } from "../../../../domain/schema/legacy-models";
 import type { PositionsData } from "../../../../domain/types/positions";
 import type {
   DashboardYieldCategory,
@@ -62,6 +63,7 @@ export type EarnEntry = {
 };
 
 export type EarnMachineIntent = {
+  amountInput: "manual" | "max" | "untouched";
   selectedTokenKey: EarnTokenKey | null;
   selectedYieldId: YieldId | null;
   selectedValidatorKeys: ReadonlySet<EarnValidatorKey>;
@@ -69,7 +71,7 @@ export type EarnMachineIntent = {
   selectedCategory: DashboardYieldCategory | null;
   stakeAmount: string;
   useMaxAmount: boolean;
-  tronResource: string | null;
+  tronResource: TronResource | null;
 };
 
 type EarnMachineSelection = {
@@ -83,26 +85,47 @@ export type EarnMachineForm = {
   providerYieldId: YieldId | null;
   stakeAmount: string;
   useMaxAmount: boolean;
-  tronResource: string | null;
+  tronResource: TronResource | null;
 };
 
 export type EarnMachineStatus =
   | "resolving-wallet"
+  | "loading-categories"
+  | "no-categories"
   | "loading-initial-selection"
   | "loading-token-options"
   | "no-tokens"
   | "loading-yields"
   | "no-yields"
+  | "loading-positions"
+  | "loading-validators"
+  | "no-validators"
+  | "failed"
   | "ready";
+
+type EarnFailureStage =
+  | "categories"
+  | "initial-selection"
+  | "token-options"
+  | "yields"
+  | "positions"
+  | "validators";
+
+type EarnMachineFailure = {
+  readonly _tag: "ResourceFailure";
+  readonly stage: EarnFailureStage;
+  readonly error: EarnCatalogError;
+};
 
 export type EarnTokenOptionsState = AsyncResult<
   ReadonlyArray<EarnTokenOption>,
   EarnCatalogError
 >;
 
-type EarnTokenOptionsResource = {
-  readonly loadedTokenOptionsAtom: Atom<EarnTokenOptionsState>;
-  readonly tokenOptionsPullAtom: Writable<
+type EarnTokenOptionsViewResource = {
+  readonly items: ReadonlyArray<EarnTokenOption>;
+  readonly waiting: boolean;
+  readonly pullAtom: Writable<
     PullResult<PullPage<EarnTokenOption>, EarnCatalogError>,
     void
   >;
@@ -110,6 +133,9 @@ type EarnTokenOptionsResource = {
 
 export type EarnValidatorsResource = {
   readonly enabled: boolean;
+  readonly initialValidatorsResultAtom: Atom<
+    AsyncResult<ReadonlyArray<EarnValidator>, EarnCatalogError>
+  >;
   readonly loadedValidatorsAtom: Writable<
     Map<EarnValidatorKey, EarnValidator>,
     ReadonlyArray<EarnValidator>
@@ -119,19 +145,29 @@ export type EarnValidatorsResource = {
   ) => Writable<PullResult<PullPage<EarnValidator>, EarnCatalogError>, void>;
 };
 
+export type EarnValidatorsViewResource = Pick<
+  EarnValidatorsResource,
+  "enabled" | "loadedValidatorsAtom" | "validatorsPullAtom"
+>;
+
 export type EarnMachineView = {
   status: EarnMachineStatus;
+  failure: EarnMachineFailure | null;
+  retryTargetAtom: Atom<unknown> | null;
   selection: EarnMachineSelection;
   form: EarnMachineForm;
   availableCategories: ReadonlyArray<DashboardYieldCategory>;
   resources: {
-    positionsDataAtom: Atom<AsyncResult<PositionsData, EarnCatalogError>>;
-    tokenOptions: EarnTokenOptionsResource;
-    yieldsResult: AsyncResult<
-      ReadonlyArray<EarnYield>,
-      EarnCatalogError
-    > | null;
-    validators: EarnValidatorsResource;
+    positions: {
+      readonly data: PositionsData;
+      readonly waiting: boolean;
+    };
+    tokenOptions: EarnTokenOptionsViewResource;
+    yields: {
+      readonly items: ReadonlyArray<EarnYield>;
+      readonly waiting: boolean;
+    };
+    validators: EarnValidatorsViewResource;
   };
   can: {
     selectToken: boolean;
@@ -142,6 +178,7 @@ export type EarnMachineView = {
 };
 
 export const makeDefaultEarnIntent = (): EarnMachineIntent => ({
+  amountInput: "untouched",
   selectedProviderYieldId: null,
   selectedTokenKey: null,
   selectedValidatorKeys: new Set(),

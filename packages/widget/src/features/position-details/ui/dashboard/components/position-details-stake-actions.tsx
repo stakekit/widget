@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
-import type { TronResource } from "../../../../../domain/schema/legacy-models";
 import { getYieldActionArg } from "../../../../../domain/types/yields";
 import { useUnstakeOrPendingActionParams } from "../../../../../shared/react/navigation/use-unstake-or-pending-action-params";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
@@ -258,7 +257,7 @@ const PositionDetailsStakeExtraArgs = ({
 
   const options = (tronResources.options ?? []).map((value) => ({
     label: value,
-    value: value as TronResource,
+    value,
   }));
   const selectedOption = stake.tronResource
     ? { value: stake.tronResource, label: stake.tronResource }

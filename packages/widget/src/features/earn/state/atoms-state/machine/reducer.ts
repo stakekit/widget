@@ -8,6 +8,7 @@ const resetYieldScopedIntent = (
   selectedYieldId: YieldId | null
 ): EarnMachineIntent => ({
   ...intent,
+  amountInput: "untouched",
   selectedProviderYieldId: null,
   selectedValidatorKeys: new Set(),
   selectedYieldId,
@@ -25,13 +26,15 @@ export const applyEarnAction = ({
 }): EarnMachineIntent =>
   Match.value(action).pipe(
     Match.when({ type: "token/select" }, (action) =>
-      resetYieldScopedIntent(
-        {
-          ...intent,
-          selectedTokenKey: action.tokenKey,
-        },
-        null
-      )
+      intent.selectedTokenKey === action.tokenKey
+        ? intent
+        : resetYieldScopedIntent(
+            {
+              ...intent,
+              selectedTokenKey: action.tokenKey,
+            },
+            null
+          )
     ),
     Match.when({ type: "yield/select" }, (action) =>
       intent.selectedYieldId === action.yieldId
@@ -39,13 +42,16 @@ export const applyEarnAction = ({
         : resetYieldScopedIntent(intent, action.yieldId)
     ),
     Match.when({ type: "category/select" }, (action) =>
-      resetYieldScopedIntent(
-        {
-          ...intent,
-          selectedCategory: action.category,
-        },
-        null
-      )
+      intent.selectedCategory === action.category
+        ? intent
+        : resetYieldScopedIntent(
+            {
+              ...intent,
+              selectedCategory: action.category,
+              selectedTokenKey: null,
+            },
+            null
+          )
     ),
     Match.when({ type: "validator/select" }, (action) => ({
       ...intent,
@@ -64,6 +70,13 @@ export const applyEarnAction = ({
         : { ...intent, selectedValidatorKeys: next };
     }),
     Match.when({ type: "validator/remove" }, (action) => {
+      if (
+        intent.selectedValidatorKeys.size === 1 &&
+        intent.selectedValidatorKeys.has(action.validatorKey)
+      ) {
+        return intent;
+      }
+
       const next = new Set(intent.selectedValidatorKeys);
       next.delete(action.validatorKey);
 
@@ -75,11 +88,13 @@ export const applyEarnAction = ({
     })),
     Match.when({ type: "stakeAmount/change" }, (action) => ({
       ...intent,
+      amountInput: "manual" as const,
       stakeAmount: action.amount,
       useMaxAmount: false,
     })),
     Match.when({ type: "stakeAmount/max" }, (action) => ({
       ...intent,
+      amountInput: "max" as const,
       stakeAmount: action.amount,
       useMaxAmount: true,
     })),

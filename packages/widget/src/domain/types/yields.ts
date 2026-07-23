@@ -52,23 +52,14 @@ type YieldActionType = "enter" | "exit";
 type YieldArguments = NonNullable<
   EarnYieldWithProvider["mechanics"]["arguments"]
 >;
-type YieldArgumentField = NonNullable<
-  YieldArguments["enter"]
->["fields"][number];
-type YieldArgumentName = YieldArgumentField["name"];
+type YieldArgumentFields = NonNullable<YieldArguments["enter"]>["fields"];
+type YieldArgumentName = keyof YieldArgumentFields;
 
 type ValidatorDto = {
   readonly address: string;
   readonly name?: string | null;
   readonly preferred?: boolean;
 };
-
-type YieldArgumentConfig = {
-  required?: boolean;
-  minimum?: number | null;
-  maximum?: number | null;
-  options?: string[];
-} & Record<string, unknown>;
 
 type YieldTypeLabelsMap = {
   [Key in ExtendedYieldType]: {
@@ -232,31 +223,17 @@ const secondsToDays = (seconds: number | undefined) => {
   return { days: Math.round(seconds / 86400) };
 };
 
-export const getYieldActionArg = (
+export const getYieldActionArg = <Name extends YieldArgumentName>(
   yieldDto: EarnYieldWithProvider,
   type: YieldActionType,
-  name: YieldArgumentName
-): YieldArgumentConfig | null => {
-  const field = yieldDto.mechanics.arguments?.[type]?.fields?.find(
-    (item) => item.name === name
-  );
+  name: Name
+): YieldArgumentFields[Name] | null =>
+  yieldDto.mechanics.arguments?.[type]?.fields[name] ?? null;
 
-  if (!field) {
-    return null;
-  }
-
-  return {
-    required: !!field.required,
-    minimum: toNumber(field.minimum),
-    maximum: toNumber(field.maximum),
-    ...(field.options ? { options: [...field.options] } : {}),
-  };
-};
-
-export const isYieldActionArgRequired = (
+export const isYieldActionArgRequired = <Name extends YieldArgumentName>(
   yieldDto: EarnYieldWithProvider,
   type: YieldActionType,
-  name: YieldArgumentName
+  name: Name
 ) => !!getYieldActionArg(yieldDto, type, name)?.required;
 
 export const getYieldRewardTokens = (yieldDto: EarnYieldWithProvider) =>

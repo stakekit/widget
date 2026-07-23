@@ -19,11 +19,10 @@ import type {
   TokenDto as LegacyTokenDto,
   YieldDto as LegacyYieldDto,
 } from "../generated/legacy-api-types";
+import type { YieldDto as YieldApiYieldDto } from "../generated/yield-api-types";
 
 type ValidatorDto = typeof EarnValidator.Encoded;
 type YieldApiProviderDto = typeof EarnProvider.Encoded;
-type YieldApiYieldDto = typeof EarnYield.Encoded;
-
 const apyFaker = () => faker.number.float({ min: 0, max: 0.05 });
 
 export const yieldRewardRateFixture = (
@@ -79,13 +78,13 @@ export const yieldRiskSummaryFixture = (
   ...overrides,
 });
 
-export const yieldApiYieldFixture = (
+export const yieldApiYieldDtoFixture = (
   overrides?: Partial<YieldApiYieldDto>
-): typeof EarnYield.Type => {
+): YieldApiYieldDto => {
   const token = overrides?.token ?? yieldApiTokenFixture();
   const tokens = overrides?.tokens ?? [token];
 
-  return Schema.decodeUnknownSync(EarnYield)({
+  return {
     id: "ethereum-eth-native-staking",
     network: token.network,
     inputTokens: overrides?.inputTokens ?? tokens,
@@ -124,10 +123,14 @@ export const yieldApiYieldFixture = (
     },
     prime: false,
     providerId: "stakekit",
-    validators: [],
     ...overrides,
-  });
+  };
 };
+
+export const yieldApiYieldFixture = (
+  overrides?: Partial<YieldApiYieldDto>
+): typeof EarnYield.Type =>
+  Schema.decodeUnknownSync(EarnYield)(yieldApiYieldDtoFixture(overrides));
 
 export const yieldApiValidatorFixture = (
   overrides?: Partial<ValidatorDto>

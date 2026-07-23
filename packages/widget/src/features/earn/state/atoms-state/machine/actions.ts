@@ -1,5 +1,6 @@
 import type { EarnValidatorKey } from "../../../../../domain/schema/earn-models";
 import type { YieldId } from "../../../../../domain/schema/identifiers";
+import type { TronResource } from "../../../../../domain/schema/legacy-models";
 import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import type { EarnTokenKey } from "../types";
 
@@ -42,5 +43,5 @@ export type EarnAction =
     }
   | {
       readonly type: "tronResource/select";
-      readonly tronResource: string | null;
+      readonly tronResource: TronResource | null;
     };

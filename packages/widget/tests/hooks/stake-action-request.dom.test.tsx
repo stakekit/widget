@@ -21,26 +21,29 @@ vi.mock("../../src/features/wallet/react/use-wallet", () => ({
   useSKWallet: () => wallet,
 }));
 
-type ActionField = NonNullable<
+type ActionFields = NonNullable<
   NonNullable<EarnYieldWithProvider["mechanics"]["arguments"]>["enter"]
->["fields"][number];
+>["fields"];
 
-const actionField = (
-  name: ActionField["name"],
-  type: ActionField["type"]
-): ActionField => ({
-  label: name,
-  name,
-  required: true,
-  type,
-});
+const actionFieldTypes = {
+  subnetId: "string",
+  validatorAddress: "address",
+  validatorAddresses: "address",
+} as const;
+
+const actionField = <Name extends keyof typeof actionFieldTypes>(name: Name) =>
+  ({
+    name,
+    required: true,
+    type: actionFieldTypes[name],
+  }) as NonNullable<ActionFields[Name]>;
 
 const makeYield = ({
-  enter = [],
-  exit = [],
+  enter = {},
+  exit = {},
 }: {
-  enter?: ReadonlyArray<ActionField>;
-  exit?: ReadonlyArray<ActionField>;
+  enter?: ActionFields;
+  exit?: ActionFields;
 }) => {
   const value = yieldApiYieldFixture();
 
@@ -67,7 +70,7 @@ const makeValidator = (subnetId?: number) =>
 describe("stake action request construction", () => {
   it("omits subnetId when the enter action does not require it", async () => {
     const selectedStake = makeYield({
-      enter: [actionField("validatorAddress", "address")],
+      enter: { validatorAddress: actionField("validatorAddress") },
     });
     const validator = makeValidator();
 
@@ -91,10 +94,10 @@ describe("stake action request construction", () => {
 
   it("blocks enter when a required subnetId is unavailable", async () => {
     const selectedStake = makeYield({
-      enter: [
-        actionField("validatorAddress", "address"),
-        actionField("subnetId", "number"),
-      ],
+      enter: {
+        subnetId: actionField("subnetId"),
+        validatorAddress: actionField("validatorAddress"),
+      },
     });
     const validator = makeValidator();
 
@@ -115,10 +118,10 @@ describe("stake action request construction", () => {
 
   it("blocks exit when a required subnetId is unavailable", async () => {
     const integrationData = makeYield({
-      exit: [
-        actionField("validatorAddress", "address"),
-        actionField("subnetId", "number"),
-      ],
+      exit: {
+        subnetId: actionField("subnetId"),
+        validatorAddress: actionField("validatorAddress"),
+      },
     });
     const validator = makeValidator();
     const balance = Schema.decodeUnknownSync(EarnBalance)({

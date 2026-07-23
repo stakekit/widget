@@ -1,4 +1,5 @@
-import { Option, Schema, SchemaGetter } from "effect";
+import BigNumber from "bignumber.js";
+import { Effect, Option, Schema, SchemaGetter, SchemaParser } from "effect";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { PendingAction } from "./action-models";
 import {
@@ -7,6 +8,7 @@ import {
   ValidatorAddress,
   YieldId,
 } from "./identifiers";
+import { TronResource } from "./legacy-models";
 import { TolerantTopLevelArray } from "./response";
 import { BigIntFromString, PrecisionDecimalFromString } from "./scalars";
 
@@ -25,6 +27,213 @@ const EarnReward = Schema.Struct({
 const EarnRewardRate = Schema.Struct({
   ...YieldApi.YieldDto.fields.rewardRate.fields,
   components: Schema.Array(EarnReward),
+});
+
+type ApiArgumentField = typeof YieldApi.ArgumentFieldDto.Type;
+type ApiArgumentName = ApiArgumentField["name"];
+type ApiArgumentType = ApiArgumentField["type"];
+
+const NumericArgumentBound = Schema.String.check(Schema.isStringFinite());
+
+const hasCoherentAmountBounds = (
+  minimumValue: string,
+  maximumValue: string | null
+) => {
+  const minimum = new BigNumber(minimumValue);
+  const maximum = maximumValue === null ? null : new BigNumber(maximumValue);
+
+  if (minimum.isEqualTo(-1) || maximum?.isEqualTo(-1)) {
+    return minimum.isEqualTo(-1) && maximum?.isEqualTo(-1) === true;
+  }
+
+  if (minimum.isNegative()) return false;
+  if (maximum === null || maximum.isZero()) return true;
+
+  return maximum.isGreaterThanOrEqualTo(minimum);
+};
+
+const normalizeAmountMaximum = (
+  minimumValue: string,
+  maximumValue: string | null
+) =>
+  maximumValue !== null &&
+  new BigNumber(minimumValue).isGreaterThanOrEqualTo(0) &&
+  new BigNumber(maximumValue).isEqualTo(-1)
+    ? null
+    : maximumValue;
+
+const decodeApiArgument = <
+  const Name extends ApiArgumentName,
+  const Type extends ApiArgumentType,
+  Domain extends Schema.Constraint,
+  R,
+>(
+  name: Name,
+  type: Type,
+  domain: Domain,
+  decode: SchemaGetter.Getter<Domain["Encoded"], ApiArgumentField, R>
+) =>
+  YieldApi.ArgumentFieldDto.check(
+    Schema.makeFilter((field) =>
+      field.name === name && field.type === type
+        ? true
+        : `expected ${name} mechanic argument with type ${type}`
+    )
+  ).pipe(
+    Schema.decodeTo(domain, {
+      decode,
+      encode: SchemaGetter.forbidden(
+        () => "Resolved Earn mechanic arguments are decode-only"
+      ),
+    })
+  );
+
+const AmountArgumentDomain = Schema.Struct({
+  required: Schema.Boolean,
+  minimum: NumericArgumentBound,
+  maximum: Schema.NullOr(NumericArgumentBound),
+}).check(
+  Schema.makeFilter((field) =>
+    hasCoherentAmountBounds(field.minimum, field.maximum)
+      ? true
+      : "amount bounds must form a coherent non-negative range or the -1/-1 force-max pair"
+  )
+);
+
+const AmountArgument = decodeApiArgument(
+  "amount",
+  "string",
+  AmountArgumentDomain,
+  SchemaGetter.transform<typeof AmountArgumentDomain.Encoded, ApiArgumentField>(
+    (field) => {
+      const minimum = field.minimum ?? "0";
+
+      return {
+        maximum: normalizeAmountMaximum(minimum, field.maximum ?? null),
+        minimum,
+        required: field.required ?? false,
+      };
+    }
+  )
+);
+
+const makeRequiredOptionsFilter = (name: ApiArgumentName) =>
+  Schema.makeFilter<{
+    readonly required: boolean;
+    readonly options: readonly unknown[];
+  }>((field) =>
+    !field.required || field.options.length > 0
+      ? true
+      : `required ${name} arguments must advertise at least one option`
+  );
+
+const ProviderIdArgumentDomain = Schema.Struct({
+  required: Schema.Boolean,
+  options: Schema.Array(YieldId),
+}).check(makeRequiredOptionsFilter("providerId"));
+
+const ProviderIdArgument = decodeApiArgument(
+  "providerId",
+  "string",
+  ProviderIdArgumentDomain,
+  SchemaGetter.transform<
+    typeof ProviderIdArgumentDomain.Encoded,
+    ApiArgumentField
+  >((field) => ({
+    options: field.options ?? [],
+    required: field.required ?? false,
+  }))
+);
+
+const TronResourceOptions = Schema.Array(TronResource);
+
+const TronResourceArgumentDomain = Schema.Struct({
+  required: Schema.Boolean,
+  options: TronResourceOptions,
+}).check(makeRequiredOptionsFilter("tronResource"));
+
+const TronResourceArgument = decodeApiArgument(
+  "tronResource",
+  "enum",
+  TronResourceArgumentDomain,
+  SchemaGetter.transformOrFail<
+    typeof TronResourceArgumentDomain.Encoded,
+    ApiArgumentField
+  >((field, options) =>
+    SchemaParser.decodeUnknownEffect(TronResourceOptions)(
+      field.options ?? [],
+      options
+    ).pipe(
+      Effect.map((tronResources) => ({
+        options: tronResources,
+        required: field.required ?? false,
+      }))
+    )
+  )
+);
+
+const makeRequiredArgument = <
+  const Name extends ApiArgumentName,
+  const Type extends ApiArgumentType,
+>(
+  name: Name,
+  type: Type
+) => {
+  const domain = Schema.Struct({
+    required: Schema.Boolean,
+  });
+
+  return decodeApiArgument(
+    name,
+    type,
+    domain,
+    SchemaGetter.transform<typeof domain.Encoded, ApiArgumentField>(
+      (field) => ({ required: field.required ?? false })
+    )
+  );
+};
+
+const ValidatorAddressArgument = makeRequiredArgument(
+  "validatorAddress",
+  "string"
+);
+const ValidatorAddressesArgument = makeRequiredArgument(
+  "validatorAddresses",
+  "string"
+);
+const SubnetIdArgument = makeRequiredArgument("subnetId", "number");
+
+const EarnYieldArgumentFieldsDomain = Schema.Struct({
+  amount: Schema.optionalKey(AmountArgument),
+  providerId: Schema.optionalKey(ProviderIdArgument),
+  subnetId: Schema.optionalKey(SubnetIdArgument),
+  tronResource: Schema.optionalKey(TronResourceArgument),
+  validatorAddress: Schema.optionalKey(ValidatorAddressArgument),
+  validatorAddresses: Schema.optionalKey(ValidatorAddressesArgument),
+});
+
+const EarnYieldArgumentFields = Schema.Array(YieldApi.ArgumentFieldDto).pipe(
+  Schema.decodeTo(EarnYieldArgumentFieldsDomain, {
+    decode: SchemaGetter.transform((fields) =>
+      Object.fromEntries(fields.map((field) => [field.name, field]))
+    ),
+    encode: SchemaGetter.forbidden(
+      () => "Resolved Earn mechanic arguments are decode-only"
+    ),
+  })
+);
+
+const EarnYieldActionArguments = Schema.Struct({
+  fields: EarnYieldArgumentFields,
+});
+
+const EarnYieldArguments = Schema.Struct({
+  enter: Schema.optionalKey(EarnYieldActionArguments),
+  exit: Schema.optionalKey(EarnYieldActionArguments),
+  manage: Schema.optionalKey(
+    Schema.Record(Schema.String, EarnYieldActionArguments)
+  ),
+  balance: Schema.optionalKey(EarnYieldActionArguments),
 });
 
 export const EarnProvider = Schema.Struct({
@@ -64,17 +273,16 @@ export const EarnValidator = EarnValidatorWire.pipe(
 );
 export type EarnValidator = typeof EarnValidator.Type;
 
-const EarnYieldMechanics = Schema.Struct({
-  ...YieldApi.YieldDto.fields.mechanics.fields,
-  gasFeeToken: EarnToken,
-});
-
 export const EarnYield = Schema.Struct({
   ...YieldApi.YieldDto.fields,
   id: YieldId,
   providerId: ProviderId,
   inputTokens: Schema.Array(EarnToken),
-  mechanics: EarnYieldMechanics,
+  mechanics: Schema.Struct({
+    ...YieldApi.YieldDto.fields.mechanics.fields,
+    arguments: Schema.optionalKey(EarnYieldArguments),
+    gasFeeToken: EarnToken,
+  }),
   outputToken: Schema.optionalKey(EarnToken),
   rewardRate: EarnRewardRate,
   token: EarnToken,

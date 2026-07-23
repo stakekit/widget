@@ -3,7 +3,7 @@ import { HttpResponse, http } from "msw";
 import { userEvent } from "vitest/browser";
 import {
   legacyYieldFixture,
-  yieldApiYieldFixture,
+  yieldApiYieldDtoFixture,
   yieldRiskSummaryFixture,
 } from "../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../mocks/api-routes";
@@ -32,7 +32,7 @@ describe("Select opportunity", () => {
     ] as const;
 
     const legacyYieldBase = legacyYieldFixture();
-    const yieldApiYieldBase = yieldApiYieldFixture();
+    const yieldApiYieldBase = yieldApiYieldDtoFixture();
     const getRewardToken = (integrationId: (typeof yieldIds)[number]) => {
       switch (integrationId) {
         case "ethereum-eth-reth-staking":
@@ -87,7 +87,7 @@ describe("Select opportunity", () => {
     const getYieldApiYield = (integrationId: (typeof yieldIds)[number]) => {
       const rewardToken = getRewardToken(integrationId);
 
-      return yieldApiYieldFixture({
+      return yieldApiYieldDtoFixture({
         id: integrationId,
         network: token.network,
         providerId: "stakewise",

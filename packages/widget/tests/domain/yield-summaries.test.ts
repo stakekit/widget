@@ -1,13 +1,13 @@
 import { Effect, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import { EarnYieldPage } from "../../src/domain/schema/earn-models";
-import { yieldApiYieldFixture } from "../fixtures";
+import { yieldApiYieldDtoFixture } from "../fixtures";
 
 describe("yield summary atom boundary", () => {
   it("retains valid summaries when a top-level sibling is malformed", async () => {
-    const valid = yieldApiYieldFixture({ id: "yield-valid", prime: false });
+    const valid = yieldApiYieldDtoFixture({ id: "yield-valid", prime: false });
     const invalid: Record<string, unknown> = {
-      ...yieldApiYieldFixture({ id: "yield-invalid", prime: false }),
+      ...yieldApiYieldDtoFixture({ id: "yield-invalid", prime: false }),
       token: { ...valid.token, decimals: "invalid" },
     };
     const page = await Effect.runPromise(

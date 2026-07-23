@@ -12,12 +12,6 @@ import { tokenString } from "../../../../../domain/types/tokens";
 import { isNonZeroRewardRateYield } from "../../../../../domain/types/yields";
 import type { EarnEntry, EarnTokenOption } from "../types";
 
-const blockedInitialYieldIds = new Set([
-  "binance-bnb-native-staking",
-  "binance-testnet-bnb-native-staking",
-  "avax-native-staking",
-]);
-
 export const resolveYieldOptions = ({
   selectedToken,
   yieldsById,
@@ -106,9 +100,7 @@ export const resolveYield = ({
 };
 
 const canShowYieldOption = (yieldOption: EarnYield) =>
-  yieldOption.status.enter &&
-  isSupportedChain(yieldOption.token.network) &&
-  !blockedInitialYieldIds.has(yieldOption.id);
+  yieldOption.status.enter && isSupportedChain(yieldOption.token.network);
 
 const findYieldById = (
   yieldOptions: ReadonlyArray<EarnYield>,
@@ -133,9 +125,6 @@ const getPreferredYieldId = ({
     preferredTokenYieldsPerNetwork?.[
       selectedToken.token.network as SupportedSKChains
     ];
-  const fallbackPreferred = preferredTokenYieldsPerNetwork
-    ? Object.values(preferredTokenYieldsPerNetwork)[0]
-    : undefined;
 
-  return networkPreferred?.[tokenKey] ?? fallbackPreferred?.[tokenKey] ?? null;
+  return networkPreferred?.[tokenKey] ?? null;
 };

@@ -62,6 +62,8 @@ export type EarnPageModel = {
   onValidatorRemove: (item: EarnValidator) => void;
   selectedValidators: Map<ValidatorKey, EarnValidator>;
   isError: boolean;
+  canRetry: boolean;
+  onRetry: () => void;
   rewardToken: ReturnType<typeof useRewardTokenDetails>;
   onSelectOpportunityClose: () => void;
   onSelectTokenClose: () => void;

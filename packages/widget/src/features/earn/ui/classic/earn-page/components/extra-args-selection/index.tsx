@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
-import type { TronResource } from "../../../../../../../domain/schema/legacy-models";
 import { getYieldActionArg } from "../../../../../../../domain/types/yields";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
@@ -23,7 +22,7 @@ export const ExtraArgsSelection = () => {
 
   const options = (tronResources.options ?? []).map((v) => ({
     label: v,
-    value: v as TronResource,
+    value: v,
   }));
 
   const selectedOption = tronResource

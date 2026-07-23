@@ -10,7 +10,7 @@ import {
   yieldApiProviderFixture,
   yieldApiTransactionFixture,
   yieldApiValidatorsFixture,
-  yieldApiYieldFixture,
+  yieldApiYieldDtoFixture,
   yieldBalanceFixture,
   yieldRiskSummaryFixture,
 } from "../fixtures";
@@ -26,7 +26,7 @@ const defaultToken: AppToken = {
   logoURI: "https://assets.stakek.it/tokens/eth.svg",
 };
 
-const defaultYield = yieldApiYieldFixture({
+const defaultYield = yieldApiYieldDtoFixture({
   id: "ethereum-eth-native-staking",
   token: defaultToken,
   tokens: [defaultToken],
@@ -115,7 +115,7 @@ export const getYieldApiMock = () => [
     await mockDelay();
 
     return HttpResponse.json(
-      yieldApiYieldFixture({
+      yieldApiYieldDtoFixture({
         ...defaultYield,
         id: String(params.yieldId),
       })

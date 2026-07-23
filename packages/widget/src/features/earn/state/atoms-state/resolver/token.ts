@@ -44,8 +44,7 @@ export const resolveToken = ({
 
   const network = entry.walletScope?.network ?? null;
   const preferredTokens = network
-    ? (entry.preferredTokenYieldsPerNetwork?.[network] ??
-      Object.values(entry.preferredTokenYieldsPerNetwork ?? {})[0])
+    ? entry.preferredTokenYieldsPerNetwork?.[network]
     : Object.values(entry.preferredTokenYieldsPerNetwork ?? {})[0];
   if (preferredTokens) {
     const selected = tokenOptions.find(

@@ -76,11 +76,15 @@ const resolveProviderYieldId = (
     : null;
 };
 
-const resolveTronResource = (selectedStake: EarnYieldWithProvider | null) =>
-  selectedStake &&
-  getYieldActionArg(selectedStake, "enter", "tronResource")?.required
-    ? ("ENERGY" as TronResource)
+const resolveTronResource = (selectedStake: EarnYieldWithProvider | null) => {
+  const argument = selectedStake
+    ? getYieldActionArg(selectedStake, "enter", "tronResource")
     : null;
+
+  return argument?.required
+    ? EArray.head(argument.options).pipe(Option.getOrNull)
+    : null;
+};
 
 export const usePositionDetailsStake = () => {
   const { t } = useTranslation();

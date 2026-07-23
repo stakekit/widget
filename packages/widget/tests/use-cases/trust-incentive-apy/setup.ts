@@ -9,7 +9,7 @@ import {
 import type { YieldRewardRateDto } from "../../../src/domain/types/reward-rate";
 import {
   legacyYieldFixture,
-  yieldApiYieldFixture,
+  yieldApiYieldDtoFixture,
   yieldBalanceFixture,
   yieldRewardRateFixture,
 } from "../../fixtures";
@@ -178,7 +178,7 @@ export const setup = async (
     "avalanche-c-usda-trust-0xbeefa1abfebe621df50ceaef9f54fdb73648c92c-vault";
 
   const legacyYieldBase = legacyYieldFixture();
-  const rawYieldBase = yieldApiYieldFixture();
+  const rawYieldBase = yieldApiYieldDtoFixture();
 
   const legacyYield: ReturnType<typeof legacyYieldFixture> = {
     ...legacyYieldBase,

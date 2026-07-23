@@ -49,8 +49,8 @@ type AmountBlockProps = {
       }[];
       canUnstake: boolean;
       unstakeIsGreaterOrLessIntegrationLimitError: boolean;
-      unstakeMaxAmount: number | null;
-      unstakeMinAmount: number | null;
+      unstakeMaxAmount: string | number | null;
+      unstakeMinAmount: string | number | null;
       /**
        * When false, the unstake info (withdrawal time, etc.) is not rendered
        * inside the card so it can be placed below the section instead.

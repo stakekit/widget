@@ -48,8 +48,16 @@ describe("dashboard application schemas", () => {
       Schema.decodeUnknownEffect(TvlHistoryResponse)({
         ...envelope,
         items: [
-          { timestamp: "2026-06-01T00:00:00.000Z", tvlUsd: "1000.5" },
-          { timestamp: "2026-06-02T00:00:00.000Z", tvlUsd: null },
+          {
+            timestamp: "2026-06-01T00:00:00.000Z",
+            tvl: "1000.5",
+            tvlRaw: "1000500000",
+          },
+          {
+            timestamp: "2026-06-02T00:00:00.000Z",
+            tvl: null,
+            tvlRaw: "0",
+          },
         ],
       })
     );

@@ -1,4 +1,4 @@
-import { Schema, SchemaTransformation } from "effect";
+import { Schema, SchemaGetter, SchemaTransformation } from "effect";
 import * as LegacyApi from "../../generated/api/legacy-schema";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { AdditionalAddresses } from "./address-models";
@@ -39,28 +39,21 @@ const RewardRatePoint = YieldApi.RewardRateSnapshotDto.pipe(
 
 const TvlPointWire = Schema.Struct({
   timestamp: Schema.String,
-  tvl: Schema.optionalKey(Schema.NullOr(Schema.String)),
-  tvlUsd: Schema.optionalKey(Schema.NullOr(Schema.FiniteFromString)),
+  tvl: Schema.FiniteFromString,
+  tvlRaw: Schema.String,
 });
 
 const TvlPoint = TvlPointWire.pipe(
-  Schema.decodeTo(
-    HistoryPoint,
-    SchemaTransformation.transform({
-      decode: (item): HistoryPoint => ({
-        date: new Date(item.timestamp),
-        timestamp: item.timestamp,
-        value: item.tvlUsd ?? Number.NaN,
-      }),
-      encode: (
-        point: HistoryPoint
-      ): {
-        readonly timestamp: string;
-        readonly tvl?: string | null;
-        readonly tvlUsd?: number | null;
-      } => ({ timestamp: point.timestamp, tvlUsd: point.value }),
-    })
-  )
+  Schema.decodeTo(HistoryPoint, {
+    decode: SchemaGetter.transform((item) => ({
+      date: new Date(item.timestamp),
+      timestamp: item.timestamp,
+      value: item.tvl,
+    })),
+    encode: SchemaGetter.forbidden(
+      () => "Resolved TVL history points are decode-only"
+    ),
+  })
 );
 
 const ValidHistoryPoint = HistoryPoint.check(

@@ -5,13 +5,7 @@ import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type { PropsWithChildren } from "react";
-import {
-  useDeferredValue,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useDeferredValue, useLayoutEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../../app/config/use-widget-config";
 import { stakeTokenSameAsGasToken } from "../../../../../../domain";
@@ -22,19 +16,16 @@ import type {
 import type { YieldId } from "../../../../../../domain/schema/identifiers";
 import type { TronResource } from "../../../../../../domain/schema/legacy-models";
 import { getKycProviderName } from "../../../../../../domain/types/kyc";
-import type { PositionsData } from "../../../../../../domain/types/positions";
 import { getTokenPriceInUSD } from "../../../../../../domain/types/price";
 import { tokenString } from "../../../../../../domain/types/tokens";
 import {
   type ExtendedYieldType,
-  filterValidators,
   getDashboardYieldCategory,
   getExtendedYieldType,
   getYieldRewardTokens,
   getYieldTypeLabels,
   getYieldTypesSortRank,
   isBittensorStaking,
-  isNonZeroRewardRateYield,
   isYieldActionArgRequired,
 } from "../../../../../../domain/types/yields";
 import type { DashboardYieldCategory } from "../../../../../../public-api/types";
@@ -66,7 +57,6 @@ import { useEstimatedRewards } from "../../../../react/use-estimated-rewards";
 import { useMaxMinYieldAmount } from "../../../../react/use-max-min-yield-amount";
 import { useProvidersDetails } from "../../../../react/use-provider-details";
 import { useRewardTokenDetails } from "../../../../react/use-reward-token-details";
-import { useValidatorsConfig } from "../../../../react/use-validators-config";
 import { useYieldKycGate } from "../../../../react/use-yield-kyc-gate";
 import { useYieldType } from "../../../../react/use-yield-type";
 import {
@@ -101,10 +91,6 @@ const getPullItems = <A, E>(
 ): ReadonlyArray<A> =>
   getAsyncValue(result)?.items.flatMap((page) => page.items) ?? [];
 
-const isAsyncErrorWithoutValue = <A, E>(
-  result: AsyncResult.AsyncResult<A, E>
-) => AsyncResult.isFailure(result) && getAsyncValue(result) === null;
-
 export const EarnPageModelBinding = ({
   children,
   registerFooterButton = true,
@@ -117,8 +103,6 @@ export const EarnPageModelBinding = ({
   const yieldGrouping = useWidgetConfig("yieldGrouping");
   const dashboardYieldCategoryGroupingEnabled =
     !!dashboardVariant && yieldGrouping === "category";
-  const validatorsConfig = useValidatorsConfig();
-
   const {
     isConnected,
     isConnecting,
@@ -132,39 +116,26 @@ export const EarnPageModelBinding = ({
     dispatch,
     input: machineInput,
     quote,
+    retry,
     view: machine,
   } = useEarnMachine();
 
   const tokenOptionsResource = machine.resources.tokenOptions;
-  const tokenOptionsResult = useAtomValue(
-    tokenOptionsResource.loadedTokenOptionsAtom
-  );
-  const tokenOptions = getAsyncValue(tokenOptionsResult) ?? [];
+  const tokenOptions = tokenOptionsResource.items;
   const [tokenOptionsPull, pullMoreTokens] = useAtom(
-    tokenOptionsResource.tokenOptionsPullAtom
+    tokenOptionsResource.pullAtom
   );
-  const positionsDataResult = useAtomValue(machine.resources.positionsDataAtom);
-  const positionsData =
-    getAsyncValue(positionsDataResult) ?? (new Map() as PositionsData);
+  const positionsData = machine.resources.positions.data;
 
   const selectedTokenOption = machine.selection.token;
   const selectedToken = selectedTokenOption?.token ?? null;
   const selectedStake = machine.selection.yield;
-  const selectedStakeId = machine.selection.yield?.id ?? null;
-  const filteredSelectedValidators = selectedStake
-    ? filterValidators({
-        validatorsConfig,
-        validators: [...machine.selection.validators],
-        network: selectedStake.token.network,
-        yieldId: selectedStake.id,
-      })
-    : [...machine.selection.validators];
   const selectedValidators = new Map(
-    filteredSelectedValidators.map((validator) => [validator.key, validator])
+    machine.selection.validators.map((validator) => [validator.key, validator])
   );
   const stakeAmount = quote.stakeAmount;
   const selectedProviderYieldId = quote.selectedProviderYieldId;
-  const tronResource = machineInput.tronResource as TronResource | null;
+  const tronResource = machineInput.tronResource;
   const selectedDashboardYieldCategory = machine.selection.category;
   const availableDashboardYieldCategories =
     dashboardYieldCategoryGroupingEnabled
@@ -272,9 +243,7 @@ export const EarnPageModelBinding = ({
   const [validatorsPullResult, pullMoreValidators] =
     useAtom(validatorsPullAtom);
 
-  const yieldOptions = machine.resources.yieldsResult
-    ? (getAsyncValue(machine.resources.yieldsResult) ?? [])
-    : [];
+  const yieldOptions = machine.resources.yields.items;
 
   const tokenBalancesData = useMemo(
     () =>
@@ -301,9 +270,9 @@ export const EarnPageModelBinding = ({
       !yieldOptions.some((yieldDto) => yieldDto.id === selectedStake.id)
         ? [selectedStake, ...yieldOptions]
         : [...yieldOptions];
-    const all = combined
-      .sort((a, b) => b.rewardRate.total - a.rewardRate.total)
-      .filter(isNonZeroRewardRateYield);
+    const all = combined.sort(
+      (a, b) => b.rewardRate.total - a.rewardRate.total
+    );
     const lowerSearch = deferredStakeSearch.toLowerCase();
     const filteredDtos = lowerSearch
       ? all.filter(
@@ -389,14 +358,9 @@ export const EarnPageModelBinding = ({
     () =>
       selectedStake && shouldFetchValidators
         ? (() => {
-            const validators = filterValidators({
-              validatorsConfig,
-              validators: debouncedValidatorSearch
-                ? getPullItems(validatorsPullResult)
-                : [...loadedValidatorsMap.values()],
-              network: selectedStake.token.network,
-              yieldId: selectedStake.id,
-            });
+            const validators = debouncedValidatorSearch
+              ? getPullItems(validatorsPullResult)
+              : [...loadedValidatorsMap.values()];
 
             if (
               dashboardVariant ||
@@ -409,7 +373,7 @@ export const EarnPageModelBinding = ({
               );
             }
 
-            return validators;
+            return [...validators];
           })()
         : null,
     [
@@ -419,7 +383,6 @@ export const EarnPageModelBinding = ({
       selectedStake,
       shouldFetchValidators,
       variant,
-      validatorsConfig,
       validatorsPullResult,
     ]
   );
@@ -528,11 +491,6 @@ export const EarnPageModelBinding = ({
     navigate(positionDetailsStakeReviewPath ?? "/review");
   };
 
-  // biome-ignore lint: false
-  useEffect(() => {
-    setSubmitted(false);
-  }, [isConnected, selectedStakeId]);
-
   const {
     maxIntegrationAmount,
     minIntegrationAmount,
@@ -600,8 +558,7 @@ export const EarnPageModelBinding = ({
   const { state } = useMountAnimation();
 
   const yieldOpportunityLoading =
-    machine.status === "loading-yields" ||
-    !!machine.resources.yieldsResult?.waiting;
+    machine.status === "loading-yields" || machine.resources.yields.waiting;
 
   const appLoading =
     !selectedToken ||
@@ -612,22 +569,22 @@ export const EarnPageModelBinding = ({
     !state.layout;
 
   const tokenOptionsLoading =
-    tokenOptionsResult.waiting && tokenOptions.length === 0;
+    tokenOptionsResource.waiting && tokenOptions.length === 0;
 
   const isFetching =
-    tokenOptionsResult.waiting ||
-    positionsDataResult.waiting ||
-    !!machine.resources.yieldsResult?.waiting;
+    tokenOptionsResource.waiting ||
+    machine.resources.positions.waiting ||
+    machine.resources.yields.waiting;
 
-  const isError =
-    isAsyncErrorWithoutValue(tokenOptionsResult) ||
-    isAsyncErrorWithoutValue(positionsDataResult) ||
-    (machine.resources.yieldsResult
-      ? isAsyncErrorWithoutValue(machine.resources.yieldsResult)
-      : false);
+  const isError = machine.status === "failed";
+  const canRetry = machine.failure !== null;
 
   const buttonDisabled =
-    isConnected && (isFetching || !stakeEnterRequestDto || kycGateIsBlocking);
+    isConnected &&
+    (isFetching ||
+      !machine.can.submit ||
+      !stakeEnterRequestDto ||
+      kycGateIsBlocking);
 
   const buttonCTAText = useYieldType(selectedStake)?.cta ?? "";
 
@@ -798,6 +755,8 @@ export const EarnPageModelBinding = ({
     onValidatorRemove,
     selectedValidators,
     isError,
+    canRetry,
+    onRetry: retry,
     rewardToken,
     onSelectOpportunityClose,
     onSelectTokenClose,

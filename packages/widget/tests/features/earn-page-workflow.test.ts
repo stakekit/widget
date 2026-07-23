@@ -1,11 +1,13 @@
-import { Atom } from "effect/unstable/reactivity";
+import { Option, Schema } from "effect";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
 import { widgetConfigAtom } from "../../src/app/config/settings";
+import { YieldId } from "../../src/domain/schema/identifiers";
 import {
   earnMachineEntryAtom,
   earnMachineIntentAtom,
   earnMachineViewAtom,
+  resolveWalletMachineView,
 } from "../../src/features/earn/state/atoms-state/machine/atoms";
 import {
   earnPageInputAtom,
@@ -46,28 +48,28 @@ describe("earn page workflow atoms", () => {
     expect(registry.get(earnMachineIntentAtom).selectedCategory).toBe("defi");
   });
 
-  it("retains the current machine view while wallet resolution is pending", () => {
-    const previousRegistry = AtomRegistry.make();
-    const previousView = previousRegistry.get(earnMachineViewAtom);
-    previousRegistry.dispose();
-    const registry = AtomRegistry.make({
-      initialValues: [
-        Atom.initialValue(earnMachineEntryAtom, {
-          categoryOrder: ["stake", "defi", "rwa"],
-          dashboardVariant: true,
-          initParams: null,
-          preferredTokenYieldsPerNetwork: null,
-          tokensForEnabledYieldsOnly: false,
-          walletResolution: "pending",
-          walletScope: null,
-        }),
-        Atom.initialValue(earnMachineViewAtom, previousView),
-      ],
+  it("publishes resolving-wallet while retaining the selection snapshot", () => {
+    const registry = AtomRegistry.make();
+    const previousView = registry.get(earnMachineViewAtom);
+    const nextView = resolveWalletMachineView({
+      entry: {
+        ...registry.get(earnMachineEntryAtom),
+        walletResolution: "pending",
+      },
+      previous: Option.some(previousView),
+      resolved: previousView,
     });
 
-    registry.refresh(earnMachineViewAtom);
-
-    expect(registry.get(earnMachineViewAtom)).toBe(previousView);
+    expect(nextView).toMatchObject({
+      can: {
+        selectToken: false,
+        selectYield: false,
+        selectValidator: false,
+        submit: false,
+      },
+      selection: previousView.selection,
+      status: "resolving-wallet",
+    });
     registry.dispose();
   });
 
@@ -123,5 +125,37 @@ describe("earn page workflow atoms", () => {
       hasErrors: true,
       submitted: true,
     });
+  });
+
+  it("resets submission state when category, yield, or token changes", () => {
+    const registry = AtomRegistry.make();
+
+    registry.set(earnPageSubmittedAtom, true);
+    registry.set(earnMachineIntentAtom, {
+      type: "category/select",
+      category: "defi",
+    });
+    expect(registry.get(earnPageSubmittedAtom)).toBe(false);
+
+    registry.set(earnPageSubmittedAtom, true);
+    registry.set(earnMachineIntentAtom, {
+      type: "yield/select",
+      yieldId: Schema.decodeSync(YieldId)("yield-1"),
+    });
+    expect(registry.get(earnPageSubmittedAtom)).toBe(false);
+
+    registry.set(earnPageSubmittedAtom, true);
+    registry.set(earnMachineIntentAtom, {
+      type: "token/select",
+      tokenKey: "ethereum-0xtoken",
+    });
+    expect(registry.get(earnPageSubmittedAtom)).toBe(false);
+
+    registry.set(earnPageSubmittedAtom, true);
+    registry.set(earnMachineIntentAtom, {
+      type: "stakeAmount/change",
+      amount: "1",
+    });
+    expect(registry.get(earnPageSubmittedAtom)).toBe(true);
   });
 });

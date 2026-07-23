@@ -8,7 +8,7 @@ import {
   yieldApiTransactionFixture,
   yieldApiValidatorFixture,
   yieldApiValidatorsFixture,
-  yieldApiYieldFixture,
+  yieldApiYieldDtoFixture,
 } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
@@ -50,7 +50,7 @@ export const setup = async (
   const avaxLiquidStakingRewardRate = 0.0475;
 
   const legacyYieldBase = legacyYieldFixture();
-  const yieldApiYieldBase = yieldApiYieldFixture();
+  const yieldApiYieldBase = yieldApiYieldDtoFixture();
   const avaxNativeStaking = legacyYieldFixture({
     id: "avalanche-avax-native-staking",
     token,
@@ -128,7 +128,7 @@ export const setup = async (
     },
     validators: avaxLiquidStakingLegacyValidators,
   });
-  const avaxNativeStakingYieldApi = yieldApiYieldFixture({
+  const avaxNativeStakingYieldApi = yieldApiYieldDtoFixture({
     id: avaxNativeStaking.id,
     network: token.network,
     token,
@@ -145,7 +145,7 @@ export const setup = async (
       gasFeeToken: token,
     },
   });
-  const avaxLiquidStakingYieldApi = yieldApiYieldFixture({
+  const avaxLiquidStakingYieldApi = yieldApiYieldDtoFixture({
     id: avaxLiquidStaking.id,
     network: token.network,
     providerId: avaxLiquidStaking.metadata.provider?.id ?? "benqi",

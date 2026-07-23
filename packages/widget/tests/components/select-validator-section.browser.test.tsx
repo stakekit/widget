@@ -29,19 +29,16 @@ const selectedStake = {
     requiresValidatorSelection: true,
     arguments: {
       enter: {
-        fields: [
-          {
-            label: "Validator",
-            name: "validatorAddress",
+        fields: {
+          validatorAddress: {
             required: true,
-            type: "address",
           },
-        ],
+        },
       },
-      exit: { fields: [] },
+      exit: { fields: {} },
     },
   },
-} as EarnYieldWithProvider;
+} satisfies EarnYieldWithProvider;
 
 const multiSelectStake = {
   ...selectedStake,
@@ -50,18 +47,15 @@ const multiSelectStake = {
     arguments: {
       ...selectedStake.mechanics.arguments,
       enter: {
-        fields: [
-          {
-            label: "Validators",
-            name: "validatorAddresses",
+        fields: {
+          validatorAddresses: {
             required: true,
-            type: "address",
           },
-        ],
+        },
       },
     },
   },
-} as EarnYieldWithProvider;
+} satisfies EarnYieldWithProvider;
 
 const createHookValue = (
   overrides: Partial<ReturnType<typeof useSelectValidator>> = {}
