@@ -77,7 +77,7 @@ describe("Effect API client", () => {
         calls.push({ headers: request.headers, url: request.url });
         return HttpResponse.json({
           status: "OK",
-          timestamp: new Date(0).toISOString(),
+          timestamp: "1970-01-01T00:00:00.000Z",
         });
       }),
       http.get("https://borrow.example.com/v1/integrations", ({ request }) => {
@@ -200,7 +200,7 @@ describe("Effect API client", () => {
             )
           : HttpResponse.json({
               status: "OK",
-              timestamp: new Date(0).toISOString(),
+              timestamp: "1970-01-01T00:00:00.000Z",
             });
       }),
       http.get("https://borrow.example.com/v1/integrations", () => {

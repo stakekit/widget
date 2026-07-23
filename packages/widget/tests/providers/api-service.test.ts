@@ -1,6 +1,7 @@
 import { Context, Effect, Layer, Option, Schema } from "effect";
 import * as HttpClientError from "effect/unstable/http/HttpClientError";
 import { describe, expect, it, vi } from "vitest";
+import { YieldAction } from "../../src/domain/schema/action-models";
 import {
   ApiRequestError,
   MissingBorrowApiConfig,
@@ -29,7 +30,7 @@ import {
   YieldResourceSource,
 } from "../../src/services/api/yield-resource-source";
 import {
-  yieldApiActionFixture,
+  yieldApiActionDtoFixture,
   yieldApiProviderFixture,
   yieldApiYieldDtoFixture,
   yieldApiYieldFixture,
@@ -142,7 +143,10 @@ describe("application API services", () => {
 
   it("maps Health through the Yield read capability", async () => {
     const health = vi.fn(() =>
-      Effect.succeed({ status: "OK", timestamp: new Date(0).toISOString() })
+      Effect.succeed({
+        status: "OK",
+        timestamp: "1970-01-01T00:00:00.000Z",
+      })
     );
     const source = makeYieldResourceSource({
       HealthControllerHealth: health,
@@ -165,7 +169,8 @@ describe("application API services", () => {
   });
 
   it("maps Action Preview through the narrow Yield operation capability", async () => {
-    const action = yieldApiActionFixture();
+    const action = yieldApiActionDtoFixture();
+    const expected = Schema.decodeUnknownSync(YieldAction)(action);
     const enter = vi.fn(() => Effect.succeed(action));
     const operations = makeYieldOperations({
       ActionsControllerEnterYield: enter,
@@ -180,7 +185,7 @@ describe("application API services", () => {
       await Effect.runPromise(
         operations.previewAction({ command, intent: "enter" })
       )
-    ).toEqual(action);
+    ).toEqual(expected);
     expect(enter).toHaveBeenCalledWith({ payload: command });
   });
 

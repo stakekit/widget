@@ -889,6 +889,19 @@
       "locked": "Locked",
       "unlocking": "Unlocking"
     },
+    "duration": {
+      "less_than_minute": "less than a minute",
+      "minutes_one": "{{count}} minute",
+      "minutes_other": "{{count}} minutes",
+      "hours_one": "{{count}} hour",
+      "hours_other": "{{count}} hours",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "months_one": "{{count}} month",
+      "months_other": "{{count}} months",
+      "years_one": "{{count}} year",
+      "years_other": "{{count}} years"
+    },
     "unstaking_duration": "{{duration}} remaining",
     "unstaking_imminent": "Imminent",
     "pending_action": {

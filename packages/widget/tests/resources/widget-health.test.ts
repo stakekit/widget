@@ -1,4 +1,4 @@
-import { Cause, Effect, Layer, Option } from "effect";
+import { Cause, DateTime, Effect, Layer, Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
@@ -25,14 +25,14 @@ const makeRegistry = (getHealth: YieldResourceSource["Service"]["getHealth"]) =>
 
 describe("Widget Health resource", () => {
   it("projects healthy and maintenance states", () => {
-    let status: "MAINTENANCE" | "OK" = "OK";
+    let status: "FAIL" | "OK" = "OK";
     const getHealth = vi.fn(() =>
-      Effect.succeed({ status, timestamp: new Date(0) } as never)
+      Effect.succeed({ status, timestamp: DateTime.makeUnsafe(0) })
     );
     const registry = makeRegistry(getHealth);
 
     expect(registry.get(underMaintenanceAtom)).toBe(false);
-    status = "MAINTENANCE";
+    status = "FAIL";
     registry.refresh(widgetHealthResourceAtom);
     expect(registry.get(underMaintenanceAtom)).toBe(true);
   });
@@ -46,7 +46,10 @@ describe("Widget Health resource", () => {
     const getHealth = vi.fn(() =>
       offline
         ? Effect.fail(requestError)
-        : Effect.succeed({ status: "OK", timestamp: new Date(0) } as never)
+        : Effect.succeed({
+            status: "OK" as const,
+            timestamp: DateTime.makeUnsafe(0),
+          })
     );
     const registry = makeRegistry(getHealth);
     const failed = registry.get(widgetHealthResourceAtom);
@@ -67,7 +70,10 @@ describe("Widget Health resource", () => {
     vi.useFakeTimers();
     try {
       const getHealth = vi.fn(() =>
-        Effect.succeed({ status: "OK", timestamp: new Date(0) } as never)
+        Effect.succeed({
+          status: "OK" as const,
+          timestamp: DateTime.makeUnsafe(0),
+        })
       );
       const registry = makeRegistry(getHealth);
       const unmount = registry.mount(widgetHealthResourceAtom);

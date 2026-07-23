@@ -26,6 +26,15 @@
         "package.json"
       ]
     },
+    "//#lint:ast": {
+      "inputs": [
+        "packages/widget/src/**/*.{ts,tsx}",
+        "packages/widget/tests/**/*.{ts,tsx}",
+        "packages/widget/scripts/**/*.{ts,tsx}",
+        "sgconfig.yml",
+        "tools/ast-grep/**"
+      ]
+    },
     "format": {
       "inputs": [
         "src/**",

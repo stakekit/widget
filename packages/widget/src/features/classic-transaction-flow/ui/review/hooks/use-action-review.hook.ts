@@ -11,7 +11,6 @@ import {
   getExtendedYieldType,
   isUnstakeYieldType,
 } from "../../../../../domain/types/yields";
-import { dateOlderThen7Days } from "../../../../../shared/lib/date";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useYieldType } from "../../../../earn/react/use-yield-type";
 import { useTrackPage } from "../../../../tracking/react/use-track-page";
@@ -97,23 +96,18 @@ export const useActionReview = () => {
       : "retry";
   }, [transactions]);
 
-  const actionOlderThan7Days = useMemo(
-    () => dateOlderThen7Days(selectedAction.createdAt),
-    [selectedAction]
-  );
-
   const cta = useMemo<PageCta>(
     () => ({
       label: t(`activity.review.${labelKey}`),
       onClick: () => confirmFlow(undefined),
       disabled: review.confirmDisabled,
       isLoading: review.confirmLoading,
-      hide: actionOlderThan7Days,
+      hide: review.actionExpired,
     }),
     [
       confirmFlow,
       labelKey,
-      actionOlderThan7Days,
+      review.actionExpired,
       review.confirmDisabled,
       review.confirmLoading,
       t,
@@ -128,7 +122,7 @@ export const useActionReview = () => {
     title,
     amount,
     inputToken,
-    actionOlderThan7Days,
+    actionExpired: review.actionExpired,
     labelKey,
     cta,
   };

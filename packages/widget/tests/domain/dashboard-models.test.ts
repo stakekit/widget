@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect";
+import { DateTime, Effect, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import {
   KycStatus,
@@ -64,8 +64,12 @@ describe("dashboard application schemas", () => {
 
     expect(rewardRate.items).toHaveLength(1);
     expect(rewardRate.items[0]?.value).toBe(5);
+    expect(DateTime.isDateTime(rewardRate.from)).toBe(true);
+    expect(DateTime.isDateTime(rewardRate.to)).toBe(true);
+    expect(DateTime.isDateTime(rewardRate.items[0]?.timestamp)).toBe(true);
     expect(tvl.items).toHaveLength(1);
     expect(tvl.items[0]?.value).toBe(1000.5);
+    expect(DateTime.isDateTime(tvl.items[0]?.timestamp)).toBe(true);
   });
 
   it("omits a malformed reward summary while retaining valid siblings", async () => {

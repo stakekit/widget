@@ -1,9 +1,0 @@
-id: no-date-now
-valid:
-  - 'const now = yield* Clock.currentTimeMillis'
-  - 'Duration.toMillis(Duration.seconds(12))'
-  - 'new Date(timestamp)'
-invalid:
-  - 'Date.now()'
-  - 'window.Date.now()'
-  - 'globalThis.Date.now()'

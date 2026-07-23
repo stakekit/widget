@@ -1,6 +1,4 @@
 import { useAtomValue } from "@effect/atom-react";
-import { setDefaultOptions } from "date-fns";
-import { enUS as dateFnsEN, fr as dateFnsFR } from "date-fns/locale";
 import {
   Data,
   Duration,
@@ -61,15 +59,7 @@ i18nInstance
     interpolation: { escapeValue: false },
     detection: { order: ["navigator", "localStorage"] },
   })
-  .then(() => {
-    setDefaultOptions({
-      locale: i18nInstance.language === "fr" ? dateFnsFR : dateFnsEN,
-    });
-  });
-
-i18nInstance.on("languageChanged", (lng) => {
-  setDefaultOptions({ locale: lng === "fr" ? dateFnsFR : dateFnsEN });
-});
+  .then(() => undefined);
 
 i18nInstance.services.formatter?.add("lowercase", (value, _, __) =>
   value.toLowerCase()

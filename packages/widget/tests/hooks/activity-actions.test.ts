@@ -10,6 +10,7 @@ import { YieldResourceSource } from "../../src/services/api/yield-resource-sourc
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import {
+  yieldApiActionDtoFixture,
   yieldApiActionFixture,
   yieldApiValidatorFixture,
   yieldApiYieldFixture,
@@ -37,12 +38,12 @@ describe("activity action atom boundary", () => {
   });
 
   it("omits a malformed action while retaining valid siblings", async () => {
-    const valid = yieldApiActionFixture({ id: "valid-action" });
+    const valid = yieldApiActionDtoFixture({ id: "valid-action" });
     const malformed: Record<string, unknown> = {
-      ...yieldApiActionFixture({ id: "invalid-action" }),
+      ...yieldApiActionDtoFixture({ id: "invalid-action" }),
       transactions: [
         {
-          ...yieldApiActionFixture().transactions[0]!,
+          ...yieldApiActionDtoFixture().transactions[0]!,
           network: "not-a-network",
         },
       ],

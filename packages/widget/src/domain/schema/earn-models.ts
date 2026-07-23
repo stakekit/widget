@@ -10,7 +10,11 @@ import {
 } from "./identifiers";
 import { TronResource } from "./legacy-models";
 import { TolerantTopLevelArray } from "./response";
-import { BigIntFromString, PrecisionDecimalFromString } from "./scalars";
+import {
+  BigIntFromString,
+  PrecisionDecimalFromString,
+  TolerantOptionalUtcDateTimeFromString,
+} from "./scalars";
 
 export const EarnToken = Schema.Struct({
   ...YieldApi.TokenDto.fields,
@@ -301,6 +305,12 @@ export const EarnBalance = Schema.Struct({
   amount: PrecisionDecimalFromString,
   amountRaw: BigIntFromString,
   amountUsd: Schema.optionalKey(Schema.NullOr(PrecisionDecimalFromString)),
+  date: Schema.optionalKey(
+    TolerantOptionalUtcDateTimeFromString({
+      operation: "yield-balance",
+      field: "date",
+    })
+  ),
   pendingActions: Schema.Array(PendingAction),
   token: EarnToken,
   validator: Schema.optionalKey(EarnValidator),

@@ -552,7 +552,7 @@ describe("semantic resource invalidation", () => {
     const action = {
       action: "repay",
       address: scopeA.address,
-      createdAt: new Date().toISOString(),
+      createdAt: "2026-07-23T00:00:00.000Z",
       currentStep: 1,
       hasNextStep: false,
       id: "borrow-action",

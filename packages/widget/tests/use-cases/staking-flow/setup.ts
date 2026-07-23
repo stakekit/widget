@@ -6,8 +6,9 @@ import type { ActionCommand } from "../../../src/domain/schema/action-models";
 import { EarnYieldWithProvider } from "../../../src/domain/schema/earn-models";
 import type { LegacyTransaction } from "../../../src/domain/schema/legacy-models";
 import {
-  yieldApiActionFixture,
+  yieldApiActionDtoFixture,
   yieldApiProviderFixture,
+  yieldApiTransactionDtoFixture,
   yieldApiTransactionFixture,
   yieldApiValidatorsFixture,
   yieldApiYieldDtoFixture,
@@ -340,7 +341,7 @@ export const setup = async (worker: TestWorker) => {
       const body = (await info.request.json()) as ActionCommand;
 
       return HttpResponse.json(
-        yieldApiActionFixture({
+        yieldApiActionDtoFixture({
           id: enterAction.id,
           yieldId: enterAction.integrationId,
           type: enterAction.type,
@@ -349,7 +350,7 @@ export const setup = async (worker: TestWorker) => {
           amountRaw: body.arguments?.amount ?? null,
           amountUsd: null,
           transactions: [
-            yieldApiTransactionFixture({
+            yieldApiTransactionDtoFixture({
               id: EArray.getUnsafe(enterAction.transactions, 0).id,
               network: transactionConstruct.network,
               status: "CREATED",

@@ -1,9 +1,10 @@
 import * as Atom from "effect/unstable/reactivity/Atom";
 
-export const actionHistoryTimestampAtom = Atom.make<number | null>(null).pipe(
-  Atom.withLabel("actionHistoryTimestampAtom")
+export const actionHistoryRevisionAtom = Atom.make(0).pipe(
+  Atom.withLabel("actionHistoryRevisionAtom")
 );
 
-export const markActionHistoryChanged = (timestamp = Date.now()) => timestamp;
+export const incrementActionHistoryRevision = (revision: number) =>
+  revision + 1;
 
-export const resetActionHistory = () => null;
+export const resetActionHistoryRevision = () => 0;

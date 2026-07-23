@@ -85,7 +85,6 @@ catalog:
   chain-registry: 1.69.221
   clsx: ^2.1.1
   cosmjs-types: ^0.10.1
-  date-fns: ^4.1.0
   effect: 4.0.0-beta.97
   eventemitter3: ^5.0.4
   husky: ^9.1.7

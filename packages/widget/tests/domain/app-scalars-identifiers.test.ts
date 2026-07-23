@@ -11,7 +11,6 @@ import {
   BigIntFromString,
   PrecisionDecimalFromString,
   UtcDateTimeFromString,
-  ValidDateFromString,
 } from "../../src/domain/schema/scalars";
 
 describe("application scalar and identifier schemas", () => {
@@ -29,18 +28,11 @@ describe("application scalar and identifier schemas", () => {
   });
 
   it("rejects invalid dates and normalizes valid date-times to UTC", () => {
-    const date = Schema.decodeUnknownSync(ValidDateFromString)(
-      "2026-07-10T12:00:00Z"
-    );
     const dateTime = Schema.decodeUnknownSync(UtcDateTimeFromString)(
       "2026-07-10T14:00:00+02:00"
     );
 
-    expect(date.toISOString()).toBe("2026-07-10T12:00:00.000Z");
     expect(DateTime.formatIso(dateTime)).toBe("2026-07-10T12:00:00.000Z");
-    expect(() =>
-      Schema.decodeUnknownSync(ValidDateFromString)("not-a-date")
-    ).toThrow();
     expect(() =>
       Schema.decodeUnknownSync(UtcDateTimeFromString)("not-a-date")
     ).toThrow();

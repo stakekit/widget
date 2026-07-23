@@ -1,6 +1,6 @@
+import { useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
-import { isPast } from "date-fns";
-import { useMemo } from "react";
+import { DateTime, Match } from "effect";
 import { useTranslation } from "react-i18next";
 import type {
   EarnBalance,
@@ -10,7 +10,8 @@ import {
   getExtendedYieldType,
   isDepositYieldType,
 } from "../../../../../domain/types/yields";
-import { formatDurationUntilDate } from "../../../../../shared/lib/date";
+import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
+import { getDisplayDurationUntil } from "../../../../../shared/lib/date";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
@@ -24,29 +25,39 @@ export const PositionBalances = ({
   integrationData: EarnYieldWithProvider;
 }) => {
   const { t } = useTranslation();
+  const presentationTime = useAtomValue(presentationClockAtom);
 
-  const durationUntilDate = useMemo(() => {
-    if (
-      !yieldBalance.date ||
-      (yieldBalance.type !== "entering" && yieldBalance.type !== "exiting")
-    ) {
-      return null;
-    }
-
-    const date = new Date(yieldBalance.date);
-
-    if (isPast(date)) {
-      return t("position_details.unstaking_imminent");
-    }
-
-    const duration = formatDurationUntilDate(date);
-
-    if (!duration) {
-      return null;
-    }
-
-    return t("position_details.unstaking_duration", { duration });
-  }, [yieldBalance.date, yieldBalance.type, t]);
+  const date = yieldBalance.date;
+  const isPendingBalance =
+    yieldBalance.type === "entering" || yieldBalance.type === "exiting";
+  const displayDuration =
+    date && isPendingBalance && presentationTime
+      ? getDisplayDurationUntil(date, presentationTime.now)
+      : undefined;
+  const duration = Match.value(displayDuration).pipe(
+    Match.when({ unit: "less-than-minute" }, () =>
+      t("position_details.duration.less_than_minute")
+    ),
+    Match.when({ unit: Match.any }, ({ unit, value }) =>
+      t(`position_details.duration.${unit}`, { count: value })
+    ),
+    Match.orElse(() => null)
+  );
+  const durationUntilDate = Match.value(
+    date && isPendingBalance && presentationTime
+      ? { date, now: presentationTime.now, duration }
+      : null
+  ).pipe(
+    Match.when(null, () => null),
+    Match.when(
+      ({ date, now }) => DateTime.isLessThanOrEqualTo(date, now),
+      () => t("position_details.unstaking_imminent")
+    ),
+    Match.when({ duration: Match.defined }, ({ duration }) =>
+      t("position_details.unstaking_duration", { duration })
+    ),
+    Match.orElse(() => null)
+  );
 
   const yieldType = getExtendedYieldType(integrationData);
 

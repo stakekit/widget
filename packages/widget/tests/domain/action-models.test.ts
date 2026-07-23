@@ -1,14 +1,17 @@
 import BigNumber from "bignumber.js";
-import { Schema } from "effect";
+import { Effect, Logger, References, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import {
   ActionCommand,
   TransactionGasEstimateJson,
   YieldAction,
 } from "../../src/domain/schema/action-models";
-import { yieldApiActionFixture, yieldApiTransactionFixture } from "../fixtures";
+import {
+  yieldApiActionDtoFixture,
+  yieldApiTransactionDtoFixture,
+} from "../fixtures";
 
-const transaction = yieldApiTransactionFixture({
+const transaction = yieldApiTransactionDtoFixture({
   gasEstimate: JSON.stringify({
     amount: "0.01",
     token: {
@@ -22,7 +25,7 @@ const transaction = yieldApiTransactionFixture({
   network: "ethereum",
 });
 
-const action = yieldApiActionFixture({
+const action = yieldApiActionDtoFixture({
   address: "0xWallet",
   id: "action-1",
   transactions: [transaction],
@@ -50,6 +53,58 @@ describe("action application schemas", () => {
         transactions: [{ ...transaction, id: "" }],
       })
     ).toThrow();
+  });
+
+  it("rejects invalid required timestamps", async () => {
+    await expect(
+      Effect.runPromise(
+        Schema.decodeUnknownEffect(YieldAction)({
+          ...action,
+          createdAt: "invalid",
+        })
+      )
+    ).rejects.toThrow();
+  });
+
+  it("safely clears invalid nullable timestamps and emits structured warnings", async () => {
+    const annotations: Array<Record<string, unknown>> = [];
+    const logger = Logger.make<unknown, void>((options) => {
+      annotations.push({
+        ...options.fiber.getRef(References.CurrentLogAnnotations),
+      });
+    });
+    const decoded = await Effect.runPromise(
+      Schema.decodeUnknownEffect(YieldAction)({
+        ...action,
+        completedAt: "invalid-completion",
+        transactions: [
+          {
+            ...transaction,
+            broadcastedAt: "invalid-broadcast",
+          },
+        ],
+      }).pipe(Effect.provide(Logger.layer([logger])))
+    );
+
+    expect(decoded.completedAt).toBeNull();
+    expect(decoded.transactions[0]?.broadcastedAt).toBeNull();
+    expect(annotations).toHaveLength(2);
+    expect(annotations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          event: "api_decode_field_rejection",
+          operation: "yield-action",
+          field: "completedAt",
+        }),
+        expect.objectContaining({
+          event: "api_decode_field_rejection",
+          operation: "yield-action-transaction",
+          field: "broadcastedAt",
+        }),
+      ])
+    );
+    expect(JSON.stringify(annotations)).not.toContain("invalid-completion");
+    expect(JSON.stringify(annotations)).not.toContain("invalid-broadcast");
   });
 
   it("decodes transaction gas JSON only through Effect Schema", () => {

@@ -1,3 +1,5 @@
+import { useAtomValue } from "@effect/atom-react";
+import { DateTime } from "effect";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -5,6 +7,7 @@ import {
   type ActionType,
   getActionInputToken,
 } from "../../../../../../domain/types/action";
+import { presentationClockAtom } from "../../../../../../shared/effect/presentation-clock";
 import {
   getActivityDayKind,
   getActivityRelativeTime,
@@ -86,6 +89,7 @@ const getFallbackTokenSymbol = ({
 
 export const useActionListItem = (action: ActionYieldDto) => {
   const { t, i18n } = useTranslation();
+  const presentationTime = useAtomValue(presentationClockAtom);
 
   const locale = i18n.language;
 
@@ -169,14 +173,18 @@ export const useActionListItem = (action: ActionYieldDto) => {
   const { timestampAbsolute, timestampRelative } = useMemo(() => {
     const createdAt = action.actionData.createdAt;
 
-    if (!createdAt) {
+    if (!createdAt || !presentationTime) {
       return { timestampAbsolute: "", timestampRelative: "" };
     }
 
-    const date = new Date(createdAt);
-    const dayKind = getActivityDayKind(date);
+    const dayKind = getActivityDayKind(
+      createdAt,
+      presentationTime.now,
+      presentationTime.timeZone
+    );
 
-    const time = date.toLocaleTimeString(locale, {
+    const time = DateTime.formatLocal(createdAt, {
+      locale,
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
@@ -187,13 +195,17 @@ export const useActionListItem = (action: ActionYieldDto) => {
         ? `${t("activity.date_group_labels.today")} · ${time}`
         : dayKind === "yesterday"
           ? t("activity.date_group_labels.yesterday")
-          : date.toLocaleDateString(locale, {
+          : DateTime.formatLocal(createdAt, {
+              locale,
               day: "2-digit",
               month: "short",
               year: "numeric",
             });
 
-    const relativeParts = getActivityRelativeTime(date);
+    const relativeParts = getActivityRelativeTime(
+      createdAt,
+      presentationTime.now
+    );
     const relative =
       relativeParts.unit === "now"
         ? t("activity.time.now")
@@ -204,7 +216,7 @@ export const useActionListItem = (action: ActionYieldDto) => {
             : t("activity.time.days_ago", { count: relativeParts.value });
 
     return { timestampAbsolute: absolute, timestampRelative: relative };
-  }, [action.actionData.createdAt, locale, t]);
+  }, [action.actionData.createdAt, locale, presentationTime, t]);
 
   const showFailedBadge = action.actionData.status === ActionStatus.FAILED;
   const canOpenDetails = !!action.yieldData;

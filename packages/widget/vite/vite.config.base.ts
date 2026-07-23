@@ -53,7 +53,6 @@ export const getConfig = (
           "vite-plugin-node-polyfills/shims/process",
           "@vanilla-extract/recipes/createRuntimeFn",
           "@vanilla-extract/sprinkles/createRuntimeSprinkles",
-          "date-fns/locale",
         ],
       },
       plugins: [

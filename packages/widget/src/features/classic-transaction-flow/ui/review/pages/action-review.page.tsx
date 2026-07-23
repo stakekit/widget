@@ -22,7 +22,7 @@ export const ActionReviewPage = () => {
     title,
     amount,
     inputToken,
-    actionOlderThan7Days,
+    actionExpired,
     labelKey,
     cta,
   } = useActionReview();
@@ -74,7 +74,7 @@ export const ActionReviewPage = () => {
           </Box>
         ))}
         <Divider my="2" />
-        {!actionOlderThan7Days && (
+        {!actionExpired && (
           <Box marginTop="4" marginBottom="4">
             <Text variant={{ weight: "normal", type: "muted" }}>
               <Trans

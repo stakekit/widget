@@ -4,8 +4,8 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
 import { WalletService } from "../../../services/wallet/wallet-service";
 import {
-  actionHistoryTimestampAtom,
-  resetActionHistory,
+  actionHistoryRevisionAtom,
+  resetActionHistoryRevision,
 } from "../../classic-transaction-flow/state/action-history";
 
 type LedgerAccountConnector = {
@@ -58,7 +58,7 @@ export const logoutAtom = walletRuntime.fn((_, context) =>
     }).pipe(
       Effect.tap(() =>
         Effect.sync(() => {
-          context.set(actionHistoryTimestampAtom, resetActionHistory());
+          context.set(actionHistoryRevisionAtom, resetActionHistoryRevision());
         })
       )
     )

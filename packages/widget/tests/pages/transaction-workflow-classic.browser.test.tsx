@@ -10,7 +10,7 @@ import { MemoryRouter, Outlet, Route, Routes, useNavigate } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
-import { actionHistoryTimestampAtom } from "../../src/features/classic-transaction-flow/state/action-history";
+import { actionHistoryRevisionAtom } from "../../src/features/classic-transaction-flow/state/action-history";
 import { makeClassicTransactionWorkflowModule } from "../../src/features/classic-transaction-flow/state/classic-transaction-workflow";
 import type { ActionMeta } from "../../src/public-api/types";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
@@ -76,7 +76,7 @@ const WorkflowProbe = () => {
   const workflow = useContext(WorkflowContext);
   if (!workflow) throw new Error("Expected a workflow");
   const view = useAtomValue(workflow.viewAtom);
-  const actionHistoryTimestamp = useAtomValue(actionHistoryTimestampAtom);
+  const actionHistoryRevision = useAtomValue(actionHistoryRevisionAtom);
   if (!view) throw new Error("Expected workflow input");
   const { state } = view;
   const navigate = useNavigate();
@@ -85,7 +85,7 @@ const WorkflowProbe = () => {
     <>
       <div data-testid="state">{state._tag}</div>
       <div data-testid="action-history">
-        {actionHistoryTimestamp === null ? "unchanged" : "changed"}
+        {actionHistoryRevision === 0 ? "unchanged" : "changed"}
       </div>
       <button type="button" onClick={() => navigate(-1)}>
         Leave workflow

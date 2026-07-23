@@ -15,8 +15,8 @@ import {
 } from "../../../services/workflow/transaction-workflow-model";
 import { makeTransactionWorkflowModule } from "../../transaction-workflow/state";
 import {
-  actionHistoryTimestampAtom,
-  markActionHistoryChanged,
+  actionHistoryRevisionAtom,
+  incrementActionHistoryRevision,
 } from "./action-history";
 
 export enum ClassicTransactionStepState {
@@ -161,8 +161,10 @@ export const makeClassicTransactionWorkflowModule = (
             event.context.domain._tag === "Classic"
           ) {
             registry.set(
-              actionHistoryTimestampAtom,
-              markActionHistoryChanged()
+              actionHistoryRevisionAtom,
+              incrementActionHistoryRevision(
+                registry.get(actionHistoryRevisionAtom)
+              )
             );
           }
         },

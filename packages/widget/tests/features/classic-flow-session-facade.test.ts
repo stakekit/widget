@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Effect, Layer, Schema, Stream } from "effect";
+import { DateTime, Duration, Effect, Layer, Schema, Stream } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
@@ -253,9 +253,11 @@ describe("Classic Flow Session module", () => {
     ).toBe("old-action");
 
     const firstReview = registry.get(makeClassicFlowReviewScope(flow));
-    const disposeFirstReview = registry.mount(firstReview.reviewViewAtom);
+    const disposeFirstReview = registry.mount(
+      firstReview.activityReviewViewAtom
+    );
     await vi.waitFor(() =>
-      expect(registry.get(firstReview.reviewViewAtom).action?.id).toBe(
+      expect(registry.get(firstReview.activityReviewViewAtom).action?.id).toBe(
         "fresh-action-1"
       )
     );
@@ -276,9 +278,11 @@ describe("Classic Flow Session module", () => {
     await vi.waitFor(() => expect(probe.disposed).toBe(1));
 
     const secondReview = registry.get(makeClassicFlowReviewScope(flow));
-    const disposeSecondReview = registry.mount(secondReview.reviewViewAtom);
+    const disposeSecondReview = registry.mount(
+      secondReview.activityReviewViewAtom
+    );
     await vi.waitFor(() =>
-      expect(registry.get(secondReview.reviewViewAtom).action?.id).toBe(
+      expect(registry.get(secondReview.activityReviewViewAtom).action?.id).toBe(
         "fresh-action-2"
       )
     );
@@ -295,6 +299,56 @@ describe("Classic Flow Session module", () => {
     disposeSecondReview();
     await vi.waitFor(() => expect(probe.disposed).toBe(2));
     disposeSession();
+  });
+
+  it("blocks confirmation when the resumed Activity action is seven days old", async () => {
+    vi.useFakeTimers();
+    try {
+      const now = DateTime.makeUnsafe("2026-07-23T12:00:00.000Z");
+      vi.setSystemTime(DateTime.toEpochMillis(now));
+      const store = classicFlowSessionStore;
+      const registry = makeRegistry(() =>
+        Effect.succeed(yieldApiActionFixture({ id: "fresh-action" }))
+      );
+      registry.set(store.startAtom, {
+        _tag: "ActivityResume",
+        action: yieldApiActionFixture({
+          id: "expired-action",
+          createdAt: DateTime.subtractDuration(now, Duration.days(7)),
+        }),
+        providersDetails: [],
+        selectedValidators: [],
+        selectedYield: yieldApiYieldFixture(),
+        walletScope,
+      });
+      const session = registry.get(store.currentSessionAtom);
+      if (!session) throw new Error("Expected an Activity Flow Session");
+      const rootAtom = makeClassicFlowSessionModule(session);
+      const disposeSession = registry.mount(rootAtom);
+      const review = registry.get(
+        makeClassicFlowReviewScope(registry.get(rootAtom))
+      );
+      const disposeReview = registry.mount(review.activityReviewViewAtom);
+
+      await vi.advanceTimersByTimeAsync(0);
+      expect(registry.get(review.activityReviewViewAtom).actionExpired).toBe(
+        true
+      );
+      expect(registry.get(review.activityReviewViewAtom).confirmDisabled).toBe(
+        true
+      );
+
+      registry.set(review.confirmAtom, undefined);
+      expect(registry.get(review.navigationAtom)).toBeNull();
+      expect(
+        registry.get(makeClassicFlowExecutionScope(registry.get(rootAtom)))
+      ).toBeNull();
+
+      disposeReview();
+      disposeSession();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("disposes the workflow when its Execution scope exits", async () => {

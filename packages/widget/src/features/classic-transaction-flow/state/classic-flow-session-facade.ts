@@ -273,9 +273,21 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
       }
     );
 
+    const reviewResources = makeClassicFlowSessionReviewResources({
+      actionPreviewAtom,
+      intakeAtom,
+      kycGateAtom,
+    });
+
     const confirmAtom = Atom.fnSync(
       (_input: undefined, context) => {
         if (context(kycGateAtom).isGateBlocking) return;
+        if (
+          session.intake._tag === "ActivityResume" &&
+          context(reviewResources.activityActionExpiredAtom)
+        ) {
+          return;
+        }
 
         if (AsyncResult.isFailure(context(actionPreviewAtom))) {
           context.set(retryAtom, undefined);
@@ -309,12 +321,6 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
       },
       { initialValue: undefined }
     ).pipe(Atom.setIdleTTL(0), Atom.withLabel("confirmClassicFlowReviewAtom"));
-
-    const reviewResources = makeClassicFlowSessionReviewResources({
-      actionPreviewAtom,
-      intakeAtom,
-      kycGateAtom,
-    });
 
     return {
       activityReviewViewAtom: reviewResources.activityReviewViewAtom,

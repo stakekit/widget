@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Option } from "effect";
+import { DateTime, Duration, Option, Schedule, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type { YieldAction } from "../../../domain/schema/action-models";
@@ -78,6 +78,29 @@ export const makeClassicFlowSessionReviewResources = ({
     get(actionPreviewAtom).pipe(AsyncResult.value, Option.getOrNull)
   );
 
+  const activityActionExpiredResourceAtom = Atom.make((get) => {
+    const intake = get(intakeAtom);
+    if (intake._tag !== "ActivityResume") {
+      throw new Error("Expected Classic Flow ActivityResume intake.");
+    }
+
+    return Stream.fromEffectSchedule(
+      DateTime.now,
+      Schedule.spaced("1 minute")
+    ).pipe(
+      Stream.map((now) =>
+        Duration.isGreaterThanOrEqualTo(
+          DateTime.distance(intake.action.createdAt, now),
+          Duration.days(7)
+        )
+      )
+    );
+  }).pipe(Atom.withLabel("classicFlowActivityActionExpiredResourceAtom"));
+
+  const activityActionExpiredAtom = Atom.make((get) =>
+    AsyncResult.getOrElse(get(activityActionExpiredResourceAtom), () => true)
+  ).pipe(Atom.withLabel("classicFlowActivityActionExpiredAtom"));
+
   const gasAmountAtom = Atom.make((get) =>
     getGasAmount(get(reviewActionAtom))
   ).pipe(Atom.withLabel("classicFlowSessionGasAmountAtom"));
@@ -148,12 +171,19 @@ export const makeClassicFlowSessionReviewResources = ({
     }
 
     const view = get(reviewViewAtom);
+    const actionExpired = get(activityActionExpiredAtom);
     return {
       ...view,
       action: view.action ?? intake.action,
+      actionExpired,
+      confirmDisabled: view.confirmDisabled || actionExpired,
       selectedYield: intake.selectedYield,
     } as const;
   }).pipe(Atom.withLabel("classicFlowSessionActivityReviewViewAtom"));
 
-  return { activityReviewViewAtom, reviewViewAtom } as const;
+  return {
+    activityActionExpiredAtom,
+    activityReviewViewAtom,
+    reviewViewAtom,
+  } as const;
 };

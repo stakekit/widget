@@ -1,3 +1,4 @@
+import { DateTime } from "effect";
 import { useId } from "react";
 import { Area, AreaChart, XAxis, YAxis } from "recharts";
 import type { HistoryPoint } from "../../../../../domain/schema/dashboard-models";
@@ -99,7 +100,12 @@ export const HistoryChart = ({
           </linearGradient>
         </defs>
 
-        <XAxis dataKey="timestamp" hide />
+        <XAxis
+          dataKey={(point: HistoryPoint) =>
+            DateTime.toEpochMillis(point.timestamp)
+          }
+          hide
+        />
 
         <YAxis
           axisLine={false}

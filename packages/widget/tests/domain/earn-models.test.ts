@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Schema } from "effect";
+import { Effect, Logger, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import {
   EarnBalance,
@@ -64,6 +64,23 @@ describe("Earn application models", () => {
     );
     expect(balance.amountRaw).toBe(9007199254740993000000000000000001n);
     expect(balance.amountUsd?.toFixed()).toBe("12345678901234567890.12");
+  });
+
+  it("safely omits an invalid optional balance timestamp", async () => {
+    const balance = await Effect.runPromise(
+      Schema.decodeUnknownEffect(EarnBalance)({
+        address: "wallet-1",
+        type: "active",
+        amount: "1",
+        amountRaw: "1",
+        date: "invalid",
+        pendingActions: [],
+        token,
+        isEarning: true,
+      }).pipe(Effect.provide(Logger.layer([])))
+    );
+
+    expect(balance.date).toBeUndefined();
   });
 
   it("decodes complete yield and position models with branded yield IDs", () => {

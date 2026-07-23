@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import { Schema } from "effect";
+import { DateTime, Schema } from "effect";
 import {
   ActionTransaction,
   YieldAction,
@@ -236,37 +236,55 @@ export const yieldApiValidatorsFixture = (
     yieldApiValidatorFixture(validator)
   );
 
-export const yieldApiTransactionFixture = (
+export const yieldApiTransactionDtoFixture = (
   overrides?: Partial<typeof ActionTransaction.Encoded>
-): typeof ActionTransaction.Type =>
-  Schema.decodeUnknownSync(ActionTransaction)({
-    id: faker.string.uuid(),
-    title: "Stake",
-    network: "ethereum",
-    status: "CREATED",
-    type: "STAKE",
-    hash: null,
-    createdAt: new Date(0).toISOString(),
-    broadcastedAt: null,
-    signedTransaction: null,
-    unsignedTransaction: null,
-    stepIndex: 0,
-    annotatedTransaction: null,
-    structuredTransaction: null,
-    explorerUrl: null,
-    isMessage: false,
-    ...overrides,
-  });
+): typeof ActionTransaction.Encoded => ({
+  id: faker.string.uuid(),
+  title: "Stake",
+  network: "ethereum",
+  status: "CREATED",
+  type: "STAKE",
+  hash: null,
+  createdAt: "2100-01-01T00:00:00.000Z",
+  broadcastedAt: null,
+  signedTransaction: null,
+  unsignedTransaction: null,
+  stepIndex: 0,
+  annotatedTransaction: null,
+  structuredTransaction: null,
+  explorerUrl: null,
+  isMessage: false,
+  ...overrides,
+});
 
-export const yieldApiActionFixture = (
+type TransactionFixtureOverrides = Partial<
+  Omit<typeof ActionTransaction.Type, "id">
+> & {
+  readonly id?: string;
+};
+
+export const yieldApiTransactionFixture = (
+  overrides?: TransactionFixtureOverrides
+): typeof ActionTransaction.Type => {
+  const transaction = Schema.decodeUnknownSync(ActionTransaction)(
+    yieldApiTransactionDtoFixture()
+  );
+
+  return {
+    ...transaction,
+    ...overrides,
+  } as typeof ActionTransaction.Type;
+};
+
+export const yieldApiActionDtoFixture = (
   overrides?: Partial<typeof YieldAction.Encoded>
-): typeof YieldAction.Type => {
+): typeof YieldAction.Encoded => {
   const type = overrides?.type ?? "STAKE";
   const intent =
     overrides?.intent ??
     (type === "STAKE" ? "enter" : type === "UNSTAKE" ? "exit" : "manage");
 
-  return Schema.decodeUnknownSync(YieldAction)({
+  return {
     id: faker.string.uuid(),
     intent,
     type,
@@ -276,15 +294,69 @@ export const yieldApiActionFixture = (
     amountRaw: null,
     amountUsd: null,
     transactions: [
-      yieldApiTransactionFixture({
+      yieldApiTransactionDtoFixture({
         type: type as (typeof ActionTransaction.Type)["type"],
       }),
     ],
     executionPattern: "synchronous",
     rawArguments: null,
-    createdAt: new Date(0).toISOString(),
+    createdAt: "2100-01-01T00:00:00.000Z",
     completedAt: null,
     status: "CREATED",
     ...overrides,
+  };
+};
+
+type ActionFixtureOverrides = Partial<
+  Omit<
+    typeof YieldAction.Type,
+    | "address"
+    | "completedAt"
+    | "createdAt"
+    | "id"
+    | "rawArguments"
+    | "transactions"
+    | "yieldId"
+  >
+> & {
+  readonly address?: string;
+  readonly completedAt?: DateTime.Utc | null;
+  readonly createdAt?: DateTime.Utc;
+  readonly id?: string;
+  readonly rawArguments?: typeof YieldAction.Encoded.rawArguments;
+  readonly transactions?: ReadonlyArray<typeof ActionTransaction.Type>;
+  readonly yieldId?: string;
+};
+
+export const yieldApiActionFixture = (
+  overrides?: ActionFixtureOverrides
+): typeof YieldAction.Type => {
+  const type = overrides?.type ?? "STAKE";
+  const intent =
+    overrides?.intent ??
+    (type === "STAKE" ? "enter" : type === "UNSTAKE" ? "exit" : "manage");
+  const { completedAt, createdAt, transactions, ...rest } = overrides ?? {};
+
+  return Schema.decodeUnknownSync(YieldAction)({
+    ...yieldApiActionDtoFixture(),
+    ...rest,
+    ...(completedAt === undefined
+      ? {}
+      : {
+          completedAt:
+            completedAt === null ? null : DateTime.formatIso(completedAt),
+        }),
+    ...(createdAt === undefined
+      ? {}
+      : { createdAt: DateTime.formatIso(createdAt) }),
+    intent,
+    ...(transactions
+      ? {
+          transactions: transactions.map((transaction) =>
+            Schema.encodeSync(ActionTransaction)(transaction)
+          ),
+        }
+      : {}),
+    type,
   });
 };

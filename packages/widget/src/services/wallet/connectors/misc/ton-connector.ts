@@ -9,7 +9,7 @@ import {
   toUserFriendlyAddress,
   type Wallet,
 } from "@tonconnect/ui";
-import { Effect, Schema, Stream } from "effect";
+import { Clock, Duration, Effect, Schema, Stream } from "effect";
 import type { Address, Chain } from "viem";
 import { createConnector } from "wagmi";
 import { ton } from "../../../../domain/types/chains/misc";
@@ -72,6 +72,7 @@ const createTonConnector = (
           });
 
           const info = parsedTx.info as CommonMessageInfoRelaxedInternal;
+          const now = yield* Clock.currentTimeMillis;
 
           const result = yield* Effect.tryPromise({
             try: () =>
@@ -83,7 +84,7 @@ const createTonConnector = (
                     payload: parsedTx.body.toBoc().toString("base64"),
                   },
                 ],
-                validUntil: Date.now() + 1000 * 60 * 60 * 24,
+                validUntil: now + Duration.toMillis(Duration.days(1)),
               }),
             catch: (error) =>
               error instanceof Error ? error : new Error(String(error)),

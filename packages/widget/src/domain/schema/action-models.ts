@@ -8,7 +8,11 @@ import {
   WalletAddress,
   YieldId,
 } from "./identifiers";
-import { PrecisionDecimalFromString } from "./scalars";
+import {
+  PrecisionDecimalFromString,
+  TolerantNullableUtcDateTimeFromString,
+  UtcDateTimeFromString,
+} from "./scalars";
 
 const ActionToken = Schema.Struct({
   ...YieldApi.TokenDto.fields,
@@ -42,6 +46,11 @@ export const TransactionGasEstimateJson = Schema.fromJsonString(
 
 export const ActionTransaction = Schema.Struct({
   ...YieldApi.TransactionDto.fields,
+  broadcastedAt: TolerantNullableUtcDateTimeFromString({
+    operation: "yield-action-transaction",
+    field: "broadcastedAt",
+  }),
+  createdAt: UtcDateTimeFromString,
   id: TransactionId,
 });
 export type ActionTransaction = typeof ActionTransaction.Type;
@@ -49,6 +58,11 @@ export type ActionTransaction = typeof ActionTransaction.Type;
 export const YieldAction = Schema.Struct({
   ...YieldApi.ActionDto.fields,
   address: WalletAddress,
+  completedAt: TolerantNullableUtcDateTimeFromString({
+    operation: "yield-action",
+    field: "completedAt",
+  }),
+  createdAt: UtcDateTimeFromString,
   id: ActionId,
   rawArguments: Schema.NullOr(ActionArguments),
   transactions: Schema.Array(ActionTransaction),

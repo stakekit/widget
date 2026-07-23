@@ -1,5 +1,5 @@
 import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
-import { Option } from "effect";
+import { DateTime, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { HistoryPeriod } from "../../../../../domain/schema/dashboard-models";
 import type { YieldId } from "../../../../../domain/schema/identifiers";
@@ -24,7 +24,9 @@ export const useYieldTvlHistory = ({
 
   return {
     data: [...(page?.items ?? [])].sort(
-      (a, b) => a.date.getTime() - b.date.getTime()
+      (a, b) =>
+        DateTime.toEpochMillis(a.timestamp) -
+        DateTime.toEpochMillis(b.timestamp)
     ),
     error: result.pipe(AsyncResult.error, Option.getOrUndefined),
     isError: AsyncResult.isFailure(result),

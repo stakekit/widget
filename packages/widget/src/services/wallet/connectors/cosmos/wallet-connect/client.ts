@@ -1,4 +1,9 @@
 import { WCClient } from "@cosmos-kit/walletconnect";
+import { DateTime, Duration } from "effect";
+
+const minimumRestorableExpiry = () =>
+  DateTime.toEpochMillis(DateTime.nowUnsafe()) +
+  Duration.toMillis(Duration.seconds(1));
 
 export class WalletConnectClient extends WCClient {
   disconnect() {
@@ -15,9 +20,10 @@ export class WalletConnectClient extends WCClient {
     if (typeof this.signClient === "undefined") {
       throw new Error("WalletConnect is not initialized");
     }
+    const minimumExpiry = minimumRestorableExpiry();
     this.pairings = this.signClient.pairing
       .getAll({ active: true })
-      .filter((p) => p.expiry * 1000 > Date.now() + 1000);
+      .filter((p) => p.expiry * 1000 > minimumExpiry);
     this.logger?.debug("RESTORED PAIRINGS: ", this.pairings);
   }
 
@@ -25,9 +31,10 @@ export class WalletConnectClient extends WCClient {
     if (typeof this.signClient === "undefined") {
       throw new Error("WalletConnect is not initialized");
     }
+    const minimumExpiry = minimumRestorableExpiry();
     this.sessions = this.signClient.session
       .getAll()
-      .filter((s) => s.expiry * 1000 > Date.now() + 1000);
+      .filter((s) => s.expiry * 1000 > minimumExpiry);
     this.logger?.debug("RESTORED SESSIONS: ", this.sessions);
   }
 }

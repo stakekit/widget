@@ -9,7 +9,7 @@ describe("Under maintenance", () => {
       http.get(yieldApiRoute("/health"), async () => {
         return HttpResponse.json({
           status: "FAIL",
-          timestamp: new Date().toISOString(),
+          timestamp: "2026-07-23T00:00:00.000Z",
         });
       })
     );

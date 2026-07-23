@@ -20,7 +20,7 @@ export const PageCtaButton = ({ cta }: { cta: PageCta }) => {
     <Box marginTop="auto" paddingTop={dashboardVariant ? undefined : "8"}>
       <Button
         data-rk={`footer-button-${cta.variant ?? "primary"}`}
-        disabled={cta.disabled}
+        disabled={cta.disabled || cta.isLoading}
         isLoading={cta.isLoading}
         onClick={cta.onClick}
         variant={{
