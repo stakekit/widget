@@ -18,6 +18,8 @@
       ],
       "devEntryPoints": [
         "scripts/generate-effect-openapi.ts",
+        "scripts/prepare-canary-release.ts",
+        "scripts/*.test.ts",
         "tests/utils/setup.ts",
         "tests/**/*.test.ts",
         "tests/**/*.test.tsx"

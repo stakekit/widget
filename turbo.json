@@ -17,6 +17,7 @@
     "lint": {
       "inputs": [
         "src/**",
+        "scripts/**",
         "tests/**",
         "tsconfig*.json",
         "vite/**/*.ts",
@@ -27,6 +28,7 @@
     "format": {
       "inputs": [
         "src/**",
+        "scripts/**",
         "tests/**",
         "tsconfig*.json",
         "vite/**/*.ts",
@@ -37,6 +39,7 @@
     "test": {
       "inputs": [
         "src/**",
+        "scripts/**",
         "tests/**",
         "tsconfig*.json",
         "vite/**/*.ts",
