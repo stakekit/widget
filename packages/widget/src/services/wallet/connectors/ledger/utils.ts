@@ -19,6 +19,7 @@ import {
 import type { MiscChainsMap } from "../../../../domain/types/chains/misc";
 import type { SubstrateChainsMap } from "../../../../domain/types/chains/substrate";
 import { typeSafeObjectEntries } from "../../../../shared/lib/object";
+import { WalletIntegrationError } from "../../domain/errors";
 
 export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
   accounts,
@@ -156,7 +157,12 @@ export const getLedgerCurrencies = (walletAPIClient: WalletAPIClient) =>
           (chain) => Object.values(chain).map((currency) => currency.currencyId)
         ),
       }),
-    catch: (error) => new Error("could not get currencies", { cause: error }),
+    catch: (cause) =>
+      new WalletIntegrationError({
+        cause,
+        message: "could not get currencies",
+        operation: "ledger-list-currencies",
+      }),
   }).pipe(
     Effect.map((val) => {
       return val.reduce(

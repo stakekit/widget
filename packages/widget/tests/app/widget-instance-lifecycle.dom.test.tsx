@@ -41,9 +41,11 @@ vi.mock("../../src/shared/ui/primitives/box", () => ({
   Box: ({ children }: PropsWithChildren) => children,
 }));
 
-vi.mock("../../src/translation", () => ({
+vi.mock("../../src/app/translation/use-load-error-translations", () => ({
   useLoadErrorTranslations: () => undefined,
 }));
+
+vi.mock("../../src/translation", () => ({}));
 
 import { renderSKWidget, SKApp } from "../../src/App";
 

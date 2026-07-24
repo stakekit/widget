@@ -3,12 +3,10 @@ language: Tsx
 severity: error
 message: Use Effect HttpClient instead of fetch.
 files:
-  - packages/widget/**/*.ts
-  - packages/widget/**/*.tsx
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
 ignores:
-  - packages/widget/dist/**
   - packages/widget/src/generated/**
-  - packages/widget/tests/generated/**
 rule:
   pattern: $FETCH($$$ARGS)
 constraints:

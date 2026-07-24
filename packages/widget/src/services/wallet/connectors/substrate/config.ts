@@ -12,6 +12,7 @@ import {
   typeSafeObjectFromEntries,
 } from "../../../../shared/lib/object";
 import { getWalletNetworkLogo } from "../../assets";
+import { WalletIntegrationError } from "../../domain/errors";
 
 const queryFn = async ({
   enabledNetworks,
@@ -72,6 +73,10 @@ const queryFn = async ({
 export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
   Effect.tryPromise({
     try: () => queryFn(opts),
-    catch: (error) =>
-      new Error("Could not get substrate config", { cause: error }),
+    catch: (cause) =>
+      new WalletIntegrationError({
+        cause,
+        message: "Could not get substrate config",
+        operation: "substrate-config",
+      }),
   });

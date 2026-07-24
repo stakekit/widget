@@ -116,7 +116,11 @@
       }
     },
     {
-      "includes": ["packages/widget/src/resources/**"],
+      "includes": [
+        "packages/widget/src/domain/**",
+        "packages/widget/src/resources/**",
+        "packages/widget/src/services/**"
+      ],
       "linter": {
         "rules": {
           "style": {
@@ -125,8 +129,21 @@
               "options": {
                 "patterns": [
                   {
-                    "group": ["react", "react/**", "react-dom", "react-dom/**"],
-                    "message": "Authoritative Resources are headless Atom/Effect modules and must not import React."
+                    "group": [
+                      "react",
+                      "react/**",
+                      "react-dom",
+                      "react-dom/**",
+                      "@effect/atom-react",
+                      "@effect/atom-react/**",
+                      "@tanstack/react-query",
+                      "@tanstack/react-query/**"
+                    ],
+                    "message": "Headless domain, resource, and service modules must not import React integrations."
+                  },
+                  {
+                    "group": ["**/index.package", "**/index.bundle"],
+                    "message": "Public widget entrypoints are outbound-only; import from the defining module."
                   }
                 ]
               }

@@ -10,6 +10,7 @@ import type { Address } from "viem";
 import type { Connector } from "wagmi";
 import type { ConnectorWithFilteredChains } from "../../../../domain/types/connectors";
 import type { SKTxMeta } from "../../../../public-api/types";
+import type { WalletIntegrationError } from "../../domain/errors";
 
 export const configMeta = {
   id: "ledgerLive",
@@ -22,7 +23,9 @@ export type ExtraProps = ConnectorWithFilteredChains & {
   $currentAccountId: Stream.Stream<string | undefined>;
   $accountsOnCurrentChain: Stream.Stream<Account[]>;
   walletApiClient: WalletAPIClient;
-  requestAndSwitchAccount: (chain: Chain) => Effect.Effect<Chain, Error>;
+  requestAndSwitchAccount: (
+    chain: Chain
+  ) => Effect.Effect<Chain, WalletIntegrationError>;
   switchAccount: (account: Account) => void;
   noAccountPlaceholder: Address;
   deserializeTransaction: typeof deserializeTransaction;

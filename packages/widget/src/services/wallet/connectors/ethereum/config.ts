@@ -19,6 +19,7 @@ import {
   typeSafeObjectEntries,
   typeSafeObjectFromEntries,
 } from "../../../../shared/lib/object";
+import { WalletIntegrationError } from "../../domain/errors";
 import { createFineryWallets } from "./finery-wallet-list";
 import { passCorrectChainsToWallet } from "./utils";
 
@@ -91,5 +92,10 @@ const queryFn = async ({
 export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
   Effect.tryPromise({
     try: () => queryFn(opts),
-    catch: (error) => new Error("Could not get evm config", { cause: error }),
+    catch: (cause) =>
+      new WalletIntegrationError({
+        cause,
+        message: "Could not get evm config",
+        operation: "evm-config",
+      }),
   });

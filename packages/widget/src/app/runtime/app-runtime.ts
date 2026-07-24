@@ -14,6 +14,7 @@ import {
 import { RichErrorService } from "../../services/errors/rich-error-service";
 import { WidgetPersistence } from "../../services/persistence/widget-persistence";
 import { TrackingService } from "../../services/tracking/tracking-service";
+import { ErrorTranslationsSource } from "../../translation/error-translations-source";
 import { widgetConfigAtom } from "../config/settings";
 
 const makeAppLayer = (
@@ -47,6 +48,7 @@ const makeAppLayer = (
     widgetConfigLayer,
     richErrorLayer,
     apiLayer,
+    ErrorTranslationsSource.layer,
     persistenceLayer,
     trackingLayer
   ).pipe(Layer.fresh);

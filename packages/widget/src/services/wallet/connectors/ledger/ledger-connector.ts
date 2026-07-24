@@ -23,6 +23,8 @@ import {
 import { makeCurrentValueStream } from "../../../../shared/effect/current-value-stream";
 import { walletImages } from "../../assets";
 import { isLedgerDappBrowserProvider } from "../../browser-environment";
+import { WalletIntegrationError } from "../../domain/errors";
+import type { RunWalletEffect } from "../../effect-runner";
 import { configMeta, type ExtraProps } from "./ledger-live-connector-meta";
 import { prepareLedgerLiveTransaction } from "./prepare-ledger-live-transaction";
 import {
@@ -34,9 +36,11 @@ const createLedgerLiveConnector = ({
   walletDetailsParams,
   enabledChainsMap,
   queryParams,
+  runWalletEffect,
 }: {
   enabledChainsMap: EnabledChainsMap;
   queryParams: InitParams;
+  runWalletEffect: RunWalletEffect;
   walletDetailsParams: WalletDetailsParams;
 }) =>
   createConnector<unknown, ExtraProps>((config) => {
@@ -73,15 +77,19 @@ const createLedgerLiveConnector = ({
        * then use TokenCurrency parent to get CryptoCurrency family
        * and add to map TokenCurrency['id'] => CryptoCurrency['family']
        */
-      const ledgerCurrencies = await Effect.runPromise(
+      const ledgerCurrencies = await runWalletEffect(
         getLedgerCurrencies(walletApiClient)
       );
 
-      const allAccounts = await Effect.runPromise(
+      const allAccounts = await runWalletEffect(
         Effect.tryPromise({
           try: () => walletApiClient.account.list(),
-          catch: (error) =>
-            new Error("could not get accounts", { cause: error }),
+          catch: (cause) =>
+            new WalletIntegrationError({
+              cause,
+              message: "could not get accounts",
+              operation: "ledger-list-accounts",
+            }),
         }).pipe(
           Effect.map((val) => ({
             accounts: val,
@@ -312,14 +320,24 @@ const createLedgerLiveConnector = ({
           chain.id
         );
 
-        if (!currencyId)
-          return yield* Effect.fail(new Error("Chain not found"));
+        if (!currencyId) {
+          return yield* Effect.fail(
+            new WalletIntegrationError({
+              message: "Chain not found",
+              operation: "ledger-request-account",
+            })
+          );
+        }
 
         const account = yield* Effect.tryPromise({
           try: () =>
             walletApiClient.account.request({ currencyIds: [currencyId] }),
-          catch: (error) =>
-            new Error("could not request account", { cause: error }),
+          catch: (cause) =>
+            new WalletIntegrationError({
+              cause,
+              message: "could not request account",
+              operation: "ledger-request-account",
+            }),
         });
 
         ledgerAccounts.push(account);
@@ -329,8 +347,12 @@ const createLedgerLiveConnector = ({
         );
         return yield* Effect.tryPromise({
           try: () => switchChain({ chainId: chain.id }),
-          catch: (error) =>
-            new Error("failed to switch to new chain", { cause: error }),
+          catch: (cause) =>
+            new WalletIntegrationError({
+              cause,
+              message: "failed to switch to new chain",
+              operation: "ledger-switch-chain",
+            }),
         });
       });
 
@@ -401,9 +423,11 @@ const createLedgerLiveConnector = ({
 export const ledgerLiveConnector = ({
   enabledChainsMap,
   queryParams,
+  runWalletEffect,
 }: {
   enabledChainsMap: EnabledChainsMap;
   queryParams: InitParams;
+  runWalletEffect: RunWalletEffect;
 }): WalletList[number] => ({
   groupName: "Ledger Live",
   wallets: [
@@ -423,6 +447,7 @@ export const ledgerLiveConnector = ({
           walletDetailsParams,
           enabledChainsMap,
           queryParams,
+          runWalletEffect,
         }),
     }),
   ],

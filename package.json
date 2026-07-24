@@ -15,8 +15,8 @@
   "scripts": {
     "build": "turbo run build",
     "lint": "turbo run lint //#lint:ast",
-    "lint:ast": "ast-grep scan --filter \"^(no-native-date|no-unsafe-date-time)$\" --error packages/widget && pnpm run test:ast",
-    "test:ast": "ast-grep test --skip-snapshot-tests",
+    "lint:ast": "ast-grep scan --error=no-suppress-all --error=unused-suppression packages/widget --color=never && pnpm run test:ast",
+    "test:ast": "ast-grep test --skip-snapshot-tests --color=never",
     "test": "turbo run test",
     "format": "turbo run format",
     "clean": "turbo run clean",

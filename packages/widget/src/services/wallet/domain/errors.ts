@@ -56,3 +56,11 @@ export class WalletRuntimeInvariantError extends Data.TaggedError(
     | "external-provider-presence-changed"
     | "wallet-topology-changed";
 }> {}
+
+export class WalletIntegrationError extends Data.TaggedError(
+  "WalletIntegrationError"
+)<{
+  readonly cause?: unknown;
+  readonly message: string;
+  readonly operation: string;
+}> {}

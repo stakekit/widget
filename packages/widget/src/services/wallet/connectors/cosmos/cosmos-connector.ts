@@ -22,6 +22,7 @@ import { CosmosNetworks } from "../../../../domain/types/chains/networks";
 import { makeCurrentValueStream } from "../../../../shared/effect/current-value-stream";
 import { getWalletNetworkLogo } from "../../assets";
 import { waitForWalletDelay } from "../../delay";
+import { WalletIntegrationError } from "../../domain/errors";
 import type { ExtraProps } from "./cosmos-connector-meta";
 import { configMeta } from "./cosmos-connector-meta";
 
@@ -274,7 +275,12 @@ export const createCosmosConnector = ({
                 cw.address!,
                 SignDoc.decode(fromHex(tx)) as unknown as DirectSignDoc // accountNumber bigint/Long issue
               ),
-            catch: (error) => new Error("signDirect failed", { cause: error }),
+            catch: (cause) =>
+              new WalletIntegrationError({
+                cause,
+                message: "signDirect failed",
+                operation: "cosmos-sign-direct",
+              }),
           }).pipe(
             Effect.map((val) =>
               toHex(

@@ -2,6 +2,7 @@ import type { Chain } from "@stakekit/rainbowkit";
 import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
+import { WalletIntegrationError } from "../../../services/wallet/domain/errors";
 import { WalletService } from "../../../services/wallet/wallet-service";
 import {
   actionHistoryRevisionAtom,
@@ -11,7 +12,7 @@ import {
 type LedgerAccountConnector = {
   readonly requestAndSwitchAccount: (
     chain: Chain
-  ) => Effect.Effect<Chain, Error>;
+  ) => Effect.Effect<Chain, WalletIntegrationError>;
 };
 
 export const addLedgerAccountAtom = Atom.fn(
@@ -21,7 +22,12 @@ export const addLedgerAccountAtom = Atom.fn(
     readonly connector: LedgerAccountConnector | null;
   }) => {
     if (!command.connector) {
-      return Effect.fail(new Error("Only Ledger Live is supported"));
+      return Effect.fail(
+        new WalletIntegrationError({
+          message: "Only Ledger Live is supported",
+          operation: "ledger-add-account",
+        })
+      );
     }
 
     return command.connector.requestAndSwitchAccount(command.chain).pipe(

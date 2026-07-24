@@ -2,6 +2,7 @@ id: no-literal-effect-failure
 valid:
   - 'Effect.fail(new AppError({ message: "boom" }))'
   - 'Effect.fail(error)'
+  - 'Effect.fail({ _tag: "AppError", message: "boom" })'
 invalid:
   - 'Effect.fail("boom")'
   - 'Effect.fail(42)'

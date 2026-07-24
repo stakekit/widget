@@ -1,9 +1,0 @@
-id: no-react-memoization
-valid:
-  - 'import { useState } from "react"'
-  - 'const value = calculate(input)'
-invalid:
-  - 'import { useMemo } from "react"'
-  - 'import { useCallback as useStable } from "react"'
-  - 'import { memo, useState } from "react"'
-  - 'React.memo(Component)'

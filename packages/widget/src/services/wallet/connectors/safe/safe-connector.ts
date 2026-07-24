@@ -6,6 +6,7 @@ import { getAddress, withTimeout } from "viem";
 import { type Connector, createConnector, ProviderNotFoundError } from "wagmi";
 import { makeCurrentValueStream } from "../../../../shared/effect/current-value-stream";
 import { isWalletIframe } from "../../browser-environment";
+import { WalletIntegrationError } from "../../domain/errors";
 import { configMeta, type ExtraProps } from "./safe-connector-meta";
 
 function safe(parameters: { shimDisconnect?: boolean } = {}) {
@@ -134,16 +135,24 @@ function safe(parameters: { shimDisconnect?: boolean } = {}) {
       getTxStatus(txHash) {
         return Effect.tryPromise({
           try: () => sdk.txs.getBySafeTxHash(txHash),
-          catch: (error) =>
-            new Error("Could not get transaction status", { cause: error }),
+          catch: (cause) =>
+            new WalletIntegrationError({
+              cause,
+              message: "Could not get transaction status",
+              operation: "safe-transaction-status",
+            }),
         });
       },
       txStatus: TransactionStatus,
       sendTransactions(args) {
         return Effect.tryPromise({
           try: () => sdk.txs.send(args),
-          catch: (error) =>
-            new Error("Could not send transactions", { cause: error }),
+          catch: (cause) =>
+            new WalletIntegrationError({
+              cause,
+              message: "Could not send transactions",
+              operation: "safe-send-transactions",
+            }),
         });
       },
     };

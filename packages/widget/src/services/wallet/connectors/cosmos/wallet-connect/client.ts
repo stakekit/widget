@@ -2,6 +2,8 @@ import { WCClient } from "@cosmos-kit/walletconnect";
 import { DateTime, Duration } from "effect";
 
 const minimumRestorableExpiry = () =>
+  // WalletConnect overrides are synchronous and cannot access Effect Clock.
+  // ast-grep-ignore: no-unsafe-date-time
   DateTime.toEpochMillis(DateTime.nowUnsafe()) +
   Duration.toMillis(Duration.seconds(1));
 

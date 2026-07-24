@@ -10,7 +10,7 @@ import {
   loadMessageRelaxed,
 } from "@ton/core";
 import BigNumber from "bignumber.js";
-import { Result, Schema } from "effect";
+import { Option, Result, Schema } from "effect";
 import { hexToBytes } from "viem";
 import { isEvmChain } from "../../../../domain/types/chains";
 import {
@@ -33,13 +33,23 @@ type PrepareLedgerLiveTransactionParams = {
   txMeta: SKTxMeta;
 };
 
-type GasEstimate = {
-  amount?: string | null;
-  gasLimit?: string | null;
-  token?: {
-    decimals: number;
-  } | null;
-} | null;
+const GasEstimate = Schema.NullOr(
+  Schema.Struct({
+    amount: Schema.optional(Schema.NullOr(Schema.String)),
+    gasLimit: Schema.optional(Schema.NullOr(Schema.String)),
+    token: Schema.optional(
+      Schema.NullOr(
+        Schema.Struct({
+          decimals: Schema.Number,
+        })
+      )
+    ),
+  })
+);
+type GasEstimate = typeof GasEstimate.Type;
+
+const GasEstimateFromJson = Schema.fromJsonString(GasEstimate);
+const UnknownFromJson = Schema.fromJsonString(Schema.Unknown);
 
 type SubstrateHumanMethod = {
   section: string;
@@ -139,11 +149,9 @@ export const prepareLedgerLiveTransaction = ({
 };
 
 const parseJson = (value: string): Result.Result<unknown, string> => {
-  try {
-    return Result.succeed(JSON.parse(value));
-  } catch {
-    return Result.fail("Failed to parse tx");
-  }
+  return Schema.decodeResult(UnknownFromJson)(value).pipe(
+    Result.mapError(() => "Failed to parse tx")
+  );
 };
 
 const buildEthereumLedgerTransaction = ({
@@ -498,11 +506,9 @@ const parseGasEstimate = (
 ): GasEstimate => {
   if (!gasEstimate) return null;
 
-  try {
-    return JSON.parse(gasEstimate) as GasEstimate;
-  } catch {
-    return null;
-  }
+  return Schema.decodeOption(GasEstimateFromJson)(gasEstimate).pipe(
+    Option.getOrNull
+  );
 };
 
 const getActionAmountInBaseUnits = (txMeta: SKTxMeta): BigNumber | null => {

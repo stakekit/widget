@@ -5,6 +5,7 @@ import {
   isSolanaConnector,
   type SolanaConnector,
 } from "./connectors/misc/solana-connector-meta";
+import { WalletIntegrationError } from "./domain/errors";
 import type { SolanaRuntime } from "./platform/solana-platform";
 import type { WagmiCoreObservation } from "./platform/wagmi-platform";
 import type {
@@ -87,7 +88,10 @@ export const installSolanaConnectorMembership = Effect.fn(
     );
     if (!isRainbowKitSolanaConnector(connector)) {
       return yield* Effect.fail(
-        new Error("Expected a Solana connector from membership factory")
+        new WalletIntegrationError({
+          message: "Expected a Solana connector from membership factory",
+          operation: "solana-connector-membership",
+        })
       );
     }
     yield* Ref.update(connectorCache, (cache) => {

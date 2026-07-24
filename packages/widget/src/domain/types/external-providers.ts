@@ -25,7 +25,12 @@ export class ExternalProvider {
       this.variantProvider.current.provider.sendTransaction;
 
     if (!sendTransaction) {
-      return Effect.fail(new Error("Invalid provider type"));
+      return Effect.fail(
+        new ExternalProviderError({
+          customMessage: null,
+          message: "Invalid provider type",
+        })
+      );
     }
 
     return Effect.tryPromise({
@@ -54,7 +59,12 @@ export class ExternalProvider {
   switchChain({ chainId }: { chainId: number }) {
     return Effect.tryPromise({
       try: () => this.variantProvider.current.provider.switchChain(chainId),
-      catch: (error) => new Error("Failed to switch chain", { cause: error }),
+      catch: (cause) =>
+        new ExternalProviderError({
+          cause,
+          customMessage: null,
+          message: "Failed to switch chain",
+        }),
     });
   }
 

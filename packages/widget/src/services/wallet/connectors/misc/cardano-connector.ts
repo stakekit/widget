@@ -6,6 +6,7 @@ import { createConnector } from "wagmi";
 import { cardano } from "../../../../domain/types/chains/misc";
 import { MiscNetworks } from "../../../../domain/types/chains/networks";
 import { getWalletNetworkLogo } from "../../assets";
+import { WalletIntegrationError } from "../../domain/errors";
 import {
   configMeta,
   type ExtraProps,
@@ -35,10 +36,20 @@ const createCardanoConnector = ({
         connectedWallet
           ? Effect.tryPromise({
               try: () => connectedWallet!.signTx(tx),
-              catch: (error) =>
-                error instanceof Error ? error : new Error(String(error)),
+              catch: (cause) =>
+                new WalletIntegrationError({
+                  cause,
+                  message:
+                    cause instanceof Error ? cause.message : String(cause),
+                  operation: "cardano-sign-transaction",
+                }),
             })
-          : Effect.fail(new Error("No wallet connected")),
+          : Effect.fail(
+              new WalletIntegrationError({
+                message: "No wallet connected",
+                operation: "cardano-sign-transaction",
+              })
+            ),
       connect: async (args) => {
         config.emitter.emit("message", { type: "connecting" });
 

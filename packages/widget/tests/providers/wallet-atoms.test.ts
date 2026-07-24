@@ -300,7 +300,7 @@ describe("wallet Effect Atom boundaries", () => {
             isSafe: false,
             mapWalletFn: undefined,
             mapWalletListFn: undefined,
-            persistPublicKey: async () => undefined,
+            persistPublicKey: () => Effect.void,
             queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
             solanaConnection: {} as SolanaConnection,
             solanaWallets: [],

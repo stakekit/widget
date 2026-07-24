@@ -16,6 +16,7 @@ import type { Chain } from "wagmi/chains";
 import { SubstrateNetworks } from "../../../../domain/types/chains/networks";
 import { config } from "../../../../shared/config/widget-defaults";
 import { getWalletNetworkLogo } from "../../assets";
+import { WalletIntegrationError } from "../../domain/errors";
 import {
   configMeta,
   type ExtraProps,
@@ -64,7 +65,12 @@ const createSubstrateConnector = ({
             const signPayload = signer?.signPayload?.bind(signer);
 
             if (!signPayload) {
-              return Effect.fail(new Error("signer missing"));
+              return Effect.fail(
+                new WalletIntegrationError({
+                  message: "signer missing",
+                  operation: "substrate-sign",
+                })
+              );
             }
 
             return Effect.tryPromise({
@@ -111,7 +117,12 @@ const createSubstrateConnector = ({
             });
           }),
           Effect.mapError(
-            (error) => new Error("Failed to sign transaction", { cause: error })
+            (cause) =>
+              new WalletIntegrationError({
+                cause,
+                message: "Failed to sign transaction",
+                operation: "substrate-sign",
+              })
           )
         ),
       connect: async (args) => {

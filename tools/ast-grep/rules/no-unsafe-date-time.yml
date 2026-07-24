@@ -10,7 +10,6 @@ files:
 ignores:
   - packages/widget/src/generated/**
   - packages/widget/tests/generated/**
-  - packages/widget/src/services/wallet/connectors/cosmos/wallet-connect/client.ts
 rule:
   any:
     - pattern: DateTime.isFutureUnsafe

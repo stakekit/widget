@@ -1,0 +1,11 @@
+id: no-direct-effect-runtime-execution
+valid:
+  - "runWalletEffect(program)"
+  - "appRuntime.atom(program)"
+  - "FiberSet.makeRuntimePromise()"
+invalid:
+  - "Effect.runPromise(program)"
+  - "Effect.runPromiseWith(context)(program)"
+  - "Effect.runFork(program)"
+  - "Effect.runSync(program)"
+  - "Effect.runCallback(program)"

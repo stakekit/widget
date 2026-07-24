@@ -3,12 +3,10 @@ language: Tsx
 severity: error
 message: Use yield* for expected failures or Effect.die for defects.
 files:
-  - packages/widget/**/*.ts
-  - packages/widget/**/*.tsx
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
 ignores:
-  - packages/widget/dist/**
   - packages/widget/src/generated/**
-  - packages/widget/tests/generated/**
 rule:
   kind: throw_statement
   inside:

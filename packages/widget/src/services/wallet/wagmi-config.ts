@@ -5,7 +5,7 @@ import type {
   WalletList,
 } from "@stakekit/rainbowkit";
 import { connectorsForWallets } from "@stakekit/rainbowkit";
-import { Effect } from "effect";
+import { Effect, FiberSet } from "effect";
 import uniqwith from "lodash.uniqwith";
 import { createStore, type Store as MipdStore } from "mipd";
 import { createClient } from "viem";
@@ -35,6 +35,8 @@ import { getConfig as getMiscConfig } from "./connectors/misc/config";
 import { getConfig as getSafeConnector } from "./connectors/safe/config";
 import { getConfig as getSubstrateConfig } from "./connectors/substrate/config";
 import { omitEnsUniversalResolver } from "./default-wagmi-config";
+import { WalletIntegrationError } from "./domain/errors";
+import type { RunWalletEffect } from "./effect-runner";
 import { getVariantNetworkUrl } from "./network-icon";
 import type { SolanaWalletDescriptor } from "./solana-runtime";
 import { makeWagmiActions } from "./wagmi-actions";
@@ -102,13 +104,15 @@ export type BuildWagmiConfigOptions = {
   persistPublicKey: (input: {
     readonly address: WalletAddress;
     readonly publicKey: string;
-  }) => Promise<void>;
+  }) => Effect.Effect<void, unknown>;
   queryParams: InitParams;
   tonConnectManifestUrl: string | undefined;
 };
 
 export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
   Effect.gen(function* () {
+    const runWalletEffect: RunWalletEffect =
+      yield* FiberSet.makeRuntimePromise();
     const [evmConfig, cosmosConfig, miscConfig, substrateConfig] =
       yield* Effect.all(
         [
@@ -121,7 +125,8 @@ export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
           getCosmosConfig({
             enabledNetworks: opts.enabledNetworks,
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
-            persistPublicKey: opts.persistPublicKey,
+            persistPublicKey: (input) =>
+              runWalletEffect(opts.persistPublicKey(input)),
           }),
           getMiscConfig({
             enabledNetworks: opts.enabledNetworks,
@@ -146,6 +151,7 @@ export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
         substrate: substrateConfig.substrateChainsMap,
       },
       queryParams: opts.queryParams,
+      runWalletEffect,
     });
     const safeConnector = yield* opts.isSafe
       ? getSafeConnector()
@@ -286,7 +292,9 @@ export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
       }
 
       if (opts.externalProviders) {
-        return [externalProviderConnector(opts.externalProviders)];
+        return [
+          externalProviderConnector(opts.externalProviders, runWalletEffect),
+        ];
       }
 
       if (val.safeConnector) {
@@ -330,6 +338,10 @@ export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
       chains: chainsWithoutEnsProfileLookups,
       client: ({ chain }) => createClient({ chain, transport: http() }),
       multiInjectedProviderDiscovery: false,
+      // The host owns external-provider connection state. Hydrating Wagmi's
+      // persisted connector can restore a connector from another topology
+      // before the external provider synchronizer establishes its connection.
+      storage: opts.externalProviders ? null : undefined,
       connectors: connectorsForWallets(walletList, connectorOptions),
     });
 
@@ -393,7 +405,10 @@ export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
       )[0];
       if (!connector) {
         return yield* Effect.fail(
-          new Error(`Solana wallet ${wallet.adapter.name} was filtered`)
+          new WalletIntegrationError({
+            message: `Solana wallet ${wallet.adapter.name} was filtered`,
+            operation: "create-solana-connector",
+          })
         );
       }
       return connector;

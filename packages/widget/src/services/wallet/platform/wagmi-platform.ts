@@ -151,11 +151,7 @@ export class WagmiPlatform extends Context.Service<
       const buildConfig = Effect.fn("buildConfig")(function* (
         options: WagmiBuildConfigOptions
       ) {
-        return yield* buildWagmiConfig({
-          ...options,
-          persistPublicKey: (input) =>
-            Effect.runPromise(options.persistPublicKey(input)),
-        }).pipe(
+        return yield* buildWagmiConfig(options).pipe(
           Effect.provideService(WagmiOperations, operations),
           Effect.mapError(
             (cause) =>

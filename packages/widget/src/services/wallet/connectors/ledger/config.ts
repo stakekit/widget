@@ -2,30 +2,42 @@ import type { WalletList } from "@stakekit/rainbowkit";
 import { Effect } from "effect";
 import type { InitParams } from "../../../../domain/schema/init-params";
 import { isLedgerDappBrowserProvider } from "../../browser-environment";
+import { WalletIntegrationError } from "../../domain/errors";
+import type { RunWalletEffect } from "../../effect-runner";
 import type { EnabledChainsMap } from "./ledger-connector";
 
 const queryFn = ({
   enabledChainsMap,
   queryParams,
+  runWalletEffect,
 }: {
   enabledChainsMap: EnabledChainsMap;
   queryParams: InitParams;
+  runWalletEffect: RunWalletEffect;
 }): Effect.Effect<
   {
     groupName: string;
     wallets: WalletList[number]["wallets"];
   } | null,
-  Error
+  WalletIntegrationError
 > => {
   if (!isLedgerDappBrowserProvider()) return Effect.succeed(null);
 
   return Effect.tryPromise({
     try: () => import("./ledger-connector"),
-    catch: (error) =>
-      new Error("Could not import ledger-connector", { cause: error }),
+    catch: (cause) =>
+      new WalletIntegrationError({
+        cause,
+        message: "Could not import ledger-connector",
+        operation: "ledger-connector-import",
+      }),
   }).pipe(
     Effect.map((module) =>
-      module.ledgerLiveConnector({ enabledChainsMap, queryParams })
+      module.ledgerLiveConnector({
+        enabledChainsMap,
+        queryParams,
+        runWalletEffect,
+      })
     )
   );
 };
@@ -33,6 +45,11 @@ const queryFn = ({
 export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
   queryFn(opts).pipe(
     Effect.mapError(
-      (error) => new Error("Could not get ledger live config", { cause: error })
+      (cause) =>
+        new WalletIntegrationError({
+          cause,
+          message: "Could not get ledger live config",
+          operation: "ledger-config",
+        })
     )
   );

@@ -3,16 +3,14 @@ language: Tsx
 severity: error
 message: Use Effect.log* inside Effect programs.
 files:
-  - packages/widget/**/*.ts
-  - packages/widget/**/*.tsx
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
 ignores:
-  - packages/widget/dist/**
   - packages/widget/src/generated/**
-  - packages/widget/tests/generated/**
 rule:
   pattern: console.$METHOD($$$ARGS)
   inside:
-    any:
-      - pattern: Effect.gen(function* ($$$PARAMS) { $$$BODY })
-      - pattern: Effect.fn($$$FIRST)($$$SECOND)
+    all:
+      - kind: call_expression
+      - regex: ^Effect\.(?:gen|fn|sync|suspend|try|tryPromise|tap|tapError)\b
     stopBy: end

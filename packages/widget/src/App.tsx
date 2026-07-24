@@ -13,6 +13,7 @@ import { acquireWidgetInstanceClaim } from "./app/embedding/widget-instance-clai
 import { WidgetInstanceReactBoundary } from "./app/embedding/widget-instance-react-boundary";
 import { ClassicRoutes } from "./app/routes/classic-routes";
 import { DashboardRoutes } from "./app/routes/dashboard-routes";
+import { useLoadErrorTranslations } from "./app/translation/use-load-error-translations";
 import { appContainer } from "./features/widget-shell/layout.css";
 import type {
   BundledSKWidgetProps,
@@ -22,7 +23,6 @@ import type {
 import { isLedgerDappBrowserProvider } from "./services/wallet/browser-environment";
 import { preloadImages } from "./shared/assets/images";
 import { Box } from "./shared/ui/primitives/box";
-import { useLoadErrorTranslations } from "./translation";
 
 preloadImages();
 

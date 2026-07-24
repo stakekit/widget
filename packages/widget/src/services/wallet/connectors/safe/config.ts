@@ -1,5 +1,6 @@
 import type { WalletList } from "@stakekit/rainbowkit";
 import { Effect } from "effect";
+import { WalletIntegrationError } from "../../domain/errors";
 
 const queryFn = async (): Promise<{
   groupName: string;
@@ -11,5 +12,10 @@ const queryFn = async (): Promise<{
 export const getConfig = () =>
   Effect.tryPromise({
     try: queryFn,
-    catch: (error) => new Error("Could not get safe config", { cause: error }),
+    catch: (cause) =>
+      new WalletIntegrationError({
+        cause,
+        message: "Could not get safe config",
+        operation: "safe-config",
+      }),
   });

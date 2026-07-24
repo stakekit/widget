@@ -1,5 +1,5 @@
 import type { WalletList } from "@stakekit/rainbowkit";
-import { Array as EArray, Effect, Option } from "effect";
+import { Array as EArray, Option } from "effect";
 import type { Address } from "viem";
 import type { Connector, CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
@@ -13,6 +13,7 @@ import {
 import type { SKExternalProviders } from "../../../../public-api/types";
 import { config } from "../../../../shared/config/widget-defaults";
 import { makeCurrentValueStream } from "../../../../shared/effect/current-value-stream";
+import type { RunWalletEffect } from "../../effect-runner";
 
 const configMeta = {
   id: "externalProviderConnector",
@@ -35,7 +36,8 @@ export const isExternalProviderConnector = (
 ): connector is ExternalConnector => connector.id === configMeta.id;
 
 export const externalProviderConnector = (
-  variant: CurrentRef<SKExternalProviders>
+  variant: CurrentRef<SKExternalProviders>,
+  runWalletEffect: RunWalletEffect
 ): WalletList[number] => ({
   groupName: "External Providers",
   wallets: [
@@ -104,7 +106,7 @@ export const externalProviderConnector = (
 
               if (!chain) throw new Error("Chain not found");
 
-              await Effect.runPromise(provider.switchChain({ chainId }));
+              await runWalletEffect(provider.switchChain({ chainId }));
               onChainChanged(chain.id.toString());
               return chain;
             };

@@ -9,6 +9,7 @@ import {
   typeSafeObjectEntries,
   typeSafeObjectFromEntries,
 } from "../../../../shared/lib/object";
+import { WalletIntegrationError } from "../../domain/errors";
 import { getWagmiChain } from "./chains";
 
 const queryFn = ({
@@ -43,8 +44,12 @@ const queryFn = ({
 
     const registry = yield* Effect.tryPromise({
       try: () => import("./chains/chain-registry"),
-      catch: (error) =>
-        new Error("Could not import cosmos chain registry", { cause: error }),
+      catch: (cause) =>
+        new WalletIntegrationError({
+          cause,
+          message: "Could not import cosmos chain registry",
+          operation: "cosmos-chain-registry-import",
+        }),
     });
     const chainsToUseSet = new Set(chainsToUse);
 
@@ -77,8 +82,12 @@ const queryFn = ({
     );
     const walletManagerModule = yield* Effect.tryPromise({
       try: () => import("./wallet-manager"),
-      catch: (error) =>
-        new Error("Could not import cosmos wallet manager", { cause: error }),
+      catch: (cause) =>
+        new WalletIntegrationError({
+          cause,
+          message: "Could not import cosmos wallet manager",
+          operation: "cosmos-wallet-manager-import",
+        }),
     });
     const { connector, walletManager } = yield* Effect.try({
       try: () =>
@@ -87,9 +96,11 @@ const queryFn = ({
           forceWalletConnectOnly,
           persistPublicKey,
         }),
-      catch: (error) =>
-        new Error("Could not initialize cosmos wallet manager", {
-          cause: error,
+      catch: (cause) =>
+        new WalletIntegrationError({
+          cause,
+          message: "Could not initialize cosmos wallet manager",
+          operation: "cosmos-wallet-manager-initialize",
         }),
     });
 
@@ -123,6 +134,11 @@ const queryFn = ({
 export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
   queryFn(opts).pipe(
     Effect.mapError(
-      (error) => new Error("Could not get cosmos config", { cause: error })
+      (cause) =>
+        new WalletIntegrationError({
+          cause,
+          message: "Could not get cosmos config",
+          operation: "cosmos-config",
+        })
     )
   );

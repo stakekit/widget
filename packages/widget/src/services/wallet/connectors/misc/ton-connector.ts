@@ -16,6 +16,7 @@ import { ton } from "../../../../domain/types/chains/misc";
 import { MiscNetworks } from "../../../../domain/types/chains/networks";
 import { unsignedTonTransactionTonConnectCodec } from "../../../../domain/types/transaction";
 import { getWalletNetworkLogo } from "../../assets";
+import { WalletIntegrationError } from "../../domain/errors";
 import {
   configMeta,
   type ExtraProps,
@@ -59,16 +60,35 @@ const createTonConnector = (
       signTransaction: (tx: string) =>
         Effect.gen(function* () {
           if (!connectedWallet) {
-            return yield* Effect.fail(new Error("No wallet connected"));
+            return yield* Effect.fail(
+              new WalletIntegrationError({
+                message: "No wallet connected",
+                operation: "ton-send-transaction",
+              })
+            );
           }
 
           const { message } = yield* Schema.decodeEffect(
             Schema.fromJsonString(unsignedTonTransactionTonConnectCodec)
-          )(tx).pipe(Effect.mapError((error) => new Error(error.message)));
+          )(tx).pipe(
+            Effect.mapError(
+              (cause) =>
+                new WalletIntegrationError({
+                  cause,
+                  message: cause.message,
+                  operation: "ton-decode-transaction",
+                })
+            )
+          );
           const parsedTx = yield* Effect.try({
             try: () =>
               loadMessageRelaxed(Cell.fromBase64(message).beginParse()),
-            catch: (error) => new Error(String(error)),
+            catch: (cause) =>
+              new WalletIntegrationError({
+                cause,
+                message: String(cause),
+                operation: "ton-decode-message",
+              }),
           });
 
           const info = parsedTx.info as CommonMessageInfoRelaxedInternal;
@@ -86,8 +106,12 @@ const createTonConnector = (
                 ],
                 validUntil: now + Duration.toMillis(Duration.days(1)),
               }),
-            catch: (error) =>
-              error instanceof Error ? error : new Error(String(error)),
+            catch: (cause) =>
+              new WalletIntegrationError({
+                cause,
+                message: cause instanceof Error ? cause.message : String(cause),
+                operation: "ton-send-transaction",
+              }),
           });
 
           const externalMessageCell = Cell.fromBase64(result.boc);

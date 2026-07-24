@@ -1,0 +1,14 @@
+id: no-direct-effect-runtime-execution
+language: Tsx
+severity: error
+message: Run Effects through the scoped Atom runtime or an injected scoped runner.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+rule:
+  pattern: Effect.$METHOD($$$ARGS)
+constraints:
+  METHOD:
+    regex: ^run(?:Promise|PromiseExit|Fork|Sync|SyncExit|Callback)(?:With)?$

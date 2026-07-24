@@ -1,6 +1,8 @@
 import { HttpResponse, http } from "msw";
 import { mainnet } from "viem/chains";
 import { userEvent } from "vitest/browser";
+import { createConfig, createConnector, http as wagmiHttp } from "wagmi";
+import { connect, reconnect } from "wagmi/actions";
 import { KycGateCard } from "../../src/features/earn/ui/components/kyc-gate-card";
 import type { SKAppProps } from "../../src/public-api/types";
 import { formatAddress } from "../../src/shared/lib/general";
@@ -13,6 +15,77 @@ import { setup as setupStakingFlow } from "./staking-flow/setup";
 import { setup as setupTrustPosition } from "./trust-incentive-apy/setup";
 
 const account = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";
+
+const makeTestConnector = ({
+  id,
+  onConnect = async () => {},
+}: {
+  readonly id: string;
+  readonly onConnect?: () => Promise<void>;
+}) =>
+  createConnector((config) => ({
+    id,
+    name: id,
+    type: id,
+    connect: async (parameters) => {
+      await onConnect();
+
+      return {
+        accounts: parameters?.withCapabilities
+          ? [{ address: account, capabilities: {} }]
+          : [account],
+        chainId: mainnet.id,
+      } as never;
+    },
+    disconnect: async () => {},
+    getAccounts: async () => [account],
+    getChainId: async () => mainnet.id,
+    getProvider: async () => ({}),
+    isAuthorized: async () => true,
+    onAccountsChanged: () => {},
+    onChainChanged: () => {},
+    onDisconnect: () => config.emitter.emit("disconnect"),
+  }));
+
+const makeBlockingReconnect = () => {
+  const started = Promise.withResolvers<void>();
+  const release = Promise.withResolvers<void>();
+  const connector = makeTestConnector({
+    id: "blocking-connector",
+    onConnect: async () => {
+      started.resolve();
+      await release.promise;
+    },
+  });
+  const wagmiConfig = createConfig({
+    chains: [mainnet],
+    connectors: [connector],
+    storage: null,
+    transports: { [mainnet.id]: wagmiHttp() },
+  });
+
+  return {
+    release: release.resolve,
+    run: () => reconnect(wagmiConfig),
+    started: started.promise,
+  };
+};
+
+const persistStaleWagmiConnection = async () => {
+  const wagmiConfig = createConfig({
+    chains: [mainnet],
+    connectors: [makeTestConnector({ id: "persisted-non-external-connector" })],
+    transports: { [mainnet.id]: wagmiHttp() },
+  });
+  const connector = wagmiConfig.connectors[0];
+
+  if (!connector) throw new Error("Expected the test connector");
+
+  await connect(wagmiConfig, { connector });
+  await vi.waitFor(() => {
+    expect(window.localStorage.getItem("wagmi.store")).not.toBeNull();
+  });
+};
 
 const skProps = {
   apiKey: import.meta.env.VITE_API_KEY,
@@ -126,6 +199,39 @@ const mockKycRequiredDefaultYield = () => {
 };
 
 describe("RWA KYC flow", () => {
+  it("ignores a persisted non-external connection while another reconnect is running", async ({
+    worker,
+  }) => {
+    const reconnectBlocker = makeBlockingReconnect();
+    window.localStorage.removeItem("wagmi.store");
+    await persistStaleWagmiConnection();
+    const blockingReconnect = reconnectBlocker.run();
+    await reconnectBlocker.started;
+
+    try {
+      const kycStatus = mockKycStatus({ status: "not_started" });
+
+      worker.use(...mockKycRequiredDefaultYield(), kycStatus.handler);
+
+      const app = await renderApp({ skProps });
+
+      try {
+        await expect
+          .element(app.getByTestId("kyc-gate-card-start_kyc"), {
+            timeout: 5_000,
+          })
+          .toBeInTheDocument();
+        await expect.poll(kycStatus.getRequestedAddress).toBe(account);
+      } finally {
+        await app.unmount();
+      }
+    } finally {
+      reconnectBlocker.release();
+      await blockingReconnect;
+      window.localStorage.removeItem("wagmi.store");
+    }
+  });
+
   it("shows not started verification card and fetches wallet status", async ({
     worker,
   }) => {
