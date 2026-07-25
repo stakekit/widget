@@ -6,14 +6,15 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import { MorphoStarsIcon } from "../../../../../shared/ui/primitives/icons/morpho-stars";
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import type { useRewardTokenDetails } from "../../../react/use-reward-token-details";
+import type { YieldSummaryRewardToken } from "../../../../yield-summary";
+import { getRewardTokenSymbols } from "./get-reward-token-symbols";
 import { inlineText } from "./style.css";
 
 export const RewardTokenDetails = ({
   rewardToken,
   ...rest
 }: {
-  rewardToken: ReturnType<typeof useRewardTokenDetails>;
+  rewardToken: YieldSummaryRewardToken | null;
 } & (
   | { type: "stake" | "unstake"; pendingAction?: never }
   | {
@@ -41,6 +42,7 @@ export const RewardTokenDetails = ({
       : undefined;
 
   if (!rewardToken) return null;
+  const symbols = getRewardTokenSymbols(rewardToken.rewardTokens);
 
   return (
     <Box display="flex" alignItems="center" gap="2">
@@ -73,7 +75,7 @@ export const RewardTokenDetails = ({
           components={{
             symbols1: (
               <Text as="span" variant={{ weight: "semibold" }}>
-                {rewardToken.symbols}
+                {symbols}
               </Text>
             ),
             highlight2: (

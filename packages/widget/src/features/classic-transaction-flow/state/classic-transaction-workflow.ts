@@ -112,26 +112,7 @@ const getClassicTransactionStepsView = (
     signError.customMessage
       ? signError.customMessage
       : null;
-  const completionNavigation =
-    machineState._tag === "Completed"
-      ? {
-          state: {
-            urls: workflowTransactions
-              .filter((transaction) => transaction.source._tag === "Classic")
-              .map((transaction) => ({
-                type: transaction.source.transaction.type,
-                url: transaction.meta.url,
-              }))
-              .filter(
-                (value): value is { type: TransactionType; url: string } =>
-                  !!value.url
-              ),
-          },
-        }
-      : null;
-
   return {
-    completionNavigation,
     customSignErrorMessage,
     retryable:
       machineState._tag === "SignFailed" ||
@@ -184,8 +165,29 @@ export const makeClassicTransactionWorkflowModule = (
         workflowInput,
       } as const;
     }).pipe(Atom.setIdleTTL(0), Atom.withLabel("classicExecutionWorkflowView"));
+    const completionStateAtom = Atom.make((get) => {
+      const { state } = get(viewAtom);
+      if (state._tag !== "Completed") return null;
+
+      return {
+        urls: flattenTransactionWorkflowTransactions(state.context)
+          .filter((transaction) => transaction.source._tag === "Classic")
+          .map((transaction) => ({
+            type: transaction.source.transaction.type,
+            url: transaction.meta.url,
+          }))
+          .filter(
+            (value): value is { type: TransactionType; url: string } =>
+              !!value.url
+          ),
+      };
+    }).pipe(
+      Atom.setIdleTTL(0),
+      Atom.withLabel("classicExecutionCompletionState")
+    );
 
     return {
+      completionStateAtom,
       dispatchAtom: workflow.commandAtom,
       viewAtom,
     } as const;

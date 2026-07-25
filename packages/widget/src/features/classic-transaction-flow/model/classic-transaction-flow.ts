@@ -14,6 +14,11 @@ import { getActionInputToken } from "../../../domain/types/action";
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
 import type { ValidatorKey } from "../../../domain/types/validators";
 import {
+  toWidgetPath,
+  type WidgetPath,
+  type WidgetPathInput,
+} from "../../../services/navigation/widget-navigation";
+import {
   sameWalletScopeOwner,
   type WalletScopeKey,
 } from "../../../services/wallet/domain/scope";
@@ -70,6 +75,32 @@ export type ClassicTransactionFlowIntake =
   | ExitClassicTransactionFlowIntake
   | ManageClassicTransactionFlowIntake
   | ActivityResumeClassicTransactionFlowIntake;
+
+export type ClassicTransactionFlowDestination = Readonly<{
+  readonly completePath: WidgetPath;
+  readonly reviewPath: WidgetPath;
+  readonly stepsPath: WidgetPath;
+}>;
+
+/**
+ * Route prefix the flow pages hang off. The widget-root flow lives directly
+ * under `/review`, `/steps` and `/complete`, so an empty base is valid.
+ */
+type ClassicTransactionFlowRouteBase = "" | WidgetPathInput;
+
+export const makeClassicTransactionFlowDestination = ({
+  completePath,
+  routeBase,
+  stepsPath,
+}: {
+  readonly completePath?: WidgetPathInput;
+  readonly routeBase: ClassicTransactionFlowRouteBase;
+  readonly stepsPath?: WidgetPathInput;
+}): ClassicTransactionFlowDestination => ({
+  completePath: toWidgetPath(completePath ?? `${routeBase}/complete`),
+  reviewPath: toWidgetPath(`${routeBase}/review`),
+  stepsPath: toWidgetPath(stepsPath ?? `${routeBase}/steps`),
+});
 
 type ClassicTransactionFlowReviewPricingInput = {
   readonly token: AppToken;

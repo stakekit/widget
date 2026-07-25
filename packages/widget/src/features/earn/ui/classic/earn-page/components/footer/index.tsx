@@ -1,26 +1,20 @@
 import type { ComponentProps } from "react";
+import { useEarnEntry } from "../../../../../react/use-earn-facades";
 import { MetaInfo } from "../../../../components/meta-info";
-import { useEarnPageModel } from "../../state/earn-page-model";
 
 export const Footer = ({
   textSize,
 }: {
   textSize?: ComponentProps<typeof MetaInfo>["textSize"];
 }) => {
-  const {
-    appLoading,
-    footerIsLoading,
-    selectedStake,
-    selectedValidators,
-    selectedToken,
-  } = useEarnPageModel();
+  const { view } = useEarnEntry();
 
   return (
     <MetaInfo
-      isLoading={appLoading || footerIsLoading}
-      selectedStake={selectedStake}
-      selectedValidators={selectedValidators}
-      selectedToken={selectedToken}
+      isLoading={view.appLoading || view.footerIsLoading}
+      selectedStake={view.selectedStake}
+      selectedValidators={view.selectedValidators}
+      selectedToken={view.selectedToken}
       textSize={textSize}
     />
   );

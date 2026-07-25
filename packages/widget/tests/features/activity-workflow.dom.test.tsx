@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
+import { applicationRoutes } from "../../src/app/routes/application-routes";
 import type { ActivityFilterOption } from "../../src/features/activity/model/filters";
 import { useActivityFilter } from "../../src/features/activity/react/use-activity-filter";
 import { CompletePageComponent } from "../../src/features/classic-transaction-flow/ui/complete/pages/common.page";
@@ -33,7 +34,7 @@ const ActivityFilterHarness = ({
 };
 
 const wrap = (children: ReactNode) => (
-  <SKAtomRegistryProvider settings={settings}>
+  <SKAtomRegistryProvider routes={applicationRoutes} settings={settings}>
     <I18nextProvider i18n={i18nInstance}>
       <MemoryRouter>{children}</MemoryRouter>
     </I18nextProvider>

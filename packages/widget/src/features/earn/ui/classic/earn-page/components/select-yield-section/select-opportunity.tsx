@@ -1,10 +1,12 @@
 import { Trigger } from "@radix-ui/react-dialog";
 import clsx from "clsx";
 import { Array as EArray, Option } from "effect";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
-import { getYieldOutputToken } from "../../../../../../../domain/types/yields";
+import {
+  getYieldOutputToken,
+  getYieldTypeLabels,
+} from "../../../../../../../domain/types/yields";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
 import { GroupedVirtualList } from "../../../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
@@ -18,40 +20,30 @@ import {
 } from "../../../../../../widget-shell/ui/select-modal";
 import { selectModalGroupLabel } from "../../../../../../widget-shell/ui/select-modal/styles.css";
 import { ProviderIcon } from "../../../../../../widget-shell/ui/token-icon/provider-icon";
+import { useEarnYieldSelection } from "../../../../../react/use-earn-facades";
 import { SelectOpportunityListItem } from "../../../../components/select-opportunity-list-item";
-import { useEarnPageModel } from "../../state/earn-page-model";
 import { selectOpportunityButton } from "./styles.css";
 
 export const SelectOpportunity = () => {
-  const {
-    selectedStake,
-    selectedStakeData,
-    onSelectOpportunityClose,
-    onYieldSearch,
-    stakeSearch,
-    onYieldSelect,
-  } = useEarnPageModel();
+  const { select, setSearch, view } = useEarnYieldSelection();
 
   const trackEvent = useTrackEvent();
 
   const { t } = useTranslation();
 
-  const data = useMemo(
-    () =>
-      selectedStake
-        ? (() => {
-            const val = [...selectedStakeData.groupsWithCounts.values()];
-
-            return {
-              ss: selectedStake,
-              all: selectedStakeData.filtered,
-              groups: val.map((v) => v.title),
-              groupCounts: val.map((v) => v.itemsLength),
-            };
-          })()
-        : null,
-    [selectedStake, selectedStakeData]
-  );
+  const data = view.selected
+    ? {
+        ss: view.selected,
+        all: view.filtered,
+        groups: view.groups.map((group) => {
+          const example = view.filtered.find(
+            (item) => getYieldTypeLabels(item, t).type === group.type
+          );
+          return example ? getYieldTypeLabels(example, t).title : group.type;
+        }),
+        groupCounts: view.groups.map((group) => group.itemsLength),
+      }
+    : null;
 
   const variant = useWidgetConfig("variant");
 
@@ -62,9 +54,9 @@ export const SelectOpportunity = () => {
   return (
     <SelectModal
       title={t("details.opportunity_search_title")}
-      onSearch={onYieldSearch}
-      searchValue={stakeSearch}
-      onClose={onSelectOpportunityClose}
+      onSearch={setSearch}
+      searchValue={view.search}
+      onClose={() => setSearch("")}
       onOpen={() => trackEvent("selectYieldModalOpened")}
       trigger={
         <Trigger asChild>
@@ -137,7 +129,7 @@ export const SelectOpportunity = () => {
                 <SelectOpportunityListItem
                   item={item}
                   selected={item.id === data.ss.id}
-                  onYieldSelect={(yieldDto) => onYieldSelect(yieldDto.id)}
+                  onYieldSelect={(yieldDto) => select(yieldDto.id)}
                   testId={`select-opportunity__item_${item.id}-${index}`}
                 />
               )}

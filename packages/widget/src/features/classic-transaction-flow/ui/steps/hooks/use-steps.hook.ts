@@ -47,7 +47,6 @@ export const useSteps = () => {
     txStates: steps.txStates,
     cta,
     customSignErrorMessage: setupError?.message ?? steps.customSignErrorMessage,
-    completionNavigation: steps.completionNavigation,
     yieldId: steps.yieldId,
   };
 };

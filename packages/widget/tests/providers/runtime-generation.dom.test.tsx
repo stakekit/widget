@@ -3,13 +3,19 @@ import { Deferred, Effect, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { act } from "react";
+import type { DataRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
+import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
+import {
+  classicFlowSessionStore,
+  makeStartClassicFlowSession,
+} from "../../src/features/classic-transaction-flow/facade";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/session";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
@@ -148,10 +154,27 @@ const ClassicFlowRuntimeHarness = () => {
       <output data-testid="classic-flow-session">
         {session ? "present" : "none"}
       </output>
-      <button type="button" onClick={() => start(activityIntake())}>
+      <button
+        type="button"
+        onClick={() => start(makeStartClassicFlowSession(activityIntake()))}
+      >
         Start classic flow
       </button>
     </>
+  );
+};
+
+const ApplicationRouterHarness = ({
+  capture,
+}: {
+  readonly capture: (router: DataRouter) => void;
+}) => {
+  const router = useAtomValue(applicationRouterAtom);
+
+  return (
+    <button type="button" onClick={() => capture(router)}>
+      Capture router
+    </button>
   );
 };
 
@@ -163,11 +186,66 @@ const settings = (trackEvent: (event: string) => void, apiKey = "api-key") =>
   });
 
 describe("API runtime generations", () => {
+  it("preserves router history for live settings and replaces it with API identity", async () => {
+    const firstTrack = vi.fn();
+    const secondTrack = vi.fn();
+    const routers: DataRouter[] = [];
+    const app = await render(
+      <SKAtomRegistryProvider
+        routes={applicationRoutes}
+        settings={settings(firstTrack)}
+      >
+        <ApplicationRouterHarness capture={(router) => routers.push(router)} />
+      </SKAtomRegistryProvider>
+    );
+    const capture = () =>
+      app.container.querySelector<HTMLButtonElement>("button")?.click();
+
+    await act(async () => capture());
+    const firstRouter = routers[0];
+    if (!firstRouter) throw new Error("Expected the first application router");
+
+    await act(async () => {
+      await firstRouter.navigate("/review");
+    });
+
+    await app.rerender(
+      <SKAtomRegistryProvider
+        routes={applicationRoutes}
+        settings={settings(secondTrack)}
+      >
+        <ApplicationRouterHarness capture={(router) => routers.push(router)} />
+      </SKAtomRegistryProvider>
+    );
+    await act(async () => capture());
+
+    expect(routers[1]).toBe(firstRouter);
+    expect(routers[1]?.state.location.pathname).toBe("/review");
+
+    const dispose = vi.spyOn(firstRouter, "dispose");
+    await app.rerender(
+      <SKAtomRegistryProvider
+        routes={applicationRoutes}
+        settings={settings(secondTrack, "replacement")}
+      >
+        <ApplicationRouterHarness capture={(router) => routers.push(router)} />
+      </SKAtomRegistryProvider>
+    );
+    await vi.waitFor(() => expect(dispose).toHaveBeenCalledOnce());
+    await act(async () => capture());
+
+    expect(routers[2]).not.toBe(firstRouter);
+    expect(routers[2]?.state.location.pathname).toBe("/");
+  });
+
   it("retains intake for live settings and clears it on runtime replacement before routing", async () => {
     const firstTrack = vi.fn();
     const secondTrack = vi.fn();
     const app = await render(
-      <SKAtomRegistryProvider settings={settings(firstTrack)}>
+      <SKAtomRegistryProvider
+        routes={applicationRoutes}
+        settings={settings(firstTrack)}
+      >
         <ClassicFlowRuntimeHarness />
       </SKAtomRegistryProvider>
     );
@@ -186,7 +264,10 @@ describe("API runtime generations", () => {
     )?.textContent;
 
     await app.rerender(
-      <SKAtomRegistryProvider settings={settings(secondTrack)}>
+      <SKAtomRegistryProvider
+        routes={applicationRoutes}
+        settings={settings(secondTrack)}
+      >
         <ClassicFlowRuntimeHarness />
       </SKAtomRegistryProvider>
     );
@@ -197,6 +278,7 @@ describe("API runtime generations", () => {
 
     await app.rerender(
       <SKAtomRegistryProvider
+        routes={applicationRoutes}
         settings={settings(secondTrack, "replacement-api-key")}
       >
         <ClassicFlowRuntimeHarness />
@@ -224,7 +306,10 @@ describe("API runtime generations", () => {
       walletPrompts: 0,
     };
     const app = await render(
-      <SKAtomRegistryProvider settings={settings(firstTrack)}>
+      <SKAtomRegistryProvider
+        routes={applicationRoutes}
+        settings={settings(firstTrack)}
+      >
         <RuntimeHarness probe={probe} workflowProbe={workflowProbe} />
       </SKAtomRegistryProvider>
     );
@@ -243,7 +328,10 @@ describe("API runtime generations", () => {
     await vi.waitFor(() => expect(firstTrack).toHaveBeenCalledOnce());
 
     await app.rerender(
-      <SKAtomRegistryProvider settings={settings(secondTrack)}>
+      <SKAtomRegistryProvider
+        routes={applicationRoutes}
+        settings={settings(secondTrack)}
+      >
         <RuntimeHarness probe={probe} workflowProbe={workflowProbe} />
       </SKAtomRegistryProvider>
     );
@@ -294,7 +382,10 @@ describe("API runtime generations", () => {
     };
     const track = vi.fn();
     const app = await render(
-      <SKAtomRegistryProvider settings={settings(track)}>
+      <SKAtomRegistryProvider
+        routes={applicationRoutes}
+        settings={settings(track)}
+      >
         <RuntimeHarness probe={probe} workflowProbe={workflowProbe} />
       </SKAtomRegistryProvider>
     );
@@ -306,7 +397,10 @@ describe("API runtime generations", () => {
     await vi.waitFor(() => expect(workflowProbe.starts).toBe(1));
 
     await app.rerender(
-      <SKAtomRegistryProvider settings={settings(track, "replacement-api-key")}>
+      <SKAtomRegistryProvider
+        routes={applicationRoutes}
+        settings={settings(track, "replacement-api-key")}
+      >
         <RuntimeHarness probe={probe} workflowProbe={workflowProbe} />
       </SKAtomRegistryProvider>
     );

@@ -1,10 +1,14 @@
+import { useAtom } from "@effect/atom-react";
 import { Array as EArray, Option, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { delay, HttpResponse, http } from "msw";
 import type { PropsWithChildren } from "react";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { YieldId } from "../../src/domain/schema/identifiers";
-import { useYieldValidators } from "../../src/features/earn/react/use-yield-validators";
+import {
+  YieldValidatorsKey,
+  yieldValidatorsPullAtom,
+} from "../../src/features/yield-entry/yield-validators";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import { yieldApiValidatorFixture } from "../fixtures";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
@@ -56,11 +60,21 @@ describe("validator loading", () => {
     );
 
     const hook = await renderHook(
-      () =>
-        useYieldValidators({
-          yieldId: Schema.decodeSync(YieldId)("yield-1"),
-          network: "ethereum",
-        }),
+      () => {
+        const [result, pull] = useAtom(
+          yieldValidatorsPullAtom(
+            new YieldValidatorsKey({
+              network: "ethereum",
+              search: null,
+              yieldId: Schema.decodeSync(YieldId)("yield-1"),
+            })
+          )
+        );
+        return {
+          pull,
+          result,
+        };
+      },
       { wrapper: Wrapper }
     );
     const validators = () =>

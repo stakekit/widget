@@ -12,10 +12,13 @@ import {
   WidgetConfigService,
 } from "../../services/config/widget-config";
 import { RichErrorService } from "../../services/errors/rich-error-service";
+import { WidgetNavigation } from "../../services/navigation/widget-navigation";
 import { WidgetPersistence } from "../../services/persistence/widget-persistence";
 import { TrackingService } from "../../services/tracking/tracking-service";
+import { WalletModal } from "../../services/wallet/wallet-modal";
 import { ErrorTranslationsSource } from "../../translation/error-translations-source";
 import { widgetConfigAtom } from "../config/settings";
+import { applicationRouterContextAtom } from "./application-router-runtime";
 
 const makeAppLayer = (
   config: WidgetConfig,
@@ -44,13 +47,21 @@ const makeAppLayer = (
   const trackingLayer = TrackingService.layer.pipe(
     Layer.provide(widgetConfigLayer)
   );
+  const applicationRouterLayer = Layer.succeedContext(
+    registry.get(applicationRouterContextAtom)
+  );
+  const navigationLayer = WidgetNavigation.layer(
+    () => !registry.get(widgetConfigAtom).disableAutoScrollToTop
+  ).pipe(Layer.provide(applicationRouterLayer));
   return Layer.mergeAll(
     widgetConfigLayer,
     richErrorLayer,
     apiLayer,
     ErrorTranslationsSource.layer,
     persistenceLayer,
-    trackingLayer
+    trackingLayer,
+    navigationLayer,
+    WalletModal.layer
   ).pipe(Layer.fresh);
 };
 

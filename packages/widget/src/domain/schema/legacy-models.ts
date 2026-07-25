@@ -13,9 +13,6 @@ export type AppToken = typeof AppToken.Type;
 export const GeolocationError = LegacyApi.GeolocationError;
 export type GeolocationError = typeof GeolocationError.Type;
 
-export const FeeConfiguration = LegacyApi.FeeConfigurationDto;
-export type FeeConfiguration = typeof FeeConfiguration.Type;
-
 export const LegacyPendingAction = LegacyApi.PendingActionDto;
 export type LegacyPendingAction = typeof LegacyPendingAction.Type;
 

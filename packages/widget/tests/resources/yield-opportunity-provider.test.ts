@@ -4,12 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { ApiRequestError } from "../../src/domain/schema/api-errors";
 import { YieldId } from "../../src/domain/schema/identifiers";
+import { initYieldAtom } from "../../src/features/earn/state/atoms-state/catalog/atoms";
+import { InitYieldKey } from "../../src/features/earn/state/atoms-state/catalog/keys";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
-} from "../../src/features/earn/resources/yields";
-import { initYieldAtom } from "../../src/features/earn/state/atoms-state/catalog/atoms";
-import { InitYieldKey } from "../../src/features/earn/state/atoms-state/catalog/keys";
+} from "../../src/resources/yield-opportunity/provider";
 import {
   YieldOpportunityError,
   yieldOpportunityResourceAtom,

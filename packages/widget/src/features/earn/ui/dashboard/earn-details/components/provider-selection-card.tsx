@@ -15,8 +15,9 @@ import { PlusIcon } from "../../../../../../shared/ui/primitives/icons/plus";
 import { XIcon } from "../../../../../../shared/ui/primitives/icons/x-icon";
 import { Image } from "../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
+import type { YieldSummaryProvider } from "../../../../../yield-summary";
+import { useEarnEntry } from "../../../../react/use-earn-facades";
 import { useSelectValidator } from "../../../classic/earn-page/components/select-validator-section/use-select-validator";
-import { useEarnPageModel } from "../../../classic/earn-page/state/earn-page-model";
 import { SelectValidator } from "../../../components/select-validator";
 import {
   formatCommission,
@@ -27,9 +28,7 @@ import {
 } from "../earn-details-formatters";
 import * as styles from "../styles.css";
 
-type ProviderDetailsItem = NonNullable<
-  ReturnType<typeof useEarnPageModel>["providersDetails"]
->[number];
+type ProviderDetailsItem = YieldSummaryProvider;
 
 type ProviderCardItem = {
   key: string;
@@ -60,7 +59,8 @@ export const ProviderSelectionCard = () => {
     validatorSearch,
     validatorsData,
   } = useSelectValidator();
-  const { providersDetails } = useEarnPageModel();
+  const { view: entry } = useEarnEntry();
+  const providersDetails = entry.providers;
 
   const yieldDto = selectedStake;
 

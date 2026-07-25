@@ -1,18 +1,12 @@
-import { useConnectModal } from "@stakekit/rainbowkit";
+import { useAtomSet } from "@effect/atom-react";
 import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
-import {
-  ActionStatus,
-  type TransactionType,
-} from "../../../../../../domain/types/action";
 import type { ClassicTransactionWorkflowProviderDetail } from "../../../../../../services/workflow/transaction-workflow-model";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import { useStartClassicTransactionFlow } from "../../../../../classic-transaction-flow/react/use-transaction-flow";
 import { useTrackPage } from "../../../../../tracking/react/use-track-page";
 import { useSKWallet } from "../../../../../wallet/react/use-wallet";
 import { FallbackContent } from "../../../../../widget-shell/fallback-content";
@@ -21,6 +15,7 @@ import {
   useActivityFilterOptions,
 } from "../../../../react/use-activity-actions";
 import { useActivityFilter } from "../../../../react/use-activity-filter";
+import { resumeActivityActionAtom } from "../../../../state/resume-action";
 import type { ActionYieldDto } from "../types";
 
 export const useActivityPage = ({
@@ -31,9 +26,7 @@ export const useActivityPage = ({
   useTrackPage("activity");
 
   const { isConnected, isConnecting } = useSKWallet();
-  const { openConnectModal } = useConnectModal();
-  const navigate = useNavigate();
-  const startClassicTransactionFlow = useStartClassicTransactionFlow();
+  const resumeActivityAction = useAtomSet(resumeActivityActionAtom);
   const filterOptionsResult = useActivityFilterOptions();
   const filterOptions = filterOptionsResult.pipe(
     AsyncResult.value,
@@ -46,58 +39,15 @@ export const useActivityPage = ({
   const onActionSelect = (
     data: ActionYieldDto,
     providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
-  ) => {
-    if (!isConnected) return openConnectModal?.();
-    if (!data.yieldData) return;
-
-    startClassicTransactionFlow({
-      _tag: "ActivityResume",
-      providersDetails,
+  ) =>
+    resumeActivityAction({
       action: data.actionData,
-      selectedYield: data.yieldData,
-      selectedValidators: data.validatorsData,
+      providersDetails,
+      selectionMode,
+      validators: data.validatorsData,
       walletScope: data.walletScope,
+      yield: data.yieldData,
     });
-
-    if (selectionMode === "select") return;
-
-    if (
-      data.actionData.status === ActionStatus.SUCCESS ||
-      data.actionData.status === ActionStatus.PROCESSING
-    ) {
-      const urls = data.actionData.transactions
-        .map((transaction) => ({
-          type: transaction.type,
-          url: transaction.explorerUrl,
-        }))
-        .filter(
-          (
-            transaction
-          ): transaction is {
-            type: TransactionType;
-            url: string;
-          } => !!transaction.url
-        );
-      const getReviewPath = () => {
-        if (data.actionData.type === "UNSTAKE") return "unstake";
-        if (data.actionData.type === "STAKE") return "stake";
-        return "pending";
-      };
-      const path = getReviewPath();
-
-      return navigate(`/activity/${path}-review/complete`, {
-        state: { urls },
-      });
-    }
-
-    if (
-      data.actionData.status === ActionStatus.CREATED ||
-      data.actionData.status === ActionStatus.WAITING_FOR_NEXT ||
-      data.actionData.status === ActionStatus.FAILED
-    ) {
-      return navigate("/activity/review");
-    }
-  };
 
   const activityValue = activityActions.result.pipe(
     AsyncResult.value,

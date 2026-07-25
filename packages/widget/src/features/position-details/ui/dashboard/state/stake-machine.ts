@@ -1,16 +1,16 @@
-import { useAtom } from "@effect/atom-react";
 import { Data } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import type { YieldId } from "../../../../../domain/schema/identifiers";
 import type { TronResource } from "../../../../../domain/schema/legacy-models";
 import type { WalletScopeKey } from "../../../../../services/wallet/domain/scope";
 
 type PositionDetailsStakeEntryParams = {
-  integrationId: string;
+  integrationId: YieldId;
   balanceId: string;
   walletScope: WalletScopeKey;
 };
 
-class PositionDetailsStakeEntryKey extends Data.Class<PositionDetailsStakeEntryParams> {}
+export class PositionDetailsStakeEntryKey extends Data.Class<PositionDetailsStakeEntryParams> {}
 
 type PositionDetailsStakeIntent = {
   stakeAmount: string;
@@ -38,7 +38,7 @@ const makeDefaultIntent = (): PositionDetailsStakeIntent => ({
   useMaxAmount: false,
 });
 
-const positionDetailsStakeAtom = Atom.family(
+export const positionDetailsStakeAtom = Atom.family(
   (_entry: PositionDetailsStakeEntryKey) => {
     const intentAtom = Atom.make<PositionDetailsStakeIntent>(
       makeDefaultIntent()
@@ -78,13 +78,3 @@ const positionDetailsStakeAtom = Atom.family(
     );
   }
 );
-
-export const usePositionDetailsStakeMachine = (
-  entry: PositionDetailsStakeEntryParams
-) => {
-  const [intent, dispatch] = useAtom(
-    positionDetailsStakeAtom(new PositionDetailsStakeEntryKey(entry))
-  );
-
-  return { intent, dispatch };
-};

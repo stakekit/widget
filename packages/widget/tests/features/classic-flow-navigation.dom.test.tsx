@@ -1,17 +1,30 @@
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Schema } from "effect";
+import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
+import { Layer, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { HttpResponse, http } from "msw";
 import { act } from "react";
 import {
-  MemoryRouter,
   Route,
+  RouterProvider,
   Routes,
   useLocation,
   useNavigate,
 } from "react-router";
-import { normalizeWidgetConfig } from "../../src/app/config/settings";
+import { ApplicationRouteContentProvider } from "../../src/app/composition/application-route-content";
+import {
+  normalizeWidgetConfig,
+  widgetConfigAtom,
+} from "../../src/app/config/settings";
+import { applicationRoutes } from "../../src/app/routes/application-routes";
+import {
+  applicationRouterAtom,
+  applicationRouterRuntime,
+} from "../../src/app/runtime/application-router-runtime";
 import { ActionCommand } from "../../src/domain/schema/action-models";
+import {
+  classicFlowSessionStore,
+  makeStartClassicFlowSession,
+} from "../../src/features/classic-transaction-flow/facade";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
   ClassicFlowExecutionScope,
@@ -21,13 +34,12 @@ import {
   useClassicFlowReview,
   useClassicFlowSession,
 } from "../../src/features/classic-transaction-flow/react/classic-flow-route";
-import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/session";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
+import { ApplicationRouter } from "../../src/services/navigation/application-router";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
 import { disconnectedNormalizedWalletState } from "../../src/services/wallet/domain/state";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
-import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { describe, expect, it, vi } from "../utils/test-extend.dom";
 import { render } from "../utils/test-utils.dom";
 
@@ -73,7 +85,10 @@ const StartPage = () => {
 
   return (
     <>
-      <button type="button" onClick={() => start(intake)}>
+      <button
+        type="button"
+        onClick={() => start(makeStartClassicFlowSession(intake))}
+      >
         Start
       </button>
       <button
@@ -119,7 +134,10 @@ const ReviewPage = () => {
       <button type="button" onClick={() => navigate(1)}>
         Browser Forward
       </button>
-      <button type="button" onClick={() => start(intake)}>
+      <button
+        type="button"
+        onClick={() => start(makeStartClassicFlowSession(intake))}
+      >
         Replace Session
       </button>
     </>
@@ -216,20 +234,45 @@ const FlowTestApp = ({
 }: {
   readonly initialPath?: string;
   readonly walletState?: NormalizedWalletState;
-}) => (
-  <TestAtomRuntimeProvider
-    settings={normalizeWidgetConfig({
-      apiKey: "test-key",
-      baseUrl: legacyApiUrl,
-      variant: "default",
-      yieldsApiUrl: yieldApiUrl,
-    })}
-  >
-    <MemoryRouter initialEntries={[initialPath]}>
-      <FlowRoutes walletState={walletState} />
-    </MemoryRouter>
-  </TestAtomRuntimeProvider>
-);
+}) => {
+  const settings = normalizeWidgetConfig({
+    apiKey: "test-key",
+    baseUrl: legacyApiUrl,
+    variant: "default",
+    yieldsApiUrl: yieldApiUrl,
+  });
+  return (
+    <RegistryProvider
+      initialValues={[
+        [widgetConfigAtom, settings],
+        [
+          applicationRouterRuntime.layer,
+          ApplicationRouter.layer(applicationRoutes, {
+            initialEntries: [initialPath],
+          }).pipe(Layer.fresh),
+        ],
+      ]}
+    >
+      <FlowRouter walletState={walletState} />
+    </RegistryProvider>
+  );
+};
+
+const FlowRouter = ({
+  walletState,
+}: {
+  readonly walletState: NormalizedWalletState;
+}) => {
+  const router = useAtomValue(applicationRouterAtom);
+
+  return (
+    <ApplicationRouteContentProvider
+      value={<FlowRoutes walletState={walletState} />}
+    >
+      <RouterProvider router={router} />
+    </ApplicationRouteContentProvider>
+  );
+};
 
 describe("Classic Transaction Flow navigation", () => {
   it("redirects routes with missing intake or execution action", async () => {

@@ -3,7 +3,6 @@ import type { ComponentProps } from "react";
 import { memo } from "react";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../../../../tracking/react/use-track-event";
 import {
   SelectModalItem,
   SelectModalItemContainer,
@@ -23,11 +22,8 @@ export const SelectTokenListItem = memo(
   ({ item, isConnected, isSelected, onTokenBalanceSelect }: Props) => {
     const amountGreaterThanZero = new BigNumber(item.amount).isGreaterThan(0);
 
-    const trackEvent = useTrackEvent();
-
     const _onItemClick: ComponentProps<typeof SelectModalItem>["onItemClick"] =
       ({ closeModal }) => {
-        trackEvent("tokenSelected", { token: item.token.symbol });
         onTokenBalanceSelect(item);
         closeModal();
       };

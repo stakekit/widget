@@ -8,7 +8,10 @@ import { formatNumber } from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useEarnPageModel } from "../../classic/earn-page/state/earn-page-model";
+import {
+  useEarnEntry,
+  useEarnYieldSelection,
+} from "../../../react/use-earn-facades";
 import {
   AddressRow,
   DetailRow,
@@ -28,18 +31,14 @@ import { useYieldRewardRateHistory } from "./use-yield-reward-rate-history";
 import { useYieldTvlHistory } from "./use-yield-tvl-history";
 
 export const EarnDetails = () => {
-  const {
-    appLoading,
-    selectedStake,
-    selectedValidators,
-    selectYieldIsLoading,
-  } = useEarnPageModel();
+  const { view: entry } = useEarnEntry();
+  const { view: yieldSelection } = useEarnYieldSelection();
 
   return (
     <EarnDetailsView
-      isLoading={appLoading || selectYieldIsLoading}
-      selectedValidators={selectedValidators}
-      yieldDto={selectedStake}
+      isLoading={entry.appLoading || yieldSelection.isLoading}
+      selectedValidators={entry.selectedValidators}
+      yieldDto={entry.selectedStake}
     />
   );
 };

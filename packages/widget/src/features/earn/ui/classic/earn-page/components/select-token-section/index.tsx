@@ -10,8 +10,11 @@ import { ContentLoaderSquare } from "../../../../../../../shared/ui/primitives/c
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
 import { MaxButton } from "../../../../../../widget-shell/ui/max-button";
 import { NumberInput } from "../../../../../../widget-shell/ui/number-input";
+import {
+  useEarnEntry,
+  useEarnTokenSelection,
+} from "../../../../../react/use-earn-facades";
 import * as AmountToggle from "../../../../components/amount-toggle";
-import { useEarnPageModel } from "../../state/earn-page-model";
 import { SelectToken } from "./select-token";
 import {
   minMaxContainer,
@@ -32,22 +35,21 @@ export const SelectTokenSection = ({
 
   const variant = useWidgetConfig("variant");
 
+  const { setAmount, setMaxAmount, view } = useEarnEntry();
+  const { view: tokenSelection } = useEarnTokenSelection();
   const {
     appLoading,
     selectedTokenAvailableAmount,
     formattedPrice,
-    onMaxClick,
-    onStakeAmountChange,
     stakeAmount,
     validation,
-    selectTokenIsLoading,
     stakeMaxAmount,
     stakeMinAmount,
     symbol,
     isStakeTokenSameAsGasToken,
-  } = useEarnPageModel();
+  } = view;
 
-  const isLoading = appLoading || selectTokenIsLoading;
+  const isLoading = appLoading || tokenSelection.isLoading;
 
   const {
     submitted,
@@ -102,7 +104,7 @@ export const SelectTokenSection = ({
             {...(isStakeTokenSameAsGasToken
               ? { as: "span" }
               : {
-                  onClick: onMaxClick,
+                  onClick: () => setMaxAmount(undefined),
                   as: "button",
                 })}
           >
@@ -162,7 +164,7 @@ export const SelectTokenSection = ({
             <NumberInput
               shakeOnInvalid
               isInvalid={errorInput}
-              onChange={onStakeAmountChange}
+              onChange={setAmount}
               value={stakeAmount}
             />
           </Box>
@@ -218,7 +220,7 @@ export const SelectTokenSection = ({
             </Box>
 
             {!isStakeTokenSameAsGasToken && (
-              <MaxButton onMaxClick={onMaxClick} />
+              <MaxButton onMaxClick={() => setMaxAmount(undefined)} />
             )}
           </Box>
         </Box>

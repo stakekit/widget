@@ -10,10 +10,10 @@ import {
 } from "../../../../../domain/types/action";
 import {
   getExtendedYieldType,
+  getYieldTypeLabels,
   isUnstakeYieldType,
 } from "../../../../../domain/types/yields";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import { useYieldType } from "../../../../earn/react/use-yield-type";
 import { useTrackPage } from "../../../../tracking/react/use-track-page";
 import type { PageCta } from "../../../../widget-shell/page-cta";
 import { useClassicFlowReview } from "../../../react/classic-flow-route";
@@ -48,7 +48,7 @@ export const useActionReview = () => {
 
   const onViewTransactionClick = (url: string) => window.open(url, "_blank");
 
-  const stakeTitle = useYieldType(selectedYield)?.review ?? "";
+  const stakeTitle = getYieldTypeLabels(selectedYield, t).review;
 
   const unstakeTitle = useMemo(() => {
     const yieldType = getExtendedYieldType(selectedYield);

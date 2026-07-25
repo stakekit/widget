@@ -149,10 +149,6 @@ const resolveRequiredValidatorView = (
       selectedYieldId: requiredYield.id,
     })
   );
-  const loaded = validatorsResult.pipe(
-    AsyncResult.value,
-    Option.getOrElse(() => [])
-  );
   const registry = AtomRegistry.make({
     initialValues: [
       [
@@ -187,10 +183,6 @@ const resolveRequiredValidatorView = (
         AsyncResult.success([requiredYield]),
       ],
       [validators.initialValidatorsResultAtom, validatorsResult],
-      [
-        validators.loadedValidatorsAtom,
-        new Map(loaded.map((validator) => [validator.key, validator])),
-      ],
     ],
   });
 
@@ -644,7 +636,6 @@ describe("Earn state machine view", () => {
           AsyncResult.success([requiredYield]),
         ],
         [validators.initialValidatorsResultAtom, AsyncResult.success([])],
-        [validators.loadedValidatorsAtom, new Map()],
       ],
     });
     const view = registry.get(
@@ -715,7 +706,6 @@ describe("Earn state machine view", () => {
           AsyncResult.success([requiredYield]),
         ],
         [validators.initialValidatorsResultAtom, AsyncResult.initial(true)],
-        [validators.loadedValidatorsAtom, new Map()],
       ],
     });
     const view = registry.get(

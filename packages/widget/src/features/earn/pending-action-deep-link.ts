@@ -14,6 +14,10 @@ import {
   singleYieldBalancesResourceAtom,
 } from "../../resources/single-yield-balances/single-yield-balances";
 import {
+  YieldOpportunityKey,
+  yieldOpportunityAtom,
+} from "../../resources/yield-opportunity/provider";
+import {
   sameWalletScopeOwner,
   type WalletScopeKey,
   walletScopeFromState,
@@ -21,7 +25,6 @@ import {
 import type { ClassicTransactionWorkflowProviderDetail } from "../../services/workflow/transaction-workflow-model";
 import { initParamsAtom } from "../init-params/atoms";
 import { walletConnectionStateAtom } from "../wallet/public-state";
-import { YieldOpportunityKey, yieldOpportunityAtom } from "./resources/yields";
 
 class PendingActionDeepLinkRequestKey extends Data.Class<{
   readonly pendingAction: NonNullable<InitParams["pendingaction"]>;

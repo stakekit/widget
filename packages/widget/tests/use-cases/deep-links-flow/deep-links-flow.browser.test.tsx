@@ -87,7 +87,9 @@ describe("Deep links flow", () => {
       wagmi: { __customConnectors__: customConnectors },
     });
 
-    await expect.element(app.getByText("Claim")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Claim", { exact: true }))
+      .toBeInTheDocument();
 
     await expect
       .element(
@@ -163,7 +165,9 @@ describe("Deep links flow", () => {
       .click();
     await app.getByText("Submit").click();
 
-    await expect.element(app.getByText("Claim")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Claim", { exact: true }))
+      .toBeInTheDocument();
 
     await expect
       .element(

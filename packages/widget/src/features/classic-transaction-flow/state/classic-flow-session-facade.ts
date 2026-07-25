@@ -1,7 +1,8 @@
-import { Data, Duration, Effect, Option, Result } from "effect";
+import { Data, Duration, Effect, Option, Result, Schedule } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
+import { runWidgetNavigationCommand } from "../../../app/runtime/navigation";
 import { getValidStakeSessionTx } from "../../../domain";
 import type { YieldAction } from "../../../domain/schema/action-models";
 import {
@@ -14,7 +15,8 @@ import {
   CurrentYieldKycGateKey,
   currentYieldKycGateAtom,
   refreshCurrentYieldKycAtom,
-} from "../../earn/resources/yield-insights";
+} from "../../yield-summary/yield-insights";
+import { type ClassicFlowSession, classicFlowSessionStore } from "../facade";
 import {
   type ClassicTransactionFlowIntake,
   getClassicTransactionFlowIntakeVariant,
@@ -22,8 +24,8 @@ import {
   getClassicTransactionWorkflowInput,
 } from "../model/classic-transaction-flow";
 import { makeClassicFlowSessionReviewResources } from "../resources/classic-flow-review-resources";
-import { type ClassicFlowSession, classicFlowSessionStore } from "../session";
 import { makeClassicTransactionWorkflowModule } from "./classic-transaction-workflow";
+import { makeClassicFlowStakeReviewViewAtom } from "./yield-summary";
 
 class ClassicFlowPreviewError extends Data.TaggedError(
   "ClassicFlowPreviewError"
@@ -234,15 +236,6 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
       Atom.withLabel("classicFlowReviewActionPreview")
     );
 
-    const navigationStateAtom = Atom.make<"Steps" | null>(null).pipe(
-      Atom.setIdleTTL(0),
-      Atom.withLabel("classicFlowReviewNavigationState")
-    );
-
-    const navigationAtom = Atom.make((get) =>
-      get(canPublishSharedOutputAtom) ? get(navigationStateAtom) : null
-    ).pipe(Atom.withLabel("classicFlowReviewNavigation"));
-
     const retryAtom = Atom.fnSync(
       (_input: undefined, context) => {
         const error = context(actionPreviewAtom).pipe(
@@ -256,87 +249,104 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
       { initialValue: undefined }
     ).pipe(Atom.setIdleTTL(0), Atom.withLabel("retryClassicFlowReviewAtom"));
 
-    const trackConfirmationAtom = appRuntime.fn(
-      (
-        input: {
-          readonly amount?: string;
-          readonly yieldId: string;
-        },
-        context
-      ) => {
-        if (!context(canPublishSharedOutputAtom)) return Effect.void;
-
-        return Effect.gen(function* () {
-          const tracking = yield* TrackingService;
-          yield* tracking.trackEvent("unstakeClicked", input);
-        }).pipe(Effect.withSpan("trackClassicFlowSessionConfirmation"));
-      }
-    );
-
     const reviewResources = makeClassicFlowSessionReviewResources({
       actionPreviewAtom,
       intakeAtom,
       kycGateAtom,
     });
+    const stakeReviewViewAtom =
+      session.intake._tag === "Enter"
+        ? makeClassicFlowStakeReviewViewAtom(
+            session.intake,
+            reviewResources.reviewViewAtom
+          )
+        : null;
+    const reviewViewAtom = Atom.make((get) => ({
+      ...get(reviewResources.reviewViewAtom),
+      stake: stakeReviewViewAtom ? get(stakeReviewViewAtom) : null,
+    })).pipe(Atom.withLabel("classicFlowSessionReviewViewAtom"));
 
-    const confirmAtom = Atom.fnSync(
-      (_input: undefined, context) => {
-        if (context(kycGateAtom).isGateBlocking) return;
-        if (
-          session.intake._tag === "ActivityResume" &&
-          context(reviewResources.activityActionExpiredAtom)
-        ) {
-          return;
-        }
+    const confirmAtom = appRuntime
+      .fn(
+        (_input: undefined, context) => {
+          const registry = context.registry;
+          if (
+            !context(isCurrentSessionAtom) ||
+            context(kycGateAtom).isGateBlocking
+          ) {
+            return Effect.void;
+          }
+          if (
+            session.intake._tag === "ActivityResume" &&
+            context(reviewResources.activityActionExpiredAtom)
+          ) {
+            return Effect.void;
+          }
 
-        if (AsyncResult.isFailure(context(actionPreviewAtom))) {
-          context.set(retryAtom, undefined);
-          return;
-        }
+          if (AsyncResult.isFailure(context(actionPreviewAtom))) {
+            context.set(retryAtom, undefined);
+            return Effect.void;
+          }
 
-        if (
-          context(navigationStateAtom) === "Steps" ||
-          context(executionActionAtom) !== null
-        ) {
-          return;
-        }
+          if (context(executionActionAtom) !== null) {
+            return Effect.void;
+          }
 
-        const action = context(actionPreviewAtom).pipe(
-          AsyncResult.value,
-          Option.getOrNull
-        );
-        if (!action) return;
+          const action = context(actionPreviewAtom).pipe(
+            AsyncResult.value,
+            Option.getOrNull
+          );
+          if (!action) return Effect.void;
 
-        context.set(stateAtom, { executionAction: action });
-        context.set(navigationStateAtom, "Steps");
+          const exitIntake =
+            session.intake._tag === "Exit" ? session.intake : null;
+          const trackConfirmation = exitIntake
+            ? TrackingService.use((tracking) =>
+                tracking.trackEvent("unstakeClicked", {
+                  yieldId: exitIntake.integration.id,
+                  ...(exitIntake.request.arguments?.amount
+                    ? { amount: exitIntake.request.arguments.amount }
+                    : {}),
+                })
+              ).pipe(Effect.withSpan("trackClassicFlowSessionConfirmation"))
+            : Effect.void;
 
-        if (session.intake._tag === "Exit") {
-          context.set(trackConfirmationAtom, {
-            yieldId: session.intake.integration.id,
-            ...(session.intake.request.arguments?.amount
-              ? { amount: session.intake.request.arguments.amount }
-              : {}),
-          });
-        }
-      },
-      { initialValue: undefined }
-    ).pipe(Atom.setIdleTTL(0), Atom.withLabel("confirmClassicFlowReviewAtom"));
+          context.set(stateAtom, { executionAction: action });
+          return Effect.all(
+            [
+              runWidgetNavigationCommand({
+                _tag: "Push",
+                path: session.destination.stepsPath,
+              }).pipe(
+                Effect.tapError(() =>
+                  Effect.sync(() => {
+                    if (
+                      registry.get(isCurrentSessionAtom) &&
+                      registry.get(executionActionAtom) === action
+                    ) {
+                      registry.set(stateAtom, { executionAction: null });
+                    }
+                  })
+                )
+              ),
+              trackConfirmation,
+            ],
+            { concurrency: "unbounded", discard: true }
+          );
+        },
+        { initialValue: undefined }
+      )
+      .pipe(Atom.setIdleTTL(0), Atom.withLabel("confirmClassicFlowReviewAtom"));
 
     return {
       activityReviewViewAtom: reviewResources.activityReviewViewAtom,
       confirmAtom,
-      navigationAtom,
       refreshKycAtom,
-      reviewViewAtom: reviewResources.reviewViewAtom,
+      reviewViewAtom,
     } as const;
   };
 
   const makeExecutionFacade = (action: YieldAction) => {
-    const navigationStateAtom = Atom.make<"Review" | null>(null).pipe(
-      Atom.setIdleTTL(0),
-      Atom.withLabel("classicFlowExecutionNavigationState")
-    );
-
     const actionAtom = Atom.make(action).pipe(
       Atom.withLabel("classicFlowExecutionAction")
     );
@@ -349,26 +359,28 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
       getClassicTransactionWorkflowInput(session.intake, action)
     );
 
-    const navigationAtom = Atom.make((get) =>
-      get(canPublishSharedOutputAtom) && get(executionActionAtom) === action
-        ? get(navigationStateAtom)
-        : null
-    ).pipe(Atom.withLabel("classicFlowExecutionNavigation"));
-
-    const backAtom = Atom.fnSync(
-      (_input: undefined, context) => {
-        if (context(navigationStateAtom) === "Review") return;
-
-        context.set(navigationStateAtom, "Review");
-      },
-      { initialValue: undefined }
-    ).pipe(Atom.setIdleTTL(0), Atom.withLabel("backClassicFlowExecutionAtom"));
+    const backAtom = appRuntime
+      .fn(
+        (_input: undefined, context) => {
+          if (
+            !context(canPublishSharedOutputAtom) ||
+            context(executionActionAtom) !== action
+          ) {
+            return Effect.void;
+          }
+          return runWidgetNavigationCommand({
+            _tag: "Replace",
+            path: session.destination.reviewPath,
+          });
+        },
+        { initialValue: undefined }
+      )
+      .pipe(Atom.setIdleTTL(0), Atom.withLabel("backClassicFlowExecutionAtom"));
 
     return {
       activityCompleteViewAtom,
       actionAtom,
       backAtom,
-      navigationAtom,
       workflowAtom,
     } as const;
   };
@@ -387,6 +399,54 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
 
       const { workflowAtom, ...execution } = makeExecutionFacade(action);
       const workflow = context(workflowAtom);
+      const registry = context.registry;
+      const navigateToCompletionAtom = appRuntime.fn(
+        (_input: undefined, commandContext) => {
+          const commandRegistry = commandContext.registry;
+          const navigate = Effect.suspend(() => {
+            if (
+              !commandRegistry.get(canPublishSharedOutputAtom) ||
+              commandRegistry.get(executionActionAtom) !== action
+            ) {
+              return Effect.void;
+            }
+            const completionState = commandRegistry.get(
+              workflow.completionStateAtom
+            );
+            if (!completionState) return Effect.void;
+            return runWidgetNavigationCommand({
+              _tag: "Replace",
+              path: session.destination.completePath,
+              state: completionState,
+            });
+          });
+          return navigate.pipe(
+            Effect.retry({
+              schedule: Schedule.spaced(Duration.millis(100)),
+            })
+          );
+        },
+        { concurrent: false }
+      );
+      context.mount(navigateToCompletionAtom);
+      context.subscribe(
+        workflow.completionStateAtom,
+        (completionState) => {
+          const navigation = registry.get(navigateToCompletionAtom);
+          if (
+            !completionState ||
+            navigation.waiting ||
+            AsyncResult.isSuccess(navigation) ||
+            !registry.get(canPublishSharedOutputAtom) ||
+            registry.get(executionActionAtom) !== action
+          ) {
+            return;
+          }
+
+          registry.set(navigateToCompletionAtom, undefined);
+        },
+        { immediate: true }
+      );
       return { ...execution, workflow } as const;
     }).pipe(Atom.setIdleTTL(0), Atom.withLabel("classicFlowExecutionScope"));
 

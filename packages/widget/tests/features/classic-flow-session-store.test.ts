@@ -1,12 +1,22 @@
 import { Schema } from "effect";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
+import {
+  normalizeWidgetConfig,
+  widgetConfigAtom,
+} from "../../src/app/config/settings";
+import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
+import {
+  classicFlowSessionStore,
+  finishClassicTransactionFlowAtom,
+  makeClassicFlowSessionStore,
+  makeStartClassicFlowSession,
+} from "../../src/features/classic-transaction-flow/facade";
 import {
   type ClassicTransactionFlowIntake,
   isClassicTransactionFlowWalletScopeValid,
 } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { makeClassicFlowSessionStore } from "../../src/features/classic-transaction-flow/session";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiYieldFixture } from "../fixtures";
 
@@ -37,15 +47,51 @@ const makeEnterIntake = (): ClassicTransactionFlowIntake => {
 };
 
 describe("Classic Flow Session intake store", () => {
+  it("finishes only the current Flow Session through runtime navigation", async () => {
+    const registry = AtomRegistry.make({
+      initialValues: [
+        [
+          widgetConfigAtom,
+          normalizeWidgetConfig({ apiKey: "test", variant: "default" }),
+        ],
+      ],
+    });
+
+    try {
+      const router = registry.get(applicationRouterAtom);
+      await router.navigate("/review");
+      registry.set(
+        classicFlowSessionStore.startAtom,
+        makeStartClassicFlowSession(makeEnterIntake())
+      );
+      const first = registry.get(classicFlowSessionStore.currentSessionAtom);
+      registry.set(
+        classicFlowSessionStore.startAtom,
+        makeStartClassicFlowSession(makeEnterIntake())
+      );
+      const second = registry.get(classicFlowSessionStore.currentSessionAtom);
+      if (!first || !second) throw new Error("Expected Flow Sessions");
+
+      registry.set(finishClassicTransactionFlowAtom, first.epoch);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(router.state.location.pathname).toBe("/review");
+
+      registry.set(finishClassicTransactionFlowAtom, second.epoch);
+      await expect.poll(() => router.state.location.pathname).toBe("/");
+    } finally {
+      registry.dispose();
+    }
+  });
+
   it("isolates equal sessions and ignores cleanup from the replaced session", () => {
     const store = makeClassicFlowSessionStore();
     const registry = AtomRegistry.make();
     const intake = makeEnterIntake();
     if (intake._tag !== "Enter") throw new Error("Expected Enter intake");
 
-    registry.set(store.startAtom, intake);
+    registry.set(store.startAtom, makeStartClassicFlowSession(intake));
     const first = registry.get(store.currentSessionAtom);
-    registry.set(store.startAtom, intake);
+    registry.set(store.startAtom, makeStartClassicFlowSession(intake));
     const second = registry.get(store.currentSessionAtom);
 
     expect(first).not.toBeNull();

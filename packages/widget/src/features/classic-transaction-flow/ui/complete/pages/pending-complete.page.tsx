@@ -3,14 +3,14 @@ import BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useUnstakeOrPendingActionParams } from "../../../../../shared/react/navigation/use-unstake-or-pending-action-params";
-import { useProvidersDetails } from "../../../../earn/react/use-provider-details";
-import { useYieldType } from "../../../../earn/react/use-yield-type";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
 } from "../../../../portfolio/resources/positions";
 import { useTrackPage } from "../../../../tracking/react/use-track-page";
+import { YieldSummaryKey } from "../../../../yield-summary";
 import { useClassicFlowIntake } from "../../../react/classic-flow-route";
+import { classicFlowYieldSummaryAtom } from "../../../state/yield-summary";
 import { CompletePage } from "./common.page";
 
 export const PendingCompletePage = () => {
@@ -33,14 +33,18 @@ export const PendingCompletePage = () => {
 
   useTrackPage("pendingActionCompelete");
 
-  const providerDetails = useProvidersDetails({
-    integrationData,
-    validators:
-      positionBalances?.type === "validators"
-        ? positionBalances.validators
-        : null,
-    selectedProviderYieldId: null,
-  });
+  const yieldSummary = useAtomValue(
+    classicFlowYieldSummaryAtom(
+      new YieldSummaryKey({
+        yield: integrationData,
+        validators:
+          positionBalances?.type === "validators"
+            ? positionBalances.validators
+            : null,
+        selectedProviderYieldId: null,
+      })
+    )
+  );
   const rawAmount = manageFlow.request.arguments?.amount;
 
   return (
@@ -54,9 +58,9 @@ export const PendingCompletePage = () => {
       }}
       network={token.symbol}
       pendingActionType={manageFlow.pendingActionType}
-      providersDetails={providerDetails}
+      providersDetails={yieldSummary.providers}
       token={token}
-      yieldType={useYieldType(integrationData)?.type ?? null}
+      yieldType={yieldSummary.yieldType}
     />
   );
 };

@@ -7,7 +7,7 @@ import type { YieldBalanceType } from "../../../domain/types/positions";
 import type { TokenString } from "../../../domain/types/tokens";
 import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 
-export type BalanceTokenActionType =
+type BalanceTokenActionType =
   `${YieldBalanceType}-${TokenString}-${YieldPendingActionType}`;
 
 export type PositionDetailsWorkflowState = {

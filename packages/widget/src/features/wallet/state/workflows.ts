@@ -1,8 +1,9 @@
 import type { Chain } from "@stakekit/rainbowkit";
 import { Effect } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import { appRuntime } from "../../../app/runtime/app-runtime";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
 import { WalletIntegrationError } from "../../../services/wallet/domain/errors";
+import { WalletModal } from "../../../services/wallet/wallet-modal";
 import { WalletService } from "../../../services/wallet/wallet-service";
 import {
   actionHistoryRevisionAtom,
@@ -15,26 +16,29 @@ type LedgerAccountConnector = {
   ) => Effect.Effect<Chain, WalletIntegrationError>;
 };
 
-export const addLedgerAccountAtom = Atom.fn(
-  (command: {
-    readonly chain: Chain;
-    readonly closeChainModal: () => void;
-    readonly connector: LedgerAccountConnector | null;
-  }) => {
-    if (!command.connector) {
-      return Effect.fail(
-        new WalletIntegrationError({
-          message: "Only Ledger Live is supported",
-          operation: "ledger-add-account",
-        })
-      );
-    }
+type AddLedgerAccountCommand = {
+  readonly chain: Chain;
+  readonly connector: LedgerAccountConnector | null;
+};
 
-    return command.connector.requestAndSwitchAccount(command.chain).pipe(
-      Effect.tap(() => Effect.sync(command.closeChainModal)),
-      Effect.asVoid
+export const runAddLedgerAccount = (command: AddLedgerAccountCommand) => {
+  if (!command.connector) {
+    return Effect.fail(
+      new WalletIntegrationError({
+        message: "Only Ledger Live is supported",
+        operation: "ledger-add-account",
+      })
     );
   }
+
+  return command.connector.requestAndSwitchAccount(command.chain).pipe(
+    Effect.tap(() => WalletModal.use((modal) => modal.closeChain)),
+    Effect.asVoid
+  );
+};
+
+export const addLedgerAccountAtom = appRuntime.fn(
+  (command: AddLedgerAccountCommand) => runAddLedgerAccount(command)
 );
 
 type LogoutCommand = {
@@ -62,6 +66,7 @@ export const logoutAtom = walletRuntime.fn((_, context) =>
     runLogout({
       disconnect: wallet.disconnect(),
     }).pipe(
+      Effect.tap(() => WalletModal.use((modal) => modal.closeChain)),
       Effect.tap(() =>
         Effect.sync(() => {
           context.set(actionHistoryRevisionAtom, resetActionHistoryRevision());

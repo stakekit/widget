@@ -4,14 +4,15 @@ import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { getPositionTotalAmount } from "../../../../../../domain/types/positions";
-import { getRewardRateFormatted } from "../../../../../../shared/lib/formatters";
-import { defaultFormattedNumber } from "../../../../../../shared/lib/number-format";
-import { useProvidersDetails } from "../../../../../earn/react/use-provider-details";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
-} from "../../../../../earn/resources/yields";
+} from "../../../../../../resources/yield-opportunity/provider";
+import { getRewardRateFormatted } from "../../../../../../shared/lib/formatters";
+import { defaultFormattedNumber } from "../../../../../../shared/lib/number-format";
+import { YieldSummaryKey } from "../../../../../yield-summary";
 import type { PositionItem } from "../../../../resources/positions";
+import { portfolioPositionYieldSummaryAtom } from "../../../../state/position-yield-summary";
 
 export const usePositionListItem = (item: PositionItem) => {
   const yieldOpportunityResult = useAtomValue(
@@ -24,11 +25,15 @@ export const usePositionListItem = (item: PositionItem) => {
     Option.getOrNull
   );
 
-  const providersDetails = useProvidersDetails({
-    integrationData,
-    validators: item.type === "validators" ? item.validators : [],
-    selectedProviderYieldId: null,
-  });
+  const providersDetails = useAtomValue(
+    portfolioPositionYieldSummaryAtom(
+      new YieldSummaryKey({
+        yield: integrationData,
+        validators: item.type === "validators" ? item.validators : [],
+        selectedProviderYieldId: null,
+      })
+    )
+  ).providers;
 
   const rewardRateAverage = useMemo(
     () =>

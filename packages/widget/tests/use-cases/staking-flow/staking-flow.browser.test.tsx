@@ -1,11 +1,11 @@
 import BigNumber from "bignumber.js";
 import { Array as EArray } from "effect";
 import { userEvent } from "vitest/browser";
-import { useRewardTokenDetails } from "../../../src/features/earn/react/use-reward-token-details";
+import { getYieldSummaryRewardToken } from "../../../src/features/yield-summary";
 import { formatAddress } from "../../../src/shared/lib/general";
 import { formatNumber } from "../../../src/shared/lib/number-format";
 import { describe, expect, it } from "../../utils/test-extend";
-import { renderApp, renderHook } from "../../utils/test-utils";
+import { renderApp } from "../../utils/test-utils";
 import { setup } from "./setup";
 
 describe("Staking flow", () => {
@@ -78,9 +78,7 @@ describe("Staking flow", () => {
       )
       .toBeInTheDocument();
 
-    const rewardTokenDetails = (
-      await renderHook(() => useRewardTokenDetails(yieldOp))
-    ).result.current!;
+    const rewardTokenDetails = getYieldSummaryRewardToken(yieldOp)!;
 
     await expect
       .element(app.getByText(`You'll receive`).first())

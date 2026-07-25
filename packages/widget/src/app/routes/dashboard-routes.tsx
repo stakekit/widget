@@ -37,7 +37,6 @@ import { ActivityStepsPage } from "../../features/classic-transaction-flow/ui/st
 import { PendingStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/pending-steps.page";
 import { StakeStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/stake-steps.page";
 import { UnstakeStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/unstake-steps.page";
-import { EarnPageModelBinding } from "../../features/earn/ui/classic/earn-page/state/earn-page-model";
 import { EarnPageContent } from "../../features/earn/ui/dashboard/earn-page";
 import { ManagePage } from "../../features/portfolio/ui/dashboard/manage.page";
 import { PositionDetailsPage as DashboardPositionDetailsPage } from "../../features/position-details/ui/dashboard";
@@ -125,14 +124,54 @@ export const DashboardRoutes = () => {
 
   return (
     <>
-      <EarnPageModelBinding registerFooterButton={registerEarnFooterButton}>
-        <Routes>
-          <Route element={<DashboardShell />}>
-            {/* Earn Tab */}
-            <Route element={<DashboardOverview />}>
-              <Route index element={<EarnPageContent />} />
+      <Routes>
+        <Route element={<DashboardShell />}>
+          {/* Earn Tab */}
+          <Route element={<DashboardOverview />}>
+            <Route
+              index
+              element={
+                <EarnPageContent
+                  registerFooterButton={registerEarnFooterButton}
+                />
+              }
+            />
 
-              <Route element={<WalletScopeRouteGuard fallbackPath="/" />}>
+            <Route element={<WalletScopeRouteGuard fallbackPath="/" />}>
+              <Route element={<EnterClassicFlowRoute />}>
+                <Route
+                  path="review"
+                  element={
+                    <ClassicFlowReviewScope>
+                      <StakeReviewPage />
+                    </ClassicFlowReviewScope>
+                  }
+                />
+                <Route element={<ClassicFlowExecutionScope />}>
+                  <Route path="steps" element={<StakeStepsPage />} />
+                  <Route path="complete" element={<StakeCompletePage />} />
+                </Route>
+              </Route>
+            </Route>
+          </Route>
+
+          {/* Manage Tab */}
+          <Route path="manage" element={<ManagePage />} />
+
+          {/* Borrow Tab */}
+          {borrowRoutes}
+
+          {/* Position Details */}
+          <Route element={<WalletScopeRouteGuard fallbackPath="/manage" />}>
+            <Route
+              path="positions/:integrationId/:balanceId"
+              element={<DashboardPositionDetailsPage />}
+            >
+              <Route index element={<PositionDetailsStakeActions />} />
+
+              {/* Staking */}
+              <Route path="stake">
+                <Route index element={<PositionDetailsStakeActions />} />
                 <Route element={<EnterClassicFlowRoute />}>
                   <Route
                     path="review"
@@ -148,113 +187,70 @@ export const DashboardRoutes = () => {
                   </Route>
                 </Route>
               </Route>
-            </Route>
 
-            {/* Manage Tab */}
-            <Route path="manage" element={<ManagePage />} />
-
-            {/* Borrow Tab */}
-            {borrowRoutes}
-
-            {/* Position Details */}
-            <Route element={<WalletScopeRouteGuard fallbackPath="/manage" />}>
               <Route
-                path="positions/:integrationId/:balanceId"
+                path="select-validator/:pendingActionType"
                 element={<DashboardPositionDetailsPage />}
-              >
-                <Route index element={<PositionDetailsStakeActions />} />
+              />
 
-                {/* Staking */}
-                <Route path="stake">
-                  <Route index element={<PositionDetailsStakeActions />} />
-                  <Route element={<EnterClassicFlowRoute />}>
-                    <Route
-                      path="review"
-                      element={
-                        <ClassicFlowReviewScope>
-                          <StakeReviewPage />
-                        </ClassicFlowReviewScope>
-                      }
-                    />
-                    <Route element={<ClassicFlowExecutionScope />}>
-                      <Route path="steps" element={<StakeStepsPage />} />
-                      <Route path="complete" element={<StakeCompletePage />} />
-                    </Route>
-                  </Route>
-                </Route>
-
-                <Route
-                  path="select-validator/:pendingActionType"
-                  element={<DashboardPositionDetailsPage />}
-                />
-
-                {/* Unstaking */}
-                <Route path="unstake">
-                  <Route index element={<PositionDetailsActions />} />
-                  <Route element={<ExitClassicFlowRoute />}>
-                    <Route
-                      path="review"
-                      element={
-                        <ClassicFlowReviewScope>
-                          <UnstakeReviewPage />
-                        </ClassicFlowReviewScope>
-                      }
-                    />
-                    <Route element={<ClassicFlowExecutionScope />}>
-                      <Route path="steps" element={<UnstakeStepsPage />} />
-                      <Route
-                        path="complete"
-                        element={<UnstakeCompletePage />}
-                      />
-                    </Route>
-                  </Route>
-                </Route>
-
-                {/* Pending Actions */}
-                <Route path="pending-action">
-                  <Route element={<ManageClassicFlowRoute />}>
-                    <Route
-                      path="review"
-                      element={
-                        <ClassicFlowReviewScope>
-                          <PendingReviewPage />
-                        </ClassicFlowReviewScope>
-                      }
-                    />
-                    <Route element={<ClassicFlowExecutionScope />}>
-                      <Route path="steps" element={<PendingStepsPage />} />
-                      <Route
-                        path="complete"
-                        element={<PendingCompletePage />}
-                      />
-                    </Route>
+              {/* Unstaking */}
+              <Route path="unstake">
+                <Route index element={<PositionDetailsActions />} />
+                <Route element={<ExitClassicFlowRoute />}>
+                  <Route
+                    path="review"
+                    element={
+                      <ClassicFlowReviewScope>
+                        <UnstakeReviewPage />
+                      </ClassicFlowReviewScope>
+                    }
+                  />
+                  <Route element={<ClassicFlowExecutionScope />}>
+                    <Route path="steps" element={<UnstakeStepsPage />} />
+                    <Route path="complete" element={<UnstakeCompletePage />} />
                   </Route>
                 </Route>
               </Route>
-            </Route>
 
-            {/* Rewards Tab */}
-            {/* <Route path="rewards" element={<RewardsTabPage />} /> */}
-
-            {/* Activity Tab */}
-            <Route path="activity" element={<ActivityTabPage />}>
-              <Route
-                element={<WalletScopeRouteGuard fallbackPath="/activity" />}
-              >
-                <Route element={<ActivityResumeClassicFlowRoute />}>
-                  <Route index element={<ActivityDetailsPage />} />
+              {/* Pending Actions */}
+              <Route path="pending-action">
+                <Route element={<ManageClassicFlowRoute />}>
+                  <Route
+                    path="review"
+                    element={
+                      <ClassicFlowReviewScope>
+                        <PendingReviewPage />
+                      </ClassicFlowReviewScope>
+                    }
+                  />
                   <Route element={<ClassicFlowExecutionScope />}>
-                    <Route
-                      path=":pendingActionType/steps"
-                      element={<ActivityStepsPage />}
-                    />
+                    <Route path="steps" element={<PendingStepsPage />} />
+                    <Route path="complete" element={<PendingCompletePage />} />
                   </Route>
                 </Route>
               </Route>
             </Route>
           </Route>
-        </Routes>
-      </EarnPageModelBinding>
+
+          {/* Rewards Tab */}
+          {/* <Route path="rewards" element={<RewardsTabPage />} /> */}
+
+          {/* Activity Tab */}
+          <Route path="activity" element={<ActivityTabPage />}>
+            <Route element={<WalletScopeRouteGuard fallbackPath="/activity" />}>
+              <Route element={<ActivityResumeClassicFlowRoute />}>
+                <Route index element={<ActivityDetailsPage />} />
+                <Route element={<ClassicFlowExecutionScope />}>
+                  <Route
+                    path=":pendingActionType/steps"
+                    element={<ActivityStepsPage />}
+                  />
+                </Route>
+              </Route>
+            </Route>
+          </Route>
+        </Route>
+      </Routes>
 
       <GlobalModals />
     </>

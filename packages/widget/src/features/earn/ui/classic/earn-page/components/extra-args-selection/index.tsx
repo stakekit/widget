@@ -3,13 +3,13 @@ import { useWidgetConfig } from "../../../../../../../app/config/use-widget-conf
 import { getYieldActionArg } from "../../../../../../../domain/types/yields";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
+import { useEarnEntry } from "../../../../../../earn/react/use-earn-facades";
 import { Divider } from "../../../../../../widget-shell/divider";
 import { Dropdown } from "../../../../../../widget-shell/ui/dropdown";
-import { useEarnPageModel } from "../../state/earn-page-model";
 
 export const ExtraArgsSelection = () => {
-  const { selectedStake, tronResource, onTronResourceSelect, validation } =
-    useEarnPageModel();
+  const { selectTronResource, view } = useEarnEntry();
+  const { selectedStake, tronResource, validation } = view;
 
   const { t } = useTranslation();
 
@@ -45,7 +45,7 @@ export const ExtraArgsSelection = () => {
 
       <Dropdown
         options={options}
-        onSelect={(val) => onTronResourceSelect(val)}
+        onSelect={selectTronResource}
         selectedOption={selectedOption}
         placeholder={t("details.tron_resources.placeholder")}
         isError={isError}

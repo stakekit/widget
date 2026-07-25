@@ -14,8 +14,8 @@ import {
   getTokensPricesRequest,
   PricesKey,
   pricesAtom,
-} from "../../earn/resources/prices";
-import type { CurrentYieldKycGate } from "../../earn/resources/yield-insights";
+} from "../../../resources/token-prices/prices";
+import type { CurrentYieldKycGate } from "../../yield-summary/yield-insights";
 import {
   type ClassicTransactionFlowIntake,
   getClassicTransactionFlowGasWarningInput,

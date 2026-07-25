@@ -15,7 +15,6 @@ import {
   earnPageSearchAtom,
   earnPageSelectionAtom,
   earnPageSubmittedAtom,
-  getEarnPageValidation,
 } from "../../src/features/earn/state/page-workflow";
 
 describe("earn page workflow atoms", () => {
@@ -90,7 +89,7 @@ describe("earn page workflow atoms", () => {
     ).toBeNull();
   });
 
-  it("owns searches, submission state, and validation derivation", () => {
+  it("owns searches and submission state", () => {
     const registry = AtomRegistry.make();
 
     registry.set(earnPageSearchAtom, {
@@ -102,29 +101,6 @@ describe("earn page workflow atoms", () => {
 
     expect(registry.get(earnPageSearchAtom).token).toBe("eth");
     expect(registry.get(earnPageSubmittedAtom)).toBe(true);
-
-    const validation = getEarnPageValidation({
-      connected: true,
-      hasTronResource: false,
-      stakeAmountGreaterThanAvailableAmount: false,
-      stakeAmountGreaterThanMax: false,
-      stakeAmountIsZero: true,
-      stakeAmountLessThanMin: false,
-      submitted: true,
-      tronResourceRequired: true,
-    });
-
-    expect(validation).toEqual({
-      errors: {
-        stakeAmountGreaterThanAvailableAmount: false,
-        stakeAmountGreaterThanMax: false,
-        stakeAmountIsZero: true,
-        stakeAmountLessThanMin: false,
-        tronResource: true,
-      },
-      hasErrors: true,
-      submitted: true,
-    });
   });
 
   it("resets submission state when category, yield, or token changes", () => {

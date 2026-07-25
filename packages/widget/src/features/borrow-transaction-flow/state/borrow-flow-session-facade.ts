@@ -1,7 +1,8 @@
-import { Data, Effect, Option } from "effect";
+import { Data, Duration, Effect, Option, Schedule } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
+import { runWidgetNavigationCommand } from "../../../app/runtime/navigation";
 import type { Action } from "../../../domain/borrow/action";
 import type { Transaction } from "../../../domain/borrow/transaction";
 import { BorrowOperations } from "../../../services/api/borrow-operations";
@@ -17,6 +18,7 @@ import {
   makeTransactionWorkflowModule,
   type TransactionWorkflowLoadingError,
 } from "../../transaction-workflow/state";
+import { getBorrowTransactionFlowRoutes } from "../model/borrow-transaction-flow";
 import {
   type BorrowFlowSession,
   borrowFlowSessionStore,
@@ -43,7 +45,6 @@ const validateCreatedAction = (action: Action) =>
 
 type BorrowFlowSessionState = Readonly<{
   readonly executionAction: Action | null;
-  readonly navigation: "Base" | "Steps" | null;
 }>;
 
 type BorrowExecutionPhase =
@@ -94,33 +95,67 @@ const getExecutionPhase = (
 export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
   const stateAtom = Atom.make<BorrowFlowSessionState>({
     executionAction: null,
-    navigation: null,
   }).pipe(Atom.setIdleTTL(0), Atom.withLabel("borrowFlowSessionState"));
   const isCurrentSessionAtom = Atom.make(
     (get) =>
       get(borrowFlowSessionStore.currentSessionAtom)?.epoch === session.epoch
   ).pipe(Atom.withLabel("isCurrentBorrowFlowSession"));
-  const navigationAtom = Atom.make((get) =>
-    get(isCurrentSessionAtom) ? get(stateAtom).navigation : null
-  ).pipe(Atom.withLabel("borrowFlowSessionNavigation"));
   const executionActionAtom = Atom.make(
     (get) => get(stateAtom).executionAction
   ).pipe(Atom.withLabel("borrowFlowExecutionAction"));
 
   const createActionAtom = appRuntime.fn(
-    (_input: undefined) =>
-      BorrowOperations.use((api) =>
-        api.executeAction(session.intake.request)
-      ).pipe(
-        Effect.mapError(
-          (cause) =>
-            new BorrowActionCreationError({
-              cause,
-              message: "Borrow action could not be created.",
+    (_input: undefined, context) => {
+      const registry = context.registry;
+      return Effect.gen(function* () {
+        const action = yield* BorrowOperations.use((api) =>
+          api.executeAction(session.intake.request)
+        ).pipe(
+          Effect.mapError(
+            (cause) =>
+              new BorrowActionCreationError({
+                cause,
+                message: "Borrow action could not be created.",
+              })
+          ),
+          Effect.flatMap(validateCreatedAction)
+        );
+        if (
+          !registry.get(isCurrentSessionAtom) ||
+          registry.get(stateAtom).executionAction
+        ) {
+          return action;
+        }
+
+        registry.set(stateAtom, { executionAction: action });
+        yield* runWidgetNavigationCommand({
+          _tag: "Push",
+          path: getBorrowTransactionFlowRoutes(session.intake.entry).stepsPath,
+        }).pipe(
+          Effect.tapError(() =>
+            Effect.sync(() => {
+              if (
+                registry.get(isCurrentSessionAtom) &&
+                registry.get(stateAtom).executionAction === action
+              ) {
+                registry.set(stateAtom, { executionAction: null });
+              }
             })
-        ),
-        Effect.flatMap(validateCreatedAction)
-      ),
+          )
+        );
+        if (
+          !registry.get(isCurrentSessionAtom) ||
+          registry.get(stateAtom).executionAction !== action
+        ) {
+          return action;
+        }
+        registry.set(publishBorrowTransactionFlowOutcomeAtom, {
+          _tag: "ExecutionStarted",
+          epoch: session.epoch,
+        });
+        return action;
+      });
+    },
     { concurrent: false }
   );
   const createActionResultAtom = Atom.make((get) => get(createActionAtom)).pipe(
@@ -139,28 +174,45 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
     },
     { initialValue: undefined }
   ).pipe(Atom.withLabel("confirmBorrowFlowReview"));
-  const backAtom = Atom.fnSync(
-    (_input: undefined, context) => {
-      if (!context(isCurrentSessionAtom)) return;
-      context.set(stateAtom, { ...context(stateAtom), navigation: "Base" });
-    },
-    { initialValue: undefined }
-  ).pipe(Atom.withLabel("backBorrowFlow"));
-  const doneAtom = Atom.fnSync(
-    (_input: undefined, context) => {
-      if (!context(isCurrentSessionAtom)) return;
-      context.set(publishBorrowTransactionFlowOutcomeAtom, {
-        _tag: "Done",
-        epoch: session.epoch,
-      });
-      context.set(stateAtom, { ...context(stateAtom), navigation: "Base" });
-    },
-    { initialValue: undefined }
-  ).pipe(Atom.withLabel("finishBorrowFlow"));
+  const backAtom = appRuntime
+    .fn(
+      (_input: undefined, context) => {
+        if (!context(isCurrentSessionAtom)) return Effect.void;
+        return runWidgetNavigationCommand({
+          _tag: "Replace",
+          path: getBorrowTransactionFlowRoutes(session.intake.entry).basePath,
+        });
+      },
+      { initialValue: undefined }
+    )
+    .pipe(Atom.withLabel("backBorrowFlow"));
+  const doneAtom = appRuntime
+    .fn(
+      (_input: undefined, context) => {
+        const registry = context.registry;
+        if (!context(isCurrentSessionAtom)) return Effect.void;
+        return runWidgetNavigationCommand({
+          _tag: "Replace",
+          path: getBorrowTransactionFlowRoutes(session.intake.entry).basePath,
+        }).pipe(
+          Effect.tap(() =>
+            Effect.sync(() => {
+              if (!registry.get(isCurrentSessionAtom)) return;
+              registry.set(publishBorrowTransactionFlowOutcomeAtom, {
+                _tag: "Done",
+                epoch: session.epoch,
+              });
+            })
+          )
+        );
+      },
+      { initialValue: undefined }
+    )
+    .pipe(Atom.withLabel("finishBorrowFlow"));
   const reviewRootAtom = Atom.make((context) => {
     const state = context.once(stateAtom);
     if (!state.executionAction) return;
-    context.set(stateAtom, { executionAction: null, navigation: null });
+    context.set(stateAtom, { executionAction: null });
   }).pipe(Atom.setIdleTTL(0), Atom.withLabel("borrowFlowReviewRoot"));
 
   const makeExecutionScopeAtom = () =>
@@ -215,21 +267,59 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
           totalSteps: currentBatch?.totalSteps ?? latestAction.totalSteps,
         } as const;
       }).pipe(Atom.withLabel("borrowFlowExecutionView"));
-      const completionNavigationAtom = Atom.make((get) =>
-        get(isCurrentSessionAtom) && get(viewAtom).isDone ? "Complete" : null
-      ).pipe(Atom.withLabel("borrowFlowExecutionCompletionNavigation"));
       const routeRootAtom = Atom.make((rootContext) => {
-        rootContext.set(stateAtom, {
-          executionAction: action,
-          navigation: null,
-        });
+        const registry = rootContext.registry;
+        const navigateToCompletionAtom = appRuntime.fn(
+          (_input: undefined, commandContext) => {
+            const commandRegistry = commandContext.registry;
+            const navigate = Effect.suspend(() => {
+              if (
+                !commandRegistry.get(isCurrentSessionAtom) ||
+                commandRegistry.get(executionActionAtom) !== action ||
+                !commandRegistry.get(viewAtom).isDone
+              ) {
+                return Effect.void;
+              }
+              return runWidgetNavigationCommand({
+                _tag: "Replace",
+                path: getBorrowTransactionFlowRoutes(session.intake.entry)
+                  .completePath,
+              });
+            });
+            return navigate.pipe(
+              Effect.retry({
+                schedule: Schedule.spaced(Duration.millis(100)),
+              })
+            );
+          },
+          { concurrent: false }
+        );
+        rootContext.mount(navigateToCompletionAtom);
+        rootContext.set(stateAtom, { executionAction: action });
+        rootContext.subscribe(
+          viewAtom,
+          (view) => {
+            const navigation = registry.get(navigateToCompletionAtom);
+            if (
+              !view.isDone ||
+              navigation.waiting ||
+              AsyncResult.isSuccess(navigation) ||
+              !registry.get(isCurrentSessionAtom) ||
+              registry.get(executionActionAtom) !== action
+            ) {
+              return;
+            }
+
+            registry.set(navigateToCompletionAtom, undefined);
+          },
+          { immediate: true }
+        );
       }).pipe(
         Atom.setIdleTTL(0),
         Atom.withLabel("borrowFlowExecutionRouteRoot")
       );
 
       return {
-        completionNavigationAtom,
         retryAtom: workflow.commandAtom,
         routeRootAtom,
         viewAtom,
@@ -244,7 +334,6 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
       createActionResultAtom,
       doneAtom,
       intake: session.intake,
-      navigationAtom,
       reviewRootAtom,
     },
     ports: { makeExecutionScopeAtom },
@@ -253,25 +342,6 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
   return Atom.make((context) => {
     const registry = context.registry;
     context.mount(stateAtom);
-    context.subscribe(createActionAtom, (result) => {
-      const action = Option.getOrNull(AsyncResult.value(result));
-      if (
-        !action ||
-        registry.get(stateAtom).executionAction ||
-        !registry.get(isCurrentSessionAtom)
-      ) {
-        return;
-      }
-
-      registry.set(stateAtom, {
-        executionAction: action,
-        navigation: "Steps",
-      });
-      registry.set(publishBorrowTransactionFlowOutcomeAtom, {
-        _tag: "ExecutionStarted",
-        epoch: session.epoch,
-      });
-    });
     context.addFinalizer(() => {
       registry.set(borrowFlowSessionStore.clearAtom, session.epoch);
     });

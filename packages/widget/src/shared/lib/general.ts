@@ -1,4 +1,3 @@
-import BigNumber from "bignumber.js";
 import type { Network } from "../../domain/schema/network-model";
 import { formatNumber } from "./number-format";
 
@@ -67,9 +66,3 @@ export const isMobile = () => {
 
   return mobile;
 };
-
-export const bpsToAmount = (bps: BigNumber, amount: BigNumber) =>
-  amount.multipliedBy(bps).dividedBy(10000);
-
-export const bpsToPercentage = (bps: BigNumber | number) =>
-  BigNumber(bps).dividedBy(100).toNumber();

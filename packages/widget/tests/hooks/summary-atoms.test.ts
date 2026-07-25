@@ -12,10 +12,6 @@ import { EarnPosition } from "../../src/domain/schema/earn-models";
 import { toPositionsData } from "../../src/domain/types/positions";
 import { getDashboardYieldCategory } from "../../src/domain/types/yields";
 import {
-  MultiYieldsKey,
-  multiYieldsByIdAtom,
-} from "../../src/features/earn/resources/yields";
-import {
   currentGroupedPositionsAtom,
   positionsTableDataAtom,
   toPositionItems,
@@ -24,6 +20,10 @@ import {
   getPositionsAverageApy,
   getPositionsTotal,
 } from "../../src/features/portfolio/resources/summary";
+import {
+  MultiYieldsKey,
+  multiYieldsByIdAtom,
+} from "../../src/features/yield-summary/multi-yields";
 import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
 import {
   yieldApiProviderFixture,

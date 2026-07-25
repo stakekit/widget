@@ -2,7 +2,7 @@ import { Match } from "effect";
 import { startsWith } from "effect/String";
 import { useNavigate } from "react-router";
 import { isBorrowFeatureEnabled } from "../../../features/borrow/availability";
-import { useEarnPageModel } from "../../../features/earn/ui/classic/earn-page/state/earn-page-model";
+import { useEarnYieldSelection } from "../../../features/earn/react/use-earn-facades";
 import { useTrackEvent } from "../../../features/tracking/react/use-track-event";
 import { Divider } from "../../../features/widget-shell/divider";
 import type { DashboardYieldCategory } from "../../../public-api/types";
@@ -30,11 +30,9 @@ const tabsMap: Record<RouteTab, string> = {
 export const DashboardTabs = () => {
   const trackEvent = useTrackEvent();
   const navigate = useNavigate();
-  const {
-    availableDashboardYieldCategories,
-    onDashboardYieldCategorySelect,
-    selectedDashboardYieldCategory,
-  } = useEarnPageModel();
+  const { selectCategory, view: yieldSelection } = useEarnYieldSelection();
+  const availableDashboardYieldCategories = yieldSelection.availableCategories;
+  const selectedDashboardYieldCategory = yieldSelection.selectedCategory;
   const { current } = useSKLocation();
 
   const selectedTab = Match.value(current.pathname).pipe(
@@ -60,7 +58,7 @@ export const DashboardTabs = () => {
     }
 
     trackEvent("tabClicked", { selected: category });
-    onDashboardYieldCategorySelect(category);
+    selectCategory(category);
     navigate("/");
   };
 

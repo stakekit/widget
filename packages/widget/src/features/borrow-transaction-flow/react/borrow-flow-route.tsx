@@ -4,7 +4,7 @@ import {
   useAtomValue,
 } from "@effect/atom-react";
 import { type PropsWithChildren, useContext } from "react";
-import { Navigate, Outlet, useLocation } from "react-router";
+import { Navigate, Outlet } from "react-router";
 import { sameWalletScopeOwner } from "../../../services/wallet/domain/scope";
 import { useWalletScopeRoute } from "../../wallet/react/wallet-scope-route";
 import type { BorrowTransactionFlowEntry } from "../model/borrow-transaction-flow";
@@ -75,26 +75,14 @@ export const BorrowTransactionFlowRoute = ({
 };
 
 const BorrowSessionBinding = () => {
-  const session = useBorrowFlowSessionModule();
-  const navigation = useAtomValue(session.facade.navigationAtom);
-  const { basePath } = getBorrowTransactionFlowRoutes(
-    session.facade.intake.entry
-  );
-
-  return navigation === "Base" ? (
-    <Navigate to={basePath} replace />
-  ) : (
-    <Outlet />
-  );
+  useBorrowFlowSessionModule();
+  return <Outlet />;
 };
 
 export const BorrowTransactionFlowReviewRoute = () => {
   const session = useBorrowTransactionFlow();
   useAtomMount(session.reviewRootAtom);
-  const navigation = useAtomValue(session.navigationAtom);
-  const { stepsPath } = getBorrowTransactionFlowRoutes(session.intake.entry);
-
-  return navigation === "Steps" ? <Navigate to={stepsPath} /> : <Outlet />;
+  return <Outlet />;
 };
 
 export const BorrowTransactionFlowExecutionScope = ({
@@ -128,27 +116,7 @@ const MountedBorrowExecution = ({
   execution,
 }: PropsWithChildren<{ readonly execution: BorrowFlowExecutionModule }>) => {
   useAtomMount(execution.routeRootAtom);
-
-  return (
-    <>
-      <BorrowCompletionNavigation execution={execution} />
-      {children ?? <Outlet />}
-    </>
-  );
-};
-
-const BorrowCompletionNavigation = ({
-  execution,
-}: {
-  readonly execution: BorrowFlowExecutionModule;
-}) => {
-  const navigation = useAtomValue(execution.completionNavigationAtom);
-  const session = useBorrowTransactionFlow();
-  const location = useLocation();
-  const { completePath } = getBorrowTransactionFlowRoutes(session.intake.entry);
-  return navigation === "Complete" && location.pathname !== completePath ? (
-    <Navigate to={completePath} replace />
-  ) : null;
+  return children ?? <Outlet />;
 };
 
 export const BorrowTransactionFlowCompletionGuard = () => {

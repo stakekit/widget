@@ -14,10 +14,11 @@ import { MorphoStarsIcon } from "../../../../../../../shared/ui/primitives/icons
 import { Image } from "../../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
 import { Divider } from "../../../../../../widget-shell/divider";
+import { useEarnEntry } from "../../../../../react/use-earn-facades";
 import { EstimatedRewardAmounts } from "../../../../components/estimated-reward-amounts";
 import { RewardRateBreakdown } from "../../../../components/reward-rate-breakdown";
 import { isMorphoProvider } from "../../../../components/reward-token-details";
-import { useEarnPageModel } from "../../state/earn-page-model";
+import { getRewardTokenSymbols } from "../../../../components/reward-token-details/get-reward-token-symbols";
 import { viaProviderImage } from "./styles.css";
 
 type StrategyProvider = {
@@ -32,6 +33,7 @@ export const SelectYieldRewardDetails = () => {
   const { t } = useTranslation();
   const showYieldStrategyDetails = variant !== "zerion";
 
+  const { view } = useEarnEntry();
   const {
     rewardToken,
     estimatedRewards,
@@ -39,8 +41,8 @@ export const SelectYieldRewardDetails = () => {
     selectedStake,
     selectedValidators,
     stakeAmount,
-    providersDetails,
-  } = useEarnPageModel();
+    providers: providersDetails,
+  } = view;
 
   const rewardRateDetails = selectedStake
     ? getEffectiveYieldRewardRateDetails({
@@ -131,7 +133,7 @@ export const SelectYieldRewardDetails = () => {
                 components={{
                   symbols1: (
                     <Box as="span" fontWeight="bold">
-                      {rewardToken.symbols}
+                      {getRewardTokenSymbols(rewardToken.rewardTokens)}
                     </Box>
                   ),
                 }}

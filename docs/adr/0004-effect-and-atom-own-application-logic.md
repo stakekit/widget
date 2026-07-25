@@ -10,7 +10,7 @@ This trades familiar component-local hook orchestration for one testable applica
 
 React may still own synchronous presentation state with no domain meaning, asynchronous behavior, persistence, route lifetime, or cross-component coordination, such as focus, hover, temporary disclosure, and element references. Derived domain values, validation, user-intent state, loading and failure state, and coordinated view state remain application logic and belong in Effect Atom.
 
-React may declare that a lifecycle Atom is mounted when a resource genuinely follows view or route visibility, but the Atom or scoped Effect owns acquisition, interruption, and finalization. Resources belonging to the whole Widget Runtime are scoped there rather than indirectly owned by a component mount.
+React may declare that a lifecycle Atom is mounted when a resource genuinely follows view or route visibility, but the Atom or scoped Effect owns acquisition, interruption, and finalization. Resources belonging to the whole Application Runtime Generation are scoped there rather than indirectly owned by a component mount.
 
 React event handlers are synchronous adapters: they normalize UI input and dispatch an Atom command. They do not run or await Effects, call asynchronous APIs, sequence workflow changes or retries, or clean up domain resources; asynchronous browser operations also belong behind Effect-backed Atom commands.
 

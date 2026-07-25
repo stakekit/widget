@@ -8,8 +8,9 @@ import { useMountAnimation } from "../../../../mount-animation/react/use-mount-a
 import { useTrackPage } from "../../../../tracking/react/use-track-page";
 import { ZerionChainModal } from "../../../../wallet/ui/zerion-chain-modal";
 import { PageContainer } from "../../../../widget-shell/page-container";
-import { PageCtaButton } from "../../../../widget-shell/page-cta";
-import { KycGateCard } from "../../components/kyc-gate-card";
+import { useEarnPageStatus } from "../../../react/use-earn-facades";
+import { EarnKycGate } from "../../components/earn-kyc-gate";
+import { EarnPageCta } from "../../components/earn-page-cta";
 import { ExtraArgsSelection } from "./components/extra-args-selection";
 import { Footer } from "./components/footer";
 import { SelectProvider } from "./components/select-provider";
@@ -17,28 +18,6 @@ import { SelectTokenSection } from "./components/select-token-section";
 import { SelectTokenTitle } from "./components/select-token-section/title";
 import { SelectValidatorSection } from "./components/select-validator-section";
 import { SelectYieldSection } from "./components/select-yield-section";
-import {
-  EarnPageModelBinding,
-  useEarnPageModel,
-} from "./state/earn-page-model";
-
-const EarnKycGateSection = () => {
-  const { kycGate, kycGateIsChecking, kycProviderName, onKycStatusRefresh } =
-    useEarnPageModel();
-
-  if (kycGate.state === "pass" && !kycGateIsChecking) return null;
-
-  return (
-    <Box marginTop="3">
-      <KycGateCard
-        gate={kycGate}
-        isChecking={kycGateIsChecking}
-        onCheckStatus={onKycStatusRefresh}
-        providerName={kycProviderName}
-      />
-    </Box>
-  );
-};
 
 const EarnPageComponent = () => {
   useTrackPage("earn");
@@ -47,7 +26,7 @@ const EarnPageComponent = () => {
 
   const variant = useWidgetConfig("variant");
 
-  const { canRetry, cta, isError, onRetry } = useEarnPageModel();
+  const { retry, view: status } = useEarnPageStatus();
 
   return (
     <PageContainer>
@@ -60,7 +39,7 @@ const EarnPageComponent = () => {
 
         <SelectYieldSection />
 
-        <EarnKycGateSection />
+        <EarnKycGate />
 
         <SelectProvider />
 
@@ -69,7 +48,7 @@ const EarnPageComponent = () => {
         <ExtraArgsSelection />
       </Box>
 
-      {isError && (
+      {status.isError && (
         <Box
           display="flex"
           alignItems="center"
@@ -81,8 +60,8 @@ const EarnPageComponent = () => {
           <Text variant={{ type: "danger" }} textAlign="center">
             {t("shared.something_went_wrong")}
           </Text>
-          {canRetry && (
-            <Button data-rk="earn-retry" onClick={onRetry}>
+          {status.canRetry && (
+            <Button data-rk="earn-retry" onClick={() => retry(undefined)}>
               {t("shared.retry")}
             </Button>
           )}
@@ -93,16 +72,12 @@ const EarnPageComponent = () => {
         <Footer />
       </Box>
 
-      <PageCtaButton cta={cta} />
+      <EarnPageCta />
     </PageContainer>
   );
 };
 
-const EarnPage = () => (
-  <EarnPageModelBinding>
-    <EarnPageComponent />
-  </EarnPageModelBinding>
-);
+const EarnPage = () => <EarnPageComponent />;
 
 export const AnimatedEarnPage = () => {
   const { mountAnimationFinished, dispatch } = useMountAnimation();

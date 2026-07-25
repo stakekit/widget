@@ -11,7 +11,6 @@ import {
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
-import { getRewardTokenSymbols } from "../../../../earn/react/use-reward-token-details/get-reward-token-symbols";
 import type { RewardTokenDetails } from "../../../../earn/ui/components/reward-token-details";
 import type { PageCta } from "../../../../widget-shell/page-cta";
 import {
@@ -69,7 +68,6 @@ export const useUnstakeActionReview = () => {
         rewardToken: {
           logoUri: integrationData.provider.logoURI,
           providerName: integrationData.provider.name,
-          symbols: getRewardTokenSymbols([integrationData.token]),
           rewardTokens: [integrationData.token],
         },
       } satisfies ComponentProps<typeof RewardTokenDetails>)

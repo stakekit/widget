@@ -37,6 +37,7 @@ import { BorrowStepsPage } from "../../src/features/borrow-transaction-flow/ui/s
 import { useBorrowExecution } from "../../src/features/borrow-transaction-flow/ui/use-borrow-execution";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { BorrowOperations } from "../../src/services/api/borrow-operations";
+import { WidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
@@ -223,6 +224,15 @@ const ExecutionProbe = () => {
   );
 };
 
+const NavigationCapture = ({
+  capture,
+}: {
+  readonly capture: (navigate: ReturnType<typeof useNavigate>) => void;
+}) => {
+  capture(useNavigate());
+  return null;
+};
+
 const StartExecutionProbe = () => {
   const flow = useBorrowTransactionFlow();
   const confirm = useAtomSet(flow.confirmAtom);
@@ -279,6 +289,26 @@ const renderExecution = async (
     readonly wallet?: WalletOperations;
   } = {}
 ) => {
+  const navigation: {
+    current: ReturnType<typeof useNavigate> | null;
+  } = { current: null };
+  const navigationService = WidgetNavigation.of({
+    back: () =>
+      Effect.sync(() => {
+        navigation.current?.(-1);
+      }),
+    push: (path, options) =>
+      Effect.sync(() => {
+        navigation.current?.(path, { state: options?.state });
+      }),
+    replace: (path, options) =>
+      Effect.sync(() => {
+        navigation.current?.(path, {
+          replace: true,
+          state: options?.state,
+        });
+      }),
+  });
   const activeWallet = options.wallet ?? wallet;
   const workflowAction = options.action ?? decodedAction();
   borrow.executeAction.mockImplementation(() => Effect.succeed(workflowAction));
@@ -323,7 +353,8 @@ const renderExecution = async (
             Layer.succeed(TrackingService, {
               trackEvent: () => Effect.void,
               trackPageView: () => Effect.void,
-            } as TrackingService["Service"])
+            } as TrackingService["Service"]),
+            Layer.succeed(WidgetNavigation, navigationService)
           ).pipe(Layer.fresh),
         ],
         [
@@ -340,6 +371,9 @@ const renderExecution = async (
         }
         initialIndex={options.initialIndex}
       >
+        <NavigationCapture
+          capture={(navigate) => (navigation.current = navigate)}
+        />
         {options.historyControls ? <HistoryControls /> : null}
         <Routes>
           <Route

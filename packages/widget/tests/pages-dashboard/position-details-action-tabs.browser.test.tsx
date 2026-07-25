@@ -10,7 +10,6 @@ import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import { shouldRegisterDashboardEarnFooterButton } from "../../src/app/routes/dashboard-routes";
 import { PositionDetailsActionTabs } from "../../src/features/position-details/ui/dashboard/components/position-details-action-tabs";
-import { getPositionDetailsStakeReviewPath } from "../../src/shared/react/navigation/use-position-details-stake-match";
 import { i18nInstance } from "../../src/translation";
 import { render } from "../utils/test-utils";
 
@@ -68,21 +67,6 @@ const renderTabs = (initialEntries: string | string[]) => {
 };
 
 describe("position details action tabs", () => {
-  it("builds the nested stake review path from position route params", () => {
-    expect(
-      getPositionDetailsStakeReviewPath({
-        balanceId: "balance-1",
-        integrationId: "yield-1",
-      })
-    ).toBe("/positions/yield-1/balance-1/stake/review");
-
-    expect(
-      getPositionDetailsStakeReviewPath({
-        balanceId: "balance-1",
-      })
-    ).toBeNull();
-  });
-
   it("registers the earn CTA only for stake form routes", () => {
     expect(shouldRegisterDashboardEarnFooterButton("/")).toBe(true);
     expect(

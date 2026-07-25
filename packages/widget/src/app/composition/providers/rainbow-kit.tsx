@@ -1,13 +1,17 @@
 import type { DisclaimerComponent } from "@stakekit/rainbowkit";
-import { RainbowKitProvider, useChainModal } from "@stakekit/rainbowkit";
+import {
+  RainbowKitProvider,
+  useChainModal,
+  useConnectModal,
+} from "@stakekit/rainbowkit";
 import type { PropsWithChildren } from "react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { shouldShowDisconnect } from "../../../domain/types/connectors";
 import { useTrackEvent } from "../../../features/tracking/react/use-track-event";
-import { useCloseChainModal } from "../../../features/wallet/react/use-close-chain-modal";
 import { useLedgerDisabledChain } from "../../../features/wallet/react/use-ledger-disabled-chains";
 import { useSKWallet } from "../../../features/wallet/react/use-wallet";
+import { walletModalAdapterAtom } from "../../../features/wallet/state/wallet-modal";
 import { addLedgerAccountAtom } from "../../../features/wallet/state/workflows";
 import { isLedgerLiveConnector } from "../../../services/wallet/connectors/ledger/ledger-live-connector-meta";
 import { vars } from "../../../shared/styles/theme/contract.css";
@@ -36,7 +40,6 @@ export const RainbowKitProviderWithTheme = ({
   const trackEvent = useTrackEvent();
 
   const addLedgerAccount = useAtomSet(addLedgerAccountAtom);
-  const { closeChainModal } = useCloseChainModal();
 
   const { t, i18n } = useTranslation();
 
@@ -82,7 +85,6 @@ export const RainbowKitProviderWithTheme = ({
         trackEvent("addLedgerAccountClicked");
         addLedgerAccount({
           chain: disabledChain,
-          closeChainModal,
           connector:
             connector && isLedgerLiveConnector(connector) ? connector : null,
         });
@@ -96,15 +98,31 @@ export const RainbowKitProviderWithTheme = ({
       hideDisconnect={hideDisconnect}
       dialogRoot={portalContainer}
     >
-      <DisabledChainHandling />
+      <WalletModalBoundary />
       {children}
     </RainbowKitProvider>
   );
 };
 
-const DisabledChainHandling = () => {
-  useCloseChainModal().setCloseChainModal = useChainModal().closeChainModal; // haaack
+const WalletModalBoundary = () => {
+  const updateAdapter = useAtomSet(walletModalAdapterAtom);
+  const [owner] = useState(() => ({}));
+  const { closeChainModal } = useChainModal();
+  const { openConnectModal } = useConnectModal();
 
+  useEffect(() => {
+    updateAdapter({
+      _tag: "Install",
+      adapter: {
+        closeChain: closeChainModal,
+        openConnect: () => openConnectModal?.(),
+      },
+      owner,
+    });
+    return () => {
+      updateAdapter({ _tag: "Uninstall", owner });
+    };
+  }, [closeChainModal, openConnectModal, owner, updateAdapter]);
   return null;
 };
 

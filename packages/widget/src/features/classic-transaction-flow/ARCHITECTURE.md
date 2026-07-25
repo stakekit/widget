@@ -15,6 +15,6 @@ The module must not reintroduce a Classic Flow domain identity, Reviewing/Execut
 
 View adapters may use synchronous local React state only for presentation details with no domain meaning, asynchronous behavior, persistence, route lifetime, or cross-view coordination. They must not declare asynchronous functions, await or chain Promises, discard calls with `void`, execute Effect runtimes, or use React Query. React lifecycle hooks require a named external-boundary review rather than a local exception.
 
-Navigation decisions belong to Atom outcomes and the route adapter. React Router's `useNavigate` binding is the adapter that applies those outcomes; coincidentally named functions are not routing boundaries.
+Navigation decisions belong to scoped Atom commands and workflow transition events. After confirming current Flow Session or Execution Attempt ownership, they execute canonical absolute destinations through the application-runtime `WidgetNavigation` module; derived view Atoms do not publish navigation outcomes for React to apply. Declarative route guards remain React view concerns.
 
 The document-claim callback-ref bridge in `app/embedding/widget-instance-react-boundary.tsx` is the only reviewed external React boundary for this effort because the actual owner `Document` is available only at the React-owned DOM mount seam. Changing its lifecycle responsibilities requires a new boundary review.

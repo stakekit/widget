@@ -5,10 +5,6 @@ import { widgetConfigAtom } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { ApiRequestError } from "../../src/domain/schema/api-errors";
 import {
-  MultiYieldsKey,
-  visibleMultiYieldsAtom,
-} from "../../src/features/earn/resources/yields";
-import {
   availableYieldCategoriesAtom,
   earnYieldCatalogAtom,
   yieldValidatorsAtom,
@@ -18,6 +14,10 @@ import {
   YieldCatalogKey,
   YieldValidatorsKey,
 } from "../../src/features/earn/state/atoms-state/catalog/keys";
+import {
+  MultiYieldsKey,
+  visibleMultiYieldsAtom,
+} from "../../src/features/yield-summary/multi-yields";
 import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
 import {
   yieldApiProviderFixture,
@@ -198,10 +198,13 @@ describe("Earn state machine catalog", () => {
       })
     );
 
-    expect(
-      AsyncResult.getOrThrow(
-        registry.get(validators.initialValidatorsResultAtom)
-      ).map((validator) => validator.address)
-    ).toEqual([allowed.address]);
+    const initial = AsyncResult.getOrThrow(
+      registry.get(validators.initialValidatorsResultAtom)
+    );
+
+    expect(initial.map((validator) => validator.address)).toEqual([
+      allowed.address,
+    ]);
+    expect(registry.get(validators.rememberValidatorsAtom).size).toBe(0);
   });
 });

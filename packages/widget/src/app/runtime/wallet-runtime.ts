@@ -9,6 +9,7 @@ import type { WidgetConfigService } from "../../services/config/widget-config";
 import type { RichErrorService } from "../../services/errors/rich-error-service";
 import type { WidgetPersistence } from "../../services/persistence/widget-persistence";
 import type { TrackingService } from "../../services/tracking/tracking-service";
+import type { WalletModal } from "../../services/wallet/wallet-modal";
 import { WalletService } from "../../services/wallet/wallet-service";
 import { TransactionWorkflowOperationsService } from "../../services/workflow/transaction-workflow-operations-service";
 import { TransactionWorkflowService } from "../../services/workflow/transaction-workflow-service";
@@ -20,6 +21,7 @@ type AppServices =
   | LegacyResourceSource
   | RichErrorService
   | TrackingService
+  | WalletModal
   | WidgetConfigService
   | WidgetPersistence
   | YieldOperations
@@ -42,7 +44,7 @@ export const walletRuntime = Atom.runtime((get) => {
     )
   );
 
-  return Layer.mergeAll(walletLayer, transactionWorkflowLayer).pipe(
+  return Layer.mergeAll(appLayer, walletLayer, transactionWorkflowLayer).pipe(
     Layer.fresh
   );
 });

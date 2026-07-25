@@ -4,7 +4,7 @@ import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../../../shared/ui/primitives/icons/caret-left";
-import { classicFlowSessionStore } from "../../../../classic-transaction-flow/session";
+import { classicFlowSessionStore } from "../../../../classic-transaction-flow/facade";
 import { AnimationPage } from "../../../../widget-shell/animation-page";
 import { ActivityPage } from "./activity.page";
 import { activityDetailsContainer } from "./styles.css";

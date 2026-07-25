@@ -1,216 +1,28 @@
-import BigNumber from "bignumber.js";
-import { Array as EArray, Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router";
-import type { AppToken } from "../../../../../domain/schema/legacy-models";
-import { getKycProviderName } from "../../../../../domain/types/kyc";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import type BigNumber from "bignumber.js";
 import {
-  getRewardRateBreakdown,
-  type YieldRewardRateDto,
-} from "../../../../../domain/types/reward-rate";
-import { isForceMaxAmount } from "../../../../../domain/types/stake";
-
-import {
-  getYieldActionArg,
-  isYieldValidatorSelectionRequired,
-} from "../../../../../domain/types/yields";
-import { getPullResultItems } from "../../../../../shared/effect/pagination";
-import { formatUsd } from "../../../../../shared/lib/formatters";
-import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import {
-  getPositionDetailsUnstakeReviewPath,
-  useUnstakeOrPendingActionParams,
-} from "../../../../../shared/react/navigation/use-unstake-or-pending-action-params";
-import { useStartClassicTransactionFlow } from "../../../../classic-transaction-flow/react/use-transaction-flow";
-import { useProvidersDetails } from "../../../../earn/react/use-provider-details";
-import { useYieldKycGate } from "../../../../earn/react/use-yield-kyc-gate";
-import { useYieldValidators } from "../../../../earn/react/use-yield-validators";
-import { useTrackEvent } from "../../../../tracking/react/use-track-event";
+  loadMorePositionDetailsValidatorsAtom,
+  positionDetailsClassicViewAtom,
+  refreshPositionDetailsKycAtom,
+  setPositionDetailsExitAmountAtom,
+  setPositionDetailsExitMaxAmountAtom,
+  submitPositionDetailsExitAtom,
+} from "../../../state/classic-facade";
 import { useUnstakeOrPendingAction } from "../state";
 import { usePendingActions } from "./use-pending-actions";
-import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
-
-const hasCampaignRewardRate = (
-  rewardRate: YieldRewardRateDto | null | undefined
-) =>
-  !!getRewardRateBreakdown(rewardRate).find((item) => item.key === "campaign");
 
 export const usePositionDetails = () => {
-  const { dispatch, state: positionWorkflow } = useUnstakeOrPendingAction();
-  const {
-    unstakeAmount,
-    integrationData,
-    yieldOpportunity,
-    positionBalances,
-    positionBalancesResult,
-    reducedStakedOrLiquidBalance,
-    positionBalancesByType,
-    positionBalancePrices,
-    unstakeAmountValid,
-    unstakeToken,
-    unstakeAmountError,
-    canChangeUnstakeAmount,
-    unstakeIsGreaterOrLessIntegrationLimitError,
-    minUnstakeAmount,
-    currentWalletScope,
-  } = positionWorkflow;
-
-  const navigate = useNavigate();
-  const { plain } = useUnstakeOrPendingActionParams();
-
-  const stakeExitRequestDto = useStakeExitRequestDto(positionWorkflow);
-  const startClassicTransactionFlow = useStartClassicTransactionFlow();
-  const yieldKycGate = useYieldKycGate({
-    yieldDto: integrationData,
-  });
-  const kycGateIsBlocking = yieldKycGate.isGateBlocking;
-  const kycProviderName = integrationData
-    ? getKycProviderName(integrationData)
-    : null;
-  const onKycStatusRefresh = () => {
-    void yieldKycGate.refetch();
-  };
-
-  const unstakeMaxAmount = useMemo(
-    () =>
-      (() => {
-        const amount = integrationData
-          ? getYieldActionArg(integrationData, "exit", "amount")
-          : null;
-        return amount && !isForceMaxAmount(amount)
-          ? (amount.maximum ?? null)
-          : null;
-      })(),
-    [integrationData]
+  const { dispatch, workflowKey } = useUnstakeOrPendingAction();
+  const view = useAtomValue(positionDetailsClassicViewAtom(workflowKey));
+  const setAmount = useAtomSet(setPositionDetailsExitAmountAtom(workflowKey));
+  const setMaxAmount = useAtomSet(
+    setPositionDetailsExitMaxAmountAtom(workflowKey)
   );
-
-  const unstakeMinAmount = useMemo(
-    () =>
-      (() => {
-        const amount = integrationData
-          ? getYieldActionArg(integrationData, "exit", "amount")
-          : null;
-        const minimum = minUnstakeAmount.toNumber();
-        return amount &&
-          !isForceMaxAmount(amount) &&
-          new BigNumber(minimum).isGreaterThan(0)
-          ? minimum
-          : null;
-      })(),
-    [integrationData, minUnstakeAmount]
+  const submitExit = useAtomSet(submitPositionDetailsExitAtom(workflowKey));
+  const refreshKyc = useAtomSet(refreshPositionDetailsKycAtom(workflowKey));
+  const loadMoreValidators = useAtomSet(
+    loadMorePositionDetailsValidatorsAtom(workflowKey)
   );
-
-  const [unstakeSubmissionError, setUnstakeSubmissionError] = useState(false);
-  const onUnstakeClick = () => {
-    if (!unstakeAmountValid) {
-      setUnstakeSubmissionError(true);
-      return;
-    }
-    setUnstakeSubmissionError(false);
-    if (kycGateIsBlocking) return;
-
-    if (stakeExitRequestDto && integrationData && unstakeToken) {
-      startClassicTransactionFlow({
-        _tag: "Exit",
-        gasFeeToken: stakeExitRequestDto.gasFeeToken,
-        integration: integrationData,
-        providersDetails: providersDetails ?? [],
-        request: stakeExitRequestDto.dto,
-        unstakeAmount,
-        unstakeToken,
-        walletScope: currentWalletScope,
-      });
-      navigate(getPositionDetailsUnstakeReviewPath(plain) ?? "unstake/review");
-    }
-  };
-
-  const _unstakeAmountError = unstakeSubmissionError || unstakeAmountError;
-
-  const trackEvent = useTrackEvent();
-
-  const baseToken = integrationData?.token ?? null;
-
-  const shouldFetchValidators = integrationData
-    ? isYieldValidatorSelectionRequired(integrationData)
-    : false;
-
-  const yieldValidators = useYieldValidators({
-    enabled: shouldFetchValidators,
-    yieldId: integrationData?.id,
-    network: integrationData?.token.network,
-  });
-  const validatorPages = getPullResultItems(yieldValidators.result);
-  const loadedValidators = EArray.flatMap(validatorPages, (page) =>
-    EArray.fromIterable(page.items)
-  );
-  const hasMoreValidators = yieldValidators.result.pipe(
-    AsyncResult.value,
-    Option.exists(({ done }) => !done)
-  );
-  const isLoadingMoreValidators =
-    yieldValidators.result.waiting && loadedValidators.length > 0;
-  const onLoadMoreValidators = () => {
-    if (!yieldValidators.result.waiting && hasMoreValidators) {
-      yieldValidators.pull();
-    }
-  };
-
-  const validatorsData = shouldFetchValidators ? loadedValidators : undefined;
-
-  const providersDetails = useProvidersDetails({
-    integrationData,
-    validators:
-      positionBalances?.type === "validators"
-        ? positionBalances.validators
-        : null,
-    selectedProviderYieldId: null,
-  });
-
-  const personalizedRewardRate = useMemo(
-    () =>
-      positionBalances && hasCampaignRewardRate(positionBalances.rewardRate)
-        ? positionBalances.rewardRate
-        : null,
-    [positionBalances]
-  );
-
-  const fallbackRewardRate = useMemo(
-    () =>
-      integrationData && hasCampaignRewardRate(integrationData.rewardRate)
-        ? integrationData.rewardRate
-        : null,
-    [integrationData]
-  );
-
-  const apyCompositionRewardRate = personalizedRewardRate ?? fallbackRewardRate;
-  const apyCompositionShowsUpToCampaign =
-    !personalizedRewardRate && !!fallbackRewardRate;
-
-  const canUnstake = !!integrationData?.status.exit;
-
-  const onUnstakeAmountChange = (value: BigNumber) =>
-    dispatch({ type: "unstake/amount/change", data: value });
-
-  const unstakeFormattedAmount = useMemo(
-    () =>
-      reducedStakedOrLiquidBalance
-        ? formatUsd(reducedStakedOrLiquidBalance.amountUsd)
-        : "",
-    [reducedStakedOrLiquidBalance]
-  );
-
-  const onMaxClick = () => {
-    if (!integrationData) return;
-    trackEvent("positionDetailsPageMaxClicked", {
-      yieldId: integrationData.id,
-    });
-
-    dispatch({ type: "unstake/amount/max" });
-  };
-
-  const unstakeAvailable = integrationData?.status.exit ?? false;
-
   const {
     onPendingActionAmountChange,
     pendingActions,
@@ -219,82 +31,20 @@ export const usePositionDetails = () => {
     validatorAddressesHandling,
   } = usePendingActions({
     dispatch,
-    providersDetails: providersDetails ?? [],
-    workflow: positionWorkflow,
+    workflowKey,
   });
 
-  const shareToAmountConversions = useMemo(
-    () =>
-      integrationData && positionBalancesByType && baseToken
-        ? [...positionBalancesByType.values()].reduce((acc, curr) => {
-            curr
-              .filter((yb) => yb.shareAmount && yb.amount && !yb.token.isPoints)
-              .forEach((yb) => {
-                acc.set(
-                  yb.token.symbol,
-                  `1 ${yb.token.symbol} = ${defaultFormattedNumber(
-                    new BigNumber(yb.shareAmount ?? 0).dividedBy(
-                      new BigNumber(yb.amount ?? 0)
-                    )
-                  )} ${yb.shareToken?.symbol}`
-                );
-              });
-
-            return acc;
-          }, new Map<AppToken["symbol"], string>())
-        : null,
-    [integrationData, positionBalancesByType, baseToken]
-  );
-
-  const unstakeDisabled =
-    AsyncResult.isInitial(yieldOpportunity) ||
-    !unstakeAvailable ||
-    kycGateIsBlocking;
-
-  const isLoading =
-    AsyncResult.isInitial(positionBalancesResult) ||
-    AsyncResult.isInitial(positionBalancePrices) ||
-    AsyncResult.isInitial(yieldOpportunity) ||
-    (shouldFetchValidators && AsyncResult.isInitial(yieldValidators.result));
-
   return {
-    integrationData,
-    validatorsData: validatorsData ?? [],
-    hasMoreValidators,
-    isLoadingMoreValidators,
-    onLoadMoreValidators,
-    reducedStakedOrLiquidBalance,
-    positionBalancesByType,
-    canUnstake,
-    unstakeAmount,
-    onUnstakeAmountChange,
-    unstakeFormattedAmount,
-    onMaxClick,
-    canChangeUnstakeAmount,
-    onUnstakeClick,
-    unstakeDisabled,
-    kycGate: yieldKycGate.gate,
-    kycGateIsChecking:
-      yieldKycGate.isLoading ||
-      yieldKycGate.isFetching ||
-      yieldKycGate.isRefetching,
-    kycProviderName,
-    onKycStatusRefresh,
-    isLoading,
-    onPendingActionClick,
-    providersDetails,
-    personalizedRewardRate,
-    apyCompositionRewardRate,
-    apyCompositionShowsUpToCampaign,
-    pendingActions,
-    shareToAmountConversions,
-    validatorAddressesHandling,
-    onValidatorsSubmit,
+    ...view,
+    onKycStatusRefresh: () => refreshKyc(undefined),
+    onLoadMoreValidators: () => loadMoreValidators(undefined),
+    onMaxClick: () => setMaxAmount(undefined),
     onPendingActionAmountChange,
-    unstakeToken,
-    unstakeAmountError: _unstakeAmountError,
-    unstakeMaxAmount,
-    unstakeMinAmount,
-    unstakeIsGreaterOrLessIntegrationLimitError,
+    onPendingActionClick,
+    onUnstakeAmountChange: (amount: BigNumber) => setAmount(amount),
+    onUnstakeClick: () => submitExit(undefined),
+    onValidatorsSubmit,
+    pendingActions,
+    validatorAddressesHandling,
   };
 };

@@ -3,6 +3,7 @@ import { act } from "react";
 import { describe, expect, it } from "vitest";
 import { EarnBalance } from "../../src/domain/schema/earn-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { PositionDetailsWorkflowKey } from "../../src/features/position-details/state/workflow";
 import { useValidatorAddressesHandling } from "../../src/features/position-details/ui/classic/hooks/use-validator-addresses-handling";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
@@ -55,7 +56,14 @@ const ValidatorModalHarness = ({
 }: {
   readonly scope: WalletScopeKey;
 }) => {
-  const modal = useValidatorAddressesHandling(scope);
+  const modal = useValidatorAddressesHandling(
+    new PositionDetailsWorkflowKey({
+      balanceId: null,
+      integrationId: null,
+      pendingActionType: null,
+      scope,
+    })
+  );
 
   return (
     <>
@@ -64,7 +72,7 @@ const ValidatorModalHarness = ({
       </output>
       <output data-testid="payload">
         {modal.showValidatorsModal
-          ? modal.pendingActionDto.passthrough
+          ? modal.pendingActionDto?.passthrough
           : "none"}
       </output>
       <button

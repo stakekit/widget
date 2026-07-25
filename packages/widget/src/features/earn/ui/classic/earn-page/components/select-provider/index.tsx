@@ -15,9 +15,9 @@ import { Text } from "../../../../../../../shared/ui/primitives/typography/text"
 import {
   MultiYieldsKey,
   visibleMultiYieldsAtom,
-} from "../../../../../resources/yields";
+} from "../../../../../../yield-summary/multi-yields";
+import { useEarnEntry } from "../../../../../react/use-earn-facades";
 import { SelectYield } from "../../../../components/select-yield";
-import { useEarnPageModel } from "../../state/earn-page-model";
 import {
   overflowEllipsis,
   selectorSummaryCard,
@@ -45,12 +45,8 @@ const getProviderTvl = (tvlUsd: unknown) => {
 };
 
 export const SelectProvider = () => {
-  const {
-    appLoading,
-    onProviderYieldIdSelect,
-    selectedProviderYieldId,
-    selectedStake,
-  } = useEarnPageModel();
+  const { selectProvider, view } = useEarnEntry();
+  const { appLoading, selectedProviderYieldId, selectedStake } = view;
 
   const { t } = useTranslation();
 
@@ -95,7 +91,7 @@ export const SelectProvider = () => {
 
   return (
     <SelectYield
-      onItemClick={(yieldDto) => onProviderYieldIdSelect(yieldDto.id)}
+      onItemClick={(yieldDto) => selectProvider(yieldDto.id)}
       providerYieldIds={providerYieldIdOptions}
       selectedYieldId={selectedProviderYield.id}
       trigger={

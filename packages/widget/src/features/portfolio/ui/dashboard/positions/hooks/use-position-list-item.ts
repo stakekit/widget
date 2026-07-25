@@ -3,13 +3,16 @@ import BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { getTokenPriceInUSD } from "../../../../../../domain/types/price";
+import {
+  PricesKey,
+  pricesAtom,
+} from "../../../../../../resources/token-prices/prices";
 import { config } from "../../../../../../shared/config/widget-defaults";
 import { defaultFormattedNumber } from "../../../../../../shared/lib/number-format";
-import { PricesKey, pricesAtom } from "../../../../../earn/resources/prices";
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
-} from "../../../../../earn/resources/yield-insights";
+} from "../../../../../yield-summary/yield-insights";
 import type { PositionItem } from "../../../../resources/positions";
 import { usePositionListItem as useBasePositionListItem } from "../../../classic/positions-page/hooks/use-position-list-item";
 

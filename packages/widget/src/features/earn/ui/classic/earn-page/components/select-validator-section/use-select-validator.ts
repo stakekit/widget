@@ -1,62 +1,32 @@
 import type { EarnValidator } from "../../../../../../../domain/schema/earn-models";
-
-import { useTrackEvent } from "../../../../../../tracking/react/use-track-event";
-import { useEarnPageModel } from "../../state/earn-page-model";
+import { useEarnValidatorSelection } from "../../../../../react/use-earn-facades";
 
 export const useSelectValidator = () => {
-  const {
-    appLoading,
-    onValidatorSelect,
-    onValidatorRemove,
-    selectedValidators,
-    selectedStake,
-    selectValidatorIsLoading,
-    onValidatorSearch,
-    validatorsData,
-    validatorSearch,
-    hasMoreValidators,
-    isLoadingMoreValidators,
-    onLoadMoreValidators,
-  } = useEarnPageModel();
+  const { loadMore, recordModalEvent, remove, select, setSearch, view } =
+    useEarnValidatorSelection();
 
-  const isLoading = appLoading || selectValidatorIsLoading;
+  const onViewMoreClick = () => recordModalEvent({ _tag: "ViewMoreClicked" });
+  const onClose = () => recordModalEvent({ _tag: "Closed" });
+  const onOpen = () => recordModalEvent({ _tag: "Opened" });
 
-  const trackEvent = useTrackEvent();
+  const onItemClick = (item: EarnValidator) => select(item.key);
 
-  const onViewMoreClick = () => trackEvent("selectValidatorViewMoreClicked");
-  const onClose = () => trackEvent("selectValidatorModalClosed");
-  const onOpen = () => trackEvent("selectValidatorModalOpened");
-
-  const onItemClick = (item: EarnValidator) => {
-    trackEvent("validatorSelected", {
-      validatorName: item.name,
-      validatorAddress: item.address,
-    });
-    onValidatorSelect(item);
-  };
-
-  const onRemoveValidator = (item: EarnValidator) => {
-    trackEvent("validatorRemoved", {
-      validatorName: item.name,
-      validatorAddress: item.address,
-    });
-    onValidatorRemove(item);
-  };
+  const onRemoveValidator = (item: EarnValidator) => remove(item.key);
 
   return {
-    isLoading,
+    isLoading: view.isLoading,
     onViewMoreClick,
     onClose,
     onOpen,
     onItemClick,
     onRemoveValidator,
-    selectedValidators,
-    selectedStake,
-    onValidatorSearch,
-    validatorsData,
-    validatorSearch,
-    hasMoreValidators,
-    isLoadingMoreValidators,
-    onLoadMoreValidators,
+    selectedValidators: view.selected,
+    selectedStake: view.selectedYield,
+    onValidatorSearch: setSearch,
+    validatorsData: view.data,
+    validatorSearch: view.search,
+    hasMoreValidators: view.hasMore,
+    isLoadingMoreValidators: view.isLoadingMore,
+    onLoadMoreValidators: () => loadMore(undefined),
   };
 };

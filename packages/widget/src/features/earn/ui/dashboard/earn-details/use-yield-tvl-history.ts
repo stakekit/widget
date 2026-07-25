@@ -6,7 +6,7 @@ import type { YieldId } from "../../../../../domain/schema/identifiers";
 import {
   YieldHistoryKey,
   yieldTvlHistoryAtom,
-} from "../../../resources/yield-insights";
+} from "../../../../yield-summary/yield-insights";
 
 export const useYieldTvlHistory = ({
   period,

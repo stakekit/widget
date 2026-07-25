@@ -1,7 +1,11 @@
+import { Match } from "effect";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
-import { getYieldActionArg } from "../../../../../domain/types/yields";
+import {
+  getYieldActionArg,
+  getYieldTypeLabels,
+} from "../../../../../domain/types/yields";
 import { useUnstakeOrPendingActionParams } from "../../../../../shared/react/navigation/use-unstake-or-pending-action-params";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
@@ -18,7 +22,7 @@ import {
 import * as AmountToggle from "../../../../earn/ui/components/amount-toggle";
 import { KycGateCard } from "../../../../earn/ui/components/kyc-gate-card";
 import { MetaInfo } from "../../../../earn/ui/components/meta-info";
-import { PageCtaButton } from "../../../../widget-shell/page-cta";
+import { type PageCta, PageCtaButton } from "../../../../widget-shell/page-cta";
 import { Dropdown } from "../../../../widget-shell/ui/dropdown";
 import { MaxButton } from "../../../../widget-shell/ui/max-button";
 import { NumberInput } from "../../../../widget-shell/ui/number-input";
@@ -288,6 +292,42 @@ const PositionDetailsStakeExtraArgs = ({
   );
 };
 
+const PositionDetailsStakePrimaryAction = ({
+  stake,
+}: {
+  readonly stake: PositionDetailsStakeState;
+}) => {
+  const { t } = useTranslation();
+  const yieldAction = ({
+    disabled,
+    loading,
+  }: {
+    readonly disabled: boolean;
+    readonly loading: boolean;
+  }): PageCta => ({
+    disabled,
+    isLoading: loading,
+    label: stake.selectedStake
+      ? getYieldTypeLabels(stake.selectedStake, t).cta
+      : "",
+    onClick: stake.onPrimaryAction,
+  });
+  const cta = Match.value(stake.cta).pipe(
+    Match.tag("Hidden", () => null),
+    Match.tag("AddLedgerAccount", ({ disabled, loading }) => ({
+      disabled,
+      isLoading: loading,
+      label: t("init.ledger_add_account"),
+      onClick: stake.onPrimaryAction,
+    })),
+    Match.tag("ConnectWallet", yieldAction),
+    Match.tag("Submit", yieldAction),
+    Match.exhaustive
+  );
+
+  return <PageCtaButton cta={cta} />;
+};
+
 export const PositionDetailsStakeActions = () => {
   const stake = usePositionDetailsStake();
   const { positionDetails } = stake;
@@ -357,7 +397,7 @@ export const PositionDetailsStakeActions = () => {
         <PositionDetailsStakeExtraArgs stake={stake} />
       </Box>
 
-      <PageCtaButton cta={stake.cta} />
+      <PositionDetailsStakePrimaryAction stake={stake} />
     </Box>
   );
 };

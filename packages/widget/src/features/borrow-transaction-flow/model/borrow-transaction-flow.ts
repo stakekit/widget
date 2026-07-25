@@ -1,5 +1,9 @@
 import type { ActionRequest } from "../../../domain/borrow/action-request";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
+import {
+  toWidgetPath,
+  type WidgetPathInput,
+} from "../../../services/navigation/widget-navigation";
 
 export type BorrowTransactionFlowReview = {
   readonly request: ActionRequest;
@@ -39,15 +43,15 @@ export type BorrowTransactionFlowIntake = BorrowTransactionFlowReview & {
 export const getBorrowTransactionFlowRoutes = (
   entry: BorrowTransactionFlowEntry
 ) => {
-  const basePath =
+  const basePath: WidgetPathInput =
     entry._tag === "BorrowDashboard"
       ? "/borrow"
       : `/positions/borrow/${entry.marketId}`;
 
   return {
-    basePath,
-    completePath: `${basePath}/complete`,
-    reviewPath: `${basePath}/review`,
-    stepsPath: `${basePath}/steps`,
+    basePath: toWidgetPath(basePath),
+    completePath: toWidgetPath(`${basePath}/complete`),
+    reviewPath: toWidgetPath(`${basePath}/review`),
+    stepsPath: toWidgetPath(`${basePath}/steps`),
   } as const;
 };

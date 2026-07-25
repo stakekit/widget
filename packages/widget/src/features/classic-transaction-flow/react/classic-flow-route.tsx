@@ -1,16 +1,13 @@
 import { make as makeScopedAtom, useAtomValue } from "@effect/atom-react";
-import { Match } from "effect";
 import { type PropsWithChildren, useContext } from "react";
 import { Navigate, Outlet } from "react-router";
-import { useWidgetConfig } from "../../../app/config/use-widget-config";
-import type { YieldAction } from "../../../domain/schema/action-models";
 import { useWalletScopeRoute } from "../../wallet/react/wallet-scope-route";
+import { classicFlowSessionStore } from "../facade";
 import {
   type ClassicTransactionFlowIntake,
   getClassicTransactionFlowIntakeVariant,
   isClassicTransactionFlowWalletScopeValid,
 } from "../model/classic-transaction-flow";
-import { classicFlowSessionStore } from "../session";
 import {
   type ClassicFlowExecutionFacade,
   type ClassicFlowReviewFacade,
@@ -114,31 +111,9 @@ export const ClassicFlowReviewScope = ({ children }: PropsWithChildren) => {
   );
 };
 
-const getActivityStepsPath = (action: YieldAction) => {
-  const path = Match.value(action.type).pipe(
-    Match.when("UNSTAKE", () => "unstake"),
-    Match.when("STAKE", () => "stake"),
-    Match.orElse(() => "pending")
-  );
-  return `/activity/${path}/steps`;
-};
-
 const ReviewBinding = ({ children }: PropsWithChildren) => {
-  const session = useClassicFlowSession();
-  const review = useClassicFlowReview();
-  const view = useAtomValue(review.reviewViewAtom);
-  const navigation = useAtomValue(review.navigationAtom);
-  const to =
-    session.intake._tag === "ActivityResume" && view.action
-      ? getActivityStepsPath(view.action)
-      : "../steps";
-
-  return (
-    <>
-      {navigation === "Steps" ? <Navigate to={to} relative="path" /> : null}
-      {children ?? <Outlet />}
-    </>
-  );
+  useClassicFlowReview();
+  return children ?? <Outlet />;
 };
 
 export const ClassicFlowExecutionScope = ({ children }: PropsWithChildren) => {
@@ -154,36 +129,7 @@ export const ClassicFlowExecutionScope = ({ children }: PropsWithChildren) => {
 const ExecutionBinding = ({ children }: PropsWithChildren) => {
   const executionAtom = useContext(ExecutionScopedAtom.Context);
   const execution = useAtomValue(executionAtom);
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
-
   if (!execution) return <Navigate to="/" replace />;
 
-  return (
-    <>
-      <ExecutionNavigation dashboardVariant={dashboardVariant} />
-      {children ?? <Outlet />}
-    </>
-  );
-};
-
-const ExecutionNavigation = ({
-  dashboardVariant,
-}: {
-  readonly dashboardVariant: boolean | undefined;
-}) => {
-  const { navigationAtom } = useClassicFlowExecution();
-  const intake = useClassicFlowSession().intake;
-  const navigation = useAtomValue(navigationAtom);
-  const to = Match.value(intake).pipe(
-    Match.tag("ActivityResume", () =>
-      dashboardVariant ? "../.." : "../../review"
-    ),
-    Match.orElse(() => "../review")
-  );
-
-  if (navigation === "Review") {
-    return <Navigate to={to} relative="path" replace />;
-  }
-
-  return null;
+  return children ?? <Outlet />;
 };

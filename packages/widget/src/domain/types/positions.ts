@@ -43,7 +43,7 @@ export type PositionsData = Map<
 export type PositionData =
   PositionsData extends Map<YieldId, infer Value> ? Value : never;
 
-export type PositionBalances =
+type PositionBalances =
   PositionData["balanceData"] extends Map<BalanceDataKey, infer Value>
     ? Value & { rewardRate: PositionData["rewardRate"] }
     : never;

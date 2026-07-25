@@ -10,8 +10,8 @@ Production code is organized by ownership rather than by React mechanism:
   remote reads shared across features. Each remote fact has one named, typed
   resource module rather than a global registry.
 - `src/services` owns Effect services and side effects: API transport,
-  persistence, tracking, wallet integration, workflow execution, and borrow
-  execution.
+  persistence, tracking, widget navigation, wallet integration, workflow
+  execution, and borrow execution.
 - `src/features/<feature>` owns feature state, contextual read models, command
   atoms, React adapters, and screens. A feature exposes cross-feature
   collaboration only through an intentional root entry such as `index.ts`,
@@ -86,19 +86,34 @@ runtime API clients are private to `services/api`; approved `domain/schema` and
 
 ## Application runtime
 
-`src/app/runtime/app-runtime.ts` and its derived `wallet-runtime.ts` contain the
-only production `Atom.runtime` constructors. The fresh application layer
-composes bootstrap configuration, focused Yield, Legacy, and Borrow capability
-ports, rich errors, persistence, and tracking; the wallet runtime derives its
-scoped wallet and transaction-workflow services from that application context.
+`src/app/runtime/application-router-runtime.ts` is a synchronous base runtime
+that constructs the scoped `ApplicationRouter` around the memory router.
+`app-runtime.ts` consumes that router context and composes bootstrap
+configuration, focused Yield, Legacy, and Borrow capability ports, rich errors,
+persistence, tracking, `WidgetNavigation`, and wallet-modal commands. The
+derived `wallet-runtime.ts` receives the application context and adds its scoped
+wallet and transaction-workflow services.
 Borrow configuration is optional at construction time; invoking an unavailable
 borrow capability produces the typed error.
 
 All application atoms resolve dependencies through `appRuntime`. Feature-local
 atoms may own synchronous state directly, but must not construct another
-runtime or hide an independent service graph. Mounting a widget creates a new
-registry and lifecycle-sensitive service state; remounting therefore starts
-cleanly.
+runtime or hide an independent service graph. The Application Router base
+runtime is the only lower-level exception and contains no feature services.
+Mounting a widget creates a new registry and lifecycle-sensitive service state;
+remounting therefore starts cleanly.
+
+`ApplicationRouter` owns one memory router for an Application Runtime
+Generation and disposes it with that generation. The root route configuration is
+assembled at the top-level React composition seam in `App.tsx` and seeded into
+the registry when it is created, so runtime construction does not import React
+composition. React synchronously reads the router from an internal Atom only to
+pass it to `RouterProvider`.
+`WidgetNavigation` is constructed directly from `ApplicationRouter` and is the
+headless application-runtime command interface. Application-owned navigation
+uses canonical absolute paths from commands and workflow transition events;
+derived view Atoms do not publish navigation outcomes for React to apply.
+Declarative route guards and view-local navigation remain React concerns.
 
 ## Effect Atom state conventions
 
@@ -140,9 +155,26 @@ the previous atoms and duplicate client methods before the next slice begins.
 Existing direct feature reads are migration debt and must not be copied into new
 or materially refactored code.
 
+Feature facades expose stable read-only view Atoms and writable command Atoms.
+They retain mutable state, dynamic resource Atom identities, retry targets, and
+pagination implementations privately. Published view values contain neither
+nested Atoms or Atom factories nor command callbacks; the facade resolves the
+active resource and forwards user intent internally. Deterministic
+calculations remain plain TypeScript.
+
+`features/yield-entry` owns the shared Yield Entry capability used by Earn and
+position details: amount constraints, validation, KYC projection, Enter Action
+Command preparation, submission decisions, and their command effects.
+`features/yield-summary` owns shared read-only yield projections such as
+provider details, reward-token details, and semantic yield type. Earn,
+position details, transaction flows, activity, and portfolio consume these
+modules through narrow public entries rather than importing implementation
+from one another.
+
 Use React Context only when the value is inherently tree-scoped, such as a
-compound component, host DOM element, router history adapter, or required
-third-party provider. Do not introduce new page or application-state contexts.
+compound component, host DOM element, router-rendered application route
+content, or required third-party provider. Do not introduce new page or
+application-state contexts.
 
 ## Supported lifecycle
 
@@ -160,6 +192,9 @@ own provider.
 
 The remaining widget-owned contexts are intentional:
 
+- `ApplicationRouteContentContext` supplies the application subtree to the
+  static data-router root route without making the route definition depend on
+  application providers.
 - `CollapsibleContext`, `CopyTextContext`, `SelectModalContext`, and the amount
   toggle context are private compound-component contracts. Their state belongs
   to one component subtree.
@@ -175,6 +210,12 @@ The remaining widget-owned contexts are intentional:
 Effect Atom's registry context and the contexts supplied by i18next, TanStack
 Query, Wagmi, RainbowKit, and the Solana wallet adapters are third-party runtime
 contracts and remain at application composition boundaries.
+
+RainbowKit exposes modal commands only through React Context. One named
+provider adapter installs connect- and chain-modal commands into the
+runtime-scoped `WalletModal` interface and releases them with the provider
+lifetime. Feature state never stores or transports those callbacks, and no
+module-global latest-callback holder is used.
 
 Page workflows must not introduce React contexts. Earn, position details,
 activity, completion, transaction flow, tracking, summary, configuration, and
@@ -196,5 +237,6 @@ Transaction execution is split by ownership:
   revive the machine after that scope exits.
 
 The shared Transaction Workflow contains execution mechanics only. Journey
-projection, routing, handoff cleanup, and completion behavior remain in the
-Classic and Borrow adapters.
+projection, navigation decisions, handoff cleanup, and completion behavior
+remain in the Classic and Borrow modules; application-owned destinations are
+executed through the application-runtime `WidgetNavigation` module.

@@ -14,7 +14,7 @@ import {
 import {
   MultiYieldsKey,
   visibleMultiYieldsAtom,
-} from "../../../resources/yields";
+} from "../../../../yield-summary/multi-yields";
 import { SelectOpportunityListItem } from "../select-opportunity-list-item";
 
 type SelectYieldProps = PropsWithChildren<

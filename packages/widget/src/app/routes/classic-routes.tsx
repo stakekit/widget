@@ -3,6 +3,7 @@ import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { AnimatedActivityPage } from "../../features/activity/ui/classic/activity-page/activity.page";
+import { classicFlowSessionStore } from "../../features/classic-transaction-flow/facade";
 import {
   ActivityResumeClassicFlowRoute,
   ClassicFlowExecutionScope,
@@ -11,7 +12,6 @@ import {
   ExitClassicFlowRoute,
   ManageClassicFlowRoute,
 } from "../../features/classic-transaction-flow/react/classic-flow-route";
-import { classicFlowSessionStore } from "../../features/classic-transaction-flow/session";
 import { ActivityCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/activity-complete.page";
 import { PendingCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/pending-complete.page";
 import { StakeCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/stake-complete.page";
@@ -45,7 +45,6 @@ import { useDetailsMatch } from "../../shared/react/navigation/use-details-match
 import { usePrevious } from "../../shared/react/use-previous";
 import { useSavedRef } from "../../shared/react/use-saved-ref";
 import { isClassicFlowSessionPath } from "./classic-flow-session-path";
-import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
 
 export const ClassicRoutes = () => {
   const underMaintenance = useUnderMaintenance();
@@ -91,8 +90,6 @@ export const ClassicRoutes = () => {
 
     navigateRef.current(initTab === "earn" ? "/" : "/positions");
   }, [initTab, navigateRef]);
-
-  useHandleDeepLinks();
 
   const detailsMatch = useDetailsMatch();
 

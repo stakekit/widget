@@ -7,15 +7,15 @@ import type { Prices } from "../../../domain/schema/health-price-models";
 import type { YieldId } from "../../../domain/schema/identifiers";
 import { getPositionTotalAmount } from "../../../domain/types/positions";
 import { getTokenPriceInUSD } from "../../../domain/types/price";
-import { PricesKey, pricesAtom } from "../../earn/resources/prices";
-import {
-  CurrentRewardsSummaryKey,
-  positiveRewardsSummaryAtom,
-} from "../../earn/resources/yield-insights";
+import { PricesKey, pricesAtom } from "../../../resources/token-prices/prices";
 import {
   MultiYieldsKey,
   multiYieldsByIdAtom,
-} from "../../earn/resources/yields";
+} from "../../yield-summary/multi-yields";
+import {
+  CurrentRewardsSummaryKey,
+  positiveRewardsSummaryAtom,
+} from "../../yield-summary/yield-insights";
 import { type PositionItem, positionsTableDataAtom } from "./positions";
 import { tokenBalancesScanAtom } from "./token-balances";
 

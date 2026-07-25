@@ -8,6 +8,10 @@ StakeKit Widget embeds staking and related wallet workflows into a host applicat
 A mounted StakeKit Widget within a browser document. A document may contain at most one Widget Instance at a time; unmounting it and later mounting another is supported.
 _Avoid_: Concurrent widgets, multiple widget instances
 
+**Application Runtime Generation**:
+One continuous lifetime of widget application state under a stable API identity. It ends when that identity changes or the Widget Instance unmounts; live settings changes remain within the same generation.
+_Avoid_: Widget Runtime, app mount
+
 ## Wallet Language
 
 **Wallet Scope**:
@@ -48,6 +52,10 @@ _Avoid_: External provider configuration
 **Earn Selection**:
 The category, token, yield, validators, and entry form values currently resolved for starting an Earn journey. It is valid only against the authoritative facts for the active Wallet Scope Owner.
 _Avoid_: Atom state, selected stake data
+
+**Yield Entry**:
+A user's pre-execution attempt to add tokens to an Earn Selection. An eligible Yield Entry culminates in an Enter Action Command.
+_Avoid_: Enter Action, stake form
 
 **Earn Initialization**:
 The one-time use of host or deep-link initialization parameters to seed the first Earn Selection of a Widget Instance. A consumed or invalidated initialization target does not run again after user intent or a Wallet Scope Owner change.

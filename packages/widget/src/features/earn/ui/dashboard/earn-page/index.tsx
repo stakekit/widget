@@ -5,39 +5,25 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { Divider } from "../../../../widget-shell/divider";
-import { PageCtaButton } from "../../../../widget-shell/page-cta";
+import { useEarnPageStatus } from "../../../react/use-earn-facades";
 import { ExtraArgsSelection } from "../../classic/earn-page/components/extra-args-selection";
 import { Footer } from "../../classic/earn-page/components/footer";
 import { SelectTokenSection } from "../../classic/earn-page/components/select-token-section";
 import { SelectTokenTitle } from "../../classic/earn-page/components/select-token-section/title";
 import { SelectYieldSection } from "../../classic/earn-page/components/select-yield-section";
-import { useEarnPageModel } from "../../classic/earn-page/state/earn-page-model";
-import { KycGateCard } from "../../components/kyc-gate-card";
+import { EarnKycGate } from "../../components/earn-kyc-gate";
+import { EarnPageCta } from "../../components/earn-page-cta";
 import { container, selectTokenTitleContainer } from "./styles.css";
 
-const EarnKycGateSection = () => {
-  const { kycGate, kycGateIsChecking, kycProviderName, onKycStatusRefresh } =
-    useEarnPageModel();
-
-  if (kycGate.state === "pass" && !kycGateIsChecking) return null;
-
-  return (
-    <Box marginTop="3">
-      <KycGateCard
-        gate={kycGate}
-        isChecking={kycGateIsChecking}
-        onCheckStatus={onKycStatusRefresh}
-        providerName={kycProviderName}
-      />
-    </Box>
-  );
-};
-
-export const EarnPageContent = () => {
+export const EarnPageContent = ({
+  registerFooterButton = true,
+}: {
+  readonly registerFooterButton?: boolean;
+}) => {
   const { t } = useTranslation();
   const dashboardVariant = useWidgetConfig("dashboardVariant");
   const variant = useWidgetConfig("variant");
-  const { canRetry, cta, isError, onRetry } = useEarnPageModel();
+  const { retry, view: status } = useEarnPageStatus();
 
   return (
     <Box className={container}>
@@ -55,7 +41,7 @@ export const EarnPageContent = () => {
 
         <SelectYieldSection />
 
-        <EarnKycGateSection />
+        <EarnKycGate />
 
         <ExtraArgsSelection />
       </Box>
@@ -68,20 +54,23 @@ export const EarnPageContent = () => {
         <Footer />
       </Box>
 
-      {isError && (
+      {status.isError && (
         <Box alignItems="center" display="flex" flexDirection="column" gap="2">
           <Text textAlign="center" variant={{ type: "danger" }}>
             {t("shared.something_went_wrong")}
           </Text>
-          {canRetry && (
-            <Button data-rk="earn-dashboard-retry" onClick={onRetry}>
+          {status.canRetry && (
+            <Button
+              data-rk="earn-dashboard-retry"
+              onClick={() => retry(undefined)}
+            >
               {t("shared.retry")}
             </Button>
           )}
         </Box>
       )}
 
-      <PageCtaButton cta={cta} />
+      <EarnPageCta enabled={registerFooterButton} />
     </Box>
   );
 };

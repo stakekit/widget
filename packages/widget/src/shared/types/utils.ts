@@ -4,10 +4,6 @@ export type RecursivePartial<T> = {
 
 export type Override<T1, T2> = Omit<T1, keyof T2> & T2;
 
-export type Action<T extends string, D = void> = D extends void
-  ? { type: T }
-  : { type: T; data: D };
-
 export type Nullable<T> = T | undefined | null;
 
 export type KebabToCamelCase<S extends string> =

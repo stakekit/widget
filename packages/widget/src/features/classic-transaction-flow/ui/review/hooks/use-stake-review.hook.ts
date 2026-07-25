@@ -1,52 +1,37 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import BigNumber from "bignumber.js";
-import { Array as EArray, Option } from "effect";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
-import { getActionProviderYieldId } from "../../../../../domain/types/action";
 import { getKycProviderName } from "../../../../../domain/types/kyc";
-import { isBittensorStaking } from "../../../../../domain/types/yields";
-import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
+import { getYieldTypeLabels } from "../../../../../domain/types/yields";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
-import { useEstimatedRewards } from "../../../../earn/react/use-estimated-rewards";
-import { useRewardTokenDetails } from "../../../../earn/react/use-reward-token-details";
-import { useYieldType } from "../../../../earn/react/use-yield-type";
 import type { PageCta } from "../../../../widget-shell/page-cta";
 import {
   useClassicFlowIntake,
   useClassicFlowReview,
 } from "../../../react/classic-flow-route";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
-import { useFees } from "./use-fees";
 
 export const useStakeReview = () => {
+  const { t } = useTranslation();
   const enterFlow = useClassicFlowIntake("Enter");
   const facade = useClassicFlowReview();
   const confirmFlow = useAtomSet(facade.confirmAtom);
   const refreshKyc = useAtomSet(facade.refreshKycAtom);
   const review = useAtomValue(facade.reviewViewAtom);
 
-  const stakeAmount = useMemo(
-    () => new BigNumber(enterFlow.request.arguments?.amount ?? 0),
-    [enterFlow.request]
-  );
-
+  const stakeReview = review.stake;
+  if (!stakeReview) {
+    throw new Error("Stake Review requires an Enter Flow Session.");
+  }
+  const stakeAmount = stakeReview.stakeAmount;
   const selectedStake = enterFlow.selectedStake;
   const selectedToken = enterFlow.selectedToken;
-  const stakeEnterTxGas = review.gasAmount;
 
-  const selectedProviderYieldId = getActionProviderYieldId(enterFlow.request);
-
-  const rewardToken = useRewardTokenDetails(selectedStake);
-  const estimatedRewards = useEstimatedRewards({
-    selectedStake,
-    stakeAmount,
-    selectedValidators: new Map(enterFlow.selectedValidators),
-    selectedProviderYieldId,
-  });
-  const yieldType = useYieldType(selectedStake)?.review ?? "";
+  const rewardToken = stakeReview.rewardToken;
+  const estimatedRewards = stakeReview.estimatedRewards;
+  const yieldType = getYieldTypeLabels(selectedStake, t).review;
 
   const amount = useMemo(
     () => defaultFormattedNumber(stakeAmount),
@@ -57,17 +42,7 @@ export const useStakeReview = () => {
     [estimatedRewards]
   );
 
-  const symbol = selectedToken.symbol;
-  const rewardsTokenSymbol = useMemo(
-    () =>
-      isBittensorStaking(selectedStake.id)
-        ? EArray.head([...enterFlow.selectedValidators.values()]).pipe(
-            Option.map((validator) => validator.subnet?.tokenSymbol ?? ""),
-            Option.getOrElse(() => symbol)
-          )
-        : symbol,
-    [enterFlow.selectedValidators, selectedStake, symbol]
-  );
+  const rewardsTokenSymbol = stakeReview.rewardsTokenSymbol;
 
   const estimatedRewardAmounts = useMemo(
     () =>
@@ -80,39 +55,21 @@ export const useStakeReview = () => {
     [estimatedRewards, rewardsTokenSymbol]
   );
 
-  const prices = review.prices;
-
-  const fee = useMemo(
-    () =>
-      getGasFeeInUSD({
-        gas: stakeEnterTxGas,
-        prices,
-        yieldDto: selectedStake,
-      }),
-    [prices, selectedStake, stakeEnterTxGas]
-  );
-
-  const { depositFee, managementFee, performanceFee } = useFees({
-    amount: stakeAmount,
-    token: selectedToken,
-    feeConfigDto: null,
-    yieldFee: useMemo(
-      () =>
-        (
-          enterFlow.selectedStake as typeof enterFlow.selectedStake & {
-            mechanics?: {
-              fee?: {
-                deposit?: string;
-                management?: string;
-                performance?: string;
-              };
-            };
-          }
-        ).mechanics?.fee ?? null,
-      [enterFlow.selectedStake]
-    ),
-    prices,
-  });
+  const fee = stakeReview.gasFee;
+  const localizeFee = (
+    value: typeof stakeReview.depositFee,
+    type: "deposit" | "management" | "performance"
+  ) =>
+    value
+      ? {
+          ...value,
+          explanation: t(`review.${type}_fee_explanation`),
+          label: t(`review.${type}_fee`),
+        }
+      : null;
+  const depositFee = localizeFee(stakeReview.depositFee, "deposit");
+  const managementFee = localizeFee(stakeReview.managementFee, "management");
+  const performanceFee = localizeFee(stakeReview.performanceFee, "performance");
 
   const metadata = {
     logoURI: selectedStake.metadata.logoURI,
@@ -125,8 +82,6 @@ export const useStakeReview = () => {
   const onClick = () => confirmFlow(undefined);
 
   const onClickRef = useSavedRef(onClick);
-
-  const { t } = useTranslation();
 
   const cta = useMemo<PageCta>(
     () => ({

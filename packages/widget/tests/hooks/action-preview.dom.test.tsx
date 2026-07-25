@@ -9,12 +9,12 @@ import {
   widgetConfigAtom,
 } from "../../src/app/config/settings";
 import { ActionCommand } from "../../src/domain/schema/action-models";
-import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { useStartClassicTransactionFlow } from "../../src/features/classic-transaction-flow/react/use-transaction-flow";
 import {
   type ClassicFlowSession,
   classicFlowSessionStore,
-} from "../../src/features/classic-transaction-flow/session";
+} from "../../src/features/classic-transaction-flow/facade";
+import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import { makeClassicTransactionFlowDestination } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
@@ -165,22 +165,27 @@ describe("action preview", () => {
 
     const { result } = await renderHook(
       () => {
-        const startFlow = useStartClassicTransactionFlow();
+        const startFlow = useAtomSet(classicFlowSessionStore.startAtom);
 
         useEffect(() => {
           startFlow({
-            _tag: "Enter",
-            gasFeeToken: stake.mechanics.gasFeeToken,
-            providersDetails: [],
-            request: command,
-            selectedStake: stake,
-            selectedToken: stake.token,
-            selectedValidators: new Map(),
-            walletScope: new WalletScopeKey({
-              address: command.address,
-              network: "ethereum",
+            destination: makeClassicTransactionFlowDestination({
+              routeBase: "",
             }),
-          } satisfies ClassicTransactionFlowIntake);
+            intake: {
+              _tag: "Enter",
+              gasFeeToken: stake.mechanics.gasFeeToken,
+              providersDetails: [],
+              request: command,
+              selectedStake: stake,
+              selectedToken: stake.token,
+              selectedValidators: new Map(),
+              walletScope: new WalletScopeKey({
+                address: command.address,
+                network: "ethereum",
+              }),
+            } satisfies ClassicTransactionFlowIntake,
+          });
         }, [startFlow]);
 
         return useAtomValue(sessionReviewViewAtom);
@@ -224,21 +229,26 @@ describe("action preview", () => {
 
     const { act, result } = await renderHook(
       () => {
-        const startFlow = useStartClassicTransactionFlow();
+        const startFlow = useAtomSet(classicFlowSessionStore.startAtom);
 
         useEffect(() => {
           startFlow({
-            _tag: "Enter",
-            gasFeeToken: kycRequiredStake.mechanics.gasFeeToken,
-            providersDetails: [],
-            request: command,
-            selectedStake: kycRequiredStake,
-            selectedToken: kycRequiredStake.token,
-            selectedValidators: new Map(),
-            walletScope: new WalletScopeKey({
-              address: command.address,
-              network: "ethereum",
+            destination: makeClassicTransactionFlowDestination({
+              routeBase: "",
             }),
+            intake: {
+              _tag: "Enter",
+              gasFeeToken: kycRequiredStake.mechanics.gasFeeToken,
+              providersDetails: [],
+              request: command,
+              selectedStake: kycRequiredStake,
+              selectedToken: kycRequiredStake.token,
+              selectedValidators: new Map(),
+              walletScope: new WalletScopeKey({
+                address: command.address,
+                network: "ethereum",
+              }),
+            },
           });
         }, [startFlow]);
 

@@ -14,7 +14,7 @@ import { decodeValidator } from "../utils/validators";
 import { TestWidgetConfigProvider } from "../utils/widget-config-provider";
 
 const hookState = vi.hoisted(() => ({
-  earnContext: {} as Record<string, unknown>,
+  entryView: {} as Record<string, unknown>,
   selectValidator: undefined as unknown as ReturnType<
     typeof useSelectValidator
   >,
@@ -28,13 +28,12 @@ vi.mock(
 );
 
 vi.mock(
-  "../../src/features/earn/ui/classic/earn-page/state/earn-page-model",
+  "../../src/features/earn/react/use-earn-facades",
   async (importOriginal) => {
     const actual = await importOriginal<object>();
-
     return {
       ...actual,
-      useEarnPageModel: () => hookState.earnContext,
+      useEarnEntry: () => ({ view: hookState.entryView }),
     };
   }
 );
@@ -131,14 +130,14 @@ describe("ProviderSelectionCard", () => {
     );
     const onRemoveValidator = vi.fn();
 
-    hookState.earnContext = {
-      providersDetails: [],
+    hookState.entryView = {
+      providers: [],
     };
     hookState.selectValidator = createHookValue({
       onRemoveValidator,
       selectedValidators: new Map([
-        [firstValidator.address, firstValidator],
-        [secondValidator.address, secondValidator],
+        [firstValidator.key, firstValidator],
+        [secondValidator.key, secondValidator],
       ]),
     });
 
@@ -165,11 +164,11 @@ describe("ProviderSelectionCard", () => {
       })
     );
 
-    hookState.earnContext = {
-      providersDetails: [],
+    hookState.entryView = {
+      providers: [],
     };
     hookState.selectValidator = createHookValue({
-      selectedValidators: new Map([[validator.address, validator]]),
+      selectedValidators: new Map([[validator.key, validator]]),
     });
 
     const app = await renderProviderSelectionCard();
@@ -191,13 +190,13 @@ describe("ProviderSelectionCard", () => {
       })
     );
 
-    hookState.earnContext = {
-      providersDetails: [],
+    hookState.entryView = {
+      providers: [],
     };
     hookState.selectValidator = createHookValue({
       selectedValidators: new Map([
-        [firstValidator.address, firstValidator],
-        [secondValidator.address, secondValidator],
+        [firstValidator.key, firstValidator],
+        [secondValidator.key, secondValidator],
       ]),
       validatorSearch: "missing validator",
     });
@@ -230,15 +229,15 @@ describe("SelectYieldRewardDetails", () => {
       })
     );
 
-    hookState.earnContext = {
+    hookState.entryView = {
       estimatedRewards: null,
-      providersDetails: [],
+      providers: [],
       rewardToken: null,
       rewardsTokenSymbol: "ETH",
       selectedStake: multiSelectStake,
       selectedValidators: new Map([
-        [firstValidator.address, firstValidator],
-        [secondValidator.address, secondValidator],
+        [firstValidator.key, firstValidator],
+        [secondValidator.key, secondValidator],
       ]),
       stakeAmount: new BigNumber(1),
     };
@@ -251,9 +250,9 @@ describe("SelectYieldRewardDetails", () => {
   });
 
   it("hides the yield strategy summary in the widget variant", async () => {
-    hookState.earnContext = {
+    hookState.entryView = {
       estimatedRewards: null,
-      providersDetails: [],
+      providers: [],
       rewardToken: null,
       rewardsTokenSymbol: "ETH",
       selectedStake: multiSelectStake,

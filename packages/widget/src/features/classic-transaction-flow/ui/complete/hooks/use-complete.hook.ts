@@ -1,6 +1,7 @@
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation } from "react-router";
 import type { TransactionType } from "../../../../../domain/types/action";
 import { isMobile } from "../../../../../shared/lib/general";
 import { useActivityPendingActionMatch } from "../../../../../shared/react/navigation/use-activity-pending-action-match";
@@ -12,11 +13,15 @@ import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import { useTrackEvent } from "../../../../tracking/react/use-track-event";
 import { useSKWallet } from "../../../../wallet/react/use-wallet";
 import type { PageCta } from "../../../../widget-shell/page-cta";
+import {
+  classicFlowSessionStore,
+  finishClassicTransactionFlowAtom,
+} from "../../../facade";
 
 export const useComplete = () => {
-  const navigate = useNavigate();
-
   const location = useLocation();
+  const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
+  const finish = useAtomSet(finishClassicTransactionFlowAtom);
 
   const { isLedgerLive } = useSKWallet();
 
@@ -33,7 +38,9 @@ export const useComplete = () => {
 
       return;
     }
-    navigate("/");
+    if (session) {
+      finish(session.epoch);
+    }
   };
 
   const onViewTransactionClick = (url: string) => {

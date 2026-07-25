@@ -88,7 +88,7 @@ export type EarnMachineForm = {
   tronResource: TronResource | null;
 };
 
-export type EarnMachineStatus =
+type EarnMachineStatus =
   | "resolving-wallet"
   | "loading-categories"
   | "no-categories"
@@ -136,8 +136,8 @@ export type EarnValidatorsResource = {
   readonly initialValidatorsResultAtom: Atom<
     AsyncResult<ReadonlyArray<EarnValidator>, EarnCatalogError>
   >;
-  readonly loadedValidatorsAtom: Writable<
-    Map<EarnValidatorKey, EarnValidator>,
+  readonly rememberValidatorsAtom: Writable<
+    ReadonlyMap<EarnValidatorKey, EarnValidator>,
     ReadonlyArray<EarnValidator>
   >;
   readonly validatorsPullAtom: (
@@ -145,10 +145,12 @@ export type EarnValidatorsResource = {
   ) => Writable<PullResult<PullPage<EarnValidator>, EarnCatalogError>, void>;
 };
 
-export type EarnValidatorsViewResource = Pick<
-  EarnValidatorsResource,
-  "enabled" | "loadedValidatorsAtom" | "validatorsPullAtom"
->;
+export type EarnValidatorsViewResource = {
+  readonly enabled: boolean;
+  readonly items: ReadonlyArray<EarnValidator>;
+  readonly rememberValidatorsAtom: EarnValidatorsResource["rememberValidatorsAtom"];
+  readonly validatorsPullAtom: EarnValidatorsResource["validatorsPullAtom"];
+};
 
 export type EarnMachineView = {
   status: EarnMachineStatus;

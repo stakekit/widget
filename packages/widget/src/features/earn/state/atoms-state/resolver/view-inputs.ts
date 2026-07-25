@@ -105,11 +105,11 @@ const getPreferredTokenNetwork = (
     : null;
 };
 
-const emptyValidatorsMapAtom = Atom.writable<
-  Map<EarnValidatorKey, EarnValidator>,
+const noopRememberValidatorsAtom = Atom.writable<
+  ReadonlyMap<EarnValidatorKey, EarnValidator>,
   ReadonlyArray<EarnValidator>
 >(
-  () => new Map<EarnValidatorKey, EarnValidator>(),
+  () => new Map(),
   () => {}
 );
 
@@ -123,20 +123,23 @@ const disabledValidatorsResource: EarnValidatorsResource = {
   initialValidatorsResultAtom: Atom.make(
     AsyncResult.success<ReadonlyArray<EarnValidator>, EarnCatalogError>([])
   ),
-  loadedValidatorsAtom: emptyValidatorsMapAtom,
+  rememberValidatorsAtom: noopRememberValidatorsAtom,
   validatorsPullAtom: () => emptyValidatorsPullAtom,
 };
 
 const toValidatorsViewResource = (
-  resource: EarnValidatorsResource
+  resource: EarnValidatorsResource,
+  items: ReadonlyArray<EarnValidator>
 ): EarnValidatorsViewResource => ({
   enabled: resource.enabled,
-  loadedValidatorsAtom: resource.loadedValidatorsAtom,
+  items,
+  rememberValidatorsAtom: resource.rememberValidatorsAtom,
   validatorsPullAtom: resource.validatorsPullAtom,
 });
 
 export const disabledValidatorsViewResource = toValidatorsViewResource(
-  disabledValidatorsResource
+  disabledValidatorsResource,
+  []
 );
 
 export const pendingTokenOptionsPullAtom = Atom.pull<
@@ -296,11 +299,20 @@ export const readValidatorInput = ({
     })
   );
   const initial = readAsyncAtom(context, resource.initialValidatorsResultAtom);
+  const known = new Map<EarnValidatorKey, EarnValidator>(
+    initial.observation._tag === "available"
+      ? initial.observation.value.map((validator) => [validator.key, validator])
+      : []
+  );
+  context
+    .get(resource.rememberValidatorsAtom)
+    .forEach((validator, key) => known.set(key, validator));
+  const options = [...known.values()];
 
   return {
     _tag: "enabled",
     initial,
-    options: [...context.get(resource.loadedValidatorsAtom).values()],
-    resource: toValidatorsViewResource(resource),
+    options,
+    resource: toValidatorsViewResource(resource, options),
   } as const;
 };

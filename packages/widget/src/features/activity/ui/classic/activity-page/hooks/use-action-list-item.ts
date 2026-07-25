@@ -14,7 +14,8 @@ import {
 } from "../../../../../../shared/lib/date";
 import { capitalizeFirstLetters } from "../../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../../shared/lib/number-format";
-import { useProvidersDetails } from "../../../../../earn/react/use-provider-details";
+import { YieldSummaryKey } from "../../../../../yield-summary";
+import { activityActionYieldSummaryAtom } from "../../../../state/action-yield-summary";
 import type { ActivityIconType } from "../components/activity-icon";
 import type { ActionYieldDto } from "../types";
 
@@ -95,11 +96,15 @@ export const useActionListItem = (action: ActionYieldDto) => {
 
   const integrationData = action.yieldData ?? null;
 
-  const providersDetails = useProvidersDetails({
-    integrationData,
-    validators: action.validatorsData,
-    selectedProviderYieldId: null,
-  });
+  const providersDetails = useAtomValue(
+    activityActionYieldSummaryAtom(
+      new YieldSummaryKey({
+        yield: integrationData,
+        validators: action.validatorsData,
+        selectedProviderYieldId: null,
+      })
+    )
+  ).providers;
 
   const direction = useMemo(
     () => getDirection(action.actionData.type),

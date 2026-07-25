@@ -14,25 +14,18 @@ import {
 import { CaretDownIcon } from "../../../../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
 import { useTrackEvent } from "../../../../../../tracking/react/use-track-event";
-import { useSKWallet } from "../../../../../../wallet/react/use-wallet";
 import { SelectModal } from "../../../../../../widget-shell/ui/select-modal";
 import { TokenIcon } from "../../../../../../widget-shell/ui/token-icon";
-import { useEarnPageModel } from "../../state/earn-page-model";
+import {
+  useEarnEntry,
+  useEarnTokenSelection,
+} from "../../../../../react/use-earn-facades";
 import { validatorVirtuosoContainer } from "../../styles.css";
 import { SelectTokenListItem } from "./select-token-list-item";
 
 export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
-  const {
-    onSelectTokenClose,
-    onTokenBalanceSelect,
-    tokenBalancesData,
-    selectedToken,
-    onTokenSearch,
-    tokenSearch,
-    hasMoreTokens,
-    isLoadingMoreTokens,
-    onLoadMoreTokens,
-  } = useEarnPageModel();
+  const { loadMore, select, setSearch, view } = useEarnTokenSelection();
+  const { view: entry } = useEarnEntry();
 
   const variant = useWidgetConfig("variant");
 
@@ -40,14 +33,12 @@ export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
 
   const { t } = useTranslation();
 
-  const { isConnected } = useSKWallet();
-
   const data = useMemo(
     () =>
-      selectedToken
-        ? { st: selectedToken, tokenBalances: tokenBalancesData.filtered }
+      entry.selectedToken
+        ? { st: entry.selectedToken, tokenBalances: view.filtered }
         : null,
-    [selectedToken, tokenBalancesData]
+    [entry.selectedToken, view.filtered]
   );
 
   if (!data) return null;
@@ -77,9 +68,9 @@ export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
   return (
     <SelectModal
       title={t("select_token.title")}
-      onSearch={onTokenSearch}
-      searchValue={tokenSearch}
-      onClose={onSelectTokenClose}
+      onSearch={setSearch}
+      searchValue={view.search}
+      onClose={() => setSearch("")}
       onOpen={() => trackEvent("selectTokenModalOpened")}
       trigger={
         <Trigger asChild>
@@ -118,16 +109,16 @@ export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
         className={validatorVirtuosoContainer}
         data={data.tokenBalances}
         estimateSize={() => 60}
-        hasNextPage={hasMoreTokens}
-        isFetchingNextPage={isLoadingMoreTokens}
-        fetchNextPage={onLoadMoreTokens}
+        hasNextPage={view.hasMore}
+        isFetchingNextPage={view.isLoadingMore}
+        fetchNextPage={() => loadMore(undefined)}
         itemContent={(_index, item) => {
           return (
             <SelectTokenListItem
               item={item}
               isSelected={equalTokens(item.token, data.st)}
-              onTokenBalanceSelect={onTokenBalanceSelect}
-              isConnected={isConnected}
+              onTokenBalanceSelect={select}
+              isConnected={entry.connected}
             />
           );
         }}

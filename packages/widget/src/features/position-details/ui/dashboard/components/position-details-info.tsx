@@ -3,15 +3,15 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import {
-  CurrentRewardsSummaryKey,
-  currentRewardsSummaryAtom,
-} from "../../../../earn/resources/yield-insights";
-import {
   AddressRow,
   DetailRow,
   DetailsSection,
 } from "../../../../earn/ui/dashboard/earn-details/components/details-section";
 import { EarnDetailsHeader } from "../../../../earn/ui/dashboard/earn-details/components/earn-details-header";
+import {
+  CurrentRewardsSummaryKey,
+  currentRewardsSummaryAtom,
+} from "../../../../yield-summary/yield-insights";
 import { usePositionDetails } from "../../classic/hooks/use-position-details";
 import {
   type DashboardPositionMetricCard,

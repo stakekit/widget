@@ -158,14 +158,3 @@ export const resolveWalletMachineView = ({
     },
   };
 };
-
-const noRetryAtom = Atom.make(undefined).pipe(
-  Atom.withLabel("earnNoRetryAtom")
-);
-
-export const earnMachineRetryTargetAtom = Atom.make<Atom.Atom<unknown>>(
-  (context) => {
-    const view = context.get(earnMachineViewAtom);
-    return view.retryTargetAtom ?? noRetryAtom;
-  }
-).pipe(Atom.withLabel("earnMachineRetryTargetAtom"));

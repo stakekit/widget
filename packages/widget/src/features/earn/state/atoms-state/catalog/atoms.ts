@@ -42,7 +42,7 @@ import {
 } from "../../../../../resources/yield-token-directory/yield-token-directory";
 import { mapAsyncResultError } from "../../../../../shared/effect/async-result";
 import type { PullPage } from "../../../../../shared/effect/pagination";
-import { validatorsConfigAtom } from "../../validators-config";
+import { validatorsConfigAtom } from "../../../../yield-entry/validators-config";
 import {
   EarnCatalogError,
   type EarnCatalogOperation,
@@ -668,6 +668,9 @@ const projectValidators = ({
 
 export const yieldValidatorsAtom = Atom.family(
   ({ network, selectedYieldId }: YieldValidatorsKey) => {
+    const rememberedValidatorsAtom = Atom.make<
+      ReadonlyMap<EarnValidatorKey, EarnValidator>
+    >(new Map());
     const preferredValidatorsSource =
       preferredValidatorsResourceAtom(selectedYieldId);
     const preferredValidatorsAtom = Atom.readable(
@@ -700,23 +703,21 @@ export const yieldValidatorsAtom = Atom.family(
           defaults: get(defaultValidatorsResultAtom),
           preferred: get(preferredValidatorsAtom),
         }).pipe(
-          AsyncResult.map(({ defaults, preferred }) => {
-            const validators = [
-              ...new Map(
-                [...preferred, ...defaults].map((validator) => [
-                  validator.key,
-                  validator,
-                ])
-              ).values(),
-            ];
-
-            return projectValidators({
+          AsyncResult.map(({ defaults, preferred }) =>
+            projectValidators({
               network,
               selectedYieldId,
-              validators,
+              validators: [
+                ...new Map(
+                  [...preferred, ...defaults].map((validator) => [
+                    validator.key,
+                    validator,
+                  ])
+                ).values(),
+              ],
               validatorsConfig,
-            });
-          })
+            })
+          )
         );
       },
       (refresh) => {
@@ -724,42 +725,27 @@ export const yieldValidatorsAtom = Atom.family(
         refresh(preferredValidatorsAtom);
       }
     );
-    const rememberedValidatorsAtom = Atom.make(
-      new Map<EarnValidatorKey, EarnValidator>()
-    );
-
-    const loadedValidatorsAtom = Atom.writable<
-      Map<EarnValidatorKey, EarnValidator>,
+    /**
+     * Validators discovered through a search are remembered when the user
+     * selects them, so a selection survives changing or clearing the search.
+     * The memory is only written from this command path; derived reads project
+     * it alongside the initial validator result.
+     */
+    const rememberValidatorsAtom = Atom.writable<
+      ReadonlyMap<EarnValidatorKey, EarnValidator>,
       ReadonlyArray<EarnValidator>
     >(
-      (context) => {
-        const initialValidators = context.get(initialValidatorsResultAtom).pipe(
-          AsyncResult.value,
-          Option.getOrElse(() => [])
+      (context) => context.get(rememberedValidatorsAtom),
+      (context, validators) => {
+        const current = context.get(rememberedValidatorsAtom);
+        const unknown = validators.filter(
+          (validator) => current.get(validator.key) !== validator
         );
-        const loadedValidators = new Map<EarnValidatorKey, EarnValidator>(
-          initialValidators.map((validator) => [validator.key, validator])
-        );
+        if (unknown.length === 0) return;
 
-        projectValidators({
-          network,
-          selectedYieldId,
-          validators: [...context.get(rememberedValidatorsAtom).values()],
-          validatorsConfig: context.get(validatorsConfigAtom),
-        }).forEach((validator) => {
-          loadedValidators.set(validator.key, validator);
-        });
-
-        return loadedValidators;
-      },
-      (context, value) => {
-        const newValue = new Map(context.get(rememberedValidatorsAtom));
-
-        value.forEach((validator) => {
-          newValue.set(validator.key, validator);
-        });
-
-        context.set(rememberedValidatorsAtom, newValue);
+        const next = new Map(current);
+        unknown.forEach((validator) => next.set(validator.key, validator));
+        context.set(rememberedValidatorsAtom, next);
       }
     );
 
@@ -801,7 +787,7 @@ export const yieldValidatorsAtom = Atom.family(
     return {
       enabled: true,
       initialValidatorsResultAtom,
-      loadedValidatorsAtom,
+      rememberValidatorsAtom,
       validatorsPullAtom,
     } satisfies EarnValidatorsResource;
   }

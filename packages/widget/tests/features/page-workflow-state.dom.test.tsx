@@ -5,11 +5,8 @@ import { act, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
+import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import {
-  earnPageSubmittedAtom,
-  getEarnPageValidation,
-} from "../../src/features/earn/state/page-workflow";
 import {
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
@@ -34,31 +31,6 @@ const positionWorkflowAtom = positionDetailsWorkflowAtom(
     }),
   })
 );
-
-const EarnValidationHarness = () => {
-  const [submitted, setSubmitted] = useAtom(earnPageSubmittedAtom);
-  const validation = getEarnPageValidation({
-    connected: true,
-    hasTronResource: true,
-    stakeAmountGreaterThanAvailableAmount: false,
-    stakeAmountGreaterThanMax: false,
-    stakeAmountIsZero: true,
-    stakeAmountLessThanMin: false,
-    submitted,
-    tronResourceRequired: false,
-  });
-
-  return (
-    <>
-      <button type="button" onClick={() => setSubmitted(true)}>
-        Submit
-      </button>
-      {validation.submitted && validation.hasErrors ? (
-        <p role="alert">Amount is required</p>
-      ) : null}
-    </>
-  );
-};
 
 const PositionAmountHarness = () => {
   const [workflow, setWorkflow] = useAtom(positionWorkflowAtom);
@@ -86,22 +58,12 @@ const PositionAmountHarness = () => {
 
 const renderWorkflow = (children: ReactNode) =>
   render(
-    <SKAtomRegistryProvider settings={settings}>
+    <SKAtomRegistryProvider routes={applicationRoutes} settings={settings}>
       {children}
     </SKAtomRegistryProvider>
   );
 
 describe("page workflow atom adapters", () => {
-  it("shows earn validation after submission", async () => {
-    const app = await renderWorkflow(<EarnValidationHarness />);
-
-    expect(app.container.querySelector('[role="alert"]')).toBeNull();
-    await act(async () => app.container.querySelector("button")?.click());
-    expect(app.container.querySelector('[role="alert"]')?.textContent).toBe(
-      "Amount is required"
-    );
-  });
-
   it("updates the visible position amount through the workflow atom", async () => {
     const app = await renderWorkflow(<PositionAmountHarness />);
 

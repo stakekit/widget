@@ -2,14 +2,14 @@ import { useAtomValue } from "@effect/atom-react";
 import type { YieldAction } from "../../../../../domain/schema/action-models";
 import { getActionInputToken } from "../../../../../domain/types/action";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import { useProvidersDetails } from "../../../../earn/react/use-provider-details";
-import { useYieldType } from "../../../../earn/react/use-yield-type";
 import { useTrackPage } from "../../../../tracking/react/use-track-page";
+import { YieldSummaryKey } from "../../../../yield-summary";
 import type { ClassicTransactionFlowIntake } from "../../../model/classic-transaction-flow";
 import {
   useClassicFlowExecution,
   useClassicFlowSession,
 } from "../../../react/classic-flow-route";
+import { classicFlowYieldSummaryAtom } from "../../../state/yield-summary";
 
 type ActivityIntake = Extract<
   ClassicTransactionFlowIntake,
@@ -34,11 +34,15 @@ const useActivityCompleteView = ({
     actionDto: selectedAction,
     yieldDto: selectedYield,
   });
-  const providerDetails = useProvidersDetails({
-    integrationData: selectedYield,
-    validators: selectedValidators,
-    selectedProviderYieldId: selectedAction.yieldId,
-  });
+  const yieldSummary = useAtomValue(
+    classicFlowYieldSummaryAtom(
+      new YieldSummaryKey({
+        yield: selectedYield,
+        validators: selectedValidators,
+        selectedProviderYieldId: selectedAction.yieldId,
+      })
+    )
+  );
 
   return {
     amount: defaultFormattedNumber(selectedAction.amount ?? 0),
@@ -51,9 +55,9 @@ const useActivityCompleteView = ({
         }
       : null,
     network: inputToken?.symbol ?? "",
-    providerDetails,
+    providerDetails: yieldSummary.providers,
     selectedAction,
-    yieldType: useYieldType(selectedYield)?.type ?? null,
+    yieldType: yieldSummary.yieldType,
   };
 };
 

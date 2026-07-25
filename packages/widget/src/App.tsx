@@ -1,18 +1,23 @@
 import "@stakekit/rainbowkit/styles.css";
 import "./translation";
 import "./shared/styles/theme/global.css";
+import { useAtomValue } from "@effect/atom-react";
 import type { ComponentProps } from "react";
 import { createRef, useImperativeHandle, useState } from "react";
 import ReactDOM from "react-dom/client";
-import { createMemoryRouter, RouterProvider } from "react-router";
+import { RouterProvider } from "react-router/dom";
+import { ApplicationRouteContentProvider } from "./app/composition/application-route-content";
 import { Providers } from "./app/composition/providers";
 import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";
 import { normalizeWidgetConfig } from "./app/config/settings";
 import { useWidgetConfig } from "./app/config/use-widget-config";
 import { acquireWidgetInstanceClaim } from "./app/embedding/widget-instance-claim";
 import { WidgetInstanceReactBoundary } from "./app/embedding/widget-instance-react-boundary";
+import { applicationRoutes } from "./app/routes/application-routes";
 import { ClassicRoutes } from "./app/routes/classic-routes";
 import { DashboardRoutes } from "./app/routes/dashboard-routes";
+import { useHandleDeepLinks } from "./app/routes/hooks/use-handle-deep-links";
+import { applicationRouterAtom } from "./app/runtime/application-router-runtime";
 import { useLoadErrorTranslations } from "./app/translation/use-load-error-translations";
 import { appContainer } from "./features/widget-shell/layout.css";
 import type {
@@ -28,6 +33,7 @@ preloadImages();
 
 const App = () => {
   useLoadErrorTranslations();
+  useHandleDeepLinks();
 
   const dashboardVariant = useWidgetConfig("dashboardVariant");
 
@@ -40,29 +46,40 @@ const Root = () => (
   </Providers>
 );
 
+const SKAppRouter = ({
+  dashboardVariant,
+}: {
+  readonly dashboardVariant: boolean;
+}) => {
+  const router = useAtomValue(applicationRouterAtom);
+
+  return (
+    <ApplicationRouteContentProvider value={<Root />}>
+      <Box
+        className={appContainer({
+          variant: dashboardVariant ? "dashboard" : "widget",
+        })}
+      >
+        <RouterProvider router={router} />
+      </Box>
+    </ApplicationRouteContentProvider>
+  );
+};
+
 const SKAppContent = (props: SKAppProps) => {
   const variantProps: VariantProps =
     props.variant === "zerion"
       ? { variant: props.variant, chainModal: props.chainModal }
       : { variant: props.variant ?? "default" };
 
-  const [router] = useState(() =>
-    createMemoryRouter([{ path: "*", Component: Root }])
-  );
   const settings = normalizeWidgetConfig(
     { ...props, ...variantProps },
     { isLedgerLive: isLedgerDappBrowserProvider() }
   );
 
   return (
-    <SKAtomRegistryProvider settings={settings}>
-      <Box
-        className={appContainer({
-          variant: settings.dashboardVariant ? "dashboard" : "widget",
-        })}
-      >
-        <RouterProvider router={router} />
-      </Box>
+    <SKAtomRegistryProvider routes={applicationRoutes} settings={settings}>
+      <SKAppRouter dashboardVariant={!!settings.dashboardVariant} />
     </SKAtomRegistryProvider>
   );
 };
