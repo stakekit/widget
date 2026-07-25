@@ -5,7 +5,7 @@ import { TokenBalancesResponse } from "../../src/domain/schema/financial-models"
 import {
   deriveBorrowMarketWalletBalances,
   deriveBorrowTokenWalletBalance,
-} from "../../src/features/borrow/balances";
+} from "../../src/features/borrow/state";
 
 const market = Schema.decodeUnknownSync(Market)({
   id: "aave-v3-ethereum-usdc",

@@ -10,11 +10,11 @@ import { Market } from "../../src/domain/borrow/market";
 import { BorrowAccountPosition } from "../../src/domain/borrow/position";
 import { deriveBorrowPositionItems } from "../../src/domain/borrow/position-items";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import { BorrowPositionActionPage } from "../../src/features/borrow/ui/position-details";
 import {
   type BorrowPositionAction,
   getBorrowPositionActions,
-} from "../../src/features/borrow/ui/position-details-model";
+} from "../../src/features/borrow/state";
+import { BorrowPositionActionPage } from "../../src/features/borrow/ui";
 import { RootElementProvider } from "../../src/shared/react/root-element";
 import { i18nInstance } from "../../src/translation";
 import { render } from "../utils/test-utils.dom";

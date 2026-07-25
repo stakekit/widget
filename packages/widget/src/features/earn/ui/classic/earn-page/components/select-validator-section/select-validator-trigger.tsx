@@ -6,6 +6,7 @@ import type {
 } from "../../../../../../../domain/schema/earn-models";
 import { formatCompactNumber } from "../../../../../../../shared/lib/formatters";
 import { APToPercentage } from "../../../../../../../shared/lib/general";
+import { Divider } from "../../../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { CaretDownIcon } from "../../../../../../../shared/ui/primitives/icons/caret-down";
 import { PlusIcon } from "../../../../../../../shared/ui/primitives/icons/plus";
@@ -13,7 +14,6 @@ import { PreferredIcon } from "../../../../../../../shared/ui/primitives/icons/p
 import { XIcon } from "../../../../../../../shared/ui/primitives/icons/x-icon";
 import { Image } from "../../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { Divider } from "../../../../../../widget-shell/divider";
 import {
   addValidatorContainer,
   overflowEllipsis,

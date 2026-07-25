@@ -2,10 +2,10 @@ import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
+import { Divider } from "../../../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { Divider } from "../../../../../../widget-shell/divider";
 import {
   useEarnEntry,
   useEarnYieldSelection,

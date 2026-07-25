@@ -10,7 +10,7 @@ import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-varia
 import { Box } from "../../../../shared/ui/primitives/box";
 import { CaretDownIcon } from "../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../tracking/react/use-track-event";
+import { useTrackEvent } from "../../../tracking/state";
 import { useSKWallet } from "../../react/use-wallet";
 import { avatarContainer, container, titleStyle } from "./styles.css";
 

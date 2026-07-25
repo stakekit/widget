@@ -8,18 +8,18 @@ import {
   getYieldTypeLabels,
 } from "../../../../../../../domain/types/yields";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
+import {
+  SelectModal,
+  SelectModalItemContainer,
+} from "../../../../../../../shared/ui/components/select-modal";
+import { selectModalGroupLabel } from "../../../../../../../shared/ui/components/select-modal/styles.css";
+import { ProviderIcon } from "../../../../../../../shared/ui/components/token-icon/provider-icon";
 import { GroupedVirtualList } from "../../../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { pressAnimation } from "../../../../../../../shared/ui/primitives/button/styles.css";
 import { CaretDownIcon } from "../../../../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../../../../tracking/react/use-track-event";
-import {
-  SelectModal,
-  SelectModalItemContainer,
-} from "../../../../../../widget-shell/ui/select-modal";
-import { selectModalGroupLabel } from "../../../../../../widget-shell/ui/select-modal/styles.css";
-import { ProviderIcon } from "../../../../../../widget-shell/ui/token-icon/provider-icon";
+import { useTrackEvent } from "../../../../../../tracking/state";
 import { useEarnYieldSelection } from "../../../../../react/use-earn-facades";
 import { SelectOpportunityListItem } from "../../../../components/select-opportunity-list-item";
 import { selectOpportunityButton } from "./styles.css";

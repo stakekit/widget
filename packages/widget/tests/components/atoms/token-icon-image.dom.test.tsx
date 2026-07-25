@@ -1,6 +1,6 @@
 import { act } from "react";
 import { describe, expect, it } from "vitest";
-import { TokenIconImage } from "../../../src/features/widget-shell/ui/token-icon/token-icon-image";
+import { TokenIconImage } from "../../../src/shared/ui/components/token-icon/token-icon-image";
 import { render } from "../../utils/test-utils.dom";
 
 const validSrc =

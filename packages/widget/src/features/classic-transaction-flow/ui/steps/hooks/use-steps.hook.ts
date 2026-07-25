@@ -4,8 +4,8 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
-import { useTrackEvent } from "../../../../tracking/react/use-track-event";
-import type { PageCta } from "../../../../widget-shell/page-cta";
+import { useTrackEvent } from "../../../../tracking/state";
+import type { PageCta } from "../../../../widget-shell/components";
 import { useClassicFlowExecution } from "../../../react/classic-flow-route";
 import { useTransactionWorkflow } from "./use-transaction-workflow.hook";
 

@@ -23,8 +23,8 @@ import {
   PositionBalancesKey,
   positionBalancesAtom,
   positionBalancesByTypeAtom,
-} from "../../portfolio/resources/positions";
-import { getYieldAmountConstraints } from "../../yield-entry";
+} from "../../portfolio/state";
+import { getYieldAmountConstraints } from "../../yield-entry/state";
 import {
   type PendingActionAmountChange,
   type PositionDetailsWorkflowAction,

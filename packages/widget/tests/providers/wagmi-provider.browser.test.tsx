@@ -35,11 +35,11 @@ import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { solana } from "../../src/domain/types/chains/misc";
 import { EvmNetworks } from "../../src/domain/types/chains/networks";
-import { WagmiConfigProvider } from "../../src/features/wallet/react/provider";
 import {
-  currentWalletStateResultAtom,
   useWalletConfig,
-} from "../../src/features/wallet/state/root-atom";
+  walletStateResultAtom,
+} from "../../src/features/wallet/state";
+import { WagmiConfigProvider } from "../../src/features/wallet/ui";
 import type { SolanaRuntime } from "../../src/services/wallet/platform/solana-platform";
 import { installSolanaConnectorMembership } from "../../src/services/wallet/solana-connector-membership";
 import type {
@@ -100,7 +100,7 @@ const useRainbowKitWagmiContract = () => ({
   walletConfig: useWalletConfig(),
   disconnect: useDisconnect(),
   switchChain: useSwitchChain(),
-  walletProjection: useAtomValue(currentWalletStateResultAtom),
+  walletProjection: useAtomValue(walletStateResultAtom),
 });
 
 const solanaAccount = "0x0000000000000000000000000000000000000501" as Address;

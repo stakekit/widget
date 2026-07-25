@@ -8,7 +8,7 @@ import { YieldId } from "../../src/domain/schema/identifiers";
 import {
   YieldValidatorsKey,
   yieldValidatorsPullAtom,
-} from "../../src/features/yield-entry/yield-validators";
+} from "../../src/features/yield-entry/state/yield-validators";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import { yieldApiValidatorFixture } from "../fixtures";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";

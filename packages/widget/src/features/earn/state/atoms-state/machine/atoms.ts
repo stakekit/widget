@@ -2,11 +2,11 @@ import { Option } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigAtom } from "../../../../../app/config/settings";
 import { walletScopeOwnerKey } from "../../../../../services/wallet/domain/scope";
-import { initParamsAtom } from "../../../../init-params/atoms";
+import { initParamsAtom } from "../../../../init-params/state";
 import {
-  currentWalletScopeAtom,
   selectCurrentWalletAtom,
-} from "../../../../wallet/state/selectors";
+  walletScopeAtom,
+} from "../../../../wallet/state";
 import { resolveEarnView } from "../resolver/view";
 import { makeResolvingWalletView } from "../resolver/view-model";
 import type { EarnEntry, EarnMachineIntent, EarnMachineView } from "../types";
@@ -24,7 +24,7 @@ const earnWalletStateAtom = selectCurrentWalletAtom((state) => state);
 export const earnMachineEntryAtom = Atom.make<EarnEntry>((context) => {
   const config = context.get(widgetConfigAtom);
   const wallet = context.get(earnWalletStateAtom);
-  const walletScope = context.get(currentWalletScopeAtom);
+  const walletScope = context.get(walletScopeAtom);
   const initParams = context.get(initParamsAtom);
 
   return {

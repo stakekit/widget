@@ -1,4 +1,3 @@
-// biome-ignore-all lint/performance/noBarrelFile: Intentional feature public interface.
 export {
   BorrowTransactionFlowCompletionGuard,
   BorrowTransactionFlowExecutionScope,

@@ -81,28 +81,3 @@ export const tabPageContainer = recipe({
     justifyContent: "center",
   },
 });
-
-export const tabPageDivider = recipe({
-  base: {
-    alignSelf: "stretch",
-    width: "1px",
-    marginTop: "-18px",
-  },
-  variants: {
-    variant: {
-      default: [
-        atoms({
-          background: "tabBorder",
-        }),
-      ],
-      utila: [
-        atoms({
-          background: "tabBorder",
-        }),
-      ],
-    },
-  },
-  defaultVariants: {
-    variant: "default",
-  },
-});

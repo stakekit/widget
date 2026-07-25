@@ -1,11 +1,10 @@
 import { motion } from "motion/react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useWidgetConfig } from "../../../../app/config/use-widget-config";
-import { useSKLocation } from "../../../../shared/react/location-history";
+import { Divider } from "../../../../shared/ui/components/divider";
 import { Box } from "../../../../shared/ui/primitives/box";
-import { useMountAnimation } from "../../../mount-animation/react/use-mount-animation";
-import { useTrackEvent } from "../../../tracking/react/use-track-event";
-import { Divider } from "../../divider";
+import { useMountAnimation } from "../../../mount-animation/state";
+import { useTrackEvent } from "../../../tracking/state";
 import { divider } from "../styles.css";
 import { Tab } from "./tab";
 
@@ -25,10 +24,10 @@ const Tabs = ({ pendingActionsCount }: TabsProps) => {
   const trackEvent = useTrackEvent();
   const navigate = useNavigate();
 
-  const { current } = useSKLocation();
+  const location = useLocation();
   const getSelectedTab = (): TabsList => {
-    if (current.pathname.startsWith("/positions")) return "positions";
-    if (current.pathname.startsWith("/activity")) return "activity";
+    if (location.pathname.startsWith("/positions")) return "positions";
+    if (location.pathname.startsWith("/activity")) return "activity";
     return "earn";
   };
   const selectedTab = getSelectedTab();

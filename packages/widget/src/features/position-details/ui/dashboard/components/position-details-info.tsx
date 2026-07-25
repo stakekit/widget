@@ -6,12 +6,12 @@ import {
   AddressRow,
   DetailRow,
   DetailsSection,
-} from "../../../../earn/ui/dashboard/earn-details/components/details-section";
-import { EarnDetailsHeader } from "../../../../earn/ui/dashboard/earn-details/components/earn-details-header";
+  EarnDetailsHeader,
+} from "../../../../earn/components";
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
-} from "../../../../yield-summary/yield-insights";
+} from "../../../../yield-summary/state";
 import { usePositionDetails } from "../../classic/hooks/use-position-details";
 import {
   type DashboardPositionMetricCard,

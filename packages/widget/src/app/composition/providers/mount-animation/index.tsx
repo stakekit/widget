@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
-import { useMountAnimation } from "../../../../features/mount-animation/react/use-mount-animation";
+import { useLocation } from "react-router";
+import { useMountAnimation } from "../../../../features/mount-animation/state";
 import { delayAPIRequests } from "../../../../services/api/delay-api-requests";
-import { useSKLocation } from "../../../../shared/react/location-history";
 import { useWidgetConfig } from "../../../config/use-widget-config";
 
 const removeDelay = delayAPIRequests();
@@ -10,7 +10,7 @@ export const MountAnimationEffects = () => {
   const onMountAnimationComplete = useWidgetConfig("onMountAnimationComplete");
   const callbackRef = useRef(onMountAnimationComplete);
   callbackRef.current = onMountAnimationComplete;
-  const { current } = useSKLocation();
+  const location = useLocation();
   const { dispatch, state } = useMountAnimation();
 
   useEffect(() => {
@@ -21,10 +21,10 @@ export const MountAnimationEffects = () => {
   }, [state.earnPage, state.layout]);
 
   useEffect(() => {
-    if (current.pathname !== "/") {
+    if (location.pathname !== "/") {
       dispatch({ type: "all" });
     }
-  }, [current.pathname, dispatch]);
+  }, [location.pathname, dispatch]);
 
   return null;
 };

@@ -6,7 +6,7 @@ import {
   metaMaskWallet,
   walletConnectWallet,
 } from "@stakekit/rainbowkit/wallets";
-import { Effect } from "effect";
+import { Effect, Record } from "effect";
 import type { Network } from "../../../../domain/schema/network-model";
 import { evmChainGroup } from "../../../../domain/types/chains";
 import {
@@ -15,10 +15,6 @@ import {
 } from "../../../../domain/types/chains/evm";
 import type { VariantProps } from "../../../../public-api/types";
 import portoIcon from "../../../../shared/assets/images/porto.svg";
-import {
-  typeSafeObjectEntries,
-  typeSafeObjectFromEntries,
-} from "../../../../shared/lib/object";
 import { WalletIntegrationError } from "../../domain/errors";
 import { createFineryWallets } from "./finery-wallet-list";
 import { passCorrectChainsToWallet } from "./utils";
@@ -39,10 +35,9 @@ const queryFn = async ({
   connector: WalletList[number] | null;
   institutionalWallets: ReturnType<typeof createFineryWallets> | null;
 }> => {
-  const filteredEvmChainsMap: Partial<EvmChainsMap> = typeSafeObjectFromEntries(
-    typeSafeObjectEntries<EvmChainsMap>(evmChainsMap).filter(([_, v]) =>
-      enabledNetworks.has(v.skChainName)
-    )
+  const filteredEvmChainsMap: Partial<EvmChainsMap> = Record.filter(
+    evmChainsMap,
+    (v) => enabledNetworks.has(v.skChainName)
   );
 
   const evmChains = Object.values(filteredEvmChainsMap).map(

@@ -2,19 +2,19 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
+import * as AmountToggle from "../../../../../../../shared/ui/components/amount-toggle";
+import { MaxButton } from "../../../../../../../shared/ui/components/max-button";
+import { NumberInput } from "../../../../../../../shared/ui/components/number-input";
 import {
   Box,
   type BoxProps,
 } from "../../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { MaxButton } from "../../../../../../widget-shell/ui/max-button";
-import { NumberInput } from "../../../../../../widget-shell/ui/number-input";
 import {
   useEarnEntry,
   useEarnTokenSelection,
 } from "../../../../../react/use-earn-facades";
-import * as AmountToggle from "../../../../components/amount-toggle";
 import { SelectToken } from "./select-token";
 import {
   minMaxContainer,

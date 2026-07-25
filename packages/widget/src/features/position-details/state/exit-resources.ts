@@ -12,12 +12,12 @@ import { getPullResultItems } from "../../../shared/effect/pagination";
 import {
   YieldValidatorsKey,
   yieldValidatorsPullAtom,
-} from "../../yield-entry/yield-validators";
+} from "../../yield-entry/state";
 import {
   CurrentYieldKycGateKey,
   currentYieldKycGateAtom,
   refreshCurrentYieldKycAtom,
-} from "../../yield-summary/yield-insights";
+} from "../../yield-summary/state";
 
 export class PositionDetailsExitResourcesKey extends Data.Class<{
   readonly yieldId: YieldId | null;

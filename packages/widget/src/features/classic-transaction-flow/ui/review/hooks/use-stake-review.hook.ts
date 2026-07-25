@@ -6,7 +6,7 @@ import { getKycProviderName } from "../../../../../domain/types/kyc";
 import { getYieldTypeLabels } from "../../../../../domain/types/yields";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
-import type { PageCta } from "../../../../widget-shell/page-cta";
+import type { PageCta } from "../../../../widget-shell/components";
 import {
   useClassicFlowIntake,
   useClassicFlowReview,

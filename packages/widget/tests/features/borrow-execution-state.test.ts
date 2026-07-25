@@ -2,15 +2,17 @@ import { Schema } from "effect";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import { borrowActionFormAtom } from "../../src/features/borrow/atoms/action-form";
-import { borrowTransactionFlowOutcomeBindingAtom } from "../../src/features/borrow/atoms/transaction-flow-outcomes";
+import {
+  borrowActionFormAtom,
+  borrowTransactionFlowOutcomeBindingAtom,
+} from "../../src/features/borrow/state";
 import type {
   BorrowTransactionFlowIntake,
   BorrowTransactionFlowReview,
 } from "../../src/features/borrow-transaction-flow/state";
 import { makeBorrowFlowSessionStore } from "../../src/features/borrow-transaction-flow/state/borrow-flow-session-store";
 import { publishBorrowTransactionFlowOutcomeAtom } from "../../src/features/borrow-transaction-flow/state/outcomes";
-import { currentWalletScopeAtom } from "../../src/features/wallet/state/selectors";
+import { walletScopeAtom } from "../../src/features/wallet/state";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 
 describe("borrow flow session state", () => {
@@ -20,7 +22,7 @@ describe("borrow flow session state", () => {
     );
     const walletScope = new WalletScopeKey({ address, network: "base" });
     const registry = AtomRegistry.make({
-      initialValues: [[currentWalletScopeAtom, walletScope]],
+      initialValues: [[walletScopeAtom, walletScope]],
     });
     const store = makeBorrowFlowSessionStore();
     const summary = {

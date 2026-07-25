@@ -14,9 +14,9 @@ import { presentationClockAtom } from "../../../../../shared/effect/presentation
 import { getDisplayDurationUntil } from "../../../../../shared/lib/date";
 import { formatUsd } from "../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
+import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { TokenIcon } from "../../../../widget-shell/ui/token-icon";
 
 export const PositionBalances = ({
   yieldBalance,

@@ -1,14 +1,14 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import type { PositionDetailsLabelType } from "../../../../../../domain/types/positions";
+import { TokenIcon } from "../../../../../../shared/ui/components/token-icon";
+import { ToolTip } from "../../../../../../shared/ui/components/tooltip";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/content-loader";
 import { SKLink } from "../../../../../../shared/ui/primitives/link";
 import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
 import { Spinner } from "../../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import { TokenIcon } from "../../../../../widget-shell/ui/token-icon";
-import { ToolTip } from "../../../../../widget-shell/ui/tooltip";
 import type { PositionItem } from "../../../../resources/positions";
 import { usePositionListItem } from "../hooks/use-position-list-item";
 import { listItemContainer, viaText } from "../style.css";

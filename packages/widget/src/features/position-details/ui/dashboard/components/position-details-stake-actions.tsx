@@ -6,27 +6,30 @@ import {
   getYieldActionArg,
   getYieldTypeLabels,
 } from "../../../../../domain/types/yields";
-import { useUnstakeOrPendingActionParams } from "../../../../../shared/react/navigation/use-unstake-or-pending-action-params";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
+import * as AmountToggle from "../../../../../shared/ui/components/amount-toggle";
+import { Dropdown } from "../../../../../shared/ui/components/dropdown";
+import { MaxButton } from "../../../../../shared/ui/components/max-button";
+import { NumberInput } from "../../../../../shared/ui/components/number-input";
+import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { selectTokenButton } from "../../../../../shared/ui/primitives/button/styles.css";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Spinner } from "../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import {
+  KycGateCard,
+  MetaInfo,
   minMaxContainer,
   priceTxt,
   selectTokenBalance,
   selectTokenSection,
-} from "../../../../earn/ui/classic/earn-page/components/select-token-section/styles.css";
-import * as AmountToggle from "../../../../earn/ui/components/amount-toggle";
-import { KycGateCard } from "../../../../earn/ui/components/kyc-gate-card";
-import { MetaInfo } from "../../../../earn/ui/components/meta-info";
-import { type PageCta, PageCtaButton } from "../../../../widget-shell/page-cta";
-import { Dropdown } from "../../../../widget-shell/ui/dropdown";
-import { MaxButton } from "../../../../widget-shell/ui/max-button";
-import { NumberInput } from "../../../../widget-shell/ui/number-input";
-import { TokenIcon } from "../../../../widget-shell/ui/token-icon";
+} from "../../../../earn/components";
+import {
+  type PageCta,
+  PageCtaButton,
+} from "../../../../widget-shell/components";
+import { useUnstakeOrPendingActionParams } from "../../../react/use-unstake-or-pending-action-params";
 import { usePositionDetailsStake } from "../hooks/use-position-details-stake";
 import { PositionDetailsActionTabs } from "./position-details-action-tabs";
 import {

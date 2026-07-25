@@ -1,6 +1,5 @@
 import BigNumber from "bignumber.js";
 import { Result } from "effect";
-import type { Override } from "../shared/types/utils";
 import type { ActionTransaction, YieldAction } from "./schema/action-models";
 import type { EarnYieldWithProvider } from "./schema/earn-models";
 import type { AppToken } from "./schema/legacy-models";
@@ -12,6 +11,7 @@ import {
 } from "./types/pending-action";
 
 import { equalTokens } from "./types/tokens";
+import type { Override } from "./types/utils";
 
 export const stakeTokenSameAsGasToken = ({
   stakeToken,

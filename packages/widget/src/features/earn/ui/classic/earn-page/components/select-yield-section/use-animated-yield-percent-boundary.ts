@@ -2,7 +2,7 @@ import { animate, useMotionValue, useTransform } from "motion/react";
 import { useEffect } from "react";
 import { config } from "../../../../../../../shared/config/widget-defaults";
 import { APToPercentage } from "../../../../../../../shared/lib/general";
-import type { getYieldEntryEstimatedRewards } from "../../../../../../yield-entry";
+import type { getYieldEntryEstimatedRewards } from "../../../../../../yield-entry/state";
 
 type EstimatedRewards = ReturnType<typeof getYieldEntryEstimatedRewards>;
 

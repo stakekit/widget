@@ -1,4 +1,3 @@
-import { useAtomValue } from "@effect/atom-react";
 import { Effect, Option, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
@@ -26,13 +25,13 @@ export const currentWalletConfigResultAtom = walletRuntime
   .atom(WalletService.use((wallet) => Effect.succeed(wallet.wagmiConfig)))
   .pipe(Atom.setIdleTTL(0), Atom.withLabel("currentWalletConfigResultAtom"));
 
-type WalletConfigResource = {
+export type WalletConfigResource = {
   readonly data: Config | undefined;
   readonly error: unknown;
   readonly isLoading: boolean;
 };
 
-const walletConfigAtom = Atom.make((get) => {
+export const walletConfigAtom = Atom.make((get) => {
   const result = get(currentWalletConfigResultAtom);
 
   return {
@@ -41,6 +40,3 @@ const walletConfigAtom = Atom.make((get) => {
     isLoading: AsyncResult.isInitial(result) || result.waiting,
   } satisfies WalletConfigResource;
 }).pipe(Atom.withLabel("walletConfigAtom"));
-
-export const useWalletConfig = (): WalletConfigResource =>
-  useAtomValue(walletConfigAtom);

@@ -14,7 +14,7 @@ import {
 } from "../../../../../../shared/lib/date";
 import { capitalizeFirstLetters } from "../../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../../shared/lib/number-format";
-import { YieldSummaryKey } from "../../../../../yield-summary";
+import { YieldSummaryKey } from "../../../../../yield-summary/state";
 import { activityActionYieldSummaryAtom } from "../../../../state/action-yield-summary";
 import type { ActivityIconType } from "../components/activity-icon";
 import type { ActionYieldDto } from "../types";

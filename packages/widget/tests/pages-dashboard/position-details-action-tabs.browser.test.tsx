@@ -9,7 +9,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import { shouldRegisterDashboardEarnFooterButton } from "../../src/app/routes/dashboard-routes";
-import { PositionDetailsActionTabs } from "../../src/features/position-details/ui/dashboard/components/position-details-action-tabs";
+import { PositionDetailsActionTabs } from "../../src/features/position-details/ui";
 import { i18nInstance } from "../../src/translation";
 import { render } from "../utils/test-utils";
 

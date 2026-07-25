@@ -9,6 +9,16 @@ import {
 } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import {
+  earnMachineIntentAtom,
+  earnMachineViewAtom,
+} from "../../src/features/earn/state/atoms-state/machine/atoms";
+import { makeEarnView } from "../../src/features/earn/state/atoms-state/resolver/view-model";
+import {
+  type EarnTokenOption,
+  type EarnValidatorsViewResource,
+  makeDefaultEarnIntent,
+} from "../../src/features/earn/state/atoms-state/types";
+import {
   earnTokenSelectionViewAtom,
   earnValidatorModalEventAtom,
   earnValidatorSelectionViewAtom,
@@ -21,17 +31,7 @@ import {
   setEarnTokenSearchAtom,
   setEarnValidatorSearchAtom,
   setEarnYieldSearchAtom,
-} from "../../src/features/earn/facade";
-import {
-  earnMachineIntentAtom,
-  earnMachineViewAtom,
-} from "../../src/features/earn/state/atoms-state/machine/atoms";
-import { makeEarnView } from "../../src/features/earn/state/atoms-state/resolver/view-model";
-import {
-  type EarnTokenOption,
-  type EarnValidatorsViewResource,
-  makeDefaultEarnIntent,
-} from "../../src/features/earn/state/atoms-state/types";
+} from "../../src/features/earn/state/earn-facade";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import type { PullPage } from "../../src/shared/effect/pagination";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";

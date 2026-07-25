@@ -14,8 +14,8 @@ import {
   isUnstakeYieldType,
 } from "../../../../../domain/types/yields";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import { useTrackPage } from "../../../../tracking/react/use-track-page";
-import type { PageCta } from "../../../../widget-shell/page-cta";
+import { useTrackPage } from "../../../../tracking/state";
+import type { PageCta } from "../../../../widget-shell/components";
 import { useClassicFlowReview } from "../../../react/classic-flow-route";
 import type { LabelKey } from "../types";
 

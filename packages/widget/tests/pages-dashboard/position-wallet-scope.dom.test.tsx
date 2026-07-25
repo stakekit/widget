@@ -16,7 +16,7 @@ import {
   PositionBalancesKey,
   positionBalancesAtom,
   positionBalancesByTypeAtom,
-} from "../../src/features/portfolio/resources/positions";
+} from "../../src/features/portfolio/state";
 import {
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,

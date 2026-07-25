@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
 import { getYieldActionArg } from "../../../../../../../domain/types/yields";
+import { Divider } from "../../../../../../../shared/ui/components/divider";
+import { Dropdown } from "../../../../../../../shared/ui/components/dropdown";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
 import { useEarnEntry } from "../../../../../../earn/react/use-earn-facades";
-import { Divider } from "../../../../../../widget-shell/divider";
-import { Dropdown } from "../../../../../../widget-shell/ui/dropdown";
 
 export const ExtraArgsSelection = () => {
   const { selectTronResource, view } = useEarnEntry();

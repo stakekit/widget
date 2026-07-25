@@ -11,12 +11,12 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { ManageActionCommand } from "../../src/domain/schema/action-models";
 import { EarnBalance } from "../../src/domain/schema/earn-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
-import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/facade";
+import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state";
 import {
   PendingActionDeepLinkIntentId,
   pendingActionDeepLinkViewAtom,
-} from "../../src/features/earn/pending-action-deep-link";
-import { mountAnimationStateAtom } from "../../src/features/mount-animation/public-state";
+} from "../../src/features/earn/state/pending-action-deep-link";
+import { mountAnimationStateAtom } from "../../src/features/mount-animation/state";
 import {
   WidgetNavigation,
   type WidgetPath,

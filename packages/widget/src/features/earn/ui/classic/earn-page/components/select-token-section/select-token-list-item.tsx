@@ -1,13 +1,13 @@
 import BigNumber from "bignumber.js";
 import type { ComponentProps } from "react";
 import { memo } from "react";
-import { Box } from "../../../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
 import {
   SelectModalItem,
   SelectModalItemContainer,
-} from "../../../../../../widget-shell/ui/select-modal";
-import { TokenIcon } from "../../../../../../widget-shell/ui/token-icon";
+} from "../../../../../../../shared/ui/components/select-modal";
+import { TokenIcon } from "../../../../../../../shared/ui/components/token-icon";
+import { Box } from "../../../../../../../shared/ui/primitives/box";
+import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
 import type { EarnTokenOption } from "../../../../../state/atoms-state/types";
 import { selectItemText } from "../../styles.css";
 

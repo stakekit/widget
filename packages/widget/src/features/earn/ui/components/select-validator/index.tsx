@@ -6,11 +6,10 @@ import type {
   EarnYieldWithProvider,
 } from "../../../../../domain/schema/earn-models";
 import type { ValidatorKey } from "../../../../../domain/types/validators";
-
+import type { SelectModalProps } from "../../../../../shared/ui/components/select-modal";
+import { SelectModal } from "../../../../../shared/ui/components/select-modal";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import type { SelectModalProps } from "../../../../widget-shell/ui/select-modal";
-import { SelectModal } from "../../../../widget-shell/ui/select-modal";
 import type { GroupedItem } from "./select-validator-list";
 import { SelectValidatorList } from "./select-validator-list";
 import { emptyState } from "./styles.css";

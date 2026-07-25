@@ -1,8 +1,8 @@
 import { useAtomMount } from "@effect/atom-react";
 import type { ReactNode } from "react";
 import { Navigate, Outlet } from "react-router";
-import { borrowTransactionFlowOutcomeBindingAtom } from "../atoms/transaction-flow-outcomes";
-import { useBorrowWalletBridge } from "./wallet-bridge";
+import { useBorrowWalletBridge } from "../react/use-borrow-wallet-bridge";
+import { borrowTransactionFlowOutcomeBindingAtom } from "../state/transaction-flow-outcomes";
 
 export const BorrowConnectedWalletRoute = (): ReactNode => {
   useAtomMount(borrowTransactionFlowOutcomeBindingAtom);

@@ -7,7 +7,7 @@ import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import type { ActivityFilterOption } from "../../src/features/activity/model/filters";
 import { useActivityFilter } from "../../src/features/activity/react/use-activity-filter";
-import { CompletePageComponent } from "../../src/features/classic-transaction-flow/ui/complete/pages/common.page";
+import { CompletePageComponent } from "../../src/features/classic-transaction-flow/ui";
 import { i18nInstance } from "../../src/translation";
 import { render } from "../utils/test-utils.dom";
 

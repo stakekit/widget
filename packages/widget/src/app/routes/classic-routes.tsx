@@ -1,47 +1,58 @@
 import { useAtomValue } from "@effect/atom-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { useEffect } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router";
-import { AnimatedActivityPage } from "../../features/activity/ui/classic/activity-page/activity.page";
-import { classicFlowSessionStore } from "../../features/classic-transaction-flow/facade";
 import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router";
+import { AnimatedActivityPage } from "../../features/activity/ui";
+import { classicFlowSessionStore } from "../../features/classic-transaction-flow/state";
+import {
+  ActionReviewPage,
+  ActivityCompletePage,
   ActivityResumeClassicFlowRoute,
+  ActivityStepsPage,
   ClassicFlowExecutionScope,
   ClassicFlowReviewScope,
   EnterClassicFlowRoute,
   ExitClassicFlowRoute,
   ManageClassicFlowRoute,
-} from "../../features/classic-transaction-flow/react/classic-flow-route";
-import { ActivityCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/activity-complete.page";
-import { PendingCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/pending-complete.page";
-import { StakeCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/stake-complete.page";
-import { UnstakeCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/unstake-complete.page";
-import { ActionReviewPage } from "../../features/classic-transaction-flow/ui/review/pages/action-review.page";
-import { PendingReviewPage } from "../../features/classic-transaction-flow/ui/review/pages/pending-review.page";
-import { StakeReviewPage } from "../../features/classic-transaction-flow/ui/review/pages/stake-review.page";
-import { UnstakeReviewPage } from "../../features/classic-transaction-flow/ui/review/pages/unstake-review.page";
-import { ActivityStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/activity-steps.page";
-import { PendingStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/pending-steps.page";
-import { StakeStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/stake-steps.page";
-import { UnstakeStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/unstake-steps.page";
-import { AnimatedEarnPage } from "../../features/earn/ui/classic/earn-page/earn.page";
-import { initParamsAtom } from "../../features/init-params/atoms";
-import { AnimatedPositionsPage } from "../../features/portfolio/ui/classic/positions-page/positions.page";
-import { PositionDetailsPage as ClassicPositionDetailsPage } from "../../features/position-details/ui/classic/position-details.page";
-import { useSKWallet } from "../../features/wallet/react/use-wallet";
-import { WalletScopeRouteGuard } from "../../features/wallet/react/wallet-scope-route";
-import { AnimationLayout } from "../../features/widget-shell/animation-layout";
-import { ClassicLayout } from "../../features/widget-shell/classic-layout";
-import { headerContainer } from "../../features/widget-shell/classic-layout/styles.css";
-import { Details } from "../../features/widget-shell/details/details.page";
-import { Header } from "../../features/widget-shell/header";
-import { container } from "../../features/widget-shell/layout.css";
-import { PoweredBy } from "../../features/widget-shell/powered-by";
-import { useUnderMaintenance } from "../../features/widget-shell/react-use-under-maintenance";
-import { GlobalModals } from "../../features/widget-shell/ui/global-modals";
-import { default as UnderMaintenance } from "../../features/widget-shell/ui/under-maintenance";
-import { useSKLocation } from "../../shared/react/location-history";
-import { useDetailsMatch } from "../../shared/react/navigation/use-details-match";
+  PendingCompletePage,
+  PendingReviewPage,
+  PendingStepsPage,
+  StakeCompletePage,
+  StakeReviewPage,
+  StakeStepsPage,
+  UnstakeCompletePage,
+  UnstakeReviewPage,
+  UnstakeStepsPage,
+} from "../../features/classic-transaction-flow/ui";
+import { AnimatedEarnPage } from "../../features/earn/ui";
+import { initParamsAtom } from "../../features/init-params/state";
+import { AnimatedPositionsPage } from "../../features/portfolio/ui";
+import { ClassicPositionDetailsPage } from "../../features/position-details/ui";
+import { useSKWallet } from "../../features/wallet/state";
+import { WalletScopeRouteGuard } from "../../features/wallet/ui";
+import {
+  container,
+  headerContainer,
+  UnderMaintenance,
+} from "../../features/widget-shell/components";
+import {
+  useDetailsMatch,
+  useUnderMaintenance,
+} from "../../features/widget-shell/state";
+import {
+  AnimationLayout,
+  ClassicLayout,
+  Details,
+  GlobalModals,
+  Header,
+  PoweredBy,
+} from "../../features/widget-shell/ui";
 import { usePrevious } from "../../shared/react/use-previous";
 import { useSavedRef } from "../../shared/react/use-saved-ref";
 import { isClassicFlowSessionPath } from "./classic-flow-session-path";
@@ -54,10 +65,10 @@ export const ClassicRoutes = () => {
   const prevChain = usePrevious(chain);
   const prevAddress = usePrevious(address);
 
-  const { current } = useSKLocation();
+  const location = useLocation();
   const flowSession = useAtomValue(classicFlowSessionStore.currentSessionAtom);
 
-  const pathnameRef = useSavedRef(current.pathname);
+  const pathnameRef = useSavedRef(location.pathname);
   const navigateRef = useSavedRef(useNavigate());
 
   /**
@@ -100,12 +111,12 @@ export const ClassicRoutes = () => {
   const resolveRouteKey = () => {
     if (
       flowSession &&
-      isClassicFlowSessionPath(current.pathname, flowSession.intake._tag)
+      isClassicFlowSessionPath(location.pathname, flowSession.intake._tag)
     ) {
       return "classic-flow-session";
     }
     if (detailsMatch) return "/";
-    return current.key;
+    return location.key;
   };
   const key = resolveRouteKey();
 
@@ -121,9 +132,11 @@ export const ClassicRoutes = () => {
 
           <motion.div layout="position" className={container}>
             <AnimatePresence>
-              <Routes location={current} key={key}>
+              <Routes location={location} key={key}>
                 <Route
-                  element={<ClassicLayout currentPathname={current.pathname} />}
+                  element={
+                    <ClassicLayout currentPathname={location.pathname} />
+                  }
                 >
                   {/* Home + Tabs */}
                   <Route element={<Details />}>

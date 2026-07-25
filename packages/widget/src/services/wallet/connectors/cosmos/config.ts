@@ -1,14 +1,10 @@
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
-import { Effect } from "effect";
+import { Effect, Record } from "effect";
 import type { WalletAddress } from "../../../../domain/schema/identifiers";
 import type { Network } from "../../../../domain/schema/network-model";
 import type { CosmosChainsMap } from "../../../../domain/types/chains/cosmos";
 import { supportedCosmosChains } from "../../../../domain/types/chains/cosmos";
 
-import {
-  typeSafeObjectEntries,
-  typeSafeObjectFromEntries,
-} from "../../../../shared/lib/object";
 import { WalletIntegrationError } from "../../domain/errors";
 import { getWagmiChain } from "./chains";
 
@@ -53,28 +49,27 @@ const queryFn = ({
     });
     const chainsToUseSet = new Set(chainsToUse);
 
-    const cosmosChainsMap: Partial<CosmosChainsMap> = typeSafeObjectFromEntries(
-      typeSafeObjectEntries<CosmosChainsMap>(
-        registry.cosmosRegistryChains.reduce((acc, next) => {
-          const skChainName =
-            registry.registryIdsToSKCosmosNetworks[next.chain_id];
+    const cosmosChainsMap: Partial<CosmosChainsMap> = Record.filter(
+      registry.cosmosRegistryChains.reduce((acc, next) => {
+        const skChainName =
+          registry.registryIdsToSKCosmosNetworks[next.chain_id];
 
-          if (!skChainName || !chainsToUseSet.has(skChainName)) {
-            return acc;
-          }
+        if (!skChainName || !chainsToUseSet.has(skChainName)) {
+          return acc;
+        }
 
-          return {
-            // biome-ignore lint: false
-            ...acc,
-            [skChainName]: {
-              type: "cosmos",
-              skChainName,
-              chain: next,
-              wagmiChain: getWagmiChain(next),
-            },
-          };
-        }, {} as CosmosChainsMap)
-      ).filter(([_, v]) => networks.has(v.skChainName))
+        return {
+          // biome-ignore lint: false
+          ...acc,
+          [skChainName]: {
+            type: "cosmos",
+            skChainName,
+            chain: next,
+            wagmiChain: getWagmiChain(next),
+          },
+        };
+      }, {} as CosmosChainsMap),
+      (v) => networks.has(v.skChainName)
     );
 
     const cosmosWagmiChains = Object.values(cosmosChainsMap).map(

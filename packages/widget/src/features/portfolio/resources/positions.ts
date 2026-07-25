@@ -30,7 +30,7 @@ import {
 import { yieldPositionsResourceAtom } from "../../../resources/yield-positions/yield-positions";
 import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 import { defaultFormattedNumber } from "../../../shared/lib/number-format";
-import { walletScopeAtom } from "../../wallet/public-state";
+import { walletScopeAtom } from "../../wallet/state";
 import { yieldBalancesScanAtom } from "./yield-balances";
 
 export type PositionItem = {

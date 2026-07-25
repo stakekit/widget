@@ -6,10 +6,12 @@ import { Button } from "../../../shared/ui/primitives/button";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
 import { Spinner } from "../../../shared/ui/primitives/spinner";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { useTrackPage } from "../../tracking/react/use-track-page";
-import { AnimationPage } from "../../widget-shell/animation-page";
-import { PageContainer } from "../../widget-shell/page-container";
-import { PageCtaButton } from "../../widget-shell/page-cta";
+import { useTrackPage } from "../../tracking/state";
+import {
+  AnimationPage,
+  PageContainer,
+  PageCtaButton,
+} from "../../widget-shell/components";
 import { useBorrowTransactionFlow } from "../react/borrow-flow-route";
 import * as styles from "./styles.css";
 import { useBorrowExecution } from "./use-borrow-execution";

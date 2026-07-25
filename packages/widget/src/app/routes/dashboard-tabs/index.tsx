@@ -1,13 +1,12 @@
 import { Match } from "effect";
 import { startsWith } from "effect/String";
-import { useNavigate } from "react-router";
-import { isBorrowFeatureEnabled } from "../../../features/borrow/availability";
-import { useEarnYieldSelection } from "../../../features/earn/react/use-earn-facades";
-import { useTrackEvent } from "../../../features/tracking/react/use-track-event";
-import { Divider } from "../../../features/widget-shell/divider";
+import { useLocation, useNavigate } from "react-router";
+import { isBorrowFeatureEnabled } from "../../../features/borrow/state";
+import { useEarnYieldSelection } from "../../../features/earn/state";
+import { useTrackEvent } from "../../../features/tracking/state";
 import type { DashboardYieldCategory } from "../../../public-api/types";
-import { useSKLocation } from "../../../shared/react/location-history";
 import { combineRecipeWithVariant } from "../../../shared/styles/recipe-variant";
+import { Divider } from "../../../shared/ui/components/divider";
 import { Box } from "../../../shared/ui/primitives/box";
 import { useWidgetConfig } from "../../config/use-widget-config";
 import {
@@ -33,9 +32,9 @@ export const DashboardTabs = () => {
   const { selectCategory, view: yieldSelection } = useEarnYieldSelection();
   const availableDashboardYieldCategories = yieldSelection.availableCategories;
   const selectedDashboardYieldCategory = yieldSelection.selectedCategory;
-  const { current } = useSKLocation();
+  const location = useLocation();
 
-  const selectedTab = Match.value(current.pathname).pipe(
+  const selectedTab = Match.value(location.pathname).pipe(
     Match.when(startsWith("/activity"), () => "activity" as const),
     Match.when(startsWith("/borrow"), () => "borrow" as const),
     Match.whenOr(

@@ -10,7 +10,7 @@ import { isForceMaxAmount } from "../../../domain/types/stake";
 import { getYieldActionArg } from "../../../domain/types/yields";
 import { formatUsd } from "../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../shared/lib/number-format";
-import { YieldSummaryKey } from "../../yield-summary";
+import { YieldSummaryKey } from "../../yield-summary/state";
 import {
   positionDetailsExitActionViewAtom,
   setPositionDetailsExitMaxAmountAtom,

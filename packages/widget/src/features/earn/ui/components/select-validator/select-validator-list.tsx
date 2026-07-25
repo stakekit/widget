@@ -12,6 +12,10 @@ import {
   getRewardTypeFormatted,
 } from "../../../../../shared/lib/formatters";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
+import {
+  SelectModalItem,
+  SelectModalItemContainer,
+} from "../../../../../shared/ui/components/select-modal";
 import { GroupedVirtualList } from "../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
@@ -20,10 +24,6 @@ import { PreferredIcon } from "../../../../../shared/ui/primitives/icons/preferr
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { textStyles } from "../../../../../shared/ui/primitives/typography/styles.css";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import {
-  SelectModalItem,
-  SelectModalItemContainer,
-} from "../../../../widget-shell/ui/select-modal";
 import { useMetaInfo } from "./meta-info";
 import {
   groupLabel,

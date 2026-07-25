@@ -70,21 +70,18 @@ describe("feature facade architecture", () => {
 
   it("keeps remaining workflow transitions out of React adapters", () => {
     const pendingActions = readFileSync(
-      join(
-        sourceRoot,
-        "features/position-details/ui/classic/hooks/use-pending-actions.ts"
-      ),
+      join(sourceRoot, "features/position-details/ui.ts"),
       "utf8"
     );
     const positionDetails = readFileSync(
-      join(
-        sourceRoot,
-        "features/position-details/ui/classic/hooks/use-position-details.ts"
-      ),
+      join(sourceRoot, "features/position-details/ui.ts"),
       "utf8"
     );
     const positionDetailsStateAdapter = readFileSync(
-      join(sourceRoot, "features/position-details/ui/classic/state/index.tsx"),
+      join(
+        sourceRoot,
+        "features/position-details/react/use-unstake-or-pending-action.ts"
+      ),
       "utf8"
     );
     const activityPage = readFileSync(
@@ -114,8 +111,6 @@ describe("feature facade architecture", () => {
     expect(positionDetails).not.toContain("useStartClassicTransactionFlow");
     expect(activityPage).not.toContain("useNavigate");
     expect(activityPage).not.toContain("useStartClassicTransactionFlow");
-    expect(pendingActionRoute).not.toContain(
-      "classic-transaction-flow/model/classic-transaction-flow"
-    );
+    expect(pendingActionRoute).not.toContain("classic-transaction-flow/state/");
   });
 });

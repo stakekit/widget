@@ -6,10 +6,10 @@ import {
   getRewardRateFormatted,
   getRewardTypeFormatted,
 } from "../../../../../shared/lib/formatters";
+import { SelectModalItem } from "../../../../../shared/ui/components/select-modal";
+import { ProviderIcon } from "../../../../../shared/ui/components/token-icon/provider-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { SelectModalItem } from "../../../../widget-shell/ui/select-modal";
-import { ProviderIcon } from "../../../../widget-shell/ui/token-icon/provider-icon";
 import {
   itemSubtitle,
   rewardRateLabel,

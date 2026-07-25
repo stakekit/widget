@@ -9,15 +9,17 @@ import {
   formatPercent,
   formatUsd,
 } from "../../../shared/lib/formatters";
+import { Divider } from "../../../shared/ui/components/divider";
 import { Box } from "../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { DetailRow } from "../../earn/ui/dashboard/earn-details/components/details-section";
-import { useTrackPage } from "../../tracking/react/use-track-page";
-import { AnimationPage } from "../../widget-shell/animation-page";
-import { Divider } from "../../widget-shell/divider";
-import { PageContainer } from "../../widget-shell/page-container";
-import { PageCtaButton } from "../../widget-shell/page-cta";
+import { DetailRow } from "../../earn/components";
+import { useTrackPage } from "../../tracking/state";
+import {
+  AnimationPage,
+  PageContainer,
+  PageCtaButton,
+} from "../../widget-shell/components";
 import { useBorrowTransactionFlow } from "../react/borrow-flow-route";
 import * as styles from "./styles.css";
 

@@ -1,13 +1,13 @@
 import { useAtomValue } from "@effect/atom-react";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import { useUnstakeOrPendingActionParams } from "../../../../../shared/react/navigation/use-unstake-or-pending-action-params";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
-} from "../../../../portfolio/resources/positions";
-import { useTrackPage } from "../../../../tracking/react/use-track-page";
-import { YieldSummaryKey } from "../../../../yield-summary";
+} from "../../../../portfolio/state";
+import { useUnstakeOrPendingActionParams } from "../../../../position-details/state";
+import { useTrackPage } from "../../../../tracking/state";
+import { YieldSummaryKey } from "../../../../yield-summary/state";
 import { useClassicFlowIntake } from "../../../react/classic-flow-route";
 import { classicFlowYieldSummaryAtom } from "../../../state/yield-summary";
 import { CompletePage } from "./common.page";

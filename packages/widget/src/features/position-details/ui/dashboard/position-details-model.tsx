@@ -28,11 +28,6 @@ import {
 import { APToPercentage } from "../../../../shared/lib/general";
 import { defaultFormattedNumber } from "../../../../shared/lib/number-format";
 import {
-  RiskRatingBadge,
-  YieldRiskInfoTooltip,
-} from "../../../earn/ui/components/yield-risk";
-import { riskSummaryActions } from "../../../earn/ui/components/yield-risk/styles.css";
-import {
   formatCooldownDays,
   formatMinStake,
   formatMinStakeLabel,
@@ -41,7 +36,10 @@ import {
   formatRewardClaiming,
   formatRewardRateLabel,
   formatRewardTokenLabel,
-} from "../../../earn/ui/dashboard/earn-details/earn-details-formatters";
+  RiskRatingBadge,
+  riskSummaryActions,
+  YieldRiskInfoTooltip,
+} from "../../../earn/components";
 
 type DashboardPositionStatusTone = "action" | "claim" | "default";
 

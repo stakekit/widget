@@ -1,13 +1,14 @@
-import { Navigate, Route, Routes } from "react-router";
-import { ActivityTabPage } from "../../features/activity/ui/dashboard/activity";
-import { BorrowFormPage, BorrowLayout } from "../../features/borrow/ui";
-import { BorrowConnectedWalletRoute } from "../../features/borrow/ui/connected-wallet";
+import { Navigate, Route, Routes, useLocation } from "react-router";
+import { ActivityTabPage } from "../../features/activity/ui";
+import { useBorrowFeatureEnabled } from "../../features/borrow/state";
 import {
+  BorrowConnectedWalletRoute,
+  BorrowFormPage,
+  BorrowLayout,
   BorrowPositionActionPage,
   BorrowPositionActionsPage,
   BorrowPositionDetailsPage,
-} from "../../features/borrow/ui/position-details";
-import { useBorrowFeatureEnabled } from "../../features/borrow/ui/use-borrow-feature-enabled";
+} from "../../features/borrow/ui";
 import {
   BorrowCompletePage,
   BorrowReviewPage,
@@ -19,32 +20,33 @@ import {
 } from "../../features/borrow-transaction-flow/ui";
 // import { RewardsTabPage } from "../../domain/types/rewards";
 import {
+  ActivityDetailsPage,
   ActivityResumeClassicFlowRoute,
+  ActivityStepsPage,
   ClassicFlowExecutionScope,
   ClassicFlowReviewScope,
   EnterClassicFlowRoute,
   ExitClassicFlowRoute,
   ManageClassicFlowRoute,
-} from "../../features/classic-transaction-flow/react/classic-flow-route";
-import { ActivityDetailsPage } from "../../features/classic-transaction-flow/ui/activity-details.page";
-import { PendingCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/pending-complete.page";
-import { StakeCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/stake-complete.page";
-import { UnstakeCompletePage } from "../../features/classic-transaction-flow/ui/complete/pages/unstake-complete.page";
-import { PendingReviewPage } from "../../features/classic-transaction-flow/ui/review/pages/pending-review.page";
-import { StakeReviewPage } from "../../features/classic-transaction-flow/ui/review/pages/stake-review.page";
-import { UnstakeReviewPage } from "../../features/classic-transaction-flow/ui/review/pages/unstake-review.page";
-import { ActivityStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/activity-steps.page";
-import { PendingStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/pending-steps.page";
-import { StakeStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/stake-steps.page";
-import { UnstakeStepsPage } from "../../features/classic-transaction-flow/ui/steps/pages/unstake-steps.page";
-import { EarnPageContent } from "../../features/earn/ui/dashboard/earn-page";
-import { ManagePage } from "../../features/portfolio/ui/dashboard/manage.page";
-import { PositionDetailsPage as DashboardPositionDetailsPage } from "../../features/position-details/ui/dashboard";
-import { PositionDetailsActions } from "../../features/position-details/ui/dashboard/components/position-details-actions";
-import { PositionDetailsStakeActions } from "../../features/position-details/ui/dashboard/components/position-details-stake-actions";
-import { WalletScopeRouteGuard } from "../../features/wallet/react/wallet-scope-route";
-import { GlobalModals } from "../../features/widget-shell/ui/global-modals";
-import { useSKLocation } from "../../shared/react/location-history";
+  PendingCompletePage,
+  PendingReviewPage,
+  PendingStepsPage,
+  StakeCompletePage,
+  StakeReviewPage,
+  StakeStepsPage,
+  UnstakeCompletePage,
+  UnstakeReviewPage,
+  UnstakeStepsPage,
+} from "../../features/classic-transaction-flow/ui";
+import { EarnPageContent } from "../../features/earn/ui";
+import { ManagePage } from "../../features/portfolio/ui";
+import {
+  DashboardPositionDetailsPage,
+  PositionDetailsActions,
+  PositionDetailsStakeActions,
+} from "../../features/position-details/ui";
+import { WalletScopeRouteGuard } from "../../features/wallet/ui";
+import { GlobalModals } from "../../features/widget-shell/ui";
 import { DashboardOverview } from "./dashboard-overview";
 import { DashboardShell } from "./dashboard-shell";
 
@@ -55,10 +57,10 @@ export const shouldRegisterDashboardEarnFooterButton = (pathname: string) =>
   pathname === "/" || positionDetailsStakeFooterPath.test(pathname);
 
 export const DashboardRoutes = () => {
-  const { current } = useSKLocation();
+  const location = useLocation();
   const borrowFeatureEnabled = useBorrowFeatureEnabled();
   const registerEarnFooterButton = shouldRegisterDashboardEarnFooterButton(
-    current.pathname
+    location.pathname
   );
   const borrowRoutes = borrowFeatureEnabled ? (
     <>

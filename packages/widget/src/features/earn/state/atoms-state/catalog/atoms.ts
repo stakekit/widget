@@ -42,7 +42,7 @@ import {
 } from "../../../../../resources/yield-token-directory/yield-token-directory";
 import { mapAsyncResultError } from "../../../../../shared/effect/async-result";
 import type { PullPage } from "../../../../../shared/effect/pagination";
-import { validatorsConfigAtom } from "../../../../yield-entry/validators-config";
+import { validatorsConfigAtom } from "../../../../yield-entry/state";
 import {
   EarnCatalogError,
   type EarnCatalogOperation,

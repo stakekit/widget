@@ -22,19 +22,21 @@ import {
 } from "../../src/app/runtime/application-router-runtime";
 import { ActionCommand } from "../../src/domain/schema/action-models";
 import {
-  classicFlowSessionStore,
-  makeStartClassicFlowSession,
-} from "../../src/features/classic-transaction-flow/facade";
-import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import {
-  ClassicFlowExecutionScope,
-  ClassicFlowReviewScope,
-  EnterClassicFlowRoute,
   useClassicFlowExecution,
   useClassicFlowReview,
   useClassicFlowSession,
 } from "../../src/features/classic-transaction-flow/react/classic-flow-route";
-import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
+import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/state";
+import {
+  classicFlowSessionStore,
+  makeStartClassicFlowSession,
+} from "../../src/features/classic-transaction-flow/state";
+import {
+  ClassicFlowExecutionScope,
+  ClassicFlowReviewScope,
+  EnterClassicFlowRoute,
+} from "../../src/features/classic-transaction-flow/ui";
+import { WalletScopeRoute } from "../../src/features/wallet/ui";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";

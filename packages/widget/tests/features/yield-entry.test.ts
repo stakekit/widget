@@ -11,13 +11,15 @@ import {
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/facade";
-import { makeClassicTransactionFlowDestination } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import {
+  classicFlowSessionStore,
+  makeClassicTransactionFlowDestination,
+} from "../../src/features/classic-transaction-flow/state";
 import {
   getYieldEntryCta,
   makeYieldEntry,
   type YieldEntryFacadeInput,
-} from "../../src/features/yield-entry";
+} from "../../src/features/yield-entry/state/yield-entry";
 import { WidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";

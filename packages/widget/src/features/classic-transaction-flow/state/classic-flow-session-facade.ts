@@ -15,8 +15,7 @@ import {
   CurrentYieldKycGateKey,
   currentYieldKycGateAtom,
   refreshCurrentYieldKycAtom,
-} from "../../yield-summary/yield-insights";
-import { type ClassicFlowSession, classicFlowSessionStore } from "../facade";
+} from "../../yield-summary/state";
 import {
   type ClassicTransactionFlowIntake,
   getClassicTransactionFlowIntakeVariant,
@@ -25,6 +24,10 @@ import {
 } from "../model/classic-transaction-flow";
 import { makeClassicFlowSessionReviewResources } from "../resources/classic-flow-review-resources";
 import { makeClassicTransactionWorkflowModule } from "./classic-transaction-workflow";
+import {
+  type ClassicFlowSession,
+  classicFlowSessionStore,
+} from "./flow-session-store";
 import { makeClassicFlowStakeReviewViewAtom } from "./yield-summary";
 
 class ClassicFlowPreviewError extends Data.TaggedError(

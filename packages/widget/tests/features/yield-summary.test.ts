@@ -3,7 +3,7 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
-import { makeYieldSummary } from "../../src/features/yield-summary";
+import { makeYieldSummary } from "../../src/features/yield-summary/state/yield-summary";
 import { yieldApiYieldFixture } from "../fixtures";
 
 describe("Yield Summary", () => {

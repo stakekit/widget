@@ -1,4 +1,4 @@
-import { useTrackPage } from "../../../../tracking/react/use-track-page";
+import { useTrackPage } from "../../../../tracking/state";
 import { StepsPage } from "./common.page";
 
 export const PendingStepsPage = () => {

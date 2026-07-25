@@ -4,10 +4,10 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import {
-  currentWalletConfigResultAtom,
-  currentWalletLedgerStateAtom,
-  currentWalletStateResultAtom,
-} from "../../src/features/wallet/state/root-atom";
+  walletConfigResultAtom,
+  walletLedgerStateAtom,
+  walletStateResultAtom,
+} from "../../src/features/wallet/state";
 import { makeDefaultConfig } from "../../src/services/wallet/default-wagmi-config";
 import {
   disconnectedLedgerConnectorState,
@@ -36,24 +36,24 @@ describe("WalletService projections", () => {
       ],
     });
 
-    registry.mount(currentWalletConfigResultAtom);
-    registry.mount(currentWalletStateResultAtom);
-    registry.mount(currentWalletLedgerStateAtom);
+    registry.mount(walletConfigResultAtom);
+    registry.mount(walletStateResultAtom);
+    registry.mount(walletLedgerStateAtom);
 
     await vi.waitFor(() => {
       expect(
         Option.getOrThrow(
-          AsyncResult.value(registry.get(currentWalletConfigResultAtom))
+          AsyncResult.value(registry.get(walletConfigResultAtom))
         )
       ).toBe(wagmiConfig);
       expect(
         Option.getOrThrow(
-          AsyncResult.value(registry.get(currentWalletStateResultAtom))
+          AsyncResult.value(registry.get(walletStateResultAtom))
         )
       ).toBe(walletState.connection);
       expect(
         Option.getOrThrow(
-          AsyncResult.value(registry.get(currentWalletLedgerStateAtom))
+          AsyncResult.value(registry.get(walletLedgerStateAtom))
         )
       ).toBe(walletState.ledger);
     });

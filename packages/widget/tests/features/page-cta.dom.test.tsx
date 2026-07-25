@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
-import { PageCtaButton } from "../../src/features/widget-shell/page-cta";
+import { PageCtaButton } from "../../src/features/widget-shell/components";
 import { render } from "../utils/test-utils.dom";
 
 const settings = normalizeWidgetConfig({

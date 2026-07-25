@@ -1,4 +1,4 @@
-import type { ClassicTransactionFlowIntake } from "../../features/classic-transaction-flow/model/classic-transaction-flow";
+import type { ClassicTransactionFlowIntake } from "../../features/classic-transaction-flow/state";
 
 export const isClassicFlowSessionPath = (
   pathname: string,

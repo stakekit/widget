@@ -2,7 +2,7 @@ import { motion } from "motion/react";
 import { useMemo } from "react";
 import { Outlet } from "react-router";
 import { Box } from "../../../shared/ui/primitives/box";
-import { usePositions } from "../../portfolio/ui/classic/positions-page/hooks/use-positions";
+import { usePositions } from "../../portfolio/state";
 import { AnimatedTabs } from "./components/tabs";
 
 export const Details = () => {

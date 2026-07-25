@@ -6,7 +6,7 @@ import type { YieldId } from "../../../../../domain/schema/identifiers";
 import {
   YieldHistoryKey,
   yieldRewardRateHistoryAtom,
-} from "../../../../yield-summary/yield-insights";
+} from "../../../../yield-summary/state";
 
 export const useYieldRewardRateHistory = ({
   period,

@@ -8,11 +8,13 @@ import type { PropsWithChildren } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { shouldShowDisconnect } from "../../../domain/types/connectors";
-import { useTrackEvent } from "../../../features/tracking/react/use-track-event";
-import { useLedgerDisabledChain } from "../../../features/wallet/react/use-ledger-disabled-chains";
-import { useSKWallet } from "../../../features/wallet/react/use-wallet";
-import { walletModalAdapterAtom } from "../../../features/wallet/state/wallet-modal";
-import { addLedgerAccountAtom } from "../../../features/wallet/state/workflows";
+import { useTrackEvent } from "../../../features/tracking/state";
+import {
+  addLedgerAccountAtom,
+  useLedgerDisabledChain,
+  useSKWallet,
+  walletModalAdapterAtom,
+} from "../../../features/wallet/state";
 import { isLedgerLiveConnector } from "../../../services/wallet/connectors/ledger/ledger-live-connector-meta";
 import { vars } from "../../../shared/styles/theme/contract.css";
 import { id } from "../../../shared/styles/theme/ids";

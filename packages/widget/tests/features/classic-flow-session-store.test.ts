@@ -8,15 +8,13 @@ import {
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
+  type ClassicTransactionFlowIntake,
   classicFlowSessionStore,
   finishClassicTransactionFlowAtom,
-  makeClassicFlowSessionStore,
-  makeStartClassicFlowSession,
-} from "../../src/features/classic-transaction-flow/facade";
-import {
-  type ClassicTransactionFlowIntake,
   isClassicTransactionFlowWalletScopeValid,
-} from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+  makeStartClassicFlowSession,
+} from "../../src/features/classic-transaction-flow/state";
+import { makeClassicFlowSessionStore } from "../../src/features/classic-transaction-flow/state/flow-session-store";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiYieldFixture } from "../fixtures";
 

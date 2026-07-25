@@ -8,15 +8,17 @@ import {
   type ExtendedYieldType,
   isEthenaUsdeStaking,
 } from "../../../../../domain/types/yields";
+import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { CheckCircleIcon } from "../../../../../shared/ui/primitives/icons/check-circle";
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { Heading } from "../../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { AnimationPage } from "../../../../widget-shell/animation-page";
-import { PageContainer } from "../../../../widget-shell/page-container";
-import { PageCtaButton } from "../../../../widget-shell/page-cta";
-import { TokenIcon } from "../../../../widget-shell/ui/token-icon";
+import {
+  AnimationPage,
+  PageContainer,
+  PageCtaButton,
+} from "../../../../widget-shell/components";
 import { useComplete } from "../hooks/use-complete.hook";
 
 type CompletePageModel = ReturnType<typeof useComplete>;

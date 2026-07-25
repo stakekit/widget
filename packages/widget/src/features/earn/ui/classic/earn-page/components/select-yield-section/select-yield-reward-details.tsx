@@ -9,11 +9,11 @@ import {
   getYieldTypeLabels,
 } from "../../../../../../../domain/types/yields";
 import { formatNumber } from "../../../../../../../shared/lib/number-format";
+import { Divider } from "../../../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { MorphoStarsIcon } from "../../../../../../../shared/ui/primitives/icons/morpho-stars";
 import { Image } from "../../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { Divider } from "../../../../../../widget-shell/divider";
 import { useEarnEntry } from "../../../../../react/use-earn-facades";
 import { EstimatedRewardAmounts } from "../../../../components/estimated-reward-amounts";
 import { RewardRateBreakdown } from "../../../../components/reward-rate-breakdown";

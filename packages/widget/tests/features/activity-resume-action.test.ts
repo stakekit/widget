@@ -5,8 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import { resumeActivityActionAtom } from "../../src/features/activity/state/resume-action";
-import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/facade";
-import { walletConnectionStateAtom } from "../../src/features/wallet/public-state";
+import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state";
+import { walletConnectionStateAtom } from "../../src/features/wallet/state";
 import {
   WidgetNavigation,
   type WidgetNavigationOptions,

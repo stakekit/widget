@@ -5,14 +5,16 @@ import { useTranslation } from "react-i18next";
 import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useMountAnimation } from "../../../../mount-animation/react/use-mount-animation";
-import { useTrackPage } from "../../../../tracking/react/use-track-page";
-import { useSKWallet } from "../../../../wallet/react/use-wallet";
-import { ZerionChainModal } from "../../../../wallet/ui/zerion-chain-modal";
-import { FallbackContent } from "../../../../widget-shell/fallback-content";
-import { PageContainer } from "../../../../widget-shell/page-container";
+import { useMountAnimation } from "../../../../mount-animation/state";
+import { useTrackPage } from "../../../../tracking/state";
+import { useSKWallet } from "../../../../wallet/state";
+import { ZerionChainModal } from "../../../../wallet/ui";
+import {
+  FallbackContent,
+  PageContainer,
+} from "../../../../widget-shell/components";
+import { usePositions } from "../../../react/use-positions";
 import { PositionsListItem } from "./components/positions-list-item";
-import { usePositions } from "./hooks/use-positions";
 import { container } from "./style.css";
 
 const PositionsPage = () => {

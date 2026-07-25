@@ -1,108 +1,144 @@
 # StakeKit Widget - Agent Guide
 
-## Project Overview
-- Monorepo managed with `pnpm` workspaces + Turborepo.
-- Main package is `@stakekit/widget` in `packages/widget` (React + TypeScript + Vite).
-- Widget supports two entry modes:
-  - React component export (`src/index.package.ts`)
-  - Fully bundled renderer (`src/index.bundle.ts`)
-- Runtime branches between classic widget and dashboard variant in `src/App.tsx`.
-- Support at most one concurrently mounted Widget Instance per browser document. Sequential unmount and remount is supported.
-- Do not preserve or introduce isolation and concurrency machinery solely for multiple Widget Instances. Keep concurrency control required within the single supported Widget Instance.
+Monorepo (`pnpm` workspaces + Turborepo). Main package is `@stakekit/widget` in
+`packages/widget` (React + TypeScript + Vite), published both as a React
+component (`src/index.package.ts`) and as a bundled renderer
+(`src/index.bundle.ts`).
 
-## Repo Layout (important paths)
-- `packages/widget/src/App.tsx` — root app, router setup, bundle renderer.
-- `packages/widget/src/Widget.tsx` — non-dashboard route flow (earn/review/steps/details).
-- `packages/widget/src/Dashboard.tsx` + `pages-dashboard/*` — dashboard variant UI.
-- `packages/widget/src/providers/*` — global provider composition (API, query, wallet, tracking, theme, stores).
-- `packages/widget/src/hooks/*` — feature and API hooks.
-- `packages/widget/src/domain/*` — shared domain types/helpers.
-- `packages/widget/src/translation/*` — i18n resources (`English`, `French`).
-- `packages/widget/tests/*` — Vitest Node and browser tests; browser tests use the `.browser.test.*` suffix and MSW.
-- `packages/examples/*` — integration examples (`with-vite`, `with-vite-bundled`, `with-nextjs`, `with-cdn-script`).
+This guide is operational: commands, conventions, and where to read more. It
+deliberately does not restate the architecture.
 
-## Commands Agents Should Use
+## Where to look
 
-### Package manager and dependency installation
+| For | Read |
+| --- | --- |
+| Module ownership, dependency direction, feature entries, Effect services, runtimes, Atom conventions, React Context policy | `packages/widget/ARCHITECTURE.md` |
+| Domain vocabulary (use it in code, tests, commits) | `CONTEXT.md` |
+| Accepted decisions and their rationale | `docs/adr/` |
+| Transaction journeys | `ARCHITECTURE.md` next to `features/{classic-transaction-flow,borrow-transaction-flow,transaction-workflow}` |
+| Effect APIs before writing Effect code | `@repos/effect/LLMS.md`, then the smallest relevant `agent-patterns/*.md` (see its README) |
+| Issue tracker / triage labels / domain docs | `docs/agents/` |
 
-- Run all pnpm commands through the version pinned by mise: `mise exec -- pnpm ...`.
-- Do not install dependencies unless a dependency manifest or lockfile changed, `node_modules` is missing or invalid, or the requested work otherwise requires it.
-- When sandboxed, request approval to run dependency-installing or dependency-modifying commands outside the sandbox so pnpm can use the normal global store.
-- Do not fall back to a sandboxed install or create a project-local `.pnpm-store`. If approval is denied, report the blocked installation instead of changing the store configuration.
+`packages/widget/src` is organized by ownership, not by React mechanism: `app/`
+composes, `features/` owns feature behavior, `resources/` owns cacheable remote
+reads, `services/` owns side effects, `domain/` owns framework-independent rules,
+`shared/` owns neutral utilities and the UI kit, `public-api/` owns host-facing
+types.
 
-### From repo root (all workspaces via Turbo)
+## Commands
 
-- `mise exec -- pnpm build` — build all packages.
-- `mise exec -- pnpm lint` — lint/type-check all packages.
-- `mise exec -- pnpm test` — run all workspace tests.
-- `mise exec -- pnpm format` — run formatting checks/tasks.
-- `mise exec -- pnpm check-hygiene` — check unused deps, unresolved imports, circular deps, etc.
+Run every pnpm command through the version pinned by mise: `mise exec -- pnpm ...`.
 
-### Focused widget commands (recommended for most tasks)
+Do not install dependencies unless a manifest or lockfile changed, `node_modules`
+is missing or invalid, or the work genuinely requires it. When sandboxed, request
+approval to install outside the sandbox so pnpm uses the normal global store —
+never fall back to a sandboxed install or a project-local `.pnpm-store`. If
+approval is denied, report the blocked install instead of reconfiguring the store.
 
-- `mise exec -- pnpm --filter @stakekit/widget {command}`
-- `mise exec -- pnpm --filter @stakekit/widget test:unit` — run the fast Node test project.
-- `mise exec -- pnpm --filter @stakekit/widget test:dom` — run React/DOM tests in jsdom.
-- `mise exec -- pnpm --filter @stakekit/widget test:browser` — run the Chromium test project.
-- `mise exec -- pnpm --filter @stakekit/widget test:changed` — run affected Node + jsdom tests.
-- `mise exec -- pnpm --filter @stakekit/widget test:changed:all` — run all affected projects, including Chromium.
+Root (all workspaces):
 
-## Agent Working Guidelines (short)
-- Keep public API compatibility in `src/index.package.ts` and `src/index.bundle.ts`.
-- React Compiler is enabled. Do not add `useMemo`, `useCallback`, or `React.memo` only for render-performance optimization; prefer plain values/functions.
-- Do not use nested ternaries or mutable bindings for value selection. Prefer immutable `const` results from pure resolvers for boolean precedence and Effect `Match` for closed domain alternatives or clear multi-branch projections.
-- Treat React as the view layer. Put new or materially refactored business state, transitions, asynchronous work, retries, concurrency, and resource lifetimes in Effect and Effect Atom; React should read Atom state and dispatch user intent.
-- Use `useEffect` only for unavoidable React, DOM, or third-party lifecycle boundaries that cannot be expressed safely with scoped Effects or lifecycle Atoms. Do not use it for data fetching, duplicated-state synchronization, workflow advancement, or domain-resource cleanup.
-- Local synchronous presentation state may remain in React when it has no domain meaning, asynchronous behavior, persistence, route lifetime, or cross-component coordination, such as focus, hover, disclosure, or element refs.
-- React may mount a lifecycle Atom when a resource follows view or route visibility, but acquisition, interruption, and finalization stay inside Atom/Effect. Widget-runtime resources must be scoped to the runtime rather than component effects.
-- Keep React event handlers synchronous: normalize the UI event and dispatch an Atom command. Do not call `Effect.runPromise`, await asynchronous work, coordinate retries or state transitions, or clean up domain resources in the handler.
-- Keep deterministic domain constructors, transitions, invariant checks, and projections as plain TypeScript. Use Atom for reactive state and commands, and Effect for typed asynchronous work, dependencies, concurrency, and scoped resources.
-- Represent application instants with Effect `DateTime`, intervals with `Duration`, and effectful current time with `Clock` or `DateTime.now`; do not use native `Date`, native-Date Effect schemas/conversions, or `date-fns`. Follow `docs/adr/0010-effect-datetime-owns-application-time.md` for boundary tolerance, presentation buckets, and the documented synchronous adapter exception.
-- Feature facades should expose read-only view Atoms and writable command Atoms while keeping mutable storage private. React convenience hooks must be zero-logic adapters rather than places for derivation, variant branching, or orchestration.
-- Effect-backed resources and command Atoms own loading, typed failure normalization, retry eligibility, and stale-result suppression. React renders the published state and dispatches Retry; it does not catch promises, normalize raw errors, or maintain duplicate loading flags.
-- Treat these as review constraints: application-logic modules must not import React, and touched view adapters must not use `useEffect`. Any unavoidable external lifecycle exception must be isolated in a named boundary adapter and explicitly documented.
-- Prefer a scoped Effect exposed through an Atom lifecycle for the document-level Widget Instance claim. If React mount semantics require a hook bridge, isolate and document one embedding-boundary hook that only acquires/releases the claim and contains no wallet or feature logic.
-- Do not introduce React Query, hook-owned fetches, or Promise caches for new or materially refactored feature resources. Use Effect services/resources exposed through Atom; leave unrelated existing React Query usage unchanged unless it is in scope.
-- Run feature Effects through the existing scoped application or wallet Atom runtimes and injected Effect services. Feature code must not create ad hoc runtimes or call `Effect.runPromise`; runtime generations own interruption and cleanup.
-- Prefer headless Effect services over React-only third-party APIs. When no headless API exists, isolate the hook in a named boundary adapter that normalizes external values/callbacks into Atom; keep decisions, sequencing, errors, and non-library cleanup in Effect/Atom.
-- Classic Transaction Flow code follows `packages/widget/src/features/classic-transaction-flow/ARCHITECTURE.md`. Re-review any external boundary when its lifecycle responsibilities change.
-- When changing user-facing copy, update both:
-  - `packages/widget/src/translation/English/translations.json`
-  - `packages/widget/src/translation/French/translations.json`
-- After changes, run the lint command to check lint and type errors.
+- `pnpm lint` — Biome + `tsc` per package, plus the root `lint:ast` ast-grep scan.
+- `pnpm check-hygiene` — architecture enforcement (see below). **Root only.**
+- `pnpm check` — lint + hygiene + test + build. Use before handing off a large change.
+- `pnpm build`, `pnpm test`, `pnpm format`.
 
-## Useful Context for Debugging
-- API client is configured in `packages/widget/src/providers/api/api-client-provider.tsx`.
-- React Query defaults are in `packages/widget/src/providers/query-client/index.tsx`.
-- App-level config/env mapping is in `packages/widget/src/config/index.ts`.
-- Test bootstrapping + MSW worker setup:
-  - `packages/widget/tests/utils/setup.browser.ts`
-  - `packages/widget/tests/mocks/worker.ts`
+Widget only (preferred for most tasks) — `pnpm --filter @stakekit/widget <script>`:
 
-## Vendored Repositories
+- `lint` — Biome + `tsc`. `dev` — standalone dev site.
+- `test:unit` (Node), `test:dom` (jsdom), `test:browser` (Chromium).
+- `test:changed`, `test:changed:all` — affected tests; the latter includes Chromium.
 
-This project vendors external repositories under `@repos/`.
+Test project is selected by filename: `*.browser.test.*`, `*.dom.test.*`,
+everything else runs in Node.
 
-- Use vendored repositories as read-only reference material when working with related libraries
-- Prefer examples and patterns from the vendored source code over generated guesses or web search results
-- Do not edit files under `@repos/` unless explicitly asked
-- Do not import from `@repos/` - application code should continue importing from normal package dependencies
-- `@repos/effect` is a local-only clone of Effect-TS/effect-smol and may be ignored by Git locally
-- When searching `@repos/`, use `rg --no-ignore <pattern> @repos/<repo>` so ignored local reference repositories are included without searching unrelated ignored directories
-- Before writing any Effect code, inspect `@repos/effect/LLMS.md`
-- Before writing code that interacts with Effect `HttpClient`, inspect `agent-patterns/effect-http-client.md`
-- Before writing code that uses Effect `Stream`, inspect `agent-patterns/effect-stream.md`
+## Architecture enforcement
 
-## Agent skills
+`ARCHITECTURE.md` is the intent; these are the mechanism. A failure is a design
+problem, not a config problem to silence. Do not add blanket suppressions —
+`lint:ast` fails on suppress-all and on unused ones.
 
-### Issue tracker
+- `check-hygiene` runs `rev-dep` against `.rev-dep.config.jsonc` (module
+  boundaries, feature-internal imports, cycles, orphans, unused exports) plus
+  `scripts/check-test-only-exports.ts`. Run it whenever you move, rename, add,
+  or delete a module — plain `lint` will not catch these.
+- Biome confines generated API imports, rejects React in `domain`/`resources`/`services`,
+  and allows barrel files only at the declared public entries.
+- ast-grep (`tools/ast-grep/rules`) catches ad hoc Atom runtimes, direct Effect
+  runtime execution, native `Date`, global `fetch`, and throws inside Effect generators.
 
-Issues are tracked as local Markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
+## Feature module layout
 
-### Triage labels
+Each `src/features/<name>` publishes up to three root entries; **everything
+else is private**, whether nested or at the feature root.
 
-Triage state uses the five default canonical role strings. See `docs/agents/triage-labels.md`.
+- `state.ts` — headless entry: view Atoms, command Atoms, pure projections, published types, and zero-logic React adapter hooks.
+- `ui.ts` — rendered views the feature owns: routes, pages, layouts.
+- `components.ts` — presentational components published for reuse.
+- Internals live in `model/` (pure TS), `state/` (Effect + Atom), `react/` (hook adapters), `ui/` (components and pages).
 
-### Domain docs
+Adapter hooks go in `state.ts`, not `ui.ts` — a hook that only reads an Atom is
+part of the headless interface, and routing it through the page barrel drags the
+whole page graph into consumers and creates import cycles.
 
-Domain documentation uses a single-context layout. See `docs/agents/domain.md`.
+Keep barrels narrow: publish the collaboration contract, not the machinery.
+Create only the entries a feature actually shares, and delete ones with no
+consumer. Adding a root module is not a way to publish something. Test-only
+machinery stays private and is deep-imported by the test.
+
+Biome's `noBarrelFile` is whitelisted for exactly these three filenames, so they
+need no suppression comment and no fourth entry name will work. New features
+also need a `restrictedDirectImportersDetection` entry in `.rev-dep.config.jsonc`.
+
+## Coding rules
+
+These are not in `ARCHITECTURE.md`; they apply to all code you write.
+
+**React / Effect boundary.** React is the view layer. New or materially
+refactored business state, async work, retries, concurrency, and resource
+lifetimes belong in Effect and Effect Atom. Event handlers stay synchronous:
+normalize the event and dispatch an Atom command — never `Effect.runPromise`,
+await, sequence retries, or clean up domain resources there. Use `useEffect`
+only for unavoidable React/DOM/third-party lifecycle boundaries, never for data
+fetching, state mirroring, or workflow advancement; isolate and document any
+exception in a named boundary adapter. Application-logic modules must not import
+React. Prefer headless Effect services over React-only third-party APIs.
+
+**Runtimes.** Run feature Effects through the existing application or wallet Atom
+runtimes and injected services. Never construct an ad hoc runtime.
+
+**Data fetching.** No React Query, hook-owned fetches, or Promise caches for new
+or refactored resources — use Effect services exposed through Atom. The only
+sanctioned React Query client is the Wagmi/RainbowKit shell at
+`src/app/composition/providers/query-client/index.tsx`. Resources and command
+Atoms own loading, typed failures, retry eligibility, and stale-result
+suppression; React renders published state and dispatches Retry.
+
+**State ownership.** Deterministic constructors, transitions, invariants, and
+projections stay plain TypeScript. Local synchronous presentation state (focus,
+hover, disclosure, refs) may stay in React.
+
+**Time.** Use Effect `DateTime` for instants, `Duration` for intervals, and
+`Clock`/`DateTime.now` for current time. No native `Date`, native-Date Effect
+schemas, or `date-fns`. See `docs/adr/0010-effect-datetime-owns-application-time.md`.
+
+**Style.** React Compiler is enabled — do not add `useMemo`, `useCallback`, or
+`React.memo` for render performance. No nested ternaries or mutable bindings for
+value selection; prefer `const` results from pure resolvers, and Effect `Match`
+for closed domain alternatives.
+
+**Copy.** User-facing copy changes update both
+`src/translation/English/translations.json` and
+`src/translation/French/translations.json`.
+
+**Lifecycle.** At most one Widget Instance per document; sequential unmount and
+remount is supported. Do not add machinery for concurrent instances.
+
+**Public API.** Keep `src/index.package.ts` and `src/index.bundle.ts`
+compatible; host-facing types live in `src/public-api/`. Never import either
+entrypoint from inside `src` — they are outbound-only.
+
+## Before finishing
+
+- Run `pnpm --filter @stakekit/widget lint` for lint and type errors.
+- Run `pnpm check-hygiene` if you changed the import graph.
+- Do not edit `@repos/` (read-only vendored reference) or import from it.

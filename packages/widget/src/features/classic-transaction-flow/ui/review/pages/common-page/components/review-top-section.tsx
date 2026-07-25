@@ -2,12 +2,12 @@ import { motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { AppToken } from "../../../../../../../domain/schema/legacy-models";
+import { TokenIcon } from "../../../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { Heading } from "../../../../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { EstimatedRewardAmounts } from "../../../../../../earn/ui/components/estimated-reward-amounts";
-import type { RewardTokenDetails } from "../../../../../../earn/ui/components/reward-token-details";
-import { TokenIcon } from "../../../../../../widget-shell/ui/token-icon";
+import type { RewardTokenDetails } from "../../../../../../earn/components";
+import { EstimatedRewardAmounts } from "../../../../../../earn/components";
 import { headingStyles } from "../../style.css";
 
 type Props = {

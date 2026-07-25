@@ -3,7 +3,7 @@ import {
   sameWalletScopeOwner,
   WalletScopeKey,
 } from "../../../services/wallet/domain/scope";
-import { currentWalletScopeAtom } from "../../wallet/state/selectors";
+import { walletScopeAtom } from "../../wallet/state";
 import type { BorrowTransactionFlowIntake } from "../model/borrow-transaction-flow";
 
 export type BorrowFlowSession = Readonly<{
@@ -36,7 +36,7 @@ export const makeBorrowFlowSessionStore = () => {
   );
   const startAtom = Atom.fnSync(
     (intake: BorrowTransactionFlowIntake, context) => {
-      const walletScope = context(currentWalletScopeAtom);
+      const walletScope = context(walletScopeAtom);
       if (
         !walletScope ||
         !sameWalletScopeOwner(walletScope, {

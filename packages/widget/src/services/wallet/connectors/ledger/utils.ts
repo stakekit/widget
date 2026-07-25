@@ -6,7 +6,7 @@ import type {
   WalletAPIClient,
 } from "@ledgerhq/wallet-api-client";
 import type { Chain } from "@stakekit/rainbowkit";
-import { Effect } from "effect";
+import { Effect, Record } from "effect";
 import type { SupportedSKChains } from "../../../../domain/types/chains";
 import type { CosmosChainsMap } from "../../../../domain/types/chains/cosmos";
 import type { EvmChainsMap } from "../../../../domain/types/chains/evm";
@@ -18,7 +18,6 @@ import {
 } from "../../../../domain/types/chains/ledger";
 import type { MiscChainsMap } from "../../../../domain/types/chains/misc";
 import type { SubstrateChainsMap } from "../../../../domain/types/chains/substrate";
-import { typeSafeObjectEntries } from "../../../../shared/lib/object";
 import { WalletIntegrationError } from "../../domain/errors";
 
 export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
@@ -49,7 +48,7 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
     { accountsFamilies: new Set(), accountsCurrencies: new Set() }
   );
 
-  const v = typeSafeObjectEntries(supportedLedgerFamiliesWithCurrency).reduce(
+  const v = Record.toEntries(supportedLedgerFamiliesWithCurrency).reduce(
     (acc, [k, v]) => {
       const filtered = Object.keys(v).reduce((acc, key) => {
         const item = v[key as keyof typeof v] as {

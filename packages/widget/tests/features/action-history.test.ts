@@ -4,7 +4,7 @@ import {
   actionHistoryRevisionAtom,
   incrementActionHistoryRevision,
   resetActionHistoryRevision,
-} from "../../src/features/classic-transaction-flow/state/action-history";
+} from "../../src/features/classic-transaction-flow/state";
 
 describe("action history atoms", () => {
   it("initializes, updates, and resets explicitly", () => {

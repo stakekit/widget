@@ -2,7 +2,7 @@ import { Context, Effect, Layer, Stream, SubscriptionRef } from "effect";
 import { HttpResponse, http } from "msw";
 import { version as widgetVersion } from "../../package.json";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
-import { useGeoBlock } from "../../src/features/preferences/react/use-geo-block";
+import { useGeoBlock } from "../../src/features/preferences/state";
 import { BorrowOperations } from "../../src/services/api/borrow-operations";
 import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
 import { delayAPIRequests } from "../../src/services/api/delay-api-requests";

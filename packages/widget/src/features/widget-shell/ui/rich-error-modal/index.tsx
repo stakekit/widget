@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { images } from "../../../../shared/assets/images";
+import { SelectModal } from "../../../../shared/ui/components/select-modal";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { useRichErrors } from "../../react/use-rich-errors";
-import { SelectModal } from "../select-modal";
 import { imageStyle } from "./style.css";
 
 export const RichErrorModal = () => {

@@ -11,11 +11,11 @@ import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
+import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/state";
 import {
   classicFlowSessionStore,
   makeStartClassicFlowSession,
-} from "../../src/features/classic-transaction-flow/facade";
-import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+} from "../../src/features/classic-transaction-flow/state";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";

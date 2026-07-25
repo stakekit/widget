@@ -23,7 +23,7 @@ import {
   setEarnTokenSearchAtom,
   setEarnValidatorSearchAtom,
   setEarnYieldSearchAtom,
-} from "../facade";
+} from "../state/earn-facade";
 
 export const useEarnTokenSelection = () => ({
   loadMore: useAtomSet(loadMoreEarnTokensAtom),

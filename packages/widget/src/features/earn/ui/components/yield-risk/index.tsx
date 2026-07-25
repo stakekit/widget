@@ -5,10 +5,10 @@ import {
   getYieldRiskSourceLabel,
   type YieldRiskDisplay,
 } from "../../../../../domain/types/yields";
+import { ToolTip } from "../../../../../shared/ui/components/tooltip";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { ToolTip } from "../../../../widget-shell/ui/tooltip";
 import {
   riskInfoButton,
   riskRatingBadge,

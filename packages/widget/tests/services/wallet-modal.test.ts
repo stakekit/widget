@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
-import { runAddLedgerAccount } from "../../src/features/wallet/state/workflows";
+import { runAddLedgerAccount } from "../../src/features/wallet/state";
 import { WalletModal } from "../../src/services/wallet/wallet-modal";
 
 describe("WalletModal", () => {

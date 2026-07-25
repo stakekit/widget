@@ -7,12 +7,12 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { EarnBalance } from "../../src/domain/schema/earn-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/facade";
+import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
   positionBalancesByTypeAtom,
-} from "../../src/features/portfolio/resources/positions";
+} from "../../src/features/portfolio/state";
 import {
   setPositionDetailsExitMaxAmountAtom,
   submitPositionDetailsExitAtom,
@@ -21,7 +21,7 @@ import {
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
 } from "../../src/features/position-details/state/workflow";
-import { walletConnectionStateAtom } from "../../src/features/wallet/public-state";
+import { walletConnectionStateAtom } from "../../src/features/wallet/state";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,

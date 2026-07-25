@@ -40,7 +40,10 @@
         "!**/packages/widget/src/index.package.ts",
         "!**/packages/widget/src/index.bundle.ts",
         "!**/packages/widget/src/public-api/index.package.ts",
-        "!**/packages/widget/src/public-api/index.bundle.ts"
+        "!**/packages/widget/src/public-api/index.bundle.ts",
+        "!**/packages/widget/src/features/*/state.ts",
+        "!**/packages/widget/src/features/*/ui.ts",
+        "!**/packages/widget/src/features/*/components.ts"
       ]
     }
   ],
@@ -91,7 +94,10 @@
         "!packages/widget/src/index.package.ts",
         "!packages/widget/src/index.bundle.ts",
         "!packages/widget/src/public-api/index.package.ts",
-        "!packages/widget/src/public-api/index.bundle.ts"
+        "!packages/widget/src/public-api/index.bundle.ts",
+        "!packages/widget/src/features/*/state.ts",
+        "!packages/widget/src/features/*/ui.ts",
+        "!packages/widget/src/features/*/components.ts"
       ],
       "linter": {
         "rules": {

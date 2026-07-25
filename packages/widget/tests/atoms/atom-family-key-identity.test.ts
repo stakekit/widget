@@ -11,7 +11,7 @@ import {
 import {
   CurrentRewardsSummaryKey,
   positiveRewardsSummaryAtom,
-} from "../../src/features/yield-summary/yield-insights";
+} from "../../src/features/yield-summary/state/yield-insights";
 import {
   ActivityInvalidationKey,
   BorrowMarketsInvalidationKey,

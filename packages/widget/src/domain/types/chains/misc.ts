@@ -1,7 +1,7 @@
 import type { Chain } from "@stakekit/rainbowkit";
 import { MiscChainIds } from "../../../public-api/types";
-import { getTokenLogo } from "../../../shared/lib/general";
-import type { KebabToCamelCase } from "../../../shared/types/utils";
+import type { KebabToCamelCase } from "../utils";
+import { getTokenLogo } from "./logos";
 import { MiscNetworks } from "./networks";
 
 const supportedMiscChains = [

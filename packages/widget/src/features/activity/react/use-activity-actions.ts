@@ -1,5 +1,5 @@
 import { useAtom, useAtomRefresh, useAtomValue } from "@effect/atom-react";
-import { walletScopeAtom } from "../../wallet/public-state";
+import { walletScopeAtom } from "../../wallet/state";
 import type { ActivityFilter } from "../model/filters";
 import {
   ActivityFilterOptionsKey,

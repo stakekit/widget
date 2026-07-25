@@ -1,9 +1,11 @@
 import { Outlet } from "react-router";
-import { EarnDetails } from "../../features/earn/ui/dashboard/earn-details";
-import { AnimationPage } from "../../features/widget-shell/animation-page";
-import { BackButtonProvider } from "../../features/widget-shell/dashboard/components/back-button";
-import { VerticalDivider } from "../../features/widget-shell/dashboard/components/divider";
-import { TabPageContainer } from "../../features/widget-shell/dashboard/components/tab-page-container";
+import { EarnDetails } from "../../features/earn/ui";
+import {
+  AnimationPage,
+  BackButtonProvider,
+  TabPageContainer,
+} from "../../features/widget-shell/components";
+import { VerticalDivider } from "../../shared/ui/components/divider";
 import { Box } from "../../shared/ui/primitives/box";
 import {
   earnDetailsWrapper,

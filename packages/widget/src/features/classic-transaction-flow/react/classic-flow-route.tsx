@@ -1,8 +1,7 @@
 import { make as makeScopedAtom, useAtomValue } from "@effect/atom-react";
 import { type PropsWithChildren, useContext } from "react";
 import { Navigate, Outlet } from "react-router";
-import { useWalletScopeRoute } from "../../wallet/react/wallet-scope-route";
-import { classicFlowSessionStore } from "../facade";
+import { useWalletScopeRoute } from "../../wallet/ui";
 import {
   type ClassicTransactionFlowIntake,
   getClassicTransactionFlowIntakeVariant,
@@ -17,6 +16,7 @@ import {
   makeClassicFlowReviewScope,
   makeClassicFlowSessionModule,
 } from "../state/classic-flow-session-facade";
+import { classicFlowSessionStore } from "../state/flow-session-store";
 
 const SessionScopedAtom = makeScopedAtom(makeClassicFlowSessionModule);
 

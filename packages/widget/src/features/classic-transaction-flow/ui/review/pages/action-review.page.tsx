@@ -1,14 +1,16 @@
 import { Trans, useTranslation } from "react-i18next";
 import { capitalizeFirstLetters } from "../../../../../shared/lib/formatters";
+import { Divider } from "../../../../../shared/ui/components/divider";
+import { ToolTip } from "../../../../../shared/ui/components/tooltip";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../../tracking/react/use-track-event";
-import { AnimationPage } from "../../../../widget-shell/animation-page";
-import { Divider } from "../../../../widget-shell/divider";
-import { PageContainer } from "../../../../widget-shell/page-container";
-import { PageCtaButton } from "../../../../widget-shell/page-cta";
-import { ToolTip } from "../../../../widget-shell/ui/tooltip";
+import { useTrackEvent } from "../../../../tracking/state";
+import {
+  AnimationPage,
+  PageContainer,
+  PageCtaButton,
+} from "../../../../widget-shell/components";
 import { useActionReview } from "../hooks/use-action-review.hook";
 import ReviewTopSection from "./common-page/components/review-top-section";
 import { pointerStyles } from "./style.css";

@@ -6,7 +6,7 @@ import {
 import { type PropsWithChildren, useContext } from "react";
 import { Navigate, Outlet } from "react-router";
 import { sameWalletScopeOwner } from "../../../services/wallet/domain/scope";
-import { useWalletScopeRoute } from "../../wallet/react/wallet-scope-route";
+import { useWalletScopeRoute } from "../../wallet/ui";
 import type { BorrowTransactionFlowEntry } from "../model/borrow-transaction-flow";
 import { getBorrowTransactionFlowRoutes } from "../model/borrow-transaction-flow";
 import {

@@ -1,8 +1,7 @@
 export { SKApp } from "./App";
 export { TrackingContextProvider } from "./app/composition/providers/tracking";
-export type { SupportedSKChainIds } from "./domain/types/chains";
 export { evmChainGroup } from "./domain/types/chains";
-export { HelpModal } from "./features/preferences/ui/help-modal";
+export { HelpModal } from "./features/preferences/ui";
 export type {
   ActionMeta,
   BittensorTx,
@@ -10,6 +9,7 @@ export type {
   SKTx,
   SKTxMeta,
   SKWallet,
+  SupportedSKChainIds,
   TronTx,
 } from "./public-api/types";
 export {

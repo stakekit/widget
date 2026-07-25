@@ -8,15 +8,15 @@ import {
   formatUsd,
 } from "../../../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../../../shared/lib/number-format";
+import { TokenIcon } from "../../../../../../shared/ui/components/token-icon";
+import { ToolTip } from "../../../../../../shared/ui/components/tooltip";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/content-loader";
 import { SKLink } from "../../../../../../shared/ui/primitives/link";
 import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
 import { Spinner } from "../../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import { borrowTokenToTokenDto } from "../../../../../borrow/ui/position-details-model";
-import { TokenIcon } from "../../../../../widget-shell/ui/token-icon";
-import { ToolTip } from "../../../../../widget-shell/ui/tooltip";
+import { borrowTokenToTokenDto } from "../../../../../borrow/state";
 import type { UnifiedPositionItem } from "../../../../resources/positions";
 import {
   listItem,

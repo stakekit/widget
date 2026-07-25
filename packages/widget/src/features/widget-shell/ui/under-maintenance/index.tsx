@@ -3,8 +3,8 @@ import { images } from "../../../../shared/assets/images";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { animationContainer } from "../../layout.css";
-import { PoweredBy } from "../../powered-by";
+import { animationContainer } from "../layout.css";
+import { PoweredBy } from "../powered-by";
 import { container, imageStyle } from "./style.css";
 
 const UnderMaintenance = () => {

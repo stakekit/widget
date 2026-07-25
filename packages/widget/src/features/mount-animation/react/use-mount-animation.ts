@@ -1,5 +1,5 @@
 import { useAtom } from "@effect/atom-react";
-import { mountAnimationStateAtom } from "../public-state";
+import { mountAnimationStateAtom } from "../state/mount-animation";
 
 export const useMountAnimation = () => {
   const [state, dispatch] = useAtom(mountAnimationStateAtom);

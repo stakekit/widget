@@ -6,10 +6,8 @@ import {
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
 } from "../../../services/wallet/domain/state";
-import {
-  currentWalletStateResultAtom,
-  useWalletConfig,
-} from "../state/root-atom";
+import { currentWalletStateResultAtom } from "../state/root-atom";
+import { useWalletConfig } from "./use-wallet-config";
 
 export const useSKWallet = () => {
   const walletConfig = useWalletConfig();

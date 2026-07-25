@@ -6,7 +6,7 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import { MorphoStarsIcon } from "../../../../../shared/ui/primitives/icons/morpho-stars";
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import type { YieldSummaryRewardToken } from "../../../../yield-summary";
+import type { YieldSummaryRewardToken } from "../../../../yield-summary/state";
 import { getRewardTokenSymbols } from "./get-reward-token-symbols";
 import { inlineText } from "./style.css";
 

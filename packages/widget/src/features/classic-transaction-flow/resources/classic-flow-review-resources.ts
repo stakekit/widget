@@ -15,7 +15,7 @@ import {
   PricesKey,
   pricesAtom,
 } from "../../../resources/token-prices/prices";
-import type { CurrentYieldKycGate } from "../../yield-summary/yield-insights";
+import type { CurrentYieldKycGate } from "../../yield-summary/state";
 import {
   type ClassicTransactionFlowIntake,
   getClassicTransactionFlowGasWarningInput,

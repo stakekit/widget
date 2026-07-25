@@ -1,6 +1,6 @@
 import type { Connection } from "@solana/web3.js";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
-import { Effect } from "effect";
+import { Effect, Record } from "effect";
 import type { Network } from "../../../../domain/schema/network-model";
 import {
   type MiscChainsMap,
@@ -8,10 +8,6 @@ import {
 } from "../../../../domain/types/chains/misc";
 import type { VariantProps } from "../../../../public-api/types";
 import { config } from "../../../../shared/config/widget-defaults";
-import {
-  typeSafeObjectEntries,
-  typeSafeObjectFromEntries,
-} from "../../../../shared/lib/object";
 import { WalletIntegrationError } from "../../domain/errors";
 import type { SolanaWalletDescriptor } from "../../solana-runtime";
 
@@ -37,12 +33,10 @@ const queryFn = async ({
     wallets: WalletList[number]["wallets"];
   } | null)[];
 }> => {
-  const miscChainsEntries = typeSafeObjectEntries<MiscChainsMap>(
-    miscChainsMap
-  ).filter(([_, v]) => enabledNetworks.has(v.skChainName));
-
-  const filteredMiscChainsMap: Partial<MiscChainsMap> =
-    typeSafeObjectFromEntries(miscChainsEntries);
+  const filteredMiscChainsMap: Partial<MiscChainsMap> = Record.filter(
+    miscChainsMap,
+    (v) => enabledNetworks.has(v.skChainName)
+  );
 
   const miscChains = Object.values(filteredMiscChainsMap).map(
     (val) => val.wagmiChain

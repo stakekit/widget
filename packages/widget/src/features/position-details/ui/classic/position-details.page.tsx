@@ -2,18 +2,19 @@ import { useTranslation } from "react-i18next";
 import type { YieldPendingActionType } from "../../../../domain/types/pending-action";
 import { getExtendedYieldType } from "../../../../domain/types/yields";
 import { getRewardRateFormatted } from "../../../../shared/lib/formatters";
+import { TokenIcon } from "../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Button } from "../../../../shared/ui/primitives/button";
 import { Spinner } from "../../../../shared/ui/primitives/spinner";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { KycGateCard } from "../../../earn/ui/components/kyc-gate-card";
-import { RewardRateBreakdown } from "../../../earn/ui/components/reward-rate-breakdown";
-import { SelectValidator } from "../../../earn/ui/components/select-validator";
-import { useTrackPage } from "../../../tracking/react/use-track-page";
-import { AnimationPage } from "../../../widget-shell/animation-page";
-import { PageContainer } from "../../../widget-shell/page-container";
-import { TokenIcon } from "../../../widget-shell/ui/token-icon";
+import {
+  KycGateCard,
+  RewardRateBreakdown,
+  SelectValidator,
+} from "../../../earn/components";
+import { useTrackPage } from "../../../tracking/state";
+import { AnimationPage, PageContainer } from "../../../widget-shell/components";
 import { AmountBlock } from "./components/amount-block";
 import { PositionBalances } from "./components/position-balances";
 import { ProviderDetails } from "./components/provider-details";

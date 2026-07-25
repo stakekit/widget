@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 import { Outlet } from "react-router";
 import { useSyncElementHeight } from "../../../shared/react/use-sync-element-height";
-import { useCurrentLayout } from "../current-layout";
+import { useCurrentLayout } from "../ui/current-layout";
 import { absoluteContainer } from "./styles.css";
 
 export const ClassicLayout = ({

@@ -13,14 +13,35 @@ Production code is organized by ownership rather than by React mechanism:
   persistence, tracking, widget navigation, wallet integration, workflow
   execution, and borrow execution.
 - `src/features/<feature>` owns feature state, contextual read models, command
-  atoms, React adapters, and screens. A feature exposes cross-feature
-  collaboration only through an intentional root entry such as `index.ts`,
-  `support.ts`, `state.ts`, `ui.ts`, or another narrowly named entrypoint.
+  atoms, React adapters, and screens. A feature publishes cross-feature
+  collaboration only through root entry files, of which there are exactly three
+  kinds, and everything else it contains is private — subdirectory modules and
+  other root-level modules alike, so a module at the feature root is not a way
+  to escape the boundary:
+  - `state.ts` — the headless interface: view atoms, command atoms, pure
+    projections and constructors, and zero-logic React adapter hooks over them.
+  - `ui.ts` — rendered views the feature owns: pages, routes, and layouts.
+  - `components.ts` — presentational components the feature publishes for reuse
+    by other features.
+
+  A feature only creates the entries it actually shares; an entry with no
+  cross-feature consumer is deleted rather than kept empty. A small flat feature
+  keeps its implementation in `state/` behind `state.ts`; a single-module feature
+  whose one module is the entire headless interface may keep that implementation
+  in `state.ts` itself. Keep the barrels narrow. A root entry that re-exports a feature's whole page graph creates
+  import cycles and drags unrelated modules into consumers' builds, so publish
+  the collaboration contract rather than the implementation. Build-time
+  `*.css.ts` modules are exempt: vanilla-extract evaluates them outside the
+  React module graph, so they import style modules directly.
 - `src/domain` owns framework-independent schemas, identifiers, and business
   rules. Approved domain schema modules may adapt generated schemas, but domain
-  code must not depend on React, services, or features.
+  code must not depend on React, services, features, or `shared`. `shared`
+  depends on `domain`, so the edge runs one way only; a utility that only
+  domain uses belongs in `domain`.
 - `src/shared` owns framework-neutral utilities and genuinely reusable React or
-  UI primitives. Shared modules must not depend on app, services, or features.
+  UI primitives, including the widget's UI kit in `src/shared/ui`. Shared
+  modules must not depend on app, services, or features. Kit components are
+  imported directly by path; `shared` publishes no barrels.
 
 The retired top-level `hooks`, `providers`, `pages`, `pages-dashboard`,
 `components`, `common`, `atoms`, and `borrow` ownership buckets must not be
@@ -43,7 +64,10 @@ acquires enabled networks and an optional initial Yield while constructing the
 wallet runtime, before feature resources are available.
 
 Feature-to-feature collaboration must use an explicit supported entrypoint;
-deep imports into another feature are forbidden. Resources may depend on the
+deep imports into another feature are forbidden and rev-dep fails the build on
+them. Importing a feature's root module that is not one of its three entries
+counts as a deep import and fails the same check. Tests may deep-import feature
+internals, since they assert on internal behaviour by design. Resources may depend on the
 app runtime, resource-source capability services, domain, shared code, and
 public types, but never on features or React. Services may depend on other
 services, domain, shared code, and generated clients where approved, but never
@@ -54,6 +78,26 @@ React dependencies in Authoritative Resources, and blocks retired architecture
 paths. Application runtime composition and tests are permitted to construct
 capability layers; approved domain schema adapters may import generated schema
 artifacts, but generated runtime clients remain private to `services/api`.
+
+### The shared UI kit and its inverted configuration
+
+`src/shared/ui/components` owns the generic kit: select modal, tooltip,
+dropdown, number input, max button, collapsible, divider, amount toggle, token
+and provider icons, and the virtual lists. None of it reads widget
+configuration. Where a component needs a host preference — the overlay portal
+element, the theme variant its recipe styles resolve against, icon overrides,
+or the input auto-resize switch — it reads the `WidgetPresentation` contract
+that `shared/ui` itself declares, and
+`app/composition/providers/widget-presentation.tsx` populates that contract
+from `app/config`. The dependency therefore points from app into shared, and
+the `shared` boundary stays limited to `shared` and `domain`.
+
+A feature's `components.ts` publishes only components that carry that feature's
+domain meaning. `widget-shell/components.ts` publishes shell chrome — page
+container, page CTA, back button, tab and layout styles, maintenance screen —
+and `earn/components.ts` publishes yield, validator, and KYC presentation typed
+on those domain models. A generic component that acquires no domain meaning
+belongs in the kit, not behind a feature entry.
 
 ## Effect services
 
@@ -202,10 +246,14 @@ The remaining widget-owned contexts are intentional:
   subtree in which a back button is rendered.
 - `CurrentLayoutContext` coordinates measurements between the active routed
   page and its surrounding animated layout.
-- `SKLocationContext` adapts the current and previous React Router locations
-  for the routed subtree.
 - `RootElementContext` exposes the widget host element to portal and overlay
   descendants in that host subtree.
+- `WidgetPresentationContext` supplies the host-owned rendering environment —
+  overlay portal element, theme variant, icon overrides, input auto-resize — to
+  the `shared/ui` kit. It is the inversion that lets shared components render
+  host preferences without importing `app/config`; its value is immutable host
+  configuration for the subtree, not widget state, and it is installed once at
+  the application composition seam.
 
 Effect Atom's registry context and the contexts supplied by i18next, TanStack
 Query, Wagmi, RainbowKit, and the Solana wallet adapters are third-party runtime

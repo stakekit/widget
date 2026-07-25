@@ -15,7 +15,7 @@ import { Text } from "../../../../../../../shared/ui/primitives/typography/text"
 import {
   MultiYieldsKey,
   visibleMultiYieldsAtom,
-} from "../../../../../../yield-summary/multi-yields";
+} from "../../../../../../yield-summary/state";
 import { useEarnEntry } from "../../../../../react/use-earn-facades";
 import { SelectYield } from "../../../../components/select-yield";
 import {

@@ -1,11 +1,11 @@
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { useUnstakeMatch } from "../../../../../shared/react/navigation/use-unstake-match";
-import { useUnstakeOrPendingActionParams } from "../../../../../shared/react/navigation/use-unstake-or-pending-action-params";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { pressAnimation } from "../../../../../shared/ui/primitives/button/styles.css";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useUnstakeMatch } from "../../../react/use-unstake-match";
+import { useUnstakeOrPendingActionParams } from "../../../react/use-unstake-or-pending-action-params";
 import * as styles from "./styles.css";
 
 type PositionDetailsActionMode = "stake" | "unstake";

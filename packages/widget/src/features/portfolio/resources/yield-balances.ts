@@ -4,10 +4,10 @@ import {
   refreshYieldPositionsAtom,
   yieldPositionsResourceAtom,
 } from "../../../resources/yield-positions/yield-positions";
-import { currentWalletScopeAtom } from "../../wallet/state/selectors";
+import { walletScopeAtom } from "../../wallet/state";
 
 const yieldBalancesScanResourceAtom = Atom.readable((get) => {
-  const scope = get(currentWalletScopeAtom);
+  const scope = get(walletScopeAtom);
 
   return scope
     ? get(yieldPositionsResourceAtom(scope))
@@ -16,11 +16,11 @@ const yieldBalancesScanResourceAtom = Atom.readable((get) => {
 
 export const yieldBalancesScanAtom = Atom.writable(
   (get) => ({
-    enabled: get(currentWalletScopeAtom) !== null,
+    enabled: get(walletScopeAtom) !== null,
     result: get(yieldBalancesScanResourceAtom),
   }),
   (get) => {
-    const scope = get.get(currentWalletScopeAtom);
+    const scope = get.get(walletScopeAtom);
     if (scope) get.set(refreshYieldPositionsAtom(scope), undefined);
   }
 ).pipe(Atom.withLabel("yieldBalancesScanAtom"));

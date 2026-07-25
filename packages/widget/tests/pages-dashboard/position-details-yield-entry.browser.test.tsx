@@ -22,22 +22,22 @@ import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   classicFlowSessionStore,
   makeClassicTransactionFlowDestination,
-} from "../../src/features/classic-transaction-flow/facade";
+} from "../../src/features/classic-transaction-flow/state";
 import {
   PositionBalancesKey,
   positionBalancesByTypeAtom,
   tokenBalancesScanAtom,
-} from "../../src/features/portfolio/public-state";
+} from "../../src/features/portfolio/state";
 import {
   positionDetailsStakeViewAtom,
   setPositionDetailsStakeAmountAtom,
   submitPositionDetailsStakeAtom,
-} from "../../src/features/position-details/ui/dashboard/state/stake-facade";
-import { PositionDetailsStakeEntryKey } from "../../src/features/position-details/ui/dashboard/state/stake-machine";
+} from "../../src/features/position-details/state/dashboard-stake-facade";
+import { PositionDetailsStakeEntryKey } from "../../src/features/position-details/state/dashboard-stake-machine";
 import {
   walletConnectionStateAtom,
   walletScopeAtom,
-} from "../../src/features/wallet/public-state";
+} from "../../src/features/wallet/state";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,

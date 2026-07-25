@@ -5,8 +5,11 @@ import type { Prices } from "../../../domain/schema/health-price-models";
 import { getActionProviderYieldId } from "../../../domain/types/action";
 import { isBittensorStaking } from "../../../domain/types/yields";
 import { getFeesInUSD, getGasFeeInUSD } from "../../../shared/lib/formatters";
-import { getYieldEntryEstimatedRewards } from "../../yield-entry";
-import { makeYieldSummaryFamily, YieldSummaryKey } from "../../yield-summary";
+import { getYieldEntryEstimatedRewards } from "../../yield-entry/state";
+import {
+  makeYieldSummaryFamily,
+  YieldSummaryKey,
+} from "../../yield-summary/state";
 import type { ClassicTransactionFlowIntake } from "../model/classic-transaction-flow";
 
 export const classicFlowYieldSummaryAtom = makeYieldSummaryFamily();

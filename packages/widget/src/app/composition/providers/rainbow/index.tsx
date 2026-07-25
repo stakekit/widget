@@ -2,7 +2,7 @@ import { useAtomSet } from "@effect/atom-react";
 import { AccountExtraInfoContext } from "@stakekit/rainbowkit";
 import type { PropsWithChildren } from "react";
 import type { Address } from "viem";
-import { useSKWallet } from "../../../../features/wallet/react/use-wallet";
+import { useSKWallet } from "../../../../features/wallet/state";
 import type { WalletSwitchAccountInput } from "../../../../services/wallet/domain/commands";
 import { WalletService } from "../../../../services/wallet/wallet-service";
 import { formatAddress } from "../../../../shared/lib/general";

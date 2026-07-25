@@ -4,17 +4,17 @@ import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
 import type { YieldId } from "../../../../../domain/schema/identifiers";
-import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import type { SelectModalProps } from "../../../../widget-shell/ui/select-modal";
+import type { SelectModalProps } from "../../../../../shared/ui/components/select-modal";
 import {
   SelectModal,
   SelectModalItemContainer,
-} from "../../../../widget-shell/ui/select-modal";
+} from "../../../../../shared/ui/components/select-modal";
+import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
+import { Box } from "../../../../../shared/ui/primitives/box";
 import {
   MultiYieldsKey,
   visibleMultiYieldsAtom,
-} from "../../../../yield-summary/multi-yields";
+} from "../../../../yield-summary/state";
 import { SelectOpportunityListItem } from "../select-opportunity-list-item";
 
 type SelectYieldProps = PropsWithChildren<

@@ -9,13 +9,11 @@ import { getPositionTotalAmount } from "../../../domain/types/positions";
 import { getTokenPriceInUSD } from "../../../domain/types/price";
 import { PricesKey, pricesAtom } from "../../../resources/token-prices/prices";
 import {
+  CurrentRewardsSummaryKey,
   MultiYieldsKey,
   multiYieldsByIdAtom,
-} from "../../yield-summary/multi-yields";
-import {
-  CurrentRewardsSummaryKey,
   positiveRewardsSummaryAtom,
-} from "../../yield-summary/yield-insights";
+} from "../../yield-summary/state";
 import { type PositionItem, positionsTableDataAtom } from "./positions";
 import { tokenBalancesScanAtom } from "./token-balances";
 

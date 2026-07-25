@@ -4,15 +4,15 @@ import { useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { images } from "../../../../shared/assets/images";
 import { formatCountryCode } from "../../../../shared/lib/formatters";
+import type { SelectModalProps } from "../../../../shared/ui/components/select-modal";
+import { SelectModal } from "../../../../shared/ui/components/select-modal";
 import { SKAnchor } from "../../../../shared/ui/primitives/anchor";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Button } from "../../../../shared/ui/primitives/button";
 import { HelpIcon } from "../../../../shared/ui/primitives/icons/help";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../tracking/react/use-track-event";
-import type { SelectModalProps } from "../../../widget-shell/ui/select-modal";
-import { SelectModal } from "../../../widget-shell/ui/select-modal";
+import { useTrackEvent } from "../../../tracking/state";
 import type { useGeoBlock } from "../../react/use-geo-block";
 import { container, imageStyle } from "./style.css";
 

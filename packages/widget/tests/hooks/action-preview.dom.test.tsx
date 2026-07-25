@@ -9,18 +9,18 @@ import {
   widgetConfigAtom,
 } from "../../src/app/config/settings";
 import { ActionCommand } from "../../src/domain/schema/action-models";
+import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/state";
 import {
   type ClassicFlowSession,
   classicFlowSessionStore,
-} from "../../src/features/classic-transaction-flow/facade";
-import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { makeClassicTransactionFlowDestination } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+  makeClassicTransactionFlowDestination,
+} from "../../src/features/classic-transaction-flow/state";
 import {
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
   makeClassicFlowSessionModule,
 } from "../../src/features/classic-transaction-flow/state/classic-flow-session-facade";
-import { currentWalletStateResultAtom } from "../../src/features/wallet/state/root-atom";
+import { walletStateResultAtom } from "../../src/features/wallet/state";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
   yieldApiActionFixture,
@@ -113,7 +113,7 @@ const ConnectedWrapper = ({ children }: PropsWithChildren) => (
     initialValues={[
       [widgetConfigAtom, settings],
       [
-        currentWalletStateResultAtom,
+        walletStateResultAtom,
         AsyncResult.success({
           additionalAddresses: null,
           address: command.address,

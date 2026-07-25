@@ -10,7 +10,7 @@ import { MemoryRouter, Outlet, Route, Routes, useNavigate } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
-import { actionHistoryRevisionAtom } from "../../src/features/classic-transaction-flow/state/action-history";
+import { actionHistoryRevisionAtom } from "../../src/features/classic-transaction-flow/state";
 import { makeClassicTransactionWorkflowModule } from "../../src/features/classic-transaction-flow/state/classic-transaction-workflow";
 import type { ActionMeta } from "../../src/public-api/types";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";

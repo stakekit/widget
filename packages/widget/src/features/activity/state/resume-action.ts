@@ -15,8 +15,8 @@ import type { ClassicTransactionWorkflowProviderDetail } from "../../../services
 import {
   classicFlowSessionStore,
   makeClassicTransactionFlowDestination,
-} from "../../classic-transaction-flow/facade";
-import { walletConnectionStateAtom } from "../../wallet/public-state";
+} from "../../classic-transaction-flow/state";
+import { walletConnectionStateAtom } from "../../wallet/state";
 
 type ResumeActivityAction = Readonly<{
   readonly action: YieldAction;

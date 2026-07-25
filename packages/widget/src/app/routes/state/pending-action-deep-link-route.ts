@@ -4,15 +4,15 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import {
   classicFlowSessionStore,
   makeClassicTransactionFlowDestination,
-} from "../../../features/classic-transaction-flow/facade";
+} from "../../../features/classic-transaction-flow/state";
 import {
   type PendingActionDeepLinkIntentId,
   pendingActionDeepLinkViewAtom,
   samePendingActionDeepLinkIntent,
-} from "../../../features/earn/pending-action-deep-link";
-import { initParamsAtom } from "../../../features/init-params/atoms";
-import { mountAnimationStateAtom } from "../../../features/mount-animation/public-state";
-import { walletConnectionStateAtom } from "../../../features/wallet/public-state";
+} from "../../../features/earn/state";
+import { initParamsAtom } from "../../../features/init-params/state";
+import { mountAnimationStateAtom } from "../../../features/mount-animation/state";
+import { walletConnectionStateAtom } from "../../../features/wallet/state";
 import { toWidgetPath } from "../../../services/navigation/widget-navigation";
 import { appRuntime } from "../../runtime/app-runtime";
 import { runWidgetNavigationCommand } from "../../runtime/navigation";

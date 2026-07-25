@@ -18,7 +18,7 @@ import { Button } from "../../../../shared/ui/primitives/button";
 import { XIcon } from "../../../../shared/ui/primitives/icons/x-icon";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../tracking/react/use-track-event";
+import { useTrackEvent } from "../../../tracking/state";
 import {
   closeButton,
   container,

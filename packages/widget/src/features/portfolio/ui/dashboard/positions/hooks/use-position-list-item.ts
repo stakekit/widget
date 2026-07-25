@@ -12,7 +12,7 @@ import { defaultFormattedNumber } from "../../../../../../shared/lib/number-form
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
-} from "../../../../../yield-summary/yield-insights";
+} from "../../../../../yield-summary/state";
 import type { PositionItem } from "../../../../resources/positions";
 import { usePositionListItem as useBasePositionListItem } from "../../../classic/positions-page/hooks/use-position-list-item";
 

@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
 import { equalTokens } from "../../../../../../../domain/types/tokens";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
+import { SelectModal } from "../../../../../../../shared/ui/components/select-modal";
+import { TokenIcon } from "../../../../../../../shared/ui/components/token-icon";
 import { VirtualList } from "../../../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import {
@@ -13,9 +15,7 @@ import {
 } from "../../../../../../../shared/ui/primitives/button/styles.css";
 import { CaretDownIcon } from "../../../../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../../../../tracking/react/use-track-event";
-import { SelectModal } from "../../../../../../widget-shell/ui/select-modal";
-import { TokenIcon } from "../../../../../../widget-shell/ui/token-icon";
+import { useTrackEvent } from "../../../../../../tracking/state";
 import {
   useEarnEntry,
   useEarnTokenSelection,

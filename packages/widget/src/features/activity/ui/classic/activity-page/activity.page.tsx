@@ -3,9 +3,11 @@ import { useTranslation } from "react-i18next";
 import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useMountAnimation } from "../../../../mount-animation/react/use-mount-animation";
-import { FallbackContent } from "../../../../widget-shell/fallback-content";
-import { PageContainer } from "../../../../widget-shell/page-container";
+import { useMountAnimation } from "../../../../mount-animation/state";
+import {
+  FallbackContent,
+  PageContainer,
+} from "../../../../widget-shell/components";
 import { ActionListItem } from "./components/action-list-item";
 import { ActivityFilters } from "./components/activity-filters";
 import { useActivityPage } from "./hooks/use-activity-page";

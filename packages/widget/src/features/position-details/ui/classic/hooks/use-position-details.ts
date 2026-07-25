@@ -1,5 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type BigNumber from "bignumber.js";
+import { useUnstakeOrPendingAction } from "../../../react/use-unstake-or-pending-action";
 import {
   loadMorePositionDetailsValidatorsAtom,
   positionDetailsClassicViewAtom,
@@ -8,7 +9,6 @@ import {
   setPositionDetailsExitMaxAmountAtom,
   submitPositionDetailsExitAtom,
 } from "../../../state/classic-facade";
-import { useUnstakeOrPendingAction } from "../state";
 import { usePendingActions } from "./use-pending-actions";
 
 export const usePositionDetails = () => {

@@ -1,6 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { ValidatorInput as ValidatorDto } from "../../../../../domain/types/validators";
-import type { SelectModalProps } from "../../../../widget-shell/ui/select-modal";
+import type { SelectModalProps } from "../../../../../shared/ui/components/select-modal";
 import {
   closePositionPendingActionModalAtom,
   openPositionPendingActionModalAtom,

@@ -8,11 +8,13 @@ import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
 import { CheckCircleIcon } from "../../../shared/ui/primitives/icons/check-circle";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { DetailRow } from "../../earn/ui/dashboard/earn-details/components/details-section";
-import { useTrackPage } from "../../tracking/react/use-track-page";
-import { AnimationPage } from "../../widget-shell/animation-page";
-import { PageContainer } from "../../widget-shell/page-container";
-import { PageCtaButton } from "../../widget-shell/page-cta";
+import { DetailRow } from "../../earn/components";
+import { useTrackPage } from "../../tracking/state";
+import {
+  AnimationPage,
+  PageContainer,
+  PageCtaButton,
+} from "../../widget-shell/components";
 import { useBorrowTransactionFlow } from "../react/borrow-flow-route";
 import { useBorrowExecution } from "./use-borrow-execution";
 

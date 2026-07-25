@@ -5,9 +5,11 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { Heading } from "../../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { AnimationPage } from "../../../../widget-shell/animation-page";
-import { PageContainer } from "../../../../widget-shell/page-container";
-import { PageCtaButton } from "../../../../widget-shell/page-cta";
+import {
+  AnimationPage,
+  PageContainer,
+  PageCtaButton,
+} from "../../../../widget-shell/components";
 import { useSteps } from "../hooks/use-steps.hook";
 import { stepsErrorBanner, utilaPendingApprovalsBanner } from "./styles.css";
 import { TxState } from "./tx-state";

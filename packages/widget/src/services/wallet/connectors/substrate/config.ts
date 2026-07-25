@@ -1,16 +1,12 @@
 import type { Chain as LunoKitChain } from "@luno-kit/core/chains";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
-import { Effect } from "effect";
+import { Effect, Record } from "effect";
 import type { Network } from "../../../../domain/schema/network-model";
 
 import {
   type SubstrateChainsMap,
   substrateChainsMap,
 } from "../../../../domain/types/chains/substrate";
-import {
-  typeSafeObjectEntries,
-  typeSafeObjectFromEntries,
-} from "../../../../shared/lib/object";
 import { getWalletNetworkLogo } from "../../assets";
 import { WalletIntegrationError } from "../../domain/errors";
 
@@ -28,12 +24,10 @@ const queryFn = async ({
     wallets: WalletList[number]["wallets"];
   } | null;
 }> => {
-  const filteredSubstrateChainsMap: Partial<SubstrateChainsMap> =
-    typeSafeObjectFromEntries(
-      typeSafeObjectEntries<SubstrateChainsMap>(substrateChainsMap).filter(
-        ([_, v]) => enabledNetworks.has(v.skChainName)
-      )
-    );
+  const filteredSubstrateChainsMap: Partial<SubstrateChainsMap> = Record.filter(
+    substrateChainsMap,
+    (v) => enabledNetworks.has(v.skChainName)
+  );
 
   const substrateChains = Object.values(filteredSubstrateChainsMap).map(
     (val) => val.wagmiChain

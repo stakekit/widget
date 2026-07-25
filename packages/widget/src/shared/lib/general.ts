@@ -1,4 +1,3 @@
-import type { Network } from "../../domain/schema/network-model";
 import { formatNumber } from "./number-format";
 
 export const APToPercentage = (ap: number) =>
@@ -11,12 +10,6 @@ export const APToPercentage = (ap: number) =>
 
 //   return colorsTuple[char % colorsTuple.length] ?? colorsTuple[0];
 // };
-
-export const getNetworkLogo = (network: Network) =>
-  `https://assets.stakek.it/networks/${network}.svg`;
-
-export const getTokenLogo = (tokenName: string) =>
-  `https://assets.stakek.it/tokens/${tokenName}.svg`;
 
 export function formatAddress(
   address: string,

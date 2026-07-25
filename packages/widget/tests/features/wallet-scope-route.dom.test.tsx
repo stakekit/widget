@@ -9,7 +9,7 @@ import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   useWalletScopeRoute,
   WalletScopeRoute,
-} from "../../src/features/wallet/react/wallet-scope-route";
+} from "../../src/features/wallet/ui";
 import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
 import { disconnectedNormalizedWalletState } from "../../src/services/wallet/domain/state";
 import { render } from "../utils/test-utils.dom";

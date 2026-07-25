@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
 import { formatAddress } from "../../../../../../shared/lib/general";
-import { Box } from "../../../../../../shared/ui/primitives/box";
-import * as CopyText from "../../../../../../shared/ui/primitives/copy-text";
-import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import {
   CollapsibleArrow,
   CollapsibleContent,
   CollapsibleRoot,
   CollapsibleTrigger,
-} from "../../../../../widget-shell/ui/collapsible";
+} from "../../../../../../shared/ui/components/collapsible";
+import { Box } from "../../../../../../shared/ui/primitives/box";
+import * as CopyText from "../../../../../../shared/ui/primitives/copy-text";
+import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import type {
   EarnDetailAddressRow,
   EarnDetailRow,

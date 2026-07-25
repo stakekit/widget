@@ -1,6 +1,6 @@
 import type { recipe } from "@vanilla-extract/recipes";
 
-type WidgetVariant = "default" | "finery" | "porto" | "utila" | "zerion";
+export type WidgetVariant = "default" | "finery" | "porto" | "utila" | "zerion";
 
 export const combineRecipeWithVariant = ({
   rec,

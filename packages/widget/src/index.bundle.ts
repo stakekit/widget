@@ -1,5 +1,4 @@
 export { renderSKWidget } from "./App";
-export type { SupportedSKChainIds } from "./domain/types/chains";
 export type {
   ActionMeta,
   BittensorTx,
@@ -7,6 +6,7 @@ export type {
   SKTx,
   SKTxMeta,
   SKWallet,
+  SupportedSKChainIds,
   TronTx,
 } from "./public-api/types";
 export {

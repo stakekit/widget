@@ -21,13 +21,13 @@ import { walletScopeOwnerKey } from "../../../services/wallet/domain/scope";
 import {
   classicFlowSessionStore,
   makeClassicTransactionFlowDestination,
-} from "../../classic-transaction-flow/facade";
-import { walletConnectionStateAtom } from "../../wallet/public-state";
-import { YieldSummaryKey } from "../../yield-summary";
+} from "../../classic-transaction-flow/state";
+import { walletConnectionStateAtom } from "../../wallet/state";
 import {
   CurrentYieldKycGateKey,
   currentYieldKycGateAtom,
-} from "../../yield-summary/yield-insights";
+  YieldSummaryKey,
+} from "../../yield-summary/state";
 import {
   dispatchPositionDetailsWorkflowAtom,
   positionDetailsWorkflowViewAtom,

@@ -4,10 +4,10 @@ import {
   refreshTokenBalancesAtom,
   tokenBalancesResourceAtom,
 } from "../../../resources/token-balances/token-balances";
-import { currentWalletScopeAtom } from "../../wallet/state/selectors";
+import { walletScopeAtom } from "../../wallet/state";
 
 const tokenBalancesScanResourceAtom = Atom.readable((get) => {
-  const scope = get(currentWalletScopeAtom);
+  const scope = get(walletScopeAtom);
 
   return scope
     ? get(tokenBalancesResourceAtom(scope))
@@ -16,11 +16,11 @@ const tokenBalancesScanResourceAtom = Atom.readable((get) => {
 
 export const tokenBalancesScanAtom = Atom.writable(
   (get) => ({
-    enabled: get(currentWalletScopeAtom) !== null,
+    enabled: get(walletScopeAtom) !== null,
     result: get(tokenBalancesScanResourceAtom),
   }),
   (get) => {
-    const scope = get.get(currentWalletScopeAtom);
+    const scope = get.get(walletScopeAtom);
     if (scope) get.set(refreshTokenBalancesAtom(scope), undefined);
   }
 ).pipe(Atom.withLabel("tokenBalancesScanAtom"));

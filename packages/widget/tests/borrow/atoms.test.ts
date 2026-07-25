@@ -10,12 +10,9 @@ import { TokenBalancesResponse } from "../../src/domain/schema/financial-models"
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   applyBorrowFormAction,
+  BorrowAtomError,
   BorrowDashboardKey,
   type BorrowFormIntent,
-  resolveBorrowDashboardView,
-} from "../../src/features/borrow/atoms/form";
-import {
-  BorrowAtomError,
   BorrowMarketsKey,
   BorrowPositionKey,
   BorrowPositionNotFound,
@@ -25,8 +22,9 @@ import {
   borrowPositionAtom,
   borrowPositionsAtom,
   currentBorrowPositionsAtom,
-} from "../../src/features/borrow/atoms/resources";
-import { currentWalletScopeAtom } from "../../src/features/wallet/state/selectors";
+  resolveBorrowDashboardView,
+} from "../../src/features/borrow/state";
+import { walletScopeAtom } from "../../src/features/wallet/state";
 import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 
@@ -189,7 +187,7 @@ describe("borrow atoms", () => {
             } as never)
           )
         ),
-        Atom.initialValue(currentWalletScopeAtom, walletScope),
+        Atom.initialValue(walletScopeAtom, walletScope),
       ],
     });
 

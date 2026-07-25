@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { getYieldTypeLabels } from "../../../../domain/types/yields";
-import type { PageCta } from "../../../widget-shell/page-cta";
-import { PageCtaButton } from "../../../widget-shell/page-cta";
+import type { PageCta } from "../../../widget-shell/components";
+import { PageCtaButton } from "../../../widget-shell/components";
 import { useEarnEntry } from "../../react/use-earn-facades";
 
 export const EarnPageCta = ({

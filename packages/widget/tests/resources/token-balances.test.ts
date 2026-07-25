@@ -5,7 +5,7 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { ApiRequestError } from "../../src/domain/schema/api-errors";
 import type { TokenBalanceScanCommand } from "../../src/domain/schema/financial-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import { tokenBalancesScanAtom as portfolioTokenBalancesAtom } from "../../src/features/portfolio/resources/token-balances";
+import { tokenBalancesScanAtom as portfolioTokenBalancesAtom } from "../../src/features/portfolio/state";
 import {
   refreshTokenBalancesAtom,
   TokenBalancesError,

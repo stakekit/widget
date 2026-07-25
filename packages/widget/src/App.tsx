@@ -19,7 +19,7 @@ import { DashboardRoutes } from "./app/routes/dashboard-routes";
 import { useHandleDeepLinks } from "./app/routes/hooks/use-handle-deep-links";
 import { applicationRouterAtom } from "./app/runtime/application-router-runtime";
 import { useLoadErrorTranslations } from "./app/translation/use-load-error-translations";
-import { appContainer } from "./features/widget-shell/layout.css";
+import { appContainer } from "./features/widget-shell/components";
 import type {
   BundledSKWidgetProps,
   SKAppProps,

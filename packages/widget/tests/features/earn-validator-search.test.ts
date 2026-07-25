@@ -3,16 +3,16 @@ import { Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import type { EarnYield } from "../../src/domain/schema/earn-models";
-import {
-  earnValidatorSelectionViewAtom,
-  selectEarnValidatorAtom,
-  setEarnValidatorSearchAtom,
-} from "../../src/features/earn/facade";
 import { yieldValidatorsAtom } from "../../src/features/earn/state/atoms-state/catalog/atoms";
 import {
   YieldValidatorsKey,
   YieldValidatorsPullKey,
 } from "../../src/features/earn/state/atoms-state/catalog/keys";
+import {
+  earnValidatorSelectionViewAtom,
+  selectEarnValidatorAtom,
+  setEarnValidatorSearchAtom,
+} from "../../src/features/earn/state/earn-facade";
 import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
 import {
   type ValidatorDirectoryRequest,

@@ -17,7 +17,7 @@ import {
 import {
   MultiYieldsKey,
   visibleMultiYieldsAtom,
-} from "../../src/features/yield-summary/multi-yields";
+} from "../../src/features/yield-summary/state/multi-yields";
 import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
 import {
   yieldApiProviderFixture,

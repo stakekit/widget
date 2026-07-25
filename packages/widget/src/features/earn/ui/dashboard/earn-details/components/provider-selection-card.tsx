@@ -15,7 +15,7 @@ import { PlusIcon } from "../../../../../../shared/ui/primitives/icons/plus";
 import { XIcon } from "../../../../../../shared/ui/primitives/icons/x-icon";
 import { Image } from "../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import type { YieldSummaryProvider } from "../../../../../yield-summary";
+import type { YieldSummaryProvider } from "../../../../../yield-summary/state";
 import { useEarnEntry } from "../../../../react/use-earn-facades";
 import { useSelectValidator } from "../../../classic/earn-page/components/select-validator-section/use-select-validator";
 import { SelectValidator } from "../../../components/select-validator";

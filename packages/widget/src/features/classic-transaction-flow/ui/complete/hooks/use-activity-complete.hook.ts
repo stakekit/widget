@@ -2,8 +2,8 @@ import { useAtomValue } from "@effect/atom-react";
 import type { YieldAction } from "../../../../../domain/schema/action-models";
 import { getActionInputToken } from "../../../../../domain/types/action";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import { useTrackPage } from "../../../../tracking/react/use-track-page";
-import { YieldSummaryKey } from "../../../../yield-summary";
+import { useTrackPage } from "../../../../tracking/state";
+import { YieldSummaryKey } from "../../../../yield-summary/state";
 import type { ClassicTransactionFlowIntake } from "../../../model/classic-transaction-flow";
 import {
   useClassicFlowExecution,

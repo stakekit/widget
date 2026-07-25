@@ -3,10 +3,9 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import type { ComponentProps, PropsWithChildren } from "react";
 import { StrictMode } from "react";
 import { I18nextProvider } from "react-i18next";
-import { WagmiConfigProvider } from "../../../features/wallet/react/provider";
-import { CurrentLayoutProvider } from "../../../features/widget-shell/current-layout";
+import { WagmiConfigProvider } from "../../../features/wallet/ui";
+import { CurrentLayoutProvider } from "../../../features/widget-shell/ui";
 import { selectAtom } from "../../../shared/effect/select-atom";
-import { SKLocationProvider } from "../../../shared/react/location-history";
 import { RootElementProvider } from "../../../shared/react/root-element";
 import { i18nInstance } from "../../../translation";
 import utilaTranslations from "../../../translation/English/utila-variant.json";
@@ -15,6 +14,7 @@ import { MountAnimationEffects } from "./mount-animation";
 import { ThirdPartyQueryClientProvider } from "./query-client";
 import { RainbowProvider } from "./rainbow";
 import { ThemeWrapper } from "./theme-wrapper";
+import { WidgetPresentationAdapter } from "./widget-presentation";
 
 const widgetTranslationConfigAtom = selectAtom(
   widgetConfigAtom,
@@ -64,10 +64,10 @@ export const Providers = ({
 
   return (
     <StrictMode>
-      <RootElementProvider>
-        <I18nextProvider i18n={i18nInstance}>
-          <ThirdPartyQueryClientProvider>
-            <SKLocationProvider>
+      <WidgetPresentationAdapter>
+        <RootElementProvider>
+          <I18nextProvider i18n={i18nInstance}>
+            <ThirdPartyQueryClientProvider>
               <MountAnimationEffects />
               <WagmiConfigProvider>
                 <RainbowProvider>
@@ -76,10 +76,10 @@ export const Providers = ({
                   </ThemeWrapper>
                 </RainbowProvider>
               </WagmiConfigProvider>
-            </SKLocationProvider>
-          </ThirdPartyQueryClientProvider>
-        </I18nextProvider>
-      </RootElementProvider>
+            </ThirdPartyQueryClientProvider>
+          </I18nextProvider>
+        </RootElementProvider>
+      </WidgetPresentationAdapter>
     </StrictMode>
   );
 };

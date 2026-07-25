@@ -10,19 +10,21 @@ import {
   formatNumber,
 } from "../../../../../shared/lib/number-format";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
+import * as AmountToggle from "../../../../../shared/ui/components/amount-toggle";
+import { MaxButton } from "../../../../../shared/ui/components/max-button";
+import {
+  NumberInput,
+  type NumberInputProps,
+} from "../../../../../shared/ui/components/number-input";
+import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box, type BoxProps } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useYieldMetaInfo } from "../../../../earn/react/use-yield-meta-info";
-import { selectTokenSection } from "../../../../earn/ui/classic/earn-page/components/select-token-section/styles.css";
-import * as AmountToggle from "../../../../earn/ui/components/amount-toggle";
-import { MaxButton } from "../../../../widget-shell/ui/max-button";
 import {
-  NumberInput,
-  type NumberInputProps,
-} from "../../../../widget-shell/ui/number-input";
-import { TokenIcon } from "../../../../widget-shell/ui/token-icon";
+  selectTokenSection,
+  useYieldMetaInfo,
+} from "../../../../earn/components";
 import { priceTxt } from "../styles.css";
 
 type AmountBlockProps = {

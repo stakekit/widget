@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
+import { Divider } from "../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { Divider } from "../../../../widget-shell/divider";
 import { useEarnPageStatus } from "../../../react/use-earn-facades";
 import { ExtraArgsSelection } from "../../classic/earn-page/components/extra-args-selection";
 import { Footer } from "../../classic/earn-page/components/footer";

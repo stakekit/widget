@@ -10,7 +10,7 @@ import {
 } from "../../../../../../resources/yield-opportunity/provider";
 import { getRewardRateFormatted } from "../../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../../shared/lib/number-format";
-import { YieldSummaryKey } from "../../../../../yield-summary";
+import { YieldSummaryKey } from "../../../../../yield-summary/state";
 import type { PositionItem } from "../../../../resources/positions";
 import { portfolioPositionYieldSummaryAtom } from "../../../../state/position-yield-summary";
 
