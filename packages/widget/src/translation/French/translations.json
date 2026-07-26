@@ -680,6 +680,8 @@
     "up_to_rate_type": "JUSQU'À {{rateType}}"
   },
   "error_modal": {
+    "unexpected_description": "Une erreur inattendue s'est produite. Rechargez l'application et réessayez.",
+    "reload_app": "Recharger l'application",
     "solution": "Solution potentielle :"
   },
   "chain_modal_disclaimer": "Alimenté par Yield.xyz",

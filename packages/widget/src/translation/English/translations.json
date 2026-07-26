@@ -807,6 +807,8 @@
     "up_to_rate_type": "UP TO {{rateType}}"
   },
   "error_modal": {
+    "unexpected_description": "An unexpected error occurred. Reload the app and try again.",
+    "reload_app": "Reload app",
     "solution": "Potential solution:"
   },
   "chain_modal_disclaimer": "Powered by Yield.xyz",

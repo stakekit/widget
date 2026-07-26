@@ -1,16 +1,33 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { images } from "../../../assets/images";
-import { useRichErrors } from "../../../hooks/use-rich-errors";
+import { type RichError, useRichErrors } from "../../../hooks/use-rich-errors";
 import { Box } from "../../atoms/box";
+import { Button } from "../../atoms/button";
 import { SelectModal } from "../../atoms/select-modal";
 import { Heading } from "../../atoms/typography/heading";
 import { Text } from "../../atoms/typography/text";
 import { imageStyle } from "./style.css";
 
-export const RichErrorModal = () => {
+type Props = {
+  error?: RichError | null;
+  isOpen?: boolean;
+  onClose?: () => void;
+  action?: { label: string; onClick: () => void };
+  description?: string;
+};
+
+export const RichErrorModal = ({
+  error: controlledError,
+  isOpen,
+  onClose,
+  action,
+  description,
+}: Props = {}) => {
   const { i18n, t } = useTranslation();
-  const { error, resetError } = useRichErrors();
+  const { error: richError, resetError } = useRichErrors();
+  const error = controlledError === undefined ? richError : controlledError;
+  const close = onClose ?? resetError;
   const { message, details } = error ?? {};
   const hasKnownMessage = message ? i18n.exists(`errors.${message}`) : false;
 
@@ -18,8 +35,8 @@ export const RichErrorModal = () => {
 
   return (
     <SelectModal
-      state={{ isOpen: !!error, setOpen: (isOpen) => !isOpen && resetError() }}
-      onClose={resetError}
+      state={{ isOpen: isOpen ?? !!error, setOpen: (open) => !open && close() }}
+      onClose={close}
     >
       <Box
         display="flex"
@@ -32,10 +49,20 @@ export const RichErrorModal = () => {
       >
         <Box as="img" src={images.whatIsLiquidStaking} className={imageStyle} />
         {!message && (
-          <Box marginBottom="6">
+          <Box marginBottom="6" textAlign="center">
             <Heading variant={{ level: "h4" }}>
               {t("shared.something_went_wrong")}
             </Heading>
+
+            {description && (
+              <Text
+                variant={{ type: "muted", weight: "normal" }}
+                textAlign="center"
+                marginTop="2"
+              >
+                {description}
+              </Text>
+            )}
           </Box>
         )}
 
@@ -86,6 +113,16 @@ export const RichErrorModal = () => {
             >
               {message}
             </Text>
+          </Box>
+        )}
+
+        {action && (
+          <Box marginTop="6" width="full">
+            <Button variant={{ color: "secondary" }} onClick={action.onClick}>
+              <Text variant={{ weight: "bold", size: "large" }}>
+                {action.label}
+              </Text>
+            </Button>
           </Box>
         )}
       </Box>

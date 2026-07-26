@@ -2,7 +2,7 @@ import { useCallback, useSyncExternalStore } from "react";
 import { BehaviorSubject } from "rxjs";
 import { config } from "../config";
 
-interface RichError {
+export interface RichError {
   message: string;
   details?: { [key: string]: unknown };
 }
