@@ -55,7 +55,7 @@ describe("Trust incentive APY", () => {
       .toBeInTheDocument();
     await expect.element(selectContainer.getByText("APY")).toBeInTheDocument();
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("shows personalized APY on the position details page", async ({
@@ -102,7 +102,7 @@ describe("Trust incentive APY", () => {
       )
       .toBeInTheDocument();
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("falls back to yield APY composition when the balance has no campaign component", async ({
@@ -158,6 +158,6 @@ describe("Trust incentive APY", () => {
       )
       .toBeInTheDocument();
 
-    app.unmount();
+    await app.unmount();
   });
 });

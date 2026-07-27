@@ -62,6 +62,7 @@ export default defineConfig(
           cacheDir: testCacheDir("browser"),
           test: {
             name: "browser",
+            fileParallelism: false,
             include: [browserTestPattern],
             setupFiles: [
               path.resolve(__dirname, "..", "tests/utils/setup.browser.ts"),

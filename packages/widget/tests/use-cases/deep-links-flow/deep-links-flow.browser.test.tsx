@@ -129,7 +129,7 @@ describe("Deep links flow", () => {
 
     expect(app.getByText("View Claim rewards transaction")).toBeInTheDocument();
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("Works correctly with pending action query param with validator address requirement", async ({

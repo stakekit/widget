@@ -1,6 +1,7 @@
 import { MotionGlobalConfig } from "motion/react";
 import { delay, HttpResponse, http } from "msw";
-import { afterEach } from "vitest";
+import { afterEach, vi } from "vitest";
+import { i18nInstance } from "../../src/translation";
 import { yieldApiYieldDtoFixture } from "../fixtures";
 import { yieldApiRoute } from "../mocks/api-routes";
 import { describe, expect, it } from "../utils/test-extend";
@@ -150,7 +151,39 @@ describe("classic mount geometry", () => {
         "visible"
       );
 
-      app.unmount();
+      await app.unmount();
     });
   }
+
+  it("restores language detection on a default remount", async () => {
+    const changeLanguage = vi.spyOn(i18nInstance, "changeLanguage");
+    const frenchApp = await renderApp({
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        chainModal: () => null,
+        language: "fr",
+        variant: "zerion",
+      },
+    });
+
+    expect(changeLanguage).toHaveBeenCalledWith("fr");
+    await frenchApp.unmount();
+    changeLanguage.mockClear();
+
+    const defaultApp = await renderApp({
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        variant: "default",
+      },
+    });
+    const detected = i18nInstance.services.languageDetector?.detect();
+    const detectedLanguage = Array.isArray(detected) ? detected[0] : detected;
+
+    expect(changeLanguage).toHaveBeenCalledWith(detectedLanguage);
+    await expect
+      .poll(() => i18nInstance.t("details.rewards.receive_output"))
+      .toBe("You'll receive");
+    await defaultApp.unmount();
+    changeLanguage.mockRestore();
+  });
 });

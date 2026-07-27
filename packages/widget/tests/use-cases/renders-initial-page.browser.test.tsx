@@ -209,7 +209,7 @@ describe("Renders initial page", () => {
     await expect.element(app.getByText("Manage")).toBeInTheDocument();
     await expect.element(app.getByText("Connect Wallet")).toBeInTheDocument();
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("uses category dashboard yield grouping by default with Borrow disabled", async ({
@@ -239,7 +239,7 @@ describe("Renders initial page", () => {
     expect(tabsText).not.toContain("Borrow");
     expect(tabsText).not.toContain("Earn");
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("shows Borrow when enabled with dashboard category grouping", async ({
@@ -270,7 +270,7 @@ describe("Renders initial page", () => {
     expect(tabsText).toContain("Manage");
     expect(tabsText).toContain("Activity");
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("supports flat dashboard yield grouping with Borrow disabled", async () => {
@@ -290,7 +290,7 @@ describe("Renders initial page", () => {
     expect(tabsText).toContain("Manage");
     expect(tabsText).toContain("Activity");
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("uses the configured dashboard category tab order", async ({ worker }) => {
@@ -339,7 +339,7 @@ describe("Renders initial page", () => {
       tabsText.indexOf("Activity")
     );
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("updates the selected dashboard category after route tab changes", async ({
@@ -409,7 +409,7 @@ describe("Renders initial page", () => {
       .element(app.getByText("DeFi").first())
       .toHaveAttribute("data-state", "selected");
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("opens the native Borrow dashboard tab", async ({ worker }) => {
@@ -619,7 +619,7 @@ describe("Renders initial page", () => {
       true
     );
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("opens the native Borrow review screen", async ({ worker }) => {
@@ -741,6 +741,6 @@ describe("Renders initial page", () => {
       .element(app.getByText("aave-v3-ethereum-usdc"))
       .toBeInTheDocument();
 
-    app.unmount();
+    await app.unmount();
   });
 });

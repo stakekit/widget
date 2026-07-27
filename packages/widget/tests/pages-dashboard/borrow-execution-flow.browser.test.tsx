@@ -431,7 +431,7 @@ describe("borrow execution flow component", () => {
 
     await expect.element(app.getByText("Borrow home")).toBeInTheDocument();
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("renders running state while execution waits for wallet signing", async () => {
@@ -445,7 +445,7 @@ describe("borrow execution flow component", () => {
     await expect.element(app.getByTestId("phase")).toHaveTextContent("signing");
     await expect.element(app.getByTestId("running")).toHaveTextContent("true");
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("routes to success when execution completes", async () => {
@@ -464,7 +464,7 @@ describe("borrow execution flow component", () => {
       .element(app.getByTestId("complete"))
       .toHaveTextContent("/borrow/complete action-1");
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("renders retryable failure and routes after retry succeeds", async () => {
@@ -491,7 +491,7 @@ describe("borrow execution flow component", () => {
       .element(app.getByTestId("complete"))
       .toHaveTextContent("/borrow/complete action-1");
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("retries after reconnecting without signing twice", async () => {
@@ -537,7 +537,7 @@ describe("borrow execution flow component", () => {
       .toHaveTextContent("/borrow/complete action-1");
     expect(signTransaction).toHaveBeenCalledOnce();
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("shows the next action step while retaining prior transaction batches", async () => {
@@ -588,7 +588,7 @@ describe("borrow execution flow component", () => {
       .toHaveTextContent("tx-2");
     await expect.element(app.getByTestId("phase")).toHaveTextContent("signing");
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("does not restart an abandoned submitted workflow from browser history", async () => {
@@ -650,6 +650,6 @@ describe("borrow execution flow component", () => {
     expect(signTransaction).toHaveBeenCalledOnce();
     expect(borrow.submitTransaction).toHaveBeenCalledOnce();
 
-    app.unmount();
+    await app.unmount();
   });
 });

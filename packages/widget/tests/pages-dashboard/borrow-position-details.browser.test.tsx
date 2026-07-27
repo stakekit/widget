@@ -233,7 +233,7 @@ describe("Borrow position details", () => {
     expect(app.container.textContent).not.toContain("2%");
     expect(app.container.textContent).not.toContain("3%");
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("renders borrow positions in Manage and opens borrow details", async ({
@@ -331,7 +331,7 @@ describe("Borrow position details", () => {
     await expect.element(app.getByText("My positions")).toBeInTheDocument();
     await expect.element(app.getByText("Total supplied")).toBeInTheDocument();
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("keeps a position execution route mounted while its position refreshes", async ({
@@ -448,6 +448,6 @@ describe("Borrow position details", () => {
       )
       .toBe(true);
 
-    app.unmount();
+    await app.unmount();
   });
 });

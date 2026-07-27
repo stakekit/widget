@@ -79,7 +79,7 @@ describe("position details action tabs", () => {
       .element(manage.getByTestId("route-kind"))
       .toHaveTextContent("manage");
 
-    manage.unmount();
+    await manage.unmount();
 
     const borrowPosition = await renderTabs("/positions/borrow/market-1");
 

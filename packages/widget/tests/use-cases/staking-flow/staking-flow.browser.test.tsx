@@ -173,6 +173,6 @@ describe("Staking flow", () => {
     await expect
       .element(app.getByText("View Stake transaction"))
       .toBeInTheDocument();
-    app.unmount();
-  }, 30_000);
+    await app.unmount();
+  });
 });

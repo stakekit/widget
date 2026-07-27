@@ -283,6 +283,6 @@ describe("Select opportunity", () => {
       )
       .toBeInTheDocument();
 
-    app.unmount();
+    await app.unmount();
   });
 });

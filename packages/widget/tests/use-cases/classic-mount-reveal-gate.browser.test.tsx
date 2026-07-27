@@ -49,7 +49,7 @@ const recordReveal = async (skProps: {
     heights.push(containerHeight(app.container));
   }
 
-  app.unmount();
+  await app.unmount();
 
   return { complete, heights };
 };

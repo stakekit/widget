@@ -27,6 +27,6 @@ describe("Geo block", () => {
       .element(app.getByText("This feature is not available in Austria."))
       .toBeInTheDocument();
 
-    app.unmount();
+    await app.unmount();
   });
 });

@@ -25,14 +25,18 @@ const widgetTranslationConfigAtom = selectAtom(
   })
 );
 
+const detectWidgetLanguage = () => {
+  const detected = i18nInstance.services.languageDetector?.detect();
+
+  return Array.isArray(detected) ? detected[0] : detected;
+};
+
 const widgetTranslationEffectsAtom = Atom.make((get) => {
   const { customTranslations, language, variant } = get(
     widgetTranslationConfigAtom
   );
 
-  if (language) {
-    void i18nInstance.changeLanguage(language);
-  }
+  void i18nInstance.changeLanguage(language ?? detectWidgetLanguage());
 
   if (variant === "utila") {
     i18nInstance.addResourceBundle(

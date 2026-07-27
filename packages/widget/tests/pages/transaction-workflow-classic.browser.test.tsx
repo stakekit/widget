@@ -155,7 +155,7 @@ describe("classic transaction workflow browser integration", () => {
     expect(signTransaction).toHaveBeenCalledOnce();
     expect(submitClassicSigned).toHaveBeenCalledOnce();
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("eventually interrupts deferred signing when the steps route unmounts", async () => {
@@ -220,7 +220,7 @@ describe("classic transaction workflow browser integration", () => {
     expect(submitClassicSigned).not.toHaveBeenCalled();
     expect(signTransaction).toHaveBeenCalledOnce();
 
-    app.unmount();
+    await app.unmount();
   });
 
   it("interrupts deferred confirmation when the steps route unmounts", async () => {
@@ -314,6 +314,6 @@ describe("classic transaction workflow browser integration", () => {
     expect(submitClassicSigned).toHaveBeenCalledOnce();
     expect(getClassicStatus).toHaveBeenCalledOnce();
 
-    app.unmount();
+    await app.unmount();
   });
 });

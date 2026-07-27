@@ -20,6 +20,6 @@ describe("Under maintenance", () => {
       .element(app.getByTestId("under-maintenance"))
       .toBeInTheDocument();
 
-    app.unmount();
+    await app.unmount();
   });
 });
