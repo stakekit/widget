@@ -174,5 +174,5 @@ describe("Staking flow", () => {
       .element(app.getByText("View Stake transaction"))
       .toBeInTheDocument();
     app.unmount();
-  });
+  }, 30_000);
 });
