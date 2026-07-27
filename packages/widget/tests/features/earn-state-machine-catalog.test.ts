@@ -1,16 +1,21 @@
-import { Effect, Layer, Option } from "effect";
+import { Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
+import * as Reactivity from "effect/unstable/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { widgetConfigAtom } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { ApiRequestError } from "../../src/domain/schema/api-errors";
+import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   availableYieldCategoriesAtom,
   earnYieldCatalogAtom,
+  mergedTokenOptionsAtom,
   yieldValidatorsAtom,
 } from "../../src/features/earn/state/atoms-state/catalog/atoms";
 import {
   AvailableYieldCategoriesKey,
+  TokenOptionsKey,
   YieldCatalogKey,
   YieldValidatorsKey,
 } from "../../src/features/earn/state/atoms-state/catalog/keys";
@@ -18,7 +23,9 @@ import {
   MultiYieldsKey,
   visibleMultiYieldsAtom,
 } from "../../src/features/yield-summary/state/multi-yields";
+import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
 import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
+import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
   yieldApiProviderFixture,
   yieldApiValidatorFixture,
@@ -26,6 +33,178 @@ import {
 } from "../fixtures";
 
 describe("Earn state machine catalog", () => {
+  it("uses balances only to enrich canonical tokens with amounts", async () => {
+    const canonicalYield = yieldApiYieldFixture();
+    const balanceOnlyYield = yieldApiYieldFixture({
+      id: "ethereum-usdc-staking",
+      token: {
+        ...canonicalYield.token,
+        address: "0x1111111111111111111111111111111111111111",
+        name: "USD Coin",
+        symbol: "USDC",
+      },
+    });
+    const balanceOnlyYieldId = balanceOnlyYield.id;
+    const listYields = vi.fn(() => Effect.die("unexpected Yield directory"));
+    const registry = AtomRegistry.make({
+      initialValues: [
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.mergeAll(
+            Reactivity.layer,
+            Layer.succeed(
+              LegacyResourceSource,
+              LegacyResourceSource.of({
+                scanTokenBalances: () =>
+                  Effect.succeed(
+                    Schema.decodeUnknownSync(TokenBalancesResponse)([
+                      {
+                        amount: "10",
+                        availableYields: [
+                          canonicalYield.id,
+                          balanceOnlyYieldId,
+                        ],
+                        token: canonicalYield.token,
+                      },
+                      {
+                        amount: "20",
+                        availableYields: [balanceOnlyYieldId],
+                        token: balanceOnlyYield.token,
+                      },
+                    ])
+                  ),
+              } as never)
+            ),
+            Layer.succeed(
+              YieldResourceSource,
+              YieldResourceSource.of({
+                listYieldTokens: () =>
+                  Effect.succeed({
+                    items: [
+                      {
+                        availableYields: [canonicalYield.id],
+                        token: canonicalYield.token,
+                      },
+                    ],
+                    limit: 100,
+                    offset: 0,
+                    total: 1,
+                  }),
+                listYields,
+              } as never)
+            )
+          ) as never
+        ),
+      ],
+    });
+    const scope = new WalletScopeKey({
+      address: Schema.decodeSync(WalletAddress)(
+        "0x9999999999999999999999999999999999999999"
+      ),
+      network: "ethereum",
+    });
+    const resource = mergedTokenOptionsAtom(
+      new TokenOptionsKey({
+        category: "stake",
+        initToken: null,
+        initTokenNetwork: null,
+        initYieldId: null,
+        scope,
+        tokensForEnabledYieldsOnly: false,
+      })
+    );
+    const unmount = registry.mount(resource);
+
+    await vi.waitFor(() =>
+      expect(AsyncResult.getOrThrow(registry.get(resource))).toEqual([
+        {
+          amount: "10",
+          availableYields: [canonicalYield.id],
+          source: "balance",
+          token: canonicalYield.token,
+        },
+      ])
+    );
+    expect(listYields).not.toHaveBeenCalled();
+
+    unmount();
+    registry.dispose();
+  });
+
+  it("falls back to canonical tokens when the balance scan fails", async () => {
+    const canonicalYield = yieldApiYieldFixture();
+    const registry = AtomRegistry.make({
+      initialValues: [
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.mergeAll(
+            Reactivity.layer,
+            Layer.succeed(
+              LegacyResourceSource,
+              LegacyResourceSource.of({
+                scanTokenBalances: () =>
+                  Effect.fail(
+                    new ApiRequestError({
+                      cause: new Error("offline"),
+                      operation: "token-balances-scan",
+                    })
+                  ),
+              } as never)
+            ),
+            Layer.succeed(
+              YieldResourceSource,
+              YieldResourceSource.of({
+                listYieldTokens: () =>
+                  Effect.succeed({
+                    items: [
+                      {
+                        availableYields: [canonicalYield.id],
+                        token: canonicalYield.token,
+                      },
+                    ],
+                    limit: 100,
+                    offset: 0,
+                    total: 1,
+                  }),
+              } as never)
+            )
+          ) as never
+        ),
+      ],
+    });
+    const scope = new WalletScopeKey({
+      address: Schema.decodeSync(WalletAddress)(
+        "0x9999999999999999999999999999999999999999"
+      ),
+      network: "ethereum",
+    });
+    const resource = mergedTokenOptionsAtom(
+      new TokenOptionsKey({
+        category: "stake",
+        initToken: null,
+        initTokenNetwork: null,
+        initYieldId: null,
+        scope,
+        tokensForEnabledYieldsOnly: false,
+      })
+    );
+    const unmount = registry.mount(resource);
+
+    await vi.waitFor(() =>
+      expect(AsyncResult.getOrThrow(registry.get(resource))).toEqual([
+        {
+          amount: "0",
+          availableYields: [canonicalYield.id],
+          source: "default",
+          token: canonicalYield.token,
+        },
+      ])
+    );
+
+    unmount();
+    registry.dispose();
+  });
+
   it("refreshes the responsible authoritative source through the catalog projection", () => {
     const yieldModel = yieldApiYieldFixture();
     let offline = true;

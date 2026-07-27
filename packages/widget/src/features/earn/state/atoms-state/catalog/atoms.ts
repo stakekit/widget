@@ -405,6 +405,14 @@ const getTokenOptionRank = (token: EarnTokenOption) => {
   return 3;
 };
 
+const fallBackOnInitialFailure = <A>(
+  result: AsyncResult.AsyncResult<A, EarnCatalogError>,
+  fallback: A
+): AsyncResult.AsyncResult<A, EarnCatalogError> =>
+  AsyncResult.isFailure(result) && Option.isNone(AsyncResult.value(result))
+    ? AsyncResult.success(fallback)
+    : result;
+
 const mergeTokenOptions = ({
   balanceItems,
   defaultItems,
@@ -423,7 +431,12 @@ const mergeTokenOptions = ({
     ].sort();
 
   const mergeOption = (
-    prev: { option: EarnTokenOption } | undefined,
+    prev:
+      | {
+          candidateIndex: number;
+          option: EarnTokenOption;
+        }
+      | undefined,
     next: EarnTokenOption
   ): EarnTokenOption => ({
     ...next,
@@ -433,46 +446,36 @@ const mergeTokenOptions = ({
   const byKey = new Map<
     string,
     {
-      balanceIndex: number | null;
-      defaultIndex: number | null;
-      initIndex: number | null;
+      candidateIndex: number;
       option: EarnTokenOption;
     }
   >();
 
-  defaultItems.forEach((option, defaultIndex) => {
+  const mergeCandidate = (option: EarnTokenOption) => {
     const key = tokenString(option.token);
     const prev = byKey.get(key);
 
     byKey.set(key, {
-      balanceIndex: null,
-      defaultIndex: prev?.defaultIndex ?? defaultIndex,
-      initIndex: null,
+      candidateIndex: prev?.candidateIndex ?? byKey.size,
       option: mergeOption(prev, option),
     });
-  });
+  };
 
-  initItems.forEach((option, initIndex) => {
+  defaultItems.forEach(mergeCandidate);
+  initItems.forEach(mergeCandidate);
+
+  balanceItems.forEach((option) => {
     const key = tokenString(option.token);
     const prev = byKey.get(key);
+    if (!prev) return;
 
     byKey.set(key, {
-      balanceIndex: null,
-      defaultIndex: prev?.defaultIndex ?? null,
-      initIndex,
-      option: mergeOption(prev, option),
-    });
-  });
-
-  balanceItems.forEach((option, balanceIndex) => {
-    const key = tokenString(option.token);
-    const prev = byKey.get(key);
-
-    byKey.set(key, {
-      balanceIndex,
-      defaultIndex: prev?.defaultIndex ?? null,
-      initIndex: prev?.initIndex ?? null,
-      option: mergeOption(prev, option),
+      ...prev,
+      option: {
+        ...prev.option,
+        amount: option.amount,
+        source: "balance",
+      },
     });
   });
 
@@ -485,16 +488,7 @@ const mergeTokenOptions = ({
         return rankDiff;
       }
 
-      return (
-        (a.balanceIndex ??
-          a.initIndex ??
-          a.defaultIndex ??
-          Number.MAX_SAFE_INTEGER) -
-        (b.balanceIndex ??
-          b.initIndex ??
-          b.defaultIndex ??
-          Number.MAX_SAFE_INTEGER)
-      );
+      return a.candidateIndex - b.candidateIndex;
     })
     .map(({ option }) => option);
 };
@@ -532,6 +526,10 @@ export const mergedTokenOptionsAtom = Atom.family((key: TokenOptionsKey) => {
       const initTokenResult = context.get(initTokenAtom);
       const initYieldResult = context.get(initYieldAtomValue);
       const preferredTokenKeys = new Set(key.preferredTokenKeys);
+      const balanceItemsResult = fallBackOnInitialFailure(
+        balancesResult,
+        [] as ReadonlyArray<EarnTokenOption>
+      );
       const preferredTokensResult =
         preferredTokenKeys.size === 0
           ? AsyncResult.success<
@@ -558,7 +556,7 @@ export const mergedTokenOptionsAtom = Atom.family((key: TokenOptionsKey) => {
 
       const tokenSourcesResult = AsyncResult.all({
         defaultItems: getPullItemsResult(defaultResult),
-        balanceItems: balancesResult,
+        balanceItems: balanceItemsResult,
         initToken: initTokenResult,
         initYield: initYieldResult,
         preferredItems: preferredTokensResult,
@@ -567,18 +565,26 @@ export const mergedTokenOptionsAtom = Atom.family((key: TokenOptionsKey) => {
       return AsyncResult.flatMap(
         tokenSourcesResult,
         (sources, sourcesResult) => {
-          const rawInitItems = [
-            sources.initYield
-              ? toInitYieldTokenOption(sources.initYield)
-              : null,
-            sources.initToken,
-          ].filter((option): option is EarnTokenOption => option !== null);
+          const defaultItems = sources.defaultItems.filter(hasAvailableYields);
+          const defaultTokenKeys = new Set(
+            defaultItems.map((option) => tokenString(option.token))
+          );
+          const initYieldItems = sources.initYield
+            ? [toInitYieldTokenOption(sources.initYield)]
+            : [];
+          const supplementalInitTokenItems =
+            sources.initToken &&
+            !defaultTokenKeys.has(tokenString(sources.initToken.token))
+              ? [sources.initToken]
+              : [];
+          const supplementalPreferredItems = sources.preferredItems.filter(
+            (option) => !defaultTokenKeys.has(tokenString(option.token))
+          );
           const candidateYieldIds = getAvailableYieldIds([
-            ...sources.balanceItems,
-            ...rawInitItems,
-            ...sources.preferredItems,
+            ...supplementalInitTokenItems,
+            ...supplementalPreferredItems,
           ]);
-          const tokenYieldScopeResult: AsyncResult.AsyncResult<
+          const rawTokenYieldScopeResult: AsyncResult.AsyncResult<
             ReadonlySet<YieldId> | null,
             EarnCatalogError
           > =
@@ -597,24 +603,41 @@ export const mergedTokenOptionsAtom = Atom.family((key: TokenOptionsKey) => {
                     ? new Set<YieldId>()
                     : null
                 );
+          const tokenYieldScopeResult =
+            supplementalInitTokenItems.length > 0
+              ? rawTokenYieldScopeResult.pipe(
+                  mapAsyncResultError(
+                    (error) =>
+                      new EarnCatalogError({
+                        cause: error.cause,
+                        operation: "init-token-option",
+                      })
+                  )
+                )
+              : fallBackOnInitialFailure(
+                  rawTokenYieldScopeResult,
+                  key.category || key.tokensForEnabledYieldsOnly
+                    ? new Set<YieldId>()
+                    : null
+                );
           const scopedResult = tokenYieldScopeResult.pipe(
             AsyncResult.map((scopedYieldIds) =>
               mergeTokenOptions({
-                balanceItems: scopeTokenOptions({
-                  items: sources.balanceItems,
-                  yieldIds: scopedYieldIds,
-                }),
+                balanceItems: sources.balanceItems,
                 defaultItems: [
-                  ...sources.defaultItems.filter(hasAvailableYields),
+                  ...defaultItems,
                   ...scopeTokenOptions({
-                    items: sources.preferredItems,
+                    items: supplementalPreferredItems,
                     yieldIds: scopedYieldIds,
                   }),
                 ],
-                initItems: scopeTokenOptions({
-                  items: rawInitItems,
-                  yieldIds: scopedYieldIds,
-                }),
+                initItems: [
+                  ...initYieldItems,
+                  ...scopeTokenOptions({
+                    items: supplementalInitTokenItems,
+                    yieldIds: scopedYieldIds,
+                  }),
+                ],
               })
             )
           );

@@ -494,6 +494,28 @@ describe("Earn state machine model", () => {
         tokenOptions: [first, second],
       })
     ).toBe(first);
+    const zeroFirst = { ...first, amount: "0" };
+    const balancedSecond = {
+      ...second,
+      amount: "2",
+      source: "balance" as const,
+    };
+    expect(
+      resolveToken({
+        entry: baseEntry,
+        previousToken: zeroFirst,
+        selectedTokenKey: null,
+        tokenOptions: [zeroFirst, balancedSecond],
+      })
+    ).toBe(zeroFirst);
+    expect(
+      resolveToken({
+        entry: baseEntry,
+        previousToken: null,
+        selectedTokenKey: null,
+        tokenOptions: [zeroFirst, balancedSecond],
+      })
+    ).toBe(balancedSecond);
     expect(
       resolveToken({
         entry: baseEntry,

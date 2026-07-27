@@ -7,7 +7,10 @@ import {
   EarnValidator,
   type EarnYield,
 } from "../../src/domain/schema/earn-models";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import {
+  TokenAddress,
+  WalletAddress,
+} from "../../src/domain/schema/identifiers";
 import type { PositionsData } from "../../src/domain/types/positions";
 import { tokenString } from "../../src/domain/types/tokens";
 import {
@@ -30,6 +33,7 @@ import { resolveEarnView } from "../../src/features/earn/state/atoms-state/resol
 import {
   EarnCatalogError,
   type EarnEntry,
+  type EarnMachineView,
   type EarnTokenOption,
   makeDefaultEarnIntent,
 } from "../../src/features/earn/state/atoms-state/types";
@@ -61,12 +65,14 @@ const walletScope = new WalletScopeKey({
 const resolveClassicView = ({
   positionsResult = AsyncResult.success(new Map() as PositionsData),
   intent = makeDefaultEarnIntent(),
+  previous = null,
   scope = walletScope as WalletScopeKey | null,
   tokenOptionsResult = AsyncResult.success([tokenOption]),
   yieldsResult = AsyncResult.success([yieldModel]),
 }: {
   intent?: ReturnType<typeof makeDefaultEarnIntent>;
   positionsResult?: AsyncResult.AsyncResult<PositionsData, EarnCatalogError>;
+  previous?: EarnMachineView | null;
   scope?: WalletScopeKey | null;
   tokenOptionsResult?: AsyncResult.AsyncResult<
     ReadonlyArray<EarnTokenOption>,
@@ -122,6 +128,7 @@ const resolveClassicView = ({
         context,
         entry: classicEntry,
         intent,
+        previous,
       })
     )
   );
@@ -379,6 +386,48 @@ describe("Earn state machine view", () => {
       items: [tokenOption],
       waiting: false,
     });
+  });
+
+  it("preserves an automatic token only while its category remains current", () => {
+    const previousToken = {
+      ...tokenOption,
+      token: {
+        ...tokenOption.token,
+        address: Schema.decodeSync(TokenAddress)(
+          "0x1111111111111111111111111111111111111111"
+        ),
+      },
+    } satisfies EarnTokenOption;
+    const previous = resolveClassicView({
+      tokenOptionsResult: AsyncResult.success([previousToken, tokenOption]),
+    });
+    const currentPreviousToken = {
+      ...previousToken,
+      amount: "0",
+    } satisfies EarnTokenOption;
+    const tokenOptionsResult = AsyncResult.success([
+      currentPreviousToken,
+      tokenOption,
+    ]);
+
+    expect(
+      resolveClassicView({
+        previous,
+        tokenOptionsResult,
+      }).selection.token
+    ).toEqual(currentPreviousToken);
+    expect(
+      resolveClassicView({
+        previous: {
+          ...previous,
+          selection: {
+            ...previous.selection,
+            category: "stake",
+          },
+        },
+        tokenOptionsResult,
+      }).selection.token
+    ).toEqual(tokenOption);
   });
 
   it("does not replace an explicit token while token options are still resolving", () => {

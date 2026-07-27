@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { Option, Schema } from "effect";
 import { YieldId } from "../../../../../domain/schema/identifiers";
 import { tokenString } from "../../../../../domain/types/tokens";
@@ -5,10 +6,12 @@ import type { EarnEntry, EarnTokenKey, EarnTokenOption } from "../types";
 
 export const resolveToken = ({
   entry,
+  previousToken = null,
   selectedTokenKey,
   tokenOptions,
 }: {
   entry: EarnEntry;
+  previousToken?: EarnTokenOption | null;
   selectedTokenKey: EarnTokenKey | null;
   tokenOptions: ReadonlyArray<EarnTokenOption>;
 }) => {
@@ -53,6 +56,23 @@ export const resolveToken = ({
     if (selected) {
       return selected;
     }
+  }
+
+  if (previousToken) {
+    const selected = findTokenByKey(
+      tokenOptions,
+      tokenString(previousToken.token)
+    );
+    if (selected) {
+      return selected;
+    }
+  }
+
+  const positiveBalanceToken = tokenOptions.find((option) =>
+    new BigNumber(option.amount).isGreaterThan(0)
+  );
+  if (positiveBalanceToken) {
+    return positiveBalanceToken;
   }
 
   return tokenOptions[0] ?? null;

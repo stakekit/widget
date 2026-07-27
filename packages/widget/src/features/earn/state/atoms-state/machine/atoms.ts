@@ -1,7 +1,11 @@
 import { Option } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigAtom } from "../../../../../app/config/settings";
-import { walletScopeOwnerKey } from "../../../../../services/wallet/domain/scope";
+import {
+  sameWalletScopeOwner,
+  type WalletScopeOwnerKey,
+  walletScopeOwnerKey,
+} from "../../../../../services/wallet/domain/scope";
 import { initParamsAtom } from "../../../../init-params/state";
 import {
   selectCurrentWalletAtom,
@@ -68,20 +72,53 @@ export const earnMachineIntentAtom = Atom.writable<
   (context, action) => context.set(earnMachineStateAtom, action)
 ).pipe(Atom.withLabel("earnMachineIntentAtom"));
 
-export const earnMachineViewAtom = Atom.readable<EarnMachineView>((context) => {
-  const entry = context.get(earnMachineEntryAtom);
-  const state = context.get(earnMachineStateAtom);
+type EarnMachineProjection = {
+  readonly owner: WalletScopeOwnerKey | null;
+  readonly view: EarnMachineView;
+};
 
-  if (entry.walletResolution === "pending") {
-    return makeResolvingWalletView({
-      intent: state.intent,
-      previous: context.self<EarnMachineView>(),
-    });
+const hasSameOwner = (
+  first: WalletScopeOwnerKey | null,
+  second: WalletScopeOwnerKey | null
+) => {
+  if (!first || !second) {
+    return first === second;
   }
 
-  return resolveEarnView({
-    context,
-    entry: state.userSelected ? { ...entry, initParams: null } : entry,
-    intent: state.intent,
-  });
-}).pipe(Atom.withLabel("earnMachineViewAtom"));
+  return sameWalletScopeOwner(first, second);
+};
+
+const earnMachineProjectionAtom = Atom.readable<EarnMachineProjection>(
+  (context) => {
+    const entry = context.get(earnMachineEntryAtom);
+    const state = context.get(earnMachineStateAtom);
+    const previousProjection = context
+      .self<EarnMachineProjection>()
+      .pipe(Option.getOrNull);
+    const previous =
+      previousProjection && hasSameOwner(previousProjection.owner, state.owner)
+        ? previousProjection.view
+        : null;
+    const view =
+      entry.walletResolution === "pending"
+        ? makeResolvingWalletView({
+            intent: state.intent,
+            previous: Option.fromNullishOr(previous),
+          })
+        : resolveEarnView({
+            context,
+            entry: state.userSelected ? { ...entry, initParams: null } : entry,
+            intent: state.intent,
+            previous,
+          });
+
+    return {
+      owner: state.owner,
+      view,
+    };
+  }
+).pipe(Atom.withLabel("earnMachineProjectionAtom"));
+
+export const earnMachineViewAtom = Atom.make(
+  (context) => context.get(earnMachineProjectionAtom).view
+).pipe(Atom.withLabel("earnMachineViewAtom"));

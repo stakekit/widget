@@ -1,3 +1,4 @@
+import { Match } from "effect";
 import type * as Atom from "effect/unstable/reactivity/Atom";
 import type { EarnYield } from "../../../../../domain/schema/earn-models";
 import type { YieldId } from "../../../../../domain/schema/identifiers";
@@ -87,10 +88,12 @@ export const resolveEarnView = ({
   context,
   entry,
   intent,
+  previous = null,
 }: {
   context: Atom.AtomContext;
   entry: EarnEntry;
   intent: EarnMachineIntent;
+  previous?: EarnMachineView | null;
 }): EarnMachineView => {
   const initial = readInitialViewInputs({ context, entry, intent });
   const initYield = getAvailableValue(initial.initYield.observation, null);
@@ -197,10 +200,13 @@ export const resolveEarnView = ({
       (option) => tokenString(option.token) === intent.selectedTokenKey
     ) &&
     isResolving(tokenInput.observation);
+  const previousToken =
+    previous?.selection.category === category ? previous.selection.token : null;
   const selectedToken = explicitTokenPending
     ? null
     : resolveToken({
         entry,
+        previousToken,
         selectedTokenKey: intent.selectedTokenKey,
         tokenOptions,
       });
@@ -217,18 +223,22 @@ export const resolveEarnView = ({
       (tokenOptions.length === 0 &&
         tokenInput.observation._tag === "available" &&
         tokenInput.observation.waiting);
-    const getStatus = (): EarnMachineView["status"] => {
-      if (failed) return "failed";
-      if (explicitTokenPending || tokenOptionsResolving) {
-        return "loading-token-options";
-      }
-      return "no-tokens";
-    };
+    const status = Match.value({
+      failed: failed !== null,
+      loading: explicitTokenPending || tokenOptionsResolving,
+    }).pipe(
+      Match.when({ failed: true }, (): EarnMachineView["status"] => "failed"),
+      Match.when(
+        { loading: true },
+        (): EarnMachineView["status"] => "loading-token-options"
+      ),
+      Match.orElse((): EarnMachineView["status"] => "no-tokens")
+    );
 
     return makeEarnView({
       ...tokenStage,
       intent,
-      status: getStatus(),
+      status,
       failure: failed ? makeFailure(failureStage, failed) : null,
       retryTarget: failed ? tokenInput.retryTarget : null,
     });
@@ -269,16 +279,22 @@ export const resolveEarnView = ({
 
   if (!selectedYield) {
     const failed = getObservationError(yieldObservation);
-    const getStatus = (): EarnMachineView["status"] => {
-      if (failed) return "failed";
-      if (isResolving(yieldObservation)) return "loading-yields";
-      return "no-yields";
-    };
+    const status = Match.value({
+      failed: failed !== null,
+      loading: isResolving(yieldObservation),
+    }).pipe(
+      Match.when({ failed: true }, (): EarnMachineView["status"] => "failed"),
+      Match.when(
+        { loading: true },
+        (): EarnMachineView["status"] => "loading-yields"
+      ),
+      Match.orElse((): EarnMachineView["status"] => "no-yields")
+    );
 
     return makeEarnView({
       ...yieldStage,
       intent,
-      status: getStatus(),
+      status,
       failure: failed ? makeFailure("yields", failed) : null,
       retryTarget: failed ? yieldCatalogInput.retryTarget : null,
     });
