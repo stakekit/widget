@@ -5,9 +5,9 @@ import { describe, expect, it, vi } from "vitest";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import {
   walletConfigResultAtom,
-  walletLedgerStateAtom,
   walletStateResultAtom,
 } from "../../src/features/wallet/state";
+import { currentWalletLedgerStateAtom as walletLedgerStateAtom } from "../../src/features/wallet/state/root-atom";
 import { makeDefaultConfig } from "../../src/services/wallet/default-wagmi-config";
 import {
   disconnectedLedgerConnectorState,

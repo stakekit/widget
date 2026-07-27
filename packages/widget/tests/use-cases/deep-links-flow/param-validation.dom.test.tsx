@@ -9,7 +9,34 @@ const decodeCurrentUrl = () =>
     href: window.location.href,
   });
 
+const decodeHref = (href: string) =>
+  decodeInitParams({
+    externalProviderInitToken: null,
+    href,
+  });
+
 describe("Deep link param validation", () => {
+  it("decodes every supported route-level tab", () => {
+    for (const tab of [
+      "earn",
+      "positions",
+      "manage",
+      "activity",
+      "borrow",
+    ] as const) {
+      expect(decodeHref(`https://host.test/?tab=${tab}`).tab).toBe(tab);
+    }
+  });
+
+  it("decodes absent, empty, invalid, and unrelated tabs as null", () => {
+    expect(decodeHref("https://host.test/").tab).toBeNull();
+    expect(decodeHref("https://host.test/?tab=").tab).toBeNull();
+    expect(decodeHref("https://host.test/?tab=stake").tab).toBeNull();
+    expect(
+      decodeHref("https://host.test/?yieldId=ethereum-eth-native-staking").tab
+    ).toBeNull();
+  });
+
   it("Should validate yieldId param", async () => {
     const setAndAssertIsValidYieldIdParam = async (
       yieldId: string,

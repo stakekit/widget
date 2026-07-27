@@ -1,9 +1,6 @@
 import { borrowFlowSessionStore } from "./state/borrow-flow-session-store";
 
-export type {
-  BorrowTransactionFlowIntake,
-  BorrowTransactionFlowReview,
-} from "./model/borrow-transaction-flow";
+export type { BorrowTransactionFlowReview } from "./model/borrow-transaction-flow";
 export const startBorrowTransactionFlowAtom = borrowFlowSessionStore.startAtom;
 export {
   type BorrowTransactionFlowOutcome,

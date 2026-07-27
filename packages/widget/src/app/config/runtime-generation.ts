@@ -3,8 +3,8 @@ import { normalizeWidgetApiConfig } from "../../services/config/widget-config";
 /**
  * The complete identity of an application runtime generation.
  *
- * Keep this deliberately API-only: live host callbacks and wallet topology
- * have narrower lifecycles and must not dispose application state.
+ * API identity and mount-time feature configuration create fresh application
+ * state. Live host callbacks and wallet topology have narrower lifecycles.
  */
 export const makeWidgetRuntimeGenerationKey = (
   settings: Parameters<typeof normalizeWidgetApiConfig>[0]
@@ -12,5 +12,11 @@ export const makeWidgetRuntimeGenerationKey = (
   const { apiKey, baseUrl, borrowApiUrl, yieldsApiUrl } =
     normalizeWidgetApiConfig(settings);
 
-  return JSON.stringify([apiKey, baseUrl, borrowApiUrl, yieldsApiUrl]);
+  return JSON.stringify([
+    apiKey,
+    baseUrl,
+    borrowApiUrl,
+    yieldsApiUrl,
+    settings.borrowEnabled,
+  ]);
 };

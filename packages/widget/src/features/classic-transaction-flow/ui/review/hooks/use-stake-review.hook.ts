@@ -5,7 +5,6 @@ import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { getKycProviderName } from "../../../../../domain/types/kyc";
 import { getYieldTypeLabels } from "../../../../../domain/types/yields";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import type { PageCta } from "../../../../widget-shell/components";
 import {
   useClassicFlowIntake,
@@ -81,17 +80,12 @@ export const useStakeReview = () => {
 
   const onClick = () => confirmFlow(undefined);
 
-  const onClickRef = useSavedRef(onClick);
-
-  const cta = useMemo<PageCta>(
-    () => ({
-      disabled: review.confirmDisabled,
-      isLoading: review.confirmLoading,
-      label: t("shared.confirm"),
-      onClick: () => onClickRef.current(),
-    }),
-    [onClickRef, review.confirmDisabled, review.confirmLoading, t]
-  );
+  const resolveCta = (): PageCta => ({
+    disabled: review.confirmDisabled,
+    isLoading: review.confirmLoading,
+    label: t("shared.confirm"),
+    onClick,
+  });
 
   const variant = useWidgetConfig("variant");
 
@@ -132,6 +126,6 @@ export const useStakeReview = () => {
     kycStatusIsChecking:
       review.kyc.isLoading || review.kyc.isFetching || review.kyc.isRefetching,
     onKycStatusRefresh,
-    cta,
+    cta: resolveCta(),
   };
 };

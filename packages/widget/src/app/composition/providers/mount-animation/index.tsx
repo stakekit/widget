@@ -1,24 +1,16 @@
-import { useEffect, useRef } from "react";
+import { useAtomMount } from "@effect/atom-react";
+import { useEffect } from "react";
 import { useLocation } from "react-router";
-import { useMountAnimation } from "../../../../features/mount-animation/state";
-import { delayAPIRequests } from "../../../../services/api/delay-api-requests";
-import { useWidgetConfig } from "../../../config/use-widget-config";
-
-const removeDelay = delayAPIRequests();
+import {
+  mountAnimationCompletionAtom,
+  useMountAnimation,
+} from "../../../../features/mount-animation/state";
 
 export const MountAnimationEffects = () => {
-  const onMountAnimationComplete = useWidgetConfig("onMountAnimationComplete");
-  const callbackRef = useRef(onMountAnimationComplete);
-  callbackRef.current = onMountAnimationComplete;
   const location = useLocation();
-  const { dispatch, state } = useMountAnimation();
+  const { dispatch } = useMountAnimation();
 
-  useEffect(() => {
-    if (state.layout && state.earnPage) {
-      removeDelay();
-      callbackRef.current?.();
-    }
-  }, [state.earnPage, state.layout]);
+  useAtomMount(mountAnimationCompletionAtom);
 
   useEffect(() => {
     if (location.pathname !== "/") {

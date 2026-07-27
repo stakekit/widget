@@ -2,7 +2,9 @@ import type BigNumber from "bignumber.js";
 import { Data, Effect } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import { widgetConfigAtom } from "../../../app/config/settings";
 import { appRuntime } from "../../../app/runtime/app-runtime";
+import { BorrowFeatureDisabled } from "../../../domain/borrow/availability";
 import type { CollateralToken } from "../../../domain/borrow/collateral-token";
 import { isBorrowNetwork } from "../../../domain/borrow/network";
 import { TrackingService } from "../../../services/tracking/tracking-service";
@@ -79,6 +81,8 @@ const borrowDashboardAtom = Atom.family((key: BorrowDashboardKey) => {
 });
 
 const currentBorrowDashboardKeyAtom = Atom.make((get) => {
+  if (!get(widgetConfigAtom).borrowEnabled) return null;
+
   const scope = get(walletScopeAtom);
 
   return scope && isBorrowNetwork(scope.network)
@@ -178,6 +182,14 @@ export const selectBorrowCollateralTokenAtom = appRuntime
 
 export const startBorrowDashboardReviewAtom = appRuntime
   .fn((_input: undefined, context) => {
+    if (!context(widgetConfigAtom).borrowEnabled) {
+      return Effect.fail(
+        new BorrowFeatureDisabled({
+          message: "Borrow is disabled by Widget configuration.",
+        })
+      );
+    }
+
     const view = context(currentBorrowDashboardAtom);
     const preparedReviewState = view?.preparedReviewState;
 

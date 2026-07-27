@@ -1,7 +1,6 @@
 import { Match } from "effect";
 import { startsWith } from "effect/String";
 import { useLocation, useNavigate } from "react-router";
-import { isBorrowFeatureEnabled } from "../../../features/borrow/state";
 import { useEarnYieldSelection } from "../../../features/earn/state";
 import { useTrackEvent } from "../../../features/tracking/state";
 import type { DashboardYieldCategory } from "../../../public-api/types";
@@ -23,7 +22,7 @@ const tabsMap: Record<RouteTab, string> = {
   activity: "/activity",
   borrow: "/borrow",
   earn: "/",
-  manage: "/manage",
+  manage: "/positions",
 };
 
 export const DashboardTabs = () => {
@@ -37,11 +36,7 @@ export const DashboardTabs = () => {
   const selectedTab = Match.value(location.pathname).pipe(
     Match.when(startsWith("/activity"), () => "activity" as const),
     Match.when(startsWith("/borrow"), () => "borrow" as const),
-    Match.whenOr(
-      startsWith("/manage"),
-      startsWith("/positions"),
-      () => "manage" as const
-    ),
+    Match.when(startsWith("/positions"), () => "manage" as const),
     Match.orElse(() => "earn" as const)
   );
 
@@ -62,18 +57,12 @@ export const DashboardTabs = () => {
   };
 
   const borrowEnabled = useWidgetConfig("borrowEnabled");
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
   const variant = useWidgetConfig("variant");
   const yieldGrouping = useWidgetConfig("yieldGrouping");
   const categoryGroupingEnabled = yieldGrouping === "category";
-  const borrowFeatureEnabled = isBorrowFeatureEnabled({
-    borrowEnabled,
-    dashboardVariant,
-    yieldGrouping,
-  });
   const showGroupDivider =
     categoryGroupingEnabled &&
-    (availableDashboardYieldCategories.length > 0 || borrowFeatureEnabled);
+    (availableDashboardYieldCategories.length > 0 || borrowEnabled);
 
   return (
     <Box className={combineRecipeWithVariant({ rec: tabsWrapper, variant })}>
@@ -101,7 +90,7 @@ export const DashboardTabs = () => {
           />
         )}
 
-        {borrowFeatureEnabled ? (
+        {borrowEnabled ? (
           <DashboardTab
             isSelected={selectedTab === "borrow"}
             onTabPress={() => onRouteTabPress("borrow")}

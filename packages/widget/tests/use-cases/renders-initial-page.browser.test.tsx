@@ -273,11 +273,10 @@ describe("Renders initial page", () => {
     app.unmount();
   });
 
-  it("hides Borrow when dashboard yield grouping is flat", async () => {
+  it("supports flat dashboard yield grouping with Borrow disabled", async () => {
     const app = await renderApp({
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
-        borrowEnabled: true,
         dashboardVariant: true,
         yieldGrouping: "flat",
       },

@@ -1,6 +1,7 @@
 import { Context, Effect, Layer, Option, Schema } from "effect";
 import * as HttpClientError from "effect/unstable/http/HttpClientError";
 import { describe, expect, it, vi } from "vitest";
+import { BorrowFeatureDisabled } from "../../src/domain/borrow/availability";
 import { YieldAction } from "../../src/domain/schema/action-models";
 import {
   ApiRequestError,
@@ -127,6 +128,21 @@ describe("application API services", () => {
       null
     );
     expect(getAction).toHaveBeenCalledWith("borrow-action", undefined);
+  });
+
+  it("fails disabled Borrow commands before calling transport", async () => {
+    const getAction = vi.fn();
+    const operations = makeBorrowOperations(
+      {
+        ActionsControllerGetActionV1: getAction,
+      } as never,
+      false
+    );
+
+    await expect(
+      Effect.runPromise(operations.getAction("borrow-action"))
+    ).rejects.toBeInstanceOf(BorrowFeatureDisabled);
+    expect(getAction).not.toHaveBeenCalled();
   });
 
   it("returns decoded domain values from successful transport responses", async () => {

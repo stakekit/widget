@@ -36,7 +36,7 @@ import {
   ClassicFlowReviewScope,
   EnterClassicFlowRoute,
 } from "../../src/features/classic-transaction-flow/ui";
-import { WalletScopeRoute } from "../../src/features/wallet/ui";
+import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";

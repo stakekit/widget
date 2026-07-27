@@ -61,6 +61,30 @@ rerender({
 unmount() // release the document so another Widget Instance may be mounted
 ```
 
+### Settings lifecycle
+
+Most settings may be updated through React props or the bundled renderer's
+`rerender` method. The following mount-time settings instead identify one
+Widget generation:
+
+- `apiKey`
+- `baseUrl`
+- `borrowApiUrl`
+- `yieldsApiUrl`
+- `borrowEnabled`
+
+Changing any of them creates a fresh internal generation, disposing scoped
+state, workflows, resources, and router history. Configure them once for a
+mounted Widget unless a full application reset is intended.
+
+Wallet-topology settings are also captured during bootstrap, but they do not
+trigger this reset. Changing them after mount is unsupported and may be rejected
+or ignored.
+
+`borrowEnabled` defaults to `false`. Enabling it requires
+`dashboardVariant: true` and category yield grouping; incompatible settings are
+rejected during configuration normalization.
+
 ## Params
 
 To open the widget on a specific yield opportunity you need to pass the parameter yieldId as a prop to the component. Below is are examples that will open the widget on theethereum-eth-lido-staking. All possible yieldIds can be retrieved from the /v1/stake/opportunities endpoint
@@ -88,6 +112,8 @@ const App = () => {
 type SettingsProps = {
   apiKey: string;
   baseUrl?: string;
+  borrowApiUrl?: string;
+  yieldsApiUrl?: string;
   theme?: ThemeWrapperTheme;
   tracking?: {
     trackEvent?: (event: TrackEventVal, properties?: Properties) => void;
@@ -120,6 +146,7 @@ type SettingsProps = {
   chainIconMapping?:
     | Record<SupportedSKChains, string>
     | ((chain: SupportedSKChains) => string);
+  borrowEnabled?: boolean;
   dashboardVariant?: boolean;
   dashboardYieldCategoryOrder?: DashboardYieldCategory[];
   hideChainSelector?: boolean;

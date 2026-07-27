@@ -1,4 +1,4 @@
-import { Data, Duration } from "effect";
+import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import type { BorrowNetwork } from "../../domain/borrow/network";
@@ -37,7 +37,10 @@ export const borrowMarketsResourceAtom = Atom.family((key: BorrowMarketsKey) =>
               scope: "all",
             }),
           pageSize: API_MAX_PAGE_SIZE,
-        }).pipe(withBorrowResourceError("borrow-markets"))
+        }).pipe(
+          Effect.catchTag("BorrowFeatureDisabled", () => Effect.succeed([])),
+          withBorrowResourceError("borrow-markets")
+        )
       )
     )
     .pipe(

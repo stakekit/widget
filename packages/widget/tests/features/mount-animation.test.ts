@@ -4,30 +4,20 @@ import {
   normalizeWidgetConfig,
   widgetConfigAtom,
 } from "../../src/app/config/settings";
-import { mountAnimationStateAtom } from "../../src/features/mount-animation/state";
+import {
+  mountAnimationCompletionAtom,
+  mountAnimationStateAtom,
+} from "../../src/features/mount-animation/state";
 
-vi.mock("../../src/shared/config/widget-defaults", async (importOriginal) => {
-  const original =
-    await importOriginal<
-      typeof import("../../src/shared/config/widget-defaults")
-    >();
-
-  return {
-    ...original,
-    config: {
-      ...original.config,
-      env: {
-        ...original.config.env,
-        isTestMode: false,
-      },
-    },
-  };
-});
-
-const makeWidgetConfig = (dashboardVariant: boolean) =>
+const makeWidgetConfig = (
+  dashboardVariant: boolean,
+  onMountAnimationComplete?: () => void
+) =>
   normalizeWidgetConfig({
     apiKey: "api-key",
     dashboardVariant,
+    disableInitLayoutAnimation: false,
+    onMountAnimationComplete,
     variant: "default",
   });
 
@@ -71,5 +61,47 @@ describe("mount animation state", () => {
       earnPage: true,
       layout: true,
     });
+  });
+
+  it("notifies the host once, no matter how often a step is dispatched", () => {
+    const onMountAnimationComplete = vi.fn();
+    const registry = AtomRegistry.make({
+      initialValues: [
+        [widgetConfigAtom, makeWidgetConfig(false, onMountAnimationComplete)],
+      ],
+    });
+
+    const unmount = registry.mount(mountAnimationCompletionAtom);
+
+    try {
+      expect(onMountAnimationComplete).not.toHaveBeenCalled();
+
+      registry.set(mountAnimationStateAtom, { type: "layout" });
+      registry.set(mountAnimationStateAtom, { type: "earnPage" });
+      expect(onMountAnimationComplete).toHaveBeenCalledTimes(1);
+
+      registry.set(mountAnimationStateAtom, { type: "all" });
+      registry.set(mountAnimationStateAtom, { type: "layout" });
+      expect(onMountAnimationComplete).toHaveBeenCalledTimes(1);
+    } finally {
+      unmount();
+    }
+  });
+
+  it("notifies the host for variants whose animation starts finished", () => {
+    const onMountAnimationComplete = vi.fn();
+    const registry = AtomRegistry.make({
+      initialValues: [
+        [widgetConfigAtom, makeWidgetConfig(true, onMountAnimationComplete)],
+      ],
+    });
+
+    const unmount = registry.mount(mountAnimationCompletionAtom);
+
+    try {
+      expect(onMountAnimationComplete).toHaveBeenCalledTimes(1);
+    } finally {
+      unmount();
+    }
   });
 });

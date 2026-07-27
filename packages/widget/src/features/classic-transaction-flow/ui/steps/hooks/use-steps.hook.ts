@@ -1,9 +1,7 @@
 import { useAtomSet } from "@effect/atom-react";
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import { useTrackEvent } from "../../../../tracking/state";
 import type { PageCta } from "../../../../widget-shell/components";
 import { useClassicFlowExecution } from "../../../react/classic-flow-route";
@@ -26,26 +24,21 @@ export const useSteps = () => {
 
   const { t } = useTranslation();
 
-  const onClickRef = useSavedRef(onClick);
-
-  const cta = useMemo<PageCta>(
-    () =>
-      steps.txStates.length
-        ? {
-            disabled: false,
-            isLoading: false,
-            label: t("shared.cancel"),
-            onClick: () => onClickRef.current(),
-            variant: "secondary",
-          }
-        : null,
-    [steps.txStates.length, t, onClickRef]
-  );
+  const resolveCta = (): PageCta =>
+    steps.txStates.length
+      ? {
+          disabled: false,
+          isLoading: false,
+          label: t("shared.cancel"),
+          onClick,
+          variant: "secondary",
+        }
+      : null;
 
   return {
     retry,
     txStates: steps.txStates,
-    cta,
+    cta: resolveCta(),
     customSignErrorMessage: setupError?.message ?? steps.customSignErrorMessage,
     yieldId: steps.yieldId,
   };

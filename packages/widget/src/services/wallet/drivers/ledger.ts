@@ -1,4 +1,4 @@
-import { Effect, Result } from "effect";
+import { Effect } from "effect";
 import type { Connector } from "wagmi";
 import {
   isLedgerLiveConnector,
@@ -55,15 +55,9 @@ export const makeLedgerWalletDriver = ({
         );
       }
 
-      const preparedResult = yield* Effect.try({
-        try: () => ledgerConnector.prepareTransaction({ network, tx, txMeta }),
-        catch: (cause) => new WalletDecodeError({ cause }),
-      });
-      const prepared = Result.isFailure(preparedResult)
-        ? yield* Effect.fail(
-            new WalletDecodeError({ cause: preparedResult.failure })
-          )
-        : preparedResult.success;
+      const prepared = yield* ledgerConnector
+        .prepareTransaction({ network, tx, txMeta })
+        .pipe(Effect.mapError((cause) => new WalletDecodeError({ cause })));
       const deserializedTransaction = yield* Effect.try({
         try: () => ledgerConnector.deserializeTransaction(prepared),
         catch: (cause) => new WalletDecodeError({ cause }),

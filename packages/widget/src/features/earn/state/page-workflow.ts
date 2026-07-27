@@ -1,10 +1,8 @@
 import BigNumber from "bignumber.js";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import {
-  earnMachineIntentAtom,
-  earnMachineViewAtom,
-} from "./atoms-state/machine/atoms";
-import type { EarnMachineIntent } from "./atoms-state/types";
+import { tokenString } from "../../../domain/types/tokens";
+import { earnMachineViewAtom } from "./atoms-state/machine/atoms";
+import type { EarnMachineView } from "./atoms-state/types";
 
 export const earnPageSearchAtom = Atom.make({
   stake: "",
@@ -12,27 +10,32 @@ export const earnPageSearchAtom = Atom.make({
   validator: "",
 }).pipe(Atom.keepAlive, Atom.withLabel("earnPageSearchAtom"));
 
-const getEarnPageSubmissionKey = (intent: EarnMachineIntent) =>
+const getEarnPageSubmissionKey = (
+  selection: EarnMachineView["selection"]
+): string =>
   JSON.stringify([
-    intent.selectedCategory,
-    intent.selectedYieldId,
-    intent.selectedTokenKey,
+    selection.category,
+    selection.yield?.id ?? null,
+    selection.token ? tokenString(selection.token.token) : null,
   ]);
 
-const submittedEarnPageSelectionKeyAtom = Atom.make<string | null>(null);
+const submittedEarnPageSelectionKeyAtom = Atom.make<string | null>(null).pipe(
+  Atom.keepAlive,
+  Atom.withLabel("submittedEarnPageSelectionKeyAtom")
+);
 
 export const earnPageSubmittedAtom = Atom.writable<boolean, boolean>(
   (context) =>
     context.get(submittedEarnPageSelectionKeyAtom) ===
-    getEarnPageSubmissionKey(context.get(earnMachineIntentAtom)),
+    getEarnPageSubmissionKey(context.get(earnMachineViewAtom).selection),
   (context, submitted) =>
     context.set(
       submittedEarnPageSelectionKeyAtom,
       submitted
-        ? getEarnPageSubmissionKey(context.get(earnMachineIntentAtom))
+        ? getEarnPageSubmissionKey(context.get(earnMachineViewAtom).selection)
         : null
     )
-).pipe(Atom.keepAlive, Atom.withLabel("earnPageSubmittedAtom"));
+).pipe(Atom.withLabel("earnPageSubmittedAtom"));
 
 export const earnPageInputAtom = Atom.make(
   (context) => context.get(earnMachineViewAtom).form

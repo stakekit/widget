@@ -17,4 +17,4 @@ export const useBorrowPositionContext = () =>
   useOutletContext<BorrowPositionContext>();
 
 export const getBorrowPositionBasePath = (marketId: string | undefined) =>
-  marketId ? `/positions/borrow/${marketId}` : "/manage";
+  marketId ? `/positions/borrow/${marketId}` : "/positions";

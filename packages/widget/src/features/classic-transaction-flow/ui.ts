@@ -11,7 +11,6 @@ export {
 } from "./react/classic-flow-route";
 export { ActivityDetailsPage } from "./ui/activity-details.page";
 export { ActivityCompletePage } from "./ui/complete/pages/activity-complete.page";
-export { CompletePageComponent } from "./ui/complete/pages/common.page";
 export { PendingCompletePage } from "./ui/complete/pages/pending-complete.page";
 export { StakeCompletePage } from "./ui/complete/pages/stake-complete.page";
 export { UnstakeCompletePage } from "./ui/complete/pages/unstake-complete.page";

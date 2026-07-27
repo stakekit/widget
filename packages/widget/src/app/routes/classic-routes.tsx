@@ -1,13 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
-import { useEffect } from "react";
-import {
-  Navigate,
-  Route,
-  Routes,
-  useLocation,
-  useNavigate,
-} from "react-router";
+import { Navigate, Route, Routes, useLocation } from "react-router";
 import { AnimatedActivityPage } from "../../features/activity/ui";
 import { classicFlowSessionStore } from "../../features/classic-transaction-flow/state";
 import {
@@ -31,10 +24,8 @@ import {
   UnstakeStepsPage,
 } from "../../features/classic-transaction-flow/ui";
 import { AnimatedEarnPage } from "../../features/earn/ui";
-import { initParamsAtom } from "../../features/init-params/state";
 import { AnimatedPositionsPage } from "../../features/portfolio/ui";
 import { ClassicPositionDetailsPage } from "../../features/position-details/ui";
-import { useSKWallet } from "../../features/wallet/state";
 import { WalletScopeRouteGuard } from "../../features/wallet/ui";
 import {
   container,
@@ -53,54 +44,13 @@ import {
   Header,
   PoweredBy,
 } from "../../features/widget-shell/ui";
-import { usePrevious } from "../../shared/react/use-previous";
-import { useSavedRef } from "../../shared/react/use-saved-ref";
 import { isClassicFlowSessionPath } from "./classic-flow-session-path";
 
 export const ClassicRoutes = () => {
   const underMaintenance = useUnderMaintenance();
 
-  const { chain, address } = useSKWallet();
-
-  const prevChain = usePrevious(chain);
-  const prevAddress = usePrevious(address);
-
   const location = useLocation();
   const flowSession = useAtomValue(classicFlowSessionStore.currentSessionAtom);
-
-  const pathnameRef = useSavedRef(location.pathname);
-  const navigateRef = useSavedRef(useNavigate());
-
-  /**
-   * On chain change, navigate to home page
-   */
-  useEffect(() => {
-    if (
-      pathnameRef.current !== "/" &&
-      pathnameRef.current !== "/positions" &&
-      pathnameRef.current !== "/activity" &&
-      ((prevChain && chain !== prevChain) ||
-        (prevAddress && address !== prevAddress))
-    ) {
-      const url = new URL(window.location.href);
-      const newUrl = new URL(window.location.origin);
-      if (url.searchParams.has("embed")) {
-        newUrl.searchParams.set("embed", "true");
-      }
-
-      window.history.pushState({}, window.document.title, newUrl.href);
-      navigateRef.current("/", { replace: true });
-    }
-  }, [chain, address, pathnameRef, navigateRef, prevChain, prevAddress]);
-
-  const initParams = useAtomValue(initParamsAtom);
-  const initTab = initParams?.tab;
-
-  useEffect(() => {
-    if (!initTab) return;
-
-    navigateRef.current(initTab === "earn" ? "/" : "/positions");
-  }, [initTab, navigateRef]);
 
   const detailsMatch = useDetailsMatch();
 

@@ -1,12 +1,15 @@
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Deferred, Effect, Schema } from "effect";
+import { Deferred, Effect, Equal, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { act } from "react";
 import type { DataRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
-import { normalizeWidgetConfig } from "../../src/app/config/settings";
+import {
+  normalizeWidgetConfig,
+  widgetConfigAtom,
+} from "../../src/app/config/settings";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
@@ -178,6 +181,15 @@ const ApplicationRouterHarness = ({
   );
 };
 
+const WidgetConfigProjection = ({
+  projection,
+}: {
+  readonly projection: Atom.Atom<string>;
+}) => {
+  useAtomValue(projection);
+  return null;
+};
+
 const settings = (trackEvent: (event: string) => void, apiKey = "api-key") =>
   normalizeWidgetConfig({
     apiKey,
@@ -186,6 +198,52 @@ const settings = (trackEvent: (event: string) => void, apiKey = "api-key") =>
   });
 
 describe("API runtime generations", () => {
+  it("does not publish value-equal widget config across rerenders", async () => {
+    const track = vi.fn();
+    const customConnectors = vi.fn();
+    const projectionRead = vi.fn();
+    const projection = Atom.make((get) => {
+      projectionRead();
+      return get(widgetConfigAtom).apiKey;
+    });
+    const makeInlineSettings = () =>
+      normalizeWidgetConfig({
+        apiKey: "api-key",
+        preferredTokenYieldsPerNetwork: {
+          ethereum: {
+            "ethereum-eth": "ethereum-eth-native-staking",
+          },
+        },
+        tracking: { trackEvent: track },
+        variant: "default",
+        wagmi: { __customConnectors__: customConnectors },
+      });
+    const firstSettings = makeInlineSettings();
+    const equalInlineSettings = makeInlineSettings();
+    const renderProvider = (
+      settings: ReturnType<typeof makeInlineSettings>
+    ) => (
+      <SKAtomRegistryProvider routes={applicationRoutes} settings={settings}>
+        <WidgetConfigProjection projection={projection} />
+      </SKAtomRegistryProvider>
+    );
+
+    expect(equalInlineSettings).not.toBe(firstSettings);
+    expect(equalInlineSettings.preferredTokenYieldsPerNetwork).not.toBe(
+      firstSettings.preferredTokenYieldsPerNetwork
+    );
+    expect(equalInlineSettings.wagmi).not.toBe(firstSettings.wagmi);
+    expect(Equal.equals(equalInlineSettings, firstSettings)).toBe(true);
+
+    const app = await render(renderProvider(firstSettings));
+
+    expect(projectionRead).toHaveBeenCalledOnce();
+
+    await app.rerender(renderProvider(equalInlineSettings));
+
+    expect(projectionRead).toHaveBeenCalledOnce();
+  });
+
   it("preserves router history for live settings and replaces it with API identity", async () => {
     const firstTrack = vi.fn();
     const secondTrack = vi.fn();

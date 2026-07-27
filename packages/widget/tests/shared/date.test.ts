@@ -47,11 +47,14 @@ describe("date presentation helpers", () => {
     [Duration.days(31), { unit: "months", value: 1 }],
     [Duration.days(364), { unit: "months", value: 12 }],
     [Duration.days(365), { unit: "years", value: 1 }],
-  ] as const)("uses agreed display breakpoints for %o", (duration, expected) => {
-    const now = utc("2026-01-01T00:00:00.000Z");
+  ] as const)(
+    "uses agreed display breakpoints for %o",
+    (duration, expected) => {
+      const now = utc("2026-01-01T00:00:00.000Z");
 
-    expect(
-      getDisplayDurationUntil(DateTime.addDuration(now, duration), now)
-    ).toEqual(expected);
-  });
+      expect(
+        getDisplayDurationUntil(DateTime.addDuration(now, duration), now)
+      ).toEqual(expected);
+    }
+  );
 });

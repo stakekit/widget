@@ -1,17 +1,13 @@
 import { Option } from "effect";
-import type * as Atom from "effect/unstable/reactivity/Atom";
 import type { PositionsData } from "../../../../../domain/types/positions";
 import type {
   EarnMachineForm,
   EarnMachineIntent,
   EarnMachineView,
 } from "../types";
-import {
-  disabledValidatorsViewResource,
-  pendingTokenOptionsPullAtom,
-} from "./view-inputs";
+import { disabledValidatorsViewResource } from "./view-inputs";
 
-const makeEmptyPositionsData = (): PositionsData => new Map();
+export const makeEmptyPositionsData = (): PositionsData => new Map();
 
 const getIntentForm = (intent: EarnMachineIntent): EarnMachineForm => ({
   providerYieldId: intent.selectedProviderYieldId,
@@ -20,6 +16,13 @@ const getIntentForm = (intent: EarnMachineIntent): EarnMachineForm => ({
   useMaxAmount: intent.useMaxAmount,
 });
 
+export type EarnViewStage = {
+  readonly availableCategories?: EarnMachineView["availableCategories"];
+  readonly form?: EarnMachineForm;
+  readonly resources?: Partial<EarnMachineView["resources"]>;
+  readonly selection?: Partial<EarnMachineView["selection"]>;
+};
+
 export const makeEarnView = ({
   availableCategories = [],
   can,
@@ -27,23 +30,19 @@ export const makeEarnView = ({
   form,
   intent,
   resources,
-  retryTargetAtom = null,
+  retryTarget = null,
   selection,
   status,
-}: {
-  readonly availableCategories?: EarnMachineView["availableCategories"];
+}: EarnViewStage & {
   readonly can?: Partial<EarnMachineView["can"]>;
   readonly failure?: EarnMachineView["failure"];
-  readonly form?: EarnMachineForm;
   readonly intent: EarnMachineIntent;
-  readonly resources?: Partial<EarnMachineView["resources"]>;
-  readonly retryTargetAtom?: Atom.Atom<unknown> | null;
-  readonly selection?: Partial<EarnMachineView["selection"]>;
+  readonly retryTarget?: EarnMachineView["retryTarget"];
   readonly status: EarnMachineView["status"];
 }): EarnMachineView => ({
   status,
   failure,
-  retryTargetAtom,
+  retryTarget,
   availableCategories,
   selection: {
     category: null,
@@ -61,7 +60,7 @@ export const makeEarnView = ({
     tokenOptions: {
       items: [],
       waiting: false,
-      pullAtom: pendingTokenOptionsPullAtom,
+      pullKey: null,
     },
     validators: disabledValidatorsViewResource,
     yields: {
@@ -71,8 +70,8 @@ export const makeEarnView = ({
     ...resources,
   },
   can: {
-    selectToken: false,
-    selectYield: false,
+    selectToken: (resources?.tokenOptions?.items.length ?? 0) > 0,
+    selectYield: (resources?.yields?.items.length ?? 0) > 0,
     selectValidator: false,
     submit: false,
     ...can,
@@ -91,7 +90,7 @@ export const makeResolvingWalletView = ({
       ...previous.value,
       status: "resolving-wallet",
       failure: null,
-      retryTargetAtom: null,
+      retryTarget: null,
       can: {
         selectToken: false,
         selectYield: false,

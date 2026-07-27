@@ -44,6 +44,34 @@ describe("ApplicationRouter runtime", () => {
     }
   });
 
+  it("constructs the router at the atom-derived deep link without navigating", () => {
+    vi.stubGlobal("location", {
+      href: "https://host.test/?tab=positions",
+    });
+    const registry = AtomRegistry.make({
+      initialValues: [
+        [
+          widgetConfigAtom,
+          normalizeWidgetConfig({
+            apiKey: "test",
+            dashboardVariant: true,
+            variant: "default",
+          }),
+        ],
+      ],
+    });
+
+    try {
+      const router = registry.get(applicationRouterAtom);
+
+      expect(router.state.location.pathname).toBe("/positions");
+      expect(router.state.historyAction).toBe("POP");
+    } finally {
+      registry.dispose();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("drives real memory history through WidgetNavigation", async () => {
     const registry = makeRegistry();
 

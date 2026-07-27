@@ -16,6 +16,8 @@ const inlineTestDependencies = [
   /@tronweb3/,
   /@zondax/,
 ];
+const testCacheDir = (project: "browser" | "dom" | "unit") =>
+  path.resolve(__dirname, "..", "node_modules", ".vite", project);
 
 export default defineConfig(
   getConfig({
@@ -23,6 +25,7 @@ export default defineConfig(
       projects: [
         {
           extends: true,
+          cacheDir: testCacheDir("unit"),
           test: {
             name: "unit",
             environment: "node",
@@ -38,6 +41,7 @@ export default defineConfig(
         },
         {
           extends: true,
+          cacheDir: testCacheDir("dom"),
           test: {
             name: "dom",
             environment: "jsdom",
@@ -55,6 +59,7 @@ export default defineConfig(
         },
         {
           extends: true,
+          cacheDir: testCacheDir("browser"),
           test: {
             name: "browser",
             include: [browserTestPattern],

@@ -161,6 +161,8 @@ describe("widget runtime service graph", () => {
     const config = normalizeWidgetConfig({
       apiKey: "test-api-key",
       borrowApiUrl: "",
+      borrowEnabled: true,
+      dashboardVariant: true,
       tracking: { trackEvent: vi.fn() },
       variant: "default",
     });

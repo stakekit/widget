@@ -1,4 +1,5 @@
 import { Context, Effect, Layer, Schema } from "effect";
+import { BorrowFeatureDisabled } from "../../domain/borrow/availability";
 import type { Integration } from "../../domain/borrow/integration";
 import type { BorrowNetwork } from "../../domain/borrow/network";
 import {
@@ -9,6 +10,7 @@ import {
 import { MissingBorrowApiConfig } from "../../domain/schema/api-errors";
 import type { WalletAddress } from "../../domain/schema/identifiers";
 import type * as BorrowApi from "../../generated/api/borrow-client";
+import { WidgetConfigService } from "../config/widget-config";
 import {
   decodeApiResponse,
   withApiRequestError,
@@ -17,10 +19,17 @@ import {
 import { ApiTransportService } from "./transport";
 
 export const makeBorrowResourceSource = (
-  borrow: BorrowApi.BorrowApi | null
+  borrow: BorrowApi.BorrowApi | null,
+  borrowEnabled = true
 ) => {
   const requireTransport = Effect.fn("BorrowResourceSource.requireTransport")(
     function* () {
+      if (!borrowEnabled) {
+        return yield* new BorrowFeatureDisabled({
+          message: "Borrow is disabled by Widget configuration.",
+        });
+      }
+
       if (borrow) return borrow;
 
       return yield* new MissingBorrowApiConfig({
@@ -91,9 +100,15 @@ export const makeBorrowResourceSource = (
 export class BorrowResourceSource extends Context.Service<BorrowResourceSource>()(
   "stakekit/widget/services/api/BorrowResourceSource",
   {
-    make: Effect.map(ApiTransportService, ({ borrow }) =>
-      makeBorrowResourceSource(borrow)
-    ),
+    make: Effect.gen(function* () {
+      const { borrow } = yield* ApiTransportService;
+      const widgetConfig = yield* WidgetConfigService;
+
+      return makeBorrowResourceSource(
+        borrow,
+        widgetConfig.initial.borrowEnabled
+      );
+    }),
   }
 ) {
   static readonly layer = Layer.effect(

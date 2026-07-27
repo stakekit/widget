@@ -1,7 +1,6 @@
 export { WagmiConfigProvider } from "./react/provider";
 export {
   useWalletScopeRoute,
-  WalletScopeRoute,
   WalletScopeRouteGuard,
 } from "./react/wallet-scope-route";
 export { AccountModal } from "./ui/account-modal";

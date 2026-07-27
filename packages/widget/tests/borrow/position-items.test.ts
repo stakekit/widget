@@ -7,11 +7,11 @@ import { Market } from "../../src/domain/borrow/market";
 import { BorrowAccountPosition } from "../../src/domain/borrow/position";
 import { deriveBorrowPositionItems } from "../../src/domain/borrow/position-items";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { getBorrowDetailsModel } from "../../src/features/borrow/model/borrow-details-model";
 import {
-  getBorrowDetailsModel,
   getBorrowPositionActions,
   getBorrowPositionDetailsModel,
-} from "../../src/features/borrow/state";
+} from "../../src/features/borrow/model/position-details-model";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

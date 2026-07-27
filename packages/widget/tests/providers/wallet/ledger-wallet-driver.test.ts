@@ -1,6 +1,6 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
 import type { RawTransaction } from "@ledgerhq/wallet-api-core";
-import { Effect, Result } from "effect";
+import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 import { makeLedgerWalletDriver } from "../../../src/services/wallet/drivers/ledger";
@@ -16,8 +16,8 @@ const transactionInput = {
 };
 
 const makeConnector = () => {
-  const prepareTransaction = vi.fn<() => Result.Result<RawTransaction, string>>(
-    () => Result.succeed({} as RawTransaction)
+  const prepareTransaction = vi.fn<() => Effect.Effect<RawTransaction, string>>(
+    () => Effect.succeed({} as RawTransaction)
   );
   const deserializeTransaction = vi.fn(() => ({ family: "ethereum" }));
   const signAndBroadcast = vi.fn(async () => "0xledger-hash");
@@ -83,7 +83,7 @@ describe("Ledger wallet driver", () => {
 
   it("maps preparation and broadcast failures to distinct errors", async () => {
     const ledger = makeConnector();
-    ledger.prepareTransaction.mockReturnValue(Result.fail("invalid tx"));
+    ledger.prepareTransaction.mockReturnValue(Effect.fail("invalid tx"));
     const decodeFailure = await Effect.runPromise(
       Effect.flip(
         makeLedgerWalletDriver({
@@ -94,7 +94,7 @@ describe("Ledger wallet driver", () => {
     );
 
     ledger.prepareTransaction.mockReturnValue(
-      Result.succeed({} as RawTransaction)
+      Effect.succeed({} as RawTransaction)
     );
     ledger.signAndBroadcast.mockRejectedValue(new Error("rejected"));
     const broadcastFailure = await Effect.runPromise(

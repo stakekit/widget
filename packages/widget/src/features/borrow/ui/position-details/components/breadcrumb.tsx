@@ -9,7 +9,7 @@ import {
 } from "../../../../widget-shell/components";
 
 export const BorrowPositionBreadcrumb = ({
-  backPath = "/manage",
+  backPath = "/positions",
   positionName,
 }: {
   readonly backPath?: string;

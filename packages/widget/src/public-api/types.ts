@@ -324,9 +324,13 @@ export type PreferredTokenYieldsPerNetwork = Readonly<
 >;
 
 export type SettingsProps = {
+  /** Mount-time setting. Changing it creates a fresh Widget generation. */
   apiKey: string;
+  /** Mount-time setting. Changing it creates a fresh Widget generation. */
   baseUrl?: string;
+  /** Mount-time setting. Changing it creates a fresh Widget generation. */
   borrowApiUrl?: string;
+  /** Mount-time setting. Changing it creates a fresh Widget generation. */
   yieldsApiUrl?: string;
   theme?: SKTheme;
   tracking?: TrackingConfig;
@@ -371,6 +375,10 @@ export type SettingsProps = {
   >;
   tokenIconMapping?: Record<string, string> | ((token: SKToken) => string);
   chainIconMapping?: Record<string, string> | ((chain: string) => string);
+  /**
+   * Mount-time setting. Changing it creates a fresh Widget generation.
+   * Requires dashboardVariant and category yield grouping.
+   */
   borrowEnabled?: boolean;
   dashboardVariant?: boolean;
   dashboardYieldCategoryOrder?: DashboardYieldCategory[];

@@ -6,6 +6,7 @@ const settings = normalizeWidgetConfig({
   apiKey: "api-key",
   baseUrl: "https://legacy.example/",
   borrowApiUrl: "https://borrow.example/",
+  dashboardVariant: true,
   variant: "default",
   yieldsApiUrl: "https://yield.example/",
 });
@@ -35,6 +36,7 @@ describe("WidgetRuntimeGenerationKey", () => {
     ["apiKey", "changed-api-key"],
     ["baseUrl", "https://changed-legacy.example/"],
     ["borrowApiUrl", "https://changed-borrow.example/"],
+    ["borrowEnabled", true],
     ["yieldsApiUrl", "https://changed-yield.example/"],
   ] as const)("changes identity when %s changes", (field, value) => {
     const first = makeWidgetRuntimeGenerationKey(settings);

@@ -13,11 +13,13 @@ import { toPositionsData } from "../../src/domain/types/positions";
 import { getDashboardYieldCategory } from "../../src/domain/types/yields";
 import {
   currentGroupedPositionsAtom,
-  getPositionsAverageApy,
-  getPositionsTotal,
   positionsTableDataAtom,
   toPositionItems,
-} from "../../src/features/portfolio/state";
+} from "../../src/features/portfolio/resources/positions";
+import {
+  getPositionsAverageApy,
+  getPositionsTotal,
+} from "../../src/features/portfolio/resources/summary";
 import {
   MultiYieldsKey,
   multiYieldsByIdAtom,

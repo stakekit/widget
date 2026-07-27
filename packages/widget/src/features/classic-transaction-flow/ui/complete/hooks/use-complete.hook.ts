@@ -1,10 +1,8 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
 import type { TransactionType } from "../../../../../domain/types/action";
 import { isMobile } from "../../../../../shared/lib/general";
-import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import {
   usePendingActionMatch,
   useUnstakeMatch,
@@ -57,28 +55,23 @@ export const useComplete = () => {
   const activityPendingMatch = useActivityPendingActionMatch();
   const activityReviewMatch = useActivityReviewMatch();
 
-  const onClickRef = useSavedRef(onClick);
-
   const { t } = useTranslation();
 
-  const cta = useMemo<PageCta>(
-    () => ({
-      disabled: false,
-      isLoading: false,
-      label: t("complete.continue", {
-        context: isLedgerLive ? "ledger" : undefined,
-      }),
-      onClick: () => onClickRef.current(),
-      hide: !!activityReviewMatch,
+  const resolveCta = (): PageCta => ({
+    disabled: false,
+    isLoading: false,
+    label: t("complete.continue", {
+      context: isLedgerLive ? "ledger" : undefined,
     }),
-    [onClickRef, t, activityReviewMatch, isLedgerLive]
-  );
+    onClick,
+    hide: !!activityReviewMatch,
+  });
 
   return {
     urls,
     unstakeMatch: !!(unstakeMatch || activityUnstakeMatch),
     pendingActionMatch: !!(pendingActionMatch || activityPendingMatch),
     onViewTransactionClick,
-    cta,
+    cta: resolveCta(),
   };
 };

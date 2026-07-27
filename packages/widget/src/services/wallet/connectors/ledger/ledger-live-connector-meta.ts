@@ -5,7 +5,7 @@ import type {
 } from "@ledgerhq/wallet-api-client";
 import type { RawTransaction } from "@ledgerhq/wallet-api-core";
 import type { Chain } from "@stakekit/rainbowkit";
-import type { Effect, Result, Stream } from "effect";
+import type { Effect, Stream } from "effect";
 import type { Address } from "viem";
 import type { Connector } from "wagmi";
 import type { ConnectorWithFilteredChains } from "../../../../domain/types/connectors";
@@ -37,7 +37,7 @@ export type ExtraProps = ConnectorWithFilteredChains & {
     network: string;
     tx: string;
     txMeta: SKTxMeta;
-  }) => Result.Result<RawTransaction, string>;
+  }) => Effect.Effect<RawTransaction, string>;
 };
 
 type LedgerLiveConnector = Connector & ExtraProps;

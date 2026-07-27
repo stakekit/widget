@@ -10,20 +10,7 @@ import {
 import { getWalletNetworkLogo } from "../../assets";
 import { WalletIntegrationError } from "../../domain/errors";
 
-const queryFn = async ({
-  enabledNetworks,
-  forceWalletConnectOnly,
-}: {
-  enabledNetworks: ReadonlySet<Network>;
-  forceWalletConnectOnly: boolean;
-}): Promise<{
-  substrateChainsMap: Partial<SubstrateChainsMap>;
-  substrateChains: Chain[];
-  connector: {
-    groupName: string;
-    wallets: WalletList[number]["wallets"];
-  } | null;
-}> => {
+const enabledSubstrateChains = (enabledNetworks: ReadonlySet<Network>) => {
   const filteredSubstrateChainsMap: Partial<SubstrateChainsMap> = Record.filter(
     substrateChainsMap,
     (v) => enabledNetworks.has(v.skChainName)
@@ -49,28 +36,65 @@ const queryFn = async ({
     })
   );
 
-  const connector = substrateChains.length
-    ? (await import("./substrate-connector")).getSubstrateConnectors(
-        substrateChains,
-        lunoKitChains,
-        forceWalletConnectOnly
-      )
-    : null;
-
-  return {
-    substrateChainsMap: filteredSubstrateChainsMap,
-    substrateChains,
-    connector,
-  };
+  return { filteredSubstrateChainsMap, lunoKitChains, substrateChains };
 };
 
-export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
-  Effect.tryPromise({
-    try: () => queryFn(opts),
-    catch: (cause) =>
-      new WalletIntegrationError({
-        cause,
-        message: "Could not get substrate config",
-        operation: "substrate-config",
-      }),
-  });
+export const getConfig = ({
+  buildConnectors,
+  enabledNetworks,
+  forceWalletConnectOnly,
+}: {
+  buildConnectors: boolean;
+  enabledNetworks: ReadonlySet<Network>;
+  forceWalletConnectOnly: boolean;
+}): Effect.Effect<
+  {
+    substrateChainsMap: Partial<SubstrateChainsMap>;
+    substrateChains: Chain[];
+    connector: {
+      groupName: string;
+      wallets: WalletList[number]["wallets"];
+    } | null;
+  },
+  WalletIntegrationError
+> =>
+  Effect.gen(function* () {
+    const { filteredSubstrateChainsMap, lunoKitChains, substrateChains } =
+      enabledSubstrateChains(enabledNetworks);
+
+    const connector =
+      buildConnectors && substrateChains.length
+        ? yield* Effect.tryPromise({
+            try: () => import("./substrate-connector"),
+            catch: (cause) =>
+              new WalletIntegrationError({
+                cause,
+                message: "Could not import substrate-connector",
+                operation: "substrate-connector-import",
+              }),
+          }).pipe(
+            Effect.flatMap((module) =>
+              module.getSubstrateConnectors(
+                substrateChains,
+                lunoKitChains,
+                forceWalletConnectOnly
+              )
+            )
+          )
+        : null;
+
+    return {
+      substrateChainsMap: filteredSubstrateChainsMap,
+      substrateChains,
+      connector,
+    };
+  }).pipe(
+    Effect.mapError(
+      (cause) =>
+        new WalletIntegrationError({
+          cause,
+          message: "Could not get substrate config",
+          operation: "substrate-config",
+        })
+    )
+  );

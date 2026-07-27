@@ -9,10 +9,12 @@ import { WalletIntegrationError } from "../../domain/errors";
 import { getWagmiChain } from "./chains";
 
 const queryFn = ({
+  buildConnectors,
   enabledNetworks,
   forceWalletConnectOnly,
   persistPublicKey,
 }: {
+  buildConnectors: boolean;
   enabledNetworks: ReadonlySet<Network>;
   forceWalletConnectOnly: boolean;
   persistPublicKey: (input: {
@@ -75,6 +77,11 @@ const queryFn = ({
     const cosmosWagmiChains = Object.values(cosmosChainsMap).map(
       (value) => value.wagmiChain
     );
+
+    if (!buildConnectors) {
+      return { cosmosChainsMap, cosmosWagmiChains, connector: null };
+    }
+
     const walletManagerModule = yield* Effect.tryPromise({
       try: () => import("./wallet-manager"),
       catch: (cause) =>

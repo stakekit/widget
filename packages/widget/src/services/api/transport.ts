@@ -14,7 +14,6 @@ import {
   WidgetConfigService,
 } from "../config/widget-config";
 import { RichErrorService } from "../errors/rich-error-service";
-import { waitForDelayedApiRequests } from "./delay-api-requests";
 import { handleGeoBlockResponse } from "./geo-block-state";
 
 type ApiTransport = {
@@ -33,8 +32,6 @@ const inspectResponse = ({
   readonly suppressRichErrors?: boolean;
 }) =>
   Effect.gen(function* () {
-    yield* Effect.promise(waitForDelayedApiRequests);
-
     if (response.status < 400) return;
 
     const data = yield* Effect.orElseSucceed(response.json, () => undefined);

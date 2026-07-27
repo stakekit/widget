@@ -21,7 +21,16 @@ import type {
 } from "../../../../public-api/types";
 import type { WalletScopeKey } from "../../../../services/wallet/domain/scope";
 import type { PullPage } from "../../../../shared/effect/pagination";
-import type { YieldValidatorsPullKey } from "./catalog/keys";
+import type {
+  AvailableYieldCategoriesKey,
+  DefaultTokenOptionsKey,
+  InitYieldKey,
+  PositionsDataKey,
+  TokenOptionsKey,
+  YieldCatalogKey,
+  YieldValidatorsKey,
+  YieldValidatorsPullKey,
+} from "./catalog/keys";
 
 export type EarnTokenOption = {
   readonly token: EarnToken;
@@ -45,12 +54,21 @@ export type EarnCatalogOperation =
   | "token-yield-scope"
   | "validators";
 
-export type EarnCatalogUnderlyingError = unknown;
-
 export class EarnCatalogError extends Data.TaggedError("EarnCatalogError")<{
   readonly operation: EarnCatalogOperation;
-  readonly cause: EarnCatalogUnderlyingError;
+  readonly cause: unknown;
 }> {}
+
+export type EarnRetryTarget =
+  | {
+      readonly _tag: "AvailableCategories";
+      readonly key: AvailableYieldCategoriesKey;
+    }
+  | { readonly _tag: "InitYield"; readonly key: InitYieldKey }
+  | { readonly _tag: "PositionsData"; readonly key: PositionsDataKey }
+  | { readonly _tag: "TokenOptions"; readonly key: TokenOptionsKey }
+  | { readonly _tag: "YieldCatalog"; readonly key: YieldCatalogKey }
+  | { readonly _tag: "YieldValidators"; readonly key: YieldValidatorsKey };
 
 export type EarnEntry = {
   readonly walletScope: WalletScopeKey | null;
@@ -125,10 +143,7 @@ export type EarnTokenOptionsState = AsyncResult<
 type EarnTokenOptionsViewResource = {
   readonly items: ReadonlyArray<EarnTokenOption>;
   readonly waiting: boolean;
-  readonly pullAtom: Writable<
-    PullResult<PullPage<EarnTokenOption>, EarnCatalogError>,
-    void
-  >;
+  readonly pullKey: DefaultTokenOptionsKey | null;
 };
 
 export type EarnValidatorsResource = {
@@ -148,14 +163,13 @@ export type EarnValidatorsResource = {
 export type EarnValidatorsViewResource = {
   readonly enabled: boolean;
   readonly items: ReadonlyArray<EarnValidator>;
-  readonly rememberValidatorsAtom: EarnValidatorsResource["rememberValidatorsAtom"];
-  readonly validatorsPullAtom: EarnValidatorsResource["validatorsPullAtom"];
+  readonly key: YieldValidatorsKey | null;
 };
 
 export type EarnMachineView = {
   status: EarnMachineStatus;
   failure: EarnMachineFailure | null;
-  retryTargetAtom: Atom<unknown> | null;
+  retryTarget: EarnRetryTarget | null;
   selection: EarnMachineSelection;
   form: EarnMachineForm;
   availableCategories: ReadonlyArray<DashboardYieldCategory>;

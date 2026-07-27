@@ -6,6 +6,7 @@ import {
   widgetConfigFieldAtom,
 } from "../../src/app/config/settings";
 import { widgetBootstrapConfigAtom } from "../../src/app/config/widget-config";
+import { InvalidBorrowFeatureConfiguration } from "../../src/domain/borrow/availability";
 
 describe("widget configuration", () => {
   it("normalizes defaults, category order, and token preference keys", () => {
@@ -45,6 +46,43 @@ describe("widget configuration", () => {
 
     expect(wagmi.__customConnectors__).toBe(customConnectors);
     expect(settings.wagmi?.__customConnectors__).toBe(customConnectors);
+  });
+
+  it("accepts Borrow only in the category-grouped dashboard", () => {
+    expect(
+      normalizeWidgetConfig({
+        apiKey: "api-key",
+        borrowEnabled: true,
+        dashboardVariant: true,
+        variant: "default",
+      })
+    ).toMatchObject({
+      borrowEnabled: true,
+      dashboardVariant: true,
+      yieldGrouping: "category",
+    });
+  });
+
+  it("rejects Borrow outside the dashboard", () => {
+    expect(() =>
+      normalizeWidgetConfig({
+        apiKey: "api-key",
+        borrowEnabled: true,
+        variant: "default",
+      })
+    ).toThrow(InvalidBorrowFeatureConfiguration);
+  });
+
+  it("rejects Borrow with flat yield grouping", () => {
+    expect(() =>
+      normalizeWidgetConfig({
+        apiKey: "api-key",
+        borrowEnabled: true,
+        dashboardVariant: true,
+        variant: "default",
+        yieldGrouping: "flat",
+      })
+    ).toThrow(InvalidBorrowFeatureConfiguration);
   });
 
   it("derives focused React fields and Effect bootstrap configuration from one atom", () => {

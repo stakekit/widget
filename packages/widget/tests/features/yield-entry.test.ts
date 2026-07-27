@@ -507,37 +507,37 @@ describe("Yield Entry", () => {
         walletScope: null,
       },
     },
-  ] as const)("rejects a $name before starting a session", async ({
-    expected,
-    override,
-  }) => {
-    const ports = makeObservablePorts();
-    const inputAtom = Atom.make(makeFacadeInput(override));
-    const connect = vi.fn(() => Effect.void);
-    const addLedgerAccount = vi.fn(() => Effect.void);
-    const facade = makeYieldEntry(inputAtom, {
-      markSubmitted: () => undefined,
-      onConnectWallet: connect,
-      refreshKyc: () => undefined,
-      runAddLedgerAccount: addLedgerAccount,
-    });
-    const registry = makeObservableRegistry(ports);
+  ] as const)(
+    "rejects a $name before starting a session",
+    async ({ expected, override }) => {
+      const ports = makeObservablePorts();
+      const inputAtom = Atom.make(makeFacadeInput(override));
+      const connect = vi.fn(() => Effect.void);
+      const addLedgerAccount = vi.fn(() => Effect.void);
+      const facade = makeYieldEntry(inputAtom, {
+        markSubmitted: () => undefined,
+        onConnectWallet: connect,
+        refreshKyc: () => undefined,
+        runAddLedgerAccount: addLedgerAccount,
+      });
+      const registry = makeObservableRegistry(ports);
 
-    try {
-      registry.set(facade.submitAtom, undefined);
-      await readSubmitOutcome(registry, facade.submitAtom).toBe(expected);
-      expect(
-        registry.get(classicFlowSessionStore.currentSessionAtom)
-      ).toBeNull();
-      expect(connect).not.toHaveBeenCalled();
-      expect(addLedgerAccount).not.toHaveBeenCalled();
-      expect(ports.openConnect).not.toHaveBeenCalled();
-      expect(ports.closeChain).not.toHaveBeenCalled();
-      expect(ports.trackEvent).not.toHaveBeenCalled();
-      expect(ports.push).not.toHaveBeenCalled();
-      expect(ports.replace).not.toHaveBeenCalled();
-    } finally {
-      registry.dispose();
+      try {
+        registry.set(facade.submitAtom, undefined);
+        await readSubmitOutcome(registry, facade.submitAtom).toBe(expected);
+        expect(
+          registry.get(classicFlowSessionStore.currentSessionAtom)
+        ).toBeNull();
+        expect(connect).not.toHaveBeenCalled();
+        expect(addLedgerAccount).not.toHaveBeenCalled();
+        expect(ports.openConnect).not.toHaveBeenCalled();
+        expect(ports.closeChain).not.toHaveBeenCalled();
+        expect(ports.trackEvent).not.toHaveBeenCalled();
+        expect(ports.push).not.toHaveBeenCalled();
+        expect(ports.replace).not.toHaveBeenCalled();
+      } finally {
+        registry.dispose();
+      }
     }
-  });
+  );
 });

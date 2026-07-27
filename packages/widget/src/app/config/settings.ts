@@ -1,5 +1,6 @@
 import { Record as EffectRecord } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import { validateBorrowFeatureConfiguration } from "../../domain/borrow/availability";
 import { normalizeDashboardYieldCategoryOrder } from "../../domain/types/yields";
 import type {
   PreferredTokenYieldsPerNetwork,
@@ -41,18 +42,26 @@ export const normalizeWidgetConfig = (
     !config.env.isTestMode && input.wagmi?.__customConnectors__
       ? { ...input.wagmi, __customConnectors__: undefined }
       : input.wagmi;
+  const borrowEnabled = input.borrowEnabled ?? false;
+  const yieldGrouping =
+    input.yieldGrouping ?? (input.dashboardVariant ? "category" : "flat");
+
+  validateBorrowFeatureConfiguration({
+    borrowEnabled,
+    dashboardVariant: input.dashboardVariant,
+    yieldGrouping,
+  });
 
   return {
     ...input,
-    borrowEnabled: input.borrowEnabled ?? false,
+    borrowEnabled,
     dashboardYieldCategoryOrder: normalizeDashboardYieldCategoryOrder(
       input.dashboardYieldCategoryOrder
     ),
     isLedgerLive: options.isLedgerLive ?? false,
     preferredTokenYieldsPerNetwork,
     wagmi,
-    yieldGrouping:
-      input.yieldGrouping ?? (input.dashboardVariant ? "category" : "flat"),
+    yieldGrouping,
   } as WidgetConfig;
 };
 

@@ -1,6 +1,5 @@
 import {
   currentWalletConfigResultAtom,
-  currentWalletLedgerStateAtom,
   currentWalletStateResultAtom,
 } from "./state/root-atom";
 import {
@@ -11,7 +10,6 @@ import {
 
 export const walletConnectionStateAtom = currentWalletStateAtom;
 export const walletConfigResultAtom = currentWalletConfigResultAtom;
-export const walletLedgerStateAtom = currentWalletLedgerStateAtom;
 export const walletScopeAtom = currentWalletScopeAtom;
 export const walletStateResultAtom = currentWalletStateResultAtom;
 export const walletConnectedNetworkAtom = currentWalletConnectedNetworkAtom;
@@ -25,5 +23,4 @@ export { walletModalAdapterAtom } from "./state/wallet-modal";
 export {
   addLedgerAccountAtom,
   runAddLedgerAccount,
-  runLogout,
 } from "./state/workflows";

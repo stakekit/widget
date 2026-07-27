@@ -88,7 +88,7 @@ export const yieldFirstPageResourceAtom = Atom.family(
         YieldResourceSource.use((source) =>
           source
             .listYields({
-              limit: API_MAX_PAGE_SIZE,
+              limit: 10,
               offset: 0,
               ...(key.network ? { network: key.network } : {}),
               types: key.types,

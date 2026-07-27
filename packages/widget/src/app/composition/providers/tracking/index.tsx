@@ -1,12 +1,12 @@
-import { RegistryProvider, useAtomSet } from "@effect/atom-react";
+import { RegistryProvider } from "@effect/atom-react";
 import type { PropsWithChildren } from "react";
-import { useLayoutEffect, useState } from "react";
+import { useState } from "react";
 import type { TrackingConfig } from "../../../../public-api/types";
-import type { WidgetConfig } from "../../../../services/config/widget-config";
 import {
   normalizeWidgetConfig,
   widgetConfigAtom,
 } from "../../../config/settings";
+import { WidgetConfigBoundaryAdapter } from "../widget-config-binding";
 
 type TrackingProviderProps = PropsWithChildren<{
   readonly tracking: TrackingConfig | undefined;
@@ -27,19 +27,6 @@ const makeTrackingConfig = ({
   },
 });
 
-const TrackingConfigBinding = ({
-  children,
-  settings,
-}: PropsWithChildren<{ readonly settings: WidgetConfig }>) => {
-  const setWidgetConfig = useAtomSet(widgetConfigAtom);
-
-  useLayoutEffect(() => {
-    setWidgetConfig(settings);
-  }, [setWidgetConfig, settings]);
-
-  return children;
-};
-
 export const TrackingContextProvider = ({
   children,
   tracking,
@@ -54,9 +41,9 @@ export const TrackingContextProvider = ({
 
   return (
     <RegistryProvider initialValues={[[widgetConfigAtom, initialSettings]]}>
-      <TrackingConfigBinding settings={settings}>
+      <WidgetConfigBoundaryAdapter settings={settings}>
         {children}
-      </TrackingConfigBinding>
+      </WidgetConfigBoundaryAdapter>
     </RegistryProvider>
   );
 };

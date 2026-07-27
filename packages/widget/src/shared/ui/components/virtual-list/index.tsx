@@ -4,8 +4,7 @@ import {
 } from "@tanstack/react-virtual";
 import clsx from "clsx";
 import { Array as EArray, Option } from "effect";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useSavedRef } from "../../../react/use-saved-ref";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { breakpoints } from "../../../styles/tokens/breakpoints";
 import {
   Box,
@@ -73,13 +72,13 @@ export const VirtualList = <ItemData,>({
     [virtualItems, data.length]
   );
 
-  const fetchNextPageRef = useSavedRef(fetchNextPage);
+  const requestNextPage = useEffectEvent(() => fetchNextPage?.());
 
   useEffect(() => {
     if (isEndReached && hasNextPage && !isFetchingNextPage) {
-      fetchNextPageRef.current?.();
+      requestNextPage();
     }
-  }, [isEndReached, hasNextPage, isFetchingNextPage, fetchNextPageRef]);
+  }, [isEndReached, hasNextPage, isFetchingNextPage]);
 
   const _maxHeight = isTabletOrBigger ? maxHeight : "max(65vh, 400px)";
 
@@ -155,7 +154,7 @@ export const GroupedVirtualList = ({
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
-  const fetchNextPageRef = useSavedRef(fetchNextPage);
+  const requestNextPage = useEffectEvent(() => fetchNextPage?.());
 
   type ParentResult = {
     type: "parent";
@@ -204,9 +203,9 @@ export const GroupedVirtualList = ({
 
   useEffect(() => {
     if (isEndReached && hasNextPage && !isFetchingNextPage) {
-      fetchNextPageRef.current?.();
+      requestNextPage();
     }
-  }, [isEndReached, hasNextPage, isFetchingNextPage, fetchNextPageRef]);
+  }, [isEndReached, hasNextPage, isFetchingNextPage]);
 
   const _maxHeight = isTabletOrBigger ? maxHeight : "max(65vh, 500px)";
 

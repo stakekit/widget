@@ -15,9 +15,10 @@ type StandaloneVariant = Exclude<VariantProps["variant"], "zerion">;
 const variant: StandaloneVariant =
   import.meta.env.VITE_APP_VARIANT ?? "default";
 
-// TODO: Remove this once the borrow feature is enabled
-const dashboardVariant: SKAppProps["dashboardVariant"] = true;
-const borrowEnabled: SKAppProps["borrowEnabled"] = true;
+const dashboardVariant: SKAppProps["dashboardVariant"] =
+  import.meta.env.VITE_FORCE_DASHBOARD === "true";
+const borrowEnabled: SKAppProps["borrowEnabled"] =
+  import.meta.env.VITE_FORCE_BORROW === "true";
 
 const StandaloneApp = () => {
   const [themeVariant, setThemeVariant] = useState<"dark" | "light">("dark");

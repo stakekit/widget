@@ -9,12 +9,16 @@ import { applicationRouterAtom } from "../../src/app/runtime/application-router-
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   type ClassicTransactionFlowIntake,
-  classicFlowSessionStore,
-  finishClassicTransactionFlowAtom,
   isClassicTransactionFlowWalletScopeValid,
+} from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import {
+  classicFlowSessionStore,
   makeStartClassicFlowSession,
 } from "../../src/features/classic-transaction-flow/state";
-import { makeClassicFlowSessionStore } from "../../src/features/classic-transaction-flow/state/flow-session-store";
+import {
+  finishClassicTransactionFlowAtom,
+  makeClassicFlowSessionStore,
+} from "../../src/features/classic-transaction-flow/state/flow-session-store";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiYieldFixture } from "../fixtures";
 

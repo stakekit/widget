@@ -13,7 +13,12 @@ import {
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
 
 const makeTestLayers = (api: WidgetApiConfig) => {
-  const config = normalizeWidgetConfig({ ...api, variant: "default" });
+  const config = normalizeWidgetConfig({
+    ...api,
+    borrowEnabled: true,
+    dashboardVariant: true,
+    variant: "default",
+  });
   const configLayer = WidgetConfigService.layer({
     initial: config,
     changes: Stream.never,
@@ -32,7 +37,7 @@ const makeTestLayers = (api: WidgetApiConfig) => {
     LegacyResourceSource.layer,
     YieldOperations.layer,
     YieldResourceSource.layer
-  ).pipe(Layer.provide(transportLayer));
+  ).pipe(Layer.provide(transportLayer), Layer.provide(configLayer));
 
   return { apiLayer, richErrorLayer } as const;
 };

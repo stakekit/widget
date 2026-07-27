@@ -4,11 +4,7 @@ import { EarnValidator } from "../../src/domain/schema/earn-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
 import { EvmNetworks } from "../../src/domain/types/chains/networks";
 import { tokenString } from "../../src/domain/types/tokens";
-import {
-  reconcileEarnMachineOwner,
-  reconcileEarnMachineView,
-  shouldConsumeEarnInitialization,
-} from "../../src/features/earn/state/atoms-state/machine/owner";
+import { reconcileEarnMachineOwner } from "../../src/features/earn/state/atoms-state/machine/owner";
 import { applyEarnAction } from "../../src/features/earn/state/atoms-state/machine/reducer";
 import { resolveCategory } from "../../src/features/earn/state/atoms-state/resolver/category";
 import { resolveToken } from "../../src/features/earn/state/atoms-state/resolver/token";
@@ -19,7 +15,6 @@ import {
 } from "../../src/features/earn/state/atoms-state/resolver/yield";
 import {
   type EarnMachineIntent,
-  type EarnMachineView,
   makeDefaultEarnIntent,
 } from "../../src/features/earn/state/atoms-state/types";
 import {
@@ -51,16 +46,16 @@ describe("Earn state machine model", () => {
       reconcileEarnMachineOwner(
         {
           dashboardVariant: false,
-          initializationConsumed: false,
           intent,
           owner: firstOwner,
+          userSelected: false,
         },
         nextOwner
       ).intent
     ).toEqual(makeDefaultEarnIntent());
   });
 
-  it("does not re-arm one-time initialization when the wallet owner changes", () => {
+  it("does not let a wallet owner change re-arm init param seeding", () => {
     const firstOwner = new WalletScopeOwnerKey({
       address: walletAddress("0x1111111111111111111111111111111111111111"),
       network: EvmNetworks.Ethereum,
@@ -73,94 +68,14 @@ describe("Earn state machine model", () => {
     expect(
       reconcileEarnMachineOwner(
         {
-          initializationConsumed: true,
           dashboardVariant: false,
           intent: makeDefaultEarnIntent(),
           owner: firstOwner,
+          userSelected: true,
         },
         nextOwner
-      ).initializationConsumed
+      ).userSelected
     ).toBe(true);
-  });
-
-  it("waits for an account-targeted wallet scope before consuming initialization", () => {
-    const readyView = { status: "ready" } as EarnMachineView;
-    const initParams = {
-      accountId: "0x1111111111111111111111111111111111111111",
-      balanceId: null,
-      network: null,
-      pendingaction: null,
-      tab: null,
-      token: null,
-      validator: null,
-      yieldId,
-    };
-    const baseEntry = {
-      categoryOrder: [],
-      dashboardVariant: false,
-      initParams,
-      walletResolution: "settled" as const,
-      walletScope: null,
-    };
-
-    expect(
-      shouldConsumeEarnInitialization({ entry: baseEntry, view: readyView })
-    ).toBe(false);
-    expect(
-      shouldConsumeEarnInitialization({
-        entry: {
-          ...baseEntry,
-          walletScope: new WalletScopeKey({
-            address: walletAddress(initParams.accountId),
-            network: EvmNetworks.Ethereum,
-          }),
-        },
-        view: readyView,
-      })
-    ).toBe(true);
-    expect(
-      shouldConsumeEarnInitialization({
-        entry: {
-          ...baseEntry,
-          initParams: { ...initParams, accountId: null },
-        },
-        view: readyView,
-      })
-    ).toBe(true);
-  });
-
-  it("commits a resolved fallback selection into canonical intent", () => {
-    const selectedYield = yieldApiYieldFixture();
-    const token = {
-      amount: "0",
-      availableYields: [selectedYield.id],
-      source: "default" as const,
-      token: selectedYield.token,
-    };
-    const view = {
-      form: {
-        providerYieldId: null,
-        stakeAmount: "2",
-        tronResource: null,
-        useMaxAmount: false,
-      },
-      selection: {
-        category: "stake",
-        token,
-        validators: [],
-        yield: selectedYield,
-      },
-      status: "ready",
-    } as unknown as EarnMachineView;
-
-    expect(
-      reconcileEarnMachineView(makeDefaultEarnIntent(), view)
-    ).toMatchObject({
-      selectedCategory: "stake",
-      selectedTokenKey: tokenString(token.token),
-      selectedYieldId: selectedYield.id,
-      stakeAmount: "2",
-    });
   });
 
   it("preserves intent when the primary address and network are unchanged", () => {
@@ -174,12 +89,12 @@ describe("Earn state machine model", () => {
     });
     const state = {
       dashboardVariant: false,
-      initializationConsumed: false,
       intent: applyEarnAction({
         action: { category: "defi", type: "category/select" },
         intent: makeDefaultEarnIntent(),
       }),
       owner: firstOwner,
+      userSelected: false,
     };
 
     expect(reconcileEarnMachineOwner(state, sameOwner)).toBe(state);
@@ -188,19 +103,19 @@ describe("Earn state machine model", () => {
   it("resets selection when switching between classic and dashboard modes", () => {
     const state = {
       dashboardVariant: false,
-      initializationConsumed: true,
       intent: applyEarnAction({
         action: { category: "defi", type: "category/select" },
         intent: makeDefaultEarnIntent(),
       }),
       owner: null,
+      userSelected: true,
     };
 
     expect(reconcileEarnMachineOwner(state, null, true)).toEqual({
       dashboardVariant: true,
-      initializationConsumed: true,
       intent: makeDefaultEarnIntent(),
       owner: null,
+      userSelected: true,
     });
   });
 

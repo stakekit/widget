@@ -65,7 +65,14 @@ const borrowPositionDataResourceAtom = Atom.family((key: BorrowPositionsKey) =>
             integrations,
             network: network as BorrowNetwork,
           })
-          .pipe(withBorrowResourceError("borrow-positions"));
+          .pipe(
+            Effect.catchTag("BorrowFeatureDisabled", () =>
+              Effect.succeed(
+                [] as typeof BorrowIntegrationPositionsResponse.Type
+              )
+            ),
+            withBorrowResourceError("borrow-positions")
+          );
       });
     })
     .pipe(

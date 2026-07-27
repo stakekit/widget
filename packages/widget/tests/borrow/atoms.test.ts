@@ -1,6 +1,10 @@
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
+import {
+  normalizeWidgetConfig,
+  widgetConfigAtom,
+} from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { Integration } from "../../src/domain/borrow/integration";
 import { Market } from "../../src/domain/borrow/market";
@@ -10,22 +14,31 @@ import { TokenBalancesResponse } from "../../src/domain/schema/financial-models"
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   applyBorrowFormAction,
-  BorrowAtomError,
   BorrowDashboardKey,
   type BorrowFormIntent,
-  BorrowMarketsKey,
+  resolveBorrowDashboardView,
+} from "../../src/features/borrow/model/borrow-form";
+import {
   BorrowPositionKey,
   BorrowPositionNotFound,
-  BorrowPositionsKey,
-  borrowIntegrationsAtom,
-  borrowMarketsAtom,
   borrowPositionAtom,
-  borrowPositionsAtom,
   currentBorrowPositionsAtom,
-  resolveBorrowDashboardView,
-} from "../../src/features/borrow/state";
+} from "../../src/features/borrow/state/resources";
 import { walletScopeAtom } from "../../src/features/wallet/state";
-import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
+import { BorrowResourceError as BorrowAtomError } from "../../src/resources/borrow/borrow-resource-error";
+import { borrowIntegrationsResourceAtom as borrowIntegrationsAtom } from "../../src/resources/borrow-integrations/borrow-integrations";
+import {
+  BorrowMarketsKey,
+  borrowMarketsResourceAtom as borrowMarketsAtom,
+} from "../../src/resources/borrow-markets/borrow-markets";
+import {
+  BorrowPositionsKey,
+  borrowPositionsResourceAtom as borrowPositionsAtom,
+} from "../../src/resources/borrow-positions/borrow-positions";
+import {
+  BorrowResourceSource,
+  makeBorrowResourceSource,
+} from "../../src/services/api/borrow-resource-source";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -188,13 +201,57 @@ describe("borrow atoms", () => {
           )
         ),
         Atom.initialValue(walletScopeAtom, walletScope),
+        Atom.initialValue(
+          widgetConfigAtom,
+          normalizeWidgetConfig({
+            apiKey: "api-key",
+            borrowEnabled: true,
+            dashboardVariant: true,
+            variant: "default",
+          })
+        ),
       ],
     });
 
     expect(
-      AsyncResult.getOrThrow(registry.get(currentBorrowPositionsAtom(true)))[0]
-        ?.id
+      AsyncResult.getOrThrow(registry.get(currentBorrowPositionsAtom))[0]?.id
     ).toBe(market.id);
+  });
+
+  it("returns inert resources without calling Borrow transport when disabled", () => {
+    const getIntegrations = vi.fn();
+    const getMarkets = vi.fn();
+    const getPositionData = vi.fn();
+    const source = makeBorrowResourceSource(
+      {
+        IntegrationsControllerGetIntegrationsV1: getIntegrations,
+        MarketsControllerGetMarketsV1: getMarkets,
+        PositionsControllerGetPositionsV1: getPositionData,
+      } as never,
+      false
+    );
+    const registry = makeRegistry(source);
+
+    expect(
+      AsyncResult.getOrThrow(registry.get(borrowIntegrationsAtom))
+    ).toEqual([]);
+    expect(
+      AsyncResult.getOrThrow(
+        registry.get(
+          borrowMarketsAtom(new BorrowMarketsKey({ network: "ethereum" }))
+        )
+      )
+    ).toEqual([]);
+    expect(
+      AsyncResult.getOrThrow(
+        registry.get(
+          borrowPositionsAtom(new BorrowPositionsKey({ scope: walletScope }))
+        )
+      )
+    ).toEqual([]);
+    expect(getIntegrations).not.toHaveBeenCalled();
+    expect(getMarkets).not.toHaveBeenCalled();
+    expect(getPositionData).not.toHaveBeenCalled();
   });
 
   it("shares one positions request between list and detail consumers", () => {

@@ -2,21 +2,32 @@ import clsx from "clsx";
 import type { Variants } from "motion/react";
 import { AnimatePresence, motion, useAnimate, usePresence } from "motion/react";
 import type { PropsWithChildren } from "react";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useDisableTransitionDuration } from "../../../react/layout-transition";
-import { useFirstMountState } from "../../../react/use-first-mount-state";
 import type { BoxProps } from "../../primitives/box";
 import { Box } from "../../primitives/box";
 import { CaretDownIcon } from "../../primitives/icons/caret-down";
 import { caretContainer, rotate180deg, triggerContainer } from "./styles.css";
 
-type State = { collapsed: boolean; onClick: () => void; initial?: never };
+type ControlledProps = {
+  collapsed: boolean;
+  onClick: () => void;
+  initial?: never;
+};
 
 type Props = PropsWithChildren<
-  State | { initial?: boolean; collapsed?: never; onClick?: never }
+  ControlledProps | { initial?: boolean; collapsed?: never; onClick?: never }
 >;
 
-const CollapsibleContext = createContext<State | undefined>(undefined);
+type CollapsibleContextValue = {
+  collapsed: boolean;
+  onClick: () => void;
+  hasToggled: boolean;
+};
+
+const CollapsibleContext = createContext<CollapsibleContextValue | undefined>(
+  undefined
+);
 
 const useCollapsible = () => {
   const value = useContext(CollapsibleContext);
@@ -29,21 +40,26 @@ const useCollapsible = () => {
 };
 
 export const CollapsibleRoot = ({ children, ...controlledProps }: Props) => {
-  const internalState = useState(controlledProps.initial ?? true);
-
-  const value = useMemo<State>(
-    () =>
-      controlledProps.onClick
-        ? {
-            collapsed: controlledProps.collapsed,
-            onClick: controlledProps.onClick,
-          }
-        : {
-            collapsed: internalState[0],
-            onClick: () => internalState[1]((prev) => !prev),
-          },
-    [controlledProps.onClick, controlledProps.collapsed, internalState]
+  const [internalCollapsed, setInternalCollapsed] = useState(
+    controlledProps.initial ?? true
   );
+  const [hasToggled, setHasToggled] = useState(false);
+
+  const value: CollapsibleContextValue = {
+    collapsed: controlledProps.onClick
+      ? controlledProps.collapsed
+      : internalCollapsed,
+    hasToggled,
+    onClick: () => {
+      setHasToggled(true);
+
+      if (controlledProps.onClick) {
+        controlledProps.onClick();
+      } else {
+        setInternalCollapsed((prev) => !prev);
+      }
+    },
+  };
 
   return (
     <CollapsibleContext.Provider value={value}>
@@ -88,14 +104,14 @@ export const CollapsibleArrow = () => {
 };
 
 export const CollapsibleContent = ({ children }: PropsWithChildren) => {
-  const { collapsed } = useCollapsible();
-
-  const isFirstMount = useFirstMountState();
+  const { collapsed, hasToggled } = useCollapsible();
 
   return (
     <AnimatePresence>
       {!collapsed && (
-        <AnimateContent isFirstMount={isFirstMount}>{children}</AnimateContent>
+        <AnimateContent skipEnterAnimation={!hasToggled}>
+          {children}
+        </AnimateContent>
       )}
     </AnimatePresence>
   );
@@ -107,9 +123,9 @@ const variants = {
 } satisfies Variants;
 
 const AnimateContent = ({
-  isFirstMount,
+  skipEnterAnimation,
   children,
-}: PropsWithChildren<{ isFirstMount: boolean }>) => {
+}: PropsWithChildren<{ skipEnterAnimation: boolean }>) => {
   const [isPresent, safeToRemove] = usePresence();
   const [scope, animate] = useAnimate();
 
@@ -139,7 +155,7 @@ const AnimateContent = ({
   return (
     <motion.div
       ref={scope}
-      initial={isFirstMount ? variants.open : variants.closed}
+      initial={skipEnterAnimation ? variants.open : variants.closed}
       style={{ overflow: "hidden" }}
       transition={{ duration: 0.3 }}
     >

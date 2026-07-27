@@ -19,7 +19,7 @@ export const UnstakeSignPopup = ({
   const { t } = useTranslation();
 
   return (
-    <SelectModal state={{ isOpen, setOpen: onCancel }} onClose={onCancel}>
+    <SelectModal state={{ isOpen, setOpen: () => onCancel() }}>
       <Box
         display="flex"
         flexDirection="column"

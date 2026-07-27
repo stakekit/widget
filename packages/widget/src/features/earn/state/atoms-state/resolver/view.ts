@@ -1,7 +1,6 @@
 import type * as Atom from "effect/unstable/reactivity/Atom";
 import type { EarnYield } from "../../../../../domain/schema/earn-models";
 import type { YieldId } from "../../../../../domain/schema/identifiers";
-import type { PositionsData } from "../../../../../domain/types/positions";
 import { tokenString } from "../../../../../domain/types/tokens";
 import {
   getDashboardYieldCategory,
@@ -25,10 +24,12 @@ import {
   readValidatorInput,
   readYieldCatalogInput,
 } from "./view-inputs";
-import { makeEarnView } from "./view-model";
+import {
+  type EarnViewStage,
+  makeEarnView,
+  makeEmptyPositionsData,
+} from "./view-model";
 import { resolveYield, resolveYieldOptions } from "./yield";
-
-const makeEmptyPositionsData = (): PositionsData => new Map();
 
 const getAvailableValue = <A>(
   observation: ResourceObservation<A>,
@@ -46,6 +47,9 @@ const mapAvailableValue = <A, B>(
 const isResolving = <A>(observation: ResourceObservation<A>) =>
   observation._tag === "loading" ||
   (observation._tag === "available" && observation.waiting);
+
+const getObservationError = <A>(observation: ResourceObservation<A>) =>
+  observation._tag === "failed" ? observation.error : null;
 
 const getInitYieldCategory = ({
   dashboardVariant,
@@ -94,10 +98,6 @@ export const resolveEarnView = ({
     initial.positions.observation,
     makeEmptyPositionsData()
   );
-  const positionsResource = {
-    data: positionsForSelection,
-    waiting: initial.positions.waiting,
-  };
   const initYieldCategory = getInitYieldCategory({
     dashboardVariant: entry.dashboardVariant,
     initYield,
@@ -112,40 +112,44 @@ export const resolveEarnView = ({
     categoryInput._tag === "enabled"
       ? getAvailableValue(categoryInput.observation, [])
       : [];
+  const categoryStage: EarnViewStage = {
+    availableCategories,
+    resources: {
+      positions: {
+        data: positionsForSelection,
+        waiting: initial.positions.waiting,
+      },
+    },
+  };
 
-  if (
-    categoryInput._tag === "enabled" &&
-    categoryInput.observation._tag === "failed"
-  ) {
-    return makeEarnView({
-      intent,
-      status: "failed",
-      failure: makeFailure("categories", categoryInput.observation.error),
-      retryTargetAtom: categoryInput.retryTargetAtom,
-      availableCategories,
-      resources: { positions: positionsResource },
-    });
-  }
+  if (categoryInput._tag === "enabled") {
+    const failed = getObservationError(categoryInput.observation);
 
-  if (
-    categoryInput._tag === "enabled" &&
-    categoryInput.observation._tag === "loading"
-  ) {
-    return makeEarnView({
-      intent,
-      status: "loading-categories",
-      availableCategories,
-      resources: { positions: positionsResource },
-    });
-  }
+    if (failed) {
+      return makeEarnView({
+        ...categoryStage,
+        intent,
+        status: "failed",
+        failure: makeFailure("categories", failed),
+        retryTarget: categoryInput.retryTarget,
+      });
+    }
 
-  if (categoryInput._tag === "enabled" && availableCategories.length === 0) {
-    return makeEarnView({
-      intent,
-      status: "no-categories",
-      availableCategories,
-      resources: { positions: positionsResource },
-    });
+    if (categoryInput.observation._tag === "loading") {
+      return makeEarnView({
+        ...categoryStage,
+        intent,
+        status: "loading-categories",
+      });
+    }
+
+    if (availableCategories.length === 0) {
+      return makeEarnView({
+        ...categoryStage,
+        intent,
+        status: "no-categories",
+      });
+    }
   }
 
   const category = resolveCategory({
@@ -161,14 +165,17 @@ export const resolveEarnView = ({
     selectionSeedYieldId: initial.selectionSeedYieldId,
   });
   const tokenOptions = getAvailableValue(tokenInput.observation, []);
-  const tokenOptionsResource = {
-    items: tokenOptions,
-    waiting: tokenInput.waiting,
-    pullAtom: tokenInput.pullAtom,
-  };
-  const stageResources = {
-    positions: positionsResource,
-    tokenOptions: tokenOptionsResource,
+  const tokenStage: EarnViewStage = {
+    ...categoryStage,
+    resources: {
+      ...categoryStage.resources,
+      tokenOptions: {
+        items: tokenOptions,
+        waiting: tokenInput.waiting,
+        pullKey: tokenInput.pullKey,
+      },
+    },
+    selection: { category },
   };
 
   if (
@@ -178,12 +185,9 @@ export const resolveEarnView = ({
     isResolving(tokenInput.observation)
   ) {
     return makeEarnView({
+      ...tokenStage,
       intent,
       status: "loading-initial-selection",
-      availableCategories,
-      selection: { category },
-      resources: stageResources,
-      can: { selectToken: tokenOptions.length > 0 },
     });
   }
 
@@ -202,10 +206,7 @@ export const resolveEarnView = ({
       });
 
   if (!selectedToken) {
-    const failed =
-      tokenInput.observation._tag === "failed"
-        ? tokenInput.observation.error
-        : null;
+    const failed = getObservationError(tokenInput.observation);
     const failureStage =
       failed?.operation === "init-yield" ||
       failed?.operation === "init-token-option"
@@ -223,17 +224,13 @@ export const resolveEarnView = ({
       }
       return "no-tokens";
     };
-    const status = getStatus();
 
     return makeEarnView({
+      ...tokenStage,
       intent,
-      status,
+      status: getStatus(),
       failure: failed ? makeFailure(failureStage, failed) : null,
-      retryTargetAtom: failed ? tokenInput.retryTargetAtom : null,
-      availableCategories,
-      selection: { category },
-      resources: stageResources,
-      can: { selectToken: tokenOptions.length > 0 },
+      retryTarget: failed ? tokenInput.retryTarget : null,
     });
   }
 
@@ -258,57 +255,44 @@ export const resolveEarnView = ({
     selectedYieldId: intent.selectedYieldId,
     yieldOptions,
   });
-  const yieldResources = {
-    ...stageResources,
-    yields: {
-      items: yieldOptions,
-      waiting: yieldCatalogInput.waiting,
+  const yieldStage: EarnViewStage = {
+    ...tokenStage,
+    resources: {
+      ...tokenStage.resources,
+      yields: {
+        items: yieldOptions,
+        waiting: yieldCatalogInput.waiting,
+      },
     },
+    selection: { category, token: selectedToken },
   };
 
   if (!selectedYield) {
-    const failed =
-      yieldObservation._tag === "failed" ? yieldObservation.error : null;
+    const failed = getObservationError(yieldObservation);
     const getStatus = (): EarnMachineView["status"] => {
       if (failed) return "failed";
       if (isResolving(yieldObservation)) return "loading-yields";
       return "no-yields";
     };
-    const status = getStatus();
 
     return makeEarnView({
+      ...yieldStage,
       intent,
-      status,
+      status: getStatus(),
       failure: failed ? makeFailure("yields", failed) : null,
-      retryTargetAtom: failed ? yieldCatalogInput.retryTargetAtom : null,
-      availableCategories,
-      selection: { category, token: selectedToken },
-      resources: yieldResources,
-      can: {
-        selectToken: tokenOptions.length > 0,
-        selectYield: yieldOptions.length > 0,
-      },
+      retryTarget: failed ? yieldCatalogInput.retryTarget : null,
     });
   }
 
   if (initial.positions.observation._tag !== "available") {
-    const failed =
-      initial.positions.observation._tag === "failed"
-        ? initial.positions.observation.error
-        : null;
+    const failed = getObservationError(initial.positions.observation);
 
     return makeEarnView({
+      ...yieldStage,
       intent,
       status: failed ? "failed" : "loading-positions",
       failure: failed ? makeFailure("positions", failed) : null,
-      retryTargetAtom: failed ? initial.positions.retryTargetAtom : null,
-      availableCategories,
-      selection: { category, token: selectedToken },
-      resources: yieldResources,
-      can: {
-        selectToken: tokenOptions.length > 0,
-        selectYield: yieldOptions.length > 0,
-      },
+      retryTarget: failed ? initial.positions.retryTarget : null,
     });
   }
 
@@ -320,11 +304,6 @@ export const resolveEarnView = ({
   });
   const validatorOptions =
     validatorInput._tag === "enabled" ? validatorInput.options : [];
-  const selectedValidators = resolveValidators({
-    entry,
-    selectedValidatorKeys: intent.selectedValidatorKeys,
-    validatorOptions,
-  });
   const availableAmount = entry.walletScope ? selectedToken.amount : null;
   const form = resolveForm({
     availableAmount,
@@ -332,74 +311,55 @@ export const resolveEarnView = ({
     positionsData: positionsForSelection,
     selectedYield,
   });
-  const validatorResources = {
-    ...yieldResources,
-    validators: validatorInput.resource,
+  const validatorStage: EarnViewStage = {
+    ...yieldStage,
+    form,
+    resources: {
+      ...yieldStage.resources,
+      validators: validatorInput.resource,
+    },
+    selection: { category, token: selectedToken, yield: selectedYield },
   };
 
-  if (
-    validatorInput._tag === "enabled" &&
-    validatorInput.initial.observation._tag !== "available"
-  ) {
-    const failed =
-      validatorInput.initial.observation._tag === "failed"
-        ? validatorInput.initial.observation.error
-        : null;
+  if (validatorInput._tag === "enabled") {
+    if (validatorInput.initial.observation._tag !== "available") {
+      const failed = getObservationError(validatorInput.initial.observation);
 
-    return makeEarnView({
-      intent,
-      status: failed ? "failed" : "loading-validators",
-      failure: failed ? makeFailure("validators", failed) : null,
-      retryTargetAtom: failed ? validatorInput.initial.retryTargetAtom : null,
-      availableCategories,
-      selection: {
-        category,
-        token: selectedToken,
-        yield: selectedYield,
-      },
-      form,
-      resources: validatorResources,
-      can: {
-        selectToken: tokenOptions.length > 0,
-        selectYield: yieldOptions.length > 0,
-      },
-    });
+      return makeEarnView({
+        ...validatorStage,
+        intent,
+        status: failed ? "failed" : "loading-validators",
+        failure: failed ? makeFailure("validators", failed) : null,
+        retryTarget: failed ? validatorInput.initial.retryTarget : null,
+      });
+    }
+
+    if (validatorOptions.length === 0) {
+      return makeEarnView({
+        ...validatorStage,
+        intent,
+        status: "no-validators",
+      });
+    }
   }
 
-  if (validatorInput._tag === "enabled" && validatorOptions.length === 0) {
-    return makeEarnView({
-      intent,
-      status: "no-validators",
-      availableCategories,
-      selection: {
-        category,
-        token: selectedToken,
-        yield: selectedYield,
-      },
-      form,
-      resources: validatorResources,
-      can: {
-        selectToken: tokenOptions.length > 0,
-        selectYield: yieldOptions.length > 0,
-      },
-    });
-  }
+  const selectedValidators = resolveValidators({
+    entry,
+    selectedValidatorKeys: intent.selectedValidatorKeys,
+    validatorOptions,
+  });
 
   return makeEarnView({
+    ...validatorStage,
     intent,
     status: "ready",
-    availableCategories,
     selection: {
       category,
       token: selectedToken,
       validators: selectedValidators,
       yield: selectedYield,
     },
-    form,
-    resources: validatorResources,
     can: {
-      selectToken: tokenOptions.length > 0,
-      selectYield: yieldOptions.length > 0,
       selectValidator: validatorInput._tag === "enabled",
       submit:
         entry.walletScope !== null &&

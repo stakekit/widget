@@ -2,8 +2,7 @@ import { Content, Overlay, Portal, Root, Title } from "@radix-ui/react-dialog";
 import { Root as VisuallyHiddenRoot } from "@radix-ui/react-visually-hidden";
 import clsx from "clsx";
 import type { ChangeEvent, PropsWithChildren, ReactNode } from "react";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useSavedRef } from "../../../react/use-saved-ref";
+import { createContext, useContext, useMemo, useState } from "react";
 import { combineRecipeWithVariant } from "../../../styles/recipe-variant";
 import { id } from "../../../styles/theme/ids";
 import { Box } from "../../primitives/box";
@@ -78,8 +77,6 @@ const SelectModalWithoutState = ({
   onSearch,
   searchValue,
   inputPlaceholder,
-  onClose,
-  onOpen,
   isLoading,
   errorMessage,
   disableClose,
@@ -89,17 +86,6 @@ const SelectModalWithoutState = ({
   const { isOpen, setOpen } = useSelectModalContext();
   const { portalContainer: configuredPortalContainer } =
     useWidgetPresentation();
-
-  const onCloseRef = useSavedRef(onClose);
-  const onOpenRef = useSavedRef(onOpen);
-
-  useEffect(() => {
-    if (!isOpen) {
-      onCloseRef.current?.();
-    } else {
-      onOpenRef.current?.();
-    }
-  }, [isOpen, onCloseRef, onOpenRef]);
 
   const showTopBar = !!title || !hideTopBar || onSearch;
 
@@ -201,16 +187,36 @@ const SelectModalWithoutState = ({
   );
 };
 
-export const SelectModal = ({ state, ...props }: SelectModalProps) => {
-  const [isOpen, setOpen] = useState(false);
+export const SelectModal = ({
+  state,
+  onClose,
+  onOpen,
+  ...props
+}: SelectModalProps) => {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+
+  const isOpen = state ? state.isOpen : internalIsOpen;
 
   const value = useMemo<SelectModalContextType>(
-    () =>
-      state ?? {
-        isOpen,
-        setOpen: (val) => setOpen(val),
+    () => ({
+      isOpen,
+      setOpen: (val) => {
+        if (state) {
+          state.setOpen(val);
+        } else {
+          setInternalIsOpen(val);
+        }
+
+        if (val === isOpen) return;
+
+        if (val) {
+          onOpen?.();
+        } else {
+          onClose?.();
+        }
       },
-    [isOpen, state]
+    }),
+    [isOpen, state, onOpen, onClose]
   );
 
   return (

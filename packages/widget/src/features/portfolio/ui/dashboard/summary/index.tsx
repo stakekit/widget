@@ -16,7 +16,7 @@ export const Summary = () => {
   const { allPositionsQuery, averageApyQuery, availableBalanceSumQuery } =
     useSummary();
   const borrowFeatureEnabled = useBorrowFeatureEnabled();
-  const borrowPositions = useBorrowPositions({ enabled: borrowFeatureEnabled });
+  const borrowPositions = useBorrowPositions();
   const borrowPositionItems = AsyncResult.getOrElse(
     borrowPositions.positionsResult,
     () => []

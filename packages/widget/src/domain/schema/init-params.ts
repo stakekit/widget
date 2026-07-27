@@ -14,7 +14,10 @@ const SafeQueryParam = Schema.String.check(
 
 const PendingActionType = SafeQueryParam.check(Schema.isPattern(/^[A-Z_]+$/));
 
-const InitTab = Schema.Literals(["earn", "positions"]);
+const InitTab = invalidAsNull(
+  Schema.Literals(["earn", "positions", "manage", "activity", "borrow"])
+);
+export type InitTab = typeof InitTab.Type;
 
 const SafeYieldId = SafeQueryParam.check(
   Schema.isPattern(/^[^-]+-[^-]+-.+$/)
@@ -44,7 +47,7 @@ export const InitParams = Schema.Struct({
   balanceId: invalidAsNull(SafeQueryParam),
   network: invalidAsNull(SupportedNetwork),
   pendingaction: invalidAsNull(PendingActionType),
-  tab: invalidAsNull(InitTab),
+  tab: InitTab,
   token: invalidAsNull(Schema.String),
   validator: invalidAsNull(Schema.String),
   yieldId: invalidAsNull(SafeYieldId),

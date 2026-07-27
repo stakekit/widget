@@ -1,11 +1,15 @@
+import { RegistryProvider } from "@effect/atom-react";
 import { Context, Effect, Layer, Stream, SubscriptionRef } from "effect";
 import { HttpResponse, http } from "msw";
 import { version as widgetVersion } from "../../package.json";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
+import {
+  mountAnimationStateAtom,
+  useMountAnimation,
+} from "../../src/features/mount-animation/state";
 import { useGeoBlock } from "../../src/features/preferences/state";
 import { BorrowOperations } from "../../src/services/api/borrow-operations";
 import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
-import { delayAPIRequests } from "../../src/services/api/delay-api-requests";
 import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
 import { ApiTransportService } from "../../src/services/api/transport";
 import { YieldOperations } from "../../src/services/api/yield-operations";
@@ -17,13 +21,25 @@ import {
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
 import { config } from "../../src/shared/config/widget-defaults";
 import { describe, expect, it } from "../utils/test-extend.dom";
-import { renderHook } from "../utils/test-utils.dom";
+import { render, renderHook } from "../utils/test-utils.dom";
+
+const MountPresentationProbe = () => {
+  const { mountAnimationFinished } = useMountAnimation();
+
+  return (
+    <output data-testid="mount-presentation">
+      {mountAnimationFinished ? "live" : "frozen"}
+    </output>
+  );
+};
 
 const createTestClient = async (options: Partial<WidgetApiConfig> = {}) => {
   const config = normalizeWidgetConfig({
     apiKey: "test-key",
     baseUrl: "https://api.example.com",
+    borrowEnabled: true,
     borrowApiUrl: "https://borrow.example.com",
+    dashboardVariant: true,
     yieldsApiUrl: "https://yield.example.com",
     variant: "default",
     ...options,
@@ -46,7 +62,7 @@ const createTestClient = async (options: Partial<WidgetApiConfig> = {}) => {
     LegacyResourceSource.layer,
     YieldOperations.layer,
     YieldResourceSource.layer
-  ).pipe(Layer.provide(transportLayer));
+  ).pipe(Layer.provide(transportLayer), Layer.provide(configLayer));
   const context = await Effect.runPromise(
     Layer.build(Layer.merge(clientLayer, richErrorLayer)).pipe(Effect.scoped)
   );
@@ -235,32 +251,39 @@ describe("Effect API client", () => {
     expect(badRequestAttempts).toBe(1);
   });
 
-  it("waits for delayed API requests before resolving", async ({ worker }) => {
-    const env = config.env as unknown as { isTestMode: boolean };
-    const originalIsTestMode = env.isTestMode;
-    env.isTestMode = false;
-    const releaseDelay = delayAPIRequests();
-    let resolved = false;
+  it("resolves API responses while mount presentation remains frozen", async ({
+    worker,
+  }) => {
     worker.use(
       http.get("https://api.example.com/v1/tokens", () => HttpResponse.json([]))
     );
     const { client } = await createTestClient();
+    const presentation = await render(
+      <RegistryProvider
+        initialValues={[
+          [
+            mountAnimationStateAtom,
+            {
+              earnPage: false,
+              layout: false,
+            },
+          ],
+        ]}
+      >
+        <MountPresentationProbe />
+      </RegistryProvider>
+    );
 
     try {
-      const request = Effect.runPromise(
-        client.legacySource.getTokenOptions()
-      ).then(() => {
-        resolved = true;
-      });
+      await Effect.runPromise(client.legacySource.getTokenOptions());
 
-      await Promise.resolve();
-      expect(resolved).toBe(false);
-      releaseDelay();
-      await request;
-      expect(resolved).toBe(true);
+      expect(
+        presentation.container.querySelector(
+          "[data-testid='mount-presentation']"
+        )?.textContent
+      ).toBe("frozen");
     } finally {
-      releaseDelay();
-      env.isTestMode = originalIsTestMode;
+      presentation.unmount();
     }
   });
 });

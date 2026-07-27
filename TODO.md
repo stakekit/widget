@@ -1,3 +1,0 @@
-- remove useEffect/useLayoutEffect
-- move non-view logic to atoms
-- docs cleanup

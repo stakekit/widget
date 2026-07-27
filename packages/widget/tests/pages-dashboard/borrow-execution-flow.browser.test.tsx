@@ -35,7 +35,7 @@ import type { BorrowFlowSession } from "../../src/features/borrow-transaction-fl
 import { borrowFlowSessionStore } from "../../src/features/borrow-transaction-flow/state/borrow-flow-session-store";
 import { BorrowStepsPage } from "../../src/features/borrow-transaction-flow/ui/steps";
 import { useBorrowExecution } from "../../src/features/borrow-transaction-flow/ui/use-borrow-execution";
-import { WalletScopeRoute } from "../../src/features/wallet/ui";
+import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { BorrowOperations } from "../../src/services/api/borrow-operations";
 import { WidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";

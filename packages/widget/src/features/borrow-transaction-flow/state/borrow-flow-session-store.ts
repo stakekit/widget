@@ -1,4 +1,6 @@
 import * as Atom from "effect/unstable/reactivity/Atom";
+import { widgetConfigAtom } from "../../../app/config/settings";
+import { BorrowFeatureDisabled } from "../../../domain/borrow/availability";
 import {
   sameWalletScopeOwner,
   WalletScopeKey,
@@ -36,6 +38,12 @@ export const makeBorrowFlowSessionStore = () => {
   );
   const startAtom = Atom.fnSync(
     (intake: BorrowTransactionFlowIntake, context) => {
+      if (!context(widgetConfigAtom).borrowEnabled) {
+        return new BorrowFeatureDisabled({
+          message: "Borrow is disabled by Widget configuration.",
+        });
+      }
+
       const walletScope = context(walletScopeAtom);
       if (
         !walletScope ||

@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import { runLogout } from "../../src/features/wallet/state";
+import { runLogout } from "../../src/features/wallet/state/workflows";
 import { WalletConnectionError } from "../../src/services/wallet/domain/errors";
 
 describe("logout workflow", () => {

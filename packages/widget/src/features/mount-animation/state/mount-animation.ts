@@ -17,6 +17,14 @@ const makeMountAnimationState = (finished = false): MountAnimationState => ({
   layout: finished,
 });
 
+export const isMountAnimationFinished = (state: MountAnimationState) =>
+  state.earnPage && state.layout;
+
+const sameMountAnimationState = (
+  a: MountAnimationState,
+  b: MountAnimationState
+) => a.earnPage === b.earnPage && a.layout === b.layout;
+
 export const mountAnimationStateAtom = Atom.writable<
   MountAnimationState,
   MountAnimationAction
@@ -25,18 +33,30 @@ export const mountAnimationStateAtom = Atom.writable<
     context.self<MountAnimationState>().pipe(
       Option.getOrElse(() => {
         const widgetConfig = context.once(widgetConfigAtom);
+        const testModeStartsFinished =
+          config.env.isTestMode &&
+          widgetConfig.disableInitLayoutAnimation === undefined;
 
         return makeMountAnimationState(
-          !!widgetConfig.dashboardVariant || config.env.isTestMode
+          !!widgetConfig.dashboardVariant || testModeStartsFinished
         );
       })
     ),
   (context, action) => {
     const state = context.get(mountAnimationStateAtom);
-    context.setSelf(
+    const next =
       action.type === "all"
         ? makeMountAnimationState(true)
-        : { ...state, [action.type]: true }
-    );
+        : { ...state, [action.type]: true };
+
+    if (sameMountAnimationState(state, next)) return;
+
+    context.setSelf(next);
   }
 ).pipe(Atom.keepAlive, Atom.withLabel("mountAnimationStateAtom"));
+
+export const mountAnimationCompletionAtom = Atom.make((get) => {
+  if (!isMountAnimationFinished(get(mountAnimationStateAtom))) return;
+
+  get.once(widgetConfigAtom).onMountAnimationComplete?.();
+}).pipe(Atom.withLabel("mountAnimationCompletionAtom"));

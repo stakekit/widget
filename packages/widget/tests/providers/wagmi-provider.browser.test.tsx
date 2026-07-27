@@ -40,6 +40,7 @@ import {
   walletStateResultAtom,
 } from "../../src/features/wallet/state";
 import { WagmiConfigProvider } from "../../src/features/wallet/ui";
+import { handleGeoBlockResponse } from "../../src/services/api/geo-block-state";
 import type { SolanaRuntime } from "../../src/services/wallet/platform/solana-platform";
 import { installSolanaConnectorMembership } from "../../src/services/wallet/solana-connector-membership";
 import type {
@@ -496,5 +497,38 @@ describe("WagmiConfigProvider", () => {
           .chain?.id,
       }))
       .toEqual({ account: optimism.id, projection: optimism.id });
+  });
+
+  it("keeps providing the fallback after a geo-blocked wallet bootstrap", async () => {
+    handleGeoBlockResponse({
+      data: {
+        countryCode: "AT",
+        regionCode: "AT-9",
+        type: "GEO_LOCATION",
+      },
+      status: 403,
+    });
+
+    const app = await render(
+      <RegistryProvider
+        initialValues={[
+          [
+            walletRuntime.layer,
+            Layer.effect(
+              WalletService,
+              Effect.fail(new Error("geo-blocked wallet bootstrap"))
+            ) as never,
+          ],
+        ]}
+      >
+        <WagmiConfigProvider>
+          <div>geo-block fallback ready</div>
+        </WagmiConfigProvider>
+      </RegistryProvider>
+    );
+
+    await expect
+      .element(app.getByText("geo-block fallback ready"))
+      .toBeVisible();
   });
 });

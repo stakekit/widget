@@ -503,7 +503,13 @@ describe("Earn state machine view", () => {
       error,
       stage: "categories",
     });
-    expect(view.retryTargetAtom).toBe(categoryAtom);
+    expect(view.retryTarget).toEqual({
+      _tag: "AvailableCategories",
+      key: new AvailableYieldCategoriesKey({
+        categoryOrder: entry.categoryOrder,
+        network: null,
+      }),
+    });
   });
 
   it("distinguishes first yield acquisition failure from no yields", () => {

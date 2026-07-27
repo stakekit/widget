@@ -6,10 +6,8 @@ import type { Chain } from "viem";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import {
-  useWalletScopeRoute,
-  WalletScopeRoute,
-} from "../../src/features/wallet/ui";
+import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
+import { useWalletScopeRoute } from "../../src/features/wallet/ui";
 import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
 import { disconnectedNormalizedWalletState } from "../../src/services/wallet/domain/state";
 import { render } from "../utils/test-utils.dom";

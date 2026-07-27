@@ -13,7 +13,7 @@ import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   type BorrowPositionAction,
   getBorrowPositionActions,
-} from "../../src/features/borrow/state";
+} from "../../src/features/borrow/model/position-details-model";
 import { BorrowPositionActionPage } from "../../src/features/borrow/ui";
 import { RootElementProvider } from "../../src/shared/react/root-element";
 import { i18nInstance } from "../../src/translation";

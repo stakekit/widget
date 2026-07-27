@@ -19,6 +19,7 @@
       ],
       "devEntryPoints": [
         "scripts/generate-effect-openapi.ts",
+        "scripts/measure-mount-jank.mts",
         "scripts/prepare-canary-release.ts",
         "scripts/*.test.ts",
         "tests/utils/setup.browser.ts",
@@ -440,6 +441,7 @@
             "public/mockServiceWorker.js",
             "vite/*.ts",
             "scripts/generate-effect-openapi.ts",
+            "scripts/measure-mount-jank.mts",
             "scripts/prepare-canary-release.ts",
             "scripts/*.test.ts",
             "tests/**/*.ts",

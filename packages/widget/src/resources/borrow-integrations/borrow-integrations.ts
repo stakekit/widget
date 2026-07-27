@@ -1,4 +1,4 @@
-import { Duration } from "effect";
+import { Duration, Effect } from "effect";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import { BorrowResourceSource } from "../../services/api/borrow-resource-source";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
@@ -13,9 +13,10 @@ const borrowCatalogPolicy = withApiResourcePolicy({
 export const borrowIntegrationsResourceAtom = appRuntime
   .atom(
     BorrowResourceSource.use((source) =>
-      source
-        .getIntegrations()
-        .pipe(withBorrowResourceError("borrow-integrations"))
+      source.getIntegrations().pipe(
+        Effect.catchTag("BorrowFeatureDisabled", () => Effect.succeed([])),
+        withBorrowResourceError("borrow-integrations")
+      )
     )
   )
   .pipe(borrowCatalogPolicy);

@@ -1,6 +1,5 @@
 import type { RefObject } from "react";
-import { useEffect } from "react";
-import { usePrevious } from "../../../react/use-previous";
+import { useEffect, useRef } from "react";
 import { vars } from "../../../styles/theme/contract.css";
 import { useWidgetPresentation } from "../../widget-presentation";
 import { initialFontSizeVar } from "./styles.css";
@@ -14,11 +13,14 @@ export const useAutoResizeText = ({
   inputRef: RefObject<HTMLInputElement | null>;
   spanRef: RefObject<HTMLSpanElement | null>;
 }) => {
-  const prevVal = usePrevious(inputVal);
-
   const { disableInputAutoResize } = useWidgetPresentation();
 
+  const measuredValRef = useRef<string | null>(null);
+
   useEffect(() => {
+    const prevVal = measuredValRef.current;
+    measuredValRef.current = inputVal;
+
     if (
       !inputRef.current ||
       !spanRef.current ||
@@ -36,7 +38,7 @@ export const useAutoResizeText = ({
 
     inputRef.current.style.fontSize = `${newFontSize}px`;
     spanRef.current.style.fontSize = `${newFontSize}px`;
-  }, [inputRef, inputVal, prevVal, spanRef, disableInputAutoResize]);
+  }, [inputRef, inputVal, spanRef, disableInputAutoResize]);
 };
 
 const scale = ({

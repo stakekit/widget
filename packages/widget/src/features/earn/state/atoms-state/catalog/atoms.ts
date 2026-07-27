@@ -46,7 +46,6 @@ import { validatorsConfigAtom } from "../../../../yield-entry/state";
 import {
   EarnCatalogError,
   type EarnCatalogOperation,
-  type EarnCatalogUnderlyingError,
   type EarnTokenOption,
   type EarnTokenOptionsState,
   type EarnValidatorsResource,
@@ -65,9 +64,8 @@ import {
   type YieldValidatorsPullKey,
 } from "./keys";
 
-const toCatalogError =
-  (operation: EarnCatalogOperation) => (cause: EarnCatalogUnderlyingError) =>
-    new EarnCatalogError({ operation, cause });
+const toCatalogError = (operation: EarnCatalogOperation) => (cause: unknown) =>
+  new EarnCatalogError({ operation, cause });
 
 const toNetworksParam = (network: Network | null) =>
   network ? ([network] as const) : undefined;

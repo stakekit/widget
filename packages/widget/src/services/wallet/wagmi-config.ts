@@ -27,6 +27,8 @@ import type {
   VariantProps,
 } from "../../public-api/types";
 import { config } from "../../shared/config/widget-defaults";
+import { isLedgerDappBrowserProvider } from "./browser-environment";
+import { buildsEcosystemConnectors } from "./connector-mode";
 import { getConfig as getCosmosConfig } from "./connectors/cosmos/config";
 import { getConfig as getEvmConfig } from "./connectors/ethereum/config";
 import { externalProviderConnector } from "./connectors/external-provider";
@@ -113,6 +115,15 @@ export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
   Effect.gen(function* () {
     const runWalletEffect: RunWalletEffect =
       yield* FiberSet.makeRuntimePromise();
+
+    const buildConnectors = buildsEcosystemConnectors({
+      hasCustomConnectors: !!opts.customConnectors,
+      hasExternalProviders: !!opts.externalProviders,
+      institutionalWallets: opts.institutionalWallets,
+      isLedgerDappBrowser: isLedgerDappBrowserProvider(),
+      isSafe: opts.isSafe,
+      variant: opts.variant,
+    });
     const [evmConfig, cosmosConfig, miscConfig, substrateConfig] =
       yield* Effect.all(
         [
@@ -123,12 +134,14 @@ export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
             variant: opts.variant,
           }),
           getCosmosConfig({
+            buildConnectors,
             enabledNetworks: opts.enabledNetworks,
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
             persistPublicKey: (input) =>
               runWalletEffect(opts.persistPublicKey(input)),
           }),
           getMiscConfig({
+            buildConnectors,
             enabledNetworks: opts.enabledNetworks,
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
             solanaWallets: opts.solanaWallets,
@@ -137,6 +150,7 @@ export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
             tonConnectManifestUrl: opts.tonConnectManifestUrl,
           }),
           getSubstrateConfig({
+            buildConnectors,
             enabledNetworks: opts.enabledNetworks,
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
           }),

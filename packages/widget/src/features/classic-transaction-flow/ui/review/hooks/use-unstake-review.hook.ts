@@ -10,7 +10,6 @@ import {
 } from "../../../../../domain/types/yields";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import type { RewardTokenDetails } from "../../../../earn/components";
 import type { PageCta } from "../../../../widget-shell/components";
 import {
@@ -79,17 +78,12 @@ export const useUnstakeActionReview = () => {
 
   const onClick = () => confirmFlow(undefined);
 
-  const onClickRef = useSavedRef(onClick);
-
-  const cta = useMemo<PageCta>(
-    () => ({
-      label: t("shared.confirm"),
-      onClick: () => onClickRef.current(),
-      disabled: review.confirmDisabled,
-      isLoading: unstakeIsLoading,
-    }),
-    [onClickRef, review.confirmDisabled, t, unstakeIsLoading]
-  );
+  const resolveCta = (): PageCta => ({
+    label: t("shared.confirm"),
+    onClick,
+    disabled: review.confirmDisabled,
+    isLoading: unstakeIsLoading,
+  });
 
   return {
     integrationData,
@@ -109,6 +103,6 @@ export const useUnstakeActionReview = () => {
     kycStatusIsChecking:
       review.kyc.isLoading || review.kyc.isFetching || review.kyc.isRefetching,
     onKycStatusRefresh,
-    cta,
+    cta: resolveCta(),
   };
 };

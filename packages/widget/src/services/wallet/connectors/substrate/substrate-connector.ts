@@ -5,7 +5,6 @@ import {
   talismanConnector,
   walletConnectConnector,
 } from "@luno-kit/core/connectors";
-import { TypeRegistry } from "@polkadot/types";
 import type { SignerPayloadJSON } from "@polkadot/types/types";
 import { u8aToHex } from "@polkadot/util";
 import type { WalletDetailsParams, WalletList } from "@stakekit/rainbowkit";
@@ -23,11 +22,23 @@ import {
   type StorageItem,
 } from "./substrate-connector-meta";
 
+type EncodeSignedExtrinsic =
+  typeof import("./extrinsic-encoding").encodeSignedExtrinsic;
+
+const loadExtrinsicEncoder = Effect.tryPromise({
+  try: (): Promise<EncodeSignedExtrinsic> =>
+    import("./extrinsic-encoding").then(
+      (module) => module.encodeSignedExtrinsic
+    ),
+  catch: (error) => error,
+});
+
 const createSubstrateConnector = ({
   id,
   name,
   type,
   baseConnector,
+  encodeSignedExtrinsic,
   walletDetailsParams,
   chains,
   lunoKitChains,
@@ -36,6 +47,7 @@ const createSubstrateConnector = ({
   name: string;
   type: string;
   baseConnector: BaseConnector;
+  encodeSignedExtrinsic: Effect.Effect<EncodeSignedExtrinsic, unknown>;
   walletDetailsParams: WalletDetailsParams;
   chains: ReadonlyArray<Chain>;
   lunoKitChains: LunoKitChain[];
@@ -91,30 +103,19 @@ const createSubstrateConnector = ({
               );
             }
 
-            return Effect.try({
-              try: () => {
-                const registry = new TypeRegistry();
-
-                registry.setMetadata(
-                  registry.createType("Metadata", payload.metadataRpc)
-                );
-
-                const extrinsic = registry.createType(
-                  "Extrinsic",
-                  { method: payload.tx.method },
-                  { version: payload.tx.version }
-                );
-
-                extrinsic.addSignature(
-                  payload.tx.address,
-                  res.signature,
-                  payload.tx
-                );
-
-                return u8aToHex(extrinsic.toU8a());
-              },
-              catch: (error) => error,
-            });
+            return encodeSignedExtrinsic.pipe(
+              Effect.flatMap((encode) =>
+                Effect.try({
+                  try: () =>
+                    encode({
+                      metadataRpc: payload.metadataRpc,
+                      signature: res.signature,
+                      tx: payload.tx,
+                    }),
+                  catch: (error) => error,
+                })
+              )
+            );
           }),
           Effect.mapError(
             (cause) =>
@@ -206,7 +207,29 @@ export const getSubstrateConnectors = (
   chains: ReadonlyArray<Chain>,
   lunoKitChains: LunoKitChain[],
   forceWalletConnectOnly: boolean
-): WalletList[number] => {
+): Effect.Effect<WalletList[number]> =>
+  Effect.gen(function* () {
+    const encodeSignedExtrinsic = yield* Effect.cached(loadExtrinsicEncoder);
+
+    return buildSubstrateWalletGroup({
+      chains,
+      encodeSignedExtrinsic,
+      forceWalletConnectOnly,
+      lunoKitChains,
+    });
+  });
+
+const buildSubstrateWalletGroup = ({
+  chains,
+  encodeSignedExtrinsic,
+  forceWalletConnectOnly,
+  lunoKitChains,
+}: {
+  chains: ReadonlyArray<Chain>;
+  encodeSignedExtrinsic: Effect.Effect<EncodeSignedExtrinsic, unknown>;
+  forceWalletConnectOnly: boolean;
+  lunoKitChains: LunoKitChain[];
+}): WalletList[number] => {
   const subwallet = subwalletConnector();
   const talisman = talismanConnector();
   const wc = walletConnectConnector({
@@ -230,6 +253,7 @@ export const getSubstrateConnectors = (
     createConnector: (walletDetailsParams) => {
       const createConnectorFn = createSubstrateConnector({
         baseConnector: wc,
+        encodeSignedExtrinsic,
         id: wc.id,
         name: wc.name,
         type: configMeta.type,
@@ -273,6 +297,7 @@ export const getSubstrateConnectors = (
             createConnector: (walletDetailsParams) =>
               createSubstrateConnector({
                 baseConnector: talisman,
+                encodeSignedExtrinsic,
                 id: talisman.id,
                 name: talisman.name,
                 type: configMeta.type,
@@ -295,6 +320,7 @@ export const getSubstrateConnectors = (
             createConnector: (walletDetailsParams) =>
               createSubstrateConnector({
                 baseConnector: subwallet,
+                encodeSignedExtrinsic,
                 id: subwallet.id,
                 name: subwallet.name,
                 type: configMeta.type,

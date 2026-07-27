@@ -9,7 +9,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import { shouldRegisterDashboardEarnFooterButton } from "../../src/app/routes/dashboard-routes";
-import { PositionDetailsActionTabs } from "../../src/features/position-details/ui";
+import { PositionDetailsActionTabs } from "../../src/features/position-details/ui/dashboard/components/position-details-action-tabs";
 import { i18nInstance } from "../../src/translation";
 import { render } from "../utils/test-utils";
 
@@ -40,26 +40,31 @@ const renderTabs = (initialEntries: string | string[]) => {
         <LocationProbe />
 
         <Routes>
-          <Route path="manage" element={null} />
-
-          <Route
-            path="positions/:integrationId/:balanceId"
-            element={
-              <>
-                <PositionDetailsActionTabs canStake canUnstake />
-                <BackProbe />
-              </>
-            }
-          />
-          <Route
-            path="positions/:integrationId/:balanceId/unstake"
-            element={
-              <>
-                <PositionDetailsActionTabs canStake canUnstake />
-                <BackProbe />
-              </>
-            }
-          />
+          <Route path="positions">
+            <Route index element={<div data-testid="route-kind">manage</div>} />
+            <Route
+              path="borrow/:marketId"
+              element={<div data-testid="route-kind">borrow position</div>}
+            />
+            <Route
+              path=":integrationId/:balanceId"
+              element={
+                <>
+                  <PositionDetailsActionTabs canStake canUnstake />
+                  <BackProbe />
+                </>
+              }
+            />
+            <Route
+              path=":integrationId/:balanceId/unstake"
+              element={
+                <>
+                  <PositionDetailsActionTabs canStake canUnstake />
+                  <BackProbe />
+                </>
+              }
+            />
+          </Route>
         </Routes>
       </MemoryRouter>
     </I18nextProvider>
@@ -67,6 +72,22 @@ const renderTabs = (initialEntries: string | string[]) => {
 };
 
 describe("position details action tabs", () => {
+  it("matches the Manage index and prefers borrow over generic position details", async () => {
+    const manage = await renderTabs("/positions");
+
+    await expect
+      .element(manage.getByTestId("route-kind"))
+      .toHaveTextContent("manage");
+
+    manage.unmount();
+
+    const borrowPosition = await renderTabs("/positions/borrow/market-1");
+
+    await expect
+      .element(borrowPosition.getByTestId("route-kind"))
+      .toHaveTextContent("borrow position");
+  });
+
   it("registers the earn CTA only for stake form routes", () => {
     expect(shouldRegisterDashboardEarnFooterButton("/")).toBe(true);
     expect(
@@ -88,7 +109,10 @@ describe("position details action tabs", () => {
   });
 
   it("renders Stake and Unstake tabs without adding tab changes to history", async () => {
-    const app = await renderTabs(["/manage", "/positions/yield-1/balance-1"]);
+    const app = await renderTabs([
+      "/positions",
+      "/positions/yield-1/balance-1",
+    ]);
 
     await expect
       .element(app.getByTestId("position-details-action-tab-stake"))
@@ -112,7 +136,7 @@ describe("position details action tabs", () => {
 
     await expect
       .element(app.getByTestId("location"))
-      .toHaveTextContent("/manage");
+      .toHaveTextContent("/positions");
   });
 
   it("does not render a selector when there is only one available action", async () => {

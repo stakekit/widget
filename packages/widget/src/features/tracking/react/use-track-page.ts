@@ -1,5 +1,5 @@
 import { useAtomSet } from "@effect/atom-react";
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useEffectEvent } from "react";
 import type {
   Properties,
   TrackPageKey,
@@ -11,13 +11,12 @@ export const useTrackPage = (
   properties?: Properties
 ) => {
   const trackPageView = useAtomSet(trackPageViewAtom);
-  const propertiesRef = useRef(properties);
 
-  useLayoutEffect(() => {
-    propertiesRef.current = properties;
-  });
+  const reportPageView = useEffectEvent((page: TrackPageKey) =>
+    trackPageView({ page, properties })
+  );
 
   useEffect(() => {
-    trackPageView({ page: pageName, properties: propertiesRef.current });
-  }, [pageName, trackPageView]);
+    reportPageView(pageName);
+  }, [pageName]);
 };

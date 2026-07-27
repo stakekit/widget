@@ -7,7 +7,6 @@ import {
   useState,
 } from "react";
 import { useLocation } from "react-router";
-import { useSavedRef } from "../../../shared/react/use-saved-ref";
 
 type CurrentLayoutContextValue = {
   setState: (args: { pathname: string; height: number }) => void;
@@ -26,15 +25,13 @@ export const CurrentLayoutProvider = ({ children }: PropsWithChildren) => {
 
   const { pathname: currentPathname } = useLocation();
 
-  const currentPathnameRef = useSavedRef(currentPathname);
-
   const _setState = useCallback<CurrentLayoutContextValue["setState"]>(
     ({ height, pathname }) => {
-      if (currentPathnameRef.current !== pathname) return;
+      if (currentPathname !== pathname) return;
 
       setState({ pathname, height });
     },
-    [currentPathnameRef]
+    [currentPathname]
   );
 
   const value = useMemo(

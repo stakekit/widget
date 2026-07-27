@@ -1,5 +1,7 @@
 import { Data } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import { widgetConfigAtom } from "../../../app/config/settings";
+import { BorrowFeatureDisabled } from "../../../domain/borrow/availability";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
 import {
   type BorrowTransactionFlowReview,
@@ -79,6 +81,12 @@ export const borrowWithdrawFormAtom = Atom.family(
 
 export const startBorrowPositionActionReviewAtom = Atom.fnSync(
   (reviewState: BorrowTransactionFlowReview, context) => {
+    if (!context(widgetConfigAtom).borrowEnabled) {
+      return new BorrowFeatureDisabled({
+        message: "Borrow is disabled by Widget configuration.",
+      });
+    }
+
     context.set(borrowActionFormAtom, {
       reviewState,
       type: "prepareReview",
@@ -99,6 +107,12 @@ export const startBorrowPositionActionReviewAtom = Atom.fnSync(
  */
 export const stageBorrowPositionActionAtom = Atom.fnSync(
   (action: BorrowPositionAction, context) => {
+    if (!context(widgetConfigAtom).borrowEnabled) {
+      return new BorrowFeatureDisabled({
+        message: "Borrow is disabled by Widget configuration.",
+      });
+    }
+
     const key = makeBorrowPositionActionFormKey(action);
 
     context.set(borrowRepayFormAtom(key), { type: "reset" });

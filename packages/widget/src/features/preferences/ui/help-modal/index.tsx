@@ -1,6 +1,6 @@
 import { Trigger } from "@radix-ui/react-dialog";
 import type { ReactNode } from "react";
-import { useMemo } from "react";
+import { useEffect, useEffectEvent, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { images } from "../../../../shared/assets/images";
 import { formatCountryCode } from "../../../../shared/lib/formatters";
@@ -196,32 +196,45 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
 
   const { description, image, title, link, button } = getContent(modal);
 
-  const selectModalProps = useMemo<SelectModalProps>(() => {
-    const base: SelectModalProps = {
-      onOpen: () => trackEvent("helpModalOpened", { modal: title }),
-    };
+  const isGeoBlock = modal.type === "geoBlock";
 
-    return modal.type === "geoBlock"
-      ? {
-          ...base,
-          state: {
-            isOpen: true,
-            setOpen: modal.onClose,
+  const reportOpened = useEffectEvent(() =>
+    trackEvent("helpModalOpened", { modal: title })
+  );
+
+  useEffect(() => {
+    if (!isGeoBlock) return;
+
+    reportOpened();
+  }, [isGeoBlock]);
+
+  const selectModalProps = useMemo<SelectModalProps>(
+    () =>
+      modal.type === "geoBlock"
+        ? {
+            state: {
+              isOpen: true,
+              setOpen: modal.onClose,
+            },
+          }
+        : {
+            onOpen: () => trackEvent("helpModalOpened", { modal: title }),
+            trigger: (
+              <Trigger asChild={!!customTrigger}>
+                {customTrigger ?? (
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <HelpIcon />
+                  </Box>
+                )}
+              </Trigger>
+            ),
           },
-        }
-      : {
-          ...base,
-          trigger: (
-            <Trigger asChild={!!customTrigger}>
-              {customTrigger ?? (
-                <Box display="flex" alignItems="center" justifyContent="center">
-                  <HelpIcon />
-                </Box>
-              )}
-            </Trigger>
-          ),
-        };
-  }, [customTrigger, modal, title, trackEvent]);
+    [customTrigger, modal, title, trackEvent]
+  );
 
   return (
     <SelectModal {...selectModalProps}>

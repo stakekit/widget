@@ -42,7 +42,7 @@ const makeAppLayer = (
     LegacyResourceSource.layer,
     YieldOperations.layer,
     YieldResourceSource.layer
-  ).pipe(Layer.provide(apiTransportLayer));
+  ).pipe(Layer.provide(apiTransportLayer), Layer.provide(widgetConfigLayer));
   const persistenceLayer = WidgetPersistence.layer;
   const trackingLayer = TrackingService.layer.pipe(
     Layer.provide(widgetConfigLayer)

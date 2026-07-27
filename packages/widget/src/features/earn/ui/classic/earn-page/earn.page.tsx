@@ -1,13 +1,20 @@
 import { motion } from "motion/react";
+import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
+import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
+import { Spinner } from "../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useMountAnimation } from "../../../../mount-animation/state";
 import { useTrackPage } from "../../../../tracking/state";
 import { ZerionChainModal } from "../../../../wallet/ui";
-import { PageContainer } from "../../../../widget-shell/components";
+import {
+  PageContainer,
+  type PageCta,
+  PageCtaButton,
+} from "../../../../widget-shell/components";
 import { useEarnPageStatus } from "../../../react/use-earn-facades";
 import { EarnKycGate } from "../../components/earn-kyc-gate";
 import { EarnPageCta } from "../../components/earn-page-cta";
@@ -19,6 +26,55 @@ import { SelectTokenTitle } from "./components/select-token-section/title";
 import { SelectValidatorSection } from "./components/select-validator-section";
 import { SelectYieldSection } from "./components/select-yield-section";
 
+const hiddenLivePresentationStyle = {
+  inset: 0,
+  pointerEvents: "none",
+  position: "absolute",
+  visibility: "hidden",
+  width: "100%",
+} satisfies CSSProperties;
+
+const loadingCta = {
+  disabled: true,
+  isLoading: true,
+  label: "",
+  onClick: () => undefined,
+} satisfies PageCta;
+
+const EarnPageSkeleton = () => {
+  const variant = useWidgetConfig("variant");
+
+  return (
+    <PageContainer aria-hidden="true" data-rk="earn-mount-skeleton" inert>
+      <Box>
+        {variant !== "zerion" && (
+          <Box display="flex" alignItems="center" my="1">
+            <Spinner />
+          </Box>
+        )}
+
+        <Box marginTop="2">
+          <ContentLoaderSquare heightPx={112.5} />
+        </Box>
+
+        <Box marginTop="2">
+          <ContentLoaderSquare heightPx={112.5} />
+        </Box>
+
+        <Box marginTop="2">
+          <ContentLoaderSquare heightPx={20} variant={{ size: "medium" }} />
+        </Box>
+      </Box>
+
+      <Box marginTop="4">
+        <ContentLoaderSquare heightPx={150} />
+      </Box>
+
+      <PageCtaButton cta={loadingCta} />
+    </PageContainer>
+  );
+};
+
 const EarnPageComponent = () => {
   useTrackPage("earn");
 
@@ -29,51 +85,64 @@ const EarnPageComponent = () => {
   const { retry, view: status } = useEarnPageStatus();
 
   return (
-    <PageContainer>
-      <Box>
-        {variant !== "zerion" && <SelectTokenTitle />}
+    <Box position="relative">
+      {status.presentationFrozen && <EarnPageSkeleton />}
 
-        <ZerionChainModal />
+      <Box
+        aria-hidden={status.presentationFrozen || undefined}
+        data-rk="earn-live-presentation"
+        inert={status.presentationFrozen || undefined}
+        style={
+          status.presentationFrozen ? hiddenLivePresentationStyle : undefined
+        }
+      >
+        <PageContainer>
+          <Box>
+            {variant !== "zerion" && <SelectTokenTitle />}
 
-        <SelectTokenSection />
+            <ZerionChainModal />
 
-        <SelectYieldSection />
+            <SelectTokenSection />
 
-        <EarnKycGate />
+            <SelectYieldSection />
 
-        <SelectProvider />
+            <EarnKycGate />
 
-        <SelectValidatorSection />
+            <SelectProvider />
 
-        <ExtraArgsSelection />
-      </Box>
+            <SelectValidatorSection />
 
-      {status.isError && (
-        <Box
-          display="flex"
-          alignItems="center"
-          flexDirection="column"
-          gap="2"
-          justifyContent="center"
-          my="4"
-        >
-          <Text variant={{ type: "danger" }} textAlign="center">
-            {t("shared.something_went_wrong")}
-          </Text>
-          {status.canRetry && (
-            <Button data-rk="earn-retry" onClick={() => retry(undefined)}>
-              {t("shared.retry")}
-            </Button>
+            <ExtraArgsSelection />
+          </Box>
+
+          {status.isError && (
+            <Box
+              display="flex"
+              alignItems="center"
+              flexDirection="column"
+              gap="2"
+              justifyContent="center"
+              my="4"
+            >
+              <Text variant={{ type: "danger" }} textAlign="center">
+                {t("shared.something_went_wrong")}
+              </Text>
+              {status.canRetry && (
+                <Button data-rk="earn-retry" onClick={() => retry(undefined)}>
+                  {t("shared.retry")}
+                </Button>
+              )}
+            </Box>
           )}
-        </Box>
-      )}
 
-      <Box marginTop="4">
-        <Footer />
+          <Box marginTop="4">
+            <Footer />
+          </Box>
+
+          <EarnPageCta />
+        </PageContainer>
       </Box>
-
-      <EarnPageCta />
-    </PageContainer>
+    </Box>
   );
 };
 

@@ -1,4 +1,4 @@
-import { Result, Schema } from "effect";
+import { Effect, Schema } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { ValidatorAddress } from "../../src/domain/schema/identifiers";
 import {
@@ -7,7 +7,7 @@ import {
   SubstrateNetworks,
 } from "../../src/domain/types/chains/networks";
 import type { SKTxMeta } from "../../src/public-api/types";
-import { prepareLedgerLiveTransaction } from "../../src/services/wallet/connectors/ledger/prepare-ledger-live-transaction";
+import { makePrepareLedgerLiveTransaction } from "../../src/services/wallet/connectors/ledger/prepare-ledger-live-transaction";
 
 const substrateMethod = vi.hoisted(() => ({
   current: {
@@ -34,6 +34,18 @@ vi.mock("@polkadot/types", () => ({
     setMetadata() {}
   },
 }));
+
+type PrepareParams = { network: string; tx: string; txMeta: SKTxMeta };
+
+const prepared = (params: PrepareParams) =>
+  makePrepareLedgerLiveTransaction.pipe(
+    Effect.flatMap((prepareTransaction) => prepareTransaction(params))
+  );
+
+const prepare = (params: PrepareParams) => Effect.runPromise(prepared(params));
+
+const prepareFailure = (params: PrepareParams) =>
+  Effect.runPromise(Effect.flip(prepared(params)));
 
 const createTxMeta = (overrides: Partial<SKTxMeta>): SKTxMeta =>
   ({
@@ -94,9 +106,23 @@ const polkadotTx = JSON.stringify({
   },
 });
 
+const polkadotBondParams = {
+  network: SubstrateNetworks.Polkadot,
+  tx: polkadotTx,
+  txMeta: createTxMeta({
+    amountRaw: "1000",
+    inputToken: {
+      decimals: 10,
+      name: "Polkadot",
+      network: SubstrateNetworks.Polkadot,
+      symbol: "DOT",
+    },
+  }),
+};
+
 describe("prepareLedgerLiveTransaction", () => {
-  it("builds Tron vote counts in TRX units distributed across validators", () => {
-    const result = prepareLedgerLiveTransaction({
+  it("builds Tron vote counts in TRX units distributed across validators", async () => {
+    const tx = (await prepare({
       network: MiscNetworks.Tron,
       tx: tronTx,
       txMeta: createTxMeta({
@@ -117,11 +143,7 @@ describe("prepareLedgerLiveTransaction", () => {
         },
         txType: "VOTE",
       }),
-    });
-
-    expect(Result.isSuccess(result)).toBe(true);
-
-    const tx = Result.getOrThrow(result) as {
+    })) as {
       amount: string;
       votes: Array<{ address: string; voteCount: number }>;
     };
@@ -134,8 +156,8 @@ describe("prepareLedgerLiveTransaction", () => {
     ]);
   });
 
-  it("uses the accrued reward amount for Cosmos claim reward modes", () => {
-    const result = prepareLedgerLiveTransaction({
+  it("uses the accrued reward amount for Cosmos claim reward modes", async () => {
+    const tx = (await prepare({
       network: CosmosNetworks.Cosmos,
       tx: "{}",
       txMeta: createTxMeta({
@@ -146,11 +168,7 @@ describe("prepareLedgerLiveTransaction", () => {
         },
         txType: "CLAIM_REWARDS",
       }),
-    });
-
-    expect(Result.isSuccess(result)).toBe(true);
-
-    const tx = Result.getOrThrow(result) as {
+    })) as {
       amount: string;
       mode: string;
       validators: Array<{ address: string; amount: string }>;
@@ -163,8 +181,8 @@ describe("prepareLedgerLiveTransaction", () => {
     ]);
   });
 
-  it("falls back to zero for Cosmos claim modes without a known reward amount", () => {
-    const result = prepareLedgerLiveTransaction({
+  it("falls back to zero for Cosmos claim modes without a known reward amount", async () => {
+    const tx = (await prepare({
       network: CosmosNetworks.Cosmos,
       tx: "{}",
       txMeta: createTxMeta({
@@ -174,11 +192,7 @@ describe("prepareLedgerLiveTransaction", () => {
         },
         txType: "CLAIM_REWARDS",
       }),
-    });
-
-    expect(Result.isSuccess(result)).toBe(true);
-
-    const tx = Result.getOrThrow(result) as {
+    })) as {
       amount: string;
       validators: Array<{ address: string; amount: string }>;
     };
@@ -189,23 +203,23 @@ describe("prepareLedgerLiveTransaction", () => {
     ]);
   });
 
-  it("requires amount for Cosmos non-claim modes", () => {
-    const result = prepareLedgerLiveTransaction({
-      network: CosmosNetworks.Cosmos,
-      tx: "{}",
-      txMeta: createTxMeta({
-        amount: null,
-        rawArguments: {
-          validatorAddress: validatorAddress("cosmosvaloper1validator"),
-        },
-        txType: "STAKE",
-      }),
-    });
-
-    expect(Result.merge(result)).toBe("Missing Cosmos Ledger arguments");
+  it("requires amount for Cosmos non-claim modes", async () => {
+    await expect(
+      prepareFailure({
+        network: CosmosNetworks.Cosmos,
+        tx: "{}",
+        txMeta: createTxMeta({
+          amount: null,
+          rawArguments: {
+            validatorAddress: validatorAddress("cosmosvaloper1validator"),
+          },
+          txType: "STAKE",
+        }),
+      })
+    ).resolves.toBe("Missing Cosmos Ledger arguments");
   });
 
-  it("uses the Polkadot bond payee as Ledger reward destination", () => {
+  it("uses the Polkadot bond payee as Ledger reward destination", async () => {
     substrateMethod.current = {
       args: {
         payee: "Stash",
@@ -216,23 +230,7 @@ describe("prepareLedgerLiveTransaction", () => {
       section: "staking",
     };
 
-    const result = prepareLedgerLiveTransaction({
-      network: SubstrateNetworks.Polkadot,
-      tx: polkadotTx,
-      txMeta: createTxMeta({
-        amountRaw: "1000",
-        inputToken: {
-          decimals: 10,
-          name: "Polkadot",
-          network: SubstrateNetworks.Polkadot,
-          symbol: "DOT",
-        },
-      }),
-    });
-
-    expect(Result.isSuccess(result)).toBe(true);
-
-    const tx = Result.getOrThrow(result) as {
+    const tx = (await prepare(polkadotBondParams)) as {
       amount: string;
       rewardDestination?: string;
     };

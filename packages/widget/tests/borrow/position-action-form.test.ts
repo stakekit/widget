@@ -16,7 +16,7 @@ import {
   resolveBorrowRepayFormView,
   resolveBorrowWithdrawFormView,
 } from "../../src/features/borrow/model/position-action-form";
-import { getBorrowPositionActions } from "../../src/features/borrow/state";
+import { getBorrowPositionActions } from "../../src/features/borrow/model/position-details-model";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

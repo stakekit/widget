@@ -3,14 +3,13 @@ import type {
   RawTransaction,
   RawTronTransaction,
 } from "@ledgerhq/wallet-api-core";
-import { TypeRegistry } from "@polkadot/types";
 import {
   Cell,
   type CommonMessageInfoRelaxedInternal,
   loadMessageRelaxed,
 } from "@ton/core";
 import BigNumber from "bignumber.js";
-import { Option, Result, Schema } from "effect";
+import { Effect, Option, Result, Schema } from "effect";
 import { hexToBytes } from "viem";
 import { isEvmChain } from "../../../../domain/types/chains";
 import {
@@ -26,6 +25,7 @@ import {
   unsignedTronTransactionCodec,
 } from "../../../../domain/types/transaction";
 import type { SKTxMeta } from "../../../../public-api/types";
+import type { BuildPolkadotLedgerTransaction } from "./polkadot-ledger-transaction";
 
 type PrepareLedgerLiveTransactionParams = {
   tx: string;
@@ -51,12 +51,6 @@ type GasEstimate = typeof GasEstimate.Type;
 const GasEstimateFromJson = Schema.fromJsonString(GasEstimate);
 const UnknownFromJson = Schema.fromJsonString(Schema.Unknown);
 
-type SubstrateHumanMethod = {
-  section: string;
-  method: string;
-  args: Record<string, unknown> | null;
-};
-
 const eip1559FieldsUnsupportedNetworks = new Set<string>([
   EvmNetworks.Polygon,
   EvmNetworks.Optimism,
@@ -73,7 +67,68 @@ const decodeSchema = <S extends Schema.ConstraintDecoder<unknown>>(
     Result.mapError((error) => error.message)
   );
 
-export const prepareLedgerLiveTransaction = ({
+export type PrepareLedgerLiveTransaction = (
+  params: PrepareLedgerLiveTransactionParams
+) => Effect.Effect<RawTransaction, string>;
+
+/**
+ * The Polkadot builder pulls in `@polkadot/types`, whose evaluation inflates a
+ * large network registry. Loading it is deferred to the first Polkadot
+ * transaction and memoized for the lifetime of the connector that owns the
+ * returned preparer; every other network stays fully synchronous.
+ */
+export const makePrepareLedgerLiveTransaction: Effect.Effect<PrepareLedgerLiveTransaction> =
+  Effect.gen(function* () {
+    const loadPolkadotBuilder = yield* Effect.cached(
+      Effect.tryPromise({
+        try: () =>
+          import("./polkadot-ledger-transaction").then(
+            (module) => module.buildPolkadotLedgerTransaction
+          ),
+        catch: () => "Could not load Polkadot transaction support",
+      })
+    );
+
+    return ({ network, tx, txMeta }) =>
+      network === SubstrateNetworks.Polkadot
+        ? preparePolkadotTransaction({ loadPolkadotBuilder, tx, txMeta })
+        : Effect.fromResult(
+            prepareSynchronousTransaction({ network, tx, txMeta })
+          );
+  });
+
+const preparePolkadotTransaction = ({
+  loadPolkadotBuilder,
+  tx,
+  txMeta,
+}: {
+  loadPolkadotBuilder: Effect.Effect<BuildPolkadotLedgerTransaction, string>;
+  tx: string;
+  txMeta: SKTxMeta;
+}): Effect.Effect<RawTransaction, string> =>
+  Effect.fromResult(
+    parseJson(tx).pipe(
+      Result.flatMap((value) => decodeSchema(substratePayloadCodec, value))
+    )
+  ).pipe(
+    Effect.flatMap((payload) =>
+      loadPolkadotBuilder.pipe(
+        Effect.flatMap((buildPolkadotLedgerTransaction) =>
+          Effect.fromResult(
+            buildPolkadotLedgerTransaction({
+              fee: getFeeInBaseUnits(
+                parseGasEstimate(txMeta.gasEstimate)
+              ).toString(),
+              payload,
+              txMeta,
+            })
+          )
+        )
+      )
+    )
+  );
+
+const prepareSynchronousTransaction = ({
   network,
   tx,
   txMeta,
@@ -103,20 +158,6 @@ export const prepareLedgerLiveTransaction = ({
   }
 
   switch (network) {
-    case SubstrateNetworks.Polkadot:
-      return parsedTx.pipe(
-        Result.flatMap((value) =>
-          decodeSchema(substratePayloadCodec, value).pipe(
-            Result.flatMap((payload) =>
-              buildPolkadotLedgerTransaction({
-                gasEstimate: parseGasEstimate(txMeta.gasEstimate),
-                payload,
-                txMeta,
-              })
-            )
-          )
-        )
-      );
     case MiscNetworks.Tron:
       return parsedTx.pipe(
         Result.flatMap((value) =>
@@ -182,110 +223,6 @@ const buildEthereumLedgerTransaction = ({
   }
 
   return ledgerTx as RawTransaction;
-};
-
-const buildPolkadotLedgerTransaction = ({
-  gasEstimate,
-  payload,
-  txMeta,
-}: {
-  gasEstimate: GasEstimate;
-  payload: typeof substratePayloadCodec.Type;
-  txMeta: SKTxMeta;
-}): Result.Result<RawTransaction, string> => {
-  try {
-    const registry = new TypeRegistry();
-    registry.setMetadata(
-      registry.createType("Metadata", payload.tx.metadataRpc)
-    );
-
-    const extrinsic = registry.createType(
-      "Extrinsic",
-      { method: payload.tx.method },
-      { version: payload.tx.version }
-    );
-    const humanMethod = extrinsic.method.toHuman() as SubstrateHumanMethod;
-    const args = formatSubstrateArgs(humanMethod.args);
-    const fee = getFeeInBaseUnits(gasEstimate);
-    const recipient = payload.tx.address;
-
-    const ledgerTx = (() => {
-      switch (humanMethod.method) {
-        case "bond":
-          return {
-            mode: "bond",
-            family: "polkadot",
-            amount: readString(args.value, txMeta.amountRaw),
-            recipient,
-            fee: fee.toString(),
-            rewardDestination: readOptionalString(args.payee),
-          };
-        case "bondExtra":
-          return {
-            mode: "bond",
-            family: "polkadot",
-            amount: readString(args.maxAdditional),
-            recipient,
-            fee: fee.toString(),
-            rewardDestination: "Stash",
-          };
-        case "unbond":
-          return {
-            mode: "unbond",
-            family: "polkadot",
-            amount: readString(args.value, txMeta.amountRaw),
-            recipient,
-            fee: fee.toString(),
-          };
-        case "nominate":
-          return {
-            mode: "nominate",
-            family: "polkadot",
-            amount: "0",
-            recipient,
-            fee: fee.toString(),
-            validators: readValidatorTargets(args.targets),
-          };
-        case "chill":
-          return {
-            mode: "chill",
-            family: "polkadot",
-            amount: "0",
-            recipient,
-            fee: fee.toString(),
-          };
-        case "rebond":
-          return {
-            mode: "rebond",
-            family: "polkadot",
-            amount: readString(args.value, txMeta.amountRaw),
-            recipient,
-            fee: fee.toString(),
-          };
-        case "withdrawUnbonded":
-          return {
-            mode: "withdrawUnbonded",
-            family: "polkadot",
-            amount: readString(args.value, "0"),
-            recipient,
-            numOfSlashingSpans: Number(
-              readString(args.numOfSlashingSpans, "0")
-            ),
-            fee: fee.toString(),
-          };
-        default:
-          throw new Error(
-            `Unsupported Polkadot Ledger method: ${humanMethod.method}`
-          );
-      }
-    })();
-
-    return Result.succeed(ledgerTx as RawTransaction);
-  } catch (error) {
-    return Result.fail(
-      error instanceof Error ? error.message : "Invalid Polkadot transaction"
-    );
-  }
 };
 
 const buildCosmosLedgerTransaction = (
@@ -571,73 +508,6 @@ const getNearMode = (txType: SKTxMeta["txType"]): string => {
   }
 };
 
-const formatSubstrateArgs = (
-  args: Record<string, unknown> | null
-): Record<string, unknown> => {
-  if (!args) return {};
-
-  return Object.entries(args).reduce<Record<string, unknown>>(
-    (acc, [key, value]) => {
-      acc[toCamelCase(key)] = normalizeSubstrateValue(value);
-
-      return acc;
-    },
-    {}
-  );
-};
-
-const normalizeSubstrateValue = (value: unknown): unknown => {
-  if (Array.isArray(value)) {
-    return value.map(normalizeSubstrateValue);
-  }
-
-  if (typeof value === "string") {
-    const normalized = value.replace(/,/g, "");
-
-    return isNumericString(normalized) ? normalized : value;
-  }
-
-  if (typeof value === "object" && value !== null) {
-    return formatSubstrateArgs(value as Record<string, unknown>);
-  }
-
-  return value;
-};
-
-const toCamelCase = (key: string): string =>
-  key.includes("-") || key.includes("_")
-    ? key
-        .toLowerCase()
-        .replace(/([-_][a-z])/g, (group) =>
-          group.toUpperCase().replace("-", "").replace("_", "")
-        )
-    : key;
-
-const isNumericString = (value: string): boolean =>
-  /^-?\d+(\.\d+)?(e[+-]?\d+)?$/i.test(value.trim());
-
-const readString = (
-  value: unknown,
-  fallback: string | null | undefined = undefined
-): string => {
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "bigint") {
-    return value.toString();
-  }
-  if (fallback) return fallback;
-
-  return "0";
-};
-
-const readOptionalString = (value: unknown): string | undefined => {
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "bigint") {
-    return value.toString();
-  }
-
-  return undefined;
-};
-
 const getActionAmountInTokenUnits = (txMeta: SKTxMeta): BigNumber | null => {
   const amount = txMeta.rawArguments?.amount ?? txMeta.amount;
 
@@ -696,22 +566,4 @@ const getTronVotes = ({
         .toNumber(),
     }))
   );
-};
-
-const readValidatorTargets = (value: unknown): string[] => {
-  if (!Array.isArray(value)) return [];
-
-  return value.flatMap((item) => {
-    if (typeof item === "string") return [item];
-    if (typeof item === "object" && item !== null && "Id" in item) {
-      const id = (item as { Id?: unknown }).Id;
-      return typeof id === "string" ? [id] : [];
-    }
-    if (typeof item === "object" && item !== null && "id" in item) {
-      const id = (item as { id?: unknown }).id;
-      return typeof id === "string" ? [id] : [];
-    }
-
-    return [];
-  });
 };

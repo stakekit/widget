@@ -184,8 +184,7 @@ export const currentGroupedPositionsAtom = Atom.make(
     const earnPositions = get(positionsTableDataAtom).pipe(
       AsyncResult.getOrElse(() => [])
     );
-    const borrowManageEnabled =
-      config.borrowEnabled && !!config.dashboardVariant;
+    const borrowManageEnabled = config.borrowEnabled;
     const borrowPositions = get(
       borrowPositionsResourceAtom(
         new BorrowPositionsKey({

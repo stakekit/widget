@@ -32,7 +32,7 @@ const queryFn = ({
         operation: "ledger-connector-import",
       }),
   }).pipe(
-    Effect.map((module) =>
+    Effect.flatMap((module) =>
       module.ledgerLiveConnector({
         enabledChainsMap,
         queryParams,

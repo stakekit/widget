@@ -26,7 +26,10 @@ import { isLedgerDappBrowserProvider } from "../../browser-environment";
 import { WalletIntegrationError } from "../../domain/errors";
 import type { RunWalletEffect } from "../../effect-runner";
 import { configMeta, type ExtraProps } from "./ledger-live-connector-meta";
-import { prepareLedgerLiveTransaction } from "./prepare-ledger-live-transaction";
+import {
+  makePrepareLedgerLiveTransaction,
+  type PrepareLedgerLiveTransaction,
+} from "./prepare-ledger-live-transaction";
 import {
   getFilteredSupportedLedgerFamiliesWithCurrency,
   getLedgerCurrencies,
@@ -35,10 +38,12 @@ import {
 const createLedgerLiveConnector = ({
   walletDetailsParams,
   enabledChainsMap,
+  prepareTransaction,
   queryParams,
   runWalletEffect,
 }: {
   enabledChainsMap: EnabledChainsMap;
+  prepareTransaction: PrepareLedgerLiveTransaction;
   queryParams: InitParams;
   runWalletEffect: RunWalletEffect;
   walletDetailsParams: WalletDetailsParams;
@@ -416,7 +421,7 @@ const createLedgerLiveConnector = ({
       $disabledChains: disabledChains.changes,
       noAccountPlaceholder,
       deserializeTransaction,
-      prepareTransaction: prepareLedgerLiveTransaction,
+      prepareTransaction,
     };
   });
 
@@ -428,30 +433,36 @@ export const ledgerLiveConnector = ({
   enabledChainsMap: EnabledChainsMap;
   queryParams: InitParams;
   runWalletEffect: RunWalletEffect;
-}): WalletList[number] => ({
-  groupName: "Ledger Live",
-  wallets: [
-    () => ({
-      id: configMeta.id,
-      name: configMeta.name,
-      iconUrl: walletImages.ledgerLogo,
-      iconBackground: "#fff",
-      chainGroup: {
-        id: configMeta.id,
-        title: configMeta.name,
-        iconUrl: walletImages.ledgerLogo,
-      },
-      hidden: () => !isLedgerDappBrowserProvider(),
-      createConnector: (walletDetailsParams) =>
-        createLedgerLiveConnector({
-          walletDetailsParams,
-          enabledChainsMap,
-          queryParams,
-          runWalletEffect,
+}): Effect.Effect<WalletList[number]> =>
+  Effect.gen(function* () {
+    const prepareTransaction = yield* makePrepareLedgerLiveTransaction;
+
+    return {
+      groupName: "Ledger Live",
+      wallets: [
+        () => ({
+          id: configMeta.id,
+          name: configMeta.name,
+          iconUrl: walletImages.ledgerLogo,
+          iconBackground: "#fff",
+          chainGroup: {
+            id: configMeta.id,
+            title: configMeta.name,
+            iconUrl: walletImages.ledgerLogo,
+          },
+          hidden: () => !isLedgerDappBrowserProvider(),
+          createConnector: (walletDetailsParams) =>
+            createLedgerLiveConnector({
+              walletDetailsParams,
+              enabledChainsMap,
+              prepareTransaction,
+              queryParams,
+              runWalletEffect,
+            }),
         }),
-    }),
-  ],
-});
+      ],
+    };
+  });
 
 type ChainItem = {
   currencyId: string;

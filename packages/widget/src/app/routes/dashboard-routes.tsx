@@ -1,6 +1,5 @@
 import { Navigate, Route, Routes, useLocation } from "react-router";
 import { ActivityTabPage } from "../../features/activity/ui";
-import { useBorrowFeatureEnabled } from "../../features/borrow/state";
 import {
   BorrowConnectedWalletRoute,
   BorrowFormPage,
@@ -47,6 +46,7 @@ import {
 } from "../../features/position-details/ui";
 import { WalletScopeRouteGuard } from "../../features/wallet/ui";
 import { GlobalModals } from "../../features/widget-shell/ui";
+import { BorrowFeatureRoute } from "./borrow-feature-route";
 import { DashboardOverview } from "./dashboard-overview";
 import { DashboardShell } from "./dashboard-shell";
 
@@ -58,70 +58,8 @@ export const shouldRegisterDashboardEarnFooterButton = (pathname: string) =>
 
 export const DashboardRoutes = () => {
   const location = useLocation();
-  const borrowFeatureEnabled = useBorrowFeatureEnabled();
   const registerEarnFooterButton = shouldRegisterDashboardEarnFooterButton(
     location.pathname
-  );
-  const borrowRoutes = borrowFeatureEnabled ? (
-    <>
-      <Route path="borrow" element={<BorrowLayout />}>
-        <Route index element={<BorrowFormPage />} />
-        <Route element={<WalletScopeRouteGuard fallbackPath="/borrow" />}>
-          <Route element={<BorrowConnectedWalletRoute />}>
-            <Route
-              element={
-                <BorrowTransactionFlowRoute expected="BorrowDashboard" />
-              }
-            >
-              <Route element={<BorrowTransactionFlowReviewRoute />}>
-                <Route path="review" element={<BorrowReviewPage />} />
-              </Route>
-              <Route element={<BorrowTransactionFlowExecutionScope />}>
-                <Route path="steps" element={<BorrowStepsPage />} />
-                <Route element={<BorrowTransactionFlowCompletionGuard />}>
-                  <Route path="complete" element={<BorrowCompletePage />} />
-                </Route>
-              </Route>
-            </Route>
-          </Route>
-        </Route>
-      </Route>
-      <Route element={<WalletScopeRouteGuard fallbackPath="/borrow" />}>
-        <Route element={<BorrowConnectedWalletRoute />}>
-          <Route
-            path="positions/borrow/:marketId"
-            element={<BorrowPositionDetailsPage />}
-          >
-            <Route index element={<BorrowPositionActionsPage />} />
-            <Route
-              path="action/:actionId"
-              element={<BorrowPositionActionPage />}
-            />
-            <Route
-              element={<BorrowTransactionFlowRoute expected="BorrowPosition" />}
-            >
-              <Route element={<BorrowTransactionFlowReviewRoute />}>
-                <Route path="review" element={<BorrowReviewPage />} />
-              </Route>
-              <Route element={<BorrowTransactionFlowExecutionScope />}>
-                <Route path="steps" element={<BorrowStepsPage />} />
-                <Route element={<BorrowTransactionFlowCompletionGuard />}>
-                  <Route path="complete" element={<BorrowCompletePage />} />
-                </Route>
-              </Route>
-            </Route>
-          </Route>
-        </Route>
-      </Route>
-    </>
-  ) : (
-    <>
-      <Route path="borrow/*" element={<Navigate to="/" replace />} />
-      <Route
-        path="positions/borrow/:marketId/*"
-        element={<Navigate to="/manage" replace />}
-      />
-    </>
   );
 
   return (
@@ -157,77 +95,157 @@ export const DashboardRoutes = () => {
             </Route>
           </Route>
 
-          {/* Manage Tab */}
-          <Route path="manage" element={<ManagePage />} />
-
           {/* Borrow Tab */}
-          {borrowRoutes}
-
-          {/* Position Details */}
-          <Route element={<WalletScopeRouteGuard fallbackPath="/manage" />}>
+          <Route element={<BorrowFeatureRoute fallbackPath="/" />}>
+            <Route path="borrow" element={<BorrowLayout />}>
+              <Route index element={<BorrowFormPage />} />
+              <Route element={<WalletScopeRouteGuard fallbackPath="/borrow" />}>
+                <Route element={<BorrowConnectedWalletRoute />}>
+                  <Route
+                    element={
+                      <BorrowTransactionFlowRoute expected="BorrowDashboard" />
+                    }
+                  >
+                    <Route element={<BorrowTransactionFlowReviewRoute />}>
+                      <Route path="review" element={<BorrowReviewPage />} />
+                    </Route>
+                    <Route element={<BorrowTransactionFlowExecutionScope />}>
+                      <Route path="steps" element={<BorrowStepsPage />} />
+                      <Route element={<BorrowTransactionFlowCompletionGuard />}>
+                        <Route
+                          path="complete"
+                          element={<BorrowCompletePage />}
+                        />
+                      </Route>
+                    </Route>
+                  </Route>
+                </Route>
+              </Route>
+            </Route>
             <Route
-              path="positions/:integrationId/:balanceId"
-              element={<DashboardPositionDetailsPage />}
-            >
-              <Route index element={<PositionDetailsStakeActions />} />
+              path="borrow/*"
+              element={<Navigate to="/borrow" replace />}
+            />
+          </Route>
 
-              {/* Staking */}
-              <Route path="stake">
-                <Route index element={<PositionDetailsStakeActions />} />
-                <Route element={<EnterClassicFlowRoute />}>
-                  <Route
-                    path="review"
-                    element={
-                      <ClassicFlowReviewScope>
-                        <StakeReviewPage />
-                      </ClassicFlowReviewScope>
-                    }
-                  />
-                  <Route element={<ClassicFlowExecutionScope />}>
-                    <Route path="steps" element={<StakeStepsPage />} />
-                    <Route path="complete" element={<StakeCompletePage />} />
-                  </Route>
-                </Route>
-              </Route>
-
+          {/* Manage Tab + Position Details */}
+          <Route path="positions">
+            <Route index element={<ManagePage />} />
+            <Route element={<BorrowFeatureRoute fallbackPath="/positions" />}>
               <Route
-                path="select-validator/:pendingActionType"
-                element={<DashboardPositionDetailsPage />}
-              />
-
-              {/* Unstaking */}
-              <Route path="unstake">
-                <Route index element={<PositionDetailsActions />} />
-                <Route element={<ExitClassicFlowRoute />}>
+                element={<WalletScopeRouteGuard fallbackPath="/positions" />}
+              >
+                <Route element={<BorrowConnectedWalletRoute />}>
                   <Route
-                    path="review"
-                    element={
-                      <ClassicFlowReviewScope>
-                        <UnstakeReviewPage />
-                      </ClassicFlowReviewScope>
-                    }
-                  />
-                  <Route element={<ClassicFlowExecutionScope />}>
-                    <Route path="steps" element={<UnstakeStepsPage />} />
-                    <Route path="complete" element={<UnstakeCompletePage />} />
+                    path="borrow/:marketId"
+                    element={<BorrowPositionDetailsPage />}
+                  >
+                    <Route index element={<BorrowPositionActionsPage />} />
+                    <Route
+                      path="action/:actionId"
+                      element={<BorrowPositionActionPage />}
+                    />
+                    <Route
+                      element={
+                        <BorrowTransactionFlowRoute expected="BorrowPosition" />
+                      }
+                    >
+                      <Route element={<BorrowTransactionFlowReviewRoute />}>
+                        <Route path="review" element={<BorrowReviewPage />} />
+                      </Route>
+                      <Route element={<BorrowTransactionFlowExecutionScope />}>
+                        <Route path="steps" element={<BorrowStepsPage />} />
+                        <Route
+                          element={<BorrowTransactionFlowCompletionGuard />}
+                        >
+                          <Route
+                            path="complete"
+                            element={<BorrowCompletePage />}
+                          />
+                        </Route>
+                      </Route>
+                    </Route>
                   </Route>
                 </Route>
               </Route>
+              <Route
+                path="borrow/*"
+                element={<Navigate to="/positions" replace />}
+              />
+            </Route>
+            <Route
+              element={<WalletScopeRouteGuard fallbackPath="/positions" />}
+            >
+              <Route
+                path=":integrationId/:balanceId"
+                element={<DashboardPositionDetailsPage />}
+              >
+                <Route index element={<PositionDetailsStakeActions />} />
 
-              {/* Pending Actions */}
-              <Route path="pending-action">
-                <Route element={<ManageClassicFlowRoute />}>
-                  <Route
-                    path="review"
-                    element={
-                      <ClassicFlowReviewScope>
-                        <PendingReviewPage />
-                      </ClassicFlowReviewScope>
-                    }
-                  />
-                  <Route element={<ClassicFlowExecutionScope />}>
-                    <Route path="steps" element={<PendingStepsPage />} />
-                    <Route path="complete" element={<PendingCompletePage />} />
+                {/* Staking */}
+                <Route path="stake">
+                  <Route index element={<PositionDetailsStakeActions />} />
+                  <Route element={<EnterClassicFlowRoute />}>
+                    <Route
+                      path="review"
+                      element={
+                        <ClassicFlowReviewScope>
+                          <StakeReviewPage />
+                        </ClassicFlowReviewScope>
+                      }
+                    />
+                    <Route element={<ClassicFlowExecutionScope />}>
+                      <Route path="steps" element={<StakeStepsPage />} />
+                      <Route path="complete" element={<StakeCompletePage />} />
+                    </Route>
+                  </Route>
+                </Route>
+
+                <Route
+                  path="select-validator/:pendingActionType"
+                  element={<DashboardPositionDetailsPage />}
+                />
+
+                {/* Unstaking */}
+                <Route path="unstake">
+                  <Route index element={<PositionDetailsActions />} />
+                  <Route element={<ExitClassicFlowRoute />}>
+                    <Route
+                      path="review"
+                      element={
+                        <ClassicFlowReviewScope>
+                          <UnstakeReviewPage />
+                        </ClassicFlowReviewScope>
+                      }
+                    />
+                    <Route element={<ClassicFlowExecutionScope />}>
+                      <Route path="steps" element={<UnstakeStepsPage />} />
+                      <Route
+                        path="complete"
+                        element={<UnstakeCompletePage />}
+                      />
+                    </Route>
+                  </Route>
+                </Route>
+
+                {/* Pending Actions */}
+                <Route path="pending-action">
+                  <Route element={<ManageClassicFlowRoute />}>
+                    <Route
+                      path="review"
+                      element={
+                        <ClassicFlowReviewScope>
+                          <PendingReviewPage />
+                        </ClassicFlowReviewScope>
+                      }
+                    />
+                    <Route element={<ClassicFlowExecutionScope />}>
+                      <Route path="steps" element={<PendingStepsPage />} />
+                      <Route
+                        path="complete"
+                        element={<PendingCompletePage />}
+                      />
+                    </Route>
                   </Route>
                 </Route>
               </Route>

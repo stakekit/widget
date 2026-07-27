@@ -12,7 +12,7 @@ import { PositionsDataKey } from "../../src/features/earn/state/atoms-state/cata
 import {
   PositionDataKey,
   positionDataAtom,
-} from "../../src/features/portfolio/state";
+} from "../../src/features/portfolio/resources/positions";
 import {
   refreshYieldPositionsAtom,
   YieldPositionsError,

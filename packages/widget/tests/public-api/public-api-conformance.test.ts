@@ -255,26 +255,27 @@ describe.each(entryPairs)("$label", ({ contract, runtime }) => {
 });
 
 describe("contract is import-closed", () => {
-  it.each(
-    entryPairs.map(({ contract }) => contract)
-  )("%s reaches nothing outside src/public-api", (contract) => {
-    const escaping = parse(contract)
-      .statements.flatMap((statement) =>
-        (ts.isImportDeclaration(statement) ||
-          ts.isExportDeclaration(statement)) &&
-        statement.moduleSpecifier &&
-        ts.isStringLiteral(statement.moduleSpecifier)
-          ? [statement.moduleSpecifier.text]
-          : []
-      )
-      .filter((specifier) => specifier.startsWith("."))
-      .filter(
-        (specifier) =>
-          !resolveModuleSpecifier(contract, specifier).startsWith(
-            path.join("src", "public-api")
-          )
-      );
+  it.each(entryPairs.map(({ contract }) => contract))(
+    "%s reaches nothing outside src/public-api",
+    (contract) => {
+      const escaping = parse(contract)
+        .statements.flatMap((statement) =>
+          (ts.isImportDeclaration(statement) ||
+            ts.isExportDeclaration(statement)) &&
+          statement.moduleSpecifier &&
+          ts.isStringLiteral(statement.moduleSpecifier)
+            ? [statement.moduleSpecifier.text]
+            : []
+        )
+        .filter((specifier) => specifier.startsWith("."))
+        .filter(
+          (specifier) =>
+            !resolveModuleSpecifier(contract, specifier).startsWith(
+              path.join("src", "public-api")
+            )
+        );
 
-    expect(escaping).toStrictEqual([]);
-  });
+      expect(escaping).toStrictEqual([]);
+    }
+  );
 });

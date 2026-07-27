@@ -1,12 +1,13 @@
 import { Array as EArray, Option } from "effect";
-import { useEffect, useRef } from "react";
-import { useSavedRef } from "./use-saved-ref";
+import { useEffect, useEffectEvent, useRef } from "react";
 
 export const useSyncElementHeight = (
   setCurrentHeight: (height: number) => void
 ) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const setCurrentHeightRef = useSavedRef(setCurrentHeight);
+  const onHeightChange = useEffectEvent((height: number) =>
+    setCurrentHeight(height)
+  );
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -16,7 +17,7 @@ export const useSyncElementHeight = (
 
       if (!entry) return;
 
-      setCurrentHeightRef.current(entry.target.clientHeight);
+      onHeightChange(entry.target.clientHeight);
     });
 
     observer.observe(containerRef.current);
@@ -24,7 +25,7 @@ export const useSyncElementHeight = (
     return () => {
       observer.disconnect();
     };
-  }, [setCurrentHeightRef]);
+  }, []);
 
   return { containerRef };
 };

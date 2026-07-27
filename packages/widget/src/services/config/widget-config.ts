@@ -1,4 +1,4 @@
-import { Context, type Effect, Layer, type Stream } from "effect";
+import { Context, type Effect, Equal, Layer, type Stream } from "effect";
 import type {
   SettingsProps,
   SKExternalProviders,
@@ -95,7 +95,7 @@ export const defaultWidgetBootstrapConfig = {
     tonConnectManifestUrl: undefined,
     variant: "default",
   },
-} as const;
+} as const satisfies WidgetBootstrapConfigValue;
 
 export type WidgetBootstrapConfigValue = {
   readonly api: WidgetApiConfig;
@@ -132,6 +132,32 @@ export const normalizeWidgetBootstrapConfig = ({
     variant: settings.variant,
   },
 });
+
+const walletConfigKeys = Object.keys(
+  defaultWidgetBootstrapConfig.wallet
+) as ReadonlyArray<keyof WidgetWalletConfig>;
+
+type WalletConfigDifference = {
+  readonly material: ReadonlyArray<keyof WidgetWalletConfig>;
+  readonly opaque: ReadonlyArray<keyof WidgetWalletConfig>;
+};
+
+export const diffWidgetWalletConfig = (
+  next: WidgetWalletConfig,
+  bootstrapped: WidgetWalletConfig
+): WalletConfigDifference => {
+  const isOpaque = (key: keyof WidgetWalletConfig) =>
+    typeof next[key] === "function" || typeof bootstrapped[key] === "function";
+
+  const changed = walletConfigKeys.filter(
+    (key) => !Equal.equals(next[key], bootstrapped[key])
+  );
+
+  return {
+    material: changed.filter((key) => !isOpaque(key)),
+    opaque: changed.filter(isOpaque),
+  };
+};
 
 type WidgetConfigServiceValue = {
   readonly initial: WidgetConfig;

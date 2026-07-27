@@ -25,7 +25,7 @@ import {
 import {
   BorrowPositionKey,
   borrowPositionAtom,
-} from "../../src/features/borrow/state";
+} from "../../src/features/borrow/state/resources";
 import {
   mergedTokenOptionsAtom,
   positionsDataAtom,

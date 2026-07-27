@@ -1,7 +1,7 @@
-import { Cause, Option, Schema, Stream } from "effect";
+import { Cause, Option, Schema } from "effect";
 import type { AsyncResult as AsyncResultValue } from "effect/unstable/reactivity/AsyncResult";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import type * as Atom from "effect/unstable/reactivity/Atom";
 import type {
   EarnValidator,
   EarnValidatorKey,
@@ -11,16 +11,11 @@ import { YieldId } from "../../../../../domain/schema/identifiers";
 import { Network } from "../../../../../domain/schema/network-model";
 import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import {
-  type PullPage,
-  withPullPageDone,
-} from "../../../../../shared/effect/pagination";
-import {
   availableYieldCategoriesAtom,
   earnYieldCatalogAtom,
   initYieldAtom,
   mergedTokenOptionsAtom,
   positionsDataAtom,
-  tokenOptionsPullAtom,
   yieldValidatorsAtom,
 } from "../catalog/atoms";
 import {
@@ -36,8 +31,8 @@ import type {
   EarnCatalogError,
   EarnEntry,
   EarnMachineIntent,
+  EarnRetryTarget,
   EarnTokenOption,
-  EarnValidatorsResource,
   EarnValidatorsViewResource,
 } from "../types";
 
@@ -75,13 +70,14 @@ const observeAsyncResult = <A>(
 
 const readAsyncAtom = <A>(
   context: Atom.AtomContext,
-  atom: Atom.Atom<AsyncResultValue<A, EarnCatalogError>>
+  atom: Atom.Atom<AsyncResultValue<A, EarnCatalogError>>,
+  retryTarget: EarnRetryTarget
 ) => {
   const result = context.get(atom);
 
   return {
     observation: observeAsyncResult(result),
-    retryTargetAtom: atom,
+    retryTarget,
     waiting: result.waiting,
   };
 };
@@ -105,47 +101,11 @@ const getPreferredTokenNetwork = (
     : null;
 };
 
-const noopRememberValidatorsAtom = Atom.writable<
-  ReadonlyMap<EarnValidatorKey, EarnValidator>,
-  ReadonlyArray<EarnValidator>
->(
-  () => new Map(),
-  () => {}
-);
-
-const emptyValidatorsPullAtom = Atom.pull<
-  PullPage<EarnValidator>,
-  EarnCatalogError
->(Stream.succeed({ hasNextPage: false, items: [] })).pipe(withPullPageDone);
-
-const disabledValidatorsResource: EarnValidatorsResource = {
+export const disabledValidatorsViewResource: EarnValidatorsViewResource = {
   enabled: false,
-  initialValidatorsResultAtom: Atom.make(
-    AsyncResult.success<ReadonlyArray<EarnValidator>, EarnCatalogError>([])
-  ),
-  rememberValidatorsAtom: noopRememberValidatorsAtom,
-  validatorsPullAtom: () => emptyValidatorsPullAtom,
+  items: [],
+  key: null,
 };
-
-const toValidatorsViewResource = (
-  resource: EarnValidatorsResource,
-  items: ReadonlyArray<EarnValidator>
-): EarnValidatorsViewResource => ({
-  enabled: resource.enabled,
-  items,
-  rememberValidatorsAtom: resource.rememberValidatorsAtom,
-  validatorsPullAtom: resource.validatorsPullAtom,
-});
-
-export const disabledValidatorsViewResource = toValidatorsViewResource(
-  disabledValidatorsResource,
-  []
-);
-
-export const pendingTokenOptionsPullAtom = Atom.pull<
-  PullPage<EarnTokenOption>,
-  EarnCatalogError
->(Stream.never).pipe(withPullPageDone);
 
 export const readInitialViewInputs = ({
   context,
@@ -162,14 +122,16 @@ export const readInitialViewInputs = ({
       )
     : null;
   const selectionSeedYieldId = intent.selectedYieldId ?? initYieldId;
-  const initYield = readAsyncAtom(
-    context,
-    initYieldAtom(new InitYieldKey({ yieldId: selectionSeedYieldId }))
-  );
-  const positions = readAsyncAtom(
-    context,
-    positionsDataAtom(new PositionsDataKey({ scope: entry.walletScope }))
-  );
+  const initYieldKey = new InitYieldKey({ yieldId: selectionSeedYieldId });
+  const initYield = readAsyncAtom(context, initYieldAtom(initYieldKey), {
+    _tag: "InitYield",
+    key: initYieldKey,
+  });
+  const positionsKey = new PositionsDataKey({ scope: entry.walletScope });
+  const positions = readAsyncAtom(context, positionsDataAtom(positionsKey), {
+    _tag: "PositionsData",
+    key: positionsKey,
+  });
 
   return {
     initYield,
@@ -193,16 +155,17 @@ export const readCategoryInput = ({
     return { _tag: "disabled" } as const;
   }
 
-  const atom = availableYieldCategoriesAtom(
-    new AvailableYieldCategoriesKey({
-      network,
-      categoryOrder: entry.categoryOrder,
-    })
-  );
+  const key = new AvailableYieldCategoriesKey({
+    network,
+    categoryOrder: entry.categoryOrder,
+  });
 
   return {
     _tag: "enabled",
-    ...readAsyncAtom(context, atom),
+    ...readAsyncAtom(context, availableYieldCategoriesAtom(key), {
+      _tag: "AvailableCategories",
+      key,
+    }),
   } as const;
 };
 
@@ -221,33 +184,32 @@ export const readTokenOptionsInput = ({
     entry,
     entry.walletScope?.network ?? null
   );
-  const pullAtom = tokenOptionsPullAtom(
-    new DefaultTokenOptionsKey({
-      network: entry.walletScope?.network ?? null,
-      category,
-      tokensForEnabledYieldsOnly: !!entry.tokensForEnabledYieldsOnly,
-    })
-  );
-  const atom = mergedTokenOptionsAtom(
-    new TokenOptionsKey({
-      scope: entry.walletScope,
-      category,
-      initToken: entry.initParams?.token ?? null,
-      initTokenNetwork: entry.initParams?.network ?? null,
-      initYieldId: selectionSeedYieldId,
-      preferredTokenNetwork,
-      preferredTokenKeys: preferredTokenNetwork
-        ? Object.keys(
-            entry.preferredTokenYieldsPerNetwork?.[preferredTokenNetwork] ?? {}
-          )
-        : [],
-      tokensForEnabledYieldsOnly: !!entry.tokensForEnabledYieldsOnly,
-    })
-  );
+  const pullKey = new DefaultTokenOptionsKey({
+    network: entry.walletScope?.network ?? null,
+    category,
+    tokensForEnabledYieldsOnly: !!entry.tokensForEnabledYieldsOnly,
+  });
+  const key = new TokenOptionsKey({
+    scope: entry.walletScope,
+    category,
+    initToken: entry.initParams?.token ?? null,
+    initTokenNetwork: entry.initParams?.network ?? null,
+    initYieldId: selectionSeedYieldId,
+    preferredTokenNetwork,
+    preferredTokenKeys: preferredTokenNetwork
+      ? Object.keys(
+          entry.preferredTokenYieldsPerNetwork?.[preferredTokenNetwork] ?? {}
+        )
+      : [],
+    tokensForEnabledYieldsOnly: !!entry.tokensForEnabledYieldsOnly,
+  });
 
   return {
-    ...readAsyncAtom(context, atom),
-    pullAtom,
+    ...readAsyncAtom(context, mergedTokenOptionsAtom(key), {
+      _tag: "TokenOptions",
+      key,
+    }),
+    pullKey,
   };
 };
 
@@ -260,20 +222,16 @@ export const readYieldCatalogInput = ({
   readonly context: Atom.AtomContext;
   readonly selectedToken: EarnTokenOption;
 }) => {
-  const atom = earnYieldCatalogAtom(
-    new YieldCatalogKey({
-      category,
-      network: selectedToken.token.network,
-      yieldIds: selectedToken.availableYields,
-    })
-  );
-  const result = context.get(atom);
+  const key = new YieldCatalogKey({
+    category,
+    network: selectedToken.token.network,
+    yieldIds: selectedToken.availableYields,
+  });
 
-  return {
-    observation: observeAsyncResult(result),
-    retryTargetAtom: atom,
-    waiting: result.waiting,
-  };
+  return readAsyncAtom(context, earnYieldCatalogAtom(key), {
+    _tag: "YieldCatalog",
+    key,
+  });
 };
 
 export const readValidatorInput = ({
@@ -292,13 +250,15 @@ export const readValidatorInput = ({
     } as const;
   }
 
-  const resource = yieldValidatorsAtom(
-    new YieldValidatorsKey({
-      network: selectedYield.token.network,
-      selectedYieldId: selectedYield.id,
-    })
-  );
-  const initial = readAsyncAtom(context, resource.initialValidatorsResultAtom);
+  const key = new YieldValidatorsKey({
+    network: selectedYield.token.network,
+    selectedYieldId: selectedYield.id,
+  });
+  const resource = yieldValidatorsAtom(key);
+  const initial = readAsyncAtom(context, resource.initialValidatorsResultAtom, {
+    _tag: "YieldValidators",
+    key,
+  });
   const known = new Map<EarnValidatorKey, EarnValidator>(
     initial.observation._tag === "available"
       ? initial.observation.value.map((validator) => [validator.key, validator])
@@ -306,13 +266,17 @@ export const readValidatorInput = ({
   );
   context
     .get(resource.rememberValidatorsAtom)
-    .forEach((validator, key) => known.set(key, validator));
+    .forEach((validator, validatorKey) => known.set(validatorKey, validator));
   const options = [...known.values()];
 
   return {
     _tag: "enabled",
     initial,
     options,
-    resource: toValidatorsViewResource(resource, options),
+    resource: {
+      enabled: true,
+      items: options,
+      key,
+    } satisfies EarnValidatorsViewResource,
   } as const;
 };

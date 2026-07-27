@@ -23,16 +23,13 @@ export const PositionsPage = () => {
 
   const { positions, positionsResult, showPositions } = usePositions();
   const borrowEnabled = useWidgetConfig("borrowEnabled");
-  const dashboardVariant = useWidgetConfig("dashboardVariant");
   const variant = useWidgetConfig("variant");
-  const borrowManageEnabled = borrowEnabled && !!dashboardVariant;
-  const borrowPositions = useBorrowPositions({ enabled: borrowManageEnabled });
+  const borrowPositions = useBorrowPositions();
   const { isConnected, isConnecting } = useSKWallet();
   const manageState = getUnifiedManagePositionsState({
     borrowPositionsResult: borrowPositions.positionsResult,
     borrowWalletIsConnected:
-      borrowManageEnabled &&
-      borrowPositions.walletBridge.status === "connected",
+      borrowEnabled && borrowPositions.walletBridge.status === "connected",
     earnIsError: AsyncResult.isFailure(positionsResult),
     earnIsFetching: positionsResult.waiting,
     earnIsLoading: AsyncResult.isInitial(positionsResult),

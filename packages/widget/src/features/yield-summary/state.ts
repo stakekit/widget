@@ -1,6 +1,3 @@
-// Collaboration contract only: shared read-only yield projections — provider and
-// reward-token details, semantic yield type, the yield sets a wallet may enter,
-// and the KYC gate, rewards, and history insights derived from them.
 export {
   MultiYieldsKey,
   multiYieldsByIdAtom,

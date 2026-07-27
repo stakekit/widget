@@ -1,11 +1,12 @@
-import { RegistryProvider, useAtomSet } from "@effect/atom-react";
-import { type PropsWithChildren, useLayoutEffect } from "react";
+import { RegistryProvider } from "@effect/atom-react";
+import type { PropsWithChildren } from "react";
 import type { RouteObject } from "react-router";
 import type { WidgetConfig } from "../../../../services/config/widget-config";
 import { config } from "../../../../shared/config/widget-defaults";
 import { makeWidgetRuntimeGenerationKey } from "../../../config/runtime-generation";
 import { widgetConfigAtom } from "../../../config/settings";
 import { applicationRoutesAtom } from "../../../runtime/application-router-runtime";
+import { WidgetConfigBoundaryAdapter } from "../widget-config-binding";
 
 export const SKAtomRegistryProvider = ({
   children,
@@ -24,20 +25,9 @@ export const SKAtomRegistryProvider = ({
         [applicationRoutesAtom, routes],
       ]}
     >
-      <WidgetConfigBinding settings={settings}>{children}</WidgetConfigBinding>
+      <WidgetConfigBoundaryAdapter settings={settings}>
+        {children}
+      </WidgetConfigBoundaryAdapter>
     </RegistryProvider>
   );
-};
-
-const WidgetConfigBinding = ({
-  children,
-  settings,
-}: PropsWithChildren<{ readonly settings: WidgetConfig }>) => {
-  const setWidgetConfig = useAtomSet(widgetConfigAtom);
-
-  useLayoutEffect(() => {
-    setWidgetConfig(settings);
-  }, [setWidgetConfig, settings]);
-
-  return children;
 };

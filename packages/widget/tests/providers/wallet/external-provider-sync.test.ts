@@ -3,7 +3,10 @@ import { mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 import { normalizeWidgetConfig } from "../../../src/app/config/settings";
-import type { SKExternalProviders } from "../../../src/public-api/types";
+import type {
+  SettingsProps,
+  SKExternalProviders,
+} from "../../../src/public-api/types";
 import {
   normalizeWidgetBootstrapConfig,
   WidgetConfigService,
@@ -89,12 +92,15 @@ const makeHarness = async ({
   connect = () => Effect.void,
   connector,
   connected,
+  settings = {},
 }: {
   readonly connect?: () => Effect.Effect<void>;
   readonly connector: Connector | undefined;
   readonly connected: boolean;
+  readonly settings?: Partial<SettingsProps>;
 }) => {
   const initial = normalizeWidgetConfig({
+    ...settings,
     apiKey: "api-key",
     externalProviders: externalProviders(),
     variant: "default",
@@ -242,6 +248,91 @@ describe("external-provider synchronization", () => {
         }).pipe(Effect.provide(harness.configLayer))
       )
     );
+  });
+
+  it("keeps synchronizing when only host functions change identity", async () => {
+    const notified = await Effect.runPromise(Deferred.make<void>());
+    const connector = {
+      id: "externalProviderConnector",
+      name: "External",
+      onAccountsChanged: () => {
+        void Effect.runPromise(Deferred.succeed(notified, undefined));
+      },
+      onChainChanged: () => undefined,
+      onSupportedChainsChanged: () => undefined,
+      type: "externalProvider",
+      uid: "external-uid",
+    } as unknown as Connector;
+    const harness = await makeHarness({
+      connected: true,
+      connector,
+      settings: { mapWalletFn: (wallet) => wallet },
+    });
+
+    const failed = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          yield* installExternalProviderSynchronization(harness);
+          yield* SubscriptionRef.set(
+            harness.config,
+            normalizeWidgetConfig({
+              apiKey: "api-key",
+              externalProviders: externalProviders({
+                currentAddress: secondAddress,
+              }),
+              mapWalletFn: (wallet) => wallet,
+              variant: "default",
+            })
+          );
+          yield* Deferred.await(notified);
+          yield* Effect.yieldNow;
+
+          return yield* Deferred.isDone(harness.invariant);
+        }).pipe(Effect.provide(harness.configLayer))
+      )
+    );
+
+    expect(failed).toBe(false);
+    expect(harness.bootstrap.externalProviders?.current.currentAddress).toBe(
+      secondAddress
+    );
+  });
+
+  it("fails the runtime when a comparable wallet field changes", async () => {
+    const connector = {
+      id: "externalProviderConnector",
+      name: "External",
+      onAccountsChanged: () => undefined,
+      onChainChanged: () => undefined,
+      onSupportedChainsChanged: () => undefined,
+      type: "externalProvider",
+      uid: "external-uid",
+    } as unknown as Connector;
+    const harness = await makeHarness({ connected: true, connector });
+
+    const failure = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          yield* installExternalProviderSynchronization(harness);
+          yield* SubscriptionRef.set(
+            harness.config,
+            normalizeWidgetConfig({
+              apiKey: "api-key",
+              externalProviders: externalProviders(),
+              isSafe: true,
+              variant: "default",
+            })
+          );
+
+          return yield* Deferred.await(harness.invariant);
+        }).pipe(Effect.provide(harness.configLayer))
+      )
+    );
+
+    expect(failure).toMatchObject({
+      _tag: "WalletRuntimeInvariantError",
+      reason: "wallet-topology-changed",
+    });
   });
 
   it("fails the runtime when the fixed external connector is missing", async () => {

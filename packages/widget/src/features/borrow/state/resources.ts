@@ -1,9 +1,9 @@
 import { Data } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import { widgetConfigAtom } from "../../../app/config/settings";
 import type { MarketId } from "../../../domain/borrow/ids";
 import { isBorrowNetwork } from "../../../domain/borrow/network";
-import { BorrowResourceError } from "../../../resources/borrow/borrow-resource-error";
 import { borrowIntegrationsResourceAtom } from "../../../resources/borrow-integrations/borrow-integrations";
 import {
   BorrowMarketsKey,
@@ -19,7 +19,6 @@ import { walletScopeAtom } from "../../wallet/state";
 export {
   BorrowMarketsKey,
   BorrowPositionsKey,
-  BorrowResourceError as BorrowAtomError,
   borrowIntegrationsResourceAtom as borrowIntegrationsAtom,
   borrowMarketsResourceAtom as borrowMarketsAtom,
   borrowPositionsResourceAtom as borrowPositionsAtom,
@@ -64,17 +63,18 @@ export const borrowPositionAtom = Atom.family((key: BorrowPositionKey) => {
   );
 });
 
-export const currentBorrowPositionsAtom = Atom.family((enabled: boolean) =>
-  Atom.make((get) => {
-    const scope = get(walletScopeAtom);
+export const currentBorrowPositionsAtom = Atom.make((get) => {
+  const borrowEnabled = get(widgetConfigAtom).borrowEnabled;
+  const scope = get(walletScopeAtom);
 
-    return get(
-      borrowPositionsResourceAtom(
-        new BorrowPositionsKey({
-          scope:
-            enabled && scope && isBorrowNetwork(scope.network) ? scope : null,
-        })
-      )
-    );
-  }).pipe(Atom.withLabel("currentBorrowPositionsAtom"))
-);
+  return get(
+    borrowPositionsResourceAtom(
+      new BorrowPositionsKey({
+        scope:
+          borrowEnabled && scope && isBorrowNetwork(scope.network)
+            ? scope
+            : null,
+      })
+    )
+  );
+}).pipe(Atom.withLabel("currentBorrowPositionsAtom"));

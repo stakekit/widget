@@ -1,5 +1,6 @@
-import { Effect, Equal, Ref, type Scope, Stream } from "effect";
+import { Effect, Ref, type Scope, Stream } from "effect";
 import {
+  diffWidgetWalletConfig,
   normalizeWidgetBootstrapConfig,
   WidgetConfigService,
 } from "../config/widget-config";
@@ -54,19 +55,43 @@ export const installExternalProviderSynchronization = Effect.fn(
 }): Effect.fn.Return<void, never, Scope.Scope | WidgetConfigService> {
   const config = yield* WidgetConfigService;
   const memory = yield* Ref.make(initialMemory);
+  const reportedUnstableKeys = yield* Ref.make<ReadonlyArray<string>>([]);
 
   const failInvariant = Effect.fn("failInvariant")(function* (
-    reason: WalletRuntimeInvariantError["reason"]
+    reason: WalletRuntimeInvariantError["reason"],
+    annotations: Record<string, unknown> = {}
   ) {
     const error = new WalletRuntimeInvariantError({ reason });
     yield* Effect.logError("Wallet Runtime invariant violated").pipe(
       Effect.annotateLogs({
         event: "wallet_runtime_invariant_violated",
         reason,
+        ...annotations,
       })
     );
     yield* state.failInvariant(error);
   });
+
+  const reportUnstableWalletProps = Effect.fn("reportUnstableWalletProps")(
+    function* (keys: ReadonlyArray<string>) {
+      const reported = yield* Ref.get(reportedUnstableKeys);
+      const fresh = keys.filter((key) => !reported.includes(key));
+      if (fresh.length === 0) return;
+
+      yield* Ref.update(reportedUnstableKeys, (current) => [
+        ...current,
+        ...fresh,
+      ]);
+      yield* Effect.logWarning(
+        "Wallet configuration functions changed identity after bootstrap and were ignored"
+      ).pipe(
+        Effect.annotateLogs({
+          event: "wallet_config_function_unstable",
+          keys: fresh,
+        })
+      );
+    }
+  );
 
   const synchronize = Effect.fn("synchronize")(function* (
     context: WalletStateContext
@@ -205,27 +230,40 @@ export const installExternalProviderSynchronization = Effect.fn(
     Stream.succeed(yield* config.current),
     config.changes
   ).pipe(
-    Stream.mapEffect((next) => {
-      const nextTopology = normalizeWidgetBootstrapConfig({
-        isLedgerLive: next.isLedgerLive,
-        settings: next,
-      }).wallet;
-      if (!Equal.equals(nextTopology, bootstrap.snapshot.config.wallet)) {
-        return failInvariant("wallet-topology-changed").pipe(
-          Effect.as(makeExternalProviderSnapshot(next))
+    Stream.mapEffect((next) =>
+      Effect.gen(function* () {
+        const difference = diffWidgetWalletConfig(
+          normalizeWidgetBootstrapConfig({
+            isLedgerLive: next.isLedgerLive,
+            settings: next,
+          }).wallet,
+          bootstrap.snapshot.config.wallet
         );
-      }
-      const snapshot = makeExternalProviderSnapshot(next);
-      if ((snapshot !== undefined) !== bootstrap.externalProviderMode) {
-        return failInvariant("external-provider-presence-changed").pipe(
-          Effect.as(snapshot)
-        );
-      }
-      if (snapshot && bootstrap.externalProviders) {
-        bootstrap.externalProviders.current = snapshot;
-      }
-      return Effect.succeed(snapshot);
-    })
+        const snapshot = makeExternalProviderSnapshot(next);
+
+        if (difference.material.length > 0) {
+          yield* failInvariant("wallet-topology-changed", {
+            changedKeys: difference.material,
+          });
+          return snapshot;
+        }
+
+        if (difference.opaque.length > 0) {
+          yield* reportUnstableWalletProps(difference.opaque);
+        }
+
+        if ((snapshot !== undefined) !== bootstrap.externalProviderMode) {
+          yield* failInvariant("external-provider-presence-changed");
+          return snapshot;
+        }
+
+        if (snapshot && bootstrap.externalProviders) {
+          bootstrap.externalProviders.current = snapshot;
+        }
+
+        return snapshot;
+      })
+    )
   );
 
   yield* Stream.zipLatestAll(state.contexts, settings).pipe(

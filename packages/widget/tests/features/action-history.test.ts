@@ -2,9 +2,9 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
 import {
   actionHistoryRevisionAtom,
-  incrementActionHistoryRevision,
   resetActionHistoryRevision,
 } from "../../src/features/classic-transaction-flow/state";
+import { incrementActionHistoryRevision } from "../../src/features/classic-transaction-flow/state/action-history";
 
 describe("action history atoms", () => {
   it("initializes, updates, and resets explicitly", () => {

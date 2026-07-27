@@ -19,7 +19,6 @@ export const RichErrorModal = () => {
   return (
     <SelectModal
       state={{ isOpen: !!error, setOpen: (isOpen) => !isOpen && resetError() }}
-      onClose={resetError}
     >
       <Box
         display="flex"

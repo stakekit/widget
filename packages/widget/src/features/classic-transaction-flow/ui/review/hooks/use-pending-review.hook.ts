@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 import type { YieldPendingActionType } from "../../../../../domain/types/pending-action";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
 import type { RewardTokenDetails } from "../../../../earn/components";
 import type { PageCta } from "../../../../widget-shell/components";
 import {
@@ -78,17 +77,12 @@ export const usePendingActionReview = () => {
     [integrationData, manageFlow.request.action]
   );
 
-  const onClickRef = useSavedRef(onClick);
-
-  const cta = useMemo<PageCta>(
-    () => ({
-      label: t("shared.confirm"),
-      onClick: () => onClickRef.current(),
-      disabled: false,
-      isLoading: review.confirmLoading,
-    }),
-    [onClickRef, review.confirmLoading, t]
-  );
+  const resolveCta = (): PageCta => ({
+    label: t("shared.confirm"),
+    onClick,
+    disabled: false,
+    isLoading: review.confirmLoading,
+  });
 
   const metaInfo: MetaInfoProps = useMemo(() => ({ showMetaInfo: false }), []);
 
@@ -107,6 +101,6 @@ export const usePendingActionReview = () => {
     metaInfo,
     isGasCheckWarning: review.isGasCheckWarning,
     gasCheckLoading: review.gasCheckLoading,
-    cta,
+    cta: resolveCta(),
   };
 };

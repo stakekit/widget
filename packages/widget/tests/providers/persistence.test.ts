@@ -7,7 +7,7 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import {
   setTosAcceptedAtom,
   tosAcceptedAtom,
-} from "../../src/features/preferences/state";
+} from "../../src/features/preferences/state/tos-atoms";
 import {
   StoredPublicKeys,
   TosAccepted,

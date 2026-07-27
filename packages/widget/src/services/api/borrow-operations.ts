@@ -1,12 +1,14 @@
 import { Context, Effect, Layer, Schema } from "effect";
 import { Action as BorrowAction } from "../../domain/borrow/action";
 import type { ActionRequest as BorrowActionRequest } from "../../domain/borrow/action-request";
+import { BorrowFeatureDisabled } from "../../domain/borrow/availability";
 import {
   type SubmitTransactionCommand as BorrowSubmitTransactionCommand,
   SubmitTransactionResult as BorrowSubmitTransactionResult,
 } from "../../domain/borrow/transaction";
 import { MissingBorrowApiConfig } from "../../domain/schema/api-errors";
 import type * as BorrowApi from "../../generated/api/borrow-client";
+import { WidgetConfigService } from "../config/widget-config";
 import {
   decodeApiResponse,
   withApiRequestError,
@@ -14,9 +16,18 @@ import {
 } from "./api-operation";
 import { ApiTransportService } from "./transport";
 
-export const makeBorrowOperations = (borrow: BorrowApi.BorrowApi | null) => {
+export const makeBorrowOperations = (
+  borrow: BorrowApi.BorrowApi | null,
+  borrowEnabled = true
+) => {
   const requireTransport = Effect.fn("BorrowOperations.requireTransport")(
     function* () {
+      if (!borrowEnabled) {
+        return yield* new BorrowFeatureDisabled({
+          message: "Borrow is disabled by Widget configuration.",
+        });
+      }
+
       if (borrow) return borrow;
 
       return yield* new MissingBorrowApiConfig({
@@ -88,9 +99,12 @@ export const makeBorrowOperations = (borrow: BorrowApi.BorrowApi | null) => {
 export class BorrowOperations extends Context.Service<BorrowOperations>()(
   "stakekit/widget/services/api/BorrowOperations",
   {
-    make: Effect.map(ApiTransportService, ({ borrow }) =>
-      makeBorrowOperations(borrow)
-    ),
+    make: Effect.gen(function* () {
+      const { borrow } = yield* ApiTransportService;
+      const widgetConfig = yield* WidgetConfigService;
+
+      return makeBorrowOperations(borrow, widgetConfig.initial.borrowEnabled);
+    }),
   }
 ) {
   static readonly layer = Layer.effect(BorrowOperations, BorrowOperations.make);

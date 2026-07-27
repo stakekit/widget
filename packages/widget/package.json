@@ -154,6 +154,7 @@
     "react-i18next": "catalog:",
     "react-loading-skeleton": "catalog:",
     "react-router": "catalog:",
+    "recharts": "catalog:",
     "swagger2openapi": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
@@ -164,8 +165,7 @@
     "vitest": "catalog:",
     "vitest-browser-react": "catalog:",
     "wagmi": "catalog:",
-    "yaml": "catalog:",
-    "recharts": "catalog:"
+    "yaml": "catalog:"
   },
   "msw": {
     "workerDirectory": [

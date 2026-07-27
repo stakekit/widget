@@ -10,15 +10,9 @@ import {
   useBorrowWalletBridge,
 } from "./use-borrow-wallet-bridge";
 
-type BorrowPositionsOptions = {
-  readonly enabled?: boolean;
-};
-
-export const useBorrowPositions = ({
-  enabled = true,
-}: BorrowPositionsOptions = {}) => {
+export const useBorrowPositions = () => {
   const walletBridge = useBorrowWalletBridge();
-  const positionsResult = useAtomValue(currentBorrowPositionsAtom(enabled));
+  const positionsResult = useAtomValue(currentBorrowPositionsAtom);
 
   return {
     positionsResult,

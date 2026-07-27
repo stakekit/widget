@@ -9,13 +9,24 @@ import {
 } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import {
+  mergedTokenOptionsAtom,
+  tokenOptionsPullAtom,
+  yieldValidatorsAtom,
+} from "../../src/features/earn/state/atoms-state/catalog/atoms";
+import {
+  DefaultTokenOptionsKey,
+  TokenOptionsKey,
+  YieldValidatorsKey,
+  YieldValidatorsPullKey,
+} from "../../src/features/earn/state/atoms-state/catalog/keys";
+import {
   earnMachineIntentAtom,
   earnMachineViewAtom,
 } from "../../src/features/earn/state/atoms-state/machine/atoms";
 import { makeEarnView } from "../../src/features/earn/state/atoms-state/resolver/view-model";
 import {
+  EarnCatalogError,
   type EarnTokenOption,
-  type EarnValidatorsViewResource,
   makeDefaultEarnIntent,
 } from "../../src/features/earn/state/atoms-state/types";
 import {
@@ -33,27 +44,22 @@ import {
   setEarnYieldSearchAtom,
 } from "../../src/features/earn/state/earn-facade";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
-import type { PullPage } from "../../src/shared/effect/pagination";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 import { decodeValidator } from "../utils/validators";
 
-const makePullAtom = <A>(
-  items: ReadonlyArray<A>,
-  pulled: () => void
-): Atom.Writable<Atom.PullResult<PullPage<A>, never>, void> =>
-  Atom.writable(
-    () =>
-      AsyncResult.success({
-        done: false,
-        items: [{ hasNextPage: true, items }],
-      }),
-    () => pulled()
-  );
+const makePullResult = <A>(items: ReadonlyArray<A>, done = false) =>
+  AsyncResult.success({
+    done,
+    items: [{ hasNextPage: !done, items }],
+  });
 
-const noopRememberValidatorsAtom: EarnValidatorsViewResource["rememberValidatorsAtom"] =
-  Atom.writable(
-    () => new Map(),
-    () => {}
+const trackingLayer = (trackEvent: () => Effect.Effect<void>) =>
+  Atom.initialValue(
+    appRuntime.layer,
+    Layer.succeed(
+      TrackingService,
+      TrackingService.of({ trackEvent, trackPageView: () => Effect.void })
+    ) as never
   );
 
 describe("Earn facade", () => {
@@ -61,18 +67,19 @@ describe("Earn facade", () => {
     const selectedYield = yieldApiYieldFixture();
     const validator = decodeValidator(yieldApiValidatorFixture());
     const trackEvent = vi.fn(() => Effect.void);
+    const validatorsKey = new YieldValidatorsKey({
+      network: selectedYield.token.network,
+      selectedYieldId: selectedYield.id,
+    });
     const registry = AtomRegistry.make({
       initialValues: [
-        Atom.initialValue(
-          appRuntime.layer,
-          Layer.succeed(
-            TrackingService,
-            TrackingService.of({
-              trackEvent,
-              trackPageView: () => Effect.void,
-            })
-          ) as never
-        ),
+        trackingLayer(trackEvent),
+        [
+          yieldValidatorsAtom(validatorsKey).validatorsPullAtom(
+            new YieldValidatorsPullKey({ search: null })
+          ),
+          makePullResult([validator]),
+        ],
         Atom.initialValue(
           earnMachineViewAtom,
           makeEarnView({
@@ -81,8 +88,7 @@ describe("Earn facade", () => {
               validators: {
                 enabled: true,
                 items: [validator],
-                rememberValidatorsAtom: noopRememberValidatorsAtom,
-                validatorsPullAtom: () => makePullAtom([], () => undefined),
+                key: validatorsKey,
               },
             },
             selection: { yield: selectedYield },
@@ -155,7 +161,7 @@ describe("Earn facade", () => {
     }
   });
 
-  it("projects search and routes pagination and retry commands", () => {
+  it("projects search and routes pagination to the published keys", () => {
     const selectedYield = yieldApiYieldFixture();
     const tokenOption = {
       amount: "10",
@@ -164,16 +170,18 @@ describe("Earn facade", () => {
       token: selectedYield.token,
     } satisfies EarnTokenOption;
     const validator = decodeValidator(yieldApiValidatorFixture());
-    const tokenPull = vi.fn();
-    const validatorPull = vi.fn();
-    const tokenPullAtom = makePullAtom([tokenOption], tokenPull);
-    const validatorPullAtom = makePullAtom([validator], validatorPull);
-    const validatorsPullAtom = vi.fn(() => validatorPullAtom);
-    const retry = vi.fn();
-    const retryTargetAtom = Atom.readable(
-      () => undefined,
-      () => retry()
-    );
+    const tokenPullKey = new DefaultTokenOptionsKey({
+      category: null,
+      network: null,
+      tokensForEnabledYieldsOnly: false,
+    });
+    const validatorsKey = new YieldValidatorsKey({
+      network: selectedYield.token.network,
+      selectedYieldId: selectedYield.id,
+    });
+    const validatorPullAtom = yieldValidatorsAtom(
+      validatorsKey
+    ).validatorsPullAtom(new YieldValidatorsPullKey({ search: null }));
     const machine = makeEarnView({
       can: {
         selectToken: true,
@@ -185,18 +193,16 @@ describe("Earn facade", () => {
       resources: {
         tokenOptions: {
           items: [tokenOption],
-          pullAtom: tokenPullAtom,
+          pullKey: tokenPullKey,
           waiting: false,
         },
         validators: {
           enabled: true,
           items: [validator],
-          rememberValidatorsAtom: noopRememberValidatorsAtom,
-          validatorsPullAtom,
+          key: validatorsKey,
         },
         yields: { items: [selectedYield], waiting: false },
       },
-      retryTargetAtom,
       selection: {
         token: tokenOption,
         yield: selectedYield,
@@ -210,13 +216,13 @@ describe("Earn facade", () => {
           widgetConfigAtom,
           normalizeWidgetConfig({ apiKey: "test", variant: "default" })
         ),
+        [tokenOptionsPullAtom(tokenPullKey), makePullResult([tokenOption])],
+        [validatorPullAtom, makePullResult([validator])],
       ],
     });
 
     try {
-      registry.set(retryEarnPageAtom, undefined);
-      expect(retry).toHaveBeenCalledOnce();
-
+      const set = vi.spyOn(registry, "set");
       const unmountValidators = registry.mount(earnValidatorSelectionViewAtom);
       try {
         registry.set(setEarnTokenSearchAtom, selectedYield.token.symbol);
@@ -225,15 +231,19 @@ describe("Earn facade", () => {
         expect(registry.get(earnTokenSelectionViewAtom).filtered).toEqual([
           tokenOption,
         ]);
+        expect(registry.get(earnTokenSelectionViewAtom).hasMore).toBe(true);
         expect(registry.get(earnYieldSelectionViewAtom).filtered).toEqual([
           selectedYield,
         ]);
 
         registry.set(loadMoreEarnTokensAtom, undefined);
-        expect(tokenPull).toHaveBeenCalledOnce();
+        expect(set).toHaveBeenCalledWith(
+          tokenOptionsPullAtom(tokenPullKey),
+          undefined
+        );
 
         registry.set(loadMoreEarnValidatorsAtom, undefined);
-        expect(validatorPull).toHaveBeenCalledOnce();
+        expect(set).toHaveBeenCalledWith(validatorPullAtom, undefined);
 
         registry.set(setEarnValidatorSearchAtom, " validator ");
         expect(registry.get(earnValidatorSelectionViewAtom)).toMatchObject({
@@ -244,6 +254,45 @@ describe("Earn facade", () => {
       } finally {
         unmountValidators();
       }
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("retries the resource the published retry target names", () => {
+    const retryKey = new TokenOptionsKey({
+      category: "defi",
+      initToken: null,
+      initTokenNetwork: null,
+      initYieldId: null,
+      scope: null,
+      tokensForEnabledYieldsOnly: false,
+    });
+    const registry = AtomRegistry.make({
+      initialValues: [
+        Atom.initialValue(
+          earnMachineViewAtom,
+          makeEarnView({
+            failure: {
+              _tag: "ResourceFailure",
+              error: new EarnCatalogError({
+                cause: new Error("offline"),
+                operation: "default-token-options",
+              }),
+              stage: "token-options",
+            },
+            intent: makeDefaultEarnIntent(),
+            retryTarget: { _tag: "TokenOptions", key: retryKey },
+            status: "failed",
+          })
+        ),
+      ],
+    });
+    const refresh = vi.spyOn(registry, "refresh");
+
+    try {
+      registry.set(retryEarnPageAtom, undefined);
+      expect(refresh).toHaveBeenCalledWith(mergedTokenOptionsAtom(retryKey));
     } finally {
       registry.dispose();
     }
