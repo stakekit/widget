@@ -9,6 +9,7 @@ import type { WalletAddress, YieldId } from "../../domain/schema/identifiers";
 import { YieldResourceSource } from "../../services/api/yield-resource-source";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 export class SingleYieldBalancesKey extends Data.TaggedClass(
   "SingleYieldBalancesKey"
@@ -29,7 +30,7 @@ const balancesPolicy = withApiResourcePolicy({
   revalidateOnMount: true,
 });
 
-export const singleYieldBalancesResourceAtom = Atom.family(
+const singleYieldBalancesCanonicalAtom = Atom.family(
   (key: SingleYieldBalancesKey) =>
     appRuntime
       .atom(() =>
@@ -54,4 +55,8 @@ export const singleYieldBalancesResourceAtom = Atom.family(
         balancesPolicy,
         Atom.withLabel("singleYieldBalancesResourceAtom")
       )
+);
+
+export const singleYieldBalancesResourceAtom = makePresentableResourceFamily(
+  singleYieldBalancesCanonicalAtom
 );

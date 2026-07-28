@@ -46,7 +46,7 @@ export const usePositionListItem = (item: PositionItem) => {
 
   const prices = AsyncResult.getOrElse(
     useAtomValue(
-      pricesAtom(
+      pricesAtom.foreground(
         new PricesKey({
           request: {
             currency: config.currency,

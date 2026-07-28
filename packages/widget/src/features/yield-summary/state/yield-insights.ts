@@ -42,7 +42,7 @@ const yieldKycStatusAtom = Atom.family((key: YieldKycKey) =>
     (get) =>
       key.address && key.yieldId
         ? get(
-            yieldKycStatusResourceAtom(
+            yieldKycStatusResourceAtom.foreground(
               new YieldKycStatusKey({
                 address: key.address,
                 yieldId: key.yieldId,
@@ -53,7 +53,7 @@ const yieldKycStatusAtom = Atom.family((key: YieldKycKey) =>
     (refresh) => {
       if (key.address && key.yieldId) {
         refresh(
-          yieldKycStatusResourceAtom(
+          yieldKycStatusResourceAtom.foreground(
             new YieldKycStatusKey({
               address: key.address,
               yieldId: key.yieldId,
@@ -186,7 +186,7 @@ export const yieldRewardRateHistoryAtom = Atom.family((key: YieldHistoryKey) =>
   Atom.make((get) =>
     key.yieldId
       ? get(
-          yieldRewardRateHistoryResourceAtom(
+          yieldRewardRateHistoryResourceAtom.foreground(
             new YieldHistoryResourceKey({
               interval: getYieldHistoryInterval(key.period),
               period: key.period,
@@ -202,7 +202,7 @@ export const yieldTvlHistoryAtom = Atom.family((key: YieldHistoryKey) =>
   Atom.make((get) =>
     key.yieldId
       ? get(
-          yieldTvlHistoryResourceAtom(
+          yieldTvlHistoryResourceAtom.foreground(
             new YieldHistoryResourceKey({
               interval: getYieldHistoryInterval(key.period),
               period: key.period,
@@ -243,7 +243,7 @@ export const currentRewardsSummaryAtom = Atom.family(
 
       return addresses && filteredIds.length > 0
         ? get(
-            rewardSummariesResourceAtom(
+            rewardSummariesResourceAtom.foreground(
               new RewardSummariesKey({
                 addresses,
                 yieldIds: filteredIds,

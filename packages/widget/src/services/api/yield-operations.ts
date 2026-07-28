@@ -96,8 +96,8 @@ export const makeYieldOperations = (yieldApi: YieldApi.YieldApi) => {
 export class YieldOperations extends Context.Service<YieldOperations>()(
   "stakekit/widget/services/api/YieldOperations",
   {
-    make: Effect.map(ApiTransportService, ({ yield: yieldApi }) =>
-      makeYieldOperations(yieldApi)
+    make: Effect.map(ApiTransportService, ({ operations }) =>
+      makeYieldOperations(operations.yield)
     ),
   }
 ) {

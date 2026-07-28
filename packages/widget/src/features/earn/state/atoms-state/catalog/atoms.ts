@@ -87,7 +87,7 @@ export const availableYieldCategoriesAtom = Atom.family(
       (get) => {
         const categoryResults = key.categoryOrder.map((category) =>
           get(
-            yieldFirstPageResourceAtom(
+            yieldFirstPageResourceAtom.foreground(
               new YieldFirstPageKey({
                 network: key.network,
                 types: getApiYieldTypesForDashboardCategory(category),
@@ -112,7 +112,7 @@ export const availableYieldCategoriesAtom = Atom.family(
       (refresh) =>
         key.categoryOrder.forEach((category) =>
           refresh(
-            yieldFirstPageResourceAtom(
+            yieldFirstPageResourceAtom.foreground(
               new YieldFirstPageKey({
                 network: key.network,
                 types: getApiYieldTypesForDashboardCategory(category),
@@ -124,7 +124,7 @@ export const availableYieldCategoriesAtom = Atom.family(
 );
 
 export const earnYieldCatalogAtom = Atom.family((key: YieldCatalogKey) => {
-  const source = yieldDirectoryResourceAtom(
+  const source = yieldDirectoryResourceAtom.foreground(
     new YieldDirectoryKey({
       network: key.network,
       types: toYieldTypesParam(key.category),
@@ -143,7 +143,9 @@ export const earnYieldCatalogAtom = Atom.family((key: YieldCatalogKey) => {
 });
 
 export const initYieldAtom = Atom.family((key: InitYieldKey) => {
-  const source = key.yieldId ? yieldOpportunityResourceAtom(key.yieldId) : null;
+  const source = key.yieldId
+    ? yieldOpportunityResourceAtom.foreground(key.yieldId)
+    : null;
 
   return Atom.readable(
     (get) =>
@@ -157,7 +159,9 @@ export const initYieldAtom = Atom.family((key: InitYieldKey) => {
 });
 
 export const positionsDataAtom = Atom.family((key: PositionsDataKey) => {
-  const source = key.scope ? yieldPositionsResourceAtom(key.scope) : null;
+  const source = key.scope
+    ? yieldPositionsResourceAtom.foreground(key.scope)
+    : null;
 
   return Atom.readable(
     (get) =>
@@ -281,7 +285,7 @@ const findInitTokenOption = ({
 
 const legacyTokenOptionsAtom = Atom.family((network: Network | null) =>
   Atom.make((get) =>
-    get(legacyTokenOptionsResourceAtom(network)).pipe(
+    get(legacyTokenOptionsResourceAtom.foreground(network)).pipe(
       mapAsyncResultError(toCatalogError("legacy-token-options"))
     )
   ).pipe(Atom.withLabel("earnLegacyTokenOptionsAtom"))
@@ -318,25 +322,27 @@ const defaultTokenOptionsPullAtom = Atom.family(
 
     if (!useYieldTokens) return legacyTokenOptionsPullAtom(key.network);
 
-    return yieldTokensPullAtom(
-      new YieldTokensKey({
-        networks: toNetworksParam(key.network),
-        yieldTypes: toYieldTypesParam(key.category),
-      })
-    ).pipe(
-      Atom.map((result) =>
-        result.pipe(
-          AsyncResult.map(({ done, items }) => ({
-            done,
-            items: EArray.map(items, (page) => ({
-              ...page,
-              items: EArray.map(page.items, toDefaultTokenOption),
-            })),
-          })),
-          mapAsyncResultError(toCatalogError("default-token-options"))
-        )
+    return yieldTokensPullAtom
+      .foreground(
+        new YieldTokensKey({
+          networks: toNetworksParam(key.network),
+          yieldTypes: toYieldTypesParam(key.category),
+        })
       )
-    );
+      .pipe(
+        Atom.map((result) =>
+          result.pipe(
+            AsyncResult.map(({ done, items }) => ({
+              done,
+              items: EArray.map(items, (page) => ({
+                ...page,
+                items: EArray.map(page.items, toDefaultTokenOption),
+              })),
+            })),
+            mapAsyncResultError(toCatalogError("default-token-options"))
+          )
+        )
+      );
   }
 );
 
@@ -364,7 +370,7 @@ const initTokenOptionAtom = Atom.family((key: InitTokenOptionKey) => {
 const tokenBalancesScanAtom = Atom.family((key: TokenBalancesScanKey) =>
   Atom.make((get) =>
     key.scope
-      ? get(tokenBalancesResourceAtom(key.scope)).pipe(
+      ? get(tokenBalancesResourceAtom.foreground(key.scope)).pipe(
           AsyncResult.map((balances) => balances.map(toBalanceTokenOption)),
           mapAsyncResultError(toCatalogError("token-balances-scan"))
         )
@@ -377,7 +383,7 @@ const tokenYieldScopeAtom = Atom.family((key: TokenYieldScopeKey) =>
     !key.category || key.yieldIds.length === 0
       ? AsyncResult.success(new Set<YieldId>())
       : get(
-          yieldDirectoryResourceAtom(
+          yieldDirectoryResourceAtom.foreground(
             new YieldDirectoryKey({
               types: toYieldTypesParam(key.category),
               yieldIds: key.yieldIds,
@@ -693,7 +699,7 @@ export const yieldValidatorsAtom = Atom.family(
       ReadonlyMap<EarnValidatorKey, EarnValidator>
     >(new Map());
     const preferredValidatorsSource =
-      preferredValidatorsResourceAtom(selectedYieldId);
+      preferredValidatorsResourceAtom.foreground(selectedYieldId);
     const preferredValidatorsAtom = Atom.readable(
       (get) =>
         get(preferredValidatorsSource).pipe(
@@ -701,7 +707,7 @@ export const yieldValidatorsAtom = Atom.family(
         ),
       (refresh) => refresh(preferredValidatorsSource)
     );
-    const defaultValidatorsPullAtom = validatorsResourcePullAtom(
+    const defaultValidatorsPullAtom = validatorsResourcePullAtom.foreground(
       new ValidatorsKey({
         preferred: false,
         status: "active",

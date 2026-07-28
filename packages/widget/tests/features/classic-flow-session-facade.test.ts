@@ -522,7 +522,7 @@ describe("Classic Flow Session module", () => {
     disposeSession();
   });
 
-  it("retries an ordinary preview failure through Confirm", async () => {
+  it("continues into Execution after Confirm retries a preview failure", async () => {
     let previewCalls = 0;
     const previewAction = vi.fn(() => {
       previewCalls += 1;
@@ -551,14 +551,58 @@ describe("Classic Flow Session module", () => {
       )
     );
     registry.set(review.confirmAtom, undefined);
-    registry.set(review.confirmAtom, undefined);
+
+    await vi.waitFor(() => expect(previewAction).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => {
+      const execution = registry.get(
+        makeClassicFlowExecutionScope(registry.get(rootAtom))
+      );
+      expect(execution).not.toBeNull();
+      if (!execution) return;
+      expect(registry.get(execution.actionAtom).id).toBe("retried-action");
+    });
+    expect(previewAction).toHaveBeenCalledTimes(2);
+
+    disposeReview();
+    disposeSession();
+  });
+
+  it("stays in Review when the Confirm retry also fails", async () => {
+    const previewAction = vi.fn(() =>
+      Effect.fail(new Error("preview unavailable"))
+    );
+    const store = classicFlowSessionStore;
+    const registry = makeRegistry(previewAction);
+    registry.set(
+      store.startAtom,
+      makeStartClassicFlowSession(makeEnterIntake())
+    );
+    const session = registry.get(store.currentSessionAtom);
+    if (!session) throw new Error("Expected a Flow Session");
+    const rootAtom = makeClassicFlowSessionModule(session);
+    const disposeSession = registry.mount(rootAtom);
+    const review = registry.get(
+      makeClassicFlowReviewScope(registry.get(rootAtom))
+    );
+    const disposeReview = registry.mount(review.reviewViewAtom);
+
     await vi.waitFor(() =>
-      expect(registry.get(review.reviewViewAtom).action?.id).toBe(
-        "retried-action"
+      expect(registry.get(review.reviewViewAtom).actionPreviewLoading).toBe(
+        false
       )
     );
     registry.set(review.confirmAtom, undefined);
-    expect(previewAction).toHaveBeenCalledTimes(2);
+
+    await vi.waitFor(() => expect(previewAction).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() =>
+      expect(registry.get(review.reviewViewAtom).actionPreviewLoading).toBe(
+        false
+      )
+    );
+    expect(
+      registry.get(makeClassicFlowExecutionScope(registry.get(rootAtom)))
+    ).toBeNull();
+    expect(registry.get(review.reviewViewAtom).action).toBeNull();
 
     disposeReview();
     disposeSession();

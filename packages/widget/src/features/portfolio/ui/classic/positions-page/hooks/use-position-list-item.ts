@@ -16,7 +16,7 @@ import { portfolioPositionYieldSummaryAtom } from "../../../../state/position-yi
 
 export const usePositionListItem = (item: PositionItem) => {
   const yieldOpportunityResult = useAtomValue(
-    yieldOpportunityAtom(
+    yieldOpportunityAtom.foreground(
       new YieldOpportunityKey({ yieldId: item.integrationId })
     )
   );

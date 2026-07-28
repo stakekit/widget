@@ -82,6 +82,10 @@ const createDashboardActivityResumeRoutes = () => (
     <Route index element={<ActivityDetailsPage />} />
     <Route element={<ClassicFlowExecutionScope />}>
       <Route path=":pendingActionType/steps" element={<ActivityStepsPage />} />
+      <Route
+        path=":pendingActionType/complete"
+        element={<ActivityCompletePage />}
+      />
     </Route>
   </Route>
 );

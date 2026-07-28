@@ -93,7 +93,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
     const intentAtom = positionDetailsStakeAtom(key);
     const selectedYieldAtom = Atom.make((get) =>
       get(
-        yieldOpportunityAtom(
+        yieldOpportunityAtom.foreground(
           new YieldOpportunityKey({ yieldId: key.integrationId })
         )
       ).pipe(AsyncResult.value, Option.getOrNull)
@@ -203,7 +203,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         yieldDto: selectedYield,
       });
       const pricesResult = get(
-        pricesAtom(new PricesKey({ request: pricesRequest }))
+        pricesAtom.foreground(new PricesKey({ request: pricesRequest }))
       );
       const prices = pricesResult.pipe(AsyncResult.value, Option.getOrNull);
       const validatorsResult = get(
@@ -221,7 +221,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
       const isFetching =
         AsyncResult.isInitial(
           get(
-            yieldOpportunityAtom(
+            yieldOpportunityAtom.foreground(
               new YieldOpportunityKey({ yieldId: key.integrationId })
             )
           )
@@ -238,7 +238,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
       const appLoading =
         AsyncResult.isInitial(
           get(
-            yieldOpportunityAtom(
+            yieldOpportunityAtom.foreground(
               new YieldOpportunityKey({ yieldId: key.integrationId })
             )
           )

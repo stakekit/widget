@@ -8,6 +8,7 @@ import type {
 import type { ProviderId } from "../../domain/schema/identifiers";
 import { YieldResourceSource } from "../../services/api/yield-resource-source";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 export class YieldProviderError extends Data.TaggedError("YieldProviderError")<{
   readonly cause: ApiRequestError | ResponseDecodeError;
@@ -20,7 +21,7 @@ const providerPolicy = withApiResourcePolicy({
   revalidateOnMount: true,
 });
 
-export const yieldProviderResourceAtom = Atom.family((providerId: ProviderId) =>
+const yieldProviderCanonicalAtom = Atom.family((providerId: ProviderId) =>
   appRuntime
     .atom(() =>
       Effect.gen(function* () {
@@ -35,4 +36,8 @@ export const yieldProviderResourceAtom = Atom.family((providerId: ProviderId) =>
       })
     )
     .pipe(providerPolicy, Atom.withLabel("yieldProviderResourceAtom"))
+);
+
+export const yieldProviderResourceAtom = makePresentableResourceFamily(
+  yieldProviderCanonicalAtom
 );

@@ -8,6 +8,7 @@ import type {
 import type { Network } from "../../domain/schema/network-model";
 import { LegacyResourceSource } from "../../services/api/legacy-resource-source";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 class LegacyTokenOptionsError extends Data.TaggedError(
   "LegacyTokenOptionsError"
@@ -21,21 +22,24 @@ const legacyTokenOptionsPolicy = withApiResourcePolicy({
   revalidateOnMount: true,
 });
 
-export const legacyTokenOptionsResourceAtom = Atom.family(
-  (network: Network | null) =>
-    appRuntime
-      .atom(() =>
-        Effect.gen(function* () {
-          const source = yield* LegacyResourceSource;
-          return yield* source
-            .getTokenOptions(network ?? undefined)
-            .pipe(
-              Effect.mapError((cause) => new LegacyTokenOptionsError({ cause }))
-            );
-        })
-      )
-      .pipe(
-        legacyTokenOptionsPolicy,
-        Atom.withLabel("legacyTokenOptionsResourceAtom")
-      )
+const legacyTokenOptionsCanonicalAtom = Atom.family((network: Network | null) =>
+  appRuntime
+    .atom(() =>
+      Effect.gen(function* () {
+        const source = yield* LegacyResourceSource;
+        return yield* source
+          .getTokenOptions(network ?? undefined)
+          .pipe(
+            Effect.mapError((cause) => new LegacyTokenOptionsError({ cause }))
+          );
+      })
+    )
+    .pipe(
+      legacyTokenOptionsPolicy,
+      Atom.withLabel("legacyTokenOptionsResourceAtom")
+    )
+);
+
+export const legacyTokenOptionsResourceAtom = makePresentableResourceFamily(
+  legacyTokenOptionsCanonicalAtom
 );

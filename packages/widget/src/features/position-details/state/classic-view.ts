@@ -94,7 +94,7 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
         ? Schema.decodeOption(YieldId)(key.integrationId).pipe(Option.getOrNull)
         : null;
       const yieldOpportunity = get(
-        yieldOpportunityAtom(new YieldOpportunityKey({ yieldId }))
+        yieldOpportunityAtom.foreground(new YieldOpportunityKey({ yieldId }))
       );
       const integrationData = yieldOpportunity.pipe(
         AsyncResult.value,
@@ -240,7 +240,7 @@ export const positionDetailsPricesAtom = Atom.family(
       const view = get(positionDetailsWorkflowViewAtom(key));
       const baseToken = view.integrationData?.token ?? null;
       return get(
-        pricesAtom(
+        pricesAtom.foreground(
           new PricesKey({
             request:
               view.positionBalances && baseToken

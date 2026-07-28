@@ -1,8 +1,16 @@
 import { RegistryProvider } from "@effect/atom-react";
-import { Context, Effect, Layer, Stream, SubscriptionRef } from "effect";
+import {
+  Context,
+  Effect,
+  Layer,
+  Schema,
+  Stream,
+  SubscriptionRef,
+} from "effect";
 import { HttpResponse, http } from "msw";
 import { version as widgetVersion } from "../../package.json";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
+import { ActionCommand } from "../../src/domain/schema/action-models";
 import {
   mountAnimationStateAtom,
   useMountAnimation,
@@ -129,21 +137,21 @@ describe("Effect API client", () => {
     ).rejects.toBeTruthy();
   });
 
-  it("records rich errors and geo-block responses", async ({ worker }) => {
+  it("keeps resource transports neutral while operations publish rich errors", async ({
+    worker,
+  }) => {
     const geoBlock = await renderHook(() => useGeoBlock());
     const apiUrl = normalizeUrl(config.env.apiUrl);
     let response: "rich" | "geo" = "rich";
+    const richFailure = {
+      code: 400,
+      details: { code: "TEST" },
+      message: "Rich failure",
+    };
     worker.use(
       http.get(`${apiUrl}/v1/tokens`, () =>
         response === "rich"
-          ? HttpResponse.json(
-              {
-                code: 400,
-                details: { code: "TEST" },
-                message: "Rich failure",
-              },
-              { status: 400 }
-            )
+          ? HttpResponse.json(richFailure, { status: 400 })
           : HttpResponse.json(
               {
                 countryCode: "CA",
@@ -154,14 +162,49 @@ describe("Effect API client", () => {
               },
               { status: 403 }
             )
+      ),
+      http.post("https://yield.example.com/v1/actions/enter", () =>
+        HttpResponse.json(richFailure, { status: 400 })
+      ),
+      http.get("https://yield.example.com/health", () =>
+        HttpResponse.json(richFailure, { status: 400 })
+      ),
+      http.get("https://borrow.example.com/v1/integrations", () =>
+        HttpResponse.json(richFailure, { status: 400 })
       )
     );
     const { client, richErrors } = await createTestClient({ baseUrl: apiUrl });
 
     try {
       await geoBlock.act(async () => {
+        const resourceError = await Effect.runPromise(
+          client.legacySource.getTokenOptions().pipe(Effect.flip)
+        );
+        expect(resourceError._tag).toBe("ApiRequestError");
+        if (resourceError._tag !== "ApiRequestError") {
+          throw resourceError;
+        }
+        expect(resourceError.richError?.message).toBe("Rich failure");
         await expect(
-          Effect.runPromise(client.legacySource.getTokenOptions())
+          Effect.runPromise(client.yieldSource.getHealth())
+        ).rejects.toBeTruthy();
+        await expect(
+          Effect.runPromise(client.borrowSource.getIntegrations())
+        ).rejects.toBeTruthy();
+        await expect(
+          Effect.runPromise(SubscriptionRef.get(richErrors.current))
+        ).resolves.toBeNull();
+
+        await expect(
+          Effect.runPromise(
+            client.yieldOperations.previewAction({
+              command: Schema.decodeUnknownSync(ActionCommand)({
+                address: "0xWallet",
+                yieldId: "ethereum-eth-native-staking",
+              }),
+              intent: "enter",
+            })
+          )
         ).rejects.toBeTruthy();
         await expect
           .poll(() =>
@@ -170,6 +213,7 @@ describe("Effect API client", () => {
             )
           )
           .toBe("Rich failure");
+        await Effect.runPromise(richErrors.reset);
 
         response = "geo";
         await expect(

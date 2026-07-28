@@ -10,7 +10,7 @@ const tokenBalancesScanResourceAtom = Atom.readable((get) => {
   const scope = get(walletScopeAtom);
 
   return scope
-    ? get(tokenBalancesResourceAtom(scope))
+    ? get(tokenBalancesResourceAtom.foreground(scope))
     : AsyncResult.success([]);
 }).pipe(Atom.withLabel("currentTokenBalancesScanResourceAtom"));
 

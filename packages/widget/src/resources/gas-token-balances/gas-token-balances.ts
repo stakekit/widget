@@ -11,6 +11,7 @@ import { LegacyResourceSource } from "../../services/api/legacy-resource-source"
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { WalletScopeKey } from "../../services/wallet/domain/scope";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 export class GasTokenBalancesKey extends Data.TaggedClass(
   "GasTokenBalancesKey"
@@ -28,34 +29,37 @@ const gasBalancesPolicy = withApiResourcePolicy({
   revalidateOnMount: true,
 });
 
-export const gasTokenBalancesResourceAtom = Atom.family(
-  (key: GasTokenBalancesKey) =>
-    appRuntime
-      .atom(() =>
-        Effect.gen(function* () {
-          const source = yield* LegacyResourceSource;
-          return yield* source
-            .getGasTokenBalances(key.command)
-            .pipe(
-              Effect.mapError((cause) => new GasTokenBalancesError({ cause }))
-            );
-        })
-      )
-      .pipe(
-        Atom.withReactivity(
-          key.command.addresses.flatMap((address) =>
-            isSupportedChain(address.network)
-              ? resourceInvalidationKeys.walletBalances(
-                  new WalletScopeKey({
-                    additionalAddresses: address.additionalAddresses,
-                    address: address.address,
-                    network: address.network,
-                  })
-                )
-              : []
-          )
-        ),
-        gasBalancesPolicy,
-        Atom.withLabel("gasTokenBalancesResourceAtom")
-      )
+const gasTokenBalancesCanonicalAtom = Atom.family((key: GasTokenBalancesKey) =>
+  appRuntime
+    .atom(() =>
+      Effect.gen(function* () {
+        const source = yield* LegacyResourceSource;
+        return yield* source
+          .getGasTokenBalances(key.command)
+          .pipe(
+            Effect.mapError((cause) => new GasTokenBalancesError({ cause }))
+          );
+      })
+    )
+    .pipe(
+      Atom.withReactivity(
+        key.command.addresses.flatMap((address) =>
+          isSupportedChain(address.network)
+            ? resourceInvalidationKeys.walletBalances(
+                new WalletScopeKey({
+                  additionalAddresses: address.additionalAddresses,
+                  address: address.address,
+                  network: address.network,
+                })
+              )
+            : []
+        )
+      ),
+      gasBalancesPolicy,
+      Atom.withLabel("gasTokenBalancesResourceAtom")
+    )
+);
+
+export const gasTokenBalancesResourceAtom = makePresentableResourceFamily(
+  gasTokenBalancesCanonicalAtom
 );

@@ -3,6 +3,7 @@ import { appRuntime } from "../../app/runtime/app-runtime";
 import { BorrowResourceSource } from "../../services/api/borrow-resource-source";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { withBorrowResourceError } from "../borrow/borrow-resource-error";
+import { makePresentableResource } from "../resource-failure-presentation";
 
 const borrowCatalogPolicy = withApiResourcePolicy({
   idleTTL: Duration.minutes(5),
@@ -10,7 +11,7 @@ const borrowCatalogPolicy = withApiResourcePolicy({
   revalidateOnMount: true,
 });
 
-export const borrowIntegrationsResourceAtom = appRuntime
+const borrowIntegrationsCanonicalAtom = appRuntime
   .atom(
     BorrowResourceSource.use((source) =>
       source.getIntegrations().pipe(
@@ -20,3 +21,7 @@ export const borrowIntegrationsResourceAtom = appRuntime
     )
   )
   .pipe(borrowCatalogPolicy);
+
+export const borrowIntegrationsResourceAtom = makePresentableResource(
+  borrowIntegrationsCanonicalAtom
+);

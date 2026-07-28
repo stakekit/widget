@@ -16,13 +16,10 @@ import {
 import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 import { walletScopeAtom } from "../../wallet/state";
 
-export {
-  BorrowMarketsKey,
-  BorrowPositionsKey,
-  borrowIntegrationsResourceAtom as borrowIntegrationsAtom,
-  borrowMarketsResourceAtom as borrowMarketsAtom,
-  borrowPositionsResourceAtom as borrowPositionsAtom,
-};
+export { BorrowMarketsKey, BorrowPositionsKey };
+export const borrowIntegrationsAtom = borrowIntegrationsResourceAtom.foreground;
+export const borrowMarketsAtom = borrowMarketsResourceAtom.foreground;
+export const borrowPositionsAtom = borrowPositionsResourceAtom.foreground;
 
 export class BorrowPositionNotFound extends Data.TaggedError(
   "BorrowPositionNotFound"
@@ -36,7 +33,7 @@ export class BorrowPositionKey extends Data.Class<{
 }> {}
 
 export const borrowPositionAtom = Atom.family((key: BorrowPositionKey) => {
-  const positionsAtom = borrowPositionsResourceAtom(
+  const positionsAtom = borrowPositionsResourceAtom.foreground(
     new BorrowPositionsKey({ scope: key.scope })
   );
 
@@ -68,7 +65,7 @@ export const currentBorrowPositionsAtom = Atom.make((get) => {
   const scope = get(walletScopeAtom);
 
   return get(
-    borrowPositionsResourceAtom(
+    borrowPositionsResourceAtom.foreground(
       new BorrowPositionsKey({
         scope:
           borrowEnabled && scope && isBorrowNetwork(scope.network)

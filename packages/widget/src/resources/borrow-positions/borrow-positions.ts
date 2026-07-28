@@ -23,6 +23,7 @@ import {
   BorrowMarketsKey,
   borrowMarketsResourceAtom,
 } from "../borrow-markets/borrow-markets";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 export class BorrowPositionsKey extends Data.TaggedClass("BorrowPositionsKey")<{
   readonly scope: WalletScopeOwnerKey | null;
@@ -53,7 +54,7 @@ const borrowPositionDataResourceAtom = Atom.family((key: BorrowPositionsKey) =>
 
       return Effect.gen(function* () {
         const allIntegrations = yield* context.result(
-          borrowIntegrationsResourceAtom
+          borrowIntegrationsResourceAtom.local
         );
         const integrations = allIntegrations.filter((integration) =>
           integration.networks.includes(network)
@@ -81,31 +82,33 @@ const borrowPositionDataResourceAtom = Atom.family((key: BorrowPositionsKey) =>
     )
 );
 
-export const borrowPositionsResourceAtom = Atom.family(
-  (key: BorrowPositionsKey) => {
-    const network = key.scope?.network;
-    if (!key.scope || !network || !isBorrowNetwork(network)) {
-      return Atom.make(AsyncResult.success([] as Position[]));
-    }
-    const positionDataAtom = borrowPositionDataResourceAtom(key);
-    const marketsAtom = borrowMarketsResourceAtom(
-      new BorrowMarketsKey({ network })
-    );
-
-    return Atom.readable(
-      (get) =>
-        AsyncResult.all({
-          integrationPositions: get(positionDataAtom),
-          markets: get(marketsAtom),
-        }).pipe(
-          AsyncResult.map(({ integrationPositions, markets }) =>
-            deriveBorrowPositionItems({ integrationPositions, markets })
-          )
-        ),
-      (refresh) => {
-        refresh(positionDataAtom);
-        refresh(marketsAtom);
-      }
-    );
+const borrowPositionsCanonicalAtom = Atom.family((key: BorrowPositionsKey) => {
+  const network = key.scope?.network;
+  if (!key.scope || !network || !isBorrowNetwork(network)) {
+    return Atom.make(AsyncResult.success([] as Position[]));
   }
+  const positionDataAtom = borrowPositionDataResourceAtom(key);
+  const marketsAtom = borrowMarketsResourceAtom.local(
+    new BorrowMarketsKey({ network })
+  );
+
+  return Atom.readable(
+    (get) =>
+      AsyncResult.all({
+        integrationPositions: get(positionDataAtom),
+        markets: get(marketsAtom),
+      }).pipe(
+        AsyncResult.map(({ integrationPositions, markets }) =>
+          deriveBorrowPositionItems({ integrationPositions, markets })
+        )
+      ),
+    (refresh) => {
+      refresh(positionDataAtom);
+      refresh(marketsAtom);
+    }
+  );
+});
+
+export const borrowPositionsResourceAtom = makePresentableResourceFamily(
+  borrowPositionsCanonicalAtom
 );

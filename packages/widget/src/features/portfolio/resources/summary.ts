@@ -166,7 +166,7 @@ const rewardsPricesResultAtom = Atom.make((get) => {
   const rewards = AsyncResult.getOrElse(rewardsResult, () => null);
 
   return get(
-    pricesAtom(
+    pricesAtom.foreground(
       new PricesKey({
         request:
           AsyncResult.isInitial(rewardsResult) ||
@@ -271,7 +271,7 @@ const availableBalancePricesResultAtom = Atom.make((get) => {
   );
 
   return get(
-    pricesAtom(
+    pricesAtom.foreground(
       new PricesKey({
         request: tokenBalances
           ? {

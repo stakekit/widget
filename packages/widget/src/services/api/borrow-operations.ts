@@ -100,10 +100,13 @@ export class BorrowOperations extends Context.Service<BorrowOperations>()(
   "stakekit/widget/services/api/BorrowOperations",
   {
     make: Effect.gen(function* () {
-      const { borrow } = yield* ApiTransportService;
+      const { operations } = yield* ApiTransportService;
       const widgetConfig = yield* WidgetConfigService;
 
-      return makeBorrowOperations(borrow, widgetConfig.initial.borrowEnabled);
+      return makeBorrowOperations(
+        operations.borrow,
+        widgetConfig.initial.borrowEnabled
+      );
     }),
   }
 ) {

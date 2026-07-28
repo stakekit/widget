@@ -10,6 +10,7 @@ import {
   loadAllPages,
 } from "../../shared/effect/pagination";
 import { withBorrowResourceError } from "../borrow/borrow-resource-error";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 const CONCURRENCY = 5;
 
@@ -23,7 +24,7 @@ const borrowMarketPolicy = withApiResourcePolicy({
   revalidateOnMount: true,
 });
 
-export const borrowMarketsResourceAtom = Atom.family((key: BorrowMarketsKey) =>
+const borrowMarketsCanonicalAtom = Atom.family((key: BorrowMarketsKey) =>
   appRuntime
     .atom(
       BorrowResourceSource.use((source) =>
@@ -47,4 +48,8 @@ export const borrowMarketsResourceAtom = Atom.family((key: BorrowMarketsKey) =>
       Atom.withReactivity(resourceInvalidationKeys.borrowMarkets(key.network)),
       borrowMarketPolicy
     )
+);
+
+export const borrowMarketsResourceAtom = makePresentableResourceFamily(
+  borrowMarketsCanonicalAtom
 );

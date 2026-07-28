@@ -239,19 +239,6 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
       Atom.withLabel("classicFlowReviewActionPreview")
     );
 
-    const retryAtom = Atom.fnSync(
-      (_input: undefined, context) => {
-        const error = context(actionPreviewAtom).pipe(
-          AsyncResult.error,
-          Option.getOrNull
-        );
-        if (!error?.retryable) return;
-
-        context.refresh(previewResourceAtom);
-      },
-      { initialValue: undefined }
-    ).pipe(Atom.setIdleTTL(0), Atom.withLabel("retryClassicFlowReviewAtom"));
-
     const reviewResources = makeClassicFlowSessionReviewResources({
       actionPreviewAtom,
       intakeAtom,
@@ -286,55 +273,89 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
             return Effect.void;
           }
 
-          if (AsyncResult.isFailure(context(actionPreviewAtom))) {
-            context.set(retryAtom, undefined);
-            return Effect.void;
-          }
-
-          if (context(executionActionAtom) !== null) {
-            return Effect.void;
-          }
-
-          const action = context(actionPreviewAtom).pipe(
-            AsyncResult.value,
-            Option.getOrNull
-          );
-          if (!action) return Effect.void;
-
           const exitIntake =
             session.intake._tag === "Exit" ? session.intake : null;
-          const trackConfirmation = exitIntake
-            ? TrackingService.use((tracking) =>
-                tracking.trackEvent("unstakeClicked", {
-                  yieldId: exitIntake.integration.id,
-                  ...(exitIntake.request.arguments?.amount
-                    ? { amount: exitIntake.request.arguments.amount }
-                    : {}),
-                })
-              ).pipe(Effect.withSpan("trackClassicFlowSessionConfirmation"))
-            : Effect.void;
+          const promoteAction = Effect.fn("promoteClassicFlowAction")(
+            function* (action: YieldAction | null) {
+              if (
+                !action ||
+                !registry.get(isCurrentSessionAtom) ||
+                registry.get(kycGateAtom).isGateBlocking ||
+                (session.intake._tag === "ActivityResume" &&
+                  registry.get(reviewResources.activityActionExpiredAtom)) ||
+                registry.get(executionActionAtom) !== null
+              ) {
+                return;
+              }
 
-          context.set(stateAtom, { executionAction: action });
-          return Effect.all(
-            [
-              runWidgetNavigationCommand({
-                _tag: "Push",
-                path: session.destination.stepsPath,
-              }).pipe(
-                Effect.tapError(() =>
-                  Effect.sync(() => {
-                    if (
-                      registry.get(isCurrentSessionAtom) &&
-                      registry.get(executionActionAtom) === action
-                    ) {
-                      registry.set(stateAtom, { executionAction: null });
-                    }
-                  })
-                )
-              ),
-              trackConfirmation,
-            ],
-            { concurrency: "unbounded", discard: true }
+              const trackConfirmation = exitIntake
+                ? TrackingService.use((tracking) =>
+                    tracking.trackEvent("unstakeClicked", {
+                      yieldId: exitIntake.integration.id,
+                      ...(exitIntake.request.arguments?.amount
+                        ? { amount: exitIntake.request.arguments.amount }
+                        : {}),
+                    })
+                  ).pipe(Effect.withSpan("trackClassicFlowSessionConfirmation"))
+                : Effect.void;
+
+              registry.set(stateAtom, { executionAction: action });
+              yield* Effect.all(
+                [
+                  runWidgetNavigationCommand({
+                    _tag: "Push",
+                    path: session.destination.stepsPath,
+                  }).pipe(
+                    Effect.tapError(() =>
+                      Effect.sync(() => {
+                        if (
+                          registry.get(isCurrentSessionAtom) &&
+                          registry.get(executionActionAtom) === action
+                        ) {
+                          registry.set(stateAtom, { executionAction: null });
+                        }
+                      })
+                    )
+                  ),
+                  trackConfirmation,
+                ],
+                { concurrency: "unbounded", discard: true }
+              );
+            }
+          );
+
+          const preview = context(actionPreviewAtom);
+          if (AsyncResult.isFailure(preview)) {
+            const error = preview.pipe(AsyncResult.error, Option.getOrNull);
+            if (!error?.retryable) return Effect.void;
+
+            return Effect.callback<YieldAction | null, ClassicFlowReviewError>(
+              (resume) => {
+                const cancel = registry.subscribe(
+                  previewResourceAtom,
+                  (result) => {
+                    if (AsyncResult.isInitial(result) || result.waiting) return;
+
+                    cancel();
+                    resume(
+                      AsyncResult.isSuccess(result)
+                        ? Effect.succeed(result.value)
+                        : Effect.failCause(result.cause)
+                    );
+                  },
+                  { immediate: false }
+                );
+
+                registry.refresh(previewResourceAtom);
+                return Effect.sync(cancel);
+              }
+            ).pipe(Effect.flatMap(promoteAction));
+          }
+
+          return preview.pipe(
+            AsyncResult.value,
+            Option.getOrNull,
+            promoteAction
           );
         },
         { initialValue: undefined }

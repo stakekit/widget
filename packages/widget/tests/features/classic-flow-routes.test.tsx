@@ -287,7 +287,7 @@ describe("Classic Transaction Flow routes", () => {
     ]);
   });
 
-  it("publishes the Dashboard Activity Resume presentation without a Complete route", () => {
+  it("publishes the Dashboard Activity Resume completion route", () => {
     const routes = createRoutesFromElements(
       createClassicFlowRoutes({
         journey: "ActivityResume",
@@ -312,6 +312,12 @@ describe("Classic Transaction Flow routes", () => {
                 index: false,
                 path: ":pendingActionType/steps",
               },
+              {
+                children: [],
+                element: "ActivityCompletePage",
+                index: false,
+                path: ":pendingActionType/complete",
+              },
             ],
             element: "ClassicFlowExecutionScope",
             index: false,
@@ -323,6 +329,6 @@ describe("Classic Transaction Flow routes", () => {
         path: null,
       },
     ]);
-    expect(matchRoutes(routes, "/stake/complete")).toBeNull();
+    expect(matchRoutes(routes, "/stake/complete")).not.toBeNull();
   });
 });

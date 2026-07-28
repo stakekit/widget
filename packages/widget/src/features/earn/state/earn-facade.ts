@@ -562,7 +562,7 @@ export const earnEntryViewAtom = Atom.make((get) => {
     yieldDto: selectedYield,
   });
   const prices = get(
-    pricesAtom(new PricesKey({ request: pricesRequest }))
+    pricesAtom.foreground(new PricesKey({ request: pricesRequest }))
   ).pipe(AsyncResult.value, Option.getOrNull);
   const availableAmount = input.availableAmount;
   const symbol = selectedToken?.symbol ?? "";

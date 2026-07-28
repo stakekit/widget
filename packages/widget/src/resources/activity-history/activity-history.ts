@@ -24,6 +24,7 @@ import {
 } from "../../services/wallet/domain/scope";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { getNextPageOffset } from "../../shared/effect/pagination";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 const PAGE_SIZE = 50;
 const COUNT_PAGE_SIZE = 1;
@@ -186,7 +187,7 @@ const projectActivityHistoryResult = (
     return sourceSuccess.waiting ? AsyncResult.waiting(projected) : projected;
   });
 
-export const activityHistoryPullAtom = Atom.family(
+const activityHistoryCanonicalPullAtom = Atom.family(
   (key: ActivityHistoryKey) => {
     const source = appRuntime.pull(() => activityHistoryAttemptStream(key));
 
@@ -200,24 +201,31 @@ export const activityHistoryPullAtom = Atom.family(
   }
 );
 
-export const activityCountResourceAtom = Atom.family(
-  (key: ActivityHistoryKey) =>
-    appRuntime
-      .atom(() =>
-        YieldResourceSource.use((source) =>
-          source
-            .listActivity(
-              activityRequest(key, { limit: COUNT_PAGE_SIZE, offset: 0 })
-            )
-            .pipe(
-              Effect.map((page) => page.total),
-              Effect.mapError((cause) => new ActivityHistoryError({ cause }))
-            )
-        )
+export const activityHistoryPullAtom = makePresentableResourceFamily(
+  activityHistoryCanonicalPullAtom
+);
+
+const activityCountCanonicalAtom = Atom.family((key: ActivityHistoryKey) =>
+  appRuntime
+    .atom(() =>
+      YieldResourceSource.use((source) =>
+        source
+          .listActivity(
+            activityRequest(key, { limit: COUNT_PAGE_SIZE, offset: 0 })
+          )
+          .pipe(
+            Effect.map((page) => page.total),
+            Effect.mapError((cause) => new ActivityHistoryError({ cause }))
+          )
       )
-      .pipe(
-        Atom.withReactivity(resourceInvalidationKeys.activity(key.scope)),
-        activityPolicy,
-        Atom.withLabel("activityCountResourceAtom")
-      )
+    )
+    .pipe(
+      Atom.withReactivity(resourceInvalidationKeys.activity(key.scope)),
+      activityPolicy,
+      Atom.withLabel("activityCountResourceAtom")
+    )
+);
+
+export const activityCountResourceAtom = makePresentableResourceFamily(
+  activityCountCanonicalAtom
 );

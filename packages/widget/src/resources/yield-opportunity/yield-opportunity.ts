@@ -9,6 +9,7 @@ import type { EarnYieldWithProvider } from "../../domain/schema/earn-models";
 import type { YieldId } from "../../domain/schema/identifiers";
 import { YieldResourceSource } from "../../services/api/yield-resource-source";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 import { yieldProviderResourceAtom } from "../yield-provider/yield-provider";
 
 export class YieldOpportunityError extends Data.TaggedError(
@@ -23,7 +24,7 @@ const opportunityPolicy = withApiResourcePolicy({
   revalidateOnMount: true,
 });
 
-export const yieldOpportunityResourceAtom = Atom.family((yieldId: YieldId) =>
+const yieldOpportunityCanonicalAtom = Atom.family((yieldId: YieldId) =>
   appRuntime
     .atom(() =>
       Effect.gen(function* () {
@@ -38,21 +39,27 @@ export const yieldOpportunityResourceAtom = Atom.family((yieldId: YieldId) =>
     .pipe(opportunityPolicy, Atom.withLabel("yieldOpportunityResourceAtom"))
 );
 
-export const enrichedYieldOpportunityResourceAtom = Atom.family(
-  (yieldId: YieldId) =>
-    appRuntime.atom((get) =>
-      Effect.gen(function* () {
-        const yieldModel = yield* get.result(
-          yieldOpportunityResourceAtom(yieldId)
-        );
-        const provider = yield* get
-          .result(yieldProviderResourceAtom(yieldModel.providerId))
-          .pipe(Effect.map(Option.getOrUndefined));
-
-        return {
-          ...yieldModel,
-          ...(provider ? { provider } : {}),
-        } satisfies EarnYieldWithProvider;
-      })
-    )
+export const yieldOpportunityResourceAtom = makePresentableResourceFamily(
+  yieldOpportunityCanonicalAtom
 );
+
+const enrichedYieldOpportunityCanonicalAtom = Atom.family((yieldId: YieldId) =>
+  appRuntime.atom((get) =>
+    Effect.gen(function* () {
+      const yieldModel = yield* get.result(
+        yieldOpportunityResourceAtom.local(yieldId)
+      );
+      const provider = yield* get
+        .result(yieldProviderResourceAtom.local(yieldModel.providerId))
+        .pipe(Effect.map(Option.getOrUndefined));
+
+      return {
+        ...yieldModel,
+        ...(provider ? { provider } : {}),
+      } satisfies EarnYieldWithProvider;
+    })
+  )
+);
+
+export const enrichedYieldOpportunityResourceAtom =
+  makePresentableResourceFamily(enrichedYieldOpportunityCanonicalAtom);

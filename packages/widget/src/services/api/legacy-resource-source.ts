@@ -114,8 +114,8 @@ export const makeLegacyResourceSource = (legacyApi: LegacyApi.LegacyApi) => {
 export class LegacyResourceSource extends Context.Service<LegacyResourceSource>()(
   "stakekit/widget/services/api/LegacyResourceSource",
   {
-    make: Effect.map(ApiTransportService, ({ legacy }) =>
-      makeLegacyResourceSource(legacy)
+    make: Effect.map(ApiTransportService, ({ resources }) =>
+      makeLegacyResourceSource(resources.legacy)
     ),
   }
 ) {

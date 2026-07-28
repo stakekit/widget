@@ -8,6 +8,7 @@ import type {
 } from "../../domain/schema/api-errors";
 import { YieldResourceSource } from "../../services/api/yield-resource-source";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { makePresentableResource } from "../resource-failure-presentation";
 
 export class WidgetHealthError extends Data.TaggedError("WidgetHealthError")<{
   readonly cause: ApiRequestError | ResponseDecodeError;
@@ -28,13 +29,17 @@ const healthRequestAtom = appRuntime
     Atom.withLabel("healthRequestAtom")
   );
 
-export const widgetHealthResourceAtom = healthRequestAtom.pipe(
+const widgetHealthCanonicalAtom = healthRequestAtom.pipe(
   Atom.withRefresh(Duration.seconds(30)),
   Atom.withLabel("widgetHealthResourceAtom")
 );
 
+export const widgetHealthResourceAtom = makePresentableResource(
+  widgetHealthCanonicalAtom
+);
+
 export const underMaintenanceAtom = Atom.make((get) => {
-  const result = get(widgetHealthResourceAtom);
+  const result = get(widgetHealthResourceAtom.local);
   const health = result.pipe(AsyncResult.value, Option.getOrUndefined);
 
   return (

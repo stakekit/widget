@@ -110,4 +110,32 @@ describe("feature facade architecture", () => {
     expect(activityPage).not.toContain("useStartClassicTransactionFlow");
     expect(pendingActionRoute).not.toContain("classic-transaction-flow/state/");
   });
+
+  it("keeps resource acquisition neutral and presentation observer-scoped", () => {
+    const transport = readFileSync(
+      join(sourceRoot, "services/api/transport.ts"),
+      "utf8"
+    );
+    const activity = readFileSync(
+      join(sourceRoot, "features/activity/resources/activity-actions.ts"),
+      "utf8"
+    );
+    const resourceFiles = sourceFiles(join(sourceRoot, "resources")).filter(
+      (path) => readFileSync(path, "utf8").includes("ResourceSource")
+    );
+
+    expect(transport).toContain("readonly operations");
+    expect(transport).toContain("readonly resources");
+    expect(transport).toContain("publishRichErrors: false");
+    expect(transport).toContain("publishRichErrors: true");
+    expect(activity).toContain("enrichedYieldOpportunityResourceAtom.local");
+    expect(activity).toContain("validatorByAddressAtom.local");
+    expect(activity).toContain("activityHistoryPullAtom.foreground");
+    expect(activity).toContain("activityCountResourceAtom.local");
+    expect(
+      resourceFiles.every((path) =>
+        readFileSync(path, "utf8").includes("makePresentableResource")
+      )
+    ).toBe(true);
+  });
 });

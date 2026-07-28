@@ -17,6 +17,7 @@ import {
   API_MAX_PAGE_SIZE,
   loadAllPagesByIdChunks,
 } from "../../shared/effect/pagination";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 import type { YieldProviderError } from "../yield-provider/yield-provider";
 import { yieldProviderResourceAtom } from "../yield-provider/yield-provider";
 
@@ -81,80 +82,83 @@ const directoryPolicy = withApiResourcePolicy({
   revalidateOnMount: true,
 });
 
-export const yieldFirstPageResourceAtom = Atom.family(
-  (key: YieldFirstPageKey) =>
-    appRuntime
-      .atom(() =>
-        YieldResourceSource.use((source) =>
-          source
-            .listYields({
-              limit: API_MAX_PAGE_SIZE,
-              offset: 0,
-              ...(key.network ? { network: key.network } : {}),
-              types: key.types,
-            })
-            .pipe(
-              Effect.map((page) => page.items ?? []),
-              Effect.mapError((cause) => new YieldDirectoryError({ cause }))
-            )
-        )
+const yieldFirstPageCanonicalAtom = Atom.family((key: YieldFirstPageKey) =>
+  appRuntime
+    .atom(() =>
+      YieldResourceSource.use((source) =>
+        source
+          .listYields({
+            limit: API_MAX_PAGE_SIZE,
+            offset: 0,
+            ...(key.network ? { network: key.network } : {}),
+            types: key.types,
+          })
+          .pipe(
+            Effect.map((page) => page.items ?? []),
+            Effect.mapError((cause) => new YieldDirectoryError({ cause }))
+          )
       )
-      .pipe(directoryPolicy, Atom.withLabel("yieldFirstPageResourceAtom"))
+    )
+    .pipe(directoryPolicy, Atom.withLabel("yieldFirstPageResourceAtom"))
 );
 
-export const yieldDirectoryResourceAtom = Atom.family(
-  (key: YieldDirectoryKey) =>
-    appRuntime
-      .atom(() =>
-        Effect.gen(function* () {
-          if (key.yieldIds?.length === 0) {
-            return {
-              items: [],
-              missingYieldIds: [],
-            } satisfies YieldDirectoryResult;
-          }
+export const yieldFirstPageResourceAtom = makePresentableResourceFamily(
+  yieldFirstPageCanonicalAtom
+);
 
-          const source = yield* YieldResourceSource;
-          const fetchPage = (
-            offset: number,
-            yieldIds?: ReadonlyArray<YieldId>
-          ) =>
-            source.listYields({
-              limit: API_MAX_PAGE_SIZE,
-              offset,
-              ...(key.network ? { network: key.network } : {}),
-              ...(key.types.length > 0 ? { types: key.types } : {}),
-              ...(yieldIds ? { yieldIds } : {}),
-            });
-
-          const items = yield* loadAllPagesByIdChunks({
-            chunkSize: API_MAX_PAGE_SIZE,
-            concurrency: CONCURRENCY,
-            fetchPage: ({ ids, offset }) => fetchPage(offset, ids),
-            getItemId: (yieldModel) => yieldModel.id,
-            ids: key.yieldIds,
-            pageSize: API_MAX_PAGE_SIZE,
-          });
-          const returnedIds = new Set(items.map((yieldModel) => yieldModel.id));
-
+const yieldDirectoryCanonicalAtom = Atom.family((key: YieldDirectoryKey) =>
+  appRuntime
+    .atom(() =>
+      Effect.gen(function* () {
+        if (key.yieldIds?.length === 0) {
           return {
-            items,
-            missingYieldIds: key.yieldIds.filter(
-              (yieldId) => !returnedIds.has(yieldId)
-            ),
+            items: [],
+            missingYieldIds: [],
           } satisfies YieldDirectoryResult;
-        }).pipe(Effect.mapError((cause) => new YieldDirectoryError({ cause })))
-      )
-      .pipe(directoryPolicy, Atom.withLabel("yieldDirectoryResourceAtom"))
+        }
+
+        const source = yield* YieldResourceSource;
+        const fetchPage = (offset: number, yieldIds?: ReadonlyArray<YieldId>) =>
+          source.listYields({
+            limit: API_MAX_PAGE_SIZE,
+            offset,
+            ...(key.network ? { network: key.network } : {}),
+            ...(key.types.length > 0 ? { types: key.types } : {}),
+            ...(yieldIds ? { yieldIds } : {}),
+          });
+
+        const items = yield* loadAllPagesByIdChunks({
+          chunkSize: API_MAX_PAGE_SIZE,
+          concurrency: CONCURRENCY,
+          fetchPage: ({ ids, offset }) => fetchPage(offset, ids),
+          getItemId: (yieldModel) => yieldModel.id,
+          ids: key.yieldIds,
+          pageSize: API_MAX_PAGE_SIZE,
+        });
+        const returnedIds = new Set(items.map((yieldModel) => yieldModel.id));
+
+        return {
+          items,
+          missingYieldIds: key.yieldIds.filter(
+            (yieldId) => !returnedIds.has(yieldId)
+          ),
+        } satisfies YieldDirectoryResult;
+      }).pipe(Effect.mapError((cause) => new YieldDirectoryError({ cause })))
+    )
+    .pipe(directoryPolicy, Atom.withLabel("yieldDirectoryResourceAtom"))
 );
 
-export const enrichedYieldDirectoryResourceAtom = Atom.family(
+export const yieldDirectoryResourceAtom = makePresentableResourceFamily(
+  yieldDirectoryCanonicalAtom
+);
+
+const enrichedYieldDirectoryCanonicalAtom = Atom.family(
   (key: YieldDirectoryKey) =>
     appRuntime
       .atom((context) =>
         Effect.gen(function* () {
           const directory = yield* context.result(
-            yieldDirectoryResourceAtom(key)
+            yieldDirectoryResourceAtom.local(key)
           );
           const providerIds = [
             ...new Set(
@@ -164,7 +168,7 @@ export const enrichedYieldDirectoryResourceAtom = Atom.family(
           const providerResults = yield* Effect.forEach(
             providerIds,
             (providerId) =>
-              context.result(yieldProviderResourceAtom(providerId)).pipe(
+              context.result(yieldProviderResourceAtom.local(providerId)).pipe(
                 Effect.result,
                 Effect.map((provider) => [providerId, provider] as const)
               ),
@@ -200,4 +204,8 @@ export const enrichedYieldDirectoryResourceAtom = Atom.family(
         })
       )
       .pipe(Atom.withLabel("enrichedYieldDirectoryResourceAtom"))
+);
+
+export const enrichedYieldDirectoryResourceAtom = makePresentableResourceFamily(
+  enrichedYieldDirectoryCanonicalAtom
 );

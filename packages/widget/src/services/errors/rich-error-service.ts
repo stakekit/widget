@@ -1,13 +1,13 @@
 import { Context, Effect, Layer, Stream, SubscriptionRef } from "effect";
+import type {
+  ApiRequestError,
+  RichError,
+} from "../../domain/schema/api-errors";
+
 import {
   normalizeWidgetApiConfig,
   WidgetConfigService,
 } from "../config/widget-config";
-
-export interface RichError {
-  readonly message: string;
-  readonly details?: { readonly [key: string]: unknown };
-}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -25,6 +25,7 @@ export class RichErrorService extends Context.Service<RichErrorService>()(
       const widgetConfig = yield* WidgetConfigService;
       const api = normalizeWidgetApiConfig(widgetConfig.initial);
       const current = yield* SubscriptionRef.make<RichError | null>(null);
+      const presentedRequestErrors = new WeakSet<ApiRequestError>();
       const allowedUrls = [api.baseUrl, api.borrowApiUrl, api.yieldsApiUrl];
 
       const publishResponse = ({
@@ -46,9 +47,20 @@ export class RichErrorService extends Context.Service<RichErrorService>()(
         return SubscriptionRef.set(current, data);
       };
 
+      const presentRequestError = (error: ApiRequestError) =>
+        Effect.suspend(() => {
+          if (!error.richError || presentedRequestErrors.has(error)) {
+            return Effect.void;
+          }
+
+          presentedRequestErrors.add(error);
+          return SubscriptionRef.set(current, error.richError);
+        });
+
       return {
         changes: Stream.changes(SubscriptionRef.changes(current)),
         current,
+        presentRequestError,
         publishResponse,
         reset: SubscriptionRef.set(current, null),
       } as const;

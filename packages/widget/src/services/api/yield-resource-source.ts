@@ -255,8 +255,8 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
 export class YieldResourceSource extends Context.Service<YieldResourceSource>()(
   "stakekit/widget/services/api/YieldResourceSource",
   {
-    make: Effect.map(ApiTransportService, ({ yield: yieldApi }) =>
-      makeYieldResourceSource(yieldApi)
+    make: Effect.map(ApiTransportService, ({ resources }) =>
+      makeYieldResourceSource(resources.yield)
     ),
   }
 ) {

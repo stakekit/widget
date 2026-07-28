@@ -17,19 +17,25 @@ import { RichErrorService } from "../errors/rich-error-service";
 import { handleGeoBlockResponse } from "./geo-block-state";
 
 type ApiTransport = {
-  readonly borrow: BorrowApi.BorrowApi | null;
-  readonly legacy: LegacyApi.LegacyApi;
-  readonly yield: YieldApi.YieldApi;
+  readonly operations: {
+    readonly borrow: BorrowApi.BorrowApi | null;
+    readonly yield: YieldApi.YieldApi;
+  };
+  readonly resources: {
+    readonly borrow: BorrowApi.BorrowApi | null;
+    readonly legacy: LegacyApi.LegacyApi;
+    readonly yield: YieldApi.YieldApi;
+  };
 };
 
 const inspectResponse = ({
   response,
   richErrors,
-  suppressRichErrors,
+  publishRichErrors,
 }: {
   readonly response: HttpClientResponse.HttpClientResponse;
   readonly richErrors: RichErrorService["Service"];
-  readonly suppressRichErrors?: boolean;
+  readonly publishRichErrors: boolean;
 }) =>
   Effect.gen(function* () {
     if (response.status < 400) return;
@@ -38,7 +44,7 @@ const inspectResponse = ({
 
     handleGeoBlockResponse({ data, status: response.status });
 
-    if (!suppressRichErrors) {
+    if (publishRichErrors) {
       yield* richErrors.publishResponse({
         data,
         url: response.request.url,
@@ -50,14 +56,14 @@ const configureClient = ({
   apiKey,
   baseUrl,
   client,
+  publishRichErrors,
   richErrors,
-  suppressRichErrors,
 }: {
   readonly apiKey: string;
   readonly baseUrl: string;
   readonly client: HttpClient.HttpClient;
+  readonly publishRichErrors: boolean;
   readonly richErrors: RichErrorService["Service"];
-  readonly suppressRichErrors?: boolean;
 }): HttpClient.HttpClient =>
   client.pipe(
     HttpClient.mapRequest(
@@ -70,7 +76,7 @@ const configureClient = ({
     ),
     HttpClient.retryTransient({ times: 3 }),
     HttpClient.tap((response) =>
-      inspectResponse({ response, richErrors, suppressRichErrors })
+      inspectResponse({ response, richErrors, publishRichErrors })
     )
   );
 
@@ -80,34 +86,41 @@ const makeApiTransport = Effect.gen(function* () {
   const httpClient = yield* HttpClient.HttpClient;
   const richErrors = yield* RichErrorService;
   const borrowApiUrl = api.borrowApiUrl.trim();
+  const makeClient = ({
+    baseUrl,
+    publishRichErrors,
+  }: {
+    readonly baseUrl: string;
+    readonly publishRichErrors: boolean;
+  }) =>
+    configureClient({
+      apiKey: api.apiKey,
+      baseUrl,
+      client: httpClient,
+      publishRichErrors,
+      richErrors,
+    });
+  const makeBorrowClient = (publishRichErrors: boolean) =>
+    borrowApiUrl
+      ? BorrowApi.make(makeClient({ baseUrl: borrowApiUrl, publishRichErrors }))
+      : null;
 
   return {
-    borrow: borrowApiUrl
-      ? BorrowApi.make(
-          configureClient({
-            apiKey: api.apiKey,
-            baseUrl: borrowApiUrl,
-            client: httpClient,
-            richErrors,
-          })
-        )
-      : null,
-    legacy: LegacyApi.make(
-      configureClient({
-        apiKey: api.apiKey,
-        baseUrl: api.baseUrl,
-        client: httpClient,
-        richErrors,
-      })
-    ),
-    yield: YieldApi.make(
-      configureClient({
-        apiKey: api.apiKey,
-        baseUrl: api.yieldsApiUrl,
-        client: httpClient,
-        richErrors,
-      })
-    ),
+    operations: {
+      borrow: makeBorrowClient(true),
+      yield: YieldApi.make(
+        makeClient({ baseUrl: api.yieldsApiUrl, publishRichErrors: true })
+      ),
+    },
+    resources: {
+      borrow: makeBorrowClient(false),
+      legacy: LegacyApi.make(
+        makeClient({ baseUrl: api.baseUrl, publishRichErrors: false })
+      ),
+      yield: YieldApi.make(
+        makeClient({ baseUrl: api.yieldsApiUrl, publishRichErrors: false })
+      ),
+    },
   } satisfies ApiTransport;
 });
 

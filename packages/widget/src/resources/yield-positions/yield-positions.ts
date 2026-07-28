@@ -14,6 +14,7 @@ import {
   walletScopeOwnerKey,
 } from "../../services/wallet/domain/scope";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 const yieldPositionsPolicy = withApiResourcePolicy({
   idleTTL: Duration.minutes(5),
@@ -59,8 +60,23 @@ const yieldPositionsByOwnerResourceAtom = Atom.family(
     )
 );
 
-export const yieldPositionsResourceAtom = (scope: WalletScopeKey) =>
-  yieldPositionsByOwnerResourceAtom(walletScopeOwnerKey(scope));
+const yieldPositionsByOwnerResource = makePresentableResourceFamily(
+  yieldPositionsByOwnerResourceAtom
+);
+
+const localYieldPositionsResourceAtom = (scope: WalletScopeKey) =>
+  yieldPositionsByOwnerResource.local(walletScopeOwnerKey(scope));
+
+const foregroundYieldPositionsResourceAtom = (scope: WalletScopeKey) =>
+  yieldPositionsByOwnerResource.foreground(walletScopeOwnerKey(scope));
+
+export const yieldPositionsResourceAtom = Object.assign(
+  foregroundYieldPositionsResourceAtom,
+  {
+    foreground: foregroundYieldPositionsResourceAtom,
+    local: localYieldPositionsResourceAtom,
+  }
+);
 
 const refreshYieldPositionsByOwnerAtom = Atom.family(
   (scope: WalletScopeOwnerKey) =>

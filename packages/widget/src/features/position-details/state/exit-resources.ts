@@ -26,7 +26,9 @@ export class PositionDetailsExitResourcesKey extends Data.Class<{
 const selectedYieldAtom = Atom.family((key: PositionDetailsExitResourcesKey) =>
   Atom.make((get) =>
     get(
-      yieldOpportunityAtom(new YieldOpportunityKey({ yieldId: key.yieldId }))
+      yieldOpportunityAtom.foreground(
+        new YieldOpportunityKey({ yieldId: key.yieldId })
+      )
     ).pipe(AsyncResult.value, Option.getOrNull)
   )
 );

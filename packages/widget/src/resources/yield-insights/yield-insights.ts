@@ -9,6 +9,7 @@ import type { HistoryPeriod } from "../../domain/schema/dashboard-models";
 import type { WalletAddress, YieldId } from "../../domain/schema/identifiers";
 import { YieldResourceSource } from "../../services/api/yield-resource-source";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 const insightPolicy = withApiResourcePolicy({
   idleTTL: Duration.minutes(5),
@@ -34,20 +35,23 @@ export class YieldInsightError extends Data.TaggedError("YieldInsightError")<{
   readonly operation: "kyc" | "reward-rate-history" | "tvl-history";
 }> {}
 
-export const yieldKycStatusResourceAtom = Atom.family(
-  (key: YieldKycStatusKey) =>
-    appRuntime
-      .atom(() =>
-        YieldResourceSource.use((source) => source.getKycStatus(key)).pipe(
-          Effect.mapError(
-            (cause) => new YieldInsightError({ cause, operation: "kyc" })
-          )
+const yieldKycStatusCanonicalAtom = Atom.family((key: YieldKycStatusKey) =>
+  appRuntime
+    .atom(() =>
+      YieldResourceSource.use((source) => source.getKycStatus(key)).pipe(
+        Effect.mapError(
+          (cause) => new YieldInsightError({ cause, operation: "kyc" })
         )
       )
-      .pipe(insightPolicy, Atom.withLabel("yieldKycStatusResourceAtom"))
+    )
+    .pipe(insightPolicy, Atom.withLabel("yieldKycStatusResourceAtom"))
 );
 
-export const yieldRewardRateHistoryResourceAtom = Atom.family(
+export const yieldKycStatusResourceAtom = makePresentableResourceFamily(
+  yieldKycStatusCanonicalAtom
+);
+
+const yieldRewardRateHistoryCanonicalAtom = Atom.family(
   (key: YieldHistoryResourceKey) =>
     appRuntime
       .atom(() =>
@@ -66,7 +70,11 @@ export const yieldRewardRateHistoryResourceAtom = Atom.family(
       .pipe(insightPolicy, Atom.withLabel("yieldRewardRateHistoryResourceAtom"))
 );
 
-export const yieldTvlHistoryResourceAtom = Atom.family(
+export const yieldRewardRateHistoryResourceAtom = makePresentableResourceFamily(
+  yieldRewardRateHistoryCanonicalAtom
+);
+
+const yieldTvlHistoryCanonicalAtom = Atom.family(
   (key: YieldHistoryResourceKey) =>
     appRuntime
       .atom(() =>
@@ -78,4 +86,8 @@ export const yieldTvlHistoryResourceAtom = Atom.family(
         )
       )
       .pipe(insightPolicy, Atom.withLabel("yieldTvlHistoryResourceAtom"))
+);
+
+export const yieldTvlHistoryResourceAtom = makePresentableResourceFamily(
+  yieldTvlHistoryCanonicalAtom
 );

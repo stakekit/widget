@@ -13,6 +13,7 @@ import {
 import { tokenString } from "../../domain/types/tokens";
 import { LegacyResourceSource } from "../../services/api/legacy-resource-source";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 export class TokenPricesKey extends Data.TaggedClass("TokenPricesKey")<{
   readonly request: PriceRequest;
@@ -42,7 +43,7 @@ const pricesPolicy = withApiResourcePolicy({
   revalidateOnMount: true,
 });
 
-export const tokenPricesResourceAtom = Atom.family((key: TokenPricesKey) =>
+const tokenPricesCanonicalAtom = Atom.family((key: TokenPricesKey) =>
   appRuntime
     .atom(() =>
       key.request.tokenList.length === 0
@@ -52,4 +53,8 @@ export const tokenPricesResourceAtom = Atom.family((key: TokenPricesKey) =>
           ).pipe(Effect.mapError((cause) => new TokenPricesError({ cause })))
     )
     .pipe(pricesPolicy, Atom.withLabel("tokenPricesResourceAtom"))
+);
+
+export const tokenPricesResourceAtom = makePresentableResourceFamily(
+  tokenPricesCanonicalAtom
 );

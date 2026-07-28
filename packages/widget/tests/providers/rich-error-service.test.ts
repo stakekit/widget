@@ -4,6 +4,7 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { ApiRequestError } from "../../src/domain/schema/api-errors";
 import { richErrorAtom } from "../../src/features/widget-shell/react/use-rich-errors";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
@@ -80,6 +81,53 @@ describe("rich error service", () => {
       unmountSecond();
       first.dispose();
       second.dispose();
+    }
+  });
+
+  it("presents one modal per request-error identity and allows a retry occurrence", async () => {
+    const registry = makeRegistry("https://api.example.com");
+    const unmount = registry.mount(richErrorAtom);
+
+    try {
+      const service = AsyncResult.getOrThrow(
+        registry.get(richErrorServiceAtom)
+      );
+      const firstFailure = new ApiRequestError({
+        cause: new Error("first"),
+        operation: "yield-directory",
+        richError: { message: "First failure" },
+      });
+      service.presentRequestError(firstFailure);
+
+      await Effect.runPromise(
+        Effect.all([
+          service.presentRequestError(firstFailure),
+          service.presentRequestError(firstFailure),
+        ])
+      );
+      expect(AsyncResult.getOrThrow(registry.get(richErrorAtom))).toEqual({
+        message: "First failure",
+      });
+
+      await Effect.runPromise(service.reset);
+      await Effect.runPromise(service.presentRequestError(firstFailure));
+      expect(AsyncResult.getOrThrow(registry.get(richErrorAtom))).toBeNull();
+
+      await Effect.runPromise(
+        service.presentRequestError(
+          new ApiRequestError({
+            cause: new Error("retry"),
+            operation: "yield-directory",
+            richError: { message: "Retry failure" },
+          })
+        )
+      );
+      expect(AsyncResult.getOrThrow(registry.get(richErrorAtom))).toEqual({
+        message: "Retry failure",
+      });
+    } finally {
+      unmount();
+      registry.dispose();
     }
   });
 });

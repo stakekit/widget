@@ -21,6 +21,7 @@ import {
   loadAllPages,
   withPullPageDone,
 } from "../../shared/effect/pagination";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 const CONCURRENCY = 5;
 
@@ -93,7 +94,7 @@ const toRequest = ({
   ...(key.status ? { status: key.status } : {}),
 });
 
-export const validatorsPullAtom = Atom.family((key: ValidatorsKey) =>
+const validatorsCanonicalPullAtom = Atom.family((key: ValidatorsKey) =>
   appRuntime
     .pull(() => {
       const initialCursor: ValidatorCursor = key.search
@@ -163,7 +164,11 @@ export const validatorsPullAtom = Atom.family((key: ValidatorsKey) =>
     )
 );
 
-export const preferredValidatorsResourceAtom = Atom.family((yieldId: YieldId) =>
+export const validatorsPullAtom = makePresentableResourceFamily(
+  validatorsCanonicalPullAtom
+);
+
+const preferredValidatorsCanonicalAtom = Atom.family((yieldId: YieldId) =>
   appRuntime
     .atom(() =>
       YieldResourceSource.use((source) =>
@@ -194,6 +199,10 @@ export const preferredValidatorsResourceAtom = Atom.family((yieldId: YieldId) =>
     .pipe(validatorPolicy, Atom.withLabel("preferredValidatorsResourceAtom"))
 );
 
+export const preferredValidatorsResourceAtom = makePresentableResourceFamily(
+  preferredValidatorsCanonicalAtom
+);
+
 export class ValidatorByAddressKey extends Data.TaggedClass(
   "ValidatorByAddressKey"
 )<{
@@ -201,7 +210,7 @@ export class ValidatorByAddressKey extends Data.TaggedClass(
   readonly yieldId: YieldId;
 }> {}
 
-export const validatorByAddressAtom = Atom.family(
+const validatorByAddressCanonicalAtom = Atom.family(
   (key: ValidatorByAddressKey) =>
     appRuntime
       .atom(() =>
@@ -242,4 +251,8 @@ export const validatorByAddressAtom = Atom.family(
         )
       )
       .pipe(validatorPolicy, Atom.withLabel("validatorByAddressAtom"))
+);
+
+export const validatorByAddressAtom = makePresentableResourceFamily(
+  validatorByAddressCanonicalAtom
 );

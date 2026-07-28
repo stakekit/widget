@@ -10,6 +10,7 @@ import { LegacyResourceSource } from "../../services/api/legacy-resource-source"
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import type { WalletScopeKey } from "../../services/wallet/domain/scope";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 const tokenBalancesPolicy = withApiResourcePolicy({
   idleTTL: Duration.minutes(5),
@@ -51,11 +52,15 @@ const tokenBalancesRequestAtom = Atom.family((scope: WalletScopeKey) =>
     )
 );
 
-export const tokenBalancesResourceAtom = Atom.family((scope: WalletScopeKey) =>
+const tokenBalancesCanonicalAtom = Atom.family((scope: WalletScopeKey) =>
   tokenBalancesRequestAtom(scope).pipe(
     Atom.withRefresh(scheduledRefreshInterval),
     Atom.withLabel("tokenBalancesResourceAtom")
   )
+);
+
+export const tokenBalancesResourceAtom = makePresentableResourceFamily(
+  tokenBalancesCanonicalAtom
 );
 
 export const refreshTokenBalancesAtom = Atom.family((scope: WalletScopeKey) =>

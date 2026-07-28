@@ -121,7 +121,7 @@ export const toPositionItems = (
 };
 
 const positionsDataAtomFamily = Atom.family((scope: WalletScopeKey) =>
-  yieldPositionsResourceAtom(scope).pipe(
+  yieldPositionsResourceAtom.foreground(scope).pipe(
     Atom.mapResult((page) => toPositionsData(page.items)),
     Atom.withLabel("positionsDataAtom")
   )
@@ -186,7 +186,7 @@ export const currentGroupedPositionsAtom = Atom.make(
     );
     const borrowManageEnabled = config.borrowEnabled;
     const borrowPositions = get(
-      borrowPositionsResourceAtom(
+      borrowPositionsResourceAtom.foreground(
         new BorrowPositionsKey({
           scope: borrowManageEnabled ? get(walletScopeAtom) : null,
         })
@@ -211,7 +211,7 @@ export const currentGroupedPositionsAtom = Atom.make(
       ...new Set(earnPositions.map((position) => position.integrationId)),
     ];
     const yieldsById = get(
-      yieldDirectoryResourceAtom(new YieldDirectoryKey({ yieldIds }))
+      yieldDirectoryResourceAtom.foreground(new YieldDirectoryKey({ yieldIds }))
     ).pipe(
       AsyncResult.map(
         ({ items }) =>

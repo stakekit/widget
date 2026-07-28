@@ -18,13 +18,13 @@ export class MultiYieldsKey extends Data.Class<{
 }
 
 const multiYieldsAtom = Atom.family((key: MultiYieldsKey) =>
-  enrichedYieldDirectoryResourceAtom(
-    new YieldDirectoryKey({ yieldIds: key.yieldIds })
-  ).pipe(
-    Atom.mapResult((directory) =>
-      key.yieldIds.length === 0 ? null : directory.items
+  enrichedYieldDirectoryResourceAtom
+    .foreground(new YieldDirectoryKey({ yieldIds: key.yieldIds }))
+    .pipe(
+      Atom.mapResult((directory) =>
+        key.yieldIds.length === 0 ? null : directory.items
+      )
     )
-  )
 );
 
 export const visibleMultiYieldsAtom = Atom.family((key: MultiYieldsKey) =>

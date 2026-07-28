@@ -41,7 +41,7 @@ export const yieldValidatorsPullAtom = Atom.family(
     if (!key.yieldId) return emptyYieldValidatorsPullAtom;
 
     const yieldId = key.yieldId;
-    const source = validatorsPullAtom(
+    const source = validatorsPullAtom.foreground(
       new ValidatorsKey({ search: key.search, status: "active", yieldId })
     );
 

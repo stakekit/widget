@@ -108,7 +108,7 @@ const activityEnrichmentFactsAtom = Atom.family((key: ActivityEnrichmentKey) =>
           request._tag === "yield"
             ? context
                 .resultOnce(
-                  enrichedYieldOpportunityResourceAtom(request.yieldId)
+                  enrichedYieldOpportunityResourceAtom.local(request.yieldId)
                 )
                 .pipe(
                   Effect.catchCause(() => Effect.succeed(null)),
@@ -119,7 +119,7 @@ const activityEnrichmentFactsAtom = Atom.family((key: ActivityEnrichmentKey) =>
                   }))
                 )
             : context
-                .resultOnce(validatorByAddressAtom(request.validatorKey))
+                .resultOnce(validatorByAddressAtom.local(request.validatorKey))
                 .pipe(
                   Effect.catchCause(() => Effect.succeed(null)),
                   Effect.map((value) => ({
@@ -174,7 +174,7 @@ export const activityActionsPullAtom = Atom.family(
     if (!historyKey || !key.scope) return emptyActivityActionsPullAtom;
 
     const walletScope = key.scope;
-    const source = activityHistoryPullAtom(historyKey);
+    const source = activityHistoryPullAtom.foreground(historyKey);
 
     return Atom.transform(source, (context) => {
       const historyResult = mapAsyncResultError(
@@ -254,7 +254,7 @@ export const activityFilterOptionsAtom = Atom.family(
           );
 
           return historyKey
-            ? context.result(activityCountResourceAtom(historyKey))
+            ? context.result(activityCountResourceAtom.local(historyKey))
             : Effect.succeed(0);
         };
         const allCount = yield* count("all");

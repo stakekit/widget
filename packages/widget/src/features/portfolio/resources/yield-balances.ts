@@ -10,7 +10,7 @@ const yieldBalancesScanResourceAtom = Atom.readable((get) => {
   const scope = get(walletScopeAtom);
 
   return scope
-    ? get(yieldPositionsResourceAtom(scope))
+    ? get(yieldPositionsResourceAtom.foreground(scope))
     : AsyncResult.success({ errors: [], items: [] });
 }).pipe(Atom.withLabel("currentYieldBalancesScanResourceAtom"));
 

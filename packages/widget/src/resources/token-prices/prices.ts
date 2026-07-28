@@ -4,6 +4,7 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import type { EarnYieldWithProvider } from "../../domain/schema/earn-models";
 import type { PriceRequest } from "../../domain/schema/health-price-models";
 import type { AppToken } from "../../domain/schema/legacy-models";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 import { TokenPricesKey, tokenPricesResourceAtom } from "./token-prices";
 
 const DEFAULT_CURRENCY = "USD";
@@ -26,10 +27,12 @@ export const getTokensPricesRequest = ({
       }
     : null;
 
-export const pricesAtom = Atom.family((key: PricesKey) =>
+const pricesCanonicalAtom = Atom.family((key: PricesKey) =>
   Atom.make((get) =>
     key.request
-      ? get(tokenPricesResourceAtom(new TokenPricesKey(key.request)))
+      ? get(tokenPricesResourceAtom.local(new TokenPricesKey(key.request)))
       : AsyncResult.success(null)
   ).pipe(Atom.withLabel("pricesAtom"))
 );
+
+export const pricesAtom = makePresentableResourceFamily(pricesCanonicalAtom);

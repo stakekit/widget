@@ -61,7 +61,7 @@ const pendingActionDeepLinkResourceAtom = Atom.family(
     appRuntime.atom((get) =>
       Effect.gen(function* () {
         const position = yield* get.result(
-          singleYieldBalancesResourceAtom(
+          singleYieldBalancesResourceAtom.foreground(
             new SingleYieldBalancesKey({
               address: key.scope.address,
               yieldId: key.yieldId,
@@ -90,7 +90,7 @@ const pendingActionDeepLinkResourceAtom = Atom.family(
         if (!balance || !pendingAction) return null;
 
         const yieldData = yield* get.result(
-          yieldOpportunityAtom(
+          yieldOpportunityAtom.foreground(
             new YieldOpportunityKey({ yieldId: key.yieldId })
           )
         );

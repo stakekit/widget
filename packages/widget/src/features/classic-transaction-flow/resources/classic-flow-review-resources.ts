@@ -71,7 +71,7 @@ export const makeClassicFlowSessionReviewResources = ({
       ? getTokensPricesRequest({ token: input.token, yieldDto: input.yield })
       : null;
 
-    return get(pricesAtom(new PricesKey({ request })));
+    return get(pricesAtom.foreground(new PricesKey({ request })));
   }).pipe(Atom.withLabel("classicFlowSessionReviewPricesAtom"));
 
   const reviewActionAtom = Atom.make((get) =>
@@ -112,7 +112,7 @@ export const makeClassicFlowSessionReviewResources = ({
     if (!input || !gasAmount) return AsyncResult.success(null);
 
     return get(
-      gasTokenBalancesResourceAtom(
+      gasTokenBalancesResourceAtom.foreground(
         new GasTokenBalancesKey({
           command: getGasBalancesCommand(input),
         })

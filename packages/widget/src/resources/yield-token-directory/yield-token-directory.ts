@@ -15,6 +15,7 @@ import {
   paginatedApiStream,
   withPullPageDone,
 } from "../../shared/effect/pagination";
+import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 type YieldType = (typeof EarnYield.Type)["mechanics"]["type"];
 type YieldToken = NonNullable<(typeof EarnTokenPage.Type)["items"]>[number];
@@ -60,7 +61,7 @@ const emptyYieldTokensPullAtom = Atom.pull<
   })
 ).pipe(withPullPageDone);
 
-export const yieldTokensPullAtom = Atom.family((key: YieldTokensKey) => {
+const yieldTokensCanonicalPullAtom = Atom.family((key: YieldTokensKey) => {
   if (key.networks?.length === 0 || key.yieldTypes?.length === 0) {
     return emptyYieldTokensPullAtom;
   }
@@ -93,3 +94,7 @@ export const yieldTokensPullAtom = Atom.family((key: YieldTokensKey) => {
       Atom.withLabel("yieldTokensPullAtom")
     );
 });
+
+export const yieldTokensPullAtom = makePresentableResourceFamily(
+  yieldTokensCanonicalPullAtom
+);

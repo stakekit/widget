@@ -2,10 +2,8 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Effect } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import {
-  type RichError,
-  RichErrorService,
-} from "../../../services/errors/rich-error-service";
+import type { RichError } from "../../../domain/schema/api-errors";
+import { RichErrorService } from "../../../services/errors/rich-error-service";
 
 export const richErrorAtom = appRuntime.subscriptionRef(
   Effect.map(RichErrorService, ({ current }) => current)

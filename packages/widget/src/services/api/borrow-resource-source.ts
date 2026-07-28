@@ -101,11 +101,11 @@ export class BorrowResourceSource extends Context.Service<BorrowResourceSource>(
   "stakekit/widget/services/api/BorrowResourceSource",
   {
     make: Effect.gen(function* () {
-      const { borrow } = yield* ApiTransportService;
+      const { resources } = yield* ApiTransportService;
       const widgetConfig = yield* WidgetConfigService;
 
       return makeBorrowResourceSource(
-        borrow,
+        resources.borrow,
         widgetConfig.initial.borrowEnabled
       );
     }),
