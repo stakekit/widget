@@ -12,16 +12,13 @@ releases.
 
 ## Publishing authority
 
-Repository writers may request and publish a canary workflow run without a
-deployment-environment approval. Stable npm publication uses the `production`
-GitHub environment, which must require approval from a release maintainer.
+Repository writers may request a canary workflow run. Both canary and stable
+npm publication use the `production` GitHub environment, which must require
+approval from a release maintainer.
 
 Both release paths publish from the existing
 `.github/workflows/release.yml` workflow so npm trusted publishing remains
-bound to one workflow identity. The npm trusted publisher must not restrict
-that workflow identity to a GitHub environment: the stable job supplies the
-`production` environment claim, while the canary job intentionally has no
-environment.
+bound to one workflow identity and the `production` environment claim.
 
 ## Stable releases
 
@@ -49,6 +46,7 @@ To request a canary:
 3. Choose **Run workflow**.
 4. Select the branch to test.
 5. Start the workflow.
+6. Obtain release-maintainer approval for the `production` environment.
 
 The selected branch must contain the manual release workflow and its
 `packages/widget/package.json` version must equal the version currently

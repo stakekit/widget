@@ -94,6 +94,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    environment: production
     concurrency:
       group: npm-canary-publish
       cancel-in-progress: false
