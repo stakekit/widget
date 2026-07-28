@@ -2,27 +2,11 @@ import { useAtomValue } from "@effect/atom-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
 import { AnimatedActivityPage } from "../../features/activity/ui";
-import { classicFlowSessionStore } from "../../features/classic-transaction-flow/state";
 import {
-  ActionReviewPage,
-  ActivityCompletePage,
-  ActivityResumeClassicFlowRoute,
-  ActivityStepsPage,
-  ClassicFlowExecutionScope,
-  ClassicFlowReviewScope,
-  EnterClassicFlowRoute,
-  ExitClassicFlowRoute,
-  ManageClassicFlowRoute,
-  PendingCompletePage,
-  PendingReviewPage,
-  PendingStepsPage,
-  StakeCompletePage,
-  StakeReviewPage,
-  StakeStepsPage,
-  UnstakeCompletePage,
-  UnstakeReviewPage,
-  UnstakeStepsPage,
-} from "../../features/classic-transaction-flow/ui";
+  classicFlowSessionStore,
+  isClassicFlowSessionPath,
+} from "../../features/classic-transaction-flow/state";
+import { createClassicFlowRoutes } from "../../features/classic-transaction-flow/ui";
 import { AnimatedEarnPage } from "../../features/earn/ui";
 import { AnimatedPositionsPage } from "../../features/portfolio/ui";
 import { ClassicPositionDetailsPage } from "../../features/position-details/ui";
@@ -44,7 +28,6 @@ import {
   Header,
   PoweredBy,
 } from "../../features/widget-shell/ui";
-import { isClassicFlowSessionPath } from "./classic-flow-session-path";
 
 export const ClassicRoutes = () => {
   const underMaintenance = useUnderMaintenance();
@@ -61,7 +44,7 @@ export const ClassicRoutes = () => {
   const resolveRouteKey = () => {
     if (
       flowSession &&
-      isClassicFlowSessionPath(location.pathname, flowSession.intake._tag)
+      isClassicFlowSessionPath(flowSession, location.pathname)
     ) {
       return "classic-flow-session";
     }
@@ -101,46 +84,14 @@ export const ClassicRoutes = () => {
                   <Route element={<WalletScopeRouteGuard fallbackPath="/" />}>
                     {/* Activity flow */}
                     <Route path="activity">
-                      <Route element={<ActivityResumeClassicFlowRoute />}>
-                        <Route
-                          path="review"
-                          element={
-                            <ClassicFlowReviewScope>
-                              <ActionReviewPage />
-                            </ClassicFlowReviewScope>
-                          }
-                        />
-                        <Route element={<ClassicFlowExecutionScope />}>
-                          <Route
-                            path=":pendingActionType/steps"
-                            element={<ActivityStepsPage />}
-                          />
-                          <Route
-                            path=":pendingActionType/complete"
-                            element={<ActivityCompletePage />}
-                          />
-                        </Route>
-                      </Route>
+                      {createClassicFlowRoutes({
+                        journey: "ActivityResume",
+                        presentation: "Classic",
+                      })}
                     </Route>
 
                     {/* Stake flow */}
-                    <Route element={<EnterClassicFlowRoute />}>
-                      <Route
-                        path="review"
-                        element={
-                          <ClassicFlowReviewScope>
-                            <StakeReviewPage />
-                          </ClassicFlowReviewScope>
-                        }
-                      />
-                      <Route element={<ClassicFlowExecutionScope />}>
-                        <Route path="steps" element={<StakeStepsPage />} />
-                        <Route
-                          path="complete"
-                          element={<StakeCompletePage />}
-                        />
-                      </Route>
-                    </Route>
+                    {createClassicFlowRoutes({ journey: "Enter" })}
 
                     {/* Unstake or pending actions flow */}
                     <Route path="positions/:integrationId/:balanceId">
@@ -152,50 +103,12 @@ export const ClassicRoutes = () => {
 
                       {/* Unstaking */}
                       <Route path="unstake">
-                        <Route element={<ExitClassicFlowRoute />}>
-                          <Route
-                            path="review"
-                            element={
-                              <ClassicFlowReviewScope>
-                                <UnstakeReviewPage />
-                              </ClassicFlowReviewScope>
-                            }
-                          />
-                          <Route element={<ClassicFlowExecutionScope />}>
-                            <Route
-                              path="steps"
-                              element={<UnstakeStepsPage />}
-                            />
-                            <Route
-                              path="complete"
-                              element={<UnstakeCompletePage />}
-                            />
-                          </Route>
-                        </Route>
+                        {createClassicFlowRoutes({ journey: "Exit" })}
                       </Route>
 
                       {/* Pending Actions */}
                       <Route path="pending-action">
-                        <Route element={<ManageClassicFlowRoute />}>
-                          <Route
-                            path="review"
-                            element={
-                              <ClassicFlowReviewScope>
-                                <PendingReviewPage />
-                              </ClassicFlowReviewScope>
-                            }
-                          />
-                          <Route element={<ClassicFlowExecutionScope />}>
-                            <Route
-                              path="steps"
-                              element={<PendingStepsPage />}
-                            />
-                            <Route
-                              path="complete"
-                              element={<PendingCompletePage />}
-                            />
-                          </Route>
-                        </Route>
+                        {createClassicFlowRoutes({ journey: "Manage" })}
                       </Route>
                     </Route>
                   </Route>

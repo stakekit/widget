@@ -18,25 +18,7 @@ import {
   BorrowTransactionFlowRoute,
 } from "../../features/borrow-transaction-flow/ui";
 // import { RewardsTabPage } from "../../domain/types/rewards";
-import {
-  ActivityDetailsPage,
-  ActivityResumeClassicFlowRoute,
-  ActivityStepsPage,
-  ClassicFlowExecutionScope,
-  ClassicFlowReviewScope,
-  EnterClassicFlowRoute,
-  ExitClassicFlowRoute,
-  ManageClassicFlowRoute,
-  PendingCompletePage,
-  PendingReviewPage,
-  PendingStepsPage,
-  StakeCompletePage,
-  StakeReviewPage,
-  StakeStepsPage,
-  UnstakeCompletePage,
-  UnstakeReviewPage,
-  UnstakeStepsPage,
-} from "../../features/classic-transaction-flow/ui";
+import { createClassicFlowRoutes } from "../../features/classic-transaction-flow/ui";
 import { EarnPageContent } from "../../features/earn/ui";
 import { ManagePage } from "../../features/portfolio/ui";
 import {
@@ -78,20 +60,7 @@ export const DashboardRoutes = () => {
             />
 
             <Route element={<WalletScopeRouteGuard fallbackPath="/" />}>
-              <Route element={<EnterClassicFlowRoute />}>
-                <Route
-                  path="review"
-                  element={
-                    <ClassicFlowReviewScope>
-                      <StakeReviewPage />
-                    </ClassicFlowReviewScope>
-                  }
-                />
-                <Route element={<ClassicFlowExecutionScope />}>
-                  <Route path="steps" element={<StakeStepsPage />} />
-                  <Route path="complete" element={<StakeCompletePage />} />
-                </Route>
-              </Route>
+              {createClassicFlowRoutes({ journey: "Enter" })}
             </Route>
           </Route>
 
@@ -185,20 +154,7 @@ export const DashboardRoutes = () => {
                 {/* Staking */}
                 <Route path="stake">
                   <Route index element={<PositionDetailsStakeActions />} />
-                  <Route element={<EnterClassicFlowRoute />}>
-                    <Route
-                      path="review"
-                      element={
-                        <ClassicFlowReviewScope>
-                          <StakeReviewPage />
-                        </ClassicFlowReviewScope>
-                      }
-                    />
-                    <Route element={<ClassicFlowExecutionScope />}>
-                      <Route path="steps" element={<StakeStepsPage />} />
-                      <Route path="complete" element={<StakeCompletePage />} />
-                    </Route>
-                  </Route>
+                  {createClassicFlowRoutes({ journey: "Enter" })}
                 </Route>
 
                 <Route
@@ -209,44 +165,12 @@ export const DashboardRoutes = () => {
                 {/* Unstaking */}
                 <Route path="unstake">
                   <Route index element={<PositionDetailsActions />} />
-                  <Route element={<ExitClassicFlowRoute />}>
-                    <Route
-                      path="review"
-                      element={
-                        <ClassicFlowReviewScope>
-                          <UnstakeReviewPage />
-                        </ClassicFlowReviewScope>
-                      }
-                    />
-                    <Route element={<ClassicFlowExecutionScope />}>
-                      <Route path="steps" element={<UnstakeStepsPage />} />
-                      <Route
-                        path="complete"
-                        element={<UnstakeCompletePage />}
-                      />
-                    </Route>
-                  </Route>
+                  {createClassicFlowRoutes({ journey: "Exit" })}
                 </Route>
 
                 {/* Pending Actions */}
                 <Route path="pending-action">
-                  <Route element={<ManageClassicFlowRoute />}>
-                    <Route
-                      path="review"
-                      element={
-                        <ClassicFlowReviewScope>
-                          <PendingReviewPage />
-                        </ClassicFlowReviewScope>
-                      }
-                    />
-                    <Route element={<ClassicFlowExecutionScope />}>
-                      <Route path="steps" element={<PendingStepsPage />} />
-                      <Route
-                        path="complete"
-                        element={<PendingCompletePage />}
-                      />
-                    </Route>
-                  </Route>
+                  {createClassicFlowRoutes({ journey: "Manage" })}
                 </Route>
               </Route>
             </Route>
@@ -258,15 +182,10 @@ export const DashboardRoutes = () => {
           {/* Activity Tab */}
           <Route path="activity" element={<ActivityTabPage />}>
             <Route element={<WalletScopeRouteGuard fallbackPath="/activity" />}>
-              <Route element={<ActivityResumeClassicFlowRoute />}>
-                <Route index element={<ActivityDetailsPage />} />
-                <Route element={<ClassicFlowExecutionScope />}>
-                  <Route
-                    path=":pendingActionType/steps"
-                    element={<ActivityStepsPage />}
-                  />
-                </Route>
-              </Route>
+              {createClassicFlowRoutes({
+                journey: "ActivityResume",
+                presentation: "Dashboard",
+              })}
             </Route>
           </Route>
         </Route>

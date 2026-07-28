@@ -17,6 +17,54 @@ export type ClassicFlowSession = Readonly<{
   readonly intake: ClassicTransactionFlowIntake;
 }>;
 
+const removeOptionalTrailingSlash = (pathname: string): string =>
+  pathname.length > 1 && pathname.endsWith("/")
+    ? pathname.slice(0, -1)
+    : pathname;
+
+const getPathSegments = (pathname: string): ReadonlyArray<string> =>
+  removeOptionalTrailingSlash(pathname).split("/").filter(Boolean);
+
+const isActivityResumeSessionPath = (
+  session: ClassicFlowSession,
+  pathname: string
+): boolean => {
+  const pathnameSegments = getPathSegments(pathname);
+  const reviewPathSegments = getPathSegments(session.destination.reviewPath);
+  const routeBaseSegments = reviewPathSegments.slice(0, -1);
+
+  if (
+    routeBaseSegments.some(
+      (segment, index) => pathnameSegments[index] !== segment
+    )
+  ) {
+    return false;
+  }
+
+  const relativeSegments = pathnameSegments.slice(routeBaseSegments.length);
+  if (relativeSegments.length === 1) {
+    return relativeSegments[0] === "review";
+  }
+  if (relativeSegments.length !== 2) return false;
+
+  return relativeSegments[1] === "steps" || relativeSegments[1] === "complete";
+};
+
+export const isClassicFlowSessionPath = (
+  session: ClassicFlowSession,
+  pathname: string
+): boolean => {
+  const normalizedPathname = removeOptionalTrailingSlash(pathname);
+
+  if (session.intake._tag === "ActivityResume") {
+    return isActivityResumeSessionPath(session, normalizedPathname);
+  }
+
+  return Object.values(session.destination).some(
+    (destination) => destination === normalizedPathname
+  );
+};
+
 type StartClassicFlowSession = Readonly<{
   readonly destination: ClassicTransactionFlowDestination;
   readonly intake: ClassicTransactionFlowIntake;

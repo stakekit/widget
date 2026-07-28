@@ -21,21 +21,19 @@ import {
   applicationRouterRuntime,
 } from "../../src/app/runtime/application-router-runtime";
 import { ActionCommand } from "../../src/domain/schema/action-models";
+import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
+  ClassicFlowExecutionScope,
+  ClassicFlowReviewScope,
+  ClassicFlowRoute,
   useClassicFlowExecution,
   useClassicFlowReview,
   useClassicFlowSession,
 } from "../../src/features/classic-transaction-flow/react/classic-flow-route";
-import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/state";
 import {
   classicFlowSessionStore,
   makeStartClassicFlowSession,
 } from "../../src/features/classic-transaction-flow/state";
-import {
-  ClassicFlowExecutionScope,
-  ClassicFlowReviewScope,
-  EnterClassicFlowRoute,
-} from "../../src/features/classic-transaction-flow/ui";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
@@ -211,7 +209,7 @@ const FlowRoutes = ({
           />
         }
       >
-        <Route element={<EnterClassicFlowRoute />}>
+        <Route element={<ClassicFlowRoute expected="Enter" />}>
           <Route
             path="review"
             element={

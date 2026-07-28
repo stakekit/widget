@@ -1,7 +1,4 @@
-export {
-  type ClassicTransactionFlowIntake,
-  makeClassicTransactionFlowDestination,
-} from "./model/classic-transaction-flow";
+export { makeClassicTransactionFlowDestination } from "./model/classic-transaction-flow";
 export {
   actionHistoryRevisionAtom,
   resetActionHistoryRevision,
@@ -9,5 +6,6 @@ export {
 export {
   type ClassicFlowSession,
   classicFlowSessionStore,
+  isClassicFlowSessionPath,
   makeStartClassicFlowSession,
 } from "./state/flow-session-store";

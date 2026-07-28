@@ -14,7 +14,7 @@ import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/state";
+import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
   classicFlowSessionStore,
   makeStartClassicFlowSession,

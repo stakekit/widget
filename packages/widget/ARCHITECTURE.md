@@ -5,7 +5,8 @@
 Production code is organized by ownership rather than by React mechanism:
 
 - `src/app` owns public-input normalization, runtime construction, provider
-  composition, and classic/dashboard route composition.
+  composition, Classic/Dashboard shell route composition, feature route mount
+  paths, and app-level route guards.
 - `src/resources` owns Authoritative Resources: app-runtime-scoped, cacheable
   remote reads shared across features. Each remote fact has one named, typed
   resource module rather than a global registry.
@@ -274,7 +275,10 @@ mount-animation state are registry-scoped atoms or models derived from atoms.
 Transaction execution is split by ownership:
 
 - `features/classic-transaction-flow` owns the Classic Review, Steps, and
-  Complete journey and its Flow Session.
+  Complete journey and its Flow Session. Its UI entry publishes one route
+  module that owns the relative phase paths, intake guard, Review and Execution
+  scope topology, and pages for each Classic journey mount. The app chooses the
+  Classic or Dashboard shell, parent mount path, and app-level guards.
 - `features/borrow-transaction-flow` owns the Borrow Review, Steps, and Complete
   journey and its Flow Session. `features/borrow` starts it through immutable
   intake and observes its read-only lifecycle outcomes; the flow never imports

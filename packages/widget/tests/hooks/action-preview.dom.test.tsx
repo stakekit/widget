@@ -9,7 +9,7 @@ import {
   widgetConfigAtom,
 } from "../../src/app/config/settings";
 import { ActionCommand } from "../../src/domain/schema/action-models";
-import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/state";
+import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
   type ClassicFlowSession,
   classicFlowSessionStore,

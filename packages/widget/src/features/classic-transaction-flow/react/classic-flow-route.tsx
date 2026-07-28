@@ -59,7 +59,7 @@ export const useClassicFlowIntake = <
   return session.getIntake(variant);
 };
 
-const ClassicFlowRoute = ({
+export const ClassicFlowRoute = ({
   expected,
 }: {
   readonly expected: ClassicTransactionFlowIntake["_tag"];
@@ -89,17 +89,6 @@ const SessionBinding = () => {
   useClassicFlowSessionModule();
   return <Outlet />;
 };
-
-export const EnterClassicFlowRoute = () => (
-  <ClassicFlowRoute expected="Enter" />
-);
-export const ExitClassicFlowRoute = () => <ClassicFlowRoute expected="Exit" />;
-export const ManageClassicFlowRoute = () => (
-  <ClassicFlowRoute expected="Manage" />
-);
-export const ActivityResumeClassicFlowRoute = () => (
-  <ClassicFlowRoute expected="ActivityResume" />
-);
 
 export const ClassicFlowReviewScope = ({ children }: PropsWithChildren) => {
   const session = useClassicFlowSessionModule();
