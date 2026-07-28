@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next";
-import type { ClassicTransactionWorkflowProviderDetail } from "../../../../../../../services/workflow/transaction-workflow-model";
-import { Box } from "../../../../../../../shared/ui/primitives/box";
-import { ListItem } from "../../../../../../../shared/ui/primitives/list/list-item";
-import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
+import type { ClassicTransactionWorkflowProviderDetail } from "../../../../../../services/workflow/transaction-workflow-model";
+import { Box } from "../../../../../../shared/ui/primitives/box";
+import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
+import { Text } from "../../../../../../shared/ui/primitives/typography/text";
+import type { ActivityActionItem } from "../../../../model/activity-action";
 import { useActionListItem } from "../../hooks/use-action-list-item";
-import type { ActionYieldDto } from "../../types";
 import { ActivityIcon } from "../activity-icon";
 import {
   amountNeutral,
@@ -22,9 +22,9 @@ export const ActionListItem = ({
   action,
   onActionSelect,
 }: {
-  action: ActionYieldDto;
+  action: ActivityActionItem;
   onActionSelect: (
-    action: ActionYieldDto,
+    action: ActivityActionItem,
     providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
   ) => void;
 }) => {

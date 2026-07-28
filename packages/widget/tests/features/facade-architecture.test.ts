@@ -85,10 +85,7 @@ describe("feature facade architecture", () => {
       "utf8"
     );
     const activityPage = readFileSync(
-      join(
-        sourceRoot,
-        "features/activity/ui/classic/activity-page/hooks/use-activity-page.tsx"
-      ),
+      join(sourceRoot, "features/activity/react/use-activity-page.ts"),
       "utf8"
     );
     const pendingActionRoute = readFileSync(

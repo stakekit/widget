@@ -1,16 +1,16 @@
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
-import { Box } from "../../../../../../../shared/ui/primitives/box";
-import { pressAnimation } from "../../../../../../../shared/ui/primitives/button/styles.css";
-import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
+import { Box } from "../../../../../../shared/ui/primitives/box";
+import { pressAnimation } from "../../../../../../shared/ui/primitives/button/styles.css";
+import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import type {
   ActivityFilter,
   ActivityFilterOption,
-} from "../../../../../model/filters";
+} from "../../../../model/filters";
 import { filterCount, filterPill, filtersContainer } from "./styles.css";
 
 type Props = {
-  options: ActivityFilterOption[];
+  options: ReadonlyArray<ActivityFilterOption>;
   selectedFilter: ActivityFilter;
   onSelect: (filter: ActivityFilter) => void;
 };

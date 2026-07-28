@@ -1,95 +1,7 @@
 import { motion } from "motion/react";
-import { useTranslation } from "react-i18next";
-import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useMountAnimation } from "../../../../mount-animation/state";
-import {
-  FallbackContent,
-  PageContainer,
-} from "../../../../widget-shell/components";
-import { ActionListItem } from "./components/action-list-item";
-import { ActivityFilters } from "./components/activity-filters";
-import { useActivityPage } from "./hooks/use-activity-page";
-import { container } from "./style.css";
-
-const ActivityPageComponent = () => {
-  const {
-    content,
-    allData,
-    filterOptions,
-    selectedFilter,
-    onFilterSelect,
-    showingCount,
-    total,
-    onActionSelect,
-    hasNextPage,
-    isFetchingNextPage,
-    onLoadMore,
-    showActivityContent,
-    showActivityControls,
-    showActivityList,
-  } = useActivityPage();
-
-  const { t } = useTranslation();
-
-  return (
-    <Box className={container} display="flex" flex={1} flexDirection="column">
-      {content}
-
-      <Box display="flex" flexDirection="column">
-        {showActivityContent && (
-          <>
-            {showActivityControls && (
-              <ActivityFilters
-                options={filterOptions}
-                selectedFilter={selectedFilter}
-                onSelect={onFilterSelect}
-              />
-            )}
-
-            {showActivityList ? (
-              <>
-                <Box display="flex" justifyContent="flex-end" paddingBottom="2">
-                  <Text
-                    variant={{
-                      type: "muted",
-                      weight: "normal",
-                      size: "small",
-                    }}
-                  >
-                    {t("activity.showing_count", {
-                      showing: showingCount,
-                      total,
-                    })}
-                  </Text>
-                </Box>
-
-                <VirtualList
-                  data={allData ?? []}
-                  hasNextPage={hasNextPage}
-                  isFetchingNextPage={isFetchingNextPage}
-                  fetchNextPage={onLoadMore}
-                  estimateSize={() => 80}
-                  itemContent={(_index, item) => (
-                    <ActionListItem
-                      onActionSelect={onActionSelect}
-                      action={item}
-                    />
-                  )}
-                />
-              </>
-            ) : (
-              <Box my="4">
-                <FallbackContent type="no_previous_activity" />
-              </Box>
-            )}
-          </>
-        )}
-      </Box>
-    </Box>
-  );
-};
+import { PageContainer } from "../../../../widget-shell/components";
+import { ActivityPageContent } from "../../activity-page/activity-page-content";
 
 export const AnimatedActivityPage = () => {
   const { mountAnimationFinished } = useMountAnimation();
@@ -104,7 +16,7 @@ export const AnimatedActivityPage = () => {
       }}
     >
       <PageContainer>
-        <ActivityPageComponent />
+        <ActivityPageContent resumeMode="start-and-navigate" />
       </PageContainer>
     </motion.div>
   );

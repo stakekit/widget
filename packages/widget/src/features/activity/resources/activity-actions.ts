@@ -25,6 +25,7 @@ import { enrichedYieldOpportunityResourceAtom } from "../../../resources/yield-o
 import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 import { mapAsyncResultError } from "../../../shared/effect/async-result";
 import { withPullPageDone } from "../../../shared/effect/pagination";
+import type { ActivityActionItem } from "../model/activity-action";
 import {
   type ActivityFilter,
   activityFilterCategories,
@@ -33,15 +34,8 @@ import { ActivityActionsKey, getActivityHistoryKey } from "./activity-requests";
 
 type ActivityAction = ActivityHistoryBatch["actions"][number];
 
-type ActivityActionView = {
-  readonly actionData: ActivityAction;
-  readonly validatorsData: EarnValidator[];
-  readonly walletScope: WalletScopeKey;
-  readonly yieldData: EarnYieldWithProvider | null;
-};
-
 type ActivityActionsBatch = Omit<ActivityHistoryBatch, "actions"> & {
-  readonly actions: ReadonlyArray<ActivityActionView>;
+  readonly actions: ReadonlyArray<ActivityActionItem>;
 };
 
 const ACTIVITY_ENRICHMENT_CONCURRENCY = 5;
@@ -226,6 +220,22 @@ export const activityActionsPullAtom = Atom.family(
       );
     });
   }
+);
+
+export const loadMoreActivityActionsAtom = Atom.family(
+  (key: ActivityActionsKey) =>
+    Atom.fnSync(
+      (_input: undefined, context) => {
+        const resource = activityActionsPullAtom(key);
+        const result = context(resource);
+        const value = AsyncResult.value(result);
+
+        if (result.waiting || value._tag !== "Some" || value.value.done) return;
+
+        context.set(resource, undefined);
+      },
+      { initialValue: undefined }
+    ).pipe(Atom.withLabel("loadMoreActivityActionsAtom"))
 );
 
 export class ActivityFilterOptionsKey extends Data.Class<{

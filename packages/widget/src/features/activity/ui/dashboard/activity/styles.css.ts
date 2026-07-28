@@ -1,10 +1,5 @@
-import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../../../shared/styles/theme/atoms.css";
-
-export const container = style({
-  minHeight: "300px",
-});
 
 export const activityDetailsContainer = recipe({
   base: [

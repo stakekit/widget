@@ -1,7 +1,7 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
-import { atoms } from "../../../../../../../shared/styles/theme/atoms.css";
-import { vars } from "../../../../../../../shared/styles/theme/contract.css";
+import { atoms } from "../../../../../../shared/styles/theme/atoms.css";
+import { vars } from "../../../../../../shared/styles/theme/contract.css";
 
 export const filtersContainer = style([
   atoms({ display: "flex", alignItems: "center", paddingBottom: "3" }),

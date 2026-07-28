@@ -4,7 +4,7 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import { resumeActivityActionAtom } from "../../src/features/activity/state/resume-action";
+import { startActivityResumeAtom } from "../../src/features/activity/state/start-activity-resume";
 import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state";
 import { walletConnectionStateAtom } from "../../src/features/wallet/state";
 import {
@@ -70,13 +70,15 @@ describe("Activity resume action", () => {
     });
 
     try {
-      registry.set(resumeActivityActionAtom, {
-        action,
+      registry.set(startActivityResumeAtom, {
+        item: {
+          actionData: action,
+          validatorsData: [],
+          walletScope,
+          yieldData: selectedYield,
+        },
         providersDetails: [],
-        selectionMode: "navigate",
-        validators: [],
-        walletScope,
-        yield: selectedYield,
+        mode: "start-and-navigate",
       });
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
@@ -105,18 +107,20 @@ describe("Activity resume action", () => {
     });
 
     try {
-      registry.set(resumeActivityActionAtom, {
-        action: yieldApiActionFixture({
-          status: "SUCCESS",
-          transactions: [transaction],
-          type: "STAKE",
-          yieldId: selectedYield.id,
-        }),
+      registry.set(startActivityResumeAtom, {
+        item: {
+          actionData: yieldApiActionFixture({
+            status: "SUCCESS",
+            transactions: [transaction],
+            type: "STAKE",
+            yieldId: selectedYield.id,
+          }),
+          validatorsData: [],
+          walletScope,
+          yieldData: selectedYield,
+        },
         providersDetails: [],
-        selectionMode: "navigate",
-        validators: [],
-        walletScope,
-        yield: selectedYield,
+        mode: "start-and-navigate",
       });
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
