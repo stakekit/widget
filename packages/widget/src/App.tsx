@@ -9,6 +9,8 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { preloadImages } from "./assets/images";
 import { Box } from "./components/atoms/box";
 import { Dashboard } from "./Dashboard";
+import { useNoEnabledYields } from "./hooks/use-no-enabled-yields";
+import NoEnabledYields from "./pages/components/no-enabled-yields";
 import { Providers } from "./providers";
 import { SettingsContextProvider, useSettings } from "./providers/settings";
 import type { SettingsProps, VariantProps } from "./providers/settings/types";
@@ -22,6 +24,10 @@ const App = () => {
   useLoadErrorTranslations();
 
   const { dashboardVariant } = useSettings();
+
+  const noEnabledYields = useNoEnabledYields();
+
+  if (noEnabledYields) return <NoEnabledYields />;
 
   return dashboardVariant ? <Dashboard /> : <Widget />;
 };

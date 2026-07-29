@@ -426,6 +426,10 @@
       "title": "En maintenance",
       "description": "Yield.xyz est actuellement en maintenance de routine. Notre service devrait être de retour en ligne dans environ 5 à 10 minutes.",
       "description2": "Nous apprécions votre patience et vous encourageons à revenir bientôt !"
+    },
+    "no_enabled_yields": {
+      "title": "Aucun rendement activé",
+      "description": "Aucun rendement n'est activé pour cette clé API. Activez au moins un rendement pour commencer à générer des intérêts."
     }
   },
   "positions": {
