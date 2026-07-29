@@ -20,7 +20,10 @@ import {
   makeClassicFlowReviewScope,
   makeClassicFlowSessionModule,
 } from "../../src/features/classic-transaction-flow/state/classic-flow-session-facade";
-import { walletStateResultAtom } from "../../src/features/wallet/state";
+import {
+  walletScopeAtom,
+  walletStateResultAtom,
+} from "../../src/features/wallet/state";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
   yieldApiActionFixture,
@@ -37,9 +40,14 @@ const command = Schema.decodeUnknownSync(ActionCommand)({
   yieldId: "ethereum-eth-native-staking",
 });
 const stake = yieldApiYieldFixture({ id: command.yieldId });
+const walletScope = new WalletScopeKey({
+  address: command.address,
+  network: "ethereum",
+});
 
 const Wrapper = ({ children }: PropsWithChildren) => (
   <TestAtomRuntimeProvider
+    initialValues={[[walletScopeAtom, walletScope]]}
     settings={normalizeWidgetConfig({
       apiKey: "test-key",
       baseUrl: "https://api.example.com",
@@ -180,10 +188,7 @@ describe("action preview", () => {
               selectedStake: stake,
               selectedToken: stake.token,
               selectedValidators: new Map(),
-              walletScope: new WalletScopeKey({
-                address: command.address,
-                network: "ethereum",
-              }),
+              walletScope,
             } satisfies ClassicTransactionFlowIntake,
           });
         }, [startFlow]);

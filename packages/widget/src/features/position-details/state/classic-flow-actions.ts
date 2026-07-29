@@ -1,7 +1,6 @@
 import { Data, Array as EArray, Effect, Option, Result } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import { runWidgetNavigationCommand } from "../../../app/runtime/navigation";
 import {
   PAMultiValidatorsRequired,
   PASingleValidatorRequired,
@@ -19,8 +18,8 @@ import { getYieldActionArg } from "../../../domain/types/yields";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import { walletScopeOwnerKey } from "../../../services/wallet/domain/scope";
 import {
-  classicFlowSessionStore,
   makeClassicTransactionFlowDestination,
+  startClassicFlowSessionAtom,
 } from "../../classic-transaction-flow/state";
 import { walletConnectionStateAtom } from "../../wallet/state";
 import {
@@ -158,8 +157,8 @@ export const submitPositionDetailsExitAtom = Atom.family(
   (key: PositionDetailsWorkflowKey) =>
     appRuntime
       .fn((_input: undefined, context) => {
-        context.set(exitSubmittedAtom(key), true);
         const facts = context(positionDetailsFlowFactsAtom(key));
+        context.set(exitSubmittedAtom(key), true);
         const prepared = makeExitActionCommand(facts);
         if (
           !facts.amountValid ||
@@ -176,7 +175,7 @@ export const submitPositionDetailsExitAtom = Atom.family(
         const destination = makeClassicTransactionFlowDestination({
           routeBase: `/positions/${key.integrationId}/${key.balanceId}/unstake`,
         });
-        context.set(classicFlowSessionStore.startAtom, {
+        return context.setResult(startClassicFlowSessionAtom, {
           destination,
           intake: {
             _tag: "Exit",
@@ -188,10 +187,10 @@ export const submitPositionDetailsExitAtom = Atom.family(
             unstakeToken: facts.token,
             walletScope: key.scope,
           },
-        });
-        return runWidgetNavigationCommand({
-          _tag: "Push",
-          path: destination.reviewPath,
+          navigation: {
+            _tag: "Push",
+            path: destination.reviewPath,
+          },
         });
       })
       .pipe(Atom.withLabel("submitPositionDetailsExitAtom"))
@@ -453,29 +452,37 @@ export const runPositionPendingActionAtom = Atom.family(
           routeBase: `/positions/${key.integrationId}/${key.balanceId}/pending-action`,
         });
         const value = prepared.success;
-        context.set(
-          pendingActionModalDecisionAtom(getPendingActionModalKey(key)),
-          closedPendingActionModalState
-        );
-        context.set(classicFlowSessionStore.startAtom, {
-          destination,
-          intake: {
-            _tag: "Manage",
-            gasFeeToken: value.gasFeeToken,
-            integration: value.integrationData,
-            interactedToken: selection.yieldBalance.token,
-            pendingActionType: selection.pendingActionDto.type,
-            providersDetails: facts.providers,
-            request: value.requestDto,
-            walletScope: key.scope,
-          },
-        });
         return tracking.pipe(
           Effect.andThen(
-            runWidgetNavigationCommand({
-              _tag: "Push",
-              path: destination.reviewPath,
+            context.setResult(startClassicFlowSessionAtom, {
+              destination,
+              intake: {
+                _tag: "Manage",
+                gasFeeToken: value.gasFeeToken,
+                integration: value.integrationData,
+                interactedToken: selection.yieldBalance.token,
+                pendingActionType: selection.pendingActionDto.type,
+                providersDetails: facts.providers,
+                request: value.requestDto,
+                walletScope: key.scope,
+              },
+              navigation: {
+                _tag: "Push",
+                path: destination.reviewPath,
+              },
             })
+          ),
+          Effect.tap((outcome) =>
+            outcome._tag === "Started"
+              ? Effect.sync(() =>
+                  context.set(
+                    pendingActionModalDecisionAtom(
+                      getPendingActionModalKey(key)
+                    ),
+                    closedPendingActionModalState
+                  )
+                )
+              : Effect.void
           )
         );
       })

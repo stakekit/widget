@@ -15,6 +15,7 @@ import {
   classicFlowSessionStore,
   makeClassicTransactionFlowDestination,
 } from "../../src/features/classic-transaction-flow/state";
+import { walletScopeAtom } from "../../src/features/wallet/state";
 import {
   getYieldEntryCta,
   makeYieldEntry,
@@ -31,6 +32,12 @@ const address = Schema.decodeSync(WalletAddress)(
 );
 const walletScope = new WalletScopeKey({
   address,
+  network: "ethereum",
+});
+const otherWalletScope = new WalletScopeKey({
+  address: Schema.decodeSync(WalletAddress)(
+    "0x2234567890123456789012345678901234567890"
+  ),
   network: "ethereum",
 });
 
@@ -60,7 +67,6 @@ const makeFacadeInput = (
     isKycBlocking: false,
     isKycLoading: false,
     isLedgerAccountPlaceholder: false,
-    isOwnerCurrent: true,
     isWalletConnecting: false,
     positionsData: new Map(),
     providers: [
@@ -132,6 +138,7 @@ const makeObservableRegistry = (
         widgetConfigAtom,
         normalizeWidgetConfig({ apiKey: "test", variant: "default" }),
       ],
+      [walletScopeAtom, walletScope],
       [appRuntime.layer, ports.layer],
     ],
   });
@@ -238,6 +245,7 @@ describe("Yield Entry", () => {
           widgetConfigAtom,
           normalizeWidgetConfig({ apiKey: "test", variant: "default" }),
         ],
+        [walletScopeAtom, walletScope],
       ],
     });
     const validInput = makeFacadeInput();
@@ -341,6 +349,7 @@ describe("Yield Entry", () => {
           widgetConfigAtom,
           normalizeWidgetConfig({ apiKey: "test", variant: "default" }),
         ],
+        [walletScopeAtom, walletScope],
         [
           appRuntime.layer,
           Layer.succeed(
@@ -452,7 +461,7 @@ describe("Yield Entry", () => {
     {
       expected: "stale-owner",
       name: "stale owner",
-      override: { isOwnerCurrent: false },
+      override: { walletScope: otherWalletScope },
     },
     {
       expected: "invalid",

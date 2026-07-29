@@ -2,8 +2,8 @@ import { Effect, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import {
-  classicFlowSessionStore,
   makeClassicTransactionFlowDestination,
+  startClassicFlowSessionAtom,
 } from "../../../features/classic-transaction-flow/state";
 import {
   type PendingActionDeepLinkIntentId,
@@ -73,19 +73,33 @@ const claimPendingActionDeepLinkAtom = appRuntime
       const destination = makeClassicTransactionFlowDestination({
         routeBase: `${positionBase}/pending-action`,
       });
-      context.set(classicFlowSessionStore.startAtom, {
-        destination,
-        intake: {
-          _tag: "Manage",
-          request: current.pendingActionDto.requestDto,
-          gasFeeToken: current.pendingActionDto.gasFeeToken,
-          integration: current.pendingActionDto.integrationData,
-          interactedToken: current.balance.token,
-          pendingActionType: current.pendingActionDto.requestDto.action,
-          providersDetails: current.providersDetails,
-          walletScope: current.walletScope,
-        },
-      });
+      return context
+        .setResult(startClassicFlowSessionAtom, {
+          destination,
+          intake: {
+            _tag: "Manage",
+            request: current.pendingActionDto.requestDto,
+            gasFeeToken: current.pendingActionDto.gasFeeToken,
+            integration: current.pendingActionDto.integrationData,
+            interactedToken: current.balance.token,
+            pendingActionType: current.pendingActionDto.requestDto.action,
+            providersDetails: current.providersDetails,
+            walletScope: current.walletScope,
+          },
+          navigation: { _tag: "Push", path },
+        })
+        .pipe(
+          Effect.tap((outcome) =>
+            outcome._tag === "Started"
+              ? Effect.sync(() => {
+                  context.set(pendingActionDeepLinkRouteStateAtom, {
+                    ...state,
+                    claimedIntents: [...state.claimedIntents, intentId],
+                  });
+                })
+              : Effect.void
+          )
+        );
     }
 
     context.set(pendingActionDeepLinkRouteStateAtom, {

@@ -9,7 +9,7 @@ A mounted StakeKit Widget within a browser document. A document may contain at m
 _Avoid_: Concurrent widgets, multiple widget instances
 
 **Application Runtime Generation**:
-One continuous lifetime of widget application state under a stable API identity. It ends when that identity changes or the Widget Instance unmounts; live settings changes remain within the same generation.
+One continuous lifetime of widget application state created when a Widget Instance mounts and ended when it unmounts. Its normalized API configuration and mount-time feature configuration are immutable; changing that identity is an invalid host integration that requires unmounting and remounting the Widget. Live settings changes remain within the same generation.
 _Avoid_: Widget Runtime, app mount
 
 ## Wallet Language
@@ -58,7 +58,7 @@ A user's pre-execution attempt to add tokens to an Earn Selection. An eligible Y
 _Avoid_: Enter Action, stake form
 
 **Earn Initialization**:
-The one-time use of host or deep-link initialization parameters to seed the first Earn Selection of a Widget Instance. A consumed or invalidated initialization target does not run again after user intent or a Wallet Scope Owner change.
+The one-time use of host or deep-link initialization parameters to seed the first Earn Selection of a Widget Instance. Its first ready, empty, or failed result completes the attempt; a completed or owner-invalidated target does not run again.
 _Avoid_: Permanent default, init fallback
 
 **Earn Readiness**:

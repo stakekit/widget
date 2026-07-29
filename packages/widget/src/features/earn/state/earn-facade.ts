@@ -494,7 +494,6 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
     isKycLoading: kyc.isLoading,
     isLedgerAccountPlaceholder:
       connected && wallet.isLedgerLiveAccountPlaceholder,
-    isOwnerCurrent: true,
     isWalletConnecting: wallet.status === "connecting",
     kyc,
     positionsData: machine.resources.positions.data,

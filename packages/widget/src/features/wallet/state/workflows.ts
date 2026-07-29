@@ -5,10 +5,6 @@ import { walletRuntime } from "../../../app/runtime/wallet-runtime";
 import { WalletIntegrationError } from "../../../services/wallet/domain/errors";
 import { WalletModal } from "../../../services/wallet/wallet-modal";
 import { WalletService } from "../../../services/wallet/wallet-service";
-import {
-  actionHistoryRevisionAtom,
-  resetActionHistoryRevision,
-} from "../../classic-transaction-flow/state";
 
 type LedgerAccountConnector = {
   readonly requestAndSwitchAccount: (
@@ -61,17 +57,10 @@ export const runLogout = Effect.fn("runLogout")(function* ({
   yield* Effect.tryPromise(clearDatabases);
 });
 
-export const logoutAtom = walletRuntime.fn((_, context) =>
+export const logoutAtom = walletRuntime.fn(() =>
   WalletService.use((wallet) =>
     runLogout({
       disconnect: wallet.disconnect(),
-    }).pipe(
-      Effect.tap(() => WalletModal.use((modal) => modal.closeChain)),
-      Effect.tap(() =>
-        Effect.sync(() => {
-          context.set(actionHistoryRevisionAtom, resetActionHistoryRevision());
-        })
-      )
-    )
+    }).pipe(Effect.tap(() => WalletModal.use((modal) => modal.closeChain)))
   )
 );

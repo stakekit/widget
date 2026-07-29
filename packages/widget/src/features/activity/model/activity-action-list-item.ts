@@ -10,7 +10,10 @@ import {
 } from "../../../shared/lib/date";
 import { capitalizeFirstLetters } from "../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../shared/lib/number-format";
-import type { ActivityActionItem } from "./activity-action";
+import {
+  type ActivityActionItem,
+  getActivityActionOpenTarget,
+} from "./activity-action";
 
 export type ActivityDirection = "deposit" | "withdraw" | "rewards" | "other";
 
@@ -241,7 +244,9 @@ export const projectActivityActionListItem = ({
   return {
     amount,
     amountSign: resolveAmountSign({ amount, direction }),
-    canOpenDetails: action.yieldData !== null,
+    canOpenDetails:
+      action.yieldData !== null &&
+      getActivityActionOpenTarget(action.actionData.status) !== null,
     direction,
     isPositive: direction === "deposit" || direction === "rewards",
     showFailedBadge: action.actionData.status === ActionStatus.FAILED,

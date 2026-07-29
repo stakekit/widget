@@ -17,14 +17,21 @@ const runtimeReleased = vi.hoisted(() => vi.fn());
 vi.mock("../../src/app/composition/providers", async () => {
   const { useAtomValue } = await import("@effect/atom-react");
   const Atom = await import("effect/unstable/reactivity/Atom");
+  const { widgetConfigAtom } = await import("../../src/app/config/settings");
   const { useLayoutEffect } = await import("react");
   const runtimeIdentityAtom = Atom.make(() => ({}));
 
   return {
     Providers: ({ children }: PropsWithChildren) => {
       providersRendered(useAtomValue(runtimeIdentityAtom));
+      const settings = useAtomValue(widgetConfigAtom);
       useLayoutEffect(() => () => runtimeReleased(), []);
-      return children;
+      return (
+        <>
+          <output data-testid="bundled-api-key">{settings.apiKey}</output>
+          {children}
+        </>
+      );
     },
   };
 });
@@ -138,7 +145,60 @@ describe("Widget Instance lifecycle", () => {
     act(() => secondaryRoot.unmount());
   });
 
-  it("keeps the bundled claim while rerendering", async () => {
+  it("rejects a bundled API identity change and keeps the claim until unmount", async () => {
+    const container = document.createElement("div");
+    document.body.append(container);
+    let controller: ReturnType<typeof renderSKWidget>;
+
+    try {
+      await act(async () => {
+        controller = renderSKWidget({ apiKey: "api-key", container });
+      });
+      await expect(
+        act(async () => {
+          controller.rerender({ apiKey: "updated-api-key" });
+        })
+      ).rejects.toMatchObject({
+        name: "ApplicationRuntimeIdentityChangedError",
+      });
+
+      expect(() =>
+        renderSKWidget({
+          apiKey: "other-api-key",
+          container: document.createElement("div"),
+        })
+      ).toThrow(
+        "Only one StakeKit Widget may be mounted in a browser document at a time."
+      );
+    } finally {
+      act(() => controller.unmount());
+      container.remove();
+    }
+  });
+
+  it("applies the latest rerender requested before the initial commit", async () => {
+    const container = document.createElement("div");
+    document.body.append(container);
+    const controller = renderSKWidget({ apiKey: "initial-api-key", container });
+
+    try {
+      expect(() => {
+        controller.rerender({ apiKey: "first-api-key" });
+        controller.rerender({ apiKey: "latest-api-key" });
+      }).not.toThrow();
+
+      await act(async () => undefined);
+
+      expect(
+        container.querySelector('[data-testid="bundled-api-key"]')?.textContent
+      ).toBe("latest-api-key");
+    } finally {
+      act(() => controller.unmount());
+      container.remove();
+    }
+  });
+
+  it("ignores rerender after the bundled Widget Instance unmounts", async () => {
     const container = document.createElement("div");
     document.body.append(container);
     let controller: ReturnType<typeof renderSKWidget>;
@@ -146,20 +206,11 @@ describe("Widget Instance lifecycle", () => {
     await act(async () => {
       controller = renderSKWidget({ apiKey: "api-key", container });
     });
-    await act(async () => {
-      controller.rerender({ apiKey: "updated-api-key" });
-    });
-
-    expect(() =>
-      renderSKWidget({
-        apiKey: "other-api-key",
-        container: document.createElement("div"),
-      })
-    ).toThrow(
-      "Only one StakeKit Widget may be mounted in a browser document at a time."
-    );
-
     act(() => controller.unmount());
+
+    expect(() => controller.rerender({ apiKey: "late-api-key" })).not.toThrow();
+    expect(container.textContent).toBe("");
+
     container.remove();
   });
 

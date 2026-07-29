@@ -45,25 +45,38 @@ describe("bundled widget renderer", () => {
       apiKey: "api-key",
       container: document.createElement("div"),
     });
-    const rendered = reactRoot.render.mock.calls[0]?.[0] as {
-      props: {
-        ref: {
-          current: { rerender: (props: unknown) => void } | null;
-        };
-      };
-    };
-    const rerender = vi.fn();
-    rendered.props.ref.current = { rerender };
-
     widget.rerender({ apiKey: "replacement-api-key" });
 
-    expect(reactRoot.render).toHaveBeenCalledOnce();
-    expect(rerender).toHaveBeenCalledWith(
-      expect.objectContaining({
+    expect(createRoot).toHaveBeenCalledOnce();
+    expect(reactRoot.render).toHaveBeenCalledTimes(2);
+    expect(reactRoot.render.mock.calls[1]?.[0]).toMatchObject({
+      props: {
         apiKey: "replacement-api-key",
-        ref: rendered.props.ref,
-      })
-    );
+      },
+    });
+
+    widget.unmount();
+    widget.rerender({ apiKey: "ignored-api-key" });
+
+    expect(reactRoot.render).toHaveBeenCalledTimes(2);
+    expect(reactRoot.unmount).toHaveBeenCalledOnce();
+  });
+
+  it("applies the latest props across immediate rerenders", () => {
+    const widget = renderSKWidget({
+      apiKey: "api-key",
+      container: document.createElement("div"),
+    });
+
+    widget.rerender({ apiKey: "first-api-key" });
+    widget.rerender({ apiKey: "latest-api-key" });
+
+    expect(reactRoot.render).toHaveBeenCalledTimes(3);
+    expect(reactRoot.render.mock.lastCall?.[0]).toMatchObject({
+      props: {
+        apiKey: "latest-api-key",
+      },
+    });
 
     widget.unmount();
   });

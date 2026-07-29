@@ -2,7 +2,7 @@ import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Deferred, Effect, Equal, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { act } from "react";
+import { act, Component, type PropsWithChildren, type ReactNode } from "react";
 import type { DataRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
@@ -15,13 +15,12 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import {
-  classicFlowSessionStore,
-  makeStartClassicFlowSession,
-} from "../../src/features/classic-transaction-flow/state";
+import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state";
+import { walletScopeAtom } from "../../src/features/wallet/state";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
+import { makeStartClassicFlowSession } from "../utils/classic-flow-session";
 import { render } from "../utils/test-utils.dom";
 
 type LifecycleProbe = {
@@ -197,7 +196,30 @@ const settings = (trackEvent: (event: string) => void, apiKey = "api-key") =>
     variant: "default",
   });
 
-describe("API runtime generations", () => {
+class RuntimeInvariantBoundary extends Component<
+  PropsWithChildren<{ readonly onError: (error: unknown) => void }>,
+  { readonly failed: boolean }
+> {
+  override state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  override componentDidCatch(error: unknown) {
+    this.props.onError(error);
+  }
+
+  override render(): ReactNode {
+    return this.state.failed ? (
+      <div>runtime rejected</div>
+    ) : (
+      this.props.children
+    );
+  }
+}
+
+describe("Application Runtime identity", () => {
   it("does not publish value-equal widget config across rerenders", async () => {
     const track = vi.fn();
     const customConnectors = vi.fn();
@@ -244,18 +266,24 @@ describe("API runtime generations", () => {
     expect(projectionRead).toHaveBeenCalledOnce();
   });
 
-  it("preserves router history for live settings and replaces it with API identity", async () => {
+  it("preserves router history for live settings and rejects a changed API identity", async () => {
     const firstTrack = vi.fn();
     const secondTrack = vi.fn();
     const routers: DataRouter[] = [];
-    const app = await render(
-      <SKAtomRegistryProvider
-        routes={applicationRoutes}
-        settings={settings(firstTrack)}
-      >
-        <ApplicationRouterHarness capture={(router) => routers.push(router)} />
-      </SKAtomRegistryProvider>
+    const onError = vi.fn<(error: unknown) => void>();
+    const renderProvider = (currentSettings: ReturnType<typeof settings>) => (
+      <RuntimeInvariantBoundary onError={onError}>
+        <SKAtomRegistryProvider
+          routes={applicationRoutes}
+          settings={currentSettings}
+        >
+          <ApplicationRouterHarness
+            capture={(router) => routers.push(router)}
+          />
+        </SKAtomRegistryProvider>
+      </RuntimeInvariantBoundary>
     );
+    const app = await render(renderProvider(settings(firstTrack)));
     const capture = () =>
       app.container.querySelector<HTMLButtonElement>("button")?.click();
 
@@ -267,40 +295,30 @@ describe("API runtime generations", () => {
       await firstRouter.navigate("/review");
     });
 
-    await app.rerender(
-      <SKAtomRegistryProvider
-        routes={applicationRoutes}
-        settings={settings(secondTrack)}
-      >
-        <ApplicationRouterHarness capture={(router) => routers.push(router)} />
-      </SKAtomRegistryProvider>
-    );
+    await app.rerender(renderProvider(settings(secondTrack)));
     await act(async () => capture());
 
     expect(routers[1]).toBe(firstRouter);
     expect(routers[1]?.state.location.pathname).toBe("/review");
 
-    const dispose = vi.spyOn(firstRouter, "dispose");
     await app.rerender(
-      <SKAtomRegistryProvider
-        routes={applicationRoutes}
-        settings={settings(secondTrack, "replacement")}
-      >
-        <ApplicationRouterHarness capture={(router) => routers.push(router)} />
-      </SKAtomRegistryProvider>
+      renderProvider(settings(secondTrack, "replacement-api-key"))
     );
-    await vi.waitFor(() => expect(dispose).toHaveBeenCalledOnce());
-    await act(async () => capture());
 
-    expect(routers[2]).not.toBe(firstRouter);
-    expect(routers[2]?.state.location.pathname).toBe("/");
+    expect(app.container.textContent).toContain("runtime rejected");
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "ApplicationRuntimeIdentityChangedError",
+      })
+    );
   });
 
-  it("retains intake for live settings and clears it on runtime replacement before routing", async () => {
+  it("retains intake while live settings change", async () => {
     const firstTrack = vi.fn();
     const secondTrack = vi.fn();
     const app = await render(
       <SKAtomRegistryProvider
+        initialValues={[[walletScopeAtom, activityIntake().walletScope]]}
         routes={applicationRoutes}
         settings={settings(firstTrack)}
       >
@@ -323,6 +341,7 @@ describe("API runtime generations", () => {
 
     await app.rerender(
       <SKAtomRegistryProvider
+        initialValues={[[walletScopeAtom, activityIntake().walletScope]]}
         routes={applicationRoutes}
         settings={settings(secondTrack)}
       >
@@ -333,21 +352,6 @@ describe("API runtime generations", () => {
       app.container.querySelector('[data-testid="classic-flow-session"]')
         ?.textContent
     ).toBe(sessionKey);
-
-    await app.rerender(
-      <SKAtomRegistryProvider
-        routes={applicationRoutes}
-        settings={settings(secondTrack, "replacement-api-key")}
-      >
-        <ClassicFlowRuntimeHarness />
-      </SKAtomRegistryProvider>
-    );
-    await vi.waitFor(() =>
-      expect(
-        app.container.querySelector('[data-testid="classic-flow-session"]')
-          ?.textContent
-      ).toBe("none")
-    );
   });
 
   it("keeps the runtime and staged state while resolving new live callbacks", async () => {
@@ -423,61 +427,6 @@ describe("API runtime generations", () => {
       starts: 1,
       states: ["Signing", "Completed"],
       submissions: 1,
-      walletPrompts: 1,
-    });
-  });
-
-  it("disposes all old registry state when API configuration changes", async () => {
-    const probe: LifecycleProbe = { disposed: 0, initialized: 0 };
-    const workflowProbe: WorkflowProbe = {
-      deferredSigning: await Effect.runPromise(Deferred.make<void>()),
-      finalized: 0,
-      machine: null,
-      starts: 0,
-      states: [],
-      submissions: 0,
-      walletPrompts: 0,
-    };
-    const track = vi.fn();
-    const app = await render(
-      <SKAtomRegistryProvider
-        routes={applicationRoutes}
-        settings={settings(track)}
-      >
-        <RuntimeHarness probe={probe} workflowProbe={workflowProbe} />
-      </SKAtomRegistryProvider>
-    );
-
-    await vi.waitFor(() => expect(probe.initialized).toBe(1));
-    await act(async () =>
-      app.container.querySelector<HTMLButtonElement>("button")?.click()
-    );
-    await vi.waitFor(() => expect(workflowProbe.starts).toBe(1));
-
-    await app.rerender(
-      <SKAtomRegistryProvider
-        routes={applicationRoutes}
-        settings={settings(track, "replacement-api-key")}
-      >
-        <RuntimeHarness probe={probe} workflowProbe={workflowProbe} />
-      </SKAtomRegistryProvider>
-    );
-
-    await vi.waitFor(() =>
-      expect(probe).toEqual({ disposed: 1, initialized: 2 })
-    );
-    expect(
-      app.container.querySelector('[data-testid="staged"]')?.textContent
-    ).toBe("empty");
-    await vi.waitFor(() => expect(workflowProbe.finalized).toBe(1));
-
-    await Effect.runPromise(
-      Deferred.succeed(workflowProbe.deferredSigning, undefined)
-    );
-    expect(workflowProbe).toMatchObject({
-      finalized: 1,
-      starts: 1,
-      submissions: 0,
       walletPrompts: 1,
     });
   });

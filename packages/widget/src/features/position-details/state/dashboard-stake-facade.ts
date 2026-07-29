@@ -228,8 +228,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         ) ||
         (tokenBalances.enabled &&
           AsyncResult.isInitial(tokenBalances.result)) ||
-        AsyncResult.isInitial(validatorsResult) ||
-        Boolean(pricesRequest && AsyncResult.isInitial(pricesResult));
+        AsyncResult.isInitial(validatorsResult);
       const symbol = selectedToken?.symbol ?? "";
       const currentScope = get(walletScopeAtom);
       const ownerCurrent =
@@ -268,7 +267,6 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         isLedgerAccountPlaceholder:
           wallet.status === "connected" &&
           wallet.isLedgerLiveAccountPlaceholder,
-        isOwnerCurrent: ownerCurrent,
         isWalletConnecting: wallet.status === "connecting",
         kyc: {
           gate: kyc.gate,
@@ -294,7 +292,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
           address: wallet.status === "connected" ? wallet.address : null,
           isLedgerLive: wallet.isLedgerLive,
         },
-        walletScope: currentScope,
+        walletScope: key.walletScope,
       } as const;
     }).pipe(Atom.withLabel("positionDetailsStakeYieldEntryInputAtom"));
 

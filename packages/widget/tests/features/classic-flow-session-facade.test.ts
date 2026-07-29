@@ -11,15 +11,13 @@ import type {
 } from "../../src/domain/schema/action-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import {
-  classicFlowSessionStore,
-  makeStartClassicFlowSession,
-} from "../../src/features/classic-transaction-flow/state";
+import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state";
 import {
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
   makeClassicFlowSessionModule,
 } from "../../src/features/classic-transaction-flow/state/classic-flow-session-facade";
+import { walletScopeAtom } from "../../src/features/wallet/state";
 import {
   type ActionPreviewRequest,
   YieldOperations,
@@ -33,6 +31,7 @@ import {
   yieldApiTransactionFixture,
   yieldApiYieldFixture,
 } from "../fixtures";
+import { makeStartClassicFlowSession } from "../utils/classic-flow-session";
 
 const walletScope = new WalletScopeKey({
   address: Schema.decodeSync(WalletAddress)(
@@ -141,6 +140,7 @@ const makeRegistry = (
         makeAppLayer(previewAction, trackEvent) as never
       ),
       Atom.initialValue(walletRuntime.layer, makeWorkflowLayer(probe) as never),
+      Atom.initialValue(walletScopeAtom, walletScope),
     ],
   });
 

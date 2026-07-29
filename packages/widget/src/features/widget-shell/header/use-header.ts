@@ -1,10 +1,12 @@
+import { useAtomSet } from "@effect/atom-react";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import { useWidgetConfig } from "../../../app/config/use-widget-config";
 import { shouldShowDisconnect } from "../../../domain/types/connectors";
 import { useTrackEvent } from "../../tracking/state";
-import { useLogout, useSKWallet, useWalletConfig } from "../../wallet/state";
+import { useSKWallet, useWalletConfig } from "../../wallet/state";
 import { useDetailsMatch } from "../react/use-details-match";
+import { disconnectWidgetAtom } from "../state";
 import { useSyncHeaderHeight } from "./use-sync-header-height";
 
 export const useHeader = () => {
@@ -38,11 +40,11 @@ export const useHeader = () => {
     navigate(-1);
   };
 
-  const logout = useLogout();
+  const disconnectWidget = useAtomSet(disconnectWidgetAtom);
 
   const onXPress = () => {
     trackEvent("widgetDisconnectClicked");
-    void logout().catch(() => undefined);
+    disconnectWidget(undefined);
   };
 
   return {

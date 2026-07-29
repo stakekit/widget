@@ -17,6 +17,7 @@ import {
   pendingActionDeepLinkViewAtom,
 } from "../../src/features/earn/state/pending-action-deep-link";
 import { mountAnimationStateAtom } from "../../src/features/mount-animation/state";
+import { walletScopeAtom } from "../../src/features/wallet/state";
 import {
   WidgetNavigation,
   type WidgetPath,
@@ -87,6 +88,10 @@ describe("pending-action deep-link route claims", () => {
           layout: false,
         }),
         Atom.initialValue(pendingActionDeepLinkViewAtom, projected),
+        Atom.initialValue(
+          walletScopeAtom,
+          new WalletScopeKey({ address, network: "ethereum" })
+        ),
       ],
     });
     const unmount = registry.mount(pendingActionDeepLinkRouteAtom);

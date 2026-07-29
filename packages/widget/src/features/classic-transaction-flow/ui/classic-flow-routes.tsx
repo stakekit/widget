@@ -1,6 +1,7 @@
 import { Match } from "effect";
 import type { ComponentType } from "react";
 import { Route } from "react-router";
+import { historicalActivityCompletePaths } from "../react/activity-route-paths";
 import {
   ClassicFlowExecutionScope,
   ClassicFlowReviewScope,
@@ -67,6 +68,9 @@ const createClassicActivityResumeRoutes = () => (
         </ClassicFlowReviewScope>
       }
     />
+    {Object.values(historicalActivityCompletePaths).map((path) => (
+      <Route key={path} path={path} element={<ActivityDetailsPage />} />
+    ))}
     <Route element={<ClassicFlowExecutionScope />}>
       <Route path=":pendingActionType/steps" element={<ActivityStepsPage />} />
       <Route

@@ -46,36 +46,13 @@ describe("Earn state machine model", () => {
       reconcileEarnMachineOwner(
         {
           dashboardVariant: false,
+          initializationPhase: "complete",
           intent,
           owner: firstOwner,
-          userSelected: false,
         },
         nextOwner
       ).intent
     ).toEqual(makeDefaultEarnIntent());
-  });
-
-  it("does not let a wallet owner change re-arm init param seeding", () => {
-    const firstOwner = new WalletScopeOwnerKey({
-      address: walletAddress("0x1111111111111111111111111111111111111111"),
-      network: EvmNetworks.Ethereum,
-    });
-    const nextOwner = new WalletScopeOwnerKey({
-      address: walletAddress("0x2222222222222222222222222222222222222222"),
-      network: EvmNetworks.Polygon,
-    });
-
-    expect(
-      reconcileEarnMachineOwner(
-        {
-          dashboardVariant: false,
-          intent: makeDefaultEarnIntent(),
-          owner: firstOwner,
-          userSelected: true,
-        },
-        nextOwner
-      ).userSelected
-    ).toBe(true);
   });
 
   it("preserves intent when the primary address and network are unchanged", () => {
@@ -89,12 +66,12 @@ describe("Earn state machine model", () => {
     });
     const state = {
       dashboardVariant: false,
+      initializationPhase: "complete" as const,
       intent: applyEarnAction({
         action: { category: "defi", type: "category/select" },
         intent: makeDefaultEarnIntent(),
       }),
       owner: firstOwner,
-      userSelected: false,
     };
 
     expect(reconcileEarnMachineOwner(state, sameOwner)).toBe(state);
@@ -103,19 +80,19 @@ describe("Earn state machine model", () => {
   it("resets selection when switching between classic and dashboard modes", () => {
     const state = {
       dashboardVariant: false,
+      initializationPhase: "complete" as const,
       intent: applyEarnAction({
         action: { category: "defi", type: "category/select" },
         intent: makeDefaultEarnIntent(),
       }),
       owner: null,
-      userSelected: true,
     };
 
     expect(reconcileEarnMachineOwner(state, null, true)).toEqual({
       dashboardVariant: true,
+      initializationPhase: "complete",
       intent: makeDefaultEarnIntent(),
       owner: null,
-      userSelected: true,
     });
   });
 

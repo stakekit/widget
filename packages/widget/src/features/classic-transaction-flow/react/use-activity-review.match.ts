@@ -1,9 +1,19 @@
 import { useMatch } from "react-router";
+import {
+  historicalActivityCompletePaths,
+  toActivityRouteMatchPath,
+} from "./activity-route-paths";
 
 export const useActivityReviewMatch = () => {
-  const stakeReviewMatch = useMatch("activity/stake-review/complete");
-  const unstakeReviewMatch = useMatch("activity/unstake-review/complete");
-  const pendingReviewMatch = useMatch("activity/pending-review/complete");
+  const stakeReviewMatch = useMatch(
+    toActivityRouteMatchPath(historicalActivityCompletePaths.stake)
+  );
+  const unstakeReviewMatch = useMatch(
+    toActivityRouteMatchPath(historicalActivityCompletePaths.unstake)
+  );
+  const pendingReviewMatch = useMatch(
+    toActivityRouteMatchPath(historicalActivityCompletePaths.pending)
+  );
 
   return stakeReviewMatch || unstakeReviewMatch || pendingReviewMatch;
 };

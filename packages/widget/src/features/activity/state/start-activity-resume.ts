@@ -1,17 +1,18 @@
 import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import { runWidgetNavigationCommand } from "../../../app/runtime/navigation";
-import { ActionStatus } from "../../../domain/types/action";
 import { toWidgetPath } from "../../../services/navigation/widget-navigation";
 import { WalletModal } from "../../../services/wallet/wallet-modal";
 import type { ClassicTransactionWorkflowProviderDetail } from "../../../services/workflow/transaction-workflow-model";
 import {
-  classicFlowSessionStore,
   makeClassicTransactionFlowDestination,
+  startClassicFlowSessionAtom,
 } from "../../classic-transaction-flow/state";
 import { walletConnectionStateAtom } from "../../wallet/state";
-import type { ActivityActionItem } from "../model/activity-action";
+import {
+  type ActivityActionItem,
+  getActivityActionOpenTarget,
+} from "../model/activity-action";
 
 export type ActivityResumeMode = "start-and-navigate" | "start-only";
 
@@ -40,6 +41,10 @@ export const startActivityResumeAtom = appRuntime
       return WalletModal.use((modal) => modal.openConnect);
     }
     if (!command.item.yieldData) return Effect.void;
+    const openTarget = getActivityActionOpenTarget(
+      command.item.actionData.status
+    );
+    if (!openTarget) return Effect.void;
 
     const segment = getActivityFlowPathSegment(command.item.actionData.type);
     const destination = makeClassicTransactionFlowDestination({
@@ -47,7 +52,33 @@ export const startActivityResumeAtom = appRuntime
       routeBase: "/activity",
       stepsPath: `/activity/${segment}/steps`,
     });
-    context.set(classicFlowSessionStore.startAtom, {
+    const navigation = (() => {
+      if (command.mode === "start-only") return null;
+      if (openTarget === "HistoricalDetails") {
+        return {
+          _tag: "Push" as const,
+          path: toWidgetPath(`/activity/${segment}-review/complete`),
+          state: {
+            urls: command.item.actionData.transactions.flatMap((transaction) =>
+              transaction.explorerUrl
+                ? [
+                    {
+                      type: transaction.type,
+                      url: transaction.explorerUrl,
+                    },
+                  ]
+                : []
+            ),
+          },
+        };
+      }
+      return {
+        _tag: "Push" as const,
+        path: destination.reviewPath,
+      };
+    })();
+
+    return context.setResult(startClassicFlowSessionAtom, {
       destination,
       intake: {
         _tag: "ActivityResume",
@@ -57,38 +88,7 @@ export const startActivityResumeAtom = appRuntime
         selectedYield: command.item.yieldData,
         walletScope: command.item.walletScope,
       },
+      navigation,
     });
-
-    if (command.mode === "start-only") return Effect.void;
-
-    if (
-      command.item.actionData.status === ActionStatus.SUCCESS ||
-      command.item.actionData.status === ActionStatus.PROCESSING
-    ) {
-      const urls = command.item.actionData.transactions.flatMap(
-        (transaction) =>
-          transaction.explorerUrl
-            ? [{ type: transaction.type, url: transaction.explorerUrl }]
-            : []
-      );
-      return runWidgetNavigationCommand({
-        _tag: "Push",
-        path: toWidgetPath(`/activity/${segment}-review/complete`),
-        state: { urls },
-      });
-    }
-
-    if (
-      command.item.actionData.status === ActionStatus.CREATED ||
-      command.item.actionData.status === ActionStatus.WAITING_FOR_NEXT ||
-      command.item.actionData.status === ActionStatus.FAILED
-    ) {
-      return runWidgetNavigationCommand({
-        _tag: "Push",
-        path: destination.reviewPath,
-      });
-    }
-
-    return Effect.void;
   })
   .pipe(Atom.withLabel("startActivityResumeAtom"));

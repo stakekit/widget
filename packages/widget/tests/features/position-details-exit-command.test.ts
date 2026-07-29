@@ -14,6 +14,7 @@ import {
   positionBalancesByTypeAtom,
 } from "../../src/features/portfolio/state";
 import {
+  runPositionPendingActionAtom,
   setPositionDetailsExitMaxAmountAtom,
   submitPositionDetailsExitAtom,
 } from "../../src/features/position-details/state/classic-flow-actions";
@@ -32,10 +33,17 @@ import {
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
+);
+const otherAddress = Schema.decodeSync(WalletAddress)(
+  "0x2234567890123456789012345678901234567890"
+);
+const sameAddressDifferentCase = Schema.decodeSync(WalletAddress)(
+  address.toUpperCase()
 );
 const scope = new WalletScopeKey({ address, network: "ethereum" });
 const baseYield = yieldApiYieldFixture();
@@ -52,6 +60,23 @@ const balance = Schema.decodeUnknownSync(EarnBalance)(
     token: selectedYield.token,
   })
 );
+const manageBalance = Schema.decodeUnknownSync(EarnBalance)(
+  yieldBalanceFixture({
+    address,
+    amount: "1",
+    pendingActions: [
+      {
+        amount: "1",
+        arguments: { fields: [] },
+        intent: "manage",
+        passthrough: "wallet-a-action",
+        type: "CLAIM_REWARDS",
+      },
+    ],
+    token: selectedYield.token,
+  })
+);
+const manageAction = manageBalance.pendingActions[0]!;
 const workflowKey = new PositionDetailsWorkflowKey({
   balanceId: "balance-1",
   integrationId: selectedYield.id,
@@ -64,12 +89,32 @@ const positionKey = new PositionBalancesKey({
   yieldId: selectedYield.id,
 });
 
+const makeConnectedWallet = (
+  overrides: Partial<
+    Extract<NormalizedWalletState, { readonly status: "connected" }>
+  > = {}
+): Extract<NormalizedWalletState, { readonly status: "connected" }> => ({
+  additionalAddresses: null,
+  address,
+  chain: {} as never,
+  connector: {} as never,
+  connectorChains: [],
+  isLedgerLive: false,
+  isLedgerLiveAccountPlaceholder: false,
+  ledgerAccounts: [],
+  network: "ethereum",
+  status: "connected",
+  ...overrides,
+});
+
 const makeRegistry = ({
   push,
   trackEvent,
+  wallet = makeConnectedWallet(),
 }: {
   readonly push: ReturnType<typeof vi.fn<(path: WidgetPath) => void>>;
   readonly trackEvent: TrackingService["Service"]["trackEvent"];
+  readonly wallet?: NormalizedWalletState;
 }) =>
   AtomRegistry.make({
     initialValues: [
@@ -93,18 +138,7 @@ const makeRegistry = ({
           )
         ) as never
       ),
-      Atom.initialValue(walletConnectionStateAtom, {
-        additionalAddresses: null,
-        address,
-        chain: {} as never,
-        connector: {} as never,
-        connectorChains: [],
-        isLedgerLive: false,
-        isLedgerLiveAccountPlaceholder: false,
-        ledgerAccounts: [],
-        network: "ethereum",
-        status: "connected",
-      } as const),
+      Atom.initialValue(walletConnectionStateAtom, wallet),
       Atom.initialValue(
         yieldOpportunityAtom(
           new YieldOpportunityKey({ yieldId: selectedYield.id })
@@ -186,6 +220,160 @@ describe("Position Details exit command", () => {
         yieldId: selectedYield.id,
       });
       expect(push).not.toHaveBeenCalled();
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("rejects a stale Exit command after the Wallet Scope Owner changes", async () => {
+    const push = vi.fn<(path: WidgetPath) => void>();
+    const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
+      () => Effect.void
+    );
+    const registry = makeRegistry({
+      push,
+      trackEvent,
+      wallet: makeConnectedWallet({ address: otherAddress }),
+    });
+
+    try {
+      registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        pendingActions: new Map(),
+        unstakeAmount: new BigNumber("0.4"),
+        unstakeUseMaxAmount: false,
+      });
+      registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
+
+      await Promise.resolve();
+
+      expect(push).not.toHaveBeenCalled();
+      expect(
+        registry.get(classicFlowSessionStore.currentSessionAtom)
+      ).toBeNull();
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("rejects a stale Manage command after the Wallet Scope Owner changes", async () => {
+    const push = vi.fn<(path: WidgetPath) => void>();
+    const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
+      () => Effect.void
+    );
+    const registry = makeRegistry({
+      push,
+      trackEvent,
+      wallet: makeConnectedWallet({ address: otherAddress }),
+    });
+
+    try {
+      registry.set(runPositionPendingActionAtom(workflowKey), {
+        _tag: "Select",
+        pendingActionDto: manageAction,
+        yieldBalance: manageBalance,
+      });
+
+      await Promise.resolve();
+
+      expect(push).not.toHaveBeenCalled();
+      expect(
+        registry.get(classicFlowSessionStore.currentSessionAtom)
+      ).toBeNull();
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("captures refreshed additional addresses in both the Exit request and Wallet Scope", async () => {
+    const push = vi.fn<(path: WidgetPath) => void>();
+    const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
+      () => Effect.void
+    );
+    const registry = makeRegistry({
+      push,
+      trackEvent,
+      wallet: makeConnectedWallet({
+        additionalAddresses: { cosmosPubKey: "cosmos-refreshed" },
+        address: sameAddressDifferentCase,
+      }),
+    });
+
+    try {
+      registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        pendingActions: new Map(),
+        unstakeAmount: new BigNumber("0.4"),
+        unstakeUseMaxAmount: false,
+      });
+      registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
+
+      await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
+      const intake = registry.get(
+        classicFlowSessionStore.currentSessionAtom
+      )?.intake;
+
+      expect(intake).toMatchObject({
+        _tag: "Exit",
+        request: {
+          address: sameAddressDifferentCase,
+          arguments: {
+            cosmosPubKey: "cosmos-refreshed",
+          },
+        },
+        walletScope: {
+          additionalAddresses: {
+            cosmosPubKey: "cosmos-refreshed",
+          },
+          address: sameAddressDifferentCase,
+          network: "ethereum",
+        },
+      });
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("captures one refreshed Wallet Scope for a Manage request and intake", async () => {
+    const push = vi.fn<(path: WidgetPath) => void>();
+    const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
+      () => Effect.void
+    );
+    const registry = makeRegistry({
+      push,
+      trackEvent,
+      wallet: makeConnectedWallet({
+        additionalAddresses: { cosmosPubKey: "cosmos-refreshed" },
+        address: sameAddressDifferentCase,
+      }),
+    });
+
+    try {
+      registry.set(runPositionPendingActionAtom(workflowKey), {
+        _tag: "Select",
+        pendingActionDto: manageAction,
+        yieldBalance: manageBalance,
+      });
+
+      await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
+      const intake = registry.get(
+        classicFlowSessionStore.currentSessionAtom
+      )?.intake;
+
+      expect(intake).toMatchObject({
+        _tag: "Manage",
+        request: {
+          address: sameAddressDifferentCase,
+          arguments: {
+            cosmosPubKey: "cosmos-refreshed",
+          },
+        },
+        walletScope: {
+          additionalAddresses: {
+            cosmosPubKey: "cosmos-refreshed",
+          },
+          address: sameAddressDifferentCase,
+          network: "ethereum",
+        },
+      });
     } finally {
       registry.dispose();
     }

@@ -35,7 +35,7 @@ vi.mock("@polkadot/types", () => ({
   },
 }));
 
-type PrepareParams = { network: string; tx: string; txMeta: SKTxMeta };
+type PrepareParams = { network: string; tx: string; txMeta?: SKTxMeta };
 
 const prepared = (params: PrepareParams) =>
   makePrepareLedgerLiveTransaction.pipe(
@@ -216,7 +216,22 @@ describe("prepareLedgerLiveTransaction", () => {
           txType: "STAKE",
         }),
       })
-    ).resolves.toBe("Missing Cosmos Ledger arguments");
+    ).resolves.toMatchObject({
+      _tag: "LedgerTransactionPreparationError",
+      message: "Missing Cosmos Ledger arguments",
+    });
+  });
+
+  it("requires classic transaction metadata for Polkadot", async () => {
+    await expect(
+      prepareFailure({
+        network: SubstrateNetworks.Polkadot,
+        tx: polkadotTx,
+      })
+    ).resolves.toMatchObject({
+      _tag: "LedgerTransactionPreparationError",
+      message: "Missing classic transaction metadata",
+    });
   });
 
   it("uses the Polkadot bond payee as Ledger reward destination", async () => {

@@ -2,7 +2,6 @@ import BigNumber from "bignumber.js";
 import { Array as EArray, Effect, Option } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import { runWidgetNavigationCommand } from "../../../app/runtime/navigation";
 import { getMaxAmount } from "../../../domain";
 import { ActionCommand } from "../../../domain/schema/action-models";
 import type { AdditionalAddresses } from "../../../domain/schema/address-models";
@@ -37,8 +36,7 @@ import { getRewardRateFormatted } from "../../../shared/lib/formatters";
 import { formatNumber } from "../../../shared/lib/number-format";
 import {
   type ClassicFlowSession,
-  classicFlowSessionStore,
-  makeStartClassicFlowSession,
+  startClassicFlowSessionAtom,
 } from "../../classic-transaction-flow/state";
 import type { YieldSummaryProvider } from "../../yield-summary/state";
 
@@ -185,7 +183,6 @@ export type YieldEntryFacadeInput = Readonly<{
   readonly isKycBlocking: boolean;
   readonly isKycLoading: boolean;
   readonly isLedgerAccountPlaceholder: boolean;
-  readonly isOwnerCurrent: boolean;
   readonly isWalletConnecting: boolean;
   readonly positionsData: PositionsData;
   readonly providers: ReadonlyArray<YieldSummaryProvider> | null;
@@ -363,9 +360,6 @@ export const makeYieldEntry = (
       (_input: undefined, context) => {
         const input = context(inputAtom);
         const view = context(viewAtom);
-        if (!input.isOwnerCurrent) {
-          return Effect.succeed("stale-owner" as const);
-        }
         if (
           !input.connected &&
           (input.externalProviders || input.isWalletConnecting)
@@ -429,7 +423,6 @@ const runSubmitYieldEntry = (
   input: SubmitYieldEntry,
   context: Atom.FnContext
 ) => {
-  const registry = context.registry;
   if (!input.connected || !input.walletScope) {
     return WalletModal.use((modal) => modal.openConnect).pipe(
       Effect.as("connecting-wallet" as const)
@@ -445,34 +438,31 @@ const runSubmitYieldEntry = (
     return Effect.succeed("kyc-blocked" as const);
   }
 
-  const start = makeStartClassicFlowSession({
-    _tag: "Enter",
-    request: input.preparation.command,
-    selectedToken: input.preparation.selectedToken,
-    gasFeeToken: input.preparation.gasFeeToken,
-    providersDetails: input.providers,
-    selectedStake: input.preparation.selectedYield,
-    selectedValidators: input.preparation.selectedValidators,
-    walletScope: input.walletScope,
-  });
-  context.set(classicFlowSessionStore.startAtom, {
-    ...start,
-    destination: input.destination,
-  });
-  const startedSession = registry
-    .get(classicFlowSessionStore.startAtom)
-    .pipe(Option.getOrThrow);
-  return runWidgetNavigationCommand({
-    _tag: "Push",
-    path: input.destination.reviewPath,
-  }).pipe(
-    Effect.tapError(() =>
-      Effect.sync(() => {
-        registry.set(classicFlowSessionStore.clearAtom, startedSession.epoch);
-      })
-    ),
-    Effect.as("submitted" as const)
-  );
+  return context
+    .setResult(startClassicFlowSessionAtom, {
+      destination: input.destination,
+      intake: {
+        _tag: "Enter",
+        request: input.preparation.command,
+        selectedToken: input.preparation.selectedToken,
+        gasFeeToken: input.preparation.gasFeeToken,
+        providersDetails: input.providers,
+        selectedStake: input.preparation.selectedYield,
+        selectedValidators: input.preparation.selectedValidators,
+        walletScope: input.walletScope,
+      },
+      navigation: {
+        _tag: "Push",
+        path: input.destination.reviewPath,
+      },
+    })
+    .pipe(
+      Effect.map((outcome) =>
+        outcome._tag === "Started"
+          ? ("submitted" as const)
+          : ("stale-owner" as const)
+      )
+    );
 };
 
 type YieldAmountConstraintsInput = Readonly<{

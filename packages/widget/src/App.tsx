@@ -3,7 +3,6 @@ import "./translation";
 import "./shared/styles/theme/global.css";
 import { useAtomValue } from "@effect/atom-react";
 import type { ComponentProps } from "react";
-import { createRef, useImperativeHandle, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router/dom";
 import { ApplicationRouteContentProvider } from "./app/composition/application-route-content";
@@ -20,11 +19,7 @@ import { useHandleDeepLinks } from "./app/routes/hooks/use-handle-deep-links";
 import { applicationRouterAtom } from "./app/runtime/application-router-runtime";
 import { useLoadErrorTranslations } from "./app/translation/use-load-error-translations";
 import { appContainer } from "./features/widget-shell/components";
-import type {
-  BundledSKWidgetProps,
-  SKAppProps,
-  VariantProps,
-} from "./public-api/types";
+import type { SKAppProps, VariantProps } from "./public-api/types";
 import { isLedgerDappBrowserProvider } from "./services/wallet/browser-environment";
 import { preloadImages } from "./shared/assets/images";
 import { Box } from "./shared/ui/primitives/box";
@@ -90,15 +85,7 @@ export const SKApp = (props: SKAppProps) => (
   </WidgetInstanceReactBoundary>
 );
 
-const BundledSKWidget = (_props: BundledSKWidgetProps) => {
-  const [props, setProps] = useState(_props);
-
-  useImperativeHandle(props.ref, () => ({
-    rerender: (newProps: BundledSKWidgetProps) => setProps(newProps),
-  }));
-
-  return <SKAppContent {...props} />;
-};
+const BundledSKWidget = (props: SKAppProps) => <SKAppContent {...props} />;
 
 export const renderSKWidget = ({
   container,
@@ -115,18 +102,18 @@ export const renderSKWidget = ({
 
   try {
     root = ReactDOM.createRoot(container);
-
-    const appRef = createRef<{ rerender: () => void }>() as NonNullable<
-      BundledSKWidgetProps["ref"]
-    >;
-
-    root.render(<BundledSKWidget {...rest} ref={appRef} />);
-
+    let currentProps = rest;
     let unmounted = false;
+    const render = () => root.render(<BundledSKWidget {...currentProps} />);
+
+    render();
 
     return {
-      rerender: (newProps: SKAppProps) =>
-        appRef.current.rerender({ ...newProps, ref: appRef }),
+      rerender: (newProps: SKAppProps) => {
+        if (unmounted) return;
+        currentProps = newProps;
+        render();
+      },
       unmount: () => {
         if (unmounted) return;
 

@@ -2,10 +2,8 @@ import { Data, Duration, Effect } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
-import {
-  type BorrowPositions,
-  deriveBorrowPositions,
-} from "../../domain/borrow/borrow-positions";
+import { deriveBorrowPositions } from "../../domain/borrow/borrow-positions";
+
 import {
   type BorrowNetwork,
   isBorrowNetwork,
@@ -129,5 +127,3 @@ const borrowPositionsCanonicalAtom = Atom.family((key: BorrowPositionsKey) => {
 export const borrowPositionsResourceAtom = makePresentableResourceFamily(
   borrowPositionsCanonicalAtom
 );
-
-export type { BorrowPositions };

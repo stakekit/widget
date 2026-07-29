@@ -141,4 +141,38 @@ describe("Activity resume action", () => {
       registry.dispose();
     }
   });
+
+  it.each(["CANCELED", "STALE"] as const)(
+    "does not start a Flow Session for a %s action",
+    async (status) => {
+      const push = vi.fn();
+      const registry = makeRegistry(push);
+      const selectedYield = yieldApiYieldFixture();
+
+      try {
+        registry.set(startActivityResumeAtom, {
+          item: {
+            actionData: yieldApiActionFixture({
+              status,
+              yieldId: selectedYield.id,
+            }),
+            validatorsData: [],
+            walletScope,
+            yieldData: selectedYield,
+          },
+          providersDetails: [],
+          mode: "start-and-navigate",
+        });
+
+        await Promise.resolve();
+
+        expect(push).not.toHaveBeenCalled();
+        expect(
+          registry.get(classicFlowSessionStore.currentSessionAtom)
+        ).toBeNull();
+      } finally {
+        registry.dispose();
+      }
+    }
+  );
 });

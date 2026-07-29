@@ -69,7 +69,19 @@ const decodeSchema = <S extends Schema.ConstraintDecoder<unknown>>(
 
 export type PrepareLedgerLiveTransaction = (
   params: PrepareLedgerLiveTransactionParams
-) => Effect.Effect<RawTransaction, string>;
+) => Effect.Effect<RawTransaction, LedgerTransactionPreparationError>;
+
+export class LedgerTransactionPreparationError extends Schema.TaggedErrorClass<LedgerTransactionPreparationError>()(
+  "LedgerTransactionPreparationError",
+  {
+    message: Schema.String,
+  }
+) {}
+
+const transactionPreparationError = (
+  message: string
+): LedgerTransactionPreparationError =>
+  new LedgerTransactionPreparationError({ message });
 
 /**
  * The Polkadot builder pulls in `@polkadot/types`, whose evaluation inflates a
@@ -85,7 +97,10 @@ export const makePrepareLedgerLiveTransaction: Effect.Effect<PrepareLedgerLiveTr
           import("./polkadot-ledger-transaction").then(
             (module) => module.buildPolkadotLedgerTransaction
           ),
-        catch: () => "Could not load Polkadot transaction support",
+        catch: () =>
+          transactionPreparationError(
+            "Could not load Polkadot transaction support"
+          ),
       })
     );
 
@@ -93,12 +108,16 @@ export const makePrepareLedgerLiveTransaction: Effect.Effect<PrepareLedgerLiveTr
       if (network === SubstrateNetworks.Polkadot) {
         return txMeta
           ? preparePolkadotTransaction({ loadPolkadotBuilder, tx, txMeta })
-          : Effect.fail("Missing classic transaction metadata");
+          : Effect.fail(
+              transactionPreparationError(
+                "Missing classic transaction metadata"
+              )
+            );
       }
 
       return Effect.fromResult(
         prepareSynchronousTransaction({ network, tx, txMeta })
-      );
+      ).pipe(Effect.mapError(transactionPreparationError));
     };
   });
 
@@ -107,15 +126,19 @@ const preparePolkadotTransaction = ({
   tx,
   txMeta,
 }: {
-  loadPolkadotBuilder: Effect.Effect<BuildPolkadotLedgerTransaction, string>;
+  loadPolkadotBuilder: Effect.Effect<
+    BuildPolkadotLedgerTransaction,
+    LedgerTransactionPreparationError
+  >;
   tx: string;
   txMeta: SKTxMeta;
-}): Effect.Effect<RawTransaction, string> =>
+}): Effect.Effect<RawTransaction, LedgerTransactionPreparationError> =>
   Effect.fromResult(
     parseJson(tx).pipe(
       Result.flatMap((value) => decodeSchema(substratePayloadCodec, value))
     )
   ).pipe(
+    Effect.mapError(transactionPreparationError),
     Effect.flatMap((payload) =>
       loadPolkadotBuilder.pipe(
         Effect.flatMap((buildPolkadotLedgerTransaction) =>
@@ -127,7 +150,7 @@ const preparePolkadotTransaction = ({
               payload,
               txMeta,
             })
-          )
+          ).pipe(Effect.mapError(transactionPreparationError))
         )
       )
     )

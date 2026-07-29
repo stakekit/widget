@@ -8,6 +8,7 @@ import {
   YieldValidatorsKey,
   YieldValidatorsPullKey,
 } from "../../src/features/earn/state/atoms-state/catalog/keys";
+import { earnMachineIntentAtom } from "../../src/features/earn/state/atoms-state/machine/atoms";
 import {
   earnValidatorSelectionViewAtom,
   selectEarnValidatorAtom,
@@ -236,9 +237,15 @@ describe("Earn validator search", () => {
       const beta = registry.get(earnValidatorSelectionViewAtom).data?.[0];
       registry.set(selectEarnValidatorAtom, beta!.key);
       await vi.advanceTimersByTimeAsync(0);
+      expect([
+        ...registry.get(earnMachineIntentAtom).selectedValidatorKeys,
+      ]).toEqual([beta!.key]);
       registry.set(setEarnValidatorSearchAtom, "");
       await vi.advanceTimersByTimeAsync(VALIDATOR_SEARCH_DEBOUNCE_MS);
 
+      expect([
+        ...registry.get(earnMachineIntentAtom).selectedValidatorKeys,
+      ]).toEqual([beta!.key]);
       expect([
         ...registry.get(earnValidatorSelectionViewAtom).selected.values(),
       ]).toEqual([beta]);

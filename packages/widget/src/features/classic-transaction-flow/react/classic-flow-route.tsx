@@ -30,18 +30,14 @@ export const useClassicFlowSession = (): ClassicFlowSessionFacade => {
   return session.facade;
 };
 
-const ReviewScopedAtom = makeScopedAtom((session: ClassicFlowSessionModule) =>
-  makeClassicFlowReviewScope(session)
-);
+const ReviewScopedAtom = makeScopedAtom(makeClassicFlowReviewScope);
 
 export const useClassicFlowReview = (): ClassicFlowReviewFacade => {
   const reviewAtom = useContext(ReviewScopedAtom.Context);
   return useAtomValue(reviewAtom);
 };
 
-const ExecutionScopedAtom = makeScopedAtom(
-  (session: ClassicFlowSessionModule) => makeClassicFlowExecutionScope(session)
-);
+const ExecutionScopedAtom = makeScopedAtom(makeClassicFlowExecutionScope);
 
 export const useClassicFlowExecution = (): ClassicFlowExecutionFacade => {
   const executionAtom = useContext(ExecutionScopedAtom.Context);

@@ -1,15 +1,19 @@
 import BigNumber from "bignumber.js";
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import { runWidgetNavigationCommand } from "../../../app/runtime/navigation";
+import {
+  runWidgetNavigationCommand,
+  type WidgetNavigationCommand,
+} from "../../../app/runtime/navigation";
 import { toWidgetPath } from "../../../services/navigation/widget-navigation";
 import { WalletScopeKey } from "../../../services/wallet/domain/scope";
+import { walletScopeAtom } from "../../wallet/state";
 import type {
   ClassicTransactionFlowDestination,
   ClassicTransactionFlowIntake,
 } from "../model/classic-transaction-flow";
-import { makeClassicTransactionFlowDestination as makeDestination } from "../model/classic-transaction-flow";
+import { isClassicTransactionFlowWalletScopeValid } from "../model/classic-transaction-flow";
 
 export type ClassicFlowSession = Readonly<{
   readonly destination: ClassicTransactionFlowDestination;
@@ -70,12 +74,17 @@ type StartClassicFlowSession = Readonly<{
   readonly intake: ClassicTransactionFlowIntake;
 }>;
 
-export const makeStartClassicFlowSession = (
-  intake: ClassicTransactionFlowIntake
-): StartClassicFlowSession => ({
-  destination: makeDestination({ routeBase: "" }),
-  intake,
-});
+type StartClassicFlowSessionCommand = StartClassicFlowSession &
+  Readonly<{
+    readonly navigation: WidgetNavigationCommand | null;
+  }>;
+
+type StartClassicFlowSessionOutcome =
+  | Readonly<{
+      readonly _tag: "Started";
+      readonly session: ClassicFlowSession;
+    }>
+  | Readonly<{ readonly _tag: "RejectedOwner" }>;
 
 type ClassicFlowSessionStoreState = Readonly<{
   readonly current: ClassicFlowSession | null;
@@ -88,25 +97,30 @@ const initialState: ClassicFlowSessionStoreState = {
 };
 
 const copyIntake = (
-  intake: ClassicTransactionFlowIntake
+  intake: ClassicTransactionFlowIntake,
+  walletScope: WalletScopeKey
 ): ClassicTransactionFlowIntake => {
   switch (intake._tag) {
     case "Enter": {
-      const { walletScope, ...facts } = intake;
+      const { walletScope: _expectedWalletScope, ...facts } = intake;
       return {
         ...structuredClone(facts),
         walletScope: new WalletScopeKey(walletScope),
       };
     }
     case "ActivityResume": {
-      const { walletScope, ...facts } = intake;
+      const { walletScope: _expectedWalletScope, ...facts } = intake;
       return {
         ...structuredClone(facts),
         walletScope: new WalletScopeKey(walletScope),
       };
     }
     case "Exit": {
-      const { unstakeAmount, walletScope, ...facts } = intake;
+      const {
+        unstakeAmount,
+        walletScope: _expectedWalletScope,
+        ...facts
+      } = intake;
       return {
         ...structuredClone(facts),
         unstakeAmount: new BigNumber(unstakeAmount),
@@ -114,7 +128,7 @@ const copyIntake = (
       };
     }
     case "Manage": {
-      const { walletScope, ...facts } = intake;
+      const { walletScope: _expectedWalletScope, ...facts } = intake;
       return {
         ...structuredClone(facts),
         walletScope: new WalletScopeKey(walletScope),
@@ -123,11 +137,29 @@ const copyIntake = (
   }
 };
 
-export const makeClassicFlowSessionStore = () => {
-  const stateAtom = Atom.make<ClassicFlowSessionStoreState>(initialState).pipe(
-    Atom.keepAlive,
-    Atom.withLabel("classicFlowSessionStoreAtom")
-  );
+export const makeClassicFlowSessionStore = (
+  currentWalletScopeAtom: Atom.Atom<WalletScopeKey | null>
+) => {
+  const stateAtom = Atom.writable<
+    ClassicFlowSessionStoreState,
+    ClassicFlowSessionStoreState
+  >(
+    (context) => {
+      const previous = context
+        .self<ClassicFlowSessionStoreState>()
+        .pipe(Option.getOrElse(() => initialState));
+      const currentWalletScope = context.get(currentWalletScopeAtom);
+
+      return previous.current &&
+        !isClassicTransactionFlowWalletScopeValid(
+          previous.current.intake,
+          currentWalletScope
+        )
+        ? { ...previous, current: null }
+        : previous;
+    },
+    (context, state) => context.setSelf(state)
+  ).pipe(Atom.keepAlive, Atom.withLabel("classicFlowSessionStoreAtom"));
 
   const currentSessionAtom = Atom.make((get) => get(stateAtom).current).pipe(
     Atom.withLabel("currentClassicFlowSessionAtom")
@@ -135,11 +167,19 @@ export const makeClassicFlowSessionStore = () => {
 
   const startAtom = Atom.fnSync(
     ({ destination, intake }: StartClassicFlowSession, context) => {
+      const currentWalletScope = context(currentWalletScopeAtom);
+      if (
+        !currentWalletScope ||
+        !isClassicTransactionFlowWalletScopeValid(intake, currentWalletScope)
+      ) {
+        return null;
+      }
+
       const state = context(stateAtom);
       const session: ClassicFlowSession = {
         destination,
         epoch: state.nextEpoch,
-        intake: copyIntake(intake),
+        intake: copyIntake(intake, currentWalletScope),
       };
 
       context.set(stateAtom, {
@@ -147,7 +187,8 @@ export const makeClassicFlowSessionStore = () => {
         nextEpoch: state.nextEpoch + 1,
       });
       return session;
-    }
+    },
+    { initialValue: null }
   ).pipe(Atom.withLabel("startClassicFlowSessionAtom"));
 
   const clearAtom = Atom.fnSync((epoch: number, context) => {
@@ -164,7 +205,38 @@ export const makeClassicFlowSessionStore = () => {
   } as const;
 };
 
-export const classicFlowSessionStore = makeClassicFlowSessionStore();
+export const classicFlowSessionStore =
+  makeClassicFlowSessionStore(walletScopeAtom);
+
+export const startClassicFlowSessionAtom = appRuntime
+  .fn((command: StartClassicFlowSessionCommand, context) =>
+    Effect.gen(function* () {
+      const { navigation, ...start } = command;
+      context.set(classicFlowSessionStore.startAtom, start);
+      const session = context(classicFlowSessionStore.startAtom);
+      if (!session) {
+        return {
+          _tag: "RejectedOwner",
+        } satisfies StartClassicFlowSessionOutcome;
+      }
+
+      const outcome = {
+        _tag: "Started",
+        session,
+      } satisfies StartClassicFlowSessionOutcome;
+      if (!navigation) return outcome;
+
+      yield* runWidgetNavigationCommand(navigation).pipe(
+        Effect.tapError(() =>
+          Effect.sync(() => {
+            context.set(classicFlowSessionStore.clearAtom, session.epoch);
+          })
+        )
+      );
+      return outcome;
+    })
+  )
+  .pipe(Atom.withLabel("startClassicFlowSessionCommandAtom"));
 
 export const finishClassicTransactionFlowAtom = appRuntime
   .fn((epoch: number, context) => {

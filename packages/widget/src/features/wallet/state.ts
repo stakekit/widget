@@ -15,12 +15,12 @@ export const walletStateResultAtom = currentWalletStateResultAtom;
 export const walletConnectedNetworkAtom = currentWalletConnectedNetworkAtom;
 
 export { useLedgerDisabledChain } from "./react/use-ledger-disabled-chains";
-export { useLogout } from "./react/use-logout";
 export { useSKWallet } from "./react/use-wallet";
 export { useWalletConfig } from "./react/use-wallet-config";
 export { selectCurrentWalletAtom } from "./state/selectors";
 export { walletModalAdapterAtom } from "./state/wallet-modal";
 export {
   addLedgerAccountAtom,
+  logoutAtom,
   runAddLedgerAccount,
 } from "./state/workflows";

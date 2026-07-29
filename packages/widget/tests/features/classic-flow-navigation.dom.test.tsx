@@ -30,16 +30,15 @@ import {
   useClassicFlowReview,
   useClassicFlowSession,
 } from "../../src/features/classic-transaction-flow/react/classic-flow-route";
-import {
-  classicFlowSessionStore,
-  makeStartClassicFlowSession,
-} from "../../src/features/classic-transaction-flow/state";
+import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
+import { walletScopeAtom } from "../../src/features/wallet/state";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
 import { disconnectedNormalizedWalletState } from "../../src/services/wallet/domain/state";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
+import { makeStartClassicFlowSession } from "../utils/classic-flow-session";
 import { describe, expect, it, vi } from "../utils/test-extend.dom";
 import { render } from "../utils/test-utils.dom";
 
@@ -245,6 +244,7 @@ const FlowTestApp = ({
     <RegistryProvider
       initialValues={[
         [widgetConfigAtom, settings],
+        [walletScopeAtom, walletScope],
         [
           applicationRouterRuntime.layer,
           ApplicationRouter.layer(applicationRoutes, {

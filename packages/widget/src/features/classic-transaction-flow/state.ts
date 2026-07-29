@@ -7,5 +7,5 @@ export {
   type ClassicFlowSession,
   classicFlowSessionStore,
   isClassicFlowSessionPath,
-  makeStartClassicFlowSession,
+  startClassicFlowSessionAtom,
 } from "./state/flow-session-store";

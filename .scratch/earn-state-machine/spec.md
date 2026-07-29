@@ -51,7 +51,7 @@ The canonical terms are defined in `CONTEXT.md`:
 7. A yield requiring validator selection has at least one valid selected validator before it is ready.
 8. Results from obsolete wallet owners, configuration, categories, tokens, yields, validators, pagination keys, or searches never alter the active view.
 9. Earn Initialization runs at most once per Widget Instance.
-10. A Wallet Scope Owner change resets intent but does not rerun Earn Initialization.
+10. A later manual connection or Wallet Scope Owner change resets intent but does not rerun Earn Initialization.
 11. A prior successful value is usable during waiting or refresh failure only when the complete semantic resource key is unchanged.
 
 ## Lifecycle and Reset Rules
@@ -60,7 +60,10 @@ The canonical terms are defined in `CONTEXT.md`:
 
 While wallet resolution is pending, the machine publishes `resolving-wallet`, starts no new owner-scoped loads, disables selection and submission capabilities, and retains the prior view snapshot when one exists. The first pending resolution uses an empty snapshot.
 
-After resolution settles:
+Wallet resolution remains pending while Wallet Bootstrap has not published its
+first Wallet State or that state is connecting. The first connected,
+disconnected, unsupported, or failed result settles the startup gate. After
+resolution settles:
 
 - The same Wallet Scope Owner continues with existing intent.
 - A changed primary address or network resets the complete Earn intent to its default state, then resolves from current authoritative facts without applying Earn Initialization again.
@@ -73,6 +76,7 @@ After resolution settles:
 - Switching between classic and category-grouped dashboard modes resets category, token, and every downstream selection and form field.
 - Reordering categories does not override an explicit category that remains available.
 - Configuration changes never reactivate consumed Earn Initialization.
+- Normalized API configuration and `borrowEnabled` are mount-time Runtime Identity. Changing them while the Widget remains mounted is an invariant violation; the host must unmount and remount.
 
 ### User transitions
 
@@ -180,8 +184,11 @@ Yield visibility is determined by API-key-scoped data, enter capability, and sup
 
 - Syntactically invalid init parameters decode to absence before reaching Earn state.
 - A well-formed target that resolves as unavailable or disabled is consumed and falls back normally. Transport, server, and decode failures for requested initialization data remain blocking first-load failures.
-- A transport or server failure while resolving a requested target is a blocking first-load `initial-selection` failure with retry.
-- Account-targeted initialization is not consumed while the wallet owner is absent. Committing a resolved fallback and consuming initialization are separate transitions, so initial wallet connection can reset intent and resolve the same one-time target for its owner without re-arming initialization later.
+- A transport or server failure while resolving a requested target is a blocking first-load `initial-selection` failure and completes the initialization attempt. A later ordinary resource retry does not restore init params.
+- `accountId` is consumed by Wallet Bootstrap rather than the Earn resolver. Earn waits for the bootstrap attempt, then resolves initialization once with its connected or disconnected result. A later manual connection does not reopen initialization.
+- Required initialization resources may remain loading until the first ready, empty, or failed Earn result completes the attempt.
+- User commands do not cancel initialization. Explicit intent takes precedence while the bounded attempt resolves.
+- A Wallet Scope Owner change while initialization resources are loading abandons the attempt immediately.
 - Once a yield target is committed, its ID remains a resource seed while selected so transient catalog re-keying cannot replace it with a fallback.
 - A consumed, invalidated, or user-overridden target cannot resurrect.
 - A successful bounded directory result may explicitly omit requested IDs. Omitted IDs are unavailable selections, not transport failures; explicit intent is reconciled and init intent emits its one diagnostic before fallback.
@@ -296,7 +303,7 @@ Code inspection identified the following current behaviors that conflict with th
 
 - First-load category, token, yield, position, and validator failures now publish structured blocking failures; refresh failures with a previous value retain readiness.
 - Readiness now waits for categories, tokens, yields, positions, and both required-validator sources in dependency order.
-- Wallet pending publishes `resolving-wallet` without starting owner-scoped work; address/network owner changes and classic/dashboard mode changes reset intent, while one-time initialization is never re-armed. Account-targeted initialization consumption waits for the initial wallet owner.
+- Wallet Bootstrap pending and connecting states publish `resolving-wallet` without starting owner-scoped work. The first terminal Wallet State opens one bounded initialization attempt; a ready, empty, or failed Earn result completes it, and later address/network owner changes and classic/dashboard mode changes never re-arm it.
 - Successful fallback selection is committed to canonical intent, and category changes reset token plus all downstream state.
 - Explicit zero amount, connected-wallet balance knowledge, and truthful submission capability are modeled in state. Advertised provider/Tron options and coherent numeric constraints are decoded before state resolution.
 - Earn Mechanic Arguments now resolve from API arrays into validated, name-keyed domain records. Resolver-owned `InvalidYieldContract` handling and its form failure stage were removed.

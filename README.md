@@ -73,9 +73,10 @@ Widget generation:
 - `yieldsApiUrl`
 - `borrowEnabled`
 
-Changing any of them creates a fresh internal generation, disposing scoped
-state, workflows, resources, and router history. Configure them once for a
-mounted Widget unless a full application reset is intended.
+Changing any of them while the Widget remains mounted is rejected as an
+Application Runtime invariant violation. Unmount and remount the Widget to
+apply a different identity and create fresh state, workflows, resources, and
+router history.
 
 Wallet-topology settings are also captured during bootstrap, but they do not
 trigger this reset. Changing them after mount is unsupported and may be rejected

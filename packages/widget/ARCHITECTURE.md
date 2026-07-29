@@ -149,7 +149,9 @@ Mounting a widget creates a new registry and lifecycle-sensitive service state;
 remounting therefore starts cleanly.
 
 `ApplicationRouter` owns one memory router for an Application Runtime
-Generation and disposes it with that generation. The root route configuration is
+Generation and disposes it when the Widget Instance unmounts. Runtime Identity
+is fixed for that mounted generation; changing it requires the host to unmount
+and remount. The root route configuration is
 assembled at the top-level React composition seam in `App.tsx` and seeded into
 the registry when it is created, so runtime construction does not import React
 composition. React synchronously reads the router from an internal Atom only to

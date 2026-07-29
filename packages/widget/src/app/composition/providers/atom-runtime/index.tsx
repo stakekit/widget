@@ -1,26 +1,31 @@
 import { RegistryProvider } from "@effect/atom-react";
-import type { PropsWithChildren } from "react";
+import type { ComponentProps, PropsWithChildren } from "react";
 import type { RouteObject } from "react-router";
 import type { WidgetConfig } from "../../../../services/config/widget-config";
 import { config } from "../../../../shared/config/widget-defaults";
-import { makeWidgetRuntimeGenerationKey } from "../../../config/runtime-generation";
 import { widgetConfigAtom } from "../../../config/settings";
 import { applicationRoutesAtom } from "../../../runtime/application-router-runtime";
 import { WidgetConfigBoundaryAdapter } from "../widget-config-binding";
 
-export const SKAtomRegistryProvider = ({
-  children,
-  routes,
-  settings,
-}: PropsWithChildren<{
+type SKAtomRegistryProviderProps = PropsWithChildren<{
+  readonly initialValues?: ComponentProps<
+    typeof RegistryProvider
+  >["initialValues"];
   readonly routes: ReadonlyArray<RouteObject>;
   readonly settings: WidgetConfig;
-}>) => {
+}>;
+
+export const SKAtomRegistryProvider = ({
+  children,
+  initialValues,
+  routes,
+  settings,
+}: SKAtomRegistryProviderProps) => {
   return (
     <RegistryProvider
-      key={makeWidgetRuntimeGenerationKey(settings)}
       defaultIdleTTL={config.atomResources.defaultIdleTTL}
       initialValues={[
+        ...(initialValues ?? []),
         [widgetConfigAtom, settings],
         [applicationRoutesAtom, routes],
       ]}

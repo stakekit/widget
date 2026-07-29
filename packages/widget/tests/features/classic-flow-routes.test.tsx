@@ -261,6 +261,24 @@ describe("Classic Transaction Flow routes", () => {
             path: "review",
           },
           {
+            children: [],
+            element: "ActivityDetailsPage",
+            index: false,
+            path: "stake-review/complete",
+          },
+          {
+            children: [],
+            element: "ActivityDetailsPage",
+            index: false,
+            path: "unstake-review/complete",
+          },
+          {
+            children: [],
+            element: "ActivityDetailsPage",
+            index: false,
+            path: "pending-review/complete",
+          },
+          {
             children: [
               {
                 children: [],

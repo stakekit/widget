@@ -11,6 +11,7 @@ import type { Connector } from "wagmi";
 import type { ConnectorWithFilteredChains } from "../../../../domain/types/connectors";
 import type { SKTxMeta } from "../../../../public-api/types";
 import type { WalletIntegrationError } from "../../domain/errors";
+import type { LedgerTransactionPreparationError } from "./prepare-ledger-live-transaction";
 
 export const configMeta = {
   id: "ledgerLive",
@@ -37,7 +38,7 @@ export type ExtraProps = ConnectorWithFilteredChains & {
     network: string;
     tx: string;
     txMeta?: SKTxMeta;
-  }) => Effect.Effect<RawTransaction, string>;
+  }) => Effect.Effect<RawTransaction, LedgerTransactionPreparationError>;
 };
 
 type LedgerLiveConnector = Connector & ExtraProps;

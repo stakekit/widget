@@ -81,4 +81,25 @@ describe("Activity action list item projection", () => {
       tokenSymbol: "Unknown",
     });
   });
+
+  it.each(["CANCELED", "STALE"] as const)(
+    "does not offer details for a %s action",
+    (status) => {
+      const yieldData = yieldApiYieldFixture();
+      const projection = projectActivityActionListItem({
+        action: makeItem(
+          yieldApiActionFixture({
+            status,
+            yieldId: yieldData.id,
+          }),
+          yieldData
+        ),
+        locale: "en-US",
+        presentationTime: null,
+        unknownTokenLabel: "Unknown",
+      });
+
+      expect(projection.canOpenDetails).toBe(false);
+    }
+  );
 });

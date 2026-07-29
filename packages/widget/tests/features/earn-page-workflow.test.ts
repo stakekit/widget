@@ -1,8 +1,10 @@
-import { Option } from "effect";
+import { Cause, Effect, Layer, Option, Schema, SubscriptionRef } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { widgetConfigAtom } from "../../src/app/config/settings";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { PositionsData } from "../../src/domain/types/positions";
 import { tokenString } from "../../src/domain/types/tokens";
 import {
@@ -23,7 +25,10 @@ import {
   earnMachineViewAtom,
 } from "../../src/features/earn/state/atoms-state/machine/atoms";
 import { makeResolvingWalletView } from "../../src/features/earn/state/atoms-state/resolver/view-model";
-import type { EarnTokenOption } from "../../src/features/earn/state/atoms-state/types";
+import {
+  EarnCatalogError,
+  type EarnTokenOption,
+} from "../../src/features/earn/state/atoms-state/types";
 import {
   earnPageInputAtom,
   earnPageQuoteAtom,
@@ -31,6 +36,16 @@ import {
   earnPageSelectionAtom,
   earnPageSubmittedAtom,
 } from "../../src/features/earn/state/page-workflow";
+import { initParamsAtom } from "../../src/features/init-params/state";
+import { walletStateResultAtom } from "../../src/features/wallet/state";
+import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import {
+  disconnectedLedgerConnectorState,
+  disconnectedNormalizedWalletState,
+  type NormalizedWalletState,
+  type WalletState,
+} from "../../src/services/wallet/domain/state";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
 
 const baseDto = yieldApiYieldDtoFixture();
@@ -52,6 +67,42 @@ const toTokenOption = (yieldModel: typeof firstYield): EarnTokenOption => ({
   token: yieldModel.token,
 });
 
+const firstOwnerAddress = Schema.decodeSync(WalletAddress)(
+  "0x1111111111111111111111111111111111111111"
+);
+const firstOwnerScope = new WalletScopeKey({
+  address: firstOwnerAddress,
+  network: "ethereum",
+});
+const secondOwnerAddress = Schema.decodeSync(WalletAddress)(
+  "0x2222222222222222222222222222222222222222"
+);
+const secondOwnerScope = new WalletScopeKey({
+  address: secondOwnerAddress,
+  network: "ethereum",
+});
+const connectedWalletState: NormalizedWalletState = {
+  additionalAddresses: null,
+  address: firstOwnerAddress,
+  chain: {} as never,
+  connector: {} as never,
+  connectorChains: [],
+  isLedgerLive: false,
+  isLedgerLiveAccountPlaceholder: false,
+  ledgerAccounts: [],
+  network: "ethereum",
+  status: "connected",
+};
+const secondConnectedWalletState: NormalizedWalletState = {
+  ...connectedWalletState,
+  address: secondOwnerAddress,
+};
+
+const makeWalletState = (connection: NormalizedWalletState): WalletState => ({
+  connection,
+  ledger: disconnectedLedgerConnectorState,
+});
+
 /**
  * Seeds every resource `resolveEarnView` reads so the published view reaches
  * `ready` without a network, which is the only status where the removed
@@ -62,6 +113,10 @@ const makeReadyRegistry = () => {
 
   return AtomRegistry.make({
     initialValues: [
+      [
+        walletStateResultAtom,
+        AsyncResult.success(disconnectedNormalizedWalletState),
+      ],
       [
         initYieldAtom(new InitYieldKey({ yieldId: null })),
         AsyncResult.success(null),
@@ -101,6 +156,513 @@ const makeReadyRegistry = () => {
 };
 
 describe("earn page workflow atoms", () => {
+  it("waits for Wallet Bootstrap before resolving Earn Initialization", () => {
+    const registry = AtomRegistry.make({
+      initialValues: [[walletStateResultAtom, AsyncResult.initial(true)]],
+    });
+
+    expect(registry.get(earnMachineEntryAtom).walletResolution).toBe("pending");
+    registry.dispose();
+  });
+
+  it("treats a failed Wallet Bootstrap attempt as settled", () => {
+    const registry = AtomRegistry.make({
+      initialValues: [
+        [
+          walletStateResultAtom,
+          AsyncResult.failure(Cause.fail(new Error("wallet bootstrap failed"))),
+        ],
+      ],
+    });
+
+    expect(registry.get(earnMachineEntryAtom).walletResolution).toBe("settled");
+    registry.dispose();
+  });
+
+  it("captures the owner atomically when the initial wallet connects", async () => {
+    const walletState = Effect.runSync(
+      SubscriptionRef.make<WalletState>({
+        ...makeWalletState(disconnectedNormalizedWalletState),
+        connection: {
+          ...disconnectedNormalizedWalletState,
+          status: "connecting",
+        },
+      })
+    );
+    const registry = AtomRegistry.make({
+      initialValues: [
+        [
+          walletRuntime.layer,
+          Layer.succeed(
+            WalletService,
+            WalletService.of({
+              state: SubscriptionRef.get(walletState),
+              states: SubscriptionRef.changes(walletState),
+              wagmiConfig: {} as never,
+            } as never)
+          ) as never,
+        ],
+      ],
+    });
+    const unmount = registry.mount(earnMachineEntryAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(registry.get(earnMachineEntryAtom).walletResolution).toBe(
+          "pending"
+        )
+      );
+
+      Effect.runSync(
+        SubscriptionRef.set(walletState, makeWalletState(connectedWalletState))
+      );
+
+      await vi.waitFor(() =>
+        expect(registry.get(earnMachineEntryAtom)).toMatchObject({
+          walletResolution: "settled",
+          walletScope: firstOwnerScope,
+        })
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("does not reapply startup initialization after a later manual connection", async () => {
+    const walletState = Effect.runSync(
+      SubscriptionRef.make(makeWalletState(disconnectedNormalizedWalletState))
+    );
+    const tokenOptions = [
+      toTokenOption(firstYield),
+      toTokenOption(secondYield),
+    ];
+    const initParams = {
+      accountId: "ledger-account",
+      balanceId: null,
+      network: null,
+      pendingaction: null,
+      tab: null,
+      token: null,
+      validator: null,
+      yieldId: secondYield.id,
+    } as const;
+    const registry = AtomRegistry.make({
+      initialValues: [
+        [
+          walletRuntime.layer,
+          Layer.succeed(
+            WalletService,
+            WalletService.of({
+              state: SubscriptionRef.get(walletState),
+              states: SubscriptionRef.changes(walletState),
+              wagmiConfig: {} as never,
+            } as never)
+          ) as never,
+        ],
+        [initParamsAtom, initParams],
+        [
+          initYieldAtom(new InitYieldKey({ yieldId: secondYield.id })),
+          AsyncResult.success(secondYield),
+        ],
+        [
+          initYieldAtom(new InitYieldKey({ yieldId: null })),
+          AsyncResult.success(null),
+        ],
+        ...[null, firstOwnerScope].flatMap((scope) => [
+          [
+            positionsDataAtom(new PositionsDataKey({ scope })),
+            AsyncResult.success(new Map() as PositionsData),
+          ] as const,
+          [
+            mergedTokenOptionsAtom(
+              new TokenOptionsKey({
+                category: null,
+                initToken: null,
+                initTokenNetwork: null,
+                initYieldId: secondYield.id,
+                scope,
+                tokensForEnabledYieldsOnly: false,
+              })
+            ),
+            AsyncResult.success(tokenOptions),
+          ] as const,
+          [
+            mergedTokenOptionsAtom(
+              new TokenOptionsKey({
+                category: null,
+                initToken: null,
+                initTokenNetwork: null,
+                initYieldId: null,
+                scope,
+                tokensForEnabledYieldsOnly: false,
+              })
+            ),
+            AsyncResult.success(tokenOptions),
+          ] as const,
+        ]),
+        ...[firstYield, secondYield].map(
+          (yieldModel) =>
+            [
+              earnYieldCatalogAtom(
+                new YieldCatalogKey({
+                  category: null,
+                  network: yieldModel.token.network,
+                  yieldIds: [yieldModel.id],
+                })
+              ),
+              AsyncResult.success([yieldModel]),
+            ] as const
+        ),
+      ],
+    });
+    const unmount = registry.mount(earnMachineViewAtom);
+
+    try {
+      await vi.waitFor(() => {
+        expect(registry.get(earnMachineViewAtom).selection.yield).toEqual(
+          secondYield
+        );
+      });
+
+      Effect.runSync(
+        SubscriptionRef.set(walletState, makeWalletState(connectedWalletState))
+      );
+
+      await vi.waitFor(() => {
+        const view = registry.get(earnMachineViewAtom);
+
+        expect(view.status).toBe("ready");
+        expect(view.selection.yield).toEqual(firstYield);
+      });
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("keeps initialization active after a command while explicit intent wins", () => {
+    const tokenOptions = [
+      toTokenOption(firstYield),
+      toTokenOption(secondYield),
+    ];
+    const registry = AtomRegistry.make({
+      initialValues: [
+        [
+          walletStateResultAtom,
+          AsyncResult.success(disconnectedNormalizedWalletState),
+        ],
+        [
+          initParamsAtom,
+          {
+            accountId: null,
+            balanceId: null,
+            network: null,
+            pendingaction: null,
+            tab: null,
+            token: null,
+            validator: null,
+            yieldId: secondYield.id,
+          },
+        ],
+        ...[firstYield, secondYield].map(
+          (yieldModel) =>
+            [
+              initYieldAtom(new InitYieldKey({ yieldId: yieldModel.id })),
+              AsyncResult.success(yieldModel),
+            ] as const
+        ),
+        [
+          positionsDataAtom(new PositionsDataKey({ scope: null })),
+          AsyncResult.success(new Map() as PositionsData),
+        ],
+        [
+          mergedTokenOptionsAtom(
+            new TokenOptionsKey({
+              category: null,
+              initToken: null,
+              initTokenNetwork: null,
+              initYieldId: secondYield.id,
+              scope: null,
+              tokensForEnabledYieldsOnly: false,
+            })
+          ),
+          AsyncResult.initial(true),
+        ],
+        ...[null, firstYield.id].map(
+          (initYieldId) =>
+            [
+              mergedTokenOptionsAtom(
+                new TokenOptionsKey({
+                  category: null,
+                  initToken: null,
+                  initTokenNetwork: null,
+                  initYieldId,
+                  scope: null,
+                  tokensForEnabledYieldsOnly: false,
+                })
+              ),
+              AsyncResult.success(tokenOptions),
+            ] as const
+        ),
+        [
+          earnYieldCatalogAtom(
+            new YieldCatalogKey({
+              category: null,
+              network: firstYield.token.network,
+              yieldIds: [firstYield.id],
+            })
+          ),
+          AsyncResult.success([firstYield]),
+        ],
+      ],
+    });
+    const unmount = registry.mount(earnMachineViewAtom);
+
+    expect(registry.get(earnMachineViewAtom).status).toBe(
+      "loading-initial-selection"
+    );
+
+    registry.set(earnMachineIntentAtom, {
+      type: "stakeAmount/change",
+      amount: "1",
+    });
+
+    expect(registry.get(earnMachineViewAtom)).toMatchObject({
+      form: { stakeAmount: "1" },
+      status: "loading-initial-selection",
+    });
+
+    registry.set(earnMachineIntentAtom, {
+      type: "yield/select",
+      yieldId: firstYield.id,
+    });
+
+    expect(registry.get(earnMachineIntentAtom).selectedYieldId).toBe(
+      firstYield.id
+    );
+    expect(registry.get(earnMachineViewAtom).status).not.toBe(
+      "loading-initial-selection"
+    );
+    unmount();
+    registry.dispose();
+  });
+
+  it("abandons pending initialization when the initial owner changes", async () => {
+    const walletState = Effect.runSync(
+      SubscriptionRef.make(makeWalletState(connectedWalletState))
+    );
+    const tokenOptions = [
+      toTokenOption(firstYield),
+      toTokenOption(secondYield),
+    ];
+    const registry = AtomRegistry.make({
+      initialValues: [
+        [
+          walletRuntime.layer,
+          Layer.succeed(
+            WalletService,
+            WalletService.of({
+              state: SubscriptionRef.get(walletState),
+              states: SubscriptionRef.changes(walletState),
+              wagmiConfig: {} as never,
+            } as never)
+          ) as never,
+        ],
+        [
+          initParamsAtom,
+          {
+            accountId: null,
+            balanceId: null,
+            network: null,
+            pendingaction: null,
+            tab: null,
+            token: null,
+            validator: null,
+            yieldId: secondYield.id,
+          },
+        ],
+        [
+          initYieldAtom(new InitYieldKey({ yieldId: secondYield.id })),
+          AsyncResult.success(secondYield),
+        ],
+        [
+          initYieldAtom(new InitYieldKey({ yieldId: null })),
+          AsyncResult.success(null),
+        ],
+        ...[firstOwnerScope, secondOwnerScope].map(
+          (scope) =>
+            [
+              positionsDataAtom(new PositionsDataKey({ scope })),
+              AsyncResult.success(new Map() as PositionsData),
+            ] as const
+        ),
+        [
+          mergedTokenOptionsAtom(
+            new TokenOptionsKey({
+              category: null,
+              initToken: null,
+              initTokenNetwork: null,
+              initYieldId: secondYield.id,
+              scope: firstOwnerScope,
+              tokensForEnabledYieldsOnly: false,
+            })
+          ),
+          AsyncResult.initial(true),
+        ],
+        [
+          mergedTokenOptionsAtom(
+            new TokenOptionsKey({
+              category: null,
+              initToken: null,
+              initTokenNetwork: null,
+              initYieldId: null,
+              scope: secondOwnerScope,
+              tokensForEnabledYieldsOnly: false,
+            })
+          ),
+          AsyncResult.success(tokenOptions),
+        ],
+        ...[firstYield, secondYield].map(
+          (yieldModel) =>
+            [
+              earnYieldCatalogAtom(
+                new YieldCatalogKey({
+                  category: null,
+                  network: yieldModel.token.network,
+                  yieldIds: [yieldModel.id],
+                })
+              ),
+              AsyncResult.success([yieldModel]),
+            ] as const
+        ),
+      ],
+    });
+    const unmount = registry.mount(earnMachineViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(registry.get(earnMachineViewAtom).status).toBe(
+          "loading-initial-selection"
+        )
+      );
+
+      Effect.runSync(
+        SubscriptionRef.set(
+          walletState,
+          makeWalletState(secondConnectedWalletState)
+        )
+      );
+
+      await vi.waitFor(() => {
+        const view = registry.get(earnMachineViewAtom);
+
+        expect(view.status).toBe("ready");
+        expect(view.selection.yield).toEqual(firstYield);
+      });
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("consumes initialization after an initialization resource fails", () => {
+    const tokenOptions = [
+      toTokenOption(firstYield),
+      toTokenOption(secondYield),
+    ];
+    const registry = AtomRegistry.make({
+      initialValues: [
+        [
+          walletStateResultAtom,
+          AsyncResult.success(disconnectedNormalizedWalletState),
+        ],
+        [
+          initParamsAtom,
+          {
+            accountId: null,
+            balanceId: null,
+            network: null,
+            pendingaction: null,
+            tab: null,
+            token: null,
+            validator: null,
+            yieldId: secondYield.id,
+          },
+        ],
+        [
+          initYieldAtom(new InitYieldKey({ yieldId: secondYield.id })),
+          AsyncResult.failure(
+            Cause.fail(new Error("initial yield request failed"))
+          ),
+        ],
+        [
+          initYieldAtom(new InitYieldKey({ yieldId: null })),
+          AsyncResult.success(null),
+        ],
+        [
+          positionsDataAtom(new PositionsDataKey({ scope: null })),
+          AsyncResult.success(new Map() as PositionsData),
+        ],
+        [
+          mergedTokenOptionsAtom(
+            new TokenOptionsKey({
+              category: null,
+              initToken: null,
+              initTokenNetwork: null,
+              initYieldId: secondYield.id,
+              scope: null,
+              tokensForEnabledYieldsOnly: false,
+            })
+          ),
+          AsyncResult.failure(
+            Cause.fail(
+              new EarnCatalogError({
+                cause: new Error("initial yield request failed"),
+                operation: "init-yield",
+              })
+            )
+          ),
+        ],
+        [
+          mergedTokenOptionsAtom(
+            new TokenOptionsKey({
+              category: null,
+              initToken: null,
+              initTokenNetwork: null,
+              initYieldId: null,
+              scope: null,
+              tokensForEnabledYieldsOnly: false,
+            })
+          ),
+          AsyncResult.success(tokenOptions),
+        ],
+        [
+          earnYieldCatalogAtom(
+            new YieldCatalogKey({
+              category: null,
+              network: firstYield.token.network,
+              yieldIds: [firstYield.id],
+            })
+          ),
+          AsyncResult.success([firstYield]),
+        ],
+      ],
+    });
+
+    expect(registry.get(earnMachineViewAtom).status).toBe("failed");
+
+    registry.set(earnMachineIntentAtom, {
+      type: "stakeAmount/change",
+      amount: "1",
+    });
+
+    const view = registry.get(earnMachineViewAtom);
+    expect(view.status).toBe("ready");
+    expect(view.selection.yield).toEqual(firstYield);
+    registry.dispose();
+  });
+
   it("derives input, selection, and quote models from the feature machine", () => {
     const registry = AtomRegistry.make();
 
