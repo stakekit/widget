@@ -2,8 +2,7 @@ import clsx from "clsx";
 import { type ReactNode, useState } from "react";
 import { Box } from "../../../../components/atoms/box";
 import { CaretLeftIcon } from "../../../../components/atoms/icons/caret-left";
-import { useMediaQuery } from "../../../../hooks/use-media-query";
-import { splitCollapsedMediaQuery } from "../../../../styles/tokens/breakpoints";
+import { useSplitCollapsed } from "../../../../hooks/use-split-collapsed";
 import { VerticalDivider } from "../divider";
 import * as styles from "./styles.css";
 
@@ -22,7 +21,7 @@ export const SplitView = ({
   primaryBarLabel,
   secondaryBarLabel,
 }: SplitViewProps) => {
-  const isCollapsed = useMediaQuery(splitCollapsedMediaQuery);
+  const isCollapsed = useSplitCollapsed();
   const [activeSide, setActiveSide] = useState<Side>("primary");
 
   if (!primary || !secondary) {

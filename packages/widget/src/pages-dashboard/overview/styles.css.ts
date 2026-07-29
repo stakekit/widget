@@ -1,9 +1,9 @@
 import { style } from "@vanilla-extract/css";
-import { splitExpandedMediaQuery } from "../../styles/tokens/breakpoints";
+import { splitExpandedContainerQuery } from "../../styles/tokens/breakpoints";
 
 export const overviewPageContainer = style({
-  "@media": {
-    [splitExpandedMediaQuery]: {
+  "@container": {
+    [splitExpandedContainerQuery]: {
       maxWidth: "380px",
     },
   },

@@ -1,3 +1,5 @@
+import { appContainerName } from "./containers.css";
+
 export const breakpoints = {
   mobile: 0,
   tablet: 520,
@@ -14,19 +16,16 @@ const toPx = (breakpoint: Breakpoint | number) =>
 export const minMediaQuery = (breakpoint: Breakpoint | number) =>
   `screen and (min-width: ${toPx(breakpoint)}px)`;
 
-const maxMediaQuery = (breakpoint: Breakpoint | number) =>
-  `screen and (max-width: ${toPx(breakpoint)}px)`;
-
-export const splitCollapsedMediaQuery = maxMediaQuery(
-  SPLIT_COLLAPSE_BREAKPOINT
-);
-
-export const splitExpandedMediaQuery = minMediaQuery(
-  SPLIT_COLLAPSE_BREAKPOINT + 1
-);
-
 export const minContainerWidth = (
   containerName: string,
   breakpoint: Breakpoint | number
-) =>
-  `${containerName} (min-width: ${typeof breakpoint === "number" ? breakpoint : breakpoints[breakpoint]}px)`;
+) => `${containerName} (min-width: ${toPx(breakpoint)}px)`;
+
+
+export const splitExpandedContainerQuery = minContainerWidth(
+  appContainerName,
+  SPLIT_COLLAPSE_BREAKPOINT + 1
+);
+
+export const isSplitCollapsedWidth = (appContainerWidth: number) =>
+  appContainerWidth <= SPLIT_COLLAPSE_BREAKPOINT;

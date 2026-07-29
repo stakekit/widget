@@ -7,12 +7,11 @@ import { createRef, useImperativeHandle, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { preloadImages } from "./assets/images";
-import { Box } from "./components/atoms/box";
 import { Dashboard } from "./Dashboard";
 import { Providers } from "./providers";
+import { AppContainerProvider } from "./providers/app-container";
 import { SettingsContextProvider, useSettings } from "./providers/settings";
 import type { SettingsProps, VariantProps } from "./providers/settings/types";
-import { appContainer } from "./style.css";
 import { useLoadErrorTranslations } from "./translation";
 import { Widget } from "./Widget";
 
@@ -46,14 +45,11 @@ export const SKApp = (props: SKAppProps) => {
 
   return (
     <SettingsContextProvider {...variantProps} {...props}>
-      <Box
-        data-sk-layout={props.dashboardVariant ? "dashboard" : "widget"}
-        className={appContainer({
-          variant: props.dashboardVariant ? "dashboard" : "widget",
-        })}
+      <AppContainerProvider
+        variant={props.dashboardVariant ? "dashboard" : "widget"}
       >
         <RouterProvider router={router} />
-      </Box>
+      </AppContainerProvider>
     </SettingsContextProvider>
   );
 };

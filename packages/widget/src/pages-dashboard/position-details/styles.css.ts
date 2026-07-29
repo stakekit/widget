@@ -1,6 +1,6 @@
 import { style } from "@vanilla-extract/css";
 import { atoms } from "../../styles/theme/atoms.css";
-import { splitExpandedMediaQuery } from "../../styles/tokens/breakpoints";
+import { splitExpandedContainerQuery } from "../../styles/tokens/breakpoints";
 
 export const posistionDetailsInfoContainer = style([
   atoms({
@@ -9,8 +9,8 @@ export const posistionDetailsInfoContainer = style([
     width: "0",
   }),
   {
-    "@media": {
-      [splitExpandedMediaQuery]: {
+    "@container": {
+      [splitExpandedContainerQuery]: {
         maxWidth: "600px",
       },
     },
@@ -18,8 +18,8 @@ export const posistionDetailsInfoContainer = style([
 ]);
 
 export const positionDetailsActionsContainer = style({
-  "@media": {
-    [splitExpandedMediaQuery]: {
+  "@container": {
+    [splitExpandedContainerQuery]: {
       maxWidth: "380px",
     },
   },

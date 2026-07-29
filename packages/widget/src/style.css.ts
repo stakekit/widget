@@ -1,10 +1,12 @@
-import { createContainer, style } from "@vanilla-extract/css";
+import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "./styles/theme/atoms.css";
 import { minContainerWidth } from "./styles/tokens/breakpoints";
+import {
+  appContainerName,
+  widgetContainerName,
+} from "./styles/tokens/containers.css";
 
-const appContainerName = createContainer();
-const widgetContainerName = createContainer();
 const widgetContainerMaxWidth = 400;
 
 export const animationContainer = style([
