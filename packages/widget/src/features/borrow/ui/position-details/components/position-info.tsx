@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { Position } from "../../../../../domain/borrow/position";
+import type { MarketPosition } from "../../../../../domain/borrow/market-position";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Image } from "../../../../../shared/ui/primitives/image";
@@ -29,7 +29,7 @@ export const BorrowPositionInfo = ({
   readonly content: "details" | "fallback";
   readonly model: ReturnType<typeof getBorrowPositionDetailsModel> | null;
   readonly onActionSelect: (action: BorrowPositionAction) => void;
-  readonly position: Position | null;
+  readonly position: MarketPosition | null;
 }) => {
   const { t } = useTranslation();
 

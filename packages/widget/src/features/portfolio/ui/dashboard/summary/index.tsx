@@ -29,16 +29,16 @@ export const Summary = () => {
   const hasBorrowPositions =
     borrowFeatureEnabled && borrowPositionItems.length > 0;
   const borrowTotalSupplied = borrowPositionItems.reduce(
-    (acc, position) => acc.plus(position.getTotalSuppliedUsd()),
+    (acc, position) => acc.plus(position.metrics.totalSuppliedUsd),
     new BigNumber(0)
   );
   const borrowNetWorth = borrowPositionItems.reduce(
-    (acc, position) => acc.plus(position.getNetWorthUsd()),
+    (acc, position) => acc.plus(position.metrics.netWorthUsd),
     new BigNumber(0)
   );
   const borrowApySummary = borrowPositionItems.reduce(
     (acc, position) => {
-      const netWorth = position.getNetWorthUsd();
+      const netWorth = position.metrics.netWorthUsd;
 
       if (netWorth <= 0) {
         return acc;
@@ -47,7 +47,7 @@ export const Summary = () => {
       return {
         totalValue: acc.totalValue.plus(netWorth),
         weightedApy: acc.weightedApy.plus(
-          position.getNetApy() * 100 * netWorth
+          position.metrics.netApy * 100 * netWorth
         ),
       };
     },

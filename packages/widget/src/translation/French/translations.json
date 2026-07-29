@@ -787,6 +787,14 @@
       "empty_description": "Les marchés d'emprunt ne sont pas encore disponibles pour ce réseau.",
       "error_title": "Emprunt indisponible",
       "error_description": "Les données du marché d'emprunt ne peuvent pas être chargées pour le moment.",
+      "form_reset": {
+        "title": "Formulaire d'emprunt réinitialisé",
+        "description": "La disponibilité du marché a changé, le formulaire d'emprunt a donc été réinitialisé."
+      },
+      "risk_unavailable": {
+        "title": "Risque projeté indisponible",
+        "description": "Les informations de risque ne sont pas disponibles pour cette combinaison de garanties. Vous pouvez continuer, mais la transaction peut être rejetée par le fournisseur ou sur la blockchain."
+      },
       "form": {
         "borrow": "Emprunt",
         "collateral": "Garantie",
@@ -809,6 +817,7 @@
         "ltv_note": "La liquidation peut survenir si le LTV dépasse le seuil du marché sélectionné.",
         "validation": {
           "available_liquidity": "Le montant dépasse la liquidité disponible.",
+          "minimum_loan": "La dette résultante est inférieure au minimum du marché.",
           "wallet_balance": "Le montant dépasse le solde du portefeuille.",
           "ltv": "La garantie est trop faible pour ce montant emprunté."
         }
@@ -935,6 +944,7 @@
         "disable_collateral_warning": "Désactiver cet actif comme garantie peut réduire le facteur de santé et augmenter le risque de liquidation.",
         "validation": {
           "repay_debt": "Le montant dépasse la dette restante.",
+          "repay_minimum": "Le remboursement laisserait une dette inférieure au minimum du marché. Remboursez tout ou réduisez le remboursement.",
           "wallet_balance": "Le montant dépasse le solde du portefeuille.",
           "withdraw_balance": "Le montant dépasse le solde retirable.",
           "withdraw_ltv": "Le retrait dépasserait la limite LTV du marché."

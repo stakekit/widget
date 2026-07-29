@@ -1,9 +1,20 @@
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import type { Position as BorrowPosition } from "../../../../../domain/borrow/position";
+import type { TFunction } from "i18next";
+import {
+  deriveMarketPositionOverview,
+  type MarketPosition,
+} from "../../../../../domain/borrow/market-position";
+import {
+  formatBorrowProviderName,
+  formatPercent,
+  formatUsd,
+} from "../../../../../shared/lib/formatters";
+import { formatNumber } from "../../../../../shared/lib/number-format";
+import { borrowTokenToTokenDto } from "../../../../borrow/state";
 
 type UnifiedManagePositionsStateInput = {
   readonly borrowPositionsResult: AsyncResult.AsyncResult<
-    ReadonlyArray<BorrowPosition>,
+    ReadonlyArray<MarketPosition>,
     unknown
   >;
   readonly borrowWalletIsConnected: boolean;
@@ -14,6 +25,38 @@ type UnifiedManagePositionsStateInput = {
   readonly isConnected: boolean;
   readonly isConnecting: boolean;
   readonly showEarnPositions: boolean;
+};
+
+export const getBorrowMarketPositionListItemModel = ({
+  position,
+  t,
+}: {
+  readonly position: MarketPosition;
+  readonly t: TFunction;
+}) => {
+  const debtBalance = position.balances.debt;
+  const overview = deriveMarketPositionOverview(position);
+  const headerToken = borrowTokenToTokenDto({
+    network: position.market.network,
+    token: overview.headerToken,
+  });
+
+  return {
+    balanceText: debtBalance
+      ? `${formatNumber(debtBalance.balance, 6)} ${debtBalance.tokenSymbol}`
+      : formatUsd(position.metrics.totalSuppliedUsd.toString()),
+    borrowApy: formatPercent(position.metrics.borrowApy),
+    headerToken,
+    providerName: formatBorrowProviderName(position.integration.name),
+    subValue: debtBalance
+      ? `${formatPercent(overview.currentLtv)} ${t(
+          "dashboard.borrow.position_details.ltv"
+        )} · ${formatUsd(
+          debtBalance.balanceUsd.toString()
+        )} ${t("dashboard.borrow.position_details.debt").toLowerCase()}`
+      : t("dashboard.borrow.position_details.supplied"),
+    title: overview.title,
+  };
 };
 
 type UnifiedManagePositionsState = {

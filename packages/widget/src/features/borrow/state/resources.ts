@@ -42,7 +42,7 @@ export const borrowPositionAtom = Atom.family((key: BorrowPositionKey) => {
       const positionsResult = get(positionsAtom);
       const detailResult = AsyncResult.flatMap(positionsResult, (positions) => {
         const position = key.marketId
-          ? positions.find((candidate) => candidate.id === key.marketId)
+          ? positions.items.find((candidate) => candidate.id === key.marketId)
           : null;
 
         return position
@@ -73,5 +73,5 @@ export const currentBorrowPositionsAtom = Atom.make((get) => {
             : null,
       })
     )
-  );
+  ).pipe(AsyncResult.map((positions) => positions.items));
 }).pipe(Atom.withLabel("currentBorrowPositionsAtom"));

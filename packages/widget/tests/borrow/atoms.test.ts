@@ -6,10 +6,13 @@ import {
   widgetConfigAtom,
 } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { BorrowAccountSnapshot } from "../../src/domain/borrow/borrow-account-snapshot";
+import {
+  deriveBorrowPositions,
+  emptyBorrowPositions,
+} from "../../src/domain/borrow/borrow-positions";
 import { Integration } from "../../src/domain/borrow/integration";
 import { Market } from "../../src/domain/borrow/market";
-import { BorrowAccountPosition } from "../../src/domain/borrow/position";
-import { deriveBorrowPositionItems } from "../../src/domain/borrow/position-items";
 import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
@@ -17,13 +20,16 @@ import {
   BorrowDashboardKey,
   type BorrowFormIntent,
   resolveBorrowDashboardView,
+  shouldResetBorrowFormForCatalog,
 } from "../../src/features/borrow/model/borrow-form";
+import { currentBorrowDashboardAtom } from "../../src/features/borrow/state/form";
 import {
   BorrowPositionKey,
   BorrowPositionNotFound,
   borrowPositionAtom,
   currentBorrowPositionsAtom,
 } from "../../src/features/borrow/state/resources";
+import { tokenBalancesScanAtom } from "../../src/features/portfolio/state";
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import { BorrowResourceError as BorrowAtomError } from "../../src/resources/borrow/borrow-resource-error";
 import { borrowIntegrationsResourceAtom as borrowIntegrationsAtom } from "../../src/resources/borrow-integrations/borrow-integrations";
@@ -145,7 +151,7 @@ describe("borrow atoms", () => {
   it("fetches, decodes, and derives borrow positions through atom resources", () => {
     const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
     const market = Schema.decodeUnknownSync(Market)(marketDto);
-    const position = Schema.decodeUnknownSync(BorrowAccountPosition)(
+    const position = Schema.decodeUnknownSync(BorrowAccountSnapshot)(
       positionDto
     );
     const registry = makeRegistry({
@@ -170,15 +176,15 @@ describe("borrow atoms", () => {
 
     expect(AsyncResult.isSuccess(result)).toBe(true);
     if (AsyncResult.isSuccess(result)) {
-      expect(result.value[0]?.id).toBe(marketDto.id);
-      expect(result.value[0]?.debtBalance?.balance).toBe(400);
+      expect(result.value.items[0]?.id).toBe(marketDto.id);
+      expect(result.value.items[0]?.balances.debt?.balance).toBe(400);
     }
   });
 
   it("resolves current borrow positions from wallet scope inside the atom runtime", () => {
     const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
     const market = Schema.decodeUnknownSync(Market)(marketDto);
-    const position = Schema.decodeUnknownSync(BorrowAccountPosition)(
+    const position = Schema.decodeUnknownSync(BorrowAccountSnapshot)(
       positionDto
     );
     const registry = AtomRegistry.make({
@@ -248,7 +254,7 @@ describe("borrow atoms", () => {
           borrowPositionsAtom(new BorrowPositionsKey({ scope: walletScope }))
         )
       )
-    ).toEqual([]);
+    ).toMatchObject({ items: [] });
     expect(getIntegrations).not.toHaveBeenCalled();
     expect(getMarkets).not.toHaveBeenCalled();
     expect(getPositionData).not.toHaveBeenCalled();
@@ -257,7 +263,7 @@ describe("borrow atoms", () => {
   it("shares one positions request between list and detail consumers", () => {
     const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
     const market = Schema.decodeUnknownSync(Market)(marketDto);
-    const position = Schema.decodeUnknownSync(BorrowAccountPosition)(
+    const position = Schema.decodeUnknownSync(BorrowAccountSnapshot)(
       positionDto
     );
     const getIntegrations = vi.fn(() => Effect.succeed([integration]));
@@ -297,7 +303,7 @@ describe("borrow atoms", () => {
       )
     );
 
-    expect(AsyncResult.getOrThrow(list)[0]?.id).toBe(market.id);
+    expect(AsyncResult.getOrThrow(list).items[0]?.id).toBe(market.id);
     expect(AsyncResult.getOrThrow(detail).id).toBe(market.id);
     expect(getIntegrations).toHaveBeenCalledOnce();
     expect(getMarkets).toHaveBeenCalledOnce();
@@ -307,7 +313,7 @@ describe("borrow atoms", () => {
   it("shares positions when only unused additional addresses differ", () => {
     const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
     const market = Schema.decodeUnknownSync(Market)(marketDto);
-    const position = Schema.decodeUnknownSync(BorrowAccountPosition)(
+    const position = Schema.decodeUnknownSync(BorrowAccountSnapshot)(
       positionDto
     );
     const getPositionData = vi.fn(() =>
@@ -337,8 +343,8 @@ describe("borrow atoms", () => {
     );
 
     expect(second).toBe(first);
-    expect(AsyncResult.getOrThrow(registry.get(first))).toHaveLength(1);
-    expect(AsyncResult.getOrThrow(registry.get(second))).toHaveLength(1);
+    expect(AsyncResult.getOrThrow(registry.get(first)).items).toHaveLength(1);
+    expect(AsyncResult.getOrThrow(registry.get(second)).items).toHaveLength(1);
     expect(getPositionData).toHaveBeenCalledOnce();
   });
 
@@ -403,13 +409,15 @@ describe("borrow atoms", () => {
   it("preserves base previous values and errors while typing absent details", () => {
     const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
     const market = Schema.decodeUnknownSync(Market)(marketDto);
-    const accountPosition = Schema.decodeUnknownSync(BorrowAccountPosition)(
+    const accountPosition = Schema.decodeUnknownSync(BorrowAccountSnapshot)(
       positionDto
     );
-    const position = deriveBorrowPositionItems({
-      integrationPositions: [{ integration, position: accountPosition }],
+    const positions = deriveBorrowPositions({
+      integrationAccountSnapshots: [
+        { accountSnapshot: accountPosition, integration },
+      ],
       markets: [market],
-    })[0]!;
+    });
     const base = borrowPositionsAtom(
       new BorrowPositionsKey({ scope: walletScope })
     );
@@ -418,7 +426,7 @@ describe("borrow atoms", () => {
     );
     const waitingRegistry = AtomRegistry.make({
       initialValues: [
-        [base, AsyncResult.waiting(AsyncResult.success([position]))],
+        [base, AsyncResult.waiting(AsyncResult.success(positions))],
       ],
     });
     const waiting = waitingRegistry.get(detail);
@@ -435,7 +443,7 @@ describe("borrow atoms", () => {
         [
           base,
           AsyncResult.failWithPrevious(error, {
-            previous: Option.some(AsyncResult.success([position])),
+            previous: Option.some(AsyncResult.success(positions)),
             waiting: false,
           }),
         ],
@@ -449,7 +457,7 @@ describe("borrow atoms", () => {
     expect(Option.getOrThrow(Cause.findErrorOption(failure.cause))).toBe(error);
 
     const absentRegistry = AtomRegistry.make({
-      initialValues: [[base, AsyncResult.success([])]],
+      initialValues: [[base, AsyncResult.success(emptyBorrowPositions)]],
     });
     const absent = absentRegistry.get(detail);
 
@@ -546,14 +554,214 @@ describe("borrow atoms", () => {
     });
   });
 
+  it("defaults the form to the first market where borrowing is enabled", () => {
+    const disabledMarket = Schema.decodeUnknownSync(Market)({
+      ...marketDto,
+      id: "disabled-market",
+      isBorrowEnabled: false,
+    });
+    const enabledMarket = Schema.decodeUnknownSync(Market)({
+      ...marketDto,
+      id: "enabled-market",
+    });
+
+    const view = resolveBorrowDashboardView({
+      integrationsResult: AsyncResult.success([]),
+      intent: {
+        borrowAmount: "0",
+        collateralAmount: "0",
+        selectedCollateralTokenAddress: null,
+        selectedMarketId: null,
+      },
+      key: new BorrowDashboardKey({
+        network: "ethereum",
+        scope: walletScope,
+      }),
+      marketsResult: AsyncResult.success([disabledMarket, enabledMarket]),
+      tokenBalances: [],
+    });
+
+    expect(view.selectedMarketId).toBe(enabledMarket.id);
+    expect(view.markets.map((market) => market.id)).toEqual([enabledMarket.id]);
+  });
+
+  it.each([
+    { borrowAmount: "5", expectedReady: true, minLoan: null },
+    { borrowAmount: "5", expectedReady: true, minLoan: "0" },
+    { borrowAmount: "10", expectedReady: true, minLoan: "10" },
+    { borrowAmount: "9.99", expectedReady: false, minLoan: "10" },
+    { borrowAmount: "10.01", expectedReady: true, minLoan: "10" },
+  ])(
+    "enforces the projected debt floor for minLoan=$minLoan and borrowAmount=$borrowAmount",
+    ({ borrowAmount, expectedReady, minLoan }) => {
+      const market = Schema.decodeUnknownSync(Market)({
+        ...marketDto,
+        minLoan,
+      });
+      const view = resolveBorrowDashboardView({
+        integrationsResult: AsyncResult.success([]),
+        intent: {
+          borrowAmount,
+          collateralAmount: "1",
+          selectedCollateralTokenAddress:
+            market.collateralTokens[0]?.token.address ?? null,
+          selectedMarketId: market.id,
+        },
+        key: new BorrowDashboardKey({
+          network: "ethereum",
+          scope: walletScope,
+        }),
+        marketsResult: AsyncResult.success([market]),
+        tokenBalances: Schema.decodeUnknownSync(TokenBalancesResponse)([
+          {
+            amount: "2",
+            availableYields: [],
+            token: {
+              address: marketDto.collateralTokens[0].token.address,
+              decimals: 18,
+              name: "Wrapped Ether",
+              network: "ethereum",
+              symbol: "WETH",
+            },
+          },
+        ]),
+      });
+
+      expect(view.isActionReady).toBe(expectedReady);
+      expect(view.validation.projectedDebtBelowMinimum).toBe(!expectedReady);
+      expect(view.preparedReviewState != null).toBe(expectedReady);
+    }
+  );
+
+  it("resets persisted form intent when a successful refresh removes the selected market", () => {
+    const selectedMarket = Schema.decodeUnknownSync(Market)(marketDto);
+    const replacementMarket = Schema.decodeUnknownSync(Market)({
+      ...marketDto,
+      id: "replacement-market",
+    });
+    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    let catalog = [selectedMarket];
+    const registry = AtomRegistry.make({
+      initialValues: [
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.succeed(BorrowResourceSource, {
+            getIntegrations: () => Effect.succeed([integration]),
+            getMarkets: () =>
+              Effect.succeed({
+                items: catalog,
+                limit: 100,
+                offset: 0,
+                total: catalog.length,
+              }),
+            getPositionData: () => Effect.succeed([]),
+          } as never)
+        ),
+        Atom.initialValue(walletScopeAtom, walletScope),
+        Atom.initialValue(
+          widgetConfigAtom,
+          normalizeWidgetConfig({
+            apiKey: "api-key",
+            borrowEnabled: true,
+            dashboardVariant: true,
+            variant: "default",
+          })
+        ),
+        Atom.initialValue(tokenBalancesScanAtom, {
+          enabled: true,
+          result: AsyncResult.success([]),
+        }),
+      ],
+    });
+
+    expect(registry.get(currentBorrowDashboardAtom)?.selectedMarketId).toBe(
+      selectedMarket.id
+    );
+    registry.set(currentBorrowDashboardAtom, {
+      amount: "25",
+      type: "borrowAmount/set",
+    });
+    registry.set(currentBorrowDashboardAtom, {
+      amount: "1",
+      type: "collateralAmount/set",
+    });
+
+    catalog = [replacementMarket];
+    registry.refresh(
+      borrowMarketsAtom.foreground(
+        new BorrowMarketsKey({ network: "ethereum" })
+      )
+    );
+
+    const view = registry.get(currentBorrowDashboardAtom);
+
+    expect(view?.selectedMarketId).toBe(replacementMarket.id);
+    expect(view?.borrowAmount.toString(10)).toBe("0");
+    expect(view?.collateralAmount.toString(10)).toBe("0");
+    expect(view?.catalogResetNotice).toBe(true);
+  });
+
+  it("uses stable catalog identities when deciding whether to reset the form", () => {
+    const selectedMarket = Schema.decodeUnknownSync(Market)(marketDto);
+    const otherMarket = Schema.decodeUnknownSync(Market)({
+      ...marketDto,
+      id: "other-market",
+    });
+    const intent: BorrowFormIntent = {
+      borrowAmount: "25",
+      collateralAmount: "1",
+      selectedCollateralTokenAddress:
+        selectedMarket.collateralTokens[0]?.token.address ?? null,
+      selectedMarketId: selectedMarket.id,
+    };
+
+    expect(
+      shouldResetBorrowFormForCatalog({
+        intent,
+        markets: [
+          otherMarket,
+          Schema.decodeUnknownSync(Market)({ ...marketDto }),
+        ],
+      })
+    ).toBe(false);
+    expect(
+      shouldResetBorrowFormForCatalog({
+        intent,
+        markets: [otherMarket],
+      })
+    ).toBe(true);
+    expect(
+      shouldResetBorrowFormForCatalog({
+        intent,
+        markets: [
+          Schema.decodeUnknownSync(Market)({
+            ...marketDto,
+            isBorrowEnabled: false,
+          }),
+        ],
+      })
+    ).toBe(true);
+    expect(
+      shouldResetBorrowFormForCatalog({
+        intent,
+        markets: [
+          Schema.decodeUnknownSync(Market)({
+            ...marketDto,
+            collateralTokens: [],
+          }),
+        ],
+      })
+    ).toBe(true);
+  });
+
   it("projects borrow form risk from existing selected-market positions", () => {
     const market = Schema.decodeUnknownSync(Market)(marketDto);
     const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
-    const [position] = deriveBorrowPositionItems({
-      integrationPositions: [
+    const positions = deriveBorrowPositions({
+      integrationAccountSnapshots: [
         {
           integration,
-          position: Schema.decodeUnknownSync(BorrowAccountPosition)({
+          accountSnapshot: Schema.decodeUnknownSync(BorrowAccountSnapshot)({
             ...positionDto,
             supplyBalances: [
               {
@@ -575,6 +783,7 @@ describe("borrow atoms", () => {
       ],
       markets: [market],
     });
+    const [position] = positions.items;
 
     if (!position) {
       throw new Error("Expected borrow position");
@@ -594,7 +803,7 @@ describe("borrow atoms", () => {
         scope: walletScope,
       }),
       marketsResult: AsyncResult.success([market]),
-      positionsResult: AsyncResult.success([position]),
+      positionsResult: AsyncResult.success(positions),
       tokenBalances: [],
     });
 
@@ -604,5 +813,211 @@ describe("borrow atoms", () => {
     expect(view.projection.projectedDebtUsd.toString(10)).toBe("900");
     expect(view.projection.projectedLtv).toBe(0.9);
     expect(view.validation.ltvGreaterThanMax).toBe(true);
+  });
+
+  it("projects a new pool market against same-integration account risk", () => {
+    const existingMarket = Schema.decodeUnknownSync(Market)(marketDto);
+    const selectedMarket = Schema.decodeUnknownSync(Market)({
+      ...marketDto,
+      id: "aave-v3-ethereum-dai",
+      loanToken: {
+        address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        decimals: 18,
+        name: "Dai Stablecoin",
+        symbol: "DAI",
+      },
+    });
+    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const positions = deriveBorrowPositions({
+      integrationAccountSnapshots: [
+        {
+          integration,
+          accountSnapshot: Schema.decodeUnknownSync(BorrowAccountSnapshot)({
+            ...positionDto,
+            supplyBalances: [
+              {
+                apy: "0.02",
+                balance: "0.5",
+                balanceRaw: "500000000000000000",
+                balanceUsd: "1000",
+                isCollateral: true,
+                marketId: existingMarket.id,
+                pendingActions: [],
+                tokenAddress: marketDto.collateralTokens[0].token.address,
+                tokenSymbol: "WETH",
+              },
+            ],
+            totalCollateralUsd: "1000",
+            totalSuppliedUsd: "1000",
+          }),
+        },
+      ],
+      markets: [existingMarket, selectedMarket],
+    });
+    const [existingPosition] = positions.items;
+
+    if (!existingPosition) {
+      throw new Error("Expected existing pool position");
+    }
+
+    const view = resolveBorrowDashboardView({
+      integrationsResult: AsyncResult.success([integration]),
+      intent: {
+        borrowAmount: "200",
+        collateralAmount: "0",
+        selectedCollateralTokenAddress:
+          selectedMarket.collateralTokens[0]?.token.address ?? null,
+        selectedMarketId: selectedMarket.id,
+      },
+      key: new BorrowDashboardKey({
+        network: "ethereum",
+        scope: walletScope,
+      }),
+      marketsResult: AsyncResult.success([existingMarket, selectedMarket]),
+      positionsResult: AsyncResult.success(positions),
+      tokenBalances: [],
+    });
+
+    expect(view.projection.existingCollateralUsd.toString(10)).toBe("1000");
+    expect(view.projection.existingDebtUsd.toString(10)).toBe("400");
+    expect(view.projection.projectedDebtUsd.toString(10)).toBe("600");
+    expect(view.projection.projectedLtv).toBe(0.6);
+    expect(view.validation.ltvGreaterThanMax).toBe(false);
+  });
+
+  it("validates borrow-only intent against the complete collateral composition", () => {
+    const strictToken = {
+      ...marketDto.collateralTokens[0],
+      liquidationThreshold: "0.6",
+      maxLtv: "0.5",
+    };
+    const defaultToken = {
+      ...marketDto.collateralTokens[0],
+      liquidationThreshold: "0.9",
+      maxLtv: "0.8",
+      token: {
+        address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        decimals: 8,
+        name: "Wrapped BTC",
+        symbol: "WBTC",
+      },
+    };
+    const market = Schema.decodeUnknownSync(Market)({
+      ...marketDto,
+      collateralTokens: [defaultToken, strictToken],
+    });
+    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const positions = deriveBorrowPositions({
+      integrationAccountSnapshots: [
+        {
+          integration,
+          accountSnapshot: Schema.decodeUnknownSync(BorrowAccountSnapshot)({
+            ...positionDto,
+            debtBalances: [
+              {
+                ...positionDto.debtBalances[0],
+                balance: "400",
+                balanceUsd: "400",
+              },
+            ],
+            supplyBalances: [
+              {
+                apy: "0.02",
+                balance: "0.5",
+                balanceRaw: "500000000000000000",
+                balanceUsd: "1000",
+                isCollateral: true,
+                marketId: market.id,
+                pendingActions: [],
+                tokenAddress: strictToken.token.address,
+                tokenSymbol: strictToken.token.symbol,
+              },
+            ],
+            totalBorrowedUsd: "400",
+            totalCollateralUsd: "1000",
+            totalSuppliedUsd: "1000",
+          }),
+        },
+      ],
+      markets: [market],
+    });
+    const [position] = positions.items;
+
+    if (!position) {
+      throw new Error("Expected borrow position");
+    }
+
+    const view = resolveBorrowDashboardView({
+      integrationsResult: AsyncResult.success([integration]),
+      intent: {
+        borrowAmount: "200",
+        collateralAmount: "0",
+        selectedCollateralTokenAddress:
+          market.collateralTokens[0]?.token.address ?? null,
+        selectedMarketId: market.id,
+      },
+      key: new BorrowDashboardKey({
+        network: "ethereum",
+        scope: walletScope,
+      }),
+      marketsResult: AsyncResult.success([market]),
+      positionsResult: AsyncResult.success(positions),
+      tokenBalances: [],
+    });
+
+    expect(view.projection.maxLtv).toBe(0.5);
+    expect(view.projection.projectedHealthFactor).toBe(1);
+    expect(view.validation.ltvGreaterThanMax).toBe(true);
+    expect(view.isActionReady).toBe(false);
+  });
+
+  it("allows review with an explicit warning when projected risk is unavailable", () => {
+    const market = Schema.decodeUnknownSync(Market)({
+      ...marketDto,
+      collateralTokens: [
+        {
+          ...marketDto.collateralTokens[0],
+          priceUsd: "0",
+        },
+      ],
+    });
+    const view = resolveBorrowDashboardView({
+      integrationsResult: AsyncResult.success([]),
+      intent: {
+        borrowAmount: "1",
+        collateralAmount: "1",
+        selectedCollateralTokenAddress:
+          market.collateralTokens[0]?.token.address ?? null,
+        selectedMarketId: market.id,
+      },
+      key: new BorrowDashboardKey({
+        network: "ethereum",
+        scope: walletScope,
+      }),
+      marketsResult: AsyncResult.success([market]),
+      tokenBalances: Schema.decodeUnknownSync(TokenBalancesResponse)([
+        {
+          amount: "2",
+          availableYields: [],
+          token: {
+            address: marketDto.collateralTokens[0].token.address,
+            decimals: 18,
+            name: "Wrapped Ether",
+            network: "ethereum",
+            symbol: "WETH",
+          },
+        },
+      ]),
+    });
+
+    expect(view.projection.riskStatus).toBe("unavailable");
+    expect(view.isActionReady).toBe(true);
+    expect(view.preparedReviewState?.summary).toMatchObject({
+      riskStatus: "unavailable",
+    });
+    expect(view.preparedReviewState?.summary.projectedHealthFactor).toBe(
+      undefined
+    );
+    expect(view.preparedReviewState?.summary.projectedLtv).toBe(undefined);
   });
 });

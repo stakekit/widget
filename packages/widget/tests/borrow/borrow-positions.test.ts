@@ -2,10 +2,10 @@ import BigNumber from "bignumber.js";
 import * as Schema from "effect/Schema";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
+import { BorrowAccountSnapshot } from "../../src/domain/borrow/borrow-account-snapshot";
+import { deriveBorrowPositions } from "../../src/domain/borrow/borrow-positions";
 import { Integration } from "../../src/domain/borrow/integration";
 import { Market } from "../../src/domain/borrow/market";
-import { BorrowAccountPosition } from "../../src/domain/borrow/position";
-import { deriveBorrowPositionItems } from "../../src/domain/borrow/position-items";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import { getBorrowDetailsModel } from "../../src/features/borrow/model/borrow-details-model";
 import {
@@ -72,7 +72,7 @@ const integrationDto = {
   actions: [],
 } as const;
 
-const positionDto = Schema.decodeUnknownSync(BorrowAccountPosition)({
+const positionDto = Schema.decodeUnknownSync(BorrowAccountSnapshot)({
   address,
   availableToBorrowUsd: "450",
   currentLtv: "0.4",
@@ -138,33 +138,39 @@ const positionDto = Schema.decodeUnknownSync(BorrowAccountPosition)({
   totalSuppliedUsd: "1000",
 });
 
+const deriveItems = (input: Parameters<typeof deriveBorrowPositions>[0]) =>
+  deriveBorrowPositions(input).items;
+
 const t = ((key: string) => key) as TFunction;
 
 describe("borrow position items", () => {
   it("projects integration-level position responses into market positions", () => {
-    const [position] = deriveBorrowPositionItems({
-      integrationPositions: [
+    const [position] = deriveItems({
+      integrationAccountSnapshots: [
         {
           integration: Schema.decodeUnknownSync(Integration)(integrationDto),
-          position: positionDto,
+          accountSnapshot: positionDto,
         },
       ],
       markets: [Schema.decodeUnknownSync(Market)(marketDto)],
     });
 
     expect(position?.id).toBe("aave-v3-ethereum-usdc");
-    expect(position?.debtBalance?.balance).toBe(400);
-    expect(position?.supplyBalances).toHaveLength(1);
-    expect(position?.getCurrentLtv()).toBe(0.4);
-    expect(position?.getHealthFactor()).toBe(2.125);
+    expect(position?.balances.debt?.balance).toBe(400);
+    expect(position?.balances.supply).toHaveLength(1);
+    expect(position?.risk.current).toMatchObject({
+      healthFactor: 2.125,
+      ltv: 0.4,
+      status: "available",
+    });
   });
 
   it("builds review states for borrow position pending actions", () => {
-    const [position] = deriveBorrowPositionItems({
-      integrationPositions: [
+    const [position] = deriveItems({
+      integrationAccountSnapshots: [
         {
           integration: Schema.decodeUnknownSync(Integration)(integrationDto),
-          position: positionDto,
+          accountSnapshot: positionDto,
         },
       ],
       markets: [Schema.decodeUnknownSync(Market)(marketDto)],
@@ -193,11 +199,11 @@ describe("borrow position items", () => {
   });
 
   it("derives borrow position details model from local position data", () => {
-    const [position] = deriveBorrowPositionItems({
-      integrationPositions: [
+    const [position] = deriveItems({
+      integrationAccountSnapshots: [
         {
           integration: Schema.decodeUnknownSync(Integration)(integrationDto),
-          position: positionDto,
+          accountSnapshot: positionDto,
         },
       ],
       markets: [Schema.decodeUnknownSync(Market)(marketDto)],
@@ -301,6 +307,7 @@ describe("borrow position items", () => {
           name: loanTokenSymbol,
           symbol: loanTokenSymbol,
         },
+        type: "isolated",
       });
     const usdcMarket = makeMarket({
       id: usdcMarketId,
@@ -312,7 +319,7 @@ describe("borrow position items", () => {
       loanTokenAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
       loanTokenSymbol: "USDT",
     });
-    const accountPosition = Schema.decodeUnknownSync(BorrowAccountPosition)({
+    const accountPosition = Schema.decodeUnknownSync(BorrowAccountSnapshot)({
       ...positionDto,
       availableToBorrowUsd: null,
       currentLtv: "0.1462",
@@ -372,9 +379,12 @@ describe("borrow position items", () => {
       totalCollateralUsd: "3.42",
       totalSuppliedUsd: "3.42",
     });
-    const positions = deriveBorrowPositionItems({
-      integrationPositions: [
-        { integration: morphoIntegration, position: accountPosition },
+    const positions = deriveItems({
+      integrationAccountSnapshots: [
+        {
+          accountSnapshot: accountPosition,
+          integration: morphoIntegration,
+        },
       ],
       markets: [usdcMarket, usdtMarket],
     });
@@ -382,17 +392,20 @@ describe("borrow position items", () => {
       (position) => position.id === usdcMarket.id
     );
 
-    expect(usdcPosition?.supplyBalances).toEqual([
+    expect(usdcPosition?.balances.supply).toEqual([
       expect.objectContaining({
         balanceUsd: 2.54,
         marketId: usdcMarket.id,
       }),
     ]);
-    expect(usdcPosition?.getTotalCollateralUsd()).toBe(2.54);
-    expect(usdcPosition?.getTotalBorrowedUsd()).toBe(0.5);
-    expect(usdcPosition?.getCurrentLtv()).toBe(0.1968);
-    expect(usdcPosition?.getHealthFactor()).toBe(4.3708);
-    expect(usdcPosition?.getBorrowApy()).toBeCloseTo(0.0385665);
+    expect(usdcPosition?.metrics.totalCollateralUsd).toBe(2.54);
+    expect(usdcPosition?.metrics.totalBorrowedUsd).toBe(0.5);
+    expect(usdcPosition?.risk.current).toMatchObject({
+      healthFactor: 4.3708,
+      ltv: 0.1968,
+      status: "available",
+    });
+    expect(usdcPosition?.metrics.borrowApy).toBeCloseTo(0.0385665);
 
     if (!usdcPosition) {
       throw new Error("Expected USDC position");

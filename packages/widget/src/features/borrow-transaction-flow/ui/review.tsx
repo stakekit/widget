@@ -237,6 +237,17 @@ export const BorrowReviewPage = () => {
             </Box>
           ) : null}
 
+          {summary.riskStatus === "unavailable" ? (
+            <Box className={styles.formCard}>
+              <Text variant={{ weight: "bold" }}>
+                {t("dashboard.borrow.risk_unavailable.title")}
+              </Text>
+              <Text variant={{ type: "muted", weight: "normal" }}>
+                {t("dashboard.borrow.risk_unavailable.description")}
+              </Text>
+            </Box>
+          ) : null}
+
           <Text variant={{ type: "muted", weight: "normal" }}>
             {t(
               `dashboard.borrow.review_page.risk_disclosures.${summary.action}`

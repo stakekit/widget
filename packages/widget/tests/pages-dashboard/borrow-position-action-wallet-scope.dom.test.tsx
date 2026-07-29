@@ -5,10 +5,10 @@ import { act } from "react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { describe, expect, it } from "vitest";
+import { BorrowAccountSnapshot } from "../../src/domain/borrow/borrow-account-snapshot";
+import { deriveBorrowPositions } from "../../src/domain/borrow/borrow-positions";
 import { Integration } from "../../src/domain/borrow/integration";
 import { Market } from "../../src/domain/borrow/market";
-import { BorrowAccountPosition } from "../../src/domain/borrow/position";
-import { deriveBorrowPositionItems } from "../../src/domain/borrow/position-items";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   type BorrowPositionAction,
@@ -85,11 +85,11 @@ const makePosition = ({
   readonly owner: WalletAddress;
   readonly supplied: string;
 }) => {
-  const [position] = deriveBorrowPositionItems({
-    integrationPositions: [
+  const [position] = deriveBorrowPositions({
+    integrationAccountSnapshots: [
       {
         integration,
-        position: Schema.decodeUnknownSync(BorrowAccountPosition)({
+        accountSnapshot: Schema.decodeUnknownSync(BorrowAccountSnapshot)({
           address: owner,
           availableToBorrowUsd: "450",
           currentLtv: "0.4",
@@ -149,7 +149,7 @@ const makePosition = ({
       },
     ],
     markets: [market],
-  });
+  }).items;
 
   if (!position) throw new Error("Expected Borrow position");
   return position;

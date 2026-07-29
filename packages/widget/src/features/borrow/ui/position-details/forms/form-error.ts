@@ -3,6 +3,7 @@ import type { BorrowPositionActionFormError } from "../../../model/position-acti
 
 const errorTranslationKeys = {
   repayDebt: "dashboard.borrow.position_details.validation.repay_debt",
+  repayMinimum: "dashboard.borrow.position_details.validation.repay_minimum",
   walletBalance: "dashboard.borrow.position_details.validation.wallet_balance",
   withdrawBalance:
     "dashboard.borrow.position_details.validation.withdraw_balance",

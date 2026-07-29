@@ -1,15 +1,15 @@
 import { Schema } from "effect";
 import * as BorrowApi from "../../generated/api/borrow";
+import { RiskRatioFromString } from "./risk-values";
 import { BorrowToken } from "./token";
 
-export class CollateralToken extends Schema.Class<CollateralToken>(
-  "BorrowCollateralToken"
-)({
+export const CollateralToken = Schema.Struct({
   ...BorrowApi.CollateralTokenDto.fields,
-  token: BorrowToken,
-  priceUsd: Schema.FiniteFromString,
-  maxLtv: Schema.FiniteFromString,
-  liquidationThreshold: Schema.FiniteFromString,
-  liquidationPenalty: Schema.FiniteFromString,
+  liquidationPenalty: RiskRatioFromString,
+  liquidationThreshold: RiskRatioFromString,
+  maxLtv: RiskRatioFromString,
+  priceUsd: Schema.FiniteFromString.check(Schema.isGreaterThanOrEqualTo(0)),
   supplyRate: Schema.FiniteFromString,
-}) {}
+  token: BorrowToken,
+});
+export type CollateralToken = typeof CollateralToken.Type;

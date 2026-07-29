@@ -29,6 +29,7 @@ export type BorrowTransactionFlowReview = {
     readonly projectedHealthFactor?: string;
     readonly projectedLtv?: string;
     readonly providerName: string;
+    readonly riskStatus?: "available" | "unavailable";
   };
 };
 

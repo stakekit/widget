@@ -5,9 +5,9 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import * as Reactivity from "effect/unstable/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { BorrowAccountSnapshot } from "../../src/domain/borrow/borrow-account-snapshot";
 import { Integration } from "../../src/domain/borrow/integration";
 import { Market } from "../../src/domain/borrow/market";
-import { BorrowAccountPosition } from "../../src/domain/borrow/position";
 import { EarnLegacyTokenOptionsResponse } from "../../src/domain/schema/earn-models";
 import {
   TokenBalancesResponse,
@@ -135,7 +135,7 @@ const borrowMarket = Schema.decodeUnknownSync(Market)({
   utilizationRate: "0.5",
 });
 const borrowAccountPosition = (updated: boolean) =>
-  Schema.decodeUnknownSync(BorrowAccountPosition)({
+  Schema.decodeUnknownSync(BorrowAccountSnapshot)({
     address: scopeA.address,
     availableToBorrowUsd: updated ? "750" : "450",
     currentLtv: updated ? "0.1" : "0.4",
@@ -545,8 +545,8 @@ describe("semantic resource invalidation", () => {
 
     await vi.waitFor(() => {
       const value = AsyncResult.getOrThrow(registry.get(detail));
-      expect(value.debtBalance?.balance).toBe(400);
-      expect(value.debtBalance?.pendingActions).toHaveLength(1);
+      expect(value.balances.debt?.balance).toBe(400);
+      expect(value.balances.debt?.pendingActions).toHaveLength(1);
     });
     updated = true;
     const action = {
@@ -569,8 +569,8 @@ describe("semantic resource invalidation", () => {
     await Effect.runPromise(reactivity.withBatch(reactivity.invalidate(keys)));
     await vi.waitFor(() => {
       const value = AsyncResult.getOrThrow(registry.get(detail));
-      expect(value.debtBalance?.balance).toBe(100);
-      expect(value.debtBalance?.pendingActions).toHaveLength(0);
+      expect(value.balances.debt?.balance).toBe(100);
+      expect(value.balances.debt?.pendingActions).toHaveLength(0);
     });
     expect(getIntegrations).toHaveBeenCalledOnce();
     expect(getMarkets).toHaveBeenCalledTimes(2);

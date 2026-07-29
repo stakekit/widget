@@ -1,10 +1,10 @@
 import * as Schema from "effect/Schema";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
+import { BorrowAccountSnapshot } from "../../src/domain/borrow/borrow-account-snapshot";
+import { deriveBorrowPositions } from "../../src/domain/borrow/borrow-positions";
 import { Integration } from "../../src/domain/borrow/integration";
 import { Market } from "../../src/domain/borrow/market";
-import { BorrowAccountPosition } from "../../src/domain/borrow/position";
-import { deriveBorrowPositionItems } from "../../src/domain/borrow/position-items";
 import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
@@ -12,7 +12,7 @@ import {
   applyBorrowWithdrawFormAction,
   makeDefaultBorrowRepayFormIntent,
   makeDefaultBorrowWithdrawFormIntent,
-  resolveBorrowCollateralToggleReviewState,
+  resolveBorrowCollateralToggleFormView,
   resolveBorrowRepayFormView,
   resolveBorrowWithdrawFormView,
 } from "../../src/features/borrow/model/position-action-form";
@@ -80,7 +80,7 @@ const integrationDto = {
   actions: [],
 } as const;
 
-const accountPositionDto = Schema.decodeUnknownSync(BorrowAccountPosition)({
+const accountPositionDto = Schema.decodeUnknownSync(BorrowAccountSnapshot)({
   address,
   availableToBorrowUsd: "450",
   currentLtv: "0.4",
@@ -159,20 +159,34 @@ const walletBalances = Schema.decodeUnknownSync(TokenBalancesResponse)([
 
 const t = ((key: string) => key) as TFunction;
 
-const getPositionActions = () => {
-  const [position] = deriveBorrowPositionItems({
-    integrationPositions: [
+const makePosition = ({
+  market,
+  snapshot = accountPositionDto,
+}: {
+  readonly market: typeof Market.Type;
+  readonly snapshot?: typeof BorrowAccountSnapshot.Type;
+}) => {
+  const position = deriveBorrowPositions({
+    integrationAccountSnapshots: [
       {
         integration: Schema.decodeUnknownSync(Integration)(integrationDto),
-        position: accountPositionDto,
+        accountSnapshot: snapshot,
       },
     ],
-    markets: [Schema.decodeUnknownSync(Market)(marketDto)],
-  });
+    markets: [market],
+  }).items[0];
 
   if (!position) {
     throw new Error("Expected borrow position");
   }
+
+  return position;
+};
+
+const getPositionActions = (
+  market = Schema.decodeUnknownSync(Market)(marketDto)
+) => {
+  const position = makePosition({ market });
 
   return getBorrowPositionActions({ address, position, t });
 };
@@ -233,6 +247,43 @@ describe("borrow repay form", () => {
     });
   });
 
+  it("allows repayment while reporting unavailable projected risk", () => {
+    const unavailableSupplyBalances = context.position.balances.supply.map(
+      (supplyBalance) => ({
+        ...supplyBalance,
+        balanceUsd: 0,
+      })
+    );
+    const unavailableContext = {
+      ...context,
+      position: makePosition({
+        market: context.position.market,
+        snapshot: {
+          ...accountPositionDto,
+          totalCollateralUsd: 0,
+          totalSuppliedUsd: 0,
+          supplyBalances: unavailableSupplyBalances,
+        },
+      }),
+    };
+    const view = resolveBorrowRepayFormView({
+      address,
+      context: unavailableContext,
+      intent: {
+        amount: "100",
+        repayAll: false,
+      },
+      tokenBalances: null,
+    });
+
+    expect(view.canSubmit).toBe(true);
+    expect(view.projectedLtv).toBeNull();
+    expect(view.riskStatus).toBe("unavailable");
+    expect(view.reviewState?.summary).toMatchObject({
+      riskStatus: "unavailable",
+    });
+  });
+
   it("repays the full debt when the repay all intent is set", () => {
     const intent = applyBorrowRepayFormAction({
       action: { repayAll: true, type: "repayAll/set" },
@@ -249,6 +300,67 @@ describe("borrow repay form", () => {
     expect(view.canSubmit).toBe(true);
     expect(view.remainingDebt).toBe(0);
     expect(view.reviewState?.request.args).toMatchObject({ repayAll: true });
+  });
+
+  it.each([
+    { expectedReady: true, minLoan: null, repayAmount: 395 },
+    { expectedReady: true, minLoan: "0", repayAmount: 395 },
+    { expectedReady: true, minLoan: "10", repayAmount: 390 },
+    { expectedReady: false, minLoan: "10", repayAmount: 395 },
+    { expectedReady: true, minLoan: "10", repayAmount: 389 },
+  ])(
+    "enforces the remaining debt floor for minLoan=$minLoan and repayAmount=$repayAmount",
+    ({ expectedReady, minLoan, repayAmount }) => {
+      const minimumMarket = Schema.decodeUnknownSync(Market)({
+        ...marketDto,
+        minLoan,
+      });
+      const action = getPositionActions(minimumMarket).find(
+        (candidate) => candidate.pendingContext.type === "repay"
+      );
+
+      if (action?.pendingContext.type !== "repay") {
+        throw new Error("Expected repay context");
+      }
+
+      const view = resolveBorrowRepayFormView({
+        address,
+        context: action.pendingContext,
+        intent: {
+          amount: repayAmount.toString(),
+          repayAll: false,
+        },
+        tokenBalances: null,
+      });
+
+      expect(view.canSubmit).toBe(expectedReady);
+      expect(view.error).toBe(expectedReady ? null : "repayMinimum");
+    }
+  );
+
+  it("allows full repayment when the market has a minimum loan", () => {
+    const minimumMarket = Schema.decodeUnknownSync(Market)({
+      ...marketDto,
+      minLoan: "10",
+    });
+    const action = getPositionActions(minimumMarket).find(
+      (candidate) => candidate.pendingContext.type === "repay"
+    );
+
+    if (action?.pendingContext.type !== "repay") {
+      throw new Error("Expected repay context");
+    }
+
+    const view = resolveBorrowRepayFormView({
+      address,
+      context: action.pendingContext,
+      intent: { amount: "0", repayAll: true },
+      tokenBalances: null,
+    });
+
+    expect(view.canSubmit).toBe(true);
+    expect(view.remainingDebt).toBe(0);
+    expect(view.error).toBeNull();
   });
 
   it("reports a repayment larger than the wallet balance", () => {
@@ -312,6 +424,19 @@ describe("borrow withdraw form", () => {
     expect(view?.canSubmit).toBe(false);
   });
 
+  it("does not substitute another token for a disappeared explicit selection", () => {
+    const view = resolveBorrowWithdrawFormView({
+      address,
+      context,
+      intent: {
+        amount: "0.1",
+        selectedTokenAddress: "0x0000000000000000000000000000000000000002",
+      },
+    });
+
+    expect(view).toBeNull();
+  });
+
   it("projects collateral and ltv for a partial withdrawal", () => {
     const intent = applyBorrowWithdrawFormAction({
       action: { amount: "0.1", type: "amount/set" },
@@ -326,6 +451,42 @@ describe("borrow withdraw form", () => {
     expect(view?.reviewState?.summary).toMatchObject({
       action: "withdraw",
       collateralTokenSymbol: "WETH",
+    });
+  });
+
+  it("allows withdrawal while reporting unavailable projected risk", () => {
+    const unavailableSupplyBalances = context.position.balances.supply.map(
+      (supplyBalance) => ({
+        ...supplyBalance,
+        balanceUsd: 0,
+      })
+    );
+    const unavailableContext = {
+      ...context,
+      position: makePosition({
+        market: context.position.market,
+        snapshot: {
+          ...accountPositionDto,
+          totalCollateralUsd: 0,
+          totalSuppliedUsd: 0,
+          supplyBalances: unavailableSupplyBalances,
+        },
+      }),
+    };
+    const view = resolveBorrowWithdrawFormView({
+      address,
+      context: unavailableContext,
+      intent: {
+        amount: "0.1",
+        selectedTokenAddress: context.tokens[0]!.action.args.tokenAddress,
+      },
+    });
+
+    expect(view?.canSubmit).toBe(true);
+    expect(view?.projectedLtv).toBeNull();
+    expect(view?.riskStatus).toBe("unavailable");
+    expect(view?.reviewState?.summary).toMatchObject({
+      riskStatus: "unavailable",
     });
   });
 
@@ -347,6 +508,119 @@ describe("borrow withdraw form", () => {
     });
     const view = resolveBorrowWithdrawFormView({ address, context, intent });
 
+    expect(view?.error).toBe("withdrawLtv");
+    expect(view?.canSubmit).toBe(false);
+  });
+
+  it("validates withdrawal against the collateral composition remaining afterward", () => {
+    const highLimitTokenAddress = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599";
+    const mixedMarketDto = {
+      ...marketDto,
+      collateralTokens: [
+        {
+          ...marketDto.collateralTokens[0],
+          liquidationThreshold: "0.6",
+          maxLtv: "0.5",
+        },
+        {
+          ...marketDto.collateralTokens[0],
+          liquidationThreshold: "0.9",
+          maxLtv: "0.8",
+          priceUsd: "1000",
+          token: {
+            address: highLimitTokenAddress,
+            decimals: 8,
+            name: "Wrapped BTC",
+            symbol: "WBTC",
+          },
+        },
+      ],
+    } as const;
+    const mixedMarket = Schema.decodeUnknownSync(Market)(mixedMarketDto);
+    const withdrawAction = {
+      args: {
+        amountRaw: "100000000",
+        marketId: mixedMarket.id,
+        tokenAddress: highLimitTokenAddress,
+      },
+      label: "Withdraw",
+      type: "withdraw",
+    } as const;
+    const position = makePosition({
+      market: mixedMarket,
+      snapshot: Schema.decodeUnknownSync(BorrowAccountSnapshot)({
+        ...Schema.encodeSync(BorrowAccountSnapshot)(accountPositionDto),
+        availableToBorrowUsd: "700",
+        currentLtv: "0.3",
+        debtBalances: [
+          {
+            apy: "0.06",
+            balance: "600",
+            balanceRaw: "600000000",
+            balanceUsd: "600",
+            marketId: mixedMarket.id,
+            pendingActions: [],
+            tokenAddress: loanTokenAddress,
+            tokenSymbol: "USDC",
+          },
+        ],
+        healthFactor: "2.5",
+        supplyBalances: [
+          {
+            apy: "0.02",
+            balance: "0.5",
+            balanceRaw: "500000000000000000",
+            balanceUsd: "1000",
+            isCollateral: true,
+            marketId: mixedMarket.id,
+            pendingActions: [],
+            tokenAddress: collateralTokenAddress,
+            tokenSymbol: "WETH",
+          },
+          {
+            apy: "0.02",
+            balance: "1",
+            balanceRaw: "100000000",
+            balanceUsd: "1000",
+            isCollateral: true,
+            marketId: mixedMarket.id,
+            pendingActions: [withdrawAction],
+            tokenAddress: highLimitTokenAddress,
+            tokenSymbol: "WBTC",
+          },
+        ],
+        totalBorrowedUsd: "600",
+        totalCollateralUsd: "2000",
+        totalSuppliedUsd: "2000",
+      }),
+    });
+    const decodedWithdrawAction = position.actions.supply[0];
+
+    if (decodedWithdrawAction?.type !== "withdraw") {
+      throw new Error("Expected withdraw action");
+    }
+
+    const selectedToken = {
+      action: decodedWithdrawAction,
+      collateralToken: mixedMarket.collateralTokens[1]!,
+      supplyBalance: position.balances.supply[1]!,
+    };
+    const mixedContext = {
+      position,
+      tokens: [selectedToken],
+      type: "withdraw",
+    } as const;
+
+    const view = resolveBorrowWithdrawFormView({
+      address,
+      context: mixedContext,
+      intent: {
+        amount: "1",
+        selectedTokenAddress: decodedWithdrawAction.args.tokenAddress,
+      },
+    });
+
+    expect(view?.projectedLtv).toBe(0.6);
     expect(view?.error).toBe("withdrawLtv");
     expect(view?.canSubmit).toBe(false);
   });
@@ -379,24 +653,19 @@ describe("borrow withdraw form", () => {
 });
 
 describe("borrow collateral toggle", () => {
-  it("builds a review state from the current position", () => {
+  it("blocks disabling collateral when it would exceed borrow capacity", () => {
     const context = getActionContext("disableCollateral");
 
     if (context.type !== "disableCollateral") {
       throw new Error("Expected disable collateral context");
     }
 
-    const reviewState = resolveBorrowCollateralToggleReviewState({
+    const view = resolveBorrowCollateralToggleFormView({
       address,
       context,
     });
 
-    expect(reviewState.request.action).toBe("disableCollateral");
-    expect(reviewState.summary).toMatchObject({
-      action: "disableCollateral",
-      collateralTokenSymbol: "WETH",
-      marketLabel: "WETH / USDC",
-      providerName: "Aave V3",
-    });
+    expect(view.reviewState).toBeNull();
+    expect(view.riskStatus).toBe("available");
   });
 });

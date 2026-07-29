@@ -73,6 +73,34 @@ _Avoid_: Raw mechanic fields, yield contract
 The owner identity of a Wallet Scope, consisting only of its network and primary address. Additional-address changes do not change the Wallet Scope Owner.
 _Avoid_: Wallet Scope key, connector identity
 
+## Borrow Language
+
+**Borrow Account Snapshot**:
+The decoded API snapshot of one wallet owner's Borrow balances and provider-reported risk facts for an integration and network. It is an input to derivation, not the application's position model.
+_Avoid_: Position, account position
+
+**Market Position**:
+One existing Borrow position in a specific market. It owns only that market's balances, pending actions, and local financial metrics, and references the Risk Position that governs those balances.
+_Avoid_: Position, account position
+
+**Borrow Positions**:
+The wallet-scoped aggregate of existing Market Positions and the resolver for the Risk Position governing any catalog market, including a selected market with no existing Market Position.
+_Avoid_: Position items, positions array
+
+**Risk Position**:
+The domain-owned solvency view for either a pool account or one isolated market. It exposes current risk and assesses semantic compound changes such as borrow, repay, supply, withdraw, and collateral toggles.
+_Avoid_: Risk scope, risk helpers, position projection
+
+**Account Risk Position**:
+A Risk Position shared by pool Market Positions for one integration and network. Its current facts are API-authoritative; projected facts use the Widget's complete known collateral composition.
+
+**Market Risk Position**:
+A Risk Position owned by one isolated market. Its current facts use the market's API-authoritative position state.
+
+**Risk Unavailable**:
+A typed, user-visible result meaning the Widget lacks consistent inputs for a risk projection. It does not block an action; known projected borrow-capacity violations do.
+_Avoid_: Infinite limit, safe fallback
+
 ## Transaction Flow Language
 
 **Transaction Flow**:

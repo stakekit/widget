@@ -1,15 +1,15 @@
+import type {
+  DebtBalance,
+  SupplyBalance,
+} from "../../../domain/borrow/borrow-account-snapshot";
 import type { CollateralToken } from "../../../domain/borrow/collateral-token";
+import type { MarketPosition } from "../../../domain/borrow/market-position";
 import type {
   DisableCollateralPendingAction,
   EnableCollateralPendingAction,
   RepayPendingAction,
   WithdrawPendingAction,
 } from "../../../domain/borrow/pending-action";
-import type {
-  DebtBalance,
-  Position,
-  SupplyBalance,
-} from "../../../domain/borrow/position";
 
 export type BorrowWithdrawTokenOption = {
   readonly action: WithdrawPendingAction;
@@ -20,12 +20,12 @@ export type BorrowWithdrawTokenOption = {
 export type BorrowRepayActionContext = {
   readonly action: RepayPendingAction;
   readonly debtBalance: DebtBalance;
-  readonly position: Position;
+  readonly position: MarketPosition;
   readonly type: "repay";
 };
 
 export type BorrowWithdrawActionContext = {
-  readonly position: Position;
+  readonly position: MarketPosition;
   readonly tokens: ReadonlyArray<BorrowWithdrawTokenOption>;
   readonly type: "withdraw";
 };
@@ -34,7 +34,7 @@ export type BorrowCollateralToggleActionContext = {
   readonly action:
     | DisableCollateralPendingAction
     | EnableCollateralPendingAction;
-  readonly position: Position;
+  readonly position: MarketPosition;
   readonly supplyBalance: SupplyBalance;
   readonly type: "disableCollateral" | "enableCollateral";
 };

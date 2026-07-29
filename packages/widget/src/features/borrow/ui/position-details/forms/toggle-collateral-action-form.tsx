@@ -10,8 +10,9 @@ import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { DetailRow } from "../../../../earn/components";
 import { PageCtaButton } from "../../../../widget-shell/components";
 import type { BorrowCollateralToggleActionContext } from "../../../model/position-action-context";
-import { resolveBorrowCollateralToggleReviewState } from "../../../model/position-action-form";
+import { resolveBorrowCollateralToggleFormView } from "../../../model/position-action-form";
 import type { BorrowPositionAction } from "../../../model/position-details-model";
+import { BorrowNotice } from "../../components/notices";
 import * as styles from "../../styles.css";
 import { useStartBorrowPositionReview } from "./use-start-review";
 
@@ -27,15 +28,21 @@ export const ToggleCollateralActionForm = ({
   const { position } = context;
   const isDisable = context.type === "disableCollateral";
   const tokenSymbol = context.supplyBalance.tokenSymbol;
-  const healthFactor = position.getHealthFactor();
+  const currentRisk = position.risk.current;
+  const healthFactor =
+    currentRisk.status === "available" ? currentRisk.healthFactor : null;
+  const currentLtv =
+    currentRisk.status === "available" ? currentRisk.ltv : null;
+  const view = resolveBorrowCollateralToggleFormView({
+    address: action.reviewState.request.address,
+    context,
+  });
 
-  const onContinue = () =>
-    startReview(
-      resolveBorrowCollateralToggleReviewState({
-        address: action.reviewState.request.address,
-        context,
-      })
-    );
+  const onContinue = () => {
+    if (view.reviewState) {
+      startReview(view.reviewState);
+    }
+  };
 
   return (
     <Box display="flex" flexDirection="column" gap="4">
@@ -60,7 +67,7 @@ export const ToggleCollateralActionForm = ({
         <DetailRow
           id="ltv"
           label={t("dashboard.borrow.form.ltv_ratio")}
-          value={formatPercent(position.getCurrentLtv())}
+          value={formatPercent(currentLtv)}
         />
         <DetailRow
           id="health"
@@ -74,9 +81,15 @@ export const ToggleCollateralActionForm = ({
         />
       </Box>
 
+      {view.riskStatus === "unavailable" ? (
+        <BorrowNotice title={t("dashboard.borrow.risk_unavailable.title")}>
+          {t("dashboard.borrow.risk_unavailable.description")}
+        </BorrowNotice>
+      ) : null}
+
       <PageCtaButton
         cta={{
-          disabled: false,
+          disabled: !view.reviewState,
           isLoading: false,
           label: t("dashboard.borrow.review"),
           onClick: onContinue,

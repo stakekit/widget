@@ -9,6 +9,7 @@ import { PageCtaButton } from "../../../../widget-shell/components";
 import type { BorrowRepayActionContext } from "../../../model/position-action-context";
 import type { BorrowPositionAction } from "../../../model/position-details-model";
 import { useBorrowRepayForm } from "../../../react/use-borrow-position-action-form";
+import { BorrowNotice } from "../../components/notices";
 import * as styles from "../../styles.css";
 import { AmountInputCard } from "./amount-input-card";
 import { getBorrowPositionFormErrorMessage } from "./form-error";
@@ -48,6 +49,13 @@ export const RepayActionForm = ({
         tokenSymbol={debtBalance.tokenSymbol}
         usdValue={view.repayUsd}
       />
+
+      {view.riskStatus === "unavailable" &&
+      (view.repayAll || view.amount.gt(0)) ? (
+        <BorrowNotice title={t("dashboard.borrow.risk_unavailable.title")}>
+          {t("dashboard.borrow.risk_unavailable.description")}
+        </BorrowNotice>
+      ) : null}
 
       <Box className={styles.formCard}>
         <Box className={styles.checkboxRow}>

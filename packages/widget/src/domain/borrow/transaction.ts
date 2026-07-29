@@ -3,15 +3,14 @@ import * as BorrowApi from "../../generated/api/borrow";
 import { TransactionId, WalletAddress } from "./ids";
 import { BorrowNetwork } from "./network";
 
-export class Transaction extends Schema.Class<Transaction>("BorrowTransaction")(
-  {
-    ...BorrowApi.TransactionDto.fields,
-    id: TransactionId,
-    network: BorrowNetwork,
-    chainId: Schema.FiniteFromString,
-    address: WalletAddress,
-  }
-) {}
+export const Transaction = Schema.Struct({
+  ...BorrowApi.TransactionDto.fields,
+  address: WalletAddress,
+  chainId: Schema.FiniteFromString,
+  id: TransactionId,
+  network: BorrowNetwork,
+});
+export type Transaction = typeof Transaction.Type;
 
 const HexString = Schema.TemplateLiteral([Schema.Literal("0x"), Schema.String]);
 const Numberish = Schema.Union([Schema.String, Schema.Number, Schema.BigInt]);

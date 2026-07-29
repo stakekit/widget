@@ -4,7 +4,7 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigAtom } from "../../../app/config/settings";
 import { widgetBootstrapConfigAtom } from "../../../app/config/widget-config";
-import type { Position as BorrowPosition } from "../../../domain/borrow/position";
+import type { MarketPosition } from "../../../domain/borrow/market-position";
 import type { EarnBalance } from "../../../domain/schema/earn-models";
 import type { YieldId } from "../../../domain/schema/identifiers";
 import {
@@ -51,7 +51,7 @@ export type PositionItem = {
 );
 
 export type UnifiedPositionItem =
-  | { readonly kind: "borrow"; readonly position: BorrowPosition }
+  | { readonly kind: "borrow"; readonly position: MarketPosition }
   | { readonly kind: "earn"; readonly position: PositionItem };
 
 export type PositionsListRow =
@@ -191,7 +191,10 @@ export const currentGroupedPositionsAtom = Atom.make(
           scope: borrowManageEnabled ? get(walletScopeAtom) : null,
         })
       )
-    ).pipe(AsyncResult.getOrElse(() => []));
+    ).pipe(
+      AsyncResult.map((positions) => positions.items),
+      AsyncResult.getOrElse(() => [])
+    );
 
     if (config.yieldGrouping !== "category") {
       return [

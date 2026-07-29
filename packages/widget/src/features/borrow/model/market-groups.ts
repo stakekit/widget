@@ -123,28 +123,28 @@ export const filterBorrowMarketGroups = ({
   );
   const normalizedSearch = normalizeSearch(search);
 
-  return getBorrowMarketGroups(markets).flatMap(
-    (group): BorrowMarketGroup[] => {
-      const groupMatches = borrowGroupMatchesSearch({
-        group,
-        search: normalizedSearch,
-      });
-      const marketItems = group.marketItems.filter((market) =>
-        groupMatches
-          ? true
-          : marketMatchesSearch({
-              integrationName:
-                integrationsById.get(market.integrationId)?.name ?? null,
-              market,
-              search: normalizedSearch,
-            })
-      );
+  return getBorrowMarketGroups(
+    markets.filter((market) => market.isBorrowEnabled)
+  ).flatMap((group): BorrowMarketGroup[] => {
+    const groupMatches = borrowGroupMatchesSearch({
+      group,
+      search: normalizedSearch,
+    });
+    const marketItems = group.marketItems.filter((market) =>
+      groupMatches
+        ? true
+        : marketMatchesSearch({
+            integrationName:
+              integrationsById.get(market.integrationId)?.name ?? null,
+            market,
+            search: normalizedSearch,
+          })
+    );
 
-      return groupMatches || marketItems.length > 0
-        ? [{ ...group, marketItems }]
-        : [];
-    }
-  );
+    return groupMatches || marketItems.length > 0
+      ? [{ ...group, marketItems }]
+      : [];
+  });
 };
 
 export const filterBorrowCollateralTokens = ({

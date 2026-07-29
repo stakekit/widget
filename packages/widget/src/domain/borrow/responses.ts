@@ -1,9 +1,9 @@
 import { Schema, SchemaGetter } from "effect";
 import * as BorrowApi from "../../generated/api/borrow";
 import { TolerantTopLevelArray } from "../schema/response";
+import { BorrowAccountSnapshot } from "./borrow-account-snapshot";
 import { Integration } from "./integration";
 import { Market } from "./market";
-import { BorrowAccountPosition } from "./position";
 
 const ItemIdentifier = Schema.Struct({ id: Schema.String }).pipe(
   Schema.decodeTo(Schema.String, {
@@ -29,7 +29,7 @@ export const BorrowMarketsResponse = Schema.Struct({
 
 const IntegrationPositionResponse = Schema.Struct({
   integration: Schema.toType(Integration),
-  position: BorrowAccountPosition,
+  position: BorrowAccountSnapshot,
 });
 
 export const BorrowIntegrationPositionsResponse = TolerantTopLevelArray(

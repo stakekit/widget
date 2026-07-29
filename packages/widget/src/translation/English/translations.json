@@ -331,6 +331,14 @@
       "empty_description": "Borrow markets are not available for this network yet.",
       "error_title": "Borrow unavailable",
       "error_description": "Borrow market data could not be loaded right now.",
+      "form_reset": {
+        "title": "Borrow form reset",
+        "description": "Market availability changed, so the borrow form was reset."
+      },
+      "risk_unavailable": {
+        "title": "Projected risk unavailable",
+        "description": "Risk information is unavailable for this collateral combination. You can continue, but the transaction may be rejected by the provider or onchain."
+      },
       "form": {
         "borrow": "Borrow",
         "collateral": "Collateral",
@@ -353,6 +361,7 @@
         "ltv_note": "Liquidation can occur if LTV crosses the selected market threshold.",
         "validation": {
           "available_liquidity": "Amount exceeds available liquidity.",
+          "minimum_loan": "Resulting debt is below the market minimum.",
           "wallet_balance": "Amount exceeds wallet balance.",
           "ltv": "Collateral is too low for this borrow amount."
         }
@@ -479,6 +488,7 @@
         "disable_collateral_warning": "Disabling this asset as collateral can lower health factor and increase liquidation risk.",
         "validation": {
           "repay_debt": "Amount exceeds outstanding debt.",
+          "repay_minimum": "Repayment would leave debt below the market minimum. Repay all or reduce the repayment.",
           "wallet_balance": "Amount exceeds wallet balance.",
           "withdraw_balance": "Amount exceeds withdrawable balance.",
           "withdraw_ltv": "Withdrawal would exceed the market LTV limit."

@@ -4,12 +4,14 @@ import {
   buildRepayActionRequest,
   buildWithdrawActionRequest,
 } from "../../../domain/borrow/action-request";
-import type { Position } from "../../../domain/borrow/position";
-import { projectLtvRatio } from "../../../domain/borrow/position-projection";
+import { decodeTokenId } from "../../../domain/borrow/ids";
+import type { MarketPosition } from "../../../domain/borrow/market-position";
+import { isDebtBelowMarketMinimum } from "../../../domain/borrow/minimum-debt";
 import type { TokenBalance } from "../../../domain/schema/financial-models";
 import type { WalletAddress } from "../../../domain/schema/identifiers";
 import type { BorrowTransactionFlowReview } from "../../borrow-transaction-flow/state";
 import { getBorrowMarketPairLabel } from "./borrow-details-model";
+import { makeBorrowRiskSummary } from "./borrow-risk-summary";
 import type {
   BorrowCollateralToggleActionContext,
   BorrowRepayActionContext,
@@ -20,6 +22,7 @@ import { deriveBorrowTokenWalletBalance } from "./wallet-balances";
 
 export type BorrowPositionActionFormError =
   | "repayDebt"
+  | "repayMinimum"
   | "walletBalance"
   | "withdrawBalance"
   | "withdrawLtv";
@@ -65,7 +68,8 @@ type BorrowRepayFormView = {
   readonly canSubmit: boolean;
   readonly currentLtv: number | null;
   readonly error: BorrowPositionActionFormError | null;
-  readonly projectedLtv: number;
+  readonly projectedLtv: number | null;
+  readonly riskStatus: "available" | "unavailable";
   readonly remainingDebt: number;
   readonly repayAll: boolean;
   readonly repayUsd: BigNumber;
@@ -79,7 +83,8 @@ type BorrowWithdrawFormView = {
   readonly currentLtv: number | null;
   readonly error: BorrowPositionActionFormError | null;
   readonly projectedCollateralUsd: number;
-  readonly projectedLtv: number;
+  readonly projectedLtv: number | null;
+  readonly riskStatus: "available" | "unavailable";
   readonly reviewState: BorrowTransactionFlowReview | null;
   readonly selectedToken: BorrowWithdrawTokenOption;
   readonly withdrawUsd: BigNumber;
@@ -133,7 +138,7 @@ export const applyBorrowWithdrawFormAction = ({
   }
 };
 
-const getPositionSummary = (position: Position) => ({
+const getPositionSummary = (position: MarketPosition) => ({
   marketLabel: getBorrowMarketPairLabel(position.market),
   network: position.market.network,
   providerName: position.integration.name,
@@ -164,36 +169,62 @@ export const resolveBorrowRepayFormView = ({
   const insufficientWalletBalance =
     !!tokenBalances && repayAmount.gt(walletBalance.amountValue);
   const repayUsd = repayAmount.multipliedBy(position.market.loanTokenPriceUsd);
-  const projectedDebtUsd = Math.max(
-    debtBalance.balanceUsd - repayUsd.toNumber(),
+  const remainingDebtAmount = BigNumber.maximum(
+    new BigNumber(debtBalance.balance).minus(repayAmount),
     0
   );
-  const projectedLtv = projectLtvRatio({
-    collateralUsd: position.getTotalCollateralUsd(),
-    debtUsd: projectedDebtUsd,
+  const minLoan = new BigNumber(position.market.minLoan ?? 0);
+  const leavesDebtBelowMinimum = isDebtBelowMarketMinimum({
+    debt: remainingDebtAmount,
+    minimum: minLoan,
   });
-  const collateralDetails = position.getCollateralTokenDetails();
-  const projectedHealthFactor =
-    projectedLtv > 0 && Number.isFinite(collateralDetails.liquidationThreshold)
-      ? collateralDetails.liquidationThreshold / projectedLtv
-      : null;
+  const riskAssessment = position.risk.assess([
+    {
+      amount: repayAmount.toNumber(),
+      marketId: context.action.args.marketId,
+      type: "repay",
+    },
+  ]);
+  const riskProjection = riskAssessment.projection;
+  const projectedDebtUsd =
+    riskProjection.totalDebtUsd ??
+    Math.max(position.metrics.totalBorrowedUsd - repayUsd.toNumber(), 0);
+  const projectedLtv =
+    riskProjection.status === "available" ? riskProjection.ltv : null;
+  const riskSummary =
+    riskProjection.status === "available"
+      ? makeBorrowRiskSummary({
+          healthFactor: riskProjection.healthFactor,
+          ltv: riskProjection.ltv,
+          status: riskProjection.status,
+        })
+      : makeBorrowRiskSummary({ status: riskProjection.status });
   const hasAmount = intent.repayAll || repayAmount.gt(0);
-  const canSubmit = hasAmount && !exceedsDebt && !insufficientWalletBalance;
+  const canSubmit =
+    hasAmount &&
+    !exceedsDebt &&
+    !insufficientWalletBalance &&
+    !leavesDebtBelowMinimum;
   const getError = (): BorrowPositionActionFormError | null => {
     if (exceedsDebt) return "repayDebt";
     if (insufficientWalletBalance) return "walletBalance";
+    if (leavesDebtBelowMinimum) return "repayMinimum";
     return null;
   };
 
   return {
     amount,
     canSubmit,
-    currentLtv: position.getCurrentLtv(),
+    currentLtv:
+      position.risk.current.status === "available"
+        ? position.risk.current.ltv
+        : null,
     error: getError(),
     projectedLtv,
-    remainingDebt: Math.max(debtBalance.balance - repayAmount.toNumber(), 0),
+    remainingDebt: remainingDebtAmount.toNumber(),
     repayAll: intent.repayAll,
     repayUsd,
+    riskStatus: riskProjection.status,
     reviewState: canSubmit
       ? {
           request: buildRepayActionRequest({
@@ -210,8 +241,7 @@ export const resolveBorrowRepayFormView = ({
             existingDebtUsd: debtBalance.balanceUsd.toString(),
             loanTokenSymbol: debtBalance.tokenSymbol,
             projectedDebtUsd: projectedDebtUsd.toString(),
-            projectedHealthFactor: projectedHealthFactor?.toString(),
-            projectedLtv: projectedLtv.toString(),
+            ...riskSummary,
           },
         }
       : null,
@@ -224,12 +254,17 @@ const getSelectedWithdrawToken = ({
 }: {
   readonly context: BorrowWithdrawActionContext;
   readonly intent: BorrowWithdrawFormIntent;
-}) =>
-  context.tokens.find(
-    (token) => token.action.args.tokenAddress === intent.selectedTokenAddress
-  ) ??
-  context.tokens[0] ??
-  null;
+}) => {
+  if (intent.selectedTokenAddress === null) {
+    return context.tokens[0] ?? null;
+  }
+
+  return (
+    context.tokens.find(
+      (token) => token.action.args.tokenAddress === intent.selectedTokenAddress
+    ) ?? null
+  );
+};
 
 export const resolveBorrowWithdrawFormView = ({
   address,
@@ -252,19 +287,34 @@ export const resolveBorrowWithdrawFormView = ({
     selectedToken.collateralToken.priceUsd
   );
   const exceedsBalance = amount.gt(selectedToken.supplyBalance.balance);
-  const currentCollateralUsd = position.getTotalCollateralUsd();
-  const projectedCollateralUsd = Math.max(
-    currentCollateralUsd - withdrawUsd.toNumber(),
-    0
-  );
-  const projectedLtv = projectLtvRatio({
-    collateralUsd: projectedCollateralUsd,
-    debtUsd: position.getTotalBorrowedUsd(),
-  });
-  const ltvTooHigh =
-    position.getTotalBorrowedUsd() > 0 &&
-    amount.gt(0) &&
-    projectedLtv > selectedToken.collateralToken.maxLtv;
+  const currentCollateralUsd =
+    position.risk.current.totalCollateralUsd ??
+    position.metrics.totalCollateralUsd;
+  const riskAssessment = position.risk.assess([
+    {
+      amount: amount.toNumber(),
+      tokenId: decodeTokenId({
+        address: selectedToken.collateralToken.token.address,
+        symbol: selectedToken.collateralToken.token.symbol,
+      }),
+      type: "withdraw",
+    },
+  ]);
+  const riskProjection = riskAssessment.projection;
+  const projectedCollateralUsd =
+    riskProjection.totalCollateralUsd ??
+    Math.max(currentCollateralUsd - withdrawUsd.toNumber(), 0);
+  const projectedLtv =
+    riskProjection.status === "available" ? riskProjection.ltv : null;
+  const riskSummary =
+    riskProjection.status === "available"
+      ? makeBorrowRiskSummary({
+          healthFactor: riskProjection.healthFactor,
+          ltv: riskProjection.ltv,
+          status: riskProjection.status,
+        })
+      : makeBorrowRiskSummary({ status: riskProjection.status });
+  const ltvTooHigh = amount.gt(0) && riskAssessment.decision === "block";
   const canSubmit = amount.gt(0) && !exceedsBalance && !ltvTooHigh;
   const getError = (): BorrowPositionActionFormError | null => {
     if (exceedsBalance) return "withdrawBalance";
@@ -276,10 +326,14 @@ export const resolveBorrowWithdrawFormView = ({
     amount,
     canSubmit,
     currentCollateralUsd,
-    currentLtv: position.getCurrentLtv(),
+    currentLtv:
+      position.risk.current.status === "available"
+        ? position.risk.current.ltv
+        : null,
     error: getError(),
     projectedCollateralUsd,
     projectedLtv,
+    riskStatus: riskProjection.status,
     reviewState: canSubmit
       ? {
           request: buildWithdrawActionRequest({
@@ -296,7 +350,7 @@ export const resolveBorrowWithdrawFormView = ({
             collateralTokenSymbol: selectedToken.supplyBalance.tokenSymbol,
             existingCollateralUsd: currentCollateralUsd.toString(),
             projectedCollateralUsd: projectedCollateralUsd.toString(),
-            projectedLtv: projectedLtv.toString(),
+            ...riskSummary,
           },
         }
       : null,
@@ -305,30 +359,63 @@ export const resolveBorrowWithdrawFormView = ({
   };
 };
 
-export const resolveBorrowCollateralToggleReviewState = ({
+export const resolveBorrowCollateralToggleFormView = ({
   address,
   context,
 }: {
   readonly address: WalletAddress;
   readonly context: BorrowCollateralToggleActionContext;
-}): BorrowTransactionFlowReview => {
+}): {
+  readonly reviewState: BorrowTransactionFlowReview | null;
+  readonly riskStatus: "available" | "unavailable";
+} => {
   const { position } = context;
+  const riskAssessment = position.risk.assess([
+    {
+      tokenId: decodeTokenId({
+        address: context.action.args.tokenAddress,
+        symbol: context.supplyBalance.tokenSymbol,
+      }),
+      type: context.type,
+    },
+  ]);
+  const riskProjection = riskAssessment.projection;
+  const riskSummary =
+    riskProjection.status === "available"
+      ? makeBorrowRiskSummary({
+          healthFactor: riskProjection.healthFactor,
+          ltv: riskProjection.ltv,
+          status: riskProjection.status,
+        })
+      : makeBorrowRiskSummary({ status: riskProjection.status });
+
+  if (riskAssessment.decision === "block") {
+    return {
+      reviewState: null,
+      riskStatus: riskProjection.status,
+    };
+  }
 
   return {
-    request: buildCollateralToggleActionRequest({
-      action: context.type,
-      address,
-      integrationId: position.integration.id,
-      marketId: context.action.args.marketId,
-      tokenAddress: context.action.args.tokenAddress,
-    }),
-    summary: {
-      ...getPositionSummary(position),
-      action: context.type,
-      collateralTokenSymbol: context.supplyBalance.tokenSymbol,
-      existingCollateralUsd: position.getTotalCollateralUsd().toString(),
-      projectedHealthFactor: position.getHealthFactor()?.toString(),
-      projectedLtv: position.getCurrentLtv()?.toString(),
+    reviewState: {
+      request: buildCollateralToggleActionRequest({
+        action: context.type,
+        address,
+        integrationId: position.integration.id,
+        marketId: context.action.args.marketId,
+        tokenAddress: context.action.args.tokenAddress,
+      }),
+      summary: {
+        ...getPositionSummary(position),
+        action: context.type,
+        collateralTokenSymbol: context.supplyBalance.tokenSymbol,
+        existingCollateralUsd: (
+          position.risk.current.totalCollateralUsd ??
+          position.metrics.totalCollateralUsd
+        ).toString(),
+        ...riskSummary,
+      },
     },
+    riskStatus: riskProjection.status,
   };
 };

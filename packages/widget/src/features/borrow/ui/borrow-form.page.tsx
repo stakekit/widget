@@ -98,6 +98,7 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowDashboardView }) => {
   const {
     borrowAmount,
     canSelectCollateralMaxAmount,
+    catalogResetNotice,
     collateralAmount,
     integrationsResult,
     isActionReady,
@@ -116,8 +117,10 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowDashboardView }) => {
   const {
     borrowAmountGreaterThanAvailable,
     collateralAmountGreaterThanBalance,
+    hasAmounts,
     hasValidationError,
     ltvGreaterThanMax,
+    projectedDebtBelowMinimum,
   } = validation;
   const onReviewClick = () => {
     if (!isActionReady || !preparedReviewState || !selectedMarket) {
@@ -128,6 +131,16 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowDashboardView }) => {
     navigate("/borrow/review");
   };
   const integrations = AsyncResult.getOrElse(integrationsResult, () => []);
+  const getBorrowAmountValidationText = () => {
+    if (borrowAmountGreaterThanAvailable) {
+      return t("dashboard.borrow.form.validation.available_liquidity");
+    }
+    if (projectedDebtBelowMinimum) {
+      return t("dashboard.borrow.form.validation.minimum_loan");
+    }
+    return null;
+  };
+  const borrowAmountValidationText = getBorrowAmountValidationText();
 
   const getFormContent = (): ReactNode => {
     if (
@@ -156,7 +169,9 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowDashboardView }) => {
         <AmountField
           amount={borrowAmount}
           balanceLabel={null}
-          isInvalid={borrowAmountGreaterThanAvailable}
+          isInvalid={
+            borrowAmountGreaterThanAvailable || projectedDebtBelowMinimum
+          }
           label={t("dashboard.borrow.form.borrow")}
           highlight
           onMaxClick={null}
@@ -169,11 +184,7 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowDashboardView }) => {
             />
           }
           usdValue={borrowAmount.multipliedBy(selectedMarket.loanTokenPriceUsd)}
-          validationText={
-            borrowAmountGreaterThanAvailable
-              ? t("dashboard.borrow.form.validation.available_liquidity")
-              : null
-          }
+          validationText={borrowAmountValidationText}
         />
 
         <AmountField
@@ -231,6 +242,18 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowDashboardView }) => {
 
   return (
     <>
+      {catalogResetNotice ? (
+        <BorrowNotice title={t("dashboard.borrow.form_reset.title")}>
+          {t("dashboard.borrow.form_reset.description")}
+        </BorrowNotice>
+      ) : null}
+
+      {projection.riskStatus === "unavailable" && hasAmounts ? (
+        <BorrowNotice title={t("dashboard.borrow.risk_unavailable.title")}>
+          {t("dashboard.borrow.risk_unavailable.description")}
+        </BorrowNotice>
+      ) : null}
+
       {formContent}
 
       <PageCtaButton

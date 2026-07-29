@@ -3,7 +3,7 @@ import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import type { Integration } from "../../../domain/borrow/integration";
 import type { Market } from "../../../domain/borrow/market";
-import { projectLtvRatio } from "../../../domain/borrow/position-projection";
+import { deriveMarketRiskLimits } from "../../../domain/borrow/market-risk";
 import {
   formatBorrowProviderName,
   formatHealthFactor,
@@ -44,6 +44,20 @@ const getTokenUsdValue = ({
   readonly price: number;
 }) => amount.multipliedBy(price);
 
+const deriveLtv = ({
+  collateralUsd,
+  debtUsd,
+}: {
+  readonly collateralUsd: number;
+  readonly debtUsd: number;
+}) => {
+  if (collateralUsd > 0) {
+    return debtUsd / collateralUsd;
+  }
+
+  return debtUsd > 0 ? 1 : 0;
+};
+
 export const getBorrowMarketPairLabel = (market: Market) => {
   const collateralToken = market.collateralTokens[0];
 
@@ -78,14 +92,17 @@ export const getBorrowDetailsModel = ({
     amount: collateralAmount,
     price: collateralToken?.priceUsd ?? 0,
   });
-  const projectedLtv = projectLtvRatio({
+  const projectedLtv = deriveLtv({
     collateralUsd: collateralUsd.toNumber(),
     debtUsd: borrowUsd.toNumber(),
   });
-  const maxLtv = collateralToken?.maxLtv ?? market.getMaxLtv();
+  const marketRisk = deriveMarketRiskLimits(market);
+  const maxLtv = projection
+    ? projection.maxLtv
+    : (collateralToken?.maxLtv ?? marketRisk.maxLtv);
   const displayedProjectedLtv = projection?.projectedLtv ?? projectedLtv;
   const existingLtv = projection
-    ? projectLtvRatio({
+    ? deriveLtv({
         collateralUsd: projection.existingCollateralUsd.toNumber(),
         debtUsd: projection.existingDebtUsd.toNumber(),
       })
@@ -93,11 +110,16 @@ export const getBorrowDetailsModel = ({
   const displayedCollateralUsd =
     projection?.projectedCollateralUsd ?? collateralUsd;
   const displayedDebtUsd = projection?.projectedDebtUsd ?? borrowUsd;
-  const healthFactor =
-    projection?.projectedHealthFactor ??
-    (displayedProjectedLtv > 0 && collateralToken
+  const getHealthFactor = () => {
+    if (projection) {
+      return projection.projectedHealthFactor;
+    }
+
+    return displayedProjectedLtv > 0 && collateralToken
       ? collateralToken.liquidationThreshold / displayedProjectedLtv
-      : null);
+      : null;
+  };
+  const healthFactor = getHealthFactor();
   const hasExistingPosition =
     projection != null &&
     (projection.existingCollateralUsd.gt(0) ||
@@ -118,6 +140,7 @@ export const getBorrowDetailsModel = ({
   ];
 
   const getLtvValue = (): ReactNode => {
+    if (projection?.riskStatus === "unavailable") return "-";
     if (displayedCollateralUsd.isZero()) return "-";
     if (!hasExistingPosition) {
       return formatPercent(displayedProjectedLtv);

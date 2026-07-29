@@ -5,9 +5,13 @@ import {
   buildRepayActionRequest,
   buildWithdrawActionRequest,
 } from "../../../domain/borrow/action-request";
+import {
+  deriveMarketPositionOverview,
+  type MarketPosition,
+} from "../../../domain/borrow/market-position";
+import { deriveMarketRiskLimits } from "../../../domain/borrow/market-risk";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
 import type { PendingAction } from "../../../domain/borrow/pending-action";
-import type { Position, SupplyBalance } from "../../../domain/borrow/position";
 import type { BorrowToken } from "../../../domain/borrow/token";
 import type { WalletAddress } from "../../../domain/schema/identifiers";
 import type { AppToken } from "../../../domain/schema/legacy-models";
@@ -72,55 +76,20 @@ export const borrowTokenToTokenDto = ({
   symbol: token.symbol,
 });
 
-const getSupplyBalanceToken = ({
-  position,
-  supplyBalance,
-}: {
-  readonly position: Position;
-  readonly supplyBalance: SupplyBalance | undefined;
-}) => {
-  if (!supplyBalance) {
-    return position.market.loanToken;
-  }
-
-  return (
-    position.market.collateralTokens.find(
-      (collateralToken) =>
-        collateralToken.token.address === supplyBalance.tokenAddress
-    )?.token ?? {
-      address: supplyBalance.tokenAddress,
-      decimals: 18,
-      name: supplyBalance.tokenSymbol,
-      symbol: supplyBalance.tokenSymbol,
-    }
-  );
-};
-
-const getPositionHeaderToken = (position: Position) =>
-  borrowTokenToTokenDto({
-    network: position.market.network,
-    token: position.debtBalance
-      ? position.market.loanToken
-      : getSupplyBalanceToken({
-          position,
-          supplyBalance: position.supplyBalances[0],
-        }),
-  });
-
 const getPositionActionLabel = (action: PendingAction, t: TFunction) =>
   t(`dashboard.borrow.position_details.actions.${action.type}`);
 
 const getPositionActionSummaryAction = (action: PendingAction) => action.type;
 
 const getBorrowWithdrawTokenOptions = (
-  position: Position
+  position: MarketPosition
 ): BorrowWithdrawTokenOption[] =>
-  position.supplyPendingActions.flatMap((action) => {
+  position.actions.supply.flatMap((action) => {
     if (action.type !== "withdraw") {
       return [];
     }
 
-    const supplyBalance = position.supplyBalances.find(
+    const supplyBalance = position.balances.supply.find(
       (balance) => balance.tokenAddress === action.args.tokenAddress
     );
     const collateralToken = position.market.collateralTokens.find(
@@ -146,7 +115,7 @@ export const getBorrowPositionActions = ({
   t,
 }: {
   readonly address: WalletAddress;
-  readonly position: Position;
+  readonly position: MarketPosition;
   readonly t: TFunction;
 }): BorrowPositionAction[] => {
   const marketLabel = getBorrowMarketPairLabel(position.market);
@@ -158,8 +127,8 @@ export const getBorrowPositionActions = ({
   };
   const actions: BorrowPositionAction[] = [];
 
-  for (const action of position.debtPendingActions) {
-    if (action.type !== "repay" || !position.debtBalance) {
+  for (const action of position.actions.debt) {
+    if (action.type !== "repay" || !position.balances.debt) {
       continue;
     }
 
@@ -168,7 +137,7 @@ export const getBorrowPositionActions = ({
       label: getPositionActionLabel(action, t),
       pendingContext: {
         action,
-        debtBalance: position.debtBalance,
+        debtBalance: position.balances.debt,
         position,
         type: "repay",
       },
@@ -183,8 +152,8 @@ export const getBorrowPositionActions = ({
         summary: {
           ...commonSummary,
           action: getPositionActionSummaryAction(action),
-          borrowAmount: position.debtBalance.balance.toString(),
-          loanTokenSymbol: position.debtBalance.tokenSymbol,
+          borrowAmount: position.balances.debt.balance.toString(),
+          loanTokenSymbol: position.balances.debt.tokenSymbol,
         },
       },
       type: "repay",
@@ -222,8 +191,8 @@ export const getBorrowPositionActions = ({
     });
   }
 
-  for (const action of position.supplyPendingActions) {
-    const supplyBalance = position.supplyBalances.find(
+  for (const action of position.actions.supply) {
+    const supplyBalance = position.balances.supply.find(
       (balance) => balance.tokenAddress === action.args.tokenAddress
     );
 
@@ -306,24 +275,34 @@ export const getBorrowPositionDetailsModel = ({
   position,
   t,
 }: {
-  readonly position: Position;
+  readonly position: MarketPosition;
   readonly t: TFunction;
 }) => {
-  const meta = position.getMeta();
-  const currentLtv = position.getCurrentLtv();
-  const healthFactor = position.getHealthFactor();
-  const collateralDetails = position.getCollateralTokenDetails();
+  const debtBalance = position.balances.debt;
+  const supplyBalances = position.balances.supply;
+  const overview = deriveMarketPositionOverview(position);
+  const currentRisk = position.risk.current;
+  const currentLtv = overview.currentLtv;
+  const healthFactor =
+    currentRisk.status === "available" ? currentRisk.healthFactor : null;
+  const marketRisk = deriveMarketRiskLimits(position.market);
+  const maxLtv =
+    currentRisk.status === "available" ? currentRisk.maxLtv : marketRisk.maxLtv;
+  const liquidationThreshold =
+    currentRisk.status === "available"
+      ? currentRisk.liquidationThreshold
+      : marketRisk.liquidationThreshold;
   const metricCards: BorrowPositionMetricCard[] = [
     {
       id: "net-worth",
       label: t("dashboard.borrow.position_details.net_worth"),
-      value: formatUsd(position.getNetWorthUsd()),
+      value: formatUsd(position.metrics.netWorthUsd),
     },
     {
       id: "debt",
       label: t("dashboard.borrow.position_details.debt"),
-      subValue: position.debtBalance?.tokenSymbol,
-      value: formatUsd(position.getTotalBorrowedUsd()),
+      subValue: debtBalance?.tokenSymbol,
+      value: formatUsd(position.metrics.totalBorrowedUsd),
     },
     {
       id: "ltv",
@@ -337,7 +316,7 @@ export const getBorrowPositionDetailsModel = ({
     },
   ];
   const breakdownRows: BorrowPositionRow[] = [
-    ...position.supplyBalances.map((balance) => ({
+    ...supplyBalances.map((balance) => ({
       id: `supply-${balance.tokenAddress}`,
       label: balance.isCollateral
         ? t("dashboard.borrow.position_details.collateral")
@@ -345,15 +324,13 @@ export const getBorrowPositionDetailsModel = ({
       subValue: formatUsd(balance.balanceUsd),
       value: `${formatNumber(balance.balance, 6)} ${balance.tokenSymbol}`,
     })),
-    ...(position.debtBalance
+    ...(debtBalance
       ? [
           {
-            id: `debt-${position.debtBalance.tokenAddress}`,
+            id: `debt-${debtBalance.tokenAddress}`,
             label: t("dashboard.borrow.position_details.borrowed"),
-            subValue: formatUsd(position.debtBalance.balanceUsd),
-            value: `${formatNumber(position.debtBalance.balance, 6)} ${
-              position.debtBalance.tokenSymbol
-            }`,
+            subValue: formatUsd(debtBalance.balanceUsd),
+            value: `${formatNumber(debtBalance.balance, 6)} ${debtBalance.tokenSymbol}`,
           },
         ]
       : []),
@@ -377,37 +354,25 @@ export const getBorrowPositionDetailsModel = ({
     {
       id: "max-ltv",
       label: t("dashboard.borrow.details.max_ltv"),
-      value: formatPercent(
-        Number.isFinite(collateralDetails.maxLtv)
-          ? collateralDetails.maxLtv
-          : position.market.getMaxLtv()
-      ),
+      value: formatPercent(maxLtv),
     },
     {
       id: "liquidation-threshold",
       label: t("dashboard.borrow.position_details.liquidation_threshold"),
-      value: formatPercent(
-        Number.isFinite(collateralDetails.liquidationThreshold)
-          ? collateralDetails.liquidationThreshold
-          : position.market.getLiquidationThreshold()
-      ),
+      value: formatPercent(liquidationThreshold),
     },
     {
       id: "liquidation-penalty",
       label: t("dashboard.borrow.position_details.liquidation_penalty"),
-      value: formatPercent(
-        Number.isFinite(collateralDetails.liquidationPenalty)
-          ? collateralDetails.liquidationPenalty
-          : position.market.getLiquidationPenalty()
-      ),
+      value: formatPercent(marketRisk.liquidationPenalty),
     },
     {
       id: "borrow-apy",
       label: t("dashboard.borrow.details.borrow_apy"),
-      value: formatPercent(position.getBorrowApy()),
+      value: formatPercent(position.metrics.borrowApy),
     },
   ];
-  const collateralItems = position.supplyBalances.map((balance) => {
+  const collateralItems = supplyBalances.map((balance) => {
     const collateralToken = position.market.collateralTokens.find(
       (candidate) => candidate.token.address === balance.tokenAddress
     );
@@ -434,24 +399,22 @@ export const getBorrowPositionDetailsModel = ({
       supplyRate: formatPercent(balance.apy),
     };
   });
-  const liquidationThreshold = Number.isFinite(
-    collateralDetails.liquidationThreshold
-  )
-    ? collateralDetails.liquidationThreshold
-    : position.market.getLiquidationThreshold();
 
   return {
     breakdownRows,
     collateralItems,
     currentLtv,
     detailRows,
-    headerToken: getPositionHeaderToken(position),
+    headerToken: borrowTokenToTokenDto({
+      network: position.market.network,
+      token: overview.headerToken,
+    }),
     healthFactor,
     liquidationThreshold,
     marketLabel: getBorrowMarketPairLabel(position.market),
     metricCards,
     providerName: formatBorrowProviderName(position.integration.name),
-    totalCollateralUsd: formatUsd(position.getTotalCollateralUsd()),
-    title: meta.name,
+    totalCollateralUsd: formatUsd(position.metrics.totalCollateralUsd),
+    title: overview.title,
   };
 };

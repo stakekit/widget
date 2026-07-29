@@ -3,11 +3,13 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import {
+  type BorrowPositions,
+  deriveBorrowPositions,
+} from "../../domain/borrow/borrow-positions";
+import {
   type BorrowNetwork,
   isBorrowNetwork,
 } from "../../domain/borrow/network";
-import type { Position } from "../../domain/borrow/position";
-import { deriveBorrowPositionItems } from "../../domain/borrow/position-items";
 import type { BorrowIntegrationPositionsResponse } from "../../domain/borrow/responses";
 import { BorrowResourceSource } from "../../services/api/borrow-resource-source";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
@@ -85,7 +87,14 @@ const borrowPositionDataResourceAtom = Atom.family((key: BorrowPositionsKey) =>
 const borrowPositionsCanonicalAtom = Atom.family((key: BorrowPositionsKey) => {
   const network = key.scope?.network;
   if (!key.scope || !network || !isBorrowNetwork(network)) {
-    return Atom.make(AsyncResult.success([] as Position[]));
+    return Atom.make(
+      AsyncResult.success(
+        deriveBorrowPositions({
+          integrationAccountSnapshots: [],
+          markets: [],
+        })
+      )
+    );
   }
   const positionDataAtom = borrowPositionDataResourceAtom(key);
   const marketsAtom = borrowMarketsResourceAtom.local(
@@ -99,7 +108,15 @@ const borrowPositionsCanonicalAtom = Atom.family((key: BorrowPositionsKey) => {
         markets: get(marketsAtom),
       }).pipe(
         AsyncResult.map(({ integrationPositions, markets }) =>
-          deriveBorrowPositionItems({ integrationPositions, markets })
+          deriveBorrowPositions({
+            integrationAccountSnapshots: integrationPositions.map(
+              ({ integration, position }) => ({
+                accountSnapshot: position,
+                integration,
+              })
+            ),
+            markets,
+          })
         )
       ),
     (refresh) => {
@@ -112,3 +129,5 @@ const borrowPositionsCanonicalAtom = Atom.family((key: BorrowPositionsKey) => {
 export const borrowPositionsResourceAtom = makePresentableResourceFamily(
   borrowPositionsCanonicalAtom
 );
+
+export type { BorrowPositions };

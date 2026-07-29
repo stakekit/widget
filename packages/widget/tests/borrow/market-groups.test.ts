@@ -54,12 +54,14 @@ const makeMarket = ({
   collateralTokens,
   id,
   integrationId,
+  isBorrowEnabled = true,
   loanToken,
 }: {
   readonly borrowRate: string;
   readonly collateralTokens: ReadonlyArray<ReturnType<typeof collateralToken>>;
   readonly id: string;
   readonly integrationId: string;
+  readonly isBorrowEnabled?: boolean;
   readonly loanToken: typeof usdc | typeof usdt;
 }) =>
   Schema.decodeUnknownSync(Market)({
@@ -79,7 +81,7 @@ const makeMarket = ({
     availableLiquidityRaw: "500000000000",
     utilizationRate: "0.5",
     loanTokenPriceUsd: "1",
-    isBorrowEnabled: true,
+    isBorrowEnabled,
     supplyCollateralFeeBps: "0",
     feeWrapperAddress: null,
     minLoan: null,
@@ -179,6 +181,27 @@ describe("borrow market groups", () => {
     expect(
       filterBorrowMarketGroups({ integrations, markets, search: "solana" })
     ).toEqual([]);
+  });
+
+  it("excludes markets where new borrowing is disabled", () => {
+    const disabledMarket = makeMarket({
+      borrowRate: "0.01",
+      collateralTokens: [collateralToken(wbtc)],
+      id: "disabled-usdc",
+      integrationId: "aave-borrow",
+      isBorrowEnabled: false,
+      loanToken: usdc,
+    });
+
+    const groups = filterBorrowMarketGroups({
+      integrations,
+      markets: [disabledMarket, aaveUsdt],
+      search: "",
+    });
+
+    expect(
+      groups.flatMap((group) => group.marketItems.map((market) => market.id))
+    ).toEqual([aaveUsdt.id]);
   });
 });
 

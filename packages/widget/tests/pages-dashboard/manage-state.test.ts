@@ -1,10 +1,10 @@
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { describe, expect, it } from "vitest";
-import type { Position as BorrowPosition } from "../../src/domain/borrow/position";
+import type { MarketPosition } from "../../src/domain/borrow/market-position";
 import { getUnifiedManagePositionsState } from "../../src/features/portfolio/ui/dashboard/positions/model";
 
-const borrowPositionsResult = (positions: ReadonlyArray<BorrowPosition> = []) =>
-  AsyncResult.success<ReadonlyArray<BorrowPosition>, unknown>(positions);
+const borrowPositionsResult = (positions: ReadonlyArray<MarketPosition> = []) =>
+  AsyncResult.success<ReadonlyArray<MarketPosition>, unknown>(positions);
 
 const getState = (
   overrides: Partial<Parameters<typeof getUnifiedManagePositionsState>[0]> = {}
@@ -39,7 +39,7 @@ describe("unified Manage positions state", () => {
   it("supports borrow-only positions", () => {
     expect(
       getState({
-        borrowPositionsResult: borrowPositionsResult([{} as BorrowPosition]),
+        borrowPositionsResult: borrowPositionsResult([{} as MarketPosition]),
         showEarnPositions: false,
       })
     ).toMatchObject({
@@ -52,7 +52,7 @@ describe("unified Manage positions state", () => {
   it("supports mixed earn and borrow positions", () => {
     expect(
       getState({
-        borrowPositionsResult: borrowPositionsResult([{} as BorrowPosition]),
+        borrowPositionsResult: borrowPositionsResult([{} as MarketPosition]),
         earnPositionsCount: 2,
       }).totalPositionsCount
     ).toBe(3);
@@ -70,7 +70,7 @@ describe("unified Manage positions state", () => {
       getState({
         borrowPositionsResult: AsyncResult.fail<
           unknown,
-          ReadonlyArray<BorrowPosition>
+          ReadonlyArray<MarketPosition>
         >("borrow failed"),
         earnPositionsCount: 1,
       })
@@ -86,7 +86,7 @@ describe("unified Manage positions state", () => {
     expect(
       getState({
         borrowPositionsResult: AsyncResult.initial<
-          ReadonlyArray<BorrowPosition>,
+          ReadonlyArray<MarketPosition>,
           unknown
         >(true),
       })

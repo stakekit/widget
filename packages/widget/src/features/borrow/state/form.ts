@@ -1,12 +1,15 @@
 import type BigNumber from "bignumber.js";
-import { Data, Effect } from "effect";
+import { Data, Effect, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigAtom } from "../../../app/config/settings";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import { BorrowFeatureDisabled } from "../../../domain/borrow/availability";
 import type { CollateralToken } from "../../../domain/borrow/collateral-token";
-import { isBorrowNetwork } from "../../../domain/borrow/network";
+import {
+  type BorrowNetwork,
+  isBorrowNetwork,
+} from "../../../domain/borrow/network";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 import { startBorrowTransactionFlowAtom } from "../../borrow-transaction-flow/state";
@@ -19,7 +22,9 @@ import {
   type BorrowFormAction,
   type BorrowFormIntent,
   makeDefaultBorrowFormIntent,
+  pinBorrowFormDefaults,
   resolveBorrowDashboardView,
+  shouldResetBorrowFormForCatalog,
 } from "../model/borrow-form";
 import { borrowActionFormAtom } from "./action-form";
 import {
@@ -31,52 +36,107 @@ import {
 } from "./resources";
 
 class BorrowFormScopeKey extends Data.Class<{
+  readonly network: BorrowNetwork;
   readonly scope: WalletScopeKey;
 }> {}
 
-const borrowFormIntentAtom = Atom.family((_scope: BorrowFormScopeKey) =>
-  Atom.make<BorrowFormIntent>(makeDefaultBorrowFormIntent())
+type BorrowFormState = {
+  readonly catalogResetNotice: boolean;
+  readonly intent: BorrowFormIntent;
+};
+
+const makeDefaultBorrowFormState = (): BorrowFormState => ({
+  catalogResetNotice: false,
+  intent: makeDefaultBorrowFormIntent(),
+});
+
+const borrowFormStateAtom = Atom.family((key: BorrowFormScopeKey) =>
+  Atom.writable<BorrowFormState, BorrowFormAction>(
+    (context) => {
+      const previous = context
+        .self<BorrowFormState>()
+        .pipe(Option.getOrElse(makeDefaultBorrowFormState));
+      const marketsResult = context.get(
+        borrowMarketsAtom(new BorrowMarketsKey({ network: key.network }))
+      );
+      const shouldReset =
+        AsyncResult.isSuccess(marketsResult) &&
+        !marketsResult.waiting &&
+        shouldResetBorrowFormForCatalog({
+          intent: previous.intent,
+          markets: marketsResult.value,
+        });
+
+      return shouldReset
+        ? {
+            catalogResetNotice: true,
+            intent: makeDefaultBorrowFormIntent(),
+          }
+        : previous;
+    },
+    (context, action) => {
+      const state = context.get(borrowFormStateAtom(key));
+      const marketsResult = context.get(
+        borrowMarketsAtom(new BorrowMarketsKey({ network: key.network }))
+      );
+      const shouldPinDefaults =
+        action.type !== "reset" && action.type !== "market/select";
+      const intent =
+        shouldPinDefaults && AsyncResult.isSuccess(marketsResult)
+          ? pinBorrowFormDefaults({
+              intent: state.intent,
+              markets: marketsResult.value,
+            })
+          : state.intent;
+
+      context.setSelf({
+        catalogResetNotice: false,
+        intent: applyBorrowFormAction({
+          action,
+          intent,
+        }),
+      });
+    }
+  )
 );
 
 const borrowDashboardAtom = Atom.family((key: BorrowDashboardKey) => {
   const scope = new BorrowFormScopeKey({
+    network: key.network,
     scope: key.scope,
   });
 
   return Atom.writable<BorrowDashboardView, BorrowFormAction>(
-    (context) =>
-      resolveBorrowDashboardView({
-        integrationsResult: context.get(borrowIntegrationsAtom),
-        intent: context.get(borrowFormIntentAtom(scope)),
-        key,
-        marketsResult: context.get(
-          borrowMarketsAtom(new BorrowMarketsKey({ network: key.network }))
-        ),
-        positionsResult: context.get(
-          borrowPositionsAtom(
-            new BorrowPositionsKey({
-              scope: key.scope,
-            })
-          )
-        ),
-        tokenBalances:
-          AsyncResult.getOrElse(
-            context.get(tokenBalancesScanAtom).result,
-            () => []
-          ) ?? [],
-      }),
-    (context, action) => {
-      const intentAtom = borrowFormIntentAtom(scope);
-      const intent = context.get(intentAtom);
-
-      context.set(
-        intentAtom,
-        applyBorrowFormAction({
-          action,
-          intent,
-        })
+    (context) => {
+      const stateAtom = borrowFormStateAtom(scope);
+      const state = context.get(stateAtom);
+      const marketsResult = context.get(
+        borrowMarketsAtom(new BorrowMarketsKey({ network: key.network }))
       );
-    }
+
+      return {
+        ...resolveBorrowDashboardView({
+          integrationsResult: context.get(borrowIntegrationsAtom),
+          intent: state.intent,
+          key,
+          marketsResult,
+          positionsResult: context.get(
+            borrowPositionsAtom(
+              new BorrowPositionsKey({
+                scope: key.scope,
+              })
+            )
+          ),
+          tokenBalances:
+            AsyncResult.getOrElse(
+              context.get(tokenBalancesScanAtom).result,
+              () => []
+            ) ?? [],
+        }),
+        catalogResetNotice: state.catalogResetNotice,
+      };
+    },
+    (context, action) => context.set(borrowFormStateAtom(scope), action)
   );
 });
 

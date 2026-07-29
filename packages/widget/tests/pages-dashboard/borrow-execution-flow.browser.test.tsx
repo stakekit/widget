@@ -33,6 +33,7 @@ import {
 import type { BorrowTransactionFlowReview } from "../../src/features/borrow-transaction-flow/state";
 import type { BorrowFlowSession } from "../../src/features/borrow-transaction-flow/state/borrow-flow-session-store";
 import { borrowFlowSessionStore } from "../../src/features/borrow-transaction-flow/state/borrow-flow-session-store";
+import { BorrowReviewPage } from "../../src/features/borrow-transaction-flow/ui/review";
 import { BorrowStepsPage } from "../../src/features/borrow-transaction-flow/ui/steps";
 import { useBorrowExecution } from "../../src/features/borrow-transaction-flow/ui/use-borrow-execution";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
@@ -281,10 +282,13 @@ const renderExecution = async (
   borrow: ReturnType<typeof makeBorrowApi>,
   options: {
     readonly action?: BorrowAction;
+    readonly autoStart?: boolean;
     readonly historyControls?: boolean;
     readonly initialEntries?: ReadonlyArray<string>;
     readonly initialIndex?: number;
     readonly initialPath?: string;
+    readonly reviewElement?: ReactNode;
+    readonly session?: BorrowFlowSession;
     readonly stepsElement?: ReactNode;
     readonly wallet?: WalletOperations;
   } = {}
@@ -344,7 +348,10 @@ const renderExecution = async (
       initialValues={[
         [
           borrowFlowSessionStore.stateAtom,
-          { current: session, nextEpoch: session.epoch + 1 },
+          {
+            current: options.session ?? session,
+            nextEpoch: (options.session ?? session).epoch + 1,
+          },
         ],
         [
           appRuntime.layer,
@@ -393,7 +400,7 @@ const renderExecution = async (
               <Route element={<BorrowTransactionFlowReviewRoute />}>
                 <Route
                   path="/borrow/review"
-                  element={<StartExecutionProbe />}
+                  element={options.reviewElement ?? <StartExecutionProbe />}
                 />
               </Route>
               <Route element={<BorrowTransactionFlowExecutionScope />}>
@@ -412,7 +419,10 @@ const renderExecution = async (
     </RegistryProvider>
   );
 
-  if (options.initialPath !== "/borrow/complete") {
+  if (
+    options.autoStart !== false &&
+    options.initialPath !== "/borrow/complete"
+  ) {
     await userEvent.click(app.getByTestId("start-execution"));
   }
 
@@ -420,6 +430,40 @@ const renderExecution = async (
 };
 
 describe("borrow execution flow component", () => {
+  it("warns on Review when projected risk is unavailable", async () => {
+    const unavailableSession: BorrowFlowSession = {
+      ...session,
+      intake: {
+        ...session.intake,
+        summary: {
+          ...session.intake.summary,
+          riskStatus: "unavailable",
+        },
+      },
+    };
+    const app = await renderExecution(makeBorrowApi({}), {
+      autoStart: false,
+      reviewElement: <BorrowReviewPage />,
+      session: unavailableSession,
+    });
+
+    await expect
+      .element(app.getByText("Projected risk unavailable"))
+      .toBeInTheDocument();
+    await expect
+      .element(
+        app.getByText(
+          /Risk information is unavailable for this collateral combination/
+        )
+      )
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByRole("button", { name: "Confirm" }))
+      .toBeEnabled();
+
+    await app.unmount();
+  });
+
   it("routes an incomplete direct completion page back to Borrow", async () => {
     const app = await renderExecution(makeBorrowApi({}), {
       initialPath: "/borrow/complete",

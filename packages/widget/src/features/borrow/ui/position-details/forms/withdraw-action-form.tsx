@@ -17,6 +17,7 @@ import {
   borrowTokenToTokenDto,
 } from "../../../model/position-details-model";
 import { useBorrowWithdrawForm } from "../../../react/use-borrow-position-action-form";
+import { BorrowNotice } from "../../components/notices";
 import * as styles from "../../styles.css";
 import { AmountInputCard } from "./amount-input-card";
 import { getBorrowPositionFormErrorMessage } from "./form-error";
@@ -143,6 +144,12 @@ export const WithdrawActionForm = ({
         tokenSymbol={selectedToken.supplyBalance.tokenSymbol}
         usdValue={view.withdrawUsd}
       />
+
+      {view.riskStatus === "unavailable" && view.amount.gt(0) ? (
+        <BorrowNotice title={t("dashboard.borrow.risk_unavailable.title")}>
+          {t("dashboard.borrow.risk_unavailable.description")}
+        </BorrowNotice>
+      ) : null}
 
       <Box className={styles.formCard}>
         <DetailRow

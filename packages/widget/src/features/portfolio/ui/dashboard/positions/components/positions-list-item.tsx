@@ -1,13 +1,7 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import type { Position as BorrowPosition } from "../../../../../../domain/borrow/position";
+import type { MarketPosition } from "../../../../../../domain/borrow/market-position";
 import type { PositionDetailsLabelType } from "../../../../../../domain/types/positions";
-import {
-  formatBorrowProviderName,
-  formatPercent,
-  formatUsd,
-} from "../../../../../../shared/lib/formatters";
-import { formatNumber } from "../../../../../../shared/lib/number-format";
 import { TokenIcon } from "../../../../../../shared/ui/components/token-icon";
 import { ToolTip } from "../../../../../../shared/ui/components/tooltip";
 import { Box } from "../../../../../../shared/ui/primitives/box";
@@ -16,7 +10,6 @@ import { SKLink } from "../../../../../../shared/ui/primitives/link";
 import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
 import { Spinner } from "../../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import { borrowTokenToTokenDto } from "../../../../../borrow/state";
 import type { UnifiedPositionItem } from "../../../../resources/positions";
 import {
   listItem,
@@ -26,35 +19,16 @@ import {
   rewardRateText,
 } from "../../../classic/positions-page/components/styles.css";
 import { usePositionListItem } from "../hooks/use-position-list-item";
+import { getBorrowMarketPositionListItemModel } from "../model";
 import { listItemContainer, viaText } from "../styles.css";
 
-const BorrowPositionsListItem = ({
+const BorrowMarketPositionListItem = ({
   position,
 }: {
-  readonly position: BorrowPosition;
+  readonly position: MarketPosition;
 }) => {
   const { t } = useTranslation();
-  const meta = position.getMeta();
-  const currentLtv = position.getCurrentLtv();
-  const headerToken = borrowTokenToTokenDto({
-    network: position.market.network,
-    token: position.debtBalance
-      ? position.market.loanToken
-      : (position.market.collateralTokens[0]?.token ??
-        position.market.loanToken),
-  });
-  const balanceText = position.debtBalance
-    ? `${formatNumber(position.debtBalance.balance, 6)} ${
-        position.debtBalance.tokenSymbol
-      }`
-    : formatUsd(position.getTotalSuppliedUsd().toString());
-  const subValue = position.debtBalance
-    ? `${formatPercent(currentLtv)} ${t(
-        "dashboard.borrow.position_details.ltv"
-      )} · ${formatUsd(
-        position.debtBalance.balanceUsd.toString()
-      )} ${t("dashboard.borrow.position_details.debt").toLowerCase()}`
-    : t("dashboard.borrow.position_details.supplied");
+  const model = getBorrowMarketPositionListItemModel({ position, t });
 
   return (
     <SKLink relative="path" to={`../positions/borrow/${position.id}`}>
@@ -74,11 +48,11 @@ const BorrowPositionsListItem = ({
               flex={1}
               minWidth="0"
             >
-              <TokenIcon token={headerToken} />
+              <TokenIcon token={model.headerToken} />
 
               <Box className={positionInfoColumn}>
                 <Box display="flex" alignItems="center" gap="1">
-                  <Text className={positionName}>{meta.name}</Text>
+                  <Text className={positionName}>{model.title}</Text>
                   <Box className={listItemContainer({ type: "pending" })}>
                     <Text variant={{ type: "white" }} className={noWrap}>
                       {t("dashboard.details.tabs.borrow")}
@@ -91,9 +65,7 @@ const BorrowPositionsListItem = ({
                   variant={{ type: "muted", weight: "normal" }}
                 >
                   {t("positions.via", {
-                    providerName: formatBorrowProviderName(
-                      position.integration.name
-                    ),
+                    providerName: model.providerName,
                     count: 1,
                   })}
                 </Text>
@@ -101,9 +73,7 @@ const BorrowPositionsListItem = ({
             </Box>
 
             <Box display="flex" alignItems="center" gap="4" flexShrink={0}>
-              <Text className={rewardRateText}>
-                {formatPercent(position.getBorrowApy())}
-              </Text>
+              <Text className={rewardRateText}>{model.borrowApy}</Text>
 
               <Box
                 display="flex"
@@ -112,12 +82,12 @@ const BorrowPositionsListItem = ({
                 textAlign="end"
                 gap="1"
               >
-                <Text className={noWrap}>{balanceText}</Text>
+                <Text className={noWrap}>{model.balanceText}</Text>
                 <Text
                   className={noWrap}
                   variant={{ type: "muted", weight: "normal" }}
                 >
-                  {subValue}
+                  {model.subValue}
                 </Text>
               </Box>
             </Box>
@@ -328,7 +298,7 @@ const EarnPositionsListItem = ({
 export const PositionsListItem = memo(
   ({ item }: { item: UnifiedPositionItem }) =>
     item.kind === "borrow" ? (
-      <BorrowPositionsListItem position={item.position} />
+      <BorrowMarketPositionListItem position={item.position} />
     ) : (
       <EarnPositionsListItem item={item.position} />
     )

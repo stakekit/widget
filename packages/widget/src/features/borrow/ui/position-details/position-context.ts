@@ -1,5 +1,5 @@
 import { useOutletContext } from "react-router";
-import type { Position } from "../../../../domain/borrow/position";
+import type { MarketPosition } from "../../../../domain/borrow/market-position";
 import type {
   BorrowPositionAction,
   getBorrowPositionDetailsModel,
@@ -10,7 +10,7 @@ export type BorrowPositionContext = {
   readonly actions: BorrowPositionAction[];
   readonly borrowPosition: ReturnType<typeof useBorrowPosition>;
   readonly model: ReturnType<typeof getBorrowPositionDetailsModel> | null;
-  readonly position: Position | null;
+  readonly position: MarketPosition | null;
 };
 
 export const useBorrowPositionContext = () =>

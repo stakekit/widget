@@ -9,9 +9,7 @@ import {
 } from "./ids";
 import { Transaction } from "./transaction";
 
-class ActionRawArguments extends Schema.Class<ActionRawArguments>(
-  "BorrowActionRawArguments"
-)({
+const ActionRawArguments = Schema.Struct({
   ...BorrowApi.ActionDto.fields.rawArguments.schema.fields,
   marketId: MarketId,
   tokenAddress: Schema.optionalKey(TokenAddress),
@@ -20,11 +18,9 @@ class ActionRawArguments extends Schema.Class<ActionRawArguments>(
   amountRaw: Schema.optionalKey(Schema.BigIntFromString),
   collateralAmount: Schema.optionalKey(Schema.FiniteFromString),
   collateralAmountRaw: Schema.optionalKey(Schema.BigIntFromString),
-}) {}
+});
 
-class ActionMetadata extends Schema.Class<ActionMetadata>(
-  "BorrowActionMetadata"
-)({
+const ActionMetadata = Schema.Struct({
   currentHealthFactor: Schema.NullOr(Schema.FiniteFromString),
   predictedHealthFactor: Schema.NullOr(Schema.FiniteFromString),
   currentLtv: Schema.FiniteFromString,
@@ -32,9 +28,9 @@ class ActionMetadata extends Schema.Class<ActionMetadata>(
   liquidationThreshold: Schema.FiniteFromString,
   predictedTotalSupplyUsd: Schema.FiniteFromString,
   predictedTotalDebtUsd: Schema.FiniteFromString,
-}) {}
+});
 
-export class Action extends Schema.Class<Action>("BorrowAction")({
+export const Action = Schema.Struct({
   ...BorrowApi.ActionDto.fields,
   id: ActionId,
   integrationId: IntegrationId,
@@ -42,4 +38,5 @@ export class Action extends Schema.Class<Action>("BorrowAction")({
   transactions: Schema.Array(Transaction),
   rawArguments: Schema.optionalKey(ActionRawArguments),
   metadata: Schema.optionalKey(ActionMetadata),
-}) {}
+});
+export type Action = typeof Action.Type;

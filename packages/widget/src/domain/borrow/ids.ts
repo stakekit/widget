@@ -36,6 +36,11 @@ export type IntegrationId = typeof IntegrationId.Type;
 export const MarketId = Schema.String.pipe(Schema.brand("BorrowMarketId"));
 export type MarketId = typeof MarketId.Type;
 
+export const PoolRiskId = Schema.String.pipe(Schema.brand("BorrowPoolRiskId"));
+export type PoolRiskId = typeof PoolRiskId.Type;
+
+export const decodePoolRiskId = Schema.decodeSync(PoolRiskId);
+
 export const TokenAddress = Schema.String.pipe(
   Schema.decode(SchemaTransformation.toLowerCase()),
   Schema.decodeTo(CanonicalTokenAddress)
@@ -47,11 +52,12 @@ export const TransactionId = Schema.String.pipe(
 );
 export type TransactionId = typeof TransactionId.Type;
 
-const TokenId = Schema.TemplateLiteral([
+export const TokenId = Schema.TemplateLiteral([
   Schema.String,
   Schema.Literal("::"),
   TokenAddress,
 ]).pipe(Schema.brand("BorrowTokenId"));
+export type TokenId = typeof TokenId.Type;
 
 export const decodeTokenId = ({
   symbol,

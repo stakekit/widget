@@ -1,9 +1,7 @@
 import { Schema } from "effect";
 import { MarketId, TokenAddress } from "./ids";
 
-export class WithdrawPendingAction extends Schema.Class<WithdrawPendingAction>(
-  "BorrowWithdrawPendingAction"
-)({
+export const WithdrawPendingAction = Schema.Struct({
   type: Schema.Literal("withdraw"),
   label: Schema.String,
   args: Schema.Struct({
@@ -11,39 +9,39 @@ export class WithdrawPendingAction extends Schema.Class<WithdrawPendingAction>(
     tokenAddress: TokenAddress,
     marketId: MarketId,
   }),
-}) {}
+});
+export type WithdrawPendingAction = typeof WithdrawPendingAction.Type;
 
-export class RepayPendingAction extends Schema.Class<RepayPendingAction>(
-  "BorrowRepayPendingAction"
-)({
+export const RepayPendingAction = Schema.Struct({
   type: Schema.Literal("repay"),
   label: Schema.String,
   args: Schema.Struct({
     tokenAddress: TokenAddress,
     marketId: MarketId,
   }),
-}) {}
+});
+export type RepayPendingAction = typeof RepayPendingAction.Type;
 
 const CollateralToggleArgs = Schema.Struct({
   tokenAddress: TokenAddress,
   marketId: MarketId,
 });
 
-export class EnableCollateralPendingAction extends Schema.Class<EnableCollateralPendingAction>(
-  "BorrowEnableCollateralPendingAction"
-)({
+export const EnableCollateralPendingAction = Schema.Struct({
   type: Schema.Literal("enableCollateral"),
   label: Schema.String,
   args: CollateralToggleArgs,
-}) {}
+});
+export type EnableCollateralPendingAction =
+  typeof EnableCollateralPendingAction.Type;
 
-export class DisableCollateralPendingAction extends Schema.Class<DisableCollateralPendingAction>(
-  "BorrowDisableCollateralPendingAction"
-)({
+export const DisableCollateralPendingAction = Schema.Struct({
   type: Schema.Literal("disableCollateral"),
   label: Schema.String,
   args: CollateralToggleArgs,
-}) {}
+});
+export type DisableCollateralPendingAction =
+  typeof DisableCollateralPendingAction.Type;
 
 export const PendingAction = Schema.Union([
   WithdrawPendingAction,

@@ -1,6 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { userEvent } from "vitest/browser";
-import type { BorrowAccountPosition } from "../../src/domain/borrow/position";
+import type { BorrowAccountSnapshot } from "../../src/domain/borrow/borrow-account-snapshot";
 import { borrowApiRoute } from "../mocks/api-routes";
 import { rkMockWallet } from "../utils/mock-connector";
 import { describe, expect, it } from "../utils/test-extend";
@@ -8,7 +8,7 @@ import { renderApp } from "../utils/test-utils";
 
 const account = "0x0000000000000000000000000000000000000001";
 
-type PositionDto = typeof BorrowAccountPosition.Encoded;
+type PositionDto = typeof BorrowAccountSnapshot.Encoded;
 
 const integration = {
   id: "aave-borrow",
@@ -152,6 +152,68 @@ const emptyPosition: PositionDto = {
 };
 
 describe("Borrow position details", () => {
+  it("warns without blocking when withdraw risk is unavailable", async ({
+    worker,
+  }) => {
+    worker.use(
+      http.get(borrowApiRoute("/v1/integrations"), () =>
+        HttpResponse.json([integration])
+      ),
+      http.get(borrowApiRoute("/v1/markets"), () =>
+        HttpResponse.json({
+          items: [market],
+          limit: 100,
+          offset: 0,
+          total: 1,
+        })
+      ),
+      http.get(borrowApiRoute("/v1/positions"), () =>
+        HttpResponse.json({
+          ...position,
+          supplyBalances: position.supplyBalances.map((supplyBalance) => ({
+            ...supplyBalance,
+            balanceUsd: "0",
+          })),
+          totalCollateralUsd: "0",
+          totalSuppliedUsd: "0",
+        })
+      )
+    );
+
+    const app = await renderApp({
+      wagmi: {
+        __customConnectors__: rkMockWallet({ accounts: [account] }),
+      },
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        borrowEnabled: true,
+        dashboardVariant: true,
+      },
+    });
+
+    await userEvent.click(app.getByText("Manage"));
+    await userEvent.click(app.getByText("WETH/USDC"));
+    await app.getByTestId("borrow-position-action__withdraw").click();
+    await userEvent.click(app.getByTestId("number-input"));
+    await userEvent.keyboard("0.1");
+
+    await expect
+      .element(app.getByText("Projected risk unavailable"))
+      .toBeInTheDocument();
+    await expect
+      .element(
+        app.getByText(
+          /Risk information is unavailable for this collateral combination/
+        )
+      )
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByRole("button", { name: "Review borrow" }))
+      .toBeEnabled();
+
+    await app.unmount();
+  });
+
   it("does not present market liquidity or collateral APY as user capacity", async ({
     worker,
   }) => {
