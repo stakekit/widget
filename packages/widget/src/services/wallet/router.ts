@@ -102,9 +102,7 @@ export const routeWalletTransaction = Effect.fn("routeWalletTransaction")(
         connector,
       }).signTransaction({
         address: address as Address,
-        network: input.network,
-        tx: input.tx,
-        txMeta: input.txMeta,
+        ...input,
       });
     }
     if (isSolanaConnector(connector)) {

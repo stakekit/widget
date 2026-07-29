@@ -97,11 +97,17 @@ const makeHarness = async ({
   readonly connect?: () => Effect.Effect<void>;
   readonly connector: Connector | undefined;
   readonly connected: boolean;
-  readonly settings?: Partial<SettingsProps>;
+  readonly settings?: Partial<
+    Omit<
+      Extract<SettingsProps, { readonly borrowEnabled?: false }>,
+      "externalProviders"
+    >
+  >;
 }) => {
   const initial = normalizeWidgetConfig({
     ...settings,
     apiKey: "api-key",
+    borrowEnabled: false,
     externalProviders: externalProviders(),
     variant: "default",
   });

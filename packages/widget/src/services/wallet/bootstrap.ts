@@ -6,7 +6,7 @@ import {
   InitParams as InitParamsSchema,
 } from "../../domain/schema/init-params";
 import type { EnabledNetworks } from "../../domain/schema/wallet-models";
-import type { SKExternalProviders } from "../../public-api/types";
+import type { ExternalProviderSnapshot } from "../../domain/types/external-providers";
 import { LegacyResourceSource } from "../api/legacy-resource-source";
 import { YieldResourceSource } from "../api/yield-resource-source";
 import {
@@ -40,10 +40,8 @@ export class WalletBootstrapError extends Schema.TaggedErrorClass<WalletBootstra
   }
 ) {}
 
-type ExternalProviderSnapshot = Readonly<SKExternalProviders>;
-
 type MutableExternalProviderRef = {
-  current: SKExternalProviders;
+  current: ExternalProviderSnapshot;
 };
 
 type WalletBootstrapSnapshot = {

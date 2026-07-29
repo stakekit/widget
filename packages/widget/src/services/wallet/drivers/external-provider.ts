@@ -10,7 +10,6 @@ import {
   isTronChain,
 } from "../../../domain/types/chains";
 
-import { ExternalProviderError } from "../../../domain/types/external-providers";
 import {
   decodeAndPrepareEvmTransaction,
   normalizeSolanaTransactionToHex,
@@ -22,6 +21,7 @@ import {
 } from "../../../domain/types/transaction";
 import type {
   BittensorTx,
+  SKBorrowTxMeta,
   SKTx,
   SKTxMeta,
   TronTx,
@@ -123,6 +123,21 @@ const decodeExternalProviderTransaction = ({
     : Effect.succeed(result.success);
 };
 
+type ExternalProviderTransactionInput = {
+  readonly address: Address;
+  readonly network: Network;
+  readonly tx: string;
+} & (
+  | {
+      readonly family: "classic";
+      readonly txMeta: SKTxMeta;
+    }
+  | {
+      readonly family: "borrow";
+      readonly txMeta: SKBorrowTxMeta;
+    }
+);
+
 export const makeExternalProviderWalletDriver = ({
   connector,
 }: {
@@ -154,17 +169,9 @@ export const makeExternalProviderWalletDriver = ({
           )
         );
     }),
-  signTransaction: ({
-    address,
-    network,
-    tx,
-    txMeta,
-  }: {
-    readonly address: Address;
-    readonly network: Network;
-    readonly tx: string;
-    readonly txMeta: SKTxMeta;
-  }): Effect.Effect<
+  signTransaction: (
+    input: ExternalProviderTransactionInput
+  ): Effect.Effect<
     WalletBroadcastResult,
     WalletBroadcastError | WalletCapabilityUnavailableError | WalletDecodeError
   > =>
@@ -179,23 +186,20 @@ export const makeExternalProviderWalletDriver = ({
       }
 
       const decodedTx = yield* decodeExternalProviderTransaction({
-        address,
-        network,
-        tx,
+        address: input.address,
+        network: input.network,
+        tx: input.tx,
       });
-      const sendTransaction = connector.sendTransaction(
-        decodedTx,
-        txMeta
-      ) as Effect.Effect<string, Error>;
+      const sendTransaction =
+        input.family === "borrow"
+          ? connector.sendBorrowTransaction(decodedTx, input.txMeta)
+          : connector.sendTransaction(decodedTx, input.txMeta);
       const signedTx = yield* sendTransaction.pipe(
         Effect.mapError(
           (cause) =>
             new WalletBroadcastError({
               cause,
-              customMessage:
-                cause instanceof ExternalProviderError
-                  ? cause.customMessage
-                  : null,
+              customMessage: cause.customMessage,
             })
         )
       );

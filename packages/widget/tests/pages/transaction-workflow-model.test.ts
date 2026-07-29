@@ -5,15 +5,18 @@ import { Transaction } from "../../src/domain/borrow/transaction";
 import type { ActionTransaction } from "../../src/domain/schema/action-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
 import type { ActionMeta } from "../../src/public-api/types";
+import { WalletBroadcastError } from "../../src/services/wallet/domain/errors";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
   appendTransactionWorkflowBatch,
   BorrowTransactionWorkflowInput,
   ClassicTransactionWorkflowInput,
   getCurrentTransactionWorkflowTransaction,
+  getTransactionSignCustomMessage,
   getTransactionWorkflowAction,
   initializeTransactionWorkflow,
   makeBorrowTransactionWorkflowBatch,
+  makeTransactionSignError,
   TransactionAdvanceError,
   TransactionConfirmationError,
   TransactionSignError,
@@ -279,8 +282,8 @@ describe("transaction workflow model", () => {
           context,
           error: new TransactionSignError({
             ...common,
-            customMessage: null,
             network: "ethereum",
+            reason: { _tag: "MissingUnsignedPayload" },
           }),
         } as const,
         action: "sign",
@@ -328,5 +331,38 @@ describe("transaction workflow model", () => {
         state: { _tag: "Signing", context },
       })
     ).toBeNull();
+  });
+
+  it("projects host custom messages from wallet broadcast sign failures", () => {
+    const withCustom = makeTransactionSignError({
+      batchId: "classic",
+      network: "ethereum",
+      reason: {
+        _tag: "WalletOperationFailed",
+        cause: new WalletBroadcastError({
+          cause: null,
+          customMessage: "Open your host wallet",
+        }),
+        operation: "transaction",
+      },
+      transactionId: "classic-1",
+      workflowId: "action-1",
+    });
+    expect(withCustom.message).toBe("Transaction signing failed.");
+    expect(getTransactionSignCustomMessage(withCustom)).toBe(
+      "Open your host wallet"
+    );
+
+    const withoutCustom = makeTransactionSignError({
+      batchId: "classic",
+      network: "ethereum",
+      reason: { _tag: "WalletUnavailable", detail: "disconnected" },
+      transactionId: "classic-1",
+      workflowId: "action-1",
+    });
+    expect(withoutCustom.message).toBe(
+      "Wallet is not connected for transaction signing."
+    );
+    expect(getTransactionSignCustomMessage(withoutCustom)).toBeNull();
   });
 });

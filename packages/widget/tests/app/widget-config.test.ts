@@ -85,6 +85,72 @@ describe("widget configuration", () => {
     ).toThrow(InvalidBorrowFeatureConfiguration);
   });
 
+  it("rejects a classic external provider when Borrow is enabled", () => {
+    expect(() =>
+      normalizeWidgetConfig({
+        apiKey: "api-key",
+        borrowEnabled: true,
+        dashboardVariant: true,
+        externalProviders: {
+          currentAddress: "0x0000000000000000000000000000000000000001",
+          provider: {
+            sendTransaction: async () => "transaction-hash",
+            signMessage: async () => "signature",
+            switchChain: async () => undefined,
+          },
+          type: "generic",
+        },
+        variant: "default",
+      } as never)
+    ).toThrow(InvalidBorrowFeatureConfiguration);
+  });
+
+  it("rejects an invalid provider that declares Borrow without its callback", () => {
+    expect(() =>
+      normalizeWidgetConfig({
+        apiKey: "api-key",
+        borrowEnabled: true,
+        dashboardVariant: true,
+        externalProviders: {
+          currentAddress: "0x0000000000000000000000000000000000000001",
+          provider: {
+            sendTransaction: async () => "transaction-hash",
+            signMessage: async () => "signature",
+            switchChain: async () => undefined,
+          },
+          supportsBorrow: true,
+          type: "generic",
+        },
+        variant: "default",
+      } as never)
+    ).toThrow(InvalidBorrowFeatureConfiguration);
+  });
+
+  it("accepts a declared Borrow external provider capability", () => {
+    expect(
+      normalizeWidgetConfig({
+        apiKey: "api-key",
+        borrowEnabled: true,
+        dashboardVariant: true,
+        externalProviders: {
+          currentAddress: "0x0000000000000000000000000000000000000001",
+          provider: {
+            sendBorrowTransaction: async () => "borrow-transaction-hash",
+            sendTransaction: async () => "transaction-hash",
+            signMessage: async () => "signature",
+            switchChain: async () => undefined,
+          },
+          supportsBorrow: true,
+          type: "generic",
+        },
+        variant: "default",
+      })
+    ).toMatchObject({
+      borrowEnabled: true,
+      externalProviders: { supportsBorrow: true },
+    });
+  });
+
   it("derives focused React fields and Effect bootstrap configuration from one atom", () => {
     const registry = AtomRegistry.make();
     const variantAtom = widgetConfigFieldAtom("variant");

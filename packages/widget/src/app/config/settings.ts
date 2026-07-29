@@ -1,11 +1,11 @@
 import { Record as EffectRecord } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { validateBorrowFeatureConfiguration } from "../../domain/borrow/availability";
+import { hasValidBorrowProviderContract } from "../../domain/types/external-providers";
 import { normalizeDashboardYieldCategoryOrder } from "../../domain/types/yields";
 import type {
   PreferredTokenYieldsPerNetwork,
-  SettingsProps,
-  VariantProps,
+  SKAppProps,
 } from "../../public-api/types";
 import {
   defaultWidgetBootstrapConfig,
@@ -20,7 +20,7 @@ type TokenYieldPreferences = Exclude<
 >;
 
 export const normalizeWidgetConfig = (
-  input: SettingsProps & VariantProps,
+  input: SKAppProps,
   options: { readonly isLedgerLive?: boolean } = {}
 ): WidgetConfig => {
   const preferredTokenYieldsPerNetwork = input.preferredTokenYieldsPerNetwork
@@ -49,6 +49,9 @@ export const normalizeWidgetConfig = (
   validateBorrowFeatureConfiguration({
     borrowEnabled,
     dashboardVariant: input.dashboardVariant,
+    hasExternalProviderBorrowCapability:
+      !input.externalProviders ||
+      hasValidBorrowProviderContract(input.externalProviders),
     yieldGrouping,
   });
 

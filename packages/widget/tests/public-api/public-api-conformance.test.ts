@@ -32,6 +32,44 @@ type PackageContract = typeof import("../../src/public-api/index.package");
 type PackageRuntime = typeof import("../../src/index.package");
 type BundleContract = typeof import("../../src/public-api/index.bundle");
 type BundleRuntime = typeof import("../../src/index.bundle");
+type PublicSKAppProps = import("../../src/public-api/types").SKAppProps;
+
+type ClassicExternalProviderProps = {
+  readonly apiKey: string;
+  readonly externalProviders: {
+    readonly currentAddress: string;
+    readonly provider: {
+      readonly sendTransaction: (
+        tx: import("../../src/public-api/types").SKTx,
+        txMeta: import("../../src/public-api/types").SKTxMeta
+      ) => Promise<string>;
+      readonly signMessage: (message: string) => Promise<string>;
+      readonly switchChain: (chainId: number) => Promise<void>;
+    };
+    readonly type: "generic";
+  };
+};
+
+type BorrowExternalProviderProps = ClassicExternalProviderProps & {
+  readonly borrowEnabled: true;
+  readonly externalProviders: Omit<
+    ClassicExternalProviderProps["externalProviders"],
+    "provider"
+  > & {
+    readonly supportsBorrow: true;
+    readonly provider: ClassicExternalProviderProps["externalProviders"]["provider"] & {
+      readonly sendBorrowTransaction: (
+        tx: import("../../src/public-api/types").SKTx,
+        txMeta: import("../../src/public-api/types").SKBorrowTxMeta
+      ) => Promise<string>;
+    };
+  };
+};
+
+type DynamicBorrowProps = {
+  readonly apiKey: string;
+  readonly borrowEnabled: boolean;
+};
 
 /**
  * Fails to compile unless `Runtime` is assignable to `Contract`, reported as an
@@ -55,6 +93,17 @@ describe("declared value exports", () => {
   it("match the bundle contract", () => {
     assertRuntimeSatisfiesContract<BundleContract, BundleRuntime>();
     expectTypeOf<keyof BundleRuntime>().toEqualTypeOf<keyof BundleContract>();
+  });
+});
+
+describe("public external-provider props", () => {
+  it("preserves classic hosts and makes Borrow capability explicit", () => {
+    expectTypeOf<ClassicExternalProviderProps>().toMatchTypeOf<PublicSKAppProps>();
+    expectTypeOf<BorrowExternalProviderProps>().toMatchTypeOf<PublicSKAppProps>();
+    expectTypeOf<DynamicBorrowProps>().toMatchTypeOf<PublicSKAppProps>();
+    expectTypeOf<
+      ClassicExternalProviderProps & { readonly borrowEnabled: true }
+    >().not.toMatchTypeOf<PublicSKAppProps>();
   });
 });
 

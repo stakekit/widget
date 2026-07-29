@@ -1,4 +1,4 @@
-import { Data } from "effect";
+import { Data, Match, type Schema } from "effect";
 import type { Action as BorrowAction } from "../../domain/borrow/action";
 import type { Transaction as BorrowTransaction } from "../../domain/borrow/transaction";
 import type {
@@ -6,6 +6,13 @@ import type {
   YieldAction,
 } from "../../domain/schema/action-models";
 import type { ActionMeta } from "../../public-api/types";
+import type {
+  WalletBroadcastError,
+  WalletCapabilityUnavailableError,
+  WalletDecodeError,
+  WalletRuntimeInvariantError,
+  WalletSigningError,
+} from "../wallet/domain/errors";
 import { sameWalletScopeOwner, WalletScopeKey } from "../wallet/domain/scope";
 
 type ClassicTransactionWorkflowInputFields = {
@@ -121,14 +128,105 @@ type WorkflowErrorFields = {
   readonly workflowId: string;
 };
 
+export type TransactionSignWalletOperationCause =
+  | WalletBroadcastError
+  | WalletCapabilityUnavailableError
+  | WalletDecodeError
+  | WalletSigningError;
+
+export type TransactionSignFailureReason =
+  | {
+      readonly _tag: "WalletUnavailable";
+      readonly cause?: WalletRuntimeInvariantError;
+      readonly detail:
+        | "account-changed"
+        | "disconnected"
+        | "network-changed"
+        | "no-address"
+        | "state-unavailable";
+    }
+  | { readonly _tag: "MissingUnsignedPayload" }
+  | { readonly _tag: "MissingBorrowMeta" }
+  | { readonly _tag: "DecodeFailed"; readonly cause: Schema.SchemaError }
+  | {
+      readonly _tag: "WalletOperationFailed";
+      readonly cause: TransactionSignWalletOperationCause;
+      readonly operation: "message" | "transaction";
+    };
+
+const transactionSignFailureMessage = (
+  reason: TransactionSignFailureReason
+): string =>
+  Match.valueTags(reason, {
+    WalletUnavailable: ({ detail }) =>
+      Match.value(detail).pipe(
+        Match.when(
+          "state-unavailable",
+          () => "Wallet state is unavailable for transaction signing."
+        ),
+        Match.when(
+          "disconnected",
+          () => "Wallet is not connected for transaction signing."
+        ),
+        Match.when(
+          "no-address",
+          () => "The transaction workflow has no wallet address."
+        ),
+        Match.when(
+          "network-changed",
+          () => "Wallet network changed during transaction execution."
+        ),
+        Match.when(
+          "account-changed",
+          () => "Wallet account changed during transaction execution."
+        ),
+        Match.exhaustive
+      ),
+    MissingUnsignedPayload: () => "The transaction has no unsigned payload.",
+    MissingBorrowMeta: () =>
+      "Borrow action metadata is unavailable for signing.",
+    DecodeFailed: () => "Borrow transaction payload could not be decoded.",
+    WalletOperationFailed: ({ operation }) =>
+      operation === "message"
+        ? "Message signing failed."
+        : "Transaction signing failed.",
+  });
+
 export class TransactionSignError extends Data.TaggedError(
   "TransactionSignError"
-)<
-  WorkflowErrorFields & {
-    readonly customMessage: string | null;
-    readonly network: string;
+)<{
+  readonly batchId: string;
+  readonly message: string;
+  readonly network: string;
+  readonly reason: TransactionSignFailureReason;
+  readonly transactionId: string | null;
+  readonly workflowId: string;
+}> {}
+
+export const makeTransactionSignError = (input: {
+  readonly batchId: string;
+  readonly network: string;
+  readonly reason: TransactionSignFailureReason;
+  readonly transactionId: string | null;
+  readonly workflowId: string;
+}): TransactionSignError =>
+  new TransactionSignError({
+    ...input,
+    message: transactionSignFailureMessage(input.reason),
+  });
+
+export const getTransactionSignCustomMessage = (
+  error: TransactionSignError
+): string | null => {
+  if (
+    error.reason._tag === "WalletOperationFailed" &&
+    error.reason.cause._tag === "WalletBroadcastError"
+  ) {
+    return error.reason.cause.customMessage;
   }
-> {}
+
+  return null;
+};
 
 export class TransactionSubmissionError extends Data.TaggedError(
   "TransactionSubmissionError"

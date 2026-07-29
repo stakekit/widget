@@ -139,27 +139,243 @@ export type BittensorTx = {
 
 export type SKTx = EVMTx | SolanaTx | TonTx | TronTx | BittensorTx;
 
+type SKNetwork =
+  | "ethereum"
+  | "ethereum-goerli"
+  | "ethereum-holesky"
+  | "ethereum-sepolia"
+  | "ethereum-hoodi"
+  | "arbitrum"
+  | "base"
+  | "base-sepolia"
+  | "gnosis"
+  | "optimism"
+  | "polygon"
+  | "polygon-amoy"
+  | "starknet"
+  | "zksync"
+  | "linea"
+  | "unichain"
+  | "monad-testnet"
+  | "monad"
+  | "robinhood"
+  | "robinhood-testnet"
+  | "avalanche-c"
+  | "avalanche-c-atomic"
+  | "avalanche-p"
+  | "binance"
+  | "celo"
+  | "fantom"
+  | "harmony"
+  | "moonriver"
+  | "okc"
+  | "viction"
+  | "core"
+  | "sonic"
+  | "plasma"
+  | "katana"
+  | "hyperevm"
+  | "tempo"
+  | "pharos"
+  | "agoric"
+  | "akash"
+  | "axelar"
+  | "band-protocol"
+  | "bitsong"
+  | "canto"
+  | "chihuahua"
+  | "comdex"
+  | "coreum"
+  | "cosmos"
+  | "crescent"
+  | "cronos"
+  | "cudos"
+  | "desmos"
+  | "dydx"
+  | "evmos"
+  | "fetch-ai"
+  | "gravity-bridge"
+  | "injective"
+  | "irisnet"
+  | "juno"
+  | "kava"
+  | "ki-network"
+  | "mars-protocol"
+  | "nym"
+  | "okex-chain"
+  | "onomy"
+  | "osmosis"
+  | "persistence"
+  | "quicksilver"
+  | "regen"
+  | "secret"
+  | "sentinel"
+  | "sommelier"
+  | "stafi"
+  | "stargaze"
+  | "stride"
+  | "teritori"
+  | "tgrade"
+  | "umee"
+  | "sei"
+  | "mantra"
+  | "celestia"
+  | "saga"
+  | "zetachain"
+  | "dymension"
+  | "humansai"
+  | "neutron"
+  | "polkadot"
+  | "kusama"
+  | "westend"
+  | "bittensor"
+  | "aptos"
+  | "binancebeacon"
+  | "cardano"
+  | "near"
+  | "solana"
+  | "solana-devnet"
+  | "stellar"
+  | "stellar-testnet"
+  | "sui"
+  | "tezos"
+  | "tron"
+  | "ton"
+  | "ton-testnet"
+  | "hyperliquid";
+
 type SKToken = {
   readonly symbol: string;
   readonly name: string;
   readonly decimals: number;
-  readonly network: string;
+  readonly network: SKNetwork;
   readonly address?: string;
   readonly logoURI?: string;
   readonly isPoints?: boolean;
   readonly coinGeckoId?: string;
+  readonly feeConfigurationId?: string;
 };
 
-type ActionArguments = Readonly<Record<string, unknown>> & {
+type ActionArguments = {
   readonly amount?: string;
+  readonly amounts?: ReadonlyArray<string>;
+  readonly shareAmount?: string;
+  readonly shareAmountRaw?: string;
   readonly validatorAddress?: string;
   readonly validatorAddresses?: ReadonlyArray<string>;
+  readonly providerId?: string;
+  readonly duration?: number;
+  readonly inputToken?: string;
+  readonly inputTokenNetwork?: SKNetwork;
+  readonly outputToken?: string;
+  readonly outputTokenNetwork?: SKNetwork;
+  readonly subnetId?: number;
   readonly tronResource?: "BANDWIDTH" | "ENERGY";
+  readonly feeConfigurationId?: string;
+  readonly cosmosPubKey?: string;
+  readonly tezosPubKey?: string;
+  readonly cAddressBech?: string;
+  readonly pAddressBech?: string;
+  readonly executionMode?: "individual" | "batched";
+  readonly ledgerWalletApiCompatible?: boolean;
+  readonly useMaxAmount?: boolean;
+  readonly useInstantExecution?: boolean;
+  readonly useAutoClaim?: boolean;
+  readonly skipPrechecks?: boolean;
+  readonly useMaxAllowance?: boolean;
+  readonly feePayerAddress?: string;
+  readonly receiverAddress?: string;
+  readonly rangeMin?: string;
+  readonly rangeMax?: string;
+  readonly percentage?: number;
+  readonly tokenId?: string;
 };
+
+type ClassicActionType =
+  | "STAKE"
+  | "UNSTAKE"
+  | "WITHDRAW_REQUEST"
+  | "INSTANT_WITHDRAW"
+  | "CLAIM_REWARDS"
+  | "AUTO_SWEEP_UNSTAKE_REWARDS"
+  | "AUTO_SWEEP_WITHDRAW_REWARDS"
+  | "RESTAKE_REWARDS"
+  | "WITHDRAW"
+  | "WITHDRAW_ALL"
+  | "RESTAKE"
+  | "CLAIM_UNSTAKED"
+  | "UNLOCK_LOCKED"
+  | "STAKE_LOCKED"
+  | "VOTE"
+  | "REVOKE"
+  | "VOTE_LOCKED"
+  | "REVOTE"
+  | "REBOND"
+  | "MIGRATE"
+  | "VERIFY_WITHDRAW_CREDENTIALS"
+  | "DELEGATE";
+
+type ClassicTransactionType =
+  | "SWAP"
+  | "DEPOSIT"
+  | "APPROVAL"
+  | "STAKE"
+  | "SET_OPERATOR"
+  | "CLAIM_UNSTAKED"
+  | "CLAIM_REWARDS"
+  | "RESTAKE_REWARDS"
+  | "UNSTAKE"
+  | "SPLIT"
+  | "MERGE"
+  | "LOCK"
+  | "UNLOCK"
+  | "SUPPLY"
+  | "ADD_LIQUIDITY"
+  | "REMOVE_LIQUIDITY"
+  | "BRIDGE"
+  | "VOTE"
+  | "REVOKE"
+  | "RESTAKE"
+  | "REBOND"
+  | "WITHDRAW"
+  | "WITHDRAW_ALL"
+  | "CREATE_ACCOUNT"
+  | "REVEAL"
+  | "MIGRATE"
+  | "DELEGATE"
+  | "UNDELEGATE"
+  | "UTXO_P_TO_C_IMPORT"
+  | "UTXO_C_TO_P_IMPORT"
+  | "WRAP"
+  | "UNWRAP"
+  | "UNFREEZE_LEGACY"
+  | "UNFREEZE_LEGACY_BANDWIDTH"
+  | "UNFREEZE_LEGACY_ENERGY"
+  | "UNFREEZE_BANDWIDTH"
+  | "UNFREEZE_ENERGY"
+  | "FREEZE_BANDWIDTH"
+  | "FREEZE_ENERGY"
+  | "UNDELEGATE_BANDWIDTH"
+  | "UNDELEGATE_ENERGY"
+  | "P2P_NODE_REQUEST"
+  | "CREATE_EIGENPOD"
+  | "VERIFY_WITHDRAW_CREDENTIALS"
+  | "START_CHECKPOINT"
+  | "VERIFY_CHECKPOINT_PROOFS"
+  | "QUEUE_WITHDRAWALS"
+  | "COMPLETE_QUEUED_WITHDRAWALS"
+  | "LZ_DEPOSIT"
+  | "LZ_WITHDRAW"
+  | "LUGANODES_PROVISION"
+  | "LUGANODES_EXIT_REQUEST"
+  | "INFSTONES_PROVISION"
+  | "INFSTONES_EXIT_REQUEST"
+  | "INFSTONES_CLAIM_REQUEST"
+  | "BATCH";
 
 export type ActionMeta = {
   actionId: string;
-  actionType: string;
+  actionType: ClassicActionType;
   address?: string;
   amount: string | null;
   amountRaw?: string | null;
@@ -176,35 +392,86 @@ export type ActionMeta = {
   }>;
 };
 
+type NonNullishValue = NonNullable<unknown>;
+
 export type SKTxMeta = ActionMeta & {
   txId: string;
-  txType: string;
-  structuredTransaction?: unknown;
-  annotatedTransaction?: unknown;
+  txType: ClassicTransactionType;
+  structuredTransaction?: NonNullishValue | null;
+  annotatedTransaction?: NonNullishValue | null;
   gasEstimate?: string;
 };
+
+type SKTransactionResult =
+  | string
+  | { type: "success"; txHash: string }
+  | { type: "error"; error: string };
 
 export type SKWallet = {
   signMessage: (message: string) => Promise<string>;
   switchChain: (chainId: number) => Promise<void>;
   getTransactionReceipt?(txHash: string): Promise<{ transactionHash?: string }>;
-  sendTransaction(
+  sendTransaction(tx: SKTx, txMeta: SKTxMeta): Promise<SKTransactionResult>;
+};
+
+export type SKBorrowTxMeta = {
+  readonly actionId: string;
+  readonly actionType:
+    | "supply"
+    | "borrow"
+    | "repay"
+    | "withdraw"
+    | "enableCollateral"
+    | "disableCollateral";
+  readonly address: string;
+  readonly integrationId: string;
+  readonly rawArguments: {
+    readonly amount?: string;
+    readonly amountRaw?: string;
+    readonly borrowAmount?: string;
+    readonly collateralAmount?: string;
+    readonly collateralAmountRaw?: string;
+    readonly collateralTokenAddress?: string;
+    readonly marketId: string;
+    readonly repayAll?: boolean;
+    readonly targetLtv?: string;
+    readonly tokenAddress?: string;
+  };
+  readonly txId: string;
+  readonly txType:
+    | "APPROVAL"
+    | "AUTHORIZE"
+    | "SUPPLY"
+    | "BORROW"
+    | "REPAY"
+    | "WITHDRAW"
+    | "ENABLE_COLLATERAL"
+    | "DISABLE_COLLATERAL";
+};
+
+export type SKBorrowWallet = SKWallet & {
+  sendBorrowTransaction(
     tx: SKTx,
-    txMeta: SKTxMeta
-  ): Promise<
-    | string
-    | { type: "success"; txHash: string }
-    | { type: "error"; error: string }
-  >;
+    txMeta: SKBorrowTxMeta
+  ): Promise<SKTransactionResult>;
 };
 
 export type SKExternalProviders = {
   currentChain?: SupportedSKChainIds;
   currentAddress: string;
   initToken?: `${string}-${string}`;
+  readonly supportsBorrow?: false;
   supportedChainIds?: SupportedSKChainIds[];
   type: "generic";
   provider: SKWallet;
+};
+
+export type SKBorrowExternalProviders = Omit<
+  SKExternalProviders,
+  "provider" | "supportsBorrow"
+> & {
+  readonly supportsBorrow: true;
+  readonly provider: SKBorrowWallet;
 };
 
 export type VariantProps =
@@ -323,7 +590,7 @@ export type PreferredTokenYieldsPerNetwork = Readonly<
   Record<string, Readonly<Record<`${string}-${string}`, string>>>
 >;
 
-export type SettingsProps = {
+type SettingsPropsBase = {
   /** Mount-time setting. Changing it creates a fresh Widget generation. */
   apiKey: string;
   /** Mount-time setting. Changing it creates a fresh Widget generation. */
@@ -339,7 +606,6 @@ export type SettingsProps = {
     forceWalletConnectOnly?: boolean;
     __customConnectors__?: (chains: Chain[]) => WalletList;
   };
-  externalProviders?: SKExternalProviders;
   disableGasCheck?: boolean;
   hideNetworkLogo?: boolean;
   disableInitLayoutAnimation?: boolean;
@@ -379,7 +645,6 @@ export type SettingsProps = {
    * Mount-time setting. Changing it creates a fresh Widget generation.
    * Requires dashboardVariant and category yield grouping.
    */
-  borrowEnabled?: boolean;
   dashboardVariant?: boolean;
   dashboardYieldCategoryOrder?: DashboardYieldCategory[];
   yieldGrouping?: "flat" | "category";
@@ -391,6 +656,18 @@ export type SettingsProps = {
   tonConnectManifestUrl?: string;
   initialChain?: SupportedSKChainIds;
 };
+
+type BorrowProviderSettings =
+  | {
+      borrowEnabled?: false;
+      externalProviders?: SKExternalProviders | SKBorrowExternalProviders;
+    }
+  | {
+      borrowEnabled?: boolean;
+      externalProviders?: SKBorrowExternalProviders;
+    };
+
+export type SettingsProps = SettingsPropsBase & BorrowProviderSettings;
 
 export type SKAppProps = SettingsProps &
   (VariantProps | { variant?: never; chainModal?: never });

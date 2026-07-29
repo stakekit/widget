@@ -1,19 +1,20 @@
 import { Context, type Effect, Equal, Layer, type Stream } from "effect";
-import type {
-  SettingsProps,
-  SKExternalProviders,
-  VariantProps,
-} from "../../public-api/types";
+import type { ExternalProviderSnapshot } from "../../domain/types/external-providers";
+import type { SettingsProps, VariantProps } from "../../public-api/types";
 import { config } from "../../shared/config/widget-defaults";
 
 type ResolvedSettingsProps = Omit<
   SettingsProps,
-  "borrowEnabled" | "dashboardYieldCategoryOrder" | "yieldGrouping"
+  | "borrowEnabled"
+  | "dashboardYieldCategoryOrder"
+  | "externalProviders"
+  | "yieldGrouping"
 > & {
   readonly borrowEnabled: boolean;
   readonly dashboardYieldCategoryOrder: NonNullable<
     SettingsProps["dashboardYieldCategoryOrder"]
   >;
+  readonly externalProviders?: ExternalProviderSnapshot;
   readonly yieldGrouping: NonNullable<SettingsProps["yieldGrouping"]>;
 };
 
@@ -56,7 +57,7 @@ type WidgetWalletConfig = {
   readonly customConnectors: WagmiSettings["__customConnectors__"];
   readonly disableInjectedProviderDiscovery: boolean;
   readonly externalProviderInitToken: NonNullable<
-    SKExternalProviders["initToken"]
+    ExternalProviderSnapshot["initToken"]
   > | null;
   readonly hasExternalProvider: boolean;
   readonly forceWalletConnectOnly: boolean;

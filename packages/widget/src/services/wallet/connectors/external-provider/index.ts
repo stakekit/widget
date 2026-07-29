@@ -9,8 +9,8 @@ import type { ConnectorWithFilteredChains } from "../../../../domain/types/conne
 import {
   type CurrentRef,
   ExternalProvider,
+  type ExternalProviderSnapshot,
 } from "../../../../domain/types/external-providers";
-import type { SKExternalProviders } from "../../../../public-api/types";
 import { config } from "../../../../shared/config/widget-defaults";
 import { makeCurrentValueStream } from "../../../../shared/effect/current-value-stream";
 import type { RunWalletEffect } from "../../effect-runner";
@@ -22,7 +22,10 @@ const configMeta = {
 } as const;
 
 type ExtraProps = ConnectorWithFilteredChains &
-  Pick<ExternalProvider, "sendTransaction" | "signMessage"> & {
+  Pick<
+    ExternalProvider,
+    "sendBorrowTransaction" | "sendTransaction" | "signMessage"
+  > & {
     onSupportedChainsChanged: (args: {
       supportedChainIds: number[];
       currentChainId: number;
@@ -36,7 +39,7 @@ export const isExternalProviderConnector = (
 ): connector is ExternalConnector => connector.id === configMeta.id;
 
 export const externalProviderConnector = (
-  variant: CurrentRef<SKExternalProviders>,
+  variant: CurrentRef<ExternalProviderSnapshot>,
   runWalletEffect: RunWalletEffect
 ): WalletList[number] => ({
   groupName: "External Providers",
@@ -171,6 +174,8 @@ export const externalProviderConnector = (
             onChainChanged,
             onAccountsChanged,
             switchChain,
+            sendBorrowTransaction:
+              provider.sendBorrowTransaction.bind(provider),
             sendTransaction: provider.sendTransaction.bind(provider),
             signMessage: provider.signMessage.bind(provider),
             $filteredChains: filteredChains.changes,

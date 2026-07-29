@@ -16,9 +16,14 @@ const tx = JSON.stringify({
   type: 0,
 });
 
-const txMeta = {} as Parameters<
+type ExternalProviderTransactionInput = Parameters<
   ReturnType<typeof makeExternalProviderWalletDriver>["signTransaction"]
->[0]["txMeta"];
+>[0];
+
+const txMeta = {} as Extract<
+  ExternalProviderTransactionInput,
+  { readonly family: "classic" }
+>["txMeta"];
 
 describe("external-provider wallet driver", () => {
   it("reads fresh host callbacks and preserves their Promise contract", async () => {
@@ -52,6 +57,7 @@ describe("external-provider wallet driver", () => {
       Effect.runPromise(
         driver.signTransaction({
           address: zeroAddress,
+          family: "classic",
           network: "ethereum",
           tx,
           txMeta,
@@ -75,6 +81,7 @@ describe("external-provider wallet driver", () => {
       Effect.flip(
         makeExternalProviderWalletDriver({ connector }).signTransaction({
           address: zeroAddress,
+          family: "classic",
           network: "ethereum",
           tx,
           txMeta,
@@ -86,6 +93,48 @@ describe("external-provider wallet driver", () => {
     if (failure._tag === "WalletBroadcastError") {
       expect(failure.customMessage).toBe("Open your host wallet");
     }
+  });
+
+  it("routes Borrow transactions through the Borrow connector capability", async () => {
+    let classicCalls = 0;
+    let borrowCalls = 0;
+    const connector = {
+      id: "externalProviderConnector",
+      sendBorrowTransaction: () => {
+        borrowCalls += 1;
+        return Effect.succeed("borrow-hash");
+      },
+      sendTransaction: () => {
+        classicCalls += 1;
+        return Effect.succeed("classic-hash");
+      },
+    } as unknown as Connector;
+
+    await expect(
+      Effect.runPromise(
+        makeExternalProviderWalletDriver({ connector }).signTransaction({
+          address: zeroAddress,
+          family: "borrow",
+          network: "ethereum",
+          tx,
+          txMeta: {
+            actionId: "borrow-action-id",
+            actionType: "borrow",
+            address: zeroAddress,
+            integrationId: "aave-v3",
+            rawArguments: {
+              amount: "1",
+              marketId: "aave-v3-ethereum-usdc",
+            },
+            txId: "borrow-transaction-id",
+            txType: "BORROW",
+          },
+        })
+      )
+    ).resolves.toEqual({ broadcasted: true, signedTx: "borrow-hash" });
+
+    expect(borrowCalls).toBe(1);
+    expect(classicCalls).toBe(0);
   });
 
   it("fails invalid host transaction payloads before invoking the callback", async () => {
@@ -101,6 +150,7 @@ describe("external-provider wallet driver", () => {
       Effect.flip(
         makeExternalProviderWalletDriver({ connector }).signTransaction({
           address: zeroAddress,
+          family: "classic",
           network: "ethereum",
           tx: "{}",
           txMeta,

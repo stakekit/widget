@@ -42,15 +42,21 @@ const renderHookWithExternalProvider = (
   options: {
     variant?: "default" | "utila";
   } = {}
-) =>
-  renderHook(useTestWallet, {
+) => {
+  const variantProps =
+    options.variant === "utila"
+      ? ({ variant: "utila" } as const)
+      : ({ variant: "default" } as const);
+
+  return renderHook(useTestWallet, {
     wrapper: ({ children }) => (
       <ThirdPartyQueryClientProvider>
         <TestAtomRuntimeProvider
           settings={normalizeWidgetConfig({
             apiKey: import.meta.env.VITE_API_KEY,
+            borrowEnabled: false,
             externalProviders,
-            variant: options.variant ?? "default",
+            ...variantProps,
           })}
         >
           <WagmiConfigProvider>{children}</WagmiConfigProvider>
@@ -58,6 +64,7 @@ const renderHookWithExternalProvider = (
       </ThirdPartyQueryClientProvider>
     ),
   });
+};
 
 const waitForWalletConnection = (
   wallet: Awaited<ReturnType<typeof renderHookWithExternalProvider>>
@@ -162,6 +169,7 @@ describe("SK Wallet", () => {
     await waitForWalletConnection(solanaWallet);
 
     const solanaRes = await solanaWallet.result.current.signTransaction({
+      family: "classic",
       network: "solana",
       tx: "AQIDBA==",
       txMeta: createSolanaTxMeta(),
@@ -209,6 +217,7 @@ describe("SK Wallet", () => {
     await waitForWalletConnection(solanaWallet);
 
     const solanaRes = await solanaWallet.result.current.signTransaction({
+      family: "classic",
       network: "solana",
       tx: "0xA1B2",
       txMeta: createSolanaTxMeta(),
@@ -260,6 +269,7 @@ describe("SK Wallet", () => {
     await waitForWalletConnection(solanaWallet);
 
     const solanaRes = solanaWallet.result.current.signTransaction({
+      family: "classic",
       network: "solana",
       tx: "12345",
       txMeta: {
@@ -313,6 +323,7 @@ describe("SK Wallet", () => {
 
     const tonFixture = createDefaultTonTransactionFixture();
     const tonRes = await tonWallet.result.current.signTransaction({
+      family: "classic",
       network: "ton",
       tx: tonFixture.tx,
       txMeta: createTonTxMeta(),
@@ -366,6 +377,7 @@ describe("SK Wallet", () => {
     await waitForWalletConnection(tonWallet);
 
     const tonRes = await tonWallet.result.current.signTransaction({
+      family: "classic",
       network: "ton",
       tx: JSON.stringify(rawTx),
       txMeta: createTonTxMeta(),

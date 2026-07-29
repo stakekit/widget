@@ -17,6 +17,7 @@ import {
 import type { WagmiActions } from "../../../src/services/wallet/wagmi-actions";
 
 const transactionInput = {
+  family: "classic" as const,
   ledgerHwAppId: null,
   network: "ethereum" as Network,
   tx: JSON.stringify({

@@ -11,6 +11,7 @@ import type {
 import {
   flattenTransactionWorkflowTransactions,
   getCurrentTransactionWorkflowTransaction,
+  getTransactionSignCustomMessage,
   initializeTransactionWorkflow,
 } from "../../../services/workflow/transaction-workflow-model";
 import { makeTransactionWorkflowModule } from "../../transaction-workflow/state";
@@ -105,13 +106,9 @@ const getClassicTransactionStepsView = (
     ];
   });
   const signError = currentTransaction?.meta.signError ?? null;
-  const customSignErrorMessage =
-    signError &&
-    "customMessage" in signError &&
-    typeof signError.customMessage === "string" &&
-    signError.customMessage
-      ? signError.customMessage
-      : null;
+  const customSignErrorMessage = signError
+    ? getTransactionSignCustomMessage(signError)
+    : null;
   return {
     customSignErrorMessage,
     retryable:

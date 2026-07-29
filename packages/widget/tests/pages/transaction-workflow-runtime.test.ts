@@ -12,6 +12,7 @@ import {
   WalletBalancesInvalidationKey,
   YieldPositionsInvalidationKey,
 } from "../../src/services/resource-invalidation";
+import { WalletSigningError } from "../../src/services/wallet/domain/errors";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
   BorrowTransactionWorkflowInput,
@@ -114,6 +115,11 @@ const borrowAction = ({
     hasNextStep,
     id,
     integrationId: "morpho-blue",
+    rawArguments: {
+      amount: "1",
+      amountRaw: "1000000",
+      marketId: "market-1",
+    },
     status,
     totalSteps,
     transactions: transactions.map((transaction) =>
@@ -320,7 +326,13 @@ describe("transaction workflow runtime", () => {
             }),
             operations: makeOperations({
               completeWorkflow,
-              signTransaction: () => Effect.fail(new Error("rejected")),
+              signTransaction: () =>
+                Effect.fail(
+                  new WalletSigningError({
+                    cause: new Error("rejected"),
+                    operation: "transaction",
+                  })
+                ),
             }),
           });
           const failed = yield* waitForState(
@@ -386,12 +398,17 @@ describe("transaction workflow runtime", () => {
         Effect.suspend(() => {
           signAttempts += 1;
           return signAttempts === 1
-            ? Effect.fail(new Error("sign failed"))
+            ? Effect.fail(
+                new WalletSigningError({
+                  cause: new Error("sign failed"),
+                  operation: "transaction",
+                })
+              )
             : Effect.succeed({
                 broadcasted: false as const,
                 signedTx: signedPayload,
               });
-        }) as never,
+        }),
       submitClassicSigned: () =>
         Effect.suspend(() => {
           submitAttempts += 1;
@@ -472,7 +489,11 @@ describe("transaction workflow runtime", () => {
     );
     expect(wrongWallet).toMatchObject({
       _tag: "SignFailed",
-      error: { _tag: "TransactionSignError", transactionId: "borrow-1" },
+      error: {
+        _tag: "TransactionSignError",
+        reason: { _tag: "WalletUnavailable", detail: "account-changed" },
+        transactionId: "borrow-1",
+      },
     });
 
     const invalidAction = borrowAction({
@@ -506,6 +527,7 @@ describe("transaction workflow runtime", () => {
       error: {
         _tag: "TransactionSignError",
         message: "Borrow transaction payload could not be decoded.",
+        reason: { _tag: "DecodeFailed" },
       },
     });
   });
@@ -529,6 +551,13 @@ describe("transaction workflow runtime", () => {
           transactionHash,
         })
       );
+      const signTransaction = vi.fn(
+        () =>
+          Effect.succeed({
+            broadcasted,
+            signedTx: broadcasted ? transactionHash : signedPayload,
+          }) as never
+      );
       const result = await runToCompletion(
         new BorrowTransactionWorkflowInput({
           action,
@@ -537,16 +566,30 @@ describe("transaction workflow runtime", () => {
         makeOperations({
           getBorrowAction: () => Effect.succeed(confirmed(action)),
           getWalletState: Effect.succeed(walletState("base")),
-          signTransaction: () =>
-            Effect.succeed({
-              broadcasted,
-              signedTx: broadcasted ? transactionHash : signedPayload,
-            }) as never,
+          signTransaction,
           submitBorrowTransaction: submit,
         })
       );
       const submission = result.finalState.context.submissions[0];
 
+      expect(signTransaction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          family: "borrow",
+          txMeta: {
+            actionId: `borrow-${broadcasted}`,
+            actionType: "borrow",
+            address,
+            integrationId: "morpho-blue",
+            rawArguments: {
+              amount: "1",
+              amountRaw: "1000000",
+              marketId: "market-1",
+            },
+            txId: "borrow-1",
+            txType: "BORROW",
+          },
+        })
+      );
       expect(submit).toHaveBeenCalledWith({
         command: broadcasted
           ? { transactionHash }

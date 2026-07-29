@@ -30,7 +30,7 @@ import type { BuildPolkadotLedgerTransaction } from "./polkadot-ledger-transacti
 type PrepareLedgerLiveTransactionParams = {
   tx: string;
   network: string;
-  txMeta: SKTxMeta;
+  txMeta?: SKTxMeta;
 };
 
 const GasEstimate = Schema.NullOr(
@@ -89,12 +89,17 @@ export const makePrepareLedgerLiveTransaction: Effect.Effect<PrepareLedgerLiveTr
       })
     );
 
-    return ({ network, tx, txMeta }) =>
-      network === SubstrateNetworks.Polkadot
-        ? preparePolkadotTransaction({ loadPolkadotBuilder, tx, txMeta })
-        : Effect.fromResult(
-            prepareSynchronousTransaction({ network, tx, txMeta })
-          );
+    return ({ network, tx, txMeta }) => {
+      if (network === SubstrateNetworks.Polkadot) {
+        return txMeta
+          ? preparePolkadotTransaction({ loadPolkadotBuilder, tx, txMeta })
+          : Effect.fail("Missing classic transaction metadata");
+      }
+
+      return Effect.fromResult(
+        prepareSynchronousTransaction({ network, tx, txMeta })
+      );
+    };
   });
 
 const preparePolkadotTransaction = ({
@@ -155,6 +160,10 @@ const prepareSynchronousTransaction = ({
         )
       )
     );
+  }
+
+  if (!txMeta) {
+    return Result.fail("Missing classic transaction metadata");
   }
 
   switch (network) {

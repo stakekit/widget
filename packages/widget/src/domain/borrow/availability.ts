@@ -3,6 +3,7 @@ import { Data } from "effect";
 type BorrowFeatureConfiguration = {
   readonly borrowEnabled: boolean;
   readonly dashboardVariant?: boolean;
+  readonly hasExternalProviderBorrowCapability: boolean;
   readonly yieldGrouping: "category" | "flat";
 };
 
@@ -21,6 +22,7 @@ export class InvalidBorrowFeatureConfiguration extends Data.TaggedError(
 export const validateBorrowFeatureConfiguration = ({
   borrowEnabled,
   dashboardVariant,
+  hasExternalProviderBorrowCapability,
   yieldGrouping,
 }: BorrowFeatureConfiguration): void => {
   if (!borrowEnabled) return;
@@ -34,6 +36,13 @@ export const validateBorrowFeatureConfiguration = ({
   if (yieldGrouping !== "category") {
     throw new InvalidBorrowFeatureConfiguration({
       message: 'Borrow requires yieldGrouping to be "category".',
+    });
+  }
+
+  if (!hasExternalProviderBorrowCapability) {
+    throw new InvalidBorrowFeatureConfiguration({
+      message:
+        "Borrow requires externalProviders.provider.sendBorrowTransaction.",
     });
   }
 };

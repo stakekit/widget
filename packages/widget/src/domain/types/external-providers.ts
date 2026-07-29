@@ -1,5 +1,7 @@
 import { Data, Effect } from "effect";
 import type {
+  SKBorrowExternalProviders,
+  SKBorrowTxMeta,
   SKExternalProviders,
   SKTx,
   SKTxMeta,
@@ -17,8 +19,23 @@ export type CurrentRef<A> = {
   readonly current: A;
 };
 
+export type ExternalProviderSnapshot =
+  | Readonly<SKExternalProviders>
+  | Readonly<SKBorrowExternalProviders>;
+
+const isBorrowExternalProvider = (
+  snapshot: ExternalProviderSnapshot
+): snapshot is Readonly<SKBorrowExternalProviders> =>
+  snapshot.supportsBorrow === true;
+
+export const hasValidBorrowProviderContract = (
+  snapshot: ExternalProviderSnapshot
+): boolean =>
+  isBorrowExternalProvider(snapshot) &&
+  typeof snapshot.provider.sendBorrowTransaction === "function";
+
 export class ExternalProvider {
-  constructor(private variantProvider: CurrentRef<SKExternalProviders>) {}
+  constructor(private variantProvider: CurrentRef<ExternalProviderSnapshot>) {}
 
   sendTransaction(tx: SKTx, txMeta: SKTxMeta) {
     const sendTransaction =
@@ -33,26 +50,22 @@ export class ExternalProvider {
       );
     }
 
-    return Effect.tryPromise({
-      try: () => sendTransaction(tx, txMeta),
-      catch: toExternalProviderError,
-    }).pipe(
-      Effect.flatMap((res) => {
-        if (typeof res === "string") {
-          return Effect.succeed(res);
-        }
+    return sendExternalTransaction(() => sendTransaction(tx, txMeta));
+  }
 
-        if (res.type === "success") {
-          return Effect.succeed(res.txHash);
-        }
+  sendBorrowTransaction(tx: SKTx, txMeta: SKBorrowTxMeta) {
+    const config = this.variantProvider.current;
+    if (!isBorrowExternalProvider(config)) {
+      return Effect.fail(
+        new ExternalProviderError({
+          customMessage: null,
+          message: "Borrow transaction capability is unavailable",
+        })
+      );
+    }
 
-        return Effect.fail(
-          new ExternalProviderError({
-            customMessage: res.error,
-            message: res.error ?? "External provider failed",
-          })
-        );
-      })
+    return sendExternalTransaction(() =>
+      config.provider.sendBorrowTransaction(tx, txMeta)
     );
   }
 
@@ -91,3 +104,32 @@ const toExternalProviderError = (error: unknown) => {
     message: customMessage ?? "External provider failed",
   });
 };
+
+type ExternalTransactionResult = Awaited<
+  ReturnType<SKExternalProviders["provider"]["sendTransaction"]>
+>;
+
+const sendExternalTransaction = (
+  send: () => Promise<ExternalTransactionResult>
+) =>
+  Effect.tryPromise({
+    try: send,
+    catch: toExternalProviderError,
+  }).pipe(
+    Effect.flatMap((result) => {
+      if (typeof result === "string") {
+        return Effect.succeed(result);
+      }
+
+      if (result.type === "success") {
+        return Effect.succeed(result.txHash);
+      }
+
+      return Effect.fail(
+        new ExternalProviderError({
+          customMessage: result.error,
+          message: result.error ?? "External provider failed",
+        })
+      );
+    })
+  );

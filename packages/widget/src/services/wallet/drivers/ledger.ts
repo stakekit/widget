@@ -38,12 +38,7 @@ export const makeLedgerWalletDriver = ({
   readonly connector: Connector;
   readonly currentAccountId: string | undefined;
 }) => ({
-  signTransaction: ({
-    ledgerHwAppId,
-    network,
-    tx,
-    txMeta,
-  }: WalletSignTransactionInput) =>
+  signTransaction: (input: WalletSignTransactionInput) =>
     Effect.gen(function* () {
       const ledgerConnector = yield* requireLedgerConnector(connector);
       if (!currentAccountId) {
@@ -56,7 +51,11 @@ export const makeLedgerWalletDriver = ({
       }
 
       const prepared = yield* ledgerConnector
-        .prepareTransaction({ network, tx, txMeta })
+        .prepareTransaction({
+          network: input.network,
+          tx: input.tx,
+          txMeta: input.family === "classic" ? input.txMeta : undefined,
+        })
         .pipe(Effect.mapError((cause) => new WalletDecodeError({ cause })));
       const deserializedTransaction = yield* Effect.try({
         try: () => ledgerConnector.deserializeTransaction(prepared),
@@ -67,7 +66,7 @@ export const makeLedgerWalletDriver = ({
           ledgerConnector.walletApiClient.transaction.signAndBroadcast(
             currentAccountId,
             deserializedTransaction,
-            ledgerHwAppId ? { hwAppId: ledgerHwAppId } : undefined
+            input.ledgerHwAppId ? { hwAppId: input.ledgerHwAppId } : undefined
           ),
         catch: (cause) =>
           new WalletBroadcastError({ cause, customMessage: null }),

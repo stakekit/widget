@@ -20,12 +20,11 @@ import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
 import type { EvmChainsMap } from "../../domain/types/chains/evm";
 import type { MiscChainsMap } from "../../domain/types/chains/misc";
 import type { SubstrateChainsMap } from "../../domain/types/chains/substrate";
-import type { CurrentRef } from "../../domain/types/external-providers";
 import type {
-  SettingsProps,
-  SKExternalProviders,
-  VariantProps,
-} from "../../public-api/types";
+  CurrentRef,
+  ExternalProviderSnapshot,
+} from "../../domain/types/external-providers";
+import type { SettingsProps, VariantProps } from "../../public-api/types";
 import { config } from "../../shared/config/widget-defaults";
 import { isLedgerDappBrowserProvider } from "./browser-environment";
 import { buildsEcosystemConnectors } from "./connector-mode";
@@ -91,7 +90,7 @@ export type BuildWagmiConfigOptions = {
     name: string;
     iconBackground: string;
   };
-  externalProviders?: CurrentRef<SKExternalProviders>;
+  externalProviders?: CurrentRef<ExternalProviderSnapshot>;
   enabledNetworks: EnabledNetworks;
   forceWalletConnectOnly: boolean;
   customConnectors?: (chains: Chain[]) => WalletList;

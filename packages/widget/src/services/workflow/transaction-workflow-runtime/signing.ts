@@ -2,25 +2,54 @@ import { Effect, Match } from "effect";
 import type { Action as BorrowAction } from "../../../domain/borrow/action";
 import { decodeBorrowTransactionForWallet } from "../../../domain/borrow/transaction";
 import type { Network } from "../../../domain/schema/network-model";
-import type { SKTxMeta } from "../../../public-api/types";
+import type { SKBorrowTxMeta } from "../../../public-api/types";
+import type { WalletRuntimeInvariantError } from "../../wallet/domain/errors";
 import { sameWalletScopeOwner } from "../../wallet/domain/scope";
 import {
-  TransactionSignError,
+  makeTransactionSignError,
+  type TransactionSignFailureReason,
+  type TransactionSignWalletOperationCause,
   type TransactionWorkflowContext,
   updateCurrentTransactionWorkflowTransaction,
 } from "../transaction-workflow-model";
 import { TransactionWorkflowOperationsService } from "../transaction-workflow-operations-service";
 import { type CurrentWorkflow, requireCurrentWorkflow } from "./current";
 
-const getWalletCustomMessage = (error: unknown): string | null =>
-  typeof error === "object" &&
-  error !== null &&
-  "_tag" in error &&
-  error._tag === "WalletBroadcastError" &&
-  "customMessage" in error &&
-  typeof error.customMessage === "string"
-    ? error.customMessage
-    : null;
+type WalletSignFailure =
+  | TransactionSignWalletOperationCause
+  | WalletRuntimeInvariantError;
+
+const walletSignFailureReason = (
+  cause: WalletSignFailure,
+  operation: "message" | "transaction"
+): TransactionSignFailureReason =>
+  Match.valueTags(cause, {
+    WalletBroadcastError: (cause) => ({
+      _tag: "WalletOperationFailed" as const,
+      cause,
+      operation,
+    }),
+    WalletCapabilityUnavailableError: (cause) => ({
+      _tag: "WalletOperationFailed" as const,
+      cause,
+      operation,
+    }),
+    WalletDecodeError: (cause) => ({
+      _tag: "WalletOperationFailed" as const,
+      cause,
+      operation,
+    }),
+    WalletRuntimeInvariantError: (cause) => ({
+      _tag: "WalletUnavailable" as const,
+      cause,
+      detail: "state-unavailable" as const,
+    }),
+    WalletSigningError: (cause) => ({
+      _tag: "WalletOperationFailed" as const,
+      cause,
+      operation,
+    }),
+  });
 
 const validateWallet = Effect.fn("TransactionWorkflow.validateWallet")(
   function* ({
@@ -37,34 +66,43 @@ const validateWallet = Effect.fn("TransactionWorkflow.validateWallet")(
       Match.tag("Borrow", ({ domain }) => domain.action.address),
       Match.exhaustive
     );
-    const error = (message: string, cause?: unknown) =>
-      new TransactionSignError({
+    const fail = (reason: TransactionSignFailureReason) =>
+      makeTransactionSignError({
         batchId: batch.id,
-        cause,
-        customMessage: null,
-        message,
         network,
+        reason,
         transactionId: transaction.source.transaction.id,
         workflowId,
       });
     const wallet = yield* operations.getWalletState.pipe(
       Effect.mapError((cause) =>
-        error("Wallet state is unavailable for transaction signing.", cause)
+        fail({
+          _tag: "WalletUnavailable",
+          cause,
+          detail: "state-unavailable",
+        })
       )
     );
 
     if (wallet.status !== "connected") {
-      return yield* error("Wallet is not connected for transaction signing.");
+      return yield* fail({
+        _tag: "WalletUnavailable",
+        detail: "disconnected",
+      });
     }
 
     if (!expectedAddress) {
-      return yield* error("The transaction workflow has no wallet address.");
+      return yield* fail({
+        _tag: "WalletUnavailable",
+        detail: "no-address",
+      });
     }
 
     if (wallet.network !== network) {
-      return yield* error(
-        "Wallet network changed during transaction execution."
-      );
+      return yield* fail({
+        _tag: "WalletUnavailable",
+        detail: "network-changed",
+      });
     }
 
     if (
@@ -73,15 +111,13 @@ const validateWallet = Effect.fn("TransactionWorkflow.validateWallet")(
         { address: expectedAddress, network: wallet.network }
       )
     ) {
-      return yield* error(
-        "Wallet account changed during transaction execution."
-      );
+      return yield* fail({
+        _tag: "WalletUnavailable",
+        detail: "account-changed",
+      });
     }
   }
 );
-
-const getBorrowActionAmount = (action: BorrowAction) =>
-  action.rawArguments?.amount ?? action.rawArguments?.amountRaw ?? 0;
 
 const getBorrowTransactionMeta = ({
   action,
@@ -89,20 +125,53 @@ const getBorrowTransactionMeta = ({
 }: {
   readonly action: BorrowAction;
   readonly transaction: BorrowAction["transactions"][number];
-}) =>
-  ({
+}): SKBorrowTxMeta | null => {
+  const rawArguments = action.rawArguments;
+  if (!rawArguments) return null;
+
+  return {
     actionId: action.id,
     actionType: action.action,
     address: action.address,
-    amount: getBorrowActionAmount(action).toString(),
-    amountRaw: action.rawArguments?.amountRaw?.toString(),
-    inputToken: undefined,
-    providersDetails: [],
-    rawArguments: action.rawArguments,
+    integrationId: action.integrationId,
+    rawArguments: {
+      marketId: rawArguments.marketId,
+      ...(rawArguments.amount == null
+        ? {}
+        : { amount: rawArguments.amount.toString() }),
+      ...(rawArguments.amountRaw == null
+        ? {}
+        : { amountRaw: rawArguments.amountRaw.toString() }),
+      ...(rawArguments.borrowAmount == null
+        ? {}
+        : { borrowAmount: rawArguments.borrowAmount }),
+      ...(rawArguments.collateralAmount == null
+        ? {}
+        : { collateralAmount: rawArguments.collateralAmount.toString() }),
+      ...(rawArguments.collateralAmountRaw == null
+        ? {}
+        : {
+            collateralAmountRaw: rawArguments.collateralAmountRaw.toString(),
+          }),
+      ...(rawArguments.collateralTokenAddress == null
+        ? {}
+        : {
+            collateralTokenAddress: rawArguments.collateralTokenAddress,
+          }),
+      ...(rawArguments.repayAll == null
+        ? {}
+        : { repayAll: rawArguments.repayAll }),
+      ...(rawArguments.targetLtv == null
+        ? {}
+        : { targetLtv: rawArguments.targetLtv }),
+      ...(rawArguments.tokenAddress == null
+        ? {}
+        : { tokenAddress: rawArguments.tokenAddress }),
+    },
     txId: transaction.id,
     txType: transaction.type,
-    yieldId: action.integrationId,
-  }) as SKTxMeta;
+  };
+};
 
 export const prepareAndSign = Effect.fn("TransactionWorkflow.prepareAndSign")(
   function* (context: TransactionWorkflowContext) {
@@ -111,13 +180,11 @@ export const prepareAndSign = Effect.fn("TransactionWorkflow.prepareAndSign")(
     const { batch, transaction, workflowId } = current;
     const { source } = transaction;
     const network = source.transaction.network;
-    const fail = (message: string, cause?: unknown) =>
-      new TransactionSignError({
+    const fail = (reason: TransactionSignFailureReason) =>
+      makeTransactionSignError({
         batchId: batch.id,
-        cause,
-        customMessage: getWalletCustomMessage(cause),
-        message,
         network,
+        reason,
         transactionId: source.transaction.id,
         workflowId,
       });
@@ -129,7 +196,7 @@ export const prepareAndSign = Effect.fn("TransactionWorkflow.prepareAndSign")(
         const { source } = transaction;
 
         if (source.transaction.unsignedTransaction == null) {
-          return Effect.fail(fail("The transaction has no unsigned payload."));
+          return Effect.fail(fail({ _tag: "MissingUnsignedPayload" }));
         }
 
         const payload =
@@ -143,10 +210,13 @@ export const prepareAndSign = Effect.fn("TransactionWorkflow.prepareAndSign")(
                 broadcasted: false as const,
                 signedTx,
               })),
-              Effect.mapError((cause) => fail("Message signing failed.", cause))
+              Effect.mapError((cause) =>
+                fail(walletSignFailureReason(cause, "message"))
+              )
             )
           : operations
               .signTransaction({
+                family: "classic",
                 ledgerHwAppId: null,
                 network: network as Network,
                 tx: payload,
@@ -162,31 +232,35 @@ export const prepareAndSign = Effect.fn("TransactionWorkflow.prepareAndSign")(
               })
               .pipe(
                 Effect.mapError((cause) =>
-                  fail("Transaction signing failed.", cause)
+                  fail(walletSignFailureReason(cause, "transaction"))
                 )
               );
       }),
       Match.tag("Borrow", ({ domain, transaction }) => {
         const { source } = transaction;
+        const txMeta = getBorrowTransactionMeta({
+          action: domain.action,
+          transaction: source.transaction,
+        });
+
+        if (!txMeta) {
+          return Effect.fail(fail({ _tag: "MissingBorrowMeta" }));
+        }
 
         return decodeBorrowTransactionForWallet(source.transaction).pipe(
-          Effect.mapError((cause) =>
-            fail("Borrow transaction payload could not be decoded.", cause)
-          ),
+          Effect.mapError((cause) => fail({ _tag: "DecodeFailed", cause })),
           Effect.flatMap((tx) =>
             operations
               .signTransaction({
+                family: "borrow",
                 ledgerHwAppId: null,
                 network: network as Network,
                 tx,
-                txMeta: getBorrowTransactionMeta({
-                  action: domain.action,
-                  transaction: source.transaction,
-                }),
+                txMeta,
               })
               .pipe(
                 Effect.mapError((cause) =>
-                  fail("Transaction signing failed.", cause)
+                  fail(walletSignFailureReason(cause, "transaction"))
                 )
               )
           )

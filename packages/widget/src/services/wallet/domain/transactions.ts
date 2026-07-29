@@ -2,7 +2,7 @@ import type { Address, Hex } from "viem";
 import type { Connector } from "wagmi";
 import type { LegacyTransaction } from "../../../domain/schema/legacy-models";
 import type { Network } from "../../../domain/schema/network-model";
-import type { SKTxMeta } from "../../../public-api/types";
+import type { SKBorrowTxMeta, SKTxMeta } from "../../../public-api/types";
 
 type WalletEvmTransactionInputCommon = {
   readonly account?: Address;
@@ -30,12 +30,23 @@ export type WalletEvmTransactionInput = WalletEvmTransactionInputCommon &
       }
   );
 
-export type WalletSignTransactionInput = {
+type WalletSignTransactionInputFields = {
   readonly ledgerHwAppId: string | null;
   readonly network: Network;
   readonly tx: NonNullable<LegacyTransaction["unsignedTransaction"]>;
-  readonly txMeta: SKTxMeta;
 };
+
+export type WalletSignTransactionInput = WalletSignTransactionInputFields &
+  (
+    | {
+        readonly family: "classic";
+        readonly txMeta: SKTxMeta;
+      }
+    | {
+        readonly family: "borrow";
+        readonly txMeta: SKBorrowTxMeta;
+      }
+  );
 
 export type WalletSignedPayloadResult = {
   readonly broadcasted: false;

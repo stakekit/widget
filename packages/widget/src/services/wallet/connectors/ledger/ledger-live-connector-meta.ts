@@ -36,7 +36,7 @@ export type ExtraProps = ConnectorWithFilteredChains & {
   }: {
     network: string;
     tx: string;
-    txMeta: SKTxMeta;
+    txMeta?: SKTxMeta;
   }) => Effect.Effect<RawTransaction, string>;
 };
 

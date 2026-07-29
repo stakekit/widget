@@ -6,13 +6,18 @@ import type { Connector } from "wagmi";
 import { makeLedgerWalletDriver } from "../../../src/services/wallet/drivers/ledger";
 
 const account = { id: "ledger-account" } as Account;
+type LedgerTransactionInput = Parameters<
+  ReturnType<typeof makeLedgerWalletDriver>["signTransaction"]
+>[0];
 const transactionInput = {
+  family: "classic" as const,
   ledgerHwAppId: "ethereum",
   network: "ethereum" as const,
   tx: "{}",
-  txMeta: {} as Parameters<
-    ReturnType<typeof makeLedgerWalletDriver>["signTransaction"]
-  >[0]["txMeta"],
+  txMeta: {} as Extract<
+    LedgerTransactionInput,
+    { readonly family: "classic" }
+  >["txMeta"],
 };
 
 const makeConnector = () => {
