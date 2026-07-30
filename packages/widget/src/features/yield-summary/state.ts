@@ -17,8 +17,8 @@ export {
 } from "./state/yield-insights";
 export {
   makeYieldSummary,
-  makeYieldSummaryFamily,
   YieldSummaryKey,
   type YieldSummaryProvider,
   type YieldSummaryRewardToken,
+  yieldSummaryAtom,
 } from "./state/yield-summary";

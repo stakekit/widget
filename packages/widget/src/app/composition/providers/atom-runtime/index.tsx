@@ -1,5 +1,5 @@
 import { RegistryProvider } from "@effect/atom-react";
-import type { ComponentProps, PropsWithChildren } from "react";
+import type { PropsWithChildren } from "react";
 import type { RouteObject } from "react-router";
 import type { WidgetConfig } from "../../../../services/config/widget-config";
 import { config } from "../../../../shared/config/widget-defaults";
@@ -8,16 +8,12 @@ import { applicationRoutesAtom } from "../../../runtime/application-router-runti
 import { WidgetConfigBoundaryAdapter } from "../widget-config-binding";
 
 type SKAtomRegistryProviderProps = PropsWithChildren<{
-  readonly initialValues?: ComponentProps<
-    typeof RegistryProvider
-  >["initialValues"];
   readonly routes: ReadonlyArray<RouteObject>;
   readonly settings: WidgetConfig;
 }>;
 
 export const SKAtomRegistryProvider = ({
   children,
-  initialValues,
   routes,
   settings,
 }: SKAtomRegistryProviderProps) => {
@@ -25,7 +21,6 @@ export const SKAtomRegistryProvider = ({
     <RegistryProvider
       defaultIdleTTL={config.atomResources.defaultIdleTTL}
       initialValues={[
-        ...(initialValues ?? []),
         [widgetConfigAtom, settings],
         [applicationRoutesAtom, routes],
       ]}

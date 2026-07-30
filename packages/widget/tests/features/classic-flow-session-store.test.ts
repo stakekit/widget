@@ -1,24 +1,27 @@
-import { Schema } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import { Effect, Layer, Schema, SubscriptionRef } from "effect";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   normalizeWidgetConfig,
   widgetConfigAtom,
 } from "../../src/app/config/settings";
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   type ClassicTransactionFlowIntake,
   isClassicTransactionFlowWalletScopeValid,
 } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state";
-import {
-  finishClassicTransactionFlowAtom,
-  makeClassicFlowSessionStore,
-} from "../../src/features/classic-transaction-flow/state/flow-session-store";
+import { finishClassicTransactionFlowAtom } from "../../src/features/classic-transaction-flow/state/flow-session-store";
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import {
+  disconnectedLedgerConnectorState,
+  type NormalizedWalletState,
+  type WalletState,
+} from "../../src/services/wallet/domain/state";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import { yieldApiYieldFixture } from "../fixtures";
 import { makeStartClassicFlowSession } from "../utils/classic-flow-session";
 
@@ -54,41 +57,104 @@ const makeEnterIntake = (): ClassicTransactionFlowIntake => {
   };
 };
 
+const makeConnectedWalletState = (
+  scope: WalletScopeKey
+): NormalizedWalletState => ({
+  additionalAddresses: scope.additionalAddresses,
+  address: scope.address,
+  chain: {} as never,
+  connector: {} as never,
+  connectorChains: [],
+  isLedgerLive: false,
+  isLedgerLiveAccountPlaceholder: false,
+  ledgerAccounts: [],
+  network: scope.network,
+  status: "connected",
+});
+
+const makeMutableWalletRegistry = (initialScope: WalletScopeKey) => {
+  const walletState = Effect.runSync(
+    SubscriptionRef.make<WalletState>({
+      connection: makeConnectedWalletState(initialScope),
+      ledger: disconnectedLedgerConnectorState,
+    })
+  );
+  const registry = AtomRegistry.make({
+    initialValues: [
+      [
+        walletRuntime.layer,
+        Layer.succeed(
+          WalletService,
+          WalletService.of({
+            state: SubscriptionRef.get(walletState),
+            states: SubscriptionRef.changes(walletState),
+            wagmiConfig: {} as never,
+          } as never)
+        ) as never,
+      ],
+    ],
+  });
+  const unmount = registry.mount(classicFlowSessionStore.currentSessionAtom);
+
+  return {
+    registry,
+    setWalletScope: (scope: WalletScopeKey) =>
+      Effect.runSync(
+        SubscriptionRef.set(walletState, {
+          connection: makeConnectedWalletState(scope),
+          ledger: disconnectedLedgerConnectorState,
+        })
+      ),
+    unmount,
+  } as const;
+};
+
 describe("Classic Flow Session intake store", () => {
   it("rejects a Start whose expected owner is no longer current", () => {
-    const store = makeClassicFlowSessionStore(Atom.make(otherWalletScope));
-    const registry = AtomRegistry.make();
+    const registry = AtomRegistry.make({
+      initialValues: [[walletScopeAtom, otherWalletScope]],
+    });
 
     registry.set(
-      store.startAtom,
+      classicFlowSessionStore.startAtom,
       makeStartClassicFlowSession(makeEnterIntake())
     );
 
-    expect(registry.get(store.startAtom)).toBeNull();
-    expect(registry.get(store.currentSessionAtom)).toBeNull();
+    expect(registry.get(classicFlowSessionStore.startAtom)).toBeNull();
+    expect(registry.get(classicFlowSessionStore.currentSessionAtom)).toBeNull();
     registry.dispose();
   });
 
-  it("abandons the stored Flow Session when its owner changes", () => {
-    const currentWalletScopeAtom = Atom.make<WalletScopeKey | null>(
-      walletScope
-    );
-    const store = makeClassicFlowSessionStore(currentWalletScopeAtom);
-    const registry = AtomRegistry.make();
+  it("abandons the stored Flow Session when its owner changes", async () => {
+    const { registry, setWalletScope, unmount } =
+      makeMutableWalletRegistry(walletScope);
 
-    registry.set(
-      store.startAtom,
-      makeStartClassicFlowSession(makeEnterIntake())
-    );
-    expect(registry.get(store.currentSessionAtom)).not.toBeNull();
+    try {
+      await vi.waitFor(() =>
+        expect(registry.get(walletScopeAtom)).toEqual(walletScope)
+      );
+      registry.set(
+        classicFlowSessionStore.startAtom,
+        makeStartClassicFlowSession(makeEnterIntake())
+      );
+      expect(
+        registry.get(classicFlowSessionStore.currentSessionAtom)
+      ).not.toBeNull();
 
-    registry.set(currentWalletScopeAtom, otherWalletScope);
+      setWalletScope(otherWalletScope);
 
-    expect(registry.get(store.currentSessionAtom)).toBeNull();
-    registry.dispose();
+      await vi.waitFor(() =>
+        expect(
+          registry.get(classicFlowSessionStore.currentSessionAtom)
+        ).toBeNull()
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
   });
 
-  it("captures the current full scope without abandoning the same owner", () => {
+  it("captures the current full scope without abandoning the same owner", async () => {
     const scopeAtStart = new WalletScopeKey({
       additionalAddresses: {
         lidoStakeAccounts: ["lido-at-start"],
@@ -105,26 +171,35 @@ describe("Classic Flow Session intake store", () => {
       address: walletScope.address,
       network: walletScope.network,
     });
-    const currentWalletScopeAtom = Atom.make<WalletScopeKey | null>(
-      scopeAtStart
-    );
-    const store = makeClassicFlowSessionStore(currentWalletScopeAtom);
-    const registry = AtomRegistry.make();
+    const { registry, setWalletScope, unmount } =
+      makeMutableWalletRegistry(scopeAtStart);
 
-    registry.set(
-      store.startAtom,
-      makeStartClassicFlowSession(makeEnterIntake())
-    );
-    const started = registry.get(store.currentSessionAtom);
+    try {
+      await vi.waitFor(() =>
+        expect(registry.get(walletScopeAtom)).toEqual(scopeAtStart)
+      );
+      registry.set(
+        classicFlowSessionStore.startAtom,
+        makeStartClassicFlowSession(makeEnterIntake())
+      );
+      const started = registry.get(classicFlowSessionStore.currentSessionAtom);
 
-    expect(started?.intake.walletScope).toEqual(scopeAtStart);
-    expect(started?.intake.walletScope).not.toBe(scopeAtStart);
+      expect(started?.intake.walletScope).toEqual(scopeAtStart);
+      expect(started?.intake.walletScope).not.toBe(scopeAtStart);
 
-    registry.set(currentWalletScopeAtom, scopeAfterStart);
+      setWalletScope(scopeAfterStart);
 
-    expect(registry.get(store.currentSessionAtom)).toBe(started);
-    expect(started?.intake.walletScope).toEqual(scopeAtStart);
-    registry.dispose();
+      await vi.waitFor(() =>
+        expect(registry.get(walletScopeAtom)).toEqual(scopeAfterStart)
+      );
+      expect(registry.get(classicFlowSessionStore.currentSessionAtom)).toBe(
+        started
+      );
+      expect(started?.intake.walletScope).toEqual(scopeAtStart);
+    } finally {
+      unmount();
+      registry.dispose();
+    }
   });
 
   it("finishes only the current Flow Session through runtime navigation", async () => {
@@ -165,15 +240,22 @@ describe("Classic Flow Session intake store", () => {
   });
 
   it("isolates equal sessions and ignores cleanup from the replaced session", () => {
-    const store = makeClassicFlowSessionStore(Atom.make(walletScope));
-    const registry = AtomRegistry.make();
+    const registry = AtomRegistry.make({
+      initialValues: [[walletScopeAtom, walletScope]],
+    });
     const intake = makeEnterIntake();
     if (intake._tag !== "Enter") throw new Error("Expected Enter intake");
 
-    registry.set(store.startAtom, makeStartClassicFlowSession(intake));
-    const first = registry.get(store.currentSessionAtom);
-    registry.set(store.startAtom, makeStartClassicFlowSession(intake));
-    const second = registry.get(store.currentSessionAtom);
+    registry.set(
+      classicFlowSessionStore.startAtom,
+      makeStartClassicFlowSession(intake)
+    );
+    const first = registry.get(classicFlowSessionStore.currentSessionAtom);
+    registry.set(
+      classicFlowSessionStore.startAtom,
+      makeStartClassicFlowSession(intake)
+    );
+    const second = registry.get(classicFlowSessionStore.currentSessionAtom);
 
     expect(first).not.toBeNull();
     expect(second).not.toBeNull();
@@ -191,11 +273,13 @@ describe("Classic Flow Session intake store", () => {
       second?.intake._tag === "Enter" ? second.intake.selectedStake : null
     ).not.toBe(intake.selectedStake);
 
-    if (first) registry.set(store.clearAtom, first.epoch);
-    expect(registry.get(store.currentSessionAtom)).toBe(second);
+    if (first) registry.set(classicFlowSessionStore.clearAtom, first.epoch);
+    expect(registry.get(classicFlowSessionStore.currentSessionAtom)).toBe(
+      second
+    );
 
-    if (second) registry.set(store.clearAtom, second.epoch);
-    expect(registry.get(store.currentSessionAtom)).toBeNull();
+    if (second) registry.set(classicFlowSessionStore.clearAtom, second.epoch);
+    expect(registry.get(classicFlowSessionStore.currentSessionAtom)).toBeNull();
   });
 
   it("validates wallet ownership without coupling to additional addresses", () => {

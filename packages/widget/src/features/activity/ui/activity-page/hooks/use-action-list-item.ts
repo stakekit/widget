@@ -2,13 +2,15 @@ import { useAtomValue } from "@effect/atom-react";
 import { Match } from "effect";
 import { useTranslation } from "react-i18next";
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
-import { YieldSummaryKey } from "../../../../yield-summary/state";
+import {
+  YieldSummaryKey,
+  yieldSummaryAtom,
+} from "../../../../yield-summary/state";
 import type { ActivityActionItem } from "../../../model/activity-action";
 import {
   type ActivityDirection,
   projectActivityActionListItem,
 } from "../../../model/activity-action-list-item";
-import { activityActionYieldSummaryAtom } from "../../../state/action-yield-summary";
 import type { ActivityIconType } from "../components/activity-icon";
 
 const ICON_TYPE_MAP: Record<ActivityDirection, ActivityIconType> = {
@@ -23,7 +25,7 @@ export const useActionListItem = (action: ActivityActionItem) => {
   const presentationTime = useAtomValue(presentationClockAtom);
   const locale = i18n.language;
   const providersDetails = useAtomValue(
-    activityActionYieldSummaryAtom(
+    yieldSummaryAtom(
       new YieldSummaryKey({
         yield: action.yieldData,
         validators: action.validatorsData,

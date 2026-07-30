@@ -3,13 +3,15 @@ import type { YieldAction } from "../../../../../domain/schema/action-models";
 import { getActionInputToken } from "../../../../../domain/types/action";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useTrackPage } from "../../../../tracking/state";
-import { YieldSummaryKey } from "../../../../yield-summary/state";
+import {
+  YieldSummaryKey,
+  yieldSummaryAtom,
+} from "../../../../yield-summary/state";
 import type { ClassicTransactionFlowIntake } from "../../../model/classic-transaction-flow";
 import {
   useClassicFlowExecution,
   useClassicFlowSession,
 } from "../../../react/classic-flow-route";
-import { classicFlowYieldSummaryAtom } from "../../../state/yield-summary";
 
 type ActivityIntake = Extract<
   ClassicTransactionFlowIntake,
@@ -35,7 +37,7 @@ const useActivityCompleteView = ({
     yieldDto: selectedYield,
   });
   const yieldSummary = useAtomValue(
-    classicFlowYieldSummaryAtom(
+    yieldSummaryAtom(
       new YieldSummaryKey({
         yield: selectedYield,
         validators: selectedValidators,

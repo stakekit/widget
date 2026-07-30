@@ -3,9 +3,11 @@ import BigNumber from "bignumber.js";
 import { getActionProviderYieldId } from "../../../../../domain/types/action";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useTrackPage } from "../../../../tracking/state";
-import { YieldSummaryKey } from "../../../../yield-summary/state";
+import {
+  YieldSummaryKey,
+  yieldSummaryAtom,
+} from "../../../../yield-summary/state";
 import { useClassicFlowIntake } from "../../../react/classic-flow-route";
-import { classicFlowYieldSummaryAtom } from "../../../state/yield-summary";
 import { CompletePage } from "./common.page";
 
 export const StakeCompletePage = () => {
@@ -15,7 +17,7 @@ export const StakeCompletePage = () => {
   const selectedStake = enterFlow.selectedStake;
   const selectedToken = enterFlow.selectedToken;
   const yieldSummary = useAtomValue(
-    classicFlowYieldSummaryAtom(
+    yieldSummaryAtom(
       new YieldSummaryKey({
         yield: selectedStake,
         validators: new Map(enterFlow.selectedValidators),

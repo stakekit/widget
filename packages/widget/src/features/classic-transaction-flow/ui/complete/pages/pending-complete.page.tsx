@@ -8,9 +8,11 @@ import {
 } from "../../../../portfolio/state";
 import { useUnstakeOrPendingActionParams } from "../../../../position-details/state";
 import { useTrackPage } from "../../../../tracking/state";
-import { YieldSummaryKey } from "../../../../yield-summary/state";
+import {
+  YieldSummaryKey,
+  yieldSummaryAtom,
+} from "../../../../yield-summary/state";
 import { useClassicFlowIntake } from "../../../react/classic-flow-route";
-import { classicFlowYieldSummaryAtom } from "../../../state/yield-summary";
 import { CompletePage } from "./common.page";
 
 export const PendingCompletePage = () => {
@@ -34,7 +36,7 @@ export const PendingCompletePage = () => {
   useTrackPage("pendingActionCompelete");
 
   const yieldSummary = useAtomValue(
-    classicFlowYieldSummaryAtom(
+    yieldSummaryAtom(
       new YieldSummaryKey({
         yield: integrationData,
         validators:

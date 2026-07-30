@@ -1,4 +1,9 @@
-import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
+import {
+  useAtom,
+  useAtomInitialValues,
+  useAtomSet,
+  useAtomValue,
+} from "@effect/atom-react";
 import { Deferred, Effect, Equal, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
@@ -148,6 +153,8 @@ const activityIntake = (): ClassicTransactionFlowIntake => {
 };
 
 const ClassicFlowRuntimeHarness = () => {
+  const intake = activityIntake();
+  useAtomInitialValues([[walletScopeAtom, intake.walletScope]]);
   const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
   const start = useAtomSet(classicFlowSessionStore.startAtom);
 
@@ -158,7 +165,7 @@ const ClassicFlowRuntimeHarness = () => {
       </output>
       <button
         type="button"
-        onClick={() => start(makeStartClassicFlowSession(activityIntake()))}
+        onClick={() => start(makeStartClassicFlowSession(intake))}
       >
         Start classic flow
       </button>
@@ -318,7 +325,6 @@ describe("Application Runtime identity", () => {
     const secondTrack = vi.fn();
     const app = await render(
       <SKAtomRegistryProvider
-        initialValues={[[walletScopeAtom, activityIntake().walletScope]]}
         routes={applicationRoutes}
         settings={settings(firstTrack)}
       >
@@ -341,7 +347,6 @@ describe("Application Runtime identity", () => {
 
     await app.rerender(
       <SKAtomRegistryProvider
-        initialValues={[[walletScopeAtom, activityIntake().walletScope]]}
         routes={applicationRoutes}
         settings={settings(secondTrack)}
       >

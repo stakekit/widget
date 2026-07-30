@@ -170,6 +170,14 @@ their complete input, failures remain typed, and mutation success refreshes
 only declared dependent resources. React hooks should be thin adapters over
 atoms or derived read models, not alternate state owners.
 
+Production composition interfaces represent production variability. Runtime
+providers, Atom constructors, and feature facades do not accept alternate
+Atoms, initial registry values, or optional dependencies solely for tests.
+Tests substitute through test-owned registries and Effect service Layers, or
+exercise deterministic production-used projections directly. Keyed families,
+tree-scoped modules, and constructors with multiple production compositions
+remain valid production seams.
+
 An Authoritative Resource is the sole owner of one cacheable canonical remote
 fact. Its interface accepts complete explicit identity and never reads current,
 selected, or visible feature state. It caches decoded domain-facing facts

@@ -10,9 +10,11 @@ import {
 } from "../../../../../../resources/yield-opportunity/provider";
 import { getRewardRateFormatted } from "../../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../../shared/lib/number-format";
-import { YieldSummaryKey } from "../../../../../yield-summary/state";
+import {
+  YieldSummaryKey,
+  yieldSummaryAtom,
+} from "../../../../../yield-summary/state";
 import type { PositionItem } from "../../../../resources/positions";
-import { portfolioPositionYieldSummaryAtom } from "../../../../state/position-yield-summary";
 
 export const usePositionListItem = (item: PositionItem) => {
   const yieldOpportunityResult = useAtomValue(
@@ -26,7 +28,7 @@ export const usePositionListItem = (item: PositionItem) => {
   );
 
   const providersDetails = useAtomValue(
-    portfolioPositionYieldSummaryAtom(
+    yieldSummaryAtom(
       new YieldSummaryKey({
         yield: integrationData,
         validators: item.type === "validators" ? item.validators : [],

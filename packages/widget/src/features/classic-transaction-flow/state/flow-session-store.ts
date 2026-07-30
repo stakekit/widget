@@ -137,76 +137,69 @@ const copyIntake = (
   }
 };
 
-export const makeClassicFlowSessionStore = (
-  currentWalletScopeAtom: Atom.Atom<WalletScopeKey | null>
-) => {
-  const stateAtom = Atom.writable<
-    ClassicFlowSessionStoreState,
-    ClassicFlowSessionStoreState
-  >(
-    (context) => {
-      const previous = context
-        .self<ClassicFlowSessionStoreState>()
-        .pipe(Option.getOrElse(() => initialState));
-      const currentWalletScope = context.get(currentWalletScopeAtom);
+const classicFlowSessionStateAtom = Atom.writable<
+  ClassicFlowSessionStoreState,
+  ClassicFlowSessionStoreState
+>(
+  (context) => {
+    const previous = context
+      .self<ClassicFlowSessionStoreState>()
+      .pipe(Option.getOrElse(() => initialState));
+    const currentWalletScope = context.get(walletScopeAtom);
 
-      return previous.current &&
-        !isClassicTransactionFlowWalletScopeValid(
-          previous.current.intake,
-          currentWalletScope
-        )
-        ? { ...previous, current: null }
-        : previous;
-    },
-    (context, state) => context.setSelf(state)
-  ).pipe(Atom.keepAlive, Atom.withLabel("classicFlowSessionStoreAtom"));
+    return previous.current &&
+      !isClassicTransactionFlowWalletScopeValid(
+        previous.current.intake,
+        currentWalletScope
+      )
+      ? { ...previous, current: null }
+      : previous;
+  },
+  (context, state) => context.setSelf(state)
+).pipe(Atom.keepAlive, Atom.withLabel("classicFlowSessionStoreAtom"));
 
-  const currentSessionAtom = Atom.make((get) => get(stateAtom).current).pipe(
-    Atom.withLabel("currentClassicFlowSessionAtom")
-  );
+const currentSessionAtom = Atom.make(
+  (get) => get(classicFlowSessionStateAtom).current
+).pipe(Atom.withLabel("currentClassicFlowSessionAtom"));
 
-  const startAtom = Atom.fnSync(
-    ({ destination, intake }: StartClassicFlowSession, context) => {
-      const currentWalletScope = context(currentWalletScopeAtom);
-      if (
-        !currentWalletScope ||
-        !isClassicTransactionFlowWalletScopeValid(intake, currentWalletScope)
-      ) {
-        return null;
-      }
+const startAtom = Atom.fnSync(
+  ({ destination, intake }: StartClassicFlowSession, context) => {
+    const currentWalletScope = context(walletScopeAtom);
+    if (
+      !currentWalletScope ||
+      !isClassicTransactionFlowWalletScopeValid(intake, currentWalletScope)
+    ) {
+      return null;
+    }
 
-      const state = context(stateAtom);
-      const session: ClassicFlowSession = {
-        destination,
-        epoch: state.nextEpoch,
-        intake: copyIntake(intake, currentWalletScope),
-      };
+    const state = context(classicFlowSessionStateAtom);
+    const session: ClassicFlowSession = {
+      destination,
+      epoch: state.nextEpoch,
+      intake: copyIntake(intake, currentWalletScope),
+    };
 
-      context.set(stateAtom, {
-        current: session,
-        nextEpoch: state.nextEpoch + 1,
-      });
-      return session;
-    },
-    { initialValue: null }
-  ).pipe(Atom.withLabel("startClassicFlowSessionAtom"));
+    context.set(classicFlowSessionStateAtom, {
+      current: session,
+      nextEpoch: state.nextEpoch + 1,
+    });
+    return session;
+  },
+  { initialValue: null }
+).pipe(Atom.withLabel("startClassicFlowSessionAtom"));
 
-  const clearAtom = Atom.fnSync((epoch: number, context) => {
-    const state = context(stateAtom);
-    if (state.current?.epoch !== epoch) return;
+const clearAtom = Atom.fnSync((epoch: number, context) => {
+  const state = context(classicFlowSessionStateAtom);
+  if (state.current?.epoch !== epoch) return;
 
-    context.set(stateAtom, { ...state, current: null });
-  }).pipe(Atom.withLabel("clearClassicFlowSessionAtom"));
+  context.set(classicFlowSessionStateAtom, { ...state, current: null });
+}).pipe(Atom.withLabel("clearClassicFlowSessionAtom"));
 
-  return {
-    clearAtom,
-    currentSessionAtom,
-    startAtom,
-  } as const;
-};
-
-export const classicFlowSessionStore =
-  makeClassicFlowSessionStore(walletScopeAtom);
+export const classicFlowSessionStore = {
+  clearAtom,
+  currentSessionAtom,
+  startAtom,
+} as const;
 
 export const startClassicFlowSessionAtom = appRuntime
   .fn((command: StartClassicFlowSessionCommand, context) =>

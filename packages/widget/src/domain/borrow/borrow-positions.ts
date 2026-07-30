@@ -1,16 +1,13 @@
+import { Schema } from "effect";
 import type {
   BorrowAccountSnapshot,
   SupplyBalance,
 } from "./borrow-account-snapshot";
-import {
-  decodePoolRiskId,
-  type MarketId,
-  type PoolRiskId,
-  type TokenAddress,
-} from "./ids";
+import { IntegrationId, type MarketId, type TokenAddress } from "./ids";
 import type { Integration } from "./integration";
 import type { Market } from "./market";
 import { type MarketPosition, makeMarketPosition } from "./market-position";
+import { BorrowNetwork } from "./network";
 import type { PendingAction } from "./pending-action";
 import {
   makeAccountRiskPosition,
@@ -23,6 +20,15 @@ type IntegrationAccountSnapshot = {
   readonly integration: Integration;
 };
 
+const PoolRiskId = Schema.TemplateLiteral([
+  BorrowNetwork,
+  Schema.Literal(":"),
+  IntegrationId,
+]).pipe(Schema.brand("BorrowPoolRiskId"));
+type PoolRiskId = typeof PoolRiskId.Type;
+
+const decodePoolRiskId = Schema.decodeSync(PoolRiskId);
+
 export type BorrowPositions = {
   readonly items: ReadonlyArray<MarketPosition>;
   readonly riskFor: (market: Market) => RiskPosition;
@@ -32,7 +38,7 @@ const getPoolRiskId = ({
   integrationId,
   network,
 }: Pick<Market, "integrationId" | "network">): PoolRiskId =>
-  decodePoolRiskId(`${integrationId}:${network}`);
+  decodePoolRiskId(`${network}:${integrationId}`);
 
 export const deriveBorrowPositions = ({
   integrationAccountSnapshots,

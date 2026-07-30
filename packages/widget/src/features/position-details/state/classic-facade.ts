@@ -10,7 +10,7 @@ import { isForceMaxAmount } from "../../../domain/types/stake";
 import { getYieldActionArg } from "../../../domain/types/yields";
 import { formatUsd } from "../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../shared/lib/number-format";
-import { YieldSummaryKey } from "../../yield-summary/state";
+import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/state";
 import {
   positionDetailsExitActionViewAtom,
   setPositionDetailsExitMaxAmountAtom,
@@ -28,7 +28,6 @@ import {
   refreshPositionDetailsExitKycAtom,
 } from "./exit-resources";
 import type { PositionDetailsWorkflowKey } from "./workflow";
-import { positionDetailsYieldSummaryAtom } from "./yield-summary";
 
 const hasCampaignRewardRate = (
   rewardRate: YieldRewardRateDto | null | undefined
@@ -57,7 +56,7 @@ export const positionDetailsClassicViewAtom = Atom.family(
         positionDetailsExitResourcesViewAtom(getExitResourcesKey(workflow))
       );
       const providers = get(
-        positionDetailsYieldSummaryAtom(
+        yieldSummaryAtom(
           new YieldSummaryKey({
             selectedProviderYieldId: null,
             validators:

@@ -26,13 +26,13 @@ import {
   CurrentYieldKycGateKey,
   currentYieldKycGateAtom,
   YieldSummaryKey,
+  yieldSummaryAtom,
 } from "../../yield-summary/state";
 import {
   dispatchPositionDetailsWorkflowAtom,
   positionDetailsWorkflowViewAtom,
 } from "./classic-view";
 import type { PositionDetailsWorkflowKey } from "./workflow";
-import { positionDetailsYieldSummaryAtom } from "./yield-summary";
 
 const positionDetailsFlowFactsAtom = Atom.family(
   (key: PositionDetailsWorkflowKey) =>
@@ -41,7 +41,7 @@ const positionDetailsFlowFactsAtom = Atom.family(
       const integration = workflow.integrationData;
       const wallet = get(walletConnectionStateAtom);
       const providers = get(
-        positionDetailsYieldSummaryAtom(
+        yieldSummaryAtom(
           new YieldSummaryKey({
             selectedProviderYieldId: null,
             validators:

@@ -6,13 +6,8 @@ import { getActionProviderYieldId } from "../../../domain/types/action";
 import { isBittensorStaking } from "../../../domain/types/yields";
 import { getFeesInUSD, getGasFeeInUSD } from "../../../shared/lib/formatters";
 import { getYieldEntryEstimatedRewards } from "../../yield-entry/state";
-import {
-  makeYieldSummaryFamily,
-  YieldSummaryKey,
-} from "../../yield-summary/state";
+import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/state";
 import type { ClassicTransactionFlowIntake } from "../model/classic-transaction-flow";
-
-export const classicFlowYieldSummaryAtom = makeYieldSummaryFamily();
 
 type ClassicFlowEnterIntake = Extract<
   ClassicTransactionFlowIntake,
@@ -51,7 +46,7 @@ export const makeClassicFlowStakeReviewViewAtom = (
   reviewAtom: Atom.Atom<ClassicStakeReviewResourceView>
 ) => {
   const stakeAmount = new BigNumber(intake.request.arguments?.amount ?? 0);
-  const yieldSummaryAtom = classicFlowYieldSummaryAtom(
+  const summaryAtom = yieldSummaryAtom(
     new YieldSummaryKey({
       selectedProviderYieldId: getActionProviderYieldId(intake.request),
       validators: new Map(intake.selectedValidators),
@@ -61,7 +56,7 @@ export const makeClassicFlowStakeReviewViewAtom = (
 
   return Atom.make((get) => {
     const review = get(reviewAtom);
-    const yieldSummary = get(yieldSummaryAtom);
+    const yieldSummary = get(summaryAtom);
     const rewardsTokenSymbol = isBittensorStaking(intake.selectedStake.id)
       ? EArray.head([...intake.selectedValidators.values()]).pipe(
           Option.map((validator) => validator.subnet?.tokenSymbol ?? ""),

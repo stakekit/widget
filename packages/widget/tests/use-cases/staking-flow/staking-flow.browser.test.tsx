@@ -1,7 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Array as EArray } from "effect";
 import { userEvent } from "vitest/browser";
-import { getYieldSummaryRewardToken } from "../../../src/features/yield-summary/state/yield-summary";
+import { getYieldSummaryRewardToken } from "../../../src/features/yield-summary/model/yield-summary";
 import { formatAddress } from "../../../src/shared/lib/general";
 import { formatNumber } from "../../../src/shared/lib/number-format";
 import { describe, expect, it } from "../../utils/test-extend";
