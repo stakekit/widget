@@ -3,9 +3,9 @@ packages:
   - packages/examples/*
 
 catalog:
-  "@biomejs/biome": ^2.4.15
-  "@commitlint/cli": ^21.0.0
-  "@commitlint/config-conventional": ^21.0.0
+  "@biomejs/biome": ^2.5.0
+  "@commitlint/cli": ^21.0.2
+  "@commitlint/config-conventional": ^21.0.2
   "@cosmjs/amino": ^0.36.2
   "@cosmjs/encoding": 0.36.2
   "@cosmos-kit/core": 2.18.1
@@ -15,8 +15,8 @@ catalog:
   "@effect/openapi-generator": 4.0.0-beta.68
   "@effect/platform-node": 4.0.0-beta.68
   "@faker-js/faker": ^10.4.0
-  "@ledgerhq/wallet-api-client": ^1.14.0
-  "@ledgerhq/wallet-api-core": ^1.30.0
+  "@ledgerhq/wallet-api-client": ^1.14.5
+  "@ledgerhq/wallet-api-core": ^1.32.1
   "@luno-kit/core": ^0.0.13
   "@meshsdk/wallet": 1.9.0-beta-40
   "@polkadot/types": ^16.5.6
@@ -45,7 +45,7 @@ catalog:
   "@types/lodash.merge": ^4.6.9
   "@types/lodash.uniqwith": ^4.5.9
   "@types/node": ^25.7.0
-  "@types/react": 19.2.14
+  "@types/react": 19.2.17
   "@types/react-dom": 19.2.3
   "@types/react-is": ^19.2.0
   "@vanilla-extract/css": ^1.20.1
@@ -53,8 +53,8 @@ catalog:
   "@vanilla-extract/recipes": ^0.5.7
   "@vanilla-extract/sprinkles": ^1.6.5
   "@vanilla-extract/vite-plugin": ^5.2.2
-  "@vitejs/plugin-react": ^6.0.1
-  "@vitest/browser-playwright": ^4.1.6
+  "@vitejs/plugin-react": ^6.0.2
+  "@vitest/browser-playwright": ^4.1.9
   "@xstate/react": ^6.1.0
   "@xstate/store": ^3.17.5
   autoprefixer: ^10.5.0
@@ -75,30 +75,30 @@ catalog:
   mixpanel-browser: ^2.78.0
   motion: 12.38.0
   msw: ^2.14.6
-  next: ^16.2.6
-  playwright: ^1.60.0
+  next: ^16.2.9
+  playwright: ^1.61.0
   postcss: ^8.5.14
   purify-ts: 2.1.4
-  react: ^19.2.6
-  react-dom: ^19.2.6
+  react: ^19.2.7
+  react-dom: ^19.2.7
   react-i18next: ^17.0.7
   react-is: ^19.2.0
   react-loading-skeleton: ^3.5.0
   react-router: ^7.15.0
   recharts: ^3.8.1
   reselect: ^5.1.1
-  rev-dep: ^2.13.2
+  rev-dep: ^2.15.0
   rxjs: ^7.8.2
   serve: ^14.2.6
   swagger2openapi: ^7.0.8
-  tsx: ^4.21.0
-  turbo: ^2.9.12
+  tsx: ^4.22.4
+  turbo: ^2.9.18
   typescript: ^6.0.3
-  unplugin-macros: ^0.20.0
+  unplugin-macros: ^0.20.2
   viem: ^2.48.11
-  vite: ^8.0.12
-  vite-plugin-node-polyfills: ^0.26.0
-  vitest: ^4.1.6
+  vite: ^8.0.16
+  vite-plugin-node-polyfills: ^0.28.0
+  vitest: ^4.1.9
   vitest-browser-react: ^2.2.0
   wagmi: 3.6.14
   xstate: ^5.31.1

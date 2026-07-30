@@ -12,11 +12,8 @@ import {
   type UserConfig,
   type UserConfigFnObject,
 } from "vite";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 import type { InlineConfig } from "vitest/node";
-import {
-  nodePolyfillOptimizeDeps,
-  nodePolyfillPlugins,
-} from "./vite.node-polyfills";
 
 declare module "vite" {
   interface UserConfig {
@@ -36,7 +33,9 @@ export const getConfig = (
       root: path.resolve(__dirname, ".."),
       optimizeDeps: {
         include: [
-          ...nodePolyfillOptimizeDeps,
+          "vite-plugin-node-polyfills/shims/buffer",
+          "vite-plugin-node-polyfills/shims/global",
+          "vite-plugin-node-polyfills/shims/process",
           "@vanilla-extract/recipes/createRuntimeFn",
           "@vanilla-extract/sprinkles/createRuntimeSprinkles",
           "date-fns/locale",
@@ -56,7 +55,7 @@ export const getConfig = (
       },
       plugins: [
         ...(options?.plugins ?? []),
-        ...nodePolyfillPlugins(),
+        nodePolyfills({ include: ["buffer", "crypto"] }),
         macros(),
         react(),
         babel({ presets: [reactCompilerPreset()] }),
@@ -86,5 +85,5 @@ export const getConfig = (
           }),
         },
       },
-    } satisfies UserConfig);
+    });
   });

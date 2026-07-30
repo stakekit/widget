@@ -91,10 +91,14 @@ export const autoBadge = style([
     px: "2",
   }),
   {
-    background: "#DCFCE7",
-    color: "#15803D",
+    background: `color-mix(in srgb, ${vars.color.positionsRewardRate} 18%, transparent)`,
+    border: `1px solid color-mix(in srgb, ${vars.color.positionsRewardRate} 38%, transparent)`,
   },
 ]);
+
+export const autoBadgeText = style({
+  color: vars.color.positionsRewardRate,
+});
 
 export const metricGrid = style({
   display: "grid",
@@ -134,6 +138,14 @@ export const providerCard = style([
     textAlign: "left",
     width: "100%",
   },
+]);
+
+export const providerCardList = style([
+  atoms({
+    display: "flex",
+    flexDirection: "column",
+    gap: "2",
+  }),
 ]);
 
 export const providerCardMainRow = style([
@@ -178,11 +190,12 @@ export const providerNameText = style({
 
 export const providerChangeButton = style([
   atoms({
+    alignSelf: "flex-end",
     alignItems: "center",
     background: "stakeSectionBackground",
     borderRadius: "2xl",
     display: "flex",
-    gap: "1",
+    gap: "2",
     px: "3",
     py: "2",
   }),
@@ -193,6 +206,24 @@ export const providerChangeButton = style([
     flexShrink: 0,
     font: "inherit",
     // minHeight: "42px",
+  },
+]);
+
+export const providerRemoveButton = style([
+  atoms({
+    alignItems: "center",
+    background: "stakeSectionBackground",
+    borderRadius: "full",
+    display: "flex",
+    justifyContent: "center",
+  }),
+  {
+    border: 0,
+    cursor: "pointer",
+    flexShrink: 0,
+    font: "inherit",
+    height: 32,
+    width: 32,
   },
 ]);
 
@@ -207,6 +238,7 @@ export const providerMetaText = style({
 
 export const providerWebsiteText = style([
   atoms({
+    alignSelf: "flex-start",
     alignItems: "center",
     display: "flex",
     gap: "1",

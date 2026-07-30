@@ -94,9 +94,14 @@ describe("Deep links flow", () => {
       )
       .toBeInTheDocument();
 
-    await expect.element(app.getByText("Confirm").last()).toBeInTheDocument();
+    const confirmButton = app.getByRole("button", {
+      exact: true,
+      name: "Confirm",
+    });
 
-    await app.getByText("Confirm").last().click();
+    await expect.element(confirmButton).toBeInTheDocument();
+
+    await confirmButton.click();
 
     await expect.element(app.getByText("Follow Steps")).toBeInTheDocument();
 

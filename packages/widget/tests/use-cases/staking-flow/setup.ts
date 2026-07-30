@@ -1,4 +1,4 @@
-import { delay, HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
 import type { YieldCreateActionDto } from "../../../src/domain/types/action";
@@ -18,6 +18,7 @@ import {
   yieldApiYieldFixture,
 } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
+import { mockDelay } from "../../mocks/delay";
 import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
 
@@ -238,12 +239,12 @@ export const setup = async (worker: TestWorker) => {
 
   worker.use(
     http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json(["avalanche-c"]);
     }),
 
     http.get(legacyApiRoute("/v1/tokens"), async () => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json([
         {
@@ -261,7 +262,7 @@ export const setup = async (worker: TestWorker) => {
     }),
 
     http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json([
         {
           token,
@@ -272,7 +273,7 @@ export const setup = async (worker: TestWorker) => {
     }),
 
     http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json([
         {
           token,
@@ -283,7 +284,7 @@ export const setup = async (worker: TestWorker) => {
     }),
 
     http.post(legacyApiRoute("/v1/tokens/prices"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json({
         "avalanche-c-undefined": {
           price: 43.92,
@@ -294,12 +295,12 @@ export const setup = async (worker: TestWorker) => {
     http.get(
       legacyApiRoute("/v1/yields/avalanche-avax-liquid-staking"),
       async () => {
-        await delay();
+        await mockDelay();
         return HttpResponse.json(yieldOp);
       }
     ),
     http.get(yieldApiRoute("/v1/yields"), async () => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json({
         items: [yieldApiYieldOp],
@@ -311,12 +312,12 @@ export const setup = async (worker: TestWorker) => {
     http.get(
       yieldApiRoute("/v1/yields/avalanche-avax-liquid-staking"),
       async () => {
-        await delay();
+        await mockDelay();
         return HttpResponse.json(yieldApiYieldOp);
       }
     ),
     http.get(yieldApiRoute("/v1/yields/:yieldId/validators"), async (info) => {
-      await delay();
+      await mockDelay();
 
       const yieldId = info.params.yieldId as string;
       const validators =
@@ -330,7 +331,7 @@ export const setup = async (worker: TestWorker) => {
       });
     }),
     http.post(yieldApiRoute("/v1/actions/enter"), async (info) => {
-      await delay();
+      await mockDelay();
 
       const body = (await info.request.json()) as YieldCreateActionDto;
 
@@ -368,7 +369,7 @@ export const setup = async (worker: TestWorker) => {
       async (info) => {
         const transactionId = info.params.transactionId as string;
 
-        await delay();
+        await mockDelay();
 
         return HttpResponse.json(
           yieldApiTransactionFixture({

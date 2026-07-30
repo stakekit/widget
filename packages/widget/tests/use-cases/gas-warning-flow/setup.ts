@@ -1,4 +1,4 @@
-import { delay, HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw";
 import { vitest } from "vitest";
 import type { YieldCreateActionDto } from "../../../src/domain/types/action";
 import { waitForMs } from "../../../src/utils";
@@ -10,6 +10,7 @@ import {
   yieldApiYieldFixture,
 } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
+import { mockDelay } from "../../mocks/delay";
 import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
 
@@ -151,12 +152,12 @@ export const setup = (worker: TestWorker) => {
 
   worker.use(
     http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json([avalancheCToken.network]);
     }),
 
     http.get(legacyApiRoute("/v1/tokens"), async () => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json([
         {
@@ -171,7 +172,7 @@ export const setup = (worker: TestWorker) => {
     }),
 
     http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json([
         {
           token: avalancheCToken,
@@ -187,7 +188,7 @@ export const setup = (worker: TestWorker) => {
     }),
 
     http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json([
         {
           token: avalancheCToken,
@@ -205,13 +206,13 @@ export const setup = (worker: TestWorker) => {
     http.get(
       legacyApiRoute(`/v1/yields/${yieldWithSameGasAndStakeToken.yieldDto.id}`),
       async () => {
-        await delay();
+        await mockDelay();
 
         return HttpResponse.json(yieldWithSameGasAndStakeToken.yieldDto);
       }
     ),
     http.get(yieldApiRoute("/v1/yields"), async () => {
-      await delay();
+      await mockDelay();
 
       const items = [
         yieldWithSameGasAndStakeToken.yieldApiDto,
@@ -228,7 +229,7 @@ export const setup = (worker: TestWorker) => {
     http.get(
       yieldApiRoute(`/v1/yields/${yieldWithSameGasAndStakeToken.yieldDto.id}`),
       async () => {
-        await delay();
+        await mockDelay();
 
         return HttpResponse.json(yieldWithSameGasAndStakeToken.yieldApiDto);
       }
@@ -238,7 +239,7 @@ export const setup = (worker: TestWorker) => {
         `/v1/yields/${yieldWithDifferentGasAndStakeToken.yieldDto.id}`
       ),
       async () => {
-        await delay();
+        await mockDelay();
 
         return HttpResponse.json(yieldWithDifferentGasAndStakeToken.yieldDto);
       }
@@ -248,7 +249,7 @@ export const setup = (worker: TestWorker) => {
         `/v1/yields/${yieldWithDifferentGasAndStakeToken.yieldDto.id}`
       ),
       async () => {
-        await delay();
+        await mockDelay();
 
         return HttpResponse.json(
           yieldWithDifferentGasAndStakeToken.yieldApiDto
@@ -256,7 +257,7 @@ export const setup = (worker: TestWorker) => {
       }
     ),
     http.get(yieldApiRoute("/v1/yields/:yieldId/validators"), async (info) => {
-      await delay();
+      await mockDelay();
 
       const yieldId = info.params.yieldId as string;
       const validators =
@@ -272,7 +273,7 @@ export const setup = (worker: TestWorker) => {
       });
     }),
     http.post(yieldApiRoute("/v1/actions/enter"), async (info) => {
-      await delay();
+      await mockDelay();
 
       const body = (await info.request.json()) as YieldCreateActionDto;
       const selectedYield =

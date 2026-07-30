@@ -4,7 +4,6 @@ import type {
   SupportedSKChainIds,
   SupportedSKChains,
 } from "../../domain/types/chains";
-import type { TransactionFormat } from "../../domain/types/settings";
 import type { PreferredTokenYieldsPerNetwork } from "../../domain/types/stake";
 import type { TokenDto } from "../../domain/types/tokens";
 import type { SKExternalProviders } from "../../domain/types/wallets";
@@ -70,7 +69,6 @@ export type SettingsProps = {
   mapWalletListFn?: (val: WalletList) => WalletList;
   customTranslations?: RecursivePartial<typeof localResources>;
   tokensForEnabledYieldsOnly?: boolean;
-  preferredTransactionFormat?: TransactionFormat;
   validatorsConfig?: {
     [Key in SupportedSKChains | "*"]?: {
       allowed?: string[];

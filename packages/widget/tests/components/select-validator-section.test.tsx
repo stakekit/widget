@@ -5,7 +5,6 @@ import { userEvent } from "vitest/browser";
 import type { Yield } from "../../src/domain/types/yields";
 import { SelectValidatorSection } from "../../src/pages/details/earn-page/components/select-validator-section";
 import type { useSelectValidator } from "../../src/pages/details/earn-page/components/select-validator-section/use-select-validator";
-import { UtilaSelectValidatorSection } from "../../src/pages-dashboard/overview/earn-page/utila-select-validator-section";
 import { SettingsContextProvider } from "../../src/providers/settings";
 import { i18nInstance } from "../../src/translation";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
@@ -45,6 +44,26 @@ const selectedStake = {
   },
 } as Yield;
 
+const multiSelectStake = {
+  ...selectedStake,
+  mechanics: {
+    ...selectedStake.mechanics,
+    arguments: {
+      ...selectedStake.mechanics.arguments,
+      enter: {
+        fields: [
+          {
+            label: "Validators",
+            name: "validatorAddresses",
+            required: true,
+            type: "address",
+          },
+        ],
+      },
+    },
+  },
+} as Yield;
+
 const createHookValue = (
   overrides: Partial<ReturnType<typeof useSelectValidator>> = {}
 ): ReturnType<typeof useSelectValidator> => ({
@@ -75,20 +94,6 @@ const renderSection = () =>
         yieldsApiUrl="https://yield.example.com"
       >
         <SelectValidatorSection />
-      </SettingsContextProvider>
-    </I18nextProvider>
-  );
-
-const renderUtilaSection = () =>
-  render(
-    <I18nextProvider i18n={i18nInstance}>
-      <SettingsContextProvider
-        apiKey="test-key"
-        baseUrl="https://api.example.com"
-        variant="utila"
-        yieldsApiUrl="https://yield.example.com"
-      >
-        <UtilaSelectValidatorSection />
       </SettingsContextProvider>
     </I18nextProvider>
   );
@@ -161,55 +166,32 @@ describe("SelectValidatorSection", () => {
       .toBeInTheDocument();
   });
 
-  it("keeps the dashboard Change action when search has no results", async () => {
-    const selectedValidator = yieldApiValidatorFixture({
-      address: "selected-validator",
-      name: "Selected Validator",
-    });
-
+  it("shows the View all action for multi-select validators when more pages exist", async () => {
     hookState.current = createHookValue({
-      isLoading: false,
-      selectedValidators: new Map([
-        [selectedValidator.address, selectedValidator],
-      ]),
-      validatorsData: Maybe.of([]),
-      validatorSearch: "missing validator",
+      selectedStake: Maybe.of(multiSelectStake),
+      validatorsData: Maybe.of(
+        Array.from({ length: 4 }, (_, index) =>
+          yieldApiValidatorFixture({
+            address: `validator-${index}`,
+            name: `Validator ${index}`,
+            preferred: true,
+          })
+        )
+      ),
+      hasMoreValidators: true,
     });
 
-    const app = await renderUtilaSection();
+    const app = await renderSection();
 
-    await expect.element(app.getByText("Change")).toBeInTheDocument();
+    await expect.element(app.getByText("Earn with")).toBeInTheDocument();
 
-    await userEvent.click(app.getByText("Change"));
+    const trigger = app.container.querySelector(
+      '[data-rk="select-validator-plus"]'
+    );
+    expect(trigger).not.toBeNull();
 
-    await expect
-      .element(app.getByTestId("select-modal__search-input"))
-      .toHaveValue("missing validator");
-    await expect
-      .element(app.getByText("No validators found"))
-      .toBeInTheDocument();
-  });
+    await userEvent.click(trigger as HTMLButtonElement);
 
-  it("keeps the dashboard Change action while cleared search reloads validators", async () => {
-    const selectedValidator = yieldApiValidatorFixture({
-      address: "selected-validator",
-      name: "Selected Validator",
-    });
-
-    hookState.current = createHookValue({
-      isLoading: true,
-      selectedValidators: new Map([
-        [selectedValidator.address, selectedValidator],
-      ]),
-      validatorsData: Maybe.of([]),
-      validatorSearch: "",
-    });
-
-    const app = await renderUtilaSection();
-
-    await expect.element(app.getByText("Change")).toBeInTheDocument();
-    await expect
-      .element(app.getByText("Selected Validator"))
-      .toBeInTheDocument();
+    await expect.element(app.getByText("View all")).toBeInTheDocument();
   });
 });

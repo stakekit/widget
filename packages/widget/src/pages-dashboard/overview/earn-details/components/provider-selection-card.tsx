@@ -2,13 +2,17 @@ import { Trigger } from "@radix-ui/react-dialog";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../components/atoms/box";
 import { CaretDownIcon } from "../../../../components/atoms/icons/caret-down";
+import { PlusIcon } from "../../../../components/atoms/icons/plus";
+import { XIcon } from "../../../../components/atoms/icons/x-icon";
 import { Image } from "../../../../components/atoms/image";
 import { Text } from "../../../../components/atoms/typography/text";
 import { SelectValidator } from "../../../../components/molecules/select-validator";
 import {
   isYieldActionArgRequired,
   isYieldValidatorSelectionRequired,
+  type Yield,
 } from "../../../../domain/types/yields";
+import type { ValidatorDto } from "../../../../generated/api/yield";
 import { useSelectValidator } from "../../../../pages/details/earn-page/components/select-validator-section/use-select-validator";
 import { useEarnPageContext } from "../../../../pages/details/earn-page/state/earn-page-context";
 import {
@@ -26,6 +30,18 @@ type ProviderDetailsItem = NonNullable<
   >
 >[number];
 
+type ProviderCardItem = {
+  key: string;
+  commission: ProviderDetailsItem["commission"] | ValidatorDto["commission"];
+  logo: string | undefined;
+  name: string;
+  preferred: boolean | undefined;
+  stakedBalance: ProviderDetailsItem["stakedBalance"] | ValidatorDto["tvlRaw"];
+  status: ProviderDetailsItem["status"] | ValidatorDto["status"];
+  validator: ValidatorDto | undefined;
+  website: string | undefined;
+};
+
 export const ProviderSelectionCard = () => {
   const {
     hasMoreValidators,
@@ -35,6 +51,7 @@ export const ProviderSelectionCard = () => {
     onItemClick,
     onLoadMoreValidators,
     onOpen,
+    onRemoveValidator,
     onValidatorSearch,
     onViewMoreClick,
     selectedStake,
@@ -43,20 +60,18 @@ export const ProviderSelectionCard = () => {
     validatorsData,
   } = useSelectValidator();
   const { providersDetails } = useEarnPageContext();
-  const { t } = useTranslation();
 
   const yieldDto = selectedStake.extractNullable();
 
   if (!yieldDto || !isYieldValidatorSelectionRequired(yieldDto)) return null;
 
   const selectedValidatorsArr = [...selectedValidators.values()];
-  const selectedProvider = providersDetails.extractNullable()?.[0];
-  const providerName =
-    selectedProvider?.name ??
-    selectedValidatorsArr[0]?.name ??
-    selectedValidatorsArr[0]?.address ??
-    yieldDto.provider?.name ??
-    yieldDto.providerId;
+  const providerDetailsArr = providersDetails.extractNullable() ?? [];
+  const providerCardItems = getProviderCardItems({
+    providerDetailsArr,
+    selectedValidatorsArr,
+    yieldDto,
+  });
   const multiSelect = isYieldActionArgRequired(
     yieldDto,
     "enter",
@@ -67,67 +82,12 @@ export const ProviderSelectionCard = () => {
   return (
     <SelectValidator
       trigger={
-        <Box className={styles.providerCard}>
-          <Box className={styles.providerCardMainRow}>
-            <Image
-              wrapperProps={{ hw: "8", flexShrink: 0 }}
-              imgProps={{ borderRadius: "base" }}
-              src={selectedProvider?.logo}
-              fallbackName={providerName}
-            />
-
-            <Box className={styles.providerCardContent}>
-              <Box className={styles.providerCardHeader}>
-                <Text
-                  className={styles.providerNameText}
-                  variant={{ weight: "bold" }}
-                >
-                  {providerName}
-                </Text>
-
-                {selectedProvider?.preferred ? (
-                  <Box className={styles.autoBadge}>
-                    <Text variant={{ weight: "bold", size: "small" }}>
-                      {t("details.validators_preferred")}
-                    </Text>
-                  </Box>
-                ) : null}
-              </Box>
-
-              <ProviderMetaLine
-                provider={selectedProvider}
-                tokenSymbol={yieldDto.token.symbol}
-              />
-            </Box>
-
-            <Trigger asChild>
-              <Box
-                as="button"
-                className={styles.providerChangeButton}
-                type="button"
-              >
-                <Text variant={{ weight: "bold", size: "small" }}>
-                  {t("shared.change")}
-                </Text>
-                <CaretDownIcon />
-              </Box>
-            </Trigger>
-          </Box>
-
-          {selectedProvider?.website ? (
-            <Text
-              as="a"
-              className={styles.providerWebsiteText}
-              href={formatProviderWebsiteHref(selectedProvider.website)}
-              rel="noreferrer"
-              target="_blank"
-              variant={{ type: "muted", weight: "normal" }}
-            >
-              {formatProviderWebsite(selectedProvider.website)}
-              <ExternalLinkIcon />
-            </Text>
-          ) : null}
-        </Box>
+        <ProviderCardsTrigger
+          items={providerCardItems}
+          multiSelect={multiSelect}
+          onRemoveValidator={onRemoveValidator}
+          tokenSymbol={yieldDto.token.symbol}
+        />
       }
       selectedValidators={new Set(selectedValidatorsArr.map((v) => v.address))}
       multiSelect={multiSelect}
@@ -147,17 +107,184 @@ export const ProviderSelectionCard = () => {
   );
 };
 
-const ProviderMetaLine = ({
-  provider,
+const ProviderCardsTrigger = ({
+  items,
+  multiSelect,
+  onRemoveValidator,
   tokenSymbol,
 }: {
-  provider: ProviderDetailsItem | undefined;
+  items: ProviderCardItem[];
+  multiSelect: boolean;
+  onRemoveValidator: (item: ValidatorDto) => void;
   tokenSymbol: string;
 }) => {
+  const { t } = useTranslation();
+
+  return (
+    <Box className={styles.providerCardList}>
+      {items.map((item) => {
+        const removableValidator =
+          multiSelect && items.length > 1 ? item.validator : undefined;
+
+        return (
+          <Box className={styles.providerCard} key={item.key}>
+            <Box className={styles.providerCardMainRow}>
+              <Image
+                wrapperProps={{ hw: "8", flexShrink: 0 }}
+                imgProps={{ borderRadius: "base" }}
+                src={item.logo}
+                fallbackName={item.name}
+              />
+
+              <Box className={styles.providerCardContent}>
+                <Box className={styles.providerCardHeader}>
+                  <Text
+                    className={styles.providerNameText}
+                    variant={{ weight: "bold" }}
+                  >
+                    {item.name}
+                  </Text>
+
+                  {item.preferred ? (
+                    <Box className={styles.autoBadge}>
+                      <Text
+                        className={styles.autoBadgeText}
+                        variant={{ weight: "bold", size: "small" }}
+                      >
+                        {t("details.validators_preferred")}
+                      </Text>
+                    </Box>
+                  ) : null}
+                </Box>
+
+                <ProviderMetaLine item={item} tokenSymbol={tokenSymbol} />
+              </Box>
+
+              {removableValidator ? (
+                <Box
+                  aria-label={`Remove ${item.name}`}
+                  as="button"
+                  className={styles.providerRemoveButton}
+                  onClick={() => onRemoveValidator(removableValidator)}
+                  type="button"
+                >
+                  <XIcon hw={12} strokeWidth={4.9} />
+                </Box>
+              ) : !multiSelect ? (
+                <Trigger asChild>
+                  <Box
+                    as="button"
+                    className={styles.providerChangeButton}
+                    type="button"
+                  >
+                    <Text variant={{ weight: "bold", size: "small" }}>
+                      {t("shared.change")}
+                    </Text>
+                    <CaretDownIcon />
+                  </Box>
+                </Trigger>
+              ) : null}
+            </Box>
+
+            {item.website ? (
+              <Text
+                as="a"
+                className={styles.providerWebsiteText}
+                href={formatProviderWebsiteHref(item.website)}
+                rel="noreferrer"
+                target="_blank"
+                variant={{ type: "muted", weight: "normal" }}
+              >
+                {formatProviderWebsite(item.website)}
+                <ExternalLinkIcon />
+              </Text>
+            ) : null}
+          </Box>
+        );
+      })}
+
+      {multiSelect ? (
+        <Trigger asChild>
+          <Box
+            as="button"
+            className={styles.providerChangeButton}
+            type="button"
+          >
+            <PlusIcon hw={12} strokeWidth={4.9} />
+            <Text variant={{ weight: "bold", size: "small" }}>
+              {t("shared.manage_validators")}
+            </Text>
+          </Box>
+        </Trigger>
+      ) : null}
+    </Box>
+  );
+};
+
+const getProviderCardItems = ({
+  providerDetailsArr,
+  selectedValidatorsArr,
+  yieldDto,
+}: {
+  providerDetailsArr: ProviderDetailsItem[];
+  selectedValidatorsArr: ValidatorDto[];
+  yieldDto: Yield;
+}): ProviderCardItem[] => {
+  if (selectedValidatorsArr.length) {
+    return selectedValidatorsArr.map((validator, index) => {
+      const providerDetails = providerDetailsArr[index];
+      const name = validator.name ?? validator.address;
+
+      return {
+        key: validator.address,
+        commission: providerDetails?.commission ?? validator.commission,
+        logo: providerDetails?.logo ?? validator.logoURI,
+        name: providerDetails?.name ?? name,
+        preferred: providerDetails?.preferred ?? validator.preferred,
+        stakedBalance:
+          providerDetails?.stakedBalance ?? validator.tvl ?? validator.tvlRaw,
+        status: providerDetails?.status ?? validator.status,
+        validator,
+        website: providerDetails?.website ?? validator.website,
+      };
+    });
+  }
+
+  const providerDetails = providerDetailsArr[0];
+
+  return [
+    {
+      key: yieldDto.provider?.id ?? yieldDto.providerId ?? yieldDto.id,
+      commission: providerDetails?.commission,
+      logo: providerDetails?.logo ?? yieldDto.provider?.logoURI ?? undefined,
+      name:
+        providerDetails?.name ??
+        yieldDto.provider?.name ??
+        yieldDto.providerId ??
+        yieldDto.metadata.name,
+      preferred: providerDetails?.preferred,
+      stakedBalance: providerDetails?.stakedBalance,
+      status: providerDetails?.status,
+      validator: undefined,
+      website: providerDetails?.website ?? yieldDto.provider?.website,
+    },
+  ];
+};
+
+const ProviderMetaLine = ({
+  item,
+  tokenSymbol,
+}: {
+  item: ProviderCardItem;
+  tokenSymbol: string;
+}) => {
+  const { t } = useTranslation();
+  const statusLabel = formatProviderStatus(item.status, t);
+
   const details = [
-    formatCommission(provider?.commission),
-    formatProviderTvl(provider?.stakedBalance, tokenSymbol),
-    provider?.status ? formatProviderStatus(provider.status) : null,
+    formatCommission(item.commission),
+    formatProviderTvl(item.stakedBalance, tokenSymbol),
+    statusLabel,
   ].filter((item): item is string => !!item);
 
   if (!details.length) return null;
@@ -171,7 +298,7 @@ const ProviderMetaLine = ({
         <Box
           as="span"
           className={
-            detail.toLowerCase() === "active"
+            detail === statusLabel && item.status === "active"
               ? styles.providerStatusText
               : undefined
           }

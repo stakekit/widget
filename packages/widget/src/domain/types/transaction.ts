@@ -1,3 +1,8 @@
+import {
+  Cell,
+  type CommonMessageInfoRelaxedInternal,
+  loadMessageRelaxed,
+} from "@ton/core";
 import type { GetType } from "purify-ts";
 import {
   array,
@@ -184,6 +189,30 @@ export const unsignedTonTransactionCodec = oneOf([
 ]);
 
 export type DecodedTonTransaction = GetType<typeof unsignedTonTransactionCodec>;
+
+type DecodedTonRawTransaction = Extract<
+  DecodedTonTransaction,
+  ReadonlyArray<unknown>
+>;
+
+export const normalizeTonTransactionToRaw = (
+  tx: DecodedTonTransaction
+): DecodedTonRawTransaction => {
+  if (Array.isArray(tx)) {
+    return tx;
+  }
+
+  const parsedTx = loadMessageRelaxed(Cell.fromBase64(tx.message).beginParse());
+  const info = parsedTx.info as CommonMessageInfoRelaxedInternal;
+
+  return [
+    {
+      address: info.dest.toString(),
+      amount: info.value.coins.toString(),
+      payload: parsedTx.body.toBoc().toString("base64"),
+    },
+  ];
+};
 
 export const substratePayloadCodec = Codec.interface({
   tx: Codec.interface({

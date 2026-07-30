@@ -1,10 +1,11 @@
-import { delay, HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw";
 import type {
   TokenDto,
   YieldRewardsSummaryResponseDto,
 } from "../../src/generated/api/legacy";
 import { legacyYieldFixture } from "../fixtures";
 import { legacyApiRoute } from "./api-routes";
+import { mockDelay } from "./delay";
 
 const defaultToken: TokenDto = {
   name: "Ethereum",
@@ -24,13 +25,13 @@ const defaultYield = legacyYieldFixture({
 
 export const getLegacyApiMock = () => [
   http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json([defaultToken.network]);
   }),
 
   http.get(legacyApiRoute("/v1/tokens"), async () => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json([
       {
@@ -41,7 +42,7 @@ export const getLegacyApiMock = () => [
   }),
 
   http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json([
       {
@@ -53,7 +54,7 @@ export const getLegacyApiMock = () => [
   }),
 
   http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json([
       { token: defaultToken, amount: "0", availableYields: [defaultYield.id] },
@@ -61,7 +62,7 @@ export const getLegacyApiMock = () => [
   }),
 
   http.post(legacyApiRoute("/v1/tokens/prices"), async () => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json({
       "ethereum-": {
@@ -72,7 +73,7 @@ export const getLegacyApiMock = () => [
   }),
 
   http.get(legacyApiRoute("/v1/yields/:integrationId"), async ({ params }) => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json(
       legacyYieldFixture({
@@ -85,7 +86,7 @@ export const getLegacyApiMock = () => [
   http.post(
     legacyApiRoute("/v1/yields/:integrationId/rewards-summary"),
     async () => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json({
         rewards: {
@@ -103,7 +104,7 @@ export const getLegacyApiMock = () => [
   http.post(
     legacyApiRoute("/v1/transactions/verification/:network"),
     async () => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json({ message: "verification-message" });
     }

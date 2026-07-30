@@ -17,8 +17,6 @@ export const apyYield = style([
   },
 ]);
 
-export const breakWord = style({ wordBreak: "break-all" });
-
 export const overflowEllipsis = style({
   minWidth: 0,
   overflowWrap: "anywhere",
@@ -124,9 +122,10 @@ export const selectorSummaryChangeButton = style([
 
 export const selectorSummaryBadge = style({
   alignItems: "center",
-  background: "#EAF7EE",
+  background: `color-mix(in srgb, ${vars.color.positionsRewardRate} 18%, transparent)`,
+  border: `1px solid color-mix(in srgb, ${vars.color.positionsRewardRate} 38%, transparent)`,
   borderRadius: vars.borderRadius.baseContract.full,
-  color: "#137333",
+  color: vars.color.positionsRewardRate,
   display: "inline-flex",
   fontSize: vars.fontSize.sm,
   fontWeight: vars.fontWeight.bold,
@@ -140,17 +139,6 @@ export const selectorSummaryActive = style({
   whiteSpace: "nowrap",
 });
 
-export const addValidatorButton = style([
-  atoms({
-    borderRadius: "full",
-    background: "backgroundMuted",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  }),
-  { height: "100%", aspectRatio: "1 / 1" },
-]);
-
 export const addValidatorContainer = style([
   atoms({
     marginRight: "0",
@@ -162,4 +150,81 @@ export const addValidatorContainer = style([
     width: "full",
   }),
   { boxSizing: "border-box", rowGap: "5px", gap: "5px", maxWidth: "100%" },
+]);
+
+export const validatorChipsContainer = style([
+  atoms({
+    alignItems: "center",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "2",
+    marginTop: "3",
+    width: "full",
+  }),
+  {
+    boxSizing: "border-box",
+    maxWidth: "100%",
+    minWidth: 0,
+  },
+]);
+
+export const validatorChip = style([
+  atoms({
+    alignItems: "center",
+    background: "backgroundMuted",
+    borderRadius: "2xl",
+    display: "flex",
+    gap: "1",
+    px: "2",
+    py: "1",
+  }),
+  {
+    boxSizing: "border-box",
+    maxWidth: "100%",
+    minHeight: 34,
+    minWidth: 0,
+  },
+]);
+
+export const validatorChipName = style({
+  minWidth: 0,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+});
+
+export const validatorChipRemoveButton = style([
+  atoms({
+    alignItems: "center",
+    display: "flex",
+    flexShrink: 0,
+    justifyContent: "center",
+  }),
+  {
+    background: "transparent",
+    border: 0,
+    color: vars.color.textMuted,
+    cursor: "pointer",
+    font: "inherit",
+    padding: 0,
+  },
+]);
+
+export const validatorChipAddButton = style([
+  atoms({
+    alignItems: "center",
+    background: "backgroundMuted",
+    borderRadius: "2xl",
+    display: "flex",
+    flexShrink: 0,
+    justifyContent: "center",
+  }),
+  {
+    border: 0,
+    boxSizing: "border-box",
+    cursor: "pointer",
+    font: "inherit",
+    height: 34,
+    width: 34,
+  },
 ]);

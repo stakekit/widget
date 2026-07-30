@@ -122,10 +122,21 @@ export const formatProviderTvl = (
   return formatted === "-" ? null : `TVL ${formatted} ${tokenSymbol}`;
 };
 
-export const formatProviderStatus = (status: string | null | undefined) => {
+export const formatProviderStatus = (
+  status: string | null | undefined,
+  t: TFunction
+) => {
   if (!status) return null;
 
-  return status.charAt(0).toUpperCase() + status.slice(1);
+  if (status === "active") {
+    return t("position_details.balance_type.active");
+  }
+
+  if (status === "jailed") {
+    return t("details.validators_jailed");
+  }
+
+  return t("details.validators_inactive");
 };
 
 export const formatProviderWebsite = (website: string) => {

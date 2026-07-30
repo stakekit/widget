@@ -1,4 +1,4 @@
-import { delay, HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw";
 import { userEvent } from "vitest/browser";
 import {
   legacyYieldFixture,
@@ -6,6 +6,7 @@ import {
   yieldRiskSummaryFixture,
 } from "../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../mocks/api-routes";
+import { mockDelay } from "../mocks/delay";
 import { describe, expect, it } from "../utils/test-extend";
 import { renderApp } from "../utils/test-utils";
 
@@ -138,12 +139,12 @@ describe("Select opportunity", () => {
 
     worker.use(
       http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
-        await delay();
+        await mockDelay();
 
         return HttpResponse.json(["ethereum", "polkadot"]);
       }),
       http.get(legacyApiRoute("/v1/tokens"), async () => {
-        await delay();
+        await mockDelay();
         return HttpResponse.json([
           {
             token,
@@ -156,7 +157,7 @@ describe("Select opportunity", () => {
         ]);
       }),
       http.get(yieldApiRoute("/v1/yields"), async () => {
-        await delay();
+        await mockDelay();
 
         const items = yieldIds.map((integrationId) =>
           getYieldApiYield(integrationId)
@@ -175,11 +176,11 @@ describe("Select opportunity", () => {
 
         return [
           http.get(legacyApiRoute(`/v1/yields/${integrationId}`), async () => {
-            await delay();
+            await mockDelay();
             return HttpResponse.json(legacyYield);
           }),
           http.get(yieldApiRoute(`/v1/yields/${integrationId}`), async () => {
-            await delay();
+            await mockDelay();
             return HttpResponse.json(getYieldApiYield(integrationId));
           }),
         ];

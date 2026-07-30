@@ -21,7 +21,6 @@ export const minContainerWidth = (
   breakpoint: Breakpoint | number
 ) => `${containerName} (min-width: ${toPx(breakpoint)}px)`;
 
-
 export const splitExpandedContainerQuery = minContainerWidth(
   appContainerName,
   SPLIT_COLLAPSE_BREAKPOINT + 1

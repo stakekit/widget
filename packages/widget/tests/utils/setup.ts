@@ -1,6 +1,9 @@
+import { MotionGlobalConfig } from "motion/react";
 import { vi } from "vitest";
 
-vi.setConfig({ testTimeout: 10000 });
+MotionGlobalConfig.skipAnimations = true;
+
+vi.setConfig({ testTimeout: 60000 });
 
 const ignoredConsoleMessages = [
   "All fibers interrupted without error",

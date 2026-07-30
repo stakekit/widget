@@ -536,16 +536,17 @@ const getSelectedProviderName = ({
   selectedValidators?: SelectedValidators | null;
   yieldDto: Yield;
 }) => {
-  const [selectedValidator] = selectedValidators
+  const selectedValidatorsArr = selectedValidators
     ? [...selectedValidators.values()]
     : [];
 
-  return (
-    selectedValidator?.name ??
-    selectedValidator?.address ??
-    yieldDto.provider?.name ??
-    yieldDto.providerId
-  );
+  if (selectedValidatorsArr.length) {
+    return selectedValidatorsArr
+      .map((validator) => validator.name ?? validator.address)
+      .join(", ");
+  }
+
+  return yieldDto.provider?.name ?? yieldDto.providerId;
 };
 
 const getHeaderBadges = (

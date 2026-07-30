@@ -1,4 +1,4 @@
-import { delay, HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw";
 import type {
   YieldCreateActionDto,
   YieldCreateManageActionDto,
@@ -14,6 +14,7 @@ import {
   yieldRiskSummaryFixture,
 } from "../fixtures";
 import { yieldApiRoute } from "./api-routes";
+import { mockDelay } from "./delay";
 
 const defaultToken: TokenDto = {
   name: "Ethereum",
@@ -58,7 +59,7 @@ const createDefaultAction = (
 
 export const getYieldApiMock = () => [
   http.get(yieldApiRoute("/health"), async () => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json({
       status: "OK",
@@ -67,7 +68,7 @@ export const getYieldApiMock = () => [
   }),
 
   http.get(yieldApiRoute("/v1/yields"), async () => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json({
       items: [defaultYield],
@@ -78,7 +79,7 @@ export const getYieldApiMock = () => [
   }),
 
   http.get(yieldApiRoute("/v1/tokens"), async ({ request }) => {
-    await delay();
+    await mockDelay();
 
     const url = new URL(request.url);
     const offset = Number(url.searchParams.get("offset") ?? 0);
@@ -110,7 +111,7 @@ export const getYieldApiMock = () => [
   }),
 
   http.get(yieldApiRoute("/v1/yields/:yieldId"), async ({ params }) => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json(
       yieldApiYieldFixture({
@@ -121,7 +122,7 @@ export const getYieldApiMock = () => [
   }),
 
   http.get(yieldApiRoute("/v1/yields/:yieldId/kyc/status"), async () => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json({
       kycStatus: "not_required",
@@ -129,7 +130,7 @@ export const getYieldApiMock = () => [
   }),
 
   http.get(yieldApiRoute("/v1/providers/:providerId"), async ({ params }) => {
-    await delay();
+    await mockDelay();
     const providerId = String(params.providerId);
     const providerNameById: Record<string, string> = {
       benqi: "Benqi",
@@ -148,7 +149,7 @@ export const getYieldApiMock = () => [
   }),
 
   http.get(yieldApiRoute("/v1/yields/:yieldId/validators"), async () => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json({
       items: yieldApiValidatorsFixture([]),
@@ -161,7 +162,7 @@ export const getYieldApiMock = () => [
   http.get(
     yieldApiRoute("/v1/yields/:yieldId/reward-rate/history"),
     async ({ params }) => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json({
         yieldId: String(params.yieldId),
@@ -189,7 +190,7 @@ export const getYieldApiMock = () => [
   http.get(
     yieldApiRoute("/v1/yields/:yieldId/tvl/history"),
     async ({ params }) => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json({
         yieldId: String(params.yieldId),
@@ -215,7 +216,7 @@ export const getYieldApiMock = () => [
   ),
 
   http.post(yieldApiRoute("/v1/yields/balances"), async () => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json({
       items: [],
@@ -226,7 +227,7 @@ export const getYieldApiMock = () => [
   http.post(
     yieldApiRoute("/v1/yields/:yieldId/balances"),
     async ({ params }) => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json({
         yieldId: String(params.yieldId),
@@ -236,7 +237,7 @@ export const getYieldApiMock = () => [
   ),
 
   http.post(yieldApiRoute("/v1/actions/enter"), async ({ request }) => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json(
       createDefaultAction((await request.json()) as YieldCreateActionDto)
@@ -244,7 +245,7 @@ export const getYieldApiMock = () => [
   }),
 
   http.post(yieldApiRoute("/v1/actions/exit"), async ({ request }) => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json(
       createDefaultAction(
@@ -255,7 +256,7 @@ export const getYieldApiMock = () => [
   }),
 
   http.post(yieldApiRoute("/v1/actions/manage"), async ({ request }) => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json(
       createDefaultAction(
@@ -266,7 +267,7 @@ export const getYieldApiMock = () => [
   }),
 
   http.get(yieldApiRoute("/v1/actions"), async () => {
-    await delay();
+    await mockDelay();
 
     return HttpResponse.json({
       items: [],
@@ -279,7 +280,7 @@ export const getYieldApiMock = () => [
   http.get(
     yieldApiRoute("/v1/transactions/:transactionId"),
     async ({ params }) => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json(
         yieldApiTransactionFixture({
@@ -292,7 +293,7 @@ export const getYieldApiMock = () => [
   http.post(
     yieldApiRoute("/v1/transactions/:transactionId/submit"),
     async ({ params }) => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json(
         yieldApiTransactionFixture({
@@ -306,7 +307,7 @@ export const getYieldApiMock = () => [
   http.put(
     yieldApiRoute("/v1/transactions/:transactionId/submit-hash"),
     async ({ params }) => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json(
         yieldApiTransactionFixture({
