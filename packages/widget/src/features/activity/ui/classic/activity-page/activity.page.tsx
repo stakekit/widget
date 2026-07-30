@@ -16,7 +16,7 @@ export const AnimatedActivityPage = () => {
       }}
     >
       <PageContainer>
-        <ActivityPageContent resumeMode="start-and-navigate" />
+        <ActivityPageContent resumePresentation="Classic" />
       </PageContainer>
     </motion.div>
   );

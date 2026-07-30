@@ -38,7 +38,6 @@ import {
   defaultFormattedNumber,
   formatNumber,
 } from "../../../shared/lib/number-format";
-import { makeClassicTransactionFlowDestination } from "../../classic-transaction-flow/state";
 import {
   PositionBalancesKey,
   positionBalancesByTypeAtom,
@@ -133,9 +132,6 @@ const positionDetailsStakeFacadeAtom = Atom.family(
     const submittedAtom = Atom.make(false).pipe(
       Atom.withLabel("positionDetailsStakeSubmittedAtom")
     );
-    const destination = makeClassicTransactionFlowDestination({
-      routeBase: `/positions/${key.integrationId}/${key.balanceId}/stake`,
-    });
     const yieldEntryInputAtom = Atom.make((get) => {
       const config = get(widgetConfigAtom);
       const intent = get(intentAtom);
@@ -248,7 +244,6 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         canSubmit: ownerCurrent,
         connected: wallet.status === "connected",
         defaultToMinimum: true,
-        destination,
         entry: {
           amount,
           selectedProviderYieldId: resolveProviderYieldId(selectedYield),
@@ -268,6 +263,11 @@ const positionDetailsStakeFacadeAtom = Atom.family(
           wallet.status === "connected" &&
           wallet.isLedgerLiveAccountPlaceholder,
         isWalletConnecting: wallet.status === "connecting",
+        mount: {
+          _tag: "PositionStake",
+          balanceId: key.balanceId,
+          integrationId: key.integrationId,
+        },
         kyc: {
           gate: kyc.gate,
           isBlocking: kyc.isGateBlocking,

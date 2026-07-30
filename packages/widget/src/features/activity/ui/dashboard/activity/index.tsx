@@ -1,27 +1,25 @@
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Outlet, useNavigate } from "react-router";
+import { useAtomValue } from "@effect/atom-react";
+import { Outlet } from "react-router";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../../../shared/ui/primitives/icons/caret-left";
-import { classicFlowSessionStore } from "../../../../classic-transaction-flow/state";
+import {
+  activityResumeDashboardViewAtom,
+  useAbandonActivityResume,
+} from "../../../../classic-transaction-flow/state";
 import { AnimationPage } from "../../../../widget-shell/components";
 import { ActivityPage } from "./activity.page";
 import { activityDetailsContainer } from "./styles.css";
 
 export const ActivityTabPage = () => {
   const variant = useWidgetConfig("variant");
-  const navigate = useNavigate();
-  const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
-  const clearSession = useAtomSet(classicFlowSessionStore.clearAtom);
-  const selection =
-    session?.intake._tag === "ActivityResume" ? session.intake : null;
-
-  const showDetails = selection !== null;
+  const activityResume = useAtomValue(activityResumeDashboardViewAtom);
+  const abandonActivityResume = useAbandonActivityResume();
+  const showDetails = activityResume._tag === "Open";
 
   const onBack = () => {
-    if (session && selection) clearSession(session.epoch);
-    navigate("/activity");
+    abandonActivityResume(undefined);
   };
 
   return (

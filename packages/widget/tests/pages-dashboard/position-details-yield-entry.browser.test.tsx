@@ -19,10 +19,7 @@ import {
   applicationRouterRuntime,
 } from "../../src/app/runtime/application-router-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import {
-  classicFlowSessionStore,
-  makeClassicTransactionFlowDestination,
-} from "../../src/features/classic-transaction-flow/state";
+import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
 import {
   PositionBalancesKey,
   positionBalancesByTypeAtom,
@@ -101,8 +98,12 @@ const PositionEntry = () => {
 };
 
 const ReviewGuard = () => {
-  const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
-  return session ? (
+  const isActive = useAtomValue(
+    isActiveClassicTransactionFlowPathAtom(
+      `/positions/${selectedYield.id}/balance-1/stake/review`
+    )
+  );
+  return isActive ? (
     <div>Position stake review</div>
   ) : (
     <Navigate to="/missing" />
@@ -117,11 +118,7 @@ const Runtime = () => {
         element={<PositionEntry />}
       />
       <Route
-        path={
-          makeClassicTransactionFlowDestination({
-            routeBase: `/positions/${selectedYield.id}/balance-1/stake`,
-          }).reviewPath
-        }
+        path={`/positions/${selectedYield.id}/balance-1/stake/review`}
         element={<ReviewGuard />}
       />
       <Route path="/missing" element={<div>Missing Flow Session</div>} />

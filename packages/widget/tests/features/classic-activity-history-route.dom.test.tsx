@@ -1,25 +1,25 @@
 import { RegistryProvider, useAtomSet } from "@effect/atom-react";
-import { Layer, Schema, Stream } from "effect";
+import { Effect, Layer, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { act } from "react";
 import {
   MemoryRouter,
+  type NavigateFunction,
   Route,
   Routes,
   useLocation,
   useNavigate,
 } from "react-router";
 import { vi } from "vitest";
+import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import {
-  classicFlowSessionStore,
-  makeClassicTransactionFlowDestination,
-} from "../../src/features/classic-transaction-flow/state";
+import { startClassicTransactionFlowAtom } from "../../src/features/classic-transaction-flow/state";
 import { createClassicFlowRoutes } from "../../src/features/classic-transaction-flow/ui";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { walletScopeAtom } from "../../src/features/wallet/state";
+import { WidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
 import { WalletService } from "../../src/services/wallet/wallet-service";
@@ -75,9 +75,27 @@ const walletLayer = Layer.succeed(WalletService, {
   }),
 } as never);
 
+const navigationBridge: { navigate: NavigateFunction | null } = {
+  navigate: null,
+};
+const navigationLayer = Layer.succeed(
+  WidgetNavigation,
+  WidgetNavigation.of({
+    back: () => Effect.void,
+    push: (path) =>
+      Effect.sync(() => {
+        navigationBridge.navigate?.(path);
+      }),
+    replace: () => Effect.void,
+  })
+);
+
 const makeActivityIntake = (
   status: "PROCESSING" | "SUCCESS"
-): ClassicTransactionFlowIntake => {
+): Extract<
+  ClassicTransactionFlowIntake,
+  { readonly _tag: "ActivityResume" }
+> => {
   const selectedYield = yieldApiYieldFixture();
 
   return {
@@ -95,28 +113,29 @@ const makeActivityIntake = (
 };
 
 const StartPage = ({
-  destinationPath,
+  directPath,
   status,
 }: {
-  readonly destinationPath: string;
+  readonly directPath?: string;
   readonly status: "PROCESSING" | "SUCCESS";
 }) => {
-  const start = useAtomSet(classicFlowSessionStore.startAtom);
+  const start = useAtomSet(startClassicTransactionFlowAtom);
   const navigate = useNavigate();
+  navigationBridge.navigate = navigate;
 
   return (
     <button
       type="button"
       onClick={() => {
         start({
-          destination: makeClassicTransactionFlowDestination({
-            completePath: "/activity/stake/complete",
-            routeBase: "/activity",
-            stepsPath: "/activity/stake/steps",
-          }),
           intake: makeActivityIntake(status),
+          mount: {
+            _tag: "ActivityResume",
+            presentation: "Classic",
+            target: "HistoricalDetails",
+          },
         });
-        navigate(destinationPath);
+        if (directPath) navigate(directPath);
       }}
     >
       Open Activity
@@ -130,14 +149,15 @@ const CurrentPath = () => {
 };
 
 const TestApp = ({
-  destinationPath,
+  directPath,
   status,
 }: {
-  readonly destinationPath: string;
+  readonly directPath?: string;
   readonly status: "PROCESSING" | "SUCCESS";
 }) => (
   <RegistryProvider
     initialValues={[
+      [appRuntime.layer, navigationLayer],
       [walletScopeAtom, walletScope],
       [walletRuntime.layer, walletLayer as never],
     ]}
@@ -147,9 +167,7 @@ const TestApp = ({
       <Routes>
         <Route
           path="/"
-          element={
-            <StartPage destinationPath={destinationPath} status={status} />
-          }
+          element={<StartPage directPath={directPath} status={status} />}
         />
         <Route
           element={
@@ -175,12 +193,7 @@ describe("Classic historical Activity route", () => {
   it.each(["PROCESSING", "SUCCESS"] as const)(
     "renders %s historical details without an Execution Attempt",
     async (status) => {
-      const app = await render(
-        <TestApp
-          destinationPath="/activity/stake-review/complete"
-          status={status}
-        />
-      );
+      const app = await render(<TestApp status={status} />);
       const openActivity = app.container.querySelector("button");
       if (!openActivity) throw new Error("Expected Open Activity button");
 
@@ -205,7 +218,7 @@ describe("Classic historical Activity route", () => {
 
   it("keeps live completion behind the Execution Attempt guard", async () => {
     const app = await render(
-      <TestApp destinationPath="/activity/stake/complete" status="SUCCESS" />
+      <TestApp directPath="/activity/stake/complete" status="SUCCESS" />
     );
     const openActivity = app.container.querySelector("button");
     if (!openActivity) throw new Error("Expected Open Activity button");

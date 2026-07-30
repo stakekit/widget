@@ -36,7 +36,6 @@ import {
   defaultFormattedNumber,
   formatNumber,
 } from "../../../shared/lib/number-format";
-import { makeClassicTransactionFlowDestination } from "../../classic-transaction-flow/state";
 import {
   isMountAnimationFinished,
   mountAnimationStateAtom,
@@ -475,7 +474,6 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
     canSubmit: machine.can.submit,
     connected,
     defaultToMinimum: false,
-    destination: makeClassicTransactionFlowDestination({ routeBase: "" }),
     entry: {
       amount: quote.stakeAmount,
       selectedProviderYieldId: quote.selectedProviderYieldId,
@@ -495,6 +493,7 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
     isLedgerAccountPlaceholder:
       connected && wallet.isLedgerLiveAccountPlaceholder,
     isWalletConnecting: wallet.status === "connecting",
+    mount: { _tag: "Earn" },
     kyc,
     positionsData: machine.resources.positions.data,
     providers: summary.providers,

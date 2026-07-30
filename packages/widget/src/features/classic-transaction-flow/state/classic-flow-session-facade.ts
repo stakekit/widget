@@ -9,6 +9,7 @@ import {
   type ActionPreviewRequest,
   YieldOperations,
 } from "../../../services/api/yield-operations";
+import { toWidgetPath } from "../../../services/navigation/widget-navigation";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
 import {
@@ -88,7 +89,7 @@ const getPreviewRequest = (
   }
 };
 
-export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
+const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
   const stateAtom = Atom.make<ClassicFlowSessionState>({
     executionAction: null,
   }).pipe(Atom.setIdleTTL(0), Atom.withLabel("classicFlowSessionState"));
@@ -401,10 +402,33 @@ export const makeClassicFlowSessionModule = (session: ClassicFlowSession) => {
       )
       .pipe(Atom.setIdleTTL(0), Atom.withLabel("backClassicFlowExecutionAtom"));
 
+    const finishAtom = appRuntime
+      .fn(
+        (_input: undefined, context) => {
+          if (
+            !context(canPublishSharedOutputAtom) ||
+            context(executionActionAtom) !== action
+          ) {
+            return Effect.void;
+          }
+
+          return runWidgetNavigationCommand({
+            _tag: "Push",
+            path: toWidgetPath("/"),
+          });
+        },
+        { initialValue: undefined }
+      )
+      .pipe(
+        Atom.setIdleTTL(0),
+        Atom.withLabel("finishClassicFlowExecutionAtom")
+      );
+
     return {
       activityCompleteViewAtom,
       actionAtom,
       backAtom,
+      finishAtom,
       workflowAtom,
     } as const;
   };
@@ -519,3 +543,12 @@ export type ClassicFlowReviewFacade = Atom.Type<
 export type ClassicFlowExecutionFacade = NonNullable<
   Atom.Type<ReturnType<typeof makeClassicFlowExecutionScope>>
 >;
+
+const classicFlowSessionRootAtomFamily = Atom.family(
+  makeClassicFlowSessionModule
+);
+
+export const currentClassicFlowSessionRootAtom = Atom.make((get) => {
+  const session = get(classicFlowSessionStore.currentSessionAtom);
+  return session ? classicFlowSessionRootAtomFamily(session) : null;
+}).pipe(Atom.withLabel("currentClassicFlowSessionRootAtom"));

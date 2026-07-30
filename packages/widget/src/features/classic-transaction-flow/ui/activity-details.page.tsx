@@ -8,9 +8,9 @@ import {
   useClassicFlowIntake,
 } from "../react/classic-flow-route";
 import { useActivityHistoryComplete } from "./complete/hooks/use-activity-complete.hook";
-import { useComplete } from "./complete/hooks/use-complete.hook";
 import { CompletePageComponent } from "./complete/pages/common.page";
 import { ActionReviewPage } from "./review/pages/action-review.page";
+import { useViewTransaction } from "./use-view-transaction";
 
 export const ActivityDetailsPage = () => {
   const { action: selectedAction } = useClassicFlowIntake("ActivityResume");
@@ -54,7 +54,7 @@ const ActivityCompletePage = () => {
     selectedAction,
   } = useActivityHistoryComplete();
 
-  const { onViewTransactionClick } = useComplete();
+  const onViewTransactionClick = useViewTransaction();
 
   const urls = selectedAction.transactions
     .map((val) => ({ type: val.type, url: val.explorerUrl }))

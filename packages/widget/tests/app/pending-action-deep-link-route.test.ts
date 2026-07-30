@@ -11,7 +11,7 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { ManageActionCommand } from "../../src/domain/schema/action-models";
 import { EarnBalance } from "../../src/domain/schema/earn-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
-import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state";
+import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
 import {
   PendingActionDeepLinkIntentId,
   pendingActionDeepLinkViewAtom,
@@ -106,13 +106,12 @@ describe("pending-action deep-link route claims", () => {
         `/positions/${yieldId}/balance-1/pending-action/review`
       );
       expect(
-        registry.get(classicFlowSessionStore.currentSessionAtom)
-      ).toMatchObject({
-        intake: {
-          _tag: "Manage",
-          request: { action: "CLAIM_REWARDS", yieldId },
-        },
-      });
+        registry.get(
+          isActiveClassicTransactionFlowPathAtom(
+            `/positions/${yieldId}/balance-1/pending-action/review`
+          )
+        )
+      ).toBe(true);
 
       registry.set(mountAnimationStateAtom, { type: "all" });
       await Effect.runPromise(Effect.yieldNow);

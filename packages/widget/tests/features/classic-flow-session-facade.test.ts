@@ -11,11 +11,11 @@ import type {
 } from "../../src/domain/schema/action-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state";
+import { startClassicTransactionFlowAtom } from "../../src/features/classic-transaction-flow/state";
 import {
+  currentClassicFlowSessionRootAtom,
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
-  makeClassicFlowSessionModule,
 } from "../../src/features/classic-transaction-flow/state/classic-flow-session-facade";
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import {
@@ -31,7 +31,6 @@ import {
   yieldApiTransactionFixture,
   yieldApiYieldFixture,
 } from "../fixtures";
-import { makeStartClassicFlowSession } from "../utils/classic-flow-session";
 
 const walletScope = new WalletScopeKey({
   address: Schema.decodeSync(WalletAddress)(
@@ -80,7 +79,8 @@ const makeAppLayer = (
   previewAction: (
     request: ActionPreviewRequest
   ) => Effect.Effect<YieldAction, unknown>,
-  trackEvent: TrackingService["Service"]["trackEvent"] = () => Effect.void
+  trackEvent: TrackingService["Service"]["trackEvent"] = () => Effect.void,
+  push: WidgetNavigation["Service"]["push"] = () => Effect.void
 ) =>
   Layer.mergeAll(
     Layer.succeed(
@@ -98,7 +98,7 @@ const makeAppLayer = (
       WidgetNavigation,
       WidgetNavigation.of({
         back: () => Effect.void,
-        push: () => Effect.void,
+        push,
         replace: () => Effect.void,
       })
     )
@@ -131,38 +131,117 @@ const makeRegistry = (
     request: ActionPreviewRequest
   ) => Effect.Effect<YieldAction, unknown>,
   probe?: { disposed: number; started: number },
-  trackEvent?: TrackingService["Service"]["trackEvent"]
+  trackEvent?: TrackingService["Service"]["trackEvent"],
+  push?: WidgetNavigation["Service"]["push"]
 ) =>
   AtomRegistry.make({
     initialValues: [
       Atom.initialValue(
         appRuntime.layer,
-        makeAppLayer(previewAction, trackEvent) as never
+        makeAppLayer(previewAction, trackEvent, push) as never
       ),
       Atom.initialValue(walletRuntime.layer, makeWorkflowLayer(probe) as never),
       Atom.initialValue(walletScopeAtom, walletScope),
     ],
   });
 
+const startFlow = async (
+  registry: AtomRegistry.AtomRegistry,
+  intake: ClassicTransactionFlowIntake,
+  previousRoot?: NonNullable<
+    Atom.Type<typeof currentClassicFlowSessionRootAtom>
+  >
+) => {
+  const command = (() => {
+    switch (intake._tag) {
+      case "Enter":
+        return { intake, mount: { _tag: "Earn" } } as const;
+      case "Exit":
+        return {
+          intake,
+          mount: {
+            _tag: "PositionExit",
+            balanceId: "balance",
+            integrationId: "integration",
+          },
+        } as const;
+      case "Manage":
+        return {
+          intake,
+          mount: {
+            _tag: "PositionManage",
+            balanceId: "balance",
+            integrationId: "integration",
+          },
+        } as const;
+      case "ActivityResume":
+        return {
+          intake,
+          mount: {
+            _tag: "ActivityResume",
+            presentation: "Dashboard",
+            target: "FreshReview",
+          },
+        } as const;
+    }
+  })();
+
+  registry.set(startClassicTransactionFlowAtom, command);
+  await vi.waitFor(() => {
+    const root = registry.get(currentClassicFlowSessionRootAtom);
+    expect(root).not.toBeNull();
+    if (previousRoot) expect(root).not.toBe(previousRoot);
+  });
+
+  const root = registry.get(currentClassicFlowSessionRootAtom);
+  if (!root) throw new Error("Expected a Classic Flow Session root");
+  return root;
+};
+
 describe("Classic Flow Session module", () => {
+  it("finishes through its bound Execution capability", async () => {
+    const push = vi.fn<WidgetNavigation["Service"]["push"]>(() => Effect.void);
+    const registry = makeRegistry(
+      () => Effect.succeed(yieldApiActionFixture()),
+      undefined,
+      undefined,
+      push
+    );
+    const rootAtom = await startFlow(registry, makeEnterIntake());
+    const disposeSession = registry.mount(rootAtom);
+    const flow = registry.get(rootAtom);
+    const review = registry.get(makeClassicFlowReviewScope(flow));
+    const disposeReview = registry.mount(review.reviewViewAtom);
+    await vi.waitFor(() =>
+      expect(registry.get(review.reviewViewAtom).action).not.toBeNull()
+    );
+    registry.set(review.confirmAtom, undefined);
+
+    const execution = registry.get(makeClassicFlowExecutionScope(flow));
+    if (!execution) throw new Error("Expected an Execution module");
+    registry.set(execution.finishAtom, undefined);
+
+    await vi.waitFor(() =>
+      expect(push).toHaveBeenCalledWith("/", {
+        _tag: "Push",
+        path: "/",
+      })
+    );
+
+    disposeReview();
+    disposeSession();
+  });
+
   it("hands Review into Execution and creates a fresh attempt on Back", async () => {
     const actions = [
       yieldApiActionFixture({ id: "action-1" }),
       yieldApiActionFixture({ id: "action-2" }),
     ];
     let previewCalls = 0;
-    const store = classicFlowSessionStore;
     const registry = makeRegistry(() =>
       Effect.succeed(actions[previewCalls++]!)
     );
-    registry.set(
-      store.startAtom,
-      makeStartClassicFlowSession(makeEnterIntake())
-    );
-    const session = registry.get(store.currentSessionAtom);
-    if (!session) throw new Error("Expected a Flow Session");
-
-    const rootAtom = makeClassicFlowSessionModule(session);
+    const rootAtom = await startFlow(registry, makeEnterIntake());
     const disposeSession = registry.mount(rootAtom);
     const flow = registry.get(rootAtom);
 
@@ -203,34 +282,21 @@ describe("Classic Flow Session module", () => {
     disposeSecondReview();
     disposeSession();
     await vi.waitFor(() =>
-      expect(registry.get(store.currentSessionAtom)).toBeNull()
+      expect(registry.get(currentClassicFlowSessionRootAtom)).toBeNull()
     );
   });
 
-  it("does not let an exiting session clear or navigate a replacement", () => {
-    const store = classicFlowSessionStore;
+  it("does not let an exiting session clear or navigate a replacement", async () => {
     const registry = makeRegistry(() =>
       Effect.succeed(yieldApiActionFixture())
     );
-    registry.set(
-      store.startAtom,
-      makeStartClassicFlowSession(makeEnterIntake())
-    );
-    const first = registry.get(store.currentSessionAtom);
-    if (!first) throw new Error("Expected the first Flow Session");
-    const firstRoot = makeClassicFlowSessionModule(first);
+    const firstRoot = await startFlow(registry, makeEnterIntake());
     const disposeFirst = registry.mount(firstRoot);
     const firstReview = registry.get(
       makeClassicFlowReviewScope(registry.get(firstRoot))
     );
 
-    registry.set(
-      store.startAtom,
-      makeStartClassicFlowSession(makeEnterIntake())
-    );
-    const second = registry.get(store.currentSessionAtom);
-    if (!second) throw new Error("Expected the replacement Flow Session");
-    const secondRoot = makeClassicFlowSessionModule(second);
+    const secondRoot = await startFlow(registry, makeEnterIntake(), firstRoot);
     const disposeSecond = registry.mount(secondRoot);
 
     registry.set(firstReview.confirmAtom, undefined);
@@ -238,7 +304,7 @@ describe("Classic Flow Session module", () => {
       registry.get(makeClassicFlowExecutionScope(registry.get(firstRoot)))
     ).toBeNull();
     disposeFirst();
-    expect(registry.get(store.currentSessionAtom)).toBe(second);
+    expect(registry.get(currentClassicFlowSessionRootAtom)).toBe(secondRoot);
 
     disposeSecond();
   });
@@ -253,23 +319,16 @@ describe("Classic Flow Session module", () => {
       Effect.succeed(previews[previewCalls++]!)
     );
     const probe = { disposed: 0, started: 0 };
-    const store = classicFlowSessionStore;
     const registry = makeRegistry(previewAction, probe);
     const selectedYield = yieldApiYieldFixture();
-    registry.set(
-      store.startAtom,
-      makeStartClassicFlowSession({
-        _tag: "ActivityResume",
-        action: yieldApiActionFixture({ id: "old-action" }),
-        providersDetails: [],
-        selectedValidators: [],
-        selectedYield,
-        walletScope,
-      })
-    );
-    const session = registry.get(store.currentSessionAtom);
-    if (!session) throw new Error("Expected an Activity Flow Session");
-    const rootAtom = makeClassicFlowSessionModule(session);
+    const rootAtom = await startFlow(registry, {
+      _tag: "ActivityResume",
+      action: yieldApiActionFixture({ id: "old-action" }),
+      providersDetails: [],
+      selectedValidators: [],
+      selectedYield,
+      walletScope,
+    });
     const disposeSession = registry.mount(rootAtom);
     const flow = registry.get(rootAtom);
     expect(
@@ -330,27 +389,20 @@ describe("Classic Flow Session module", () => {
     try {
       const now = DateTime.makeUnsafe("2026-07-23T12:00:00.000Z");
       vi.setSystemTime(DateTime.toEpochMillis(now));
-      const store = classicFlowSessionStore;
       const registry = makeRegistry(() =>
         Effect.succeed(yieldApiActionFixture({ id: "fresh-action" }))
       );
-      registry.set(
-        store.startAtom,
-        makeStartClassicFlowSession({
-          _tag: "ActivityResume",
-          action: yieldApiActionFixture({
-            id: "expired-action",
-            createdAt: DateTime.subtractDuration(now, Duration.days(7)),
-          }),
-          providersDetails: [],
-          selectedValidators: [],
-          selectedYield: yieldApiYieldFixture(),
-          walletScope,
-        })
-      );
-      const session = registry.get(store.currentSessionAtom);
-      if (!session) throw new Error("Expected an Activity Flow Session");
-      const rootAtom = makeClassicFlowSessionModule(session);
+      const rootAtom = await startFlow(registry, {
+        _tag: "ActivityResume",
+        action: yieldApiActionFixture({
+          id: "expired-action",
+          createdAt: DateTime.subtractDuration(now, Duration.days(7)),
+        }),
+        providersDetails: [],
+        selectedValidators: [],
+        selectedYield: yieldApiYieldFixture(),
+        walletScope,
+      });
       const disposeSession = registry.mount(rootAtom);
       const review = registry.get(
         makeClassicFlowReviewScope(registry.get(rootAtom))
@@ -383,14 +435,7 @@ describe("Classic Flow Session module", () => {
       () => Effect.succeed(yieldApiActionFixture()),
       probe
     );
-    registry.set(
-      classicFlowSessionStore.startAtom,
-      makeStartClassicFlowSession(makeEnterIntake())
-    );
-    const session = registry.get(classicFlowSessionStore.currentSessionAtom);
-    if (!session) throw new Error("Expected a Flow Session");
-
-    const rootAtom = makeClassicFlowSessionModule(session);
+    const rootAtom = await startFlow(registry, makeEnterIntake());
     const disposeSession = registry.mount(rootAtom);
     const flow = registry.get(rootAtom);
     const review = registry.get(makeClassicFlowReviewScope(flow));
@@ -423,13 +468,7 @@ describe("Classic Flow Session module", () => {
       undefined,
       trackEvent
     );
-    registry.set(
-      classicFlowSessionStore.startAtom,
-      makeStartClassicFlowSession(makeExitIntake())
-    );
-    const session = registry.get(classicFlowSessionStore.currentSessionAtom);
-    if (!session) throw new Error("Expected an Exit Flow Session");
-    const rootAtom = makeClassicFlowSessionModule(session);
+    const rootAtom = await startFlow(registry, makeExitIntake());
     const disposeSession = registry.mount(rootAtom);
     const review = registry.get(
       makeClassicFlowReviewScope(registry.get(rootAtom))
@@ -454,13 +493,7 @@ describe("Classic Flow Session module", () => {
       undefined,
       trackEvent
     );
-    registry.set(
-      classicFlowSessionStore.startAtom,
-      makeStartClassicFlowSession(makeExitIntake())
-    );
-    const session = registry.get(classicFlowSessionStore.currentSessionAtom);
-    if (!session) throw new Error("Expected an Exit Flow Session");
-    const rootAtom = makeClassicFlowSessionModule(session);
+    const rootAtom = await startFlow(registry, makeExitIntake());
     const disposeSession = registry.mount(rootAtom);
     const review = registry.get(
       makeClassicFlowReviewScope(registry.get(rootAtom))
@@ -470,10 +503,7 @@ describe("Classic Flow Session module", () => {
       expect(registry.get(review.reviewViewAtom).action).not.toBeNull()
     );
 
-    registry.set(
-      classicFlowSessionStore.startAtom,
-      makeStartClassicFlowSession(makeEnterIntake())
-    );
+    await startFlow(registry, makeEnterIntake(), rootAtom);
     registry.set(review.confirmAtom, undefined);
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -495,15 +525,8 @@ describe("Classic Flow Session module", () => {
         })
       )
     );
-    const store = classicFlowSessionStore;
     const registry = makeRegistry(previewAction);
-    registry.set(
-      store.startAtom,
-      makeStartClassicFlowSession(makeExitIntake())
-    );
-    const session = registry.get(store.currentSessionAtom);
-    if (!session) throw new Error("Expected an Exit Flow Session");
-    const rootAtom = makeClassicFlowSessionModule(session);
+    const rootAtom = await startFlow(registry, makeExitIntake());
     const disposeSession = registry.mount(rootAtom);
     const review = registry.get(
       makeClassicFlowReviewScope(registry.get(rootAtom))
@@ -530,15 +553,8 @@ describe("Classic Flow Session module", () => {
         ? Effect.fail(new Error("preview unavailable"))
         : Effect.succeed(yieldApiActionFixture({ id: "retried-action" }));
     });
-    const store = classicFlowSessionStore;
     const registry = makeRegistry(previewAction);
-    registry.set(
-      store.startAtom,
-      makeStartClassicFlowSession(makeEnterIntake())
-    );
-    const session = registry.get(store.currentSessionAtom);
-    if (!session) throw new Error("Expected a Flow Session");
-    const rootAtom = makeClassicFlowSessionModule(session);
+    const rootAtom = await startFlow(registry, makeEnterIntake());
     const disposeSession = registry.mount(rootAtom);
     const review = registry.get(
       makeClassicFlowReviewScope(registry.get(rootAtom))
@@ -571,15 +587,8 @@ describe("Classic Flow Session module", () => {
     const previewAction = vi.fn(() =>
       Effect.fail(new Error("preview unavailable"))
     );
-    const store = classicFlowSessionStore;
     const registry = makeRegistry(previewAction);
-    registry.set(
-      store.startAtom,
-      makeStartClassicFlowSession(makeEnterIntake())
-    );
-    const session = registry.get(store.currentSessionAtom);
-    if (!session) throw new Error("Expected a Flow Session");
-    const rootAtom = makeClassicFlowSessionModule(session);
+    const rootAtom = await startFlow(registry, makeEnterIntake());
     const disposeSession = registry.mount(rootAtom);
     const review = registry.get(
       makeClassicFlowReviewScope(registry.get(rootAtom))

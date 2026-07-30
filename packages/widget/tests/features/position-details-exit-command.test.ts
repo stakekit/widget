@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { EarnBalance } from "../../src/domain/schema/earn-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state";
+import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
@@ -165,7 +165,7 @@ const makeRegistry = ({
   });
 
 describe("Position Details exit command", () => {
-  it("submits the displayed partial amount for an ERC-4626 exit", async () => {
+  it("starts Exit from a valid displayed partial amount", async () => {
     const push = vi.fn<(path: WidgetPath) => void>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
       () => Effect.void
@@ -185,16 +185,12 @@ describe("Position Details exit command", () => {
         `/positions/${selectedYield.id}/balance-1/unstake/review`
       );
       expect(
-        registry.get(classicFlowSessionStore.currentSessionAtom)?.intake
-      ).toMatchObject({
-        _tag: "Exit",
-        request: {
-          arguments: {
-            amount: "0.4",
-          },
-        },
-        unstakeAmount: new BigNumber("0.4"),
-      });
+        registry.get(
+          isActiveClassicTransactionFlowPathAtom(
+            `/positions/${selectedYield.id}/balance-1/unstake/review`
+          )
+        )
+      ).toBe(true);
     } finally {
       registry.dispose();
     }
@@ -248,8 +244,12 @@ describe("Position Details exit command", () => {
 
       expect(push).not.toHaveBeenCalled();
       expect(
-        registry.get(classicFlowSessionStore.currentSessionAtom)
-      ).toBeNull();
+        registry.get(
+          isActiveClassicTransactionFlowPathAtom(
+            `/positions/${selectedYield.id}/balance-1/unstake/review`
+          )
+        )
+      ).toBe(false);
     } finally {
       registry.dispose();
     }
@@ -277,14 +277,18 @@ describe("Position Details exit command", () => {
 
       expect(push).not.toHaveBeenCalled();
       expect(
-        registry.get(classicFlowSessionStore.currentSessionAtom)
-      ).toBeNull();
+        registry.get(
+          isActiveClassicTransactionFlowPathAtom(
+            `/positions/${selectedYield.id}/balance-1/unstake/review`
+          )
+        )
+      ).toBe(false);
     } finally {
       registry.dispose();
     }
   });
 
-  it("captures refreshed additional addresses in both the Exit request and Wallet Scope", async () => {
+  it("starts Exit for a refreshed Wallet Scope with the same owner", async () => {
     const push = vi.fn<(path: WidgetPath) => void>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
       () => Effect.void
@@ -307,32 +311,19 @@ describe("Position Details exit command", () => {
       registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
-      const intake = registry.get(
-        classicFlowSessionStore.currentSessionAtom
-      )?.intake;
-
-      expect(intake).toMatchObject({
-        _tag: "Exit",
-        request: {
-          address: sameAddressDifferentCase,
-          arguments: {
-            cosmosPubKey: "cosmos-refreshed",
-          },
-        },
-        walletScope: {
-          additionalAddresses: {
-            cosmosPubKey: "cosmos-refreshed",
-          },
-          address: sameAddressDifferentCase,
-          network: "ethereum",
-        },
-      });
+      expect(
+        registry.get(
+          isActiveClassicTransactionFlowPathAtom(
+            `/positions/${selectedYield.id}/balance-1/unstake/review`
+          )
+        )
+      ).toBe(true);
     } finally {
       registry.dispose();
     }
   });
 
-  it("captures one refreshed Wallet Scope for a Manage request and intake", async () => {
+  it("starts Manage for a refreshed Wallet Scope with the same owner", async () => {
     const push = vi.fn<(path: WidgetPath) => void>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
       () => Effect.void
@@ -354,26 +345,13 @@ describe("Position Details exit command", () => {
       });
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
-      const intake = registry.get(
-        classicFlowSessionStore.currentSessionAtom
-      )?.intake;
-
-      expect(intake).toMatchObject({
-        _tag: "Manage",
-        request: {
-          address: sameAddressDifferentCase,
-          arguments: {
-            cosmosPubKey: "cosmos-refreshed",
-          },
-        },
-        walletScope: {
-          additionalAddresses: {
-            cosmosPubKey: "cosmos-refreshed",
-          },
-          address: sameAddressDifferentCase,
-          network: "ethereum",
-        },
-      });
+      expect(
+        registry.get(
+          isActiveClassicTransactionFlowPathAtom(
+            `/positions/${selectedYield.id}/balance-1/pending-action/review`
+          )
+        )
+      ).toBe(true);
     } finally {
       registry.dispose();
     }

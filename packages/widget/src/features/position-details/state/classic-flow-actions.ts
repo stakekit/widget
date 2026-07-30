@@ -17,10 +17,7 @@ import { preparePendingActionRequestDto } from "../../../domain/types/pending-ac
 import { getYieldActionArg } from "../../../domain/types/yields";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import { walletScopeOwnerKey } from "../../../services/wallet/domain/scope";
-import {
-  makeClassicTransactionFlowDestination,
-  startClassicFlowSessionAtom,
-} from "../../classic-transaction-flow/state";
+import { startClassicTransactionFlowAtom } from "../../classic-transaction-flow/state";
 import { walletConnectionStateAtom } from "../../wallet/state";
 import {
   CurrentYieldKycGateKey,
@@ -172,11 +169,7 @@ export const submitPositionDetailsExitAtom = Atom.family(
           return Effect.void;
         }
 
-        const destination = makeClassicTransactionFlowDestination({
-          routeBase: `/positions/${key.integrationId}/${key.balanceId}/unstake`,
-        });
-        return context.setResult(startClassicFlowSessionAtom, {
-          destination,
+        return context.setResult(startClassicTransactionFlowAtom, {
           intake: {
             _tag: "Exit",
             gasFeeToken: prepared.gasFeeToken,
@@ -187,9 +180,10 @@ export const submitPositionDetailsExitAtom = Atom.family(
             unstakeToken: facts.token,
             walletScope: key.scope,
           },
-          navigation: {
-            _tag: "Push",
-            path: destination.reviewPath,
+          mount: {
+            _tag: "PositionExit",
+            balanceId: key.balanceId,
+            integrationId: key.integrationId,
           },
         });
       })
@@ -448,14 +442,10 @@ export const runPositionPendingActionAtom = Atom.family(
         });
         if (Result.isFailure(prepared)) return tracking;
 
-        const destination = makeClassicTransactionFlowDestination({
-          routeBase: `/positions/${key.integrationId}/${key.balanceId}/pending-action`,
-        });
         const value = prepared.success;
         return tracking.pipe(
           Effect.andThen(
-            context.setResult(startClassicFlowSessionAtom, {
-              destination,
+            context.setResult(startClassicTransactionFlowAtom, {
               intake: {
                 _tag: "Manage",
                 gasFeeToken: value.gasFeeToken,
@@ -466,9 +456,10 @@ export const runPositionPendingActionAtom = Atom.family(
                 request: value.requestDto,
                 walletScope: key.scope,
               },
-              navigation: {
-                _tag: "Push",
-                path: destination.reviewPath,
+              mount: {
+                _tag: "PositionManage",
+                balanceId: key.balanceId,
+                integrationId: key.integrationId,
               },
             })
           ),

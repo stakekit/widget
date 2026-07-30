@@ -9,6 +9,13 @@ Application-logic modules must not import React, React DOM, Effect Atom React bi
 
 The only Classic Flow state outside its route tree is the application-runtime intake store. Every Start creates a fresh monotonic runtime-local epoch and an immutable intake snapshot. The epoch is used only to remount the capture-once Session provider, target intake-store cleanup, and suppress stale shared-world outputs such as routing and tracking; it is not a domain identity or descendant command input.
 
+The published headless interface exposes one Start command with closed semantic
+route mounts, an active-path observation, and a Dashboard Activity Resume view
+with a bound abandonment command. It does not expose the intake store, Flow
+Session values, epochs, captured intake, or destinations. Start, abandonment,
+and scoped finish commands own their navigation and validate private ownership
+before publishing shared output.
+
 A stable route tree spanning Review, Steps, and Complete mounts one non-`keepAlive` Session module. Session, Review, and Execution expose separate narrow scoped capabilities rather than one combined nullable context. The Session owns only immutable intake and a private nullable execution-action handoff. Every Review mount creates a fresh scope that owns Action Preview and forward navigation; every Execution mount captures the handoff and reads the Transaction Workflow scoped Atom for the whole Steps-and-Complete scope. Workflow view and command Atoms are passive capabilities of that scope and cannot extend or revive its private lifecycle.
 
 The module must not reintroduce a Classic Flow domain identity, Reviewing/Executable phase state, an identity-keyed Transaction Workflow handoff, or a second preparation state machine. Continue promotes the reviewed Action Preview into the Session handoff. Entering any later Review scope is the sole operation that clears the handoff, so widget Back, browser Back, and host routing share the same behavior. Activity Resume reconstructs a fresh preview when possible and never seeds Execution directly from its historical action.

@@ -8,14 +8,14 @@ import {
   setActivityPageFilterAtom,
 } from "../state/page";
 import {
-  type ActivityResumeMode,
+  type ActivityResumePresentation,
   startActivityResumeAtom,
 } from "../state/start-activity-resume";
 
 export const useActivityPage = ({
-  resumeMode,
+  resumePresentation,
 }: {
-  readonly resumeMode: ActivityResumeMode;
+  readonly resumePresentation: ActivityResumePresentation;
 }) => {
   const view = useAtomValue(activityPageViewAtom);
   const loadMore = useAtomSet(loadMoreActivityAtom);
@@ -28,7 +28,12 @@ export const useActivityPage = ({
     onActionSelect: (
       item: ActivityActionItem,
       providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
-    ) => startActivityResume({ item, mode: resumeMode, providersDetails }),
+    ) =>
+      startActivityResume({
+        item,
+        presentation: resumePresentation,
+        providersDetails,
+      }),
     onFilterSelect: selectFilter,
     onLoadMore: () => loadMore(undefined),
     onRetry: () => retry(undefined),

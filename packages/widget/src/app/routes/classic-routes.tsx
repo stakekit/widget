@@ -2,10 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
 import { AnimatedActivityPage } from "../../features/activity/ui";
-import {
-  classicFlowSessionStore,
-  isClassicFlowSessionPath,
-} from "../../features/classic-transaction-flow/state";
+import { isActiveClassicTransactionFlowPathAtom } from "../../features/classic-transaction-flow/state";
 import { createClassicFlowRoutes } from "../../features/classic-transaction-flow/ui";
 import { AnimatedEarnPage } from "../../features/earn/ui";
 import { AnimatedPositionsPage } from "../../features/portfolio/ui";
@@ -33,7 +30,9 @@ export const ClassicRoutes = () => {
   const underMaintenance = useUnderMaintenance();
 
   const location = useLocation();
-  const flowSession = useAtomValue(classicFlowSessionStore.currentSessionAtom);
+  const isActiveClassicFlowPath = useAtomValue(
+    isActiveClassicTransactionFlowPathAtom(location.pathname)
+  );
 
   const detailsMatch = useDetailsMatch();
 
@@ -42,10 +41,7 @@ export const ClassicRoutes = () => {
    * Handle position details pages in their own Routes
    */
   const resolveRouteKey = () => {
-    if (
-      flowSession &&
-      isClassicFlowSessionPath(flowSession, location.pathname)
-    ) {
+    if (isActiveClassicFlowPath) {
       return "classic-flow-session";
     }
     if (detailsMatch) return "/";

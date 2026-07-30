@@ -1,10 +1,7 @@
 import { Effect, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import {
-  makeClassicTransactionFlowDestination,
-  startClassicFlowSessionAtom,
-} from "../../../features/classic-transaction-flow/state";
+import { startClassicTransactionFlowAtom } from "../../../features/classic-transaction-flow/state";
 import {
   type PendingActionDeepLinkIntentId,
   pendingActionDeepLinkViewAtom,
@@ -70,12 +67,8 @@ const claimPendingActionDeepLinkAtom = appRuntime
     );
 
     if (current.type === "review") {
-      const destination = makeClassicTransactionFlowDestination({
-        routeBase: `${positionBase}/pending-action`,
-      });
       return context
-        .setResult(startClassicFlowSessionAtom, {
-          destination,
+        .setResult(startClassicTransactionFlowAtom, {
           intake: {
             _tag: "Manage",
             request: current.pendingActionDto.requestDto,
@@ -86,7 +79,11 @@ const claimPendingActionDeepLinkAtom = appRuntime
             providersDetails: current.providersDetails,
             walletScope: current.walletScope,
           },
-          navigation: { _tag: "Push", path },
+          mount: {
+            _tag: "PositionManage",
+            balanceId: current.balanceId,
+            integrationId: current.yieldOp.id,
+          },
         })
         .pipe(
           Effect.tap((outcome) =>

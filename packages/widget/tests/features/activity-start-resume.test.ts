@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import { startActivityResumeAtom } from "../../src/features/activity/state/start-activity-resume";
-import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state";
+import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
 import { walletConnectionStateAtom } from "../../src/features/wallet/state";
 import {
   WidgetNavigation,
@@ -78,7 +78,7 @@ describe("Activity resume action", () => {
           yieldData: selectedYield,
         },
         providersDetails: [],
-        mode: "start-and-navigate",
+        presentation: "Classic",
       });
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
@@ -87,11 +87,8 @@ describe("Activity resume action", () => {
         path: "/activity/review",
       });
       expect(
-        registry.get(classicFlowSessionStore.currentSessionAtom)?.intake
-      ).toMatchObject({
-        _tag: "ActivityResume",
-        action: { id: action.id },
-      });
+        registry.get(isActiveClassicTransactionFlowPathAtom("/activity/review"))
+      ).toBe(true);
     } finally {
       registry.dispose();
     }
@@ -120,7 +117,7 @@ describe("Activity resume action", () => {
           yieldData: selectedYield,
         },
         providersDetails: [],
-        mode: "start-and-navigate",
+        presentation: "Classic",
       });
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
@@ -161,15 +158,17 @@ describe("Activity resume action", () => {
             yieldData: selectedYield,
           },
           providersDetails: [],
-          mode: "start-and-navigate",
+          presentation: "Classic",
         });
 
         await Promise.resolve();
 
         expect(push).not.toHaveBeenCalled();
         expect(
-          registry.get(classicFlowSessionStore.currentSessionAtom)
-        ).toBeNull();
+          registry.get(
+            isActiveClassicTransactionFlowPathAtom("/activity/review")
+          )
+        ).toBe(false);
       } finally {
         registry.dispose();
       }

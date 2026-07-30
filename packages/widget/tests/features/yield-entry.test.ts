@@ -11,10 +11,7 @@ import {
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import {
-  classicFlowSessionStore,
-  makeClassicTransactionFlowDestination,
-} from "../../src/features/classic-transaction-flow/state";
+import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import {
   getYieldEntryCta,
@@ -50,7 +47,6 @@ const makeFacadeInput = (
     canSubmit: true,
     connected: true,
     defaultToMinimum: false,
-    destination: makeClassicTransactionFlowDestination({ routeBase: "" }),
     entry: {
       amount: new BigNumber(1),
       selectedProviderYieldId: null,
@@ -68,6 +64,7 @@ const makeFacadeInput = (
     isKycLoading: false,
     isLedgerAccountPlaceholder: false,
     isWalletConnecting: false,
+    mount: { _tag: "Earn" },
     positionsData: new Map(),
     providers: [
       {
@@ -277,8 +274,8 @@ describe("Yield Entry", () => {
         )
         .toBe("invalid");
       expect(
-        registry.get(classicFlowSessionStore.currentSessionAtom)
-      ).toBeNull();
+        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
+      ).toBe(false);
 
       registry.set(inputAtom, { ...validInput, isKycBlocking: true });
       registry.set(facade.submitAtom, undefined);
@@ -290,8 +287,8 @@ describe("Yield Entry", () => {
         )
         .toBe("kyc-blocked");
       expect(
-        registry.get(classicFlowSessionStore.currentSessionAtom)
-      ).toBeNull();
+        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
+      ).toBe(false);
 
       registry.set(inputAtom, validInput);
       registry.set(facade.submitAtom, undefined);
@@ -303,8 +300,8 @@ describe("Yield Entry", () => {
         )
         .toBe("submitted");
       expect(
-        registry.get(classicFlowSessionStore.currentSessionAtom)?.intake._tag
-      ).toBe("Enter");
+        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
+      ).toBe(true);
       await expect.poll(() => router.state.location.pathname).toBe("/review");
     } finally {
       registry.dispose();
@@ -325,14 +322,14 @@ describe("Yield Entry", () => {
       registry.set(facade.submitAtom, undefined);
       await readSubmitOutcome(registry, facade.submitAtom).toBe("submitted");
       expect(ports.push).toHaveBeenCalledWith(
-        input.destination.reviewPath,
+        "/review",
         expect.objectContaining({ _tag: "Push" })
       );
       expect(ports.replace).not.toHaveBeenCalled();
       expect(ports.openConnect).not.toHaveBeenCalled();
       expect(
-        registry.get(classicFlowSessionStore.currentSessionAtom)?.intake._tag
-      ).toBe("Enter");
+        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
+      ).toBe(true);
     } finally {
       registry.dispose();
     }
@@ -375,8 +372,10 @@ describe("Yield Entry", () => {
         .poll(() => AsyncResult.isFailure(registry.get(facade.submitAtom)))
         .toBe(true);
       await expect
-        .poll(() => registry.get(classicFlowSessionStore.currentSessionAtom))
-        .toBeNull();
+        .poll(() =>
+          registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
+        )
+        .toBe(false);
     } finally {
       registry.dispose();
     }
@@ -416,8 +415,8 @@ describe("Yield Entry", () => {
       expect(ports.push).not.toHaveBeenCalled();
       expect(ports.replace).not.toHaveBeenCalled();
       expect(
-        registry.get(classicFlowSessionStore.currentSessionAtom)
-      ).toBeNull();
+        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
+      ).toBe(false);
     } finally {
       registry.dispose();
     }
@@ -450,8 +449,8 @@ describe("Yield Entry", () => {
       expect(ports.openConnect).not.toHaveBeenCalled();
       expect(ports.push).not.toHaveBeenCalled();
       expect(
-        registry.get(classicFlowSessionStore.currentSessionAtom)
-      ).toBeNull();
+        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
+      ).toBe(false);
     } finally {
       registry.dispose();
     }
@@ -535,8 +534,8 @@ describe("Yield Entry", () => {
         registry.set(facade.submitAtom, undefined);
         await readSubmitOutcome(registry, facade.submitAtom).toBe(expected);
         expect(
-          registry.get(classicFlowSessionStore.currentSessionAtom)
-        ).toBeNull();
+          registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
+        ).toBe(false);
         expect(connect).not.toHaveBeenCalled();
         expect(addLedgerAccount).not.toHaveBeenCalled();
         expect(ports.openConnect).not.toHaveBeenCalled();

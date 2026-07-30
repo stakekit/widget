@@ -20,12 +20,14 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state";
+import {
+  isActiveClassicTransactionFlowPathAtom,
+  startClassicTransactionFlowAtom,
+} from "../../src/features/classic-transaction-flow/state";
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
-import { makeStartClassicFlowSession } from "../utils/classic-flow-session";
 import { render } from "../utils/test-utils.dom";
 
 type LifecycleProbe = {
@@ -137,7 +139,10 @@ const RuntimeHarness = ({
   );
 };
 
-const activityIntake = (): ClassicTransactionFlowIntake => {
+const activityIntake = (): Extract<
+  ClassicTransactionFlowIntake,
+  { readonly _tag: "ActivityResume" }
+> => {
   const selectedYield = yieldApiYieldFixture();
   return {
     _tag: "ActivityResume",
@@ -155,17 +160,28 @@ const activityIntake = (): ClassicTransactionFlowIntake => {
 const ClassicFlowRuntimeHarness = () => {
   const intake = activityIntake();
   useAtomInitialValues([[walletScopeAtom, intake.walletScope]]);
-  const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
-  const start = useAtomSet(classicFlowSessionStore.startAtom);
+  const sessionPresent = useAtomValue(
+    isActiveClassicTransactionFlowPathAtom("/activity/review")
+  );
+  const start = useAtomSet(startClassicTransactionFlowAtom);
 
   return (
     <>
       <output data-testid="classic-flow-session">
-        {session ? "present" : "none"}
+        {sessionPresent ? "present" : "none"}
       </output>
       <button
         type="button"
-        onClick={() => start(makeStartClassicFlowSession(intake))}
+        onClick={() =>
+          start({
+            intake,
+            mount: {
+              _tag: "ActivityResume",
+              presentation: "Classic",
+              target: "FreshReview",
+            },
+          })
+        }
       >
         Start classic flow
       </button>

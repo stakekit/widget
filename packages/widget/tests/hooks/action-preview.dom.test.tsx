@@ -10,15 +10,11 @@ import {
 } from "../../src/app/config/settings";
 import { ActionCommand } from "../../src/domain/schema/action-models";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import { startClassicTransactionFlowAtom } from "../../src/features/classic-transaction-flow/state";
 import {
-  type ClassicFlowSession,
-  classicFlowSessionStore,
-  makeClassicTransactionFlowDestination,
-} from "../../src/features/classic-transaction-flow/state";
-import {
+  currentClassicFlowSessionRootAtom,
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
-  makeClassicFlowSessionModule,
 } from "../../src/features/classic-transaction-flow/state/classic-flow-session-facade";
 import {
   walletScopeAtom,
@@ -66,25 +62,23 @@ const settings = normalizeWidgetConfig({
   yieldsApiUrl: yieldApiUrl,
 });
 
-const sessionRootAtomFamily = Atom.family((session: ClassicFlowSession) =>
-  makeClassicFlowSessionModule(session)
-);
+const reviewScopeAtomFamily = Atom.family(
+  (
+    rootAtom: NonNullable<Atom.Type<typeof currentClassicFlowSessionRootAtom>>
+  ) =>
+    (() => {
+      let reviewAtom: ReturnType<typeof makeClassicFlowReviewScope> | undefined;
 
-const reviewScopeAtomFamily = Atom.family((session: ClassicFlowSession) =>
-  (() => {
-    const rootAtom = sessionRootAtomFamily(session);
-    let reviewAtom: ReturnType<typeof makeClassicFlowReviewScope> | undefined;
-
-    return Atom.make((get) => {
-      const flow = get(rootAtom);
-      reviewAtom ??= makeClassicFlowReviewScope(flow);
-      return get(reviewAtom);
-    });
-  })()
+      return Atom.make((get) => {
+        const flow = get(rootAtom);
+        reviewAtom ??= makeClassicFlowReviewScope(flow);
+        return get(reviewAtom);
+      });
+    })()
 );
 const sessionReviewFacadeAtom = Atom.make((get) => {
-  const session = get(classicFlowSessionStore.currentSessionAtom);
-  return session ? get(reviewScopeAtomFamily(session)) : null;
+  const rootAtom = get(currentClassicFlowSessionRootAtom);
+  return rootAtom ? get(reviewScopeAtomFamily(rootAtom)) : null;
 });
 const sessionReviewViewAtom = Atom.make((get) => {
   const review = get(sessionReviewFacadeAtom);
@@ -108,10 +102,10 @@ const confirmSessionAtom = Atom.fnSync(
   { initialValue: undefined }
 );
 const sessionAttachedActionAtom = Atom.make((get) => {
-  const session = get(classicFlowSessionStore.currentSessionAtom);
-  if (!session) return null;
+  const rootAtom = get(currentClassicFlowSessionRootAtom);
+  if (!rootAtom) return null;
 
-  const flow = get(sessionRootAtomFamily(session));
+  const flow = get(rootAtom);
   const execution = get(makeClassicFlowExecutionScope(flow));
   return execution ? get(execution.actionAtom) : null;
 });
@@ -173,13 +167,10 @@ describe("action preview", () => {
 
     const { result } = await renderHook(
       () => {
-        const startFlow = useAtomSet(classicFlowSessionStore.startAtom);
+        const startFlow = useAtomSet(startClassicTransactionFlowAtom);
 
         useEffect(() => {
           startFlow({
-            destination: makeClassicTransactionFlowDestination({
-              routeBase: "",
-            }),
             intake: {
               _tag: "Enter",
               gasFeeToken: stake.mechanics.gasFeeToken,
@@ -190,6 +181,7 @@ describe("action preview", () => {
               selectedValidators: new Map(),
               walletScope,
             } satisfies ClassicTransactionFlowIntake,
+            mount: { _tag: "Earn" },
           });
         }, [startFlow]);
 
@@ -234,13 +226,10 @@ describe("action preview", () => {
 
     const { act, result } = await renderHook(
       () => {
-        const startFlow = useAtomSet(classicFlowSessionStore.startAtom);
+        const startFlow = useAtomSet(startClassicTransactionFlowAtom);
 
         useEffect(() => {
           startFlow({
-            destination: makeClassicTransactionFlowDestination({
-              routeBase: "",
-            }),
             intake: {
               _tag: "Enter",
               gasFeeToken: kycRequiredStake.mechanics.gasFeeToken,
@@ -254,6 +243,7 @@ describe("action preview", () => {
                 network: "ethereum",
               }),
             },
+            mount: { _tag: "Earn" },
           });
         }, [startFlow]);
 

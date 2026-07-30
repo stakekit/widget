@@ -1,4 +1,4 @@
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
 import type { TransactionType } from "../../../../../domain/types/action";
@@ -7,21 +7,18 @@ import {
   usePendingActionMatch,
   useUnstakeMatch,
 } from "../../../../position-details/state";
-import { useTrackEvent } from "../../../../tracking/state";
 import { useSKWallet } from "../../../../wallet/state";
 import type { PageCta } from "../../../../widget-shell/components";
+import { useClassicFlowExecution } from "../../../react/classic-flow-route";
 import { useActivityPendingActionMatch } from "../../../react/use-activity-pending-action-match";
 import { useActivityReviewMatch } from "../../../react/use-activity-review.match";
 import { useActivityUnstakeActionMatch } from "../../../react/use-activity-unstake.match";
-import {
-  classicFlowSessionStore,
-  finishClassicTransactionFlowAtom,
-} from "../../../state/flow-session-store";
+import { useViewTransaction } from "../../use-view-transaction";
 
 export const useComplete = () => {
   const location = useLocation();
-  const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
-  const finish = useAtomSet(finishClassicTransactionFlowAtom);
+  const execution = useClassicFlowExecution();
+  const finish = useAtomSet(execution.finishAtom);
 
   const { isLedgerLive } = useSKWallet();
 
@@ -30,7 +27,7 @@ export const useComplete = () => {
     url: string;
   }[] = location.state?.urls ?? [];
 
-  const trackEvent = useTrackEvent();
+  const onViewTransactionClick = useViewTransaction();
 
   const onClick = () => {
     if (isLedgerLive && !isMobile()) {
@@ -38,14 +35,7 @@ export const useComplete = () => {
 
       return;
     }
-    if (session) {
-      finish(session.epoch);
-    }
-  };
-
-  const onViewTransactionClick = (url: string) => {
-    trackEvent("viewTxClicked");
-    window.open(url, "_blank");
+    finish(undefined);
   };
 
   const unstakeMatch = useUnstakeMatch();

@@ -30,7 +30,10 @@ import {
   useClassicFlowReview,
   useClassicFlowSession,
 } from "../../src/features/classic-transaction-flow/react/classic-flow-route";
-import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state";
+import {
+  isActiveClassicTransactionFlowPathAtom,
+  startClassicTransactionFlowAtom,
+} from "../../src/features/classic-transaction-flow/state";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
@@ -38,7 +41,6 @@ import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
 import { disconnectedNormalizedWalletState } from "../../src/services/wallet/domain/state";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
-import { makeStartClassicFlowSession } from "../utils/classic-flow-session";
 import { describe, expect, it, vi } from "../utils/test-extend.dom";
 import { render } from "../utils/test-utils.dom";
 
@@ -78,28 +80,30 @@ const intake: ClassicTransactionFlowIntake = {
 };
 
 const StartPage = () => {
-  const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
-  const start = useAtomSet(classicFlowSessionStore.startAtom);
+  const isActive = useAtomValue(
+    isActiveClassicTransactionFlowPathAtom("/review")
+  );
+  const start = useAtomSet(startClassicTransactionFlowAtom);
   const navigate = useNavigate();
 
   return (
     <>
       <button
         type="button"
-        onClick={() => start(makeStartClassicFlowSession(intake))}
+        onClick={() => start({ intake, mount: { _tag: "Earn" } })}
       >
         Start
       </button>
       <button
         type="button"
-        disabled={!session}
+        disabled={!isActive}
         onClick={() => navigate("/review")}
       >
         Review
       </button>
       <button
         type="button"
-        disabled={!session}
+        disabled={!isActive}
         onClick={() => navigate("/steps")}
       >
         Steps
@@ -114,7 +118,7 @@ const ReviewPage = () => {
   const navigate = useNavigate();
   const review = useAtomValue(reviewFacade.reviewViewAtom);
   const confirm = useAtomSet(reviewFacade.confirmAtom);
-  const start = useAtomSet(classicFlowSessionStore.startAtom);
+  const start = useAtomSet(startClassicTransactionFlowAtom);
 
   return (
     <>
@@ -133,9 +137,12 @@ const ReviewPage = () => {
       <button type="button" onClick={() => navigate(1)}>
         Browser Forward
       </button>
+      <button type="button" onClick={() => navigate("/steps")}>
+        Host Steps
+      </button>
       <button
         type="button"
-        onClick={() => start(makeStartClassicFlowSession(intake))}
+        onClick={() => start({ intake, mount: { _tag: "Earn" } })}
       >
         Replace Session
       </button>
@@ -191,11 +198,10 @@ const FlowRoutes = ({
   readonly walletState: NormalizedWalletState;
 }) => {
   const location = useLocation();
-  const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
-  const key =
-    session && /^\/(?:review|steps|complete)$/.test(location.pathname)
-      ? "flow-session"
-      : location.key;
+  const isActive = useAtomValue(
+    isActiveClassicTransactionFlowPathAtom(location.pathname)
+  );
+  const key = isActive ? "flow-session" : location.key;
 
   return (
     <Routes key={key}>
@@ -291,9 +297,11 @@ describe("Classic Transaction Flow navigation", () => {
       return match;
     };
     await act(async () => button("Start").click());
-    await vi.waitFor(() => expect(button("Steps").disabled).toBe(false));
-    await act(async () => button("Steps").click());
-    await vi.waitFor(() => expect(button("Review").disabled).toBe(true));
+    await vi.waitFor(() => expect(button("Host Steps")).toBeDefined());
+    await act(async () => button("Host Steps").click());
+    await vi.waitFor(() =>
+      expect(directSteps.container.textContent).toContain("Start")
+    );
   });
 
   it("remounts the Flow Session boundary for a replacement snapshot", async ({
@@ -324,8 +332,6 @@ describe("Classic Transaction Flow navigation", () => {
     };
 
     await act(async () => getButton("Start").click());
-    await vi.waitFor(() => expect(getButton("Review").disabled).toBe(false));
-    await act(async () => getButton("Review").click());
     await vi.waitFor(() =>
       expect(
         app.container.querySelector('[data-testid="review-action"]')
@@ -466,8 +472,6 @@ describe("Classic Transaction Flow navigation", () => {
     };
 
     await act(async () => button("Start").click());
-    await vi.waitFor(() => expect(button("Review").disabled).toBe(false));
-    await act(async () => button("Review").click());
     await vi.waitFor(() => expect(button("Confirm").disabled).toBe(false));
     await act(async () => button("Confirm").click());
     await vi.waitFor(() =>

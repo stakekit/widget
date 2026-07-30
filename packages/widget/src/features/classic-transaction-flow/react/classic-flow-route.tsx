@@ -1,5 +1,6 @@
 import { make as makeScopedAtom, useAtomValue } from "@effect/atom-react";
-import { type PropsWithChildren, useContext } from "react";
+import type * as Atom from "effect/unstable/reactivity/Atom";
+import { createContext, type PropsWithChildren, useContext } from "react";
 import { Navigate, Outlet } from "react-router";
 import { useWalletScopeRoute } from "../../wallet/ui";
 import {
@@ -12,18 +13,20 @@ import {
   type ClassicFlowReviewFacade,
   type ClassicFlowSessionFacade,
   type ClassicFlowSessionModule,
+  currentClassicFlowSessionRootAtom,
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
-  makeClassicFlowSessionModule,
 } from "../state/classic-flow-session-facade";
 import { classicFlowSessionStore } from "../state/flow-session-store";
 
-const SessionScopedAtom = makeScopedAtom(makeClassicFlowSessionModule);
-
 const useClassicFlowSessionModule = (): ClassicFlowSessionModule => {
-  const rootAtom = useContext(SessionScopedAtom.Context);
-  return useAtomValue(rootAtom);
+  const session = useContext(ClassicFlowSessionContext);
+  if (!session) throw new Error("Classic Flow Session is unavailable.");
+  return session;
 };
+
+const ClassicFlowSessionContext =
+  createContext<ClassicFlowSessionModule | null>(null);
 
 export const useClassicFlowSession = (): ClassicFlowSessionFacade => {
   const session = useClassicFlowSessionModule();
@@ -71,19 +74,33 @@ export const ClassicFlowRoute = ({
     intake &&
     isClassicTransactionFlowWalletScopeValid(intake, walletScope)
   ) {
-    return (
-      <SessionScopedAtom.Provider key={session.epoch} value={session}>
-        <SessionBinding />
-      </SessionScopedAtom.Provider>
-    );
+    return <SessionBinding key={session.epoch} />;
   }
 
   return <Navigate to="/" replace />;
 };
 
 const SessionBinding = () => {
-  useClassicFlowSessionModule();
-  return <Outlet />;
+  const rootAtom = useAtomValue(currentClassicFlowSessionRootAtom);
+  if (!rootAtom) return <Navigate to="/" replace />;
+
+  return <MountedSessionBinding rootAtom={rootAtom} />;
+};
+
+const MountedSessionBinding = ({
+  rootAtom,
+}: {
+  readonly rootAtom: NonNullable<
+    Atom.Type<typeof currentClassicFlowSessionRootAtom>
+  >;
+}) => {
+  const session = useAtomValue(rootAtom);
+
+  return (
+    <ClassicFlowSessionContext.Provider value={session}>
+      <Outlet />
+    </ClassicFlowSessionContext.Provider>
+  );
 };
 
 export const ClassicFlowReviewScope = ({ children }: PropsWithChildren) => {

@@ -35,8 +35,8 @@ import { WalletModal } from "../../../services/wallet/wallet-modal";
 import { getRewardRateFormatted } from "../../../shared/lib/formatters";
 import { formatNumber } from "../../../shared/lib/number-format";
 import {
-  type ClassicFlowSession,
-  startClassicFlowSessionAtom,
+  type ClassicTransactionFlowEnterMount,
+  startClassicTransactionFlowAtom,
 } from "../../classic-transaction-flow/state";
 import type { YieldSummaryProvider } from "../../yield-summary/state";
 
@@ -136,8 +136,8 @@ type YieldEntryPreparation = NonNullable<
 
 type SubmitYieldEntry = Readonly<{
   readonly connected: boolean;
-  readonly destination: ClassicFlowSession["destination"];
   readonly kycBlocked: boolean;
+  readonly mount: ClassicTransactionFlowEnterMount;
   readonly preparation: YieldEntryPreparation | null;
   readonly providers: ReadonlyArray<YieldSummaryProvider>;
   readonly validationHasErrors: boolean;
@@ -174,7 +174,6 @@ export type YieldEntryFacadeInput = Readonly<{
   readonly canSubmit: boolean;
   readonly connected: boolean;
   readonly defaultToMinimum: boolean;
-  readonly destination: ClassicFlowSession["destination"];
   readonly entry: YieldEntryInput;
   readonly externalProviders: boolean;
   readonly hasNoYields: boolean;
@@ -184,6 +183,7 @@ export type YieldEntryFacadeInput = Readonly<{
   readonly isKycLoading: boolean;
   readonly isLedgerAccountPlaceholder: boolean;
   readonly isWalletConnecting: boolean;
+  readonly mount: ClassicTransactionFlowEnterMount;
   readonly positionsData: PositionsData;
   readonly providers: ReadonlyArray<YieldSummaryProvider> | null;
   readonly submitted: boolean;
@@ -378,8 +378,8 @@ export const makeYieldEntry = (
               runSubmitYieldEntry(
                 {
                   connected: false,
-                  destination: input.destination,
                   kycBlocked: false,
+                  mount: input.mount,
                   preparation: view.preparation,
                   providers: input.providers ?? [],
                   validationHasErrors: false,
@@ -397,8 +397,8 @@ export const makeYieldEntry = (
         return runSubmitYieldEntry(
           {
             connected: input.connected,
-            destination: input.destination,
             kycBlocked: input.isKycBlocking,
+            mount: input.mount,
             preparation: view.preparation,
             providers: input.providers ?? [],
             validationHasErrors: view.validation.hasErrors,
@@ -439,8 +439,7 @@ const runSubmitYieldEntry = (
   }
 
   return context
-    .setResult(startClassicFlowSessionAtom, {
-      destination: input.destination,
+    .setResult(startClassicTransactionFlowAtom, {
       intake: {
         _tag: "Enter",
         request: input.preparation.command,
@@ -451,10 +450,7 @@ const runSubmitYieldEntry = (
         selectedValidators: input.preparation.selectedValidators,
         walletScope: input.walletScope,
       },
-      navigation: {
-        _tag: "Push",
-        path: input.destination.reviewPath,
-      },
+      mount: input.mount,
     })
     .pipe(
       Effect.map((outcome) =>
