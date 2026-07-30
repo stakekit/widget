@@ -1,6 +1,6 @@
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { describe, expect, it } from "vitest";
-import type { MarketPosition } from "../../src/domain/borrow/market-position";
+import type { MarketPosition } from "../../src/domain/borrow/positions/market-position";
 import { getUnifiedManagePositionsState } from "../../src/features/portfolio/ui/dashboard/positions/model";
 
 const borrowPositionsResult = (positions: ReadonlyArray<MarketPosition> = []) =>

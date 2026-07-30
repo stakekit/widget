@@ -4,10 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
-import {
-  useBorrowFeatureEnabled,
-  useBorrowPositions,
-} from "../../../../borrow/state";
+import { usePortfolioBorrowPositions } from "../../../react/use-borrow-positions";
 import { useSummary } from "../../../react/use-summary";
 import { SummaryItem } from "../../components/summary-item";
 import { summaryContainer } from "../../components/summary-item/index.css";
@@ -15,19 +12,18 @@ import { summaryContainer } from "../../components/summary-item/index.css";
 export const Summary = () => {
   const { allPositionsQuery, averageApyQuery, availableBalanceSumQuery } =
     useSummary();
-  const borrowFeatureEnabled = useBorrowFeatureEnabled();
-  const borrowPositions = useBorrowPositions();
+  const borrowPositions = usePortfolioBorrowPositions();
   const borrowPositionItems = AsyncResult.getOrElse(
     borrowPositions.positionsResult,
     () => []
   );
   const borrowPositionsAreLoading =
-    borrowFeatureEnabled &&
-    borrowPositions.walletBridge.status === "connected" &&
+    borrowPositions.enabled &&
+    borrowPositions.connectionStatus === "connected" &&
     (AsyncResult.isInitial(borrowPositions.positionsResult) ||
       AsyncResult.isWaiting(borrowPositions.positionsResult));
   const hasBorrowPositions =
-    borrowFeatureEnabled && borrowPositionItems.length > 0;
+    borrowPositions.enabled && borrowPositionItems.length > 0;
   const borrowTotalSupplied = borrowPositionItems.reduce(
     (acc, position) => acc.plus(position.metrics.totalSuppliedUsd),
     new BigNumber(0)

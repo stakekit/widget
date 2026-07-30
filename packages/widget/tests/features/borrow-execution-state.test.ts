@@ -9,11 +9,15 @@ import {
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { BorrowTransactionFlowIntake } from "../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
-import { startBorrowTransactionFlowAtom } from "../../src/features/borrow-transaction-flow/state";
+import {
+  borrowTransactionFlowOutcomeAtom,
+  startBorrowTransactionFlowAtom,
+} from "../../src/features/borrow-transaction-flow/state";
 import {
   borrowFlowSessionStore,
   makeBorrowFlowSessionStore,
 } from "../../src/features/borrow-transaction-flow/state/borrow-flow-session-store";
+import { publishBorrowTransactionFlowOutcomeAtom } from "../../src/features/borrow-transaction-flow/state/outcomes";
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import {
   toWidgetPath,
@@ -32,7 +36,7 @@ const intake = {
     args: { marketId: "market-1" },
     integrationId: "provider-1",
   },
-  entry: { _tag: "BorrowDashboard" },
+  entry: { _tag: "BorrowEntry" },
   summary: {
     action: "borrow",
     borrowAmount: "1",
@@ -56,6 +60,28 @@ const widgetConfig = normalizeWidgetConfig({
 });
 
 describe("borrow flow session state", () => {
+  it("publishes the immutable origin with flow outcomes", () => {
+    const registry = AtomRegistry.make();
+    const entry = {
+      _tag: "MarketPosition" as const,
+      marketId: "market-1",
+    };
+
+    registry.set(publishBorrowTransactionFlowOutcomeAtom, {
+      _tag: "Done",
+      entry,
+      epoch: 3,
+    });
+
+    expect(
+      Option.getOrThrow(registry.get(borrowTransactionFlowOutcomeAtom))
+    ).toEqual({
+      _tag: "Done",
+      entry,
+      epoch: 3,
+    });
+  });
+
   it("captures immutable, fresh sessions and ignores a stale clear", () => {
     const registry = AtomRegistry.make({
       initialValues: [

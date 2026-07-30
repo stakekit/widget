@@ -217,15 +217,16 @@ nested Atoms or Atom factories nor command callbacks; the facade resolves the
 active resource and forwards user intent internally. Deterministic
 calculations remain plain TypeScript.
 
-Borrow action preparation is one deterministic feature-owned projection over a
-normalized draft, `Borrow Positions`, and the governing `Risk Position`. It
-returns `Idle`, typed `Blocked` reasons, or `Ready`; only `Ready` contains the
+Borrow action preparation is one deterministic feature-owned seam over a
+normalized draft, `Borrow Positions`, and the governing `Risk Position`. The
+seam delegates to private action-specific modules and returns `Idle`, typed
+`Blocked` reasons, or `Ready`; only `Ready` contains the
 aligned Action Command and action-specific review summary. Risk Position
 assessment is authoritative for solvency decisions. Financial totals derived
 from amounts and prices are display fallbacks and never silently replace an
-unavailable risk assessment. Borrow form Atoms own preparation and re-read the
-current `Ready` value when starting a Flow Session; React only renders the view
-and dispatches intent.
+unavailable risk assessment. Borrow Entry and Market Position Atoms own
+preparation and re-read the current `Ready` value when starting a Flow Session;
+React only renders the view and dispatches intent.
 
 `features/yield-entry` owns the shared Yield Entry capability used by Earn and
 position details: amount constraints, validation, KYC projection, Enter Action
@@ -299,10 +300,13 @@ Transaction execution is split by ownership:
   module that owns the relative phase paths, intake guard, Review and Execution
   scope topology, and pages for each Classic journey mount. The app chooses the
   Classic or Dashboard shell, parent mount path, and app-level guards.
+- `features/borrow` contains peer Borrow Entry and Market Position journeys.
+  Its UI entry publishes one route factory for each; the journeys may depend on
+  supporting Borrow modules but never import each other.
 - `features/borrow-transaction-flow` owns the Borrow Review, Steps, and Complete
-  journey and its Flow Session. `features/borrow` starts it through immutable
-  intake and observes its read-only lifecycle outcomes; the flow never imports
-  the Borrow feature.
+  journey and its Flow Session. Each Borrow journey starts it through immutable
+  entry-specific intake and observes only matching read-only lifecycle
+  outcomes; the flow never imports the Borrow feature.
 - `features/transaction-workflow` owns one fresh scoped execution machine per
   immutable Transaction Workflow Input. Its scoped Atom is the sole lifecycle
   owner; returned read capabilities are passive and retained commands cannot

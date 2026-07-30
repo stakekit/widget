@@ -224,6 +224,57 @@
             "tests/**"
           ]
         },
+        // Borrow's two journeys are peers. They may depend on supporting
+        // modules below, but never on each other's private implementation.
+        {
+          "enabled": true,
+          "files": ["src/features/borrow/borrow-entry/**"],
+          "allowImporters": [
+            "**/*.css.ts",
+            "src/features/borrow/borrow-entry/**",
+            "src/features/borrow/ui.ts",
+            "tests/**"
+          ]
+        },
+        {
+          "enabled": true,
+          "files": ["src/features/borrow/market-position/**"],
+          "allowImporters": [
+            "**/*.css.ts",
+            "src/features/borrow/market-position/**",
+            "src/features/borrow/ui.ts",
+            "tests/**"
+          ]
+        },
+        {
+          "enabled": true,
+          "files": ["src/features/borrow/action-preparation/**"],
+          "allowImporters": [
+            "src/features/borrow/action-preparation/**",
+            "src/features/borrow/borrow-entry/**",
+            "src/features/borrow/market-position/**",
+            "tests/**"
+          ]
+        },
+        {
+          "enabled": true,
+          "files": [
+            "src/features/borrow/action-feedback/**",
+            "src/features/borrow/amount-input/**",
+            "src/features/borrow/positions/**",
+            "src/features/borrow/wallet/**"
+          ],
+          "allowImporters": [
+            "**/*.css.ts",
+            "src/features/borrow/action-feedback/**",
+            "src/features/borrow/amount-input/**",
+            "src/features/borrow/borrow-entry/**",
+            "src/features/borrow/market-position/**",
+            "src/features/borrow/positions/**",
+            "src/features/borrow/wallet/**",
+            "tests/**"
+          ]
+        },
         {
           "enabled": true,
           "files": [

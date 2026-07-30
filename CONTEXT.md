@@ -75,6 +75,11 @@ _Avoid_: Wallet Scope key, connector identity
 
 ## Borrow Language
 
+**Borrow Entry**:
+The journey for selecting a Borrow market, entering borrow and collateral
+amounts, and preparing a new or expanded Market Position.
+_Avoid_: Borrow dashboard, borrow form flow
+
 **Borrow Account Snapshot**:
 The decoded API snapshot of one wallet owner's Borrow balances and provider-reported risk facts for an integration and network. It is an input to derivation, not the application's position model.
 _Avoid_: Position, account position

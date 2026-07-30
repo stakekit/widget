@@ -61,7 +61,7 @@ export const BorrowTransactionFlowRoute = ({
   if (!valid) {
     return (
       <Navigate
-        to={expected === "BorrowDashboard" ? "/borrow" : "/positions"}
+        to={expected === "BorrowEntry" ? "/borrow" : "/positions"}
         replace
       />
     );

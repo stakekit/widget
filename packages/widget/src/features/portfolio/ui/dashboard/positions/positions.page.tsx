@@ -6,11 +6,11 @@ import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-va
 import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useBorrowPositions } from "../../../../borrow/state";
 import { useTrackPage } from "../../../../tracking/state";
 import { useSKWallet } from "../../../../wallet/state";
 import { ZerionChainModal } from "../../../../wallet/ui";
 import { FallbackContent } from "../../../../widget-shell/components";
+import { usePortfolioBorrowPositions } from "../../../react/use-borrow-positions";
 import { usePositions } from "../../../react/use-positions";
 import { PositionsListItem } from "./components/positions-list-item";
 import { PositionsSectionHeader } from "./components/positions-section-header";
@@ -22,14 +22,14 @@ export const PositionsPage = () => {
   useTrackPage("positions");
 
   const { positions, positionsResult, showPositions } = usePositions();
-  const borrowEnabled = useWidgetConfig("borrowEnabled");
   const variant = useWidgetConfig("variant");
-  const borrowPositions = useBorrowPositions();
+  const borrowPositions = usePortfolioBorrowPositions();
   const { isConnected, isConnecting } = useSKWallet();
   const manageState = getUnifiedManagePositionsState({
     borrowPositionsResult: borrowPositions.positionsResult,
     borrowWalletIsConnected:
-      borrowEnabled && borrowPositions.walletBridge.status === "connected",
+      borrowPositions.enabled &&
+      borrowPositions.connectionStatus === "connected",
     earnIsError: AsyncResult.isFailure(positionsResult),
     earnIsFetching: positionsResult.waiting,
     earnIsLoading: AsyncResult.isInitial(positionsResult),

@@ -1,9 +1,9 @@
 import { Schema, SchemaGetter } from "effect";
 import * as BorrowApi from "../../generated/api/borrow";
 import { TolerantTopLevelArray } from "../schema/response";
-import { BorrowAccountSnapshot } from "./borrow-account-snapshot";
-import { Integration } from "./integration";
-import { Market } from "./market";
+import { Integration } from "./catalog/integration";
+import { Market } from "./catalog/market";
+import { BorrowAccountSnapshot } from "./positions/borrow-account-snapshot";
 
 const ItemIdentifier = Schema.Struct({ id: Schema.String }).pipe(
   Schema.decodeTo(Schema.String, {

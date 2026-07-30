@@ -1,22 +1,9 @@
-import { Navigate, Route, Routes, useLocation } from "react-router";
+import { Route, Routes, useLocation } from "react-router";
 import { ActivityTabPage } from "../../features/activity/ui";
 import {
-  BorrowConnectedWalletRoute,
-  BorrowFormPage,
-  BorrowLayout,
-  BorrowPositionActionPage,
-  BorrowPositionActionsPage,
-  BorrowPositionDetailsPage,
+  createBorrowEntryRoutes,
+  createBorrowMarketPositionRoutes,
 } from "../../features/borrow/ui";
-import {
-  BorrowCompletePage,
-  BorrowReviewPage,
-  BorrowStepsPage,
-  BorrowTransactionFlowCompletionGuard,
-  BorrowTransactionFlowExecutionScope,
-  BorrowTransactionFlowReviewRoute,
-  BorrowTransactionFlowRoute,
-} from "../../features/borrow-transaction-flow/ui";
 // import { RewardsTabPage } from "../../domain/types/rewards";
 import { createClassicFlowRoutes } from "../../features/classic-transaction-flow/ui";
 import { EarnPageContent } from "../../features/earn/ui";
@@ -66,81 +53,14 @@ export const DashboardRoutes = () => {
 
           {/* Borrow Tab */}
           <Route element={<BorrowFeatureRoute fallbackPath="/" />}>
-            <Route path="borrow" element={<BorrowLayout />}>
-              <Route index element={<BorrowFormPage />} />
-              <Route element={<WalletScopeRouteGuard fallbackPath="/borrow" />}>
-                <Route element={<BorrowConnectedWalletRoute />}>
-                  <Route
-                    element={
-                      <BorrowTransactionFlowRoute expected="BorrowDashboard" />
-                    }
-                  >
-                    <Route element={<BorrowTransactionFlowReviewRoute />}>
-                      <Route path="review" element={<BorrowReviewPage />} />
-                    </Route>
-                    <Route element={<BorrowTransactionFlowExecutionScope />}>
-                      <Route path="steps" element={<BorrowStepsPage />} />
-                      <Route element={<BorrowTransactionFlowCompletionGuard />}>
-                        <Route
-                          path="complete"
-                          element={<BorrowCompletePage />}
-                        />
-                      </Route>
-                    </Route>
-                  </Route>
-                </Route>
-              </Route>
-            </Route>
-            <Route
-              path="borrow/*"
-              element={<Navigate to="/borrow" replace />}
-            />
+            {createBorrowEntryRoutes()}
           </Route>
 
           {/* Manage Tab + Position Details */}
           <Route path="positions">
             <Route index element={<ManagePage />} />
             <Route element={<BorrowFeatureRoute fallbackPath="/positions" />}>
-              <Route
-                element={<WalletScopeRouteGuard fallbackPath="/positions" />}
-              >
-                <Route element={<BorrowConnectedWalletRoute />}>
-                  <Route
-                    path="borrow/:marketId"
-                    element={<BorrowPositionDetailsPage />}
-                  >
-                    <Route index element={<BorrowPositionActionsPage />} />
-                    <Route
-                      path="action/:actionId"
-                      element={<BorrowPositionActionPage />}
-                    />
-                    <Route
-                      element={
-                        <BorrowTransactionFlowRoute expected="BorrowPosition" />
-                      }
-                    >
-                      <Route element={<BorrowTransactionFlowReviewRoute />}>
-                        <Route path="review" element={<BorrowReviewPage />} />
-                      </Route>
-                      <Route element={<BorrowTransactionFlowExecutionScope />}>
-                        <Route path="steps" element={<BorrowStepsPage />} />
-                        <Route
-                          element={<BorrowTransactionFlowCompletionGuard />}
-                        >
-                          <Route
-                            path="complete"
-                            element={<BorrowCompletePage />}
-                          />
-                        </Route>
-                      </Route>
-                    </Route>
-                  </Route>
-                </Route>
-              </Route>
-              <Route
-                path="borrow/*"
-                element={<Navigate to="/positions" replace />}
-              />
+              {createBorrowMarketPositionRoutes()}
             </Route>
             <Route
               element={<WalletScopeRouteGuard fallbackPath="/positions" />}

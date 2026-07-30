@@ -1,7 +1,7 @@
 import { Equal, Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { Action } from "../../src/domain/borrow/action";
-import { Transaction } from "../../src/domain/borrow/transaction";
+import { Action } from "../../src/domain/borrow/execution/action";
+import { Transaction } from "../../src/domain/borrow/execution/transaction";
 import type { ActionTransaction } from "../../src/domain/schema/action-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
 import type { ActionMeta } from "../../src/public-api/types";

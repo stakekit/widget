@@ -5,9 +5,9 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import * as Reactivity from "effect/unstable/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { BorrowAccountSnapshot } from "../../src/domain/borrow/borrow-account-snapshot";
-import { Integration } from "../../src/domain/borrow/integration";
-import { Market } from "../../src/domain/borrow/market";
+import { Integration } from "../../src/domain/borrow/catalog/integration";
+import { Market } from "../../src/domain/borrow/catalog/market";
+import { BorrowAccountSnapshot } from "../../src/domain/borrow/positions/borrow-account-snapshot";
 import { EarnLegacyTokenOptionsResponse } from "../../src/domain/schema/earn-models";
 import {
   TokenBalancesResponse,
@@ -25,7 +25,7 @@ import {
 import {
   BorrowPositionKey,
   borrowPositionAtom,
-} from "../../src/features/borrow/state/resources";
+} from "../../src/features/borrow/positions/state/positions";
 import {
   mergedTokenOptionsAtom,
   positionsDataAtom,

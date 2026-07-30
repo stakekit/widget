@@ -1,6 +1,6 @@
 import { Effect, Match } from "effect";
-import type { Action as BorrowAction } from "../../../domain/borrow/action";
-import { decodeBorrowTransactionForWallet } from "../../../domain/borrow/transaction";
+import type { Action as BorrowAction } from "../../../domain/borrow/execution/action";
+import { decodeBorrowTransactionForWallet } from "../../../domain/borrow/execution/transaction";
 import type { Network } from "../../../domain/schema/network-model";
 import type { SKBorrowTxMeta } from "../../../public-api/types";
 import type { WalletRuntimeInvariantError } from "../../wallet/domain/errors";

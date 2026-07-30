@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import type { MarketPosition } from "../../../../../../domain/borrow/market-position";
+import type { MarketPosition } from "../../../../../../domain/borrow/positions/market-position";
 import type { PositionDetailsLabelType } from "../../../../../../domain/types/positions";
 import { TokenIcon } from "../../../../../../shared/ui/components/token-icon";
 import { ToolTip } from "../../../../../../shared/ui/components/tooltip";

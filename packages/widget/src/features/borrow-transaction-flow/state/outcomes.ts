@@ -1,8 +1,10 @@
 import { Option } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import type { BorrowTransactionFlowEntry } from "../model/borrow-transaction-flow";
 
 export type BorrowTransactionFlowOutcome = Readonly<{
   readonly epoch: number;
+  readonly entry: BorrowTransactionFlowEntry;
   readonly _tag: "Done" | "ExecutionStarted";
 }>;
 

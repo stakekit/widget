@@ -29,7 +29,7 @@ export const BorrowCompletePage = () => {
   const result = execution.completionResult;
   const { summary } = flow.intake;
   const projectedSummary = projectBorrowTransactionFlowSummary(summary);
-  const isPositionFlow = flow.intake.entry._tag === "BorrowPosition";
+  const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
 
   if (!result) return null;
 

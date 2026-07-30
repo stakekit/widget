@@ -15,12 +15,12 @@ import { userEvent } from "vitest/browser";
 import type { Connector } from "wagmi";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { Action as BorrowAction } from "../../src/domain/borrow/action";
-import { ActionCommand } from "../../src/domain/borrow/action-command";
+import { Action as BorrowAction } from "../../src/domain/borrow/execution/action";
+import { ActionCommand } from "../../src/domain/borrow/execution/action-command";
 import type {
   Transaction as BorrowTransaction,
   SubmitTransactionCommand,
-} from "../../src/domain/borrow/transaction";
+} from "../../src/domain/borrow/execution/transaction";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   BorrowTransactionFlowCompletionGuard,
@@ -95,7 +95,7 @@ const session: BorrowFlowSession = {
   epoch: 1,
   intake: {
     ...reviewState,
-    entry: { _tag: "BorrowDashboard" },
+    entry: { _tag: "BorrowEntry" },
   },
   walletScope,
 };
@@ -398,9 +398,7 @@ const renderExecution = async (
           >
             <Route path="/borrow" element={<div>Borrow home</div>} />
             <Route
-              element={
-                <BorrowTransactionFlowRoute expected="BorrowDashboard" />
-              }
+              element={<BorrowTransactionFlowRoute expected="BorrowEntry" />}
             >
               <Route element={<BorrowTransactionFlowReviewRoute />}>
                 <Route

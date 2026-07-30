@@ -3,14 +3,14 @@ import type { TFunction } from "i18next";
 import {
   deriveMarketPositionOverview,
   type MarketPosition,
-} from "../../../../../domain/borrow/market-position";
+} from "../../../../../domain/borrow/positions/market-position";
+import { borrowTokenToAppToken } from "../../../../../shared/lib/borrow-token";
 import {
   formatBorrowProviderName,
   formatPercent,
   formatUsd,
 } from "../../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../../shared/lib/number-format";
-import { borrowTokenToTokenDto } from "../../../../borrow/state";
 
 type UnifiedManagePositionsStateInput = {
   readonly borrowPositionsResult: AsyncResult.AsyncResult<
@@ -36,7 +36,7 @@ export const getBorrowMarketPositionListItemModel = ({
 }) => {
   const debtBalance = position.balances.debt;
   const overview = deriveMarketPositionOverview(position);
-  const headerToken = borrowTokenToTokenDto({
+  const headerToken = borrowTokenToAppToken({
     network: position.market.network,
     token: overview.headerToken,
   });

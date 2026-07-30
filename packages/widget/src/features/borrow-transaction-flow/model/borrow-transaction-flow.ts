@@ -1,4 +1,4 @@
-import type { ActionCommand } from "../../../domain/borrow/action-command";
+import type { ActionCommand } from "../../../domain/borrow/execution/action-command";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
 import {
   toWidgetPath,
@@ -188,8 +188,8 @@ export const projectBorrowTransactionFlowSummary = (
 };
 
 export type BorrowTransactionFlowEntry =
-  | { readonly _tag: "BorrowDashboard" }
-  | { readonly _tag: "BorrowPosition"; readonly marketId: string };
+  | { readonly _tag: "BorrowEntry" }
+  | { readonly _tag: "MarketPosition"; readonly marketId: string };
 
 export type BorrowTransactionFlowIntake = BorrowTransactionFlowReview & {
   readonly entry: BorrowTransactionFlowEntry;
@@ -199,7 +199,7 @@ export const getBorrowTransactionFlowRoutes = (
   entry: BorrowTransactionFlowEntry
 ) => {
   const basePath: WidgetPathInput =
-    entry._tag === "BorrowDashboard"
+    entry._tag === "BorrowEntry"
       ? "/borrow"
       : `/positions/borrow/${entry.marketId}`;
 

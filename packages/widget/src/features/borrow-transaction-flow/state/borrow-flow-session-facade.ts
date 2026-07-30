@@ -3,8 +3,8 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import { runWidgetNavigationCommand } from "../../../app/runtime/navigation";
-import type { Action } from "../../../domain/borrow/action";
-import type { Transaction } from "../../../domain/borrow/transaction";
+import type { Action } from "../../../domain/borrow/execution/action";
+import type { Transaction } from "../../../domain/borrow/execution/transaction";
 import { BorrowOperations } from "../../../services/api/borrow-operations";
 import {
   BorrowTransactionWorkflowInput,
@@ -151,6 +151,7 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
         }
         registry.set(publishBorrowTransactionFlowOutcomeAtom, {
           _tag: "ExecutionStarted",
+          entry: session.intake.entry,
           epoch: session.epoch,
         });
         return action;
@@ -200,6 +201,7 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
               if (!registry.get(isCurrentSessionAtom)) return;
               registry.set(publishBorrowTransactionFlowOutcomeAtom, {
                 _tag: "Done",
+                entry: session.intake.entry,
                 epoch: session.epoch,
               });
             })

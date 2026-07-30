@@ -1,8 +1,8 @@
 import { Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import { describe, expect, it, vi } from "vitest";
-import { Action } from "../../src/domain/borrow/action";
-import { Transaction } from "../../src/domain/borrow/transaction";
+import { Action } from "../../src/domain/borrow/execution/action";
+import { Transaction } from "../../src/domain/borrow/execution/transaction";
 import type { ActionTransaction } from "../../src/domain/schema/action-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
 import type { ActionMeta } from "../../src/public-api/types";

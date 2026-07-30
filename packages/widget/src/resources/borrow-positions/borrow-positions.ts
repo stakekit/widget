@@ -2,12 +2,11 @@ import { Data, Duration, Effect } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
-import { deriveBorrowPositions } from "../../domain/borrow/borrow-positions";
-
 import {
   type BorrowNetwork,
   isBorrowNetwork,
 } from "../../domain/borrow/network";
+import { deriveBorrowPositions } from "../../domain/borrow/positions/borrow-positions";
 import type { BorrowIntegrationPositionsResponse } from "../../domain/borrow/responses";
 import { BorrowResourceSource } from "../../services/api/borrow-resource-source";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";

@@ -4,7 +4,8 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigAtom } from "../../../app/config/settings";
 import { widgetBootstrapConfigAtom } from "../../../app/config/widget-config";
-import type { MarketPosition } from "../../../domain/borrow/market-position";
+import { isBorrowNetwork } from "../../../domain/borrow/network";
+import type { MarketPosition } from "../../../domain/borrow/positions/market-position";
 import type { EarnBalance } from "../../../domain/schema/earn-models";
 import type { YieldId } from "../../../domain/schema/identifiers";
 import {
@@ -177,6 +178,27 @@ export const positionsTableDataAtom = Atom.make((get) => {
     )
   );
 }).pipe(Atom.withLabel("positionsTableDataAtom"));
+
+export const currentPortfolioBorrowPositionsAtom = Atom.make((get) => {
+  const enabled = get(widgetConfigAtom).borrowEnabled;
+  const scope = get(walletScopeAtom);
+  const connected = enabled && scope !== null && isBorrowNetwork(scope.network);
+  const positionsResult = get(
+    borrowPositionsResourceAtom.foreground(
+      new BorrowPositionsKey({
+        scope: connected ? scope : null,
+      })
+    )
+  ).pipe(AsyncResult.map((positions) => positions.items));
+
+  return {
+    connectionStatus: connected
+      ? ("connected" as const)
+      : ("inactive" as const),
+    enabled,
+    positionsResult,
+  };
+}).pipe(Atom.withLabel("currentPortfolioBorrowPositionsAtom"));
 
 export const currentGroupedPositionsAtom = Atom.make(
   (get): PositionsListRow[] => {

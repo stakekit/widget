@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Schema } from "effect";
 import { BorrowFeatureDisabled } from "../../domain/borrow/availability";
-import type { Integration } from "../../domain/borrow/integration";
+import type { Integration } from "../../domain/borrow/catalog/integration";
 import type { BorrowNetwork } from "../../domain/borrow/network";
 import {
   BorrowIntegrationPositionsResponse,

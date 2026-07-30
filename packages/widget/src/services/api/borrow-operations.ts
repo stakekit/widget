@@ -1,11 +1,11 @@
 import { Context, Effect, Layer, Schema } from "effect";
-import { Action as BorrowAction } from "../../domain/borrow/action";
-import type { ActionCommand as BorrowActionCommand } from "../../domain/borrow/action-command";
 import { BorrowFeatureDisabled } from "../../domain/borrow/availability";
+import { Action as BorrowAction } from "../../domain/borrow/execution/action";
+import type { ActionCommand as BorrowActionCommand } from "../../domain/borrow/execution/action-command";
 import {
   type SubmitTransactionCommand as BorrowSubmitTransactionCommand,
   SubmitTransactionResult as BorrowSubmitTransactionResult,
-} from "../../domain/borrow/transaction";
+} from "../../domain/borrow/execution/transaction";
 import { MissingBorrowApiConfig } from "../../domain/schema/api-errors";
 import type * as BorrowApi from "../../generated/api/borrow-client";
 import { WidgetConfigService } from "../config/widget-config";

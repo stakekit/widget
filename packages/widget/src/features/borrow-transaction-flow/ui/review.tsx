@@ -65,7 +65,7 @@ export const BorrowReviewPage = () => {
   const confirm = useAtomSet(flow.confirmAtom);
   const back = useAtomSet(flow.backAtom);
   const reviewState = flow.intake;
-  const isPositionFlow = flow.intake.entry._tag === "BorrowPosition";
+  const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
 
   const { command, summary } = reviewState;
   const projectedSummary = projectBorrowTransactionFlowSummary(summary);

@@ -1,6 +1,6 @@
 import { Data, Match, type Schema } from "effect";
-import type { Action as BorrowAction } from "../../domain/borrow/action";
-import type { Transaction as BorrowTransaction } from "../../domain/borrow/transaction";
+import type { Action as BorrowAction } from "../../domain/borrow/execution/action";
+import type { Transaction as BorrowTransaction } from "../../domain/borrow/execution/transaction";
 import type {
   ActionTransaction,
   YieldAction,

@@ -6,17 +6,17 @@ import { act } from "react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { describe, expect, it } from "vitest";
-import { BorrowAccountSnapshot } from "../../src/domain/borrow/borrow-account-snapshot";
-import { deriveBorrowPositions } from "../../src/domain/borrow/borrow-positions";
-import { Integration } from "../../src/domain/borrow/integration";
-import { Market } from "../../src/domain/borrow/market";
+import { Integration } from "../../src/domain/borrow/catalog/integration";
+import { Market } from "../../src/domain/borrow/catalog/market";
+import { BorrowAccountSnapshot } from "../../src/domain/borrow/positions/borrow-account-snapshot";
+import { deriveBorrowPositions } from "../../src/domain/borrow/positions/borrow-positions";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   type BorrowPositionAction,
   getBorrowPositionActions,
-} from "../../src/features/borrow/model/position-details-model";
-import { currentBorrowPositionsAtom } from "../../src/features/borrow/state/resources";
-import { BorrowPositionActionPage } from "../../src/features/borrow/ui";
+} from "../../src/features/borrow/market-position/model/details";
+import { BorrowPositionActionPage } from "../../src/features/borrow/market-position/ui/action.page";
+import { currentBorrowPositionsAtom } from "../../src/features/borrow/positions/state/positions";
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { RootElementProvider } from "../../src/shared/react/root-element";

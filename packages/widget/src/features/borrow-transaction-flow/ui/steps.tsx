@@ -26,7 +26,7 @@ export const BorrowStepsPage = () => {
   const execution = useBorrowExecution();
   const executionState = flow.intake;
   const executionError = execution.error ?? execution.setupError;
-  const isPositionFlow = flow.intake.entry._tag === "BorrowPosition";
+  const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
   const transactionPosition =
     execution.currentTransactionIndex == null
       ? null
