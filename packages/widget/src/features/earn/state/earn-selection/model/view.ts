@@ -1,6 +1,6 @@
 import { Match } from "effect";
 import type * as Atom from "effect/unstable/reactivity/Atom";
-import type { EarnYield } from "../../../../../domain/schema/earn-models";
+import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
 import type { YieldId } from "../../../../../domain/schema/identifiers";
 import { tokenString } from "../../../../../domain/types/tokens";
 import {
@@ -58,15 +58,17 @@ const getInitYieldCategory = ({
   initYieldId,
 }: {
   readonly dashboardVariant: boolean;
-  readonly initYield: EarnYield | null;
-  readonly initYieldId: EarnYield["id"] | null;
+  readonly initYield: EarnYieldWithProvider | null;
+  readonly initYieldId: EarnYieldWithProvider["id"] | null;
 }) =>
   dashboardVariant && initYieldId && initYield
     ? getDashboardYieldCategory(initYield)
     : null;
 
-const mergeYieldOptions = (yields: ReadonlyArray<EarnYield | null>) => {
-  const byId = new Map<YieldId, EarnYield>();
+const mergeYieldOptions = (
+  yields: ReadonlyArray<EarnYieldWithProvider | null>
+) => {
+  const byId = new Map<YieldId, EarnYieldWithProvider>();
 
   for (const yieldModel of yields) {
     if (yieldModel) byId.set(yieldModel.id, yieldModel);

@@ -3,17 +3,16 @@ import { Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import type { EarnYield } from "../../src/domain/schema/earn-models";
-import { yieldValidatorsAtom } from "../../src/features/earn/state/atoms-state/catalog/atoms";
-import {
-  YieldValidatorsKey,
-  YieldValidatorsPullKey,
-} from "../../src/features/earn/state/atoms-state/catalog/keys";
-import { earnMachineIntentAtom } from "../../src/features/earn/state/atoms-state/machine/atoms";
 import {
   earnValidatorSelectionViewAtom,
   selectEarnValidatorAtom,
   setEarnValidatorSearchAtom,
 } from "../../src/features/earn/state/earn-facade";
+import { yieldValidatorsAtom } from "../../src/features/earn/state/earn-selection/resources/atoms";
+import {
+  YieldValidatorsKey,
+  YieldValidatorsPullKey,
+} from "../../src/features/earn/state/earn-selection/resources/keys";
 import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
 import {
   type ValidatorDirectoryRequest,
@@ -184,7 +183,11 @@ describe("Earn validator search", () => {
           Layer.mergeAll(
             Layer.succeed(
               YieldResourceSource,
-              YieldResourceSource.of({ listValidators, listYields } as never)
+              YieldResourceSource.of({
+                getProvider: () => Effect.succeedNone,
+                listValidators,
+                listYields,
+              } as never)
             ),
             Layer.succeed(
               LegacyResourceSource,
@@ -238,13 +241,13 @@ describe("Earn validator search", () => {
       registry.set(selectEarnValidatorAtom, beta!.key);
       await vi.advanceTimersByTimeAsync(0);
       expect([
-        ...registry.get(earnMachineIntentAtom).selectedValidatorKeys,
+        ...registry.get(earnValidatorSelectionViewAtom).selected.keys(),
       ]).toEqual([beta!.key]);
       registry.set(setEarnValidatorSearchAtom, "");
       await vi.advanceTimersByTimeAsync(VALIDATOR_SEARCH_DEBOUNCE_MS);
 
       expect([
-        ...registry.get(earnMachineIntentAtom).selectedValidatorKeys,
+        ...registry.get(earnValidatorSelectionViewAtom).selected.keys(),
       ]).toEqual([beta!.key]);
       expect([
         ...registry.get(earnValidatorSelectionViewAtom).selected.values(),

@@ -1,34 +1,32 @@
-import { Cause, Effect, Layer, Option, Schema, SubscriptionRef } from "effect";
+import { Cause, Effect, Layer, Schema, SubscriptionRef } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import { widgetConfigAtom } from "../../src/app/config/settings";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { PositionsData } from "../../src/domain/types/positions";
 import { tokenString } from "../../src/domain/types/tokens";
 import {
+  type EarnTokenOption,
+  earnSelectionStatusViewAtom,
+  earnSelectionViewAtom,
+  selectEarnSelectionTokenAtom,
+  selectEarnSelectionYieldAtom,
+  setEarnSelectionAmountAtom,
+} from "../../src/features/earn/state/earn-selection";
+import {
   earnYieldCatalogAtom,
   initYieldAtom,
   mergedTokenOptionsAtom,
   positionsDataAtom,
-} from "../../src/features/earn/state/atoms-state/catalog/atoms";
+} from "../../src/features/earn/state/earn-selection/resources/atoms";
 import {
   InitYieldKey,
   PositionsDataKey,
   TokenOptionsKey,
   YieldCatalogKey,
-} from "../../src/features/earn/state/atoms-state/catalog/keys";
-import {
-  earnMachineEntryAtom,
-  earnMachineIntentAtom,
-  earnMachineViewAtom,
-} from "../../src/features/earn/state/atoms-state/machine/atoms";
-import { makeResolvingWalletView } from "../../src/features/earn/state/atoms-state/resolver/view-model";
-import {
-  EarnCatalogError,
-  type EarnTokenOption,
-} from "../../src/features/earn/state/atoms-state/types";
+} from "../../src/features/earn/state/earn-selection/resources/keys";
+import { EarnCatalogError } from "../../src/features/earn/state/earn-selection/types";
 import {
   earnPageInputAtom,
   earnPageQuoteAtom,
@@ -104,7 +102,7 @@ const makeWalletState = (connection: NormalizedWalletState): WalletState => ({
 });
 
 /**
- * Seeds every resource `resolveEarnView` reads so the published view reaches
+ * Seeds every resource Earn Selection reads so the published view reaches
  * `ready` without a network, which is the only status where the removed
  * write-back used to fire.
  */
@@ -161,7 +159,9 @@ describe("earn page workflow atoms", () => {
       initialValues: [[walletStateResultAtom, AsyncResult.initial(true)]],
     });
 
-    expect(registry.get(earnMachineEntryAtom).walletResolution).toBe("pending");
+    expect(registry.get(earnSelectionStatusViewAtom).status).toBe(
+      "resolving-wallet"
+    );
     registry.dispose();
   });
 
@@ -175,11 +175,13 @@ describe("earn page workflow atoms", () => {
       ],
     });
 
-    expect(registry.get(earnMachineEntryAtom).walletResolution).toBe("settled");
+    expect(registry.get(earnSelectionStatusViewAtom).status).not.toBe(
+      "resolving-wallet"
+    );
     registry.dispose();
   });
 
-  it("captures the owner atomically when the initial wallet connects", async () => {
+  it("opens selection resolution when the initial wallet connects", async () => {
     const walletState = Effect.runSync(
       SubscriptionRef.make<WalletState>({
         ...makeWalletState(disconnectedNormalizedWalletState),
@@ -204,12 +206,12 @@ describe("earn page workflow atoms", () => {
         ],
       ],
     });
-    const unmount = registry.mount(earnMachineEntryAtom);
+    const unmount = registry.mount(earnSelectionStatusViewAtom);
 
     try {
       await vi.waitFor(() =>
-        expect(registry.get(earnMachineEntryAtom).walletResolution).toBe(
-          "pending"
+        expect(registry.get(earnSelectionStatusViewAtom).status).toBe(
+          "resolving-wallet"
         )
       );
 
@@ -218,10 +220,9 @@ describe("earn page workflow atoms", () => {
       );
 
       await vi.waitFor(() =>
-        expect(registry.get(earnMachineEntryAtom)).toMatchObject({
-          walletResolution: "settled",
-          walletScope: firstOwnerScope,
-        })
+        expect(registry.get(earnSelectionStatusViewAtom).status).not.toBe(
+          "resolving-wallet"
+        )
       );
     } finally {
       unmount();
@@ -316,11 +317,11 @@ describe("earn page workflow atoms", () => {
         ),
       ],
     });
-    const unmount = registry.mount(earnMachineViewAtom);
+    const unmount = registry.mount(earnSelectionViewAtom);
 
     try {
       await vi.waitFor(() => {
-        expect(registry.get(earnMachineViewAtom).selection.yield).toEqual(
+        expect(registry.get(earnSelectionViewAtom).selection.yield).toEqual(
           secondYield
         );
       });
@@ -330,9 +331,9 @@ describe("earn page workflow atoms", () => {
       );
 
       await vi.waitFor(() => {
-        const view = registry.get(earnMachineViewAtom);
+        const view = registry.get(earnSelectionViewAtom);
 
-        expect(view.status).toBe("ready");
+        expect(registry.get(earnSelectionStatusViewAtom).status).toBe("ready");
         expect(view.selection.yield).toEqual(firstYield);
       });
     } finally {
@@ -417,31 +418,24 @@ describe("earn page workflow atoms", () => {
         ],
       ],
     });
-    const unmount = registry.mount(earnMachineViewAtom);
+    const unmount = registry.mount(earnSelectionViewAtom);
 
-    expect(registry.get(earnMachineViewAtom).status).toBe(
+    expect(registry.get(earnSelectionStatusViewAtom).status).toBe(
       "loading-initial-selection"
     );
 
-    registry.set(earnMachineIntentAtom, {
-      type: "stakeAmount/change",
-      amount: "1",
-    });
+    registry.set(setEarnSelectionAmountAtom, "1");
 
-    expect(registry.get(earnMachineViewAtom)).toMatchObject({
+    expect(registry.get(earnSelectionViewAtom)).toMatchObject({
       form: { stakeAmount: "1" },
-      status: "loading-initial-selection",
     });
-
-    registry.set(earnMachineIntentAtom, {
-      type: "yield/select",
-      yieldId: firstYield.id,
-    });
-
-    expect(registry.get(earnMachineIntentAtom).selectedYieldId).toBe(
-      firstYield.id
+    expect(registry.get(earnSelectionStatusViewAtom).status).toBe(
+      "loading-initial-selection"
     );
-    expect(registry.get(earnMachineViewAtom).status).not.toBe(
+
+    registry.set(selectEarnSelectionYieldAtom, firstYield.id);
+
+    expect(registry.get(earnSelectionStatusViewAtom).status).not.toBe(
       "loading-initial-selection"
     );
     unmount();
@@ -538,11 +532,11 @@ describe("earn page workflow atoms", () => {
         ),
       ],
     });
-    const unmount = registry.mount(earnMachineViewAtom);
+    const unmount = registry.mount(earnSelectionViewAtom);
 
     try {
       await vi.waitFor(() =>
-        expect(registry.get(earnMachineViewAtom).status).toBe(
+        expect(registry.get(earnSelectionStatusViewAtom).status).toBe(
           "loading-initial-selection"
         )
       );
@@ -555,9 +549,9 @@ describe("earn page workflow atoms", () => {
       );
 
       await vi.waitFor(() => {
-        const view = registry.get(earnMachineViewAtom);
+        const view = registry.get(earnSelectionViewAtom);
 
-        expect(view.status).toBe("ready");
+        expect(registry.get(earnSelectionStatusViewAtom).status).toBe("ready");
         expect(view.selection.yield).toEqual(firstYield);
       });
     } finally {
@@ -650,15 +644,12 @@ describe("earn page workflow atoms", () => {
       ],
     });
 
-    expect(registry.get(earnMachineViewAtom).status).toBe("failed");
+    expect(registry.get(earnSelectionStatusViewAtom).status).toBe("failed");
 
-    registry.set(earnMachineIntentAtom, {
-      type: "stakeAmount/change",
-      amount: "1",
-    });
+    registry.set(setEarnSelectionAmountAtom, "1");
 
-    const view = registry.get(earnMachineViewAtom);
-    expect(view.status).toBe("ready");
+    const view = registry.get(earnSelectionViewAtom);
+    expect(registry.get(earnSelectionStatusViewAtom).status).toBe("ready");
     expect(view.selection.yield).toEqual(firstYield);
     registry.dispose();
   });
@@ -672,84 +663,20 @@ describe("earn page workflow atoms", () => {
     registry.dispose();
   });
 
-  it("preserves machine intent when runtime inputs change", () => {
-    const registry = AtomRegistry.make();
-
-    expect(registry.get(earnMachineEntryAtom).tokensForEnabledYieldsOnly).toBe(
-      false
-    );
-    registry.set(earnMachineIntentAtom, {
-      type: "category/select",
-      category: "defi",
-    });
-    registry.set(widgetConfigAtom, {
-      ...registry.get(widgetConfigAtom),
-      tokensForEnabledYieldsOnly: true,
-    });
-
-    expect(registry.get(earnMachineEntryAtom).tokensForEnabledYieldsOnly).toBe(
-      true
-    );
-    expect(registry.get(earnMachineIntentAtom).selectedCategory).toBe("defi");
-    registry.dispose();
-  });
-
-  it("publishes resolving-wallet while retaining the selection snapshot", () => {
-    const registry = makeReadyRegistry();
-    const previousView = registry.get(earnMachineViewAtom);
-
-    expect(previousView.status).toBe("ready");
-    expect(
-      makeResolvingWalletView({
-        intent: registry.get(earnMachineIntentAtom),
-        previous: Option.some(previousView),
-      })
-    ).toMatchObject({
-      can: {
-        selectToken: false,
-        selectValidator: false,
-        selectYield: false,
-        submit: false,
-      },
-      selection: previousView.selection,
-      status: "resolving-wallet",
-    });
-    registry.dispose();
-  });
-
   it("keeps publishing view updates after a command when the first read has no listener", () => {
     const registry = makeReadyRegistry();
 
     // useSyncExternalStore reads a snapshot during render and only subscribes on
     // commit, so the machine view is first built with no listener attached.
     expect(registry.get(earnPageInputAtom).stakeAmount).toBe("0");
-    expect(registry.get(earnMachineViewAtom).status).toBe("ready");
+    expect(registry.get(earnSelectionStatusViewAtom).status).toBe("ready");
     registry.subscribe(earnPageInputAtom, () => {}, { immediate: false });
 
-    registry.set(earnMachineIntentAtom, {
-      type: "stakeAmount/change",
-      amount: "5",
-    });
+    registry.set(setEarnSelectionAmountAtom, "5");
     expect(registry.get(earnPageInputAtom).stakeAmount).toBe("5");
 
-    registry.set(earnMachineIntentAtom, {
-      type: "stakeAmount/change",
-      amount: "7",
-    });
+    registry.set(setEarnSelectionAmountAtom, "7");
     expect(registry.get(earnPageInputAtom).stakeAmount).toBe("7");
-    registry.dispose();
-  });
-
-  it("derives the published view without writing back into machine state", () => {
-    const registry = makeReadyRegistry();
-    const intentBefore = registry.get(earnMachineIntentAtom);
-
-    // The resolver fills the selection from defaults the intent never named.
-    expect(registry.get(earnMachineViewAtom).selection.yield).toEqual(
-      firstYield
-    );
-    expect(intentBefore.selectedYieldId).toBeNull();
-    expect(registry.get(earnMachineIntentAtom)).toBe(intentBefore);
     registry.dispose();
   });
 
@@ -759,7 +686,6 @@ describe("earn page workflow atoms", () => {
     registry.set(earnPageSearchAtom, {
       stake: "ethereum",
       token: "eth",
-      validator: "validator",
     });
     registry.set(earnPageSubmittedAtom, true);
 
@@ -771,25 +697,19 @@ describe("earn page workflow atoms", () => {
   it("resets submission state when the resolved selection changes", () => {
     const registry = makeReadyRegistry();
 
-    expect(registry.get(earnMachineViewAtom).selection.token?.token).toEqual(
+    expect(registry.get(earnSelectionViewAtom).selection.token?.token).toEqual(
       firstYield.token
     );
 
     registry.set(earnPageSubmittedAtom, true);
-    registry.set(earnMachineIntentAtom, {
-      type: "token/select",
-      tokenKey: tokenString(secondYield.token),
-    });
-    expect(registry.get(earnMachineViewAtom).selection.yield).toEqual(
+    registry.set(selectEarnSelectionTokenAtom, tokenString(secondYield.token));
+    expect(registry.get(earnSelectionViewAtom).selection.yield).toEqual(
       secondYield
     );
     expect(registry.get(earnPageSubmittedAtom)).toBe(false);
 
     registry.set(earnPageSubmittedAtom, true);
-    registry.set(earnMachineIntentAtom, {
-      type: "stakeAmount/change",
-      amount: "1",
-    });
+    registry.set(setEarnSelectionAmountAtom, "1");
     expect(registry.get(earnPageSubmittedAtom)).toBe(true);
     registry.dispose();
   });

@@ -8,7 +8,7 @@ import {
 import { TokenIcon } from "../../../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import type { EarnTokenOption } from "../../../../../state/atoms-state/types";
+import type { EarnTokenOption } from "../../../../../state/earn-selection";
 import { selectItemText } from "../../styles.css";
 
 type Props = {

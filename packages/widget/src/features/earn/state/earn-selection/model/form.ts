@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import type { EarnYield } from "../../../../../domain/schema/earn-models";
+import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
 import type { PositionsData } from "../../../../../domain/types/positions";
 import { getEnterAmountConstraint } from "../../../../../domain/types/stake";
 import { getYieldActionArg } from "../../../../../domain/types/yields";
@@ -14,7 +14,7 @@ export const canSubmitEarnForm = ({
   readonly availableAmount: string | null;
   readonly form: EarnMachineForm;
   readonly positionsData: PositionsData;
-  readonly selectedYield: EarnYield;
+  readonly selectedYield: EarnYieldWithProvider;
 }): boolean => {
   const amount = new BigNumber(form.stakeAmount);
   if (!amount.isFinite() || !amount.isGreaterThan(0)) return false;
@@ -54,7 +54,7 @@ export const resolveForm = ({
   availableAmount: string | null;
   intent: EarnMachineIntent;
   positionsData: PositionsData;
-  selectedYield: EarnYield;
+  selectedYield: EarnYieldWithProvider;
 }): EarnMachineForm => {
   const constraint = getEnterAmountConstraint(selectedYield, positionsData);
 
@@ -71,7 +71,7 @@ export const resolveForm = ({
 };
 
 const resolveProviderYieldId = (
-  selectedYield: EarnYield,
+  selectedYield: EarnYieldWithProvider,
   intent: EarnMachineIntent
 ) => {
   const providerArg = getYieldActionArg(selectedYield, "enter", "providerId");
@@ -92,7 +92,7 @@ const resolveProviderYieldId = (
 };
 
 const resolveTronResource = (
-  selectedYield: EarnYield,
+  selectedYield: EarnYieldWithProvider,
   intent: EarnMachineIntent
 ) => {
   const tronArg = getYieldActionArg(selectedYield, "enter", "tronResource");

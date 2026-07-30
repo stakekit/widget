@@ -11,8 +11,8 @@ import {
 import { disconnectedNormalizedWalletState } from "../../../../../services/wallet/domain/state";
 import { initParamsAtom } from "../../../../init-params/state";
 import { walletStateResultAtom } from "../../../../wallet/state";
-import { resolveEarnView } from "../resolver/view";
-import { makeResolvingWalletView } from "../resolver/view-model";
+import { resolveEarnView } from "../model/view";
+import { makeResolvingWalletView } from "../model/view-model";
 import type { EarnEntry, EarnMachineIntent, EarnMachineView } from "../types";
 import type { EarnAction } from "./actions";
 import { commitEarnInitialSelection } from "./initial-selection";

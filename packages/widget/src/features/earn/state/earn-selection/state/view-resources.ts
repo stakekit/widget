@@ -11,8 +11,8 @@ import {
   positionsDataAtom,
   tokenOptionsPullAtom,
   yieldValidatorsAtom,
-} from "../catalog/atoms";
-import { YieldValidatorsPullKey } from "../catalog/keys";
+} from "../resources/atoms";
+import { YieldValidatorsPullKey } from "../resources/keys";
 import type { EarnRetryTarget } from "../types";
 import { earnMachineViewAtom } from "./atoms";
 

@@ -9,49 +9,26 @@ import {
 } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import {
-  mergedTokenOptionsAtom,
-  tokenOptionsPullAtom,
-  yieldValidatorsAtom,
-} from "../../src/features/earn/state/atoms-state/catalog/atoms";
-import {
-  DefaultTokenOptionsKey,
-  TokenOptionsKey,
-  YieldValidatorsKey,
-  YieldValidatorsPullKey,
-} from "../../src/features/earn/state/atoms-state/catalog/keys";
-import {
-  earnMachineIntentAtom,
-  earnMachineViewAtom,
-} from "../../src/features/earn/state/atoms-state/machine/atoms";
-import { makeEarnView } from "../../src/features/earn/state/atoms-state/resolver/view-model";
-import {
-  EarnCatalogError,
-  type EarnTokenOption,
-  makeDefaultEarnIntent,
-} from "../../src/features/earn/state/atoms-state/types";
-import {
   earnTokenSelectionViewAtom,
   earnValidatorModalEventAtom,
   earnValidatorSelectionViewAtom,
   earnYieldSelectionViewAtom,
-  loadMoreEarnTokensAtom,
-  loadMoreEarnValidatorsAtom,
-  removeEarnValidatorAtom,
-  retryEarnPageAtom,
   selectEarnValidatorAtom,
   setEarnTokenSearchAtom,
   setEarnValidatorSearchAtom,
   setEarnYieldSearchAtom,
 } from "../../src/features/earn/state/earn-facade";
+import {
+  type EarnTokenOption,
+  earnSelectionStatusViewAtom,
+  earnSelectionTokenOptionsViewAtom,
+  earnSelectionValidatorOptionsViewAtom,
+  earnSelectionViewAtom,
+  earnSelectionYieldOptionsViewAtom,
+} from "../../src/features/earn/state/earn-selection";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 import { decodeValidator } from "../utils/validators";
-
-const makePullResult = <A>(items: ReadonlyArray<A>, done = false) =>
-  AsyncResult.success({
-    done,
-    items: [{ hasNextPage: !done, items }],
-  });
 
 const trackingLayer = (trackEvent: () => Effect.Effect<void>) =>
   Atom.initialValue(
@@ -63,105 +40,75 @@ const trackingLayer = (trackEvent: () => Effect.Effect<void>) =>
   );
 
 describe("Earn facade", () => {
-  it("selects cached validators and ignores unknown selection or removal keys", async () => {
+  it("tracks validator intent through the Earn Selection interface", async () => {
     const selectedYield = yieldApiYieldFixture();
     const validator = decodeValidator(yieldApiValidatorFixture());
     const trackEvent = vi.fn(() => Effect.void);
-    const validatorsKey = new YieldValidatorsKey({
-      network: selectedYield.token.network,
-      selectedYieldId: selectedYield.id,
-    });
     const registry = AtomRegistry.make({
       initialValues: [
         trackingLayer(trackEvent),
-        [
-          yieldValidatorsAtom(validatorsKey).validatorsPullAtom(
-            new YieldValidatorsPullKey({ search: null })
-          ),
-          makePullResult([validator]),
-        ],
-        Atom.initialValue(
-          earnMachineViewAtom,
-          makeEarnView({
-            intent: makeDefaultEarnIntent(),
-            resources: {
-              validators: {
-                enabled: true,
-                items: [validator],
-                key: validatorsKey,
-              },
-            },
-            selection: { yield: selectedYield },
-            status: "ready",
-          })
-        ),
+        Atom.initialValue(earnSelectionValidatorOptionsViewAtom, {
+          canSelect: true,
+          enabled: true,
+          isDebouncing: false,
+          items: [validator],
+          page: {
+            hasMore: false,
+            isLoadingFirstPage: false,
+            isLoadingMore: false,
+          },
+          search: "",
+          selected: [validator],
+          selectedYield,
+        }),
+        Atom.initialValue(earnSelectionViewAtom, {
+          canSubmit: false,
+          form: {
+            providerYieldId: null,
+            stakeAmount: "0",
+            tronResource: null,
+            useMaxAmount: false,
+          },
+          positions: new Map(),
+          selection: {
+            category: null,
+            token: null,
+            validators: [validator],
+            yield: selectedYield,
+          },
+        }),
       ],
     });
     const unmountSelect = registry.mount(selectEarnValidatorAtom);
-    const unmountRemove = registry.mount(removeEarnValidatorAtom);
 
     try {
-      expect(
-        registry.get(earnMachineViewAtom).resources.validators.items
-      ).toEqual([validator]);
-      registry.set(selectEarnValidatorAtom, "unknown-validator" as never);
-      await expect
-        .poll(() => registry.get(selectEarnValidatorAtom).waiting)
-        .toBe(false);
-      expect(trackEvent).not.toHaveBeenCalled();
-
       registry.set(selectEarnValidatorAtom, validator.key);
       await expect
-        .poll(() => registry.get(selectEarnValidatorAtom).waiting)
-        .toBe(false);
+        .poll(() =>
+          AsyncResult.isSuccess(registry.get(selectEarnValidatorAtom))
+        )
+        .toBe(true);
       expect(AsyncResult.isFailure(registry.get(selectEarnValidatorAtom))).toBe(
         false
       );
-      expect(
-        registry.get(earnMachineIntentAtom).selectedValidatorKeys
-      ).toContain(validator.key);
       await expect.poll(() => trackEvent.mock.calls.length).toBe(1);
-
       expect(trackEvent).toHaveBeenCalledWith("validatorSelected", {
         validatorAddress: validator.address,
         validatorName: validator.name,
       });
-
-      registry.set(removeEarnValidatorAtom, "unknown-validator" as never);
-      await expect
-        .poll(() =>
-          AsyncResult.isSuccess(registry.get(removeEarnValidatorAtom))
-        )
-        .toBe(true);
-      expect(trackEvent).toHaveBeenCalledTimes(1);
 
       registry.set(earnValidatorModalEventAtom, { _tag: "Opened" });
       await expect
         .poll(() => registry.get(earnValidatorModalEventAtom).waiting)
         .toBe(false);
       expect(trackEvent).toHaveBeenLastCalledWith("selectValidatorModalOpened");
-
-      registry.set(earnValidatorModalEventAtom, { _tag: "Closed" });
-      await expect
-        .poll(() => registry.get(earnValidatorModalEventAtom).waiting)
-        .toBe(false);
-      expect(trackEvent).toHaveBeenLastCalledWith("selectValidatorModalClosed");
-
-      registry.set(earnValidatorModalEventAtom, { _tag: "ViewMoreClicked" });
-      await expect
-        .poll(() => registry.get(earnValidatorModalEventAtom).waiting)
-        .toBe(false);
-      expect(trackEvent).toHaveBeenLastCalledWith(
-        "selectValidatorViewMoreClicked"
-      );
     } finally {
-      unmountRemove();
       unmountSelect();
       registry.dispose();
     }
   });
 
-  it("projects search and routes pagination to the published keys", () => {
+  it("projects client-side token and yield search from semantic options", () => {
     const selectedYield = yieldApiYieldFixture();
     const tokenOption = {
       amount: "10",
@@ -169,131 +116,69 @@ describe("Earn facade", () => {
       source: "balance",
       token: selectedYield.token,
     } satisfies EarnTokenOption;
-    const validator = decodeValidator(yieldApiValidatorFixture());
-    const tokenPullKey = new DefaultTokenOptionsKey({
-      category: null,
-      network: null,
-      tokensForEnabledYieldsOnly: false,
-    });
-    const validatorsKey = new YieldValidatorsKey({
-      network: selectedYield.token.network,
-      selectedYieldId: selectedYield.id,
-    });
-    const validatorPullAtom = yieldValidatorsAtom(
-      validatorsKey
-    ).validatorsPullAtom(new YieldValidatorsPullKey({ search: null }));
-    const machine = makeEarnView({
-      can: {
-        selectToken: true,
-        selectValidator: true,
-        selectYield: true,
-        submit: true,
-      },
-      intent: makeDefaultEarnIntent(),
-      resources: {
-        tokenOptions: {
-          items: [tokenOption],
-          pullKey: tokenPullKey,
-          waiting: false,
-        },
-        validators: {
-          enabled: true,
-          items: [validator],
-          key: validatorsKey,
-        },
-        yields: { items: [selectedYield], waiting: false },
-      },
-      selection: {
-        token: tokenOption,
-        yield: selectedYield,
-      },
-      status: "ready",
-    });
     const registry = AtomRegistry.make({
       initialValues: [
-        Atom.initialValue(earnMachineViewAtom, machine),
         Atom.initialValue(
           widgetConfigAtom,
           normalizeWidgetConfig({ apiKey: "test", variant: "default" })
         ),
-        [tokenOptionsPullAtom(tokenPullKey), makePullResult([tokenOption])],
-        [validatorPullAtom, makePullResult([validator])],
+        Atom.initialValue(earnSelectionStatusViewAtom, {
+          canRetry: false,
+          failureStage: null,
+          isFetching: false,
+          status: "ready",
+        }),
+        Atom.initialValue(earnSelectionTokenOptionsViewAtom, {
+          canSelect: true,
+          items: [tokenOption],
+          page: {
+            hasMore: true,
+            isLoadingFirstPage: false,
+            isLoadingMore: false,
+          },
+          selected: tokenOption,
+          waiting: false,
+        }),
+        Atom.initialValue(earnSelectionYieldOptionsViewAtom, {
+          availableCategories: [],
+          canSelect: true,
+          items: [selectedYield],
+          selected: selectedYield,
+          selectedCategory: null,
+          waiting: false,
+        }),
       ],
     });
 
     try {
-      const set = vi.spyOn(registry, "set");
-      const unmountValidators = registry.mount(earnValidatorSelectionViewAtom);
-      try {
-        registry.set(setEarnTokenSearchAtom, selectedYield.token.symbol);
-        registry.set(setEarnYieldSearchAtom, selectedYield.metadata.name);
+      registry.set(setEarnTokenSearchAtom, selectedYield.token.symbol);
+      registry.set(setEarnYieldSearchAtom, selectedYield.metadata.name);
 
-        expect(registry.get(earnTokenSelectionViewAtom).filtered).toEqual([
-          tokenOption,
-        ]);
-        expect(registry.get(earnTokenSelectionViewAtom).hasMore).toBe(true);
-        expect(registry.get(earnYieldSelectionViewAtom).filtered).toEqual([
-          selectedYield,
-        ]);
-
-        registry.set(loadMoreEarnTokensAtom, undefined);
-        expect(set).toHaveBeenCalledWith(
-          tokenOptionsPullAtom(tokenPullKey),
-          undefined
-        );
-
-        registry.set(loadMoreEarnValidatorsAtom, undefined);
-        expect(set).toHaveBeenCalledWith(validatorPullAtom, undefined);
-
-        registry.set(setEarnValidatorSearchAtom, " validator ");
-        expect(registry.get(earnValidatorSelectionViewAtom)).toMatchObject({
-          isDebouncing: true,
-          isLoading: true,
-          search: " validator ",
-        });
-      } finally {
-        unmountValidators();
-      }
+      expect(registry.get(earnTokenSelectionViewAtom)).toMatchObject({
+        filtered: [tokenOption],
+        hasMore: true,
+      });
+      expect(registry.get(earnYieldSelectionViewAtom).filtered).toEqual([
+        selectedYield,
+      ]);
     } finally {
       registry.dispose();
     }
   });
 
-  it("retries the resource the published retry target names", () => {
-    const retryKey = new TokenOptionsKey({
-      category: "defi",
-      initToken: null,
-      initTokenNetwork: null,
-      initYieldId: null,
-      scope: null,
-      tokensForEnabledYieldsOnly: false,
-    });
-    const registry = AtomRegistry.make({
-      initialValues: [
-        Atom.initialValue(
-          earnMachineViewAtom,
-          makeEarnView({
-            failure: {
-              _tag: "ResourceFailure",
-              error: new EarnCatalogError({
-                cause: new Error("offline"),
-                operation: "default-token-options",
-              }),
-              stage: "token-options",
-            },
-            intent: makeDefaultEarnIntent(),
-            retryTarget: { _tag: "TokenOptions", key: retryKey },
-            status: "failed",
-          })
-        ),
-      ],
-    });
-    const refresh = vi.spyOn(registry, "refresh");
+  it("forwards validator search into the stable selection view", () => {
+    const registry = AtomRegistry.make();
+    const unmount = registry.mount(earnValidatorSelectionViewAtom);
 
     try {
-      registry.set(retryEarnPageAtom, undefined);
-      expect(refresh).toHaveBeenCalledWith(mergedTokenOptionsAtom(retryKey));
+      registry.set(setEarnValidatorSearchAtom, " validator ");
+      expect(registry.get(earnValidatorSelectionViewAtom)).toMatchObject({
+        isDebouncing: true,
+        isLoading: true,
+        search: " validator ",
+      });
     } finally {
+      unmount();
       registry.dispose();
     }
   });

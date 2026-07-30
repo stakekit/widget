@@ -1,18 +1,14 @@
 import BigNumber from "bignumber.js";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { tokenString } from "../../../domain/types/tokens";
-import { earnMachineViewAtom } from "./atoms-state/machine/atoms";
-import type { EarnMachineView } from "./atoms-state/types";
+import { type EarnSelection, earnSelectionViewAtom } from "./earn-selection";
 
 export const earnPageSearchAtom = Atom.make({
   stake: "",
   token: "",
-  validator: "",
 }).pipe(Atom.keepAlive, Atom.withLabel("earnPageSearchAtom"));
 
-const getEarnPageSubmissionKey = (
-  selection: EarnMachineView["selection"]
-): string =>
+const getEarnPageSubmissionKey = (selection: EarnSelection): string =>
   JSON.stringify([
     selection.category,
     selection.yield?.id ?? null,
@@ -27,26 +23,26 @@ const submittedEarnPageSelectionKeyAtom = Atom.make<string | null>(null).pipe(
 export const earnPageSubmittedAtom = Atom.writable<boolean, boolean>(
   (context) =>
     context.get(submittedEarnPageSelectionKeyAtom) ===
-    getEarnPageSubmissionKey(context.get(earnMachineViewAtom).selection),
+    getEarnPageSubmissionKey(context.get(earnSelectionViewAtom).selection),
   (context, submitted) =>
     context.set(
       submittedEarnPageSelectionKeyAtom,
       submitted
-        ? getEarnPageSubmissionKey(context.get(earnMachineViewAtom).selection)
+        ? getEarnPageSubmissionKey(context.get(earnSelectionViewAtom).selection)
         : null
     )
 ).pipe(Atom.withLabel("earnPageSubmittedAtom"));
 
 export const earnPageInputAtom = Atom.make(
-  (context) => context.get(earnMachineViewAtom).form
+  (context) => context.get(earnSelectionViewAtom).form
 ).pipe(Atom.withLabel("earnPageInputAtom"));
 
 export const earnPageSelectionAtom = Atom.make(
-  (context) => context.get(earnMachineViewAtom).selection
+  (context) => context.get(earnSelectionViewAtom).selection
 ).pipe(Atom.withLabel("earnPageSelectionAtom"));
 
 export const earnPageQuoteAtom = Atom.make((context) => {
-  const view = context.get(earnMachineViewAtom);
+  const view = context.get(earnSelectionViewAtom);
 
   return {
     selectedProviderYieldId: view.form.providerYieldId,

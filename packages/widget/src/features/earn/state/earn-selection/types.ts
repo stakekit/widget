@@ -9,7 +9,7 @@ import type {
   EarnToken,
   EarnValidator,
   EarnValidatorKey,
-  EarnYield,
+  EarnYieldWithProvider,
 } from "../../../../domain/schema/earn-models";
 import type { YieldId } from "../../../../domain/schema/identifiers";
 import type { InitParams } from "../../../../domain/schema/init-params";
@@ -30,7 +30,7 @@ import type {
   YieldCatalogKey,
   YieldValidatorsKey,
   YieldValidatorsPullKey,
-} from "./catalog/keys";
+} from "./resources/keys";
 
 export type EarnTokenOption = {
   readonly token: EarnToken;
@@ -95,7 +95,7 @@ export type EarnMachineIntent = {
 type EarnMachineSelection = {
   category: DashboardYieldCategory | null;
   token: EarnTokenOption | null;
-  yield: EarnYield | null;
+  yield: EarnYieldWithProvider | null;
   validators: ReadonlyArray<EarnValidator>;
 };
 
@@ -180,7 +180,7 @@ export type EarnMachineView = {
     };
     tokenOptions: EarnTokenOptionsViewResource;
     yields: {
-      readonly items: ReadonlyArray<EarnYield>;
+      readonly items: ReadonlyArray<EarnYieldWithProvider>;
       readonly waiting: boolean;
     };
     validators: EarnValidatorsViewResource;

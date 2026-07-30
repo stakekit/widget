@@ -4,7 +4,11 @@ Status: implemented
 
 ## Problem Statement
 
-`packages/widget/src/features/earn/state/atoms-state/` is the application-state boundary that combines user intent, widget configuration, Wallet Scope, and several Authoritative Resources into the selection and form consumed by Earn UI. Its behavior is currently covered only in fragments. Important branches are unverified, several loading and failure cases are collapsed into empty data, and some stale or invalid intent can survive behind a fallback projection.
+`packages/widget/src/features/earn/state/earn-selection.ts` is the feature-private
+interface that combines user intent, widget configuration, Wallet Scope, and
+several Authoritative Resources into the selection and form consumed by Earn
+UI. Its private implementation lives under `state/earn-selection/`; callers
+learn only focused semantic views and commands.
 
 The module needs an explicit behavioral contract and an exhaustive verification campaign. Tests must prove selection precedence, transition resets, data composition, loading and failure semantics, pagination, retry, refresh, race handling, and capability derivation. When the tests expose behavior that violates this specification, the implementation is corrected in the same effort and the correction is recorded here.
 
@@ -23,7 +27,14 @@ Authoritative Resources continue to own canonical remote reads, semantic request
 
 Earn projections consume typed Authoritative Resource results and never inspect HTTP causes directly. Optional preferred-token enrichment treats a failed Legacy token-directory lookup as a missing preference candidate without changing that resource's canonical error contract. Requested initialization lookups remain blocking when their required first acquisition fails.
 
-The view resolver observes keyed resources lazily in dependency order and normalizes each `AsyncResult` exactly once. Independent initialization and positions reads begin together to avoid a loading waterfall. A usable observation retains its waiting flag so same-key refreshes remain visible without becoming blocking acquisition states. The published view contains normalized token, yield, and positions snapshots; React receives operational atoms only for pagination. Blocking failures carry the already-resolved atom that Retry must refresh.
+Earn Selection observes keyed resources lazily in dependency order and
+normalizes each `AsyncResult` exactly once. Independent initialization and
+positions reads begin together to avoid a loading waterfall. A usable
+observation retains its waiting flag so same-key refreshes remain visible
+without becoming blocking acquisition states. Resource keys, dynamic Atom
+families, pagination routing, retry targets, and diagnostic causes remain
+private. Callers receive stable focused views and dispatch intention-only
+commands.
 
 `EarnYield` response decoding owns Earn Mechanic Argument projection and validation before authoritative yield facts reach this machine. Every field first decodes through the generated API schema, then the typed API field array resolves to a name-keyed domain record containing only `amount`, `providerId`, `tronResource`, `validatorAddress`, `validatorAddresses`, and `subnetId`. Consumed fields validate the canonical Yield API variants: `amount`, `providerId`, `validatorAddress`, and `validatorAddresses` use type `string`; `tronResource` uses `enum`; and `subnetId` uses `number`. The domain values retain only Widget-consumed required flags, amount bounds, and options rather than wire-only `name`, `type`, or label metadata. Every argument container (`enter`, `exit`, each `manage` action, and `balance`) uses the same projection. The Widget trusts the API contract to provide unique argument names. Valid unrelated fields are projected away; a malformed API field or invalid consumed domain value rejects that yield at the response seam.
 
@@ -108,9 +119,13 @@ The public status vocabulary is:
 
 When several required inputs are waiting, status uses this dependency order: wallet, categories, initialization, token options, yields, positions, validators. Acquisition may run safely in parallel even though the published status has deterministic priority.
 
-`failed` carries one highest-priority discriminated failure:
+`failed` carries one highest-priority semantic failure stage:
 
-- `ResourceFailure` identifies `categories`, `initial-selection`, `token-options`, `yields`, `positions`, or `validators`, preserves the typed catalog error and raw diagnostic cause, and exposes a Retry command for only the responsible resource.
+- The status view identifies `categories`, `initial-selection`,
+  `token-options`, `yields`, `positions`, or `validators` and reports whether
+  Retry is available. Typed catalog errors, raw causes, and the exact retry
+  target remain private; the stable Retry command refreshes only the
+  responsible resource.
 
 The failure is used only when a required first acquisition has no usable value. Retry ignores duplicate commands while its target is waiting. If recovery reveals an independent downstream failure, that failure then becomes active according to dependency priority. A malformed directly requested yield is an ordinary decode-backed resource failure; a tolerant directory omits only the malformed yield and records the decode rejection.
 
@@ -256,8 +271,11 @@ KYC, gas checks, and transaction-execution readiness remain outside this machine
 Tests use four seams:
 
 1. Schema-boundary tests for Earn Mechanic Argument projection, normalization, rejection, tolerant directory omission, and direct-opportunity decode failure.
-2. Pure decision tables for reducers, resolvers, validation, precedence, and invariants.
-3. Atom-registry integration tests with controllable service Layers and deferred responses for loading, failure, retry, refresh, pagination, reconciliation, and races.
+2. Pure decision tables only for cohesive deterministic model interfaces such
+   as amount constraints and validation.
+3. Earn Selection interface tests plus Atom-registry integration tests with
+   controllable Authoritative Resource inputs and deferred responses for
+   loading, failure, retry, refresh, pagination, reconciliation, and races.
 4. A small set of DOM/browser tests proving critical states and commands are consumed correctly by both classic and dashboard UI adapters, including blocking retry recovery and stale-data refresh failure.
 
 Verification is complete when:
@@ -273,7 +291,11 @@ Property-test tooling is not added solely for this effort. Explicit Vitest decis
 
 ## Delivery
 
-The change lands as one coherent internal cutover. Implementation proceeds test-first in small red/green/refactor steps across pure resolution, catalog projection, machine lifecycle, and UI adapters, but the branch does not retain parallel old/new machine authorities, temporary fallback behavior, or a compatibility facade for behavior this specification replaces. Focused tests run throughout; the completed cutover runs the full widget validation ladder.
+The change lands as one coherent internal cutover. Implementation proceeds
+test-first in small vertical slices through the feature-private Earn Selection
+interface. The branch does not retain parallel authorities, temporary fallback
+behavior, or compatibility seams. Focused tests run throughout; the completed
+cutover runs the full widget validation ladder.
 
 ## Expected Behavioral Corrections
 
@@ -295,7 +317,7 @@ Code inspection identified the following current behaviors that conflict with th
 - Three yield IDs are hard-coded out of visibility despite API-key scoping.
 - Zero reward can incorrectly remove a dashboard category from availability.
 - React's yield selector independently filters zero-reward yields after state resolution.
-- Still-live Earn provider/yield helper resources repeat the hard-coded yield exclusions outside `atoms-state`.
+- Still-live Earn provider/yield helper resources repeat the hard-coded yield exclusions outside Earn Selection.
 - Cross-network preference fallback can influence an active network.
 - `can.submit` can be true for disconnected or otherwise invalid form state.
 
@@ -320,5 +342,6 @@ This list becomes a completed correction log as focused tests reproduce each beh
 - Replacing or duplicating Authoritative Resource cache and pagination ownership.
 - Introducing React Query, hook-owned fetching, Promise caches, or React-owned retries.
 - Broad UI redesign, unrelated product copy, KYC policy, gas policy, or transaction execution changes.
-- Preserving accidental `atoms-state` behavior when it conflicts with this contract.
+- Preserving accidental implementation behavior when it conflicts with this
+  contract.
 - Adding support for multiple concurrently mounted Widget Instances.

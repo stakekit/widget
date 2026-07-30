@@ -3,8 +3,8 @@ import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { ApiRequestError } from "../../src/domain/schema/api-errors";
-import { availableYieldCategoriesAtom } from "../../src/features/earn/state/atoms-state/catalog/atoms";
-import { AvailableYieldCategoriesKey } from "../../src/features/earn/state/atoms-state/catalog/keys";
+import { availableYieldCategoriesAtom } from "../../src/features/earn/state/earn-selection/resources/atoms";
+import { AvailableYieldCategoriesKey } from "../../src/features/earn/state/earn-selection/resources/keys";
 import {
   enrichedYieldDirectoryResourceAtom,
   YieldDirectoryError,

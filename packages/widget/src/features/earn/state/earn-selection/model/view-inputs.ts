@@ -5,7 +5,7 @@ import type * as Atom from "effect/unstable/reactivity/Atom";
 import type {
   EarnValidator,
   EarnValidatorKey,
-  EarnYield,
+  EarnYieldWithProvider,
 } from "../../../../../domain/schema/earn-models";
 import { YieldId } from "../../../../../domain/schema/identifiers";
 import { Network } from "../../../../../domain/schema/network-model";
@@ -17,7 +17,7 @@ import {
   mergedTokenOptionsAtom,
   positionsDataAtom,
   yieldValidatorsAtom,
-} from "../catalog/atoms";
+} from "../resources/atoms";
 import {
   AvailableYieldCategoriesKey,
   DefaultTokenOptionsKey,
@@ -26,7 +26,7 @@ import {
   TokenOptionsKey,
   YieldCatalogKey,
   YieldValidatorsKey,
-} from "../catalog/keys";
+} from "../resources/keys";
 import type {
   EarnCatalogError,
   EarnEntry,
@@ -240,7 +240,7 @@ export const readValidatorInput = ({
   validatorSelectionRequired,
 }: {
   readonly context: Atom.AtomContext;
-  readonly selectedYield: EarnYield;
+  readonly selectedYield: EarnYieldWithProvider;
   readonly validatorSelectionRequired: boolean;
 }) => {
   if (!validatorSelectionRequired) {

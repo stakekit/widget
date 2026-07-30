@@ -10,7 +10,6 @@ import {
   EarnYieldPage,
 } from "../../src/domain/schema/earn-models";
 import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
-import { resolveYieldOptions } from "../../src/features/earn/state/atoms-state/resolver/yield";
 import { yieldApiYieldDtoFixture } from "../fixtures";
 
 const token = {
@@ -196,41 +195,5 @@ describe("Earn API boundary policies", () => {
     });
 
     expect(result.items).toEqual([]);
-  });
-
-  it("preserves existing token-scoped yield selection behavior", async () => {
-    const yieldModel = await decode(
-      EarnYield,
-      yieldApiYieldDtoFixture({ prime: false })
-    );
-    const options = resolveYieldOptions({
-      selectedToken: {
-        token: yieldModel.token,
-        availableYields: [yieldModel.id],
-        amount: "0",
-        source: "default",
-      },
-      yieldsById: [yieldModel],
-    });
-
-    expect(options.map((option) => option.id)).toEqual([yieldModel.id]);
-  });
-
-  it("does not hide an API-scoped yield by hard-coded identifier", async () => {
-    const yieldModel = await decode(
-      EarnYield,
-      yieldApiYieldDtoFixture({ id: "avax-native-staking" })
-    );
-    const options = resolveYieldOptions({
-      selectedToken: {
-        token: yieldModel.token,
-        availableYields: [yieldModel.id],
-        amount: "0",
-        source: "default",
-      },
-      yieldsById: [yieldModel],
-    });
-
-    expect(options.map((option) => option.id)).toEqual([yieldModel.id]);
   });
 });

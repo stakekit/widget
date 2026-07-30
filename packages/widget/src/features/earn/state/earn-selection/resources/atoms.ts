@@ -6,7 +6,7 @@ import type {
   EarnToken,
   EarnValidator,
   EarnValidatorKey,
-  EarnYield,
+  EarnYieldWithProvider,
 } from "../../../../../domain/schema/earn-models";
 import type { YieldId } from "../../../../../domain/schema/identifiers";
 import type { Network } from "../../../../../domain/schema/network-model";
@@ -29,12 +29,16 @@ import {
   validatorsPullAtom as validatorsResourcePullAtom,
 } from "../../../../../resources/validator-directory/validator-directory";
 import {
+  enrichedYieldDirectoryResourceAtom,
   YieldDirectoryKey,
   YieldFirstPageKey,
   yieldDirectoryResourceAtom,
   yieldFirstPageResourceAtom,
 } from "../../../../../resources/yield-directory/yield-directory";
-import { yieldOpportunityResourceAtom } from "../../../../../resources/yield-opportunity/yield-opportunity";
+import {
+  enrichedYieldOpportunityResourceAtom,
+  yieldOpportunityResourceAtom,
+} from "../../../../../resources/yield-opportunity/yield-opportunity";
 import { yieldPositionsResourceAtom } from "../../../../../resources/yield-positions/yield-positions";
 import {
   YieldTokensKey,
@@ -124,13 +128,14 @@ export const availableYieldCategoriesAtom = Atom.family(
 );
 
 export const earnYieldCatalogAtom = Atom.family((key: YieldCatalogKey) => {
-  const source = yieldDirectoryResourceAtom.foreground(
-    new YieldDirectoryKey({
-      network: key.network,
-      types: toYieldTypesParam(key.category),
-      yieldIds: key.yieldIds,
-    })
-  );
+  const directoryKey = new YieldDirectoryKey({
+    network: key.network,
+    types: toYieldTypesParam(key.category),
+    yieldIds: key.yieldIds,
+  });
+  const source = enrichedYieldDirectoryResourceAtom.foreground(directoryKey);
+  const authoritativeSource =
+    yieldDirectoryResourceAtom.foreground(directoryKey);
 
   return Atom.readable(
     (get) =>
@@ -138,12 +143,15 @@ export const earnYieldCatalogAtom = Atom.family((key: YieldCatalogKey) => {
         AsyncResult.map((directory) => directory.items),
         mapAsyncResultError(toCatalogError("earn-yield-catalog"))
       ),
-    (refresh) => refresh(source)
+    (refresh) => refresh(authoritativeSource)
   ).pipe(Atom.withLabel("earnYieldCatalogAtom"));
 });
 
 export const initYieldAtom = Atom.family((key: InitYieldKey) => {
   const source = key.yieldId
+    ? enrichedYieldOpportunityResourceAtom.foreground(key.yieldId)
+    : null;
+  const authoritativeSource = key.yieldId
     ? yieldOpportunityResourceAtom.foreground(key.yieldId)
     : null;
 
@@ -153,7 +161,7 @@ export const initYieldAtom = Atom.family((key: InitYieldKey) => {
         ? get(source).pipe(mapAsyncResultError(toCatalogError("init-yield")))
         : AsyncResult.success(null),
     (refresh) => {
-      if (source) refresh(source);
+      if (authoritativeSource) refresh(authoritativeSource);
     }
   ).pipe(Atom.withLabel("initYieldAtom"));
 });
@@ -208,7 +216,9 @@ const toInitTokenOption = (tokenWithYields: {
   source: "init",
 });
 
-const toInitYieldTokenOption = (yieldDto: EarnYield): EarnTokenOption => ({
+const toInitYieldTokenOption = (
+  yieldDto: EarnYieldWithProvider
+): EarnTokenOption => ({
   token: yieldDto.token,
   availableYields: [yieldDto.id],
   amount: "0",

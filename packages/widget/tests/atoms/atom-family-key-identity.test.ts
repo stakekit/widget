@@ -3,11 +3,11 @@ import type { Chain } from "viem";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
-import { earnYieldCatalogAtom } from "../../src/features/earn/state/atoms-state/catalog/atoms";
+import { earnYieldCatalogAtom } from "../../src/features/earn/state/earn-selection/resources/atoms";
 import {
   TokenYieldScopeKey,
   YieldCatalogKey,
-} from "../../src/features/earn/state/atoms-state/catalog/keys";
+} from "../../src/features/earn/state/earn-selection/resources/keys";
 import {
   CurrentRewardsSummaryKey,
   positiveRewardsSummaryAtom,

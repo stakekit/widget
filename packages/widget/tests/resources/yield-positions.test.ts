@@ -7,8 +7,8 @@ import { ApiRequestError } from "../../src/domain/schema/api-errors";
 import { EarnPosition } from "../../src/domain/schema/earn-models";
 import type { YieldBalancesCommand } from "../../src/domain/schema/financial-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import { positionsDataAtom as earnPositionsDataAtom } from "../../src/features/earn/state/atoms-state/catalog/atoms";
-import { PositionsDataKey } from "../../src/features/earn/state/atoms-state/catalog/keys";
+import { positionsDataAtom as earnPositionsDataAtom } from "../../src/features/earn/state/earn-selection/resources/atoms";
+import { PositionsDataKey } from "../../src/features/earn/state/earn-selection/resources/keys";
 import {
   PositionDataKey,
   positionDataAtom,

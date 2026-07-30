@@ -1,6 +1,6 @@
 import BigNumber from "bignumber.js";
 import { Option, Schema } from "effect";
-import type { EarnYield } from "../../../../../domain/schema/earn-models";
+import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
 import { YieldId } from "../../../../../domain/schema/identifiers";
 import {
   isSupportedChain,
@@ -17,7 +17,7 @@ export const resolveYieldOptions = ({
   yieldsById,
 }: {
   selectedToken: EarnTokenOption | null;
-  yieldsById: ReadonlyArray<EarnYield>;
+  yieldsById: ReadonlyArray<EarnYieldWithProvider>;
 }) => {
   if (!selectedToken) {
     return [];
@@ -42,7 +42,7 @@ export const resolveYield = ({
   positionsData: PositionsData;
   selectedYieldId: YieldId | null;
   selectedToken: EarnTokenOption;
-  yieldOptions: ReadonlyArray<EarnYield>;
+  yieldOptions: ReadonlyArray<EarnYieldWithProvider>;
 }) => {
   if (selectedYieldId) {
     const selected = findYieldById(yieldOptions, selectedYieldId);
@@ -99,18 +99,18 @@ export const resolveYield = ({
   return eligibleYield ?? getDefaultYield(yieldOptions);
 };
 
-const canShowYieldOption = (yieldOption: EarnYield) =>
+const canShowYieldOption = (yieldOption: EarnYieldWithProvider) =>
   yieldOption.status.enter && isSupportedChain(yieldOption.token.network);
 
 const findYieldById = (
-  yieldOptions: ReadonlyArray<EarnYield>,
+  yieldOptions: ReadonlyArray<EarnYieldWithProvider>,
   yieldId: YieldId
 ) =>
   yieldOptions.find(
     (yieldOption) => yieldOption.id.toLowerCase() === yieldId.toLowerCase()
   ) ?? null;
 
-const getDefaultYield = (yieldOptions: ReadonlyArray<EarnYield>) =>
+const getDefaultYield = (yieldOptions: ReadonlyArray<EarnYieldWithProvider>) =>
   yieldOptions.find(isNonZeroRewardRateYield) ?? yieldOptions[0] ?? null;
 
 const getPreferredYieldId = ({

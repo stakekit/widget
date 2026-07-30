@@ -29,11 +29,11 @@ import {
 import {
   mergedTokenOptionsAtom,
   positionsDataAtom,
-} from "../../src/features/earn/state/atoms-state/catalog/atoms";
+} from "../../src/features/earn/state/earn-selection/resources/atoms";
 import {
   PositionsDataKey,
   TokenOptionsKey,
-} from "../../src/features/earn/state/atoms-state/catalog/keys";
+} from "../../src/features/earn/state/earn-selection/resources/keys";
 import { activityHistoryPullAtom } from "../../src/resources/activity-history/activity-history";
 import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
 import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";

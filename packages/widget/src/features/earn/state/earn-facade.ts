@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Duration, Effect, Match, Option, Stream } from "effect";
+import { Effect, Match, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigAtom } from "../../../app/config/settings";
@@ -21,7 +21,6 @@ import {
   getYieldRewardTokens,
   getYieldTypesSortRank,
   isBittensorStaking,
-  isYieldActionArgRequired,
 } from "../../../domain/types/yields";
 import type { DashboardYieldCategory } from "../../../public-api/types";
 import {
@@ -57,18 +56,26 @@ import {
   refreshCurrentYieldKycAtom,
 } from "../../yield-summary/state";
 import {
-  earnMachineIntentAtom,
-  earnMachineViewAtom,
-} from "./atoms-state/machine/atoms";
-import {
-  earnTokenOptionsPageAtom,
-  earnValidatorsPageAtom,
-  loadMoreEarnTokenOptionsAtom,
-  loadMoreEarnValidatorsPageAtom,
-  rememberEarnValidatorsAtom,
-  retryEarnMachineAtom,
-} from "./atoms-state/machine/view-resources";
-import type { EarnTokenOption } from "./atoms-state/types";
+  type EarnTokenOption,
+  earnSelectionStatusViewAtom,
+  earnSelectionTokenOptionsViewAtom,
+  earnSelectionValidatorOptionsViewAtom,
+  earnSelectionViewAtom,
+  earnSelectionYieldOptionsViewAtom,
+  loadMoreEarnSelectionTokensAtom,
+  loadMoreEarnSelectionValidatorsAtom,
+  removeEarnSelectionValidatorAtom,
+  retryEarnSelectionAtom,
+  selectEarnSelectionCategoryAtom,
+  selectEarnSelectionProviderAtom,
+  selectEarnSelectionTokenAtom,
+  selectEarnSelectionTronResourceAtom,
+  selectEarnSelectionValidatorAtom,
+  selectEarnSelectionYieldAtom,
+  setEarnSelectionAmountAtom,
+  setEarnSelectionMaxAmountAtom,
+  setEarnSelectionValidatorSearchAtom,
+} from "./earn-selection";
 import {
   earnPageInputAtom,
   earnPageQuoteAtom,
@@ -77,25 +84,6 @@ import {
   earnPageSubmittedAtom,
 } from "./page-workflow";
 import { pendingActionDeepLinkViewAtom } from "./pending-action-deep-link";
-
-const normalizedValidatorSearchAtom = Atom.make((get) =>
-  get(earnPageSearchAtom).validator.trim()
-).pipe(Atom.withLabel("normalizedEarnValidatorSearchAtom"));
-
-const debouncedValidatorSearchResultAtom = appRuntime
-  .atom((get) =>
-    get
-      .stream(normalizedValidatorSearchAtom)
-      .pipe(Stream.changes, Stream.debounce(Duration.millis(300)))
-  )
-  .pipe(Atom.withLabel("debouncedEarnValidatorSearchResultAtom"));
-
-const debouncedValidatorSearchAtom = Atom.make((get) =>
-  get(debouncedValidatorSearchResultAtom).pipe(
-    AsyncResult.value,
-    Option.getOrElse(() => "")
-  )
-).pipe(Atom.withLabel("debouncedEarnValidatorSearchAtom"));
 
 const selectedValidatorsAtom = Atom.make(
   (get) =>
@@ -138,9 +126,10 @@ const yieldSummaryInputAtom = Atom.make((get) => {
 const earnYieldSummary = makeYieldSummary(yieldSummaryInputAtom);
 
 export const earnTokenSelectionViewAtom = Atom.make((get) => {
-  const machine = get(earnMachineViewAtom);
+  const options = get(earnSelectionTokenOptionsViewAtom);
+  const status = get(earnSelectionStatusViewAtom).status;
   const search = get(earnPageSearchAtom).token;
-  const all = [...machine.resources.tokenOptions.items];
+  const all = [...options.items];
   const normalizedSearch = search.toLowerCase();
   const filtered = normalizedSearch
     ? all.filter(
@@ -149,21 +138,20 @@ export const earnTokenSelectionViewAtom = Atom.make((get) => {
           option.token.symbol.toLowerCase().includes(normalizedSearch)
       )
     : all;
-  const page = get(earnTokenOptionsPageAtom);
   const loading =
-    machine.status === "resolving-wallet" ||
-    machine.status === "loading-token-options" ||
-    machine.status === "loading-initial-selection" ||
-    (machine.resources.tokenOptions.waiting && all.length === 0);
+    status === "resolving-wallet" ||
+    status === "loading-token-options" ||
+    status === "loading-initial-selection" ||
+    (options.waiting && all.length === 0);
 
   return {
     all,
     filtered,
-    hasMore: page.hasMore,
+    hasMore: options.page.hasMore,
     isLoading: loading,
-    isLoadingMore: page.isLoadingMore,
+    isLoadingMore: options.page.isLoadingMore,
     search,
-    selected: machine.selection.token,
+    selected: options.selected,
   } as const;
 }).pipe(Atom.withLabel("earnTokenSelectionViewAtom"));
 
@@ -174,17 +162,14 @@ export const setEarnTokenSearchAtom = Atom.fnSync((token: string, context) => {
 
 export const selectEarnTokenAtom = appRuntime
   .fn((token: EarnTokenOption, context) => {
-    context.set(earnMachineIntentAtom, {
-      type: "token/select",
-      tokenKey: tokenString(token.token),
-    });
+    context.set(selectEarnSelectionTokenAtom, tokenString(token.token));
     return TrackingService.use((tracking) =>
       tracking.trackEvent("tokenSelected", { token: token.token.symbol })
     );
   })
   .pipe(Atom.withLabel("selectEarnTokenAtom"));
 
-export const loadMoreEarnTokensAtom = loadMoreEarnTokenOptionsAtom;
+export const loadMoreEarnTokensAtom = loadMoreEarnSelectionTokensAtom;
 
 const groupYields = (items: ReadonlyArray<EarnYieldWithProvider>) => {
   const groups = new Map<
@@ -223,10 +208,11 @@ const resolveValidatorsData = ({
 
 export const earnYieldSelectionViewAtom = Atom.make((get) => {
   const config = get(widgetConfigAtom);
-  const machine = get(earnMachineViewAtom);
-  const selected = machine.selection.yield as EarnYieldWithProvider | null;
-  const availableYields = machine.resources.yields
-    .items as ReadonlyArray<EarnYieldWithProvider>;
+  const status = get(earnSelectionStatusViewAtom).status;
+  const tokenOptions = get(earnSelectionTokenOptionsViewAtom);
+  const yieldOptions = get(earnSelectionYieldOptionsViewAtom);
+  const selected = yieldOptions.selected;
+  const availableYields = yieldOptions.items;
   const combined =
     selected && !availableYields.some((item) => item.id === selected.id)
       ? [selected, ...availableYields]
@@ -251,7 +237,7 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
     : all;
   const categoryGrouping =
     !!config.dashboardVariant && config.yieldGrouping === "category";
-  const category = machine.selection.category;
+  const category = yieldOptions.selectedCategory;
   const categoryFiltered =
     categoryGrouping && category
       ? searchFiltered.filter(
@@ -262,21 +248,19 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
     (left, right) => getYieldTypesSortRank(left) - getYieldTypesSortRank(right)
   );
   const tokenOptionsLoading =
-    machine.resources.tokenOptions.waiting &&
-    machine.resources.tokenOptions.items.length === 0;
-  const yieldLoading =
-    machine.status === "loading-yields" || machine.resources.yields.waiting;
+    tokenOptions.waiting && tokenOptions.items.length === 0;
+  const yieldLoading = status === "loading-yields" || yieldOptions.waiting;
 
   return {
     all,
     availableCategories: categoryGrouping
-      ? [...machine.availableCategories]
+      ? [...yieldOptions.availableCategories]
       : [],
     filtered,
     groups: groupYields(filtered),
     isLoading:
-      machine.status === "resolving-wallet" ||
-      machine.status === "loading-initial-selection" ||
+      status === "resolving-wallet" ||
+      status === "loading-initial-selection" ||
       yieldLoading ||
       tokenOptionsLoading,
     search,
@@ -291,62 +275,48 @@ export const setEarnYieldSearchAtom = Atom.fnSync((stake: string, context) => {
 }).pipe(Atom.withLabel("setEarnYieldSearchAtom"));
 
 export const selectEarnYieldAtom = Atom.fnSync((yieldId: YieldId, context) =>
-  context.set(earnMachineIntentAtom, { type: "yield/select", yieldId })
+  context.set(selectEarnSelectionYieldAtom, yieldId)
 ).pipe(Atom.withLabel("selectEarnYieldAtom"));
 
 export const selectEarnCategoryAtom = Atom.fnSync(
-  (category: DashboardYieldCategory, context) => {
-    const config = context(widgetConfigAtom);
-    if (
-      !config.dashboardVariant ||
-      config.yieldGrouping !== "category" ||
-      context(earnMachineViewAtom).selection.category === category
-    ) {
-      return;
-    }
-    context.set(earnMachineIntentAtom, { type: "category/select", category });
-  }
+  (category: DashboardYieldCategory, context) =>
+    context.set(selectEarnSelectionCategoryAtom, category)
 ).pipe(Atom.withLabel("selectEarnCategoryAtom"));
-
-const earnValidatorOptionsAtom = Atom.make((get) =>
-  get(earnValidatorsPageAtom(get(debouncedValidatorSearchAtom) || null))
-).pipe(Atom.withLabel("earnValidatorOptionsAtom"));
 
 export const earnValidatorSelectionViewAtom = Atom.make((get) => {
   const config = get(widgetConfigAtom);
-  const machine = get(earnMachineViewAtom);
-  const resource = machine.resources.validators;
-  const debouncedSearch = get(debouncedValidatorSearchAtom);
-  const normalizedSearch = get(normalizedValidatorSearchAtom);
-  const page = get(earnValidatorOptionsAtom);
+  const status = get(earnSelectionStatusViewAtom).status;
+  const tokenOptions = get(earnSelectionTokenOptionsViewAtom);
+  const validatorOptions = get(earnSelectionValidatorOptionsViewAtom);
+  const yieldOptions = get(earnSelectionYieldOptionsViewAtom);
   const data = resolveValidatorsData({
-    enabled: Boolean(machine.selection.yield && resource.enabled),
+    enabled: Boolean(
+      validatorOptions.selectedYield && validatorOptions.enabled
+    ),
     shouldSort:
       Boolean(config.dashboardVariant) ||
       config.variant === "utila" ||
       config.variant === "porto",
-    validators: page.items,
+    validators: validatorOptions.items,
   });
   const tokenOptionsLoading =
-    machine.resources.tokenOptions.waiting &&
-    machine.resources.tokenOptions.items.length === 0;
-  const yieldLoading =
-    machine.status === "loading-yields" || machine.resources.yields.waiting;
+    tokenOptions.waiting && tokenOptions.items.length === 0;
+  const yieldLoading = status === "loading-yields" || yieldOptions.waiting;
 
   return {
     data,
-    hasMore: page.hasMore,
-    isDebouncing: normalizedSearch !== debouncedSearch,
+    hasMore: validatorOptions.page.hasMore,
+    isDebouncing: validatorOptions.isDebouncing,
     isLoading:
       get(earnAppLoadingAtom).isLoading ||
       tokenOptionsLoading ||
       yieldLoading ||
-      normalizedSearch !== debouncedSearch ||
-      (resource.enabled && page.isLoadingFirstPage),
-    isLoadingMore: page.isLoadingMore,
-    search: get(earnPageSearchAtom).validator,
+      validatorOptions.isDebouncing ||
+      (validatorOptions.enabled && validatorOptions.page.isLoadingFirstPage),
+    isLoadingMore: validatorOptions.page.isLoadingMore,
+    search: validatorOptions.search,
     selected: get(selectedValidatorsAtom),
-    selectedYield: machine.selection.yield,
+    selectedYield: validatorOptions.selectedYield,
   } as const;
 }).pipe(Atom.withLabel("earnValidatorSelectionViewAtom"));
 
@@ -372,31 +342,16 @@ export const earnValidatorModalEventAtom = appRuntime
   })
   .pipe(Atom.withLabel("earnValidatorModalEventAtom"));
 
-export const setEarnValidatorSearchAtom = Atom.fnSync(
-  (validator: string, context) => {
-    const search = context(earnPageSearchAtom);
-    context.set(earnPageSearchAtom, { ...search, validator });
-  }
-).pipe(Atom.withLabel("setEarnValidatorSearchAtom"));
+export const setEarnValidatorSearchAtom = setEarnSelectionValidatorSearchAtom;
 
 export const selectEarnValidatorAtom = appRuntime
   .fn((validatorKey: EarnValidatorKey, context) => {
-    const machine = context(earnMachineViewAtom);
-    const selectedYield = machine.selection.yield;
-    const validator = context(earnValidatorOptionsAtom).items.find(
+    const view = context(earnSelectionValidatorOptionsViewAtom);
+    const validator = view.items.find(
       (candidate) => candidate.key === validatorKey
     );
-    if (!selectedYield || !validator) return Effect.void;
-    context.set(rememberEarnValidatorsAtom, [validator]);
-    context.set(
-      earnMachineIntentAtom,
-      isYieldActionArgRequired(selectedYield, "enter", "validatorAddresses")
-        ? {
-            type: "validator/multiselect",
-            validatorKey: validator.key,
-          }
-        : { type: "validator/select", validatorKey: validator.key }
-    );
+    if (!view.selectedYield || !validator) return Effect.void;
+    context.set(selectEarnSelectionValidatorAtom, validator.key);
     return TrackingService.use((tracking) =>
       tracking.trackEvent("validatorSelected", {
         validatorName: validator.name,
@@ -408,16 +363,12 @@ export const selectEarnValidatorAtom = appRuntime
 
 export const removeEarnValidatorAtom = appRuntime
   .fn((validatorKey: EarnValidatorKey, context) => {
-    const validator = context(
-      earnMachineViewAtom
-    ).resources.validators.items.find(
+    const view = context(earnSelectionValidatorOptionsViewAtom);
+    const validator = [...view.selected, ...view.items].find(
       (candidate) => candidate.key === validatorKey
     );
     if (!validator) return Effect.void;
-    context.set(earnMachineIntentAtom, {
-      type: "validator/remove",
-      validatorKey,
-    });
+    context.set(removeEarnSelectionValidatorAtom, validatorKey);
     return TrackingService.use((tracking) =>
       tracking.trackEvent("validatorRemoved", {
         validatorName: validator.name,
@@ -427,23 +378,18 @@ export const removeEarnValidatorAtom = appRuntime
   })
   .pipe(Atom.withLabel("removeEarnValidatorAtom"));
 
-export const loadMoreEarnValidatorsAtom = Atom.fnSync(
-  (_input: undefined, context) => {
-    context.set(
-      loadMoreEarnValidatorsPageAtom,
-      context(debouncedValidatorSearchAtom) || null
-    );
-  },
-  { initialValue: undefined }
-).pipe(Atom.withLabel("loadMoreEarnValidatorsAtom"));
+export const loadMoreEarnValidatorsAtom = loadMoreEarnSelectionValidatorsAtom;
 
 const earnYieldEntryInputAtom = Atom.make((get) => {
   const config = get(widgetConfigAtom);
-  const machine = get(earnMachineViewAtom);
+  const earnSelection = get(earnSelectionViewAtom);
+  const status = get(earnSelectionStatusViewAtom);
+  const tokenOptions = get(earnSelectionTokenOptionsViewAtom);
+  const yieldOptions = get(earnSelectionYieldOptionsViewAtom);
   const input = get(earnPageInputAtom);
   const quote = get(earnPageQuoteAtom);
   const selection = get(earnPageSelectionAtom);
-  const selectedYield = quote.selectedStake as EarnYieldWithProvider | null;
+  const selectedYield = quote.selectedStake;
   const selectedTokenOption = selection.token;
   const selectedToken = quote.selectedToken;
   const selectedValidators = get(selectedValidatorsAtom);
@@ -460,18 +406,13 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
     )
   );
   const tokenOptionsLoading =
-    machine.resources.tokenOptions.waiting &&
-    machine.resources.tokenOptions.items.length === 0;
+    tokenOptions.waiting && tokenOptions.items.length === 0;
   const yieldLoading =
-    machine.status === "loading-yields" || machine.resources.yields.waiting;
-  const isFetching =
-    machine.resources.tokenOptions.waiting ||
-    machine.resources.positions.waiting ||
-    machine.resources.yields.waiting;
+    status.status === "loading-yields" || yieldOptions.waiting;
 
   return {
     availableAmount,
-    canSubmit: machine.can.submit,
+    canSubmit: earnSelection.canSubmit,
     connected,
     defaultToMinimum: false,
     entry: {
@@ -485,9 +426,9 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
     },
     externalProviders: Boolean(config.externalProviders),
     footerIsLoading: tokenOptionsLoading || yieldLoading,
-    hasNoYields: machine.status === "no-yields",
+    hasNoYields: status.status === "no-yields",
     isAppLoading: get(earnAppLoadingAtom).isLoading,
-    isFetching,
+    isFetching: status.isFetching,
     isKycBlocking: kyc.isGateBlocking,
     isKycLoading: kyc.isLoading,
     isLedgerAccountPlaceholder:
@@ -495,7 +436,7 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
     isWalletConnecting: wallet.status === "connecting",
     mount: { _tag: "Earn" },
     kyc,
-    positionsData: machine.resources.positions.data,
+    positionsData: earnSelection.positions,
     providers: summary.providers,
     selectedTokenOption,
     submitted: get(earnPageSubmittedAtom),
@@ -652,26 +593,17 @@ export const earnEntryViewAtom = Atom.make((get) => {
 }).pipe(Atom.withLabel("earnEntryViewAtom"));
 
 export const setEarnAmountAtom = Atom.fnSync((amount: BigNumber, context) =>
-  context.set(earnMachineIntentAtom, {
-    type: "stakeAmount/change",
-    amount: amount.toString(10),
-  })
+  context.set(setEarnSelectionAmountAtom, amount.toString(10))
 ).pipe(Atom.withLabel("setEarnAmountAtom"));
 
 export const selectEarnProviderAtom = Atom.fnSync(
   (providerYieldId: YieldId, context) =>
-    context.set(earnMachineIntentAtom, {
-      type: "providerYieldId/select",
-      providerYieldId,
-    })
+    context.set(selectEarnSelectionProviderAtom, providerYieldId)
 ).pipe(Atom.withLabel("selectEarnProviderAtom"));
 
 export const selectEarnTronResourceAtom = Atom.fnSync(
   (tronResource: TronResource, context) =>
-    context.set(earnMachineIntentAtom, {
-      type: "tronResource/select",
-      tronResource,
-    })
+    context.set(selectEarnSelectionTronResourceAtom, tronResource)
 ).pipe(Atom.withLabel("selectEarnTronResourceAtom"));
 
 export const setEarnMaxAmountAtom = appRuntime
@@ -680,13 +612,13 @@ export const setEarnMaxAmountAtom = appRuntime
       type: "enter",
       availableAmount:
         context(earnEntryViewAtom).selectedTokenAvailableAmount?.amount ?? null,
-      positionsData: context(earnMachineViewAtom).resources.positions.data,
+      positionsData: context(earnSelectionViewAtom).positions,
       yield: context(earnEntryViewAtom).selectedStake,
     });
-    context.set(earnMachineIntentAtom, {
-      type: "stakeAmount/max",
-      amount: constraints.allowedMaximum.toString(10),
-    });
+    context.set(
+      setEarnSelectionMaxAmountAtom,
+      constraints.allowedMaximum.toString(10)
+    );
     return TrackingService.use((tracking) =>
       tracking.trackEvent("earnPageMaxClicked")
     );
@@ -695,15 +627,15 @@ export const setEarnMaxAmountAtom = appRuntime
 
 export const refreshEarnKycAtom = earnYieldEntry.refreshKycAtom;
 
-export const retryEarnPageAtom = retryEarnMachineAtom;
+export const retryEarnPageAtom = retryEarnSelectionAtom;
 
 export const earnPageStatusViewAtom = Atom.make((get) => {
-  const machine = get(earnMachineViewAtom);
+  const status = get(earnSelectionStatusViewAtom);
   return {
-    canRetry: machine.failure !== null,
-    hasNoYields: machine.status === "no-yields",
-    isError: machine.status === "failed",
-    machineStatus: machine.status,
+    canRetry: status.canRetry,
+    hasNoYields: status.status === "no-yields",
+    isError: status.status === "failed",
+    machineStatus: status.status,
     presentationFrozen: get(earnAppLoadingAtom).presentationFrozen,
   } as const;
 }).pipe(Atom.withLabel("earnPageStatusViewAtom"));

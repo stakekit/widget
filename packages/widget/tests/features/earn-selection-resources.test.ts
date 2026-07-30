@@ -12,13 +12,13 @@ import {
   earnYieldCatalogAtom,
   mergedTokenOptionsAtom,
   yieldValidatorsAtom,
-} from "../../src/features/earn/state/atoms-state/catalog/atoms";
+} from "../../src/features/earn/state/earn-selection/resources/atoms";
 import {
   AvailableYieldCategoriesKey,
   TokenOptionsKey,
   YieldCatalogKey,
   YieldValidatorsKey,
-} from "../../src/features/earn/state/atoms-state/catalog/keys";
+} from "../../src/features/earn/state/earn-selection/resources/keys";
 import {
   MultiYieldsKey,
   visibleMultiYieldsAtom,
@@ -32,7 +32,7 @@ import {
   yieldApiYieldFixture,
 } from "../fixtures";
 
-describe("Earn state machine catalog", () => {
+describe("Earn Selection resources", () => {
   it("uses balances only to enrich canonical tokens with amounts", async () => {
     const canonicalYield = yieldApiYieldFixture();
     const balanceOnlyYield = yieldApiYieldFixture({
@@ -205,7 +205,7 @@ describe("Earn state machine catalog", () => {
     registry.dispose();
   });
 
-  it("refreshes the responsible authoritative source through the catalog projection", () => {
+  it("refreshes the responsible authoritative source through the catalog projection", async () => {
     const yieldModel = yieldApiYieldFixture();
     let offline = true;
     const listYields = vi.fn(() =>
@@ -229,7 +229,10 @@ describe("Earn state machine catalog", () => {
           appRuntime.layer,
           Layer.succeed(
             YieldResourceSource,
-            YieldResourceSource.of({ listYields } as never)
+            YieldResourceSource.of({
+              getProvider: () => Effect.succeedNone,
+              listYields,
+            } as never)
           )
         ),
       ],
@@ -247,9 +250,11 @@ describe("Earn state machine catalog", () => {
     offline = false;
     registry.refresh(resource);
 
-    expect(AsyncResult.getOrThrow(registry.get(resource))).toEqual([
-      yieldModel,
-    ]);
+    await vi.waitFor(() =>
+      expect(AsyncResult.getOrThrow(registry.get(resource))).toEqual([
+        yieldModel,
+      ])
+    );
     expect(listYields).toHaveBeenCalledTimes(attemptsBeforeRetry + 1);
   });
 

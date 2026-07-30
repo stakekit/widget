@@ -7,28 +7,29 @@ import type { EarnYield } from "../../src/domain/schema/earn-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
 import type { PositionsData } from "../../src/domain/types/positions";
 import { getEnterAmountConstraint } from "../../src/domain/types/stake";
+import { earnSelectionViewAtom } from "../../src/features/earn/state/earn-selection";
+import {
+  canSubmitEarnForm,
+  resolveForm,
+} from "../../src/features/earn/state/earn-selection/model/form";
 import {
   earnYieldCatalogAtom,
   initYieldAtom,
   mergedTokenOptionsAtom,
   positionsDataAtom,
-} from "../../src/features/earn/state/atoms-state/catalog/atoms";
+} from "../../src/features/earn/state/earn-selection/resources/atoms";
 import {
   InitYieldKey,
   PositionsDataKey,
   TokenOptionsKey,
   YieldCatalogKey,
-} from "../../src/features/earn/state/atoms-state/catalog/keys";
-import {
-  canSubmitEarnForm,
-  resolveForm,
-} from "../../src/features/earn/state/atoms-state/resolver/form";
-import { resolveEarnView } from "../../src/features/earn/state/atoms-state/resolver/view";
+} from "../../src/features/earn/state/earn-selection/resources/keys";
+import { earnMachineEntryAtom } from "../../src/features/earn/state/earn-selection/state/atoms";
 import {
   type EarnEntry,
   type EarnMachineIntent,
   makeDefaultEarnIntent,
-} from "../../src/features/earn/state/atoms-state/types";
+} from "../../src/features/earn/state/earn-selection/types";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
 
@@ -128,6 +129,7 @@ describe("Earn force-max amount resolution", () => {
       });
       const registry = AtomRegistry.make({
         initialValues: [
+          Atom.initialValue(earnMachineEntryAtom, entry),
           [
             initYieldAtom(new InitYieldKey({ yieldId: null })),
             AsyncResult.success(null),
@@ -150,16 +152,8 @@ describe("Earn force-max amount resolution", () => {
           ],
         ],
       });
-      const viewAtom = Atom.make((context) =>
-        resolveEarnView({
-          context,
-          entry,
-          intent: makeDefaultEarnIntent(),
-        })
-      );
-
       try {
-        return registry.get(viewAtom);
+        return registry.get(earnSelectionViewAtom);
       } finally {
         registry.dispose();
       }
@@ -169,9 +163,9 @@ describe("Earn force-max amount resolution", () => {
     const withoutBalance = makeView("default");
 
     expect(withBalance.form.stakeAmount).toBe("10");
-    expect(withBalance.can.submit).toBe(true);
+    expect(withBalance.canSubmit).toBe(true);
     expect(withoutBalance.form.stakeAmount).toBe("0");
-    expect(withoutBalance.can.submit).toBe(false);
+    expect(withoutBalance.canSubmit).toBe(false);
   });
 
   it("overrides stale amount intent and follows balance revalidation", () => {
