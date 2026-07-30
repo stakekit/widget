@@ -4,9 +4,11 @@ import {
   Fiber,
   Layer,
   Option,
+  Ref,
   Stream,
   SubscriptionRef,
 } from "effect";
+import type { Chain } from "viem";
 import { mainnet, optimism } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
@@ -79,6 +81,10 @@ describe("WalletService authoritative Wallet State", () => {
   it("keeps an in-flight command on its captured routing context", async () => {
     const firstStarted = await Effect.runPromise(Deferred.make<void>());
     const firstRelease = await Effect.runPromise(Deferred.make<void>());
+    const enrichmentStarted = await Effect.runPromise(Deferred.make<void>());
+    const enrichmentRelease = await Effect.runPromise(
+      Deferred.make<ReadonlyArray<typeof mainnet>>()
+    );
     const firstConnector = {
       id: "first",
       name: "First",
@@ -86,6 +92,12 @@ describe("WalletService authoritative Wallet State", () => {
       uid: "first-uid",
     } as unknown as Connector;
     const secondConnector = {
+      $filteredChains: Stream.fromEffect(
+        Effect.gen(function* () {
+          yield* Deferred.succeed(enrichmentStarted, undefined);
+          return yield* Deferred.await(enrichmentRelease);
+        })
+      ),
       id: "second",
       name: "Second",
       type: "injected",
@@ -94,10 +106,16 @@ describe("WalletService authoritative Wallet State", () => {
     const routed: string[] = [];
     const wagmiConfig = makeDefaultConfig();
     const controller = makeController(wagmiConfig, {
-      signMessage: ({ connector }: { readonly connector: Connector }) =>
+      signMessage: ({
+        connector,
+        message,
+      }: {
+        readonly connector: Connector;
+        readonly message: string;
+      }) =>
         Effect.gen(function* () {
           routed.push(connector.uid);
-          if (connector.uid === firstConnector.uid) {
+          if (message === "first") {
             yield* Deferred.succeed(firstStarted, undefined);
             yield* Deferred.await(firstRelease);
           }
@@ -189,22 +207,41 @@ describe("WalletService authoritative Wallet State", () => {
             connection: connectedConnection(secondConnector),
             connectors: [firstConnector, secondConnector],
           });
+          yield* Deferred.await(enrichmentStarted);
+          const duringTransition = yield* wallet
+            .signMessage({ message: "during-transition" })
+            .pipe(Effect.result);
+          yield* Deferred.succeed(enrichmentRelease, [mainnet]);
           yield* Fiber.join(changed);
           const second = yield* wallet.signMessage({ message: "second" });
           yield* Deferred.succeed(firstRelease, undefined);
-          return { first: yield* Fiber.join(first), second };
+          return {
+            duringTransition,
+            first: yield* Fiber.join(first),
+            second,
+          };
         }).pipe(Effect.provide(layer))
       )
     );
 
-    expect(result).toEqual({ first: "first-uid", second: "second-uid" });
+    expect(result).toMatchObject({
+      duringTransition: {
+        _tag: "Failure",
+        failure: {
+          _tag: "WalletCapabilityUnavailableError",
+          capability: "message",
+        },
+      },
+      first: "first-uid",
+      second: "second-uid",
+    });
     expect(routed).toEqual(["first-uid", "second-uid"]);
   });
 
-  it("publishes a connected state only after enrichment completes", async () => {
+  it("publishes a connecting state until enrichment completes", async () => {
     const enrichmentStarted = await Effect.runPromise(Deferred.make<void>());
     const enrichmentRelease = await Effect.runPromise(
-      Deferred.make<ReadonlyArray<typeof optimism>>()
+      Deferred.make<ReadonlyArray<Chain>>()
     );
     const connector = {
       $filteredChains: Stream.fromEffect(
@@ -260,9 +297,155 @@ describe("WalletService authoritative Wallet State", () => {
       )
     );
 
-    expect(result.whileEnriching.state.connection.status).toBe("disconnected");
+    expect(result.whileEnriching.state.connection.status).toBe("connecting");
     expect(result.connected.state.connection).toMatchObject({
       connectorChains: [optimism],
+      status: "connected",
+    });
+  });
+
+  it("keeps commands available when only the connector inventory changes", async () => {
+    const enrichmentStarted = await Effect.runPromise(Deferred.make<void>());
+    const enrichmentRelease = await Effect.runPromise(
+      Deferred.make<ReadonlyArray<Chain>>()
+    );
+    const subscriptions = await Effect.runPromise(Ref.make(0));
+    const connector = {
+      $filteredChains: Stream.fromEffect(
+        Ref.getAndUpdate(subscriptions, (count) => count + 1).pipe(
+          Effect.flatMap((count) =>
+            count === 0
+              ? Effect.succeed<ReadonlyArray<Chain>>([mainnet])
+              : Effect.gen(function* () {
+                  yield* Deferred.succeed(enrichmentStarted, undefined);
+                  return yield* Deferred.await(enrichmentRelease);
+                })
+          )
+        )
+      ),
+      id: "stable",
+      name: "Stable",
+      type: "injected",
+      uid: "stable-uid",
+    } as unknown as Connector;
+    const discoveredConnector = {
+      id: "discovered",
+      name: "Discovered",
+      type: "injected",
+      uid: "discovered-uid",
+    } as unknown as Connector;
+    const connection = connectedConnection(connector);
+    const controller = makeController(makeDefaultConfig());
+    const core = await Effect.runPromise(
+      SubscriptionRef.make<WalletCoreState>({
+        connection,
+        connectors: [connector],
+      })
+    );
+
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const state = yield* makeWalletStateRuntime({
+            controller: controller as WalletController,
+            core: {
+              current: SubscriptionRef.get(core),
+              states: SubscriptionRef.changes(core),
+            },
+            readStoredPublicKeys: Effect.succeed({}),
+          });
+          yield* SubscriptionRef.set(core, {
+            connection,
+            connectors: [connector, discoveredConnector],
+          });
+          yield* Deferred.await(enrichmentStarted);
+          const whileEnriching = yield* state.context;
+          yield* Deferred.succeed(enrichmentRelease, [optimism]);
+
+          return whileEnriching;
+        })
+      )
+    );
+
+    expect(result.state.connection).toMatchObject({
+      connector,
+      status: "connected",
+    });
+  });
+
+  it("retires the previous connector while Cosmos enrichment is pending", async () => {
+    const publicKey = "A".repeat(44);
+    const enrichmentStarted = await Effect.runPromise(Deferred.make<void>());
+    const enrichmentRelease = await Effect.runPromise(
+      Deferred.make<Record<string, string>>()
+    );
+    const firstConnector = {
+      id: "first",
+      name: "First",
+      type: "injected",
+      uid: "first-uid",
+    } as unknown as Connector;
+    const cosmosConnector = {
+      $chainWallet: Stream.succeed({ chainId: "cosmoshub-4" } as never),
+      id: "cosmos",
+      name: "Cosmos",
+      toBase64: () => "unused",
+      type: "cosmosProvider",
+      uid: "cosmos-uid",
+    } as unknown as Connector;
+    const controller = makeController(makeDefaultConfig());
+    const core = await Effect.runPromise(
+      SubscriptionRef.make<WalletCoreState>({
+        connection: connectedConnection(firstConnector),
+        connectors: [firstConnector, cosmosConnector],
+      })
+    );
+
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const state = yield* makeWalletStateRuntime({
+            controller: controller as WalletController,
+            core: {
+              current: SubscriptionRef.get(core),
+              states: SubscriptionRef.changes(core),
+            },
+            readStoredPublicKeys: Effect.gen(function* () {
+              yield* Deferred.succeed(enrichmentStarted, undefined);
+              return yield* Deferred.await(enrichmentRelease);
+            }),
+          });
+          const connected = yield* state.contexts.pipe(
+            Stream.filter(
+              (context) =>
+                context.state.connection.status === "connected" &&
+                context.state.connection.connector.uid === cosmosConnector.uid
+            ),
+            Stream.runHead,
+            Effect.map(Option.getOrThrow),
+            Effect.forkChild({ startImmediately: true })
+          );
+          yield* SubscriptionRef.set(core, {
+            connection: connectedConnection(cosmosConnector),
+            connectors: [firstConnector, cosmosConnector],
+          });
+          yield* Deferred.await(enrichmentStarted);
+          const whileEnriching = yield* state.context;
+          yield* Deferred.succeed(enrichmentRelease, {
+            [address]: publicKey,
+          });
+
+          return {
+            connected: yield* Fiber.join(connected),
+            whileEnriching,
+          };
+        })
+      )
+    );
+
+    expect(result.whileEnriching.state.connection.status).toBe("connecting");
+    expect(result.connected.state.connection).toMatchObject({
+      additionalAddresses: { cosmosPubKey: publicKey },
       status: "connected",
     });
   });

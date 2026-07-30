@@ -98,22 +98,23 @@ const isActivityResumeSessionPath = (
   const pathnameSegments = getPathSegments(pathname);
   const reviewPathSegments = getPathSegments(session.destination.reviewPath);
   const routeBaseSegments = reviewPathSegments.slice(0, -1);
+  const completePathSegments = getPathSegments(
+    session.destination.completePath
+  );
+  const actionSegment = completePathSegments.at(-2);
+  const historicalCompletePathSegments = actionSegment
+    ? [...routeBaseSegments, `${actionSegment}-review`, "complete"]
+    : [];
 
-  if (
-    routeBaseSegments.some(
-      (segment, index) => pathnameSegments[index] !== segment
-    )
-  ) {
-    return false;
-  }
-
-  const relativeSegments = pathnameSegments.slice(routeBaseSegments.length);
-  if (relativeSegments.length === 1) {
-    return relativeSegments[0] === "review";
-  }
-  if (relativeSegments.length !== 2) return false;
-
-  return relativeSegments[1] === "steps" || relativeSegments[1] === "complete";
+  return (
+    Object.values(session.destination).some(
+      (destination) => destination === pathname
+    ) ||
+    (pathnameSegments.length === historicalCompletePathSegments.length &&
+      pathnameSegments.every(
+        (segment, index) => segment === historicalCompletePathSegments[index]
+      ))
+  );
 };
 
 const isClassicFlowSessionPath = (

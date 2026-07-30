@@ -43,6 +43,10 @@ export const makeWalletLifecyclePolicy = Effect.gen(function* () {
         ];
       }
 
+      if (state.status === "connecting") {
+        return [null, current];
+      }
+
       if (state.status !== "unsupported" || !state.connector || !state.chain) {
         return [null, initialMemory];
       }

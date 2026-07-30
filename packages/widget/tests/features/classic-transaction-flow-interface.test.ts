@@ -325,6 +325,38 @@ describe("Classic Transaction Flow interface", () => {
     }
   });
 
+  it("ends Activity Resume route lifetime at another action type's path", async () => {
+    const push = vi.fn();
+    const registry = makeRegistry(push);
+
+    try {
+      registry.set(startClassicTransactionFlowAtom, {
+        intake: makeActivityResumeIntake("CREATED"),
+        mount: {
+          _tag: "ActivityResume",
+          presentation: "Classic",
+          target: "FreshReview",
+        },
+      });
+
+      await expect
+        .poll(() => readStartOutcome(registry))
+        .toEqual({ _tag: "Started" });
+      expect(
+        registry.get(
+          isActiveClassicTransactionFlowPathAtom("/activity/unstake/steps")
+        )
+      ).toBe(false);
+      expect(
+        registry.get(
+          isActiveClassicTransactionFlowPathAtom("/activity/unstake/complete")
+        )
+      ).toBe(false);
+    } finally {
+      registry.dispose();
+    }
+  });
+
   it("starts Classic historical Activity details at its canonical route", async () => {
     const push = vi.fn();
     const registry = makeRegistry(push);
@@ -349,6 +381,13 @@ describe("Classic Transaction Flow interface", () => {
           path: "/activity/stake-review/complete",
         })
       );
+      expect(
+        registry.get(
+          isActiveClassicTransactionFlowPathAtom(
+            "/activity/stake-review/complete"
+          )
+        )
+      ).toBe(true);
     } finally {
       registry.dispose();
     }

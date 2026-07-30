@@ -47,11 +47,20 @@ export const TransactionId = Schema.String.pipe(
 );
 export type TransactionId = typeof TransactionId.Type;
 
-export const TokenId = Schema.TemplateLiteral([
-  Schema.String,
-  Schema.Literal("::"),
+const AddressedTokenId = Schema.TemplateLiteral([
+  Schema.Literal("address:"),
+  Schema.NonEmptyString,
+  Schema.Literal(":"),
   TokenAddress,
-]).pipe(Schema.brand("BorrowTokenId"));
+]);
+const NativeTokenId = Schema.TemplateLiteral([
+  Schema.Literal("native:"),
+  Schema.NonEmptyString,
+]);
+
+export const TokenId = Schema.Union([AddressedTokenId, NativeTokenId]).pipe(
+  Schema.brand("BorrowTokenId")
+);
 export type TokenId = typeof TokenId.Type;
 
 export const decodeTokenId = ({
@@ -60,4 +69,7 @@ export const decodeTokenId = ({
 }: {
   readonly symbol: string;
   readonly address?: TokenAddress;
-}) => Schema.decodeSync(TokenId)(`${symbol}::${address ?? ""}`);
+}) =>
+  Schema.decodeSync(TokenId)(
+    address ? `address:${symbol}:${address}` : `native:${symbol}`
+  );

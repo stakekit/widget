@@ -43,6 +43,10 @@ _Avoid_: Connector scope, wallet scope
 **Wallet State**:
 The authoritative current connection, account, chain, and connector-specific details of a Wallet Runtime. Consumers receive Wallet State read-only; `WalletService` owns its changes.
 
+**Wallet Command Context**:
+An immutable wallet-routing snapshot captured when a wallet command begins. A current account, network, or connector change makes the previous context ineligible for new commands, while an already-started command retains its captured context.
+_Avoid_: Current wallet, Wallet Scope
+
 **External Provider Snapshot**:
 The latest host-supplied external wallet identity, supported chains, and wallet operations. It may be replaced during a Wallet Runtime without changing Wallet Topology.
 _Avoid_: External provider configuration
@@ -75,9 +79,15 @@ _Avoid_: Wallet Scope key, connector identity
 
 ## Borrow Language
 
+**Native Borrow Token**:
+A Borrow collateral or loan token representing a chain-native asset without a contract address. It is valid Borrow catalog data rather than a malformed addressed token.
+_Avoid_: Empty-address token
+
 **Borrow Entry**:
 The journey for selecting a Borrow market, entering borrow and collateral
-amounts, and preparing a new or expanded Market Position.
+amounts, and preparing a new or expanded Market Position. Its intent belongs to
+the Wallet Scope Owner and survives additional-address changes while its
+authoritative facts and eligibility are recalculated.
 _Avoid_: Borrow dashboard, borrow form flow
 
 **Borrow Account Snapshot**:
@@ -88,12 +98,16 @@ _Avoid_: Position, account position
 One existing Borrow position in a specific market. It owns only that market's balances, pending actions, and local financial metrics, and references the Risk Position that governs those balances.
 _Avoid_: Position, account position
 
+**Market Debt**:
+The debt attributed to one Market Position. A repayment Review's Debt transition is Market Debt even when an account-wide Risk Position governs the pooled account.
+_Avoid_: Total account debt
+
 **Borrow Positions**:
 The wallet-scoped aggregate of existing Market Positions and the resolver for the Risk Position governing any catalog market, including a selected market with no existing Market Position.
 _Avoid_: Position items, positions array
 
 **Risk Position**:
-The domain-owned solvency view for either a pool account or one isolated market. It exposes current risk and assesses semantic compound changes such as borrow, repay, supply, withdraw, and collateral toggles.
+The domain-owned solvency view for either a pool account or one isolated market. It exposes current risk and assesses semantic compound changes such as borrow, repay, supply, withdraw, and collateral toggles using the same exact amounts carried by their Action Commands.
 _Avoid_: Risk scope, risk helpers, position projection
 
 **Account Risk Position**:
@@ -124,8 +138,12 @@ _Avoid_: Borrow workflow, borrow dashboard flow
 One user attempt to complete a Transaction Flow. Every explicit Start creates a fresh Flow Session even when its intake facts equal those of another attempt; Review, Steps, and Complete share its immutable intake and Wallet Scope until the entire journey is exited or replaced.
 _Avoid_: Transaction Flow Identity, request object identity
 
+**Action Argument Contract**:
+The authoritative required and optional inputs for one action, supplied by its owning domain source such as Earn mechanics, a pending action, or a Borrow action definition. A Transaction Flow may enter Review only with an Action Command that satisfies it, including present required scalars and non-empty required collections.
+_Avoid_: Best-effort arguments, Earn-only mechanics
+
 **Action Command**:
-The prepared instruction describing the yield action the user intends to perform before that action is created.
+The prepared instruction describing the protocol action the user intends to perform before that action is created.
 _Avoid_: Request DTO
 
 **Action Preview**:
@@ -149,5 +167,5 @@ The end of an active Flow Session when its journey is exited, its Wallet Scope n
 _Avoid_: Request cleanup
 
 **Activity Resume**:
-A Classic Transaction Flow started from a Yield Action selected in activity history. Review reconstructs a fresh Action Preview when the historical action contains enough intake; unsupported historical actions remain non-executable.
+A Classic Transaction Flow started from a Yield Action selected in activity history. Review reconstructs a fresh Action Preview when the historical action contains enough intake, and execution routes remain valid only for the captured action type; unsupported historical actions remain non-executable.
 _Avoid_: Activity selection

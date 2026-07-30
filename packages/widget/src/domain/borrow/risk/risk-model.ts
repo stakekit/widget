@@ -1,6 +1,6 @@
-import { Option, Schema } from "effect";
+import BigNumber from "bignumber.js";
+import { Schema } from "effect";
 import { MarketId, TokenId } from "../ids";
-import { NonNegativeFinite } from "./risk-values";
 
 export type RiskUnavailableReason =
   | "conflictingParameters"
@@ -36,14 +36,22 @@ export type RiskProjection =
   | AvailableRiskProjection
   | UnavailableRiskProjection;
 
+const NonNegativeDecimal = Schema.instanceOf(BigNumber).check(
+  Schema.makeFilter((amount) =>
+    amount.isFinite() && amount.isGreaterThanOrEqualTo(0)
+      ? true
+      : "expected a finite non-negative decimal"
+  )
+);
+
 const RiskChangeSchema = Schema.Union([
   Schema.Struct({
-    amount: NonNegativeFinite,
+    amount: NonNegativeDecimal,
     marketId: MarketId,
     type: Schema.Literals(["borrow", "repay"]),
   }),
   Schema.Struct({
-    amount: NonNegativeFinite,
+    amount: NonNegativeDecimal,
     tokenId: TokenId,
     type: Schema.Literals(["supply", "withdraw"]),
   }),
@@ -67,20 +75,20 @@ export type RiskAssessment =
     };
 
 export type CollateralDefinition = {
-  readonly liquidationThreshold: number;
-  readonly maxLtv: number;
-  readonly priceUsd: number;
+  readonly liquidationThreshold: BigNumber;
+  readonly maxLtv: BigNumber;
+  readonly priceUsd: BigNumber;
   readonly tokenId: TokenId;
 };
 
 export type CollateralExposure = CollateralDefinition & {
-  readonly collateralUsd: number;
+  readonly collateralUsd: BigNumber;
   readonly enabled: boolean;
 };
 
 export type RiskState = {
   readonly collateral: ReadonlyArray<CollateralExposure>;
-  readonly debtUsd: number;
+  readonly debtUsd: BigNumber;
 };
 
 export type RiskStateResult =
@@ -96,7 +104,6 @@ export type RiskStateResult =
 export const decodeChanges = Schema.decodeUnknownOption(
   Schema.Array(RiskChangeSchema)
 );
-export const decodeRiskAmount = Schema.decodeUnknownOption(NonNegativeFinite);
 
 export const unavailable = ({
   reason,
@@ -112,7 +119,3 @@ export const unavailable = ({
   totalCollateralUsd,
   totalDebtUsd,
 });
-
-export const hasInvalidRiskAmounts = (
-  amounts: ReadonlyArray<Option.Option<number>>
-) => amounts.some(Option.isNone);

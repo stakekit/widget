@@ -43,7 +43,7 @@ export const prepareOpenPositionAction = (
     ...(borrowAmount.gt(0)
       ? [
           {
-            amount: borrowAmount.toNumber(),
+            amount: borrowAmount,
             marketId: market.id,
             type: "borrow" as const,
           },
@@ -52,7 +52,7 @@ export const prepareOpenPositionAction = (
     ...(collateralAmount.gt(0)
       ? [
           {
-            amount: collateralAmount.toNumber(),
+            amount: collateralAmount,
             tokenId: decodeTokenId({
               address: collateralToken.token.address,
               symbol: collateralToken.token.symbol,

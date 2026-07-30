@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import type { Market } from "../catalog/market";
 import { decodeTokenId, type TokenId } from "../ids";
 import type {
@@ -31,17 +32,21 @@ export const getDefinitions = (
       });
       const previous = definitions.get(tokenId);
       const definition = {
-        liquidationThreshold: collateralToken.liquidationThreshold,
-        maxLtv: collateralToken.maxLtv,
-        priceUsd: collateralToken.priceUsd,
+        liquidationThreshold: new BigNumber(
+          collateralToken.liquidationThreshold
+        ),
+        maxLtv: new BigNumber(collateralToken.maxLtv),
+        priceUsd: new BigNumber(collateralToken.priceUsd),
         tokenId,
       };
 
       if (
         previous &&
-        (previous.liquidationThreshold !== definition.liquidationThreshold ||
-          previous.maxLtv !== definition.maxLtv ||
-          previous.priceUsd !== definition.priceUsd)
+        (!previous.liquidationThreshold.isEqualTo(
+          definition.liquidationThreshold
+        ) ||
+          !previous.maxLtv.isEqualTo(definition.maxLtv) ||
+          !previous.priceUsd.isEqualTo(definition.priceUsd))
       ) {
         return { reason: "conflictingParameters", status: "unavailable" };
       }
@@ -86,14 +91,15 @@ export const getCollateralState = ({
 
     if (
       supplyBalance.balance > 0 &&
-      (definition.priceUsd <= 0 || supplyBalance.balanceUsd <= 0)
+      (definition.priceUsd.isLessThanOrEqualTo(0) ||
+        supplyBalance.balanceUsd <= 0)
     ) {
       return { reason: "missingPrice", status: "unavailable" };
     }
 
     collateral.push({
       ...definition,
-      collateralUsd: supplyBalance.balanceUsd,
+      collateralUsd: new BigNumber(supplyBalance.balanceUsd),
       enabled: supplyBalance.isCollateral,
     });
   }

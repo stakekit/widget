@@ -86,6 +86,36 @@ describe("Wallet lifecycle policy", () => {
     expect(disconnect).not.toHaveBeenCalled();
   });
 
+  it("preserves the tracked identity through a connecting transition", async () => {
+    const trackEvent = vi.fn(() => Effect.void);
+    const disconnect = vi.fn(() => Effect.void);
+
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const policy = yield* makePolicy(trackEvent as never);
+        yield* policy.transition({
+          actions: { disconnect },
+          state: connected(),
+        });
+        yield* policy.transition({
+          actions: { disconnect },
+          state: {
+            ...disconnectedNormalizedWalletState,
+            connectorChains: [mainnet],
+            status: "connecting",
+          },
+        });
+        yield* policy.transition({
+          actions: { disconnect },
+          state: connected(),
+        });
+      })
+    );
+
+    expect(trackEvent).toHaveBeenCalledTimes(1);
+    expect(disconnect).not.toHaveBeenCalled();
+  });
+
   it("disconnects an unsupported identity once until state resets", async () => {
     const disconnect = vi.fn(() => Effect.void);
 

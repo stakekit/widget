@@ -22,7 +22,7 @@ export const prepareWithdrawAction = (
   );
   const assessment = position.risk.assess([
     {
-      amount: amount.toNumber(),
+      amount,
       tokenId: decodeTokenId({
         address: token.collateralToken.token.address,
         symbol: token.collateralToken.token.symbol,

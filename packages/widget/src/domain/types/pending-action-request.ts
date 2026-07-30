@@ -63,17 +63,22 @@ export const preparePendingActionRequestDto = ({
   const selectedValidator = EArray.head(selectedValidators).pipe(
     Option.getOrUndefined
   );
+  const validatorAddressesRequired =
+    isPendingActionValidatorAddressesRequired(pendingActionDto);
+  const validatorAddressRequired =
+    isPendingActionValidatorAddressRequired(pendingActionDto);
+  if (validatorAddressesRequired && selectedValidators.length === 0) {
+    return Result.fail(new Error("missing required validator addresses"));
+  }
+  if (validatorAddressRequired && !selectedValidator) {
+    return Result.fail(new Error("missing required validator address"));
+  }
+
   const resolveValidatorArgs = () => {
-    if (
-      selectedValidators.length > 0 &&
-      isPendingActionValidatorAddressesRequired(pendingActionDto)
-    ) {
+    if (validatorAddressesRequired) {
       return { validatorAddresses: selectedValidators };
     }
-    if (
-      selectedValidator &&
-      isPendingActionValidatorAddressRequired(pendingActionDto)
-    ) {
+    if (validatorAddressRequired && selectedValidator) {
       return { validatorAddress: selectedValidator };
     }
     return {};

@@ -3,6 +3,7 @@ import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import { Integration } from "../../../src/domain/borrow/catalog/integration";
 import { Market } from "../../../src/domain/borrow/catalog/market";
+import { MarketId, TokenAddress } from "../../../src/domain/borrow/ids";
 import { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borrow-account-snapshot";
 import {
   deriveBorrowPositions,
@@ -301,6 +302,62 @@ describe("Borrow action preparation", () => {
     expect("review" in result).toBe(false);
   });
 
+  it("blocks an exact Action Command amount above known risk capacity", () => {
+    const precisionMarket = {
+      ...market,
+      collateralTokens: [
+        {
+          ...collateralToken,
+          liquidationThreshold: 0.1,
+          maxLtv: 0.1,
+          priceUsd: 1,
+        },
+      ],
+    };
+    const precisionSnapshot = {
+      ...accountSnapshot,
+      availableToBorrowUsd: 0.1,
+      currentLtv: 0,
+      debtBalances: [],
+      healthFactor: null,
+      supplyBalances: [
+        {
+          ...accountSnapshot.supplyBalances[0]!,
+          balance: 1,
+          balanceRaw: 1_000_000_000_000_000_000n,
+          balanceUsd: 1,
+          marketId: precisionMarket.id,
+        },
+      ],
+      totalBorrowedUsd: 0,
+      totalCollateralUsd: 1,
+      totalSuppliedUsd: 1,
+    };
+    const precisionPositions = deriveBorrowPositions({
+      integrationAccountSnapshots: [
+        { accountSnapshot: precisionSnapshot, integration },
+      ],
+      markets: [precisionMarket],
+    });
+
+    const result = prepareBorrowAction({
+      _tag: "OpenPositionDraft",
+      address,
+      borrowAmount: new BigNumber("0.10000000000000001"),
+      collateralAmount: new BigNumber(0),
+      collateralToken: precisionMarket.collateralTokens[0]!,
+      integrations: [integration],
+      market: precisionMarket,
+      positions: precisionPositions,
+      tokenBalances,
+    });
+
+    expect(result).toMatchObject({
+      _tag: "Blocked",
+      reasons: ["RiskCapacityExceeded"],
+    });
+  });
+
   it("blocks a new debt amount below the market minimum", () => {
     const minimumMarket = { ...market, minLoan: 10 };
     const result = prepareBorrowAction({
@@ -410,6 +467,83 @@ describe("Borrow action preparation", () => {
       },
     });
     expect(result.projection.remainingDebt.toString(10)).toBe("300");
+  });
+
+  it("keeps a pooled repayment Debt transition market-local", () => {
+    const daiTokenAddress = Schema.decodeSync(TokenAddress)(
+      "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+    );
+    const daiMarket = {
+      ...market,
+      id: Schema.decodeSync(MarketId)("aave-v3-ethereum-dai"),
+      loanToken: {
+        ...market.loanToken,
+        address: daiTokenAddress,
+        name: "Dai",
+        symbol: "DAI",
+      },
+    };
+    const multiMarketSnapshot = {
+      ...accountSnapshot,
+      availableToBorrowUsd: 0,
+      currentLtv: 1,
+      debtBalances: [
+        ...accountSnapshot.debtBalances,
+        {
+          ...accountSnapshot.debtBalances[0]!,
+          balance: 600,
+          balanceRaw: 600_000_000n,
+          balanceUsd: 600,
+          marketId: daiMarket.id,
+          pendingActions: [],
+          tokenAddress: daiTokenAddress,
+          tokenSymbol: "DAI",
+        },
+      ],
+      healthFactor: 0.85,
+      netWorthUsd: 0,
+      totalBorrowedUsd: 1000,
+    };
+    const multiMarketPositions = deriveBorrowPositions({
+      integrationAccountSnapshots: [
+        { accountSnapshot: multiMarketSnapshot, integration },
+      ],
+      markets: [market, daiMarket],
+    });
+    const selectedPosition = multiMarketPositions.items.find(
+      (candidate) => candidate.id === market.id
+    );
+    const selectedDebt = selectedPosition?.balances.debt;
+    const selectedRepay = selectedPosition?.actions.debt.find(
+      (action) => action.type === "repay"
+    );
+    if (!selectedPosition || !selectedDebt || !selectedRepay) {
+      throw new Error("Expected pooled repayment context");
+    }
+
+    const result = prepareBorrowAction({
+      _tag: "RepayDraft",
+      address,
+      amount: new BigNumber(100),
+      context: {
+        action: selectedRepay,
+        debtBalance: selectedDebt,
+        position: selectedPosition,
+        type: "repay",
+      },
+      repayAll: false,
+      tokenBalances: null,
+    });
+
+    expect(result).toMatchObject({
+      _tag: "Ready",
+      review: {
+        summary: {
+          existingDebtUsd: "400",
+          projectedDebtUsd: "300",
+        },
+      },
+    });
   });
 
   it("repays all debt without inventing an amount in the Action Command", () => {

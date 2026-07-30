@@ -1,8 +1,13 @@
+import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import { Integration } from "../../../src/domain/borrow/catalog/integration";
 import { Market } from "../../../src/domain/borrow/catalog/market";
-import { decodeTokenId } from "../../../src/domain/borrow/ids";
+import {
+  decodeTokenId,
+  TokenAddress,
+  TokenId,
+} from "../../../src/domain/borrow/ids";
 import { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borrow-account-snapshot";
 import { deriveBorrowPositions } from "../../../src/domain/borrow/positions/borrow-positions";
 
@@ -74,6 +79,51 @@ const makeMarket = ({
   });
 
 describe("BorrowPositions", () => {
+  it("derives risk when an unselected market advertises native collateral", () => {
+    const addressedMarket = makeMarket({
+      id: "aave-v3-ethereum-usdc",
+      loanTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      loanTokenSymbol: "USDC",
+    });
+    const nativeMarket = {
+      ...addressedMarket,
+      collateralTokens: [
+        {
+          ...addressedMarket.collateralTokens[0]!,
+          token: {
+            decimals: 18,
+            name: "Ether",
+            symbol: "ETH",
+          },
+        },
+      ],
+    };
+
+    const positions = deriveBorrowPositions({
+      integrationAccountSnapshots: [],
+      markets: [nativeMarket],
+    });
+
+    expect(positions.riskFor(nativeMarket).current).toMatchObject({
+      status: "available",
+      totalCollateralUsd: 0,
+      totalDebtUsd: 0,
+    });
+    expect(decodeTokenId({ symbol: "ETH" })).not.toBe(
+      decodeTokenId({
+        address: addressedMarket.collateralTokens[0]!.token.address,
+        symbol: "ETH",
+      })
+    );
+    expect(decodeTokenId({ symbol: "ETH::address::coin" })).not.toBe(
+      decodeTokenId({
+        address: Schema.decodeSync(TokenAddress)("coin::native"),
+        symbol: "ETH",
+      })
+    );
+    expect(() => Schema.decodeUnknownSync(TokenId)("ETH::native")).toThrow();
+  });
+
   it("decodes underwater current LTV without hiding the account snapshot", () => {
     const usdcMarket = makeMarket({
       id: "aave-v3-ethereum-usdc",
@@ -183,7 +233,7 @@ describe("BorrowPositions", () => {
     expect(
       newMarketRisk.assess([
         {
-          amount: 200,
+          amount: new BigNumber(200),
           marketId: daiMarket.id,
           type: "borrow",
         },
@@ -196,6 +246,74 @@ describe("BorrowPositions", () => {
         totalCollateralUsd: 1000,
         totalDebtUsd: 600,
       },
+    });
+
+    const collateralTokenId = decodeTokenId({
+      address: usdcMarket.collateralTokens[0]!.token.address,
+      symbol: usdcMarket.collateralTokens[0]!.token.symbol,
+    });
+    expect(
+      newMarketRisk.assess([
+        {
+          amount: new BigNumber(400),
+          marketId: daiMarket.id,
+          type: "borrow",
+        },
+      ])
+    ).toMatchObject({ decision: "allow" });
+    expect(
+      newMarketRisk.assess([
+        {
+          amount: new BigNumber("400.00000000000000001"),
+          marketId: daiMarket.id,
+          type: "borrow",
+        },
+      ])
+    ).toMatchObject({
+      decision: "block",
+      reason: "borrowCapacityExceeded",
+    });
+    expect(
+      newMarketRisk.assess([
+        {
+          amount: new BigNumber("0.100000000000000001"),
+          tokenId: collateralTokenId,
+          type: "supply",
+        },
+        {
+          amount: new BigNumber("560.000000000000001"),
+          marketId: daiMarket.id,
+          type: "borrow",
+        },
+      ])
+    ).toMatchObject({ decision: "allow" });
+    expect(
+      newMarketRisk.assess([
+        {
+          amount: new BigNumber("0.250000000000000001"),
+          tokenId: collateralTokenId,
+          type: "withdraw",
+        },
+      ])
+    ).toMatchObject({
+      decision: "block",
+      reason: "borrowCapacityExceeded",
+    });
+    expect(
+      newMarketRisk.assess([
+        {
+          amount: new BigNumber("399.99999999999999999"),
+          marketId: usdcMarket.id,
+          type: "repay",
+        },
+        {
+          tokenId: collateralTokenId,
+          type: "disableCollateral",
+        },
+      ])
+    ).toMatchObject({
+      decision: "block",
+      reason: "borrowCapacityExceeded",
     });
 
     const conflictingPositions = deriveBorrowPositions({
@@ -237,7 +355,7 @@ describe("BorrowPositions", () => {
     expect(
       nonCollateralPositions.riskFor(usdcMarket).assess([
         {
-          amount: 0.1,
+          amount: new BigNumber(0.1),
           tokenId: decodeTokenId({
             address: usdcMarket.collateralTokens[0]!.token.address,
             symbol: usdcMarket.collateralTokens[0]!.token.symbol,

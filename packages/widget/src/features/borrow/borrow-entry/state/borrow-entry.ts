@@ -11,7 +11,7 @@ import {
   isBorrowNetwork,
 } from "../../../../domain/borrow/network";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
-import type { WalletScopeKey } from "../../../../services/wallet/domain/scope";
+import { walletScopeOwnerKey } from "../../../../services/wallet/domain/scope";
 import {
   getBorrowTransactionFlowRoutes,
   startBorrowTransactionFlowAtom,
@@ -37,9 +37,9 @@ import {
   shouldResetBorrowFormForCatalog,
 } from "../model/borrow-entry";
 
-class BorrowFormScopeKey extends Data.Class<{
+class BorrowFormOwnerKey extends Data.Class<{
+  readonly address: ReturnType<typeof walletScopeOwnerKey>["address"];
   readonly network: BorrowNetwork;
-  readonly scope: WalletScopeKey;
 }> {}
 
 type BorrowFormState = {
@@ -52,7 +52,7 @@ const makeDefaultBorrowFormState = (): BorrowFormState => ({
   intent: makeDefaultBorrowFormIntent(),
 });
 
-const borrowFormStateAtom = Atom.family((key: BorrowFormScopeKey) =>
+const borrowFormStateAtom = Atom.family((key: BorrowFormOwnerKey) =>
   Atom.writable<BorrowFormState, BorrowFormAction>(
     (context) => {
       const previous = context
@@ -103,14 +103,15 @@ const borrowFormStateAtom = Atom.family((key: BorrowFormScopeKey) =>
 );
 
 const borrowEntryAtom = Atom.family((key: BorrowEntryKey) => {
-  const scope = new BorrowFormScopeKey({
+  const owner = walletScopeOwnerKey(key.scope);
+  const formOwner = new BorrowFormOwnerKey({
+    address: owner.address,
     network: key.network,
-    scope: key.scope,
   });
 
   return Atom.writable<BorrowEntryView, BorrowFormAction>(
     (context) => {
-      const stateAtom = borrowFormStateAtom(scope);
+      const stateAtom = borrowFormStateAtom(formOwner);
       const state = context.get(stateAtom);
       const marketsResult = context.get(
         borrowMarketsAtom(new BorrowMarketsKey({ network: key.network }))
@@ -138,7 +139,7 @@ const borrowEntryAtom = Atom.family((key: BorrowEntryKey) => {
         catalogResetNotice: state.catalogResetNotice,
       };
     },
-    (context, action) => context.set(borrowFormStateAtom(scope), action)
+    (context, action) => context.set(borrowFormStateAtom(formOwner), action)
   );
 });
 

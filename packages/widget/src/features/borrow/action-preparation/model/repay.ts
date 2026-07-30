@@ -34,14 +34,14 @@ export const prepareRepayAction = (
   );
   const assessment = position.risk.assess([
     {
-      amount: effectiveAmount.toNumber(),
+      amount: effectiveAmount,
       marketId: action.args.marketId,
       type: "repay",
     },
   ]);
-  const projectedDebtUsd = new BigNumber(
-    assessment.projection.totalDebtUsd ??
-      Math.max(position.metrics.totalBorrowedUsd - repayUsd.toNumber(), 0)
+  const projectedDebtUsd = BigNumber.maximum(
+    new BigNumber(debtBalance.balanceUsd).minus(repayUsd),
+    0
   );
   const risk = toBorrowRiskProjection({
     current: position.risk.current,

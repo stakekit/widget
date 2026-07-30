@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import type { Market } from "../catalog/market";
 import type {
   BorrowAccountSnapshot,
@@ -10,17 +11,15 @@ import {
   getIsolatedPositionState,
 } from "./collateral-state";
 import {
-  makeLoanPrices,
-  makeRiskPosition,
-  type RiskPositionContract,
-} from "./risk-assessment";
-import { unavailable } from "./risk-model";
-import {
   collateralTotalMatchesSnapshot,
   makeAuthoritativeAccountCurrent,
   makeAuthoritativeMarketCurrent,
+  makeLoanPrices,
+  makeRiskPosition,
   projectState,
-} from "./risk-projection";
+  type RiskPositionContract,
+} from "./risk-assessment";
+import { unavailable } from "./risk-model";
 
 export type RiskPosition = RiskPositionContract;
 
@@ -45,7 +44,7 @@ export const makeAccountRiskPosition = ({
       definitions: new Map(),
       loanPrices: makeLoanPrices(markets),
       scope: "account",
-      state: { collateral: [], debtUsd: totalDebtUsd },
+      state: { collateral: [], debtUsd: new BigNumber(totalDebtUsd) },
     });
   }
 
@@ -63,13 +62,13 @@ export const makeAccountRiskPosition = ({
       definitions: definitionsResult.definitions,
       loanPrices: makeLoanPrices(markets),
       scope: "account",
-      state: { collateral: [], debtUsd: totalDebtUsd },
+      state: { collateral: [], debtUsd: new BigNumber(totalDebtUsd) },
     });
   }
 
   const state = {
     collateral: collateralResult.collateral,
-    debtUsd: totalDebtUsd,
+    debtUsd: new BigNumber(totalDebtUsd),
   };
   const local = projectState(state);
   if (
@@ -132,7 +131,7 @@ export const makeMarketRiskPosition = ({
       definitions: new Map(),
       loanPrices,
       scope: "market",
-      state: { collateral: [], debtUsd: totalDebtUsd },
+      state: { collateral: [], debtUsd: new BigNumber(totalDebtUsd) },
     });
   }
 
@@ -150,13 +149,13 @@ export const makeMarketRiskPosition = ({
       definitions: definitionsResult.definitions,
       loanPrices,
       scope: "market",
-      state: { collateral: [], debtUsd: totalDebtUsd },
+      state: { collateral: [], debtUsd: new BigNumber(totalDebtUsd) },
     });
   }
 
   const state = {
     collateral: collateralResult.collateral,
-    debtUsd: totalDebtUsd,
+    debtUsd: new BigNumber(totalDebtUsd),
   };
   const local = projectState(state);
   const positionStateResult = getIsolatedPositionState(supplyBalances);

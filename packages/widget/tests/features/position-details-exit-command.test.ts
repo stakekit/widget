@@ -8,12 +8,14 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { EarnBalance } from "../../src/domain/schema/earn-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
+import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state/flow-session-store";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
   positionBalancesByTypeAtom,
 } from "../../src/features/portfolio/state";
 import {
+  openPositionPendingActionModalAtom,
   runPositionPendingActionAtom,
   setPositionDetailsExitMaxAmountAtom,
   submitPositionDetailsExitAtom,
@@ -34,7 +36,12 @@ import {
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
-import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
+import {
+  yieldApiValidatorFixture,
+  yieldApiYieldDtoFixture,
+  yieldApiYieldFixture,
+  yieldBalanceFixture,
+} from "../fixtures";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
@@ -111,10 +118,14 @@ const makeRegistry = ({
   push,
   trackEvent,
   wallet = makeConnectedWallet(),
+  yieldBalance = balance,
+  yieldOpportunity = selectedYield,
 }: {
   readonly push: ReturnType<typeof vi.fn<(path: WidgetPath) => void>>;
   readonly trackEvent: TrackingService["Service"]["trackEvent"];
   readonly wallet?: NormalizedWalletState;
+  readonly yieldBalance?: typeof EarnBalance.Type;
+  readonly yieldOpportunity?: typeof selectedYield;
 }) =>
   AtomRegistry.make({
     initialValues: [
@@ -143,12 +154,12 @@ const makeRegistry = ({
         yieldOpportunityAtom(
           new YieldOpportunityKey({ yieldId: selectedYield.id })
         ),
-        AsyncResult.success(selectedYield)
+        AsyncResult.success(yieldOpportunity)
       ),
       Atom.initialValue(
         positionBalancesAtom(positionKey),
         AsyncResult.success({
-          balances: [balance],
+          balances: [yieldBalance],
           rewardRate: null,
           type: "default" as const,
         })
@@ -157,7 +168,10 @@ const makeRegistry = ({
         positionBalancesByTypeAtom(positionKey),
         AsyncResult.success(
           new Map([
-            ["active", [{ ...balance, tokenPriceInUsd: new BigNumber(1) }]],
+            [
+              "active",
+              [{ ...yieldBalance, tokenPriceInUsd: new BigNumber(1) }],
+            ],
           ])
         )
       ),
@@ -165,6 +179,59 @@ const makeRegistry = ({
   });
 
 describe("Position Details exit command", () => {
+  it.each([
+    { name: "validatorAddress", type: "string" },
+    { name: "validatorAddresses", type: "string" },
+    { name: "subnetId", type: "number" },
+  ] as const)(
+    "does not start Exit without required $name mechanics",
+    async ({ name, type }) => {
+      const push = vi.fn<(path: WidgetPath) => void>();
+      const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
+        () => Effect.void
+      );
+      const yieldDto = yieldApiYieldDtoFixture();
+      const requiredYield = yieldApiYieldFixture({
+        mechanics: {
+          ...yieldDto.mechanics,
+          arguments: {
+            ...yieldDto.mechanics.arguments,
+            exit: {
+              fields: [{ label: name, name, required: true, type }],
+            },
+          },
+        },
+      });
+      const registry = makeRegistry({
+        push,
+        trackEvent,
+        yieldOpportunity: requiredYield,
+      });
+
+      try {
+        registry.set(positionDetailsWorkflowAtom(workflowKey), {
+          pendingActions: new Map(),
+          unstakeAmount: new BigNumber("0.4"),
+          unstakeUseMaxAmount: false,
+        });
+        registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
+
+        await Promise.resolve();
+
+        expect(push).not.toHaveBeenCalled();
+        expect(
+          registry.get(
+            isActiveClassicTransactionFlowPathAtom(
+              `/positions/${selectedYield.id}/balance-1/unstake/review`
+            )
+          )
+        ).toBe(false);
+      } finally {
+        registry.dispose();
+      }
+    }
+  );
+
   it("starts Exit from a valid displayed partial amount", async () => {
     const push = vi.fn<(path: WidgetPath) => void>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
@@ -195,6 +262,148 @@ describe("Position Details exit command", () => {
       registry.dispose();
     }
   });
+
+  it("includes every required option-backed Exit scalar", async () => {
+    const push = vi.fn<(path: WidgetPath) => void>();
+    const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
+      () => Effect.void
+    );
+    const yieldDto = yieldApiYieldDtoFixture();
+    const requiredYield = yieldApiYieldFixture({
+      mechanics: {
+        ...yieldDto.mechanics,
+        arguments: {
+          ...yieldDto.mechanics.arguments,
+          exit: {
+            fields: [
+              {
+                label: "Provider",
+                name: "providerId",
+                options: ["provider-a"],
+                required: true,
+                type: "string",
+              },
+              {
+                label: "Resource",
+                name: "tronResource",
+                options: ["ENERGY"],
+                required: true,
+                type: "enum",
+              },
+              {
+                label: "Validators",
+                name: "validatorAddresses",
+                required: true,
+                type: "string",
+              },
+            ],
+          },
+        },
+      },
+    });
+    const validatorBalance = Schema.decodeUnknownSync(EarnBalance)(
+      yieldBalanceFixture({
+        address,
+        amount: "1",
+        token: requiredYield.token,
+        validators: [
+          yieldApiValidatorFixture({
+            address: "validator-a",
+          }),
+        ],
+      })
+    );
+    const registry = makeRegistry({
+      push,
+      trackEvent,
+      yieldBalance: validatorBalance,
+      yieldOpportunity: requiredYield,
+    });
+
+    try {
+      registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        pendingActions: new Map(),
+        unstakeAmount: new BigNumber("0.4"),
+        unstakeUseMaxAmount: false,
+      });
+      registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
+
+      await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
+      expect(
+        registry.get(classicFlowSessionStore.currentSessionAtom)?.intake
+      ).toMatchObject({
+        _tag: "Exit",
+        request: {
+          arguments: {
+            providerId: "provider-a",
+            tronResource: "ENERGY",
+            validatorAddresses: ["validator-a"],
+          },
+        },
+      });
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it.each(["validatorAddress", "validatorAddresses"] as const)(
+    "does not start Manage without required %s arguments",
+    async (name) => {
+      const push = vi.fn<(path: WidgetPath) => void>();
+      const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
+        () => Effect.void
+      );
+      const requiredManageBalance = Schema.decodeUnknownSync(EarnBalance)(
+        yieldBalanceFixture({
+          address,
+          amount: "1",
+          pendingActions: [
+            {
+              amount: "1",
+              arguments: {
+                fields: [
+                  {
+                    label: name,
+                    name,
+                    required: true,
+                    type: "string",
+                  },
+                ],
+              },
+              intent: "manage",
+              passthrough: "wallet-a-action",
+              type: "CLAIM_REWARDS",
+            },
+          ],
+          token: selectedYield.token,
+        })
+      );
+      const requiredAction = requiredManageBalance.pendingActions[0]!;
+      const registry = makeRegistry({ push, trackEvent });
+
+      try {
+        registry.set(openPositionPendingActionModalAtom(workflowKey), {
+          pendingActionDto: requiredAction,
+          yieldBalance: requiredManageBalance,
+        });
+        registry.set(runPositionPendingActionAtom(workflowKey), {
+          _tag: "SubmitValidators",
+        });
+        await vi.waitFor(() =>
+          expect(trackEvent).toHaveBeenCalledWith(
+            "validatorsSubmitted",
+            expect.anything()
+          )
+        );
+
+        await Promise.resolve();
+
+        expect(push).not.toHaveBeenCalled();
+      } finally {
+        registry.dispose();
+      }
+    }
+  );
 
   it("sets the displayed maximum and tracks the user intent", async () => {
     const push = vi.fn<(path: WidgetPath) => void>();

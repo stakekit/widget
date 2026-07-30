@@ -1,7 +1,13 @@
+import BigNumber from "bignumber.js";
 import { Option } from "effect";
 import type { Market } from "../catalog/market";
 import type { MarketId, TokenId } from "../ids";
+import type {
+  BorrowAccountSnapshot,
+  IsolatedRiskSnapshot,
+} from "../positions/borrow-account-snapshot";
 import {
+  type AvailableRiskProjection,
   type CollateralDefinition,
   decodeChanges,
   type RiskAssessment,
@@ -11,7 +17,64 @@ import {
   type RiskStateResult,
   unavailable,
 } from "./risk-model";
-import { projectState } from "./risk-projection";
+
+type ExactRiskTotals = {
+  readonly borrowCapacityUsd: BigNumber;
+  readonly liquidationCapacityUsd: BigNumber;
+  readonly totalCollateralUsd: BigNumber;
+};
+
+const projectExactRiskTotals = (state: RiskState): ExactRiskTotals => {
+  const enabledCollateral = state.collateral.filter((item) => item.enabled);
+  return enabledCollateral.reduce<ExactRiskTotals>(
+    (result, item) => ({
+      borrowCapacityUsd: result.borrowCapacityUsd.plus(
+        item.collateralUsd.multipliedBy(item.maxLtv)
+      ),
+      liquidationCapacityUsd: result.liquidationCapacityUsd.plus(
+        item.collateralUsd.multipliedBy(item.liquidationThreshold)
+      ),
+      totalCollateralUsd: result.totalCollateralUsd.plus(item.collateralUsd),
+    }),
+    {
+      borrowCapacityUsd: new BigNumber(0),
+      liquidationCapacityUsd: new BigNumber(0),
+      totalCollateralUsd: new BigNumber(0),
+    }
+  );
+};
+
+export const projectState = (state: RiskState): RiskProjection => {
+  const totals = projectExactRiskTotals(state);
+  const hasCollateral = totals.totalCollateralUsd.isGreaterThan(0);
+  const ltv = (() => {
+    if (hasCollateral) {
+      return state.debtUsd.dividedBy(totals.totalCollateralUsd).toNumber();
+    }
+
+    return state.debtUsd.isGreaterThan(0) ? 1 : 0;
+  })();
+
+  return {
+    borrowCapacityUsd: totals.borrowCapacityUsd.toNumber(),
+    healthFactor: state.debtUsd.isGreaterThan(0)
+      ? totals.liquidationCapacityUsd.dividedBy(state.debtUsd).toNumber()
+      : null,
+    liquidationCapacityUsd: totals.liquidationCapacityUsd.toNumber(),
+    liquidationThreshold: hasCollateral
+      ? totals.liquidationCapacityUsd
+          .dividedBy(totals.totalCollateralUsd)
+          .toNumber()
+      : null,
+    ltv,
+    maxLtv: hasCollateral
+      ? totals.borrowCapacityUsd.dividedBy(totals.totalCollateralUsd).toNumber()
+      : null,
+    status: "available",
+    totalCollateralUsd: totals.totalCollateralUsd.toNumber(),
+    totalDebtUsd: state.debtUsd.toNumber(),
+  };
+};
 
 const applyChange = ({
   change,
@@ -21,7 +84,7 @@ const applyChange = ({
 }: {
   readonly change: RiskChange;
   readonly collateralDefinitions: ReadonlyMap<TokenId, CollateralDefinition>;
-  readonly loanPrices: ReadonlyMap<MarketId, number>;
+  readonly loanPrices: ReadonlyMap<MarketId, BigNumber>;
   readonly state: RiskState;
 }): RiskStateResult => {
   switch (change.type) {
@@ -31,18 +94,18 @@ const applyChange = ({
       if (priceUsd == null) {
         return { reason: "unknownMarket", status: "unavailable" };
       }
-      if (priceUsd <= 0) {
+      if (priceUsd.isLessThanOrEqualTo(0)) {
         return { reason: "missingPrice", status: "unavailable" };
       }
-      const debtUsdChange = change.amount * priceUsd;
+      const debtUsdChange = change.amount.multipliedBy(priceUsd);
 
       return {
         state: {
           ...state,
           debtUsd:
             change.type === "borrow"
-              ? state.debtUsd + debtUsdChange
-              : Math.max(state.debtUsd - debtUsdChange, 0),
+              ? state.debtUsd.plus(debtUsdChange)
+              : BigNumber.maximum(state.debtUsd.minus(debtUsdChange), 0),
         },
         status: "available",
       };
@@ -53,10 +116,12 @@ const applyChange = ({
       if (!definition) {
         return { reason: "unknownCollateral", status: "unavailable" };
       }
-      if (definition.priceUsd <= 0) {
+      if (definition.priceUsd.isLessThanOrEqualTo(0)) {
         return { reason: "missingPrice", status: "unavailable" };
       }
-      const collateralUsdChange = change.amount * definition.priceUsd;
+      const collateralUsdChange = change.amount.multipliedBy(
+        definition.priceUsd
+      );
       const existing = state.collateral.find(
         (item) => item.tokenId === change.tokenId
       );
@@ -84,8 +149,11 @@ const applyChange = ({
 
       const collateralUsd =
         change.type === "supply"
-          ? existing.collateralUsd + collateralUsdChange
-          : Math.max(existing.collateralUsd - collateralUsdChange, 0);
+          ? existing.collateralUsd.plus(collateralUsdChange)
+          : BigNumber.maximum(
+              existing.collateralUsd.minus(collateralUsdChange),
+              0
+            );
 
       return {
         state: {
@@ -132,7 +200,7 @@ const applyChanges = ({
 }: {
   readonly changes: ReadonlyArray<RiskChange>;
   readonly collateralDefinitions: ReadonlyMap<TokenId, CollateralDefinition>;
-  readonly loanPrices: ReadonlyMap<MarketId, number>;
+  readonly loanPrices: ReadonlyMap<MarketId, BigNumber>;
   readonly state: RiskState;
 }): RiskStateResult =>
   changes.reduce<RiskStateResult>(
@@ -169,7 +237,7 @@ export const makeRiskPosition = ({
 }: {
   readonly current: RiskProjection;
   readonly definitions: ReadonlyMap<TokenId, CollateralDefinition>;
-  readonly loanPrices: ReadonlyMap<MarketId, number>;
+  readonly loanPrices: ReadonlyMap<MarketId, BigNumber>;
   readonly scope: RiskPositionContract["scope"];
   readonly state: RiskState;
 }): RiskPositionContract => ({
@@ -210,17 +278,16 @@ export const makeRiskPosition = ({
       };
     }
 
-    const baseline = projectState(state);
+    const baseline = projectExactRiskTotals(state);
+    const projectedTotals = projectExactRiskTotals(changed.state);
     const projection = projectState(changed.state);
     const riskIncreasing =
-      baseline.status === "available" &&
-      projection.status === "available" &&
-      (projection.totalDebtUsd > baseline.totalDebtUsd ||
-        projection.borrowCapacityUsd < baseline.borrowCapacityUsd);
+      changed.state.debtUsd.isGreaterThan(state.debtUsd) ||
+      projectedTotals.borrowCapacityUsd.isLessThan(baseline.borrowCapacityUsd);
 
     return projection.status === "available" &&
       riskIncreasing &&
-      projection.totalDebtUsd > projection.borrowCapacityUsd
+      changed.state.debtUsd.isGreaterThan(projectedTotals.borrowCapacityUsd)
       ? {
           decision: "block",
           projection,
@@ -233,4 +300,84 @@ export const makeRiskPosition = ({
 });
 
 export const makeLoanPrices = (markets: ReadonlyArray<Market>) =>
-  new Map(markets.map((market) => [market.id, market.loanTokenPriceUsd]));
+  new Map(
+    markets.map((market) => [
+      market.id,
+      new BigNumber(market.loanTokenPriceUsd),
+    ])
+  );
+
+export const collateralTotalMatchesSnapshot = ({
+  compositionTotalUsd,
+  snapshotTotalUsd,
+}: {
+  readonly compositionTotalUsd: number;
+  readonly snapshotTotalUsd: number;
+}) => {
+  const tolerance = Math.max(0.01, snapshotTotalUsd * 0.000_001);
+
+  return Math.abs(compositionTotalUsd - snapshotTotalUsd) <= tolerance;
+};
+
+export const makeAuthoritativeAccountCurrent = ({
+  local,
+  snapshot,
+}: {
+  readonly local: AvailableRiskProjection;
+  readonly snapshot: BorrowAccountSnapshot;
+}): AvailableRiskProjection => {
+  const borrowCapacityUsd =
+    snapshot.availableToBorrowUsd == null
+      ? local.borrowCapacityUsd
+      : snapshot.totalBorrowedUsd + snapshot.availableToBorrowUsd;
+  const liquidationCapacityUsd =
+    snapshot.healthFactor == null || snapshot.totalBorrowedUsd === 0
+      ? local.liquidationCapacityUsd
+      : snapshot.healthFactor * snapshot.totalBorrowedUsd;
+
+  return {
+    borrowCapacityUsd,
+    healthFactor: snapshot.healthFactor,
+    liquidationCapacityUsd,
+    liquidationThreshold:
+      snapshot.totalCollateralUsd > 0
+        ? liquidationCapacityUsd / snapshot.totalCollateralUsd
+        : null,
+    ltv: snapshot.currentLtv,
+    maxLtv:
+      snapshot.totalCollateralUsd > 0
+        ? borrowCapacityUsd / snapshot.totalCollateralUsd
+        : null,
+    status: "available",
+    totalCollateralUsd: snapshot.totalCollateralUsd,
+    totalDebtUsd: snapshot.totalBorrowedUsd,
+  };
+};
+
+export const makeAuthoritativeMarketCurrent = ({
+  local,
+  positionState,
+}: {
+  readonly local: AvailableRiskProjection;
+  readonly positionState: IsolatedRiskSnapshot;
+}): AvailableRiskProjection => {
+  const borrowCapacityUsd =
+    local.totalDebtUsd + positionState.availableToBorrowUsd;
+  const liquidationCapacityUsd =
+    positionState.healthFactor == null || local.totalDebtUsd === 0
+      ? local.liquidationCapacityUsd
+      : positionState.healthFactor * local.totalDebtUsd;
+
+  return {
+    ...local,
+    borrowCapacityUsd,
+    healthFactor: positionState.healthFactor,
+    liquidationCapacityUsd,
+    liquidationThreshold: positionState.liquidationThreshold,
+    ltv: positionState.currentLtv,
+    maxLtv:
+      local.totalCollateralUsd > 0
+        ? borrowCapacityUsd / local.totalCollateralUsd
+        : null,
+  };
+};

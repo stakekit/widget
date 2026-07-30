@@ -9,7 +9,14 @@ import {
 } from "effect";
 import type { WidgetPersistence } from "../persistence/widget-persistence";
 import type { WalletRuntimeInvariantError } from "./domain/errors";
-import type { WalletCoreState, WalletState } from "./domain/state";
+import { sameWalletScopeOwner } from "./domain/scope";
+import {
+  disconnectedLedgerConnectorState,
+  disconnectedNormalizedWalletState,
+  type NormalizedWalletState,
+  type WalletCoreState,
+  type WalletState,
+} from "./domain/state";
 import type { WagmiCoreObservation } from "./platform/wagmi-platform";
 import type { WalletRoutingContext } from "./router";
 import { makeCompleteWalletStateStream } from "./state-projection";
@@ -63,6 +70,61 @@ const makeContextStream = ({
     )
   );
 
+const makeTransitionContext = ({
+  controller,
+  core,
+}: {
+  readonly controller: WalletController;
+  readonly core: WalletCoreState;
+}): WalletStateContext => {
+  const connection: NormalizedWalletState = {
+    ...disconnectedNormalizedWalletState,
+    connectorChains: controller.evmConfig.evmChains,
+    isLedgerLive: controller.isLedgerLive,
+    status:
+      core.connection.status === "disconnected" ? "disconnected" : "connecting",
+  };
+
+  return {
+    core,
+    routing: {
+      actions: controller.actions,
+      cosmosChainWallet: null,
+      ledgerState: disconnectedLedgerConnectorState,
+      state: connection,
+    },
+    state: {
+      connection,
+      ledger: disconnectedLedgerConnectorState,
+    },
+  };
+};
+
+const hasSameCommandIdentity = (
+  current: WalletStateContext,
+  next: WalletCoreState
+): boolean => {
+  const currentConnection = current.state.connection;
+  const nextConnection = next.connection;
+  if (
+    currentConnection.status !== "connected" ||
+    nextConnection.status !== "connected" ||
+    !nextConnection.address ||
+    !nextConnection.connector
+  ) {
+    return false;
+  }
+
+  return (
+    currentConnection.chain.id === nextConnection.chainId &&
+    currentConnection.connector.uid === nextConnection.connector.uid &&
+    sameWalletScopeOwner(currentConnection, {
+      address: nextConnection.address,
+      network: currentConnection.network,
+    })
+  );
+};
+
 export const makeWalletStateRuntime = Effect.fn("makeWalletStateRuntime")(
   function* ({
     controller,
@@ -99,6 +161,20 @@ export const makeWalletStateRuntime = Effect.fn("makeWalletStateRuntime")(
     );
 
     yield* core.states.pipe(
+      Stream.mapEffect((next) =>
+        SubscriptionRef.update(current, (result) => {
+          if (Exit.isFailure(result)) return result;
+          if (hasSameCommandIdentity(result.value, next)) {
+            return Exit.succeed({ ...result.value, core: next });
+          }
+          return Exit.succeed(
+            makeTransitionContext({
+              controller,
+              core: next,
+            })
+          );
+        }).pipe(Effect.as(next))
+      ),
       Stream.switchMap((next) =>
         makeContextStream({
           controller,

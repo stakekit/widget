@@ -10,8 +10,12 @@ import {
 export class WalletBalancesInvalidationKey extends Data.TaggedClass(
   "WalletBalancesInvalidationKey"
 )<{
-  readonly scope: WalletScopeKey;
-}> {}
+  readonly scope: WalletScopeOwnerKey;
+}> {
+  constructor(input: { readonly scope: WalletScopeKey | WalletScopeOwnerKey }) {
+    super({ scope: walletScopeOwnerKey(input.scope) });
+  }
+}
 
 export class YieldPositionsInvalidationKey extends Data.TaggedClass(
   "YieldPositionsInvalidationKey"
@@ -55,17 +59,11 @@ export class BorrowMarketsInvalidationKey extends Data.TaggedClass(
   readonly network: BorrowNetwork;
 }> {}
 
-type OptionalWalletScope = WalletScopeKey | null | undefined;
 type OptionalWalletOwnerScope =
   | WalletScopeKey
   | WalletScopeOwnerKey
   | null
   | undefined;
-
-const optionalWalletScopeKeys =
-  <Key>(makeKey: (scope: WalletScopeKey) => Key) =>
-  (scope: OptionalWalletScope): ReadonlyArray<Key> =>
-    scope ? [makeKey(scope)] : [];
 
 const optionalWalletOwnerKeys =
   <Key>(makeKey: (scope: WalletScopeKey | WalletScopeOwnerKey) => Key) =>
@@ -85,7 +83,7 @@ export const resourceInvalidationKeys = {
   singleYieldBalances: (address: WalletAddress) => [
     new SingleYieldBalancesInvalidationKey({ address }),
   ],
-  walletBalances: optionalWalletScopeKeys(
+  walletBalances: optionalWalletOwnerKeys(
     (scope) => new WalletBalancesInvalidationKey({ scope })
   ),
   yieldPositions: optionalWalletOwnerKeys(

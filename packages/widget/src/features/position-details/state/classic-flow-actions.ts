@@ -84,39 +84,84 @@ const makeExitActionCommand = (
     return null;
   }
 
+  const optionArguments = (() => {
+    const providerArgument = getYieldActionArg(
+      facts.integration,
+      "exit",
+      "providerId"
+    );
+    const tronResourceArgument = getYieldActionArg(
+      facts.integration,
+      "exit",
+      "tronResource"
+    );
+    const providerId = providerArgument?.required
+      ? providerArgument.options[0]
+      : undefined;
+    const tronResource = tronResourceArgument?.required
+      ? tronResourceArgument.options[0]
+      : undefined;
+    if (providerArgument?.required && !providerId) return null;
+    if (tronResourceArgument?.required && !tronResource) return null;
+
+    return {
+      ...(providerId ? { providerId } : {}),
+      ...(tronResource ? { tronResource } : {}),
+    };
+  })();
+  if (!optionArguments) return null;
+
   const validatorArguments = (() => {
-    if (
+    const validatorAddressesRequired = Boolean(
       getYieldActionArg(facts.integration, "exit", "validatorAddresses")
         ?.required
-    ) {
-      const balance = EArray.findFirst(
-        facts.stakedOrLiquidBalances,
-        (candidate) => Boolean(candidate.validators?.length)
-      ).pipe(Option.getOrNull);
-      return {
-        validatorAddresses:
-          balance?.validators?.map((validator) => validator.address) ?? [],
-      };
-    }
+    );
+    const validatorAddressRequired = Boolean(
+      getYieldActionArg(facts.integration, "exit", "validatorAddress")?.required
+    );
+    const subnetRequired = Boolean(
+      getYieldActionArg(facts.integration, "exit", "subnetId")?.required
+    );
     if (
-      !getYieldActionArg(facts.integration, "exit", "validatorAddress")
-        ?.required
+      !validatorAddressesRequired &&
+      !validatorAddressRequired &&
+      !subnetRequired
     ) {
       return {};
     }
 
-    const balance = EArray.findFirst(
-      facts.stakedOrLiquidBalances,
-      (candidate) => Boolean(candidate.validator?.address)
-    ).pipe(Option.getOrNull);
-    if (!balance?.validator?.address) return {};
-    const subnetRequired = Boolean(
-      getYieldActionArg(facts.integration, "exit", "subnetId")?.required
+    const pluralBalance = validatorAddressesRequired
+      ? EArray.findFirst(facts.stakedOrLiquidBalances, (candidate) =>
+          Boolean(candidate.validators?.length)
+        ).pipe(Option.getOrNull)
+      : null;
+    const validatorAddresses = pluralBalance?.validators?.map(
+      (validator) => validator.address
     );
-    const subnetId = subnetRequired ? balance.validator.subnet?.id : undefined;
+    if (
+      validatorAddressesRequired &&
+      (!validatorAddresses || validatorAddresses.length === 0)
+    ) {
+      return null;
+    }
+
+    const singularBalance =
+      validatorAddressRequired || subnetRequired
+        ? EArray.findFirst(facts.stakedOrLiquidBalances, (candidate) =>
+            Boolean(candidate.validator)
+          ).pipe(Option.getOrNull)
+        : null;
+    const validator =
+      singularBalance?.validator ?? pluralBalance?.validators?.[0];
+    if (validatorAddressRequired && !validator?.address) return null;
+    const subnetId = subnetRequired ? validator?.subnet?.id : undefined;
     if (subnetRequired && subnetId === undefined) return null;
+
     return {
-      validatorAddress: balance.validator.address,
+      ...(validatorAddresses ? { validatorAddresses } : {}),
+      ...(validatorAddressRequired && validator
+        ? { validatorAddress: validator.address }
+        : {}),
       ...(subnetId === undefined ? {} : { subnetId }),
     };
   })();
@@ -129,6 +174,7 @@ const makeExitActionCommand = (
       arguments: {
         amount: facts.amount.toString(10),
         ...(facts.workflow.unstakeUseMaxAmount ? { useMaxAmount: true } : {}),
+        ...optionArguments,
         ...validatorArguments,
         ...(facts.wallet.additionalAddresses ?? {}),
       },

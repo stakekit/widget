@@ -75,6 +75,14 @@ const sameWalletCachedScope = new WalletScopeKey({
   ),
   network: "ethereum",
 });
+const sameWalletCurrentScope = new WalletScopeKey({
+  additionalAddresses: {
+    lidoStakeAccounts: ["current-lido-account"],
+    stakeAccounts: ["current-stake-account"],
+  },
+  address: sameWalletCachedScope.address,
+  network: sameWalletCachedScope.network,
+});
 const sameAddressOtherNetworkScope = new WalletScopeKey({
   address: sameWalletCachedScope.address,
   network: "base",
@@ -264,10 +272,12 @@ describe("semantic resource invalidation", () => {
     const positions = (scope: WalletScopeKey) =>
       positionsDataAtom(new PositionsDataKey({ scope }));
     const aTokens = tokenOptions(sameWalletCachedScope);
+    const currentTokens = tokenOptions(sameWalletCurrentScope);
     const bTokens = tokenOptions(scopeB);
     const aPositions = positions(sameWalletCachedScope);
     const bPositions = positions(scopeB);
     const unmountA = [registry.mount(aTokens), registry.mount(aPositions)];
+    const unmountCurrent = registry.mount(currentTokens);
     const unmountB = [registry.mount(bTokens), registry.mount(bPositions)];
     const unmountReactivity = registry.mount(reactivityAtom);
 
@@ -278,6 +288,9 @@ describe("semantic resource invalidation", () => {
       expect(AsyncResult.getOrThrow(registry.get(bTokens))[0]?.amount).toBe(
         "2"
       );
+      expect(
+        AsyncResult.getOrThrow(registry.get(currentTokens))[0]?.amount
+      ).toBe("1");
       expect(positionCalls).toEqual(
         new Map([
           [sameWalletCachedScope.address, 1],
@@ -296,8 +309,11 @@ describe("semantic resource invalidation", () => {
       )
     );
     await vi.waitFor(() => {
-      expect(balanceCalls.get(sameWalletCachedScope.address)).toBe(2);
+      expect(balanceCalls.get(sameWalletCachedScope.address)).toBe(4);
       expect(positionCalls.get(sameWalletCachedScope.address)).toBe(2);
+      expect(
+        AsyncResult.getOrThrow(registry.get(currentTokens))[0]?.amount
+      ).toBe("10");
     });
 
     const remountA = [registry.mount(aTokens), registry.mount(aPositions)];
@@ -310,6 +326,7 @@ describe("semantic resource invalidation", () => {
     expect(positionCalls.get(scopeB.address)).toBe(1);
 
     remountA.forEach((unmount) => unmount());
+    unmountCurrent();
     unmountB.forEach((unmount) => unmount());
     unmountReactivity();
     registry.dispose();
