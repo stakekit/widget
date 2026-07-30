@@ -109,7 +109,7 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
       const registry = context.registry;
       return Effect.gen(function* () {
         const action = yield* BorrowOperations.use((api) =>
-          api.executeAction(session.intake.request)
+          api.executeAction(session.intake.command)
         ).pipe(
           Effect.mapError(
             (cause) =>

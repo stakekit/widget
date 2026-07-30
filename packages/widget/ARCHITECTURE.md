@@ -217,6 +217,16 @@ nested Atoms or Atom factories nor command callbacks; the facade resolves the
 active resource and forwards user intent internally. Deterministic
 calculations remain plain TypeScript.
 
+Borrow action preparation is one deterministic feature-owned projection over a
+normalized draft, `Borrow Positions`, and the governing `Risk Position`. It
+returns `Idle`, typed `Blocked` reasons, or `Ready`; only `Ready` contains the
+aligned Action Command and action-specific review summary. Risk Position
+assessment is authoritative for solvency decisions. Financial totals derived
+from amounts and prices are display fallbacks and never silently replace an
+unavailable risk assessment. Borrow form Atoms own preparation and re-read the
+current `Ready` value when starting a Flow Session; React only renders the view
+and dispatches intent.
+
 `features/yield-entry` owns the shared Yield Entry capability used by Earn and
 position details: amount constraints, validation, KYC projection, Enter Action
 Command preparation, submission decisions, and their command effects.

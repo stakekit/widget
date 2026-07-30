@@ -54,7 +54,6 @@ export const BorrowPositionDetailsPage = () => {
     : null;
   const actions = position
     ? getBorrowPositionActions({
-        address: borrowPosition.walletBridge.wallet.currentAccount.address,
         position,
         t,
       })

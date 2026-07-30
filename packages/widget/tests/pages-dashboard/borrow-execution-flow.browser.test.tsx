@@ -16,7 +16,7 @@ import type { Connector } from "wagmi";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { Action as BorrowAction } from "../../src/domain/borrow/action";
-import { ActionRequest } from "../../src/domain/borrow/action-request";
+import { ActionCommand } from "../../src/domain/borrow/action-command";
 import type {
   Transaction as BorrowTransaction,
   SubmitTransactionCommand,
@@ -62,7 +62,7 @@ type ActionDto = typeof BorrowAction.Encoded;
 type TransactionDto = typeof BorrowTransaction.Encoded;
 type SubmitTransactionDto = typeof SubmitTransactionCommand.Encoded;
 
-const request = Schema.decodeUnknownSync(ActionRequest)({
+const command = Schema.decodeUnknownSync(ActionCommand)({
   action: "borrow",
   address,
   args: {
@@ -74,16 +74,21 @@ const request = Schema.decodeUnknownSync(ActionRequest)({
 });
 
 const reviewState: BorrowTransactionFlowReview = {
-  request,
+  command,
   summary: {
-    action: "borrow",
+    action: "borrowAndSupply",
     borrowAmount: "25",
     collateralAmount: "0.5",
     collateralTokenSymbol: "cbBTC",
+    existingCollateralUsd: "1000",
+    existingDebtUsd: "400",
     loanTokenSymbol: "USDC",
     marketLabel: "cbBTC / USDC",
     network: "base",
+    projectedCollateralUsd: "1500",
+    projectedDebtUsd: "425",
     providerName: "Morpho Blue",
+    riskStatus: "unavailable",
   },
 };
 const session: BorrowFlowSession = {
@@ -123,7 +128,7 @@ const action = (overrides: Partial<ActionDto> = {}): ActionDto => ({
   hasNextStep: false,
   id: "action-1",
   integrationId: "morpho-blue",
-  rawArguments: request.args,
+  rawArguments: command.args,
   status: "CREATED",
   totalSteps: 1,
   transactions: [transaction()],

@@ -58,7 +58,7 @@ const RiskChangeSchema = Schema.Union([
   }),
 ]);
 
-export type RiskChange = typeof RiskChangeSchema.Type;
+type RiskChange = typeof RiskChangeSchema.Type;
 
 type RiskAssessment =
   | {

@@ -6,6 +6,7 @@ import {
 } from "../../borrow-transaction-flow/state";
 import { borrowActionFormAtom } from "./action-form";
 import { currentBorrowDashboardAtom } from "./form";
+import { resetBorrowPositionActionIntentAtom } from "./position-action-form";
 
 const outcomeRank = (outcome: BorrowTransactionFlowOutcome) =>
   outcome._tag === "ExecutionStarted" ? 1 : 2;
@@ -31,6 +32,10 @@ export const borrowTransactionFlowOutcomeBindingAtom = Atom.make((context) => {
         }
 
         registry.set(lastObservedOutcomeAtom, { epoch: outcome.epoch, rank });
+        const actionForm = registry.get(borrowActionFormAtom);
+        if (actionForm.type === "positionAction") {
+          registry.set(resetBorrowPositionActionIntentAtom, actionForm);
+        }
         registry.set(borrowActionFormAtom, { type: "reset" });
         if (outcome._tag === "Done") {
           registry.set(currentBorrowDashboardAtom, { type: "reset" });

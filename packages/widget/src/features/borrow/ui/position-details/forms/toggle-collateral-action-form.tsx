@@ -10,8 +10,8 @@ import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { DetailRow } from "../../../../earn/components";
 import { PageCtaButton } from "../../../../widget-shell/components";
 import type { BorrowCollateralToggleActionContext } from "../../../model/position-action-context";
-import { resolveBorrowCollateralToggleFormView } from "../../../model/position-action-form";
 import type { BorrowPositionAction } from "../../../model/position-details-model";
+import { useBorrowCollateralToggleForm } from "../../../react/use-borrow-position-action-form";
 import { BorrowNotice } from "../../components/notices";
 import * as styles from "../../styles.css";
 import { useStartBorrowPositionReview } from "./use-start-review";
@@ -24,7 +24,7 @@ export const ToggleCollateralActionForm = ({
   readonly context: BorrowCollateralToggleActionContext;
 }) => {
   const { t } = useTranslation();
-  const startReview = useStartBorrowPositionReview();
+  const startReview = useStartBorrowPositionReview(action);
   const { position } = context;
   const isDisable = context.type === "disableCollateral";
   const tokenSymbol = context.supplyBalance.tokenSymbol;
@@ -33,16 +33,11 @@ export const ToggleCollateralActionForm = ({
     currentRisk.status === "available" ? currentRisk.healthFactor : null;
   const currentLtv =
     currentRisk.status === "available" ? currentRisk.ltv : null;
-  const view = resolveBorrowCollateralToggleFormView({
-    address: action.reviewState.request.address,
-    context,
-  });
+  const view = useBorrowCollateralToggleForm(action);
 
-  const onContinue = () => {
-    if (view.reviewState) {
-      startReview(view.reviewState);
-    }
-  };
+  if (!view) {
+    return null;
+  }
 
   return (
     <Box display="flex" flexDirection="column" gap="4">
@@ -89,10 +84,10 @@ export const ToggleCollateralActionForm = ({
 
       <PageCtaButton
         cta={{
-          disabled: !view.reviewState,
+          disabled: view.preparation._tag !== "Ready",
           isLoading: false,
           label: t("dashboard.borrow.review"),
-          onClick: onContinue,
+          onClick: startReview,
         }}
       />
     </Box>

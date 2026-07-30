@@ -12,7 +12,10 @@ import {
 } from "../../../domain/borrow/network";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
-import { startBorrowTransactionFlowAtom } from "../../borrow-transaction-flow/state";
+import {
+  getBorrowTransactionFlowRoutes,
+  startBorrowTransactionFlowAtom,
+} from "../../borrow-transaction-flow/state";
 import { tokenBalancesScanAtom } from "../../portfolio/state";
 import { walletScopeAtom } from "../../wallet/state";
 import {
@@ -26,7 +29,6 @@ import {
   resolveBorrowDashboardView,
   shouldResetBorrowFormForCatalog,
 } from "../model/borrow-form";
-import { borrowActionFormAtom } from "./action-form";
 import {
   BorrowMarketsKey,
   BorrowPositionsKey,
@@ -241,39 +243,46 @@ export const selectBorrowCollateralTokenAtom = appRuntime
   .pipe(Atom.withLabel("selectBorrowCollateralTokenAtom"));
 
 export const startBorrowDashboardReviewAtom = appRuntime
-  .fn((_input: undefined, context) => {
-    if (!context(widgetConfigAtom).borrowEnabled) {
-      return Effect.fail(
-        new BorrowFeatureDisabled({
+  .fn((_input: undefined, context) =>
+    Effect.gen(function* () {
+      if (!context(widgetConfigAtom).borrowEnabled) {
+        return yield* new BorrowFeatureDisabled({
           message: "Borrow is disabled by Widget configuration.",
+        });
+      }
+
+      const view = context(currentBorrowDashboardAtom);
+      const preparation = view?.preparation;
+
+      if (
+        !view?.isActionReady ||
+        preparation?._tag !== "Ready" ||
+        !view.selectedMarket
+      ) {
+        return;
+      }
+
+      const entry = { _tag: "BorrowDashboard" as const };
+      const intake = {
+        ...preparation.review,
+        entry,
+      };
+      yield* context.setResult(startBorrowTransactionFlowAtom, {
+        intake,
+        navigation: {
+          _tag: "Push",
+          path: getBorrowTransactionFlowRoutes(entry).reviewPath,
+        },
+      });
+      yield* TrackingService.use((tracking) =>
+        tracking.trackEvent("borrowReviewClicked", {
+          borrowAmount: view.borrowAmount.toString(10),
+          collateralAmount: view.collateralAmount.toString(10),
+          collateralTokenAddress: view.selectedCollateralToken?.token.address,
+          collateralTokenSymbol: view.selectedCollateralToken?.token.symbol,
+          marketId: view.selectedMarket?.id,
         })
       );
-    }
-
-    const view = context(currentBorrowDashboardAtom);
-    const preparedReviewState = view?.preparedReviewState;
-
-    if (!view?.isActionReady || !preparedReviewState || !view.selectedMarket) {
-      return Effect.void;
-    }
-
-    context.set(borrowActionFormAtom, {
-      reviewState: preparedReviewState,
-      type: "prepareReview",
-    });
-    context.set(startBorrowTransactionFlowAtom, {
-      ...preparedReviewState,
-      entry: { _tag: "BorrowDashboard" },
-    });
-
-    return TrackingService.use((tracking) =>
-      tracking.trackEvent("borrowReviewClicked", {
-        borrowAmount: view.borrowAmount.toString(10),
-        collateralAmount: view.collateralAmount.toString(10),
-        collateralTokenAddress: view.selectedCollateralToken?.token.address,
-        collateralTokenSymbol: view.selectedCollateralToken?.token.symbol,
-        marketId: view.selectedMarket?.id,
-      })
-    );
-  })
+    })
+  )
   .pipe(Atom.withLabel("startBorrowDashboardReviewAtom"));

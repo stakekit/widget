@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Schema } from "effect";
 import { Action as BorrowAction } from "../../domain/borrow/action";
-import type { ActionRequest as BorrowActionRequest } from "../../domain/borrow/action-request";
+import type { ActionCommand as BorrowActionCommand } from "../../domain/borrow/action-command";
 import { BorrowFeatureDisabled } from "../../domain/borrow/availability";
 import {
   type SubmitTransactionCommand as BorrowSubmitTransactionCommand,
@@ -37,11 +37,11 @@ export const makeBorrowOperations = (
   );
 
   const executeAction = Effect.fn("BorrowOperations.executeAction")(function* (
-    request: BorrowActionRequest
+    command: BorrowActionCommand
   ) {
     const client = yield* requireTransport();
     return yield* client
-      .ActionsControllerExecuteActionV1({ payload: request })
+      .ActionsControllerExecuteActionV1({ payload: command })
       .pipe(decodeApiResponse("borrow-action-create", BorrowAction));
   });
 

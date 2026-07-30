@@ -1,5 +1,11 @@
+import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigAtom } from "../../../app/config/settings";
+import { appRuntime } from "../../../app/runtime/app-runtime";
+import {
+  runWidgetNavigationCommand,
+  type WidgetNavigationCommand,
+} from "../../../app/runtime/navigation";
 import { BorrowFeatureDisabled } from "../../../domain/borrow/availability";
 import {
   sameWalletScopeOwner,
@@ -13,6 +19,19 @@ export type BorrowFlowSession = Readonly<{
   readonly intake: BorrowTransactionFlowIntake;
   readonly walletScope: WalletScopeKey;
 }>;
+
+type StartBorrowFlowSessionCommand = Readonly<{
+  readonly intake: BorrowTransactionFlowIntake;
+  readonly navigation: WidgetNavigationCommand | null;
+}>;
+
+type StartBorrowFlowSessionOutcome =
+  | Readonly<{
+      readonly _tag: "Started";
+      readonly session: BorrowFlowSession;
+    }>
+  | Readonly<{ readonly _tag: "RejectedDisabled" }>
+  | Readonly<{ readonly _tag: "RejectedOwner" }>;
 
 type BorrowFlowSessionStoreState = Readonly<{
   readonly current: BorrowFlowSession | null;
@@ -48,7 +67,7 @@ export const makeBorrowFlowSessionStore = () => {
       if (
         !walletScope ||
         !sameWalletScopeOwner(walletScope, {
-          address: intake.request.address,
+          address: intake.command.address,
           network: intake.summary.network,
         })
       ) {
@@ -66,7 +85,8 @@ export const makeBorrowFlowSessionStore = () => {
         nextEpoch: state.nextEpoch + 1,
       });
       return session;
-    }
+    },
+    { initialValue: null }
   ).pipe(Atom.withLabel("startBorrowFlowSessionAtom"));
   const clearAtom = Atom.fnSync((epoch: number, context) => {
     const state = context(stateAtom);
@@ -78,3 +98,40 @@ export const makeBorrowFlowSessionStore = () => {
 };
 
 export const borrowFlowSessionStore = makeBorrowFlowSessionStore();
+
+export const startBorrowFlowSessionAtom = appRuntime
+  .fn((command: StartBorrowFlowSessionCommand, context) =>
+    Effect.gen(function* () {
+      context.set(borrowFlowSessionStore.startAtom, command.intake);
+      const session = context(borrowFlowSessionStore.startAtom);
+
+      if (session instanceof BorrowFeatureDisabled) {
+        return {
+          _tag: "RejectedDisabled",
+        } satisfies StartBorrowFlowSessionOutcome;
+      }
+      if (!session) {
+        return {
+          _tag: "RejectedOwner",
+        } satisfies StartBorrowFlowSessionOutcome;
+      }
+
+      const outcome = {
+        _tag: "Started",
+        session,
+      } satisfies StartBorrowFlowSessionOutcome;
+      if (!command.navigation) {
+        return outcome;
+      }
+
+      yield* runWidgetNavigationCommand(command.navigation).pipe(
+        Effect.tapError(() =>
+          Effect.sync(() => {
+            context.set(borrowFlowSessionStore.clearAtom, session.epoch);
+          })
+        )
+      );
+      return outcome;
+    })
+  )
+  .pipe(Atom.withLabel("startBorrowFlowSessionCommandAtom"));

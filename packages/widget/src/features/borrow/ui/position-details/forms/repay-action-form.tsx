@@ -23,16 +23,15 @@ export const RepayActionForm = ({
   readonly context: BorrowRepayActionContext;
 }) => {
   const { t } = useTranslation();
-  const startReview = useStartBorrowPositionReview();
-  const [view, dispatch] = useBorrowRepayForm({ action, context });
+  const startReview = useStartBorrowPositionReview(action);
+  const [view, dispatch] = useBorrowRepayForm(action);
   const { debtBalance } = context;
-  const error = getBorrowPositionFormErrorMessage({ error: view.error, t });
 
-  const onContinue = () => {
-    if (view.reviewState) {
-      startReview(view.reviewState);
-    }
-  };
+  if (!view) {
+    return null;
+  }
+
+  const error = getBorrowPositionFormErrorMessage({ error: view.error, t });
 
   return (
     <Box display="flex" flexDirection="column" gap="4">
@@ -104,7 +103,7 @@ export const RepayActionForm = ({
           disabled: !view.canSubmit,
           isLoading: false,
           label: t("dashboard.borrow.review"),
-          onClick: onContinue,
+          onClick: startReview,
         }}
       />
     </Box>

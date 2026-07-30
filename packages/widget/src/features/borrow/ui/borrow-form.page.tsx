@@ -2,7 +2,6 @@ import { useAtomSet } from "@effect/atom-react";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import type {
   BorrowWalletBridgeState,
   BorrowWalletConnectedBridgeState,
@@ -90,7 +89,6 @@ const BorrowEntryFormPage = ({
 
 const BorrowFormPanel = ({ view }: { readonly view: BorrowDashboardView }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const setBorrowAmount = useAtomSet(setBorrowAmountAtom);
   const setCollateralAmount = useAtomSet(setBorrowCollateralAmountAtom);
   const setCollateralMaxAmount = useAtomSet(setBorrowCollateralMaxAmountAtom);
@@ -104,7 +102,6 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowDashboardView }) => {
     isActionReady,
     markets,
     marketsResult,
-    preparedReviewState,
     projection,
     selectedCollateralBalance,
     selectedCollateralToken,
@@ -122,14 +119,7 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowDashboardView }) => {
     ltvGreaterThanMax,
     projectedDebtBelowMinimum,
   } = validation;
-  const onReviewClick = () => {
-    if (!isActionReady || !preparedReviewState || !selectedMarket) {
-      return;
-    }
-
-    startReview(undefined);
-    navigate("/borrow/review");
-  };
+  const onReviewClick = () => startReview(undefined);
   const integrations = AsyncResult.getOrElse(integrationsResult, () => []);
   const getBorrowAmountValidationText = () => {
     if (borrowAmountGreaterThanAvailable) {

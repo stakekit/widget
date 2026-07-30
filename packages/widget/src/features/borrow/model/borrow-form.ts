@@ -1,29 +1,25 @@
 import BigNumber from "bignumber.js";
-import { Data, Match } from "effect";
+import { Data } from "effect";
 import type { AsyncResult as AtomAsyncResult } from "effect/unstable/reactivity/AsyncResult";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import {
-  buildBorrowActionRequest,
-  decodeBorrowForm,
-} from "../../../domain/borrow/action-request";
 import {
   type BorrowPositions,
   emptyBorrowPositions,
 } from "../../../domain/borrow/borrow-positions";
 import type { CollateralToken } from "../../../domain/borrow/collateral-token";
-import { decodeTokenId } from "../../../domain/borrow/ids";
 import type { Integration } from "../../../domain/borrow/integration";
 import type { Market } from "../../../domain/borrow/market";
 import type { MarketPosition } from "../../../domain/borrow/market-position";
-import { isDebtBelowMarketMinimum } from "../../../domain/borrow/minimum-debt";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
-import type { RiskChange } from "../../../domain/borrow/risk-position";
 import type { TokenBalance } from "../../../domain/schema/financial-models";
-import type { WalletAddress } from "../../../domain/schema/identifiers";
 import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
-import type { BorrowTransactionFlowReview } from "../../borrow-transaction-flow/state";
+import {
+  type BorrowActionBlockReason,
+  type BorrowActionPreparation,
+  type OpenPositionProjection,
+  prepareBorrowAction,
+} from "./action-preparation";
 import type { BorrowAtomResultError } from "./borrow-errors";
-import { makeBorrowRiskSummary } from "./borrow-risk-summary";
 import {
   type BorrowMarketWalletBalances,
   deriveBorrowMarketWalletBalances,
@@ -96,7 +92,7 @@ export type BorrowDashboardView = {
     ReadonlyArray<Market>,
     BorrowAtomResultError
   >;
-  readonly preparedReviewState: BorrowTransactionFlowReview | null;
+  readonly preparation: BorrowActionPreparation<OpenPositionProjection> | null;
   readonly projection: BorrowFormProjection;
   readonly selectedCollateralBalance:
     | BorrowMarketWalletBalances["selectedCollateralToken"]
@@ -259,88 +255,6 @@ export const shouldResetBorrowFormForCatalog = ({
   );
 };
 
-const getPreparedReviewState = ({
-  borrowAmount,
-  collateralAmount,
-  isActionReady,
-  projection,
-  selectedCollateralToken,
-  selectedIntegration,
-  selectedMarket,
-  walletAddress,
-}: {
-  readonly borrowAmount: BigNumber;
-  readonly collateralAmount: BigNumber;
-  readonly isActionReady: boolean;
-  readonly projection: BorrowFormProjection;
-  readonly selectedCollateralToken: CollateralToken | null;
-  readonly selectedIntegration: Integration | null;
-  readonly selectedMarket: Market | null;
-  readonly walletAddress: WalletAddress;
-}): BorrowTransactionFlowReview | null => {
-  if (!isActionReady || !selectedMarket || !selectedCollateralToken) {
-    return null;
-  }
-
-  const form = decodeBorrowForm({
-    borrowAmount,
-    collateralAmount,
-    selectedCollateralToken,
-    selectedMarket,
-  });
-
-  if (!form) {
-    return null;
-  }
-
-  const summaryAction = Match.value(form).pipe(
-    Match.tag("BorrowPlusCollateral", () => "borrowAndSupply" as const),
-    Match.tag("BorrowOnly", () => "borrow" as const),
-    Match.tag("CollateralOnly", () => "supply" as const),
-    Match.exhaustive
-  );
-  const riskSummary =
-    projection.riskStatus === "available"
-      ? makeBorrowRiskSummary({
-          healthFactor: projection.projectedHealthFactor,
-          ltv: projection.projectedLtv,
-          status: projection.riskStatus,
-        })
-      : makeBorrowRiskSummary({ status: projection.riskStatus });
-
-  return {
-    request: buildBorrowActionRequest({
-      address: walletAddress,
-      form,
-    }),
-    summary: {
-      action: summaryAction,
-      ...(form._tag !== "CollateralOnly"
-        ? {
-            borrowAmount: form.borrowAmount.toString(10),
-            loanTokenSymbol: selectedMarket.loanToken.symbol,
-          }
-        : {}),
-      ...(form._tag !== "BorrowOnly"
-        ? {
-            collateralAmount: form.collateralAmount.toString(10),
-            collateralTokenSymbol: form.selectedCollateralToken.token.symbol,
-          }
-        : {}),
-      existingCollateralUsd: projection.existingCollateralUsd.toString(10),
-      existingDebtUsd: projection.existingDebtUsd.toString(10),
-      projectedCollateralUsd: projection.projectedCollateralUsd.toString(10),
-      projectedDebtUsd: projection.projectedDebtUsd.toString(10),
-      ...riskSummary,
-      marketLabel: selectedCollateralToken
-        ? `${selectedCollateralToken.token.symbol} / ${selectedMarket.loanToken.symbol}`
-        : selectedMarket.loanToken.symbol,
-      network: selectedMarket.network,
-      providerName: selectedIntegration?.name ?? selectedMarket.integrationId,
-    },
-  };
-};
-
 export const resolveBorrowDashboardView = ({
   integrationsResult,
   intent,
@@ -379,9 +293,6 @@ export const resolveBorrowDashboardView = ({
     ? (positions.items.find((position) => position.id === selectedMarket.id) ??
       null)
     : null;
-  const selectedMarketRisk = selectedMarket
-    ? positions.riskFor(selectedMarket)
-    : null;
   const selectedCollateralToken = getSelectedCollateralToken({
     intent,
     selectedMarket,
@@ -405,129 +316,74 @@ export const resolveBorrowDashboardView = ({
     walletBalances?.selectedCollateralToken ?? null;
   const borrowAmount = new BigNumber(intent.borrowAmount || 0);
   const collateralAmount = new BigNumber(intent.collateralAmount || 0);
-  const borrowMaxAmount = new BigNumber(
-    selectedMarket?.availableLiquidity ?? 0
-  );
-  const collateralMaxAmount =
-    selectedCollateralBalance?.amountValue ?? new BigNumber(0);
-  const borrowAmountGreaterThanAvailable =
-    !!selectedMarket && borrowAmount.gt(borrowMaxAmount);
-  const collateralAmountGreaterThanBalance =
-    !!selectedMarket && collateralAmount.gt(collateralMaxAmount);
-  const borrowUsd = selectedMarket
-    ? borrowAmount.multipliedBy(selectedMarket.loanTokenPriceUsd)
-    : new BigNumber(0);
-  const collateralUsd =
-    selectedCollateralToken == null
-      ? new BigNumber(0)
-      : collateralAmount.multipliedBy(selectedCollateralToken.priceUsd);
-  const projectedDebtAmount = new BigNumber(
-    selectedMarketPosition?.balances.debt?.balance ?? 0
-  ).plus(borrowAmount);
-  const minLoan = new BigNumber(selectedMarket?.minLoan ?? 0);
-  const projectedDebtBelowMinimum =
-    borrowAmount.gt(0) &&
-    isDebtBelowMarketMinimum({
-      debt: projectedDebtAmount,
-      minimum: minLoan,
-    });
-  const selectedCollateralTokenId = selectedCollateralToken
-    ? decodeTokenId({
-        address: selectedCollateralToken.token.address,
-        symbol: selectedCollateralToken.token.symbol,
-      })
-    : null;
-  const riskChanges: RiskChange[] = [
-    ...(selectedMarket && borrowAmount.gt(0)
-      ? [
-          {
-            amount: borrowAmount.toNumber(),
-            marketId: selectedMarket.id,
-            type: "borrow" as const,
-          },
-        ]
-      : []),
-    ...(selectedCollateralTokenId && collateralAmount.gt(0)
-      ? [
-          {
-            amount: collateralAmount.toNumber(),
-            tokenId: selectedCollateralTokenId,
-            type: "supply" as const,
-          },
-        ]
-      : []),
-  ];
-  const riskAssessment = selectedMarketRisk?.assess(riskChanges) ?? null;
-  const riskProjection = riskAssessment?.projection ?? {
-    reason: "unknownMarket" as const,
-    status: "unavailable" as const,
-    totalCollateralUsd: null,
-    totalDebtUsd: null,
+  const preparation =
+    selectedMarket && selectedCollateralToken
+      ? prepareBorrowAction({
+          _tag: "OpenPositionDraft",
+          address: key.scope.address,
+          borrowAmount,
+          collateralAmount,
+          collateralToken: selectedCollateralToken,
+          integrations,
+          market: selectedMarket,
+          positions,
+          tokenBalances,
+        })
+      : null;
+  const preparedProjection = preparation?.projection ?? null;
+  const financials = preparedProjection?.financials ?? {
+    existingCollateralUsd: new BigNumber(0),
+    existingDebtUsd: new BigNumber(0),
+    projectedCollateralUsd: new BigNumber(0),
+    projectedDebtUsd: new BigNumber(0),
   };
-  const currentRisk = selectedMarketRisk?.current ?? null;
-  const existingCollateralUsd = new BigNumber(
-    currentRisk?.totalCollateralUsd ?? 0
-  );
-  const existingDebtUsd = new BigNumber(currentRisk?.totalDebtUsd ?? 0);
-  const projectedCollateralUsd = new BigNumber(
-    riskProjection.totalCollateralUsd ??
-      existingCollateralUsd.plus(collateralUsd)
-  );
-  const projectedDebtUsd = new BigNumber(
-    riskProjection.totalDebtUsd ?? existingDebtUsd.plus(borrowUsd)
-  );
-  const maxLtv =
-    riskProjection.status === "available" ? riskProjection.maxLtv : null;
-  const projectedHealthFactor =
-    riskProjection.status === "available" ? riskProjection.healthFactor : null;
-  const projectedLtv =
-    riskProjection.status === "available" ? riskProjection.ltv : 0;
+  const risk = preparedProjection?.risk ?? {
+    currentLtv: null,
+    status: "unavailable" as const,
+  };
+  const availableRisk = risk.status === "available" ? risk : null;
   const hasAmounts = borrowAmount.gt(0) || collateralAmount.gt(0);
-  const ltvGreaterThanMax = hasAmounts && riskAssessment?.decision === "block";
-  const hasValidationError =
-    borrowAmountGreaterThanAvailable ||
-    collateralAmountGreaterThanBalance ||
-    ltvGreaterThanMax ||
-    projectedDebtBelowMinimum;
-  const isActionReady =
-    !!selectedMarket &&
-    !!selectedCollateralToken &&
-    hasAmounts &&
-    !hasValidationError;
+  const reasons: ReadonlyArray<BorrowActionBlockReason> =
+    preparation?._tag === "Blocked" ? preparation.reasons : [];
+  const borrowAmountGreaterThanAvailable = reasons.includes(
+    "AmountExceedsAvailableLiquidity"
+  );
+  const collateralAmountGreaterThanBalance = reasons.includes(
+    "AmountExceedsWalletBalance"
+  );
+  const ltvGreaterThanMax = reasons.includes("RiskCapacityExceeded");
+  const projectedDebtBelowMinimum = reasons.includes(
+    "ProjectedDebtBelowMarketMinimum"
+  );
+  const hasValidationError = reasons.length > 0;
+  const isActionReady = preparation?._tag === "Ready";
   const projection: BorrowFormProjection = {
-    borrowMaxAmount,
-    borrowUsd,
-    collateralMaxAmount,
-    collateralUsd,
-    existingCollateralUsd,
-    existingDebtUsd,
-    maxLtv,
-    projectedCollateralUsd,
-    projectedDebtUsd,
-    projectedHealthFactor,
-    projectedLtv,
-    riskStatus: riskProjection.status,
+    borrowMaxAmount: preparedProjection?.borrowMaxAmount ?? new BigNumber(0),
+    borrowUsd: preparedProjection?.borrowUsd ?? new BigNumber(0),
+    collateralMaxAmount:
+      preparedProjection?.collateralMaxAmount ?? new BigNumber(0),
+    collateralUsd: preparedProjection?.collateralUsd ?? new BigNumber(0),
+    existingCollateralUsd: financials.existingCollateralUsd,
+    existingDebtUsd: financials.existingDebtUsd,
+    maxLtv: availableRisk?.maxLtv ?? null,
+    projectedCollateralUsd: financials.projectedCollateralUsd,
+    projectedDebtUsd: financials.projectedDebtUsd,
+    projectedHealthFactor: availableRisk?.projectedHealthFactor ?? null,
+    projectedLtv: availableRisk?.projectedLtv ?? 0,
+    riskStatus: risk.status,
   };
 
   return {
     borrowAmount,
-    canSelectCollateralMaxAmount: !!selectedMarket && collateralMaxAmount.gt(0),
+    canSelectCollateralMaxAmount:
+      !!selectedMarket && projection.collateralMaxAmount.gt(0),
     catalogResetNotice: false,
     collateralAmount,
     integrationsResult,
     isActionReady,
     markets,
     marketsResult,
-    preparedReviewState: getPreparedReviewState({
-      borrowAmount,
-      collateralAmount,
-      isActionReady,
-      projection,
-      selectedCollateralToken,
-      selectedIntegration,
-      selectedMarket,
-      walletAddress: key.scope.address,
-    }),
+    preparation,
     projection,
     selectedCollateralBalance,
     selectedCollateralToken,

@@ -165,7 +165,7 @@ describe("borrow position items", () => {
     });
   });
 
-  it("builds review states for borrow position pending actions", () => {
+  it("builds semantic descriptors for borrow position pending actions", () => {
     const [position] = deriveItems({
       integrationAccountSnapshots: [
         {
@@ -180,20 +180,14 @@ describe("borrow position items", () => {
       throw new Error("Expected borrow position");
     }
 
-    const actions = getBorrowPositionActions({ address, position, t });
+    const actions = getBorrowPositionActions({ position, t });
 
-    expect(actions.map((action) => action.reviewState.request.action)).toEqual([
+    expect(actions.map((action) => action.type)).toEqual([
       "repay",
       "withdraw",
       "disableCollateral",
     ]);
-    expect(actions[0]?.reviewState.request.args).toMatchObject({
-      repayAll: true,
-    });
     expect(actions[0]?.pendingContext.type).toBe("repay");
-    expect(actions[1]?.reviewState.request.args).toMatchObject({
-      amount: "0.5",
-    });
     expect(actions[1]?.pendingContext.type).toBe("withdraw");
     expect(actions[2]?.pendingContext.type).toBe("disableCollateral");
   });

@@ -20,6 +20,7 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/components";
+import { projectBorrowTransactionFlowSummary } from "../model/borrow-transaction-flow";
 import { useBorrowTransactionFlow } from "../react/borrow-flow-route";
 import * as styles from "./styles.css";
 
@@ -66,7 +67,8 @@ export const BorrowReviewPage = () => {
   const reviewState = flow.intake;
   const isPositionFlow = flow.intake.entry._tag === "BorrowPosition";
 
-  const { request, summary } = reviewState;
+  const { command, summary } = reviewState;
+  const projectedSummary = projectBorrowTransactionFlowSummary(summary);
   const createActionErrorMessage = (() => {
     if (
       !AsyncResult.isFailure(createActionResult) ||
@@ -91,18 +93,28 @@ export const BorrowReviewPage = () => {
   })();
   const projectedLtv = formatTransition({
     current: null,
-    projected: formatOptionalPercentSummary(summary.projectedLtv),
+    projected: formatOptionalPercentSummary(
+      projectedSummary.risk.projectedLtv ?? undefined
+    ),
   });
-  const projectedHealthFactor = summary.projectedHealthFactor
-    ? formatHealthFactor(summary.projectedHealthFactor)
+  const projectedHealthFactor = projectedSummary.risk.projectedHealthFactor
+    ? formatHealthFactor(projectedSummary.risk.projectedHealthFactor)
     : null;
   const collateralValue = formatTransition({
-    current: formatOptionalSummary(summary.existingCollateralUsd),
-    projected: formatOptionalSummary(summary.projectedCollateralUsd),
+    current: formatOptionalSummary(
+      projectedSummary.financials.existingCollateralUsd ?? undefined
+    ),
+    projected: formatOptionalSummary(
+      projectedSummary.financials.projectedCollateralUsd ?? undefined
+    ),
   });
   const debtValue = formatTransition({
-    current: formatOptionalSummary(summary.existingDebtUsd),
-    projected: formatOptionalSummary(summary.projectedDebtUsd),
+    current: formatOptionalSummary(
+      projectedSummary.financials.existingDebtUsd ?? undefined
+    ),
+    projected: formatOptionalSummary(
+      projectedSummary.financials.projectedDebtUsd ?? undefined
+    ),
   });
   const actionRows = [
     {
@@ -110,18 +122,18 @@ export const BorrowReviewPage = () => {
       label: t("dashboard.borrow.review_page.action"),
       value: t(`dashboard.borrow.review_page.actions.${summary.action}`),
     },
-    summary.borrowAmount && summary.loanTokenSymbol
+    projectedSummary.borrow
       ? {
           id: "borrow-amount",
           label: t("dashboard.borrow.review_page.borrow_amount"),
-          value: `${summary.borrowAmount} ${summary.loanTokenSymbol}`,
+          value: `${projectedSummary.borrow.amount} ${projectedSummary.borrow.symbol}`,
         }
       : null,
-    summary.collateralAmount && summary.collateralTokenSymbol
+    projectedSummary.collateral
       ? {
           id: "collateral-amount",
           label: t("dashboard.borrow.review_page.collateral_amount"),
-          value: `${summary.collateralAmount} ${summary.collateralTokenSymbol}`,
+          value: `${projectedSummary.collateral.amount} ${projectedSummary.collateral.symbol}`,
         }
       : null,
     {
@@ -213,12 +225,12 @@ export const BorrowReviewPage = () => {
             <DetailRow
               id="requested-action"
               label={t("dashboard.borrow.review_page.requested_action")}
-              value={request.action}
+              value={command.action}
             />
             <DetailRow
               id="market-id"
               label={t("dashboard.borrow.review_page.market_id")}
-              value={request.args.marketId}
+              value={command.args.marketId}
             />
           </Box>
 

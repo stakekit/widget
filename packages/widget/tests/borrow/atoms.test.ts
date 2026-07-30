@@ -22,7 +22,13 @@ import {
   resolveBorrowDashboardView,
   shouldResetBorrowFormForCatalog,
 } from "../../src/features/borrow/model/borrow-form";
+import { getBorrowPositionActions } from "../../src/features/borrow/model/position-details-model";
 import { currentBorrowDashboardAtom } from "../../src/features/borrow/state/form";
+import {
+  borrowRepayFormAtom,
+  makeBorrowPositionActionRouteKey,
+  stageBorrowPositionActionAtom,
+} from "../../src/features/borrow/state/position-action-form";
 import {
   BorrowPositionKey,
   BorrowPositionNotFound,
@@ -222,6 +228,145 @@ describe("borrow atoms", () => {
     expect(
       AsyncResult.getOrThrow(registry.get(currentBorrowPositionsAtom))[0]?.id
     ).toBe(market.id);
+  });
+
+  it("owns staged position preparation and derives Ready from current intent", () => {
+    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const accountSnapshot = Schema.decodeUnknownSync(BorrowAccountSnapshot)({
+      ...positionDto,
+      debtBalances: [
+        {
+          ...positionDto.debtBalances[0],
+          pendingActions: [
+            {
+              args: {
+                marketId: market.id,
+                tokenAddress: market.loanToken.address,
+              },
+              label: "Repay",
+              type: "repay",
+            },
+          ],
+        },
+      ],
+    });
+    const position = deriveBorrowPositions({
+      integrationAccountSnapshots: [{ accountSnapshot, integration }],
+      markets: [market],
+    }).items[0];
+    if (!position) {
+      throw new Error("Expected Borrow position");
+    }
+    const action = getBorrowPositionActions({
+      position,
+      t: ((key: string) => key) as never,
+    }).find((candidate) => candidate.type === "repay");
+    if (!action) {
+      throw new Error("Expected repay action");
+    }
+    let currentAccountSnapshot = accountSnapshot;
+    const registry = AtomRegistry.make({
+      initialValues: [
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.succeed(BorrowResourceSource, {
+            getIntegrations: () => Effect.succeed([integration]),
+            getMarkets: () =>
+              Effect.succeed({
+                items: [market],
+                limit: 100,
+                offset: 0,
+                total: 1,
+              }),
+            getPositionData: () =>
+              Effect.succeed([
+                { integration, position: currentAccountSnapshot },
+              ]),
+          } as never)
+        ),
+        Atom.initialValue(walletScopeAtom, walletScope),
+        Atom.initialValue(
+          widgetConfigAtom,
+          normalizeWidgetConfig({
+            apiKey: "api-key",
+            borrowEnabled: true,
+            dashboardVariant: true,
+            variant: "default",
+          })
+        ),
+        Atom.initialValue(tokenBalancesScanAtom, {
+          enabled: true,
+          result: AsyncResult.success(
+            Schema.decodeUnknownSync(TokenBalancesResponse)([
+              {
+                amount: "1000",
+                availableYields: [],
+                token: {
+                  address: market.loanToken.address,
+                  decimals: market.loanToken.decimals,
+                  name: market.loanToken.name,
+                  network: market.network,
+                  symbol: market.loanToken.symbol,
+                },
+              },
+            ])
+          ),
+        }),
+      ],
+    });
+
+    registry.set(stageBorrowPositionActionAtom, action);
+    const formAtom = borrowRepayFormAtom(
+      makeBorrowPositionActionRouteKey(action)
+    );
+    expect(registry.get(formAtom)?.preparation._tag).toBe("Idle");
+
+    registry.set(formAtom, {
+      amount: "25",
+      type: "amount/set",
+    });
+    const view = registry.get(formAtom);
+
+    expect(view?.preparation._tag).toBe("Ready");
+    if (view?.preparation._tag === "Ready") {
+      expect(view.preparation.review.command).toMatchObject({
+        action: "repay",
+        address,
+        args: { amount: "25", marketId: market.id },
+      });
+      expect(view.preparation.review.summary).toMatchObject({
+        action: "repay",
+        borrowAmount: "25",
+        riskStatus: "available",
+      });
+    }
+
+    const refreshedAccountSnapshot = Schema.decodeUnknownSync(
+      BorrowAccountSnapshot
+    )({
+      ...positionDto,
+      debtBalances: [
+        {
+          ...positionDto.debtBalances[0],
+          balance: "20",
+          balanceRaw: "20000000",
+          balanceUsd: "20",
+          pendingActions: accountSnapshot.debtBalances[0]?.pendingActions,
+        },
+      ],
+      totalBorrowedUsd: "20",
+    });
+    currentAccountSnapshot = refreshedAccountSnapshot;
+    registry.refresh(
+      borrowPositionsAtom(new BorrowPositionsKey({ scope: walletScope }))
+    );
+    const refreshedView = registry.get(formAtom);
+    expect(refreshedView?.preparation).toMatchObject({
+      _tag: "Blocked",
+      reasons: ["AmountExceedsPositionBalance"],
+    });
+    registry.dispose();
   });
 
   it("returns inert resources without calling Borrow transport when disabled", () => {
@@ -543,7 +688,11 @@ describe("borrow atoms", () => {
 
     expect(selectedIntent.collateralAmount).toBe("0");
     expect(view.isActionReady).toBe(true);
-    expect(view.preparedReviewState?.request).toMatchObject({
+    expect(view.preparation?._tag).toBe("Ready");
+    if (view.preparation?._tag !== "Ready") {
+      throw new Error("Expected ready Borrow action preparation");
+    }
+    expect(view.preparation.review.command).toMatchObject({
       action: "borrow",
       address,
       args: {
@@ -629,7 +778,7 @@ describe("borrow atoms", () => {
 
       expect(view.isActionReady).toBe(expectedReady);
       expect(view.validation.projectedDebtBelowMinimum).toBe(!expectedReady);
-      expect(view.preparedReviewState != null).toBe(expectedReady);
+      expect(view.preparation?._tag === "Ready").toBe(expectedReady);
     }
   );
 
@@ -1012,12 +1161,16 @@ describe("borrow atoms", () => {
 
     expect(view.projection.riskStatus).toBe("unavailable");
     expect(view.isActionReady).toBe(true);
-    expect(view.preparedReviewState?.summary).toMatchObject({
+    expect(view.preparation?._tag).toBe("Ready");
+    if (view.preparation?._tag !== "Ready") {
+      throw new Error("Expected ready Borrow action preparation");
+    }
+    expect(view.preparation.review.summary).toMatchObject({
       riskStatus: "unavailable",
     });
-    expect(view.preparedReviewState?.summary.projectedHealthFactor).toBe(
-      undefined
+    expect("projectedHealthFactor" in view.preparation.review.summary).toBe(
+      false
     );
-    expect(view.preparedReviewState?.summary.projectedLtv).toBe(undefined);
+    expect("projectedLtv" in view.preparation.review.summary).toBe(false);
   });
 });

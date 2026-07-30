@@ -1,5 +1,6 @@
 import { RegistryProvider } from "@effect/atom-react";
 import * as Schema from "effect/Schema";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { TFunction } from "i18next";
 import { act } from "react";
 import { I18nextProvider } from "react-i18next";
@@ -14,7 +15,10 @@ import {
   type BorrowPositionAction,
   getBorrowPositionActions,
 } from "../../src/features/borrow/model/position-details-model";
+import { currentBorrowPositionsAtom } from "../../src/features/borrow/state/resources";
 import { BorrowPositionActionPage } from "../../src/features/borrow/ui";
+import { walletScopeAtom } from "../../src/features/wallet/state";
+import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { RootElementProvider } from "../../src/shared/react/root-element";
 import { i18nInstance } from "../../src/translation";
 import { render } from "../utils/test-utils.dom";
@@ -157,10 +161,9 @@ const makePosition = ({
 
 const getAction = (
   position: ReturnType<typeof makePosition>,
-  owner: WalletAddress,
   type: BorrowPositionAction["type"]
 ) => {
-  const action = getBorrowPositionActions({ address: owner, position, t }).find(
+  const action = getBorrowPositionActions({ position, t }).find(
     (candidate) => candidate.type === type
   );
   if (!action) throw new Error(`Expected ${type} action`);
@@ -186,35 +189,47 @@ const PositionOutlet = ({
 
 const renderAction = ({
   action,
+  owner,
   position,
 }: {
   readonly action: BorrowPositionAction;
+  readonly owner: WalletAddress;
   readonly position: ReturnType<typeof makePosition>;
-}) => (
-  <RegistryProvider>
-    <RootElementProvider>
-      <I18nextProvider i18n={i18nInstance}>
-        <MemoryRouter
-          initialEntries={[
-            `/positions/borrow/${market.id}/action/${action.id}`,
-          ]}
-        >
-          <Routes>
-            <Route
-              element={<PositionOutlet action={action} position={position} />}
-              path="positions/borrow/:marketId"
-            >
+}) => {
+  const scope = new WalletScopeKey({ address: owner, network: "ethereum" });
+
+  return (
+    <RegistryProvider
+      initialValues={[
+        [walletScopeAtom, scope],
+        [currentBorrowPositionsAtom, AsyncResult.success([position])],
+      ]}
+      key={owner}
+    >
+      <RootElementProvider>
+        <I18nextProvider i18n={i18nInstance}>
+          <MemoryRouter
+            initialEntries={[
+              `/positions/borrow/${market.id}/action/${action.id}`,
+            ]}
+          >
+            <Routes>
               <Route
-                element={<BorrowPositionActionPage />}
-                path="action/:actionId"
-              />
-            </Route>
-          </Routes>
-        </MemoryRouter>
-      </I18nextProvider>
-    </RootElementProvider>
-  </RegistryProvider>
-);
+                element={<PositionOutlet action={action} position={position} />}
+                path="positions/borrow/:marketId"
+              >
+                <Route
+                  element={<BorrowPositionActionPage />}
+                  path="action/:actionId"
+                />
+              </Route>
+            </Routes>
+          </MemoryRouter>
+        </I18nextProvider>
+      </RootElementProvider>
+    </RegistryProvider>
+  );
+};
 
 const enterAmount = async (container: HTMLElement, value: string) => {
   const input = container.querySelector<HTMLInputElement>(
@@ -239,10 +254,10 @@ describe("Borrow position action wallet ownership", () => {
     const ownerB = address("2");
     const positionA = makePosition({ owner: ownerA, supplied: "0.5" });
     const positionB = makePosition({ owner: ownerB, supplied: "0.2" });
-    const actionA = getAction(positionA, ownerA, "withdraw");
-    const actionB = getAction(positionB, ownerB, "withdraw");
+    const actionA = getAction(positionA, "withdraw");
+    const actionB = getAction(positionB, "withdraw");
     const app = await render(
-      renderAction({ action: actionA, position: positionA })
+      renderAction({ action: actionA, owner: ownerA, position: positionA })
     );
 
     await enterAmount(app.container, "0.1");
@@ -253,7 +268,9 @@ describe("Borrow position action wallet ownership", () => {
     ).toBe("0.1");
     expect(app.container.textContent).toContain("0.5 WETH withdrawable");
 
-    await app.rerender(renderAction({ action: actionB, position: positionB }));
+    await app.rerender(
+      renderAction({ action: actionB, owner: ownerB, position: positionB })
+    );
 
     expect(
       app.container.querySelector<HTMLInputElement>(
@@ -268,10 +285,10 @@ describe("Borrow position action wallet ownership", () => {
     const ownerB = address("2");
     const positionA = makePosition({ owner: ownerA, supplied: "0.5" });
     const positionB = makePosition({ owner: ownerB, supplied: "0.2" });
-    const actionA = getAction(positionA, ownerA, "repay");
-    const actionB = getAction(positionB, ownerB, "repay");
+    const actionA = getAction(positionA, "repay");
+    const actionB = getAction(positionB, "repay");
     const app = await render(
-      renderAction({ action: actionA, position: positionA })
+      renderAction({ action: actionA, owner: ownerA, position: positionA })
     );
 
     await enterAmount(app.container, "25");
@@ -281,7 +298,9 @@ describe("Borrow position action wallet ownership", () => {
       )?.value
     ).toBe("25");
 
-    await app.rerender(renderAction({ action: actionB, position: positionB }));
+    await app.rerender(
+      renderAction({ action: actionB, owner: ownerB, position: positionB })
+    );
 
     expect(
       app.container.querySelector<HTMLInputElement>(

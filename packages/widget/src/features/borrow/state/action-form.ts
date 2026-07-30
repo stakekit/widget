@@ -1,28 +1,27 @@
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { BorrowTransactionFlowReview } from "../../borrow-transaction-flow/state";
-import type { BorrowPositionPendingActionContext } from "../model/position-action-context";
+import type { MarketId } from "../../../domain/borrow/ids";
+import type { BorrowNetwork } from "../../../domain/borrow/network";
+import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 
 type BorrowActionFormState =
   | {
       readonly type: "idle";
     }
   | {
-      readonly context: BorrowPositionPendingActionContext;
+      readonly actionId: string;
+      readonly marketId: MarketId;
+      readonly network: BorrowNetwork;
+      readonly scope: WalletScopeKey;
       readonly type: "positionAction";
-    }
-  | {
-      readonly reviewState: BorrowTransactionFlowReview;
-      readonly type: "review";
     };
 
 type BorrowActionFormAction =
   | {
-      readonly context: BorrowPositionPendingActionContext;
+      readonly actionId: string;
+      readonly marketId: MarketId;
+      readonly network: BorrowNetwork;
+      readonly scope: WalletScopeKey;
       readonly type: "preparePositionAction";
-    }
-  | {
-      readonly reviewState: BorrowTransactionFlowReview;
-      readonly type: "prepareReview";
     }
   | {
       readonly type: "reset";
@@ -41,14 +40,11 @@ export const borrowActionFormAtom = Atom.writable<
     switch (action.type) {
       case "preparePositionAction":
         context.setSelf({
-          context: action.context,
+          actionId: action.actionId,
+          marketId: action.marketId,
+          network: action.network,
+          scope: action.scope,
           type: "positionAction",
-        });
-        return;
-      case "prepareReview":
-        context.setSelf({
-          reviewState: action.reviewState,
-          type: "review",
         });
         return;
       case "reset":

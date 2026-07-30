@@ -95,8 +95,8 @@ export const WithdrawActionForm = ({
   readonly context: BorrowWithdrawActionContext;
 }) => {
   const { t } = useTranslation();
-  const startReview = useStartBorrowPositionReview();
-  const [view, dispatch] = useBorrowWithdrawForm({ action, context });
+  const startReview = useStartBorrowPositionReview(action);
+  const [view, dispatch] = useBorrowWithdrawForm(action);
 
   if (!view) {
     return null;
@@ -105,12 +105,6 @@ export const WithdrawActionForm = ({
   const { position } = context;
   const { selectedToken } = view;
   const error = getBorrowPositionFormErrorMessage({ error: view.error, t });
-
-  const onContinue = () => {
-    if (view.reviewState) {
-      startReview(view.reviewState);
-    }
-  };
 
   return (
     <Box display="flex" flexDirection="column" gap="4">
@@ -173,7 +167,7 @@ export const WithdrawActionForm = ({
           disabled: !view.canSubmit,
           isLoading: false,
           label: t("dashboard.borrow.review"),
-          onClick: onContinue,
+          onClick: startReview,
         }}
       />
     </Box>

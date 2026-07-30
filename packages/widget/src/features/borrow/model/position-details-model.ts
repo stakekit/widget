@@ -1,19 +1,12 @@
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import {
-  buildCollateralToggleActionRequest,
-  buildRepayActionRequest,
-  buildWithdrawActionRequest,
-} from "../../../domain/borrow/action-request";
-import {
   deriveMarketPositionOverview,
   type MarketPosition,
 } from "../../../domain/borrow/market-position";
 import { deriveMarketRiskLimits } from "../../../domain/borrow/market-risk";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
-import type { PendingAction } from "../../../domain/borrow/pending-action";
 import type { BorrowToken } from "../../../domain/borrow/token";
-import type { WalletAddress } from "../../../domain/schema/identifiers";
 import type { AppToken } from "../../../domain/schema/legacy-models";
 import {
   formatBorrowProviderName,
@@ -23,7 +16,6 @@ import {
   formatUsd,
 } from "../../../shared/lib/formatters";
 import { formatNumber } from "../../../shared/lib/number-format";
-import type { BorrowTransactionFlowReview } from "../../borrow-transaction-flow/state";
 import { getBorrowMarketPairLabel } from "./borrow-details-model";
 import type {
   BorrowPositionPendingActionContext,
@@ -54,13 +46,14 @@ export type BorrowPositionAction = {
   readonly id: string;
   readonly label: string;
   readonly pendingContext: BorrowPositionPendingActionContext;
-  readonly reviewState: BorrowTransactionFlowReview;
   readonly type:
     | "disableCollateral"
     | "enableCollateral"
     | "repay"
     | "withdraw";
 };
+
+type BorrowPositionActionDescriptor = Omit<BorrowPositionAction, "label">;
 
 export const borrowTokenToTokenDto = ({
   network,
@@ -75,11 +68,6 @@ export const borrowTokenToTokenDto = ({
   network: network as AppToken["network"],
   symbol: token.symbol,
 });
-
-const getPositionActionLabel = (action: PendingAction, t: TFunction) =>
-  t(`dashboard.borrow.position_details.actions.${action.type}`);
-
-const getPositionActionSummaryAction = (action: PendingAction) => action.type;
 
 const getBorrowWithdrawTokenOptions = (
   position: MarketPosition
@@ -110,22 +98,21 @@ const getBorrowWithdrawTokenOptions = (
   });
 
 export const getBorrowPositionActions = ({
-  address,
   position,
   t,
 }: {
-  readonly address: WalletAddress;
   readonly position: MarketPosition;
   readonly t: TFunction;
-}): BorrowPositionAction[] => {
-  const marketLabel = getBorrowMarketPairLabel(position.market);
-  const providerName = position.integration.name;
-  const commonSummary = {
-    marketLabel,
-    network: position.market.network,
-    providerName,
-  };
-  const actions: BorrowPositionAction[] = [];
+}): BorrowPositionAction[] =>
+  getBorrowPositionActionDescriptors(position).map((action) => ({
+    ...action,
+    label: t(`dashboard.borrow.position_details.actions.${action.type}`),
+  }));
+
+export const getBorrowPositionActionDescriptors = (
+  position: MarketPosition
+): BorrowPositionActionDescriptor[] => {
+  const actions: BorrowPositionActionDescriptor[] = [];
 
   for (const action of position.actions.debt) {
     if (action.type !== "repay" || !position.balances.debt) {
@@ -134,27 +121,11 @@ export const getBorrowPositionActions = ({
 
     actions.push({
       id: `${action.type}-${action.args.tokenAddress}`,
-      label: getPositionActionLabel(action, t),
       pendingContext: {
         action,
         debtBalance: position.balances.debt,
         position,
         type: "repay",
-      },
-      reviewState: {
-        request: buildRepayActionRequest({
-          address,
-          integrationId: position.integration.id,
-          marketId: action.args.marketId,
-          repayAll: true,
-          tokenAddress: action.args.tokenAddress,
-        }),
-        summary: {
-          ...commonSummary,
-          action: getPositionActionSummaryAction(action),
-          borrowAmount: position.balances.debt.balance.toString(),
-          loanTokenSymbol: position.balances.debt.tokenSymbol,
-        },
       },
       type: "repay",
     });
@@ -165,27 +136,10 @@ export const getBorrowPositionActions = ({
   if (defaultWithdrawToken) {
     actions.push({
       id: "withdraw",
-      label: getPositionActionLabel(defaultWithdrawToken.action, t),
       pendingContext: {
         position,
         tokens: withdrawTokens,
         type: "withdraw",
-      },
-      reviewState: {
-        request: buildWithdrawActionRequest({
-          address,
-          amount: defaultWithdrawToken.supplyBalance.balance,
-          integrationId: position.integration.id,
-          marketId: defaultWithdrawToken.action.args.marketId,
-          tokenAddress: defaultWithdrawToken.action.args.tokenAddress,
-        }),
-        summary: {
-          ...commonSummary,
-          action: getPositionActionSummaryAction(defaultWithdrawToken.action),
-          collateralAmount:
-            defaultWithdrawToken.supplyBalance.balance.toString(),
-          collateralTokenSymbol: defaultWithdrawToken.supplyBalance.tokenSymbol,
-        },
       },
       type: "withdraw",
     });
@@ -210,26 +164,11 @@ export const getBorrowPositionActions = ({
     ) {
       actions.push({
         id: `${action.type}-${action.args.tokenAddress}`,
-        label: getPositionActionLabel(action, t),
         pendingContext: {
           action,
           position,
           supplyBalance,
           type: action.type,
-        },
-        reviewState: {
-          request: buildCollateralToggleActionRequest({
-            action: action.type,
-            address,
-            integrationId: position.integration.id,
-            marketId: action.args.marketId,
-            tokenAddress: action.args.tokenAddress,
-          }),
-          summary: {
-            ...commonSummary,
-            action: getPositionActionSummaryAction(action),
-            collateralTokenSymbol: supplyBalance.tokenSymbol,
-          },
         },
         type: action.type,
       });

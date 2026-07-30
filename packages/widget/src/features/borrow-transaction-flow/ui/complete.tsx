@@ -15,6 +15,7 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/components";
+import { projectBorrowTransactionFlowSummary } from "../model/borrow-transaction-flow";
 import { useBorrowTransactionFlow } from "../react/borrow-flow-route";
 import { useBorrowExecution } from "./use-borrow-execution";
 
@@ -27,23 +28,24 @@ export const BorrowCompletePage = () => {
   const done = useAtomSet(flow.doneAtom);
   const result = execution.completionResult;
   const { summary } = flow.intake;
+  const projectedSummary = projectBorrowTransactionFlowSummary(summary);
   const isPositionFlow = flow.intake.entry._tag === "BorrowPosition";
 
   if (!result) return null;
 
   const rows = [
-    summary.borrowAmount && summary.loanTokenSymbol
+    projectedSummary.borrow
       ? {
           id: "borrow-amount",
           label: t("dashboard.borrow.review_page.borrow_amount"),
-          value: `${summary.borrowAmount} ${summary.loanTokenSymbol}`,
+          value: `${projectedSummary.borrow.amount} ${projectedSummary.borrow.symbol}`,
         }
       : null,
-    summary.collateralAmount && summary.collateralTokenSymbol
+    projectedSummary.collateral
       ? {
           id: "collateral-amount",
           label: t("dashboard.borrow.review_page.collateral_amount"),
-          value: `${summary.collateralAmount} ${summary.collateralTokenSymbol}`,
+          value: `${projectedSummary.collateral.amount} ${projectedSummary.collateral.symbol}`,
         }
       : null,
     {
