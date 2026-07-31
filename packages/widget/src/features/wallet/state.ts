@@ -22,5 +22,4 @@ export { walletModalAdapterAtom } from "./state/wallet-modal";
 export {
   addLedgerAccountAtom,
   logoutAtom,
-  runAddLedgerAccount,
 } from "./state/workflows";

@@ -3,8 +3,12 @@ language: Tsx
 severity: error
 message: Feature model and orchestration modules must stay independent of Effect Atom.
 files:
+  - packages/widget/src/features/borrow-transaction-flow/model/**/*.ts
+  - packages/widget/src/features/borrow-transaction-flow/state/orchestration/**/*.ts
   - packages/widget/src/features/classic-transaction-flow/model/**/*.ts
   - packages/widget/src/features/classic-transaction-flow/state/orchestration/**/*.ts
+  - packages/widget/src/features/yield-entry/model/**/*.ts
+  - packages/widget/src/features/yield-entry/state/orchestration/**/*.ts
 rule:
   kind: string
   regex: ^["']effect/unstable/reactivity/(?:Atom|AtomRegistry)["']$

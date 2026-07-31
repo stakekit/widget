@@ -29,7 +29,7 @@ import {
   pricesAtom,
 } from "../../../resources/token-prices/prices";
 import { TrackingService } from "../../../services/tracking/tracking-service";
-import { isLedgerLiveConnector } from "../../../services/wallet/connectors/ledger/ledger-live-connector-meta";
+import { walletCommandIdentity } from "../../../services/wallet/domain/scope";
 import { formatUsd } from "../../../shared/lib/formatters";
 import {
   defaultFormattedNumber,
@@ -40,7 +40,6 @@ import {
   mountAnimationStateAtom,
 } from "../../mount-animation/state";
 import {
-  runAddLedgerAccount,
   walletConfigResultAtom,
   walletConnectionStateAtom,
   walletScopeAtom,
@@ -81,7 +80,7 @@ import {
   earnPageQuoteAtom,
   earnPageSearchAtom,
   earnPageSelectionAtom,
-  earnPageSubmittedAtom,
+  getEarnPageValidationKey,
 } from "./page-workflow";
 import { pendingActionDeepLinkViewAtom } from "./pending-action-deep-link";
 
@@ -439,56 +438,19 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
     positionsData: earnSelection.positions,
     providers: summary.providers,
     selectedTokenOption,
-    submitted: get(earnPageSubmittedAtom),
+    validationKey: getEarnPageValidationKey(selection),
     validateAmount: connected,
     wallet: {
       additionalAddresses: connected ? wallet.additionalAddresses : null,
       address: connected ? wallet.address : null,
       isLedgerLive: wallet.isLedgerLive,
     },
+    walletCommandIdentity: walletCommandIdentity(wallet),
     walletScope,
   } as const;
 }).pipe(Atom.withLabel("earnYieldEntryInputAtom"));
 
-const earnYieldEntry = makeYieldEntry(earnYieldEntryInputAtom, {
-  markSubmitted: (context) => context.set(earnPageSubmittedAtom, true),
-  onConnectWallet: () =>
-    TrackingService.use((tracking) =>
-      tracking.trackEvent("connectWalletClicked")
-    ),
-  runAddLedgerAccount: (context) => {
-    const wallet = context(walletConnectionStateAtom);
-    if (wallet.status !== "connected") {
-      return Effect.die("Ledger account setup requires a connected wallet.");
-    }
-    const connector = isLedgerLiveConnector(wallet.connector)
-      ? wallet.connector
-      : null;
-    return Effect.all(
-      [
-        TrackingService.use((tracking) =>
-          tracking.trackEvent("addLedgerAccountClicked")
-        ),
-        runAddLedgerAccount({
-          chain: wallet.chain,
-          connector,
-        }),
-      ],
-      { concurrency: "unbounded", discard: true }
-    );
-  },
-  refreshKyc: (context) => {
-    context.set(
-      refreshCurrentYieldKycAtom(
-        new CurrentYieldKycGateKey({
-          enabled: true,
-          yieldDto: context(earnYieldEntryInputAtom).entry.yield,
-        })
-      ),
-      undefined
-    );
-  },
-});
+const earnYieldEntry = makeYieldEntry(earnYieldEntryInputAtom);
 
 export const earnEntryViewAtom = Atom.make((get) => {
   const input = get(earnYieldEntryInputAtom);
@@ -625,7 +587,20 @@ export const setEarnMaxAmountAtom = appRuntime
   })
   .pipe(Atom.withLabel("setEarnMaxAmountAtom"));
 
-export const refreshEarnKycAtom = earnYieldEntry.refreshKycAtom;
+export const refreshEarnKycAtom = Atom.fnSync(
+  (_input: undefined, context) => {
+    context.set(
+      refreshCurrentYieldKycAtom(
+        new CurrentYieldKycGateKey({
+          enabled: true,
+          yieldDto: context(earnYieldEntryInputAtom).entry.yield,
+        })
+      ),
+      undefined
+    );
+  },
+  { initialValue: undefined }
+).pipe(Atom.withLabel("refreshEarnKycAtom"));
 
 export const retryEarnPageAtom = retryEarnSelectionAtom;
 

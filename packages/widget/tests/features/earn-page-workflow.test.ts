@@ -32,7 +32,7 @@ import {
   earnPageQuoteAtom,
   earnPageSearchAtom,
   earnPageSelectionAtom,
-  earnPageSubmittedAtom,
+  getEarnPageValidationKey,
 } from "../../src/features/earn/state/page-workflow";
 import { initParamsAtom } from "../../src/features/init-params/state";
 import { walletStateResultAtom } from "../../src/features/wallet/state";
@@ -680,37 +680,32 @@ describe("earn page workflow atoms", () => {
     registry.dispose();
   });
 
-  it("owns searches and submission state", () => {
+  it("owns page-local search state", () => {
     const registry = AtomRegistry.make();
 
     registry.set(earnPageSearchAtom, {
       stake: "ethereum",
       token: "eth",
     });
-    registry.set(earnPageSubmittedAtom, true);
-
     expect(registry.get(earnPageSearchAtom).token).toBe("eth");
-    expect(registry.get(earnPageSubmittedAtom)).toBe(true);
     registry.dispose();
   });
 
-  it("resets submission state when the resolved selection changes", () => {
+  it("keys validation attempts by category, selected yield, and selected token", () => {
     const registry = makeReadyRegistry();
-
-    expect(registry.get(earnSelectionViewAtom).selection.token?.token).toEqual(
-      firstYield.token
+    const initialKey = getEarnPageValidationKey(
+      registry.get(earnSelectionViewAtom).selection
     );
 
-    registry.set(earnPageSubmittedAtom, true);
-    registry.set(selectEarnSelectionTokenAtom, tokenString(secondYield.token));
-    expect(registry.get(earnSelectionViewAtom).selection.yield).toEqual(
-      secondYield
-    );
-    expect(registry.get(earnPageSubmittedAtom)).toBe(false);
-
-    registry.set(earnPageSubmittedAtom, true);
     registry.set(setEarnSelectionAmountAtom, "1");
-    expect(registry.get(earnPageSubmittedAtom)).toBe(true);
+    expect(
+      getEarnPageValidationKey(registry.get(earnSelectionViewAtom).selection)
+    ).toBe(initialKey);
+
+    registry.set(selectEarnSelectionTokenAtom, tokenString(secondYield.token));
+    expect(
+      getEarnPageValidationKey(registry.get(earnSelectionViewAtom).selection)
+    ).not.toBe(initialKey);
     registry.dispose();
   });
 });

@@ -1,4 +1,5 @@
 import type { ChainWalletBase } from "@cosmos-kit/core";
+import type { Chain } from "@stakekit/rainbowkit";
 import { Effect } from "effect";
 import type { Address } from "viem";
 import { isCosmosConnector } from "./connectors/cosmos/cosmos-connector-meta";
@@ -151,3 +152,15 @@ export const routeWalletAccountSwitch = Effect.fn("routeWalletAccountSwitch")(
     }).switchAccount(input);
   }
 );
+
+export const routeWalletLedgerAccountRequest = Effect.fn(
+  "routeWalletLedgerAccountRequest"
+)(function* (routing: WalletRoutingContext, targetChain?: Chain) {
+  const { state } = routing;
+  if (state.status !== "connected" || !isLedgerLiveConnector(state.connector)) {
+    return { _tag: "RejectedUnavailable" } as const;
+  }
+
+  yield* state.connector.requestAndSwitchAccount(targetChain ?? state.chain);
+  return { _tag: "Added" } as const;
+});

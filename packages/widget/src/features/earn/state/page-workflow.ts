@@ -8,30 +8,12 @@ export const earnPageSearchAtom = Atom.make({
   token: "",
 }).pipe(Atom.keepAlive, Atom.withLabel("earnPageSearchAtom"));
 
-const getEarnPageSubmissionKey = (selection: EarnSelection): string =>
+export const getEarnPageValidationKey = (selection: EarnSelection): string =>
   JSON.stringify([
     selection.category,
     selection.yield?.id ?? null,
     selection.token ? tokenString(selection.token.token) : null,
   ]);
-
-const submittedEarnPageSelectionKeyAtom = Atom.make<string | null>(null).pipe(
-  Atom.keepAlive,
-  Atom.withLabel("submittedEarnPageSelectionKeyAtom")
-);
-
-export const earnPageSubmittedAtom = Atom.writable<boolean, boolean>(
-  (context) =>
-    context.get(submittedEarnPageSelectionKeyAtom) ===
-    getEarnPageSubmissionKey(context.get(earnSelectionViewAtom).selection),
-  (context, submitted) =>
-    context.set(
-      submittedEarnPageSelectionKeyAtom,
-      submitted
-        ? getEarnPageSubmissionKey(context.get(earnSelectionViewAtom).selection)
-        : null
-    )
-).pipe(Atom.withLabel("earnPageSubmittedAtom"));
 
 export const earnPageInputAtom = Atom.make(
   (context) => context.get(earnSelectionViewAtom).form

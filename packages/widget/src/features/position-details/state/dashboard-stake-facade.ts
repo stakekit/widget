@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Array as EArray, Effect, Option } from "effect";
+import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigAtom } from "../../../app/config/settings";
@@ -30,8 +30,10 @@ import {
   yieldOpportunityAtom,
 } from "../../../resources/yield-opportunity/provider";
 import { TrackingService } from "../../../services/tracking/tracking-service";
-import { isLedgerLiveConnector } from "../../../services/wallet/connectors/ledger/ledger-live-connector-meta";
-import { sameWalletScopeOwner } from "../../../services/wallet/domain/scope";
+import {
+  sameWalletScopeOwner,
+  walletCommandIdentity,
+} from "../../../services/wallet/domain/scope";
 import { getPullResultItems } from "../../../shared/effect/pagination";
 import { formatUsd } from "../../../shared/lib/formatters";
 import {
@@ -43,11 +45,7 @@ import {
   positionBalancesByTypeAtom,
   tokenBalancesScanAtom,
 } from "../../portfolio/state";
-import {
-  runAddLedgerAccount,
-  walletConnectionStateAtom,
-  walletScopeAtom,
-} from "../../wallet/state";
+import { walletConnectionStateAtom, walletScopeAtom } from "../../wallet/state";
 import {
   makeYieldEntry,
   YieldValidatorsKey,
@@ -86,6 +84,17 @@ const resolveTronResource = (selectedYield: EarnYieldWithProvider | null) => {
     ? EArray.head(argument.options).pipe(Option.getOrNull)
     : null;
 };
+
+const getPositionDetailsStakeValidationKey = (
+  key: PositionDetailsStakeEntryKey
+): string =>
+  JSON.stringify([
+    key.integrationId,
+    key.balanceId,
+    key.walletScope.network,
+    key.walletScope.address,
+    key.walletScope.additionalAddresses,
+  ]);
 
 const positionDetailsStakeFacadeAtom = Atom.family(
   (key: PositionDetailsStakeEntryKey) => {
@@ -128,9 +137,6 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         validators: get(selectedValidatorsAtom),
         yield: get(selectedYieldAtom),
       }))
-    );
-    const submittedAtom = Atom.make(false).pipe(
-      Atom.withLabel("positionDetailsStakeSubmittedAtom")
     );
     const yieldEntryInputAtom = Atom.make((get) => {
       const config = get(widgetConfigAtom);
@@ -282,9 +288,9 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         selectedToken,
         selectedValidators: validators,
         stakeAmount: amount,
-        submitted: get(submittedAtom),
         symbol,
         tronResource,
+        validationKey: getPositionDetailsStakeValidationKey(key),
         validateAmount: true,
         wallet: {
           additionalAddresses:
@@ -292,37 +298,14 @@ const positionDetailsStakeFacadeAtom = Atom.family(
           address: wallet.status === "connected" ? wallet.address : null,
           isLedgerLive: wallet.isLedgerLive,
         },
+        walletCommandIdentity: walletCommandIdentity(wallet),
         walletScope: key.walletScope,
       } as const;
     }).pipe(Atom.withLabel("positionDetailsStakeYieldEntryInputAtom"));
 
-    const yieldEntry = makeYieldEntry(yieldEntryInputAtom, {
-      markSubmitted: (context) => context.set(submittedAtom, true),
-      onConnectWallet: () =>
-        TrackingService.use((tracking) =>
-          tracking.trackEvent("connectWalletClicked")
-        ),
-      runAddLedgerAccount: (context) => {
-        const wallet = context(walletConnectionStateAtom);
-        if (wallet.status !== "connected") {
-          return Effect.die(
-            "Ledger account setup requires a connected wallet."
-          );
-        }
-        const connector = isLedgerLiveConnector(wallet.connector)
-          ? wallet.connector
-          : null;
-        return Effect.all(
-          [
-            TrackingService.use((tracking) =>
-              tracking.trackEvent("addLedgerAccountClicked")
-            ),
-            runAddLedgerAccount({ chain: wallet.chain, connector }),
-          ],
-          { concurrency: "unbounded", discard: true }
-        );
-      },
-      refreshKyc: (context) => {
+    const yieldEntry = makeYieldEntry(yieldEntryInputAtom);
+    const refreshKycAtom = Atom.fnSync(
+      (_input: undefined, context) => {
         context.set(
           refreshCurrentYieldKycAtom(
             new CurrentYieldKycGateKey({
@@ -333,7 +316,8 @@ const positionDetailsStakeFacadeAtom = Atom.family(
           undefined
         );
       },
-    });
+      { initialValue: undefined }
+    ).pipe(Atom.withLabel("refreshPositionDetailsStakeKycAtom"));
 
     const viewAtom = Atom.make((get) => {
       const input = get(yieldEntryInputAtom);
@@ -436,7 +420,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
       );
     });
     return Atom.make({
-      refreshKycAtom: yieldEntry.refreshKycAtom,
+      refreshKycAtom,
       setAmountAtom,
       setMaxAmountAtom,
       setTronResourceAtom,

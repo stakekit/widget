@@ -15,7 +15,6 @@ import {
   useSKWallet,
   walletModalAdapterAtom,
 } from "../../../features/wallet/state";
-import { isLedgerLiveConnector } from "../../../services/wallet/connectors/ledger/ledger-live-connector-meta";
 import { vars } from "../../../shared/styles/theme/contract.css";
 import { id } from "../../../shared/styles/theme/ids";
 import type { ConnectKitTheme } from "../../../shared/styles/tokens/connect-kit";
@@ -85,11 +84,7 @@ export const RainbowKitProviderWithTheme = ({
       disabledChains={disabledChains}
       onDisabledChainClick={(disabledChain) => {
         trackEvent("addLedgerAccountClicked");
-        addLedgerAccount({
-          chain: disabledChain,
-          connector:
-            connector && isLedgerLiveConnector(connector) ? connector : null,
-        });
+        addLedgerAccount({ chain: disabledChain });
       }}
       locale={locale}
       appInfo={{ disclaimer: Disclamer, appName: t("shared.stake_kit") }}

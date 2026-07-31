@@ -1,40 +1,23 @@
 import type { Chain } from "@stakekit/rainbowkit";
 import { Effect } from "effect";
-import { appRuntime } from "../../../app/runtime/app-runtime";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
-import { WalletIntegrationError } from "../../../services/wallet/domain/errors";
+import { walletCommandIdentity } from "../../../services/wallet/domain/scope";
+import { WalletAccountSetupService } from "../../../services/wallet/wallet-account-setup-service";
 import { WalletModal } from "../../../services/wallet/wallet-modal";
 import { WalletService } from "../../../services/wallet/wallet-service";
-
-type LedgerAccountConnector = {
-  readonly requestAndSwitchAccount: (
-    chain: Chain
-  ) => Effect.Effect<Chain, WalletIntegrationError>;
-};
+import { currentWalletStateAtom } from "./selectors";
 
 type AddLedgerAccountCommand = {
   readonly chain: Chain;
-  readonly connector: LedgerAccountConnector | null;
 };
 
-export const runAddLedgerAccount = (command: AddLedgerAccountCommand) => {
-  if (!command.connector) {
-    return Effect.fail(
-      new WalletIntegrationError({
-        message: "Only Ledger Live is supported",
-        operation: "ledger-add-account",
-      })
+export const addLedgerAccountAtom = walletRuntime.fn(
+  (command: AddLedgerAccountCommand, context) => {
+    const expected = walletCommandIdentity(context(currentWalletStateAtom));
+    return WalletAccountSetupService.use((service) =>
+      service.addLedgerAccount({ expected, targetChain: command.chain })
     );
   }
-
-  return command.connector.requestAndSwitchAccount(command.chain).pipe(
-    Effect.tap(() => WalletModal.use((modal) => modal.closeChain)),
-    Effect.asVoid
-  );
-};
-
-export const addLedgerAccountAtom = appRuntime.fn(
-  (command: AddLedgerAccountCommand) => runAddLedgerAccount(command)
 );
 
 type LogoutCommand = {

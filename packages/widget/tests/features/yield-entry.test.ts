@@ -13,21 +13,25 @@ import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
 import { walletScopeAtom } from "../../src/features/wallet/state";
-import {
-  getYieldEntryCta,
-  makeYieldEntry,
-  type YieldEntryFacadeInput,
-} from "../../src/features/yield-entry/state/yield-entry";
+import { getYieldEntryCta } from "../../src/features/yield-entry/model/yield-entry";
+import { makeYieldEntry } from "../../src/features/yield-entry/state";
+import type { YieldEntryFacadeInput } from "../../src/features/yield-entry/state/atoms/yield-entry";
+import { YieldEntrySubmissionService } from "../../src/features/yield-entry/state/orchestration/yield-entry-submission-service";
 import {
   makeWidgetNavigation,
   WidgetNavigation,
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import {
+  WalletScopeKey,
+  walletCommandIdentity,
+} from "../../src/services/wallet/domain/scope";
 import {
   disconnectedLedgerConnectorState,
+  disconnectedNormalizedWalletState,
   type WalletState,
 } from "../../src/services/wallet/domain/state";
+import { WalletAccountSetupService } from "../../src/services/wallet/wallet-account-setup-service";
 import { WalletModal } from "../../src/services/wallet/wallet-modal";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import { yieldApiYieldFixture } from "../fixtures";
@@ -61,11 +65,31 @@ const walletState = {
   },
   ledger: disconnectedLedgerConnectorState,
 } satisfies WalletState;
-const walletService = WalletService.of({
-  state: Effect.succeed(walletState),
-  states: Stream.succeed(walletState),
-  wagmiConfig: {},
-} as never);
+const makeWalletService = (state: WalletState) =>
+  WalletService.of({
+    addLedgerAccount: () => Effect.succeed({ _tag: "Added" } as const),
+    state: Effect.succeed(state),
+    states: Stream.succeed(state),
+    wagmiConfig: {},
+  } as never);
+
+const walletService = makeWalletService(walletState);
+const disconnectedWalletService = makeWalletService({
+  connection: disconnectedNormalizedWalletState,
+  ledger: disconnectedLedgerConnectorState,
+});
+const ledgerPlaceholderWalletService = makeWalletService({
+  ...walletState,
+  connection: {
+    ...walletState.connection,
+    connector: { id: "ledgerLive", uid: "ledger-a" } as never,
+    isLedgerLive: true,
+    isLedgerLiveAccountPlaceholder: true,
+  },
+});
+const ledgerPlaceholderWalletState = Effect.runSync(
+  ledgerPlaceholderWalletService.state
+);
 
 const makeFacadeInput = (
   override: Partial<YieldEntryFacadeInput> = {}
@@ -104,13 +128,14 @@ const makeFacadeInput = (
         rewardType: "apy",
       },
     ],
-    submitted: false,
+    validationKey: "earn:default",
     validateAmount: true,
     wallet: {
       additionalAddresses: null,
       address,
       isLedgerLive: false,
     },
+    walletCommandIdentity: walletCommandIdentity(walletState.connection),
     walletScope,
     ...override,
   };
@@ -159,9 +184,28 @@ const makeObservablePorts = () => {
 };
 
 const makeObservableRegistry = (
-  ports: ReturnType<typeof makeObservablePorts>
-) =>
-  AtomRegistry.make({
+  ports: ReturnType<typeof makeObservablePorts>,
+  wallet: WalletService["Service"] = walletService
+) => {
+  const flowLayer = makeClassicFlowTestWalletLayer({
+    navigation: ports.navigation,
+    wallet,
+  });
+  const yieldEntryDependencies = Layer.mergeAll(
+    ports.layer,
+    Layer.succeed(WalletService, wallet)
+  );
+  const accountSetupLayer = WalletAccountSetupService.layer.pipe(
+    Layer.provide(yieldEntryDependencies)
+  );
+  const runtimeLayer = Layer.merge(
+    flowLayer,
+    YieldEntrySubmissionService.layer.pipe(
+      Layer.provide(Layer.merge(yieldEntryDependencies, accountSetupLayer))
+    )
+  );
+
+  return AtomRegistry.make({
     initialValues: [
       [
         widgetConfigAtom,
@@ -169,15 +213,10 @@ const makeObservableRegistry = (
       ],
       [walletScopeAtom, walletScope],
       [appRuntime.layer, ports.layer],
-      [
-        walletRuntime.layer,
-        makeClassicFlowTestWalletLayer({
-          navigation: ports.navigation,
-          wallet: walletService,
-        }) as never,
-      ],
+      [walletRuntime.layer, runtimeLayer as never],
     ],
   });
+};
 
 const readSubmitOutcome = (
   registry: AtomRegistry.AtomRegistry,
@@ -188,13 +227,39 @@ const readSubmitOutcome = (
   );
 
 describe("Yield Entry", () => {
+  it("owns validation attempts and resets them when the validation identity changes", async () => {
+    const base = makeFacadeInput({
+      entry: {
+        ...makeFacadeInput().entry,
+        amount: new BigNumber(0),
+      },
+    });
+    const inputAtom = Atom.make({
+      ...base,
+      validationKey: "earn:first",
+    });
+    const facade = makeYieldEntry(inputAtom as never);
+    const registry = makeObservableRegistry(makeObservablePorts());
+
+    try {
+      expect(registry.get(facade.viewAtom).validation.submitted).toBe(false);
+      registry.set(facade.submitAtom, undefined);
+      await readSubmitOutcome(registry, facade.submitAtom).toBe("invalid");
+      expect(registry.get(facade.viewAtom).validation.submitted).toBe(true);
+
+      registry.set(inputAtom, {
+        ...base,
+        validationKey: "earn:second",
+      });
+      expect(registry.get(facade.viewAtom).validation.submitted).toBe(false);
+    } finally {
+      registry.dispose();
+    }
+  });
+
   it("publishes a stable derived entry view from caller-owned input", () => {
     const inputAtom = Atom.make(makeFacadeInput());
-    const facade = makeYieldEntry(inputAtom, {
-      markSubmitted: () => undefined,
-      refreshKyc: () => undefined,
-      runAddLedgerAccount: () => Effect.void,
-    });
+    const facade = makeYieldEntry(inputAtom);
     const registry = AtomRegistry.make();
 
     try {
@@ -286,14 +351,7 @@ describe("Yield Entry", () => {
         },
       })
     );
-    const facade = makeYieldEntry(inputAtom, {
-      markSubmitted: (context) => {
-        const current = context(inputAtom);
-        context.set(inputAtom, { ...current, submitted: true });
-      },
-      refreshKyc: () => undefined,
-      runAddLedgerAccount: () => Effect.void,
-    });
+    const facade = makeYieldEntry(inputAtom);
 
     try {
       registry.set(facade.submitAtom, undefined);
@@ -345,11 +403,7 @@ describe("Yield Entry", () => {
   it("starts one session and pushes Review through the navigation port", async () => {
     const ports = makeObservablePorts();
     const input = makeFacadeInput();
-    const facade = makeYieldEntry(Atom.make(input), {
-      markSubmitted: () => undefined,
-      refreshKyc: () => undefined,
-      runAddLedgerAccount: () => Effect.void,
-    });
+    const facade = makeYieldEntry(Atom.make(input));
     const registry = makeObservableRegistry(ports);
 
     try {
@@ -397,11 +451,7 @@ describe("Yield Entry", () => {
         ],
       ],
     });
-    const facade = makeYieldEntry(Atom.make(makeFacadeInput()), {
-      markSubmitted: () => undefined,
-      refreshKyc: () => undefined,
-      runAddLedgerAccount: () => Effect.void,
-    });
+    const facade = makeYieldEntry(Atom.make(makeFacadeInput()));
 
     try {
       registry.set(facade.submitAtom, undefined);
@@ -428,19 +478,14 @@ describe("Yield Entry", () => {
           address: null,
           isLedgerLive: false,
         },
+        walletCommandIdentity: walletCommandIdentity(
+          disconnectedNormalizedWalletState
+        ),
         walletScope: null,
       })
     );
-    const facade = makeYieldEntry(inputAtom, {
-      markSubmitted: () => undefined,
-      onConnectWallet: () =>
-        TrackingService.use((tracking) =>
-          tracking.trackEvent("connectWalletClicked")
-        ),
-      refreshKyc: () => undefined,
-      runAddLedgerAccount: () => Effect.void,
-    });
-    const registry = makeObservableRegistry(ports);
+    const facade = makeYieldEntry(inputAtom);
+    const registry = makeObservableRegistry(ports, disconnectedWalletService);
 
     try {
       registry.set(facade.submitAtom, undefined);
@@ -459,30 +504,80 @@ describe("Yield Entry", () => {
     }
   });
 
-  it("routes Ledger placeholders to account setup only", async () => {
+  it("maps a stale canonical wallet connection to unavailable", async () => {
     const ports = makeObservablePorts();
-    const addLedgerAccount = vi.fn(() =>
-      TrackingService.use((tracking) =>
-        tracking.trackEvent("addLedgerAccountClicked")
+    const inputAtom = Atom.make(
+      makeFacadeInput({
+        connected: false,
+        wallet: {
+          additionalAddresses: null,
+          address: null,
+          isLedgerLive: false,
+        },
+        walletCommandIdentity: walletCommandIdentity(
+          disconnectedNormalizedWalletState
+        ),
+        walletScope: null,
+      })
+    );
+    const facade = makeYieldEntry(inputAtom);
+    const registry = makeObservableRegistry(ports, walletService);
+
+    try {
+      registry.set(facade.submitAtom, undefined);
+      await readSubmitOutcome(registry, facade.submitAtom).toBe("unavailable");
+      expect(ports.trackEvent).toHaveBeenCalledWith("connectWalletClicked");
+      expect(ports.openConnect).not.toHaveBeenCalled();
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("opens Connect Wallet for a connected entry whose scope is unavailable", async () => {
+    const ports = makeObservablePorts();
+    const facade = makeYieldEntry(
+      Atom.make(
+        makeFacadeInput({
+          walletScope: null,
+        })
       )
     );
-    const inputAtom = Atom.make(
-      makeFacadeInput({ isLedgerAccountPlaceholder: true })
-    );
-    const facade = makeYieldEntry(inputAtom, {
-      markSubmitted: () => undefined,
-      refreshKyc: () => undefined,
-      runAddLedgerAccount: addLedgerAccount,
-    });
     const registry = makeObservableRegistry(ports);
+
+    try {
+      registry.set(facade.submitAtom, undefined);
+      await readSubmitOutcome(registry, facade.submitAtom).toBe(
+        "connecting-wallet"
+      );
+      expect(ports.openConnect).toHaveBeenCalledOnce();
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("routes Ledger placeholders to account setup only", async () => {
+    const ports = makeObservablePorts();
+    const inputAtom = Atom.make(
+      makeFacadeInput({
+        isLedgerAccountPlaceholder: true,
+        walletCommandIdentity: walletCommandIdentity(
+          ledgerPlaceholderWalletState.connection
+        ),
+      })
+    );
+    const facade = makeYieldEntry(inputAtom);
+    const registry = makeObservableRegistry(
+      ports,
+      ledgerPlaceholderWalletService
+    );
 
     try {
       registry.set(facade.submitAtom, undefined);
       await readSubmitOutcome(registry, facade.submitAtom).toBe(
         "ledger-account"
       );
-      expect(addLedgerAccount).toHaveBeenCalledOnce();
       expect(ports.trackEvent).toHaveBeenCalledWith("addLedgerAccountClicked");
+      expect(ports.closeChain).toHaveBeenCalledOnce();
       expect(ports.openConnect).not.toHaveBeenCalled();
       expect(ports.push).not.toHaveBeenCalled();
       expect(
@@ -557,14 +652,7 @@ describe("Yield Entry", () => {
     async ({ expected, override }) => {
       const ports = makeObservablePorts();
       const inputAtom = Atom.make(makeFacadeInput(override));
-      const connect = vi.fn(() => Effect.void);
-      const addLedgerAccount = vi.fn(() => Effect.void);
-      const facade = makeYieldEntry(inputAtom, {
-        markSubmitted: () => undefined,
-        onConnectWallet: connect,
-        refreshKyc: () => undefined,
-        runAddLedgerAccount: addLedgerAccount,
-      });
+      const facade = makeYieldEntry(inputAtom);
       const registry = makeObservableRegistry(ports);
 
       try {
@@ -573,8 +661,6 @@ describe("Yield Entry", () => {
         expect(
           registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
         ).toBe(false);
-        expect(connect).not.toHaveBeenCalled();
-        expect(addLedgerAccount).not.toHaveBeenCalled();
         expect(ports.openConnect).not.toHaveBeenCalled();
         expect(ports.closeChain).not.toHaveBeenCalled();
         expect(ports.trackEvent).not.toHaveBeenCalled();

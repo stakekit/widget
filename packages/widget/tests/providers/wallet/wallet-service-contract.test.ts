@@ -5,6 +5,7 @@ import {
   WalletCapabilityUnavailableError,
   WalletConnectionError,
   WalletDecodeError,
+  type WalletIntegrationError,
   type WalletRuntimeInvariantError,
   WalletSigningError,
   WalletSwitchError,
@@ -71,6 +72,15 @@ describe("wallet service contract", () => {
       WalletService["Service"]["disconnect"]
     >().returns.toEqualTypeOf<
       Effect.Effect<void, WalletConnectionError | WalletRuntimeInvariantError>
+    >();
+    expectTypeOf<
+      WalletService["Service"]["addLedgerAccount"]
+    >().returns.toEqualTypeOf<
+      Effect.Effect<
+        | Readonly<{ readonly _tag: "Added" }>
+        | Readonly<{ readonly _tag: "RejectedUnavailable" }>,
+        WalletIntegrationError | WalletRuntimeInvariantError
+      >
     >();
   });
 });

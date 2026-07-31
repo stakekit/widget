@@ -473,10 +473,22 @@
             "src/features/yield-entry/**",
             "!src/features/yield-entry/state.ts",
             "!src/features/yield-entry/ui.ts",
-            "!src/features/yield-entry/components.ts"
+            "!src/features/yield-entry/components.ts",
+            "!src/features/yield-entry/state/orchestration/yield-entry-submission-service.ts"
           ],
           "allowImporters": [
             "**/*.css.ts",
+            "src/features/yield-entry/**",
+            "tests/**"
+          ]
+        },
+        {
+          "enabled": true,
+          "files": [
+            "src/features/yield-entry/state/orchestration/yield-entry-submission-service.ts"
+          ],
+          "allowImporters": [
+            "src/app/runtime/wallet-runtime.ts",
             "src/features/yield-entry/**",
             "tests/**"
           ]

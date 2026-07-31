@@ -1,3 +1,4 @@
+import type { Chain } from "@stakekit/rainbowkit";
 import { Context, Effect, Layer, Stream } from "effect";
 import type { WalletAddress } from "../../domain/schema/identifiers";
 import { WidgetPersistence } from "../persistence/widget-persistence";
@@ -16,6 +17,7 @@ import { WalletEnvironment } from "./platform/wallet-environment";
 import type { WalletRoutingContext } from "./router";
 import {
   routeWalletAccountSwitch,
+  routeWalletLedgerAccountRequest,
   routeWalletMessage,
   routeWalletTransaction,
 } from "./router";
@@ -54,6 +56,13 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
   });
 
   return {
+    addLedgerAccount: Effect.fn("addLedgerAccount")(function* (
+      targetChain?: Chain
+    ) {
+      return yield* withContext((routing) =>
+        routeWalletLedgerAccountRequest(routing, targetChain)
+      );
+    }),
     disconnect: Effect.fn("disconnect")(function* (
       input?: WalletDisconnectInput
     ) {

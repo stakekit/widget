@@ -11,6 +11,7 @@ import {
 } from "../../../src/services/wallet/domain/state";
 import {
   routeWalletAccountSwitch,
+  routeWalletLedgerAccountRequest,
   routeWalletTransaction,
   type WalletRoutingContext,
 } from "../../../src/services/wallet/router";
@@ -38,7 +39,9 @@ const makeConnector = (uid: string) =>
 
 const walletAddress = Schema.decodeSync(WalletAddress)(zeroAddress);
 
-const connectedState = (connector: Connector): NormalizedWalletState => ({
+const connectedState = (
+  connector: Connector
+): Extract<NormalizedWalletState, { readonly status: "connected" }> => ({
   additionalAddresses: null,
   address: walletAddress,
   chain: { id: 1 } as Chain,
@@ -77,6 +80,28 @@ const routingContext = (
 });
 
 describe("wallet router", () => {
+  it("requests a Ledger account on the requested chain", async () => {
+    const targetChain = { id: 10 } as Chain;
+    const requestAndSwitchAccount = vi.fn(() => Effect.succeed(targetChain));
+    const connector = {
+      id: "ledgerLive",
+      requestAndSwitchAccount,
+      uid: "ledger",
+    } as never;
+    const state = {
+      ...connectedState(connector),
+      isLedgerLive: true,
+      isLedgerLiveAccountPlaceholder: true,
+    };
+
+    const outcome = await Effect.runPromise(
+      routeWalletLedgerAccountRequest(routingContext(state), targetChain)
+    );
+
+    expect(outcome).toEqual({ _tag: "Added" });
+    expect(requestAndSwitchAccount).toHaveBeenCalledWith(targetChain);
+  });
+
   it("fails commands with a typed capability error while disconnected", async () => {
     const failure = await Effect.runPromise(
       Effect.flip(

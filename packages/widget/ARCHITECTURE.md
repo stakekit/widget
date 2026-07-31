@@ -188,17 +188,19 @@ that constructs the scoped `ApplicationRouter` around the memory router.
 configuration, focused Yield, Legacy, and Borrow capability ports, rich errors,
 persistence, tracking, `WidgetNavigation`, and wallet-modal commands. The
 derived `wallet-runtime.ts` receives the application context and adds its scoped
-wallet, transaction-workflow, and Classic Transaction Flow services. It is the
-sole privileged importer of the private Classic orchestration service; an
-exact-file rev-dep exception permits that composition edge without making the
-service a public feature entry.
+wallet, wallet-account-setup, transaction-workflow, Classic Transaction Flow,
+Borrow Transaction Flow, and Yield Entry submission services. It is the sole privileged importer
+of those private feature orchestration services; exact-file rev-dep exceptions
+permit those composition edges without making the services public feature
+entries.
 Borrow configuration is optional at construction time; invoking an unavailable
 borrow capability produces the typed error.
 
-All application atoms resolve dependencies through `appRuntime`. Feature-local
-atoms may own synchronous state directly, but must not construct another
-runtime or hide an independent service graph. The Application Router base
-runtime is the only lower-level exception and contains no feature services.
+Application atoms resolve dependencies through `appRuntime` or its derived
+`walletRuntime` when they require wallet-scoped services. Feature-local atoms
+may own synchronous state directly, but must not construct another runtime or
+hide an independent service graph. The Application Router base runtime is the
+only lower-level exception and contains no feature services.
 Mounting a widget creates a new registry and lifecycle-sensitive service state;
 remounting therefore starts cleanly.
 
@@ -291,8 +293,13 @@ preparation and re-read the current `Ready` value when starting a Flow Session;
 React only renders the view and dispatches intent.
 
 `features/yield-entry` owns the shared Yield Entry capability used by Earn and
-position details: amount constraints, validation, KYC projection, Enter Action
-Command preparation, submission decisions, and their command effects.
+position details. Its deterministic model owns amount constraints, validation,
+CTA and submission decisions, and Enter Action Command preparation. Its private
+wallet-runtime service owns serialized wallet-connect and delegates Ledger
+account setup to the wallet-owned semantic service, while its Atom facade owns validation-attempt presentation state and
+tail-delegates an eligible Enter Action Command to Classic Transaction Flow.
+KYC refresh remains owned by the Authoritative Resource adapter in each
+consumer.
 `features/yield-summary` owns shared read-only yield projections such as
 provider details, reward-token details, and semantic yield type. Earn,
 position details, transaction flows, activity, and portfolio consume these
