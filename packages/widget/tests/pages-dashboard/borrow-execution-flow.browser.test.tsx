@@ -1,5 +1,14 @@
 import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Deferred, Effect, Layer, Schema } from "effect";
+import {
+  Context,
+  Deferred,
+  Effect,
+  Exit,
+  Layer,
+  Schema,
+  Scope,
+  Stream,
+} from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { ReactNode } from "react";
 import {
@@ -22,22 +31,25 @@ import type {
   SubmitTransactionCommand,
 } from "../../src/domain/borrow/execution/transaction";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
+import type {
+  BorrowFlowSession,
+  BorrowTransactionFlowReview,
+} from "../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import {
   BorrowTransactionFlowCompletionGuard,
   BorrowTransactionFlowExecutionScope,
   BorrowTransactionFlowReviewRoute,
   BorrowTransactionFlowRoute,
-  useBorrowTransactionFlow,
   useBorrowTransactionFlowExecution,
+  useBorrowTransactionFlowReview,
 } from "../../src/features/borrow-transaction-flow/react/borrow-flow-route";
-import type { BorrowTransactionFlowReview } from "../../src/features/borrow-transaction-flow/state";
-import type { BorrowFlowSession } from "../../src/features/borrow-transaction-flow/state/borrow-flow-session-store";
-import { borrowFlowSessionStore } from "../../src/features/borrow-transaction-flow/state/borrow-flow-session-store";
+import { BorrowTransactionFlowService } from "../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
 import { BorrowReviewPage } from "../../src/features/borrow-transaction-flow/ui/review";
 import { BorrowStepsPage } from "../../src/features/borrow-transaction-flow/ui/steps";
 import { useBorrowExecution } from "../../src/features/borrow-transaction-flow/ui/use-borrow-execution";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { BorrowOperations } from "../../src/services/api/borrow-operations";
+import { WidgetConfigService } from "../../src/services/config/widget-config";
 import {
   makeWidgetNavigation,
   WidgetNavigation,
@@ -243,8 +255,8 @@ const NavigationCapture = ({
 };
 
 const StartExecutionProbe = () => {
-  const flow = useBorrowTransactionFlow();
-  const confirm = useAtomSet(flow.confirmAtom);
+  const review = useBorrowTransactionFlowReview();
+  const confirm = useAtomSet(review.confirmAtom);
 
   return (
     <button
@@ -350,17 +362,55 @@ const renderExecution = async (
       Layer.succeed(TransactionWorkflowOperationsService, operations)
     )
   );
+  const flowWallet = WalletService.of({
+    ...activeWallet,
+    state: Effect.succeed({
+      connection: connectedWalletState,
+      ledger: {
+        accounts: [],
+        currentAccountId: undefined,
+        disabledChains: [],
+      },
+    }),
+    states: Stream.succeed({
+      connection: connectedWalletState,
+      ledger: {
+        accounts: [],
+        currentAccountId: undefined,
+        disabledChains: [],
+      },
+    }),
+  } as never);
+  const flowScope = await Effect.runPromise(Scope.make());
+  const flowDependencies = Layer.mergeAll(
+    Layer.succeed(BorrowOperations, borrow as never),
+    Layer.succeed(TrackingService, {
+      trackEvent: () => Effect.void,
+      trackPageView: () => Effect.void,
+    } as TrackingService["Service"]),
+    WidgetConfigService.layer({
+      changes: Stream.never,
+      current: Effect.succeed({ borrowEnabled: true } as never),
+      initial: { borrowEnabled: true } as never,
+    }),
+    Layer.succeed(WidgetNavigation, navigationService),
+    Layer.succeed(WalletService, flowWallet),
+    workflowLayer
+  );
+  const flowContext = await Effect.runPromise(
+    Layer.buildWithScope(
+      BorrowTransactionFlowService.layer.pipe(Layer.provide(flowDependencies)),
+      flowScope
+    )
+  );
+  const flowService = Context.get(flowContext, BorrowTransactionFlowService);
+  await Effect.runPromise(
+    flowService.start((options.session ?? session).intake)
+  );
 
   const app = await render(
     <RegistryProvider
       initialValues={[
-        [
-          borrowFlowSessionStore.stateAtom,
-          {
-            current: options.session ?? session,
-            nextEpoch: (options.session ?? session).epoch + 1,
-          },
-        ],
         [
           appRuntime.layer,
           Layer.mergeAll(
@@ -374,7 +424,11 @@ const renderExecution = async (
         ],
         [
           walletRuntime.layer,
-          Layer.mergeAll(workflowLayer, walletLayer).pipe(Layer.fresh),
+          Layer.mergeAll(
+            workflowLayer,
+            walletLayer,
+            Layer.succeed(BorrowTransactionFlowService, flowService)
+          ).pipe(Layer.fresh),
         ],
       ]}
     >
@@ -432,7 +486,14 @@ const renderExecution = async (
     await userEvent.click(app.getByTestId("start-execution"));
   }
 
-  return app;
+  const unmount = app.unmount;
+  return {
+    ...app,
+    unmount: async () => {
+      await unmount();
+      await Effect.runPromise(Scope.close(flowScope, Exit.void));
+    },
+  };
 };
 
 describe("borrow execution flow component", () => {

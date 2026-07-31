@@ -347,9 +347,6 @@ const isDoneStatus = (status: string) =>
 const isBroadcastStatus = (status: string) =>
   status === "BROADCASTED" || status === "CONFIRMED";
 
-export const isTerminalBorrowActionStatus = (status: string) =>
-  status === "FAILED" || status === "CANCELED" || status === "STALE";
-
 const toTransaction = (
   source: TransactionWorkflowSource
 ): TransactionWorkflowTransaction => ({

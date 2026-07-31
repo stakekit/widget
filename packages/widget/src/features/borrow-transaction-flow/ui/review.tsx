@@ -21,7 +21,10 @@ import {
   PageCtaButton,
 } from "../../widget-shell/components";
 import { projectBorrowTransactionFlowSummary } from "../model/borrow-transaction-flow";
-import { useBorrowTransactionFlow } from "../react/borrow-flow-route";
+import {
+  useBorrowTransactionFlow,
+  useBorrowTransactionFlowReview,
+} from "../react/borrow-flow-route";
 import * as styles from "./styles.css";
 
 const formatOptionalSummary = (value: string | undefined) => {
@@ -61,9 +64,10 @@ export const BorrowReviewPage = () => {
 
   const { t } = useTranslation();
   const flow = useBorrowTransactionFlow();
-  const createActionResult = useAtomValue(flow.createActionResultAtom);
-  const confirm = useAtomSet(flow.confirmAtom);
-  const back = useAtomSet(flow.backAtom);
+  const review = useBorrowTransactionFlowReview();
+  const createActionResult = useAtomValue(review.confirmAtom);
+  const confirm = useAtomSet(review.confirmAtom);
+  const back = useAtomSet(review.backAtom);
   const reviewState = flow.intake;
   const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
 

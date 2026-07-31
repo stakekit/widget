@@ -1,10 +1,12 @@
 import { Data, Duration, Effect, Match, pipe, Ref, Schedule } from "effect";
 import { isTxError } from "../../../domain";
-import type { Action as BorrowAction } from "../../../domain/borrow/execution/action";
+import {
+  type Action as BorrowAction,
+  isUnsuccessfulBorrowActionStatus,
+} from "../../../domain/borrow/execution/action";
 import type { Transaction as BorrowTransaction } from "../../../domain/borrow/execution/transaction";
 import type { ActionTransaction } from "../../../domain/schema/action-models";
 import {
-  isTerminalBorrowActionStatus,
   selectNextTransactionWorkflowTransaction,
   TransactionConfirmationError,
   type TransactionWorkflowContext,
@@ -115,7 +117,7 @@ export const confirmCurrent = Effect.fn("TransactionWorkflow.confirmCurrent")(
                 return Effect.fail(fail("Borrow action was not found."));
               }
 
-              if (isTerminalBorrowActionStatus(action.status)) {
+              if (isUnsuccessfulBorrowActionStatus(action.status)) {
                 return Effect.fail(
                   fail(`Borrow action ended with ${action.status} status.`)
                 );

@@ -1,9 +1,11 @@
 import { Effect, Match } from "effect";
-import type { Action as BorrowAction } from "../../../domain/borrow/execution/action";
+import {
+  type Action as BorrowAction,
+  isUnsuccessfulBorrowActionStatus,
+} from "../../../domain/borrow/execution/action";
 import {
   appendTransactionWorkflowBatch,
   getCurrentTransactionWorkflowBatch,
-  isTerminalBorrowActionStatus,
   makeBorrowTransactionWorkflowBatch,
   TransactionAdvanceError,
   type TransactionWorkflowContext,
@@ -58,7 +60,7 @@ const resolveBorrowAdvance = Effect.fn(
       workflowId,
     });
   const classifySteppedAction = (action: BorrowAction) => {
-    if (isTerminalBorrowActionStatus(action.status)) {
+    if (isUnsuccessfulBorrowActionStatus(action.status)) {
       return Effect.fail(
         fail(`Borrow action ended with ${action.status} status.`)
       );
@@ -94,7 +96,7 @@ const resolveBorrowAdvance = Effect.fn(
     return yield* step();
   }
 
-  if (isTerminalBorrowActionStatus(reconciled.status)) {
+  if (isUnsuccessfulBorrowActionStatus(reconciled.status)) {
     return yield* fail(`Borrow action ended with ${reconciled.status} status.`);
   }
 

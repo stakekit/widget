@@ -12,7 +12,10 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/components";
-import { useBorrowTransactionFlow } from "../react/borrow-flow-route";
+import {
+  useBorrowTransactionFlow,
+  useBorrowTransactionFlowExecution,
+} from "../react/borrow-flow-route";
 import * as styles from "./styles.css";
 import { useBorrowExecution } from "./use-borrow-execution";
 
@@ -22,7 +25,8 @@ export const BorrowStepsPage = () => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");
   const { t } = useTranslation();
   const flow = useBorrowTransactionFlow();
-  const back = useAtomSet(flow.backAtom);
+  const executionFlow = useBorrowTransactionFlowExecution();
+  const back = useAtomSet(executionFlow.backAtom);
   const execution = useBorrowExecution();
   const executionState = flow.intake;
   const executionError = execution.error ?? execution.setupError;

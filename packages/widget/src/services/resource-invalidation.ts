@@ -43,7 +43,7 @@ export class ActivityInvalidationKey extends Data.TaggedClass(
   }
 }
 
-export class BorrowPositionsInvalidationKey extends Data.TaggedClass(
+class BorrowPositionsInvalidationKey extends Data.TaggedClass(
   "BorrowPositionsInvalidationKey"
 )<{
   readonly scope: WalletScopeOwnerKey;

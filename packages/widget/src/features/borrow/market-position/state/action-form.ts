@@ -7,10 +7,7 @@ import { BorrowFeatureDisabled } from "../../../../domain/borrow/availability";
 import type { MarketId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
 import type { WalletScopeKey } from "../../../../services/wallet/domain/scope";
-import {
-  getBorrowTransactionFlowRoutes,
-  startBorrowTransactionFlowAtom,
-} from "../../../borrow-transaction-flow/state";
+import { startBorrowTransactionFlowAtom } from "../../../borrow-transaction-flow/state";
 import { tokenBalancesScanAtom } from "../../../portfolio/state";
 import { walletScopeAtom } from "../../../wallet/state";
 import { currentBorrowPositionsAtom } from "../../positions/state/positions";
@@ -286,24 +283,13 @@ export const startBorrowPositionActionReviewAtom = appRuntime
         return;
       }
 
-      context.set(borrowActionFormAtom, {
-        ...key,
-        scope,
-        type: "preparePositionAction",
-      });
       const entry = {
         _tag: "MarketPosition" as const,
         marketId: preparation.review.command.args.marketId,
       };
       yield* context.setResult(startBorrowTransactionFlowAtom, {
-        intake: {
-          ...preparation.review,
-          entry,
-        },
-        navigation: {
-          _tag: "Push",
-          path: getBorrowTransactionFlowRoutes(entry).reviewPath,
-        },
+        ...preparation.review,
+        entry,
       });
     })
   )

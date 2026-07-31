@@ -134,6 +134,10 @@ _Avoid_: Classic transaction request
 The Wallet Scope-bound journey from prepared borrow-action intake through Review, action creation, execution, and Complete. Borrow market and position actions enter through the same flow while retaining their distinct immutable intake facts.
 _Avoid_: Borrow workflow, borrow dashboard flow
 
+**Borrow Transaction Flow Outcome**:
+A semantic fact that a Borrow Transaction Flow successfully crossed a journey transition. `ExecutionStarted` follows successful entry into Steps, while `Done` follows successful exit from a completed Execution Attempt.
+_Avoid_: Navigation attempt, Atom instruction
+
 **Flow Session**:
 One user attempt to complete a Transaction Flow. Every explicit Start creates a fresh Flow Session even when its intake facts equal those of another attempt; Review, Steps, and Complete share its immutable intake and Wallet Scope until the entire journey is exited or replaced.
 _Avoid_: Transaction Flow Identity, request object identity

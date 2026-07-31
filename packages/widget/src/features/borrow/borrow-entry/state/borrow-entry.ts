@@ -12,10 +12,7 @@ import {
 } from "../../../../domain/borrow/network";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
 import { walletScopeOwnerKey } from "../../../../services/wallet/domain/scope";
-import {
-  getBorrowTransactionFlowRoutes,
-  startBorrowTransactionFlowAtom,
-} from "../../../borrow-transaction-flow/state";
+import { startBorrowTransactionFlowAtom } from "../../../borrow-transaction-flow/state";
 import { tokenBalancesScanAtom } from "../../../portfolio/state";
 import { walletScopeAtom } from "../../../wallet/state";
 import {
@@ -268,22 +265,7 @@ export const startBorrowEntryReviewAtom = appRuntime
         ...preparation.review,
         entry,
       };
-      yield* context.setResult(startBorrowTransactionFlowAtom, {
-        intake,
-        navigation: {
-          _tag: "Push",
-          path: getBorrowTransactionFlowRoutes(entry).reviewPath,
-        },
-      });
-      yield* TrackingService.use((tracking) =>
-        tracking.trackEvent("borrowReviewClicked", {
-          borrowAmount: view.borrowAmount.toString(10),
-          collateralAmount: view.collateralAmount.toString(10),
-          collateralTokenAddress: view.selectedCollateralToken?.token.address,
-          collateralTokenSymbol: view.selectedCollateralToken?.token.symbol,
-          marketId: view.selectedMarket?.id,
-        })
-      );
+      yield* context.setResult(startBorrowTransactionFlowAtom, intake);
     })
   )
   .pipe(Atom.withLabel("startBorrowEntryReviewAtom"));

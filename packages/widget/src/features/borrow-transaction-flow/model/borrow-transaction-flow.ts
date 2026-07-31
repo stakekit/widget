@@ -4,6 +4,7 @@ import {
   toWidgetPath,
   type WidgetPathInput,
 } from "../../../services/navigation/widget-navigation";
+import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 
 type BorrowReviewCommon = {
   readonly marketLabel: string;
@@ -193,6 +194,36 @@ export type BorrowTransactionFlowEntry =
 
 export type BorrowTransactionFlowIntake = BorrowTransactionFlowReview & {
   readonly entry: BorrowTransactionFlowEntry;
+};
+
+export type BorrowFlowSession = Readonly<{
+  readonly epoch: number;
+  readonly intake: BorrowTransactionFlowIntake;
+  readonly walletScope: WalletScopeKey;
+}>;
+
+export type BorrowTransactionFlowOutcome = Readonly<{
+  readonly _tag: "Done" | "ExecutionStarted";
+  readonly entry: BorrowTransactionFlowEntry;
+  readonly epoch: number;
+}>;
+
+export const getBorrowReviewTrackingProperties = (
+  intake: BorrowTransactionFlowIntake
+) => {
+  if (intake.entry._tag !== "BorrowEntry") return null;
+  const { command, summary } = intake;
+  return {
+    borrowAmount: "borrowAmount" in summary ? summary.borrowAmount : "0",
+    collateralAmount:
+      "collateralAmount" in summary ? summary.collateralAmount : "0",
+    collateralTokenAddress: command.args.collateralTokenAddress,
+    collateralTokenSymbol:
+      "collateralTokenSymbol" in summary
+        ? summary.collateralTokenSymbol
+        : undefined,
+    marketId: command.args.marketId,
+  };
 };
 
 export const getBorrowTransactionFlowRoutes = (

@@ -4,7 +4,7 @@ import { useBorrowTransactionFlowExecution } from "../react/borrow-flow-route";
 export const useBorrowExecution = () => {
   const execution = useBorrowTransactionFlowExecution();
   const view = useAtomValue(execution.viewAtom);
-  const dispatch = useAtomSet(execution.retryAtom);
+  const dispatch = useAtomSet(execution.workflowCommandAtom);
 
   return {
     ...view,

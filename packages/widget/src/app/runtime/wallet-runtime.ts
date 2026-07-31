@@ -1,5 +1,6 @@
 import { Effect, Layer } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import { BorrowTransactionFlowService } from "../../features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
 import { ClassicTransactionFlowService } from "../../features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import type { BorrowOperations } from "../../services/api/borrow-operations";
 import type { BorrowResourceSource } from "../../services/api/borrow-resource-source";
@@ -51,11 +52,17 @@ export const walletRuntime = Atom.runtime((get) => {
       Layer.mergeAll(appLayer, walletLayer, transactionWorkflowLayer)
     )
   );
+  const borrowTransactionFlowLayer = BorrowTransactionFlowService.layer.pipe(
+    Layer.provide(
+      Layer.mergeAll(appLayer, walletLayer, transactionWorkflowLayer)
+    )
+  );
 
   return Layer.mergeAll(
     appLayer,
     walletLayer,
     transactionWorkflowLayer,
+    borrowTransactionFlowLayer,
     classicTransactionFlowLayer
   ).pipe(Layer.fresh);
 });

@@ -175,7 +175,7 @@
           "files": ["src/services/api/borrow-operations.ts"],
           "allowImporters": [
             "src/app/runtime/**",
-            "src/features/borrow-transaction-flow/state/borrow-flow-session-facade.ts",
+            "src/features/borrow-transaction-flow/state/orchestration/borrow-flow-review.ts",
             "src/services/workflow/transaction-workflow-operations-service.ts",
             "tests/**"
           ]
@@ -281,10 +281,22 @@
             "src/features/borrow-transaction-flow/**",
             "!src/features/borrow-transaction-flow/state.ts",
             "!src/features/borrow-transaction-flow/ui.ts",
-            "!src/features/borrow-transaction-flow/components.ts"
+            "!src/features/borrow-transaction-flow/components.ts",
+            "!src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service.ts"
           ],
           "allowImporters": [
             "**/*.css.ts",
+            "src/features/borrow-transaction-flow/**",
+            "tests/**"
+          ]
+        },
+        {
+          "enabled": true,
+          "files": [
+            "src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service.ts"
+          ],
+          "allowImporters": [
+            "src/app/runtime/wallet-runtime.ts",
             "src/features/borrow-transaction-flow/**",
             "tests/**"
           ]

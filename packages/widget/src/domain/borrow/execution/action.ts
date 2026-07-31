@@ -40,3 +40,9 @@ export const Action = Schema.Struct({
   metadata: Schema.optionalKey(ActionMetadata),
 });
 export type Action = typeof Action.Type;
+
+export const isUnsuccessfulBorrowActionStatus = (status: string) =>
+  status === "FAILED" || status === "CANCELED" || status === "STALE";
+
+export const isTerminalBorrowActionStatus = (status: string) =>
+  status === "SUCCESS" || isUnsuccessfulBorrowActionStatus(status);

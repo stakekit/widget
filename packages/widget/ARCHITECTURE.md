@@ -61,7 +61,7 @@ The intended read direction is:
 Feature commands and workflows may use operation capability services through
 the app runtime, but feature read models do not bypass Authoritative Resources
 to call read-side API capabilities directly. The owning operation importers are
-the Classic Flow Review orchestration module, the Borrow Flow Session facade,
+the Classic and Borrow Flow Review orchestration modules,
 and the Transaction Workflow operations service. Wallet Bootstrap is the only
 read-source exception: it acquires enabled networks and an optional initial
 Yield while constructing the wallet runtime, before feature resources are

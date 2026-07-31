@@ -16,7 +16,10 @@ import {
   PageCtaButton,
 } from "../../widget-shell/components";
 import { projectBorrowTransactionFlowSummary } from "../model/borrow-transaction-flow";
-import { useBorrowTransactionFlow } from "../react/borrow-flow-route";
+import {
+  useBorrowTransactionFlow,
+  useBorrowTransactionFlowExecution,
+} from "../react/borrow-flow-route";
 import { useBorrowExecution } from "./use-borrow-execution";
 
 export const BorrowCompletePage = () => {
@@ -25,7 +28,8 @@ export const BorrowCompletePage = () => {
   const { t } = useTranslation();
   const flow = useBorrowTransactionFlow();
   const execution = useBorrowExecution();
-  const done = useAtomSet(flow.doneAtom);
+  const executionFlow = useBorrowTransactionFlowExecution();
+  const done = useAtomSet(executionFlow.finishAtom);
   const result = execution.completionResult;
   const { summary } = flow.intake;
   const projectedSummary = projectBorrowTransactionFlowSummary(summary);
