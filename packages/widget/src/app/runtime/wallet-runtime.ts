@@ -1,5 +1,6 @@
 import { Effect, Layer } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import { ClassicTransactionFlowService } from "../../features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import type { BorrowOperations } from "../../services/api/borrow-operations";
 import type { BorrowResourceSource } from "../../services/api/borrow-resource-source";
 import type { LegacyResourceSource } from "../../services/api/legacy-resource-source";
@@ -7,6 +8,7 @@ import type { YieldOperations } from "../../services/api/yield-operations";
 import type { YieldResourceSource } from "../../services/api/yield-resource-source";
 import type { WidgetConfigService } from "../../services/config/widget-config";
 import type { RichErrorService } from "../../services/errors/rich-error-service";
+import type { WidgetNavigation } from "../../services/navigation/widget-navigation";
 import type { WidgetPersistence } from "../../services/persistence/widget-persistence";
 import type { TrackingService } from "../../services/tracking/tracking-service";
 import type { WalletModal } from "../../services/wallet/wallet-modal";
@@ -22,6 +24,7 @@ type AppServices =
   | RichErrorService
   | TrackingService
   | WalletModal
+  | WidgetNavigation
   | WidgetConfigService
   | WidgetPersistence
   | YieldOperations
@@ -43,8 +46,16 @@ export const walletRuntime = Atom.runtime((get) => {
       )
     )
   );
-
-  return Layer.mergeAll(appLayer, walletLayer, transactionWorkflowLayer).pipe(
-    Layer.fresh
+  const classicTransactionFlowLayer = ClassicTransactionFlowService.layer.pipe(
+    Layer.provide(
+      Layer.mergeAll(appLayer, walletLayer, transactionWorkflowLayer)
+    )
   );
+
+  return Layer.mergeAll(
+    appLayer,
+    walletLayer,
+    transactionWorkflowLayer,
+    classicTransactionFlowLayer
+  ).pipe(Layer.fresh);
 });

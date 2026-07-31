@@ -3,9 +3,9 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigAtom } from "../../../app/config/settings";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import {
-  runWidgetNavigationCommand,
+  WidgetNavigation,
   type WidgetNavigationCommand,
-} from "../../../app/runtime/navigation";
+} from "../../../services/navigation/widget-navigation";
 import {
   sameWalletScopeOwner,
   WalletScopeKey,
@@ -112,11 +112,14 @@ export const startBorrowFlowSessionAtom = appRuntime
         return outcome;
       }
 
-      if (!command.navigation) {
+      const navigationCommand = command.navigation;
+      if (!navigationCommand) {
         return outcome;
       }
 
-      yield* runWidgetNavigationCommand(command.navigation).pipe(
+      yield* WidgetNavigation.use((navigation) =>
+        navigation.execute(navigationCommand)
+      ).pipe(
         Effect.tapError(() =>
           Effect.sync(() => {
             context.set(

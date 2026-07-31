@@ -74,7 +74,7 @@ else is private**, whether nested or at the feature root.
 - `state.ts` — headless entry: view Atoms, command Atoms, pure projections, published types, and zero-logic React adapter hooks.
 - `ui.ts` — rendered views the feature owns: routes, pages, layouts.
 - `components.ts` — presentational components published for reuse.
-- Internals live in `model/` (pure TS), `state/` (Effect + Atom), `react/` (hook adapters), `ui/` (components and pages).
+- Internals live in `model/` (pure TS), `state/` (Effect + Atom), `react/` (hook adapters), `ui/` (components and pages). Migrated orchestration-heavy features split `state/orchestration/` (Atom-independent Effect modules) from `state/atoms/` (reactive and lifecycle adapters).
 
 Adapter hooks go in `state.ts`, not `ui.ts` — a hook that only reads an Atom is
 part of the headless interface, and routing it through the page barrel drags the
@@ -94,8 +94,10 @@ also need a `restrictedDirectImportersDetection` entry in `.rev-dep.config.jsonc
 These are not in `ARCHITECTURE.md`; they apply to all code you write.
 
 **React / Effect boundary.** React is the view layer. New or materially
-refactored business state, async work, retries, concurrency, and resource
-lifetimes belong in Effect and Effect Atom. Event handlers stay synchronous:
+refactored multi-step orchestration, retries, rollback, concurrency, failures,
+and workflow lifetimes belong in Atom-independent Effect modules. Effect Atom
+owns reactive composition, resource binding, feature-local state, and adapters.
+Event handlers stay synchronous:
 normalize the event and dispatch an Atom command — never `Effect.runPromise`,
 await, sequence retries, or clean up domain resources there. Use `useEffect`
 only for unavoidable React/DOM/third-party lifecycle boundaries, never for data
@@ -106,16 +108,40 @@ React. Prefer headless Effect services over React-only third-party APIs.
 **Runtimes.** Run feature Effects through the existing application or wallet Atom
 runtimes and injected services. Never construct an ad hoc runtime.
 
+**Orchestration modules.** An orchestration-heavy feature exposes one
+feature-owned Effect service, composed once by the application or wallet
+runtime. Resolve its static dependencies during layer construction; do not
+locally re-provide them while operations run. Private scoped child modules take
+only genuinely dynamic lifecycle inputs. Interfaces expose semantic operations
+and only the state or event Streams that production consumes. They execute
+required navigation, tracking, invalidation, and other side effects themselves
+and never accept or return Atoms, registries, or Atom contexts.
+
+**Atom commands.** A command Atom may read a snapshot, normalize it through a
+pure function, and perform exactly one local state transition, one scoped-handle
+operation, or one cross-feature tail delegation. It must not access the registry,
+subscribe, mount, refresh-and-wait, retry, coordinate multiple commands, or
+perform rollback. Use the shared app-runtime lifecycle adapter for scoped-handle
+acquisition, keep-alive, optional state projection, and release rather than
+reproducing manual mount graphs in features. Authoritative Resources retain the
+Atom machinery required by their cache and lifetime policies.
+
 **Data fetching.** No React Query, hook-owned fetches, or Promise caches for new
 or refactored resources — use Effect services exposed through Atom. The only
 sanctioned React Query client is the Wagmi/RainbowKit shell at
 `src/app/composition/providers/query-client/index.tsx`. Resources and command
-Atoms own loading, typed failures, retry eligibility, and stale-result
-suppression; React renders published state and dispatches Retry.
+adapters publish loading, typed failures, retry eligibility, and stale-result
+suppression owned by their resource or orchestration module; React renders
+published state and dispatches Retry.
 
 **State ownership.** Deterministic constructors, transitions, invariants, and
-projections stay plain TypeScript. Local synchronous presentation state (focus,
-hover, disclosure, refs) may stay in React.
+projections stay plain TypeScript. Feature `model/` modules must not import
+Effect Atom or accept Atom readers. Each workflow fact has one authoritative
+writer: Atom may passively project Effect-owned state but cannot maintain a
+writable copy or fabricate a synthetic initial lifecycle state. Represent
+scoped-handle acquisition explicitly when no authoritative state exists yet.
+Local synchronous presentation state (focus, hover, disclosure, refs) may stay
+in React.
 
 **Time.** Use Effect `DateTime` for instants, `Duration` for intervals, and
 `Clock`/`DateTime.now` for current time. No native `Date`, native-Date Effect
@@ -141,4 +167,7 @@ entrypoint from inside `src` — they are outbound-only.
 
 - Run `pnpm --filter @stakekit/widget lint` for lint and type errors.
 - Run `pnpm check-hygiene` if you changed the import graph.
+- Test Effect-native orchestration through the real service layer's semantic
+  operations and production-observable state; keep registry tests limited to
+  service lookup, Atom projection and forwarding, and route-scope lifecycle.
 - Do not edit `@repos/` (read-only vendored reference) or import from it.

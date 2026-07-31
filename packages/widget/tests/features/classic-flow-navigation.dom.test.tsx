@@ -1,9 +1,12 @@
 import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Layer, Schema } from "effect";
+import { Effect, Layer, Schema, Stream, SubscriptionRef } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { HttpResponse, http } from "msw";
-import { act } from "react";
+import { act, useEffect, useState } from "react";
 import {
+  createMemoryRouter,
+  type DataRouter,
+  type NavigateFunction,
   Route,
   RouterProvider,
   Routes,
@@ -16,10 +19,8 @@ import {
   widgetConfigAtom,
 } from "../../src/app/config/settings";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
-import {
-  applicationRouterAtom,
-  applicationRouterRuntime,
-} from "../../src/app/runtime/application-router-runtime";
+import { applicationRouterRuntime } from "../../src/app/runtime/application-router-runtime";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { ActionCommand } from "../../src/domain/schema/action-models";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
@@ -34,13 +35,26 @@ import {
   isActiveClassicTransactionFlowPathAtom,
   startClassicTransactionFlowAtom,
 } from "../../src/features/classic-transaction-flow/state";
+import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
+import {
+  makeWidgetNavigation,
+  WidgetNavigation,
+} from "../../src/services/navigation/widget-navigation";
+import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
-import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
-import { disconnectedNormalizedWalletState } from "../../src/services/wallet/domain/state";
+import {
+  disconnectedLedgerConnectorState,
+  disconnectedNormalizedWalletState,
+  type NormalizedWalletState,
+  type WalletState,
+} from "../../src/services/wallet/domain/state";
+import { WalletService } from "../../src/services/wallet/wallet-service";
+import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
+import { makeTestStakeKitApiLayer } from "../utils/stakekit-api-layer";
 import { describe, expect, it, vi } from "../utils/test-extend.dom";
 import { render } from "../utils/test-utils.dom";
 
@@ -67,6 +81,45 @@ const connectedWalletState: NormalizedWalletState = {
   network: "ethereum",
   status: "connected",
 };
+const walletStateRef = Effect.runSync(
+  SubscriptionRef.make<WalletState>({
+    connection: connectedWalletState,
+    ledger: disconnectedLedgerConnectorState,
+  })
+);
+const walletLayer = Layer.mergeAll(
+  Layer.succeed(
+    WalletService,
+    WalletService.of({
+      state: SubscriptionRef.get(walletStateRef),
+      states: SubscriptionRef.changes(walletStateRef),
+      wagmiConfig: {},
+    } as never)
+  ),
+  Layer.succeed(
+    TransactionWorkflowService,
+    TransactionWorkflowService.of({
+      make: () =>
+        Effect.succeed({
+          dispatch: () => Effect.void,
+          states: Stream.never,
+        }),
+    })
+  )
+);
+const apiLayer = makeTestStakeKitApiLayer({
+  apiKey: "test-key",
+  baseUrl: legacyApiUrl,
+  borrowApiUrl: "https://borrow.example.com",
+  yieldsApiUrl: yieldApiUrl,
+});
+const trackingLayer = Layer.succeed(
+  TrackingService,
+  TrackingService.of({
+    trackEvent: () => Effect.void,
+    trackPageView: () => Effect.void,
+  })
+);
 
 const intake: ClassicTransactionFlowIntake = {
   _tag: "Enter",
@@ -77,6 +130,34 @@ const intake: ClassicTransactionFlowIntake = {
   selectedToken: selectedStake.token,
   selectedValidators: new Map(),
   walletScope,
+};
+
+const executionFacades: Array<object> = [];
+const getExecutionFacadeId = (facade: object) => {
+  const existing = executionFacades.indexOf(facade);
+  if (existing >= 0) return existing + 1;
+  executionFacades.push(facade);
+  return executionFacades.length;
+};
+
+type TestNavigationChannel = {
+  navigate: NavigateFunction | null;
+};
+const testNavigationChannel: TestNavigationChannel = { navigate: null };
+
+const TestNavigationBridge = ({
+  channel,
+}: {
+  readonly channel: TestNavigationChannel;
+}) => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    channel.navigate = navigate;
+    return () => {
+      channel.navigate = null;
+    };
+  }, [channel, navigate]);
+  return null;
 };
 
 const StartPage = () => {
@@ -153,14 +234,15 @@ const ReviewPage = () => {
 const StepsPage = () => {
   useClassicFlowSession();
   const execution = useClassicFlowExecution();
-  const action = useAtomValue(execution.actionAtom);
   const back = useAtomSet(execution.backAtom);
   const navigate = useNavigate();
 
   return (
     <>
       <output data-testid="steps-session">present</output>
-      <output data-testid="steps-action">{action.id}</output>
+      <output data-testid="steps-execution">
+        {getExecutionFacadeId(execution)}
+      </output>
       <button type="button" onClick={() => back(undefined)}>
         Back
       </button>
@@ -179,12 +261,13 @@ const StepsPage = () => {
 
 const CompletePage = () => {
   const execution = useClassicFlowExecution();
-  const action = useAtomValue(execution.actionAtom);
   const navigate = useNavigate();
 
   return (
     <>
-      <output data-testid="complete-action">{action.id}</output>
+      <output data-testid="complete-execution">
+        {getExecutionFacadeId(execution)}
+      </output>
       <button type="button" onClick={() => navigate(-1)}>
         Back to Steps
       </button>
@@ -193,8 +276,10 @@ const CompletePage = () => {
 };
 
 const FlowRoutes = ({
+  navigationChannel,
   walletState,
 }: {
+  readonly navigationChannel: TestNavigationChannel;
   readonly walletState: NormalizedWalletState;
 }) => {
   const location = useLocation();
@@ -204,32 +289,35 @@ const FlowRoutes = ({
   const key = isActive ? "flow-session" : location.key;
 
   return (
-    <Routes key={key}>
-      <Route path="/" element={<StartPage />} />
-      <Route
-        element={
-          <WalletScopeRoute
-            fallbackPath="/"
-            walletStateResult={AsyncResult.success(walletState)}
-          />
-        }
-      >
-        <Route element={<ClassicFlowRoute expected="Enter" />}>
-          <Route
-            path="review"
-            element={
-              <ClassicFlowReviewScope>
-                <ReviewPage />
-              </ClassicFlowReviewScope>
-            }
-          />
-          <Route element={<ClassicFlowExecutionScope />}>
-            <Route path="steps" element={<StepsPage />} />
-            <Route path="complete" element={<CompletePage />} />
+    <>
+      <TestNavigationBridge channel={navigationChannel} />
+      <Routes key={key}>
+        <Route path="/" element={<StartPage />} />
+        <Route
+          element={
+            <WalletScopeRoute
+              fallbackPath="/"
+              walletStateResult={AsyncResult.success(walletState)}
+            />
+          }
+        >
+          <Route element={<ClassicFlowRoute expected="Enter" />}>
+            <Route
+              path="review"
+              element={
+                <ClassicFlowReviewScope>
+                  <ReviewPage />
+                </ClassicFlowReviewScope>
+              }
+            />
+            <Route element={<ClassicFlowExecutionScope />}>
+              <Route path="steps" element={<StepsPage />} />
+              <Route path="complete" element={<CompletePage />} />
+            </Route>
           </Route>
         </Route>
-      </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 };
 
@@ -246,34 +334,100 @@ const FlowTestApp = ({
     variant: "default",
     yieldsApiUrl: yieldApiUrl,
   });
+  const [router] = useState(() =>
+    createMemoryRouter([...applicationRoutes], {
+      initialEntries: [initialPath],
+    })
+  );
+  const applicationRouterLayer = Layer.succeed(
+    ApplicationRouter,
+    ApplicationRouter.of({ router })
+  );
+  const navigationLayer = Layer.succeed(
+    WidgetNavigation,
+    makeWidgetNavigation({
+      back: () =>
+        Effect.sync(() => {
+          testNavigationChannel.navigate?.(-1);
+        }),
+      push: (path, options) =>
+        Effect.sync(() => {
+          if (!testNavigationChannel.navigate) {
+            throw new Error("Test navigation bridge is unavailable");
+          }
+          testNavigationChannel.navigate(path, { state: options?.state });
+        }),
+      replace: (path, options) =>
+        Effect.sync(() => {
+          testNavigationChannel.navigate?.(path, {
+            replace: true,
+            state: options?.state,
+          });
+        }),
+    })
+  );
+  const classicDependencies = Layer.mergeAll(
+    apiLayer,
+    navigationLayer,
+    trackingLayer,
+    walletLayer
+  );
+  const classicWalletLayer = Layer.merge(
+    classicDependencies,
+    ClassicTransactionFlowService.layer.pipe(Layer.provide(classicDependencies))
+  );
   return (
     <RegistryProvider
       initialValues={[
         [widgetConfigAtom, settings],
         [walletScopeAtom, walletScope],
-        [
-          applicationRouterRuntime.layer,
-          ApplicationRouter.layer(applicationRoutes, {
-            initialEntries: [initialPath],
-          }).pipe(Layer.fresh),
-        ],
+        [walletRuntime.layer, classicWalletLayer as never],
+        [applicationRouterRuntime.layer, applicationRouterLayer],
       ]}
     >
-      <FlowRouter walletState={walletState} />
+      <WalletStateBridge walletState={walletState} />
+      <FlowRouter
+        navigationChannel={testNavigationChannel}
+        router={router}
+        walletState={walletState}
+      />
     </RegistryProvider>
   );
 };
 
-const FlowRouter = ({
+const WalletStateBridge = ({
   walletState,
 }: {
   readonly walletState: NormalizedWalletState;
 }) => {
-  const router = useAtomValue(applicationRouterAtom);
+  useEffect(() => {
+    Effect.runSync(
+      SubscriptionRef.set(walletStateRef, {
+        connection: walletState,
+        ledger: disconnectedLedgerConnectorState,
+      })
+    );
+  }, [walletState]);
+  return null;
+};
 
+const FlowRouter = ({
+  navigationChannel,
+  router,
+  walletState,
+}: {
+  readonly navigationChannel: TestNavigationChannel;
+  readonly router: DataRouter;
+  readonly walletState: NormalizedWalletState;
+}) => {
   return (
     <ApplicationRouteContentProvider
-      value={<FlowRoutes walletState={walletState} />}
+      value={
+        <FlowRoutes
+          navigationChannel={navigationChannel}
+          walletState={walletState}
+        />
+      }
     >
       <RouterProvider router={router} />
     </ApplicationRouteContentProvider>
@@ -476,22 +630,27 @@ describe("Classic Transaction Flow navigation", () => {
     await act(async () => button("Confirm").click());
     await vi.waitFor(() =>
       expect(
-        app.container.querySelector('[data-testid="steps-action"]')?.textContent
-      ).toBe("execution-action")
+        app.container.querySelector('[data-testid="steps-execution"]')
+          ?.textContent
+      ).not.toBe("")
     );
+    const executionId = app.container.querySelector(
+      '[data-testid="steps-execution"]'
+    )?.textContent;
 
     await act(async () => button("Complete").click());
     await vi.waitFor(() =>
       expect(
-        app.container.querySelector('[data-testid="complete-action"]')
+        app.container.querySelector('[data-testid="complete-execution"]')
           ?.textContent
-      ).toBe("execution-action")
+      ).toBe(executionId)
     );
     await act(async () => button("Back to Steps").click());
     await vi.waitFor(() =>
       expect(
-        app.container.querySelector('[data-testid="steps-action"]')?.textContent
-      ).toBe("execution-action")
+        app.container.querySelector('[data-testid="steps-execution"]')
+          ?.textContent
+      ).toBe(executionId)
     );
   });
 

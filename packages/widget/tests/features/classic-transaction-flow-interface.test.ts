@@ -1,10 +1,11 @@
 import BigNumber from "bignumber.js";
-import { Effect, Layer, Option, Schema } from "effect";
+import { Effect, Layer, Option, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
@@ -13,12 +14,19 @@ import {
 } from "../../src/features/classic-transaction-flow/state";
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import {
+  makeWidgetNavigation,
   WidgetNavigation,
   type WidgetNavigationOptions,
   type WidgetPath,
 } from "../../src/services/navigation/widget-navigation";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import {
+  disconnectedLedgerConnectorState,
+  disconnectedNormalizedWalletState,
+} from "../../src/services/wallet/domain/state";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
+import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
 
 const walletScope = new WalletScopeKey({
   address: Schema.decodeSync(WalletAddress)(
@@ -118,28 +126,59 @@ const makeActivityResumeIntake = (
 const makeRegistry = (
   push: (path: WidgetPath, options?: WidgetNavigationOptions) => void,
   currentWalletScope: WalletScopeKey = walletScope
-) =>
-  AtomRegistry.make({
+) => {
+  const navigation = makeWidgetNavigation({
+    back: () => Effect.void,
+    push: (path, options) => Effect.sync(() => push(path, options)),
+    replace: () => Effect.void,
+  });
+  const walletState = {
+    connection: currentWalletScope
+      ? {
+          ...disconnectedNormalizedWalletState,
+          additionalAddresses: currentWalletScope.additionalAddresses,
+          address: currentWalletScope.address,
+          chain: {} as never,
+          connector: {} as never,
+          ledgerAccounts: [],
+          network: currentWalletScope.network,
+          status: "connected" as const,
+        }
+      : disconnectedNormalizedWalletState,
+    ledger: disconnectedLedgerConnectorState,
+  };
+
+  return AtomRegistry.make({
     initialValues: [
       Atom.initialValue(
         appRuntime.layer,
-        Layer.succeed(
-          WidgetNavigation,
-          WidgetNavigation.of({
-            back: () => Effect.void,
-            push: (path, options) => Effect.sync(() => push(path, options)),
-            replace: () => Effect.void,
-          })
-        )
+        Layer.succeed(WidgetNavigation, navigation)
+      ),
+      Atom.initialValue(
+        walletRuntime.layer,
+        makeClassicFlowTestWalletLayer({
+          navigation,
+          wallet: WalletService.of({
+            state: Effect.succeed(walletState),
+            states: Stream.succeed(walletState),
+            wagmiConfig: {},
+          } as never),
+        }) as never
       ),
       Atom.initialValue(walletScopeAtom, currentWalletScope),
     ],
   });
+};
 
 const readStartOutcome = (registry: AtomRegistry.AtomRegistry) =>
   registry
     .get(startClassicTransactionFlowAtom)
     .pipe(AsyncResult.value, Option.getOrNull);
+
+const waitForActivePath = (registry: AtomRegistry.AtomRegistry, path: string) =>
+  expect
+    .poll(() => registry.get(isActiveClassicTransactionFlowPathAtom(path)))
+    .toBe(true);
 
 describe("Classic Transaction Flow interface", () => {
   it("rejects Start when the captured Wallet Scope Owner is stale", async () => {
@@ -174,11 +213,7 @@ describe("Classic Transaction Flow interface", () => {
         mount: { _tag: "Earn" },
       });
 
-      await expect
-        .poll(() => readStartOutcome(registry))
-        .toEqual({
-          _tag: "Started",
-        });
+      await waitForActivePath(registry, "/review");
       expect(push).toHaveBeenCalledWith("/review", {
         _tag: "Push",
         path: "/review",
@@ -214,9 +249,10 @@ describe("Classic Transaction Flow interface", () => {
         },
       });
 
-      await expect
-        .poll(() => readStartOutcome(registry))
-        .toEqual({ _tag: "Started" });
+      await waitForActivePath(
+        registry,
+        "/positions/yield/balance/stake/review"
+      );
       expect(push).toHaveBeenCalledWith(
         "/positions/yield/balance/stake/review",
         {
@@ -250,9 +286,10 @@ describe("Classic Transaction Flow interface", () => {
         },
       });
 
-      await expect
-        .poll(() => readStartOutcome(registry))
-        .toEqual({ _tag: "Started" });
+      await waitForActivePath(
+        registry,
+        "/positions/yield/balance/unstake/review"
+      );
       expect(push).toHaveBeenCalledWith(
         "/positions/yield/balance/unstake/review",
         {
@@ -279,9 +316,10 @@ describe("Classic Transaction Flow interface", () => {
         },
       });
 
-      await expect
-        .poll(() => readStartOutcome(registry))
-        .toEqual({ _tag: "Started" });
+      await waitForActivePath(
+        registry,
+        "/positions/yield/balance/pending-action/review"
+      );
       expect(push).toHaveBeenCalledWith(
         "/positions/yield/balance/pending-action/review",
         {
@@ -308,9 +346,7 @@ describe("Classic Transaction Flow interface", () => {
         },
       });
 
-      await expect
-        .poll(() => readStartOutcome(registry))
-        .toEqual({ _tag: "Started" });
+      await waitForActivePath(registry, "/activity/review");
       expect(push).toHaveBeenCalledWith("/activity/review", {
         _tag: "Push",
         path: "/activity/review",
@@ -339,9 +375,7 @@ describe("Classic Transaction Flow interface", () => {
         },
       });
 
-      await expect
-        .poll(() => readStartOutcome(registry))
-        .toEqual({ _tag: "Started" });
+      await waitForActivePath(registry, "/activity/stake/steps");
       expect(
         registry.get(
           isActiveClassicTransactionFlowPathAtom("/activity/unstake/steps")
@@ -371,9 +405,7 @@ describe("Classic Transaction Flow interface", () => {
         },
       });
 
-      await expect
-        .poll(() => readStartOutcome(registry))
-        .toEqual({ _tag: "Started" });
+      await waitForActivePath(registry, "/activity/stake-review/complete");
       expect(push).toHaveBeenCalledWith(
         "/activity/stake-review/complete",
         expect.objectContaining({
@@ -407,9 +439,7 @@ describe("Classic Transaction Flow interface", () => {
         },
       });
 
-      await expect
-        .poll(() => readStartOutcome(registry))
-        .toEqual({ _tag: "Started" });
+      await waitForActivePath(registry, "/activity/stake-review/complete");
       expect(push).not.toHaveBeenCalled();
     } finally {
       registry.dispose();

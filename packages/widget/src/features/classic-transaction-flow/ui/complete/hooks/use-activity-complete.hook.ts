@@ -1,6 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import type { YieldAction } from "../../../../../domain/schema/action-models";
-import { getActionInputToken } from "../../../../../domain/types/action";
+import type { AppToken } from "../../../../../domain/schema/legacy-models";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useTrackPage } from "../../../../tracking/state";
 import {
@@ -18,24 +18,23 @@ type ActivityIntake = Extract<
   { readonly _tag: "ActivityResume" }
 >;
 
-type ActivityCompleteView = Pick<
+type ActivityCompleteView<Action> = Pick<
   ActivityIntake,
   "selectedValidators" | "selectedYield"
 > & {
-  readonly selectedAction: YieldAction;
+  readonly inputToken: AppToken | null;
+  readonly selectedAction: Action;
 };
 
-const useActivityCompleteView = ({
+const useActivityCompleteView = <
+  Action extends Pick<YieldAction, "amount" | "type" | "yieldId">,
+>({
   selectedAction,
   selectedValidators,
   selectedYield,
-}: ActivityCompleteView) => {
+  inputToken,
+}: ActivityCompleteView<Action>) => {
   useTrackPage("activityComplete");
-
-  const inputToken = getActionInputToken({
-    actionDto: selectedAction,
-    yieldDto: selectedYield,
-  });
   const yieldSummary = useAtomValue(
     yieldSummaryAtom(
       new YieldSummaryKey({

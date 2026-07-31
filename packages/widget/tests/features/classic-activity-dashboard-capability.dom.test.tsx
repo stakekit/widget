@@ -1,7 +1,8 @@
 import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Effect, Layer, Schema } from "effect";
+import { Effect, Layer, Schema, Stream } from "effect";
 import type { PropsWithChildren } from "react";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   activityResumeDashboardViewAtom,
@@ -10,12 +11,16 @@ import {
 } from "../../src/features/classic-transaction-flow/state";
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import {
+  makeWidgetNavigation,
   WidgetNavigation,
   type WidgetNavigationOptions,
   type WidgetPath,
 } from "../../src/services/navigation/widget-navigation";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { disconnectedLedgerConnectorState } from "../../src/services/wallet/domain/state";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
+import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
 import { describe, expect, it, vi } from "../utils/test-extend.dom";
 import { renderHook } from "../utils/test-utils.dom";
 
@@ -55,17 +60,45 @@ describe("Dashboard Activity Resume capability", () => {
       vi.fn<(path: WidgetPath, options?: WidgetNavigationOptions) => void>();
     const navigationLayer = Layer.succeed(
       WidgetNavigation,
-      WidgetNavigation.of({
+      makeWidgetNavigation({
         back: () => Effect.void,
         push: (path, options) => Effect.sync(() => push(path, options)),
         replace: () => Effect.void,
       })
     );
+    const walletState = {
+      connection: {
+        additionalAddresses: null,
+        address: walletScope.address,
+        chain: {} as never,
+        connector: {} as never,
+        connectorChains: [],
+        isLedgerLive: false,
+        isLedgerLiveAccountPlaceholder: false,
+        ledgerAccounts: [],
+        network: walletScope.network,
+        status: "connected" as const,
+      },
+      ledger: disconnectedLedgerConnectorState,
+    };
+    const walletLayer = makeClassicFlowTestWalletLayer({
+      navigation: makeWidgetNavigation({
+        back: () => Effect.void,
+        push: (path, options) => Effect.sync(() => push(path, options)),
+        replace: () => Effect.void,
+      }),
+      wallet: WalletService.of({
+        state: Effect.succeed(walletState),
+        states: Stream.succeed(walletState),
+        wagmiConfig: {},
+      } as never),
+    });
     const Wrapper = ({ children }: PropsWithChildren) => (
       <RegistryProvider
         initialValues={[
           [appRuntime.layer, navigationLayer],
           [walletScopeAtom, walletScope],
+          [walletRuntime.layer, walletLayer],
         ]}
       >
         {children}

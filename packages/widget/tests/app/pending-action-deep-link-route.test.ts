@@ -1,4 +1,4 @@
-import { Effect, Layer, Schema } from "effect";
+import { Effect, Layer, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
@@ -8,6 +8,7 @@ import {
   pendingActionDeepLinkRouteAtom,
 } from "../../src/app/routes/state/pending-action-deep-link-route";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { ManageActionCommand } from "../../src/domain/schema/action-models";
 import { EarnBalance } from "../../src/domain/schema/earn-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
@@ -19,11 +20,15 @@ import {
 import { mountAnimationStateAtom } from "../../src/features/mount-animation/state";
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import {
+  makeWidgetNavigation,
   WidgetNavigation,
   type WidgetPath,
 } from "../../src/services/navigation/widget-navigation";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { disconnectedLedgerConnectorState } from "../../src/services/wallet/domain/state";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
+import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -55,14 +60,31 @@ describe("pending-action deep-link route claims", () => {
       yieldId,
     });
     const push = vi.fn<(path: WidgetPath) => void>();
-    const navigationLayer = Layer.succeed(
-      WidgetNavigation,
-      WidgetNavigation.of({
-        back: () => Effect.void,
-        push: (path) => Effect.sync(() => push(path)),
-        replace: () => Effect.void,
-      })
-    );
+    const navigation = makeWidgetNavigation({
+      back: () => Effect.void,
+      push: (path) => Effect.sync(() => push(path)),
+      replace: () => Effect.void,
+    });
+    const navigationLayer = Layer.succeed(WidgetNavigation, navigation);
+    const currentWalletScope = new WalletScopeKey({
+      address,
+      network: "ethereum",
+    });
+    const walletState = {
+      connection: {
+        additionalAddresses: null,
+        address,
+        chain: {} as never,
+        connector: {} as never,
+        connectorChains: [],
+        isLedgerLive: false,
+        isLedgerLiveAccountPlaceholder: false,
+        ledgerAccounts: [],
+        network: "ethereum" as const,
+        status: "connected" as const,
+      },
+      ledger: disconnectedLedgerConnectorState,
+    };
     const projected = AsyncResult.success({
       balance,
       balanceId: "balance-1",
@@ -83,15 +105,23 @@ describe("pending-action deep-link route claims", () => {
     const registry = AtomRegistry.make({
       initialValues: [
         Atom.initialValue(appRuntime.layer, navigationLayer),
+        Atom.initialValue(
+          walletRuntime.layer,
+          makeClassicFlowTestWalletLayer({
+            navigation,
+            wallet: WalletService.of({
+              state: Effect.succeed(walletState),
+              states: Stream.succeed(walletState),
+              wagmiConfig: {},
+            } as never),
+          }) as never
+        ),
         Atom.initialValue(mountAnimationStateAtom, {
           earnPage: false,
           layout: false,
         }),
         Atom.initialValue(pendingActionDeepLinkViewAtom, projected),
-        Atom.initialValue(
-          walletScopeAtom,
-          new WalletScopeKey({ address, network: "ethereum" })
-        ),
+        Atom.initialValue(walletScopeAtom, currentWalletScope),
       ],
     });
     const unmount = registry.mount(pendingActionDeepLinkRouteAtom);

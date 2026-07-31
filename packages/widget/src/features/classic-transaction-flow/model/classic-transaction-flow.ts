@@ -20,7 +20,7 @@ import {
 } from "../../../services/navigation/widget-navigation";
 import {
   sameWalletScopeOwner,
-  type WalletScopeKey,
+  WalletScopeKey,
 } from "../../../services/wallet/domain/scope";
 import {
   type ClassicTransactionWorkflowInput,
@@ -76,10 +76,92 @@ export type ClassicTransactionFlowIntake =
   | ManageClassicTransactionFlowIntake
   | ActivityResumeClassicTransactionFlowIntake;
 
-export type ClassicTransactionFlowDestination = Readonly<{
+type ClassicTransactionFlowDestination = Readonly<{
   readonly completePath: WidgetPath;
   readonly reviewPath: WidgetPath;
   readonly stepsPath: WidgetPath;
+}>;
+
+type ClassicTransactionFlowMount =
+  | Readonly<{
+      readonly _tag: "ActivityResume";
+      readonly presentation: "Classic" | "Dashboard";
+      readonly target: "FreshReview" | "HistoricalDetails";
+    }>
+  | Readonly<{ readonly _tag: "Earn" }>
+  | Readonly<{
+      readonly _tag: "PositionExit";
+      readonly balanceId: string;
+      readonly integrationId: string;
+    }>
+  | Readonly<{
+      readonly _tag: "PositionManage";
+      readonly balanceId: string;
+      readonly integrationId: string;
+    }>
+  | Readonly<{
+      readonly _tag: "PositionStake";
+      readonly balanceId: string;
+      readonly integrationId: string;
+    }>;
+
+export type ClassicTransactionFlowEnterMount = Extract<
+  ClassicTransactionFlowMount,
+  { readonly _tag: "Earn" | "PositionStake" }
+>;
+
+export type StartClassicTransactionFlow =
+  | Readonly<{
+      readonly intake: Extract<
+        ClassicTransactionFlowIntake,
+        { readonly _tag: "Enter" }
+      >;
+      readonly mount: ClassicTransactionFlowEnterMount;
+    }>
+  | Readonly<{
+      readonly intake: Extract<
+        ClassicTransactionFlowIntake,
+        { readonly _tag: "Exit" }
+      >;
+      readonly mount: Extract<
+        ClassicTransactionFlowMount,
+        { readonly _tag: "PositionExit" }
+      >;
+    }>
+  | Readonly<{
+      readonly intake: Extract<
+        ClassicTransactionFlowIntake,
+        { readonly _tag: "Manage" }
+      >;
+      readonly mount: Extract<
+        ClassicTransactionFlowMount,
+        { readonly _tag: "PositionManage" }
+      >;
+    }>
+  | Readonly<{
+      readonly intake: Extract<
+        ClassicTransactionFlowIntake,
+        { readonly _tag: "ActivityResume" }
+      >;
+      readonly mount: Extract<
+        ClassicTransactionFlowMount,
+        { readonly _tag: "ActivityResume" }
+      >;
+    }>;
+
+export type ClassicFlowSession = Readonly<{
+  readonly activityPresentation?: "Classic" | "Dashboard";
+  readonly destination: ClassicTransactionFlowDestination;
+  readonly epoch: number;
+  readonly intake: ClassicTransactionFlowIntake;
+}>;
+
+type ClassicFlowSessionDraft = Omit<ClassicFlowSession, "epoch">;
+
+type ClassicTransactionFlowStartNavigation = Readonly<{
+  readonly _tag: "Push";
+  readonly path: WidgetPath;
+  readonly state?: unknown;
 }>;
 
 /**
@@ -88,7 +170,7 @@ export type ClassicTransactionFlowDestination = Readonly<{
  */
 type ClassicTransactionFlowRouteBase = "" | WidgetPathInput;
 
-export const makeClassicTransactionFlowDestination = ({
+const makeClassicTransactionFlowDestination = ({
   completePath,
   routeBase,
   stepsPath,
@@ -101,6 +183,194 @@ export const makeClassicTransactionFlowDestination = ({
   reviewPath: toWidgetPath(`${routeBase}/review`),
   stepsPath: toWidgetPath(stepsPath ?? `${routeBase}/steps`),
 });
+
+const getActivityFlowPathSegment = (
+  type: Extract<
+    ClassicTransactionFlowIntake,
+    { readonly _tag: "ActivityResume" }
+  >["action"]["type"]
+): "pending" | "stake" | "unstake" => {
+  switch (type) {
+    case "STAKE":
+      return "stake";
+    case "UNSTAKE":
+      return "unstake";
+    default:
+      return "pending";
+  }
+};
+
+const copyClassicTransactionFlowIntake = (
+  intake: ClassicTransactionFlowIntake,
+  walletScope: WalletScopeKey
+): ClassicTransactionFlowIntake => {
+  switch (intake._tag) {
+    case "Enter": {
+      const { walletScope: _expectedWalletScope, ...facts } = intake;
+      return {
+        ...structuredClone(facts),
+        walletScope: new WalletScopeKey(walletScope),
+      };
+    }
+    case "ActivityResume": {
+      const { walletScope: _expectedWalletScope, ...facts } = intake;
+      return {
+        ...structuredClone(facts),
+        walletScope: new WalletScopeKey(walletScope),
+      };
+    }
+    case "Exit": {
+      const {
+        unstakeAmount,
+        walletScope: _expectedWalletScope,
+        ...facts
+      } = intake;
+      return {
+        ...structuredClone(facts),
+        unstakeAmount: new BigNumber(unstakeAmount),
+        walletScope: new WalletScopeKey(walletScope),
+      };
+    }
+    case "Manage": {
+      const { walletScope: _expectedWalletScope, ...facts } = intake;
+      return {
+        ...structuredClone(facts),
+        walletScope: new WalletScopeKey(walletScope),
+      };
+    }
+  }
+};
+
+export const resolveClassicTransactionFlowStart = (
+  command: StartClassicTransactionFlow,
+  walletScope: WalletScopeKey
+): Readonly<{
+  readonly navigation: ClassicTransactionFlowStartNavigation | null;
+  readonly session: ClassicFlowSessionDraft;
+}> => {
+  const { mount } = command;
+  const activityResumeIntake =
+    command.intake._tag === "ActivityResume" ? command.intake : null;
+  const destination = (() => {
+    switch (mount._tag) {
+      case "ActivityResume": {
+        if (!activityResumeIntake) {
+          throw new Error("Expected Activity Resume intake.");
+        }
+        const segment = getActivityFlowPathSegment(
+          activityResumeIntake.action.type
+        );
+        return makeClassicTransactionFlowDestination({
+          completePath: `/activity/${segment}/complete`,
+          routeBase: "/activity",
+          stepsPath: `/activity/${segment}/steps`,
+        });
+      }
+      case "Earn":
+        return makeClassicTransactionFlowDestination({ routeBase: "" });
+      case "PositionStake":
+        return makeClassicTransactionFlowDestination({
+          routeBase: `/positions/${mount.integrationId}/${mount.balanceId}/stake`,
+        });
+      case "PositionExit":
+        return makeClassicTransactionFlowDestination({
+          routeBase: `/positions/${mount.integrationId}/${mount.balanceId}/unstake`,
+        });
+      case "PositionManage":
+        return makeClassicTransactionFlowDestination({
+          routeBase: `/positions/${mount.integrationId}/${mount.balanceId}/pending-action`,
+        });
+    }
+  })();
+
+  const navigation = (() => {
+    if (mount._tag !== "ActivityResume") {
+      return { _tag: "Push", path: destination.reviewPath } as const;
+    }
+    if (mount.presentation === "Dashboard") return null;
+    if (mount.target === "FreshReview") {
+      return { _tag: "Push", path: destination.reviewPath } as const;
+    }
+    if (!activityResumeIntake) {
+      throw new Error("Expected Activity Resume intake.");
+    }
+
+    const segment = getActivityFlowPathSegment(
+      activityResumeIntake.action.type
+    );
+    return {
+      _tag: "Push",
+      path: toWidgetPath(`/activity/${segment}-review/complete`),
+      state: {
+        urls: activityResumeIntake.action.transactions.flatMap((transaction) =>
+          transaction.explorerUrl
+            ? [{ type: transaction.type, url: transaction.explorerUrl }]
+            : []
+        ),
+      },
+    } as const;
+  })();
+
+  return {
+    navigation,
+    session: {
+      ...(mount._tag === "ActivityResume"
+        ? { activityPresentation: mount.presentation }
+        : {}),
+      destination,
+      intake: copyClassicTransactionFlowIntake(command.intake, walletScope),
+    },
+  };
+};
+
+const removeOptionalTrailingSlash = (pathname: string): string =>
+  pathname.length > 1 && pathname.endsWith("/")
+    ? pathname.slice(0, -1)
+    : pathname;
+
+const getPathSegments = (pathname: string): ReadonlyArray<string> =>
+  removeOptionalTrailingSlash(pathname).split("/").filter(Boolean);
+
+const isActivityResumeSessionPath = (
+  session: ClassicFlowSession,
+  pathname: string
+): boolean => {
+  const pathnameSegments = getPathSegments(pathname);
+  const reviewPathSegments = getPathSegments(session.destination.reviewPath);
+  const routeBaseSegments = reviewPathSegments.slice(0, -1);
+  const completePathSegments = getPathSegments(
+    session.destination.completePath
+  );
+  const actionSegment = completePathSegments.at(-2);
+  const historicalCompletePathSegments = actionSegment
+    ? [...routeBaseSegments, `${actionSegment}-review`, "complete"]
+    : [];
+
+  return (
+    Object.values(session.destination).some(
+      (destination) => destination === pathname
+    ) ||
+    (pathnameSegments.length === historicalCompletePathSegments.length &&
+      pathnameSegments.every(
+        (segment, index) => segment === historicalCompletePathSegments[index]
+      ))
+  );
+};
+
+export const isClassicFlowSessionPath = (
+  session: ClassicFlowSession,
+  pathname: string
+): boolean => {
+  const normalizedPathname = removeOptionalTrailingSlash(pathname);
+
+  if (session.intake._tag === "ActivityResume") {
+    return isActivityResumeSessionPath(session, normalizedPathname);
+  }
+
+  return Object.values(session.destination).some(
+    (destination) => destination === normalizedPathname
+  );
+};
 
 type ClassicTransactionFlowReviewPricingInput = {
   readonly token: AppToken;

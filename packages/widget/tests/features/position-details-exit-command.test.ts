@@ -1,14 +1,15 @@
 import BigNumber from "bignumber.js";
-import { Effect, Layer, Schema } from "effect";
+import { Effect, Layer, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { EarnBalance } from "../../src/domain/schema/earn-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
-import { classicFlowSessionStore } from "../../src/features/classic-transaction-flow/state/flow-session-store";
+import { currentClassicFlowSessionAtom } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
@@ -30,18 +31,24 @@ import {
   yieldOpportunityAtom,
 } from "../../src/resources/yield-opportunity/provider";
 import {
+  makeWidgetNavigation,
   WidgetNavigation,
   type WidgetPath,
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
-import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
+import {
+  disconnectedLedgerConnectorState,
+  type NormalizedWalletState,
+} from "../../src/services/wallet/domain/state";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   yieldApiValidatorFixture,
   yieldApiYieldDtoFixture,
   yieldApiYieldFixture,
   yieldBalanceFixture,
 } from "../fixtures";
+import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
@@ -126,20 +133,22 @@ const makeRegistry = ({
   readonly wallet?: NormalizedWalletState;
   readonly yieldBalance?: typeof EarnBalance.Type;
   readonly yieldOpportunity?: typeof selectedYield;
-}) =>
-  AtomRegistry.make({
+}) => {
+  const navigation = makeWidgetNavigation({
+    back: () => Effect.void,
+    push: (path) => Effect.sync(() => push(path)),
+    replace: () => Effect.void,
+  });
+  const walletState = {
+    connection: wallet,
+    ledger: disconnectedLedgerConnectorState,
+  };
+  return AtomRegistry.make({
     initialValues: [
       Atom.initialValue(
         appRuntime.layer,
         Layer.mergeAll(
-          Layer.succeed(
-            WidgetNavigation,
-            WidgetNavigation.of({
-              back: () => Effect.void,
-              push: (path) => Effect.sync(() => push(path)),
-              replace: () => Effect.void,
-            })
-          ),
+          Layer.succeed(WidgetNavigation, navigation),
           Layer.succeed(
             TrackingService,
             TrackingService.of({
@@ -148,6 +157,17 @@ const makeRegistry = ({
             })
           )
         ) as never
+      ),
+      Atom.initialValue(
+        walletRuntime.layer,
+        makeClassicFlowTestWalletLayer({
+          navigation,
+          wallet: WalletService.of({
+            state: Effect.succeed(walletState),
+            states: Stream.succeed(walletState),
+            wagmiConfig: {},
+          } as never),
+        }) as never
       ),
       Atom.initialValue(walletConnectionStateAtom, wallet),
       Atom.initialValue(
@@ -177,6 +197,7 @@ const makeRegistry = ({
       ),
     ],
   });
+};
 
 describe("Position Details exit command", () => {
   it.each([
@@ -329,18 +350,18 @@ describe("Position Details exit command", () => {
       registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
-      expect(
-        registry.get(classicFlowSessionStore.currentSessionAtom)?.intake
-      ).toMatchObject({
-        _tag: "Exit",
-        request: {
-          arguments: {
-            providerId: "provider-a",
-            tronResource: "ENERGY",
-            validatorAddresses: ["validator-a"],
+      expect(registry.get(currentClassicFlowSessionAtom)?.intake).toMatchObject(
+        {
+          _tag: "Exit",
+          request: {
+            arguments: {
+              providerId: "provider-a",
+              tronResource: "ENERGY",
+              validatorAddresses: ["validator-a"],
+            },
           },
-        },
-      });
+        }
+      );
     } finally {
       registry.dispose();
     }

@@ -20,6 +20,7 @@ import {
 import { publishBorrowTransactionFlowOutcomeAtom } from "../../src/features/borrow-transaction-flow/state/outcomes";
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import {
+  makeWidgetNavigation,
   toWidgetPath,
   WidgetNavigation,
 } from "../../src/services/navigation/widget-navigation";
@@ -115,7 +116,7 @@ describe("borrow flow session state", () => {
           appRuntime.layer,
           Layer.succeed(
             WidgetNavigation,
-            WidgetNavigation.of({
+            makeWidgetNavigation({
               back: () => Effect.void,
               push,
               replace: () => Effect.void,
@@ -157,7 +158,7 @@ describe("borrow flow session state", () => {
           appRuntime.layer,
           Layer.succeed(
             WidgetNavigation,
-            WidgetNavigation.of({
+            makeWidgetNavigation({
               back: () => Effect.void,
               push: () => Effect.fail({ _tag: "NavigationFailed" } as never),
               replace: () => Effect.void,

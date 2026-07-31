@@ -13,7 +13,28 @@ export type WidgetNavigationOptions = Readonly<{
   readonly state?: unknown;
 }>;
 
-class WidgetNavigationError extends Data.TaggedError("WidgetNavigationError")<{
+export type WidgetNavigationCommand =
+  | Readonly<
+      {
+        readonly _tag: "Back";
+      } & WidgetNavigationOptions
+    >
+  | Readonly<
+      {
+        readonly _tag: "Push";
+        readonly path: WidgetPath;
+      } & WidgetNavigationOptions
+    >
+  | Readonly<
+      {
+        readonly _tag: "Replace";
+        readonly path: WidgetPath;
+      } & WidgetNavigationOptions
+    >;
+
+export class WidgetNavigationError extends Data.TaggedError(
+  "WidgetNavigationError"
+)<{
   readonly cause: unknown;
 }> {}
 
@@ -36,46 +57,72 @@ const runNavigation = (
     catch: (cause) => new WidgetNavigationError({ cause }),
   });
 
+export type WidgetNavigationService = Readonly<{
+  readonly back: (
+    options?: WidgetNavigationOptions
+  ) => Effect.Effect<void, WidgetNavigationError>;
+  readonly execute: (
+    command: WidgetNavigationCommand
+  ) => Effect.Effect<void, WidgetNavigationError>;
+  readonly push: (
+    path: WidgetPath,
+    options?: WidgetNavigationOptions
+  ) => Effect.Effect<void, WidgetNavigationError>;
+  readonly replace: (
+    path: WidgetPath,
+    options?: WidgetNavigationOptions
+  ) => Effect.Effect<void, WidgetNavigationError>;
+}>;
+
+export const makeWidgetNavigation = (
+  methods: Omit<WidgetNavigationService, "execute">
+): WidgetNavigationService => ({
+  ...methods,
+  execute: (command) => {
+    switch (command._tag) {
+      case "Back":
+        return methods.back(command);
+      case "Push":
+        return methods.push(command.path, command);
+      case "Replace":
+        return methods.replace(command.path, command);
+    }
+  },
+});
+
 export class WidgetNavigation extends Context.Service<
   WidgetNavigation,
-  {
-    readonly back: (
-      options?: WidgetNavigationOptions
-    ) => Effect.Effect<void, WidgetNavigationError>;
-    readonly push: (
-      path: WidgetPath,
-      options?: WidgetNavigationOptions
-    ) => Effect.Effect<void, WidgetNavigationError>;
-    readonly replace: (
-      path: WidgetPath,
-      options?: WidgetNavigationOptions
-    ) => Effect.Effect<void, WidgetNavigationError>;
-  }
+  WidgetNavigationService
 >()("@stakekit/widget/services/navigation/WidgetNavigation") {
   static readonly layer = (canResetScroll: () => boolean = () => true) =>
     Layer.effect(
       WidgetNavigation,
-      ApplicationRouter.useSync(({ router }) =>
-        WidgetNavigation.of({
-          back: (options = {}) =>
-            runNavigation(async () => {
-              await resetScroll(options, canResetScroll);
-              await router.navigate(-1);
-            }),
-          push: (path, options = {}) =>
-            runNavigation(async () => {
-              await resetScroll(options, canResetScroll);
-              await router.navigate(path, { state: options.state });
-            }),
-          replace: (path, options = {}) =>
-            runNavigation(async () => {
-              await resetScroll(options, canResetScroll);
-              await router.navigate(path, {
-                replace: true,
-                state: options.state,
-              });
-            }),
-        })
-      )
+      ApplicationRouter.useSync(({ router }) => {
+        const back: WidgetNavigation["Service"]["back"] = (options = {}) =>
+          runNavigation(async () => {
+            await resetScroll(options, canResetScroll);
+            await router.navigate(-1);
+          });
+        const push: WidgetNavigation["Service"]["push"] = (
+          path,
+          options = {}
+        ) =>
+          runNavigation(async () => {
+            await resetScroll(options, canResetScroll);
+            await router.navigate(path, { state: options.state });
+          });
+        const replace: WidgetNavigation["Service"]["replace"] = (
+          path,
+          options = {}
+        ) =>
+          runNavigation(async () => {
+            await resetScroll(options, canResetScroll);
+            await router.navigate(path, {
+              replace: true,
+              state: options.state,
+            });
+          });
+        return makeWidgetNavigation({ back, push, replace });
+      })
     );
 }

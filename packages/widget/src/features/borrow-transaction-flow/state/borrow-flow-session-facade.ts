@@ -2,10 +2,10 @@ import { Data, Duration, Effect, Option, Schedule } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import { runWidgetNavigationCommand } from "../../../app/runtime/navigation";
 import type { Action } from "../../../domain/borrow/execution/action";
 import type { Transaction } from "../../../domain/borrow/execution/transaction";
 import { BorrowOperations } from "../../../services/api/borrow-operations";
+import { WidgetNavigation } from "../../../services/navigation/widget-navigation";
 import {
   BorrowTransactionWorkflowInput,
   getCurrentTransactionWorkflowBatch,
@@ -128,10 +128,13 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
         }
 
         registry.set(stateAtom, { executionAction: action });
-        yield* runWidgetNavigationCommand({
-          _tag: "Push",
-          path: getBorrowTransactionFlowRoutes(session.intake.entry).stepsPath,
-        }).pipe(
+        yield* WidgetNavigation.use((navigation) =>
+          navigation.execute({
+            _tag: "Push",
+            path: getBorrowTransactionFlowRoutes(session.intake.entry)
+              .stepsPath,
+          })
+        ).pipe(
           Effect.tapError(() =>
             Effect.sync(() => {
               if (
@@ -179,10 +182,12 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
     .fn(
       (_input: undefined, context) => {
         if (!context(isCurrentSessionAtom)) return Effect.void;
-        return runWidgetNavigationCommand({
-          _tag: "Replace",
-          path: getBorrowTransactionFlowRoutes(session.intake.entry).basePath,
-        });
+        return WidgetNavigation.use((navigation) =>
+          navigation.execute({
+            _tag: "Replace",
+            path: getBorrowTransactionFlowRoutes(session.intake.entry).basePath,
+          })
+        );
       },
       { initialValue: undefined }
     )
@@ -192,10 +197,12 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
       (_input: undefined, context) => {
         const registry = context.registry;
         if (!context(isCurrentSessionAtom)) return Effect.void;
-        return runWidgetNavigationCommand({
-          _tag: "Replace",
-          path: getBorrowTransactionFlowRoutes(session.intake.entry).basePath,
-        }).pipe(
+        return WidgetNavigation.use((navigation) =>
+          navigation.execute({
+            _tag: "Replace",
+            path: getBorrowTransactionFlowRoutes(session.intake.entry).basePath,
+          })
+        ).pipe(
           Effect.tap(() =>
             Effect.sync(() => {
               if (!registry.get(isCurrentSessionAtom)) return;
@@ -282,11 +289,13 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) => {
               ) {
                 return Effect.void;
               }
-              return runWidgetNavigationCommand({
-                _tag: "Replace",
-                path: getBorrowTransactionFlowRoutes(session.intake.entry)
-                  .completePath,
-              });
+              return WidgetNavigation.use((navigation) =>
+                navigation.execute({
+                  _tag: "Replace",
+                  path: getBorrowTransactionFlowRoutes(session.intake.entry)
+                    .completePath,
+                })
+              );
             });
             return navigate.pipe(
               Effect.retry({

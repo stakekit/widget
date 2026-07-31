@@ -53,7 +53,6 @@ describe("transaction workflow module", () => {
               probe.started += 1;
               return {
                 dispatch: () => Effect.void,
-                events: Stream.never,
                 states: Stream.never,
               };
             }),
@@ -75,7 +74,7 @@ describe("transaction workflow module", () => {
     const disposeFirstState = registry.mount(first.stateAtom);
     const disposeSecondScope = registry.mount(secondAtom);
     const second = registry.get(secondAtom);
-    const disposeSecondEvents = registry.mount(second.eventsAtom);
+    const disposeSecondState = registry.mount(second.stateAtom);
     await vi.waitFor(() => expect(probe.started).toBe(2));
 
     disposeFirstScope();
@@ -88,6 +87,6 @@ describe("transaction workflow module", () => {
     expect(probe.started).toBe(2);
 
     disposeFirstState();
-    disposeSecondEvents();
+    disposeSecondState();
   });
 });

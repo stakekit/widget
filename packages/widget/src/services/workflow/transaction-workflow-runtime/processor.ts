@@ -1,4 +1,4 @@
-import { Effect, Match, PubSub, Queue, Ref, SubscriptionRef } from "effect";
+import { Effect, Match, Queue, Ref, SubscriptionRef } from "effect";
 import {
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
@@ -6,7 +6,6 @@ import {
   getTransactionWorkflowId,
   type TransactionWorkflowAction,
   type TransactionWorkflowContext,
-  type TransactionWorkflowEvent,
   type TransactionWorkflowInput,
   TransactionWorkflowInvariantError,
   type TransactionWorkflowState,
@@ -19,12 +18,10 @@ import { prepareAndSign } from "./signing";
 import { submitCurrent } from "./submission";
 
 export const makeTransactionWorkflowProcessor = ({
-  events,
   input,
   queue,
   stateRef,
 }: {
-  readonly events: PubSub.PubSub<TransactionWorkflowEvent>;
   readonly input: TransactionWorkflowInput;
   readonly queue: Queue.Queue<TransactionWorkflowAction>;
   readonly stateRef: SubscriptionRef.SubscriptionRef<TransactionWorkflowState>;
@@ -35,12 +32,6 @@ export const makeTransactionWorkflowProcessor = ({
     ).pipe(
       Effect.andThen(
         SubscriptionRef.set(stateRef, { _tag: "Completed", context })
-      ),
-      Effect.andThen(
-        PubSub.publish(events, {
-          _tag: "TransactionWorkflowCompleted",
-          context,
-        })
       ),
       Effect.asVoid
     );
@@ -60,15 +51,7 @@ export const makeTransactionWorkflowProcessor = ({
           }),
         onSuccess: Match.valueTags({
           Complete: (result) => complete(result.context),
-          Continue: (result) =>
-            PubSub.publish(events, {
-              _tag: "TransactionWorkflowBatchAdvanced",
-              batchId: result.batchId,
-              context: result.context,
-            }).pipe(
-              Effect.andThen(() => runCurrent(result.context)),
-              Effect.asVoid
-            ),
+          Continue: (result) => runCurrent(result.context),
         }),
       })
     );
@@ -122,20 +105,10 @@ export const makeTransactionWorkflowProcessor = ({
             context,
             error,
           }),
-        onSuccess: ({ context: submitted, submission }) =>
+        onSuccess: ({ context: submitted }) =>
           TransactionWorkflowOperationsService.use((operations) =>
             operations.submitWorkflow(input)
-          ).pipe(
-            Effect.andThen(
-              PubSub.publish(events, {
-                _tag: "TransactionWorkflowSubmitted",
-                context: submitted,
-                submission,
-              })
-            ),
-            Effect.andThen(runConfirmation(submitted)),
-            Effect.asVoid
-          ),
+          ).pipe(Effect.andThen(runConfirmation(submitted)), Effect.asVoid),
       })
     );
 
@@ -174,13 +147,7 @@ export const makeTransactionWorkflowProcessor = ({
             );
           }
 
-          return PubSub.publish(events, {
-            _tag: "TransactionWorkflowSigned",
-            batchId: batch.id,
-            source: current.source,
-            transactionId: current.source.transaction.id,
-            workflowId: getTransactionWorkflowId(input),
-          }).pipe(Effect.andThen(runSubmission(signed)), Effect.asVoid);
+          return runSubmission(signed);
         },
       })
     );

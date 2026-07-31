@@ -29,7 +29,9 @@ Production code is organized by ownership rather than by React mechanism:
   cross-feature consumer is deleted rather than kept empty. A small flat feature
   keeps its implementation in `state/` behind `state.ts`; a single-module feature
   whose one module is the entire headless interface may keep that implementation
-  in `state.ts` itself. Keep the barrels narrow. A root entry that re-exports a feature's whole page graph creates
+  in `state.ts` itself. Migrated orchestration-heavy features separate
+  deterministic `model/`, Atom-independent `state/orchestration/`, and reactive
+  `state/atoms/` internals. Keep the barrels narrow. A root entry that re-exports a feature's whole page graph creates
   import cycles and drags unrelated modules into consumers' builds, so publish
   the collaboration contract rather than the implementation. Build-time
   `*.css.ts` modules are exempt: vanilla-extract evaluates them outside the
@@ -59,10 +61,11 @@ The intended read direction is:
 Feature commands and workflows may use operation capability services through
 the app runtime, but feature read models do not bypass Authoritative Resources
 to call read-side API capabilities directly. The owning operation importers are
-the Classic and Borrow Flow Session facades plus the Transaction Workflow
-operations service. Wallet Bootstrap is the only read-source exception: it
-acquires enabled networks and an optional initial Yield while constructing the
-wallet runtime, before feature resources are available.
+the Classic Flow Review orchestration module, the Borrow Flow Session facade,
+and the Transaction Workflow operations service. Wallet Bootstrap is the only
+read-source exception: it acquires enabled networks and an optional initial
+Yield while constructing the wallet runtime, before feature resources are
+available.
 
 Feature-to-feature collaboration must use an explicit supported entrypoint;
 deep imports into another feature are forbidden and rev-dep fails the build on
@@ -129,6 +132,54 @@ Effect services and Authoritative Resources rather than UI hooks. Generated
 runtime API clients are private to `services/api`; approved `domain/schema` and
 `domain/borrow` modules may import generated schema artifacts only.
 
+## Application orchestration
+
+Plain TypeScript owns deterministic constructors, decisions, transitions,
+invariants, and projections. Feature-owned, Atom-independent Effect modules own
+multi-step orchestration, command concurrency, retries, rollback, typed
+operational failures, and scoped lifetimes. An orchestration-heavy feature has
+one feature-owned Effect service as its external implementation seam. The
+application or wallet runtime constructs that service once, resolves its static
+dependencies during layer construction, and keeps it alive independently of
+route mounts. Private child modules may be scoped factories when their Session,
+action, eligibility, or other inputs genuinely vary by route scope. Operations
+do not locally re-provide dependencies that composition already resolved.
+
+An orchestration interface publishes semantic operations rather than one
+generic tagged-command dispatcher. Observable channels are demand-driven: a
+read-only state Stream exists when production needs changing authoritative
+facts, and an event Stream exists only for a production observer that cannot
+use state or an operation outcome. The module directly performs navigation,
+tracking, invalidation, and other side effects required by an accepted
+operation. Its interface never accepts or returns an Atom, registry, Atom
+context, or command context. Feature `model/` modules likewise never import
+Effect Atom; Atom adapters materialize explicit resource observations before
+invoking deterministic logic.
+
+Command Atoms are narrow adapters. They may read the current reactive snapshot,
+normalize it through a pure function, and then perform exactly one local state
+transition, one scoped-handle operation, or one cross-feature tail delegation
+before mapping the typed result. They do not access the registry directly,
+subscribe, mount, refresh-and-wait, retry, coordinate multiple commands, or
+perform compensating writes. A shared lifecycle adapter under `src/app/runtime`
+hides scoped-handle acquisition, keep-alive, optional state projection, and
+release; feature authors and callers do not manually reproduce a mount graph.
+Authoritative Resources retain the Atom machinery required for reactive caching
+and resource policy.
+
+Workflow facts have one authoritative writer. State owned by an Effect
+lifecycle module may be mirrored or projected into Atom but is not independently
+writable there. Expected command ineligibility is a typed outcome; operational
+failure uses the Effect error channel; impossible states are defects.
+
+Transaction Flow orchestration follows the domain lifetimes: one feature-owned
+service owns the active Flow Session store, each Flow Session owns private
+handoff capabilities, and Review and Execution are fresh child scopes. Classic
+and Borrow retain separate journey-specific services and share neutral lifecycle
+infrastructure only. Flow services consume `WalletService` directly for current
+Wallet Scope validation and autonomous owner invalidation; Atom wallet
+projections do not feed orchestration.
+
 ## Application runtime
 
 `src/app/runtime/application-router-runtime.ts` is a synchronous base runtime
@@ -137,7 +188,10 @@ that constructs the scoped `ApplicationRouter` around the memory router.
 configuration, focused Yield, Legacy, and Borrow capability ports, rich errors,
 persistence, tracking, `WidgetNavigation`, and wallet-modal commands. The
 derived `wallet-runtime.ts` receives the application context and adds its scoped
-wallet and transaction-workflow services.
+wallet, transaction-workflow, and Classic Transaction Flow services. It is the
+sole privileged importer of the private Classic orchestration service; an
+exact-file rev-dep exception permits that composition edge without making the
+service a public feature entry.
 Borrow configuration is optional at construction time; invoking an unavailable
 borrow capability produces the typed error.
 
@@ -156,27 +210,35 @@ assembled at the top-level React composition seam in `App.tsx` and seeded into
 the registry when it is created, so runtime construction does not import React
 composition. React synchronously reads the router from an internal Atom only to
 pass it to `RouterProvider`.
-`WidgetNavigation` is constructed directly from `ApplicationRouter` and is the
-headless application-runtime command interface. Application-owned navigation
-uses canonical absolute paths from commands and workflow transition events;
-derived view Atoms do not publish navigation outcomes for React to apply.
+`WidgetNavigation` is constructed directly from `ApplicationRouter` and owns the
+closed Back, Push, and Replace command union plus its `execute` interpreter.
+Application-owned navigation uses canonical absolute paths; orchestration calls
+the resolved service directly and does not re-provide it at operation time.
+Derived view Atoms do not publish navigation outcomes for React to apply.
 Declarative route guards and view-local navigation remain React concerns.
 
 ## Effect Atom state conventions
 
-Effect atoms own application configuration, asynchronous resources, workflow
-state, mutations, and cross-feature read models. Resource keys must describe
-their complete input, failures remain typed, and mutation success refreshes
-only declared dependent resources. React hooks should be thin adapters over
-atoms or derived read models, not alternate state owners.
+Effect atoms own application configuration, asynchronous resources,
+feature-local synchronous state, reactive resource binding, passive workflow
+state projections, mutation adapters, and cross-feature read models.
+Effect-native lifecycle modules own authoritative workflow state and
+orchestration. Resource keys must describe their complete input, failures
+remain typed, and mutation success refreshes only declared dependent resources.
+React hooks should be thin adapters over atoms or derived read models, not
+alternate state owners.
 
 Production composition interfaces represent production variability. Runtime
 providers, Atom constructors, and feature facades do not accept alternate
 Atoms, initial registry values, or optional dependencies solely for tests.
-Tests substitute through test-owned registries and Effect service Layers, or
-exercise deterministic production-used projections directly. Keyed families,
-tree-scoped modules, and constructors with multiple production compositions
-remain valid production seams.
+Tests exercise deterministic production-used projections directly and test
+Effect-native orchestration through the real feature service layer, its semantic
+operations, and production-observable state, using test adapters for external
+capabilities. Private Session, Review, and Execution factories are not separate
+behavior-test surfaces. Test-owned registries verify only service lookup,
+route-scope acquisition and release, reactive projection, and operation
+forwarding. Keyed families, tree-scoped modules, and constructors with multiple
+production compositions remain valid production seams.
 
 An Authoritative Resource is the sole owner of one cacheable canonical remote
 fact. Its interface accepts complete explicit identity and never reads current,

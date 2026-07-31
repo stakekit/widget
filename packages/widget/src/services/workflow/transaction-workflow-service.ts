@@ -5,7 +5,7 @@ import {
   PubSub,
   Queue,
   type Scope,
-  Stream,
+  type Stream,
   SubscriptionRef,
 } from "effect";
 import {
@@ -13,7 +13,6 @@ import {
   initializeTransactionWorkflow,
   type TransactionWorkflowAction,
   type TransactionWorkflowCommand,
-  type TransactionWorkflowEvent,
   type TransactionWorkflowInput,
   type TransactionWorkflowInputError,
   type TransactionWorkflowState,
@@ -26,7 +25,6 @@ export type TransactionWorkflowHandle = {
   readonly dispatch: (
     command: TransactionWorkflowCommand
   ) => Effect.Effect<void>;
-  readonly events: Stream.Stream<TransactionWorkflowEvent>;
   readonly states: Stream.Stream<TransactionWorkflowState>;
 };
 
@@ -50,19 +48,17 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
         const stateRef = yield* SubscriptionRef.make(
           initializeTransactionWorkflow(input)
         );
-        const events = yield* PubSub.sliding<TransactionWorkflowEvent>({
-          capacity: 32,
-          replay: 8,
-        });
         yield* Effect.addFinalizer(() =>
-          Effect.all([Queue.shutdown(queue), PubSub.shutdown(events)], {
-            concurrency: "unbounded",
-            discard: true,
-          })
+          Effect.all(
+            [Queue.shutdown(queue), PubSub.shutdown(stateRef.pubsub)],
+            {
+              concurrency: "unbounded",
+              discard: true,
+            }
+          )
         );
 
         yield* makeTransactionWorkflowProcessor({
-          events,
           input,
           queue,
           stateRef,
@@ -84,7 +80,6 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
               }),
               Effect.asVoid
             ),
-          events: Stream.fromPubSub(events),
           states: SubscriptionRef.changes(stateRef),
         };
       });

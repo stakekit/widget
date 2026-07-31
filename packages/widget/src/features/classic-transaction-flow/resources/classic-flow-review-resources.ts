@@ -54,30 +54,9 @@ const getGasBalancesCommand = (
   };
 };
 
-export const makeClassicFlowSessionReviewResources = ({
-  actionPreviewAtom,
-  intakeAtom,
-  kycGateAtom,
-}: {
-  readonly actionPreviewAtom: Atom.Atom<
-    AsyncResult.AsyncResult<YieldAction | null, { readonly retryable: boolean }>
-  >;
-  readonly intakeAtom: Atom.Atom<ClassicTransactionFlowIntake>;
-  readonly kycGateAtom: Atom.Atom<CurrentYieldKycGate>;
-}) => {
-  const reviewPricesAtom = Atom.make((get) => {
-    const input = getClassicTransactionFlowReviewPricingInput(get(intakeAtom));
-    const request = input
-      ? getTokensPricesRequest({ token: input.token, yieldDto: input.yield })
-      : null;
-
-    return get(pricesAtom.foreground(new PricesKey({ request })));
-  }).pipe(Atom.withLabel("classicFlowSessionReviewPricesAtom"));
-
-  const reviewActionAtom = Atom.make((get) =>
-    get(actionPreviewAtom).pipe(AsyncResult.value, Option.getOrNull)
-  );
-
+export const makeClassicFlowActivityActionExpiredAtom = (
+  intakeAtom: Atom.Atom<ClassicTransactionFlowIntake>
+) => {
   const activityActionExpiredResourceAtom = Atom.make((get) => {
     const intake = get(intakeAtom);
     if (intake._tag !== "ActivityResume") {
@@ -97,9 +76,36 @@ export const makeClassicFlowSessionReviewResources = ({
     );
   }).pipe(Atom.withLabel("classicFlowActivityActionExpiredResourceAtom"));
 
-  const activityActionExpiredAtom = Atom.make((get) =>
+  return Atom.make((get) =>
     AsyncResult.getOrElse(get(activityActionExpiredResourceAtom), () => true)
   ).pipe(Atom.withLabel("classicFlowActivityActionExpiredAtom"));
+};
+
+export const makeClassicFlowSessionReviewResources = ({
+  actionPreviewAtom,
+  activityActionExpiredAtom,
+  intakeAtom,
+  kycGateAtom,
+}: {
+  readonly actionPreviewAtom: Atom.Atom<
+    AsyncResult.AsyncResult<YieldAction | null, { readonly retryable: boolean }>
+  >;
+  readonly activityActionExpiredAtom: Atom.Atom<boolean>;
+  readonly intakeAtom: Atom.Atom<ClassicTransactionFlowIntake>;
+  readonly kycGateAtom: Atom.Atom<CurrentYieldKycGate>;
+}) => {
+  const reviewPricesAtom = Atom.make((get) => {
+    const input = getClassicTransactionFlowReviewPricingInput(get(intakeAtom));
+    const request = input
+      ? getTokensPricesRequest({ token: input.token, yieldDto: input.yield })
+      : null;
+
+    return get(pricesAtom.foreground(new PricesKey({ request })));
+  }).pipe(Atom.withLabel("classicFlowSessionReviewPricesAtom"));
+
+  const reviewActionAtom = Atom.make((get) =>
+    get(actionPreviewAtom).pipe(AsyncResult.value, Option.getOrNull)
+  );
 
   const gasAmountAtom = Atom.make((get) =>
     getGasAmount(get(reviewActionAtom))

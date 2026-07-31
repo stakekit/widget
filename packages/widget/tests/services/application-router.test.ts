@@ -8,14 +8,15 @@ import {
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
 import {
-  runWidgetNavigationCommand,
+  toWidgetPath,
+  WidgetNavigation,
   type WidgetNavigationCommand,
-} from "../../src/app/runtime/navigation";
-import { toWidgetPath } from "../../src/services/navigation/widget-navigation";
+} from "../../src/services/navigation/widget-navigation";
 
 const navigationCommandAtom = appRuntime
   .fn(
-    (command: WidgetNavigationCommand) => runWidgetNavigationCommand(command),
+    (command: WidgetNavigationCommand) =>
+      WidgetNavigation.use((navigation) => navigation.execute(command)),
     { concurrent: false }
   )
   .pipe(Atom.withLabel("applicationRouterTestNavigationCommandAtom"));

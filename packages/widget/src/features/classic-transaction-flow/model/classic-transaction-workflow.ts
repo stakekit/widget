@@ -1,8 +1,4 @@
-import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
 import type { YieldAction } from "../../../domain/schema/action-models";
-import type { TransactionType } from "../../../domain/types/action";
 import type {
   ClassicTransactionWorkflowInput,
   TransactionWorkflowState,
@@ -12,13 +8,7 @@ import {
   flattenTransactionWorkflowTransactions,
   getCurrentTransactionWorkflowTransaction,
   getTransactionSignCustomMessage,
-  initializeTransactionWorkflow,
 } from "../../../services/workflow/transaction-workflow-model";
-import { makeTransactionWorkflowModule } from "../../transaction-workflow/state";
-import {
-  actionHistoryRevisionAtom,
-  incrementActionHistoryRevision,
-} from "./action-history";
 
 export enum ClassicTransactionStepState {
   SIGN_IDLE = 0,
@@ -77,9 +67,9 @@ const getClassicTransactionStepState = ({
   }
 };
 
-const getClassicTransactionStepsView = (
+export const getClassicTransactionStepsView = (
   machineState: TransactionWorkflowState,
-  workflowInput: ClassicTransactionWorkflowInput
+  workflowInput: Pick<ClassicTransactionWorkflowInput, "yieldId">
 ) => {
   const workflowTransactions = flattenTransactionWorkflowTransactions(
     machineState.context
@@ -119,77 +109,4 @@ const getClassicTransactionStepsView = (
     txStates,
     yieldId: workflowInput.yieldId,
   } as const;
-};
-
-export const makeClassicTransactionWorkflowModule = (
-  workflowInput: ClassicTransactionWorkflowInput
-) => {
-  const workflowAtom = makeTransactionWorkflowModule(workflowInput);
-
-  return Atom.make((context) => {
-    const registry = context.registry;
-    const workflow = context(workflowAtom);
-    context.subscribe(
-      workflow.eventsAtom,
-      Option.match({
-        onNone: () => undefined,
-        onSome: (event) => {
-          if (
-            event._tag === "TransactionWorkflowCompleted" &&
-            event.context.domain._tag === "Classic"
-          ) {
-            registry.set(
-              actionHistoryRevisionAtom,
-              incrementActionHistoryRevision(
-                registry.get(actionHistoryRevisionAtom)
-              )
-            );
-          }
-        },
-      }),
-      { immediate: true }
-    );
-    const viewAtom = Atom.make((get) => {
-      const result = get(workflow.stateAtom);
-      const state = Option.getOrElse(AsyncResult.value(result), () =>
-        initializeTransactionWorkflow(workflowInput)
-      );
-
-      return {
-        result,
-        state,
-        steps: getClassicTransactionStepsView(state, workflowInput),
-        workflowInput,
-      } as const;
-    }).pipe(Atom.setIdleTTL(0), Atom.withLabel("classicExecutionWorkflowView"));
-    const completionStateAtom = Atom.make((get) => {
-      const { state } = get(viewAtom);
-      if (state._tag !== "Completed") return null;
-
-      return {
-        urls: flattenTransactionWorkflowTransactions(state.context)
-          .filter((transaction) => transaction.source._tag === "Classic")
-          .map((transaction) => ({
-            type: transaction.source.transaction.type,
-            url: transaction.meta.url,
-          }))
-          .filter(
-            (value): value is { type: TransactionType; url: string } =>
-              !!value.url
-          ),
-      };
-    }).pipe(
-      Atom.setIdleTTL(0),
-      Atom.withLabel("classicExecutionCompletionState")
-    );
-
-    return {
-      completionStateAtom,
-      dispatchAtom: workflow.commandAtom,
-      viewAtom,
-    } as const;
-  }).pipe(
-    Atom.setIdleTTL(0),
-    Atom.withLabel("classicTransactionWorkflowScope")
-  );
 };

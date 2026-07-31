@@ -165,7 +165,7 @@
           "files": ["src/services/api/yield-operations.ts"],
           "allowImporters": [
             "src/app/runtime/**",
-            "src/features/classic-transaction-flow/state/classic-flow-session-facade.ts",
+            "src/features/classic-transaction-flow/state/orchestration/classic-flow-review.ts",
             "src/services/workflow/transaction-workflow-operations-service.ts",
             "tests/**"
           ]
@@ -295,10 +295,22 @@
             "src/features/classic-transaction-flow/**",
             "!src/features/classic-transaction-flow/state.ts",
             "!src/features/classic-transaction-flow/ui.ts",
-            "!src/features/classic-transaction-flow/components.ts"
+            "!src/features/classic-transaction-flow/components.ts",
+            "!src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service.ts"
           ],
           "allowImporters": [
             "**/*.css.ts",
+            "src/features/classic-transaction-flow/**",
+            "tests/**"
+          ]
+        },
+        {
+          "enabled": true,
+          "files": [
+            "src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service.ts"
+          ],
+          "allowImporters": [
+            "src/app/runtime/wallet-runtime.ts",
             "src/features/classic-transaction-flow/**",
             "tests/**"
           ]

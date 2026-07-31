@@ -38,7 +38,10 @@ import { BorrowStepsPage } from "../../src/features/borrow-transaction-flow/ui/s
 import { useBorrowExecution } from "../../src/features/borrow-transaction-flow/ui/use-borrow-execution";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { BorrowOperations } from "../../src/services/api/borrow-operations";
-import { WidgetNavigation } from "../../src/services/navigation/widget-navigation";
+import {
+  makeWidgetNavigation,
+  WidgetNavigation,
+} from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
@@ -301,7 +304,7 @@ const renderExecution = async (
   const navigation: {
     current: ReturnType<typeof useNavigate> | null;
   } = { current: null };
-  const navigationService = WidgetNavigation.of({
+  const navigationService = makeWidgetNavigation({
     back: () =>
       Effect.sync(() => {
         navigation.current?.(-1);

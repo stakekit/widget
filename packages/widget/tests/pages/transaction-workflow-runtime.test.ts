@@ -1,4 +1,14 @@
-import { Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
+import {
+  Deferred,
+  Effect,
+  Exit,
+  Fiber,
+  Layer,
+  Option,
+  Schema,
+  Scope,
+  Stream,
+} from "effect";
 import { TestClock } from "effect/testing";
 import { describe, expect, it, vi } from "vitest";
 import { Action } from "../../src/domain/borrow/execution/action";
@@ -207,19 +217,42 @@ const runToCompletion = (
           (state) => state._tag === "Completed"
         );
         const finalState = Option.getOrThrow(yield* Fiber.join(completed));
-        const events = yield* machine.events.pipe(
-          Stream.takeUntil(
-            (event) => event._tag === "TransactionWorkflowCompleted"
-          ),
-          Stream.runCollect
-        );
-
-        return { events: Array.from(events), finalState };
+        return { finalState };
       })
     )
   );
 
 describe("transaction workflow runtime", () => {
+  it("closes its state Stream when the workflow Scope closes", async () => {
+    const key = new ClassicTransactionWorkflowInput({
+      actionMeta,
+      transactions: [classicTransaction("scope-close")],
+      walletScope: classicWalletScope,
+      yieldId,
+    });
+
+    const streamExit = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const workflowScope = yield* Scope.make();
+          const workflow = yield* makeWorkflowFromService({
+            key,
+            operations: makeOperations(),
+          }).pipe(Effect.provideService(Scope.Scope, workflowScope));
+          const stream = yield* workflow.states.pipe(
+            Stream.runDrain,
+            Effect.forkChild
+          );
+          yield* Effect.yieldNow;
+          yield* Scope.close(workflowScope, Exit.void);
+          return yield* Fiber.await(stream);
+        })
+      )
+    );
+
+    expect(streamExit._tag).toBe("Success");
+  });
+
   it("invalidates a submitted classic workflow before confirmation", async () => {
     const getClassicStatus = vi.fn(() => Effect.never);
     const submittedKey = new ClassicTransactionWorkflowInput({
@@ -349,7 +382,7 @@ describe("transaction workflow runtime", () => {
 
   it("auto-starts classic signed-payload and broadcast submission paths", async () => {
     const submitSigned = vi.fn(() => Effect.void);
-    const signed = await runToCompletion(
+    await runToCompletion(
       new ClassicTransactionWorkflowInput({
         actionMeta,
         transactions: [classicTransaction("classic-signed")],
@@ -363,11 +396,6 @@ describe("transaction workflow runtime", () => {
       payload: { signedTransaction: signedPayload },
       transactionId: "classic-signed",
     });
-    expect(signed.events.map(({ _tag }) => _tag)).toEqual([
-      "TransactionWorkflowSigned",
-      "TransactionWorkflowSubmitted",
-      "TransactionWorkflowCompleted",
-    ]);
 
     const submitHash = vi.fn(() => Effect.void);
     await runToCompletion(
@@ -781,14 +809,6 @@ describe("transaction workflow runtime", () => {
       "borrow-step-2",
     ]);
     expect(result.finalState.context.submissions).toHaveLength(2);
-    expect(result.events.map(({ _tag }) => _tag)).toEqual([
-      "TransactionWorkflowSigned",
-      "TransactionWorkflowSubmitted",
-      "TransactionWorkflowBatchAdvanced",
-      "TransactionWorkflowSigned",
-      "TransactionWorkflowSubmitted",
-      "TransactionWorkflowCompleted",
-    ]);
   });
 
   it("reconciles an ambiguous failed borrow advancement before retrying", async () => {

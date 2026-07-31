@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Effect, Layer, Option, Schema } from "effect";
+import { Effect, Layer, Option, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
@@ -9,7 +9,7 @@ import {
   widgetConfigAtom,
 } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
 import { walletScopeAtom } from "../../src/features/wallet/state";
@@ -18,11 +18,20 @@ import {
   makeYieldEntry,
   type YieldEntryFacadeInput,
 } from "../../src/features/yield-entry/state/yield-entry";
-import { WidgetNavigation } from "../../src/services/navigation/widget-navigation";
+import {
+  makeWidgetNavigation,
+  WidgetNavigation,
+} from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import {
+  disconnectedLedgerConnectorState,
+  type WalletState,
+} from "../../src/services/wallet/domain/state";
 import { WalletModal } from "../../src/services/wallet/wallet-modal";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import { yieldApiYieldFixture } from "../fixtures";
+import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
@@ -37,6 +46,26 @@ const otherWalletScope = new WalletScopeKey({
   ),
   network: "ethereum",
 });
+const walletState = {
+  connection: {
+    additionalAddresses: walletScope.additionalAddresses,
+    address: walletScope.address,
+    chain: {} as never,
+    connector: {} as never,
+    connectorChains: [],
+    isLedgerLive: false,
+    isLedgerLiveAccountPlaceholder: false,
+    ledgerAccounts: [],
+    network: walletScope.network,
+    status: "connected",
+  },
+  ledger: disconnectedLedgerConnectorState,
+} satisfies WalletState;
+const walletService = WalletService.of({
+  state: Effect.succeed(walletState),
+  states: Stream.succeed(walletState),
+  wagmiConfig: {},
+} as never);
 
 const makeFacadeInput = (
   override: Partial<YieldEntryFacadeInput> = {}
@@ -97,6 +126,11 @@ const makeObservablePorts = () => {
   const push = vi.fn(() => Effect.void);
   const replace = vi.fn(() => Effect.void);
   const trackEvent = vi.fn(() => Effect.void);
+  const navigation = makeWidgetNavigation({
+    back: () => Effect.void,
+    push,
+    replace,
+  });
 
   return {
     closeChain,
@@ -110,16 +144,14 @@ const makeObservablePorts = () => {
           uninstall: () => Effect.void,
         })
       ),
-      Layer.succeed(
-        WidgetNavigation,
-        WidgetNavigation.of({ back: () => Effect.void, push, replace })
-      ),
+      Layer.succeed(WidgetNavigation, navigation),
       Layer.succeed(
         TrackingService,
         TrackingService.of({ trackEvent, trackPageView: () => Effect.void })
       )
     ) as never,
     openConnect,
+    navigation,
     push,
     replace,
     trackEvent,
@@ -137,6 +169,13 @@ const makeObservableRegistry = (
       ],
       [walletScopeAtom, walletScope],
       [appRuntime.layer, ports.layer],
+      [
+        walletRuntime.layer,
+        makeClassicFlowTestWalletLayer({
+          navigation: ports.navigation,
+          wallet: walletService,
+        }) as never,
+      ],
     ],
   });
 
@@ -236,15 +275,8 @@ describe("Yield Entry", () => {
   });
 
   it("starts and navigates only for an eligible submission", async () => {
-    const registry = AtomRegistry.make({
-      initialValues: [
-        [
-          widgetConfigAtom,
-          normalizeWidgetConfig({ apiKey: "test", variant: "default" }),
-        ],
-        [walletScopeAtom, walletScope],
-      ],
-    });
+    const ports = makeObservablePorts();
+    const registry = makeObservableRegistry(ports);
     const validInput = makeFacadeInput();
     const inputAtom = Atom.make(
       makeFacadeInput({
@@ -264,7 +296,6 @@ describe("Yield Entry", () => {
     });
 
     try {
-      const router = registry.get(applicationRouterAtom);
       registry.set(facade.submitAtom, undefined);
       await expect
         .poll(() =>
@@ -302,7 +333,10 @@ describe("Yield Entry", () => {
       expect(
         registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
       ).toBe(true);
-      await expect.poll(() => router.state.location.pathname).toBe("/review");
+      expect(ports.push).toHaveBeenCalledWith(
+        "/review",
+        expect.objectContaining({ _tag: "Push" })
+      );
     } finally {
       registry.dispose();
     }
@@ -340,6 +374,12 @@ describe("Yield Entry", () => {
       _tag: "WidgetNavigationError",
       cause: new Error("navigation failed"),
     } as never;
+    const navigation = makeWidgetNavigation({
+      back: () => Effect.void,
+      push: () => Effect.fail(navigationFailure),
+      replace: () => Effect.void,
+    });
+    const navigationLayer = Layer.succeed(WidgetNavigation, navigation);
     const registry = AtomRegistry.make({
       initialValues: [
         [
@@ -347,16 +387,13 @@ describe("Yield Entry", () => {
           normalizeWidgetConfig({ apiKey: "test", variant: "default" }),
         ],
         [walletScopeAtom, walletScope],
+        [appRuntime.layer, navigationLayer as never],
         [
-          appRuntime.layer,
-          Layer.succeed(
-            WidgetNavigation,
-            WidgetNavigation.of({
-              back: () => Effect.void,
-              push: () => Effect.fail(navigationFailure),
-              replace: () => Effect.void,
-            })
-          ) as never,
+          walletRuntime.layer,
+          makeClassicFlowTestWalletLayer({
+            navigation,
+            wallet: walletService,
+          }) as never,
         ],
       ],
     });

@@ -1,4 +1,4 @@
-import { type Cause, Effect, Option, Stream } from "effect";
+import { type Cause, Effect, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { walletRuntime } from "../../app/runtime/wallet-runtime";
@@ -6,7 +6,6 @@ import type { WalletBootstrapError } from "../../services/wallet/bootstrap";
 import {
   getTransactionWorkflowId,
   type TransactionWorkflowCommand,
-  type TransactionWorkflowEvent,
   type TransactionWorkflowInput,
   type TransactionWorkflowInputError,
   type TransactionWorkflowState,
@@ -32,9 +31,6 @@ export const makeTransactionWorkflowModule = <
       TransactionWorkflowLoadingError
     >
   >(AsyncResult.initial()).pipe(Atom.setIdleTTL(0));
-  const publishedEventAtom = Atom.make<Option.Option<TransactionWorkflowEvent>>(
-    Option.none()
-  ).pipe(Atom.setIdleTTL(0));
 
   const machineAtom = walletRuntime
     .atom(TransactionWorkflowService.use((service) => service.make(input)))
@@ -53,25 +49,9 @@ export const makeTransactionWorkflowModule = <
       Atom.setIdleTTL(0),
       Atom.withLabel(`transactionWorkflowState(${workflowId})`)
     );
-  const machineEventAtom = walletRuntime
-    .atom((context) =>
-      context.result(machineAtom).pipe(
-        Effect.map((machine) => machine.events),
-        Stream.unwrap
-      )
-    )
-    .pipe(
-      Atom.setIdleTTL(0),
-      Atom.withLabel(`transactionWorkflowEvent(${workflowId})`)
-    );
-
   const stateAtom = Atom.make((get) => get(publishedStateAtom)).pipe(
     Atom.setIdleTTL(0),
     Atom.withLabel(`transactionWorkflowPublishedState(${workflowId})`)
-  );
-  const eventsAtom = Atom.make((get) => get(publishedEventAtom)).pipe(
-    Atom.setIdleTTL(0),
-    Atom.withLabel(`transactionWorkflowPublishedEvent(${workflowId})`)
   );
   const commandAtom = walletRuntime
     .fn(
@@ -90,7 +70,6 @@ export const makeTransactionWorkflowModule = <
 
   const module = {
     commandAtom,
-    eventsAtom,
     input,
     stateAtom,
   } as const;
@@ -104,18 +83,9 @@ export const makeTransactionWorkflowModule = <
       (state) => registry.set(publishedStateAtom, state),
       { immediate: true }
     );
-    context.subscribe(
-      machineEventAtom,
-      (result) => {
-        const event = Option.getOrNull(AsyncResult.value(result));
-        if (event) registry.set(publishedEventAtom, Option.some(event));
-      },
-      { immediate: true }
-    );
     context.addFinalizer(() => {
       registry.set(activeAtom, false);
       registry.set(publishedStateAtom, AsyncResult.initial());
-      registry.set(publishedEventAtom, Option.none());
     });
 
     return module;

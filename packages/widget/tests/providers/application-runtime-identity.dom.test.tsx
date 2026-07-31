@@ -4,7 +4,7 @@ import {
   useAtomSet,
   useAtomValue,
 } from "@effect/atom-react";
-import { Deferred, Effect, Equal, Schema } from "effect";
+import { Deferred, Effect, Equal, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { act, Component, type PropsWithChildren, type ReactNode } from "react";
@@ -18,6 +18,7 @@ import {
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
@@ -25,9 +26,13 @@ import {
   startClassicTransactionFlowAtom,
 } from "../../src/features/classic-transaction-flow/state";
 import { walletScopeAtom } from "../../src/features/wallet/state";
+import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { disconnectedLedgerConnectorState } from "../../src/services/wallet/domain/state";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
+import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
 import { render } from "../utils/test-utils.dom";
 
 type LifecycleProbe = {
@@ -159,7 +164,39 @@ const activityIntake = (): Extract<
 
 const ClassicFlowRuntimeHarness = () => {
   const intake = activityIntake();
-  useAtomInitialValues([[walletScopeAtom, intake.walletScope]]);
+  const walletState = {
+    connection: {
+      additionalAddresses: null,
+      address: intake.walletScope.address,
+      chain: {} as never,
+      connector: {} as never,
+      connectorChains: [],
+      isLedgerLive: false,
+      isLedgerLiveAccountPlaceholder: false,
+      ledgerAccounts: [],
+      network: intake.walletScope.network,
+      status: "connected" as const,
+    },
+    ledger: disconnectedLedgerConnectorState,
+  };
+  useAtomInitialValues([
+    [walletScopeAtom, intake.walletScope],
+    [
+      walletRuntime.layer,
+      makeClassicFlowTestWalletLayer({
+        navigation: makeWidgetNavigation({
+          back: () => Effect.void,
+          push: () => Effect.void,
+          replace: () => Effect.void,
+        }),
+        wallet: WalletService.of({
+          state: Effect.succeed(walletState),
+          states: Stream.succeed(walletState),
+          wagmiConfig: {},
+        } as never),
+      }) as never,
+    ],
+  ]);
   const sessionPresent = useAtomValue(
     isActiveClassicTransactionFlowPathAtom("/activity/review")
   );

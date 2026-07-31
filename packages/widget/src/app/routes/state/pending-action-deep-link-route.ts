@@ -10,9 +10,11 @@ import {
 import { initParamsAtom } from "../../../features/init-params/state";
 import { mountAnimationStateAtom } from "../../../features/mount-animation/state";
 import { walletConnectionStateAtom } from "../../../features/wallet/state";
-import { toWidgetPath } from "../../../services/navigation/widget-navigation";
+import {
+  toWidgetPath,
+  WidgetNavigation,
+} from "../../../services/navigation/widget-navigation";
 import { appRuntime } from "../../runtime/app-runtime";
-import { runWidgetNavigationCommand } from "../../runtime/navigation";
 
 type PendingActionDeepLinkRouteState = Readonly<{
   readonly claimedIntents: ReadonlyArray<PendingActionDeepLinkIntentId>;
@@ -103,7 +105,9 @@ const claimPendingActionDeepLinkAtom = appRuntime
       ...state,
       claimedIntents: [...state.claimedIntents, intentId],
     });
-    return runWidgetNavigationCommand({ _tag: "Push", path });
+    return WidgetNavigation.use((navigation) =>
+      navigation.execute({ _tag: "Push", path })
+    );
   })
   .pipe(Atom.withLabel("claimPendingActionDeepLinkAtom"));
 
@@ -128,12 +132,14 @@ const claimPositionDeepLinkAtom = appRuntime
       ...state,
       claimedPositionIntents: [...state.claimedPositionIntents, intent],
     });
-    return runWidgetNavigationCommand({
-      _tag: "Push",
-      path: toWidgetPath(
-        `/positions/${initParams.yieldId}/${initParams.balanceId}`
-      ),
-    });
+    return WidgetNavigation.use((navigation) =>
+      navigation.execute({
+        _tag: "Push",
+        path: toWidgetPath(
+          `/positions/${initParams.yieldId}/${initParams.balanceId}`
+        ),
+      })
+    );
   })
   .pipe(Atom.withLabel("claimPositionDeepLinkAtom"));
 

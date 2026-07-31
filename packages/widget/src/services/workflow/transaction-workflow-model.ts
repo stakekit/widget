@@ -310,29 +310,6 @@ export type TransactionWorkflowContext = {
   readonly submissions: ReadonlyArray<TransactionWorkflowSubmission>;
 };
 
-export type TransactionWorkflowEvent =
-  | {
-      readonly _tag: "TransactionWorkflowSigned";
-      readonly batchId: string;
-      readonly source: TransactionWorkflowSource;
-      readonly transactionId: string;
-      readonly workflowId: string;
-    }
-  | {
-      readonly _tag: "TransactionWorkflowSubmitted";
-      readonly context: TransactionWorkflowContext;
-      readonly submission: TransactionWorkflowSubmission;
-    }
-  | {
-      readonly _tag: "TransactionWorkflowBatchAdvanced";
-      readonly batchId: string;
-      readonly context: TransactionWorkflowContext;
-    }
-  | {
-      readonly _tag: "TransactionWorkflowCompleted";
-      readonly context: TransactionWorkflowContext;
-    };
-
 type WorkflowState<Tag extends string> = {
   readonly _tag: Tag;
   readonly context: TransactionWorkflowContext;

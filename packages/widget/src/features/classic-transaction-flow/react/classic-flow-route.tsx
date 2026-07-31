@@ -2,12 +2,11 @@ import { make as makeScopedAtom, useAtomValue } from "@effect/atom-react";
 import type * as Atom from "effect/unstable/reactivity/Atom";
 import { createContext, type PropsWithChildren, useContext } from "react";
 import { Navigate, Outlet } from "react-router";
-import { useWalletScopeRoute } from "../../wallet/ui";
 import {
   type ClassicTransactionFlowIntake,
   getClassicTransactionFlowIntakeVariant,
-  isClassicTransactionFlowWalletScopeValid,
 } from "../model/classic-transaction-flow";
+import { currentClassicFlowSessionAtom } from "../state/atoms/classic-flow";
 import {
   type ClassicFlowExecutionFacade,
   type ClassicFlowReviewFacade,
@@ -16,8 +15,7 @@ import {
   currentClassicFlowSessionRootAtom,
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
-} from "../state/classic-flow-session-facade";
-import { classicFlowSessionStore } from "../state/flow-session-store";
+} from "../state/atoms/classic-flow-session";
 
 const useClassicFlowSessionModule = (): ClassicFlowSessionModule => {
   const session = useContext(ClassicFlowSessionContext);
@@ -37,16 +35,14 @@ const ReviewScopedAtom = makeScopedAtom(makeClassicFlowReviewScope);
 
 export const useClassicFlowReview = (): ClassicFlowReviewFacade => {
   const reviewAtom = useContext(ReviewScopedAtom.Context);
-  return useAtomValue(reviewAtom);
+  return useAtomValue(reviewAtom).facade;
 };
 
 const ExecutionScopedAtom = makeScopedAtom(makeClassicFlowExecutionScope);
 
 export const useClassicFlowExecution = (): ClassicFlowExecutionFacade => {
   const executionAtom = useContext(ExecutionScopedAtom.Context);
-  const execution = useAtomValue(executionAtom);
-  if (!execution) throw new Error("Classic Flow Execution is unavailable.");
-  return execution;
+  return useAtomValue(executionAtom).facade;
 };
 
 export const useClassicFlowIntake = <
@@ -63,17 +59,12 @@ export const ClassicFlowRoute = ({
 }: {
   readonly expected: ClassicTransactionFlowIntake["_tag"];
 }) => {
-  const session = useAtomValue(classicFlowSessionStore.currentSessionAtom);
-  const walletScope = useWalletScopeRoute();
+  const session = useAtomValue(currentClassicFlowSessionAtom);
   const intake = session
     ? getClassicTransactionFlowIntakeVariant(session.intake, expected)
     : null;
 
-  if (
-    session &&
-    intake &&
-    isClassicTransactionFlowWalletScopeValid(intake, walletScope)
-  ) {
+  if (session && intake) {
     return <SessionBinding key={session.epoch} />;
   }
 
@@ -114,7 +105,11 @@ export const ClassicFlowReviewScope = ({ children }: PropsWithChildren) => {
 };
 
 const ReviewBinding = ({ children }: PropsWithChildren) => {
-  useClassicFlowReview();
+  const reviewAtom = useContext(ReviewScopedAtom.Context);
+  const review = useAtomValue(reviewAtom);
+  const availability = useAtomValue(review.availabilityAtom);
+  if (availability._tag === "Failure") return <Navigate to="/" replace />;
+  if (availability._tag !== "Success") return null;
   return children ?? <Outlet />;
 };
 
@@ -131,7 +126,9 @@ export const ClassicFlowExecutionScope = ({ children }: PropsWithChildren) => {
 const ExecutionBinding = ({ children }: PropsWithChildren) => {
   const executionAtom = useContext(ExecutionScopedAtom.Context);
   const execution = useAtomValue(executionAtom);
-  if (!execution) return <Navigate to="/" replace />;
+  const availability = useAtomValue(execution.availabilityAtom);
+  if (availability._tag === "Failure") return <Navigate to="/" replace />;
+  if (availability._tag !== "Success") return null;
 
   return children ?? <Outlet />;
 };

@@ -1,27 +1,124 @@
 # Classic Transaction Flow architecture
 
-Classic Transaction Flow is one deep module with two internal tiers:
+Classic Transaction Flow is the reference implementation of ADR-0017. Its
+application logic has three explicit tiers:
 
-- Application logic lives below `classic-transaction-flow/` outside `react/` and `ui/`. The pure model belongs in `model/`; Effect Atom state, commands, resources, and the facade belong in `state/`, `resources/`, or `runtime/`.
-- React view adapters live in `react/` and `ui/`. They render Atom-derived views, normalize UI input, and synchronously dispatch Atom commands.
+- `model/` owns deterministic route, intake, ownership, copy, transition, and
+  projection decisions. It has no Effect Atom dependency.
+- `state/orchestration/` owns the private `ClassicTransactionFlowService` and
+  its scoped Session, Review, and Execution implementation modules. They expose
+  semantic operations and only production-consumed state, and have no Atom
+  dependency.
+- `state/atoms/` owns reactive composition and route-scope adaptation. It is
+  split into top-level Flow, Session, Review, and Execution adapters, projects
+  authoritative service state into view Atoms, and forwards one semantic
+  operation per command Atom. A shared app-runtime lifecycle adapter performs
+  scoped acquisition, keep-alive, optional state projection, and release.
 
-Application-logic modules must not import React, React DOM, Effect Atom React bindings, or React Query. Their public interface may expose read-only view Atoms and writable command Atoms while keeping mutable storage private. React convenience hooks are zero-logic adapters over that interface.
+React adapters live in `react/` and `ui/`. They render published Atom views,
+normalize UI events, and synchronously dispatch Atom commands. They do not own
+workflow advancement, retries, rollback, or cleanup.
 
-The only Classic Flow state outside its route tree is the application-runtime intake store. Every Start creates a fresh monotonic runtime-local epoch and an immutable intake snapshot. The epoch is used only to remount the capture-once Session provider, target intake-store cleanup, and suppress stale shared-world outputs such as routing and tracking; it is not a domain identity or descendant command input.
+## Lifetimes and ownership
 
-The published headless interface exposes one Start command with closed semantic
-route mounts, an active-path observation, and a Dashboard Activity Resume view
-with a bound abandonment command. It does not expose the intake store, Flow
-Session values, epochs, captured intake, or destinations. Start, abandonment,
-and scoped finish commands own their navigation and validate private ownership
-before publishing shared output.
+`ClassicTransactionFlowService` is eagerly constructed once per Wallet Runtime,
+remains alive independently of route mounts, and is the sole writer of the
+active Classic Flow Session. Its layer resolves `WalletService`,
+`WidgetNavigation`, `YieldOperations`, `TrackingService`, and
+`TransactionWorkflowService` once. Runtime operations close over those adapters
+and do not use local `Effect.provideService` calls.
+Private Session, Review, and Execution factory effects yield their own static
+service dependencies while that layer is constructed; invoking the resulting
+factories later passes only dynamic ownership and route-scope inputs.
 
-A stable route tree spanning Review, Steps, and Complete mounts one non-`keepAlive` Session module. Session, Review, and Execution expose separate narrow scoped capabilities rather than one combined nullable context. The Session owns only immutable intake and a private nullable execution-action handoff. Every Review mount creates a fresh scope that owns Action Preview and forward navigation; every Execution mount captures the handoff and reads the Transaction Workflow scoped Atom for the whole Steps-and-Complete scope. Workflow view and command Atoms are passive capabilities of that scope and cannot extend or revive its private lifecycle.
+Every accepted Start captures an immutable intake snapshot, assigns a fresh
+monotonic local epoch, reserves the Session before navigation, and rolls back
+only that same reservation if navigation fails. The service reads
+`WalletService` directly and invalidates the active Session when its Wallet
+Scope Owner becomes ineligible. Its `currentSession` Stream is the only
+observable top-level state; epochs, queues, flags, and lifecycle events remain
+private. Every explicit Start creates a fresh Session even for equal intake.
+Start returns the captured Session, and later operations receive that Session so
+a stale route or click cannot affect a replacement.
 
-The module must not reintroduce a Classic Flow domain identity, Reviewing/Executable phase state, an identity-keyed Transaction Workflow handoff, or a second preparation state machine. Continue promotes the reviewed Action Preview into the Session handoff. Entering any later Review scope is the sole operation that clears the handoff, so widget Back, browser Back, and host routing share the same behavior. Activity Resume reconstructs a fresh preview when possible and never seeds Execution directly from its historical action.
+A route-tree Session module is acquired for the active snapshot. The Atom bridge
+can observe only its immutable intake and call `acquireReview(eligibilityStream)`
+or `acquireExecution()`. Current-ownership checks, epoch comparison, clearing,
+execution reservation, rollback, and navigation handoff are private. Releasing
+the Session clears only its captured Session; a stale scope cannot clear or
+navigate a replacement. The service's current Session is the sole Wallet Scope
+eligibility authority, while React route guards check only route and intake
+variant compatibility.
 
-View adapters may use synchronous local React state only for presentation details with no domain meaning, asynchronous behavior, persistence, route lifetime, or cross-view coordination. They must not declare asynchronous functions, await or chain Promises, discard calls with `void`, execute Effect runtimes, or use React Query. React lifecycle hooks require a named external-boundary review rather than a local exception.
+Every Review route mount acquires a fresh Review module. Its interface is exactly
+the Action Preview state Stream and `confirm()`. KYC and Activity expiry remain
+reactive Atom-owned observations supplied as one normalized, read-only
+eligibility Stream; eligibility is consumed privately and is not republished as
+Review state. Review autonomously starts Preview when eligibility unblocks.
+`confirm()` ensures or retries Preview according to existing policy, promotes
+the action, revalidates the latest eligibility immediately before reservation,
+records tracking, and navigates with rollback. Atom and UI callers do not
+sequence those steps. Cacheable prices, balances, gas checks, and KYC resources
+remain Authoritative Resources.
 
-Navigation decisions belong to scoped Atom commands and workflow transition events. After confirming current Flow Session or Execution Attempt ownership, they execute canonical absolute destinations through the application-runtime `WidgetNavigation` module; derived view Atoms do not publish navigation outcomes for React to apply. Declarative route guards remain React view concerns.
+Session owns one private atomic `promoteToExecution(action)` capability. It
+validates current ownership, rejects duplicate reservation, reserves the action,
+navigates to Steps, and rolls back only the same reservation on navigation
+failure or interruption. The reservation is private state, not an observable
+Session Stream.
 
-The document-claim callback-ref bridge in `app/embedding/widget-instance-react-boundary.tsx` is the only reviewed external React boundary for this effort because the actual owner `Document` is available only at the React-owned DOM mount seam. Changing its lifecycle responsibilities requires a new boundary review.
+`acquireExecution()` returns Acquired with a fresh Execution handle, Rejected No
+Reservation, or Rejected Stale. Expected acquisition ineligibility stays in the
+success channel; operational construction failure uses the Effect error channel.
+Every acquired Execution scope captures the reserved action and owns one
+Transaction Workflow handle for the whole Steps-and-Complete route lifetime.
+Its interface exposes the Transaction Workflow state Stream, an operation
+accepting the existing `TransactionWorkflowCommand`, Back, and Finish. These
+operations return Accepted or Rejected Stale, with navigation failures in the
+error channel. Completion observation and navigation retry are automatic;
+navigation retries every 100 milliseconds until success or scope interruption.
+Session replacement, wallet invalidation, promotion, workflow dispatch, and
+UI-owned navigation share the service ownership serializer, so UI outputs are
+suppressed after ownership becomes stale. Transaction Workflow operations
+independently publish semantic invalidation for authoritative Activity and
+balance resources.
+
+Classic exposes no orchestration event Streams. The unused Transaction Workflow
+event Stream and Atom projection are also removed; tests assert authoritative
+state and operation effects. A neutral scoped-serialization helper under
+`src/shared/effect` captures its owner Scope, forks each serialized operation
+into that Scope, and propagates caller interruption to the forked operation
+without exposing those lifetime mechanics to Flow policy.
+
+## Published interface
+
+The root `state.ts` publishes the existing narrow Atom facade: Start,
+active-path observation, Dashboard Activity Resume capability, and zero-logic
+hooks. The Effect service, Session values, epochs, destinations, lifecycle
+handles, and implementation state remain private. `wallet-runtime.ts` is the
+sole privileged importer of the exact private service module for layer
+composition; no fourth feature entry is introduced.
+
+Command Atoms read or normalize a reactive snapshot and delegate to exactly one
+semantic service or scoped-handle operation. Scoped acquisition is explicit,
+normally as an `AsyncResult`; adapters do not fabricate initial Review or
+Transaction Workflow state or maintain writable mirrors. React uses the existing
+loading or skeleton presentation until authoritative state arrives. Registry
+reads and lifecycle machinery are confined to the shared app-runtime adapter;
+feature authors and callers do not manually list `context.mount(...)` graphs.
+
+The module does not introduce a Classic Flow domain identity, a separate phase
+state machine, a generic Transaction Flow engine, or an identity-keyed
+Transaction Workflow handoff. Review promotion reserves the action in the
+Session; entering a later Review scope clears that handoff, so widget Back,
+browser Back, and host routing share the same behavior. Borrow remains a
+separate journey-specific service and is the next vertical migration slice;
+only neutral lifecycle infrastructure is shared now.
+
+The dead action-history revision Atom and its increment/reset plumbing are
+removed. Transaction Workflow operations already invalidate the authoritative
+Activity resource through `ActivityInvalidationKey`.
+
+The document-claim callback-ref bridge in
+`app/embedding/widget-instance-react-boundary.tsx` remains the only reviewed
+external React boundary for this effort.

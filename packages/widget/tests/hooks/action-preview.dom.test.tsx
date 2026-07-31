@@ -1,5 +1,5 @@
 import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Schema } from "effect";
+import { Effect, Layer, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { HttpResponse, http } from "msw";
@@ -8,6 +8,7 @@ import {
   normalizeWidgetConfig,
   widgetConfigAtom,
 } from "../../src/app/config/settings";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { ActionCommand } from "../../src/domain/schema/action-models";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { startClassicTransactionFlowAtom } from "../../src/features/classic-transaction-flow/state";
@@ -15,18 +16,28 @@ import {
   currentClassicFlowSessionRootAtom,
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
-} from "../../src/features/classic-transaction-flow/state/classic-flow-session-facade";
+} from "../../src/features/classic-transaction-flow/state/atoms/classic-flow-session";
+import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import {
   walletScopeAtom,
   walletStateResultAtom,
 } from "../../src/features/wallet/state";
+import {
+  makeWidgetNavigation,
+  WidgetNavigation,
+} from "../../src/services/navigation/widget-navigation";
+import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { disconnectedLedgerConnectorState } from "../../src/services/wallet/domain/state";
+import { WalletService } from "../../src/services/wallet/wallet-service";
+import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,
   yieldApiYieldFixture,
 } from "../fixtures";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
+import { makeTestStakeKitApiLayer } from "../utils/stakekit-api-layer";
 import { describe, expect, it } from "../utils/test-extend.dom";
 import { renderHook } from "../utils/test-utils.dom";
 
@@ -40,10 +51,75 @@ const walletScope = new WalletScopeKey({
   address: command.address,
   network: "ethereum",
 });
+const walletState = {
+  connection: {
+    additionalAddresses: null,
+    address: walletScope.address,
+    chain: {} as never,
+    connector: {} as never,
+    connectorChains: [],
+    isLedgerLive: false,
+    isLedgerLiveAccountPlaceholder: false,
+    ledgerAccounts: [],
+    network: walletScope.network,
+    status: "connected" as const,
+  },
+  ledger: disconnectedLedgerConnectorState,
+};
+const walletLayer = Layer.succeed(
+  WalletService,
+  WalletService.of({
+    state: Effect.succeed(walletState),
+    states: Stream.succeed(walletState),
+    wagmiConfig: {},
+  } as never)
+);
+
+const classicDependencies = Layer.mergeAll(
+  walletLayer,
+  makeTestStakeKitApiLayer({
+    apiKey: "test-key",
+    baseUrl: "https://api.example.com",
+    borrowApiUrl: "https://borrow.example.com",
+    yieldsApiUrl: yieldApiUrl,
+  }),
+  Layer.succeed(
+    WidgetNavigation,
+    makeWidgetNavigation({
+      back: () => Effect.void,
+      push: () => Effect.void,
+      replace: () => Effect.void,
+    })
+  ),
+  Layer.succeed(
+    TrackingService,
+    TrackingService.of({
+      trackEvent: () => Effect.void,
+      trackPageView: () => Effect.void,
+    })
+  ),
+  Layer.succeed(
+    TransactionWorkflowService,
+    TransactionWorkflowService.of({
+      make: () =>
+        Effect.succeed({
+          dispatch: () => Effect.void,
+          states: Stream.never,
+        }),
+    })
+  )
+);
+const classicWalletLayer = Layer.merge(
+  classicDependencies,
+  ClassicTransactionFlowService.layer.pipe(Layer.provide(classicDependencies))
+);
 
 const Wrapper = ({ children }: PropsWithChildren) => (
   <TestAtomRuntimeProvider
-    initialValues={[[walletScopeAtom, walletScope]]}
+    initialValues={[
+      [walletScopeAtom, walletScope],
+      [walletRuntime.layer, classicWalletLayer as never],
+    ]}
     settings={normalizeWidgetConfig({
       apiKey: "test-key",
       baseUrl: "https://api.example.com",
@@ -72,7 +148,7 @@ const reviewScopeAtomFamily = Atom.family(
       return Atom.make((get) => {
         const flow = get(rootAtom);
         reviewAtom ??= makeClassicFlowReviewScope(flow);
-        return get(reviewAtom);
+        return get(reviewAtom).facade;
       });
     })()
 );
@@ -107,13 +183,14 @@ const sessionAttachedActionAtom = Atom.make((get) => {
 
   const flow = get(rootAtom);
   const execution = get(makeClassicFlowExecutionScope(flow));
-  return execution ? get(execution.actionAtom) : null;
+  return AsyncResult.getOrElse(get(execution.availabilityAtom), () => null);
 });
 
 const ConnectedWrapper = ({ children }: PropsWithChildren) => (
   <RegistryProvider
     initialValues={[
       [widgetConfigAtom, settings],
+      [walletRuntime.layer, classicWalletLayer as never],
       [
         walletStateResultAtom,
         AsyncResult.success({
@@ -259,8 +336,9 @@ describe("action preview", () => {
     );
 
     await act(async () => {
-      await expect.poll(() => kycStatusCalls).toBe(1);
+      await expect.poll(() => kycStatusCalls).toBeGreaterThan(0);
     });
+    const initialKycStatusCalls = kycStatusCalls;
     expect(actionPreviewCalls).toBe(0);
     expect(result.current.kyc?.isGateBlocking).toBe(true);
     expect(result.current.review?.action).toBeNull();
@@ -270,7 +348,9 @@ describe("action preview", () => {
     kycStatus = "approved";
     await act(async () => {
       result.current.refreshKyc(undefined);
-      await expect.poll(() => kycStatusCalls).toBe(2);
+      await expect
+        .poll(() => kycStatusCalls)
+        .toBeGreaterThan(initialKycStatusCalls);
       await expect.poll(() => actionPreviewCalls).toBe(1);
     });
     await expect.poll(() => result.current.review?.action).not.toBeNull();

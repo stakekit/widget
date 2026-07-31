@@ -1,8 +1,9 @@
 import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
-import { Layer, Schema } from "effect";
+import { Effect, Layer, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { Navigate, Route, Routes } from "react-router";
+import { useEffect } from "react";
+import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { mainnet } from "viem/chains";
 import { describe, expect, it } from "vitest";
@@ -18,6 +19,7 @@ import {
   applicationRouterAtom,
   applicationRouterRuntime,
 } from "../../src/app/runtime/application-router-runtime";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
 import {
@@ -40,9 +42,15 @@ import {
   yieldOpportunityAtom,
 } from "../../src/resources/yield-opportunity/provider";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
+import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
-import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
+import {
+  disconnectedLedgerConnectorState,
+  type NormalizedWalletState,
+} from "../../src/services/wallet/domain/state";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import { yieldApiYieldFixture } from "../fixtures";
+import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
 import { render } from "../utils/test-utils";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -70,6 +78,42 @@ const connectedWalletState = {
   network: "ethereum",
   status: "connected",
 } satisfies NormalizedWalletState;
+const walletState = {
+  connection: connectedWalletState,
+  ledger: disconnectedLedgerConnectorState,
+};
+const wallet = WalletService.of({
+  state: Effect.succeed(walletState),
+  states: Stream.succeed(walletState),
+  wagmiConfig: {},
+} as never);
+const navigationChannel: {
+  navigate: ReturnType<typeof useNavigate> | null;
+} = { navigate: null };
+const navigation = makeWidgetNavigation({
+  back: () => Effect.sync(() => navigationChannel.navigate?.(-1)),
+  push: (path, options) =>
+    Effect.sync(() => navigationChannel.navigate?.(path, options)),
+  replace: (path, options) =>
+    Effect.sync(() =>
+      navigationChannel.navigate?.(path, { ...options, replace: true })
+    ),
+});
+const classicWalletLayer = makeClassicFlowTestWalletLayer({
+  navigation,
+  wallet,
+});
+
+const NavigationBridge = () => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    navigationChannel.navigate = navigate;
+    return () => {
+      navigationChannel.navigate = null;
+    };
+  }, [navigate]);
+  return null;
+};
 
 const PositionEntry = () => {
   const view = useAtomValue(positionDetailsStakeViewAtom(entryKey));
@@ -112,17 +156,20 @@ const ReviewGuard = () => {
 
 const Runtime = () => {
   return (
-    <Routes>
-      <Route
-        path={`/positions/${selectedYield.id}/balance-1`}
-        element={<PositionEntry />}
-      />
-      <Route
-        path={`/positions/${selectedYield.id}/balance-1/stake/review`}
-        element={<ReviewGuard />}
-      />
-      <Route path="/missing" element={<div>Missing Flow Session</div>} />
-    </Routes>
+    <>
+      <NavigationBridge />
+      <Routes>
+        <Route
+          path={`/positions/${selectedYield.id}/balance-1`}
+          element={<PositionEntry />}
+        />
+        <Route
+          path={`/positions/${selectedYield.id}/balance-1/stake/review`}
+          element={<ReviewGuard />}
+        />
+        <Route path="/missing" element={<div>Missing Flow Session</div>} />
+      </Routes>
+    </>
   );
 };
 
@@ -152,6 +199,7 @@ const TestApp = () => {
             initialEntries: [`/positions/${selectedYield.id}/balance-1`],
           }).pipe(Layer.fresh),
         ],
+        [walletRuntime.layer, classicWalletLayer],
         [
           widgetConfigAtom,
           normalizeWidgetConfig({
@@ -163,7 +211,7 @@ const TestApp = () => {
         [walletConnectionStateAtom, connectedWalletState],
         [walletScopeAtom, walletScope],
         [
-          yieldOpportunityAtom(
+          yieldOpportunityAtom.local(
             new YieldOpportunityKey({ yieldId: selectedYield.id })
           ),
           AsyncResult.success(selectedYield),
@@ -193,7 +241,7 @@ const TestApp = () => {
 };
 
 describe("position-details Yield Entry", () => {
-  it("runs the production position facade through atom-owned Review navigation", async () => {
+  it("runs the production position facade through Effect-owned Review navigation", async () => {
     const app = await render(<TestApp />);
 
     await userEvent.click(app.getByTestId("position-stake-amount"));

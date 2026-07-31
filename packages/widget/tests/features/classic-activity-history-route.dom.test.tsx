@@ -19,11 +19,18 @@ import { startClassicTransactionFlowAtom } from "../../src/features/classic-tran
 import { createClassicFlowRoutes } from "../../src/features/classic-transaction-flow/ui";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { walletScopeAtom } from "../../src/features/wallet/state";
-import { WidgetNavigation } from "../../src/services/navigation/widget-navigation";
+import {
+  makeWidgetNavigation,
+  WidgetNavigation,
+} from "../../src/services/navigation/widget-navigation";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
-import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
+import {
+  disconnectedLedgerConnectorState,
+  type NormalizedWalletState,
+} from "../../src/services/wallet/domain/state";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
+import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
 import { describe, expect, it } from "../utils/test-extend.dom";
 import { render } from "../utils/test-utils.dom";
 
@@ -64,31 +71,30 @@ const connectedWalletState: NormalizedWalletState = {
   network: walletScope.network,
   status: "connected",
 };
-const walletLayer = Layer.succeed(WalletService, {
+const wallet = WalletService.of({
+  state: Effect.succeed({
+    connection: connectedWalletState,
+    ledger: disconnectedLedgerConnectorState,
+  }),
   states: Stream.succeed({
     connection: connectedWalletState,
-    ledger: {
-      accounts: [],
-      currentAccountId: undefined,
-      disabledChains: [],
-    },
+    ledger: disconnectedLedgerConnectorState,
   }),
 } as never);
 
 const navigationBridge: { navigate: NavigateFunction | null } = {
   navigate: null,
 };
-const navigationLayer = Layer.succeed(
-  WidgetNavigation,
-  WidgetNavigation.of({
-    back: () => Effect.void,
-    push: (path) =>
-      Effect.sync(() => {
-        navigationBridge.navigate?.(path);
-      }),
-    replace: () => Effect.void,
-  })
-);
+const navigation = makeWidgetNavigation({
+  back: () => Effect.void,
+  push: (path) =>
+    Effect.sync(() => {
+      navigationBridge.navigate?.(path);
+    }),
+  replace: () => Effect.void,
+});
+const navigationLayer = Layer.succeed(WidgetNavigation, navigation);
+const walletLayer = makeClassicFlowTestWalletLayer({ navigation, wallet });
 
 const makeActivityIntake = (
   status: "PROCESSING" | "SUCCESS"

@@ -1,23 +1,28 @@
-import { Effect, Layer, Schema } from "effect";
+import { Effect, Layer, Schema, Stream } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import { startActivityResumeAtom } from "../../src/features/activity/state/start-activity-resume";
 import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
 import { walletConnectionStateAtom } from "../../src/features/wallet/state";
 import {
+  makeWidgetNavigation,
   WidgetNavigation,
   type WidgetNavigationOptions,
   type WidgetPath,
 } from "../../src/services/navigation/widget-navigation";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { disconnectedLedgerConnectorState } from "../../src/services/wallet/domain/state";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,
   yieldApiYieldFixture,
 } from "../fixtures";
+import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
@@ -41,23 +46,37 @@ const connectedWallet = {
 
 const makeRegistry = (
   push: (path: WidgetPath, options?: WidgetNavigationOptions) => void
-) =>
-  AtomRegistry.make({
+) => {
+  const navigation = makeWidgetNavigation({
+    back: () => Effect.void,
+    push: (path, options) => Effect.sync(() => push(path, options)),
+    replace: () => Effect.void,
+  });
+  const state = {
+    connection: connectedWallet,
+    ledger: disconnectedLedgerConnectorState,
+  };
+  return AtomRegistry.make({
     initialValues: [
       Atom.initialValue(
         appRuntime.layer,
-        Layer.succeed(
-          WidgetNavigation,
-          WidgetNavigation.of({
-            back: () => Effect.void,
-            push: (path, options) => Effect.sync(() => push(path, options)),
-            replace: () => Effect.void,
-          })
-        )
+        Layer.succeed(WidgetNavigation, navigation)
+      ),
+      Atom.initialValue(
+        walletRuntime.layer,
+        makeClassicFlowTestWalletLayer({
+          navigation,
+          wallet: WalletService.of({
+            state: Effect.succeed(state),
+            states: Stream.succeed(state),
+            wagmiConfig: {},
+          } as never),
+        }) as never
       ),
       Atom.initialValue(walletConnectionStateAtom, connectedWallet),
     ],
   });
+};
 
 describe("Activity resume action", () => {
   it("starts the Flow Session and navigates a resumable action to Review", async () => {
