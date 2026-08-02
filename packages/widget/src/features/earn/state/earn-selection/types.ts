@@ -8,7 +8,6 @@ import type {
 import type {
   EarnToken,
   EarnValidator,
-  EarnValidatorKey,
   EarnYieldWithProvider,
 } from "../../../../domain/schema/earn-models";
 import type { YieldId } from "../../../../domain/schema/identifiers";
@@ -84,7 +83,7 @@ export type EarnMachineIntent = {
   amountInput: "manual" | "max" | "untouched";
   selectedTokenKey: EarnTokenKey | null;
   selectedYieldId: YieldId | null;
-  selectedValidatorKeys: ReadonlySet<EarnValidatorKey>;
+  selectedValidators: ReadonlyArray<EarnValidator> | null;
   selectedProviderYieldId: YieldId | null;
   selectedCategory: DashboardYieldCategory | null;
   stakeAmount: string;
@@ -151,10 +150,6 @@ export type EarnValidatorsResource = {
   readonly initialValidatorsResultAtom: Atom<
     AsyncResult<ReadonlyArray<EarnValidator>, EarnCatalogError>
   >;
-  readonly rememberValidatorsAtom: Writable<
-    ReadonlyMap<EarnValidatorKey, EarnValidator>,
-    ReadonlyArray<EarnValidator>
-  >;
   readonly validatorsPullAtom: (
     key: YieldValidatorsPullKey
   ) => Writable<PullResult<PullPage<EarnValidator>, EarnCatalogError>, void>;
@@ -197,7 +192,7 @@ export const makeDefaultEarnIntent = (): EarnMachineIntent => ({
   amountInput: "untouched",
   selectedProviderYieldId: null,
   selectedTokenKey: null,
-  selectedValidatorKeys: new Set(),
+  selectedValidators: null,
   selectedYieldId: null,
   stakeAmount: "0",
   tronResource: null,

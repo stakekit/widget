@@ -96,8 +96,10 @@ The root `state.ts` publishes the existing narrow Atom facade: Start,
 active-path observation, Dashboard Activity Resume capability, and zero-logic
 hooks. The Effect service, Session values, epochs, destinations, lifecycle
 handles, and implementation state remain private. `wallet-runtime.ts` is the
-sole privileged importer of the exact private service module for layer
-composition; no fourth feature entry is introduced.
+primary privileged importer of the exact private service module for layer
+composition. The wallet-runtime-owned app deep-link coordinator is the only
+second exact importer because it must start a Flow and commit its one-shot claim
+atomically. No fourth feature entry is introduced.
 
 Command Atoms read or normalize a reactive snapshot and delegate to exactly one
 semantic service or scoped-handle operation. Scoped acquisition is explicit,

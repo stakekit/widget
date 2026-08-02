@@ -313,8 +313,31 @@ Borrow Entry and Market Position form state passively reconcile from matching
 Borrow Transaction Flow outcomes. Borrow Entry consumes Done. Market Position
 consumes Execution Started, with a matching later Done serving as durable proof
 of that transition if the form was unobserved between phases. The owning state
-records the handled outcome identity so the transition is idempotent; no
-subscriber Atom, registry access, or React mount is required for correctness.
+records the handled outcome identity so the transition is idempotent. Market
+Position uses one owner- and action-keyed attempt family rather than coordinating
+separate repay, withdraw, and staged stores. No subscriber Atom, registry
+access, or React mount is required for correctness.
+
+Application deep-link routing is one scoped Effect coordinator. Its route-edge
+Atom supplies a normalized observation Stream; the coordinator owns serialized
+claims, current Wallet revalidation, Flow start, and navigation. Claims commit
+only after the accepted operation succeeds, so a failure remains eligible on
+the next meaningful observation. The application composition owns the single
+lifecycle mount; feature code does not manually mount or subscribe to command
+Atoms.
+
+Wallet logout is one semantic Wallet operation with single-flight execution:
+concurrent callers share the in-flight result, while a later retry starts a new
+attempt. Disconnect is the gate, explicitly owned storage cleanup is awaited,
+and modal close finalizes every post-disconnect cleanup attempt. The default
+storage cleanup capability is a no-op until a database is demonstrably
+widget-owned; the widget never enumerates and deletes every database belonging
+to the embedding origin.
+
+Widget Persistence owns coherent ToS acknowledgement state. It serializes the
+initial versioned read with acknowledgement writes, publishes Loading,
+Available, or typed Failed state, and preserves the existing storage key. The
+Preferences Atom only observes that state and forwards Acknowledge.
 
 Position Details owns deterministic Exit and Pending Action decisions. Its Atom
 adapter performs one local presentation transition or one public Classic Flow

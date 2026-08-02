@@ -250,6 +250,17 @@ describe("Market Position action preparation atoms", () => {
       });
     }
 
+    registry.set(stageBorrowPositionActionAtom, action);
+    const reopened = registry.get(formAtom);
+    expect(reopened).toMatchObject({
+      preparation: { _tag: "Idle" },
+    });
+    expect(reopened?.amount.toString()).toBe("0");
+    registry.set(formAtom, {
+      amount: "25",
+      type: "amount/set",
+    });
+
     const refreshedAccountSnapshot = Schema.decodeUnknownSync(
       BorrowAccountSnapshot
     )({

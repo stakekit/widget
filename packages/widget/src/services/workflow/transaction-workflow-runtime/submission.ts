@@ -8,9 +8,12 @@ import {
 import { TransactionWorkflowOperationsService } from "../transaction-workflow-operations-service";
 import { requireCurrentWorkflow } from "./current";
 
-export const submitCurrent = Effect.fn("TransactionWorkflow.submitCurrent")(
-  function* (context: TransactionWorkflowContext) {
-    const operations = yield* TransactionWorkflowOperationsService;
+export const makeSubmitCurrent = Effect.gen(function* () {
+  const operations = yield* TransactionWorkflowOperationsService;
+
+  return Effect.fn("TransactionWorkflow.submitCurrent")(function* (
+    context: TransactionWorkflowContext
+  ) {
     const current = yield* requireCurrentWorkflow(context);
     const { batch, transaction, workflowId } = current;
     const { source } = transaction;
@@ -125,5 +128,5 @@ export const submitCurrent = Effect.fn("TransactionWorkflow.submitCurrent")(
     });
 
     return { context: updated, submission };
-  }
-);
+  });
+});

@@ -389,6 +389,5 @@ describe("Earn Selection resources", () => {
     expect(initial.map((validator) => validator.address)).toEqual([
       allowed.address,
     ]);
-    expect(registry.get(validators.rememberValidatorsAtom).size).toBe(0);
   });
 });

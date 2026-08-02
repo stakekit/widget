@@ -326,7 +326,10 @@ export const resolveEarnView = ({
       });
     }
 
-    if (validatorOptions.length === 0) {
+    if (
+      validatorOptions.length === 0 &&
+      (intent.selectedValidators?.length ?? 0) === 0
+    ) {
       return makeEarnView({
         ...validatorStage,
         intent,
@@ -337,7 +340,7 @@ export const resolveEarnView = ({
 
   const selectedValidators = resolveValidators({
     entry,
-    selectedValidatorKeys: intent.selectedValidatorKeys,
+    selectedValidators: intent.selectedValidators,
     validatorOptions,
   });
 

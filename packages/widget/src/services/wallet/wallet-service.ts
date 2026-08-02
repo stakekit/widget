@@ -1,5 +1,5 @@
 import type { Chain } from "@stakekit/rainbowkit";
-import { Context, Effect, Layer, Stream } from "effect";
+import { Context, Duration, Effect, Layer, Stream } from "effect";
 import type { WalletAddress } from "../../domain/schema/identifiers";
 import { WidgetPersistence } from "../persistence/widget-persistence";
 import { bootstrapWallet, WalletBootstrapError } from "./bootstrap";
@@ -21,10 +21,14 @@ import {
   routeWalletMessage,
   routeWalletTransaction,
 } from "./router";
+import { WalletModal } from "./wallet-modal";
 import { makeWalletStateRuntime } from "./wallet-state";
+import { WalletStorageCleanup } from "./wallet-storage-cleanup";
 
 const makeWalletService = Effect.fn("makeWalletService")(function* () {
+  const modal = yield* WalletModal;
   const persistence = yield* WidgetPersistence;
+  const storageCleanup = yield* WalletStorageCleanup;
   const bootstrap = yield* bootstrapWallet();
   const state = yield* makeWalletStateRuntime({
     controller: bootstrap.controller,
@@ -54,6 +58,14 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
     const context = yield* state.context;
     return yield* use(context.routing);
   });
+  const logout = yield* Effect.cachedWithTTL(
+    withContext((routing) => routing.actions.disconnect()).pipe(
+      Effect.andThen(
+        storageCleanup.clearOwnedStorage.pipe(Effect.ensuring(modal.closeChain))
+      )
+    ),
+    Duration.zero
+  );
 
   return {
     addLedgerAccount: Effect.fn("addLedgerAccount")(function* (
@@ -68,6 +80,7 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
     ) {
       return yield* withContext((routing) => routing.actions.disconnect(input));
     }),
+    logout,
     persistPublicKey: Effect.fn("persistPublicKey")(function* (input: {
       readonly address: WalletAddress;
       readonly publicKey: string;
@@ -116,7 +129,8 @@ export class WalletService extends Context.Service<WalletService>()(
       Layer.mergeAll(
         SolanaPlatform.layer,
         WagmiPlatform.defaultLayer,
-        WalletEnvironment.layer
+        WalletEnvironment.layer,
+        WalletStorageCleanup.layer
       )
     )
   );

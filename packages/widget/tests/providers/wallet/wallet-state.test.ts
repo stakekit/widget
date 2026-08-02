@@ -27,8 +27,10 @@ import {
 import { WagmiPlatform } from "../../../src/services/wallet/platform/wagmi-platform";
 import { WalletEnvironment } from "../../../src/services/wallet/platform/wallet-environment";
 import type { WalletController } from "../../../src/services/wallet/wagmi-config";
+import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
 import { makeWalletStateRuntime } from "../../../src/services/wallet/wallet-state";
+import { WalletStorageCleanup } from "../../../src/services/wallet/wallet-storage-cleanup";
 import { makeWalletTestController } from "./wallet-test-controller";
 
 const address = "0x0000000000000000000000000000000000000001";
@@ -180,6 +182,8 @@ describe("WalletService authoritative Wallet State", () => {
             })
           ),
           TrackingService.layer.pipe(Layer.provide(configLayer)),
+          WalletModal.layer,
+          WalletStorageCleanup.layer,
           WidgetPersistence.layer
         )
       )

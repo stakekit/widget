@@ -23,11 +23,11 @@ that operation. Expected semantic rejection must be typed.
 | Yield Entry | factory `submitAtom` | Fixed: closed pure decision followed by one local invalidation, one service operation, or one Classic Flow tail delegation |
 | Borrow Entry | `setBorrowAmountAtom`, `setBorrowCollateralAmountAtom`, `setBorrowCollateralMaxAmountAtom`, `selectBorrowMarketAtom`, `selectBorrowCollateralTokenAtom`, `startBorrowEntryReviewAtom` | Compliant; start now preserves typed `Unavailable`, `Started`, and stale-owner outcomes |
 | Borrow Market Position | `startBorrowPositionActionReviewAtom` | Compliant; start now preserves typed `Unavailable`, `Started`, and stale-owner outcomes |
-| Borrow Market Position | `stageBorrowPositionActionAtom` | Deferred; see below |
+| Borrow Market Position | `stageBorrowPositionActionAtom` | Fixed: one attempt-keyed authoritative state transition |
 | Earn Selection | `setEarnSelectionValidatorSearchAtom`, `selectEarnSelectionTokenAtom`, `selectEarnSelectionYieldAtom`, `selectEarnSelectionCategoryAtom`, `removeEarnSelectionValidatorAtom`, `selectEarnSelectionProviderAtom`, `setEarnSelectionAmountAtom`, `setEarnSelectionMaxAmountAtom`, `selectEarnSelectionTronResourceAtom` | Compliant local transition |
-| Earn Selection | `selectEarnSelectionValidatorAtom` | Deferred; see below |
+| Earn Selection | `selectEarnSelectionValidatorAtom` | Fixed: one authoritative selection transition carrying the normalized validator snapshot |
 | Earn facade | `setEarnTokenSearchAtom`, `selectEarnTokenAtom`, `setEarnYieldSearchAtom`, `selectEarnYieldAtom`, `selectEarnCategoryAtom`, `earnValidatorModalEventAtom`, `selectEarnValidatorAtom`, `removeEarnValidatorAtom`, `setEarnAmountAtom`, `selectEarnProviderAtom`, `selectEarnTronResourceAtom`, `setEarnMaxAmountAtom` | Compliant local/tail transition; selection commands use permitted telemetry accompaniment |
-| Earn resources | `loadMoreEarnTokenOptionsAtom`, `loadMoreEarnValidatorsPageAtom`, `rememberEarnValidatorsAtom`, `retryEarnMachineAtom` and facade aliases | Authoritative Resource pagination, remembered-page identity, and retry commands |
+| Earn resources | `loadMoreEarnTokenOptionsAtom`, `loadMoreEarnValidatorsPageAtom`, `retryEarnMachineAtom` and facade aliases | Authoritative Resource pagination and retry commands |
 | Earn KYC | `refreshEarnKycAtom` | Authoritative Resource refresh delegation |
 | Position Details Exit | `setPositionDetailsExitAmountAtom`, `setPositionDetailsExitMaxAmountAtom`, `submitPositionDetailsExitAtom` | Fixed: pure decision, one local invalid transition or one Classic Flow tail delegation, and typed outcome |
 | Position Details Pending Action | `openPositionPendingActionModalAtom`, `closePositionPendingActionModalAtom`, `togglePositionPendingActionValidatorAtom`, `runPositionPendingActionAtom` | Fixed: pure modal/submit decisions, one local transition or Classic Flow tail delegation, and identity-keyed Started receipt |
@@ -40,37 +40,22 @@ that operation. Expected semantic rejection must be typed.
 | Classic Review resources | `refreshKycAtom` | Authoritative Resource refresh delegation |
 | Tracking | `trackEventAtom`, `trackPageViewAtom` | Compliant single tracking service operation |
 | Wallet | `addLedgerAccountAtom`, `walletModalAdapterAtom` | Compliant single semantic service operation |
-| Wallet | `logoutAtom` | Deferred; see below |
+| Wallet | `logoutAtom` | Fixed: one forwarding call to the wallet-owned Logout operation |
 | Widget shell | `disconnectWidgetAtom` | Compliant cross-feature tail delegation to Logout |
-| Preferences | `setTosAcceptedAtom` | Deferred; see below |
+| Preferences | `acknowledgeTosAtom` | Fixed: one forwarding call to coherent persistence-owned acknowledgement state |
 
-## Explicitly deferred debt
+## Resolved follow-up debt
 
-1. `selectEarnSelectionValidatorAtom` writes the validator resource's
-   remembered-page cache and then the selection intent. Removing that pairing
-   safely requires the authoritative selection state to retain the normalized
-   selected validator value, so search/pagination cannot make a selected item
-   disappear. Treating the two writes as a generic command helper would only
-   hide the ownership problem.
-2. `stageBorrowPositionActionAtom` resets the separate repay and withdraw stores
-   before staging the selected action. The correct seam is one authoritative,
-   attempt-keyed Market Position action store. This is a separate state-model
-   migration, not part of passive Flow outcome reconciliation. The unused
-   standalone reset command was removed during this audit.
-3. `logoutAtom` sequences wallet disconnect, IndexedDB cleanup, and wallet-modal
-   cleanup in a state module. It should become one wallet-owned semantic Effect
-   service operation, with the Atom only forwarding to it. That changes wallet
-   lifecycle/error policy and needs its own characterization slice.
-4. `setTosAcceptedAtom` performs a persistence write and refreshes its read Atom.
-   It should move behind a persistence capability that publishes coherent state
-   or returns an update receipt consumed by the adapter. Dropping the refresh
-   now would leave stale UI state.
-5. `pending-action-deep-link.ts` uses writable resource/state machinery rather
-   than an `Atom.fn*` command, but its remaining coordinator behavior is known
-   debt. It is intentionally excluded from this batch because it requires a
-   separate lifecycle and stale-result design.
+The five originally deferred findings are resolved. Earn intent now retains
+explicit normalized validator snapshots and the remembered-resource cache is
+deleted. Market Position has one attempt-keyed state family. Logout is one
+serialized Wallet Service operation with owned-storage cleanup and modal
+finalization. ToS acknowledgement is coherent persistence-owned state. The app
+route now supplies one normalized observation Stream to a scoped deep-link
+coordinator; claim history, stale-owner checks, Flow start, navigation, and
+retry eligibility are private to that module.
 
-Static service dependency cleanup outside the migrated Flow/Yield Entry slices
-is also intentionally separate. Neither exclusion weakens the new mechanical
-rules: all feature models and orchestration modules are Atom-independent, and
-feature code has no direct registry, subscription, or mount access.
+The remaining Transaction Workflow and Wagmi static dependencies are also
+bound once by private construction factories. Production contains no runtime
+`Effect.provideService` calls, and feature code has no direct registry,
+subscription, or mount access.

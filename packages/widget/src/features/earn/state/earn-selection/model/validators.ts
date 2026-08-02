@@ -1,29 +1,20 @@
-import type {
-  EarnValidator,
-  EarnValidatorKey,
-} from "../../../../../domain/schema/earn-models";
+import type { EarnValidator } from "../../../../../domain/schema/earn-models";
 import type { EarnEntry } from "../types";
 
 export const resolveValidators = ({
   entry,
-  selectedValidatorKeys,
+  selectedValidators,
   validatorOptions,
 }: {
   entry: EarnEntry;
-  selectedValidatorKeys: ReadonlySet<EarnValidatorKey>;
+  selectedValidators: ReadonlyArray<EarnValidator> | null;
   validatorOptions: ReadonlyArray<EarnValidator>;
 }) => {
   if (validatorOptions.length === 0) {
     return [];
   }
 
-  const selectedValidators = validatorOptions.filter((validator) =>
-    selectedValidatorKeys.has(validator.key)
-  );
-
-  if (selectedValidators.length > 0) {
-    return selectedValidators;
-  }
+  if (selectedValidators !== null) return selectedValidators;
 
   const initialValidator = entry.initParams?.validator
     ? validatorOptions.find(

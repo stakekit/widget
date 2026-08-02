@@ -46,7 +46,8 @@ const makeCommands = (
   operations: WagmiOperationsService
 ) =>
   Effect.runPromise(
-    makeWagmiActions({ config }).pipe(
+    makeWagmiActions.pipe(
+      Effect.map((build) => build({ config })),
       Effect.provideService(WagmiOperations, WagmiOperations.of(operations))
     )
   );

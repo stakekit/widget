@@ -33,103 +33,97 @@ type BorrowAdvanceResolution =
       readonly action: BorrowAction;
     };
 
-const resolveBorrowAdvance = Effect.fn(
-  "TransactionWorkflow.resolveBorrowAdvance"
-)(function* ({
-  batchId,
-  previousAction,
-  reconcile,
-  workflowId,
-}: {
-  readonly batchId: string;
-  readonly previousAction: BorrowAction;
-  readonly reconcile: boolean;
-  readonly workflowId: string;
-}): Effect.fn.Return<
-  BorrowAdvanceResolution,
-  TransactionAdvanceError,
-  TransactionWorkflowOperationsService
-> {
+export const makeAdvanceBatch = Effect.gen(function* () {
   const operations = yield* TransactionWorkflowOperationsService;
-  const fail = (message: string, cause?: unknown) =>
-    new TransactionAdvanceError({
-      batchId,
-      cause,
-      message,
-      transactionId: null,
-      workflowId,
-    });
-  const classifySteppedAction = (action: BorrowAction) => {
-    if (isUnsuccessfulBorrowActionStatus(action.status)) {
-      return Effect.fail(
-        fail(`Borrow action ended with ${action.status} status.`)
+  const resolveBorrowAdvance = Effect.fn(
+    "TransactionWorkflow.resolveBorrowAdvance"
+  )(function* ({
+    batchId,
+    previousAction,
+    reconcile,
+    workflowId,
+  }: {
+    readonly batchId: string;
+    readonly previousAction: BorrowAction;
+    readonly reconcile: boolean;
+    readonly workflowId: string;
+  }): Effect.fn.Return<BorrowAdvanceResolution, TransactionAdvanceError> {
+    const fail = (message: string, cause?: unknown) =>
+      new TransactionAdvanceError({
+        batchId,
+        cause,
+        message,
+        transactionId: null,
+        workflowId,
+      });
+    const classifySteppedAction = (action: BorrowAction) => {
+      if (isUnsuccessfulBorrowActionStatus(action.status)) {
+        return Effect.fail(
+          fail(`Borrow action ended with ${action.status} status.`)
+        );
+      }
+
+      return Effect.succeed(
+        action.status === "SUCCESS"
+          ? ({ _tag: "Complete", action } as const)
+          : ({ _tag: "NextBatch", action } as const)
+      );
+    };
+    const step = () =>
+      operations.stepBorrowAction(previousAction.id).pipe(
+        Effect.mapError((cause) =>
+          fail("Borrow action could not advance to the next step.", cause)
+        ),
+        Effect.flatMap(classifySteppedAction)
+      );
+
+    if (!reconcile) {
+      return yield* step();
+    }
+
+    const reconciled = yield* operations
+      .getBorrowAction(previousAction.id)
+      .pipe(
+        Effect.mapError((cause) =>
+          fail("Borrow action status could not be reconciled.", cause)
+        )
+      );
+
+    if (!reconciled) {
+      return yield* step();
+    }
+
+    if (isUnsuccessfulBorrowActionStatus(reconciled.status)) {
+      return yield* fail(
+        `Borrow action ended with ${reconciled.status} status.`
       );
     }
 
-    return Effect.succeed(
-      action.status === "SUCCESS"
-        ? ({ _tag: "Complete", action } as const)
-        : ({ _tag: "NextBatch", action } as const)
-    );
-  };
-  const step = () =>
-    operations.stepBorrowAction(previousAction.id).pipe(
-      Effect.mapError((cause) =>
-        fail("Borrow action could not advance to the next step.", cause)
-      ),
-      Effect.flatMap(classifySteppedAction)
-    );
+    if (reconciled.status === "SUCCESS") {
+      return { _tag: "Complete", action: reconciled };
+    }
 
-  if (!reconcile) {
+    if (reconciled.currentStep > previousAction.currentStep) {
+      return { _tag: "NextBatch", action: reconciled };
+    }
+
+    if (
+      reconciled.currentStep === previousAction.currentStep &&
+      !reconciled.hasNextStep
+    ) {
+      return { _tag: "Complete", action: reconciled };
+    }
+
     return yield* step();
-  }
+  });
 
-  const reconciled = yield* operations
-    .getBorrowAction(previousAction.id)
-    .pipe(
-      Effect.mapError((cause) =>
-        fail("Borrow action status could not be reconciled.", cause)
-      )
-    );
-
-  if (!reconciled) {
-    return yield* step();
-  }
-
-  if (isUnsuccessfulBorrowActionStatus(reconciled.status)) {
-    return yield* fail(`Borrow action ended with ${reconciled.status} status.`);
-  }
-
-  if (reconciled.status === "SUCCESS") {
-    return { _tag: "Complete", action: reconciled };
-  }
-
-  if (reconciled.currentStep > previousAction.currentStep) {
-    return { _tag: "NextBatch", action: reconciled };
-  }
-
-  if (
-    reconciled.currentStep === previousAction.currentStep &&
-    !reconciled.hasNextStep
-  ) {
-    return { _tag: "Complete", action: reconciled };
-  }
-
-  return yield* step();
-});
-
-export const advanceBatch = Effect.fn("TransactionWorkflow.advanceBatch")(
-  function* ({
+  return Effect.fn("TransactionWorkflow.advanceBatch")(function* ({
     context,
     reconcile,
   }: {
     readonly context: TransactionWorkflowContext;
     readonly reconcile: boolean;
-  }): Effect.fn.Return<
-    AdvanceResult,
-    TransactionAdvanceError,
-    TransactionWorkflowOperationsService
-  > {
+  }): Effect.fn.Return<AdvanceResult, TransactionAdvanceError> {
     const batch = getCurrentTransactionWorkflowBatch(context);
     const workflowId =
       context.domain._tag === "Classic"
@@ -192,5 +186,5 @@ export const advanceBatch = Effect.fn("TransactionWorkflow.advanceBatch")(
       }),
       Match.exhaustive
     );
-  }
-);
+  });
+});

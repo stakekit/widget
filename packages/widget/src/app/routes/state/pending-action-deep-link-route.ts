@@ -1,171 +1,92 @@
-import { Effect, Option } from "effect";
+import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { startClassicTransactionFlowAtom } from "../../../features/classic-transaction-flow/state";
-import {
-  type PendingActionDeepLinkIntentId,
-  pendingActionDeepLinkViewAtom,
-  samePendingActionDeepLinkIntent,
-} from "../../../features/earn/state";
+import { pendingActionDeepLinkViewAtom } from "../../../features/earn/state";
 import { initParamsAtom } from "../../../features/init-params/state";
 import { mountAnimationStateAtom } from "../../../features/mount-animation/state";
 import { walletConnectionStateAtom } from "../../../features/wallet/state";
 import {
-  toWidgetPath,
-  WidgetNavigation,
-} from "../../../services/navigation/widget-navigation";
-import { appRuntime } from "../../runtime/app-runtime";
+  DeepLinkCoordinator,
+  type DeepLinkRouteObservation,
+  type PendingActionDeepLinkObservation,
+} from "../../runtime/deep-link-coordinator";
+import {
+  atomToStream,
+  makeScopedEffectAtom,
+} from "../../runtime/scoped-effect-atom";
+import { walletRuntime } from "../../runtime/wallet-runtime";
 
-type PendingActionDeepLinkRouteState = Readonly<{
-  readonly claimedIntents: ReadonlyArray<PendingActionDeepLinkIntentId>;
-  readonly claimedPositionIntents: ReadonlyArray<string>;
-}>;
-
-const pendingActionDeepLinkRouteStateAtom =
-  Atom.make<PendingActionDeepLinkRouteState>({
-    claimedIntents: [],
-    claimedPositionIntents: [],
-  }).pipe(Atom.withLabel("pendingActionDeepLinkRouteStateAtom"));
-
-export const canClaimPendingActionDeepLink = ({
-  claimedIntents,
-  currentIntent,
-  requestedIntent,
-}: {
-  readonly claimedIntents: ReadonlyArray<PendingActionDeepLinkIntentId>;
-  readonly currentIntent: PendingActionDeepLinkIntentId;
-  readonly requestedIntent: PendingActionDeepLinkIntentId;
-}) =>
-  samePendingActionDeepLinkIntent(currentIntent, requestedIntent) &&
-  !claimedIntents.some((claimed) =>
-    samePendingActionDeepLinkIntent(claimed, requestedIntent)
-  );
-
-const claimPendingActionDeepLinkAtom = appRuntime
-  .fn((intentId: PendingActionDeepLinkIntentId, context) => {
-    const current = context(pendingActionDeepLinkViewAtom).pipe(
+const deepLinkRouteObservationAtom = Atom.make<DeepLinkRouteObservation>(
+  (get) => {
+    const animation = get(mountAnimationStateAtom);
+    const initParams = get(initParamsAtom);
+    const wallet = get(walletConnectionStateAtom);
+    const pendingActionValue = get(pendingActionDeepLinkViewAtom).pipe(
       AsyncResult.value,
-      Option.getOrUndefined
+      Option.getOrNull
     );
+    const pendingAction = ((): PendingActionDeepLinkObservation | null => {
+      if (!pendingActionValue) return null;
+      if (pendingActionValue.type === "positionDetails") {
+        return {
+          _tag: "OpenValidatorSelection",
+          balanceId: pendingActionValue.balanceId,
+          intent: pendingActionValue.intentId,
+          pendingActionType: pendingActionValue.pendingAction.type,
+          walletScope: pendingActionValue.walletScope,
+          yieldId: pendingActionValue.yieldOp.id,
+        };
+      }
 
-    const state = context(pendingActionDeepLinkRouteStateAtom);
-    if (
-      !current ||
-      !canClaimPendingActionDeepLink({
-        claimedIntents: state.claimedIntents,
-        currentIntent: current.intentId,
-        requestedIntent: intentId,
-      })
-    ) {
-      return Effect.void;
-    }
-
-    const positionBase =
-      `/positions/${current.yieldOp.id}/${current.balanceId}` as const;
-    const path = toWidgetPath(
-      current.type === "positionDetails"
-        ? `${positionBase}/select-validator/${current.pendingAction.type}`
-        : `${positionBase}/pending-action/review`
-    );
-
-    if (current.type === "review") {
-      return context
-        .setResult(startClassicTransactionFlowAtom, {
+      return {
+        _tag: "StartClassicFlow",
+        input: {
           intake: {
             _tag: "Manage",
-            request: current.pendingActionDto.requestDto,
-            gasFeeToken: current.pendingActionDto.gasFeeToken,
-            integration: current.pendingActionDto.integrationData,
-            interactedToken: current.balance.token,
-            pendingActionType: current.pendingActionDto.requestDto.action,
-            providersDetails: current.providersDetails,
-            walletScope: current.walletScope,
+            request: pendingActionValue.pendingActionDto.requestDto,
+            gasFeeToken: pendingActionValue.pendingActionDto.gasFeeToken,
+            integration: pendingActionValue.pendingActionDto.integrationData,
+            interactedToken: pendingActionValue.balance.token,
+            pendingActionType:
+              pendingActionValue.pendingActionDto.requestDto.action,
+            providersDetails: pendingActionValue.providersDetails,
+            walletScope: pendingActionValue.walletScope,
           },
           mount: {
             _tag: "PositionManage",
-            balanceId: current.balanceId,
-            integrationId: current.yieldOp.id,
+            balanceId: pendingActionValue.balanceId,
+            integrationId: pendingActionValue.yieldOp.id,
           },
-        })
-        .pipe(
-          Effect.tap((outcome) =>
-            outcome._tag === "Started"
-              ? Effect.sync(() => {
-                  context.set(pendingActionDeepLinkRouteStateAtom, {
-                    ...state,
-                    claimedIntents: [...state.claimedIntents, intentId],
-                  });
-                })
-              : Effect.void
-          )
-        );
-    }
+        },
+        intent: pendingActionValue.intentId,
+        walletScope: pendingActionValue.walletScope,
+      };
+    })();
+    const position =
+      wallet.status === "connected" &&
+      initParams?.yieldId &&
+      initParams.balanceId &&
+      !initParams.pendingaction
+        ? {
+            balanceId: initParams.balanceId,
+            yieldId: initParams.yieldId,
+          }
+        : null;
 
-    context.set(pendingActionDeepLinkRouteStateAtom, {
-      ...state,
-      claimedIntents: [...state.claimedIntents, intentId],
-    });
-    return WidgetNavigation.use((navigation) =>
-      navigation.execute({ _tag: "Push", path })
-    );
-  })
-  .pipe(Atom.withLabel("claimPendingActionDeepLinkAtom"));
+    return {
+      pendingAction,
+      position,
+      ready: animation.layout && animation.earnPage,
+    };
+  }
+).pipe(Atom.withLabel("deepLinkRouteObservationAtom"));
 
-const claimPositionDeepLinkAtom = appRuntime
-  .fn((_input: undefined, context) => {
-    const initParams = context(initParamsAtom);
-    const wallet = context(walletConnectionStateAtom);
-    if (
-      wallet.status !== "connected" ||
-      !initParams?.yieldId ||
-      !initParams.balanceId ||
-      initParams.pendingaction
-    ) {
-      return Effect.void;
-    }
-
-    const intent = `${initParams.yieldId}:${initParams.balanceId}`;
-    const state = context(pendingActionDeepLinkRouteStateAtom);
-    if (state.claimedPositionIntents.includes(intent)) return Effect.void;
-
-    context.set(pendingActionDeepLinkRouteStateAtom, {
-      ...state,
-      claimedPositionIntents: [...state.claimedPositionIntents, intent],
-    });
-    return WidgetNavigation.use((navigation) =>
-      navigation.execute({
-        _tag: "Push",
-        path: toWidgetPath(
-          `/positions/${initParams.yieldId}/${initParams.balanceId}`
-        ),
-      })
-    );
-  })
-  .pipe(Atom.withLabel("claimPositionDeepLinkAtom"));
-
-export const pendingActionDeepLinkRouteAtom = Atom.make((context) => {
-  const registry = context.registry;
-  context.mount(claimPendingActionDeepLinkAtom);
-  context.mount(claimPositionDeepLinkAtom);
-  const claimCurrent = () => {
-    const animation = registry.get(mountAnimationStateAtom);
-    if (!animation.layout || !animation.earnPage) return;
-
-    registry.set(claimPositionDeepLinkAtom, undefined);
-    const current = registry
-      .get(pendingActionDeepLinkViewAtom)
-      .pipe(AsyncResult.value, Option.getOrUndefined);
-    if (current) registry.set(claimPendingActionDeepLinkAtom, current.intentId);
-  };
-
-  context.subscribe(pendingActionDeepLinkViewAtom, claimCurrent, {
-    immediate: true,
-  });
-  context.subscribe(initParamsAtom, claimCurrent, { immediate: true });
-  context.subscribe(mountAnimationStateAtom, claimCurrent, { immediate: true });
-  context.subscribe(walletConnectionStateAtom, claimCurrent, {
-    immediate: true,
-  });
-
-  return undefined;
-}).pipe(Atom.withLabel("pendingActionDeepLinkRouteAtom"));
+export const pendingActionDeepLinkRouteAtom = makeScopedEffectAtom({
+  acquire: (context) =>
+    DeepLinkCoordinator.use((coordinator) =>
+      coordinator.observe(atomToStream(context, deepLinkRouteObservationAtom))
+    ),
+  label: "pendingActionDeepLinkRoute",
+  makeValue: () => undefined,
+  runtime: walletRuntime,
+});

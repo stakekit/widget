@@ -1,11 +1,7 @@
 import { Option, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type * as Atom from "effect/unstable/reactivity/Atom";
-import type {
-  EarnValidator,
-  EarnValidatorKey,
-  EarnYieldWithProvider,
-} from "../../../../../domain/schema/earn-models";
+import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
 import { YieldId } from "../../../../../domain/schema/identifiers";
 import { Network } from "../../../../../domain/schema/network-model";
 import { isYieldValidatorSelectionRequired } from "../../../../../domain/types/yields";
@@ -207,21 +203,12 @@ export const makeEarnResourceAdapter = (context: Atom.AtomContext) => {
       _tag: "YieldValidators",
       key: validatorsKey,
     });
-    const known = new Map<EarnValidatorKey, EarnValidator>(
-      initial
-        .pipe(
-          AsyncResult.value,
-          Option.getOrElse((): ReadonlyArray<EarnValidator> => [])
-        )
-        .map((validator) => [validator.key, validator])
-    );
-    context
-      .get(resource.rememberValidatorsAtom)
-      .forEach((validator, key) => known.set(key, validator));
-
     return {
       _tag: "enabled",
-      options: [...known.values()],
+      options: initial.pipe(
+        AsyncResult.value,
+        Option.getOrElse(() => [])
+      ),
       result: initial,
     };
   };

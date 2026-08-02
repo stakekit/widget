@@ -19,6 +19,7 @@ import { WalletService } from "../../services/wallet/wallet-service";
 import { TransactionWorkflowOperationsService } from "../../services/workflow/transaction-workflow-operations-service";
 import { TransactionWorkflowService } from "../../services/workflow/transaction-workflow-service";
 import { appRuntime } from "./app-runtime";
+import { DeepLinkCoordinator } from "./deep-link-coordinator";
 
 type AppServices =
   | BorrowOperations
@@ -67,6 +68,11 @@ export const walletRuntime = Atom.runtime((get) => {
       Layer.mergeAll(appLayer, walletLayer, walletAccountSetupLayer)
     )
   );
+  const deepLinkCoordinatorLayer = DeepLinkCoordinator.layer.pipe(
+    Layer.provide(
+      Layer.mergeAll(appLayer, walletLayer, classicTransactionFlowLayer)
+    )
+  );
 
   return Layer.mergeAll(
     appLayer,
@@ -75,6 +81,7 @@ export const walletRuntime = Atom.runtime((get) => {
     transactionWorkflowLayer,
     borrowTransactionFlowLayer,
     classicTransactionFlowLayer,
+    deepLinkCoordinatorLayer,
     yieldEntrySubmissionLayer
   ).pipe(Layer.fresh);
 });

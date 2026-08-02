@@ -10,6 +10,7 @@ import { getConfig as getCosmosConfig } from "../../../src/services/wallet/conne
 import { getConfig as getMiscConfig } from "../../../src/services/wallet/connectors/misc/config";
 import { getConfig as getSubstrateConfig } from "../../../src/services/wallet/connectors/substrate/config";
 import { WagmiOperations } from "../../../src/services/wallet/platform/wagmi-operations";
+import { makeWagmiActions } from "../../../src/services/wallet/wagmi-actions";
 import {
   type BuildWagmiConfigOptions,
   buildWagmiConfig,
@@ -127,24 +128,35 @@ const externalProviders: CurrentRef<SKExternalProviders> = {
 const buildController = (overrides: Partial<BuildWagmiConfigOptions> = {}) =>
   Effect.runPromise(
     Effect.scoped(
-      buildWagmiConfig({
-        chainIconMapping: undefined,
-        customConnectors: undefined,
-        disableInjectedProviderDiscovery: true,
-        enabledNetworks: new Set(["ethereum", "cosmos", "polkadot", "tron"]),
-        forceWalletConnectOnly: false,
-        institutionalWallets: false,
-        isLedgerLive: false,
-        isSafe: false,
-        mapWalletFn: undefined,
-        mapWalletListFn: undefined,
-        persistPublicKey: () => Effect.void,
-        queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
-        solanaConnection: {} as SolanaConnection,
-        solanaWallets: [],
-        tonConnectManifestUrl: undefined,
-        variant: "default",
-        ...overrides,
+      Effect.gen(function* () {
+        const buildActions = yield* makeWagmiActions;
+        return yield* buildWagmiConfig(
+          {
+            chainIconMapping: undefined,
+            customConnectors: undefined,
+            disableInjectedProviderDiscovery: true,
+            enabledNetworks: new Set([
+              "ethereum",
+              "cosmos",
+              "polkadot",
+              "tron",
+            ]),
+            forceWalletConnectOnly: false,
+            institutionalWallets: false,
+            isLedgerLive: false,
+            isSafe: false,
+            mapWalletFn: undefined,
+            mapWalletListFn: undefined,
+            persistPublicKey: () => Effect.void,
+            queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
+            solanaConnection: {} as SolanaConnection,
+            solanaWallets: [],
+            tonConnectManifestUrl: undefined,
+            variant: "default",
+            ...overrides,
+          },
+          buildActions
+        );
       }).pipe(Effect.provide(WagmiOperations.layer))
     )
   );

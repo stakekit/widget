@@ -1,16 +1,16 @@
-import { Layer, Option, Schema } from "effect";
+import { Layer, Schema } from "effect";
 import * as KeyValueStore from "effect/unstable/persistence/KeyValueStore";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import {
-  setTosAcceptedAtom,
-  tosAcceptedAtom,
+  acknowledgeTosAtom,
+  tosAcknowledgementAtom,
 } from "../../src/features/preferences/state/tos-atoms";
 import {
   StoredPublicKeys,
-  TosAccepted,
+  TosAcknowledged,
   WidgetPersistence,
   widgetStorageKeys,
 } from "../../src/services/persistence/widget-persistence";
@@ -63,11 +63,11 @@ describe("Effect browser persistence", () => {
       skPubKeys: "sk-widget@1//skPubKeys",
       tosAccepted: "sk-widget@1//tosAccepted",
     });
-    expect(Schema.decodeUnknownSync(TosAccepted)(true)).toBe(true);
+    expect(Schema.decodeUnknownSync(TosAcknowledged)(true)).toBe(true);
     expect(
       Schema.decodeUnknownSync(StoredPublicKeys)({ cosmos: "public-key" })
     ).toEqual({ cosmos: "public-key" });
-    expect(() => Schema.decodeUnknownSync(TosAccepted)("true")).toThrow();
+    expect(() => Schema.decodeUnknownSync(TosAcknowledged)("true")).toThrow();
     expect(() =>
       Schema.decodeUnknownSync(StoredPublicKeys)({ cosmos: 1 })
     ).toThrow();
@@ -82,37 +82,47 @@ describe("Effect browser persistence", () => {
     );
     const registry = makeRegistry(storage);
 
-    expect(AsyncResult.getOrThrow(registry.get(tosAcceptedAtom))).toBe(true);
-    expect(AsyncResult.getOrThrow(registry.get(tosAcceptedAtom))).toBe(true);
+    expect(
+      AsyncResult.getOrThrow(registry.get(tosAcknowledgementAtom))
+    ).toEqual({ _tag: "Available", acknowledged: true });
+    expect(
+      AsyncResult.getOrThrow(registry.get(tosAcknowledgementAtom))
+    ).toEqual({ _tag: "Available", acknowledged: true });
     expect(storage.reads).toBe(1);
   });
 
   it("uses declared defaults when persisted values are absent", () => {
     const registry = makeRegistry(new MemoryStorage());
 
-    expect(AsyncResult.getOrThrow(registry.get(tosAcceptedAtom))).toBe(false);
+    expect(
+      AsyncResult.getOrThrow(registry.get(tosAcknowledgementAtom))
+    ).toEqual({ _tag: "Available", acknowledged: false });
   });
 
   it("exposes malformed persisted values as schema failures", () => {
     const storage = new MemoryStorage();
     storage.values.set(widgetStorageKeys.tosAccepted, '"not-a-boolean"');
     const registry = makeRegistry(storage);
-    const result = registry.get(tosAcceptedAtom);
+    const result = registry.get(tosAcknowledgementAtom);
 
-    expect(AsyncResult.isFailure(result)).toBe(true);
-    expect(Option.isNone(AsyncResult.value(result))).toBe(true);
+    expect(AsyncResult.getOrThrow(result)).toMatchObject({
+      _tag: "Failed",
+      error: { _tag: "TosAcknowledgementPersistenceError", operation: "read" },
+    });
   });
 
   it("publishes writes and exposes write failures through mutation state", () => {
     const storage = new MemoryStorage();
     const registry = makeRegistry(storage);
 
-    registry.set(setTosAcceptedAtom, true);
+    registry.set(acknowledgeTosAtom, undefined);
 
     expect(
-      AsyncResult.getOrThrow(registry.get(setTosAcceptedAtom))
+      AsyncResult.getOrThrow(registry.get(acknowledgeTosAtom))
     ).toBeUndefined();
-    expect(AsyncResult.getOrThrow(registry.get(tosAcceptedAtom))).toBe(true);
+    expect(
+      AsyncResult.getOrThrow(registry.get(tosAcknowledgementAtom))
+    ).toEqual({ _tag: "Available", acknowledged: true });
     expect(storage.values.get(widgetStorageKeys.tosAccepted)).toBe("true");
 
     const failingStorage = new MemoryStorage();
@@ -120,9 +130,9 @@ describe("Effect browser persistence", () => {
       throw new Error("storage blocked");
     };
     const failingRegistry = makeRegistry(failingStorage);
-    failingRegistry.set(setTosAcceptedAtom, true);
+    failingRegistry.set(acknowledgeTosAtom, undefined);
 
-    expect(AsyncResult.isFailure(failingRegistry.get(setTosAcceptedAtom))).toBe(
+    expect(AsyncResult.isFailure(failingRegistry.get(acknowledgeTosAtom))).toBe(
       true
     );
   });

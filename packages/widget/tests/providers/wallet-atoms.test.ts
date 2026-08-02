@@ -16,6 +16,7 @@ import {
   type WagmiOperationsService,
   wagmiOperations,
 } from "../../src/services/wallet/platform/wagmi-operations";
+import { makeWagmiActions } from "../../src/services/wallet/wagmi-actions";
 import {
   buildWagmiConfig,
   scopedMipdSubscription,
@@ -287,25 +288,31 @@ describe("wallet Effect Atom boundaries", () => {
     await expect(
       Effect.runPromise(
         Effect.scoped(
-          buildWagmiConfig({
-            chainIconMapping: undefined,
-            customConnectors: () => {
-              throw cause;
-            },
-            disableInjectedProviderDiscovery: true,
-            enabledNetworks: new Set(["ethereum"]),
-            forceWalletConnectOnly: false,
-            institutionalWallets: false,
-            isLedgerLive: false,
-            isSafe: false,
-            mapWalletFn: undefined,
-            mapWalletListFn: undefined,
-            persistPublicKey: () => Effect.void,
-            queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
-            solanaConnection: {} as SolanaConnection,
-            solanaWallets: [],
-            tonConnectManifestUrl: undefined,
-            variant: "default",
+          Effect.gen(function* () {
+            const buildActions = yield* makeWagmiActions;
+            return yield* buildWagmiConfig(
+              {
+                chainIconMapping: undefined,
+                customConnectors: () => {
+                  throw cause;
+                },
+                disableInjectedProviderDiscovery: true,
+                enabledNetworks: new Set(["ethereum"]),
+                forceWalletConnectOnly: false,
+                institutionalWallets: false,
+                isLedgerLive: false,
+                isSafe: false,
+                mapWalletFn: undefined,
+                mapWalletListFn: undefined,
+                persistPublicKey: () => Effect.void,
+                queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
+                solanaConnection: {} as SolanaConnection,
+                solanaWallets: [],
+                tonConnectManifestUrl: undefined,
+                variant: "default",
+              },
+              buildActions
+            );
           }).pipe(Effect.provide(WagmiOperations.layer))
         )
       )

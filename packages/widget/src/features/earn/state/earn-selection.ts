@@ -17,7 +17,6 @@ import {
   earnValidatorsPageAtom,
   loadMoreEarnTokenOptionsAtom,
   loadMoreEarnValidatorsPageAtom,
-  rememberEarnValidatorsAtom,
   retryEarnMachineAtom,
 } from "./earn-selection/state/view-resources";
 import type {
@@ -172,25 +171,28 @@ export const selectEarnSelectionValidatorAtom = Atom.fnSync(
     );
     if (!selectedYield || !validator) return;
 
-    context.set(rememberEarnValidatorsAtom, [validator]);
     context.set(
       earnMachineIntentAtom,
       isYieldActionArgRequired(selectedYield, "enter", "validatorAddresses")
         ? {
             type: "validator/multiselect",
-            validatorKey,
+            fallbackSelection: view.selected,
+            validator,
           }
-        : { type: "validator/select", validatorKey }
+        : { type: "validator/select", validator }
     );
   }
 ).pipe(Atom.withLabel("selectEarnSelectionValidatorAtom"));
 
 export const removeEarnSelectionValidatorAtom = Atom.fnSync(
-  (validatorKey: EarnValidatorKey, context) =>
+  (validatorKey: EarnValidatorKey, context) => {
+    const selected = context(earnSelectionValidatorOptionsViewAtom).selected;
     context.set(earnMachineIntentAtom, {
       type: "validator/remove",
+      fallbackSelection: selected,
       validatorKey,
-    })
+    });
+  }
 ).pipe(Atom.withLabel("removeEarnSelectionValidatorAtom"));
 
 export const selectEarnSelectionProviderAtom = Atom.fnSync(

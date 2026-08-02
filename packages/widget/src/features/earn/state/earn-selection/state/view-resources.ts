@@ -110,15 +110,6 @@ export const loadMoreEarnValidatorsPageAtom = Atom.fnSync(
   { initialValue: undefined }
 ).pipe(Atom.withLabel("loadMoreEarnValidatorsPageAtom"));
 
-export const rememberEarnValidatorsAtom = Atom.fnSync(
-  (validators: ReadonlyArray<EarnValidator>, context) => {
-    const key = context(earnMachineViewAtom).resources.validators.key;
-    if (!key) return;
-    context.set(yieldValidatorsAtom(key).rememberValidatorsAtom, validators);
-  },
-  { initialValue: undefined }
-).pipe(Atom.withLabel("rememberEarnValidatorsAtom"));
-
 const refreshEarnRetryTarget = (
   context: Atom.FnContext,
   target: EarnRetryTarget

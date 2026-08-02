@@ -1,4 +1,7 @@
-import type { EarnValidatorKey } from "../../../../../domain/schema/earn-models";
+import type {
+  EarnValidator,
+  EarnValidatorKey,
+} from "../../../../../domain/schema/earn-models";
 import type { YieldId } from "../../../../../domain/schema/identifiers";
 import type { TronResource } from "../../../../../domain/schema/legacy-models";
 import type { DashboardYieldCategory } from "../../../../../public-api/types";
@@ -19,14 +22,16 @@ export type EarnAction =
     }
   | {
       readonly type: "validator/select";
-      readonly validatorKey: EarnValidatorKey;
+      readonly validator: EarnValidator;
     }
   | {
       readonly type: "validator/multiselect";
-      readonly validatorKey: EarnValidatorKey;
+      readonly fallbackSelection: ReadonlyArray<EarnValidator>;
+      readonly validator: EarnValidator;
     }
   | {
       readonly type: "validator/remove";
+      readonly fallbackSelection: ReadonlyArray<EarnValidator>;
       readonly validatorKey: EarnValidatorKey;
     }
   | {

@@ -19,13 +19,9 @@ import type {
 } from "./domain/transactions";
 import { WagmiOperations } from "./platform/wagmi-operations";
 
-export const makeWagmiActions = Effect.fn("makeWagmiActions")(function* ({
-  config,
-}: {
-  readonly config: Config;
-}) {
+export const makeWagmiActions = Effect.gen(function* () {
   const operations = yield* WagmiOperations;
-  return {
+  return ({ config }: { readonly config: Config }) => ({
     connect: Effect.fn("connect")(function* (input: WalletConnectInput) {
       return yield* operations.connect(config, input).pipe(
         Effect.mapError(
@@ -121,7 +117,7 @@ export const makeWagmiActions = Effect.fn("makeWagmiActions")(function* ({
         )
       );
     }),
-  };
+  });
 });
 
-export type WagmiActions = Effect.Success<ReturnType<typeof makeWagmiActions>>;
+export type WagmiActions = ReturnType<Effect.Success<typeof makeWagmiActions>>;

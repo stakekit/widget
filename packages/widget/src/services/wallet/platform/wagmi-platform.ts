@@ -16,6 +16,7 @@ import {
 } from "wagmi/actions";
 import type { WalletCoreState } from "../domain/state";
 import { makeInitializeWallet } from "../initial-connection";
+import { makeWagmiActions } from "../wagmi-actions";
 import {
   type BuildWagmiConfigOptions,
   buildWagmiConfig,
@@ -147,12 +148,11 @@ export class WagmiPlatform extends Context.Service<
     WagmiPlatform,
     Effect.gen(function* () {
       const initialize = yield* makeInitializeWallet;
-      const operations = yield* WagmiOperations;
+      const buildActions = yield* makeWagmiActions;
       const buildConfig = Effect.fn("buildConfig")(function* (
         options: WagmiBuildConfigOptions
       ) {
-        return yield* buildWagmiConfig(options).pipe(
-          Effect.provideService(WagmiOperations, operations),
+        return yield* buildWagmiConfig(options, buildActions).pipe(
           Effect.mapError(
             (cause) =>
               new WagmiPlatformError({ cause, operation: "build-config" })

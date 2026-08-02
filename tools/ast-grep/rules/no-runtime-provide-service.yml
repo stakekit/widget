@@ -1,0 +1,11 @@
+id: no-runtime-provide-service
+language: Tsx
+severity: error
+message: Resolve static Effect dependencies during Layer construction instead of locally re-providing a captured service while an operation runs.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+rule:
+  pattern: Effect.provideService($$$ARGS)

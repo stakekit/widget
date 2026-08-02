@@ -18,7 +18,6 @@ import {
   yieldOpportunityAtom,
 } from "../../../resources/yield-opportunity/provider";
 import {
-  sameWalletScopeOwner,
   type WalletScopeKey,
   walletScopeFromState,
 } from "../../../services/wallet/domain/scope";
@@ -33,22 +32,13 @@ class PendingActionDeepLinkRequestKey extends Data.Class<{
   readonly yieldId: NonNullable<InitParams["yieldId"]>;
 }> {}
 
-export class PendingActionDeepLinkIntentId extends Data.Class<{
+class PendingActionDeepLinkIntentId extends Data.Class<{
   readonly address: WalletScopeKey["address"];
   readonly network: WalletScopeKey["network"];
   readonly pendingAction: NonNullable<InitParams["pendingaction"]>;
   readonly validator: InitParams["validator"];
   readonly yieldId: NonNullable<InitParams["yieldId"]>;
 }> {}
-
-export const samePendingActionDeepLinkIntent = (
-  first: PendingActionDeepLinkIntentId,
-  second: PendingActionDeepLinkIntentId
-) =>
-  first.pendingAction === second.pendingAction &&
-  first.validator === second.validator &&
-  first.yieldId === second.yieldId &&
-  sameWalletScopeOwner(first, second);
 
 class PendingActionDeepLinkError extends Data.TaggedError(
   "PendingActionDeepLinkError"
@@ -176,6 +166,7 @@ const projectPendingActionDeepLink = (value: PendingActionDeepLinkValue) => {
       pendingAction: value.pendingAction,
       balance,
       balanceId,
+      walletScope: value.walletScope,
     };
   }
 

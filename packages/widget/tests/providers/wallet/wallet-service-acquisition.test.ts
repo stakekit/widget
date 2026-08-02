@@ -28,7 +28,9 @@ import {
   type WagmiPlatformService,
 } from "../../../src/services/wallet/platform/wagmi-platform";
 import { WalletEnvironment } from "../../../src/services/wallet/platform/wallet-environment";
+import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
+import { WalletStorageCleanup } from "../../../src/services/wallet/wallet-storage-cleanup";
 import { makeWalletTestController } from "./wallet-test-controller";
 
 const settings = normalizeWidgetConfig({
@@ -92,6 +94,8 @@ const makeWalletLayer = (
         solanaLayer,
         Layer.succeed(WagmiPlatform, WagmiPlatform.of(wagmi)),
         trackingLayer,
+        WalletModal.layer,
+        WalletStorageCleanup.layer,
         WidgetPersistence.layer
       )
     )

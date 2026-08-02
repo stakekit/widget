@@ -322,6 +322,7 @@
             "src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service.ts"
           ],
           "allowImporters": [
+            "src/app/runtime/deep-link-coordinator.ts",
             "src/app/runtime/wallet-runtime.ts",
             "src/features/classic-transaction-flow/**",
             "tests/**"

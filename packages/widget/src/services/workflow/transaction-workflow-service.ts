@@ -18,7 +18,6 @@ import {
   type TransactionWorkflowState,
   validateTransactionWorkflowInput,
 } from "./transaction-workflow-model";
-import { TransactionWorkflowOperationsService } from "./transaction-workflow-operations-service";
 import { makeTransactionWorkflowProcessor } from "./transaction-workflow-runtime/processor";
 
 export type TransactionWorkflowHandle = {
@@ -32,7 +31,7 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
   "stakekit/widget/workflow/TransactionWorkflowService",
   {
     make: Effect.gen(function* () {
-      const operations = yield* TransactionWorkflowOperationsService;
+      const process = yield* makeTransactionWorkflowProcessor;
 
       const make = Effect.fn("TransactionWorkflowService.make")(function* (
         input: TransactionWorkflowInput
@@ -58,17 +57,11 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
           )
         );
 
-        yield* makeTransactionWorkflowProcessor({
+        yield* process({
           input,
           queue,
           stateRef,
-        }).pipe(
-          Effect.provideService(
-            TransactionWorkflowOperationsService,
-            operations
-          ),
-          Effect.forkScoped
-        );
+        }).pipe(Effect.forkScoped);
 
         return {
           dispatch: (command) =>

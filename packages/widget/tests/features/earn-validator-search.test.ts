@@ -82,7 +82,6 @@ describe("Earn validator search", () => {
     const pull = validators.validatorsPullAtom(
       new YieldValidatorsPullKey({ search })
     );
-    const unmountLoaded = registry.mount(validators.rememberValidatorsAtom);
     const unmount = registry.mount(pull);
 
     await Effect.runPromise(Effect.yieldNow);
@@ -106,15 +105,7 @@ describe("Earn validator search", () => {
         .map((validator) => validator.address)
     ).toEqual(["name-match", "address-match"]);
 
-    registry.set(validators.rememberValidatorsAtom, [byAddress as never]);
-    expect(
-      [...registry.get(validators.rememberValidatorsAtom).values()].map(
-        (validator) => validator.address
-      )
-    ).toContain("address-match");
-
     unmount();
-    unmountLoaded();
   });
 
   it("debounces the normalized query, rekeys the request, and drops stale results", async () => {
@@ -252,9 +243,7 @@ describe("Earn validator search", () => {
       expect([
         ...registry.get(earnValidatorSelectionViewAtom).selected.values(),
       ]).toEqual([beta]);
-      expect(validatorNames()).toEqual(
-        expect.arrayContaining(["Beta", "Catalog"])
-      );
+      expect(validatorNames()).toEqual(["Catalog"]);
     } finally {
       unmount();
       registry.dispose();

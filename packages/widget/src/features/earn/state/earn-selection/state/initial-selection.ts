@@ -1,12 +1,15 @@
 import { tokenString } from "../../../../../domain/types/tokens";
 import type { EarnEntry, EarnMachineIntent, EarnMachineView } from "../types";
 
-const sameValidatorKeys = (
-  first: ReadonlySet<string>,
-  second: ReadonlySet<string>
+const sameValidators = (
+  first: EarnMachineIntent["selectedValidators"],
+  second: EarnMachineIntent["selectedValidators"]
 ) =>
-  first.size === second.size &&
-  Array.from(first).every((key) => second.has(key));
+  first === second ||
+  (first !== null &&
+    second !== null &&
+    first.length === second.length &&
+    first.every((validator, index) => validator.key === second[index]?.key));
 
 export const commitEarnInitialSelection = (
   entry: EarnEntry,
@@ -22,9 +25,9 @@ export const commitEarnInitialSelection = (
       ? tokenString(view.selection.token.token)
       : null;
   })();
-  const selectedValidatorKeys = validatorTargeted
-    ? new Set(view.selection.validators.map((validator) => validator.key))
-    : intent.selectedValidatorKeys;
+  const selectedValidators = validatorTargeted
+    ? view.selection.validators
+    : intent.selectedValidators;
   const selectedYieldId = yieldTargeted
     ? (view.selection.yield?.id ?? null)
     : intent.selectedYieldId;
@@ -35,7 +38,7 @@ export const commitEarnInitialSelection = (
     intent.selectedCategory === selectedCategory &&
     intent.selectedTokenKey === selectedTokenKey &&
     intent.selectedYieldId === selectedYieldId &&
-    sameValidatorKeys(intent.selectedValidatorKeys, selectedValidatorKeys);
+    sameValidators(intent.selectedValidators, selectedValidators);
 
   return selectionUnchanged
     ? intent
@@ -43,7 +46,7 @@ export const commitEarnInitialSelection = (
         ...intent,
         selectedCategory,
         selectedTokenKey,
-        selectedValidatorKeys,
+        selectedValidators,
         selectedYieldId,
       };
 };

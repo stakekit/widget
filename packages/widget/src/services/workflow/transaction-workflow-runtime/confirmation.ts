@@ -33,8 +33,10 @@ type ConfirmationCheckResult =
       readonly transaction: BorrowTransaction;
     };
 
-export const confirmCurrent = Effect.fn("TransactionWorkflow.confirmCurrent")(
-  function* ({
+export const makeConfirmCurrent = Effect.gen(function* () {
+  const operations = yield* TransactionWorkflowOperationsService;
+
+  return Effect.fn("TransactionWorkflow.confirmCurrent")(function* ({
     context,
     input,
     latestContextRef,
@@ -43,7 +45,6 @@ export const confirmCurrent = Effect.fn("TransactionWorkflow.confirmCurrent")(
     readonly input: TransactionWorkflowInput;
     readonly latestContextRef: Ref.Ref<TransactionWorkflowContext>;
   }) {
-    const operations = yield* TransactionWorkflowOperationsService;
     const current = yield* requireCurrentWorkflow(context);
     const { batch, transaction, workflowId } = current;
     const { source } = transaction;
@@ -220,5 +221,5 @@ export const confirmCurrent = Effect.fn("TransactionWorkflow.confirmCurrent")(
     );
 
     return { context: updated };
-  }
-);
+  });
+});

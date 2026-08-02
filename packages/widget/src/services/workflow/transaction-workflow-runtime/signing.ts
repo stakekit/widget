@@ -51,131 +51,132 @@ const walletSignFailureReason = (
     }),
   });
 
-const validateWallet = Effect.fn("TransactionWorkflow.validateWallet")(
-  function* ({
-    current,
-    network,
-  }: {
-    readonly current: CurrentWorkflow;
-    readonly network: string;
-  }) {
-    const operations = yield* TransactionWorkflowOperationsService;
-    const { batch, transaction, workflowId } = current;
-    const expectedAddress = Match.value(current).pipe(
-      Match.tag("Classic", ({ domain }) => domain.actionMeta.address),
-      Match.tag("Borrow", ({ domain }) => domain.action.address),
-      Match.exhaustive
-    );
-    const fail = (reason: TransactionSignFailureReason) =>
-      makeTransactionSignError({
-        batchId: batch.id,
-        network,
-        reason,
-        transactionId: transaction.source.transaction.id,
-        workflowId,
-      });
-    const wallet = yield* operations.getWalletState.pipe(
-      Effect.mapError((cause) =>
-        fail({
+export const makePrepareAndSign = Effect.gen(function* () {
+  const operations = yield* TransactionWorkflowOperationsService;
+  const validateWallet = Effect.fn("TransactionWorkflow.validateWallet")(
+    function* ({
+      current,
+      network,
+    }: {
+      readonly current: CurrentWorkflow;
+      readonly network: string;
+    }) {
+      const { batch, transaction, workflowId } = current;
+      const expectedAddress = Match.value(current).pipe(
+        Match.tag("Classic", ({ domain }) => domain.actionMeta.address),
+        Match.tag("Borrow", ({ domain }) => domain.action.address),
+        Match.exhaustive
+      );
+      const fail = (reason: TransactionSignFailureReason) =>
+        makeTransactionSignError({
+          batchId: batch.id,
+          network,
+          reason,
+          transactionId: transaction.source.transaction.id,
+          workflowId,
+        });
+      const wallet = yield* operations.getWalletState.pipe(
+        Effect.mapError((cause) =>
+          fail({
+            _tag: "WalletUnavailable",
+            cause,
+            detail: "state-unavailable",
+          })
+        )
+      );
+
+      if (wallet.status !== "connected") {
+        return yield* fail({
           _tag: "WalletUnavailable",
-          cause,
-          detail: "state-unavailable",
-        })
-      )
-    );
+          detail: "disconnected",
+        });
+      }
 
-    if (wallet.status !== "connected") {
-      return yield* fail({
-        _tag: "WalletUnavailable",
-        detail: "disconnected",
-      });
+      if (!expectedAddress) {
+        return yield* fail({
+          _tag: "WalletUnavailable",
+          detail: "no-address",
+        });
+      }
+
+      if (wallet.network !== network) {
+        return yield* fail({
+          _tag: "WalletUnavailable",
+          detail: "network-changed",
+        });
+      }
+
+      if (
+        !sameWalletScopeOwner(
+          { address: wallet.address, network: wallet.network },
+          { address: expectedAddress, network: wallet.network }
+        )
+      ) {
+        return yield* fail({
+          _tag: "WalletUnavailable",
+          detail: "account-changed",
+        });
+      }
     }
+  );
 
-    if (!expectedAddress) {
-      return yield* fail({
-        _tag: "WalletUnavailable",
-        detail: "no-address",
-      });
-    }
+  const getBorrowTransactionMeta = ({
+    action,
+    transaction,
+  }: {
+    readonly action: BorrowAction;
+    readonly transaction: BorrowAction["transactions"][number];
+  }): SKBorrowTxMeta | null => {
+    const rawArguments = action.rawArguments;
+    if (!rawArguments) return null;
 
-    if (wallet.network !== network) {
-      return yield* fail({
-        _tag: "WalletUnavailable",
-        detail: "network-changed",
-      });
-    }
-
-    if (
-      !sameWalletScopeOwner(
-        { address: wallet.address, network: wallet.network },
-        { address: expectedAddress, network: wallet.network }
-      )
-    ) {
-      return yield* fail({
-        _tag: "WalletUnavailable",
-        detail: "account-changed",
-      });
-    }
-  }
-);
-
-const getBorrowTransactionMeta = ({
-  action,
-  transaction,
-}: {
-  readonly action: BorrowAction;
-  readonly transaction: BorrowAction["transactions"][number];
-}): SKBorrowTxMeta | null => {
-  const rawArguments = action.rawArguments;
-  if (!rawArguments) return null;
-
-  return {
-    actionId: action.id,
-    actionType: action.action,
-    address: action.address,
-    integrationId: action.integrationId,
-    rawArguments: {
-      marketId: rawArguments.marketId,
-      ...(rawArguments.amount == null
-        ? {}
-        : { amount: rawArguments.amount.toString() }),
-      ...(rawArguments.amountRaw == null
-        ? {}
-        : { amountRaw: rawArguments.amountRaw.toString() }),
-      ...(rawArguments.borrowAmount == null
-        ? {}
-        : { borrowAmount: rawArguments.borrowAmount }),
-      ...(rawArguments.collateralAmount == null
-        ? {}
-        : { collateralAmount: rawArguments.collateralAmount.toString() }),
-      ...(rawArguments.collateralAmountRaw == null
-        ? {}
-        : {
-            collateralAmountRaw: rawArguments.collateralAmountRaw.toString(),
-          }),
-      ...(rawArguments.collateralTokenAddress == null
-        ? {}
-        : {
-            collateralTokenAddress: rawArguments.collateralTokenAddress,
-          }),
-      ...(rawArguments.repayAll == null
-        ? {}
-        : { repayAll: rawArguments.repayAll }),
-      ...(rawArguments.targetLtv == null
-        ? {}
-        : { targetLtv: rawArguments.targetLtv }),
-      ...(rawArguments.tokenAddress == null
-        ? {}
-        : { tokenAddress: rawArguments.tokenAddress }),
-    },
-    txId: transaction.id,
-    txType: transaction.type,
+    return {
+      actionId: action.id,
+      actionType: action.action,
+      address: action.address,
+      integrationId: action.integrationId,
+      rawArguments: {
+        marketId: rawArguments.marketId,
+        ...(rawArguments.amount == null
+          ? {}
+          : { amount: rawArguments.amount.toString() }),
+        ...(rawArguments.amountRaw == null
+          ? {}
+          : { amountRaw: rawArguments.amountRaw.toString() }),
+        ...(rawArguments.borrowAmount == null
+          ? {}
+          : { borrowAmount: rawArguments.borrowAmount }),
+        ...(rawArguments.collateralAmount == null
+          ? {}
+          : { collateralAmount: rawArguments.collateralAmount.toString() }),
+        ...(rawArguments.collateralAmountRaw == null
+          ? {}
+          : {
+              collateralAmountRaw: rawArguments.collateralAmountRaw.toString(),
+            }),
+        ...(rawArguments.collateralTokenAddress == null
+          ? {}
+          : {
+              collateralTokenAddress: rawArguments.collateralTokenAddress,
+            }),
+        ...(rawArguments.repayAll == null
+          ? {}
+          : { repayAll: rawArguments.repayAll }),
+        ...(rawArguments.targetLtv == null
+          ? {}
+          : { targetLtv: rawArguments.targetLtv }),
+        ...(rawArguments.tokenAddress == null
+          ? {}
+          : { tokenAddress: rawArguments.tokenAddress }),
+      },
+      txId: transaction.id,
+      txType: transaction.type,
+    };
   };
-};
 
-export const prepareAndSign = Effect.fn("TransactionWorkflow.prepareAndSign")(
-  function* (context: TransactionWorkflowContext) {
-    const operations = yield* TransactionWorkflowOperationsService;
+  return Effect.fn("TransactionWorkflow.prepareAndSign")(function* (
+    context: TransactionWorkflowContext
+  ) {
     const current = yield* requireCurrentWorkflow(context);
     const { batch, transaction, workflowId } = current;
     const { source } = transaction;
@@ -294,5 +295,5 @@ export const prepareAndSign = Effect.fn("TransactionWorkflow.prepareAndSign")(
         },
       }),
     });
-  }
-);
+  });
+});

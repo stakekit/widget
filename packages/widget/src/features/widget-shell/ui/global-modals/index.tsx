@@ -15,7 +15,7 @@ export const GlobalModals = () => {
 
   const [hideGeoBlock, setHideGeoBlock] = useState(false);
 
-  const { enabled, onAccept, tosAccepted } = useShowTOS();
+  const { acknowledged, enabled, onAcknowledge, resolving } = useShowTOS();
 
   if (geoBlock && !hideGeoBlock) {
     return (
@@ -30,8 +30,10 @@ export const GlobalModals = () => {
     );
   }
 
-  if (enabled && !tosAccepted) {
-    return <TosModal isOpen onAccept={onAccept} onDecline={onAccept} />;
+  if (enabled && !acknowledged && !resolving) {
+    return (
+      <TosModal isOpen onAccept={onAcknowledge} onDecline={onAcknowledge} />
+    );
   }
 
   return <RichErrorModal />;

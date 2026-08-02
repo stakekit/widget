@@ -12,10 +12,10 @@ import { normalizeWidgetConfig } from "./app/config/settings";
 import { useWidgetConfig } from "./app/config/use-widget-config";
 import { acquireWidgetInstanceClaim } from "./app/embedding/widget-instance-claim";
 import { WidgetInstanceReactBoundary } from "./app/embedding/widget-instance-react-boundary";
+import { ApplicationRouteEffects } from "./app/routes/application-route-effects";
 import { applicationRoutes } from "./app/routes/application-routes";
 import { ClassicRoutes } from "./app/routes/classic-routes";
 import { DashboardRoutes } from "./app/routes/dashboard-routes";
-import { useHandleDeepLinks } from "./app/routes/hooks/use-handle-deep-links";
 import { applicationRouterAtom } from "./app/runtime/application-router-runtime";
 import { useLoadErrorTranslations } from "./app/translation/use-load-error-translations";
 import { appContainer } from "./features/widget-shell/components";
@@ -28,11 +28,15 @@ preloadImages();
 
 const App = () => {
   useLoadErrorTranslations();
-  useHandleDeepLinks();
 
   const dashboardVariant = useWidgetConfig("dashboardVariant");
 
-  return dashboardVariant ? <DashboardRoutes /> : <ClassicRoutes />;
+  return (
+    <>
+      <ApplicationRouteEffects />
+      {dashboardVariant ? <DashboardRoutes /> : <ClassicRoutes />}
+    </>
+  );
 };
 
 const Root = () => (

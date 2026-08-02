@@ -40,7 +40,7 @@ import { WalletIntegrationError } from "./domain/errors";
 import type { RunWalletEffect } from "./effect-runner";
 import { getVariantNetworkUrl } from "./network-icon";
 import type { SolanaWalletDescriptor } from "./solana-runtime";
-import { makeWagmiActions } from "./wagmi-actions";
+import type { makeWagmiActions } from "./wagmi-actions";
 
 type MipdProviders = ReturnType<MipdStore["getProviders"]>;
 
@@ -110,7 +110,10 @@ export type BuildWagmiConfigOptions = {
   tonConnectManifestUrl: string | undefined;
 };
 
-export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
+export const buildWagmiConfig = (
+  opts: BuildWagmiConfigOptions,
+  buildActions: Effect.Success<typeof makeWagmiActions>
+) =>
   Effect.gen(function* () {
     const runWalletEffect: RunWalletEffect =
       yield* FiberSet.makeRuntimePromise();
@@ -389,7 +392,7 @@ export const buildWagmiConfig = (opts: BuildWagmiConfigOptions) =>
       });
     }
 
-    const actions = yield* makeWagmiActions({ config: wagmiConfig });
+    const actions = buildActions({ config: wagmiConfig });
     const createSolanaConnector = Effect.fn("createSolanaConnector")(function* (
       wallet: SolanaWalletDescriptor
     ) {

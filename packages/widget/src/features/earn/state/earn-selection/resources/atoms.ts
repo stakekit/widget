@@ -5,7 +5,6 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import type {
   EarnToken,
   EarnValidator,
-  EarnValidatorKey,
   EarnYieldWithProvider,
 } from "../../../../../domain/schema/earn-models";
 import type { YieldId } from "../../../../../domain/schema/identifiers";
@@ -705,9 +704,6 @@ const projectValidators = ({
 
 export const yieldValidatorsAtom = Atom.family(
   ({ network, selectedYieldId }: YieldValidatorsKey) => {
-    const rememberedValidatorsAtom = Atom.make<
-      ReadonlyMap<EarnValidatorKey, EarnValidator>
-    >(new Map());
     const preferredValidatorsSource =
       preferredValidatorsResourceAtom.foreground(selectedYieldId);
     const preferredValidatorsAtom = Atom.readable(
@@ -763,30 +759,6 @@ export const yieldValidatorsAtom = Atom.family(
       }
     );
     /**
-     * Validators discovered through a search are remembered when the user
-     * selects them, so a selection survives changing or clearing the search.
-     * The memory is only written from this command path; derived reads project
-     * it alongside the initial validator result.
-     */
-    const rememberValidatorsAtom = Atom.writable<
-      ReadonlyMap<EarnValidatorKey, EarnValidator>,
-      ReadonlyArray<EarnValidator>
-    >(
-      (context) => context.get(rememberedValidatorsAtom),
-      (context, validators) => {
-        const current = context.get(rememberedValidatorsAtom);
-        const unknown = validators.filter(
-          (validator) => current.get(validator.key) !== validator
-        );
-        if (unknown.length === 0) return;
-
-        const next = new Map(current);
-        unknown.forEach((validator) => next.set(validator.key, validator));
-        context.set(rememberedValidatorsAtom, next);
-      }
-    );
-
-    /**
      * If search is provided, we search all preferred and non-preferred validators
      * If search is not provided, we pull only non-preferred validators
      */
@@ -824,7 +796,6 @@ export const yieldValidatorsAtom = Atom.family(
     return {
       enabled: true,
       initialValidatorsResultAtom,
-      rememberValidatorsAtom,
       validatorsPullAtom,
     } satisfies EarnValidatorsResource;
   }

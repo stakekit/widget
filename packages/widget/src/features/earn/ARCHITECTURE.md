@@ -23,4 +23,7 @@ The root `state.ts` facade publishes stable view and command Atoms. Local user
 intent stays authoritative in Atom, deterministic transitions stay plain
 TypeScript, and React only renders the published view and dispatches intent.
 Authoritative Resources retain caching, pagination, refresh, retry, and
-stale-result policy.
+stale-result policy. Explicit validator selection stores normalized validator
+snapshots in intent, while the initial first-validator default remains derived.
+Search and pagination therefore cannot make a selected validator disappear and
+the validator Resource needs no remembered-selection cache or second write.

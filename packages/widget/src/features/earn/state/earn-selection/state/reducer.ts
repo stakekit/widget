@@ -10,7 +10,7 @@ const resetYieldScopedIntent = (
   ...intent,
   amountInput: "untouched",
   selectedProviderYieldId: null,
-  selectedValidatorKeys: new Set(),
+  selectedValidators: null,
   selectedYieldId,
   stakeAmount: "0",
   tronResource: null,
@@ -55,32 +55,33 @@ export const applyEarnAction = ({
     ),
     Match.when({ type: "validator/select" }, (action) => ({
       ...intent,
-      selectedValidatorKeys: new Set([action.validatorKey]),
+      selectedValidators: [action.validator],
     })),
     Match.when({ type: "validator/multiselect" }, (action) => {
-      const next = new Set(intent.selectedValidatorKeys);
-      if (next.has(action.validatorKey)) {
-        next.delete(action.validatorKey);
-      } else {
-        next.add(action.validatorKey);
-      }
+      const selected = intent.selectedValidators ?? action.fallbackSelection;
+      const alreadySelected = selected.some(
+        (validator) => validator.key === action.validator.key
+      );
+      const next = alreadySelected
+        ? selected.filter((validator) => validator.key !== action.validator.key)
+        : [...selected, action.validator];
 
-      return next.size === 0
+      return next.length === 0
         ? intent
-        : { ...intent, selectedValidatorKeys: next };
+        : { ...intent, selectedValidators: next };
     }),
     Match.when({ type: "validator/remove" }, (action) => {
-      if (
-        intent.selectedValidatorKeys.size === 1 &&
-        intent.selectedValidatorKeys.has(action.validatorKey)
-      ) {
+      const selected = intent.selectedValidators ?? action.fallbackSelection;
+      if (selected.length === 1 && selected[0]?.key === action.validatorKey) {
         return intent;
       }
 
-      const next = new Set(intent.selectedValidatorKeys);
-      next.delete(action.validatorKey);
-
-      return { ...intent, selectedValidatorKeys: next };
+      return {
+        ...intent,
+        selectedValidators: selected.filter(
+          (validator) => validator.key !== action.validatorKey
+        ),
+      };
     }),
     Match.when({ type: "providerYieldId/select" }, (action) => ({
       ...intent,

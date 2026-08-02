@@ -24,12 +24,16 @@ Supporting modules point toward neither journey:
 Borrow Transaction Flow publishes outcomes carrying the immutable entry that
 started the session. Borrow Entry passively reconciles its authoritative form
 state from matching Done outcomes. Market Position passively reconciles its
-authoritative action state from matching Execution Started outcomes; a matching
-later Done is durable proof of the same reset when the form was unobserved
-between phases. Each state records the handled epoch and phase so the transition
-is idempotent. Neither journey uses a subscriber Atom, registry access, or a
-React mount to perform that reconciliation, and the flow remains independent of
-Borrow.
+single attempt-family state from matching Execution Started outcomes; a
+matching later Done is durable proof of the same reset when the form was
+unobserved between phases. Each attempt is keyed by Wallet owner, network,
+market, and semantic action, owns one discriminated editable intent plus one
+outcome cursor, and continues resolving Position, balance, and risk from live
+resources. Direct routes therefore receive a fresh default without requiring a
+global staged attempt. Each state records the handled epoch and phase so the
+transition is idempotent. Neither journey uses a subscriber Atom, registry
+access, or a React mount to perform that reconciliation, and the flow remains
+independent of Borrow.
 
 Portfolio reads the authoritative Borrow Positions resource directly. It does
 not import a Borrow feature facade.
