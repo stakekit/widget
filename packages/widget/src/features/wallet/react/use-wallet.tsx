@@ -12,20 +12,21 @@ import { useWalletConfig } from "./use-wallet-config";
 export const useSKWallet = () => {
   const walletConfig = useWalletConfig();
   const walletStateResult = useAtomValue(currentWalletStateResultAtom);
-  const initialWalletState: NormalizedWalletState = walletConfig.isLoading
-    ? {
-        additionalAddresses: null,
-        address: null,
-        chain: null,
-        connector: null,
-        connectorChains: [],
-        isLedgerLive: false,
-        isLedgerLiveAccountPlaceholder: false,
-        ledgerAccounts: null,
-        network: null,
-        status: "connecting",
-      }
-    : disconnectedNormalizedWalletState;
+  const initialWalletState: NormalizedWalletState =
+    AsyncResult.isInitial(walletConfig) || walletConfig.waiting
+      ? {
+          additionalAddresses: null,
+          address: null,
+          chain: null,
+          connector: null,
+          connectorChains: [],
+          isLedgerLive: false,
+          isLedgerLiveAccountPlaceholder: false,
+          ledgerAccounts: null,
+          network: null,
+          status: "connecting",
+        }
+      : disconnectedNormalizedWalletState;
   const walletState = walletStateResult.pipe(
     AsyncResult.value,
     Option.getOrElse(() => initialWalletState)

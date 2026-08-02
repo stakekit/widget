@@ -160,7 +160,7 @@ export type EarnValidatorsResource = {
   ) => Writable<PullResult<PullPage<EarnValidator>, EarnCatalogError>, void>;
 };
 
-export type EarnValidatorsViewResource = {
+type EarnValidatorsViewResource = {
   readonly enabled: boolean;
   readonly items: ReadonlyArray<EarnValidator>;
   readonly key: YieldValidatorsKey | null;

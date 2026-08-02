@@ -1,11 +1,7 @@
-import BigNumber from "bignumber.js";
 import { Data, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type {
-  HistoryPeriod,
-  RewardsSummary,
-} from "../../../domain/schema/dashboard-models";
+import type { HistoryPeriod } from "../../../domain/schema/dashboard-models";
 import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
 import type {
   WalletAddress,
@@ -153,19 +149,15 @@ export const currentYieldKycGateAtom = Atom.family(
         return mapKycStatusToGate({ status, yieldDto: key.yieldDto });
       };
       const gate = getGate();
+      const isLoading = queryEnabled && AsyncResult.isInitial(result);
 
       return {
-        data: status === null ? undefined : status,
-        error: result.pipe(AsyncResult.error, Option.getOrUndefined),
         gate,
-        isError: AsyncResult.isFailure(result),
-        isFetching,
-        isGateBlocking:
+        isBlocking:
           queryEnabled &&
           (AsyncResult.isInitial(result) || isKycGateBlocking(gate)),
-        isKycEnabled: queryEnabled,
-        isLoading: queryEnabled && AsyncResult.isInitial(result),
-        isRefetching: isFetching && status !== undefined,
+        isChecking: isLoading || isFetching,
+        isLoading,
       } as const;
     })
 );
@@ -214,8 +206,6 @@ export const yieldTvlHistoryAtom = Atom.family((key: YieldHistoryKey) =>
   )
 );
 
-type RewardsSummaryResult = Record<string, RewardsSummary>;
-
 export class CurrentRewardsSummaryKey extends Data.Class<{
   readonly yieldIds: ReadonlyArray<YieldId>;
 }> {
@@ -252,26 +242,4 @@ export const currentRewardsSummaryAtom = Atom.family(
           )
         : AsyncResult.success(null);
     })
-);
-
-export const positiveRewardsSummaryAtom = Atom.family(
-  (key: CurrentRewardsSummaryKey) =>
-    currentRewardsSummaryAtom(key).pipe(
-      Atom.mapResult((summaries) => {
-        if (!summaries) return null;
-
-        return key.yieldIds.reduce<RewardsSummaryResult>(
-          (positive, yieldId) => {
-            const summary = summaries[yieldId];
-
-            if (summary && BigNumber(summary.rewards.total).gt(0)) {
-              positive[yieldId] = summary;
-            }
-
-            return positive;
-          },
-          {}
-        );
-      })
-    )
 );

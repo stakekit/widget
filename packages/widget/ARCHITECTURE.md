@@ -159,7 +159,9 @@ invoking deterministic logic.
 Command Atoms are narrow adapters. They may read the current reactive snapshot,
 normalize it through a pure function, and then perform exactly one local state
 transition, one scoped-handle operation, or one cross-feature tail delegation
-before mapping the typed result. They do not access the registry directly,
+before mapping the typed result. One telemetry effect may accompany that
+operation only when it cannot affect eligibility, ordering, state, navigation,
+retry, or the command outcome. Commands do not access the registry directly,
 subscribe, mount, refresh-and-wait, retry, coordinate multiple commands, or
 perform compensating writes. A shared lifecycle adapter under `src/app/runtime`
 hides scoped-handle acquisition, keep-alive, optional state projection, and
@@ -281,6 +283,21 @@ nested Atoms or Atom factories nor command callbacks; the facade resolves the
 active resource and forwards user intent internally. Deterministic
 calculations remain plain TypeScript.
 
+State and model modules keep `AsyncResult` as the standard representation of an
+asynchronous value. They use its existing value, previous-success, waiting, and
+failure semantics rather than translating it into feature-local
+`data`/`error`/`loading` envelopes or equivalent tagged unions. A custom
+projection is justified when it adds domain meaning by combining resources or
+deriving semantic states such as readiness, eligibility, pagination phase, or a
+KYC gate; such projections publish only the semantic facts consumers use.
+
+Earn Selection remains Atom-owned synchronous intent. Its Atom adapter owns
+concrete Authoritative Resource identity, staged observation, pagination, and
+exact retry routing, then supplies authoritative `AsyncResult` values and plain
+resource-independent inputs to the deterministic Earn model. Feature model code
+never imports Effect Atom or accepts an Atom context, including through
+type-only dependencies.
+
 Borrow action preparation is one deterministic feature-owned seam over a
 normalized draft, `Borrow Positions`, and the governing `Risk Position`. The
 seam delegates to private action-specific modules and returns `Idle`, typed
@@ -291,6 +308,19 @@ from amounts and prices are display fallbacks and never silently replace an
 unavailable risk assessment. Borrow Entry and Market Position Atoms own
 preparation and re-read the current `Ready` value when starting a Flow Session;
 React only renders the view and dispatches intent.
+
+Borrow Entry and Market Position form state passively reconcile from matching
+Borrow Transaction Flow outcomes. Borrow Entry consumes Done. Market Position
+consumes Execution Started, with a matching later Done serving as durable proof
+of that transition if the form was unobserved between phases. The owning state
+records the handled outcome identity so the transition is idempotent; no
+subscriber Atom, registry access, or React mount is required for correctness.
+
+Position Details owns deterministic Exit and Pending Action decisions. Its Atom
+adapter performs one local presentation transition or one public Classic Flow
+Start tail delegation. Pending Action modal attempts have opaque identities,
+and only a Started receipt for the same attempt closes the modal; the feature
+does not import the private Classic orchestration service.
 
 `features/yield-entry` owns the shared Yield Entry capability used by Earn and
 position details. Its deterministic model owns amount constraints, validation,

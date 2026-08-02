@@ -1,11 +1,12 @@
-import { Effect, Layer, Schema } from "effect";
+import { Effect, Layer, Option, Schema, Stream, SubscriptionRef } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   normalizeWidgetConfig,
   widgetConfigAtom,
 } from "../../../src/app/config/settings";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
+import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { Integration } from "../../../src/domain/borrow/catalog/integration";
 import { Market } from "../../../src/domain/borrow/catalog/market";
 import { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borrow-account-snapshot";
@@ -18,6 +19,9 @@ import {
   makeBorrowPositionActionRouteKey,
   stageBorrowPositionActionAtom,
 } from "../../../src/features/borrow/market-position/state/action-form";
+import type { BorrowTransactionFlowOutcome } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
+import { borrowTransactionFlowOutcomeAtom } from "../../../src/features/borrow-transaction-flow/state";
+import { BorrowTransactionFlowService } from "../../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
 import { tokenBalancesScanAtom } from "../../../src/features/portfolio/state";
 import { walletScopeAtom } from "../../../src/features/wallet/state";
 import {
@@ -118,7 +122,7 @@ const positionDto = {
 } as const;
 
 describe("Market Position action preparation atoms", () => {
-  it("owns staged position preparation and derives Ready from current intent", () => {
+  it("owns staged position preparation and derives Ready from current intent", async () => {
     const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
     const market = Schema.decodeUnknownSync(Market)(marketDto);
     const accountSnapshot = Schema.decodeUnknownSync(BorrowAccountSnapshot)({
@@ -153,9 +157,24 @@ describe("Market Position action preparation atoms", () => {
     if (!action) {
       throw new Error("Expected repay action");
     }
+    const outcomes = await Effect.runPromise(
+      SubscriptionRef.make<Option.Option<BorrowTransactionFlowOutcome>>(
+        Option.none()
+      )
+    );
+    const flow = BorrowTransactionFlowService.of({
+      acquireSession: () => Effect.succeed({ _tag: "RejectedStale" } as const),
+      currentSession: Stream.never,
+      latestOutcome: SubscriptionRef.changes(outcomes),
+      start: () => Effect.succeed({ _tag: "RejectedOwner" } as const),
+    });
     let currentAccountSnapshot = accountSnapshot;
     const registry = AtomRegistry.make({
       initialValues: [
+        Atom.initialValue(
+          walletRuntime.layer,
+          Layer.succeed(BorrowTransactionFlowService, flow) as never
+        ),
         Atom.initialValue(
           appRuntime.layer,
           Layer.succeed(BorrowResourceSource, {
@@ -208,6 +227,7 @@ describe("Market Position action preparation atoms", () => {
     const formAtom = borrowRepayFormAtom(
       makeBorrowPositionActionRouteKey(action)
     );
+    const unmount = registry.mount(formAtom);
     expect(registry.get(formAtom)?.preparation._tag).toBe("Idle");
 
     registry.set(formAtom, {
@@ -254,6 +274,39 @@ describe("Market Position action preparation atoms", () => {
       _tag: "Blocked",
       reasons: ["AmountExceedsPositionBalance"],
     });
+    unmount();
+    await Effect.runPromise(
+      SubscriptionRef.set(
+        outcomes,
+        Option.some({
+          _tag: "ExecutionStarted",
+          entry: { _tag: "MarketPosition", marketId: market.id },
+          epoch: 1,
+        })
+      )
+    );
+    await Effect.runPromise(
+      SubscriptionRef.set(
+        outcomes,
+        Option.some({
+          _tag: "Done",
+          entry: { _tag: "MarketPosition", marketId: market.id },
+          epoch: 1,
+        })
+      )
+    );
+    await vi.waitFor(() =>
+      expect(registry.get(borrowTransactionFlowOutcomeAtom)).toEqual(
+        Option.some({
+          _tag: "Done",
+          entry: { _tag: "MarketPosition", marketId: market.id },
+          epoch: 1,
+        })
+      )
+    );
+    const remount = registry.mount(formAtom);
+    expect(registry.get(formAtom)?.amount.toString()).toBe("0");
+    remount();
     registry.dispose();
   });
 });

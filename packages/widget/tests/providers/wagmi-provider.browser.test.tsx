@@ -5,7 +5,7 @@ import {
   WalletReadyState,
 } from "@solana/wallet-adapter-base";
 import type { Connection } from "@solana/web3.js";
-import { Array as EArray, Effect, Layer, Queue, Stream } from "effect";
+import { Array as EArray, Effect, Layer, Option, Queue, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { HttpResponse, http } from "msw";
 import {
@@ -85,9 +85,10 @@ const ConfigObserver = ({
   readonly onConfig: (config: Config) => void;
 }) => {
   const walletConfig = useWalletConfig();
+  const config = walletConfig.pipe(AsyncResult.value, Option.getOrUndefined);
 
   useEffect(() => {
-    if (walletConfig.data) onConfig(walletConfig.data);
+    if (config) onConfig(config);
   });
 
   return null;
@@ -371,20 +372,28 @@ describe("WagmiConfigProvider", () => {
 
     const fallbackConfig = hook.result.current.contextConfig;
     expect(fallbackConfig).toBeDefined();
-    expect(hook.result.current.walletConfig.isLoading).toBe(true);
+    expect(AsyncResult.isInitial(hook.result.current.walletConfig)).toBe(true);
 
     await expect
       .poll(
         () => ({
-          data: Boolean(hook.result.current.walletConfig.data),
-          error: hook.result.current.walletConfig.error,
+          data: Option.isSome(
+            AsyncResult.value(hook.result.current.walletConfig)
+          ),
+          error: hook.result.current.walletConfig.pipe(
+            AsyncResult.error,
+            Option.getOrUndefined
+          ),
         }),
         { timeout: 10_000 }
       )
       .toEqual({ data: true, error: undefined });
 
     expect(hook.result.current.contextConfig).toBe(
-      hook.result.current.walletConfig.data
+      hook.result.current.walletConfig.pipe(
+        AsyncResult.value,
+        Option.getOrUndefined
+      )
     );
     expect(hook.result.current.contextConfig).not.toBe(fallbackConfig);
   });
@@ -452,17 +461,21 @@ describe("WagmiConfigProvider", () => {
       .poll(
         () => ({
           connected: hook.result.current.account.isConnected,
-          ready: Boolean(hook.result.current.walletConfig.data),
+          ready: Option.isSome(
+            AsyncResult.value(hook.result.current.walletConfig)
+          ),
         }),
         { timeout: 10_000 }
       )
       .toEqual({ connected: true, ready: true });
-    if (initialConfig !== hook.result.current.walletConfig.data) {
+    const walletConfig = hook.result.current.walletConfig.pipe(
+      AsyncResult.value,
+      Option.getOrUndefined
+    );
+    if (initialConfig !== walletConfig) {
       expect(initialConfig?.state.connections.size).toBe(0);
     }
-    expect(hook.result.current.contextConfig).toBe(
-      hook.result.current.walletConfig.data
-    );
+    expect(hook.result.current.contextConfig).toBe(walletConfig);
     expect(
       AsyncResult.getOrThrow(hook.result.current.walletProjection)
     ).toMatchObject({ address: account, status: "connected" });

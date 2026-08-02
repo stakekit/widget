@@ -9,7 +9,6 @@ export {
   CurrentYieldKycGateKey,
   currentRewardsSummaryAtom,
   currentYieldKycGateAtom,
-  positiveRewardsSummaryAtom,
   refreshCurrentYieldKycAtom,
   YieldHistoryKey,
   yieldRewardRateHistoryAtom,

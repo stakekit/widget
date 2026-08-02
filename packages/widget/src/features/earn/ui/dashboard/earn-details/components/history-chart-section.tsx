@@ -1,3 +1,5 @@
+import { Option } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type {
   HistoryPeriod,
   HistoryPoint,
@@ -6,6 +8,7 @@ import { Box } from "../../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import { HistoryChart } from "../reward-rate-chart";
 import * as styles from "../styles.css";
+import type { YieldHistoryResult } from "../use-yield-history";
 
 const periods = [
   ["30d", "1M"],
@@ -14,11 +17,15 @@ const periods = [
   ["all", "ALL"],
 ] as const satisfies ReadonlyArray<readonly [HistoryPeriod, string]>;
 
-export const shouldRenderHistoryChart = (history: {
-  data: HistoryPoint[];
-  isError: boolean;
-  isLoading: boolean;
-}) => !history.isError && (history.isLoading || history.data.length >= 2);
+const getHistoryPoints = (history: YieldHistoryResult): Array<HistoryPoint> =>
+  history.pipe(
+    AsyncResult.value,
+    Option.getOrElse(() => [])
+  );
+
+export const shouldRenderHistoryChart = (history: YieldHistoryResult) =>
+  !AsyncResult.isFailure(history) &&
+  (AsyncResult.isInitial(history) || getHistoryPoints(history).length >= 2);
 
 export const HistoryChartSection = ({
   chartId,
@@ -30,11 +37,7 @@ export const HistoryChartSection = ({
   value,
 }: {
   chartId: string;
-  history: {
-    data: HistoryPoint[];
-    isFetching: boolean;
-    isLoading: boolean;
-  };
+  history: YieldHistoryResult;
   onPeriodChange: (period: HistoryPeriod) => void;
   period: HistoryPeriod;
   tickFormatter: (value: number) => string;
@@ -67,9 +70,9 @@ export const HistoryChartSection = ({
 
     <HistoryChart
       chartId={chartId}
-      data={history.data}
-      isFetching={history.isFetching}
-      isLoading={history.isLoading}
+      data={getHistoryPoints(history)}
+      isFetching={history.waiting}
+      isLoading={AsyncResult.isInitial(history)}
       tickFormatter={tickFormatter}
     />
   </Box>

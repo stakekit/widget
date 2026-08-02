@@ -123,8 +123,7 @@ export const useStakeReview = () => {
     commissionFee: null,
     kycGate: review.kyc.gate,
     kycProviderName,
-    kycStatusIsChecking:
-      review.kyc.isLoading || review.kyc.isFetching || review.kyc.isRefetching,
+    kycStatusIsChecking: review.kyc.isChecking,
     onKycStatusRefresh,
     cta: resolveCta(),
   };

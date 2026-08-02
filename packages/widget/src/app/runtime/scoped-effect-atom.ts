@@ -1,7 +1,7 @@
 import { type Cause, Effect, type Scope, Stream } from "effect";
 import type * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
+import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import type * as Reactivity from "effect/unstable/reactivity/Reactivity";
 
 type ScopedAcquire<R, A, E> = (
@@ -11,6 +11,11 @@ type ScopedAcquire<R, A, E> = (
   E,
   Scope.Scope | AtomRegistry.AtomRegistry | Reactivity.Reactivity | R
 >;
+
+export const atomToStream = <A>(
+  context: Atom.AtomContext,
+  atom: Atom.Atom<A>
+): Stream.Stream<A> => AtomRegistry.toStream(context.registry, atom);
 
 export const makeScopedEffectAtom = <R, ER, A, E, Value>({
   acquire,

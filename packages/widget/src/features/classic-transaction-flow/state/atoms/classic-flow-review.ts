@@ -1,8 +1,10 @@
 import { Cause, Data, Effect } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
-import { makeScopedEffectStateAtom } from "../../../../app/runtime/scoped-effect-atom";
+import {
+  atomToStream,
+  makeScopedEffectStateAtom,
+} from "../../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
 import type { YieldAction } from "../../../../domain/schema/action-models";
 import {
@@ -77,7 +79,7 @@ export const makeClassicFlowReviewScopeAtom = <E>({
       : Atom.make(false).pipe(Atom.setIdleTTL(0));
   const eligibilityAtom = Atom.make((get) => ({
     activityExpired: get(activityActionExpiredAtom),
-    kycBlocking: get(kycGateAtom).isGateBlocking,
+    kycBlocking: get(kycGateAtom).isBlocking,
   })).pipe(Atom.setIdleTTL(0), Atom.withLabel("classicFlowReviewEligibility"));
 
   return makeScopedEffectStateAtom({
@@ -92,14 +94,14 @@ export const makeClassicFlowReviewScopeAtom = <E>({
           return yield* unavailable();
         }
         return yield* outcome.session.acquireReview(
-          AtomRegistry.toStream(context.registry, eligibilityAtom)
+          atomToStream(context, eligibilityAtom)
         );
       }),
     getStates: (review: ClassicFlowReviewHandle) => review.states,
     label: "classicFlowReviewScope",
     makeValue: ({ handleAtom, stateAtom }) => {
       const actionPreviewAtom = Atom.make((get) => {
-        if (get(kycGateAtom).isGateBlocking) {
+        if (get(kycGateAtom).isBlocking) {
           return AsyncResult.success<YieldAction | null>(null);
         }
 

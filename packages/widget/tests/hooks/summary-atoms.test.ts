@@ -17,6 +17,7 @@ import {
   toPositionItems,
 } from "../../src/features/portfolio/resources/positions";
 import {
+  allPositionsSummaryAtom,
   getPositionsAverageApy,
   getPositionsTotal,
 } from "../../src/features/portfolio/resources/summary";
@@ -130,6 +131,47 @@ describe("summary atom derivations", () => {
     expect(getPositionsTotal([historicalPosition.item], yields).toFixed()).toBe(
       "5"
     );
+  });
+
+  it("publishes Portfolio summaries as AsyncResult without dropping failures", () => {
+    const position = makePosition({
+      amountUsd: "5",
+      rewardRate: 0.05,
+      yieldId: "yield-1",
+    });
+    const key = new MultiYieldsKey({ yieldIds: [position.yieldDto.id] });
+    const successfulRegistry = AtomRegistry.make({
+      initialValues: [
+        [positionsTableDataAtom, AsyncResult.success([position.item])],
+        [
+          multiYieldsByIdAtom(key),
+          AsyncResult.success(
+            new Map([[position.yieldDto.id, position.yieldDto]])
+          ),
+        ],
+      ],
+    });
+
+    expect(
+      AsyncResult.getOrThrow(
+        successfulRegistry.get(allPositionsSummaryAtom)
+      ).allPositionsSum.toFixed()
+    ).toBe("5");
+
+    const failure = new Error("Yield summary unavailable");
+    const failedRegistry = AtomRegistry.make({
+      initialValues: [
+        [positionsTableDataAtom, AsyncResult.success([position.item])],
+        [multiYieldsByIdAtom(key), AsyncResult.fail(failure)],
+      ],
+    });
+    const failed = failedRegistry.get(allPositionsSummaryAtom);
+
+    expect(AsyncResult.isFailure(failed)).toBe(true);
+    expect(AsyncResult.error(failed)).toEqual(Option.some(failure));
+
+    successfulRegistry.dispose();
+    failedRegistry.dispose();
   });
 
   it("publishes category-grouped position rows from the Portfolio atom", async () => {

@@ -81,8 +81,8 @@ export const positionDetailsExitResourcesViewAtom = Atom.family(
           shouldFetchValidators && AsyncResult.isInitial(validatorResult),
         kyc: {
           gate: kyc.gate,
-          isBlocking: kyc.isGateBlocking,
-          isChecking: kyc.isLoading || kyc.isFetching || kyc.isRefetching,
+          isBlocking: kyc.isBlocking,
+          isChecking: kyc.isChecking,
           providerName: getKycProviderName(selectedYield),
         },
         validators: shouldFetchValidators ? validators : [],

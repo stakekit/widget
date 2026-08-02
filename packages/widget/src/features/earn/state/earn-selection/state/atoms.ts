@@ -11,13 +11,13 @@ import {
 import { disconnectedNormalizedWalletState } from "../../../../../services/wallet/domain/state";
 import { initParamsAtom } from "../../../../init-params/state";
 import { walletStateResultAtom } from "../../../../wallet/state";
-import { resolveEarnView } from "../model/view";
 import { makeResolvingWalletView } from "../model/view-model";
 import type { EarnEntry, EarnMachineIntent, EarnMachineView } from "../types";
 import type { EarnAction } from "./actions";
 import { commitEarnInitialSelection } from "./initial-selection";
 import { type EarnMachineState, reconcileEarnMachineOwner } from "./owner";
 import { applyEarnAction } from "./reducer";
+import { makeEarnResourceAdapter } from "./resource-observations";
 
 const earnWalletSnapshotAtom = Atom.make((context) => {
   const result = context.get(walletStateResultAtom);
@@ -123,12 +123,14 @@ const earnMachineProjectionAtom = Atom.readable<EarnMachineProjection>(
             intent: state.intent,
             previous: Option.fromNullishOr(previousView),
           })
-        : resolveEarnView({
-            context,
-            entry,
-            intent: state.intent,
-            previous: previousView,
-          });
+        : (() => {
+            const resources = makeEarnResourceAdapter(context);
+            return resources.resolve({
+              entry,
+              intent: state.intent,
+              previous: previousView,
+            });
+          })();
 
     const initializationComplete =
       state.initializationPhase === "applying-init-params" &&

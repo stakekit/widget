@@ -1,0 +1,14 @@
+id: no-direct-atom-lifecycle-in-features
+language: Tsx
+severity: error
+message: Feature modules must use the shared app-runtime lifecycle adapters instead of accessing Atom registry lifecycle operations directly.
+files:
+  - packages/widget/src/features/**/*.ts
+  - packages/widget/src/features/**/*.tsx
+ignores:
+  - packages/widget/src/features/**/resources/**
+rule:
+  any:
+    - pattern: $CONTEXT.registry
+    - pattern: $CONTEXT.mount($ATOM)
+    - pattern: $CONTEXT.subscribe($$$ARGS)

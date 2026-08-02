@@ -340,7 +340,7 @@ describe("action preview", () => {
     });
     const initialKycStatusCalls = kycStatusCalls;
     expect(actionPreviewCalls).toBe(0);
-    expect(result.current.kyc?.isGateBlocking).toBe(true);
+    expect(result.current.kyc?.isBlocking).toBe(true);
     expect(result.current.review?.action).toBeNull();
     await act(async () => result.current.confirmFlow(undefined));
     expect(result.current.attachedAction).toBeNull();
@@ -354,6 +354,6 @@ describe("action preview", () => {
       await expect.poll(() => actionPreviewCalls).toBe(1);
     });
     await expect.poll(() => result.current.review?.action).not.toBeNull();
-    expect(result.current.kyc?.isGateBlocking).toBe(false);
+    expect(result.current.kyc?.isBlocking).toBe(false);
   });
 });

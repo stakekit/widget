@@ -428,7 +428,7 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
     hasNoYields: status.status === "no-yields",
     isAppLoading: get(earnAppLoadingAtom).isLoading,
     isFetching: status.isFetching,
-    isKycBlocking: kyc.isGateBlocking,
+    isKycBlocking: kyc.isBlocking,
     isKycLoading: kyc.isLoading,
     isLedgerAccountPlaceholder:
       connected && wallet.isLedgerLiveAccountPlaceholder,
@@ -523,9 +523,8 @@ export const earnEntryViewAtom = Atom.make((get) => {
         : false,
     kyc: {
       gate: input.kyc.gate,
-      isBlocking: input.kyc.isGateBlocking,
-      isChecking:
-        input.kyc.isLoading || input.kyc.isFetching || input.kyc.isRefetching,
+      isBlocking: input.kyc.isBlocking,
+      isChecking: input.kyc.isChecking,
       providerName: getKycProviderName(selectedYield),
     },
     pointsRewardTokens: selectedYield

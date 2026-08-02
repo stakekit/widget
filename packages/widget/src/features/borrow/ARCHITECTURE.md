@@ -22,9 +22,14 @@ Supporting modules point toward neither journey:
   presentation pieces.
 
 Borrow Transaction Flow publishes outcomes carrying the immutable entry that
-started the session. Borrow Entry observes only matching Done outcomes and
-resets its entry state. Market Position observes only matching execution
-outcomes and clears its staged action. The flow remains independent of Borrow.
+started the session. Borrow Entry passively reconciles its authoritative form
+state from matching Done outcomes. Market Position passively reconciles its
+authoritative action state from matching Execution Started outcomes; a matching
+later Done is durable proof of the same reset when the form was unobserved
+between phases. Each state records the handled epoch and phase so the transition
+is idempotent. Neither journey uses a subscriber Atom, registry access, or a
+React mount to perform that reconciliation, and the flow remains independent of
+Borrow.
 
 Portfolio reads the authoritative Borrow Positions resource directly. It does
 not import a Borrow feature facade.

@@ -1,4 +1,6 @@
 import { useAtomSet } from "@effect/atom-react";
+import { Option } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import { useWidgetConfig } from "../../../app/config/use-widget-config";
@@ -28,6 +30,7 @@ export const useHeader = () => {
   );
 
   const walletConfig = useWalletConfig();
+  const walletConfigReady = Option.isSome(AsyncResult.value(walletConfig));
 
   const showBack = !useDetailsMatch();
 
@@ -51,7 +54,7 @@ export const useHeader = () => {
     onLeftIconPress,
     onXPress,
     containerRef,
-    walletConfig,
+    walletConfigReady,
     variant,
     hideChainSelector,
     isConnected,

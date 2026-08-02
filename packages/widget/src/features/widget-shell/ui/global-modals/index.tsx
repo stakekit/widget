@@ -23,7 +23,7 @@ export const GlobalModals = () => {
         modal={{
           type: "geoBlock",
           ...geoBlock,
-          regionCodeName: regionCodeName.data,
+          regionCodeName,
           onClose: () => setHideGeoBlock(true),
         }}
       />

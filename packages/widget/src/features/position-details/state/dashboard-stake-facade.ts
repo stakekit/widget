@@ -263,7 +263,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         hasNoYields: false,
         isAppLoading: appLoading,
         isFetching,
-        isKycBlocking: kyc.isGateBlocking,
+        isKycBlocking: kyc.isBlocking,
         isKycLoading: kyc.isLoading,
         isLedgerAccountPlaceholder:
           wallet.status === "connected" &&
@@ -276,8 +276,8 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         },
         kyc: {
           gate: kyc.gate,
-          isBlocking: kyc.isGateBlocking,
-          isChecking: kyc.isLoading || kyc.isFetching || kyc.isRefetching,
+          isBlocking: kyc.isBlocking,
+          isChecking: kyc.isChecking,
           providerName: getKycProviderName(selectedYield),
         },
         ownerCurrent,

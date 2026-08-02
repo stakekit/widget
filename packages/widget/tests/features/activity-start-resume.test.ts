@@ -1,4 +1,5 @@
 import { Effect, Layer, Schema, Stream } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
@@ -45,7 +46,8 @@ const connectedWallet = {
 };
 
 const makeRegistry = (
-  push: (path: WidgetPath, options?: WidgetNavigationOptions) => void
+  push: (path: WidgetPath, options?: WidgetNavigationOptions) => void,
+  serviceConnection = connectedWallet
 ) => {
   const navigation = makeWidgetNavigation({
     back: () => Effect.void,
@@ -53,7 +55,7 @@ const makeRegistry = (
     replace: () => Effect.void,
   });
   const state = {
-    connection: connectedWallet,
+    connection: serviceConnection,
     ledger: disconnectedLedgerConnectorState,
   };
   return AtomRegistry.make({
@@ -79,6 +81,45 @@ const makeRegistry = (
 };
 
 describe("Activity resume action", () => {
+  it("preserves the closed Classic owner rejection", async () => {
+    const push = vi.fn();
+    const registry = makeRegistry(push, {
+      ...connectedWallet,
+      address: Schema.decodeSync(WalletAddress)(
+        "0x2234567890123456789012345678901234567890"
+      ),
+    });
+    const selectedYield = yieldApiYieldFixture();
+
+    try {
+      registry.set(startActivityResumeAtom, {
+        item: {
+          actionData: yieldApiActionFixture({
+            status: "CREATED",
+            yieldId: selectedYield.id,
+          }),
+          validatorsData: [],
+          walletScope,
+          yieldData: selectedYield,
+        },
+        providersDetails: [],
+        presentation: "Classic",
+      });
+
+      await vi.waitFor(() =>
+        expect(
+          AsyncResult.isSuccess(registry.get(startActivityResumeAtom))
+        ).toBe(true)
+      );
+      expect(
+        AsyncResult.getOrThrow(registry.get(startActivityResumeAtom))
+      ).toEqual({ _tag: "Rejected", reason: "RejectedOwner" });
+      expect(push).not.toHaveBeenCalled();
+    } finally {
+      registry.dispose();
+    }
+  });
+
   it("starts the Flow Session and navigates a resumable action to Review", async () => {
     const push = vi.fn();
     const registry = makeRegistry(push);

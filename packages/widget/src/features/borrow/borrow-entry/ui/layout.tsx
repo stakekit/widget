@@ -1,4 +1,3 @@
-import { useAtomMount } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
 import { VerticalDivider } from "../../../../shared/ui/components/divider";
@@ -9,7 +8,6 @@ import {
 } from "../../../widget-shell/components";
 import { useBorrowWalletBridge } from "../../wallet/react/use-borrow-wallet";
 import { useBorrowEntryView } from "../react/use-borrow-entry";
-import { borrowEntryTransactionFlowOutcomeBindingAtom } from "../state/transaction-flow-outcomes";
 import { BorrowDetailsPanel } from "./components/details-panel";
 import { BorrowDetailsEmpty } from "./components/notices";
 import * as styles from "./styles.css";
@@ -26,7 +24,6 @@ const BorrowConnectedDetailsPane = () => {
  * details pane stays mounted, mirroring the earn flow's `OverviewPage`.
  */
 export const BorrowLayout = () => {
-  useAtomMount(borrowEntryTransactionFlowOutcomeBindingAtom);
   const { t } = useTranslation();
   const walletBridge = useBorrowWalletBridge();
 

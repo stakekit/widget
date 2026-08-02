@@ -41,10 +41,5 @@ export const useRegionCodeName = (regionCode: Nullable<string>) => {
     regionCodeNameAtom(new RegionCodeKey({ regionCode: regionCode ?? null }))
   );
   const value = result.pipe(AsyncResult.value, Option.getOrUndefined);
-
-  return {
-    data: value === null ? undefined : value,
-    error: result.pipe(AsyncResult.error, Option.getOrUndefined),
-    isLoading: !!regionCode && AsyncResult.isInitial(result),
-  } as const;
+  return value === null ? undefined : value;
 };

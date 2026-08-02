@@ -12,9 +12,17 @@ import {
 } from "../../../../domain/borrow/network";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
 import { walletScopeOwnerKey } from "../../../../services/wallet/domain/scope";
-import { startBorrowTransactionFlowAtom } from "../../../borrow-transaction-flow/state";
+import {
+  borrowTransactionFlowOutcomeAtom,
+  startBorrowTransactionFlowAtom,
+} from "../../../borrow-transaction-flow/state";
 import { tokenBalancesScanAtom } from "../../../portfolio/state";
 import { walletScopeAtom } from "../../../wallet/state";
+import {
+  type BorrowFlowOutcomeCursor,
+  initialBorrowFlowOutcomeCursor,
+  resolveBorrowEntryOutcomeReceipt,
+} from "../../model/flow-outcome";
 import {
   BorrowMarketsKey,
   BorrowPositionsKey,
@@ -41,11 +49,13 @@ class BorrowFormOwnerKey extends Data.Class<{
 
 type BorrowFormState = {
   readonly catalogResetNotice: boolean;
+  readonly flowOutcomeCursor: BorrowFlowOutcomeCursor;
   readonly intent: BorrowFormIntent;
 };
 
 const makeDefaultBorrowFormState = (): BorrowFormState => ({
   catalogResetNotice: false,
+  flowOutcomeCursor: initialBorrowFlowOutcomeCursor,
   intent: makeDefaultBorrowFormIntent(),
 });
 
@@ -55,6 +65,27 @@ const borrowFormStateAtom = Atom.family((key: BorrowFormOwnerKey) =>
       const previous = context
         .self<BorrowFormState>()
         .pipe(Option.getOrElse(makeDefaultBorrowFormState));
+      const receipt = context.get(borrowTransactionFlowOutcomeAtom).pipe(
+        Option.map((outcome) => ({
+          entry: outcome.entry,
+          epoch: outcome.epoch,
+          phase: outcome._tag,
+        })),
+        Option.getOrNull
+      );
+      const flowOutcome = resolveBorrowEntryOutcomeReceipt({
+        cursor: previous.flowOutcomeCursor,
+        receipt,
+      });
+      const reconciled = flowOutcome.reset
+        ? {
+            ...makeDefaultBorrowFormState(),
+            flowOutcomeCursor: flowOutcome.cursor,
+          }
+        : {
+            ...previous,
+            flowOutcomeCursor: flowOutcome.cursor,
+          };
       const marketsResult = context.get(
         borrowMarketsAtom(new BorrowMarketsKey({ network: key.network }))
       );
@@ -62,16 +93,17 @@ const borrowFormStateAtom = Atom.family((key: BorrowFormOwnerKey) =>
         AsyncResult.isSuccess(marketsResult) &&
         !marketsResult.waiting &&
         shouldResetBorrowFormForCatalog({
-          intent: previous.intent,
+          intent: reconciled.intent,
           markets: marketsResult.value,
         });
 
       return shouldReset
         ? {
             catalogResetNotice: true,
+            flowOutcomeCursor: reconciled.flowOutcomeCursor,
             intent: makeDefaultBorrowFormIntent(),
           }
-        : previous;
+        : reconciled;
     },
     (context, action) => {
       const state = context.get(borrowFormStateAtom(key));
@@ -90,6 +122,7 @@ const borrowFormStateAtom = Atom.family((key: BorrowFormOwnerKey) =>
 
       context.setSelf({
         catalogResetNotice: false,
+        flowOutcomeCursor: state.flowOutcomeCursor,
         intent: applyBorrowFormAction({
           action,
           intent,
@@ -257,7 +290,7 @@ export const startBorrowEntryReviewAtom = appRuntime
         preparation?._tag !== "Ready" ||
         !view.selectedMarket
       ) {
-        return;
+        return { _tag: "Unavailable" } as const;
       }
 
       const entry = { _tag: "BorrowEntry" as const };
@@ -265,7 +298,7 @@ export const startBorrowEntryReviewAtom = appRuntime
         ...preparation.review,
         entry,
       };
-      yield* context.setResult(startBorrowTransactionFlowAtom, intake);
+      return yield* context.setResult(startBorrowTransactionFlowAtom, intake);
     })
   )
   .pipe(Atom.withLabel("startBorrowEntryReviewAtom"));

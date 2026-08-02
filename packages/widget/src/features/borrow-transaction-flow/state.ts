@@ -1,7 +1,4 @@
-export type {
-  BorrowTransactionFlowOutcome,
-  BorrowTransactionFlowReview,
-} from "./model/borrow-transaction-flow";
+export type { BorrowTransactionFlowReview } from "./model/borrow-transaction-flow";
 export {
   borrowTransactionFlowOutcomeAtom,
   startBorrowTransactionFlowAtom,

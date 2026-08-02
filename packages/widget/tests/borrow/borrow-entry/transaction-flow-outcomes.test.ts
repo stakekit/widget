@@ -9,8 +9,8 @@ import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../../src/domain/schema/identifiers";
 import { currentBorrowEntryAtom } from "../../../src/features/borrow/borrow-entry/state/borrow-entry";
-import { borrowEntryTransactionFlowOutcomeBindingAtom } from "../../../src/features/borrow/borrow-entry/state/transaction-flow-outcomes";
-import type { BorrowTransactionFlowOutcome } from "../../../src/features/borrow-transaction-flow/state";
+import type { BorrowTransactionFlowOutcome } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
+import { borrowTransactionFlowOutcomeAtom } from "../../../src/features/borrow-transaction-flow/state";
 import { BorrowTransactionFlowService } from "../../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
 import { tokenBalancesScanAtom } from "../../../src/features/portfolio/state";
 import { walletScopeAtom } from "../../../src/features/wallet/state";
@@ -71,10 +71,7 @@ describe("Borrow Entry transaction-flow outcomes", () => {
         }),
       ],
     });
-    const unmount = registry.mount(
-      borrowEntryTransactionFlowOutcomeBindingAtom
-    );
-
+    const unmount = registry.mount(currentBorrowEntryAtom);
     registry.set(currentBorrowEntryAtom, {
       amount: "7",
       type: "borrowAmount/set",
@@ -115,9 +112,16 @@ describe("Borrow Entry transaction-flow outcomes", () => {
       )
     );
     await vi.waitFor(() =>
-      expect(
-        registry.get(currentBorrowEntryAtom)?.borrowAmount.toString()
-      ).toBe("0")
+      expect(registry.get(borrowTransactionFlowOutcomeAtom)).toEqual(
+        Option.some({
+          _tag: "Done",
+          entry: { _tag: "BorrowEntry" },
+          epoch: 3,
+        })
+      )
+    );
+    expect(registry.get(currentBorrowEntryAtom)?.borrowAmount.toString()).toBe(
+      "0"
     );
     unmount();
     registry.dispose();

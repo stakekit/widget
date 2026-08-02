@@ -1,4 +1,4 @@
-import { useAtomMount, useAtomSet } from "@effect/atom-react";
+import { useAtomSet } from "@effect/atom-react";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router";
@@ -21,7 +21,6 @@ import {
   getBorrowPositionDetailsModel,
 } from "../model/details";
 import { stageBorrowPositionActionAtom } from "../state/action-form";
-import { marketPositionTransactionFlowOutcomeBindingAtom } from "../state/transaction-flow-outcomes";
 import { BorrowPositionBreadcrumb } from "./components/breadcrumb";
 import { BorrowPositionInfo } from "./components/position-info";
 import {
@@ -41,7 +40,6 @@ const getPositionFromResult = (
     : null;
 
 export const BorrowPositionDetailsPage = () => {
-  useAtomMount(marketPositionTransactionFlowOutcomeBindingAtom);
   useTrackPage("positionDetails");
 
   const { marketId } = useParams();

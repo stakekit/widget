@@ -7,9 +7,17 @@ import { BorrowFeatureDisabled } from "../../../../domain/borrow/availability";
 import type { MarketId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
 import type { WalletScopeKey } from "../../../../services/wallet/domain/scope";
-import { startBorrowTransactionFlowAtom } from "../../../borrow-transaction-flow/state";
+import {
+  borrowTransactionFlowOutcomeAtom,
+  startBorrowTransactionFlowAtom,
+} from "../../../borrow-transaction-flow/state";
 import { tokenBalancesScanAtom } from "../../../portfolio/state";
 import { walletScopeAtom } from "../../../wallet/state";
+import {
+  type BorrowFlowOutcomeCursor,
+  initialBorrowFlowOutcomeCursor,
+  resolveMarketPositionOutcomeReceipt,
+} from "../../model/flow-outcome";
 import { currentBorrowPositionsAtom } from "../../positions/state/positions";
 import {
   applyBorrowRepayFormAction,
@@ -64,42 +72,107 @@ const makeFormKey = (
     owner: scope.address.toLowerCase(),
   });
 
+type PositionIntentStore<A> = Readonly<{
+  readonly cursor: BorrowFlowOutcomeCursor;
+  readonly intent: A;
+}>;
+
+const getPositionOutcomeReceipt = (context: Atom.AtomContext) =>
+  context.get(borrowTransactionFlowOutcomeAtom).pipe(
+    Option.map((outcome) => ({
+      entry: outcome.entry,
+      epoch: outcome.epoch,
+      phase: outcome._tag,
+    })),
+    Option.getOrNull
+  );
+
 const borrowRepayIntentAtom = Atom.family(
-  (_key: BorrowPositionActionFormKey) => {
-    const intentAtom = Atom.make<BorrowRepayFormIntent>(
-      makeDefaultBorrowRepayFormIntent()
+  (key: BorrowPositionActionFormKey) => {
+    const initial: PositionIntentStore<BorrowRepayFormIntent> = {
+      cursor: initialBorrowFlowOutcomeCursor,
+      intent: makeDefaultBorrowRepayFormIntent(),
+    };
+    const storeAtom = Atom.writable<
+      PositionIntentStore<BorrowRepayFormIntent>,
+      BorrowRepayFormAction
+    >(
+      (context) => {
+        const previous = context
+          .self<PositionIntentStore<BorrowRepayFormIntent>>()
+          .pipe(Option.getOrElse(() => initial));
+        const resolved = resolveMarketPositionOutcomeReceipt({
+          cursor: previous.cursor,
+          marketId: key.marketId,
+          receipt: getPositionOutcomeReceipt(context),
+        });
+        return {
+          cursor: resolved.cursor,
+          intent: resolved.reset
+            ? makeDefaultBorrowRepayFormIntent()
+            : previous.intent,
+        };
+      },
+      (context, action) => {
+        const previous = context.get(storeAtom);
+        context.setSelf({
+          cursor: previous.cursor,
+          intent: applyBorrowRepayFormAction({
+            action,
+            intent: previous.intent,
+          }),
+        });
+      }
     );
 
     return Atom.writable<BorrowRepayFormIntent, BorrowRepayFormAction>(
-      (context) => context.get(intentAtom),
-      (context, action) =>
-        context.set(
-          intentAtom,
-          applyBorrowRepayFormAction({
-            action,
-            intent: context.get(intentAtom),
-          })
-        )
+      (context) => context.get(storeAtom).intent,
+      (context, action) => context.set(storeAtom, action)
     );
   }
 );
 
 const borrowWithdrawIntentAtom = Atom.family(
-  (_key: BorrowPositionActionFormKey) => {
-    const intentAtom = Atom.make<BorrowWithdrawFormIntent>(
-      makeDefaultBorrowWithdrawFormIntent()
+  (key: BorrowPositionActionFormKey) => {
+    const initial: PositionIntentStore<BorrowWithdrawFormIntent> = {
+      cursor: initialBorrowFlowOutcomeCursor,
+      intent: makeDefaultBorrowWithdrawFormIntent(),
+    };
+    const storeAtom = Atom.writable<
+      PositionIntentStore<BorrowWithdrawFormIntent>,
+      BorrowWithdrawFormAction
+    >(
+      (context) => {
+        const previous = context
+          .self<PositionIntentStore<BorrowWithdrawFormIntent>>()
+          .pipe(Option.getOrElse(() => initial));
+        const resolved = resolveMarketPositionOutcomeReceipt({
+          cursor: previous.cursor,
+          marketId: key.marketId,
+          receipt: getPositionOutcomeReceipt(context),
+        });
+        return {
+          cursor: resolved.cursor,
+          intent: resolved.reset
+            ? makeDefaultBorrowWithdrawFormIntent()
+            : previous.intent,
+        };
+      },
+      (context, action) => {
+        const previous = context.get(storeAtom);
+        context.setSelf({
+          cursor: previous.cursor,
+          intent: applyBorrowWithdrawFormAction({
+            action,
+            intent: previous.intent,
+          }),
+        });
+      }
     );
 
     return Atom.writable<BorrowWithdrawFormIntent, BorrowWithdrawFormAction>(
-      (context) => context.get(intentAtom),
-      (context, action) =>
-        context.set(
-          intentAtom,
-          applyBorrowWithdrawFormAction({
-            action,
-            intent: context.get(intentAtom),
-          })
-        )
+      (context) => context.get(storeAtom).intent,
+      (context, action) => context.set(storeAtom, action)
     );
   }
 );
@@ -250,24 +323,6 @@ const resetPositionActionIntents = (
   context.set(borrowWithdrawIntentAtom(formKey), { type: "reset" });
 };
 
-export const resetBorrowPositionActionIntentAtom = Atom.fnSync(
-  (
-    input: {
-      readonly actionId: string;
-      readonly marketId: MarketId;
-      readonly network: BorrowNetwork;
-      readonly scope: WalletScopeKey;
-    },
-    context
-  ) => {
-    resetPositionActionIntents(
-      context,
-      new BorrowPositionActionRouteKey(input),
-      input.scope
-    );
-  }
-).pipe(Atom.withLabel("resetBorrowPositionActionIntentAtom"));
-
 export const startBorrowPositionActionReviewAtom = appRuntime
   .fn((key: BorrowPositionActionRouteKey, context) =>
     Effect.gen(function* () {
@@ -280,14 +335,14 @@ export const startBorrowPositionActionReviewAtom = appRuntime
       const preparation = getCurrentPreparation(context, key);
       const scope = context(walletScopeAtom);
       if (preparation?._tag !== "Ready" || !scope) {
-        return;
+        return { _tag: "Unavailable" } as const;
       }
 
       const entry = {
         _tag: "MarketPosition" as const,
         marketId: preparation.review.command.args.marketId,
       };
-      yield* context.setResult(startBorrowTransactionFlowAtom, {
+      return yield* context.setResult(startBorrowTransactionFlowAtom, {
         ...preparation.review,
         entry,
       });

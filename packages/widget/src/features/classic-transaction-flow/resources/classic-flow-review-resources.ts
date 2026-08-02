@@ -154,7 +154,7 @@ export const makeClassicFlowSessionReviewResources = ({
     return {
       action: get(reviewActionAtom),
       actionPreviewLoading,
-      confirmDisabled: kyc.isGateBlocking || previewError?.retryable === false,
+      confirmDisabled: kyc.isBlocking || previewError?.retryable === false,
       confirmLoading: actionPreviewLoading || kyc.isLoading,
       gasAmount: get(gasAmountAtom),
       gasCheckLoading:

@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Effect, Layer, Schema, Stream } from "effect";
+import { Deferred, Effect, Layer, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
@@ -17,6 +17,7 @@ import {
 } from "../../src/features/portfolio/state";
 import {
   openPositionPendingActionModalAtom,
+  positionPendingActionModalViewAtom,
   runPositionPendingActionAtom,
   setPositionDetailsExitMaxAmountAtom,
   submitPositionDetailsExitAtom,
@@ -123,12 +124,14 @@ const makeConnectedWallet = (
 
 const makeRegistry = ({
   push,
+  serviceWallet,
   trackEvent,
   wallet = makeConnectedWallet(),
   yieldBalance = balance,
   yieldOpportunity = selectedYield,
 }: {
   readonly push: ReturnType<typeof vi.fn<(path: WidgetPath) => void>>;
+  readonly serviceWallet?: NormalizedWalletState;
   readonly trackEvent: TrackingService["Service"]["trackEvent"];
   readonly wallet?: NormalizedWalletState;
   readonly yieldBalance?: typeof EarnBalance.Type;
@@ -140,7 +143,7 @@ const makeRegistry = ({
     replace: () => Effect.void,
   });
   const walletState = {
-    connection: wallet,
+    connection: serviceWallet ?? wallet,
     ledger: disconnectedLedgerConnectorState,
   };
   return AtomRegistry.make({
@@ -200,6 +203,97 @@ const makeRegistry = ({
 };
 
 describe("Position Details exit command", () => {
+  it("preserves the closed Classic rejection for Exit", async () => {
+    const push = vi.fn<(path: WidgetPath) => void>();
+    const registry = makeRegistry({
+      push,
+      serviceWallet: makeConnectedWallet({ address: otherAddress }),
+      trackEvent: () => Effect.void,
+    });
+    const commandAtom = submitPositionDetailsExitAtom(workflowKey);
+
+    try {
+      registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        pendingActions: new Map(),
+        unstakeAmount: new BigNumber("0.4"),
+        unstakeUseMaxAmount: false,
+      });
+      registry.set(commandAtom, undefined);
+
+      await vi.waitFor(() =>
+        expect(AsyncResult.isSuccess(registry.get(commandAtom))).toBe(true)
+      );
+      expect(AsyncResult.getOrThrow(registry.get(commandAtom))).toEqual({
+        _tag: "Rejected",
+        reason: "RejectedOwner",
+      });
+      expect(push).not.toHaveBeenCalled();
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("preserves the closed Classic rejection for a Pending Action", async () => {
+    const push = vi.fn<(path: WidgetPath) => void>();
+    const registry = makeRegistry({
+      push,
+      serviceWallet: makeConnectedWallet({ address: otherAddress }),
+      trackEvent: () => Effect.void,
+      yieldBalance: manageBalance,
+    });
+    const commandAtom = runPositionPendingActionAtom(workflowKey);
+
+    try {
+      registry.set(commandAtom, {
+        _tag: "Select",
+        pendingActionDto: manageAction,
+        yieldBalance: manageBalance,
+      });
+
+      await vi.waitFor(() =>
+        expect(AsyncResult.isSuccess(registry.get(commandAtom))).toBe(true)
+      );
+      expect(AsyncResult.getOrThrow(registry.get(commandAtom))).toEqual({
+        _tag: "Rejected",
+        attemptId: null,
+        reason: "RejectedOwner",
+      });
+      expect(push).not.toHaveBeenCalled();
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("does not order Pending Action start behind telemetry", async () => {
+    const push = vi.fn<(path: WidgetPath) => void>();
+    const trackingRelease = await Effect.runPromise(Deferred.make<void>());
+    const registry = makeRegistry({
+      push,
+      trackEvent: () => Deferred.await(trackingRelease),
+      yieldBalance: manageBalance,
+    });
+    const commandAtom = runPositionPendingActionAtom(workflowKey);
+
+    try {
+      registry.set(commandAtom, {
+        _tag: "Select",
+        pendingActionDto: manageAction,
+        yieldBalance: manageBalance,
+      });
+
+      await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
+      await vi.waitFor(() =>
+        expect(AsyncResult.isSuccess(registry.get(commandAtom))).toBe(true)
+      );
+      expect(AsyncResult.getOrThrow(registry.get(commandAtom))).toMatchObject({
+        _tag: "Started",
+      });
+      await Effect.runPromise(Deferred.succeed(trackingRelease, undefined));
+    } finally {
+      registry.dispose();
+    }
+  });
+
   it.each([
     { name: "validatorAddress", type: "string" },
     { name: "validatorAddresses", type: "string" },
@@ -425,6 +519,72 @@ describe("Position Details exit command", () => {
       }
     }
   );
+
+  it("closes only the validator modal attempt acknowledged by Started", async () => {
+    const push = vi.fn<(path: WidgetPath) => void>();
+    const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
+      () => Effect.void
+    );
+    const validatorBalance = Schema.decodeUnknownSync(EarnBalance)(
+      yieldBalanceFixture({
+        address,
+        amount: "1",
+        pendingActions: [
+          {
+            amount: "1",
+            arguments: {
+              fields: [
+                {
+                  label: "Validators",
+                  name: "validatorAddresses",
+                  required: true,
+                  type: "string",
+                },
+              ],
+            },
+            intent: "manage",
+            passthrough: "wallet-a-action",
+            type: "CLAIM_REWARDS",
+          },
+        ],
+        token: selectedYield.token,
+        validators: [yieldApiValidatorFixture({ address: "validator-a" })],
+      })
+    );
+    const pendingActionDto = validatorBalance.pendingActions[0]!;
+    const registry = makeRegistry({
+      push,
+      trackEvent,
+      yieldBalance: validatorBalance,
+    });
+    const modalAtom = positionPendingActionModalViewAtom(workflowKey);
+    const unmount = registry.mount(modalAtom);
+
+    try {
+      registry.set(openPositionPendingActionModalAtom(workflowKey), {
+        pendingActionDto,
+        yieldBalance: validatorBalance,
+      });
+      expect(registry.get(modalAtom)._tag).toBe("Open");
+
+      registry.set(runPositionPendingActionAtom(workflowKey), {
+        _tag: "SubmitValidators",
+      });
+      await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
+      await vi.waitFor(() =>
+        expect(registry.get(modalAtom)._tag).toBe("Closed")
+      );
+
+      registry.set(openPositionPendingActionModalAtom(workflowKey), {
+        pendingActionDto,
+        yieldBalance: validatorBalance,
+      });
+      expect(registry.get(modalAtom)._tag).toBe("Open");
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
 
   it("sets the displayed maximum and tracks the user intent", async () => {
     const push = vi.fn<(path: WidgetPath) => void>();

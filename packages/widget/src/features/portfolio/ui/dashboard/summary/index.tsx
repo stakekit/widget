@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
@@ -10,8 +11,20 @@ import { SummaryItem } from "../../components/summary-item";
 import { summaryContainer } from "../../components/summary-item/index.css";
 
 export const Summary = () => {
-  const { allPositionsQuery, averageApyQuery, availableBalanceSumQuery } =
+  const { allPositionsResult, averageApyResult, availableBalanceResult } =
     useSummary();
+  const allPositions = allPositionsResult.pipe(
+    AsyncResult.value,
+    Option.getOrUndefined
+  );
+  const averageApy = averageApyResult.pipe(
+    AsyncResult.value,
+    Option.getOrUndefined
+  );
+  const availableBalance = availableBalanceResult.pipe(
+    AsyncResult.value,
+    Option.getOrUndefined
+  );
   const borrowPositions = usePortfolioBorrowPositions();
   const borrowPositionItems = AsyncResult.getOrElse(
     borrowPositions.positionsResult,
@@ -53,17 +66,17 @@ export const Summary = () => {
     }
   );
   const totalPositionsValue = hasBorrowPositions
-    ? (allPositionsQuery.data?.allPositionsSum ?? new BigNumber(0)).plus(
+    ? (allPositions?.allPositionsSum ?? new BigNumber(0)).plus(
         borrowTotalSupplied
       )
-    : allPositionsQuery.data?.allPositionsSum;
+    : allPositions?.allPositionsSum;
   const averageApyValue = (() => {
     if (!hasBorrowPositions) {
-      return averageApyQuery.data;
+      return averageApy;
     }
 
     const earnPositionsValue =
-      allPositionsQuery.data?.allPositionsSum ?? new BigNumber(0);
+      allPositions?.allPositionsSum ?? new BigNumber(0);
     const totalValue = earnPositionsValue.plus(borrowApySummary.totalValue);
 
     if (!totalValue.gt(0)) {
@@ -71,15 +84,13 @@ export const Summary = () => {
     }
 
     const earnWeightedApy =
-      averageApyQuery.data?.times(earnPositionsValue) ?? new BigNumber(0);
+      averageApy?.times(earnPositionsValue) ?? new BigNumber(0);
 
     return earnWeightedApy.plus(borrowApySummary.weightedApy).div(totalValue);
   })();
   const availableOrNetWorthValue = hasBorrowPositions
-    ? (allPositionsQuery.data?.allPositionsSum ?? new BigNumber(0)).plus(
-        borrowNetWorth
-      )
-    : availableBalanceSumQuery.data;
+    ? (allPositions?.allPositionsSum ?? new BigNumber(0)).plus(borrowNetWorth)
+    : availableBalance;
 
   const { t } = useTranslation();
 
@@ -97,14 +108,18 @@ export const Summary = () => {
             : "dashboard.overview.summary.total_staked"
         )}
         value={totalPositionsValue}
-        isLoading={allPositionsQuery.isLoading || borrowPositionsAreLoading}
+        isLoading={
+          AsyncResult.isInitial(allPositionsResult) || borrowPositionsAreLoading
+        }
       />
 
       <SummaryItem
         type="apy"
         label={t("dashboard.overview.summary.average_apy")}
         value={averageApyValue}
-        isLoading={averageApyQuery.isLoading || borrowPositionsAreLoading}
+        isLoading={
+          AsyncResult.isInitial(averageApyResult) || borrowPositionsAreLoading
+        }
       />
 
       <SummaryItem
@@ -117,8 +132,9 @@ export const Summary = () => {
         value={availableOrNetWorthValue}
         isLoading={
           hasBorrowPositions
-            ? allPositionsQuery.isLoading || borrowPositionsAreLoading
-            : availableBalanceSumQuery.isLoading
+            ? AsyncResult.isInitial(allPositionsResult) ||
+              borrowPositionsAreLoading
+            : AsyncResult.isInitial(availableBalanceResult)
         }
       />
     </Box>

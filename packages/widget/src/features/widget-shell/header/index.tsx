@@ -11,7 +11,7 @@ import { useHeader } from "./use-header";
 export const Header = () => {
   const {
     containerRef,
-    walletConfig,
+    walletConfigReady,
     variant,
     hideChainSelector,
     isConnected,
@@ -60,9 +60,7 @@ export const Header = () => {
           )}
         </Box>
 
-        {!walletConfig.isLoading &&
-        walletConfig.data &&
-        variant !== "zerion" ? (
+        {walletConfigReady && variant !== "zerion" ? (
           <ConnectButton.Custom>
             {({ account, chain, mounted }) => {
               return (

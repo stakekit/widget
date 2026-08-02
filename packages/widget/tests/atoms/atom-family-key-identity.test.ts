@@ -10,7 +10,7 @@ import {
 } from "../../src/features/earn/state/earn-selection/resources/keys";
 import {
   CurrentRewardsSummaryKey,
-  positiveRewardsSummaryAtom,
+  currentRewardsSummaryAtom,
 } from "../../src/features/yield-summary/state/yield-insights";
 import {
   ActivityInvalidationKey,
@@ -59,8 +59,8 @@ describe("atom family key identity", () => {
     });
 
     expect(first.yieldIds).toEqual([firstYieldId, secondYieldId]);
-    expect(positiveRewardsSummaryAtom(first)).toBe(
-      positiveRewardsSummaryAtom(equivalent)
+    expect(currentRewardsSummaryAtom(first)).toBe(
+      currentRewardsSummaryAtom(equivalent)
     );
   });
 
