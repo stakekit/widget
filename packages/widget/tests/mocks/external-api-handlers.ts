@@ -2,6 +2,31 @@ import { HttpResponse, http } from "msw";
 import { mockDelay } from "./delay";
 
 export const getExternalApiMock = () => [
+  http.all(
+    "https://assets.stakek.it/*",
+    () => new HttpResponse(null, { status: 204 })
+  ),
+
+  http.all(
+    "https://token-icons.s3.amazonaws.com/*",
+    () => new HttpResponse(null, { status: 204 })
+  ),
+
+  http.all(
+    "https://chain-icons.s3.amazonaws.com/*",
+    () => new HttpResponse(null, { status: 204 })
+  ),
+
+  http.post(
+    "https://cca-lite.coinbase.com/amp",
+    () => new HttpResponse(null, { status: 204 })
+  ),
+
+  http.post(
+    "https://pulse.walletconnect.org/e",
+    () => new HttpResponse(null, { status: 204 })
+  ),
+
   http.get("https://i18n.stakek.it/locales/:language/errors.json", async () => {
     await mockDelay();
 
