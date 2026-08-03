@@ -1,12 +1,4 @@
-import { useSyncExternalStore } from "react";
-import {
-  getGeoBlockSnapshot,
-  subscribeToGeoBlock,
-} from "../../../services/api/geo-block-state";
+import { useAtomValue } from "@effect/atom-react";
+import { geoBlockAtom } from "../state/geo-block";
 
-export const useGeoBlock = () =>
-  useSyncExternalStore(
-    subscribeToGeoBlock,
-    getGeoBlockSnapshot,
-    getGeoBlockSnapshot
-  );
+export const useGeoBlock = () => useAtomValue(geoBlockAtom);

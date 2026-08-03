@@ -1,17 +1,18 @@
 import type { WalletList } from "@stakekit/rainbowkit";
 import { Effect } from "effect";
 import type { InitParams } from "../../../../domain/schema/init-params";
-import { isLedgerDappBrowserProvider } from "../../browser-environment";
 import { WalletIntegrationError } from "../../domain/errors";
 import type { RunWalletEffect } from "../../effect-runner";
 import type { EnabledChainsMap } from "./ledger-connector";
 
 const queryFn = ({
   enabledChainsMap,
+  isLedgerDappBrowser,
   queryParams,
   runWalletEffect,
 }: {
   enabledChainsMap: EnabledChainsMap;
+  isLedgerDappBrowser: boolean;
   queryParams: InitParams;
   runWalletEffect: RunWalletEffect;
 }): Effect.Effect<
@@ -21,7 +22,7 @@ const queryFn = ({
   } | null,
   WalletIntegrationError
 > => {
-  if (!isLedgerDappBrowserProvider()) return Effect.succeed(null);
+  if (!isLedgerDappBrowser) return Effect.succeed(null);
 
   return Effect.tryPromise({
     try: () => import("./ledger-connector"),
@@ -35,6 +36,7 @@ const queryFn = ({
     Effect.flatMap((module) =>
       module.ledgerLiveConnector({
         enabledChainsMap,
+        isLedgerDappBrowser,
         queryParams,
         runWalletEffect,
       })

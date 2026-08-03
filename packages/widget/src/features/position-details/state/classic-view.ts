@@ -8,7 +8,7 @@ import {
   getPendingActionAmountConfig,
   isPendingActionAmountRequired,
 } from "../../../domain/types/pending-action";
-import { getBalanceTokenActionType } from "../../../domain/types/pending-action-request";
+import { getPendingActionStateKey } from "../../../domain/types/pending-action-request";
 import type { PositionBalancesByType } from "../../../domain/types/positions";
 import { getTokenPriceInUSD } from "../../../domain/types/price";
 import { getYieldActionArg, isERC4626 } from "../../../domain/types/yields";
@@ -44,9 +44,10 @@ const getPendingActionIndex = (
             balance.pendingActions.map(
               (pendingAction) =>
                 [
-                  getBalanceTokenActionType({
+                  getPendingActionStateKey({
                     actionType: pendingAction.type,
                     balanceType: balance.type,
+                    passthrough: pendingAction.passthrough,
                     token: balance.token,
                   }),
                   { balance, pendingAction },
@@ -66,9 +67,10 @@ const clampPendingActionAmount = ({
   readonly current: PositionDetailsWorkflowState["pendingActions"];
   readonly index: ReturnType<typeof getPendingActionIndex>;
 }) => {
-  const key = getBalanceTokenActionType({
+  const key = getPendingActionStateKey({
     actionType: action.actionType,
     balanceType: action.balanceType,
+    passthrough: action.passthrough,
     token: action.token,
   });
   const pending = index.get(key);
@@ -181,6 +183,7 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
         stakedOrLiquidBalances,
         unstakeAmount,
         unstakeAmountError,
+        unstakeForceMaxAmount: amountConstraints.forceMax,
         unstakeAmountValid:
           unstakeAmount.isGreaterThanOrEqualTo(
             amountConstraints.allowedMinimum
@@ -275,9 +278,10 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
               balance.pendingActions.map((pendingActionDto) => {
                 const amount = isPendingActionAmountRequired(pendingActionDto)
                   ? (view.pendingActions.get(
-                      getBalanceTokenActionType({
+                      getPendingActionStateKey({
                         actionType: pendingActionDto.type,
                         balanceType: balance.type,
+                        passthrough: pendingActionDto.passthrough,
                         token: balance.token,
                       })
                     ) ?? new BigNumber(0))

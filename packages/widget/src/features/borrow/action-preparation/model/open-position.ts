@@ -32,13 +32,20 @@ export const prepareOpenPositionAction = (
   const walletBalances = deriveBorrowMarketWalletBalances({
     balances: tokenBalances,
     market,
-    selectedCollateralTokenAddress: collateralToken.token.address,
+    selectedCollateralTokenId: decodeTokenId(collateralToken.token),
   });
   const borrowMaxAmount = new BigNumber(market.availableLiquidity);
   const collateralMaxAmount =
     walletBalances.selectedCollateralToken?.amountValue ?? new BigNumber(0);
   const borrowUsd = borrowAmount.multipliedBy(market.loanTokenPriceUsd);
-  const collateralUsd = collateralAmount.multipliedBy(collateralToken.priceUsd);
+  const collateralFeeAmount = collateralAmount
+    .multipliedBy(market.supplyCollateralFeeBps)
+    .dividedBy(10_000)
+    .decimalPlaces(collateralToken.token.decimals, BigNumber.ROUND_FLOOR);
+  const effectiveCollateralAmount = collateralAmount.minus(collateralFeeAmount);
+  const collateralUsd = effectiveCollateralAmount.multipliedBy(
+    collateralToken.priceUsd
+  );
   const changes = [
     ...(borrowAmount.gt(0)
       ? [
@@ -52,7 +59,7 @@ export const prepareOpenPositionAction = (
     ...(collateralAmount.gt(0)
       ? [
           {
-            amount: collateralAmount,
+            amount: effectiveCollateralAmount,
             tokenId: decodeTokenId({
               address: collateralToken.token.address,
               symbol: collateralToken.token.symbol,
@@ -152,8 +159,10 @@ export const prepareOpenPositionAction = (
   const facts = makeOpenPositionFacts({
     borrowAmount,
     collateralAmount,
+    collateralFeeAmount,
     collateralToken,
     common: commonFacts,
+    effectiveCollateralAmount,
     market,
   });
 

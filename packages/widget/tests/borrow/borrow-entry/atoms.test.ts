@@ -9,6 +9,7 @@ import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { Integration } from "../../../src/domain/borrow/catalog/integration";
 import { Market } from "../../../src/domain/borrow/catalog/market";
+import { decodeTokenId } from "../../../src/domain/borrow/ids";
 import { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borrow-account-snapshot";
 import { deriveBorrowPositions } from "../../../src/domain/borrow/positions/borrow-positions";
 import { TokenBalancesResponse } from "../../../src/domain/schema/financial-models";
@@ -127,6 +128,76 @@ const positionDto = {
 } as const;
 
 describe("Borrow Entry atoms", () => {
+  it("keeps a non-first native collateral token explicitly selected", () => {
+    const nativeCollateral = {
+      ...marketDto.collateralTokens[0],
+      token: {
+        decimals: 18,
+        name: "Ether",
+        symbol: "ETH",
+      },
+    };
+    const market = Schema.decodeUnknownSync(Market)({
+      ...marketDto,
+      collateralTokens: [marketDto.collateralTokens[0], nativeCollateral],
+    });
+    const nativeToken = market.collateralTokens[1]!;
+    const nativeTokenId = decodeTokenId(nativeToken.token);
+    const intent = applyBorrowFormAction({
+      action: {
+        tokenId: nativeTokenId,
+        type: "collateralToken/select",
+      },
+      intent: {
+        borrowAmount: "0",
+        collateralAmount: "1",
+        selectedCollateralTokenId: null,
+        selectedMarketId: market.id,
+      },
+    });
+    const view = resolveBorrowEntryView({
+      integrationsResult: AsyncResult.success([]),
+      intent: { ...intent, collateralAmount: "1" },
+      key: new BorrowEntryKey({
+        network: "ethereum",
+        scope: walletScope,
+      }),
+      marketsResult: AsyncResult.success([market]),
+      tokenBalances: Schema.decodeUnknownSync(TokenBalancesResponse)([
+        {
+          amount: "3",
+          availableYields: [],
+          token: {
+            decimals: 18,
+            name: "Ether",
+            network: "ethereum",
+            symbol: "ETH",
+          },
+        },
+      ]),
+    });
+
+    expect(view.selectedCollateralTokenId).toBe(nativeTokenId);
+    expect(view.selectedCollateralToken?.token.symbol).toBe("ETH");
+    expect(view.selectedCollateralBalance?.amount).toBe("3");
+    expect(view.projection.collateralMaxAmount.toString(10)).toBe("3");
+    expect(view.preparation).toMatchObject({
+      _tag: "Ready",
+      review: {
+        command: {
+          action: "supply",
+          args: { amount: "1", marketId: market.id },
+        },
+        summary: { collateralTokenSymbol: "ETH" },
+      },
+    });
+    expect(
+      view.preparation?._tag === "Ready"
+        ? view.preparation.review.command.args.collateralTokenAddress
+        : undefined
+    ).toBeUndefined();
+  });
+
   it("reduces form intent and prepares borrow review state in the atom view", () => {
     const market = Schema.decodeUnknownSync(Market)(marketDto);
     const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
@@ -138,8 +209,9 @@ describe("Borrow Entry atoms", () => {
       intent: {
         borrowAmount: "1",
         collateralAmount: "2",
-        selectedCollateralTokenAddress:
-          market.collateralTokens[0]?.token.address ?? null,
+        selectedCollateralTokenId: decodeTokenId(
+          market.collateralTokens[0]!.token
+        ),
         selectedMarketId: null,
       } satisfies BorrowFormIntent,
     });
@@ -212,7 +284,7 @@ describe("Borrow Entry atoms", () => {
       intent: {
         borrowAmount: "0",
         collateralAmount: "0",
-        selectedCollateralTokenAddress: null,
+        selectedCollateralTokenId: null,
         selectedMarketId: null,
       },
       key: new BorrowEntryKey({
@@ -245,8 +317,9 @@ describe("Borrow Entry atoms", () => {
         intent: {
           borrowAmount,
           collateralAmount: "1",
-          selectedCollateralTokenAddress:
-            market.collateralTokens[0]?.token.address ?? null,
+          selectedCollateralTokenId: decodeTokenId(
+            market.collateralTokens[0]!.token
+          ),
           selectedMarketId: market.id,
         },
         key: new BorrowEntryKey({
@@ -457,8 +530,9 @@ describe("Borrow Entry atoms", () => {
     const intent: BorrowFormIntent = {
       borrowAmount: "25",
       collateralAmount: "1",
-      selectedCollateralTokenAddress:
-        selectedMarket.collateralTokens[0]?.token.address ?? null,
+      selectedCollateralTokenId: decodeTokenId(
+        selectedMarket.collateralTokens[0]!.token
+      ),
       selectedMarketId: selectedMarket.id,
     };
 
@@ -541,8 +615,9 @@ describe("Borrow Entry atoms", () => {
       intent: {
         borrowAmount: "500",
         collateralAmount: "0",
-        selectedCollateralTokenAddress:
-          market.collateralTokens[0]?.token.address ?? null,
+        selectedCollateralTokenId: decodeTokenId(
+          market.collateralTokens[0]!.token
+        ),
         selectedMarketId: market.id,
       },
       key: new BorrowEntryKey({
@@ -612,8 +687,9 @@ describe("Borrow Entry atoms", () => {
       intent: {
         borrowAmount: "200",
         collateralAmount: "0",
-        selectedCollateralTokenAddress:
-          selectedMarket.collateralTokens[0]?.token.address ?? null,
+        selectedCollateralTokenId: decodeTokenId(
+          selectedMarket.collateralTokens[0]!.token
+        ),
         selectedMarketId: selectedMarket.id,
       },
       key: new BorrowEntryKey({
@@ -699,8 +775,9 @@ describe("Borrow Entry atoms", () => {
       intent: {
         borrowAmount: "200",
         collateralAmount: "0",
-        selectedCollateralTokenAddress:
-          market.collateralTokens[0]?.token.address ?? null,
+        selectedCollateralTokenId: decodeTokenId(
+          market.collateralTokens[0]!.token
+        ),
         selectedMarketId: market.id,
       },
       key: new BorrowEntryKey({
@@ -733,8 +810,9 @@ describe("Borrow Entry atoms", () => {
       intent: {
         borrowAmount: "1",
         collateralAmount: "1",
-        selectedCollateralTokenAddress:
-          market.collateralTokens[0]?.token.address ?? null,
+        selectedCollateralTokenId: decodeTokenId(
+          market.collateralTokens[0]!.token
+        ),
         selectedMarketId: market.id,
       },
       key: new BorrowEntryKey({

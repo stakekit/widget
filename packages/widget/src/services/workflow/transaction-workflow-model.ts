@@ -341,7 +341,7 @@ export type TransactionWorkflowAction =
   | "confirm"
   | "advance";
 
-const isDoneStatus = (status: string) =>
+export const isTransactionWorkflowDoneStatus = (status: string) =>
   status === "CONFIRMED" || status === "SKIPPED";
 
 const isBroadcastStatus = (status: string) =>
@@ -354,7 +354,7 @@ const toTransaction = (
   meta: {
     broadcasted: isBroadcastStatus(source.transaction.status) ? true : null,
     confirmationError: null,
-    done: isDoneStatus(source.transaction.status),
+    done: isTransactionWorkflowDoneStatus(source.transaction.status),
     signError: null,
     signedTx: null,
     submissionIndex: null,

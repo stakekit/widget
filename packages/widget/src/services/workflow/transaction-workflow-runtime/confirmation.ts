@@ -7,6 +7,7 @@ import {
 import type { Transaction as BorrowTransaction } from "../../../domain/borrow/execution/transaction";
 import type { ActionTransaction } from "../../../domain/schema/action-models";
 import {
+  isTransactionWorkflowDoneStatus,
   selectNextTransactionWorkflowTransaction,
   TransactionConfirmationError,
   type TransactionWorkflowContext,
@@ -81,7 +82,7 @@ export const makeConfirmCurrent = Effect.gen(function* () {
                   );
                 }
 
-                return status.status === "CONFIRMED"
+                return isTransactionWorkflowDoneStatus(status.status)
                   ? Effect.succeed({
                       _tag: "Classic",
                       explorerUrl: status.explorerUrl ?? null,

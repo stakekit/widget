@@ -35,7 +35,6 @@ const knipConfig = {
         "src/public-api/index.package.ts!",
         "src/public-api/index.bundle.ts!",
         "src/main.tsx!",
-        "src/translation/i18next.d.ts!",
         "src/types/purify-extend.d.ts!",
         "src/types/window.d.ts!",
         "src/vite-env.d.ts!",

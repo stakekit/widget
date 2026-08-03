@@ -9,7 +9,7 @@ import { Effect, FiberSet } from "effect";
 import uniqwith from "lodash.uniqwith";
 import { createStore, type Store as MipdStore } from "mipd";
 import { createClient } from "viem";
-import { createConfig, http } from "wagmi";
+import { type Connector, createConfig, http } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import type { WalletAddress } from "../../domain/schema/identifiers";
 import type { InitParams } from "../../domain/schema/init-params";
@@ -26,7 +26,6 @@ import type {
 } from "../../domain/types/external-providers";
 import type { SettingsProps, VariantProps } from "../../public-api/types";
 import { config } from "../../shared/config/widget-defaults";
-import { isLedgerDappBrowserProvider } from "./browser-environment";
 import { buildsEcosystemConnectors } from "./connector-mode";
 import { getConfig as getCosmosConfig } from "./connectors/cosmos/config";
 import { getConfig as getEvmConfig } from "./connectors/ethereum/config";
@@ -43,6 +42,21 @@ import type { SolanaWalletDescriptor } from "./solana-runtime";
 import type { makeWagmiActions } from "./wagmi-actions";
 
 type MipdProviders = ReturnType<MipdStore["getProviders"]>;
+
+export const getUnseenMipdProviders = ({
+  connectors,
+  providers,
+}: {
+  readonly connectors: ReadonlyArray<Pick<Connector, "id">>;
+  readonly providers: MipdProviders;
+}) => {
+  const existingIds = new Set(connectors.map((connector) => connector.id));
+
+  return uniqwith(
+    providers,
+    (first, second) => first.info.rdns === second.info.rdns
+  ).filter((provider) => !existingIds.has(provider.info.rdns));
+};
 
 export const scopedMipdSubscription = ({
   initialProviders,
@@ -122,7 +136,7 @@ export const buildWagmiConfig = (
       hasCustomConnectors: !!opts.customConnectors,
       hasExternalProviders: !!opts.externalProviders,
       institutionalWallets: opts.institutionalWallets,
-      isLedgerDappBrowser: isLedgerDappBrowserProvider(),
+      isLedgerDappBrowser: opts.isLedgerLive,
       isSafe: opts.isSafe,
       variant: opts.variant,
     });
@@ -166,6 +180,7 @@ export const buildWagmiConfig = (
         misc: miscConfig.miscChainsMap,
         substrate: substrateConfig.substrateChainsMap,
       },
+      isLedgerDappBrowser: opts.isLedgerLive,
       queryParams: opts.queryParams,
       runWalletEffect,
     });
@@ -367,19 +382,24 @@ export const buildWagmiConfig = (
       yield* scopedMipdSubscription({
         initialProviders: mipdStore.getProviders(),
         publish: (providers) => {
-          wagmiConfig._internal.connectors.setState((prev) => [
-            ...prev,
-            ...uniqwith(providers, (a, b) => a.info.rdns === b.info.rdns).map(
-              (provider) => ({
+          wagmiConfig._internal.connectors.setState((prev) => {
+            const unseenProviders = getUnseenMipdProviders({
+              connectors: prev,
+              providers,
+            });
+
+            return [
+              ...prev,
+              ...unseenProviders.map((provider) => ({
                 rkDetails: { chainGroup: evmChainGroup },
                 ...wagmiConfig._internal.connectors.setup(
                   wagmiConfig._internal.connectors.providerDetailToConnector(
                     provider
                   )
                 ),
-              })
-            ),
-          ]);
+              })),
+            ];
+          });
         },
         subscribe: (onProviders) => {
           const unsubscribe = mipdStore.subscribe(onProviders);

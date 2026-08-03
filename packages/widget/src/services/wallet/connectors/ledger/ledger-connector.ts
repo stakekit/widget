@@ -22,7 +22,6 @@ import {
 } from "../../../../domain/types/chains/ledger";
 import { makeCurrentValueStream } from "../../../../shared/effect/current-value-stream";
 import { walletImages } from "../../assets";
-import { isLedgerDappBrowserProvider } from "../../browser-environment";
 import { WalletIntegrationError } from "../../domain/errors";
 import type { RunWalletEffect } from "../../effect-runner";
 import { configMeta, type ExtraProps } from "./ledger-live-connector-meta";
@@ -38,11 +37,13 @@ import {
 const createLedgerLiveConnector = ({
   walletDetailsParams,
   enabledChainsMap,
+  isLedgerDappBrowser,
   prepareTransaction,
   queryParams,
   runWalletEffect,
 }: {
   enabledChainsMap: EnabledChainsMap;
+  isLedgerDappBrowser: boolean;
   prepareTransaction: PrepareLedgerLiveTransaction;
   queryParams: InitParams;
   runWalletEffect: RunWalletEffect;
@@ -297,7 +298,7 @@ const createLedgerLiveConnector = ({
       async () => ({});
 
     const isAuthorized: ReturnType<CreateConnectorFn>["isAuthorized"] =
-      async () => isLedgerDappBrowserProvider();
+      async () => isLedgerDappBrowser;
 
     const disconnect: ReturnType<CreateConnectorFn>["disconnect"] = async () =>
       transport.disconnect();
@@ -427,10 +428,12 @@ const createLedgerLiveConnector = ({
 
 export const ledgerLiveConnector = ({
   enabledChainsMap,
+  isLedgerDappBrowser,
   queryParams,
   runWalletEffect,
 }: {
   enabledChainsMap: EnabledChainsMap;
+  isLedgerDappBrowser: boolean;
   queryParams: InitParams;
   runWalletEffect: RunWalletEffect;
 }): Effect.Effect<WalletList[number]> =>
@@ -450,11 +453,12 @@ export const ledgerLiveConnector = ({
             title: configMeta.name,
             iconUrl: walletImages.ledgerLogo,
           },
-          hidden: () => !isLedgerDappBrowserProvider(),
+          hidden: () => !isLedgerDappBrowser,
           createConnector: (walletDetailsParams) =>
             createLedgerLiveConnector({
               walletDetailsParams,
               enabledChainsMap,
+              isLedgerDappBrowser,
               prepareTransaction,
               queryParams,
               runWalletEffect,

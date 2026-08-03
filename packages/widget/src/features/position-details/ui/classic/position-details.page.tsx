@@ -227,6 +227,7 @@ const PositionDetails = () => {
                         balanceType: val.yieldBalance.type,
                         token: val.yieldBalance.token,
                         actionType: val.pendingActionDto.type,
+                        passthrough: val.pendingActionDto.passthrough,
                         amount,
                       })
                     }

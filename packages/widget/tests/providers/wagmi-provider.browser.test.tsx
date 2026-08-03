@@ -32,6 +32,7 @@ import { watchConnectors } from "wagmi/actions";
 import { optimism } from "wagmi/chains";
 import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
+import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { solana } from "../../src/domain/types/chains/misc";
 import { EvmNetworks } from "../../src/domain/types/chains/networks";
@@ -40,7 +41,7 @@ import {
   walletStateResultAtom,
 } from "../../src/features/wallet/state";
 import { WagmiConfigProvider } from "../../src/features/wallet/ui";
-import { handleGeoBlockResponse } from "../../src/services/api/geo-block-state";
+import { GeoBlockService } from "../../src/services/api/geo-block-state";
 import type { SolanaRuntime } from "../../src/services/wallet/platform/solana-platform";
 import { installSolanaConnectorMembership } from "../../src/services/wallet/solana-connector-membership";
 import type {
@@ -513,18 +514,20 @@ describe("WagmiConfigProvider", () => {
   });
 
   it("keeps providing the fallback after a geo-blocked wallet bootstrap", async () => {
-    handleGeoBlockResponse({
-      data: {
-        countryCode: "AT",
-        regionCode: "AT-9",
-        type: "GEO_LOCATION",
-      },
-      status: 403,
+    const blocked = {
+      countryCode: "AT",
+      regionCode: "AT-9",
+      tags: new Set<string>(),
+    };
+    const geoBlock = GeoBlockService.of({
+      observeResponse: () => Effect.void,
+      states: Stream.succeed(blocked),
     });
 
     const app = await render(
       <RegistryProvider
         initialValues={[
+          [appRuntime.layer, Layer.succeed(GeoBlockService, geoBlock) as never],
           [
             walletRuntime.layer,
             Layer.effect(

@@ -43,7 +43,6 @@ const environmentLayer = Layer.succeed(
   WalletEnvironment,
   WalletEnvironment.of({
     href: Effect.succeed("https://widget.test/?network=ethereum"),
-    isLedgerDappBrowser: Effect.succeed(false),
     isMobileWallet: Effect.succeed(false),
   })
 );

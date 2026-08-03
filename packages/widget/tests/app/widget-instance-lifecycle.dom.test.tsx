@@ -6,7 +6,7 @@ import {
   StrictMode,
 } from "react";
 import { createRoot } from "react-dom/client";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "../utils/test-utils.dom";
 
 const providersRendered = vi.hoisted(() =>
@@ -29,6 +29,9 @@ vi.mock("../../src/app/composition/providers", async () => {
       return (
         <>
           <output data-testid="bundled-api-key">{settings.apiKey}</output>
+          <output data-testid="ledger-embed-mode">
+            {String(settings.isLedgerLive)}
+          </output>
           {children}
         </>
       );
@@ -48,13 +51,9 @@ vi.mock("../../src/shared/ui/primitives/box", () => ({
   Box: ({ children }: PropsWithChildren) => children,
 }));
 
-vi.mock("../../src/app/translation/use-load-error-translations", () => ({
-  useLoadErrorTranslations: () => undefined,
-}));
-
-vi.mock("../../src/translation", () => ({}));
-
 import { renderSKWidget, SKApp } from "../../src/App";
+
+const originalHref = window.location.href;
 
 class MountErrorBoundary extends Component<
   PropsWithChildren<{ readonly onError: (error: unknown) => void }>,
@@ -78,6 +77,10 @@ class MountErrorBoundary extends Component<
 describe("Widget Instance lifecycle", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    window.history.replaceState({}, "", originalHref);
   });
 
   it("rejects a second package mount before its providers initialize", async () => {
@@ -116,6 +119,33 @@ describe("Widget Instance lifecycle", () => {
     expect(firstRuntimeIdentity).toBeDefined();
     expect(secondRuntimeIdentity).toBeDefined();
     expect(secondRuntimeIdentity).not.toBe(firstRuntimeIdentity);
+  });
+
+  it("keeps Ledger embed mode sticky within a generation and fresh after remount", async () => {
+    const embedMode = (container: HTMLElement) =>
+      container.querySelector('[data-testid="ledger-embed-mode"]')?.textContent;
+
+    window.history.replaceState({}, "", "/?embed=true");
+    const embedded = await render(<SKApp apiKey="embedded-api-key" />);
+    expect(embedMode(embedded.container)).toBe("true");
+
+    window.history.replaceState({}, "", "/");
+    await embedded.rerender(<SKApp apiKey="embedded-api-key" />);
+    expect(embedMode(embedded.container)).toBe("true");
+    embedded.unmount();
+
+    const standard = await render(<SKApp apiKey="standard-api-key" />);
+    expect(embedMode(standard.container)).toBe("false");
+
+    window.history.replaceState({}, "", "/?embed=true");
+    await standard.rerender(<SKApp apiKey="standard-api-key" />);
+    expect(embedMode(standard.container)).toBe("false");
+    standard.unmount();
+
+    const embeddedAgain = await render(
+      <SKApp apiKey="embedded-again-api-key" />
+    );
+    expect(embedMode(embeddedAgain.container)).toBe("true");
   });
 
   it("treats React StrictMode replay as one Widget Instance", async () => {

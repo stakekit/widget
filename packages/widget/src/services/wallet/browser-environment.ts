@@ -17,19 +17,11 @@ export const isMobileWalletEnvironment = () => {
   );
 };
 
-export const isLedgerDappBrowserProvider = (() => {
-  let state: boolean | null = null;
-
-  return (): boolean => {
-    if (typeof state === "boolean") return state;
-
-    try {
-      const params = new URLSearchParams(window.self.location.search);
-      state = Boolean(params.get("embed"));
-    } catch {
-      state = false;
-    }
-
-    return state;
-  };
-})();
+export const isLedgerDappBrowserProvider = (): boolean => {
+  try {
+    const params = new URLSearchParams(window.self.location.search);
+    return Boolean(params.get("embed"));
+  } catch {
+    return false;
+  }
+};

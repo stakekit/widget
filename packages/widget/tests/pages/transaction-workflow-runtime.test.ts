@@ -669,6 +669,25 @@ describe("transaction workflow runtime", () => {
     expect(checks).toBe(1);
   });
 
+  it("completes a live classic transaction when the API skips it", async () => {
+    const getClassicStatus = vi.fn(() =>
+      Effect.succeed({ explorerUrl: null, status: "SKIPPED" as const })
+    );
+
+    const result = await runToCompletion(
+      new ClassicTransactionWorkflowInput({
+        actionMeta,
+        transactions: [classicTransaction("skipped-live")],
+        walletScope: classicWalletScope,
+        yieldId,
+      }),
+      makeOperations({ getClassicStatus })
+    );
+
+    expect(result.finalState._tag).toBe("Completed");
+    expect(getClassicStatus).toHaveBeenCalledOnce();
+  });
+
   it("uses the classic confirmation interval and exhausts its attempt limit", async () => {
     let checks = 0;
     const firstCheck = await Effect.runPromise(Deferred.make<void>());

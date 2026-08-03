@@ -3,7 +3,6 @@ import {
   FetchHttpClient,
   HttpClient,
   HttpClientRequest,
-  type HttpClientResponse,
 } from "effect/unstable/http";
 import { version as widgetVersion } from "../../../package.json";
 import * as BorrowApi from "../../generated/api/borrow-client";
@@ -14,7 +13,7 @@ import {
   WidgetConfigService,
 } from "../config/widget-config";
 import { RichErrorService } from "../errors/rich-error-service";
-import { handleGeoBlockResponse } from "./geo-block-state";
+import { GeoBlockService } from "./geo-block-state";
 
 type ApiTransport = {
   readonly operations: {
@@ -28,40 +27,18 @@ type ApiTransport = {
   };
 };
 
-const inspectResponse = ({
-  response,
-  richErrors,
-  publishRichErrors,
-}: {
-  readonly response: HttpClientResponse.HttpClientResponse;
-  readonly richErrors: RichErrorService["Service"];
-  readonly publishRichErrors: boolean;
-}) =>
-  Effect.gen(function* () {
-    if (response.status < 400) return;
-
-    const data = yield* Effect.orElseSucceed(response.json, () => undefined);
-
-    handleGeoBlockResponse({ data, status: response.status });
-
-    if (publishRichErrors) {
-      yield* richErrors.publishResponse({
-        data,
-        url: response.request.url,
-      });
-    }
-  });
-
 const configureClient = ({
   apiKey,
   baseUrl,
   client,
+  geoBlock,
   publishRichErrors,
   richErrors,
 }: {
   readonly apiKey: string;
   readonly baseUrl: string;
   readonly client: HttpClient.HttpClient;
+  readonly geoBlock: GeoBlockService["Service"];
   readonly publishRichErrors: boolean;
   readonly richErrors: RichErrorService["Service"];
 }): HttpClient.HttpClient =>
@@ -76,7 +53,23 @@ const configureClient = ({
     ),
     HttpClient.retryTransient({ times: 3 }),
     HttpClient.tap((response) =>
-      inspectResponse({ response, richErrors, publishRichErrors })
+      Effect.gen(function* () {
+        if (response.status < 400) return;
+
+        const data = yield* Effect.orElseSucceed(
+          response.json,
+          () => undefined
+        );
+
+        yield* geoBlock.observeResponse({ data, status: response.status });
+
+        if (publishRichErrors) {
+          yield* richErrors.publishResponse({
+            data,
+            url: response.request.url,
+          });
+        }
+      })
     )
   );
 
@@ -84,6 +77,7 @@ const makeApiTransport = Effect.gen(function* () {
   const widgetConfig = yield* WidgetConfigService;
   const api = normalizeWidgetApiConfig(widgetConfig.initial);
   const httpClient = yield* HttpClient.HttpClient;
+  const geoBlock = yield* GeoBlockService;
   const richErrors = yield* RichErrorService;
   const borrowApiUrl = api.borrowApiUrl.trim();
   const makeClient = ({
@@ -97,6 +91,7 @@ const makeApiTransport = Effect.gen(function* () {
       apiKey: api.apiKey,
       baseUrl,
       client: httpClient,
+      geoBlock,
       publishRichErrors,
       richErrors,
     });

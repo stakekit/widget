@@ -92,7 +92,6 @@ const makeLogoutLayer = ({
         } as never),
         Layer.succeed(WalletEnvironment, {
           href: Effect.succeed("https://widget.test/?network=ethereum"),
-          isLedgerDappBrowser: Effect.succeed(false),
           isMobileWallet: Effect.succeed(false),
         }),
         Layer.succeed(SolanaPlatform, {

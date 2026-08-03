@@ -378,6 +378,64 @@ describe("Position Details exit command", () => {
     }
   });
 
+  it("marks an untouched forced full-balance Exit as useMaxAmount", async () => {
+    const push = vi.fn<(path: WidgetPath) => void>();
+    const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
+      () => Effect.void
+    );
+    const yieldDto = yieldApiYieldDtoFixture();
+    const forceMaxYield = yieldApiYieldFixture({
+      mechanics: {
+        ...yieldDto.mechanics,
+        arguments: {
+          ...yieldDto.mechanics.arguments,
+          exit: {
+            fields: [
+              {
+                label: "Amount",
+                maximum: "-1",
+                minimum: "-1",
+                name: "amount",
+                required: true,
+                type: "string",
+              },
+            ],
+          },
+        },
+      },
+    });
+    const registry = makeRegistry({
+      push,
+      trackEvent,
+      yieldOpportunity: forceMaxYield,
+    });
+
+    try {
+      registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        pendingActions: new Map(),
+        unstakeAmount: new BigNumber(0),
+        unstakeUseMaxAmount: false,
+      });
+      registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
+
+      await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
+      expect(registry.get(currentClassicFlowSessionAtom)?.intake).toMatchObject(
+        {
+          _tag: "Exit",
+          request: {
+            arguments: {
+              amount: "1",
+              useMaxAmount: true,
+            },
+          },
+          unstakeAmount: new BigNumber(1),
+        }
+      );
+    } finally {
+      registry.dispose();
+    }
+  });
+
   it("includes every required option-backed Exit scalar", async () => {
     const push = vi.fn<(path: WidgetPath) => void>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(

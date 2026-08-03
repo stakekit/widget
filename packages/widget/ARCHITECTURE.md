@@ -11,8 +11,8 @@ Production code is organized by ownership rather than by React mechanism:
   remote reads shared across features. Each remote fact has one named, typed
   resource module rather than a global registry.
 - `src/services` owns Effect services and side effects: API transport,
-  persistence, tracking, widget navigation, wallet integration, workflow
-  execution, and borrow execution.
+  persistence, tracking, translation, widget navigation, wallet integration,
+  workflow execution, and borrow execution.
 - `src/features/<feature>` owns feature state, contextual read models, command
   atoms, React adapters, and screens. A feature publishes cross-feature
   collaboration only through root entry files, of which there are exactly three
@@ -188,8 +188,8 @@ projections do not feed orchestration.
 that constructs the scoped `ApplicationRouter` around the memory router.
 `app-runtime.ts` consumes that router context and composes bootstrap
 configuration, focused Yield, Legacy, and Borrow capability ports, rich errors,
-persistence, tracking, `WidgetNavigation`, and wallet-modal commands. The
-derived `wallet-runtime.ts` receives the application context and adds its scoped
+persistence, tracking, `WidgetTranslation`, `WidgetNavigation`, and wallet-modal
+commands. The derived `wallet-runtime.ts` receives the application context and adds its scoped
 wallet, wallet-account-setup, transaction-workflow, Classic Transaction Flow,
 Borrow Transaction Flow, and Yield Entry submission services. It is the sole privileged importer
 of those private feature orchestration services; exact-file rev-dep exceptions

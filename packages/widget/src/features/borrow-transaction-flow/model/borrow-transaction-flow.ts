@@ -43,13 +43,17 @@ type BorrowTransactionFlowSummary = BorrowReviewCommon &
         readonly action: "borrowAndSupply";
         readonly borrowAmount: string;
         readonly collateralAmount: string;
+        readonly collateralFeeAmount: string;
         readonly collateralTokenSymbol: string;
+        readonly effectiveCollateralAmount: string;
         readonly loanTokenSymbol: string;
       })
     | (OpenPositionReviewFinancials & {
         readonly action: "supply";
         readonly collateralAmount: string;
+        readonly collateralFeeAmount: string;
         readonly collateralTokenSymbol: string;
+        readonly effectiveCollateralAmount: string;
       })
     | {
         readonly action: "repay";
@@ -117,6 +121,8 @@ export const projectBorrowTransactionFlowSummary = (
         },
         collateral: {
           amount: summary.collateralAmount,
+          effectiveAmount: summary.effectiveCollateralAmount,
+          feeAmount: summary.collateralFeeAmount,
           symbol: summary.collateralTokenSymbol,
         },
         financials: {
@@ -132,6 +138,8 @@ export const projectBorrowTransactionFlowSummary = (
         borrow: null,
         collateral: {
           amount: summary.collateralAmount,
+          effectiveAmount: summary.effectiveCollateralAmount,
+          feeAmount: summary.collateralFeeAmount,
           symbol: summary.collateralTokenSymbol,
         },
         financials: {

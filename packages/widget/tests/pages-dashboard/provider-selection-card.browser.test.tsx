@@ -7,11 +7,13 @@ import type { EarnYieldWithProvider } from "../../src/domain/schema/earn-models"
 import type { useSelectValidator } from "../../src/features/earn/ui/classic/earn-page/components/select-validator-section/use-select-validator";
 import { SelectYieldRewardDetails } from "../../src/features/earn/ui/classic/earn-page/components/select-yield-section/select-yield-reward-details";
 import { ProviderSelectionCard } from "../../src/features/earn/ui/dashboard/earn-details/components/provider-selection-card";
-import { i18nInstance } from "../../src/translation";
+import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 import { render } from "../utils/test-utils";
 import { decodeValidator } from "../utils/validators";
 import { TestWidgetConfigProvider } from "../utils/widget-config-provider";
+
+const i18nInstance = createWidgetI18nInstance();
 
 const hookState = vi.hoisted(() => ({
   entryView: {} as Record<string, unknown>,

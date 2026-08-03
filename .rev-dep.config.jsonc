@@ -10,7 +10,6 @@
         "src/public-api/index.package.ts",
         "src/public-api/index.bundle.ts",
         "src/main.tsx",
-        "src/translation/i18next.d.ts",
         "src/types/window.d.ts",
         "src/vite-env.d.ts",
         "postcss.config.js",
@@ -38,8 +37,7 @@
             "src/services/**",
             "src/domain/**",
             "src/shared/**",
-            "src/public-api/**",
-            "src/translation/**"
+            "src/public-api/**"
           ]
         },
         {
@@ -107,11 +105,6 @@
           "name": "generated",
           "pattern": "src/generated/**",
           "allow": ["src/generated/**"]
-        },
-        {
-          "name": "translation",
-          "pattern": "src/translation/**",
-          "allow": ["src/translation/**", "src/shared/**"]
         },
         {
           "name": "public-api",
@@ -522,7 +515,6 @@
             "src/public-api/index.package.ts",
             "src/public-api/index.bundle.ts",
             "src/main.tsx",
-            "src/translation/i18next.d.ts",
             "src/types/window.d.ts",
             "src/vite-env.d.ts",
             "postcss.config.js",

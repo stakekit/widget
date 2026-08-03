@@ -1,7 +1,6 @@
 import { MotionGlobalConfig } from "motion/react";
 import { delay, HttpResponse, http } from "msw";
-import { afterEach, vi } from "vitest";
-import { i18nInstance } from "../../src/translation";
+import { afterEach } from "vitest";
 import { yieldApiYieldDtoFixture } from "../fixtures";
 import { yieldApiRoute } from "../mocks/api-routes";
 import { describe, expect, it } from "../utils/test-extend";
@@ -155,20 +154,28 @@ describe("classic mount geometry", () => {
     });
   }
 
-  it("restores language detection on a default remount", async () => {
-    const changeLanguage = vi.spyOn(i18nInstance, "changeLanguage");
+  it("starts a default remount with a clean translation generation", async () => {
+    const generationCopy = "PREMIERE GENERATION";
     const frenchApp = await renderApp({
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
         chainModal: () => null,
+        customTranslations: {
+          fr: {
+            translation: {
+              details: { earn: generationCopy },
+            },
+          },
+        },
         language: "fr",
         variant: "zerion",
       },
     });
 
-    expect(changeLanguage).toHaveBeenCalledWith("fr");
+    await expect
+      .poll(() => frenchApp.container.textContent)
+      .toContain(generationCopy);
     await frenchApp.unmount();
-    changeLanguage.mockClear();
 
     const defaultApp = await renderApp({
       skProps: {
@@ -176,14 +183,10 @@ describe("classic mount geometry", () => {
         variant: "default",
       },
     });
-    const detected = i18nInstance.services.languageDetector?.detect();
-    const detectedLanguage = Array.isArray(detected) ? detected[0] : detected;
-
-    expect(changeLanguage).toHaveBeenCalledWith(detectedLanguage);
     await expect
-      .poll(() => i18nInstance.t("details.rewards.receive_output"))
-      .toBe("You'll receive");
+      .poll(() => defaultApp.container.textContent)
+      .not.toContain(generationCopy);
+    await expect.poll(() => defaultApp.container.textContent).toContain("Earn");
     await defaultApp.unmount();
-    changeLanguage.mockRestore();
   });
 });

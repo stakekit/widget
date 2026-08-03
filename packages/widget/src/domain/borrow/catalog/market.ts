@@ -23,6 +23,11 @@ export const Market = Schema.Struct({
   ),
   minLoan: Schema.NullOr(NonNegativeFiniteFromString),
   network: BorrowNetwork,
+  supplyCollateralFeeBps: Schema.FiniteFromString.check(
+    Schema.isInt(),
+    Schema.isGreaterThanOrEqualTo(0),
+    Schema.isLessThanOrEqualTo(500)
+  ),
   totalBorrow: Schema.FiniteFromString,
   totalBorrowRaw: Schema.BigIntFromString,
   totalSupply: Schema.FiniteFromString,

@@ -1,4 +1,5 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import BigNumber from "bignumber.js";
 import { Cause, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
@@ -120,6 +121,23 @@ export const BorrowReviewPage = () => {
       projectedSummary.financials.projectedDebtUsd ?? undefined
     ),
   });
+  const collateralFeeAmount =
+    projectedSummary.collateral && "feeAmount" in projectedSummary.collateral
+      ? projectedSummary.collateral.feeAmount
+      : undefined;
+  const hasCollateralFee =
+    collateralFeeAmount !== undefined &&
+    new BigNumber(collateralFeeAmount).isGreaterThan(0);
+  const collateralFee =
+    hasCollateralFee && projectedSummary.collateral
+      ? `${collateralFeeAmount} ${projectedSummary.collateral.symbol}`
+      : null;
+  const effectiveCollateral =
+    hasCollateralFee &&
+    projectedSummary.collateral &&
+    "effectiveAmount" in projectedSummary.collateral
+      ? `${projectedSummary.collateral.effectiveAmount} ${projectedSummary.collateral.symbol}`
+      : null;
   const actionRows = [
     {
       id: "action",
@@ -138,6 +156,13 @@ export const BorrowReviewPage = () => {
           id: "collateral-amount",
           label: t("dashboard.borrow.review_page.collateral_amount"),
           value: `${projectedSummary.collateral.amount} ${projectedSummary.collateral.symbol}`,
+        }
+      : null,
+    effectiveCollateral
+      ? {
+          id: "effective-collateral",
+          label: t("dashboard.borrow.review_page.effective_collateral"),
+          value: effectiveCollateral,
         }
       : null,
     {
@@ -186,7 +211,9 @@ export const BorrowReviewPage = () => {
     {
       id: "estimated-fee",
       label: t("dashboard.borrow.review_page.estimated_fee"),
-      value: t("dashboard.borrow.review_page.estimated_fee_pending"),
+      value:
+        (hasCollateralFee ? collateralFee : null) ??
+        t("dashboard.borrow.review_page.estimated_fee_pending"),
     },
   ].filter((row): row is NonNullable<typeof row> => !!row);
 

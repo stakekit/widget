@@ -152,16 +152,20 @@ export type PreparedActionFacts = PreparedActionCommonFacts &
         readonly _tag: "BorrowAndSupply";
         readonly borrowAmount: BigNumber;
         readonly collateralAmount: BigNumber;
+        readonly collateralFeeAmount: BigNumber;
         readonly collateralTokenAddress: TokenAddress | undefined;
         readonly collateralTokenSymbol: string;
+        readonly effectiveCollateralAmount: BigNumber;
         readonly loanTokenAddress: TokenAddress | undefined;
         readonly loanTokenSymbol: string;
       })
     | (OpenPositionFinancialFacts & {
         readonly _tag: "Supply";
         readonly amount: BigNumber;
+        readonly collateralFeeAmount: BigNumber;
         readonly collateralTokenAddress: TokenAddress | undefined;
         readonly collateralTokenSymbol: string;
+        readonly effectiveCollateralAmount: BigNumber;
       })
     | {
         readonly _tag: "Repay";

@@ -2,6 +2,7 @@ import { useAtomSet } from "@effect/atom-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { CollateralToken } from "../../../../../domain/borrow/catalog/collateral-token";
+import { decodeTokenId, type TokenId } from "../../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../../domain/borrow/network";
 import { formatNumber } from "../../../../../shared/lib/number-format";
 import { SelectModal } from "../../../../../shared/ui/components/select-modal";
@@ -21,11 +22,11 @@ import {
 export const CollateralSelectModal = ({
   collateralTokens,
   marketNetwork,
-  selectedCollateralTokenAddress,
+  selectedCollateralTokenId,
 }: {
   readonly collateralTokens: readonly CollateralToken[];
   readonly marketNetwork: BorrowNetwork;
-  readonly selectedCollateralTokenAddress: string | null;
+  readonly selectedCollateralTokenId: TokenId | null;
 }) => {
   const { t } = useTranslation();
   const selectCollateralToken = useAtomSet(selectBorrowCollateralTokenAtom);
@@ -34,7 +35,7 @@ export const CollateralSelectModal = ({
   const selectedCollateralToken =
     collateralTokens.find(
       (collateralToken) =>
-        collateralToken.token.address === selectedCollateralTokenAddress
+        decodeTokenId(collateralToken.token) === selectedCollateralTokenId
     ) ??
     collateralTokens[0] ??
     null;
@@ -100,7 +101,8 @@ export const CollateralSelectModal = ({
                 onOpenChange(false);
               }}
               selected={
-                collateralToken.token.address === selectedCollateralTokenAddress
+                decodeTokenId(collateralToken.token) ===
+                selectedCollateralTokenId
               }
               testId={`borrow-collateral-select__item_${
                 collateralToken.token.address ?? collateralToken.token.symbol

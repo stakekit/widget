@@ -2,8 +2,8 @@ import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { type PropsWithChildren, useState } from "react";
 import { WagmiContext } from "wagmi";
-import { getGeoBlockSnapshot } from "../../../services/api/geo-block-state";
 import { makeDefaultConfig } from "../../../services/wallet/default-wagmi-config";
+import { useGeoBlock } from "../../preferences/state";
 import { useWalletConfig } from "./use-wallet-config";
 
 export const WagmiConfigProvider = ({ children }: PropsWithChildren) => {
@@ -17,8 +17,9 @@ export const WagmiConfigProvider = ({ children }: PropsWithChildren) => {
     Option.getOrUndefined
   );
   const [fallbackConfig] = useState(makeDefaultConfig);
+  const geoBlock = useGeoBlock();
 
-  if (walletConfigError && !getGeoBlockSnapshot()) throw walletConfigError;
+  if (walletConfigError && !geoBlock) throw walletConfigError;
 
   const value = walletConfig ?? fallbackConfig;
 

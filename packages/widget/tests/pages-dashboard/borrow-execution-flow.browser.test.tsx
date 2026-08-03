@@ -11,6 +11,7 @@ import {
 } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { ReactNode } from "react";
+import { I18nextProvider } from "react-i18next";
 import {
   MemoryRouter,
   Route,
@@ -55,6 +56,7 @@ import {
   WidgetNavigation,
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
+import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
   disconnectedNormalizedWalletState,
@@ -72,6 +74,7 @@ const address = Schema.decodeSync(WalletAddress)(
 const transactionHash =
   "0x1111111111111111111111111111111111111111111111111111111111111111";
 const walletScope = new WalletScopeKey({ address, network: "base" });
+const i18nInstance = createWidgetI18nInstance();
 
 type ActionDto = typeof BorrowAction.Encoded;
 type TransactionDto = typeof BorrowTransaction.Encoded;
@@ -94,7 +97,9 @@ const reviewState: BorrowTransactionFlowReview = {
     action: "borrowAndSupply",
     borrowAmount: "25",
     collateralAmount: "0.5",
+    collateralFeeAmount: "0.025",
     collateralTokenSymbol: "cbBTC",
+    effectiveCollateralAmount: "0.475",
     existingCollateralUsd: "1000",
     existingDebtUsd: "400",
     loanTokenSymbol: "USDC",
@@ -409,74 +414,79 @@ const renderExecution = async (
   );
 
   const app = await render(
-    <RegistryProvider
-      initialValues={[
-        [
-          appRuntime.layer,
-          Layer.mergeAll(
-            Layer.succeed(BorrowOperations, borrow as never),
-            Layer.succeed(TrackingService, {
-              trackEvent: () => Effect.void,
-              trackPageView: () => Effect.void,
-            } as TrackingService["Service"]),
-            Layer.succeed(WidgetNavigation, navigationService)
-          ).pipe(Layer.fresh),
-        ],
-        [
-          walletRuntime.layer,
-          Layer.mergeAll(
-            workflowLayer,
-            walletLayer,
-            Layer.succeed(BorrowTransactionFlowService, flowService)
-          ).pipe(Layer.fresh),
-        ],
-      ]}
-    >
-      <MemoryRouter
-        initialEntries={
-          options.initialEntries
-            ? [...options.initialEntries]
-            : [options.initialPath ?? "/borrow/review"]
-        }
-        initialIndex={options.initialIndex}
+    <I18nextProvider i18n={i18nInstance}>
+      <RegistryProvider
+        initialValues={[
+          [
+            appRuntime.layer,
+            Layer.mergeAll(
+              Layer.succeed(BorrowOperations, borrow as never),
+              Layer.succeed(TrackingService, {
+                trackEvent: () => Effect.void,
+                trackPageView: () => Effect.void,
+              } as TrackingService["Service"]),
+              Layer.succeed(WidgetNavigation, navigationService)
+            ).pipe(Layer.fresh),
+          ],
+          [
+            walletRuntime.layer,
+            Layer.mergeAll(
+              workflowLayer,
+              walletLayer,
+              Layer.succeed(BorrowTransactionFlowService, flowService)
+            ).pipe(Layer.fresh),
+          ],
+        ]}
       >
-        <NavigationCapture
-          capture={(navigate) => (navigation.current = navigate)}
-        />
-        {options.historyControls ? <HistoryControls /> : null}
-        <Routes>
-          <Route
-            element={
-              <WalletScopeRoute
-                fallbackPath="/borrow"
-                walletStateResult={AsyncResult.success(connectedWalletState)}
-              />
-            }
-          >
-            <Route path="/borrow" element={<div>Borrow home</div>} />
+        <MemoryRouter
+          initialEntries={
+            options.initialEntries
+              ? [...options.initialEntries]
+              : [options.initialPath ?? "/borrow/review"]
+          }
+          initialIndex={options.initialIndex}
+        >
+          <NavigationCapture
+            capture={(navigate) => (navigation.current = navigate)}
+          />
+          {options.historyControls ? <HistoryControls /> : null}
+          <Routes>
             <Route
-              element={<BorrowTransactionFlowRoute expected="BorrowEntry" />}
+              element={
+                <WalletScopeRoute
+                  fallbackPath="/borrow"
+                  walletStateResult={AsyncResult.success(connectedWalletState)}
+                />
+              }
             >
-              <Route element={<BorrowTransactionFlowReviewRoute />}>
-                <Route
-                  path="/borrow/review"
-                  element={options.reviewElement ?? <StartExecutionProbe />}
-                />
-              </Route>
-              <Route element={<BorrowTransactionFlowExecutionScope />}>
-                <Route
-                  path="/borrow/steps"
-                  element={options.stepsElement ?? <ExecutionProbe />}
-                />
-                <Route element={<BorrowTransactionFlowCompletionGuard />}>
-                  <Route path="/borrow/complete" element={<CompleteProbe />} />
+              <Route path="/borrow" element={<div>Borrow home</div>} />
+              <Route
+                element={<BorrowTransactionFlowRoute expected="BorrowEntry" />}
+              >
+                <Route element={<BorrowTransactionFlowReviewRoute />}>
+                  <Route
+                    path="/borrow/review"
+                    element={options.reviewElement ?? <StartExecutionProbe />}
+                  />
+                </Route>
+                <Route element={<BorrowTransactionFlowExecutionScope />}>
+                  <Route
+                    path="/borrow/steps"
+                    element={options.stepsElement ?? <ExecutionProbe />}
+                  />
+                  <Route element={<BorrowTransactionFlowCompletionGuard />}>
+                    <Route
+                      path="/borrow/complete"
+                      element={<CompleteProbe />}
+                    />
+                  </Route>
                 </Route>
               </Route>
             </Route>
-          </Route>
-        </Routes>
-      </MemoryRouter>
-    </RegistryProvider>
+          </Routes>
+        </MemoryRouter>
+      </RegistryProvider>
+    </I18nextProvider>
   );
 
   if (
@@ -517,6 +527,8 @@ describe("borrow execution flow component", () => {
     await expect
       .element(app.getByText("Projected risk unavailable"))
       .toBeInTheDocument();
+    await expect.element(app.getByText("0.025 cbBTC")).toBeInTheDocument();
+    await expect.element(app.getByText("0.475 cbBTC")).toBeInTheDocument();
     await expect
       .element(
         app.getByText(

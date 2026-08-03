@@ -134,9 +134,8 @@ export const bootstrapWallet = Effect.fn("bootstrapWallet")(
     const wagmi = yield* WagmiPlatform;
     const yieldSource = yield* YieldResourceSource;
     const settings = yield* config.current;
-    const [href, isLedgerDappBrowser, isMobileWallet] = yield* Effect.all([
+    const [href, isMobileWallet] = yield* Effect.all([
       environment.href,
-      environment.isLedgerDappBrowser,
       environment.isMobileWallet,
     ]);
     const normalizedConfig = normalizeWidgetBootstrapConfig({
@@ -145,7 +144,7 @@ export const bootstrapWallet = Effect.fn("bootstrapWallet")(
     });
     const browser = Object.freeze({
       href,
-      isLedgerDappBrowser,
+      isLedgerDappBrowser: normalizedConfig.wallet.isLedgerLive,
       isMobileWallet,
     });
     const initParams = decodeInitParams({

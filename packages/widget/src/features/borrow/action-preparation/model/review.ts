@@ -13,14 +13,18 @@ import type {
 export const makeOpenPositionFacts = ({
   borrowAmount,
   collateralAmount,
+  collateralFeeAmount,
   collateralToken,
   common,
+  effectiveCollateralAmount,
   market,
 }: {
   readonly borrowAmount: BigNumber;
   readonly collateralAmount: BigNumber;
+  readonly collateralFeeAmount: BigNumber;
   readonly collateralToken: CollateralToken;
   readonly common: PreparedActionCommonFacts & OpenPositionFinancialFacts;
+  readonly effectiveCollateralAmount: BigNumber;
   readonly market: Market;
 }): PreparedActionFacts => {
   if (borrowAmount.gt(0) && collateralAmount.gt(0)) {
@@ -29,8 +33,10 @@ export const makeOpenPositionFacts = ({
       _tag: "BorrowAndSupply",
       borrowAmount,
       collateralAmount,
+      collateralFeeAmount,
       collateralTokenAddress: collateralToken.token.address,
       collateralTokenSymbol: collateralToken.token.symbol,
+      effectiveCollateralAmount,
       loanTokenAddress: market.loanToken.address,
       loanTokenSymbol: market.loanToken.symbol,
     };
@@ -50,8 +56,10 @@ export const makeOpenPositionFacts = ({
     ...common,
     _tag: "Supply",
     amount: collateralAmount,
+    collateralFeeAmount,
     collateralTokenAddress: collateralToken.token.address,
     collateralTokenSymbol: collateralToken.token.symbol,
+    effectiveCollateralAmount,
   };
 };
 
@@ -137,7 +145,10 @@ export const toBorrowTransactionFlowReview = (
           action: "borrowAndSupply",
           borrowAmount: facts.borrowAmount.toString(10),
           collateralAmount: facts.collateralAmount.toString(10),
+          collateralFeeAmount: facts.collateralFeeAmount.toString(10),
           collateralTokenSymbol: facts.collateralTokenSymbol,
+          effectiveCollateralAmount:
+            facts.effectiveCollateralAmount.toString(10),
           existingCollateralUsd: facts.existingCollateralUsd.toString(10),
           existingDebtUsd: facts.existingDebtUsd.toString(10),
           loanTokenSymbol: facts.loanTokenSymbol,
@@ -161,7 +172,10 @@ export const toBorrowTransactionFlowReview = (
           ...commonSummary,
           action: "supply",
           collateralAmount: facts.amount.toString(10),
+          collateralFeeAmount: facts.collateralFeeAmount.toString(10),
           collateralTokenSymbol: facts.collateralTokenSymbol,
+          effectiveCollateralAmount:
+            facts.effectiveCollateralAmount.toString(10),
           existingCollateralUsd: facts.existingCollateralUsd.toString(10),
           existingDebtUsd: facts.existingDebtUsd.toString(10),
           projectedCollateralUsd: facts.projectedCollateralUsd.toString(10),

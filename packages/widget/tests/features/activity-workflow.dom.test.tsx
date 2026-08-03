@@ -10,10 +10,12 @@ import type { ActivityActionItem } from "../../src/features/activity/model/activ
 import type { ActivityPageView } from "../../src/features/activity/state/page";
 import { ActivityPagePresentation } from "../../src/features/activity/ui/activity-page/activity-page-presentation";
 import { CompletePageComponent } from "../../src/features/classic-transaction-flow/ui/complete/pages/common.page";
+import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
-import { i18nInstance } from "../../src/translation";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 import { render } from "../utils/test-utils.dom";
+
+const i18nInstance = createWidgetI18nInstance();
 
 vi.mock(
   "../../src/features/activity/ui/activity-page/components/action-list-item",

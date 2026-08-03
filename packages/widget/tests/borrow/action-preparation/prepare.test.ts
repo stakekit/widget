@@ -237,6 +237,124 @@ describe("Borrow action preparation", () => {
     );
   });
 
+  it("assesses and reviews fee-bearing collateral at its effective amount", () => {
+    const feeMarket = {
+      ...market,
+      collateralTokens: [
+        {
+          ...collateralToken,
+          liquidationThreshold: 0.85,
+          maxLtv: 0.8,
+          priceUsd: 1,
+          token: { ...collateralToken.token, decimals: 2 },
+        },
+      ],
+      supplyCollateralFeeBps: 500,
+    };
+    const emptySnapshot = {
+      ...accountSnapshot,
+      availableToBorrowUsd: 0,
+      currentLtv: 0,
+      debtBalances: [],
+      healthFactor: null,
+      netWorthUsd: 0,
+      supplyBalances: [],
+      totalBorrowedUsd: 0,
+      totalCollateralUsd: 0,
+      totalSuppliedUsd: 0,
+    };
+    const feePositions = deriveBorrowPositions({
+      integrationAccountSnapshots: [
+        { accountSnapshot: emptySnapshot, integration },
+      ],
+      markets: [feeMarket],
+    });
+    const feeTokenBalances = Schema.decodeUnknownSync(TokenBalancesResponse)([
+      {
+        amount: "100",
+        availableYields: [],
+        token: {
+          address: collateralTokenAddress,
+          decimals: 2,
+          name: "Wrapped Ether",
+          network: "ethereum",
+          symbol: "WETH",
+        },
+      },
+    ]);
+
+    const blocked = prepareBorrowAction({
+      _tag: "OpenPositionDraft",
+      address,
+      borrowAmount: new BigNumber(78),
+      collateralAmount: new BigNumber(100),
+      collateralToken: feeMarket.collateralTokens[0]!,
+      integrations: [integration],
+      market: feeMarket,
+      positions: feePositions,
+      tokenBalances: feeTokenBalances,
+    });
+
+    expect(blocked).toMatchObject({
+      _tag: "Blocked",
+      projection: {
+        collateralUsd: new BigNumber(95),
+        financials: { projectedCollateralUsd: new BigNumber(95) },
+      },
+      reasons: ["RiskCapacityExceeded"],
+    });
+
+    const ready = prepareBorrowAction({
+      _tag: "OpenPositionDraft",
+      address,
+      borrowAmount: new BigNumber(75),
+      collateralAmount: new BigNumber(100),
+      collateralToken: feeMarket.collateralTokens[0]!,
+      integrations: [integration],
+      market: feeMarket,
+      positions: feePositions,
+      tokenBalances: feeTokenBalances,
+    });
+
+    expect(ready).toMatchObject({
+      _tag: "Ready",
+      review: {
+        command: { args: { collateralAmount: "100" } },
+        summary: {
+          collateralAmount: "100",
+          collateralFeeAmount: "5",
+          effectiveCollateralAmount: "95",
+          projectedCollateralUsd: "95",
+        },
+      },
+    });
+
+    const supply = prepareBorrowAction({
+      _tag: "OpenPositionDraft",
+      address,
+      borrowAmount: new BigNumber(0),
+      collateralAmount: new BigNumber("1.234"),
+      collateralToken: feeMarket.collateralTokens[0]!,
+      integrations: [integration],
+      market: feeMarket,
+      positions: feePositions,
+      tokenBalances: feeTokenBalances,
+    });
+
+    expect(supply).toMatchObject({
+      _tag: "Ready",
+      review: {
+        command: { args: { amount: "1.234" } },
+        summary: {
+          action: "supply",
+          collateralAmount: "1.234",
+          collateralFeeAmount: "0.06",
+          effectiveCollateralAmount: "1.174",
+        },
+      },
+    });
+  });
+
   it.each([
     {
       borrowAmount: "25",

@@ -2,7 +2,7 @@ import BigNumber from "bignumber.js";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
 import type { Market } from "../../../../domain/borrow/catalog/market";
 import type { BorrowToken } from "../../../../domain/borrow/catalog/token";
-import type { TokenAddress } from "../../../../domain/borrow/ids";
+import { decodeTokenId, type TokenId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
 import type { TokenBalance } from "../../../../domain/schema/financial-models";
 
@@ -85,11 +85,11 @@ export const deriveBorrowTokenWalletBalance = ({
 export const deriveBorrowMarketWalletBalances = ({
   balances,
   market,
-  selectedCollateralTokenAddress,
+  selectedCollateralTokenId,
 }: {
   readonly balances: ReadonlyArray<TokenBalance>;
   readonly market: Market;
-  readonly selectedCollateralTokenAddress?: TokenAddress | string | null;
+  readonly selectedCollateralTokenId?: TokenId | null;
 }): BorrowMarketWalletBalances => {
   const collateralTokens = market.collateralTokens.map((collateralToken) => ({
     ...deriveBorrowTokenWalletBalance({
@@ -100,12 +100,11 @@ export const deriveBorrowMarketWalletBalances = ({
     collateralToken,
   }));
   const selectedCollateralToken =
-    (selectedCollateralTokenAddress
-      ? collateralTokens.find((balance) =>
-          sameAddress(
-            balance.collateralToken.token.address,
-            selectedCollateralTokenAddress
-          )
+    (selectedCollateralTokenId
+      ? collateralTokens.find(
+          (balance) =>
+            decodeTokenId(balance.collateralToken.token) ===
+            selectedCollateralTokenId
         )
       : collateralTokens[0]) ?? null;
 

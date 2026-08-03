@@ -5,6 +5,7 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
 import type { Integration } from "../../../../domain/borrow/catalog/integration";
 import type { Market } from "../../../../domain/borrow/catalog/market";
+import { decodeTokenId, type TokenId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
 import {
   type BorrowPositions,
@@ -28,7 +29,7 @@ import type { BorrowAtomResultError } from "./errors";
 export type BorrowFormIntent = {
   readonly borrowAmount: string;
   readonly collateralAmount: string;
-  readonly selectedCollateralTokenAddress: string | null;
+  readonly selectedCollateralTokenId: TokenId | null;
   readonly selectedMarketId: string | null;
 };
 
@@ -43,7 +44,7 @@ export type BorrowFormAction =
     }
   | {
       readonly type: "collateralToken/select";
-      readonly tokenAddress: string | null;
+      readonly tokenId: TokenId;
     }
   | {
       readonly type: "market/select";
@@ -98,7 +99,7 @@ export type BorrowEntryView = {
     | BorrowMarketWalletBalances["selectedCollateralToken"]
     | null;
   readonly selectedCollateralToken: CollateralToken | null;
-  readonly selectedCollateralTokenAddress: string | null;
+  readonly selectedCollateralTokenId: TokenId | null;
   readonly selectedIntegration: Integration | null;
   readonly selectedMarket: Market | null;
   readonly selectedMarketPosition: MarketPosition | null;
@@ -115,7 +116,7 @@ export class BorrowEntryKey extends Data.Class<{
 export const makeDefaultBorrowFormIntent = (): BorrowFormIntent => ({
   borrowAmount: "0",
   collateralAmount: "0",
-  selectedCollateralTokenAddress: null,
+  selectedCollateralTokenId: null,
   selectedMarketId: null,
 });
 
@@ -132,17 +133,18 @@ export const pinBorrowFormDefaults = ({
     null;
   const selectedCollateralToken =
     selectedMarket?.collateralTokens.find(
-      (token) => token.token.address === intent.selectedCollateralTokenAddress
+      (token) => decodeTokenId(token.token) === intent.selectedCollateralTokenId
     ) ??
     selectedMarket?.collateralTokens[0] ??
     null;
 
   return {
     ...intent,
-    selectedCollateralTokenAddress:
-      intent.selectedCollateralTokenAddress ??
-      selectedCollateralToken?.token.address ??
-      null,
+    selectedCollateralTokenId:
+      intent.selectedCollateralTokenId ??
+      (selectedCollateralToken
+        ? decodeTokenId(selectedCollateralToken.token)
+        : null),
     selectedMarketId: intent.selectedMarketId ?? selectedMarket?.id ?? null,
   };
 };
@@ -172,14 +174,14 @@ export const applyBorrowFormAction = ({
       return {
         ...intent,
         collateralAmount: "0",
-        selectedCollateralTokenAddress: action.tokenAddress,
+        selectedCollateralTokenId: action.tokenId,
       };
     case "market/select":
       return {
         ...intent,
         borrowAmount: "0",
         collateralAmount: "0",
-        selectedCollateralTokenAddress: null,
+        selectedCollateralTokenId: null,
         selectedMarketId: action.marketId,
       };
     case "reset":
@@ -214,14 +216,15 @@ const getSelectedCollateralToken = ({
     return null;
   }
 
-  if (intent.selectedCollateralTokenAddress === null) {
+  if (intent.selectedCollateralTokenId === null) {
     return selectedMarket.collateralTokens[0] ?? null;
   }
 
   return (
     selectedMarket.collateralTokens.find(
       (collateralToken) =>
-        collateralToken.token.address === intent.selectedCollateralTokenAddress
+        decodeTokenId(collateralToken.token) ===
+        intent.selectedCollateralTokenId
     ) ?? null
   );
 };
@@ -245,13 +248,13 @@ export const shouldResetBorrowFormForCatalog = ({
     return true;
   }
 
-  if (intent.selectedCollateralTokenAddress === null) {
+  if (intent.selectedCollateralTokenId === null) {
     return false;
   }
 
   return !selectedMarket.collateralTokens.some(
     (collateralToken) =>
-      collateralToken.token.address === intent.selectedCollateralTokenAddress
+      decodeTokenId(collateralToken.token) === intent.selectedCollateralTokenId
   );
 };
 
@@ -297,8 +300,9 @@ export const resolveBorrowEntryView = ({
     intent,
     selectedMarket,
   });
-  const selectedCollateralTokenAddress =
-    selectedCollateralToken?.token.address ?? null;
+  const selectedCollateralTokenId = selectedCollateralToken
+    ? decodeTokenId(selectedCollateralToken.token)
+    : null;
   const integrationsById = new Map(
     integrations.map((integration) => [integration.id, integration])
   );
@@ -309,7 +313,7 @@ export const resolveBorrowEntryView = ({
     ? deriveBorrowMarketWalletBalances({
         balances: tokenBalances,
         market: selectedMarket,
-        selectedCollateralTokenAddress,
+        selectedCollateralTokenId,
       })
     : null;
   const selectedCollateralBalance =
@@ -387,7 +391,7 @@ export const resolveBorrowEntryView = ({
     projection,
     selectedCollateralBalance,
     selectedCollateralToken,
-    selectedCollateralTokenAddress,
+    selectedCollateralTokenId,
     selectedIntegration,
     selectedMarket,
     selectedMarketPosition,

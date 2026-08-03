@@ -105,7 +105,7 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
     projection,
     selectedCollateralBalance,
     selectedCollateralToken,
-    selectedCollateralTokenAddress,
+    selectedCollateralTokenId,
     selectedMarket,
     selectedMarketId,
     validation,
@@ -197,7 +197,7 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
             <CollateralSelectModal
               collateralTokens={selectedMarket.collateralTokens}
               marketNetwork={selectedMarket.network}
-              selectedCollateralTokenAddress={selectedCollateralTokenAddress}
+              selectedCollateralTokenId={selectedCollateralTokenId}
             />
           }
           usdValue={collateralAmount.multipliedBy(

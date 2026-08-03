@@ -18,10 +18,12 @@ import {
 import { BorrowPositionActionPage } from "../../src/features/borrow/market-position/ui/action.page";
 import { currentBorrowPositionsAtom } from "../../src/features/borrow/positions/state/positions";
 import { walletScopeAtom } from "../../src/features/wallet/state";
+import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { RootElementProvider } from "../../src/shared/react/root-element";
-import { i18nInstance } from "../../src/translation";
 import { render } from "../utils/test-utils.dom";
+
+const i18nInstance = createWidgetI18nInstance();
 
 const marketDto = {
   availableLiquidity: "500000",

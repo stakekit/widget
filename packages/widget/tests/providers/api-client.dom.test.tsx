@@ -3,6 +3,7 @@ import {
   Context,
   Effect,
   Layer,
+  Option,
   Schema,
   Stream,
   SubscriptionRef,
@@ -15,9 +16,9 @@ import {
   mountAnimationStateAtom,
   useMountAnimation,
 } from "../../src/features/mount-animation/state";
-import { useGeoBlock } from "../../src/features/preferences/state";
 import { BorrowOperations } from "../../src/services/api/borrow-operations";
 import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
+import { GeoBlockService } from "../../src/services/api/geo-block-state";
 import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
 import { ApiTransportService } from "../../src/services/api/transport";
 import { YieldOperations } from "../../src/services/api/yield-operations";
@@ -29,7 +30,7 @@ import {
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
 import { config } from "../../src/shared/config/widget-defaults";
 import { describe, expect, it } from "../utils/test-extend.dom";
-import { render, renderHook } from "../utils/test-utils.dom";
+import { render } from "../utils/test-utils.dom";
 
 const MountPresentationProbe = () => {
   const { mountAnimationFinished } = useMountAnimation();
@@ -60,7 +61,9 @@ const createTestClient = async (options: Partial<WidgetApiConfig> = {}) => {
   const richErrorLayer = RichErrorService.layer.pipe(
     Layer.provide(configLayer)
   );
+  const geoBlockLayer = GeoBlockService.layer;
   const transportLayer = ApiTransportService.layer.pipe(
+    Layer.provide(geoBlockLayer),
     Layer.provide(richErrorLayer),
     Layer.provide(configLayer)
   );
@@ -72,7 +75,9 @@ const createTestClient = async (options: Partial<WidgetApiConfig> = {}) => {
     YieldResourceSource.layer
   ).pipe(Layer.provide(transportLayer), Layer.provide(configLayer));
   const context = await Effect.runPromise(
-    Layer.build(Layer.merge(clientLayer, richErrorLayer)).pipe(Effect.scoped)
+    Layer.build(
+      Layer.mergeAll(clientLayer, geoBlockLayer, richErrorLayer)
+    ).pipe(Effect.scoped)
   );
 
   return {
@@ -83,6 +88,7 @@ const createTestClient = async (options: Partial<WidgetApiConfig> = {}) => {
       yieldOperations: Context.get(context, YieldOperations),
       yieldSource: Context.get(context, YieldResourceSource),
     },
+    geoBlock: Context.get(context, GeoBlockService),
     richErrors: Context.get(context, RichErrorService),
   };
 };
@@ -140,7 +146,6 @@ describe("Effect API client", () => {
   it("keeps resource transports neutral while operations publish rich errors", async ({
     worker,
   }) => {
-    const geoBlock = await renderHook(() => useGeoBlock());
     const apiUrl = normalizeUrl(config.env.apiUrl);
     let response: "rich" | "geo" = "rich";
     const richFailure = {
@@ -173,62 +178,62 @@ describe("Effect API client", () => {
         HttpResponse.json(richFailure, { status: 400 })
       )
     );
-    const { client, richErrors } = await createTestClient({ baseUrl: apiUrl });
+    const { client, geoBlock, richErrors } = await createTestClient({
+      baseUrl: apiUrl,
+    });
 
     try {
-      await geoBlock.act(async () => {
-        const resourceError = await Effect.runPromise(
-          client.legacySource.getTokenOptions().pipe(Effect.flip)
-        );
-        expect(resourceError._tag).toBe("ApiRequestError");
-        if (resourceError._tag !== "ApiRequestError") {
-          throw resourceError;
-        }
-        expect(resourceError.richError?.message).toBe("Rich failure");
-        await expect(
-          Effect.runPromise(client.yieldSource.getHealth())
-        ).rejects.toBeTruthy();
-        await expect(
-          Effect.runPromise(client.borrowSource.getIntegrations())
-        ).rejects.toBeTruthy();
-        await expect(
-          Effect.runPromise(SubscriptionRef.get(richErrors.current))
-        ).resolves.toBeNull();
+      const resourceError = await Effect.runPromise(
+        client.legacySource.getTokenOptions().pipe(Effect.flip)
+      );
+      expect(resourceError._tag).toBe("ApiRequestError");
+      if (resourceError._tag !== "ApiRequestError") {
+        throw resourceError;
+      }
+      expect(resourceError.richError?.message).toBe("Rich failure");
+      await expect(
+        Effect.runPromise(client.yieldSource.getHealth())
+      ).rejects.toBeTruthy();
+      await expect(
+        Effect.runPromise(client.borrowSource.getIntegrations())
+      ).rejects.toBeTruthy();
+      await expect(
+        Effect.runPromise(SubscriptionRef.get(richErrors.current))
+      ).resolves.toBeNull();
 
-        await expect(
-          Effect.runPromise(
-            client.yieldOperations.previewAction({
-              command: Schema.decodeUnknownSync(ActionCommand)({
-                address: "0xWallet",
-                yieldId: "ethereum-eth-native-staking",
-              }),
-              intent: "enter",
-            })
-          )
-        ).rejects.toBeTruthy();
-        await expect
-          .poll(() =>
-            Effect.runPromise(SubscriptionRef.get(richErrors.current)).then(
-              (error) => error?.message
-            )
-          )
-          .toBe("Rich failure");
-        await Effect.runPromise(richErrors.reset);
-
-        response = "geo";
-        await expect(
-          Effect.runPromise(client.legacySource.getTokenOptions())
-        ).rejects.toBeTruthy();
-        await expect
-          .poll(() => {
-            const value = geoBlock.result.current;
-            return value === false ? undefined : value.countryCode;
+      await expect(
+        Effect.runPromise(
+          client.yieldOperations.previewAction({
+            command: Schema.decodeUnknownSync(ActionCommand)({
+              address: "0xWallet",
+              yieldId: "ethereum-eth-native-staking",
+            }),
+            intent: "enter",
           })
-          .toBe("CA");
-      });
+        )
+      ).rejects.toBeTruthy();
+      await expect
+        .poll(() =>
+          Effect.runPromise(SubscriptionRef.get(richErrors.current)).then(
+            (error) => error?.message
+          )
+        )
+        .toBe("Rich failure");
+      await Effect.runPromise(richErrors.reset);
+
+      response = "geo";
+      await expect(
+        Effect.runPromise(client.legacySource.getTokenOptions())
+      ).rejects.toBeTruthy();
+      await expect
+        .poll(() =>
+          Effect.runPromise(
+            geoBlock.states.pipe(Stream.runHead, Effect.map(Option.getOrThrow))
+          ).then((value) => (value === false ? undefined : value.countryCode))
+        )
+        .toBe("CA");
     } finally {
-      await geoBlock.act(() => Effect.runPromise(richErrors.reset));
-      geoBlock.unmount();
+      await Effect.runPromise(richErrors.reset);
     }
   });
 

@@ -3,6 +3,7 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { BorrowOperations } from "../../services/api/borrow-operations";
 import { BorrowResourceSource } from "../../services/api/borrow-resource-source";
+import { GeoBlockService } from "../../services/api/geo-block-state";
 import { LegacyResourceSource } from "../../services/api/legacy-resource-source";
 import { ApiTransportService } from "../../services/api/transport";
 import { YieldOperations } from "../../services/api/yield-operations";
@@ -15,8 +16,8 @@ import { RichErrorService } from "../../services/errors/rich-error-service";
 import { WidgetNavigation } from "../../services/navigation/widget-navigation";
 import { WidgetPersistence } from "../../services/persistence/widget-persistence";
 import { TrackingService } from "../../services/tracking/tracking-service";
+import { WidgetTranslation } from "../../services/translation/widget-translation";
 import { WalletModal } from "../../services/wallet/wallet-modal";
-import { ErrorTranslationsSource } from "../../translation/error-translations-source";
 import { widgetConfigAtom } from "../config/settings";
 import { applicationRouterContextAtom } from "./application-router-runtime";
 
@@ -32,7 +33,9 @@ const makeAppLayer = (
   const richErrorLayer = RichErrorService.layer.pipe(
     Layer.provide(widgetConfigLayer)
   );
+  const geoBlockLayer = GeoBlockService.layer;
   const apiTransportLayer = ApiTransportService.layer.pipe(
+    Layer.provide(geoBlockLayer),
     Layer.provide(richErrorLayer),
     Layer.provide(widgetConfigLayer)
   );
@@ -47,6 +50,9 @@ const makeAppLayer = (
   const trackingLayer = TrackingService.layer.pipe(
     Layer.provide(widgetConfigLayer)
   );
+  const widgetTranslationLayer = WidgetTranslation.layer.pipe(
+    Layer.provide(widgetConfigLayer)
+  );
   const applicationRouterLayer = Layer.succeedContext(
     registry.get(applicationRouterContextAtom)
   );
@@ -55,9 +61,10 @@ const makeAppLayer = (
   ).pipe(Layer.provide(applicationRouterLayer));
   return Layer.mergeAll(
     widgetConfigLayer,
+    geoBlockLayer,
     richErrorLayer,
     apiLayer,
-    ErrorTranslationsSource.layer,
+    widgetTranslationLayer,
     persistenceLayer,
     trackingLayer,
     navigationLayer,

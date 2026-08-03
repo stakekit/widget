@@ -675,7 +675,7 @@ catalogs:
 packageExtensionsChecksum: sha256-FZ9pA8g2+w7cg8p8CU69qpPAEhtGVHP/kzcJxOvNvcM=
 
 patchedDependencies:
-  '@stakekit/rainbowkit@2.2.11': d028a8df4a214c19e07d959c285fb81eb54f4f1f3cbc199c7331e502cd94fbea
+  '@stakekit/rainbowkit@2.2.11': 337be35435cb461cd028a33948d9df7a604880ea8d15a3e6891afe07c28e6707
 
 importers:
 
@@ -878,7 +878,7 @@ importers:
         version: 1.98.4(@typescript/typescript6@6.0.2)(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10)
       '@stakekit/rainbowkit':
         specifier: 'catalog:'
-        version: 2.2.11(patch_hash=d028a8df4a214c19e07d959c285fb81eb54f4f1f3cbc199c7331e502cd94fbea)(@tanstack/react-query@5.101.4(react@19.2.8))(@types/react@19.2.17)(@typescript/typescript6@6.0.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(viem@2.55.8(@typescript/typescript6@6.0.2)(bufferutil@4.0.9)(utf-8-validate@5.0.10)(zod@3.25.76))(wagmi@3.7.4)
+        version: 2.2.11(patch_hash=337be35435cb461cd028a33948d9df7a604880ea8d15a3e6891afe07c28e6707)(@tanstack/react-query@5.101.4(react@19.2.8))(@types/react@19.2.17)(@typescript/typescript6@6.0.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(viem@2.55.8(@typescript/typescript6@6.0.2)(bufferutil@4.0.9)(utf-8-validate@5.0.10)(zod@3.25.76))(wagmi@3.7.4)
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.101.4(react@19.2.8)
@@ -17499,7 +17499,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@stakekit/rainbowkit@2.2.11(patch_hash=d028a8df4a214c19e07d959c285fb81eb54f4f1f3cbc199c7331e502cd94fbea)(@tanstack/react-query@5.101.4(react@19.2.8))(@types/react@19.2.17)(@typescript/typescript6@6.0.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(viem@2.55.8(@typescript/typescript6@6.0.2)(bufferutil@4.0.9)(utf-8-validate@5.0.10)(zod@3.25.76))(wagmi@3.7.4)':
+  '@stakekit/rainbowkit@2.2.11(patch_hash=337be35435cb461cd028a33948d9df7a604880ea8d15a3e6891afe07c28e6707)(@tanstack/react-query@5.101.4(react@19.2.8))(@types/react@19.2.17)(@typescript/typescript6@6.0.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(viem@2.55.8(@typescript/typescript6@6.0.2)(bufferutil@4.0.9)(utf-8-validate@5.0.10)(zod@3.25.76))(wagmi@3.7.4)':
     dependencies:
       '@tanstack/react-query': 5.101.4(react@19.2.8)
       '@vanilla-extract/css': 1.17.3

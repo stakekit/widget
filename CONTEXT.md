@@ -107,7 +107,7 @@ The wallet-scoped aggregate of existing Market Positions and the resolver for th
 _Avoid_: Position items, positions array
 
 **Risk Position**:
-The domain-owned solvency view for either a pool account or one isolated market. It exposes current risk and assesses semantic compound changes such as borrow, repay, supply, withdraw, and collateral toggles using the same exact amounts carried by their Action Commands.
+The domain-owned solvency view for either a pool account or one isolated market. It exposes current risk and assesses semantic compound changes such as borrow, repay, supply, withdraw, and collateral toggles using their effective protocol amounts. When a fee-bearing Action Command carries a gross wallet debit, risk assessment uses the net amount credited as collateral.
 _Avoid_: Risk scope, risk helpers, position projection
 
 **Account Risk Position**:

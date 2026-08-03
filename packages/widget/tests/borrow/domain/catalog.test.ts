@@ -62,6 +62,19 @@ describe("borrow domain", () => {
       liquidationThreshold: 0.85,
       maxLtv: 0.8,
     });
+    expect(market.supplyCollateralFeeBps).toBe(0);
+    expect(() =>
+      Schema.decodeUnknownSync(Market)({
+        ...marketDto,
+        supplyCollateralFeeBps: "501",
+      })
+    ).toThrow();
+    expect(() =>
+      Schema.decodeUnknownSync(Market)({
+        ...marketDto,
+        supplyCollateralFeeBps: "0.5",
+      })
+    ).toThrow();
     expect(() =>
       Schema.decodeUnknownSync(Market)({ ...marketDto, minLoan: "-1" })
     ).toThrow();

@@ -10,8 +10,10 @@ import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import { shouldRegisterDashboardEarnFooterButton } from "../../src/app/routes/dashboard-routes";
 import { PositionDetailsActionTabs } from "../../src/features/position-details/ui/dashboard/components/position-details-action-tabs";
-import { i18nInstance } from "../../src/translation";
+import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
 import { render } from "../utils/test-utils";
+
+const i18nInstance = createWidgetI18nInstance();
 
 const LocationProbe = () => {
   const location = useLocation();

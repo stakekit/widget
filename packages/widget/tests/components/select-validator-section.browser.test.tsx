@@ -4,11 +4,13 @@ import { userEvent } from "vitest/browser";
 import type { EarnYieldWithProvider } from "../../src/domain/schema/earn-models";
 import { SelectValidatorSection } from "../../src/features/earn/ui/classic/earn-page/components/select-validator-section";
 import type { useSelectValidator } from "../../src/features/earn/ui/classic/earn-page/components/select-validator-section/use-select-validator";
-import { i18nInstance } from "../../src/translation";
+import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 import { render } from "../utils/test-utils";
 import { decodeValidator } from "../utils/validators";
 import { TestWidgetConfigProvider } from "../utils/widget-config-provider";
+
+const i18nInstance = createWidgetI18nInstance();
 
 const hookState = vi.hoisted(() => ({
   current: undefined as unknown as ReturnType<typeof useSelectValidator>,

@@ -115,7 +115,9 @@ export const submitPositionDetailsExitAtom = Atom.family(
                 amount: facts.amount,
                 integration: facts.integration,
                 stakedOrLiquidBalances: facts.stakedOrLiquidBalances,
-                useMaxAmount: facts.workflow.unstakeUseMaxAmount,
+                useMaxAmount:
+                  facts.workflow.unstakeUseMaxAmount ||
+                  facts.workflow.unstakeForceMaxAmount,
               }
             : null;
         const decision = resolvePositionDetailsExitSubmission({

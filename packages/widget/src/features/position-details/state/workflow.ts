@@ -3,15 +3,12 @@ import { Data } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type { AppToken } from "../../../domain/schema/legacy-models";
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
+import type { PendingActionStateKey } from "../../../domain/types/pending-action-request";
 import type { YieldBalanceType } from "../../../domain/types/positions";
-import type { TokenString } from "../../../domain/types/tokens";
 import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 
-type BalanceTokenActionType =
-  `${YieldBalanceType}-${TokenString}-${YieldPendingActionType}`;
-
 export type PositionDetailsWorkflowState = {
-  readonly pendingActions: Map<BalanceTokenActionType, BigNumber>;
+  readonly pendingActions: Map<PendingActionStateKey, BigNumber>;
   readonly unstakeAmount: BigNumber;
   readonly unstakeUseMaxAmount: boolean;
 };
@@ -22,6 +19,7 @@ export type PendingActionAmountChange = {
     readonly actionType: YieldPendingActionType;
     readonly amount: BigNumber;
     readonly balanceType: YieldBalanceType;
+    readonly passthrough: string;
     readonly token: AppToken;
   };
 };

@@ -1,8 +1,7 @@
 import "@stakekit/rainbowkit/styles.css";
-import "./translation";
 import "./shared/styles/theme/global.css";
 import { useAtomValue } from "@effect/atom-react";
-import type { ComponentProps } from "react";
+import { type ComponentProps, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router/dom";
 import { ApplicationRouteContentProvider } from "./app/composition/application-route-content";
@@ -17,7 +16,6 @@ import { applicationRoutes } from "./app/routes/application-routes";
 import { ClassicRoutes } from "./app/routes/classic-routes";
 import { DashboardRoutes } from "./app/routes/dashboard-routes";
 import { applicationRouterAtom } from "./app/runtime/application-router-runtime";
-import { useLoadErrorTranslations } from "./app/translation/use-load-error-translations";
 import { appContainer } from "./features/widget-shell/components";
 import type { SKAppProps, VariantProps } from "./public-api/types";
 import { isLedgerDappBrowserProvider } from "./services/wallet/browser-environment";
@@ -27,8 +25,6 @@ import { Box } from "./shared/ui/primitives/box";
 preloadImages();
 
 const App = () => {
-  useLoadErrorTranslations();
-
   const dashboardVariant = useWidgetConfig("dashboardVariant");
 
   return (
@@ -66,6 +62,7 @@ const SKAppRouter = ({
 };
 
 const SKAppContent = (props: SKAppProps) => {
+  const [isLedgerDappBrowser] = useState(isLedgerDappBrowserProvider);
   const variantProps: VariantProps =
     props.variant === "zerion"
       ? { variant: props.variant, chainModal: props.chainModal }
@@ -73,7 +70,7 @@ const SKAppContent = (props: SKAppProps) => {
 
   const settings = normalizeWidgetConfig(
     { ...props, ...variantProps },
-    { isLedgerLive: isLedgerDappBrowserProvider() }
+    { isLedgerLive: isLedgerDappBrowser }
   );
 
   return (

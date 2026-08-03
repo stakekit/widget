@@ -1,6 +1,7 @@
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
 import { Market } from "../../../src/domain/borrow/catalog/market";
+import { decodeTokenId } from "../../../src/domain/borrow/ids";
 import { TokenBalancesResponse } from "../../../src/domain/schema/financial-models";
 import {
   deriveBorrowMarketWalletBalances,
@@ -102,8 +103,9 @@ describe("borrow balance adapter", () => {
     const walletBalances = deriveBorrowMarketWalletBalances({
       balances,
       market,
-      selectedCollateralTokenAddress:
-        "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      selectedCollateralTokenId: decodeTokenId(
+        market.collateralTokens[0]!.token
+      ),
     });
 
     expect(walletBalances.selectedCollateralToken?.amount).toBe("0.25");

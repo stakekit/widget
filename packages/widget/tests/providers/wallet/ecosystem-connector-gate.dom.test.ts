@@ -125,41 +125,37 @@ const externalProviders: CurrentRef<SKExternalProviders> = {
   },
 };
 
+const buildControllerEffect = (
+  overrides: Partial<BuildWagmiConfigOptions> = {}
+) =>
+  Effect.gen(function* () {
+    const buildActions = yield* makeWagmiActions;
+    return yield* buildWagmiConfig(
+      {
+        chainIconMapping: undefined,
+        customConnectors: undefined,
+        disableInjectedProviderDiscovery: true,
+        enabledNetworks: new Set(["ethereum", "cosmos", "polkadot", "tron"]),
+        forceWalletConnectOnly: false,
+        institutionalWallets: false,
+        isLedgerLive: false,
+        isSafe: false,
+        mapWalletFn: undefined,
+        mapWalletListFn: undefined,
+        persistPublicKey: () => Effect.void,
+        queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
+        solanaConnection: {} as SolanaConnection,
+        solanaWallets: [],
+        tonConnectManifestUrl: undefined,
+        variant: "default",
+        ...overrides,
+      },
+      buildActions
+    );
+  }).pipe(Effect.provide(WagmiOperations.layer));
+
 const buildController = (overrides: Partial<BuildWagmiConfigOptions> = {}) =>
-  Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const buildActions = yield* makeWagmiActions;
-        return yield* buildWagmiConfig(
-          {
-            chainIconMapping: undefined,
-            customConnectors: undefined,
-            disableInjectedProviderDiscovery: true,
-            enabledNetworks: new Set([
-              "ethereum",
-              "cosmos",
-              "polkadot",
-              "tron",
-            ]),
-            forceWalletConnectOnly: false,
-            institutionalWallets: false,
-            isLedgerLive: false,
-            isSafe: false,
-            mapWalletFn: undefined,
-            mapWalletListFn: undefined,
-            persistPublicKey: () => Effect.void,
-            queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
-            solanaConnection: {} as SolanaConnection,
-            solanaWallets: [],
-            tonConnectManifestUrl: undefined,
-            variant: "default",
-            ...overrides,
-          },
-          buildActions
-        );
-      }).pipe(Effect.provide(WagmiOperations.layer))
-    )
-  );
+  Effect.runPromise(Effect.scoped(buildControllerEffect(overrides)));
 
 const expectEcosystemConnectorsSkipped = (
   controller: Awaited<ReturnType<typeof buildController>>
@@ -320,17 +316,11 @@ describe("ecosystem connector gate", () => {
     expectEcosystemConnectorsSkipped(controller);
   });
 
-  it("skips ecosystem connectors in the Ledger dApp browser", async () => {
-    browser.isLedgerDappBrowser = true;
+  it("skips ecosystem connectors for a captured Ledger generation", async () => {
+    const controller = await buildController({ isLedgerLive: true });
 
-    try {
-      const controller = await buildController();
-
-      expect(controller.ledgerLiveConnector).not.toBeNull();
-      expectEcosystemConnectorsSkipped(controller);
-    } finally {
-      browser.isLedgerDappBrowser = false;
-    }
+    expect(controller.ledgerLiveConnector).not.toBeNull();
+    expectEcosystemConnectorsSkipped(controller);
   });
 
   it("skips ecosystem connectors when the host supplies custom connectors", async () => {
@@ -353,6 +343,42 @@ describe("ecosystem connector gate", () => {
         ],
       })
     );
+  });
+
+  it("adds each provider once from cumulative MIPD announcements", async () => {
+    const connectorIds = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const controller = yield* buildControllerEffect({
+            disableInjectedProviderDiscovery: false,
+          });
+          const announce = (rdns: string, uuid: string) =>
+            window.dispatchEvent(
+              new CustomEvent("eip6963:announceProvider", {
+                detail: {
+                  info: {
+                    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>",
+                    name: rdns,
+                    rdns,
+                    uuid,
+                  },
+                  provider: { request: async () => null },
+                },
+              })
+            );
+
+          yield* Effect.sync(() => announce("wallet.a", crypto.randomUUID()));
+          yield* Effect.sync(() => announce("wallet.b", crypto.randomUUID()));
+
+          return controller.wagmiConfig.connectors.map(
+            (connector) => connector.id
+          );
+        })
+      )
+    );
+
+    expect(connectorIds.filter((id) => id === "wallet.a")).toHaveLength(1);
+    expect(connectorIds.filter((id) => id === "wallet.b")).toHaveLength(1);
   });
 
   it("still builds ecosystem connectors for a default host", async () => {

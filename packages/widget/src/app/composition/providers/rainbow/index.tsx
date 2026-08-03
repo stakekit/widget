@@ -5,9 +5,12 @@ import type { Address } from "viem";
 import { useSKWallet } from "../../../../features/wallet/state";
 import type { WalletSwitchAccountInput } from "../../../../services/wallet/domain/commands";
 import { WalletService } from "../../../../services/wallet/wallet-service";
-import { formatAddress } from "../../../../shared/lib/general";
 import { walletRuntime } from "../../../runtime/wallet-runtime";
 import { RainbowKitProviderWithTheme } from "../rainbow-kit";
+import {
+  findLedgerAccountByAddress,
+  getOtherLedgerAccounts,
+} from "./account-identities";
 
 const switchLedgerAccountAtom = walletRuntime.fn(
   (input: WalletSwitchAccountInput) =>
@@ -20,18 +23,26 @@ export const RainbowProvider = ({ children }: PropsWithChildren) => {
     mode: "promise",
   });
 
-  const otherAddresses =
-    wallet.ledgerAccounts
-      ?.filter((account) => account.address !== wallet.address)
-      .map((account) => formatAddress(account.address) as Address) ?? [];
+  const otherAccounts =
+    wallet.isConnected && wallet.ledgerAccounts
+      ? getOtherLedgerAccounts({
+          accounts: wallet.ledgerAccounts,
+          currentAddress: wallet.address,
+          network: wallet.network,
+        })
+      : [];
+  const otherAddresses = otherAccounts.map(
+    (account) => account.address as Address
+  );
 
   return (
     <AccountExtraInfoContext.Provider
       value={{
         otherAddresses,
         onOtherAddressClick: (selectedAddress: Address) => {
-          const account = wallet.ledgerAccounts?.find(
-            (candidate) => formatAddress(candidate.address) === selectedAddress
+          const account = findLedgerAccountByAddress(
+            otherAccounts,
+            selectedAddress
           );
 
           if (account && wallet.isConnected) {

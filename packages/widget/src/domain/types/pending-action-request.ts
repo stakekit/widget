@@ -15,8 +15,8 @@ import { type TokenString, tokenString } from "./tokens";
 import type { ValidatorInput as ValidatorDto } from "./validators";
 import type { SKWallet } from "./wallet";
 
-type BalanceTokenActionType =
-  `${YieldBalanceType}-${TokenString}-${YieldPendingActionType}`;
+export type PendingActionStateKey =
+  `${YieldBalanceType}-${TokenString}-${YieldPendingActionType}-${string}`;
 
 type AnyYieldBalanceDto = {
   amount: BigNumber;
@@ -30,16 +30,18 @@ type PreparedPendingAction = {
   gasFeeToken: EarnYieldWithProvider["token"];
 };
 
-export const getBalanceTokenActionType = ({
+export const getPendingActionStateKey = ({
   actionType,
   balanceType,
+  passthrough,
   token,
 }: {
   balanceType: YieldBalanceType;
   token: AppToken;
   actionType: YieldPendingActionType;
-}): BalanceTokenActionType =>
-  `${balanceType}-${tokenString(token)}-${actionType}`;
+  passthrough: string;
+}): PendingActionStateKey =>
+  `${balanceType}-${tokenString(token)}-${actionType}-${passthrough}`;
 
 export const preparePendingActionRequestDto = ({
   pendingActionsState,
@@ -50,7 +52,7 @@ export const preparePendingActionRequestDto = ({
   yieldBalance,
   selectedValidators,
 }: {
-  pendingActionsState: ReadonlyMap<BalanceTokenActionType, BigNumber>;
+  pendingActionsState: ReadonlyMap<PendingActionStateKey, BigNumber>;
   address: SKWallet["address"];
   additionalAddresses: SKWallet["additionalAddresses"];
   pendingActionDto: AnyPendingActionDto;
@@ -86,10 +88,11 @@ export const preparePendingActionRequestDto = ({
   const validatorArgs = resolveValidatorArgs();
   const stateAmount = isPendingActionAmountRequired(pendingActionDto)
     ? pendingActionsState.get(
-        getBalanceTokenActionType({
+        getPendingActionStateKey({
           balanceType: yieldBalance.type,
           token: yieldBalance.token,
           actionType: pendingActionDto.type as YieldPendingActionType,
+          passthrough: pendingActionDto.passthrough,
         })
       )
     : null;

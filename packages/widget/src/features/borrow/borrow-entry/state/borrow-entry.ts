@@ -6,6 +6,7 @@ import { widgetConfigAtom } from "../../../../app/config/settings";
 import { appRuntime } from "../../../../app/runtime/app-runtime";
 import { BorrowFeatureDisabled } from "../../../../domain/borrow/availability";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
+import { decodeTokenId } from "../../../../domain/borrow/ids";
 import {
   type BorrowNetwork,
   isBorrowNetwork,
@@ -259,7 +260,7 @@ export const selectBorrowCollateralTokenAtom = appRuntime
     const marketId = context(currentBorrowEntryAtom)?.selectedMarket?.id;
 
     context.set(currentBorrowEntryAtom, {
-      tokenAddress: collateralToken.token.address ?? null,
+      tokenId: decodeTokenId(collateralToken.token),
       type: "collateralToken/select",
     });
 

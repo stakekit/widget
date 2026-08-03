@@ -19,6 +19,7 @@ import {
 import { makeWagmiActions } from "../../src/services/wallet/wagmi-actions";
 import {
   buildWagmiConfig,
+  getUnseenMipdProviders,
   scopedMipdSubscription,
 } from "../../src/services/wallet/wagmi-config";
 
@@ -72,6 +73,42 @@ const initialize = async (
 };
 
 describe("wallet Effect Atom boundaries", () => {
+  it("reconciles cumulative MIPD snapshots without duplicating providers", () => {
+    const provider = (rdns: string) => ({ info: { rdns } });
+    const configuredConnector = { id: "configured" };
+    const firstSnapshot = [provider("wallet.a")];
+    const firstNew = getUnseenMipdProviders({
+      connectors: [configuredConnector],
+      providers: firstSnapshot as never,
+    });
+    const connectorsAfterFirst = [
+      configuredConnector,
+      ...firstNew.map((details) => ({ id: details.info.rdns })),
+    ];
+    const secondNew = getUnseenMipdProviders({
+      connectors: connectorsAfterFirst,
+      providers: [provider("wallet.a"), provider("wallet.b")] as never,
+    });
+    const connectorsAfterSecond = [
+      ...connectorsAfterFirst,
+      ...secondNew.map((details) => ({ id: details.info.rdns })),
+    ];
+
+    expect(firstNew.map((details) => details.info.rdns)).toEqual(["wallet.a"]);
+    expect(secondNew.map((details) => details.info.rdns)).toEqual(["wallet.b"]);
+    expect(
+      getUnseenMipdProviders({
+        connectors: connectorsAfterSecond,
+        providers: [provider("wallet.a"), provider("wallet.b")] as never,
+      })
+    ).toEqual([]);
+    expect(connectorsAfterSecond.map((connector) => connector.id)).toEqual([
+      "configured",
+      "wallet.a",
+      "wallet.b",
+    ]);
+  });
+
   it("decodes enabled networks into a validated set and rejects unknown values", () => {
     const networks = Schema.decodeUnknownSync(EnabledNetworksResponse)([
       "ethereum",

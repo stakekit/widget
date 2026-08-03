@@ -154,7 +154,6 @@ describe("WalletService authoritative Wallet State", () => {
             WalletEnvironment,
             WalletEnvironment.of({
               href: Effect.succeed("https://widget.test/"),
-              isLedgerDappBrowser: Effect.succeed(false),
               isMobileWallet: Effect.succeed(false),
             })
           ),
