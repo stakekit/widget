@@ -3,9 +3,14 @@ import { motion, useAnimation } from "motion/react";
 import type { ChangeEvent } from "react";
 import { memo, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { formatNumber } from "../../../lib/number-format";
 import { useRootElement } from "../../../react/root-element";
 import { Box } from "../../primitives/box";
+import { useWidgetPresentation } from "../../widget-presentation";
+import {
+  formatLocalizedNumber,
+  isLocalizedNumberInput,
+  parseLocalizedNumberInput,
+} from "./locale-number";
 import { container, numberInput, spanStyle } from "./styles.css";
 import { useAutoResizeText } from "./use-auto-resize-text";
 
@@ -27,33 +32,37 @@ export const NumberInput = memo(
     isInvalid,
     shakeOnInvalid,
   }: NumberInputProps) => {
-    const [localState, setLocalState] = useState("0");
+    const { locale } = useWidgetPresentation();
+    const [localState, setLocalState] = useState(() =>
+      formatLocalizedNumber({ locale, useGrouping: true, value })
+    );
     const [isFocused, setIsFocused] = useState(false);
+    const previousLocaleRef = useRef(locale);
 
     useEffect(() => {
-      if (isFocused) return;
+      const localeChanged = previousLocaleRef.current !== locale;
+      previousLocaleRef.current = locale;
+      if (isFocused && !localeChanged) return;
 
-      setLocalState((prevState) => {
-        if (value.isEqualTo(stringToBigNumber(prevState))) return prevState;
-
-        return formatNumber(value);
-      });
-    }, [value, isFocused]);
+      setLocalState(
+        formatLocalizedNumber({ locale, useGrouping: !isFocused, value })
+      );
+    }, [value, isFocused, locale]);
 
     const _onChange = (e: ChangeEvent<HTMLInputElement>) => {
       const val = e.target.value;
 
-      if (!e.target.validity.valid) return;
+      if (!isLocalizedNumberInput(val, locale)) return;
 
       setLocalState(val);
 
       if (!val) return onChange(new BigNumber(0));
 
-      const value = stringToBigNumber(val);
+      const parsed = parseLocalizedNumberInput(val, locale);
 
-      if (value.isNaN()) return;
+      if (!parsed) return;
 
-      onChange(value);
+      onChange(parsed);
     };
 
     const isZero = localState === "0" || localState === "";
@@ -103,7 +112,6 @@ export const NumberInput = memo(
           autoComplete="off"
           autoCorrect="off"
           spellCheck="false"
-          pattern="^(?!0\d)\d*([.,])?(\d+)?$"
           minLength={1}
           maxLength={79}
           onBlur={() => {
@@ -113,7 +121,15 @@ export const NumberInput = memo(
           }}
           onFocus={() => {
             setIsFocused(true);
-            if (isZero) setLocalState("");
+            setLocalState(
+              isZero
+                ? ""
+                : formatLocalizedNumber({
+                    locale,
+                    useGrouping: false,
+                    value,
+                  })
+            );
           }}
         />
         {rootElement &&
@@ -127,11 +143,3 @@ export const NumberInput = memo(
     );
   }
 );
-
-const stringToBigNumber = (str: string) => {
-  const normalizedValue = /^\d{1,3}(,\d{3})+(\.\d+)?$/.test(str)
-    ? str.replace(/,/g, "")
-    : str.replace(/,/g, ".");
-
-  return new BigNumber(normalizedValue);
-};

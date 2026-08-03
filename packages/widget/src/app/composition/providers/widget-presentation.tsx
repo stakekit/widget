@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from "react";
+import { useTranslation } from "react-i18next";
 import type { AppToken } from "../../../domain/schema/legacy-models";
 import type { Network } from "../../../domain/schema/network-model";
 import type { SupportedSKChains } from "../../../domain/types/chains";
@@ -14,6 +15,7 @@ import { useWidgetConfig } from "../../config/use-widget-config";
  * `app/config`. Only host overrides are forwarded; the kit owns its defaults.
  */
 export const WidgetPresentationAdapter = ({ children }: PropsWithChildren) => {
+  const { i18n } = useTranslation();
   const chainIconMapping = useWidgetConfig("chainIconMapping");
   const disableResizingInputFontSize = useWidgetConfig(
     "disableResizingInputFontSize"
@@ -26,6 +28,7 @@ export const WidgetPresentationAdapter = ({ children }: PropsWithChildren) => {
   const value: WidgetPresentation = {
     disableInputAutoResize: !!disableResizingInputFontSize,
     hideNetworkLogo: !!hideNetworkLogo,
+    locale: i18n.resolvedLanguage ?? i18n.language,
     mapNetworkIconUrl: (network: Network) =>
       typeof chainIconMapping === "function"
         ? chainIconMapping(network as SupportedSKChains)

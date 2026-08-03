@@ -14,6 +14,7 @@ import type { WidgetVariant } from "../styles/recipe-variant";
 export type WidgetPresentation = {
   readonly disableInputAutoResize: boolean;
   readonly hideNetworkLogo: boolean;
+  readonly locale: string;
   readonly mapNetworkIconUrl: (network: Network) => string | undefined;
   readonly mapTokenIconUrl: (token: AppToken) => string | undefined;
   readonly portalContainer: HTMLElement | undefined;
@@ -25,6 +26,7 @@ const unmappedIconUrl = () => undefined;
 const defaultWidgetPresentation: WidgetPresentation = {
   disableInputAutoResize: false,
   hideNetworkLogo: false,
+  locale: "en",
   mapNetworkIconUrl: unmappedIconUrl,
   mapTokenIconUrl: unmappedIconUrl,
   portalContainer: undefined,

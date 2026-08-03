@@ -14,9 +14,9 @@ export const Providers = ({
   children,
 }: PropsWithChildren & ComponentProps<typeof WagmiConfigProvider>) => (
   <StrictMode>
-    <WidgetPresentationAdapter>
-      <RootElementProvider>
-        <WidgetTranslationProvider>
+    <WidgetTranslationProvider>
+      <WidgetPresentationAdapter>
+        <RootElementProvider>
           <ThirdPartyQueryClientProvider>
             <MountAnimationEffects />
             <WagmiConfigProvider>
@@ -27,8 +27,8 @@ export const Providers = ({
               </RainbowProvider>
             </WagmiConfigProvider>
           </ThirdPartyQueryClientProvider>
-        </WidgetTranslationProvider>
-      </RootElementProvider>
-    </WidgetPresentationAdapter>
+        </RootElementProvider>
+      </WidgetPresentationAdapter>
+    </WidgetTranslationProvider>
   </StrictMode>
 );
