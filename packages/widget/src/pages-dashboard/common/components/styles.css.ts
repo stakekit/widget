@@ -11,7 +11,9 @@ export const wrapper = recipe({
       borderWidth: "1px",
       borderStyle: "solid",
       boxShadow: "0px 15px 40px 0px #0000000D",
-      width: "1000px",
+      maxWidth: "1000px",
+      width: "100%",
+      minWidth: "100%",
     },
   ],
   variants: {
@@ -56,16 +58,6 @@ export const outletWrapper = recipe({
   },
   defaultVariants: {
     variant: "default",
-  },
-});
-
-export const tabPageContainer = recipe({
-  base: {
-    display: "flex",
-    flexDirection: "row",
-    gap: "24px",
-    alignItems: "stretch",
-    justifyContent: "center",
   },
 });
 

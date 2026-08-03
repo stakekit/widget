@@ -241,6 +241,11 @@
     }
   },
   "dashboard": {
+    "split_view": {
+      "earn": "Earn",
+      "details": "Details",
+      "actions": "Actions"
+    },
     "details": {
       "tabs": {
         "earn": "Earn",

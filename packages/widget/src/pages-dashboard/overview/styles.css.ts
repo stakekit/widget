@@ -1,5 +1,10 @@
 import { style } from "@vanilla-extract/css";
+import { splitExpandedContainerQuery } from "../../styles/tokens/breakpoints";
 
 export const overviewPageContainer = style({
-  maxWidth: "380px",
+  "@container": {
+    [splitExpandedContainerQuery]: {
+      maxWidth: "380px",
+    },
+  },
 });
