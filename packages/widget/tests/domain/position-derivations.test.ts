@@ -73,6 +73,38 @@ describe("position derivations", () => {
     expect(rows[0]?.balancesWithAmount).toHaveLength(1);
   });
 
+  it("does not flag points-only claimable balances as actions", () => {
+    const yieldDto = yieldApiYieldFixture();
+    const position = Schema.decodeUnknownSync(EarnPosition)({
+      balances: [
+        yieldBalanceFixture({
+          amount: "2",
+          amountRaw: "2000000000000000000",
+          amountUsd: "5",
+          token: yieldDto.token,
+          type: "active",
+        }),
+        yieldBalanceFixture({
+          amount: "1214.8591",
+          amountRaw: "12148591",
+          amountUsd: "0",
+          token: {
+            ...yieldDto.token,
+            isPoints: true,
+            symbol: "KelpDAO Miles",
+          },
+          type: "claimable",
+        }),
+      ],
+      outputTokenBalance: null,
+      yieldId: yieldDto.id,
+    });
+
+    const [row] = toPositionItems(toPositionsData([position]), false);
+
+    expect(row?.actionRequired).toBe(false);
+  });
+
   it("deduplicates derived atom families by value-equal domain keys", () => {
     const { yieldId } = makePosition();
     const scope = new WalletScopeKey({

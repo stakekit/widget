@@ -78,6 +78,12 @@ export const toPositionItems = (
 
         if (balancesWithAmount.length === 0) continue;
 
+        const hasPendingNonClaimAction = balancesWithAmount.some((balance) =>
+          balance.pendingActions.some(
+            (action) => action.type !== "CLAIM_REWARDS"
+          )
+        );
+
         items.push({
           ...value,
           integrationId: position.yieldId,
@@ -89,10 +95,9 @@ export const toPositionItems = (
             [...value.balances].sort(
               (a, b) => priorityOrder[a.type] - priorityOrder[b.type]
             )[0]?.token ?? null,
-          actionRequired: balancesWithAmount.some(
-            (balance) =>
-              balance.type === "locked" || balance.type === "claimable"
-          ),
+          actionRequired:
+            balancesWithAmount.some((balance) => balance.type === "locked") ||
+            hasPendingNonClaimAction,
           pointsRewardTokenBalances: balancesWithAmount
             .filter((balance) => !!balance.token.isPoints)
             .map((balance) => ({

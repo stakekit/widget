@@ -187,6 +187,71 @@ describe("getDashboardPositionDetailsModel", () => {
     expect(model.chartSections).toEqual([]);
   });
 
+  it("keeps claimable balances out of status when no action is pending", () => {
+    const activeToken = yieldApiYieldFixture().token;
+    const activeBalance = makeBalance({
+      amount: "0.000205427561919412",
+      amountUsd: "0.332550",
+      token: activeToken,
+      type: "active",
+    });
+    const pointsBalance = makeBalance({
+      amount: "1214.8591",
+      amountUsd: "0",
+      token: {
+        ...activeToken,
+        isPoints: true,
+        symbol: "KelpDAO Miles",
+      },
+      type: "claimable",
+    });
+    const tokenClaimableBalance = makeBalance({
+      amount: "0.25",
+      amountUsd: "862",
+      token: activeToken,
+      type: "claimable",
+    });
+
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: false,
+      integrationData: makeYield({
+        status: { enter: false, exit: false },
+      }),
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map([
+        [
+          "active",
+          [{ ...activeBalance, tokenPriceInUsd: new BigNumber("0.332550") }],
+        ],
+        [
+          "claimable",
+          [
+            {
+              ...tokenClaimableBalance,
+              tokenPriceInUsd: new BigNumber(862),
+            },
+            { ...pointsBalance, tokenPriceInUsd: new BigNumber(0) },
+          ],
+        ],
+      ]),
+      providersDetails: [{ name: "Rocket Pool", status: "active" }],
+      reducedStakedOrLiquidBalance: {
+        amount: new BigNumber(activeBalance.amount),
+        amountUsd: new BigNumber(activeBalance.amountUsd ?? 0),
+        token: activeToken,
+      },
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(model.statusSummary).toEqual({
+      label: "Status",
+      tone: "default",
+      value: "Withdrawal unavailable",
+    });
+  });
+
   it("summarizes pending actions and keeps claim CTA information separate", () => {
     const pendingActions: DashboardPositionPendingAction[] = [
       {

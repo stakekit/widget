@@ -432,28 +432,15 @@ const getStatusSummary = ({
   const statusBalance = getBalancesByPriority(positionBalancesByType).find(
     (balance) =>
       balance.type === "locked" ||
-      balance.type === "claimable" ||
       balance.type === "withdrawable" ||
       balance.type === "exiting" ||
       balance.type === "entering"
   );
 
   if (statusBalance) {
-    const actionAvailable =
-      statusBalance.type === "claimable" ||
-      statusBalance.type === "withdrawable";
-    const getTone = (): DashboardPositionStatusTone => {
-      if (actionAvailable) return "claim";
-      if (statusBalance.type === "locked") return "action";
-      return "default";
-    };
-    const tone = getTone();
-
     return {
-      label: actionAvailable
-        ? t("dashboard.position_details.action_available")
-        : t("dashboard.position_details.status"),
-      tone,
+      label: t("dashboard.position_details.status"),
+      tone: "default",
       value: formatBalanceTypeLabel(statusBalance.type, t),
     };
   }

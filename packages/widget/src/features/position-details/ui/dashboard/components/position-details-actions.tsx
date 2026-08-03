@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { Navigate } from "react-router";
 import type { YieldPendingActionType } from "../../../../../domain/types/pending-action";
 import { getExtendedYieldType } from "../../../../../domain/types/yields";
 import { humanizePendingActionType } from "../../../../../shared/lib/formatters";
@@ -11,6 +12,7 @@ import {
   type PageCta,
   PageCtaButton,
 } from "../../../../widget-shell/components";
+import { useUnstakeOrPendingActionParams } from "../../../react/use-unstake-or-pending-action-params";
 import {
   AmountBlock,
   UnstakeInfo,
@@ -30,11 +32,28 @@ export const positionDetailsActionsHasContent = (
   !!val.integrationData &&
   !!val.positionBalancesByType &&
   (!!val.pendingActions?.length ||
-    (!!val.reducedStakedOrLiquidBalance &&
+    (val.canUnstake &&
+      !!val.reducedStakedOrLiquidBalance &&
       val.canChangeUnstakeAmount !== null &&
       !!val.unstakeToken));
 
+export const shouldRedirectFromPositionDetailsActions = (
+  val: ReturnType<typeof usePositionDetails>
+) =>
+  !!val.integrationData &&
+  !!val.positionBalancesByType &&
+  !positionDetailsActionsHasContent(val);
+
+export const getPositionDetailsRootPath = ({
+  integrationId,
+  balanceId,
+}: {
+  integrationId: string | undefined;
+  balanceId: string | undefined;
+}) => `/positions/${integrationId}/${balanceId}`;
+
 export const PositionDetailsActions = () => {
+  const positionDetails = usePositionDetails();
   const {
     isLoading,
     integrationData: integrationDataValue,
@@ -67,7 +86,8 @@ export const PositionDetailsActions = () => {
     kycGateIsChecking,
     kycProviderName,
     onKycStatusRefresh,
-  } = usePositionDetails();
+  } = positionDetails;
+  const { plain } = useUnstakeOrPendingActionParams();
 
   const { t } = useTranslation();
   const unstakeCta = useMemo<PageCta>(() => {
@@ -113,6 +133,19 @@ export const PositionDetailsActions = () => {
   }
 
   if (!integrationDataValue || !positionBalancesByTypeValue) return null;
+
+  if (shouldRedirectFromPositionDetailsActions(positionDetails)) {
+    return (
+      <Navigate
+        replace
+        to={getPositionDetailsRootPath({
+          integrationId: plain.integrationId,
+          balanceId: plain.balanceId,
+        })}
+      />
+    );
+  }
+
   return (
     <Box
       className={container}
@@ -124,7 +157,7 @@ export const PositionDetailsActions = () => {
       <Box display="flex" flex={1} flexDirection="column" gap="3">
         <PositionDetailsActionTabs
           canStake={integrationDataValue.status.enter}
-          canUnstake
+          canUnstake={canUnstake}
         />
 
         {/* Pending actions */}

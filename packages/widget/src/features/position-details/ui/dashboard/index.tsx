@@ -10,10 +10,6 @@ import {
   TabPageContainer,
 } from "../../../widget-shell/components";
 import { usePositionDetails } from "../classic/hooks/use-position-details";
-import {
-  positionDetailsActionsHasContent,
-  positionDetailsStakeHasContent,
-} from "./components/position-details-actions";
 import { PositionDetailsInfo } from "./components/position-details-info";
 import {
   breadcrumb,
@@ -51,11 +47,17 @@ const PositionBreadcrumb = ({
   );
 };
 
+export const positionDetailsPageShouldShowActionsPane = (
+  positionDetails: ReturnType<typeof usePositionDetails>
+) =>
+  positionDetails.isLoading ||
+  (!!positionDetails.integrationData &&
+    !!positionDetails.positionBalancesByType);
+
 const PositionDetailsPageComponent = () => {
   const positionDetails = usePositionDetails();
   const shouldShowActions =
-    positionDetailsActionsHasContent(positionDetails) ||
-    positionDetailsStakeHasContent(positionDetails);
+    positionDetailsPageShouldShowActionsPane(positionDetails);
 
   const positionName = positionDetails.integrationData?.metadata.name ?? null;
 
