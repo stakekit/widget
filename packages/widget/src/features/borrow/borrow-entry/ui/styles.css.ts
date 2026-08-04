@@ -1,6 +1,7 @@
 import { globalStyle, style } from "@vanilla-extract/css";
 import { atoms } from "../../../../shared/styles/theme/atoms.css";
 import { vars } from "../../../../shared/styles/theme/contract.css";
+import { splitExpandedContainerQuery } from "../../../../shared/styles/tokens/breakpoints";
 import { OUTLET_PADDING } from "../../../widget-shell/dashboard/components/styles.css";
 
 const pane = style({
@@ -16,7 +17,11 @@ export const formPane = style([
     gap: "4",
   }),
   {
-    maxWidth: "380px",
+    "@container": {
+      [splitExpandedContainerQuery]: {
+        maxWidth: "380px",
+      },
+    },
   },
 ]);
 

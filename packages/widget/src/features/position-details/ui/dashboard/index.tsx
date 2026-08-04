@@ -1,13 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
-import { VerticalDivider } from "../../../../shared/ui/components/divider";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import {
   AnimationPage,
   BackButton,
   BackButtonProvider,
-  TabPageContainer,
+  SplitView,
 } from "../../../widget-shell/components";
 import { usePositionDetails } from "../classic/hooks/use-position-details";
 import { PositionDetailsInfo } from "./components/position-details-info";
@@ -55,6 +54,7 @@ export const positionDetailsPageShouldShowActionsPane = (
     !!positionDetails.positionBalancesByType);
 
 const PositionDetailsPageComponent = () => {
+  const { t } = useTranslation();
   const positionDetails = usePositionDetails();
   const shouldShowActions =
     positionDetailsPageShouldShowActionsPane(positionDetails);
@@ -63,45 +63,48 @@ const PositionDetailsPageComponent = () => {
 
   return (
     <AnimationPage>
-      <TabPageContainer>
-        {shouldShowActions ? (
+      <SplitView
+        primaryBarLabel={t("dashboard.split_view.actions")}
+        secondaryBarLabel={t("dashboard.split_view.details")}
+        primary={
+          shouldShowActions ? (
+            <Box
+              className={positionDetailsActionsContainer}
+              display="flex"
+              flexDirection="column"
+              flex={1}
+              gap="4"
+              width="0"
+            >
+              <PositionBreadcrumb positionName={positionName} />
+
+              <Box
+                display="flex"
+                flex={1}
+                flexDirection="column"
+                gap="8"
+                justifyContent="space-between"
+              >
+                <Outlet />
+              </Box>
+            </Box>
+          ) : null
+        }
+        secondary={
           <Box
-            className={positionDetailsActionsContainer}
+            className={posistionDetailsInfoContainer}
             display="flex"
             flexDirection="column"
-            flex={1}
             gap="4"
-            width="0"
           >
-            <PositionBreadcrumb positionName={positionName} />
+            {shouldShowActions ? null : (
+              <PositionBreadcrumb positionName={positionName} />
+            )}
 
-            <Box
-              display="flex"
-              flex={1}
-              flexDirection="column"
-              gap="8"
-              justifyContent="space-between"
-            >
-              <Outlet />
-            </Box>
+            <PositionDetailsInfo />
           </Box>
-        ) : null}
-
-        {shouldShowActions ? <VerticalDivider /> : null}
-
-        <Box
-          className={posistionDetailsInfoContainer}
-          display="flex"
-          flexDirection="column"
-          gap="4"
-        >
-          {shouldShowActions ? null : (
-            <PositionBreadcrumb positionName={positionName} />
-          )}
-
-          <PositionDetailsInfo />
-        </Box>
-      </TabPageContainer>
+        }
+      />
     </AnimationPage>
   );
 };

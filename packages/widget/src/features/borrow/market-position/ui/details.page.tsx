@@ -1,7 +1,6 @@
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router";
-import { VerticalDivider } from "../../../../shared/ui/components/divider";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import {
@@ -9,10 +8,7 @@ import {
   positionDetailsActionsContainer,
 } from "../../../position-details/ui";
 import { useTrackPage } from "../../../tracking/state";
-import {
-  AnimationPage,
-  TabPageContainer,
-} from "../../../widget-shell/components";
+import { AnimationPage, SplitView } from "../../../widget-shell/components";
 import { useBorrowPosition } from "../../positions/react/use-borrow-positions";
 import {
   type BorrowPositionAction,
@@ -76,30 +72,33 @@ export const BorrowPositionDetailsPage = () => {
   if (isPositionLoading && !hasNestedRoute) {
     return (
       <AnimationPage>
-        <TabPageContainer>
-          <Box
-            className={positionDetailsActionsContainer}
-            display="flex"
-            flex={1}
-            flexDirection="column"
-            gap="4"
-            width="0"
-          >
-            <BorrowPositionBreadcrumb positionName={null} />
-            <BorrowPositionActionsSkeleton />
-          </Box>
-
-          <VerticalDivider />
-
-          <Box
-            className={posistionDetailsInfoContainer}
-            display="flex"
-            flexDirection="column"
-            gap="4"
-          >
-            <BorrowPositionInfoSkeleton />
-          </Box>
-        </TabPageContainer>
+        <SplitView
+          primaryBarLabel={t("dashboard.split_view.actions")}
+          secondaryBarLabel={t("dashboard.split_view.details")}
+          primary={
+            <Box
+              className={positionDetailsActionsContainer}
+              display="flex"
+              flex={1}
+              flexDirection="column"
+              gap="4"
+              width="0"
+            >
+              <BorrowPositionBreadcrumb positionName={null} />
+              <BorrowPositionActionsSkeleton />
+            </Box>
+          }
+          secondary={
+            <Box
+              className={posistionDetailsInfoContainer}
+              display="flex"
+              flexDirection="column"
+              gap="4"
+            >
+              <BorrowPositionInfoSkeleton />
+            </Box>
+          }
+        />
       </AnimationPage>
     );
   }
@@ -130,35 +129,38 @@ export const BorrowPositionDetailsPage = () => {
 
   return (
     <AnimationPage>
-      <TabPageContainer>
-        {shouldShowLeftPane ? (
+      <SplitView
+        primaryBarLabel={t("dashboard.split_view.actions")}
+        secondaryBarLabel={t("dashboard.split_view.details")}
+        primary={
+          shouldShowLeftPane ? (
+            <Box
+              className={positionDetailsActionsContainer}
+              display="flex"
+              flex={1}
+              flexDirection="column"
+              gap="4"
+              width="0"
+            >
+              <Outlet context={context} />
+            </Box>
+          ) : null
+        }
+        secondary={
           <Box
-            className={positionDetailsActionsContainer}
+            className={posistionDetailsInfoContainer}
             display="flex"
-            flex={1}
             flexDirection="column"
             gap="4"
-            width="0"
           >
-            <Outlet context={context} />
+            {shouldShowLeftPane ? null : (
+              <BorrowPositionBreadcrumb positionName={model?.title ?? null} />
+            )}
+
+            {rightContent}
           </Box>
-        ) : null}
-
-        {shouldShowLeftPane ? <VerticalDivider /> : null}
-
-        <Box
-          className={posistionDetailsInfoContainer}
-          display="flex"
-          flexDirection="column"
-          gap="4"
-        >
-          {shouldShowLeftPane ? null : (
-            <BorrowPositionBreadcrumb positionName={model?.title ?? null} />
-          )}
-
-          {rightContent}
-        </Box>
-      </TabPageContainer>
+        }
+      />
     </AnimationPage>
   );
 };

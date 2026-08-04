@@ -80,6 +80,7 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
     ) {
       return yield* withContext((routing) => routing.actions.disconnect(input));
     }),
+    enabledNetworks: bootstrap.snapshot.enabledNetworks,
     logout,
     persistPublicKey: Effect.fn("persistPublicKey")(function* (input: {
       readonly address: WalletAddress;

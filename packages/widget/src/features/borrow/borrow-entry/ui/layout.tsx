@@ -1,11 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
-import { VerticalDivider } from "../../../../shared/ui/components/divider";
 import { Box } from "../../../../shared/ui/primitives/box";
-import {
-  AnimationPage,
-  TabPageContainer,
-} from "../../../widget-shell/components";
+import { AnimationPage, SplitView } from "../../../widget-shell/components";
 import { useBorrowWalletBridge } from "../../wallet/react/use-borrow-wallet";
 import { useBorrowEntryView } from "../react/use-borrow-entry";
 import { BorrowDetailsPanel } from "./components/details-panel";
@@ -29,25 +25,28 @@ export const BorrowLayout = () => {
 
   return (
     <AnimationPage>
-      <TabPageContainer>
-        <Box className={styles.formPane} width="0">
-          <Outlet />
-        </Box>
-
-        <VerticalDivider />
-
-        <Box className={styles.detailsPaneWrapper} flex={1} width="0">
-          {walletBridge.status === "connected" ? (
-            <BorrowConnectedDetailsPane />
-          ) : (
-            <BorrowDetailsEmpty
-              title={t("dashboard.borrow.details.empty_title")}
-            >
-              {t("dashboard.borrow.details.empty_description")}
-            </BorrowDetailsEmpty>
-          )}
-        </Box>
-      </TabPageContainer>
+      <SplitView
+        primaryBarLabel={t("dashboard.split_view.actions")}
+        secondaryBarLabel={t("dashboard.split_view.details")}
+        primary={
+          <Box className={styles.formPane} width="0">
+            <Outlet />
+          </Box>
+        }
+        secondary={
+          <Box className={styles.detailsPaneWrapper} flex={1} width="0">
+            {walletBridge.status === "connected" ? (
+              <BorrowConnectedDetailsPane />
+            ) : (
+              <BorrowDetailsEmpty
+                title={t("dashboard.borrow.details.empty_title")}
+              >
+                {t("dashboard.borrow.details.empty_description")}
+              </BorrowDetailsEmpty>
+            )}
+          </Box>
+        }
+      />
     </AnimationPage>
   );
 };

@@ -1,6 +1,7 @@
 import "@stakekit/rainbowkit/styles.css";
 import "./shared/styles/theme/global.css";
 import { useAtomValue } from "@effect/atom-react";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { type ComponentProps, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router/dom";
@@ -16,16 +17,22 @@ import { applicationRoutes } from "./app/routes/application-routes";
 import { ClassicRoutes } from "./app/routes/classic-routes";
 import { DashboardRoutes } from "./app/routes/dashboard-routes";
 import { applicationRouterAtom } from "./app/runtime/application-router-runtime";
-import { appContainer } from "./features/widget-shell/components";
+import { walletEnabledNetworksResultAtom } from "./features/wallet/state";
+import { AppContainerProvider } from "./features/widget-shell/components";
+import { NoEnabledYields } from "./features/widget-shell/ui";
 import type { SKAppProps, VariantProps } from "./public-api/types";
 import { isLedgerDappBrowserProvider } from "./services/wallet/browser-environment";
 import { preloadImages } from "./shared/assets/images";
-import { Box } from "./shared/ui/primitives/box";
 
 preloadImages();
 
 const App = () => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");
+  const enabledNetworks = useAtomValue(walletEnabledNetworksResultAtom);
+  const noEnabledYields =
+    AsyncResult.isSuccess(enabledNetworks) && enabledNetworks.value.size === 0;
+
+  if (noEnabledYields) return <NoEnabledYields />;
 
   return (
     <>
@@ -50,13 +57,9 @@ const SKAppRouter = ({
 
   return (
     <ApplicationRouteContentProvider value={<Root />}>
-      <Box
-        className={appContainer({
-          variant: dashboardVariant ? "dashboard" : "widget",
-        })}
-      >
+      <AppContainerProvider variant={dashboardVariant ? "dashboard" : "widget"}>
         <RouterProvider router={router} />
-      </Box>
+      </AppContainerProvider>
     </ApplicationRouteContentProvider>
   );
 };

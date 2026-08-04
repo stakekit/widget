@@ -1,5 +1,6 @@
 import {
   currentWalletConfigResultAtom,
+  currentWalletEnabledNetworksResultAtom,
   currentWalletStateResultAtom,
 } from "./state/root-atom";
 import {
@@ -10,6 +11,8 @@ import {
 
 export const walletConnectionStateAtom = currentWalletStateAtom;
 export const walletConfigResultAtom = currentWalletConfigResultAtom;
+export const walletEnabledNetworksResultAtom =
+  currentWalletEnabledNetworksResultAtom;
 export const walletScopeAtom = currentWalletScopeAtom;
 export const walletStateResultAtom = currentWalletStateResultAtom;
 export const walletConnectedNetworkAtom = currentWalletConnectedNetworkAtom;

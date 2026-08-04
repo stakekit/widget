@@ -1,5 +1,6 @@
 import { style } from "@vanilla-extract/css";
 import { atoms } from "../../../../shared/styles/theme/atoms.css";
+import { splitExpandedContainerQuery } from "../../../../shared/styles/tokens/breakpoints";
 
 export const posistionDetailsInfoContainer = style([
   atoms({
@@ -8,12 +9,20 @@ export const posistionDetailsInfoContainer = style([
     width: "0",
   }),
   {
-    maxWidth: "600px",
+    "@container": {
+      [splitExpandedContainerQuery]: {
+        maxWidth: "600px",
+      },
+    },
   },
 ]);
 
 export const positionDetailsActionsContainer = style({
-  maxWidth: "380px",
+  "@container": {
+    [splitExpandedContainerQuery]: {
+      maxWidth: "380px",
+    },
+  },
 });
 
 export const breadcrumb = style([

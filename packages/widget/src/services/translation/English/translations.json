@@ -243,6 +243,11 @@
     }
   },
   "dashboard": {
+    "split_view": {
+      "earn": "Earn",
+      "details": "Details",
+      "actions": "Actions"
+    },
     "details": {
       "tabs": {
         "earn": "Earn",
@@ -751,6 +756,10 @@
       "title": "Under Maintenance",
       "description": "Yield.xyz is currently undergoing routine maintenance. Our service is expected to be back up and running in approximately 5-10 minutes.",
       "description2": "We appreciate your patience and encourage you to check back shortly!"
+    },
+    "no_enabled_yields": {
+      "title": "No yields enabled",
+      "description": "There are no yields enabled for this API key. Enable at least one yield to start earning."
     }
   },
   "positions": {

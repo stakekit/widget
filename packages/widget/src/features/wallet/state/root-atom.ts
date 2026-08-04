@@ -23,3 +23,7 @@ export const currentWalletLedgerStateAtom = Atom.make((get) =>
 export const currentWalletConfigResultAtom = walletRuntime
   .atom(WalletService.use((wallet) => Effect.succeed(wallet.wagmiConfig)))
   .pipe(Atom.withLabel("currentWalletConfigResultAtom"));
+
+export const currentWalletEnabledNetworksResultAtom = walletRuntime
+  .atom(WalletService.use((wallet) => Effect.succeed(wallet.enabledNetworks)))
+  .pipe(Atom.withLabel("currentWalletEnabledNetworksResultAtom"));

@@ -4,18 +4,19 @@
 // components live in `shared/ui/components` and are imported directly.
 
 export { headerContainer } from "./classic-layout/styles.css";
+export { AppContainerProvider } from "./dashboard/components/app-container";
 export {
   BackButton,
   BackButtonProvider,
 } from "./dashboard/components/back-button";
+export { SplitView } from "./dashboard/components/split-view";
 export {
   outletWrapper as dashboardOutletWrapper,
   wrapper as dashboardWrapper,
 } from "./dashboard/components/styles.css";
-export { TabPageContainer } from "./dashboard/components/tab-page-container";
 export { AnimationPage } from "./ui/animation-page";
 export { FallbackContent } from "./ui/fallback-content";
-export { appContainer, container } from "./ui/layout.css";
+export { container } from "./ui/layout.css";
 export { PageContainer } from "./ui/page-container";
 export type { PageCta } from "./ui/page-cta";
 export { PageCtaButton } from "./ui/page-cta";
