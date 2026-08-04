@@ -17,6 +17,7 @@
         "vite/*.ts"
       ],
       "devEntryPoints": [
+        "scripts/check-generated-schemas.ts",
         "scripts/generate-effect-openapi.ts",
         "scripts/measure-mount-jank.mts",
         "scripts/prepare-canary-release.ts",
@@ -329,11 +330,7 @@
             "!src/features/earn/ui.ts",
             "!src/features/earn/components.ts"
           ],
-          "allowImporters": [
-            "**/*.css.ts",
-            "src/features/earn/**",
-            "tests/**"
-          ]
+          "allowImporters": ["**/*.css.ts", "src/features/earn/**", "tests/**"]
         },
         {
           "enabled": true,
@@ -520,6 +517,7 @@
             "postcss.config.js",
             "public/mockServiceWorker.js",
             "vite/*.ts",
+            "scripts/check-generated-schemas.ts",
             "scripts/generate-effect-openapi.ts",
             "scripts/measure-mount-jank.mts",
             "scripts/prepare-canary-release.ts",

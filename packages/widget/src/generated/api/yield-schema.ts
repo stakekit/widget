@@ -2055,7 +2055,10 @@ export type TransactionDto = {
   readonly createdAt: string;
   readonly broadcastedAt: string | null;
   readonly signedTransaction: string | null;
-  readonly unsignedTransaction: string | {} | null;
+  readonly unsignedTransaction:
+    | string
+    | { readonly [x: string]: Schema.Json }
+    | null;
   readonly annotatedTransaction?: {} | null;
   readonly structuredTransaction?: {} | null;
   readonly stepIndex?: number;
@@ -2276,9 +2279,10 @@ export const TransactionDto = Schema.Struct({
     Schema.Union(
       [
         Schema.String.annotate({ description: "Serialized transaction data" }),
-        Schema.Struct({}).annotate({
-          description: "Transaction object (for non-EVM chains)",
-        }),
+        Schema.Record(
+          Schema.String,
+          Schema.Json.annotate({ expected: "JSON value" })
+        ).annotate({ description: "Transaction object (for non-EVM chains)" }),
       ],
       { mode: "oneOf" }
     ).annotate({

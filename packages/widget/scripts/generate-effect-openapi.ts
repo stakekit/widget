@@ -3,6 +3,12 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse, stringify } from "yaml";
+import {
+  findUnsafeGeneratedSchemaUnions,
+  normalizeGeneratedTypeOnlySource,
+  normalizeOpenApiUnionObjects,
+} from "./generated-schema-safety";
 
 type JsonPatchOperation = {
   op: "replace";
@@ -439,6 +445,15 @@ const fetchSpec = async (spec: SpecConfig) => {
   return response.text();
 };
 
+const prepareSpecContents = (spec: SpecConfig, contents: string) => {
+  const document = parse(spec.prepareSpec?.(contents) ?? contents) as unknown;
+  normalizeOpenApiUnionObjects(document);
+
+  return spec.specFileName.endsWith(".json")
+    ? `${JSON.stringify(document, null, 2)}\n`
+    : stringify(document);
+};
+
 const extractSchemaOnlyOutput = (output: string, specName: string) => {
   const clientMarker = "\nexport interface OperationConfig {";
   const clientStart = output.indexOf(clientMarker);
@@ -467,7 +482,7 @@ const generateSpec = async (spec: SpecConfig, tempDir: string) => {
 
   console.log(`Fetching ${spec.name} spec from ${spec.url}`);
   const specContents = await fetchSpec(spec);
-  await writeFile(specPath, spec.prepareSpec?.(specContents) ?? specContents);
+  await writeFile(specPath, prepareSpecContents(spec, specContents));
   await writeFile(patchPath, `${JSON.stringify(spec.patches, null, 2)}\n`);
 
   for (const output of spec.outputs) {
@@ -499,7 +514,21 @@ const generateSpec = async (spec: SpecConfig, tempDir: string) => {
 
     const generatedOutput = output.schemaOnly
       ? extractSchemaOnlyOutput(stdout, spec.name)
-      : stdout;
+      : normalizeGeneratedTypeOnlySource(stdout);
+
+    if (output.schemaOnly) {
+      const issues = findUnsafeGeneratedSchemaUnions(
+        generatedOutput,
+        path.relative(widgetRoot, output.outputPath)
+      );
+      if (issues.length > 0) {
+        throw new Error(
+          `${spec.name} generated unsafe schema unions:\n${issues
+            .map((issue) => `${issue.line}:${issue.column} ${issue.message}`)
+            .join("\n")}`
+        );
+      }
+    }
 
     await writeFile(
       output.outputPath,

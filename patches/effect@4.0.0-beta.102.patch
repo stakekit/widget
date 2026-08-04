@@ -1,0 +1,115 @@
+diff --git a/dist/unstable/reactivity/AtomRegistry.js b/dist/unstable/reactivity/AtomRegistry.js
+--- a/dist/unstable/reactivity/AtomRegistry.js
++++ b/dist/unstable/reactivity/AtomRegistry.js
+@@ -408,6 +408,8 @@ class NodeImpl {
+   children = /*#__PURE__*/new Set();
+   listeners = /*#__PURE__*/new Set();
+   skipInvalidation = false;
++  building = false;
++  invalidatedDuringBuild = false;
+   currentState() {
+     switch (this.state) {
+       case NodeState.uninitialized:
+@@ -427,7 +429,9 @@ class NodeImpl {
+   value() {
+     if ((this.state & NodeFlags.waitingForValue) !== 0) {
+       this.lifetime = makeLifetime(this);
++      this.building = true;
+       const value = this.atom.read(this.lifetime);
++      this.building = false;
+       if ((this.state & NodeFlags.waitingForValue) !== 0) {
+         if (this.preserveInitialValueOnBuild) {
+           this.preserveInitialValueOnBuild = false;
+@@ -517,6 +521,9 @@ class NodeImpl {
+     this.children.delete(child);
+   }
+   invalidate() {
++    if (this.building && batchState.phase === BatchPhase.collect) {
++      this.invalidatedDuringBuild = true;
++    }
+     if (this.state === NodeState.valid) {
+       this.state = NodeState.stale;
+       this.disposeLifetime();
+@@ -617,8 +624,9 @@ const LifetimeProto = {
+       return this.node.registry.get(atom);
+     }
+     const parent = this.node.registry.ensureNode(atom);
++    const value = parent.value();
+     this.node.addParent(parent);
+-    return parent.value();
++    return value;
+   },
+   result(atom, options) {
+     if (this.disposed || this.isFn) {
+@@ -823,7 +831,12 @@ export function batch(f) {
+ }
+ function batchRebuildNode(node) {
+   if (node.state === NodeState.valid) {
+-    return;
++    if (!node.invalidatedDuringBuild) {
++      return;
++    }
++    node.invalidatedDuringBuild = false;
++    node.state = NodeState.stale;
++    node.disposeLifetime();
+   }
+   for (const parent of node.parents) {
+     if (parent.state !== NodeState.valid) {
+diff --git a/src/unstable/reactivity/AtomRegistry.ts b/src/unstable/reactivity/AtomRegistry.ts
+--- a/src/unstable/reactivity/AtomRegistry.ts
++++ b/src/unstable/reactivity/AtomRegistry.ts
+@@ -718,6 +718,8 @@ class NodeImpl<A> {
+   children = new Set<NodeImpl<any>>()
+   listeners = new Set<() => void>()
+   skipInvalidation = false
++  building = false
++  invalidatedDuringBuild = false
+ 
+   currentState() {
+     switch (this.state) {
+@@ -740,7 +742,9 @@ class NodeImpl<A> {
+   value(): A {
+     if ((this.state & NodeFlags.waitingForValue) !== 0) {
+       this.lifetime = makeLifetime(this)
++      this.building = true
+       const value = this.atom.read(this.lifetime)
++      this.building = false
+       if ((this.state & NodeFlags.waitingForValue) !== 0) {
+         if (this.preserveInitialValueOnBuild) {
+           this.preserveInitialValueOnBuild = false
+@@ -847,6 +851,9 @@ class NodeImpl<A> {
+   }
+ 
+   invalidate(): void {
++    if (this.building && batchState.phase === BatchPhase.collect) {
++      this.invalidatedDuringBuild = true
++    }
+     if (this.state === NodeState.valid) {
+       this.state = NodeState.stale
+       this.disposeLifetime()
+@@ -972,8 +979,9 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed" | "isFn"> = {
+       return this.node.registry.get(atom)
+     }
+     const parent = this.node.registry.ensureNode(atom)
++    const value = parent.value()
+     this.node.addParent(parent)
+-    return parent.value()
++    return value
+   },
+ 
+   result<A, E>(this: Lifetime<any>, atom: Atom.Atom<Result.AsyncResult<A, E>>, options?: {
+@@ -1222,8 +1230,13 @@ export function batch(f: () => void): void {
+ }
+ 
+ function batchRebuildNode(node: NodeImpl<any>) {
+   if (node.state === NodeState.valid) {
+-    return
++    if (!node.invalidatedDuringBuild) {
++      return
++    }
++    node.invalidatedDuringBuild = false
++    node.state = NodeState.stale
++    node.disposeLifetime()
+   }
+ 
+   for (const parent of node.parents) {

@@ -335,7 +335,7 @@ export type TransactionDto = {
     | "EIP712_TYPED_DATA"
     | "SOLANA_TRANSACTION"
     | "COSMOS_TRANSACTION";
-  readonly signablePayload?: string | {};
+  readonly signablePayload?: string | { readonly [x: string]: unknown };
 };
 export type ActionRequestDto = {
   readonly integrationId: string;

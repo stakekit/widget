@@ -45,7 +45,7 @@ export const getConfig = (
     const shouldMinifyOutput = isBuild && overides?.build?.minify !== false;
 
     return merge(overides, {
-      root: path.resolve(__dirname, ".."),
+      root: path.resolve(import.meta.dirname, ".."),
       optimizeDeps: {
         include: [
           "vite-plugin-node-polyfills/shims/buffer",

@@ -45,6 +45,7 @@ const knipConfig = {
         "tests/**/*.test.ts",
         "tests/**/*.test.tsx",
         "scripts/*.test.ts",
+        "scripts/check-generated-schemas.ts!",
         "scripts/prepare-canary-release.ts!",
         "scripts/generate-effect-openapi.ts!",
       ],

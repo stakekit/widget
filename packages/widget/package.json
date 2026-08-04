@@ -44,7 +44,7 @@
     "dev": "vite -c vite/vite.config.dev.ts",
     "start": "pnpm dev",
     "build": "pnpm clean && pnpm build:package && pnpm build:bundle && pnpm build:website && pnpm build:types",
-    "lint": "biome check . && tsc",
+    "lint": "biome check . && tsc && tsx scripts/check-generated-schemas.ts",
     "test": "pnpm test:unit && pnpm test:dom && pnpm test:browser",
     "test:unit": "vitest -c vite/vitest.config.ts --project unit run",
     "test:unit:watch": "vitest -c vite/vitest.config.ts --project unit",
@@ -62,7 +62,8 @@
     "build:types": "tsc --project tsconfig.build.json",
     "clean": "rm -rf dist",
     "preview": "vite -c vite/vite.config.dev.ts preview --outDir dist/website",
-    "gen:api": "node --import tsx scripts/generate-effect-openapi.ts"
+    "gen:api": "tsx scripts/generate-effect-openapi.ts && tsx scripts/check-generated-schemas.ts",
+    "check:generated-schemas": "tsx scripts/check-generated-schemas.ts"
   },
   "peerDependencies": {
     "react": ">=18",

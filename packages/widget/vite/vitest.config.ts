@@ -1,7 +1,7 @@
 import path from "node:path";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vite";
-import { getConfig } from "./vite.config.base";
+import { getConfig } from "./vite.config.base.ts";
 
 const browserTestPattern = "tests/**/*.browser.test.{ts,tsx}";
 const domTestPattern = "tests/**/*.dom.test.{ts,tsx}";
@@ -17,7 +17,7 @@ const inlineTestDependencies = [
   /@zondax/,
 ];
 const testCacheDir = (project: "browser" | "dom" | "unit") =>
-  path.resolve(__dirname, "..", "node_modules", ".vite", project);
+  path.resolve(import.meta.dirname, "..", "node_modules", ".vite", project);
 
 export default defineConfig(
   getConfig({
@@ -47,7 +47,11 @@ export default defineConfig(
             environment: "jsdom",
             include: [domTestPattern],
             setupFiles: [
-              path.resolve(__dirname, "..", "tests/utils/setup.dom.ts"),
+              path.resolve(
+                import.meta.dirname,
+                "..",
+                "tests/utils/setup.dom.ts"
+              ),
             ],
             testTimeout: 10_000,
             server: {
@@ -65,7 +69,11 @@ export default defineConfig(
             fileParallelism: false,
             include: [browserTestPattern],
             setupFiles: [
-              path.resolve(__dirname, "..", "tests/utils/setup.browser.ts"),
+              path.resolve(
+                import.meta.dirname,
+                "..",
+                "tests/utils/setup.browser.ts"
+              ),
             ],
             testTimeout: 20_000,
             browser: {

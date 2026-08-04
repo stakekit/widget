@@ -847,7 +847,10 @@ export type TransactionDto = {
   readonly createdAt: string;
   readonly broadcastedAt: string | null;
   readonly signedTransaction: string | null;
-  readonly unsignedTransaction: string | {} | null;
+  readonly unsignedTransaction:
+    | string
+    | { readonly [x: string]: unknown }
+    | null;
   readonly annotatedTransaction?: {} | null;
   readonly structuredTransaction?: {} | null;
   readonly stepIndex?: number;

@@ -770,7 +770,7 @@ export type TransactionDto = {
     | "EIP712_TYPED_DATA"
     | "SOLANA_TRANSACTION"
     | "COSMOS_TRANSACTION";
-  readonly signablePayload?: string | {};
+  readonly signablePayload?: string | { readonly [x: string]: Schema.Json };
 };
 export const TransactionDto = Schema.Struct({
   id: Schema.String.annotate({
@@ -924,9 +924,16 @@ export const TransactionDto = Schema.Struct({
     })
   ),
   signablePayload: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Struct({})], {
-      mode: "oneOf",
-    }).annotate({
+    Schema.Union(
+      [
+        Schema.String,
+        Schema.Record(
+          Schema.String,
+          Schema.Json.annotate({ expected: "JSON value" })
+        ),
+      ],
+      { mode: "oneOf" }
+    ).annotate({
       description:
         "Unsigned transaction payload to sign. For EVM transactions, this is a JSON string containing from, to, data, gasLimit, and value fields.",
       examples: [
