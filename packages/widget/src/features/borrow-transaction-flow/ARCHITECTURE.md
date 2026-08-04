@@ -26,44 +26,29 @@ error, while failure to enter Steps remains a typed navigation error.
 
 All Borrow Flow ownership mutations and UI effects pass through one
 service-level scoped serializer. Start, Review Confirm and Back, Execution
-commands, Finish, action reservation, outcome publication, and navigation
+commands, Finish, action reservation, and navigation
 therefore have one ordering authority. Every operation revalidates current
 Flow Session ownership after acquiring the serializer, and closing the owning
 scope interrupts queued and in-flight work. Atom concurrency settings remain
 presentation behavior rather than a correctness dependency.
 
-The Flow publishes read-only `ExecutionStarted` and `Done` outcomes carrying
-the immutable `BorrowEntry` or `MarketPosition` entry captured at Start. The
-owning Borrow journey observes only its matching outcome: Market Position
-clears its staged action at execution start, while Borrow Entry resets entry
-state on Done. The flow never imports `features/borrow`, and leaving Review
-before execution preserves Borrow-owned state.
-
-`BorrowTransactionFlowService` owns the latest outcome as a read-only Stream
-and updates it inside the same serialized transition that accepts the outcome.
-The Atom adapter passively mirrors that Stream into the published Borrow Flow
-outcome Atom. The service does not receive an Atom, registry, callback, or
-imperative publisher capability; epoch and immutable entry remain part of the
-semantic fact so observers can reject stale or irrelevant outcomes.
-
-An outcome becomes true only after its journey transition succeeds.
-`ExecutionStarted` is published after action reservation and successful
-navigation to Steps. `Done` is published after a completed, current Execution
-Attempt successfully navigates out of the flow. Failed or interrupted
-navigation publishes no outcome, and navigation plus publication execute as
-one serialized operation.
+Borrow Transaction Flow publishes no form-reset outcome. Successful Transaction
+Workflow construction publishes the owner-scoped `TransactionWorkflowStarted`
+fact through the shared Widget Domain Events service. Feature-owned projections
+consume Entry Intent from that fact without introducing an import from the flow
+back into `features/borrow`. Leaving Review before workflow construction
+preserves Borrow-owned Entry Intent.
 
 Route-changing transitions keep navigation interruptible, including reservation
-rollback when Confirm navigation fails or is interrupted. After navigation
-returns successfully, the corresponding semantic outcome is committed
-uninterruptibly, so route-scope closure cannot split a successful transition
-from its `ExecutionStarted` or `Done` fact.
+rollback when Confirm navigation fails or is interrupted. Widget Domain Event
+publication is owned by Transaction Workflow construction and finalization, not
+by Borrow navigation transitions.
 
 Navigation executes inside the Effect-native module that owns the accepted
 transition. Re-entering Review after execution clears the private action
 handoff, so browser history cannot restart a disposed workflow. Only the current
-session epoch may navigate or publish form-reset and completion outcomes;
-transaction-truth work remains owned by the scoped Transaction Workflow.
+session epoch may navigate; transaction-truth work remains owned by the scoped
+Transaction Workflow.
 
 The owning Borrow feature starts a session through a command Atom that re-reads
 the current `Ready` preparation, captures the immutable intake, and tail-delegates
@@ -99,17 +84,22 @@ so ordinary route exit abandons the flow while an old route finalizer cannot
 clear a replacement Start. Back and Finish do not coordinate a separate Clear
 command, and React does not mount a cleanup Atom.
 
+Route compatibility includes exact entry identity. A Market Position Session is
+compatible only with the same URL `marketId`; when Session A is presented under
+market B's Review, Steps, or Complete route, the guard Replace-navigates to
+market B's base details route and releases Session A.
+
 The Session handle exposes only immutable intake, `acquireReview`, and
 `acquireExecution`. Acquiring Review clears any reserved action and creates a
 fresh Review scope, ending a previous Execution Attempt reached through browser
 history. Execution acquisition returns typed Acquired, Rejected No Reservation,
 or Rejected Stale outcomes. Epoch checks, action reservation, cleanup, and
-outcome publication remain private implementation.
+event publication remain private implementation.
 
 Borrow follows Classic's Effect-native service, private Session, scoped Review
 and Execution factories, lifecycle adapters, and serialized ownership model.
 It reuses only already-neutral infrastructure during migration. Borrow-specific
-action creation, outcomes, destinations, and intake policy remain local; a
+action creation, destinations, and intake policy remain local; a
 generic Transaction Flow factory is considered only after both completed
 implementations demonstrate identical policy as well as mechanics.
 
@@ -123,7 +113,7 @@ Execution Finish reads the authoritative Transaction Workflow state and is
 accepted only when it is Completed and its Session and reserved action are
 still current. Otherwise it returns Rejected Not Completed or Rejected Stale.
 The Complete route guard remains presentation behavior and is not the
-correctness condition for navigation or `Done` publication.
+correctness condition for navigation or workflow finalization.
 
 The scoped Execution module observes the first Completed Transaction Workflow
 state and automatically replaces to the immutable entry's Complete route. It
@@ -145,8 +135,8 @@ The Borrow Flow's Atom adapters contain no direct registry access,
 subscriptions, manual Atom finalizers, `context.mount`, or React `useAtomMount`.
 The shared scoped Effect Atom adapters encapsulate handle acquisition, optional
 state projection, keep-alive, and scope release; route code only reads the
-scoped module. Borrow Entry and Market Position outcome bindings remain separate
-production-observer lifecycles outside this vertical slice.
+scoped module. Borrow Entry and Market Position event projections remain
+feature-owned production-observer lifecycles outside this vertical slice.
 
 `BorrowTransactionFlowService` is constructed once by the Wallet Runtime's
 scoped layer. Its constructor and private Session, Review, and Execution factory
@@ -158,7 +148,7 @@ application runtime is the sole privileged importer for layer wiring.
 
 Behavior tests cross the production `BorrowTransactionFlowService` interface
 using its real layer and test adapters for external capabilities. A small Atom
-adapter suite covers service lookup, reactive Session and outcome projection,
+adapter suite covers service lookup, reactive Session projection,
 scope acquisition and release, and one-to-one operation forwarding; browser
 tests retain rendered journey coverage. Registry-heavy store and facade tests
 are deleted once equivalent behavior is covered, and private child factories do
@@ -173,22 +163,27 @@ emits its complete authoritative initial state immediately.
 
 Execution acquisition keeps semantic unavailability and operational failure
 separate. Rejected No Reservation and Rejected Stale remain success-channel
-outcomes that redirect, while `TransactionWorkflowInputError` remains a typed
-Effect failure exposed by the acquisition `AsyncResult` and rendered through
-the existing setup-error presentation.
+outcomes that redirect. `TransactionWorkflowInputError` means no workflow was
+constructed and therefore no Started fact was published. Borrow follows Classic:
+the guard Replace-navigates to the immutable entry's base route, releases the
+Flow Session, and preserves Entry Intent; it does not render a dead-end Steps
+setup-error Retry. Failures published by a constructed workflow remain retryable.
 
-The root `state.ts` collaboration contract retains the Start Atom, read-only
-outcome Atom, and published outcome and intake types. Start narrows from a
-caller-selected intake-plus-navigation command to immutable intake alone. The
-Atom-owned store and facade, private React route adapters, and internal file
+The root `state.ts` collaboration contract retains the Start Atom and published
+intake types, but no Borrow Flow outcome Atom or outcome types. Start narrows
+from a caller-selected intake-plus-navigation command to immutable intake alone.
+The Atom-owned store and facade, private React route adapters, and internal file
 layout may be replaced together behind that interface; orchestration and Atom
 adapters adopt the same private folder shape established by Classic.
 
-The intentional behavior changes in this slice are limited to service-derived
-Start navigation, authoritative completion validation in Finish,
-interruption-safe post-navigation outcome commit, and explicit loading instead
-of fabricated Workflow state during acquisition. Fresh epochs, ownership and
-configuration behavior, terminal-action rejection, destinations, outcome
-meanings, completion retry timing, Transaction Workflow behavior, copy, and the
-rendered journey otherwise remain unchanged. Unrelated defects are recorded
-separately unless they block migration.
+The flow renders action-specific amount copy: Borrow review and completion use
+“Borrow amount”, while Repay uses “Repay amount”, in both English and French
+translations.
+
+The intentional behavior changes include service-derived Start navigation,
+authoritative completion validation in Finish, explicit loading instead of
+fabricated Workflow state during acquisition, exact Market Position route
+identity, Classic-compatible setup-failure redirect, action-specific amount
+copy, and replacement of Borrow outcomes by Widget Domain Events. Fresh epochs,
+ownership and configuration behavior, terminal-action rejection, destinations,
+completion retry timing, and the rendered journey otherwise remain unchanged.

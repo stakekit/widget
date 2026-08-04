@@ -128,8 +128,9 @@ separate journey-specific service and is the next vertical migration slice;
 only neutral lifecycle infrastructure is shared now.
 
 The dead action-history revision Atom and its increment/reset plumbing are
-removed. Transaction Workflow operations already invalidate the authoritative
-Activity resource through `ActivityInvalidationKey`.
+removed. The `TransactionWorkflowEnded` resource projection invalidates the
+authoritative Activity resource through `ActivityInvalidationKey` after the
+Execution Attempt is left.
 
 The document-claim callback-ref bridge in
 `app/embedding/widget-instance-react-boundary.tsx` remains the only reviewed

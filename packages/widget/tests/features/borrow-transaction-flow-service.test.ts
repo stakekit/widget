@@ -320,9 +320,8 @@ describe("BorrowTransactionFlowService", () => {
           const review = yield* session.acquireReview();
           const failed = yield* Effect.exit(review.confirm());
           const retried = yield* review.confirm();
-          const outcome = yield* service.latestOutcome.pipe(Stream.runHead);
           const duplicate = yield* review.confirm();
-          return { duplicate, failed, outcome, retried };
+          return { duplicate, failed, retried };
         })
       ).pipe(
         Effect.provide(
@@ -352,15 +351,6 @@ describe("BorrowTransactionFlowService", () => {
     expect(result.retried).toEqual({ _tag: "Confirmed" });
     expect(result.duplicate).toEqual({ _tag: "RejectedAlreadyReserved" });
     expect(executeAction).toHaveBeenCalledTimes(2);
-    expect(result.outcome).toEqual(
-      Option.some(
-        Option.some({
-          _tag: "ExecutionStarted",
-          entry: intake.entry,
-          epoch: 1,
-        })
-      )
-    );
     expect(commands.map((command) => command._tag)).toEqual([
       "Push",
       "Push",
@@ -438,9 +428,8 @@ describe("BorrowTransactionFlowService", () => {
           yield* Scope.close(reviewScope, Exit.void);
           const confirmationExit = yield* Fiber.await(confirmation);
           const execution = yield* session.acquireExecution();
-          const outcome = yield* service.latestOutcome.pipe(Stream.runHead);
           yield* Deferred.succeed(navigationRelease, undefined);
-          return { confirmationExit, execution, outcome };
+          return { confirmationExit, execution };
         })
       ).pipe(
         Effect.provide(
@@ -459,10 +448,9 @@ describe("BorrowTransactionFlowService", () => {
 
     expect(Exit.hasInterrupts(result.confirmationExit)).toBe(true);
     expect(result.execution).toEqual({ _tag: "RejectedNoReservation" });
-    expect(result.outcome).toEqual(Option.some(Option.none()));
   });
 
-  it("validates authoritative completion before Finish and publishes Done only after navigation", async () => {
+  it("validates authoritative completion before Finish navigation", async () => {
     const commands: Array<WidgetNavigationCommand> = [];
     const workflowState = await Effect.runPromise(
       SubscriptionRef.make<TransactionWorkflowState>(
@@ -493,8 +481,7 @@ describe("BorrowTransactionFlowService", () => {
           };
           yield* SubscriptionRef.set(workflowState, completed);
           const accepted = yield* acquired.execution.finish();
-          const outcome = yield* service.latestOutcome.pipe(Stream.runHead);
-          return { accepted, early, outcome };
+          return { accepted, early };
         })
       ).pipe(
         Effect.provide(
@@ -515,9 +502,6 @@ describe("BorrowTransactionFlowService", () => {
 
     expect(result.early).toEqual({ _tag: "RejectedNotCompleted" });
     expect(result.accepted).toEqual({ _tag: "Accepted" });
-    expect(result.outcome).toEqual(
-      Option.some(Option.some({ _tag: "Done", entry: intake.entry, epoch: 1 }))
-    );
     expect(commands).toContainEqual({
       _tag: "Replace",
       path: toWidgetPath("/borrow"),

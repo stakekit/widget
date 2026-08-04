@@ -62,7 +62,7 @@ export const earnTokenOptionsPageAtom = Atom.make<PageProjection>((context) => {
   const result = context.get(tokenOptionsPullAtom(pullKey));
 
   return projectPage(result, getPullItems(result));
-}).pipe(Atom.withLabel("earnTokenOptionsPageAtom"));
+}).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnTokenOptionsPageAtom"));
 
 export const loadMoreEarnTokenOptionsAtom = Atom.fnSync(
   (_input: undefined, context) => {
@@ -93,7 +93,7 @@ export const earnValidatorsPageAtom = Atom.family((search: string | null) =>
       ...projectPage(result, pulled),
       items: search ? pulled : validators.items,
     };
-  }).pipe(Atom.withLabel("earnValidatorsPageAtom"))
+  }).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnValidatorsPageAtom"))
 );
 
 export const loadMoreEarnValidatorsPageAtom = Atom.fnSync(

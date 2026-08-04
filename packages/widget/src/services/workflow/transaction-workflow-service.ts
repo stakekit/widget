@@ -8,6 +8,8 @@ import {
   type Stream,
   SubscriptionRef,
 } from "effect";
+import { WidgetDomainEvents } from "../events/widget-domain-events";
+import { walletScopeOwnerKey } from "../wallet/domain/scope";
 import {
   getTransactionWorkflowAction,
   initializeTransactionWorkflow,
@@ -32,6 +34,7 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
   {
     make: Effect.gen(function* () {
       const process = yield* makeTransactionWorkflowProcessor;
+      const events = yield* WidgetDomainEvents;
 
       const make = Effect.fn("TransactionWorkflowService.make")(function* (
         input: TransactionWorkflowInput
@@ -62,6 +65,23 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
           queue,
           stateRef,
         }).pipe(Effect.forkScoped);
+
+        const owner = walletScopeOwnerKey(input.walletScope);
+        yield* Effect.addFinalizer(() =>
+          events.publish({
+            _tag: "TransactionWorkflowEnded",
+            owner,
+            workflowKind: input._tag,
+          })
+        ).pipe(
+          Effect.andThen(
+            events.publish({
+              _tag: "TransactionWorkflowStarted",
+              owner,
+            })
+          ),
+          Effect.uninterruptible
+        );
 
         return {
           dispatch: (command) =>

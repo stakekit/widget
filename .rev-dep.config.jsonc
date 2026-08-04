@@ -160,7 +160,8 @@
           "allowImporters": [
             "src/app/runtime/**",
             "src/features/classic-transaction-flow/state/orchestration/classic-flow-review.ts",
-            "src/services/workflow/transaction-workflow-operations-service.ts",
+            "src/services/workflow/transaction-workflow-runtime/confirmation.ts",
+            "src/services/workflow/transaction-workflow-runtime/submission.ts",
             "tests/**"
           ]
         },
@@ -170,7 +171,9 @@
           "allowImporters": [
             "src/app/runtime/**",
             "src/features/borrow-transaction-flow/state/orchestration/borrow-flow-review.ts",
-            "src/services/workflow/transaction-workflow-operations-service.ts",
+            "src/services/workflow/transaction-workflow-runtime/advancement.ts",
+            "src/services/workflow/transaction-workflow-runtime/confirmation.ts",
+            "src/services/workflow/transaction-workflow-runtime/submission.ts",
             "tests/**"
           ]
         },
@@ -226,6 +229,7 @@
           "allowImporters": [
             "**/*.css.ts",
             "src/features/borrow/borrow-entry/**",
+            "src/features/borrow/state.ts",
             "src/features/borrow/ui.ts",
             "tests/**"
           ]
@@ -236,6 +240,7 @@
           "allowImporters": [
             "**/*.css.ts",
             "src/features/borrow/market-position/**",
+            "src/features/borrow/state.ts",
             "src/features/borrow/ui.ts",
             "tests/**"
           ]

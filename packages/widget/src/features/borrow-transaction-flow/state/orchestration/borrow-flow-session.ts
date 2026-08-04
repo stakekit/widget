@@ -8,7 +8,6 @@ import type { TransactionWorkflowInputError } from "../../../../services/workflo
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 import {
   type BorrowFlowSession,
-  type BorrowTransactionFlowOutcome,
   getBorrowTransactionFlowRoutes,
 } from "../../model/borrow-transaction-flow";
 import {
@@ -53,8 +52,7 @@ export type BorrowFlowSessionHandle = Readonly<{
 }>;
 
 type CommitBorrowFlowTransition = (
-  navigation: WidgetNavigationCommand,
-  outcome: BorrowTransactionFlowOutcome | null
+  navigation: WidgetNavigationCommand
 ) => Effect.Effect<void, WidgetNavigationError>;
 
 export const makeBorrowFlowSessionFactory = Effect.fn(
@@ -80,7 +78,7 @@ export const makeBorrowFlowSessionFactory = Effect.fn(
 
     const back = () =>
       runCurrent(
-        commitTransition({ _tag: "Replace", path: paths.basePath }, null)
+        commitTransition({ _tag: "Replace", path: paths.basePath })
       ).pipe(
         Effect.map((result) =>
           result._tag === "Current"
@@ -107,14 +105,10 @@ export const makeBorrowFlowSessionFactory = Effect.fn(
             const rollback = Ref.modify(executionActionRef, (reserved) =>
               reserved === action ? [undefined, null] : [undefined, reserved]
             );
-            yield* commitTransition(
-              { _tag: "Push", path: paths.stepsPath },
-              {
-                _tag: "ExecutionStarted",
-                entry: session.intake.entry,
-                epoch: session.epoch,
-              }
-            ).pipe(
+            yield* commitTransition({
+              _tag: "Push",
+              path: paths.stepsPath,
+            }).pipe(
               Effect.tapError(() => rollback),
               Effect.onInterrupt(() => rollback)
             );
@@ -182,11 +176,6 @@ export const makeBorrowFlowSessionFactory = Effect.fn(
             const execution = yield* makeExecution({
               action,
               commitTransition,
-              doneOutcome: {
-                _tag: "Done",
-                entry: session.intake.entry,
-                epoch: session.epoch,
-              },
               intake: session.intake,
               runOperation: runExecutionOperation(action),
               walletScope: session.walletScope,

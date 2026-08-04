@@ -11,7 +11,6 @@ import {
   type TransactionWorkflowState,
   updateCurrentTransactionWorkflowTransaction,
 } from "../transaction-workflow-model";
-import { TransactionWorkflowOperationsService } from "../transaction-workflow-operations-service";
 import { makeAdvanceBatch } from "./advancement";
 import { makeConfirmCurrent } from "./confirmation";
 import { makePrepareAndSign } from "./signing";
@@ -20,7 +19,6 @@ import { makeSubmitCurrent } from "./submission";
 export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
   const advanceBatch = yield* makeAdvanceBatch;
   const confirmCurrent = yield* makeConfirmCurrent;
-  const operations = yield* TransactionWorkflowOperationsService;
   const prepareAndSign = yield* makePrepareAndSign;
   const submitCurrent = yield* makeSubmitCurrent;
 
@@ -34,14 +32,7 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
     readonly stateRef: SubscriptionRef.SubscriptionRef<TransactionWorkflowState>;
   }) => {
     const complete = (context: TransactionWorkflowContext) =>
-      operations
-        .completeWorkflow(input)
-        .pipe(
-          Effect.andThen(
-            SubscriptionRef.set(stateRef, { _tag: "Completed", context })
-          ),
-          Effect.asVoid
-        );
+      SubscriptionRef.set(stateRef, { _tag: "Completed", context });
 
     const runAdvance = (
       context: TransactionWorkflowContext,
@@ -112,10 +103,7 @@ export const makeTransactionWorkflowProcessor = Effect.gen(function* () {
               context,
               error,
             }),
-          onSuccess: ({ context: submitted }) =>
-            operations
-              .submitWorkflow(input)
-              .pipe(Effect.andThen(runConfirmation(submitted)), Effect.asVoid),
+          onSuccess: ({ context: submitted }) => runConfirmation(submitted),
         })
       );
 

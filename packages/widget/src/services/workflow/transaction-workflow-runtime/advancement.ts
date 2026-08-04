@@ -3,6 +3,7 @@ import {
   type Action as BorrowAction,
   isUnsuccessfulBorrowActionStatus,
 } from "../../../domain/borrow/execution/action";
+import { BorrowOperations } from "../../api/borrow-operations";
 import {
   appendTransactionWorkflowBatch,
   getCurrentTransactionWorkflowBatch,
@@ -10,7 +11,6 @@ import {
   TransactionAdvanceError,
   type TransactionWorkflowContext,
 } from "../transaction-workflow-model";
-import { TransactionWorkflowOperationsService } from "../transaction-workflow-operations-service";
 
 type AdvanceResult =
   | {
@@ -34,7 +34,7 @@ type BorrowAdvanceResolution =
     };
 
 export const makeAdvanceBatch = Effect.gen(function* () {
-  const operations = yield* TransactionWorkflowOperationsService;
+  const borrowOperations = yield* BorrowOperations;
   const resolveBorrowAdvance = Effect.fn(
     "TransactionWorkflow.resolveBorrowAdvance"
   )(function* ({
@@ -70,7 +70,7 @@ export const makeAdvanceBatch = Effect.gen(function* () {
       );
     };
     const step = () =>
-      operations.stepBorrowAction(previousAction.id).pipe(
+      borrowOperations.stepAction(previousAction.id).pipe(
         Effect.mapError((cause) =>
           fail("Borrow action could not advance to the next step.", cause)
         ),
@@ -81,8 +81,8 @@ export const makeAdvanceBatch = Effect.gen(function* () {
       return yield* step();
     }
 
-    const reconciled = yield* operations
-      .getBorrowAction(previousAction.id)
+    const reconciled = yield* borrowOperations
+      .getAction(previousAction.id)
       .pipe(
         Effect.mapError((cause) =>
           fail("Borrow action status could not be reconciled.", cause)

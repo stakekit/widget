@@ -22,6 +22,15 @@ selection result.
 The root `state.ts` facade publishes stable view and command Atoms. Local user
 intent stays authoritative in Atom, deterministic transitions stay plain
 TypeScript, and React only renders the published view and dispatches intent.
+Its application-lifecycle projection maps an owner-scoped
+`TransactionWorkflowStarted` fact to a private Earn Entry Intent reset command;
+nonmatching owners and Ended facts do not mutate selection. Wallet Scope Owner
+changes remain a direct Earn state invariant rather than event behavior, while
+additional-address-only changes preserve selection. Earn owns one active Entry
+Intent store and gives its complete transient Atom chain zero idle TTL, so
+leaving the entry surface discards intent. Resetting returns to a fresh
+post-initialization baseline and never replays one-time host or deep-link
+initialization.
 Authoritative Resources retain caching, pagination, refresh, retry, and
 stale-result policy. Explicit validator selection stores normalized validator
 snapshots in intent, while the initial first-validator default remains derived.

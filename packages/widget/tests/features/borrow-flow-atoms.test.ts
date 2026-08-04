@@ -1,4 +1,4 @@
-import { Effect, Layer, Option, Schema, Stream, SubscriptionRef } from "effect";
+import { Effect, Layer, Schema, Stream, SubscriptionRef } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
@@ -10,10 +10,8 @@ import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type {
   BorrowFlowSession,
   BorrowTransactionFlowIntake,
-  BorrowTransactionFlowOutcome,
 } from "../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import {
-  borrowTransactionFlowOutcomeAtom,
   currentBorrowFlowSessionAtom,
   startBorrowTransactionFlowAtom,
 } from "../../src/features/borrow-transaction-flow/state/atoms/borrow-flow";
@@ -104,11 +102,6 @@ describe("Borrow Flow Atom bridge", () => {
     const current = await Effect.runPromise(
       SubscriptionRef.make<BorrowFlowSession | null>(null)
     );
-    const latestOutcome = await Effect.runPromise(
-      SubscriptionRef.make<Option.Option<BorrowTransactionFlowOutcome>>(
-        Option.none()
-      )
-    );
     const probes = { acquired: 0, released: 0 };
     const startInputs: Array<BorrowTransactionFlowIntake> = [];
     const service = BorrowTransactionFlowService.of({
@@ -127,7 +120,6 @@ describe("Borrow Flow Atom bridge", () => {
             }).pipe(Effect.andThen(SubscriptionRef.set(current, null)))
         ),
       currentSession: SubscriptionRef.changes(current),
-      latestOutcome: SubscriptionRef.changes(latestOutcome),
       start: (input) =>
         Effect.gen(function* () {
           startInputs.push(input);
@@ -156,20 +148,6 @@ describe("Borrow Flow Atom bridge", () => {
     const releaseRoot = registry.mount(rootAtom);
     await vi.waitFor(() => expect(probes.acquired).toBe(1));
 
-    const outcome = {
-      _tag: "ExecutionStarted",
-      entry: intake.entry,
-      epoch: 1,
-    } as const;
-    await Effect.runPromise(
-      SubscriptionRef.set(latestOutcome, Option.some(outcome))
-    );
-    await vi.waitFor(() =>
-      expect(registry.get(borrowTransactionFlowOutcomeAtom)).toEqual(
-        Option.some(outcome)
-      )
-    );
-
     releaseRoot();
     await vi.waitFor(() => expect(probes.released).toBe(1));
     registry.dispose();
@@ -179,11 +157,6 @@ describe("Borrow Flow Atom bridge", () => {
     const session = makeSession(1);
     const current = await Effect.runPromise(
       SubscriptionRef.make<BorrowFlowSession | null>(session)
-    );
-    const latestOutcome = await Effect.runPromise(
-      SubscriptionRef.make<Option.Option<BorrowTransactionFlowOutcome>>(
-        Option.none()
-      )
     );
     const reviewProbes = { acquired: 0, released: 0 };
     const executionProbes = { acquired: 0, released: 0 };
@@ -245,7 +218,6 @@ describe("Borrow Flow Atom bridge", () => {
           () => Effect.void
         ),
       currentSession: SubscriptionRef.changes(current),
-      latestOutcome: SubscriptionRef.changes(latestOutcome),
       start: () => Effect.succeed({ _tag: "Started", session } as const),
     });
     const registry = AtomRegistry.make({

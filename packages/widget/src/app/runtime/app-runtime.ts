@@ -13,6 +13,7 @@ import {
   WidgetConfigService,
 } from "../../services/config/widget-config";
 import { RichErrorService } from "../../services/errors/rich-error-service";
+import { WidgetDomainEvents } from "../../services/events/widget-domain-events";
 import { WidgetNavigation } from "../../services/navigation/widget-navigation";
 import { WidgetPersistence } from "../../services/persistence/widget-persistence";
 import { TrackingService } from "../../services/tracking/tracking-service";
@@ -68,6 +69,7 @@ const makeAppLayer = (
     persistenceLayer,
     trackingLayer,
     navigationLayer,
+    WidgetDomainEvents.layer,
     WalletModal.layer
   ).pipe(Layer.fresh);
 };

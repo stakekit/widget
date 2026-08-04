@@ -1,0 +1,15 @@
+---
+status: accepted
+---
+
+# Widget Domain Events project Transaction Workflow lifecycle facts
+
+One application-scoped `WidgetDomainEvents` service publishes cross-feature domain facts for one Application Runtime Generation and is supplied to each Wallet Runtime. Its event type is a closed discriminated union. Publication synchronously enqueues into an in-memory, unbounded PubSub; it does not await consumers, persist facts, replay history, expose arbitrary topics, or carry tracking events.
+
+`TransactionWorkflowStarted { owner }` is published after input validation and successful Transaction Workflow construction. Starting any workflow consumes all Entry Intent for that Wallet Scope Owner, independent of its journey or source. A composition-owned coordinator statically mounts feature-owned event projections, and those projections invoke private, owner-scoped reset commands. Each feature owns one active Entry Intent store whose complete transient Atom chain has zero idle TTL: leaving its entry surface discards the store rather than retaining drafts per owner or action. A matching reset command restores the active store's fresh post-initialization baseline and never replays one-time host or deep-link initialization. Wallet Scope Owner changes remain intrinsic state-owner invariants and do not depend on events; additional-address-only changes preserve intent.
+
+`TransactionWorkflowEnded { owner, workflowKind }` is published exactly once by the Transaction Workflow handle finalizer when its Execution Attempt ends, whether completed or abandoned. A workflow resource projection uses the owner and Classic-or-Borrow kind to invalidate all relevant existing Authoritative Resource keys asynchronously. Submission, completion, and navigation do not await invalidation. The Complete page remains based on its immutable workflow snapshot; after leaving it, restored source views may briefly render cached balances, positions, or risk details while background reconciliation begins.
+
+The coordinator owns projection lifecycle, not event interpretation. Each feature owns its event-to-command mapping and private reset behavior. Projection failures are reported and isolated so one defective consumer does not stop other consumers. This design accepts the unlikely race in which a newly created Entry Intent is consumed before an already-enqueued Started fact is projected; entry screens are unavailable while their workflow is entering execution.
+
+This supersedes Borrow-specific `BorrowTransactionFlowOutcome`, `ExecutionStarted`, `Done`, outcome cursors, and outcome reconciliation. A Borrow execution setup failure constructs no workflow and therefore publishes no Started fact: Borrow follows Classic by replacing to the entry-specific base route and releasing the Flow Session, while runtime workflow failures remain retryable. Per-submission invalidation, blocking invalidation, a coordinator that directly mutates feature Atoms, dynamic consumer registration, and using domain events as imperative instructions were rejected.

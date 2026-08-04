@@ -861,6 +861,7 @@
           "withdraw": "Retirer la garantie"
         },
         "borrow_amount": "Montant emprunté",
+        "repay_amount": "Montant remboursé",
         "collateral_amount": "Montant de garantie",
         "effective_collateral": "Garantie effective",
         "market": "Marché",

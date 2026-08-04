@@ -1,4 +1,3 @@
-import { useAtomSet } from "@effect/atom-react";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router";
@@ -20,7 +19,6 @@ import {
   getBorrowPositionActions,
   getBorrowPositionDetailsModel,
 } from "../model/details";
-import { stageBorrowPositionActionAtom } from "../state/action-form";
 import { BorrowPositionBreadcrumb } from "./components/breadcrumb";
 import { BorrowPositionInfo } from "./components/position-info";
 import {
@@ -46,7 +44,6 @@ export const BorrowPositionDetailsPage = () => {
   const location = useLocation();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const stageBorrowAction = useAtomSet(stageBorrowPositionActionAtom);
   const borrowPosition = useBorrowPosition(marketId);
   const position = getPositionFromResult(borrowPosition);
   const model = position
@@ -73,7 +70,6 @@ export const BorrowPositionDetailsPage = () => {
   };
 
   const openAction = (action: BorrowPositionAction) => {
-    stageBorrowAction(action);
     navigate(`${getBorrowPositionBasePath(marketId)}/action/${action.id}`);
   };
 

@@ -1,4 +1,4 @@
-import { Cause, Option } from "effect";
+import { Cause, Effect, Layer, Option, Schema, SubscriptionRef } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
@@ -7,12 +7,15 @@ import {
   normalizeWidgetConfig,
   widgetConfigAtom,
 } from "../../src/app/config/settings";
+import { appRuntime } from "../../src/app/runtime/app-runtime";
 import type {
   EarnValidator,
   EarnYield,
 } from "../../src/domain/schema/earn-models";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { PositionsData } from "../../src/domain/types/positions";
 import { tokenString } from "../../src/domain/types/tokens";
+import { earnEntryIntentEventProjectionAtom } from "../../src/features/earn/state";
 import {
   type EarnTokenOption,
   earnSelectionStatusViewAtom,
@@ -58,6 +61,14 @@ import {
   EarnCatalogError,
   type EarnEntry,
 } from "../../src/features/earn/state/earn-selection/types";
+import {
+  type WidgetDomainEvent,
+  WidgetDomainEvents,
+} from "../../src/services/events/widget-domain-events";
+import {
+  WalletScopeKey,
+  walletScopeOwnerKey,
+} from "../../src/services/wallet/domain/scope";
 import {
   yieldApiValidatorFixture,
   yieldApiYieldDtoFixture,
@@ -114,12 +125,14 @@ const classicTokenOptionsKey = new TokenOptionsKey({
 });
 
 const makeClassicRegistry = ({
+  defaultIdleTTL,
   positionsResult = AsyncResult.success(new Map() as PositionsData),
   tokenOptions = [toTokenOption(firstYield)],
   tokenOptionsResult = AsyncResult.success(tokenOptions),
   yields = [firstYield],
   yieldsResult = AsyncResult.success(yields),
 }: {
+  readonly defaultIdleTTL?: number;
   readonly positionsResult?: AsyncResult.AsyncResult<
     PositionsData,
     EarnCatalogError
@@ -136,6 +149,7 @@ const makeClassicRegistry = ({
   >;
 } = {}) =>
   AtomRegistry.make({
+    defaultIdleTTL,
     initialValues: [
       Atom.initialValue(earnMachineEntryAtom, classicEntry),
       [
@@ -350,8 +364,125 @@ const makeDashboardRegistry = () => {
 };
 
 describe("Earn Selection", () => {
-  it("owns validator search state behind a stable semantic view", () => {
+  it("discards Entry Intent when its entry surface is released", async () => {
+    const registry = makeClassicRegistry({ defaultIdleTTL: 300_000 });
+    const unmount = registry.mount(earnSelectionViewAtom);
+    registry.set(setEarnSelectionAmountAtom, "5");
+    expect(registry.get(earnSelectionViewAtom).form.stakeAmount).toBe("5");
+
+    unmount();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    const remount = registry.mount(earnSelectionViewAtom);
+    expect(registry.get(earnSelectionViewAtom).form.stakeAmount).toBe("0");
+
+    remount();
+    registry.dispose();
+  });
+
+  it("consumes Entry Intent only for the workflow owner", async () => {
+    const ownerScope = new WalletScopeKey({
+      address: Schema.decodeSync(WalletAddress)(
+        "0x0000000000000000000000000000000000000001"
+      ),
+      network: "ethereum",
+    });
+    const otherScope = new WalletScopeKey({
+      address: Schema.decodeSync(WalletAddress)(
+        "0x0000000000000000000000000000000000000002"
+      ),
+      network: "ethereum",
+    });
+    const events = Effect.runSync(
+      SubscriptionRef.make<WidgetDomainEvent>({
+        _tag: "TransactionWorkflowStarted",
+        owner: walletScopeOwnerKey(otherScope),
+      })
+    );
+    const tokenOptions = [toTokenOption(firstYield)];
+    const registry = AtomRegistry.make({
+      initialValues: [
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.succeed(
+            WidgetDomainEvents,
+            WidgetDomainEvents.of({
+              events: SubscriptionRef.changes(events),
+              publish: () => Effect.void,
+            })
+          ) as never
+        ),
+        Atom.initialValue(earnMachineEntryAtom, {
+          ...classicEntry,
+          walletScope: ownerScope,
+        }),
+        [
+          initYieldAtom(new InitYieldKey({ yieldId: null })),
+          AsyncResult.success(null),
+        ],
+        [
+          mergedTokenOptionsAtom(
+            new TokenOptionsKey({
+              category: null,
+              initToken: null,
+              initTokenNetwork: null,
+              initYieldId: null,
+              scope: ownerScope,
+              tokensForEnabledYieldsOnly: false,
+            })
+          ),
+          AsyncResult.success(tokenOptions),
+        ],
+        [
+          positionsDataAtom(new PositionsDataKey({ scope: ownerScope })),
+          AsyncResult.success(new Map() as PositionsData),
+        ],
+        [
+          earnYieldCatalogAtom(
+            new YieldCatalogKey({
+              category: null,
+              network: firstYield.token.network,
+              yieldIds: [firstYield.id],
+            })
+          ),
+          AsyncResult.success([firstYield]),
+        ],
+      ],
+    });
+    const unmountProjection = registry.mount(
+      earnEntryIntentEventProjectionAtom
+    );
+    const unmountView = registry.mount(earnSelectionViewAtom);
+
+    registry.set(setEarnSelectionAmountAtom, "5");
+    expect(registry.get(earnSelectionViewAtom).form.stakeAmount).toBe("5");
+    await Effect.runPromise(
+      SubscriptionRef.set(events, {
+        _tag: "TransactionWorkflowEnded",
+        owner: walletScopeOwnerKey(ownerScope),
+        workflowKind: "Classic",
+      })
+    );
+    expect(registry.get(earnSelectionViewAtom).form.stakeAmount).toBe("5");
+
+    await Effect.runPromise(
+      SubscriptionRef.set(events, {
+        _tag: "TransactionWorkflowStarted",
+        owner: walletScopeOwnerKey(ownerScope),
+      })
+    );
+    await vi.waitFor(() =>
+      expect(registry.get(earnSelectionViewAtom).form.stakeAmount).toBe("0")
+    );
+
+    unmountView();
+    unmountProjection();
+    registry.dispose();
+  });
+
+  it("discards validator search when its entry surface is released", async () => {
     const registry = AtomRegistry.make();
+    let unmount = registry.mount(earnSelectionValidatorOptionsViewAtom);
 
     try {
       registry.set(setEarnSelectionValidatorSearchAtom, "  cosmos  ");
@@ -362,7 +493,18 @@ describe("Earn Selection", () => {
           search: "  cosmos  ",
         }
       );
+
+      unmount();
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      unmount = registry.mount(earnSelectionValidatorOptionsViewAtom);
+
+      expect(registry.get(earnSelectionValidatorOptionsViewAtom)).toMatchObject(
+        {
+          search: "",
+        }
+      );
     } finally {
+      unmount();
       registry.dispose();
     }
   });

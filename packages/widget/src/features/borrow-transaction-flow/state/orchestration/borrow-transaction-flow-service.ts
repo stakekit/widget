@@ -2,7 +2,6 @@ import {
   Context,
   Effect,
   Layer,
-  Option,
   PubSub,
   Ref,
   type Scope,
@@ -26,7 +25,6 @@ import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-ser
 import {
   type BorrowFlowSession,
   type BorrowTransactionFlowIntake,
-  type BorrowTransactionFlowOutcome,
   getBorrowReviewTrackingProperties,
   getBorrowTransactionFlowRoutes,
 } from "../../model/borrow-transaction-flow";
@@ -53,9 +51,6 @@ type BorrowTransactionFlowServiceApi = Readonly<{
     session: BorrowFlowSession
   ) => Effect.Effect<AcquireBorrowFlowSessionOutcome, never, Scope.Scope>;
   readonly currentSession: Stream.Stream<BorrowFlowSession | null>;
-  readonly latestOutcome: Stream.Stream<
-    Option.Option<BorrowTransactionFlowOutcome>
-  >;
   readonly start: (
     intake: BorrowTransactionFlowIntake
   ) => Effect.Effect<
@@ -76,17 +71,9 @@ const makeBorrowTransactionFlowService = Effect.fn(
   const wallet = yield* WalletService;
   const makeSession = yield* makeBorrowFlowSessionFactory();
   const stateRef = yield* SubscriptionRef.make<BorrowFlowSession | null>(null);
-  const outcomeRef = yield* SubscriptionRef.make<
-    Option.Option<BorrowTransactionFlowOutcome>
-  >(Option.none());
   const nextEpochRef = yield* Ref.make(1);
   const operations = yield* makeScopedSerialOperations();
-  yield* Effect.addFinalizer(() =>
-    Effect.all(
-      [PubSub.shutdown(stateRef.pubsub), PubSub.shutdown(outcomeRef.pubsub)],
-      { concurrency: "unbounded", discard: true }
-    )
-  );
+  yield* Effect.addFinalizer(() => PubSub.shutdown(stateRef.pubsub));
 
   const isCurrent = (session: BorrowFlowSession) =>
     SubscriptionRef.get(stateRef).pipe(
@@ -111,18 +98,8 @@ const makeBorrowTransactionFlowService = Effect.fn(
       );
 
   const commitTransition = (
-    command: Parameters<typeof navigation.execute>[0],
-    outcome: BorrowTransactionFlowOutcome | null
-  ) =>
-    Effect.uninterruptibleMask((restore) =>
-      restore(navigation.execute(command)).pipe(
-        Effect.andThen(
-          outcome
-            ? SubscriptionRef.set(outcomeRef, Option.some(outcome))
-            : Effect.void
-        )
-      )
-    );
+    command: Parameters<typeof navigation.execute>[0]
+  ) => navigation.execute(command);
 
   const startOpen = Effect.fn("BorrowTransactionFlowService.start")(function* (
     intake: BorrowTransactionFlowIntake
@@ -213,7 +190,6 @@ const makeBorrowTransactionFlowService = Effect.fn(
   return {
     acquireSession: (session) => operations.run(acquireSessionOpen(session)),
     currentSession: SubscriptionRef.changes(stateRef),
-    latestOutcome: SubscriptionRef.changes(outcomeRef),
     start: (intake) => operations.run(startOpen(intake)),
   } satisfies BorrowTransactionFlowServiceApi;
 });

@@ -1,4 +1,4 @@
-import { Effect, Layer, Option, Schema, Stream, SubscriptionRef } from "effect";
+import { Effect, Layer, Schema, SubscriptionRef } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -17,11 +17,8 @@ import { getBorrowPositionActions } from "../../../src/features/borrow/market-po
 import {
   borrowRepayFormAtom,
   makeBorrowPositionActionRouteKey,
-  stageBorrowPositionActionAtom,
 } from "../../../src/features/borrow/market-position/state/action-form";
-import type { BorrowTransactionFlowOutcome } from "../../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
-import { borrowTransactionFlowOutcomeAtom } from "../../../src/features/borrow-transaction-flow/state";
-import { BorrowTransactionFlowService } from "../../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
+import { borrowMarketPositionIntentEventProjectionAtom } from "../../../src/features/borrow/state";
 import { tokenBalancesScanAtom } from "../../../src/features/portfolio/state";
 import { walletScopeAtom } from "../../../src/features/wallet/state";
 import {
@@ -29,7 +26,20 @@ import {
   borrowPositionsResourceAtom as borrowPositionsAtom,
 } from "../../../src/resources/borrow-positions/borrow-positions";
 import { BorrowResourceSource } from "../../../src/services/api/borrow-resource-source";
-import { WalletScopeKey } from "../../../src/services/wallet/domain/scope";
+import {
+  type WidgetDomainEvent,
+  WidgetDomainEvents,
+} from "../../../src/services/events/widget-domain-events";
+import {
+  WalletScopeKey,
+  walletScopeOwnerKey,
+} from "../../../src/services/wallet/domain/scope";
+import {
+  disconnectedLedgerConnectorState,
+  type NormalizedWalletState,
+  type WalletState,
+} from "../../../src/services/wallet/domain/state";
+import { WalletService } from "../../../src/services/wallet/wallet-service";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -122,7 +132,7 @@ const positionDto = {
 } as const;
 
 describe("Market Position action preparation atoms", () => {
-  it("owns staged position preparation and derives Ready from current intent", async () => {
+  it("owns active position intent and derives Ready from current facts", async () => {
     const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
     const market = Schema.decodeUnknownSync(Market)(marketDto);
     const accountSnapshot = Schema.decodeUnknownSync(BorrowAccountSnapshot)({
@@ -157,42 +167,69 @@ describe("Market Position action preparation atoms", () => {
     if (!action) {
       throw new Error("Expected repay action");
     }
-    const outcomes = await Effect.runPromise(
-      SubscriptionRef.make<Option.Option<BorrowTransactionFlowOutcome>>(
-        Option.none()
-      )
+    const events = await Effect.runPromise(
+      SubscriptionRef.make<WidgetDomainEvent>({
+        _tag: "TransactionWorkflowEnded",
+        owner: walletScopeOwnerKey(walletScope),
+        workflowKind: "Borrow",
+      })
     );
-    const flow = BorrowTransactionFlowService.of({
-      acquireSession: () => Effect.succeed({ _tag: "RejectedStale" } as const),
-      currentSession: Stream.never,
-      latestOutcome: SubscriptionRef.changes(outcomes),
-      start: () => Effect.succeed({ _tag: "RejectedOwner" } as const),
+    const domainEvents = WidgetDomainEvents.of({
+      events: SubscriptionRef.changes(events),
+      publish: () => Effect.void,
     });
+    const connection = (
+      scope: WalletScopeKey
+    ): Extract<NormalizedWalletState, { readonly status: "connected" }> => ({
+      additionalAddresses: scope.additionalAddresses,
+      address: scope.address,
+      chain: {} as never,
+      connector: {} as never,
+      connectorChains: [],
+      isLedgerLive: false,
+      isLedgerLiveAccountPlaceholder: false,
+      ledgerAccounts: [],
+      network: scope.network,
+      status: "connected",
+    });
+    const walletState = await Effect.runPromise(
+      SubscriptionRef.make({
+        connection: connection(walletScope),
+        ledger: disconnectedLedgerConnectorState,
+      } satisfies WalletState)
+    );
     let currentAccountSnapshot = accountSnapshot;
     const registry = AtomRegistry.make({
+      defaultIdleTTL: 300_000,
       initialValues: [
         Atom.initialValue(
-          walletRuntime.layer,
-          Layer.succeed(BorrowTransactionFlowService, flow) as never
+          appRuntime.layer,
+          Layer.merge(
+            Layer.succeed(BorrowResourceSource, {
+              getIntegrations: () => Effect.succeed([integration]),
+              getMarkets: () =>
+                Effect.succeed({
+                  items: [market],
+                  limit: 100,
+                  offset: 0,
+                  total: 1,
+                }),
+              getPositionData: () =>
+                Effect.succeed([
+                  { integration, position: currentAccountSnapshot },
+                ]),
+            } as never),
+            Layer.succeed(WidgetDomainEvents, domainEvents)
+          ) as never
         ),
         Atom.initialValue(
-          appRuntime.layer,
-          Layer.succeed(BorrowResourceSource, {
-            getIntegrations: () => Effect.succeed([integration]),
-            getMarkets: () =>
-              Effect.succeed({
-                items: [market],
-                limit: 100,
-                offset: 0,
-                total: 1,
-              }),
-            getPositionData: () =>
-              Effect.succeed([
-                { integration, position: currentAccountSnapshot },
-              ]),
-          } as never)
+          walletRuntime.layer,
+          Layer.succeed(WalletService, {
+            state: SubscriptionRef.get(walletState),
+            states: SubscriptionRef.changes(walletState),
+            wagmiConfig: {},
+          } as never) as never
         ),
-        Atom.initialValue(walletScopeAtom, walletScope),
         Atom.initialValue(
           widgetConfigAtom,
           normalizeWidgetConfig({
@@ -222,12 +259,14 @@ describe("Market Position action preparation atoms", () => {
         }),
       ],
     });
+    const unmountProjection = registry.mount(
+      borrowMarketPositionIntentEventProjectionAtom
+    );
 
-    registry.set(stageBorrowPositionActionAtom, action);
     const formAtom = borrowRepayFormAtom(
       makeBorrowPositionActionRouteKey(action)
     );
-    const unmount = registry.mount(formAtom);
+    let releaseForm = registry.mount(formAtom);
     expect(registry.get(formAtom)?.preparation._tag).toBe("Idle");
 
     registry.set(formAtom, {
@@ -250,12 +289,45 @@ describe("Market Position action preparation atoms", () => {
       });
     }
 
-    registry.set(stageBorrowPositionActionAtom, action);
+    releaseForm();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    releaseForm = registry.mount(formAtom);
     const reopened = registry.get(formAtom);
     expect(reopened).toMatchObject({
       preparation: { _tag: "Idle" },
     });
     expect(reopened?.amount.toString()).toBe("0");
+    registry.set(formAtom, {
+      amount: "25",
+      type: "amount/set",
+    });
+
+    const otherWalletScope = new WalletScopeKey({
+      address: Schema.decodeSync(WalletAddress)(
+        "0x0000000000000000000000000000000000000002"
+      ),
+      network: walletScope.network,
+    });
+    await Effect.runPromise(
+      SubscriptionRef.set(walletState, {
+        connection: connection(otherWalletScope),
+        ledger: disconnectedLedgerConnectorState,
+      })
+    );
+    await vi.waitFor(() =>
+      expect(registry.get(walletScopeAtom)).toEqual(otherWalletScope)
+    );
+    expect(registry.get(formAtom)?.amount.toString()).toBe("0");
+    await Effect.runPromise(
+      SubscriptionRef.set(walletState, {
+        connection: connection(walletScope),
+        ledger: disconnectedLedgerConnectorState,
+      })
+    );
+    await vi.waitFor(() =>
+      expect(registry.get(walletScopeAtom)).toEqual(walletScope)
+    );
+    expect(registry.get(formAtom)?.amount.toString()).toBe("0");
     registry.set(formAtom, {
       amount: "25",
       type: "amount/set",
@@ -285,39 +357,17 @@ describe("Market Position action preparation atoms", () => {
       _tag: "Blocked",
       reasons: ["AmountExceedsPositionBalance"],
     });
-    unmount();
     await Effect.runPromise(
-      SubscriptionRef.set(
-        outcomes,
-        Option.some({
-          _tag: "ExecutionStarted",
-          entry: { _tag: "MarketPosition", marketId: market.id },
-          epoch: 1,
-        })
-      )
-    );
-    await Effect.runPromise(
-      SubscriptionRef.set(
-        outcomes,
-        Option.some({
-          _tag: "Done",
-          entry: { _tag: "MarketPosition", marketId: market.id },
-          epoch: 1,
-        })
-      )
+      SubscriptionRef.set(events, {
+        _tag: "TransactionWorkflowStarted",
+        owner: walletScopeOwnerKey(walletScope),
+      })
     );
     await vi.waitFor(() =>
-      expect(registry.get(borrowTransactionFlowOutcomeAtom)).toEqual(
-        Option.some({
-          _tag: "Done",
-          entry: { _tag: "MarketPosition", marketId: market.id },
-          epoch: 1,
-        })
-      )
+      expect(registry.get(formAtom)?.amount.toString()).toBe("0")
     );
-    const remount = registry.mount(formAtom);
-    expect(registry.get(formAtom)?.amount.toString()).toBe("0");
-    remount();
+    releaseForm();
+    unmountProjection();
     registry.dispose();
   });
 });

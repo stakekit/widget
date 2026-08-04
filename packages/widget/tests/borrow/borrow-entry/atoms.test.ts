@@ -32,6 +32,7 @@ import { BorrowResourceSource } from "../../../src/services/api/borrow-resource-
 import { WalletScopeKey } from "../../../src/services/wallet/domain/scope";
 import {
   disconnectedLedgerConnectorState,
+  disconnectedNormalizedWalletState,
   type NormalizedWalletState,
   type WalletState,
 } from "../../../src/services/wallet/domain/state";
@@ -416,6 +417,61 @@ describe("Borrow Entry atoms", () => {
     expect(view?.catalogResetNotice).toBe(true);
   });
 
+  it("discards Entry Intent when its entry surface is released", async () => {
+    const registry = AtomRegistry.make({
+      defaultIdleTTL: 300_000,
+      initialValues: [
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.succeed(BorrowResourceSource, {
+            getIntegrations: () => Effect.succeed([]),
+            getMarkets: () =>
+              Effect.succeed({
+                items: [],
+                limit: 100,
+                offset: 0,
+                total: 0,
+              }),
+            getPositionData: () => Effect.succeed([]),
+          } as never)
+        ),
+        Atom.initialValue(walletScopeAtom, walletScope),
+        Atom.initialValue(
+          widgetConfigAtom,
+          normalizeWidgetConfig({
+            apiKey: "api-key",
+            borrowEnabled: true,
+            dashboardVariant: true,
+            variant: "default",
+          })
+        ),
+        Atom.initialValue(tokenBalancesScanAtom, {
+          enabled: true,
+          result: AsyncResult.success([]),
+        }),
+      ],
+    });
+    const unmount = registry.mount(currentBorrowEntryAtom);
+    registry.set(currentBorrowEntryAtom, {
+      amount: "7",
+      type: "borrowAmount/set",
+    });
+    expect(registry.get(currentBorrowEntryAtom)?.borrowAmount.toString()).toBe(
+      "7"
+    );
+
+    unmount();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    const remount = registry.mount(currentBorrowEntryAtom);
+    expect(registry.get(currentBorrowEntryAtom)?.borrowAmount.toString()).toBe(
+      "0"
+    );
+
+    remount();
+    registry.dispose();
+  });
+
   it("preserves form intent when Wallet Scope enrichment keeps the same owner", async () => {
     const selectedMarket = Schema.decodeUnknownSync(Market)(marketDto);
     const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
@@ -438,7 +494,7 @@ describe("Borrow Entry atoms", () => {
       ledger: disconnectedLedgerConnectorState,
     } satisfies WalletState;
     const walletState = await Effect.runPromise(
-      SubscriptionRef.make(initialState)
+      SubscriptionRef.make<WalletState>(initialState)
     );
     const registry = AtomRegistry.make({
       initialValues: [
@@ -516,6 +572,61 @@ describe("Borrow Entry atoms", () => {
     expect(
       registry.get(currentBorrowEntryAtom)?.collateralAmount.toString(10)
     ).toBe("1");
+
+    const otherScope = new WalletScopeKey({
+      address: Schema.decodeSync(WalletAddress)(
+        "0x0000000000000000000000000000000000000002"
+      ),
+      network: walletScope.network,
+    });
+    await Effect.runPromise(
+      SubscriptionRef.set(walletState, {
+        connection: connection(otherScope),
+        ledger: disconnectedLedgerConnectorState,
+      })
+    );
+    await vi.waitFor(() =>
+      expect(registry.get(walletScopeAtom)).toEqual(otherScope)
+    );
+    await Effect.runPromise(
+      SubscriptionRef.set(walletState, {
+        connection: connection(enrichedScope),
+        ledger: disconnectedLedgerConnectorState,
+      })
+    );
+    await vi.waitFor(() =>
+      expect(registry.get(walletScopeAtom)).toEqual(enrichedScope)
+    );
+    expect(
+      registry.get(currentBorrowEntryAtom)?.borrowAmount.toString(10)
+    ).toBe("0");
+    expect(
+      registry.get(currentBorrowEntryAtom)?.collateralAmount.toString(10)
+    ).toBe("0");
+
+    registry.set(currentBorrowEntryAtom, {
+      amount: "9",
+      type: "borrowAmount/set",
+    });
+    await Effect.runPromise(
+      SubscriptionRef.set(walletState, {
+        connection: disconnectedNormalizedWalletState,
+        ledger: disconnectedLedgerConnectorState,
+      })
+    );
+    await vi.waitFor(() => expect(registry.get(walletScopeAtom)).toBeNull());
+    await Effect.runPromise(
+      SubscriptionRef.set(walletState, {
+        connection: connection(enrichedScope),
+        ledger: disconnectedLedgerConnectorState,
+      })
+    );
+    await vi.waitFor(() =>
+      expect(registry.get(walletScopeAtom)).toEqual(enrichedScope)
+    );
+    expect(
+      registry.get(currentBorrowEntryAtom)?.borrowAmount.toString(10)
+    ).toBe("0");
 
     unmount();
     registry.dispose();

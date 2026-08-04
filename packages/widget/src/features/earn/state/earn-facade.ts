@@ -92,7 +92,7 @@ const selectedValidatorsAtom = Atom.make(
         validator,
       ])
     )
-).pipe(Atom.withLabel("selectedEarnValidatorsAtom"));
+).pipe(Atom.setIdleTTL(0), Atom.withLabel("selectedEarnValidatorsAtom"));
 
 const earnAppLoadingAtom = Atom.make((get) => {
   const selectedToken = get(earnPageQuoteAtom).selectedToken;
@@ -111,7 +111,7 @@ const earnAppLoadingAtom = Atom.make((get) => {
       wallet.status === "connecting",
     presentationFrozen,
   } as const;
-}).pipe(Atom.withLabel("earnAppLoadingAtom"));
+}).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnAppLoadingAtom"));
 
 const yieldSummaryInputAtom = Atom.make((get) => {
   const quote = get(earnPageQuoteAtom);
@@ -120,7 +120,7 @@ const yieldSummaryInputAtom = Atom.make((get) => {
     validators: get(selectedValidatorsAtom),
     yield: quote.selectedStake,
   };
-}).pipe(Atom.withLabel("earnYieldSummaryInputAtom"));
+}).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnYieldSummaryInputAtom"));
 
 const earnYieldSummary = makeYieldSummary(yieldSummaryInputAtom);
 
@@ -152,7 +152,7 @@ export const earnTokenSelectionViewAtom = Atom.make((get) => {
     search,
     selected: options.selected,
   } as const;
-}).pipe(Atom.withLabel("earnTokenSelectionViewAtom"));
+}).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnTokenSelectionViewAtom"));
 
 export const setEarnTokenSearchAtom = Atom.fnSync((token: string, context) => {
   const search = context(earnPageSearchAtom);
@@ -266,7 +266,7 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
     selected,
     selectedCategory: category,
   } as const;
-}).pipe(Atom.withLabel("earnYieldSelectionViewAtom"));
+}).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnYieldSelectionViewAtom"));
 
 export const setEarnYieldSearchAtom = Atom.fnSync((stake: string, context) => {
   const search = context(earnPageSearchAtom);
@@ -317,7 +317,7 @@ export const earnValidatorSelectionViewAtom = Atom.make((get) => {
     selected: get(selectedValidatorsAtom),
     selectedYield: validatorOptions.selectedYield,
   } as const;
-}).pipe(Atom.withLabel("earnValidatorSelectionViewAtom"));
+}).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnValidatorSelectionViewAtom"));
 
 type EarnValidatorModalEvent =
   | Readonly<{ readonly _tag: "Opened" }>
@@ -448,7 +448,7 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
     walletCommandIdentity: walletCommandIdentity(wallet),
     walletScope,
   } as const;
-}).pipe(Atom.withLabel("earnYieldEntryInputAtom"));
+}).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnYieldEntryInputAtom"));
 
 const earnYieldEntry = makeYieldEntry(earnYieldEntryInputAtom);
 
@@ -551,7 +551,7 @@ export const earnEntryViewAtom = Atom.make((get) => {
     walletScope: input.walletScope,
     yieldType: selectedYield ? getExtendedYieldType(selectedYield) : null,
   } as const;
-}).pipe(Atom.withLabel("earnEntryViewAtom"));
+}).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnEntryViewAtom"));
 
 export const setEarnAmountAtom = Atom.fnSync((amount: BigNumber, context) =>
   context.set(setEarnSelectionAmountAtom, amount.toString(10))
@@ -612,6 +612,6 @@ export const earnPageStatusViewAtom = Atom.make((get) => {
     machineStatus: status.status,
     presentationFrozen: get(earnAppLoadingAtom).presentationFrozen,
   } as const;
-}).pipe(Atom.withLabel("earnPageStatusViewAtom"));
+}).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnPageStatusViewAtom"));
 
 export const runEarnPrimaryActionAtom = earnYieldEntry.submitAtom;

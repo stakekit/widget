@@ -21,7 +21,10 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/components";
-import { projectBorrowTransactionFlowSummary } from "../model/borrow-transaction-flow";
+import {
+  getBorrowTransactionFlowAmountLabelKey,
+  projectBorrowTransactionFlowSummary,
+} from "../model/borrow-transaction-flow";
 import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowReview,
@@ -147,7 +150,7 @@ export const BorrowReviewPage = () => {
     projectedSummary.borrow
       ? {
           id: "borrow-amount",
-          label: t("dashboard.borrow.review_page.borrow_amount"),
+          label: t(getBorrowTransactionFlowAmountLabelKey(summary.action)),
           value: `${projectedSummary.borrow.amount} ${projectedSummary.borrow.symbol}`,
         }
       : null,

@@ -6,6 +6,8 @@ import {
 } from "../../../domain/borrow/execution/action";
 import type { Transaction as BorrowTransaction } from "../../../domain/borrow/execution/transaction";
 import type { ActionTransaction } from "../../../domain/schema/action-models";
+import { BorrowOperations } from "../../api/borrow-operations";
+import { YieldOperations } from "../../api/yield-operations";
 import {
   isTransactionWorkflowDoneStatus,
   selectNextTransactionWorkflowTransaction,
@@ -14,7 +16,6 @@ import {
   type TransactionWorkflowInput,
   updateCurrentTransactionWorkflowTransaction,
 } from "../transaction-workflow-model";
-import { TransactionWorkflowOperationsService } from "../transaction-workflow-operations-service";
 import { requireCurrentWorkflow } from "./current";
 
 class ConfirmationPendingError extends Data.TaggedError(
@@ -35,7 +36,10 @@ type ConfirmationCheckResult =
     };
 
 export const makeConfirmCurrent = Effect.gen(function* () {
-  const operations = yield* TransactionWorkflowOperationsService;
+  const [borrowOperations, yieldOperations] = yield* Effect.all([
+    BorrowOperations,
+    YieldOperations,
+  ]);
 
   return Effect.fn("TransactionWorkflow.confirmCurrent")(function* ({
     context,
@@ -63,8 +67,8 @@ export const makeConfirmCurrent = Effect.gen(function* () {
       Match.tag("Classic", ({ transaction }) => {
         const { source } = transaction;
 
-        return operations
-          .getClassicStatus({ transactionId: source.transaction.id })
+        return yieldOperations
+          .getTransactionStatus({ transactionId: source.transaction.id })
           .pipe(
             Effect.mapError((cause) =>
               fail("Transaction status check failed.", cause)
@@ -96,7 +100,7 @@ export const makeConfirmCurrent = Effect.gen(function* () {
       Match.tag("Borrow", ({ domain, transaction }) => {
         const { source } = transaction;
 
-        return operations.getBorrowAction(domain.action.id).pipe(
+        return borrowOperations.getAction(domain.action.id).pipe(
           Effect.mapError((cause) =>
             fail("Borrow action status could not be checked.", cause)
           ),

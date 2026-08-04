@@ -7,9 +7,9 @@ Borrow is one feature with two peer journeys:
 - `market-position` owns an existing Market Position's details and actions,
   and the `/borrow/:marketId` route mount.
 
-The journeys never import each other. `ui.ts` is the feature's only public
-entry and publishes their two route factories. Each factory owns its relative
-route topology and mounts Borrow Transaction Flow with an immutable
+The journeys never import each other. `ui.ts` publishes their two route
+factories, while `state.ts` publishes composition-owned event-projection
+lifecycles. Each factory owns its relative route topology and mounts Borrow Transaction Flow with an immutable
 `BorrowEntry` or `MarketPosition` entry. The app owns only the surrounding
 Dashboard route composition.
 
@@ -21,18 +21,22 @@ Supporting modules point toward neither journey:
 - `amount-input` and `action-feedback` contain intentionally shared
   presentation pieces.
 
-Borrow Transaction Flow publishes outcomes carrying the immutable entry that
-started the session. Borrow Entry passively reconciles its authoritative form
-state from matching Done outcomes. Market Position passively reconciles its
-single attempt-family state from matching Execution Started outcomes; a
-matching later Done is durable proof of the same reset when the form was
-unobserved between phases. Each attempt is keyed by Wallet owner, network,
-market, and semantic action, owns one discriminated editable intent plus one
-outcome cursor, and continues resolving Position, balance, and risk from live
-resources. Direct routes therefore receive a fresh default without requiring a
-global staged attempt. Each state records the handled epoch and phase so the
-transition is idempotent. Neither journey uses a subscriber Atom, registry
-access, or a React mount to perform that reconciliation, and the flow remains
+Borrow Entry and Market Position each own an app-runtime lifecycle projection
+from `TransactionWorkflowStarted` to a private Entry Intent reset command. Any
+workflow start consumes all Entry Intent for its Wallet Scope Owner, independent
+of journey or source. Each feature owns one active Entry Intent store whose
+complete transient Atom chain has zero idle TTL, so leaving its entry surface
+discards intent. Wallet Scope Owner changes reset state directly,
+additional-address-only changes preserve it, and neither behavior depends on
+event delivery.
+
+Market Position stores only the active route's discriminated editable intent
+together with its owner and action identity. The action route derives fresh
+defaults when mounted; no pre-navigation staging write or retained
+owner-and-action attempt family exists. Position, balance, and risk continue to
+resolve from live resources. The composition coordinator owns projection
+lifecycle, while this feature owns the event-to-command mapping; the coordinator
+does not access Borrow Atoms directly, and Borrow Transaction Flow remains
 independent of Borrow.
 
 Portfolio reads the authoritative Borrow Positions resource directly. It does

@@ -3,8 +3,10 @@ import type { Action as BorrowAction } from "../../../domain/borrow/execution/ac
 import { decodeBorrowTransactionForWallet } from "../../../domain/borrow/execution/transaction";
 import type { Network } from "../../../domain/schema/network-model";
 import type { SKBorrowTxMeta } from "../../../public-api/types";
+import { TrackingService } from "../../tracking/tracking-service";
 import type { WalletRuntimeInvariantError } from "../../wallet/domain/errors";
 import { sameWalletScopeOwner } from "../../wallet/domain/scope";
+import { WalletService } from "../../wallet/wallet-service";
 import {
   makeTransactionSignError,
   type TransactionSignFailureReason,
@@ -12,7 +14,6 @@ import {
   type TransactionWorkflowContext,
   updateCurrentTransactionWorkflowTransaction,
 } from "../transaction-workflow-model";
-import { TransactionWorkflowOperationsService } from "../transaction-workflow-operations-service";
 import { type CurrentWorkflow, requireCurrentWorkflow } from "./current";
 
 type WalletSignFailure =
@@ -52,7 +53,10 @@ const walletSignFailureReason = (
   });
 
 export const makePrepareAndSign = Effect.gen(function* () {
-  const operations = yield* TransactionWorkflowOperationsService;
+  const [tracking, wallet] = yield* Effect.all([
+    TrackingService,
+    WalletService,
+  ]);
   const validateWallet = Effect.fn("TransactionWorkflow.validateWallet")(
     function* ({
       current,
@@ -75,7 +79,8 @@ export const makePrepareAndSign = Effect.gen(function* () {
           transactionId: transaction.source.transaction.id,
           workflowId,
         });
-      const wallet = yield* operations.getWalletState.pipe(
+      const walletState = yield* wallet.state.pipe(
+        Effect.map((state) => state.connection),
         Effect.mapError((cause) =>
           fail({
             _tag: "WalletUnavailable",
@@ -85,7 +90,7 @@ export const makePrepareAndSign = Effect.gen(function* () {
         )
       );
 
-      if (wallet.status !== "connected") {
+      if (walletState.status !== "connected") {
         return yield* fail({
           _tag: "WalletUnavailable",
           detail: "disconnected",
@@ -99,7 +104,7 @@ export const makePrepareAndSign = Effect.gen(function* () {
         });
       }
 
-      if (wallet.network !== network) {
+      if (walletState.network !== network) {
         return yield* fail({
           _tag: "WalletUnavailable",
           detail: "network-changed",
@@ -108,8 +113,8 @@ export const makePrepareAndSign = Effect.gen(function* () {
 
       if (
         !sameWalletScopeOwner(
-          { address: wallet.address, network: wallet.network },
-          { address: expectedAddress, network: wallet.network }
+          { address: walletState.address, network: walletState.network },
+          { address: expectedAddress, network: walletState.network }
         )
       ) {
         return yield* fail({
@@ -206,7 +211,7 @@ export const makePrepareAndSign = Effect.gen(function* () {
             : JSON.stringify(source.transaction.unsignedTransaction);
 
         return source.transaction.isMessage
-          ? operations.signMessage({ message: payload }).pipe(
+          ? wallet.signMessage({ message: payload }).pipe(
               Effect.map((signedTx) => ({
                 broadcasted: false as const,
                 signedTx,
@@ -215,7 +220,7 @@ export const makePrepareAndSign = Effect.gen(function* () {
                 fail(walletSignFailureReason(cause, "message"))
               )
             )
-          : operations
+          : wallet
               .signTransaction({
                 family: "classic",
                 ledgerHwAppId: null,
@@ -251,7 +256,7 @@ export const makePrepareAndSign = Effect.gen(function* () {
         return decodeBorrowTransactionForWallet(source.transaction).pipe(
           Effect.mapError((cause) => fail({ _tag: "DecodeFailed", cause })),
           Effect.flatMap((tx) =>
-            operations
+            wallet
               .signTransaction({
                 family: "borrow",
                 ledgerHwAppId: null,
@@ -276,7 +281,7 @@ export const makePrepareAndSign = Effect.gen(function* () {
       Match.exhaustive
     );
 
-    yield* operations.trackEvent("txSigned", {
+    yield* tracking.trackEvent("txSigned", {
       network,
       txId: source.transaction.id,
       yieldId,

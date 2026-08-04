@@ -1,11 +1,9 @@
-import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Button } from "../../../../shared/ui/primitives/button";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import type { BorrowPositionAction } from "../model/details";
-import { stageBorrowPositionActionAtom } from "../state/action-form";
 import { BorrowPositionBreadcrumb } from "./components/breadcrumb";
 import { useBorrowPositionContext } from "./context";
 import * as styles from "./styles.css";
@@ -13,13 +11,10 @@ import * as styles from "./styles.css";
 export const BorrowPositionActionsPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const stageBorrowAction = useAtomSet(stageBorrowPositionActionAtom);
   const { actions, model, position } = useBorrowPositionContext();
 
-  const onActionSelect = (action: BorrowPositionAction) => {
-    stageBorrowAction(action);
+  const onActionSelect = (action: BorrowPositionAction) =>
     navigate(`action/${action.id}`);
-  };
 
   return (
     <>

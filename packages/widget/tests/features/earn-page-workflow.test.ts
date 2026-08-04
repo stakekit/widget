@@ -230,7 +230,7 @@ describe("earn page workflow atoms", () => {
     }
   });
 
-  it("does not reapply startup initialization after a later manual connection", async () => {
+  it("does not reapply startup initialization after connection or route remount", async () => {
     const walletState = Effect.runSync(
       SubscriptionRef.make(makeWalletState(disconnectedNormalizedWalletState))
     );
@@ -249,6 +249,7 @@ describe("earn page workflow atoms", () => {
       yieldId: secondYield.id,
     } as const;
     const registry = AtomRegistry.make({
+      defaultIdleTTL: 300_000,
       initialValues: [
         [
           walletRuntime.layer,
@@ -317,11 +318,20 @@ describe("earn page workflow atoms", () => {
         ),
       ],
     });
-    const unmount = registry.mount(earnSelectionViewAtom);
+    let unmount = registry.mount(earnSelectionViewAtom);
 
     try {
+      expect(registry.get(earnSelectionViewAtom).selection.yield).toEqual(
+        secondYield
+      );
+
+      unmount();
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      unmount = registry.mount(earnSelectionViewAtom);
+
       await vi.waitFor(() => {
-        expect(registry.get(earnSelectionViewAtom).selection.yield).toEqual(
+        expect(registry.get(earnSelectionStatusViewAtom).status).toBe("ready");
+        expect(registry.get(earnSelectionViewAtom).selection.yield).not.toEqual(
           secondYield
         );
       });
@@ -680,14 +690,22 @@ describe("earn page workflow atoms", () => {
     registry.dispose();
   });
 
-  it("owns page-local search state", () => {
+  it("discards page-local search state when its entry surface is released", async () => {
     const registry = AtomRegistry.make();
+    let unmount = registry.mount(earnPageSearchAtom);
 
     registry.set(earnPageSearchAtom, {
       stake: "ethereum",
       token: "eth",
     });
     expect(registry.get(earnPageSearchAtom).token).toBe("eth");
+
+    unmount();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    unmount = registry.mount(earnPageSearchAtom);
+
+    expect(registry.get(earnPageSearchAtom)).toEqual({ stake: "", token: "" });
+    unmount();
     registry.dispose();
   });
 

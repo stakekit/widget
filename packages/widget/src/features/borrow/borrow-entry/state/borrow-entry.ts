@@ -1,5 +1,5 @@
 import type BigNumber from "bignumber.js";
-import { Data, Effect, Option } from "effect";
+import { Effect, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigAtom } from "../../../../app/config/settings";
@@ -12,18 +12,14 @@ import {
   isBorrowNetwork,
 } from "../../../../domain/borrow/network";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
-import { walletScopeOwnerKey } from "../../../../services/wallet/domain/scope";
 import {
-  borrowTransactionFlowOutcomeAtom,
-  startBorrowTransactionFlowAtom,
-} from "../../../borrow-transaction-flow/state";
+  sameWalletScopeOwner,
+  type WalletScopeOwnerKey,
+  walletScopeOwnerKey,
+} from "../../../../services/wallet/domain/scope";
+import { startBorrowTransactionFlowAtom } from "../../../borrow-transaction-flow/state";
 import { tokenBalancesScanAtom } from "../../../portfolio/state";
 import { walletScopeAtom } from "../../../wallet/state";
-import {
-  type BorrowFlowOutcomeCursor,
-  initialBorrowFlowOutcomeCursor,
-  resolveBorrowEntryOutcomeReceipt,
-} from "../../model/flow-outcome";
 import {
   BorrowMarketsKey,
   BorrowPositionsKey,
@@ -43,136 +39,115 @@ import {
   shouldResetBorrowFormForCatalog,
 } from "../model/borrow-entry";
 
-class BorrowFormOwnerKey extends Data.Class<{
-  readonly address: ReturnType<typeof walletScopeOwnerKey>["address"];
+type BorrowFormOwner = Readonly<{
+  readonly address: WalletScopeOwnerKey["address"];
   readonly network: BorrowNetwork;
-}> {}
+}>;
 
 type BorrowFormState = {
   readonly catalogResetNotice: boolean;
-  readonly flowOutcomeCursor: BorrowFlowOutcomeCursor;
   readonly intent: BorrowFormIntent;
+  readonly owner: BorrowFormOwner;
 };
 
-const makeDefaultBorrowFormState = (): BorrowFormState => ({
+const makeDefaultBorrowFormState = (
+  owner: BorrowFormOwner
+): BorrowFormState => ({
   catalogResetNotice: false,
-  flowOutcomeCursor: initialBorrowFlowOutcomeCursor,
   intent: makeDefaultBorrowFormIntent(),
+  owner,
 });
 
-const borrowFormStateAtom = Atom.family((key: BorrowFormOwnerKey) =>
-  Atom.writable<BorrowFormState, BorrowFormAction>(
-    (context) => {
-      const previous = context
-        .self<BorrowFormState>()
-        .pipe(Option.getOrElse(makeDefaultBorrowFormState));
-      const receipt = context.get(borrowTransactionFlowOutcomeAtom).pipe(
-        Option.map((outcome) => ({
-          entry: outcome.entry,
-          epoch: outcome.epoch,
-          phase: outcome._tag,
-        })),
-        Option.getOrNull
-      );
-      const flowOutcome = resolveBorrowEntryOutcomeReceipt({
-        cursor: previous.flowOutcomeCursor,
-        receipt,
-      });
-      const reconciled = flowOutcome.reset
-        ? {
-            ...makeDefaultBorrowFormState(),
-            flowOutcomeCursor: flowOutcome.cursor,
-          }
-        : {
-            ...previous,
-            flowOutcomeCursor: flowOutcome.cursor,
-          };
-      const marketsResult = context.get(
-        borrowMarketsAtom(new BorrowMarketsKey({ network: key.network }))
-      );
-      const shouldReset =
-        AsyncResult.isSuccess(marketsResult) &&
-        !marketsResult.waiting &&
-        shouldResetBorrowFormForCatalog({
-          intent: reconciled.intent,
-          markets: marketsResult.value,
-        });
+const getBorrowFormOwner = (
+  scope: ReturnType<typeof walletScopeOwnerKey> | null
+): BorrowFormOwner | null =>
+  scope && isBorrowNetwork(scope.network)
+    ? { address: scope.address, network: scope.network }
+    : null;
 
-      return shouldReset
-        ? {
-            catalogResetNotice: true,
-            flowOutcomeCursor: reconciled.flowOutcomeCursor,
-            intent: makeDefaultBorrowFormIntent(),
-          }
-        : reconciled;
-    },
-    (context, action) => {
-      const state = context.get(borrowFormStateAtom(key));
-      const marketsResult = context.get(
-        borrowMarketsAtom(new BorrowMarketsKey({ network: key.network }))
-      );
-      const shouldPinDefaults =
-        action.type !== "reset" && action.type !== "market/select";
-      const intent =
-        shouldPinDefaults && AsyncResult.isSuccess(marketsResult)
-          ? pinBorrowFormDefaults({
-              intent: state.intent,
-              markets: marketsResult.value,
-            })
-          : state.intent;
+export const resetBorrowEntryIntentForOwnerAtom = Atom.fnSync(
+  (owner: WalletScopeOwnerKey, context) => {
+    const scope = context(walletScopeAtom);
+    const currentOwner = getBorrowFormOwner(
+      scope ? walletScopeOwnerKey(scope) : null
+    );
+    if (!currentOwner || !sameWalletScopeOwner(currentOwner, owner)) return;
 
-      context.setSelf({
-        catalogResetNotice: false,
-        flowOutcomeCursor: state.flowOutcomeCursor,
-        intent: applyBorrowFormAction({
-          action,
-          intent,
-        }),
+    context.set(borrowFormStateAtom, { type: "reset" });
+  }
+).pipe(Atom.withLabel("resetBorrowEntryIntentForOwnerAtom"));
+
+const borrowFormStateAtom = Atom.writable<
+  BorrowFormState | null,
+  BorrowFormAction
+>(
+  (context) => {
+    const scope = context.get(walletScopeAtom);
+    const owner = getBorrowFormOwner(scope ? walletScopeOwnerKey(scope) : null);
+    if (!owner) return null;
+
+    const previous = context
+      .self<BorrowFormState | null>()
+      .pipe(Option.getOrNull);
+    const reconciled =
+      previous && sameWalletScopeOwner(previous.owner, owner)
+        ? previous
+        : makeDefaultBorrowFormState(owner);
+    const marketsResult = context.get(
+      borrowMarketsAtom(new BorrowMarketsKey({ network: owner.network }))
+    );
+    const shouldReset =
+      AsyncResult.isSuccess(marketsResult) &&
+      !marketsResult.waiting &&
+      shouldResetBorrowFormForCatalog({
+        intent: reconciled.intent,
+        markets: marketsResult.value,
       });
+
+    return shouldReset
+      ? {
+          catalogResetNotice: true,
+          intent: makeDefaultBorrowFormIntent(),
+          owner,
+        }
+      : reconciled;
+  },
+  (context, action) => {
+    const scope = context.get(walletScopeAtom);
+    const owner = getBorrowFormOwner(scope ? walletScopeOwnerKey(scope) : null);
+    if (!owner) {
+      context.setSelf(null);
+      return;
     }
-  )
-);
+    if (action.type === "reset") {
+      context.setSelf(makeDefaultBorrowFormState(owner));
+      return;
+    }
 
-const borrowEntryAtom = Atom.family((key: BorrowEntryKey) => {
-  const owner = walletScopeOwnerKey(key.scope);
-  const formOwner = new BorrowFormOwnerKey({
-    address: owner.address,
-    network: key.network,
-  });
+    const state = context.get(borrowFormStateAtom);
+    const current =
+      state && sameWalletScopeOwner(state.owner, owner)
+        ? state
+        : makeDefaultBorrowFormState(owner);
+    const marketsResult = context.get(
+      borrowMarketsAtom(new BorrowMarketsKey({ network: owner.network }))
+    );
+    const shouldPinDefaults = action.type !== "market/select";
+    const intent =
+      shouldPinDefaults && AsyncResult.isSuccess(marketsResult)
+        ? pinBorrowFormDefaults({
+            intent: current.intent,
+            markets: marketsResult.value,
+          })
+        : current.intent;
 
-  return Atom.writable<BorrowEntryView, BorrowFormAction>(
-    (context) => {
-      const stateAtom = borrowFormStateAtom(formOwner);
-      const state = context.get(stateAtom);
-      const marketsResult = context.get(
-        borrowMarketsAtom(new BorrowMarketsKey({ network: key.network }))
-      );
-
-      return {
-        ...resolveBorrowEntryView({
-          integrationsResult: context.get(borrowIntegrationsAtom),
-          intent: state.intent,
-          key,
-          marketsResult,
-          positionsResult: context.get(
-            borrowPositionsAtom(
-              new BorrowPositionsKey({
-                scope: key.scope,
-              })
-            )
-          ),
-          tokenBalances:
-            AsyncResult.getOrElse(
-              context.get(tokenBalancesScanAtom).result,
-              () => []
-            ) ?? [],
-        }),
-        catalogResetNotice: state.catalogResetNotice,
-      };
-    },
-    (context, action) => context.set(borrowFormStateAtom(formOwner), action)
-  );
-});
+    context.setSelf({
+      catalogResetNotice: false,
+      intent: applyBorrowFormAction({ action, intent }),
+      owner,
+    });
+  }
+).pipe(Atom.setIdleTTL(0), Atom.withLabel("borrowFormStateAtom"));
 
 const currentBorrowEntryKeyAtom = Atom.make((get) => {
   if (!get(widgetConfigAtom).borrowEnabled) return null;
@@ -192,16 +167,37 @@ export const currentBorrowEntryAtom = Atom.writable<
   BorrowFormAction
 >(
   (context) => {
+    const state = context.get(borrowFormStateAtom);
     const key = context.get(currentBorrowEntryKeyAtom);
+    if (!key || !state) return null;
+    const marketsResult = context.get(
+      borrowMarketsAtom(new BorrowMarketsKey({ network: key.network }))
+    );
 
-    return key ? context.get(borrowEntryAtom(key)) : null;
+    return {
+      ...resolveBorrowEntryView({
+        integrationsResult: context.get(borrowIntegrationsAtom),
+        intent: state.intent,
+        key,
+        marketsResult,
+        positionsResult: context.get(
+          borrowPositionsAtom(new BorrowPositionsKey({ scope: key.scope }))
+        ),
+        tokenBalances:
+          AsyncResult.getOrElse(
+            context.get(tokenBalancesScanAtom).result,
+            () => []
+          ) ?? [],
+      }),
+      catalogResetNotice: state.catalogResetNotice,
+    };
   },
   (context, action) => {
-    const key = context.get(currentBorrowEntryKeyAtom);
-
-    if (key) context.set(borrowEntryAtom(key), action);
+    if (context.get(currentBorrowEntryKeyAtom)) {
+      context.set(borrowFormStateAtom, action);
+    }
   }
-).pipe(Atom.withLabel("currentBorrowEntryAtom"));
+).pipe(Atom.setIdleTTL(0), Atom.withLabel("currentBorrowEntryAtom"));
 
 export const setBorrowAmountAtom = Atom.fnSync((amount: BigNumber, context) =>
   context.set(currentBorrowEntryAtom, {

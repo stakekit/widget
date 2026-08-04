@@ -6,18 +6,15 @@ import { appRuntime } from "../../../../app/runtime/app-runtime";
 import { BorrowFeatureDisabled } from "../../../../domain/borrow/availability";
 import type { MarketId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
-import type { WalletScopeKey } from "../../../../services/wallet/domain/scope";
 import {
-  borrowTransactionFlowOutcomeAtom,
-  startBorrowTransactionFlowAtom,
-} from "../../../borrow-transaction-flow/state";
+  sameWalletScopeOwner,
+  type WalletScopeKey,
+  type WalletScopeOwnerKey,
+  walletScopeOwnerKey,
+} from "../../../../services/wallet/domain/scope";
+import { startBorrowTransactionFlowAtom } from "../../../borrow-transaction-flow/state";
 import { tokenBalancesScanAtom } from "../../../portfolio/state";
 import { walletScopeAtom } from "../../../wallet/state";
-import {
-  type BorrowFlowOutcomeCursor,
-  initialBorrowFlowOutcomeCursor,
-  resolveMarketPositionOutcomeReceipt,
-} from "../../model/flow-outcome";
 import { currentBorrowPositionsAtom } from "../../positions/state/positions";
 import {
   applyBorrowRepayFormAction,
@@ -59,7 +56,7 @@ class BorrowPositionActionFormKey extends Data.Class<{
   readonly actionId: string;
   readonly marketId: MarketId;
   readonly network: BorrowNetwork;
-  readonly owner: string;
+  readonly owner: WalletScopeOwnerKey;
 }> {}
 
 const makeFormKey = (
@@ -68,7 +65,7 @@ const makeFormKey = (
 ) =>
   new BorrowPositionActionFormKey({
     ...key,
-    owner: scope.address.toLowerCase(),
+    owner: walletScopeOwnerKey(scope),
   });
 
 type BorrowPositionActionAttempt =
@@ -80,142 +77,141 @@ type BorrowPositionActionAttempt =
   | {
       readonly _tag: "Withdraw";
       readonly intent: BorrowWithdrawFormIntent;
-    }
-  | { readonly _tag: "CollateralToggle" };
+    };
 
 type BorrowPositionActionAttemptAction =
-  | {
-      readonly _tag: "Start";
-      readonly actionType:
-        | "repay"
-        | "withdraw"
-        | "disableCollateral"
-        | "enableCollateral";
-    }
   | { readonly _tag: "Repay"; readonly action: BorrowRepayFormAction }
   | { readonly _tag: "Withdraw"; readonly action: BorrowWithdrawFormAction };
 
-const initializeBorrowPositionActionAttempt = (
-  actionType: Extract<
-    BorrowPositionActionAttemptAction,
-    { readonly _tag: "Start" }
-  >["actionType"]
-): BorrowPositionActionAttempt => {
-  switch (actionType) {
-    case "repay":
-      return {
-        _tag: "Repay",
-        intent: makeDefaultBorrowRepayFormIntent(),
-      };
-    case "withdraw":
-      return {
-        _tag: "Withdraw",
-        intent: makeDefaultBorrowWithdrawFormIntent(),
-      };
-    case "disableCollateral":
-    case "enableCollateral":
-      return { _tag: "CollateralToggle" };
-  }
-};
-
-type PositionActionAttemptStore = Readonly<{
-  readonly cursor: BorrowFlowOutcomeCursor;
+type ActivePositionActionIntent = Readonly<{
   readonly attempt: BorrowPositionActionAttempt;
+  readonly key: BorrowPositionActionFormKey | null;
+  readonly owner: WalletScopeOwnerKey | null;
 }>;
 
-const getPositionOutcomeReceipt = (context: Atom.AtomContext) =>
-  context.get(borrowTransactionFlowOutcomeAtom).pipe(
-    Option.map((outcome) => ({
-      entry: outcome.entry,
-      epoch: outcome.epoch,
-      phase: outcome._tag,
-    })),
-    Option.getOrNull
-  );
+type ActivePositionActionIntentCommand =
+  | (BorrowPositionActionAttemptAction & {
+      readonly key: BorrowPositionActionFormKey;
+    })
+  | { readonly _tag: "Reset" };
 
-const borrowPositionActionAttemptAtom = Atom.family(
-  (key: BorrowPositionActionFormKey) => {
-    const initial: PositionActionAttemptStore = {
-      cursor: initialBorrowFlowOutcomeCursor,
-      attempt: { _tag: "Uninitialized" },
-    };
-    const storeAtom = Atom.writable<
-      PositionActionAttemptStore,
-      BorrowPositionActionAttemptAction
-    >(
-      (context) => {
-        const previous = context
-          .self<PositionActionAttemptStore>()
-          .pipe(Option.getOrElse(() => initial));
-        const resolved = resolveMarketPositionOutcomeReceipt({
-          cursor: previous.cursor,
-          marketId: key.marketId,
-          receipt: getPositionOutcomeReceipt(context),
+const samePositionActionForm = (
+  first: BorrowPositionActionFormKey,
+  second: BorrowPositionActionFormKey
+) =>
+  first.actionId === second.actionId &&
+  first.marketId === second.marketId &&
+  first.network === second.network &&
+  sameWalletScopeOwner(first.owner, second.owner);
+
+const makeInitialPositionActionIntent = (): ActivePositionActionIntent => ({
+  attempt: { _tag: "Uninitialized" },
+  key: null,
+  owner: null,
+});
+
+const makePositionActionIntentForOwner = (
+  owner: WalletScopeOwnerKey | null
+): ActivePositionActionIntent => ({
+  ...makeInitialPositionActionIntent(),
+  owner,
+});
+
+const activeBorrowPositionActionIntentAtom = Atom.writable<
+  ActivePositionActionIntent,
+  ActivePositionActionIntentCommand
+>(
+  (context) => {
+    const scope = context.get(walletScopeAtom);
+    const owner = scope ? walletScopeOwnerKey(scope) : null;
+    const previous = context
+      .self<ActivePositionActionIntent>()
+      .pipe(Option.getOrElse(makeInitialPositionActionIntent));
+    const sameOwner =
+      previous.owner && owner
+        ? sameWalletScopeOwner(previous.owner, owner)
+        : previous.owner === owner;
+
+    return sameOwner ? previous : makePositionActionIntentForOwner(owner);
+  },
+  (context, command) => {
+    const scope = context.get(walletScopeAtom);
+    const owner = scope ? walletScopeOwnerKey(scope) : null;
+    if (command._tag === "Reset") {
+      context.setSelf(makePositionActionIntentForOwner(owner));
+      return;
+    }
+
+    const previous = context.get(activeBorrowPositionActionIntentAtom);
+    const attempt =
+      previous.key && samePositionActionForm(previous.key, command.key)
+        ? previous.attempt
+        : ({ _tag: "Uninitialized" } as const);
+
+    switch (command._tag) {
+      case "Repay": {
+        const intent =
+          attempt._tag === "Repay"
+            ? attempt.intent
+            : makeDefaultBorrowRepayFormIntent();
+        context.setSelf({
+          attempt: {
+            _tag: "Repay",
+            intent: applyBorrowRepayFormAction({
+              action: command.action,
+              intent,
+            }),
+          },
+          key: command.key,
+          owner: command.key.owner,
         });
-        return {
-          cursor: resolved.cursor,
-          attempt: resolved.reset
-            ? ({ _tag: "Uninitialized" } as const)
-            : previous.attempt,
-        };
-      },
-      (context, action) => {
-        const previous = context.get(storeAtom);
-        switch (action._tag) {
-          case "Start": {
-            context.setSelf({
-              cursor: previous.cursor,
-              attempt: initializeBorrowPositionActionAttempt(action.actionType),
-            });
-            return;
-          }
-          case "Repay": {
-            const intent =
-              previous.attempt._tag === "Repay"
-                ? previous.attempt.intent
-                : makeDefaultBorrowRepayFormIntent();
-            context.setSelf({
-              cursor: previous.cursor,
-              attempt: {
-                _tag: "Repay",
-                intent: applyBorrowRepayFormAction({
-                  action: action.action,
-                  intent,
-                }),
-              },
-            });
-            return;
-          }
-          case "Withdraw": {
-            const intent =
-              previous.attempt._tag === "Withdraw"
-                ? previous.attempt.intent
-                : makeDefaultBorrowWithdrawFormIntent();
-            context.setSelf({
-              cursor: previous.cursor,
-              attempt: {
-                _tag: "Withdraw",
-                intent: applyBorrowWithdrawFormAction({
-                  action: action.action,
-                  intent,
-                }),
-              },
-            });
-            return;
-          }
-        }
+        return;
       }
-    );
-
-    return Atom.writable<
-      BorrowPositionActionAttempt,
-      BorrowPositionActionAttemptAction
-    >(
-      (context) => context.get(storeAtom).attempt,
-      (context, action) => context.set(storeAtom, action)
-    );
+      case "Withdraw": {
+        const intent =
+          attempt._tag === "Withdraw"
+            ? attempt.intent
+            : makeDefaultBorrowWithdrawFormIntent();
+        context.setSelf({
+          attempt: {
+            _tag: "Withdraw",
+            intent: applyBorrowWithdrawFormAction({
+              action: command.action,
+              intent,
+            }),
+          },
+          key: command.key,
+          owner: command.key.owner,
+        });
+        return;
+      }
+    }
   }
+).pipe(
+  Atom.setIdleTTL(0),
+  Atom.withLabel("activeBorrowPositionActionIntentAtom")
 );
+
+export const resetBorrowMarketPositionIntentForOwnerAtom = Atom.fnSync(
+  (owner: WalletScopeOwnerKey, context) => {
+    const scope = context(walletScopeAtom);
+    if (scope && sameWalletScopeOwner(walletScopeOwnerKey(scope), owner)) {
+      context.set(activeBorrowPositionActionIntentAtom, { _tag: "Reset" });
+    }
+  }
+).pipe(Atom.withLabel("resetBorrowMarketPositionIntentForOwnerAtom"));
+
+const getActivePositionActionAttempt = (
+  context: Atom.AtomContext,
+  key: BorrowPositionActionFormKey
+): BorrowPositionActionAttempt => {
+  const active = context.get(activeBorrowPositionActionIntentAtom);
+  if (!active.key || !samePositionActionForm(active.key, key)) {
+    return { _tag: "Uninitialized" };
+  }
+
+  return active.attempt;
+};
 
 type ReadAtom = <A>(atom: Atom.Atom<A>) => A;
 
@@ -259,6 +255,7 @@ export const borrowRepayFormAtom = Atom.family(
       (context) => {
         const current = getCurrentPositionAction(context, key);
         if (current?.action.pendingContext.type !== "repay") {
+          context.get(activeBorrowPositionActionIntentAtom);
           return null;
         }
 
@@ -268,8 +265,9 @@ export const borrowRepayFormAtom = Atom.family(
           Option.getOrElse(() => null)
         );
 
-        const attempt = context.get(
-          borrowPositionActionAttemptAtom(current.formKey)
+        const attempt = getActivePositionActionAttempt(
+          context,
+          current.formKey
         );
         return resolveBorrowRepayFormView({
           address: current.scope.address,
@@ -287,13 +285,15 @@ export const borrowRepayFormAtom = Atom.family(
           key
         );
         if (current?.action.pendingContext.type === "repay") {
-          context.set(borrowPositionActionAttemptAtom(current.formKey), {
+          context.set(activeBorrowPositionActionIntentAtom, {
             _tag: "Repay",
             action,
+            key: current.formKey,
           });
+          context.refreshSelf();
         }
       }
-    ).pipe(Atom.withLabel("borrowRepayFormAtom"))
+    ).pipe(Atom.setIdleTTL(0), Atom.withLabel("borrowRepayFormAtom"))
 );
 
 export const borrowWithdrawFormAtom = Atom.family(
@@ -302,11 +302,13 @@ export const borrowWithdrawFormAtom = Atom.family(
       (context) => {
         const current = getCurrentPositionAction(context, key);
         if (current?.action.pendingContext.type !== "withdraw") {
+          context.get(activeBorrowPositionActionIntentAtom);
           return null;
         }
 
-        const attempt = context.get(
-          borrowPositionActionAttemptAtom(current.formKey)
+        const attempt = getActivePositionActionAttempt(
+          context,
+          current.formKey
         );
         return resolveBorrowWithdrawFormView({
           address: current.scope.address,
@@ -323,13 +325,15 @@ export const borrowWithdrawFormAtom = Atom.family(
           key
         );
         if (current?.action.pendingContext.type === "withdraw") {
-          context.set(borrowPositionActionAttemptAtom(current.formKey), {
+          context.set(activeBorrowPositionActionIntentAtom, {
             _tag: "Withdraw",
             action,
+            key: current.formKey,
           });
+          context.refreshSelf();
         }
       }
-    ).pipe(Atom.withLabel("borrowWithdrawFormAtom"))
+    ).pipe(Atom.setIdleTTL(0), Atom.withLabel("borrowWithdrawFormAtom"))
 );
 
 export const borrowCollateralToggleFormAtom = Atom.family(
@@ -348,7 +352,10 @@ export const borrowCollateralToggleFormAtom = Atom.family(
         address: current.scope.address,
         context: current.action.pendingContext,
       });
-    }).pipe(Atom.withLabel("borrowCollateralToggleFormAtom"))
+    }).pipe(
+      Atom.setIdleTTL(0),
+      Atom.withLabel("borrowCollateralToggleFormAtom")
+    )
 );
 
 const getCurrentPreparation = (
@@ -397,28 +404,3 @@ export const startBorrowPositionActionReviewAtom = appRuntime
     })
   )
   .pipe(Atom.withLabel("startBorrowPositionActionReviewAtom"));
-
-/**
- * Opens a position action from the actions list: the staged semantic identity
- * starts with clean intent, while preparation resolves the current Position.
- */
-export const stageBorrowPositionActionAtom = Atom.fnSync(
-  (action: BorrowPositionAction, context) => {
-    if (!context(widgetConfigAtom).borrowEnabled) {
-      return new BorrowFeatureDisabled({
-        message: "Borrow is disabled by Widget configuration.",
-      });
-    }
-
-    const scope = context(walletScopeAtom);
-    if (!scope) {
-      return null;
-    }
-
-    const key = makeBorrowPositionActionRouteKey(action);
-    context.set(borrowPositionActionAttemptAtom(makeFormKey(key, scope)), {
-      _tag: "Start",
-      actionType: action.pendingContext.type,
-    });
-  }
-).pipe(Atom.withLabel("stageBorrowPositionActionAtom"));

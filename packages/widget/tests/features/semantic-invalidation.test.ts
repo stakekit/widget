@@ -5,6 +5,7 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import * as Reactivity from "effect/unstable/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { getTransactionWorkflowEndedInvalidationKeys } from "../../src/app/runtime/transaction-workflow-event-projection";
 import { Integration } from "../../src/domain/borrow/catalog/integration";
 import { Market } from "../../src/domain/borrow/catalog/market";
 import { BorrowAccountSnapshot } from "../../src/domain/borrow/positions/borrow-account-snapshot";
@@ -42,12 +43,10 @@ import {
   YieldResourceSource,
 } from "../../src/services/api/yield-resource-source";
 import { ActivityInvalidationKey } from "../../src/services/resource-invalidation";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
-  BorrowTransactionWorkflowInput,
-  ClassicTransactionWorkflowInput,
-} from "../../src/services/workflow/transaction-workflow-model";
-import { getTransactionWorkflowInvalidationKeys } from "../../src/services/workflow/transaction-workflow-operations-service";
+  WalletScopeKey,
+  walletScopeOwnerKey,
+} from "../../src/services/wallet/domain/scope";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 
@@ -187,17 +186,11 @@ const reactivityAtom = appRuntime.atom(
 );
 
 const workflowInvalidationKeys = (scope: WalletScopeKey) =>
-  getTransactionWorkflowInvalidationKeys(
-    new ClassicTransactionWorkflowInput({
-      actionMeta: {
-        actionId: "completed-action",
-        address: scope.address,
-      } as never,
-      transactions: [],
-      walletScope: scope,
-      yieldId,
-    })
-  );
+  getTransactionWorkflowEndedInvalidationKeys({
+    _tag: "TransactionWorkflowEnded",
+    owner: walletScopeOwnerKey(scope),
+    workflowKind: "Classic",
+  });
 
 describe("semantic resource invalidation", () => {
   it("refreshes idle Earn bases for the workflow wallet scope only", async () => {
@@ -566,21 +559,11 @@ describe("semantic resource invalidation", () => {
       expect(value.balances.debt?.pendingActions).toHaveLength(1);
     });
     updated = true;
-    const action = {
-      action: "repay",
-      address: scopeA.address,
-      createdAt: "2026-07-23T00:00:00.000Z",
-      currentStep: 1,
-      hasNextStep: false,
-      id: "borrow-action",
-      integrationId: borrowIntegration.id,
-      status: "SUCCESS",
-      totalSteps: 1,
-      transactions: [],
-    } as never;
-    const keys = getTransactionWorkflowInvalidationKeys(
-      new BorrowTransactionWorkflowInput({ action, walletScope: scopeA })
-    );
+    const keys = getTransactionWorkflowEndedInvalidationKeys({
+      _tag: "TransactionWorkflowEnded",
+      owner: walletScopeOwnerKey(scopeA),
+      workflowKind: "Borrow",
+    });
     const reactivity = AsyncResult.getOrThrow(registry.get(reactivityAtom));
 
     await Effect.runPromise(reactivity.withBatch(reactivity.invalidate(keys)));

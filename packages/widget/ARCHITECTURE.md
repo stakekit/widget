@@ -61,11 +61,10 @@ The intended read direction is:
 Feature commands and workflows may use operation capability services through
 the app runtime, but feature read models do not bypass Authoritative Resources
 to call read-side API capabilities directly. The owning operation importers are
-the Classic and Borrow Flow Review orchestration modules,
-and the Transaction Workflow operations service. Wallet Bootstrap is the only
-read-source exception: it acquires enabled networks and an optional initial
-Yield while constructing the wallet runtime, before feature resources are
-available.
+the Classic and Borrow Flow Review orchestration modules, and the Transaction
+Workflow runtime. Wallet Bootstrap is the only read-source exception: it
+acquires enabled networks and an optional initial Yield while constructing the
+wallet runtime, before feature resources are available.
 
 Feature-to-feature collaboration must use an explicit supported entrypoint;
 deep imports into another feature are forbidden and rev-dep fails the build on
@@ -150,8 +149,10 @@ generic tagged-command dispatcher. Observable channels are demand-driven: a
 read-only state Stream exists when production needs changing authoritative
 facts, and an event Stream exists only for a production observer that cannot
 use state or an operation outcome. The module directly performs navigation,
-tracking, invalidation, and other side effects required by an accepted
-operation. Its interface never accepts or returns an Atom, registry, Atom
+tracking, and other side effects required by an accepted operation. Widget
+Domain Events carry closed cross-feature lifecycle facts; feature-owned
+projections interpret them and may invoke private state or resource commands
+without turning events into an instruction bus. Its interface never accepts or returns an Atom, registry, Atom
 context, or command context. Feature `model/` modules likewise never import
 Effect Atom; Atom adapters materialize explicit resource observations before
 invoking deterministic logic.
@@ -188,8 +189,8 @@ projections do not feed orchestration.
 that constructs the scoped `ApplicationRouter` around the memory router.
 `app-runtime.ts` consumes that router context and composes bootstrap
 configuration, focused Yield, Legacy, and Borrow capability ports, rich errors,
-persistence, tracking, `WidgetTranslation`, `WidgetNavigation`, and wallet-modal
-commands. The derived `wallet-runtime.ts` receives the application context and adds its scoped
+persistence, tracking, `WidgetTranslation`, `WidgetNavigation`, wallet-modal
+commands, and one `WidgetDomainEvents` service. The derived `wallet-runtime.ts` receives the application context and adds its scoped
 wallet, wallet-account-setup, transaction-workflow, Classic Transaction Flow,
 Borrow Transaction Flow, and Yield Entry submission services. It is the sole privileged importer
 of those private feature orchestration services; exact-file rev-dep exceptions
@@ -309,14 +310,16 @@ unavailable risk assessment. Borrow Entry and Market Position Atoms own
 preparation and re-read the current `Ready` value when starting a Flow Session;
 React only renders the view and dispatches intent.
 
-Borrow Entry and Market Position form state passively reconcile from matching
-Borrow Transaction Flow outcomes. Borrow Entry consumes Done. Market Position
-consumes Execution Started, with a matching later Done serving as durable proof
-of that transition if the form was unobserved between phases. The owning state
-records the handled outcome identity so the transition is idempotent. Market
-Position uses one owner- and action-keyed attempt family rather than coordinating
-separate repay, withdraw, and staged stores. No subscriber Atom, registry
-access, or React mount is required for correctness.
+Borrow Entry and Market Position own projections from owner-scoped
+`TransactionWorkflowStarted` facts to private Entry Intent reset commands.
+Each feature owns one active Entry Intent store, and its complete transient Atom
+chain has zero idle TTL so leaving the entry surface discards it. Wallet Scope
+Owner changes reset intent directly, additional-address-only changes preserve
+it, and matching workflow facts reset mounted intent to a post-initialization
+baseline. Market Position derives fresh action defaults from the mounted route
+without pre-navigation staging or retained owner-and-action attempt families.
+Application composition owns projection lifecycle, without direct registry
+access in either journey.
 
 Application deep-link routing is one scoped Effect coordinator. Its route-edge
 Atom supplies a normalized observation Stream; the coordinator owns serialized

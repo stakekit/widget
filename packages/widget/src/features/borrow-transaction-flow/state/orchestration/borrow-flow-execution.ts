@@ -12,10 +12,7 @@ import {
 } from "../../../../services/workflow/transaction-workflow-model";
 import { TransactionWorkflowService } from "../../../../services/workflow/transaction-workflow-service";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
-import type {
-  BorrowTransactionFlowIntake,
-  BorrowTransactionFlowOutcome,
-} from "../../model/borrow-transaction-flow";
+import type { BorrowTransactionFlowIntake } from "../../model/borrow-transaction-flow";
 import { getBorrowTransactionFlowRoutes } from "../../model/borrow-transaction-flow";
 
 type BorrowFlowExecutionOutcome =
@@ -50,8 +47,7 @@ type RunBorrowFlowExecutionOperation = <A, E>(
 >;
 
 type CommitBorrowFlowTransition = (
-  navigation: Parameters<WidgetNavigation["Service"]["execute"]>[0],
-  outcome: BorrowTransactionFlowOutcome | null
+  navigation: Parameters<WidgetNavigation["Service"]["execute"]>[0]
 ) => Effect.Effect<void, WidgetNavigationError>;
 
 export const makeBorrowFlowExecutionFactory = Effect.fn(
@@ -63,14 +59,12 @@ export const makeBorrowFlowExecutionFactory = Effect.fn(
   return Effect.fn("makeBorrowFlowExecution")(function* ({
     action,
     commitTransition,
-    doneOutcome,
     intake,
     runOperation,
     walletScope,
   }: {
     readonly action: Action;
     readonly commitTransition: CommitBorrowFlowTransition;
-    readonly doneOutcome: BorrowTransactionFlowOutcome;
     readonly intake: BorrowTransactionFlowIntake;
     readonly runOperation: RunBorrowFlowExecutionOperation;
     readonly walletScope: import("../../../../services/wallet/domain/scope").WalletScopeKey;
@@ -120,10 +114,7 @@ export const makeBorrowFlowExecutionFactory = Effect.fn(
         if (Option.isNone(state) || state.value._tag !== "Completed") {
           return { _tag: "NotCompleted" } as const;
         }
-        yield* commitTransition(
-          { _tag: "Replace", path: paths.basePath },
-          doneOutcome
-        );
+        yield* commitTransition({ _tag: "Replace", path: paths.basePath });
         return { _tag: "Completed" } as const;
       }
     );

@@ -81,6 +81,13 @@ export type BorrowTransactionFlowReview = {
   readonly summary: BorrowTransactionFlowSummary;
 };
 
+export const getBorrowTransactionFlowAmountLabelKey = (
+  action: BorrowTransactionFlowSummary["action"]
+) =>
+  action === "repay"
+    ? ("dashboard.borrow.review_page.repay_amount" as const)
+    : ("dashboard.borrow.review_page.borrow_amount" as const);
+
 export const projectBorrowTransactionFlowSummary = (
   summary: BorrowTransactionFlowSummary
 ) => {
@@ -208,12 +215,6 @@ export type BorrowFlowSession = Readonly<{
   readonly epoch: number;
   readonly intake: BorrowTransactionFlowIntake;
   readonly walletScope: WalletScopeKey;
-}>;
-
-export type BorrowTransactionFlowOutcome = Readonly<{
-  readonly _tag: "Done" | "ExecutionStarted";
-  readonly entry: BorrowTransactionFlowEntry;
-  readonly epoch: number;
 }>;
 
 export const getBorrowReviewTrackingProperties = (

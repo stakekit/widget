@@ -50,6 +50,7 @@ import { BorrowStepsPage } from "../../src/features/borrow-transaction-flow/ui/s
 import { useBorrowExecution } from "../../src/features/borrow-transaction-flow/ui/use-borrow-execution";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { BorrowOperations } from "../../src/services/api/borrow-operations";
+import { YieldOperations } from "../../src/services/api/yield-operations";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import {
   makeWidgetNavigation,
@@ -63,9 +64,8 @@ import {
   type NormalizedWalletState,
 } from "../../src/services/wallet/domain/state";
 import { WalletService } from "../../src/services/wallet/wallet-service";
-import { TransactionWorkflowOperationsService } from "../../src/services/workflow/transaction-workflow-operations-service";
-import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
 import { render } from "../utils/test-utils";
+import { makeTransactionWorkflowTestLayer } from "../utils/transaction-workflow-layer";
 import type { WalletOperations } from "../utils/wallet-operations";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -345,28 +345,23 @@ const renderExecution = async (
     WalletService,
     activeWallet as WalletService["Service"]
   );
-  const operations = {
-    completeWorkflow: () => Effect.void,
-    getBorrowAction: borrow.getAction,
-    getClassicStatus: () => Effect.die("unexpected classic status"),
-    getWalletState: activeWallet.state.pipe(
-      Effect.map((state) => state.connection)
-    ),
-    signMessage: () => Effect.die("unexpected message signing"),
-    signTransaction: activeWallet.signTransaction,
-    stepBorrowAction: borrow.stepAction,
-    submitBorrowTransaction: borrow.submitTransaction,
-    submitClassicHash: () => Effect.die("unexpected classic hash submission"),
-    submitClassicSigned: () =>
-      Effect.die("unexpected classic signed submission"),
-    submitWorkflow: () => Effect.void,
+  const tracking = TrackingService.of({
     trackEvent: () => Effect.void,
-  } as unknown as TransactionWorkflowOperationsService["Service"];
-  const workflowLayer = TransactionWorkflowService.layer.pipe(
-    Layer.provide(
-      Layer.succeed(TransactionWorkflowOperationsService, operations)
-    )
-  );
+    trackPageView: () => Effect.void,
+  });
+  const workflowLayer = makeTransactionWorkflowTestLayer({
+    borrow: borrow as unknown as BorrowOperations["Service"],
+    tracking,
+    wallet: activeWallet as WalletService["Service"],
+    yieldOperations: YieldOperations.of({
+      getTransactionStatus: () => Effect.die("unexpected classic status"),
+      previewAction: () => Effect.die("unexpected action preview"),
+      submitSignedTransaction: () =>
+        Effect.die("unexpected classic signed submission"),
+      submitTransactionHash: () =>
+        Effect.die("unexpected classic hash submission"),
+    }),
+  });
   const flowWallet = WalletService.of({
     ...activeWallet,
     state: Effect.succeed({
@@ -389,10 +384,7 @@ const renderExecution = async (
   const flowScope = await Effect.runPromise(Scope.make());
   const flowDependencies = Layer.mergeAll(
     Layer.succeed(BorrowOperations, borrow as never),
-    Layer.succeed(TrackingService, {
-      trackEvent: () => Effect.void,
-      trackPageView: () => Effect.void,
-    } as TrackingService["Service"]),
+    Layer.succeed(TrackingService, tracking),
     WidgetConfigService.layer({
       changes: Stream.never,
       current: Effect.succeed({ borrowEnabled: true } as never),
@@ -421,10 +413,7 @@ const renderExecution = async (
             appRuntime.layer,
             Layer.mergeAll(
               Layer.succeed(BorrowOperations, borrow as never),
-              Layer.succeed(TrackingService, {
-                trackEvent: () => Effect.void,
-                trackPageView: () => Effect.void,
-              } as TrackingService["Service"]),
+              Layer.succeed(TrackingService, tracking),
               Layer.succeed(WidgetNavigation, navigationService)
             ).pipe(Layer.fresh),
           ],
@@ -507,6 +496,48 @@ const renderExecution = async (
 };
 
 describe("borrow execution flow component", () => {
+  it("labels a repayment amount on Review", async () => {
+    const repaySession = {
+      ...session,
+      intake: {
+        ...session.intake,
+        command: {
+          ...session.intake.command,
+          action: "repay",
+          args: {
+            amount: "25",
+            marketId: command.args.marketId,
+            tokenAddress: command.args.tokenAddress,
+          },
+        },
+        summary: {
+          action: "repay",
+          borrowAmount: "25",
+          existingDebtUsd: "400",
+          loanTokenSymbol: "USDC",
+          marketLabel: "cbBTC / USDC",
+          network: "base",
+          projectedDebtUsd: "375",
+          providerName: "Morpho Blue",
+          riskStatus: "available",
+          projectedLtv: "0.25",
+        },
+      },
+    } as BorrowFlowSession;
+    const app = await renderExecution(makeBorrowApi({}), {
+      autoStart: false,
+      reviewElement: <BorrowReviewPage />,
+      session: repaySession,
+    });
+
+    await expect.element(app.getByText("Repay amount")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Borrow amount"))
+      .not.toBeInTheDocument();
+
+    await app.unmount();
+  });
+
   it("warns on Review when projected risk is unavailable", async () => {
     const unavailableSession: BorrowFlowSession = {
       ...session,
@@ -550,6 +581,20 @@ describe("borrow execution flow component", () => {
         ...wallet,
         signTransaction: () => Effect.never,
       },
+    });
+
+    await expect.element(app.getByText("Borrow home")).toBeInTheDocument();
+
+    await app.unmount();
+  });
+
+  it("returns to Borrow when Transaction Workflow setup fails", async () => {
+    const app = await renderExecution(makeBorrowApi({}), {
+      action: decodedAction({
+        address: Schema.decodeSync(WalletAddress)(
+          "0x0000000000000000000000000000000000000002"
+        ),
+      }),
     });
 
     await expect.element(app.getByText("Borrow home")).toBeInTheDocument();

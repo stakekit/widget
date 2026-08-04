@@ -12,6 +12,10 @@ _Avoid_: Concurrent widgets, multiple widget instances
 One continuous lifetime of widget application state created when a Widget Instance mounts and ended when it unmounts. Its normalized API configuration and mount-time feature configuration are immutable; changing that identity is an invalid host integration that requires unmounting and remounting the Widget. Live settings changes remain within the same generation.
 _Avoid_: Widget Runtime, app mount
 
+**Widget Domain Event**:
+An immutable fact that a meaningful occurrence completed within an Application Runtime Generation. Its payload carries the domain identity observers need to determine relevance; it never prescribes an observer mutation.
+_Avoid_: Reset signal, Atom instruction, callback
+
 ## Wallet Language
 
 **Wallet Scope**:
@@ -122,6 +126,10 @@ _Avoid_: Infinite limit, safe fallback
 
 ## Transaction Flow Language
 
+**Entry Intent**:
+User-authored pre-execution values retained only while their entry surface is active for the current Wallet Scope Owner. Leaving that surface, changing or disconnecting its owner, or starting any Transaction Workflow for that owner consumes the intent; additional-address-only changes preserve it.
+_Avoid_: Form state, draft Atom
+
 **Transaction Flow**:
 A Wallet Scope-bound user journey through Review, Steps, and Complete, owned by one fresh Flow Session. Classic and Borrow Transaction Flows share this lifecycle language while retaining distinct intake, action preparation, and execution behavior.
 _Avoid_: Transaction Workflow, shared flow implementation
@@ -133,10 +141,6 @@ _Avoid_: Classic transaction request
 **Borrow Transaction Flow**:
 The Wallet Scope-bound journey from prepared borrow-action intake through Review, action creation, execution, and Complete. Borrow market and position actions enter through the same flow while retaining their distinct immutable intake facts.
 _Avoid_: Borrow workflow, borrow dashboard flow
-
-**Borrow Transaction Flow Outcome**:
-A semantic fact that a Borrow Transaction Flow successfully crossed a journey transition. `ExecutionStarted` follows successful entry into Steps, while `Done` follows successful exit from a completed Execution Attempt.
-_Avoid_: Navigation attempt, Atom instruction
 
 **Flow Session**:
 One user attempt to complete a Transaction Flow. Every explicit Start creates a fresh Flow Session even when its intake facts equal those of another attempt; Review, Steps, and Complete share its immutable intake and Wallet Scope until the entire journey is exited or replaced.
@@ -165,6 +169,14 @@ _Avoid_: Executable phase, attached action
 **Transaction Workflow**:
 A single execution of a prepared transaction plan, covering signing, submission, confirmation, multi-step advancement, retry, and completion. It is fresh each time an action enters execution and ends permanently when that execution is left, even when a later execution has equal inputs.
 _Avoid_: Workflow identity, resumable workflow, workflow family
+
+**Transaction Workflow Started**:
+A Widget Domain Event stating that a Transaction Workflow was successfully constructed for a Wallet Scope Owner. It marks all Entry Intent belonging to that owner as consumed, independent of journey type.
+_Avoid_: Form reset signal, journey outcome
+
+**Transaction Workflow Ended**:
+A Widget Domain Event stating that a Transaction Workflow's scoped lifetime ended, whether completed or abandoned. It is emitted once when its Execution Attempt is left.
+_Avoid_: Navigation event, invalidation command
 
 **Classic Transaction Flow Abandonment**:
 The end of an active Flow Session when its journey is exited, its Wallet Scope no longer matches, or a new session begins. Returning from execution to Review ends only the current Execution Attempt and does not abandon the Flow Session.

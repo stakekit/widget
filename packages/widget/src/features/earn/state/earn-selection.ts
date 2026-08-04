@@ -30,13 +30,16 @@ export type EarnTokenOption = InternalEarnTokenOption;
 export type EarnSelection = EarnMachineView["selection"];
 
 const validatorSearchAtom = Atom.make("").pipe(
-  Atom.keepAlive,
+  Atom.setIdleTTL(0),
   Atom.withLabel("earnSelectionValidatorSearchAtom")
 );
 
 const normalizedValidatorSearchAtom = Atom.make((get) =>
   get(validatorSearchAtom).trim()
-).pipe(Atom.withLabel("normalizedEarnSelectionValidatorSearchAtom"));
+).pipe(
+  Atom.setIdleTTL(0),
+  Atom.withLabel("normalizedEarnSelectionValidatorSearchAtom")
+);
 
 const debouncedValidatorSearchResultAtom = appRuntime
   .atom((get) =>
@@ -44,14 +47,20 @@ const debouncedValidatorSearchResultAtom = appRuntime
       .stream(normalizedValidatorSearchAtom)
       .pipe(Stream.changes, Stream.debounce(Duration.millis(300)))
   )
-  .pipe(Atom.withLabel("debouncedEarnSelectionValidatorSearchResultAtom"));
+  .pipe(
+    Atom.setIdleTTL(0),
+    Atom.withLabel("debouncedEarnSelectionValidatorSearchResultAtom")
+  );
 
 const debouncedValidatorSearchAtom = Atom.make((get) =>
   get(debouncedValidatorSearchResultAtom).pipe(
     AsyncResult.value,
     Option.getOrElse(() => "")
   )
-).pipe(Atom.withLabel("debouncedEarnSelectionValidatorSearchAtom"));
+).pipe(
+  Atom.setIdleTTL(0),
+  Atom.withLabel("debouncedEarnSelectionValidatorSearchAtom")
+);
 
 export const earnSelectionViewAtom = Atom.make((get) => {
   const machine = get(earnMachineViewAtom);
@@ -62,7 +71,7 @@ export const earnSelectionViewAtom = Atom.make((get) => {
     positions: machine.resources.positions.data,
     selection: machine.selection,
   } as const;
-}).pipe(Atom.withLabel("earnSelectionViewAtom"));
+}).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnSelectionViewAtom"));
 
 export const earnSelectionStatusViewAtom = Atom.make((get) => {
   const machine = get(earnMachineViewAtom);
@@ -76,7 +85,7 @@ export const earnSelectionStatusViewAtom = Atom.make((get) => {
       machine.resources.yields.waiting,
     status: machine.status,
   } as const;
-}).pipe(Atom.withLabel("earnSelectionStatusViewAtom"));
+}).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnSelectionStatusViewAtom"));
 
 export const earnSelectionTokenOptionsViewAtom = Atom.make((get) => {
   const machine = get(earnMachineViewAtom);
@@ -89,7 +98,10 @@ export const earnSelectionTokenOptionsViewAtom = Atom.make((get) => {
     selected: machine.selection.token,
     waiting: machine.resources.tokenOptions.waiting,
   } as const;
-}).pipe(Atom.withLabel("earnSelectionTokenOptionsViewAtom"));
+}).pipe(
+  Atom.setIdleTTL(0),
+  Atom.withLabel("earnSelectionTokenOptionsViewAtom")
+);
 
 export const earnSelectionYieldOptionsViewAtom = Atom.make((get) => {
   const machine = get(earnMachineViewAtom);
@@ -102,7 +114,10 @@ export const earnSelectionYieldOptionsViewAtom = Atom.make((get) => {
     selectedCategory: machine.selection.category,
     waiting: machine.resources.yields.waiting,
   } as const;
-}).pipe(Atom.withLabel("earnSelectionYieldOptionsViewAtom"));
+}).pipe(
+  Atom.setIdleTTL(0),
+  Atom.withLabel("earnSelectionYieldOptionsViewAtom")
+);
 
 export const earnSelectionValidatorOptionsViewAtom = Atom.make((get) => {
   const machine = get(earnMachineViewAtom);
@@ -125,7 +140,10 @@ export const earnSelectionValidatorOptionsViewAtom = Atom.make((get) => {
     selected: machine.selection.validators,
     selectedYield: machine.selection.yield,
   } as const;
-}).pipe(Atom.withLabel("earnSelectionValidatorOptionsViewAtom"));
+}).pipe(
+  Atom.setIdleTTL(0),
+  Atom.withLabel("earnSelectionValidatorOptionsViewAtom")
+);
 
 export const setEarnSelectionValidatorSearchAtom = Atom.fnSync(
   (search: string, context) => context.set(validatorSearchAtom, search)

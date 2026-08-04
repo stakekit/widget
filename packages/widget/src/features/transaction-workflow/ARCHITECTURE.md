@@ -5,6 +5,12 @@ and Borrow Transaction Flows. `state.ts` creates one fresh module for one
 immutable `TransactionWorkflowInput`; equal inputs never share Atom graphs or
 machines.
 
+Advancement, confirmation, signing, and submission resolve their exact
+operation capabilities once during Transaction Workflow service construction.
+No aggregate operations adapter sits between those leaves and their capability
+ports; each leaf maps capability failures into workflow-specific states and
+errors.
+
 The module exposes one scoped Atom whose value contains passive read and
 serialized command capabilities. That scoped Atom alone acquires, interrupts,
 and disposes the workflow handle. Releasing it resets the passive state and
@@ -16,6 +22,8 @@ states and are retried through the command Atom.
 
 This module does not own journey navigation, UI projections, flow-session
 handoffs, or completion policy. Those belong to the Classic and Borrow feature
-adapters. Transaction-truth effects such as submission tracking and resource
-invalidation finish within the scoped machine even when a newer routed flow
-suppresses an older flow's UI outputs.
+adapters. Submission tracking remains a transaction-truth effect within the
+scoped machine. Successful construction publishes `TransactionWorkflowStarted`,
+and the scoped handle finalizer publishes exactly one `TransactionWorkflowEnded`;
+resource projections invalidate affected Authoritative Resources asynchronously
+from the latter without delaying workflow completion or route exit.

@@ -32,6 +32,7 @@ export type YieldEntryFacadeInput = Omit<
 
 export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
   const submittedValidationKeyAtom = Atom.make<string | null>(null).pipe(
+    Atom.setIdleTTL(0),
     Atom.withLabel("yieldEntrySubmittedValidationKeyAtom")
   );
   const viewAtom = Atom.make((get) => {
@@ -40,7 +41,7 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
       input,
       submitted: get(submittedValidationKeyAtom) === input.validationKey,
     });
-  }).pipe(Atom.withLabel("yieldEntryFacadeViewAtom"));
+  }).pipe(Atom.setIdleTTL(0), Atom.withLabel("yieldEntryFacadeViewAtom"));
 
   const submitAtom = walletRuntime
     .fn(

@@ -1,15 +1,21 @@
 import { Effect, Match } from "effect";
+import { BorrowOperations } from "../../api/borrow-operations";
+import { YieldOperations } from "../../api/yield-operations";
+import { TrackingService } from "../../tracking/tracking-service";
 import {
   TransactionSubmissionError,
   type TransactionWorkflowContext,
   type TransactionWorkflowSubmission,
   updateCurrentTransactionWorkflowTransaction,
 } from "../transaction-workflow-model";
-import { TransactionWorkflowOperationsService } from "../transaction-workflow-operations-service";
 import { requireCurrentWorkflow } from "./current";
 
 export const makeSubmitCurrent = Effect.gen(function* () {
-  const operations = yield* TransactionWorkflowOperationsService;
+  const [borrowOperations, tracking, yieldOperations] = yield* Effect.all([
+    BorrowOperations,
+    TrackingService,
+    YieldOperations,
+  ]);
 
   return Effect.fn("TransactionWorkflow.submitCurrent")(function* (
     context: TransactionWorkflowContext
@@ -37,11 +43,11 @@ export const makeSubmitCurrent = Effect.gen(function* () {
       Match.tag("Classic", ({ transaction }) => {
         const { source } = transaction;
         const submit = broadcasted
-          ? operations.submitClassicHash({
+          ? yieldOperations.submitTransactionHash({
               payload: { hash: signedTx },
               transactionId: source.transaction.id,
             })
-          : operations.submitClassicSigned({
+          : yieldOperations.submitSignedTransaction({
               payload: { signedTransaction: signedTx },
               transactionId: source.transaction.id,
             });
@@ -69,8 +75,8 @@ export const makeSubmitCurrent = Effect.gen(function* () {
       Match.tag("Borrow", ({ transaction }) => {
         const { source } = transaction;
 
-        return operations
-          .submitBorrowTransaction({
+        return borrowOperations
+          .submitTransaction({
             command: broadcasted
               ? { transactionHash: signedTx }
               : { signedPayload: signedTx },
@@ -121,7 +127,7 @@ export const makeSubmitCurrent = Effect.gen(function* () {
       Match.exhaustive
     );
 
-    yield* operations.trackEvent("txSubmitted", {
+    yield* tracking.trackEvent("txSubmitted", {
       network: source.transaction.network,
       txId: source.transaction.id,
       yieldId,

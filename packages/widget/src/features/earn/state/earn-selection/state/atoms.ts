@@ -12,7 +12,12 @@ import { disconnectedNormalizedWalletState } from "../../../../../services/walle
 import { initParamsAtom } from "../../../../init-params/state";
 import { walletStateResultAtom } from "../../../../wallet/state";
 import { makeResolvingWalletView } from "../model/view-model";
-import type { EarnEntry, EarnMachineIntent, EarnMachineView } from "../types";
+import {
+  type EarnEntry,
+  type EarnMachineIntent,
+  type EarnMachineView,
+  makeDefaultEarnIntent,
+} from "../types";
 import type { EarnAction } from "./actions";
 import { commitEarnInitialSelection } from "./initial-selection";
 import { type EarnMachineState, reconcileEarnMachineOwner } from "./owner";
@@ -68,7 +73,12 @@ const earnMachineStateAtom = Atom.writable<EarnMachineState, EarnMachineState>(
     );
   },
   (context, state) => context.setSelf(state)
-).pipe(Atom.withLabel("earnMachineStateAtom"));
+).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnMachineStateAtom"));
+
+const earnInitialSelectionConsumedAtom = Atom.make(false).pipe(
+  Atom.keepAlive,
+  Atom.withLabel("earnInitialSelectionConsumedAtom")
+);
 
 type EarnMachineProjection = {
   readonly sourceState: EarnMachineState;
@@ -102,10 +112,18 @@ const earnMachineProjectionAtom = Atom.readable<EarnMachineProjection>(
     const previousMachine = context
       .self<EarnMachineProjection>()
       .pipe(Option.getOrNull);
-    const state =
+    const reconciledState =
       previousMachine?.sourceState === sourceState
         ? previousMachine.state
         : sourceState;
+    const state =
+      context.once(earnInitialSelectionConsumedAtom) &&
+      reconciledState.initializationPhase === "applying-init-params"
+        ? {
+            ...reconciledState,
+            initializationPhase: "complete" as const,
+          }
+        : reconciledState;
     const entry = {
       ...baseEntry,
       initParams:
@@ -148,7 +166,7 @@ const earnMachineProjectionAtom = Atom.readable<EarnMachineProjection>(
 
     return { sourceState, state: committedState, view };
   }
-).pipe(Atom.withLabel("earnMachineProjectionAtom"));
+).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnMachineProjectionAtom"));
 
 export const earnMachineIntentAtom = Atom.writable<
   EarnMachineIntent,
@@ -161,8 +179,30 @@ export const earnMachineIntentAtom = Atom.writable<
 
     context.set(earnMachineStateAtom, { ...state, intent });
   }
-).pipe(Atom.withLabel("earnMachineIntentAtom"));
+).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnMachineIntentAtom"));
 
-export const earnMachineViewAtom = Atom.make(
-  (context) => context.get(earnMachineProjectionAtom).view
-).pipe(Atom.withLabel("earnMachineViewAtom"));
+export const resetEarnEntryIntentForOwnerAtom = Atom.fnSync(
+  (owner: WalletScopeOwnerKey, context) => {
+    const state = context(earnMachineStateAtom);
+    if (!state.owner || !sameWalletScopeOwner(state.owner, owner)) return;
+
+    context.set(earnMachineStateAtom, {
+      ...state,
+      initializationPhase: "complete",
+      intent: makeDefaultEarnIntent(),
+    });
+  }
+).pipe(Atom.withLabel("resetEarnEntryIntentForOwnerAtom"));
+
+export const earnMachineViewAtom = Atom.make((context) => {
+  const projection = context.get(earnMachineProjectionAtom);
+  if (
+    projection.state.initializationPhase === "complete" &&
+    !context.once(earnInitialSelectionConsumedAtom)
+  ) {
+    // The projection observes this marker with `once`, so recording the
+    // application-generation fact cannot replace this terminal view.
+    context.set(earnInitialSelectionConsumedAtom, true);
+  }
+  return projection.view;
+}).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnMachineViewAtom"));

@@ -405,6 +405,7 @@
           "withdraw": "Withdraw collateral"
         },
         "borrow_amount": "Borrow amount",
+        "repay_amount": "Repay amount",
         "collateral_amount": "Collateral amount",
         "effective_collateral": "Effective collateral",
         "market": "Market",

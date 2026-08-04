@@ -1,7 +1,12 @@
 import { make as makeScopedAtom, useAtomValue } from "@effect/atom-react";
+import { Schema } from "effect";
 import type * as Atom from "effect/unstable/reactivity/Atom";
 import { createContext, type PropsWithChildren, useContext } from "react";
-import { Navigate, Outlet } from "react-router";
+import { Navigate, Outlet, useParams } from "react-router";
+import {
+  type MarketId,
+  MarketId as MarketIdSchema,
+} from "../../../domain/borrow/ids";
 import type { BorrowTransactionFlowEntry } from "../model/borrow-transaction-flow";
 import { getBorrowTransactionFlowRoutes } from "../model/borrow-transaction-flow";
 import { currentBorrowFlowSessionAtom } from "../state/atoms/borrow-flow";
@@ -45,24 +50,36 @@ export const useBorrowTransactionFlowExecution =
 
 const matchesEntry = (
   actual: BorrowTransactionFlowEntry,
-  expected: BorrowTransactionFlowEntry["_tag"]
-) => actual._tag === expected;
+  expected: BorrowTransactionFlowEntry["_tag"],
+  marketId: MarketId | undefined
+) =>
+  actual._tag === expected &&
+  (actual._tag !== "MarketPosition" || actual.marketId === marketId);
+
+const getEntryFallbackPath = (
+  expected: BorrowTransactionFlowEntry["_tag"],
+  marketId: MarketId | undefined
+) => {
+  if (expected === "BorrowEntry") return "/borrow";
+  if (marketId) return `/positions/borrow/${marketId}`;
+  return "/positions";
+};
 
 export const BorrowTransactionFlowRoute = ({
   expected,
 }: {
   readonly expected: BorrowTransactionFlowEntry["_tag"];
 }) => {
+  const routeParams = useParams();
+  const marketId = routeParams.marketId
+    ? Schema.decodeSync(MarketIdSchema)(routeParams.marketId)
+    : undefined;
   const session = useAtomValue(currentBorrowFlowSessionAtom);
-  if (session && matchesEntry(session.intake.entry, expected)) {
+  if (session && matchesEntry(session.intake.entry, expected, marketId)) {
     return <SessionBinding entry={session.intake.entry} key={session.epoch} />;
   }
-  return (
-    <Navigate
-      replace
-      to={expected === "BorrowEntry" ? "/borrow" : "/positions"}
-    />
-  );
+  const fallbackPath = getEntryFallbackPath(expected, marketId);
+  return <Navigate replace to={fallbackPath} />;
 };
 
 const SessionBinding = ({
@@ -139,7 +156,9 @@ const ExecutionBinding = ({ children }: PropsWithChildren) => {
     useBorrowTransactionFlow().intake.entry
   );
 
-  if (availability._tag === "Failure") return children ?? <Outlet />;
+  if (availability._tag === "Failure") {
+    return <Navigate replace to={basePath} />;
+  }
   if (availability._tag !== "Success") return null;
   if (availability.value._tag !== "Acquired") {
     return <Navigate replace to={basePath} />;
