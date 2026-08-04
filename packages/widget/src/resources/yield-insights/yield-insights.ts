@@ -12,9 +12,7 @@ import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 const insightPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(5),
   staleTime: Duration.minutes(2),
-  revalidateOnMount: true,
 });
 
 export class YieldKycStatusKey extends Data.TaggedClass("YieldKycStatusKey")<{

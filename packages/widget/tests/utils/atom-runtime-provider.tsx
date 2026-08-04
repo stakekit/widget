@@ -5,7 +5,6 @@ import { widgetConfigAtom } from "../../src/app/config/settings";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { applicationRoutesAtom } from "../../src/app/runtime/application-router-runtime";
 import type { WidgetConfig } from "../../src/services/config/widget-config";
-import { config } from "../../src/shared/config/widget-defaults";
 
 export const TestAtomRuntimeProvider = ({
   children,
@@ -18,7 +17,6 @@ export const TestAtomRuntimeProvider = ({
   readonly settings: WidgetConfig;
 }>) => (
   <RegistryProvider
-    defaultIdleTTL={config.atomResources.defaultIdleTTL}
     initialValues={[
       ...(initialValues ?? []),
       [widgetConfigAtom, settings],

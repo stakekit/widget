@@ -6,7 +6,7 @@ import { type EarnSelection, earnSelectionViewAtom } from "./earn-selection";
 export const earnPageSearchAtom = Atom.make({
   stake: "",
   token: "",
-}).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnPageSearchAtom"));
+}).pipe(Atom.withLabel("earnPageSearchAtom"));
 
 export const getEarnPageValidationKey = (selection: EarnSelection): string =>
   JSON.stringify([
@@ -17,11 +17,11 @@ export const getEarnPageValidationKey = (selection: EarnSelection): string =>
 
 export const earnPageInputAtom = Atom.make(
   (context) => context.get(earnSelectionViewAtom).form
-).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnPageInputAtom"));
+).pipe(Atom.withLabel("earnPageInputAtom"));
 
 export const earnPageSelectionAtom = Atom.make(
   (context) => context.get(earnSelectionViewAtom).selection
-).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnPageSelectionAtom"));
+).pipe(Atom.withLabel("earnPageSelectionAtom"));
 
 export const earnPageQuoteAtom = Atom.make((context) => {
   const view = context.get(earnSelectionViewAtom);
@@ -33,4 +33,4 @@ export const earnPageQuoteAtom = Atom.make((context) => {
     selectedValidators: view.selection.validators,
     stakeAmount: new BigNumber(view.form.stakeAmount),
   };
-}).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnPageQuoteAtom"));
+}).pipe(Atom.withLabel("earnPageQuoteAtom"));

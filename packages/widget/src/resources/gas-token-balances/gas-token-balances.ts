@@ -24,9 +24,7 @@ class GasTokenBalancesError extends Data.TaggedError("GasTokenBalancesError")<{
 }> {}
 
 const gasBalancesPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(5),
   staleTime: Duration.seconds(30),
-  revalidateOnMount: true,
 });
 
 const gasTokenBalancesCanonicalAtom = Atom.family((key: GasTokenBalancesKey) =>

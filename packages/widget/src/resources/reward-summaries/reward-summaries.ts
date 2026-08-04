@@ -38,9 +38,7 @@ export class RewardSummariesError extends Data.TaggedError(
 type RewardSummaries = Readonly<Record<string, RewardsSummary | null>>;
 
 const rewardsPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(5),
   staleTime: Duration.seconds(30),
-  revalidateOnMount: true,
 });
 
 const rewardSummariesCanonicalAtom = Atom.family((key: RewardSummariesKey) =>

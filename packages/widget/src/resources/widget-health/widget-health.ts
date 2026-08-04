@@ -22,9 +22,7 @@ const healthRequestAtom = appRuntime
   )
   .pipe(
     withApiResourcePolicy({
-      idleTTL: Duration.minutes(5),
       staleTime: Duration.seconds(30),
-      revalidateOnMount: true,
     }),
     Atom.withLabel("healthRequestAtom")
   );

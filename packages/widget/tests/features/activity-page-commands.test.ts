@@ -91,6 +91,20 @@ describe("Activity page commands", () => {
     }
   });
 
+  it("discards the selected filter when its observing surface is released", async () => {
+    const registry = AtomRegistry.make();
+    const unmount = registry.mount(activityFilterAtom);
+
+    registry.set(setActivityPageFilterAtom, "defi");
+    expect(registry.get(activityFilterAtom)).toBe("defi");
+
+    unmount();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    expect(registry.get(activityFilterAtom)).toBe("all");
+    registry.dispose();
+  });
+
   it("loads the next page only through the current ready page resource", async () => {
     const yieldModel = yieldApiYieldFixture();
     const actions = Array.from({ length: 51 }, (_, index) =>

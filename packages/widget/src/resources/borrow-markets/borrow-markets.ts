@@ -19,9 +19,7 @@ export class BorrowMarketsKey extends Data.TaggedClass("BorrowMarketsKey")<{
 }> {}
 
 const borrowMarketPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(5),
   staleTime: Duration.minutes(1),
-  revalidateOnMount: true,
 });
 
 const borrowMarketsCanonicalAtom = Atom.family((key: BorrowMarketsKey) =>

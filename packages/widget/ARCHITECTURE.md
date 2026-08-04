@@ -245,6 +245,16 @@ route-scope acquisition and release, reactive projection, and operation
 forwarding. Keyed families, tree-scoped modules, and constructors with multiple
 production compositions remain valid production seams.
 
+The application Atom registry supplies no default idle TTL. Ordinary Atoms are
+therefore transient and are disposed as soon as they become unobserved; feature
+state does not survive route release merely because its Atom identity remains
+reachable. Production code does not configure `defaultIdleTTL` or apply
+per-Atom finite TTLs directly. `keepAlive` is reserved for modules owned by the
+Application or Wallet Runtime Generation, such as runtime roots, global
+coordinators, immutable generation facts, and intentional application-wide
+preferences. Feature state that must survive navigation receives an explicit
+owner module or persistence mechanism instead of extending its Atom lifetime.
+
 An Authoritative Resource is the sole owner of one cacheable canonical remote
 fact. Its interface accepts complete explicit identity and never reads current,
 selected, or visible feature state. It caches decoded domain-facing facts
@@ -259,9 +269,15 @@ semantics are compatible. Resource state, including normalized entities, is
 scoped to one Widget Instance's Atom registry and is never stored in a
 module-global cache or independent runtime.
 
-Each resource module owns its stale and idle policy, retry behavior, polling,
-request concurrency, pagination, partial-response policy, typed failures, and
-stale-result behavior. Callers may observe, load more through a semantic pull
+Every canonical remote-read Atom uses the shared API resource policy, which
+retains it for five minutes after it becomes unobserved and revalidates stale
+data when it mounts. The five-minute idle lifetime is fixed rather than
+resource- or caller-configurable. Each resource module still owns its stale
+time, retry behavior, polling, request concurrency, pagination,
+partial-response policy, typed failures, and stale-result behavior. Derived
+projections, scans, command Atoms, and presentation adapters remain transient
+even when they live in a
+resource module. Callers may observe, load more through a semantic pull
 interface, request explicit retry or refresh, and derive new Atoms; they do not
 choose offsets, page sizes, cache policy, or retry schedules.
 
@@ -313,11 +329,11 @@ React only renders the view and dispatches intent.
 Borrow Entry and Market Position own projections from owner-scoped
 `TransactionWorkflowStarted` facts to private Entry Intent reset commands.
 Each feature owns one active Entry Intent store, and its complete transient Atom
-chain has zero idle TTL so leaving the entry surface discards it. Wallet Scope
-Owner changes reset intent directly, additional-address-only changes preserve
-it, and matching workflow facts reset mounted intent to a post-initialization
-baseline. Market Position derives fresh action defaults from the mounted route
-without pre-navigation staging or retained owner-and-action attempt families.
+chain is disposed when the entry surface stops observing it. Wallet Scope Owner
+changes reset intent directly, additional-address-only changes preserve it, and
+matching workflow facts reset mounted intent to a post-initialization baseline.
+Market Position derives fresh action defaults from the mounted route without
+pre-navigation staging or retained owner-and-action attempt families.
 Application composition owns projection lifecycle, without direct registry
 access in either journey.
 

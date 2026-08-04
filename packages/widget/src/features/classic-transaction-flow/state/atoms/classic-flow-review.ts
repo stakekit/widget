@@ -76,11 +76,11 @@ export const makeClassicFlowReviewScopeAtom = <E>({
   const activityActionExpiredAtom =
     session.intake._tag === "ActivityResume"
       ? makeClassicFlowActivityActionExpiredAtom(intakeAtom)
-      : Atom.make(false).pipe(Atom.setIdleTTL(0));
+      : Atom.make(false);
   const eligibilityAtom = Atom.make((get) => ({
     activityExpired: get(activityActionExpiredAtom),
     kycBlocking: get(kycGateAtom).isBlocking,
-  })).pipe(Atom.setIdleTTL(0), Atom.withLabel("classicFlowReviewEligibility"));
+  })).pipe(Atom.withLabel("classicFlowReviewEligibility"));
 
   return makeScopedEffectStateAtom({
     acquire: (context) =>
@@ -142,10 +142,7 @@ export const makeClassicFlowReviewScopeAtom = <E>({
             }
           }
         }
-      }).pipe(
-        Atom.setIdleTTL(0),
-        Atom.withLabel("classicFlowReviewActionPreview")
-      );
+      }).pipe(Atom.withLabel("classicFlowReviewActionPreview"));
 
       const reviewResources = makeClassicFlowSessionReviewResources({
         actionPreviewAtom,
@@ -172,10 +169,7 @@ export const makeClassicFlowReviewScopeAtom = <E>({
               .pipe(Effect.flatMap((review) => review.confirm())),
           { initialValue: undefined }
         )
-        .pipe(
-          Atom.setIdleTTL(0),
-          Atom.withLabel("confirmClassicFlowReviewAtom")
-        );
+        .pipe(Atom.withLabel("confirmClassicFlowReviewAtom"));
 
       return {
         availabilityAtom: handleAtom,

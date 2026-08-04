@@ -35,9 +35,7 @@ export class BorrowPositionsKey extends Data.TaggedClass("BorrowPositionsKey")<{
 }
 
 const borrowPositionPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(5),
   staleTime: Duration.minutes(1),
-  revalidateOnMount: true,
 });
 
 const borrowPositionDataResourceAtom = Atom.family((key: BorrowPositionsKey) =>

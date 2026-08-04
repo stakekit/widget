@@ -73,7 +73,7 @@ const earnMachineStateAtom = Atom.writable<EarnMachineState, EarnMachineState>(
     );
   },
   (context, state) => context.setSelf(state)
-).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnMachineStateAtom"));
+).pipe(Atom.withLabel("earnMachineStateAtom"));
 
 const earnInitialSelectionConsumedAtom = Atom.make(false).pipe(
   Atom.keepAlive,
@@ -166,7 +166,7 @@ const earnMachineProjectionAtom = Atom.readable<EarnMachineProjection>(
 
     return { sourceState, state: committedState, view };
   }
-).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnMachineProjectionAtom"));
+).pipe(Atom.withLabel("earnMachineProjectionAtom"));
 
 export const earnMachineIntentAtom = Atom.writable<
   EarnMachineIntent,
@@ -179,7 +179,7 @@ export const earnMachineIntentAtom = Atom.writable<
 
     context.set(earnMachineStateAtom, { ...state, intent });
   }
-).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnMachineIntentAtom"));
+).pipe(Atom.withLabel("earnMachineIntentAtom"));
 
 export const resetEarnEntryIntentForOwnerAtom = Atom.fnSync(
   (owner: WalletScopeOwnerKey, context) => {
@@ -205,4 +205,4 @@ export const earnMachineViewAtom = Atom.make((context) => {
     context.set(earnInitialSelectionConsumedAtom, true);
   }
   return projection.view;
-}).pipe(Atom.setIdleTTL(0), Atom.withLabel("earnMachineViewAtom"));
+}).pipe(Atom.withLabel("earnMachineViewAtom"));

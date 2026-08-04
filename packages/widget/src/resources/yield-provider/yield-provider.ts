@@ -16,9 +16,7 @@ export class YieldProviderError extends Data.TaggedError("YieldProviderError")<{
 }> {}
 
 const providerPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(10),
   staleTime: Duration.minutes(5),
-  revalidateOnMount: true,
 });
 
 const yieldProviderCanonicalAtom = Atom.family((providerId: ProviderId) =>

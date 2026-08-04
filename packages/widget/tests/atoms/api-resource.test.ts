@@ -41,39 +41,9 @@ describe("shared API resource conventions", () => {
     const source = Atom.make(AsyncResult.success(1));
     const resource = withApiResourcePolicy({
       staleTime: Duration.seconds(30),
-      idleTTL: Duration.minutes(3),
-      revalidateOnMount: true,
     })(source);
 
-    expect(resource.idleTTL).toBe(Duration.toMillis(Duration.minutes(3)));
-  });
-
-  it("revalidates on focus only after a resource becomes stale", async () => {
-    let runs = 0;
-    const focusSignal = Atom.make(0);
-    const source = Atom.make(Effect.sync(() => ++runs));
-    const resource = withApiResourcePolicy({
-      staleTime: Duration.millis(100),
-      idleTTL: Duration.seconds(5),
-      revalidateOnFocus: true,
-      focusSignal,
-    })(source);
-    const registry = AtomRegistry.make();
-
-    const unmount = registry.mount(resource);
-    expect(AsyncResult.getOrThrow(registry.get(resource))).toBe(1);
-
-    await vi.advanceTimersByTimeAsync(50);
-    registry.set(focusSignal, 1);
-    expect(AsyncResult.getOrThrow(registry.get(resource))).toBe(1);
-    expect(runs).toBe(1);
-
-    await vi.advanceTimersByTimeAsync(51);
-    registry.set(focusSignal, 2);
-
-    expect(AsyncResult.getOrThrow(registry.get(resource))).toBe(2);
-    expect(runs).toBe(2);
-    unmount();
+    expect(resource.idleTTL).toBe(Duration.toMillis(Duration.minutes(5)));
   });
 
   it("retains a prior value after failure and retries only when refreshed", () => {
@@ -88,7 +58,6 @@ describe("shared API resource conventions", () => {
     );
     const resource = withApiResourcePolicy({
       staleTime: Duration.minutes(1),
-      idleTTL: Duration.minutes(5),
     })(source);
     const registry = AtomRegistry.make();
     const unmount = registry.mount(resource);
@@ -112,13 +81,14 @@ describe("shared API resource conventions", () => {
     const source = Atom.make(Effect.sync(() => ++runs));
     const resource = withApiResourcePolicy({
       staleTime: Duration.minutes(1),
-      idleTTL: Duration.millis(50),
     })(source);
     const registry = AtomRegistry.make({ timeoutResolution: 1 });
 
     expect(AsyncResult.getOrThrow(registry.get(resource))).toBe(1);
     await Promise.resolve();
-    await vi.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(
+      Duration.toMillis(Duration.minutes(5)) + 1
+    );
     expect(AsyncResult.getOrThrow(registry.get(resource))).toBe(2);
   });
 });

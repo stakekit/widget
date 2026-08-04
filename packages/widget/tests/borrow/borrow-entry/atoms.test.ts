@@ -419,7 +419,6 @@ describe("Borrow Entry atoms", () => {
 
   it("discards Entry Intent when its entry surface is released", async () => {
     const registry = AtomRegistry.make({
-      defaultIdleTTL: 300_000,
       initialValues: [
         Atom.initialValue(
           appRuntime.layer,
@@ -451,6 +450,7 @@ describe("Borrow Entry atoms", () => {
         }),
       ],
     });
+    const unmountWalletScope = registry.mount(walletScopeAtom);
     const unmount = registry.mount(currentBorrowEntryAtom);
     registry.set(currentBorrowEntryAtom, {
       amount: "7",
@@ -469,6 +469,7 @@ describe("Borrow Entry atoms", () => {
     );
 
     remount();
+    unmountWalletScope();
     registry.dispose();
   });
 

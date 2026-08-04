@@ -17,9 +17,7 @@ class LegacyTokenOptionsError extends Data.TaggedError(
 }> {}
 
 const legacyTokenOptionsPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(5),
   staleTime: Duration.minutes(5),
-  revalidateOnMount: true,
 });
 
 const legacyTokenOptionsCanonicalAtom = Atom.family((network: Network | null) =>

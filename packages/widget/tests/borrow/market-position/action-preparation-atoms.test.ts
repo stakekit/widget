@@ -200,7 +200,6 @@ describe("Market Position action preparation atoms", () => {
     );
     let currentAccountSnapshot = accountSnapshot;
     const registry = AtomRegistry.make({
-      defaultIdleTTL: 300_000,
       initialValues: [
         Atom.initialValue(
           appRuntime.layer,

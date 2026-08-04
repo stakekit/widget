@@ -17,9 +17,7 @@ import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 const yieldPositionsPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(5),
   staleTime: Duration.minutes(1),
-  revalidateOnMount: true,
 });
 const scheduledRefreshInterval = Duration.minutes(1);
 

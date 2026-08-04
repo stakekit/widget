@@ -125,14 +125,12 @@ const classicTokenOptionsKey = new TokenOptionsKey({
 });
 
 const makeClassicRegistry = ({
-  defaultIdleTTL,
   positionsResult = AsyncResult.success(new Map() as PositionsData),
   tokenOptions = [toTokenOption(firstYield)],
   tokenOptionsResult = AsyncResult.success(tokenOptions),
   yields = [firstYield],
   yieldsResult = AsyncResult.success(yields),
 }: {
-  readonly defaultIdleTTL?: number;
   readonly positionsResult?: AsyncResult.AsyncResult<
     PositionsData,
     EarnCatalogError
@@ -149,7 +147,6 @@ const makeClassicRegistry = ({
   >;
 } = {}) =>
   AtomRegistry.make({
-    defaultIdleTTL,
     initialValues: [
       Atom.initialValue(earnMachineEntryAtom, classicEntry),
       [
@@ -365,7 +362,7 @@ const makeDashboardRegistry = () => {
 
 describe("Earn Selection", () => {
   it("discards Entry Intent when its entry surface is released", async () => {
-    const registry = makeClassicRegistry({ defaultIdleTTL: 300_000 });
+    const registry = makeClassicRegistry();
     const unmount = registry.mount(earnSelectionViewAtom);
     registry.set(setEarnSelectionAmountAtom, "5");
     expect(registry.get(earnSelectionViewAtom).form.stakeAmount).toBe("5");

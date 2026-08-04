@@ -71,9 +71,7 @@ type ValidatorPaginationState = {
 type ValidatorBranch = keyof ValidatorCursor;
 
 const validatorPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(5),
   staleTime: Duration.minutes(2),
-  revalidateOnMount: true,
 });
 
 const toRequest = ({

@@ -86,7 +86,7 @@ Earn Selection remains Atom-owned synchronous intent rather than becoming an Eff
 
 Explicit Earn validator selection retains normalized validator snapshots in authoritative intent. The implicit initial/default validator remains resource-derived until a user or targeted initialization commits a selection. Search and pagination resources therefore own only availability and pagination; they do not maintain a remembered-value cache to compensate for key-only selection.
 
-ADR-0018 supersedes Borrow-specific outcome reconciliation. Borrow Entry, Market Position, and Earn each own one active Entry Intent store plus a projection from `TransactionWorkflowStarted` to a private owner-scoped reset command. Their transient intent Atom chains have zero idle TTL, Wallet Scope Owner changes remain direct state invariants rather than event-driven reconciliation, and additional-address-only changes preserve intent.
+ADR-0018 supersedes Borrow-specific outcome reconciliation. Borrow Entry, Market Position, and Earn each own one active Entry Intent store plus a projection from `TransactionWorkflowStarted` to a private owner-scoped reset command. Under ADR-0019, their transient intent Atom chains are disposed when unobserved; Wallet Scope Owner changes remain direct state invariants rather than event-driven reconciliation, and additional-address-only changes preserve intent.
 
 Market Position stores only the active route's discriminated Repay, Withdraw, or Collateral Toggle intent together with its owner and action identity. The action route derives fresh defaults when mounted; no pre-navigation staging write or owner-and-action attempt family is retained. Live Position and risk Resources remain outside the transient intent snapshot.
 

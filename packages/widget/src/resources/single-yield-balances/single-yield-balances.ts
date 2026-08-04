@@ -25,9 +25,7 @@ export class SingleYieldBalancesError extends Data.TaggedError(
 }> {}
 
 const balancesPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(5),
   staleTime: Duration.minutes(1),
-  revalidateOnMount: true,
 });
 
 const singleYieldBalancesCanonicalAtom = Atom.family(

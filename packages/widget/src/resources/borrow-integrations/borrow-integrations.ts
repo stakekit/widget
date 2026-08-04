@@ -6,9 +6,7 @@ import { withBorrowResourceError } from "../borrow/borrow-resource-error";
 import { makePresentableResource } from "../resource-failure-presentation";
 
 const borrowCatalogPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(5),
   staleTime: Duration.minutes(1),
-  revalidateOnMount: true,
 });
 
 const borrowIntegrationsCanonicalAtom = appRuntime

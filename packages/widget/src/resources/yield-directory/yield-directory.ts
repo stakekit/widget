@@ -77,9 +77,7 @@ type EnrichedYieldDirectoryResult = {
 };
 
 const directoryPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(5),
   staleTime: Duration.minutes(5),
-  revalidateOnMount: true,
 });
 
 const yieldFirstPageCanonicalAtom = Atom.family((key: YieldFirstPageKey) =>

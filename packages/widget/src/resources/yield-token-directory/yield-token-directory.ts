@@ -46,9 +46,7 @@ export class YieldTokensError extends Data.TaggedError("YieldTokensError")<{
 }> {}
 
 const yieldTokensPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(5),
   staleTime: Duration.minutes(5),
-  revalidateOnMount: true,
 });
 
 const emptyYieldTokensPullAtom = Atom.pull<

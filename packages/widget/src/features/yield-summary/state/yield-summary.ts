@@ -36,16 +36,13 @@ export const makeYieldSummary = (inputAtom: Atom.Atom<YieldSummaryInput>) => {
         })
       )
     );
-  }).pipe(
-    Atom.setIdleTTL(0),
-    Atom.withLabel("yieldSummaryProviderYieldsResultAtom")
-  );
+  }).pipe(Atom.withLabel("yieldSummaryProviderYieldsResultAtom"));
   const viewAtom = Atom.make((get) => {
     return resolveYieldSummaryView({
       input: get(inputAtom),
       providerYieldsResult: get(providerYieldsResultAtom),
     });
-  }).pipe(Atom.setIdleTTL(0), Atom.withLabel("yieldSummaryFacadeViewAtom"));
+  }).pipe(Atom.withLabel("yieldSummaryFacadeViewAtom"));
 
   return { viewAtom } as const;
 };

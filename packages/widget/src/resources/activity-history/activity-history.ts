@@ -79,9 +79,7 @@ export class ActivityHistoryError extends Data.TaggedError(
 }> {}
 
 const activityPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(5),
   staleTime: Duration.minutes(1),
-  revalidateOnMount: true,
 });
 
 const activityRequest = (

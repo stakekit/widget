@@ -10,7 +10,7 @@ const walletStateAtom = walletRuntime
       Stream.unwrap
     )
   )
-  .pipe(Atom.setIdleTTL(0), Atom.withLabel("walletStateAtom"));
+  .pipe(Atom.withLabel("walletStateAtom"));
 
 export const currentWalletStateResultAtom = Atom.make((get) =>
   get(walletStateAtom).pipe(AsyncResult.map((state) => state.connection))
@@ -22,4 +22,4 @@ export const currentWalletLedgerStateAtom = Atom.make((get) =>
 
 export const currentWalletConfigResultAtom = walletRuntime
   .atom(WalletService.use((wallet) => Effect.succeed(wallet.wagmiConfig)))
-  .pipe(Atom.setIdleTTL(0), Atom.withLabel("currentWalletConfigResultAtom"));
+  .pipe(Atom.withLabel("currentWalletConfigResultAtom"));

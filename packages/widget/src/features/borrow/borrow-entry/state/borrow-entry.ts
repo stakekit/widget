@@ -147,7 +147,7 @@ const borrowFormStateAtom = Atom.writable<
       owner,
     });
   }
-).pipe(Atom.setIdleTTL(0), Atom.withLabel("borrowFormStateAtom"));
+).pipe(Atom.withLabel("borrowFormStateAtom"));
 
 const currentBorrowEntryKeyAtom = Atom.make((get) => {
   if (!get(widgetConfigAtom).borrowEnabled) return null;
@@ -197,7 +197,7 @@ export const currentBorrowEntryAtom = Atom.writable<
       context.set(borrowFormStateAtom, action);
     }
   }
-).pipe(Atom.setIdleTTL(0), Atom.withLabel("currentBorrowEntryAtom"));
+).pipe(Atom.withLabel("currentBorrowEntryAtom"));
 
 export const setBorrowAmountAtom = Atom.fnSync((amount: BigNumber, context) =>
   context.set(currentBorrowEntryAtom, {

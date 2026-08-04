@@ -19,9 +19,7 @@ export class YieldOpportunityError extends Data.TaggedError(
 }> {}
 
 const opportunityPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(10),
   staleTime: Duration.minutes(5),
-  revalidateOnMount: true,
 });
 
 const yieldOpportunityCanonicalAtom = Atom.family((yieldId: YieldId) =>

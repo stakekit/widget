@@ -32,13 +32,13 @@ export const makeScopedEffectAtom = <R, ER, A, E, Value>({
 }): Atom.Atom<Value> => {
   const handleAtom = runtime
     .atom(acquire)
-    .pipe(Atom.setIdleTTL(0), Atom.withLabel(`${label}Handle`));
+    .pipe(Atom.withLabel(`${label}Handle`));
   const value = makeValue(handleAtom);
 
   return Atom.make((context) => {
     context.mount(handleAtom);
     return value;
-  }).pipe(Atom.setIdleTTL(0), Atom.withLabel(label));
+  }).pipe(Atom.withLabel(label));
 };
 
 export const makeScopedEffectStateAtom = <
@@ -72,7 +72,7 @@ export const makeScopedEffectStateAtom = <
 }): Atom.Atom<Value> => {
   const handleAtom = runtime
     .atom(acquire)
-    .pipe(Atom.setIdleTTL(0), Atom.withLabel(`${label}Handle`));
+    .pipe(Atom.withLabel(`${label}Handle`));
   const stateAtom = runtime
     .atom((context) =>
       Stream.unwrap(
@@ -81,12 +81,12 @@ export const makeScopedEffectStateAtom = <
           .pipe(Effect.map((handle) => getStates(handle)))
       )
     )
-    .pipe(Atom.setIdleTTL(0), Atom.withLabel(`${label}State`));
+    .pipe(Atom.withLabel(`${label}State`));
   const value = makeValue({ handleAtom, stateAtom });
 
   return Atom.make((context) => {
     context.mount(handleAtom);
     context.mount(stateAtom);
     return value;
-  }).pipe(Atom.setIdleTTL(0), Atom.withLabel(label));
+  }).pipe(Atom.withLabel(label));
 };

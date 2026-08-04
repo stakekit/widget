@@ -187,10 +187,7 @@ const activeBorrowPositionActionIntentAtom = Atom.writable<
       }
     }
   }
-).pipe(
-  Atom.setIdleTTL(0),
-  Atom.withLabel("activeBorrowPositionActionIntentAtom")
-);
+).pipe(Atom.withLabel("activeBorrowPositionActionIntentAtom"));
 
 export const resetBorrowMarketPositionIntentForOwnerAtom = Atom.fnSync(
   (owner: WalletScopeOwnerKey, context) => {
@@ -293,7 +290,7 @@ export const borrowRepayFormAtom = Atom.family(
           context.refreshSelf();
         }
       }
-    ).pipe(Atom.setIdleTTL(0), Atom.withLabel("borrowRepayFormAtom"))
+    ).pipe(Atom.withLabel("borrowRepayFormAtom"))
 );
 
 export const borrowWithdrawFormAtom = Atom.family(
@@ -333,7 +330,7 @@ export const borrowWithdrawFormAtom = Atom.family(
           context.refreshSelf();
         }
       }
-    ).pipe(Atom.setIdleTTL(0), Atom.withLabel("borrowWithdrawFormAtom"))
+    ).pipe(Atom.withLabel("borrowWithdrawFormAtom"))
 );
 
 export const borrowCollateralToggleFormAtom = Atom.family(
@@ -352,10 +349,7 @@ export const borrowCollateralToggleFormAtom = Atom.family(
         address: current.scope.address,
         context: current.action.pendingContext,
       });
-    }).pipe(
-      Atom.setIdleTTL(0),
-      Atom.withLabel("borrowCollateralToggleFormAtom")
-    )
+    }).pipe(Atom.withLabel("borrowCollateralToggleFormAtom"))
 );
 
 const getCurrentPreparation = (

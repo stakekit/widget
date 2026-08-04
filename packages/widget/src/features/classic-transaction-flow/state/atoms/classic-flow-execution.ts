@@ -93,10 +93,7 @@ export const makeClassicFlowExecutionScopeAtom = <E>({
                 yieldId: getIntakeYieldId(session),
               },
         } as const;
-      }).pipe(
-        Atom.setIdleTTL(0),
-        Atom.withLabel("classicExecutionWorkflowView")
-      );
+      }).pipe(Atom.withLabel("classicExecutionWorkflowView"));
       const workflowDispatchAtom = walletRuntime
         .fn(
           (command: TransactionWorkflowCommand, context) =>
@@ -107,10 +104,7 @@ export const makeClassicFlowExecutionScopeAtom = <E>({
               ),
           { concurrent: false, initialValue: undefined }
         )
-        .pipe(
-          Atom.setIdleTTL(0),
-          Atom.withLabel("classicFlowExecutionWorkflowDispatch")
-        );
+        .pipe(Atom.withLabel("classicFlowExecutionWorkflowDispatch"));
       const backAtom = walletRuntime
         .fn(
           (_input: undefined, context) =>
@@ -119,10 +113,7 @@ export const makeClassicFlowExecutionScopeAtom = <E>({
               .pipe(Effect.flatMap((execution) => execution.back())),
           { initialValue: undefined }
         )
-        .pipe(
-          Atom.setIdleTTL(0),
-          Atom.withLabel("backClassicFlowExecutionAtom")
-        );
+        .pipe(Atom.withLabel("backClassicFlowExecutionAtom"));
       const finishAtom = walletRuntime
         .fn(
           (_input: undefined, context) =>
@@ -131,10 +122,7 @@ export const makeClassicFlowExecutionScopeAtom = <E>({
               .pipe(Effect.flatMap((execution) => execution.finish())),
           { initialValue: undefined }
         )
-        .pipe(
-          Atom.setIdleTTL(0),
-          Atom.withLabel("finishClassicFlowExecutionAtom")
-        );
+        .pipe(Atom.withLabel("finishClassicFlowExecutionAtom"));
       const activityCompleteViewAtom = Atom.make((get) => {
         const state = Option.getOrNull(AsyncResult.value(get(stateAtom)));
         if (state?.context.domain._tag !== "Classic") return null;

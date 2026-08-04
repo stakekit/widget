@@ -38,9 +38,7 @@ class TokenPricesError extends Data.TaggedError("TokenPricesError")<{
 }> {}
 
 const pricesPolicy = withApiResourcePolicy({
-  idleTTL: Duration.minutes(5),
   staleTime: Duration.minutes(2),
-  revalidateOnMount: true,
 });
 
 const tokenPricesCanonicalAtom = Atom.family((key: TokenPricesKey) =>

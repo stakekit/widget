@@ -1,7 +1,9 @@
 import { Cause, Effect, Layer, Schema, SubscriptionRef } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
+import * as Reactivity from "effect/unstable/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
+import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
 import type { PositionsData } from "../../src/domain/types/positions";
@@ -36,6 +38,11 @@ import {
 } from "../../src/features/earn/state/page-workflow";
 import { initParamsAtom } from "../../src/features/init-params/state";
 import { walletStateResultAtom } from "../../src/features/wallet/state";
+import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
+import {
+  type YieldDirectoryRequest,
+  YieldResourceSource,
+} from "../../src/services/api/yield-resource-source";
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
   disconnectedLedgerConnectorState,
@@ -248,9 +255,56 @@ describe("earn page workflow atoms", () => {
       validator: null,
       yieldId: secondYield.id,
     } as const;
+    const yields = [firstYield, secondYield];
     const registry = AtomRegistry.make({
-      defaultIdleTTL: 300_000,
       initialValues: [
+        [
+          appRuntime.layer,
+          Layer.mergeAll(
+            Reactivity.layer,
+            Layer.succeed(
+              LegacyResourceSource,
+              LegacyResourceSource.of({
+                getTokenOptions: () =>
+                  Effect.succeed(
+                    tokenOptions.map(({ availableYields, token }) => ({
+                      availableYields,
+                      token,
+                    }))
+                  ),
+                scanTokenBalances: () => Effect.succeed([]),
+              } as never)
+            ),
+            Layer.succeed(
+              YieldResourceSource,
+              YieldResourceSource.of({
+                getOpportunity: () => Effect.succeed(secondYield),
+                getPositions: () =>
+                  Effect.succeed({
+                    items: [],
+                    limit: 100,
+                    offset: 0,
+                    total: 0,
+                  }),
+                getProvider: () => Effect.succeedNone,
+                listYields: ({
+                  limit,
+                  offset,
+                  yieldIds,
+                }: YieldDirectoryRequest) =>
+                  Effect.succeed({
+                    items: yields.filter(
+                      (yieldModel) =>
+                        !yieldIds || yieldIds.includes(yieldModel.id)
+                    ),
+                    limit,
+                    offset,
+                    total: yields.length,
+                  }),
+              } as never)
+            )
+          ) as never,
+        ],
         [
           walletRuntime.layer,
           Layer.succeed(
@@ -263,61 +317,9 @@ describe("earn page workflow atoms", () => {
           ) as never,
         ],
         [initParamsAtom, initParams],
-        [
-          initYieldAtom(new InitYieldKey({ yieldId: secondYield.id })),
-          AsyncResult.success(secondYield),
-        ],
-        [
-          initYieldAtom(new InitYieldKey({ yieldId: null })),
-          AsyncResult.success(null),
-        ],
-        ...[null, firstOwnerScope].flatMap((scope) => [
-          [
-            positionsDataAtom(new PositionsDataKey({ scope })),
-            AsyncResult.success(new Map() as PositionsData),
-          ] as const,
-          [
-            mergedTokenOptionsAtom(
-              new TokenOptionsKey({
-                category: null,
-                initToken: null,
-                initTokenNetwork: null,
-                initYieldId: secondYield.id,
-                scope,
-                tokensForEnabledYieldsOnly: false,
-              })
-            ),
-            AsyncResult.success(tokenOptions),
-          ] as const,
-          [
-            mergedTokenOptionsAtom(
-              new TokenOptionsKey({
-                category: null,
-                initToken: null,
-                initTokenNetwork: null,
-                initYieldId: null,
-                scope,
-                tokensForEnabledYieldsOnly: false,
-              })
-            ),
-            AsyncResult.success(tokenOptions),
-          ] as const,
-        ]),
-        ...[firstYield, secondYield].map(
-          (yieldModel) =>
-            [
-              earnYieldCatalogAtom(
-                new YieldCatalogKey({
-                  category: null,
-                  network: yieldModel.token.network,
-                  yieldIds: [yieldModel.id],
-                })
-              ),
-              AsyncResult.success([yieldModel]),
-            ] as const
-        ),
       ],
     });
+    const unmountWalletState = registry.mount(walletStateResultAtom);
     let unmount = registry.mount(earnSelectionViewAtom);
 
     try {
@@ -348,6 +350,7 @@ describe("earn page workflow atoms", () => {
       });
     } finally {
       unmount();
+      unmountWalletState();
       registry.dispose();
     }
   });

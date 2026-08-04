@@ -20,4 +20,4 @@ export const currentBorrowWalletStateAtom = Atom.make(
       .pipe(Effect.map(toBorrowWalletStateProjection));
   },
   { initialValue: disconnectedBorrowWalletProjection }
-).pipe(Atom.setIdleTTL(0), Atom.withLabel("currentBorrowWalletStateAtom"));
+).pipe(Atom.withLabel("currentBorrowWalletStateAtom"));

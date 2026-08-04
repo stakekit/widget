@@ -43,7 +43,7 @@ export const makeBorrowFlowExecutionScopeAtom = <E>(
           result,
           setupError: getBorrowExecutionSetupError(AsyncResult.error(result)),
         } as const;
-      }).pipe(Atom.setIdleTTL(0), Atom.withLabel("borrowFlowExecutionView"));
+      }).pipe(Atom.withLabel("borrowFlowExecutionView"));
 
       const workflowCommandAtom = walletRuntime
         .fn(
@@ -59,7 +59,7 @@ export const makeBorrowFlowExecutionScopeAtom = <E>(
               ),
           { concurrent: false, initialValue: undefined }
         )
-        .pipe(Atom.setIdleTTL(0), Atom.withLabel("borrowFlowWorkflowCommand"));
+        .pipe(Atom.withLabel("borrowFlowWorkflowCommand"));
       const backAtom = walletRuntime
         .fn(
           (_input: undefined, context) =>
@@ -74,7 +74,7 @@ export const makeBorrowFlowExecutionScopeAtom = <E>(
               ),
           { initialValue: undefined }
         )
-        .pipe(Atom.setIdleTTL(0), Atom.withLabel("backBorrowFlowExecution"));
+        .pipe(Atom.withLabel("backBorrowFlowExecution"));
       const finishAtom = walletRuntime
         .fn(
           (_input: undefined, context) =>
@@ -89,7 +89,7 @@ export const makeBorrowFlowExecutionScopeAtom = <E>(
               ),
           { initialValue: undefined }
         )
-        .pipe(Atom.setIdleTTL(0), Atom.withLabel("finishBorrowFlowExecution"));
+        .pipe(Atom.withLabel("finishBorrowFlowExecution"));
 
       return {
         availabilityAtom: handleAtom,
