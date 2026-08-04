@@ -25,5 +25,10 @@ handoffs, or completion policy. Those belong to the Classic and Borrow feature
 adapters. Submission tracking remains a transaction-truth effect within the
 scoped machine. Successful construction publishes `TransactionWorkflowStarted`,
 and the scoped handle finalizer publishes exactly one `TransactionWorkflowEnded`;
-resource projections invalidate affected Authoritative Resources asynchronously
-from the latter without delaying workflow completion or route exit.
+resource projections immediately invalidate affected Authoritative Resources
+from the latter without delaying workflow completion or route exit. When its
+Wallet Scope Owner remains current, the application projection also starts one
+Post-Transaction Reconciliation process. It repeats balance and position
+invalidation after ten, twenty, thirty, and forty seconds; a newer eligible
+request replaces it, and disconnecting or changing its owner cancels it.
+Activity and Borrow market invalidation remain immediate-only.

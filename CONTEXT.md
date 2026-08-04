@@ -178,6 +178,10 @@ _Avoid_: Form reset signal, journey outcome
 A Widget Domain Event stating that a Transaction Workflow's scoped lifetime ended, whether completed or abandoned. It is emitted once when its Execution Attempt is left.
 _Avoid_: Navigation event, invalidation command
 
+**Post-Transaction Reconciliation**:
+A Wallet Scope Owner-bound effort to reconcile authoritative balances and positions after a Transaction Workflow ends. A newer reconciliation effort replaces the current one, and disconnecting or changing its owner ends it.
+_Avoid_: Refresh workflow, polling workflow
+
 **Classic Transaction Flow Abandonment**:
 The end of an active Flow Session when its journey is exited, its Wallet Scope no longer matches, or a new session begins. Returning from execution to Review ends only the current Execution Attempt and does not abandon the Flow Session.
 _Avoid_: Request cleanup

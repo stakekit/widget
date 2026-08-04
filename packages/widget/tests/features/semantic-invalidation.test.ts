@@ -5,9 +5,9 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import * as Reactivity from "effect/unstable/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { getTransactionWorkflowEndedInvalidationKeys } from "../../src/app/runtime/transaction-workflow-event-projection";
 import { Integration } from "../../src/domain/borrow/catalog/integration";
 import { Market } from "../../src/domain/borrow/catalog/market";
+import { isBorrowNetwork } from "../../src/domain/borrow/network";
 import { BorrowAccountSnapshot } from "../../src/domain/borrow/positions/borrow-account-snapshot";
 import { EarnLegacyTokenOptionsResponse } from "../../src/domain/schema/earn-models";
 import {
@@ -42,7 +42,10 @@ import {
   type YieldDirectoryRequest,
   YieldResourceSource,
 } from "../../src/services/api/yield-resource-source";
-import { ActivityInvalidationKey } from "../../src/services/resource-invalidation";
+import {
+  ActivityInvalidationKey,
+  resourceInvalidationKeys,
+} from "../../src/services/resource-invalidation";
 import {
   WalletScopeKey,
   walletScopeOwnerKey,
@@ -185,12 +188,15 @@ const reactivityAtom = appRuntime.atom(
   })
 );
 
-const workflowInvalidationKeys = (scope: WalletScopeKey) =>
-  getTransactionWorkflowEndedInvalidationKeys({
-    _tag: "TransactionWorkflowEnded",
-    owner: walletScopeOwnerKey(scope),
-    workflowKind: "Classic",
-  });
+const workflowInvalidationKeys = (scope: WalletScopeKey) => {
+  const owner = walletScopeOwnerKey(scope);
+  return [
+    ...resourceInvalidationKeys.walletBalances(owner),
+    ...resourceInvalidationKeys.yieldPositions(owner),
+    ...resourceInvalidationKeys.singleYieldBalances(owner.address),
+    ...resourceInvalidationKeys.activity(owner),
+  ];
+};
 
 describe("semantic resource invalidation", () => {
   it("refreshes idle Earn bases for the workflow wallet scope only", async () => {
@@ -559,14 +565,22 @@ describe("semantic resource invalidation", () => {
       expect(value.balances.debt?.pendingActions).toHaveLength(1);
     });
     updated = true;
-    const keys = getTransactionWorkflowEndedInvalidationKeys({
-      _tag: "TransactionWorkflowEnded",
-      owner: walletScopeOwnerKey(scopeA),
-      workflowKind: "Borrow",
-    });
+    const owner = walletScopeOwnerKey(scopeA);
     const reactivity = AsyncResult.getOrThrow(registry.get(reactivityAtom));
 
-    await Effect.runPromise(reactivity.withBatch(reactivity.invalidate(keys)));
+    await Effect.runPromise(
+      reactivity.withBatch(
+        reactivity.invalidate([
+          ...resourceInvalidationKeys.walletBalances(owner),
+          ...(isBorrowNetwork(owner.network)
+            ? [
+                ...resourceInvalidationKeys.borrowPositions(owner),
+                ...resourceInvalidationKeys.borrowMarkets(owner.network),
+              ]
+            : []),
+        ])
+      )
+    );
     await vi.waitFor(() => {
       const value = AsyncResult.getOrThrow(registry.get(detail));
       expect(value.balances.debt?.balance).toBe(100);
