@@ -154,11 +154,11 @@ const makeClassicTransactionFlowService = Effect.fn(
       return { _tag: "RejectedStale" } as const;
     }
 
-    yield* clearCurrent(session);
     yield* navigation.execute({
       _tag: "Push",
       path: toWidgetPath("/activity"),
     });
+    yield* clearCurrent(session);
     return { _tag: "Abandoned" } as const;
   });
 

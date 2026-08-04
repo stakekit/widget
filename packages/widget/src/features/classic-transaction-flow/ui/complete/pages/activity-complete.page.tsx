@@ -1,7 +1,14 @@
-import { useActivityComplete } from "../hooks/use-activity-complete.hook";
+import {
+  useActivityComplete,
+  useActivityCompleteView,
+} from "../hooks/use-activity-complete.hook";
 import { CompletePage } from "./common.page";
 
-export const ActivityCompletePage = () => {
+const ActivityCompleteContent = ({
+  view,
+}: {
+  readonly view: NonNullable<ReturnType<typeof useActivityComplete>>;
+}) => {
   const {
     amount,
     yieldType,
@@ -10,7 +17,7 @@ export const ActivityCompletePage = () => {
     network,
     providerDetails,
     selectedAction,
-  } = useActivityComplete();
+  } = useActivityCompleteView(view);
 
   return (
     <CompletePage
@@ -24,4 +31,9 @@ export const ActivityCompletePage = () => {
       integrationId={selectedAction.yieldId}
     />
   );
+};
+
+export const ActivityCompletePage = () => {
+  const view = useActivityComplete();
+  return view ? <ActivityCompleteContent view={view} /> : null;
 };

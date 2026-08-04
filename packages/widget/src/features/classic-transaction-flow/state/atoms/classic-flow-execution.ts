@@ -136,17 +136,13 @@ export const makeClassicFlowExecutionScopeAtom = <E>({
           Atom.withLabel("finishClassicFlowExecutionAtom")
         );
       const activityCompleteViewAtom = Atom.make((get) => {
-        const state = AsyncResult.getOrThrow(get(stateAtom));
-        if (state.context.domain._tag !== "Classic") {
-          throw new Error("Expected Classic Transaction Workflow state.");
-        }
+        const state = Option.getOrNull(AsyncResult.value(get(stateAtom)));
+        if (state?.context.domain._tag !== "Classic") return null;
         const activity = getClassicTransactionFlowIntakeVariant(
           session.intake,
           "ActivityResume"
         );
-        if (!activity) {
-          throw new Error("Expected Classic Flow ActivityResume intake.");
-        }
+        if (!activity) return null;
         const actionMeta = state.context.domain.actionMeta;
         return {
           inputToken:

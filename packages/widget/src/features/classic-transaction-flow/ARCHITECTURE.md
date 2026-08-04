@@ -76,7 +76,17 @@ Its interface exposes the Transaction Workflow state Stream, an operation
 accepting the existing `TransactionWorkflowCommand`, Back, and Finish. These
 operations return Accepted or Rejected Stale, with navigation failures in the
 error channel. Completion observation and navigation retry are automatic;
-navigation retries every 100 milliseconds until success or scope interruption.
+both Completed workflows and Disabled fixed batches with no remaining
+transactions navigate to Complete. Navigation carries the terminal transaction
+URL summary, while Activity completion presentation remains a safe nullable Atom
+projection of the terminal Transaction Workflow state. Navigation retries every
+100 milliseconds until success or scope interruption.
+
+Classic transaction confirmation treats `NOT_FOUND` as an intermediate status:
+the status endpoint can report it before the submitted transaction becomes
+visible. Like other non-terminal statuses, it remains eligible for the Classic
+polling policy of 75 attempts spaced four seconds apart. `FAILED` and `BLOCKED`
+are terminal failures; `CONFIRMED` and `SKIPPED` are terminal successes.
 Session replacement, wallet invalidation, promotion, workflow dispatch, and
 UI-owned navigation share the service ownership serializer, so UI outputs are
 suppressed after ownership becomes stale. Transaction Workflow operations

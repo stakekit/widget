@@ -26,7 +26,7 @@ type ActivityCompleteView<Action> = Pick<
   readonly selectedAction: Action;
 };
 
-const useActivityCompleteView = <
+export const useActivityCompleteView = <
   Action extends Pick<YieldAction, "amount" | "type" | "yieldId">,
 >({
   selectedAction,
@@ -64,8 +64,7 @@ const useActivityCompleteView = <
 
 export const useActivityComplete = () => {
   const execution = useClassicFlowExecution();
-  const view = useAtomValue(execution.activityCompleteViewAtom);
-  return useActivityCompleteView(view);
+  return useAtomValue(execution.activityCompleteViewAtom);
 };
 
 export const useActivityHistoryComplete = () => {

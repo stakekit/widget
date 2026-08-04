@@ -88,8 +88,8 @@ export const makeClassicFlowExecutionFactory = Effect.fn(
           state
         ): state is Extract<
           TransactionWorkflowState,
-          { readonly _tag: "Completed" }
-        > => state._tag === "Completed"
+          { readonly _tag: "Completed" | "Disabled" }
+        > => state._tag === "Completed" || state._tag === "Disabled"
       ),
       Stream.take(1),
       Stream.runForEach((state) =>
