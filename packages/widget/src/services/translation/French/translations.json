@@ -52,8 +52,7 @@
       "withdrew": "Retrait de {{token}}",
       "rewards": "Récompenses",
       "generic": "{{action}} {{token}}",
-      "unknown_token": "Jeton inconnu",
-      "yield_unavailable": "Détails du rendement indisponibles"
+      "unknown_token": "Jeton inconnu"
     },
     "time": {
       "now": "à l'instant",

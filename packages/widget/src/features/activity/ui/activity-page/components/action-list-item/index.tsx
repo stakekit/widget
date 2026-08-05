@@ -42,8 +42,6 @@ export const ActionListItem = ({
     timestampRelative,
     showFailedBadge,
     badgeLabel,
-    showUnavailableYieldDetails,
-    unavailableYieldLabel,
   } = useActionListItem(action);
 
   const firstProvider = providersDetails?.[0];
@@ -53,9 +51,7 @@ export const ActionListItem = ({
         count: Math.max((providersDetails?.length ?? 0) - 1, 1),
       })
     : null;
-  const viaLabel =
-    providerLabel ||
-    (showUnavailableYieldDetails ? unavailableYieldLabel : null);
+  const viaLabel = providerLabel;
 
   return (
     <Box py="1" width="full">

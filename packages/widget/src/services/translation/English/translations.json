@@ -53,8 +53,7 @@
       "withdrew": "Withdrew {{token}}",
       "rewards": "Rewards",
       "generic": "{{action}} {{token}}",
-      "unknown_token": "Unknown token",
-      "yield_unavailable": "Yield details unavailable"
+      "unknown_token": "Unknown token"
     },
     "time": {
       "now": "just now",

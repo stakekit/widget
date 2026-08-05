@@ -93,6 +93,5 @@ export const useActionListItem = (action: ActivityActionItem) => {
     timestampAbsolute,
     timestampRelative,
     badgeLabel: t("activity.failed"),
-    unavailableYieldLabel: t("activity.item.yield_unavailable"),
   };
 };

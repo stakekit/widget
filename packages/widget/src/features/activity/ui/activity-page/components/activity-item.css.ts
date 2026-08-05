@@ -1,5 +1,6 @@
 import { style } from "@vanilla-extract/css";
 import { atoms } from "../../../../../shared/styles/theme/atoms.css";
+import { widgetContainerName } from "../../../../../shared/styles/tokens/containers.css";
 
 export const failedBadge = style([
   atoms({
@@ -47,12 +48,22 @@ export const viaText = style({
   whiteSpace: "nowrap",
 });
 
+const hideInWidget = style({
+  "@container": {
+    [`${widgetContainerName} (max-width: 400px)`]: {
+      display: "none",
+    },
+  },
+});
+
 export const amountPositive = style([
+  hideInWidget,
   atoms({ color: "positionsRewardRate", fontWeight: "medium" }),
   { whiteSpace: "nowrap" },
 ]);
 
 export const amountNeutral = style([
+  hideInWidget,
   atoms({ color: "text", fontWeight: "medium" }),
   { whiteSpace: "nowrap" },
 ]);
