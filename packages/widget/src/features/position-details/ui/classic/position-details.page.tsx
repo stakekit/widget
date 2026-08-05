@@ -16,6 +16,7 @@ import {
 import { useTrackPage } from "../../../tracking/state";
 import { AnimationPage, PageContainer } from "../../../widget-shell/components";
 import { AmountBlock } from "./components/amount-block";
+import { ExitReceiveTokenSelect } from "./components/exit-receive-token-select";
 import { PositionBalances } from "./components/position-balances";
 import { ProviderDetails } from "./components/provider-details";
 import { StaticActionBlock } from "./components/static-action-block";
@@ -56,6 +57,8 @@ const PositionDetails = () => {
     kycGateIsChecking,
     kycProviderName,
     onKycStatusRefresh,
+    exitReceiveTokenSelection,
+    onReceiveTokenSelect,
     personalizedRewardRate,
     apyCompositionRewardRate,
     apyCompositionShowsUpToCampaign,
@@ -270,6 +273,13 @@ const PositionDetails = () => {
                       providerName={kycProviderName}
                     />
                   )}
+
+                  {exitReceiveTokenSelection ? (
+                    <ExitReceiveTokenSelect
+                      onSelect={onReceiveTokenSelect}
+                      selection={exitReceiveTokenSelection}
+                    />
+                  ) : null}
 
                   <AmountBlock
                     unstakeMaxAmount={unstakeMaxAmountValue}

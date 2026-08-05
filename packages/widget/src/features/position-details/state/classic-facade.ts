@@ -14,6 +14,7 @@ import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/state";
 import {
   positionDetailsExitActionViewAtom,
   setPositionDetailsExitMaxAmountAtom,
+  setPositionDetailsExitReceiveTokenAtom,
   submitPositionDetailsExitAtom,
 } from "./classic-flow-actions";
 import {
@@ -111,6 +112,7 @@ export const positionDetailsClassicViewAtom = Atom.family(
           !personalizedRewardRate && Boolean(fallbackRewardRate),
         canChangeUnstakeAmount: workflow.canChangeUnstakeAmount,
         canUnstake,
+        exitReceiveTokenSelection: workflow.exitReceiveTokenSelection,
         hasMoreValidators: exitResources.hasMoreValidators,
         integrationData: integration,
         isLoading:
@@ -191,4 +193,8 @@ export const refreshPositionDetailsKycAtom = Atom.family(
     )
 );
 
-export { setPositionDetailsExitMaxAmountAtom, submitPositionDetailsExitAtom };
+export {
+  setPositionDetailsExitMaxAmountAtom,
+  setPositionDetailsExitReceiveTokenAtom,
+  submitPositionDetailsExitAtom,
+};

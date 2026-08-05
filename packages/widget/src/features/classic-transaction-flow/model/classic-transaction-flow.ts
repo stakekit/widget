@@ -10,6 +10,7 @@ import type {
   EarnYieldWithProvider,
 } from "../../../domain/schema/earn-models";
 import type { AppToken } from "../../../domain/schema/legacy-models";
+import type { ExitReceiveToken } from "../../../domain/types/action";
 import { getActionInputToken } from "../../../domain/types/action";
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
 import type { ValidatorKey } from "../../../domain/types/validators";
@@ -44,6 +45,7 @@ type ExitClassicTransactionFlowIntake = {
   readonly gasFeeToken: EarnYieldWithProvider["token"];
   readonly integration: EarnYieldWithProvider;
   readonly providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>;
+  readonly receiveToken: ExitReceiveToken | null;
   readonly request: ActionCommand;
   readonly unstakeAmount: BigNumber;
   readonly unstakeToken: AppToken;

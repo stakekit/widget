@@ -149,6 +149,24 @@ const ProviderIdArgument = decodeApiArgument(
   }))
 );
 
+const OutputTokenArgumentDomain = Schema.Struct({
+  required: Schema.Boolean,
+  options: Schema.Array(TokenAddress),
+}).check(makeRequiredOptionsFilter("outputToken"));
+
+const OutputTokenArgument = decodeApiArgument(
+  "outputToken",
+  "string",
+  OutputTokenArgumentDomain,
+  SchemaGetter.transform<
+    typeof OutputTokenArgumentDomain.Encoded,
+    ApiArgumentField
+  >((field) => ({
+    options: field.options ?? [],
+    required: field.required ?? false,
+  }))
+);
+
 const TronResourceOptions = Schema.Array(TronResource);
 
 const TronResourceArgumentDomain = Schema.Struct({
@@ -209,6 +227,7 @@ const SubnetIdArgument = makeRequiredArgument("subnetId", "number");
 
 const EarnYieldArgumentFieldsDomain = Schema.Struct({
   amount: Schema.optionalKey(AmountArgument),
+  outputToken: Schema.optionalKey(OutputTokenArgument),
   providerId: Schema.optionalKey(ProviderIdArgument),
   subnetId: Schema.optionalKey(SubnetIdArgument),
   tronResource: Schema.optionalKey(TronResourceArgument),

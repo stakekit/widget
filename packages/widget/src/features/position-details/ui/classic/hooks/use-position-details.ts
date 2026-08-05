@@ -7,6 +7,7 @@ import {
   refreshPositionDetailsKycAtom,
   setPositionDetailsExitAmountAtom,
   setPositionDetailsExitMaxAmountAtom,
+  setPositionDetailsExitReceiveTokenAtom,
   submitPositionDetailsExitAtom,
 } from "../../../state/classic-facade";
 import { usePendingActions } from "./use-pending-actions";
@@ -17,6 +18,9 @@ export const usePositionDetails = () => {
   const setAmount = useAtomSet(setPositionDetailsExitAmountAtom(workflowKey));
   const setMaxAmount = useAtomSet(
     setPositionDetailsExitMaxAmountAtom(workflowKey)
+  );
+  const setReceiveToken = useAtomSet(
+    setPositionDetailsExitReceiveTokenAtom(workflowKey)
   );
   const submitExit = useAtomSet(submitPositionDetailsExitAtom(workflowKey));
   const refreshKyc = useAtomSet(refreshPositionDetailsKycAtom(workflowKey));
@@ -41,6 +45,7 @@ export const usePositionDetails = () => {
     onMaxClick: () => setMaxAmount(undefined),
     onPendingActionAmountChange,
     onPendingActionClick,
+    onReceiveTokenSelect: setReceiveToken,
     onUnstakeAmountChange: (amount: BigNumber) => setAmount(amount),
     onUnstakeClick: () => submitExit(undefined),
     onValidatorsSubmit,

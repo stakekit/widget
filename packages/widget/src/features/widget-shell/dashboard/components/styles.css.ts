@@ -47,6 +47,13 @@ export const headerContainer = style([
 
 export const middleItem = style({ gridColumn: "2" });
 
+export const disconnectButton = style({
+  alignSelf: "center",
+  height: "24px",
+  justifySelf: "end",
+  width: "24px",
+});
+
 /**
  * Horizontal inset applied by the dashboard outlet wrapper. Scroll containers
  * that want their scrollbar to sit in the edge zone (instead of crowding

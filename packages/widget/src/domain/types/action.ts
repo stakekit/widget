@@ -7,13 +7,18 @@ import {
   type YieldAction,
 } from "../schema/action-models";
 import type { EarnYieldWithProvider } from "../schema/earn-models";
-import type { ValidatorAddress } from "../schema/identifiers";
+import type { TokenAddress, ValidatorAddress } from "../schema/identifiers";
 import type { AppToken } from "../schema/legacy-models";
 
 export type TransactionType = ActionTransaction["type"];
 export type ActionType = YieldAction["type"];
 export type ActionStatus = YieldAction["status"];
 export type TransactionStatus = ActionTransaction["status"];
+
+export type ExitReceiveToken = Readonly<{
+  readonly address: TokenAddress;
+  readonly symbol: string;
+}>;
 
 export const getActionProviderYieldId = (
   command: Pick<ActionCommand, "arguments">

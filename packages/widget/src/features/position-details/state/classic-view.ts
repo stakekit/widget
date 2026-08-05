@@ -25,6 +25,7 @@ import {
   positionBalancesByTypeAtom,
 } from "../../portfolio/state";
 import { getYieldAmountConstraints } from "../../yield-entry/state";
+import { resolvePositionDetailsExitReceiveTokenSelection } from "../model/exit-receive-token";
 import {
   type PendingActionAmountChange,
   type PositionDetailsWorkflowAction,
@@ -146,6 +147,12 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
             isERC4626(integrationData))
         : null;
       const workflow = get(positionDetailsWorkflowAtom(key));
+      const exitReceiveTokenSelection = integrationData
+        ? resolvePositionDetailsExitReceiveTokenSelection({
+            integration: integrationData,
+            selectedAddress: workflow.exitReceiveTokenAddress,
+          })
+        : null;
       const unstakeAmount =
         reducedStakedOrLiquidBalance &&
         canChangeUnstakeAmount !== null &&
@@ -171,6 +178,7 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
         ...workflow,
         canChangeUnstakeAmount,
         currentWalletScope: key.scope,
+        exitReceiveTokenSelection,
         integrationData,
         maxUnstakeAmount: amountConstraints.allowedMaximum,
         minUnstakeAmount: amountConstraints.allowedMinimum,
@@ -216,6 +224,7 @@ export const dispatchPositionDetailsWorkflowAtom = Atom.family(
           maxUnstakeAmount: view.maxUnstakeAmount,
           pendingActions,
           state: {
+            exitReceiveTokenAddress: view.exitReceiveTokenAddress,
             pendingActions: view.pendingActions,
             unstakeAmount: view.unstakeAmount,
             unstakeUseMaxAmount: view.unstakeUseMaxAmount,

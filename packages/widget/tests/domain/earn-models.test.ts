@@ -373,6 +373,39 @@ describe("Earn application models", () => {
     });
   });
 
+  it("projects exit receive-token options from the Yield API contract", () => {
+    const baseYield = yieldApiYieldDtoFixture();
+    const yieldModel = yieldApiYieldFixture({
+      mechanics: {
+        ...baseYield.mechanics,
+        arguments: {
+          exit: {
+            fields: [
+              {
+                label: "Output Token",
+                name: "outputToken",
+                options: [
+                  "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+                  "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                ],
+                required: false,
+                type: "string",
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    expect(yieldModel.mechanics.arguments?.exit?.fields.outputToken).toEqual({
+      options: [
+        "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+        "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      ],
+      required: false,
+    });
+  });
+
   it.each([
     {
       field: {

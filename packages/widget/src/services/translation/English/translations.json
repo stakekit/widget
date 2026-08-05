@@ -580,6 +580,7 @@
     "deposit_fee_explanation": "A flat fee deducted at deposit, reducing the principal.",
     "management_fee_explanation": "A flat annual fee deducted from vault deposits by minting new shares, diluting participants. Calculated based on time since the last harvest and applied during harvest.",
     "performance_fee_explanation": "A fee deducted from earnings when a vault harvests a strategy. It's only applied after surpassing a variable threshold.",
+    "receive_token": "Receive token",
     "staking_fee": "Staking fee"
   },
   "steps": {
@@ -855,6 +856,9 @@
     "withdraw": "Withdraw",
     "available": "{{amount}} {{symbol}} available",
     "personalized_apy": "Personalized APY",
+    "receive_token": {
+      "label": "Receive token"
+    },
     "select_validators": {
       "submit": "Submit"
     },

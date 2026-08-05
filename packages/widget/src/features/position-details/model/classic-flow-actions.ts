@@ -15,6 +15,7 @@ import type {
   EarnYieldWithProvider,
 } from "../../../domain/schema/earn-models";
 import type { WalletAddress } from "../../../domain/schema/identifiers";
+import type { ExitReceiveToken } from "../../../domain/types/action";
 import { preparePendingActionRequestDto } from "../../../domain/types/pending-action-request";
 import { getYieldActionArg } from "../../../domain/types/yields";
 
@@ -174,11 +175,14 @@ type PositionDetailsExitFacts = Readonly<{
   readonly address: WalletAddress;
   readonly amount: { readonly toString: (radix?: number) => string };
   readonly integration: EarnYieldWithProvider;
+  readonly receiveToken: ExitReceiveToken | null;
   readonly stakedOrLiquidBalances: ReadonlyArray<EarnBalance>;
   readonly useMaxAmount: boolean;
 }>;
 
 const preparePositionDetailsExitAction = (facts: PositionDetailsExitFacts) => {
+  const outputToken = facts.receiveToken?.address;
+
   const optionArguments = (() => {
     const providerArgument = getYieldActionArg(
       facts.integration,
@@ -268,6 +272,7 @@ const preparePositionDetailsExitAction = (facts: PositionDetailsExitFacts) => {
       address: facts.address,
       arguments: {
         amount: facts.amount.toString(10),
+        ...(outputToken ? { outputToken } : {}),
         ...(facts.useMaxAmount ? { useMaxAmount: true } : {}),
         ...optionArguments,
         ...validatorArguments,

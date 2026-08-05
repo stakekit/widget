@@ -7,6 +7,7 @@ import type {
   EarnBalance,
   EarnValidator,
 } from "../../../domain/schema/earn-models";
+import type { TokenAddress } from "../../../domain/schema/identifiers";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import { walletScopeOwnerKey } from "../../../services/wallet/domain/scope";
 import { startClassicTransactionFlowAtom } from "../../classic-transaction-flow/state";
@@ -74,6 +75,7 @@ const positionDetailsFlowFactsAtom = Atom.family(
         kycBlocking: kyc.isBlocking,
         positionBalancesByType: workflow.positionBalancesByType,
         providers: providers ?? [],
+        receiveToken: workflow.exitReceiveTokenSelection?.selected ?? null,
         stakedOrLiquidBalances: workflow.stakedOrLiquidBalances,
         token: workflow.unstakeToken,
         wallet,
@@ -114,6 +116,7 @@ export const submitPositionDetailsExitAtom = Atom.family(
                 address: facts.wallet.address,
                 amount: facts.amount,
                 integration: facts.integration,
+                receiveToken: facts.receiveToken,
                 stakedOrLiquidBalances: facts.stakedOrLiquidBalances,
                 useMaxAmount:
                   facts.workflow.unstakeUseMaxAmount ||
@@ -146,6 +149,7 @@ export const submitPositionDetailsExitAtom = Atom.family(
               gasFeeToken: decision.prepared.gasFeeToken,
               integration: facts.integration,
               providersDetails: facts.providers,
+              receiveToken: facts.receiveToken,
               request: decision.prepared.request,
               unstakeAmount: facts.amount,
               unstakeToken: decision.token,
@@ -167,6 +171,16 @@ export const submitPositionDetailsExitAtom = Atom.family(
           );
       })
       .pipe(Atom.withLabel("submitPositionDetailsExitAtom"))
+);
+
+export const setPositionDetailsExitReceiveTokenAtom = Atom.family(
+  (key: PositionDetailsWorkflowKey) =>
+    Atom.fnSync((address: TokenAddress, context) =>
+      context.set(dispatchPositionDetailsWorkflowAtom(key), {
+        type: "unstake/receive-token/change",
+        data: address,
+      })
+    )
 );
 
 export const setPositionDetailsExitMaxAmountAtom = Atom.family(

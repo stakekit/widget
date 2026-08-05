@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Data } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import type { TokenAddress } from "../../../domain/schema/identifiers";
 import type { AppToken } from "../../../domain/schema/legacy-models";
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
 import type { PendingActionStateKey } from "../../../domain/types/pending-action-request";
@@ -8,6 +9,7 @@ import type { YieldBalanceType } from "../../../domain/types/positions";
 import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 
 export type PositionDetailsWorkflowState = {
+  readonly exitReceiveTokenAddress: TokenAddress | null;
   readonly pendingActions: Map<PendingActionStateKey, BigNumber>;
   readonly unstakeAmount: BigNumber;
   readonly unstakeUseMaxAmount: boolean;
@@ -26,6 +28,10 @@ export type PendingActionAmountChange = {
 
 export type PositionDetailsWorkflowAction =
   | {
+      readonly type: "unstake/receive-token/change";
+      readonly data: TokenAddress;
+    }
+  | {
       readonly type: "unstake/amount/change";
       readonly data: BigNumber;
     }
@@ -35,6 +41,7 @@ export type PositionDetailsWorkflowAction =
 export const makePositionDetailsWorkflowState = (
   unstakeAmount = new BigNumber(0)
 ): PositionDetailsWorkflowState => ({
+  exitReceiveTokenAddress: null,
   pendingActions: new Map(),
   unstakeAmount,
   unstakeUseMaxAmount: false,
@@ -52,6 +59,11 @@ export const reducePositionDetailsWorkflow = ({
   readonly state: PositionDetailsWorkflowState;
 }): PositionDetailsWorkflowState => {
   switch (action.type) {
+    case "unstake/receive-token/change":
+      return {
+        ...state,
+        exitReceiveTokenAddress: action.data,
+      };
     case "unstake/amount/change":
       return {
         ...state,

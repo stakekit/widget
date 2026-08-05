@@ -73,6 +73,14 @@ export const useUnstakeActionReview = () => {
     : null;
 
   const metaInfo: MetaInfoProps = useMemo(() => ({ showMetaInfo: false }), []);
+  const facts = exitFlow.receiveToken
+    ? [
+        {
+          label: t("review.receive_token"),
+          value: exitFlow.receiveToken.symbol,
+        },
+      ]
+    : [];
 
   const unstakeIsLoading = review.confirmLoading;
 
@@ -90,6 +98,7 @@ export const useUnstakeActionReview = () => {
     title,
     amount: formattedAmount,
     fee,
+    facts,
     rewardTokenDetailsProps,
     token: interactedToken,
     metaInfo,

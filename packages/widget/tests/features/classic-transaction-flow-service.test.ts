@@ -111,6 +111,7 @@ const makeExitIntake = (): Extract<
     gasFeeToken: integration.mechanics.gasFeeToken,
     integration,
     providersDetails: [],
+    receiveToken: null,
     request: {
       address,
       arguments: { amount: "1" },

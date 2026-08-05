@@ -73,6 +73,7 @@ const makeExitIntake = (): Intake<"Exit"> => {
     gasFeeToken: integration.mechanics.gasFeeToken,
     integration,
     providersDetails: [],
+    receiveToken: null,
     request: {
       address: walletScope.address,
       arguments: { amount: "1" },

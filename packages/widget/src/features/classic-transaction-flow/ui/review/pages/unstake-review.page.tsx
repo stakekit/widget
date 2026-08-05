@@ -8,6 +8,7 @@ export const UnstakeReviewPage = () => {
   const {
     amount,
     fee,
+    facts,
     integrationData,
     rewardTokenDetailsProps,
     title,
@@ -30,6 +31,7 @@ export const UnstakeReviewPage = () => {
   return (
     <>
       <ReviewPage
+        facts={facts}
         rewardTokenDetailsProps={rewardTokenDetailsProps}
         title={title}
         fee={fee}

@@ -7,7 +7,10 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { EarnBalance } from "../../src/domain/schema/earn-models";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import {
+  TokenAddress,
+  WalletAddress,
+} from "../../src/domain/schema/identifiers";
 import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
 import { currentClassicFlowSessionAtom } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow";
 import {
@@ -15,11 +18,13 @@ import {
   positionBalancesAtom,
   positionBalancesByTypeAtom,
 } from "../../src/features/portfolio/state";
+import { positionDetailsClassicViewAtom } from "../../src/features/position-details/state/classic-facade";
 import {
   openPositionPendingActionModalAtom,
   positionPendingActionModalViewAtom,
   runPositionPendingActionAtom,
   setPositionDetailsExitMaxAmountAtom,
+  setPositionDetailsExitReceiveTokenAtom,
   submitPositionDetailsExitAtom,
 } from "../../src/features/position-details/state/classic-flow-actions";
 import {
@@ -60,9 +65,43 @@ const otherAddress = Schema.decodeSync(WalletAddress)(
 const sameAddressDifferentCase = Schema.decodeSync(WalletAddress)(
   address.toUpperCase()
 );
+const usdsAddress = Schema.decodeSync(TokenAddress)(
+  "0xdC035D45d973E3EC169d2276DDab16f1e407384F"
+);
+const usdcAddress = Schema.decodeSync(TokenAddress)(
+  "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+);
 const scope = new WalletScopeKey({ address, network: "ethereum" });
+const skyYieldDto = yieldApiYieldDtoFixture();
+const usdsToken = {
+  ...skyYieldDto.token,
+  address: usdsAddress,
+  name: "USDS",
+  symbol: "USDS",
+};
+const usdcToken = {
+  ...skyYieldDto.token,
+  address: usdcAddress,
+  name: "USD Coin",
+  symbol: "USDC",
+};
+const susdsToken = {
+  ...skyYieldDto.token,
+  address: "0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD",
+  name: "Savings USDS",
+  symbol: "sUSDS",
+};
+const skySavingsRateFields = {
+  inputTokens: [usdsToken, usdcToken],
+  outputToken: susdsToken,
+  providerId: "sky",
+  token: usdsToken,
+  tokens: [usdsToken],
+} as const;
 const baseYield = yieldApiYieldFixture();
 const selectedYield = yieldApiYieldFixture({
+  ...skySavingsRateFields,
+  id: "ethereum-usds-susds-0xa3931d71877c0e7a3148cb7eb4463524fec27fbd-4626-vault",
   metadata: {
     ...baseYield.metadata,
     supportedStandards: ["ERC4626"],
@@ -203,6 +242,103 @@ const makeRegistry = ({
 };
 
 describe("Position Details exit command", () => {
+  it.each([
+    {
+      expectedAddress: usdsAddress,
+      expectedSymbol: "USDS",
+      name: "default USDS",
+      selectedAddress: null,
+    },
+    {
+      expectedAddress: usdcAddress,
+      expectedSymbol: "USDC",
+      name: "selected USDC",
+      selectedAddress: usdcAddress,
+    },
+  ] as const)(
+    "hands the $name Exit Receive Token to Classic Flow",
+    async ({ expectedAddress, expectedSymbol, selectedAddress }) => {
+      const push = vi.fn<(path: WidgetPath) => void>();
+      const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
+        () => Effect.void
+      );
+      const yieldDto = yieldApiYieldDtoFixture();
+      const eligibleYield = yieldApiYieldFixture({
+        ...skySavingsRateFields,
+        id: selectedYield.id,
+        metadata: selectedYield.metadata,
+        mechanics: {
+          ...yieldDto.mechanics,
+          arguments: {
+            ...yieldDto.mechanics.arguments,
+            exit: {
+              fields: [
+                {
+                  label: "Output Token",
+                  name: "outputToken",
+                  options: [
+                    "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+                    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                  ],
+                  required: false,
+                  type: "string",
+                },
+              ],
+            },
+          },
+        },
+      });
+      const registry = makeRegistry({
+        push,
+        trackEvent,
+        yieldOpportunity: eligibleYield,
+      });
+      const commandAtom = submitPositionDetailsExitAtom(workflowKey);
+      const viewAtom = positionDetailsClassicViewAtom(workflowKey);
+      const unmountView = registry.mount(viewAtom);
+
+      try {
+        registry.set(positionDetailsWorkflowAtom(workflowKey), {
+          exitReceiveTokenAddress: null,
+          pendingActions: new Map(),
+          unstakeAmount: new BigNumber("0.4"),
+          unstakeUseMaxAmount: false,
+        });
+        if (selectedAddress) {
+          registry.set(
+            setPositionDetailsExitReceiveTokenAtom(workflowKey),
+            selectedAddress
+          );
+        }
+        expect(registry.get(viewAtom)).toMatchObject({
+          exitReceiveTokenSelection: {
+            selected: { address: expectedAddress, symbol: expectedSymbol },
+          },
+          integrationData: { id: selectedYield.id },
+        });
+        registry.set(commandAtom, undefined);
+
+        await vi.waitFor(() =>
+          expect(AsyncResult.isSuccess(registry.get(commandAtom))).toBe(true)
+        );
+        expect(AsyncResult.getOrThrow(registry.get(commandAtom))).toEqual({
+          _tag: "Started",
+        });
+        expect(push).toHaveBeenCalledOnce();
+        expect(
+          registry.get(currentClassicFlowSessionAtom)?.intake
+        ).toMatchObject({
+          _tag: "Exit",
+          receiveToken: { address: expectedAddress, symbol: expectedSymbol },
+          request: { arguments: { outputToken: expectedAddress } },
+        });
+      } finally {
+        unmountView();
+        registry.dispose();
+      }
+    }
+  );
+
   it("preserves the closed Classic rejection for Exit", async () => {
     const push = vi.fn<(path: WidgetPath) => void>();
     const registry = makeRegistry({
@@ -214,6 +350,7 @@ describe("Position Details exit command", () => {
 
     try {
       registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        exitReceiveTokenAddress: null,
         pendingActions: new Map(),
         unstakeAmount: new BigNumber("0.4"),
         unstakeUseMaxAmount: false,
@@ -325,6 +462,7 @@ describe("Position Details exit command", () => {
 
       try {
         registry.set(positionDetailsWorkflowAtom(workflowKey), {
+          exitReceiveTokenAddress: null,
           pendingActions: new Map(),
           unstakeAmount: new BigNumber("0.4"),
           unstakeUseMaxAmount: false,
@@ -356,6 +494,7 @@ describe("Position Details exit command", () => {
 
     try {
       registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        exitReceiveTokenAddress: null,
         pendingActions: new Map(),
         unstakeAmount: new BigNumber("0.4"),
         unstakeUseMaxAmount: false,
@@ -373,6 +512,72 @@ describe("Position Details exit command", () => {
           )
         )
       ).toBe(true);
+      const intake = registry.get(currentClassicFlowSessionAtom)?.intake;
+      expect(intake).toMatchObject({ _tag: "Exit", receiveToken: null });
+      if (intake?._tag !== "Exit") {
+        throw new Error("Expected an active Exit intake");
+      }
+      expect(intake.request.arguments).not.toHaveProperty("outputToken");
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("forwards the receive token without enforcing an option count", async () => {
+    const push = vi.fn<(path: WidgetPath) => void>();
+    const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
+      () => Effect.void
+    );
+    const yieldDto = yieldApiYieldDtoFixture();
+    const incompleteCapabilityYield = yieldApiYieldFixture({
+      ...skySavingsRateFields,
+      id: selectedYield.id,
+      mechanics: {
+        ...yieldDto.mechanics,
+        arguments: {
+          ...yieldDto.mechanics.arguments,
+          exit: {
+            fields: [
+              {
+                label: "Output Token",
+                name: "outputToken",
+                options: ["0xdC035D45d973E3EC169d2276DDab16f1e407384F"],
+                required: true,
+                type: "string",
+              },
+            ],
+          },
+        },
+      },
+    });
+    const registry = makeRegistry({
+      push,
+      trackEvent,
+      yieldOpportunity: incompleteCapabilityYield,
+    });
+
+    try {
+      registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        exitReceiveTokenAddress: null,
+        pendingActions: new Map(),
+        unstakeAmount: new BigNumber("0.4"),
+        unstakeUseMaxAmount: false,
+      });
+      registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
+
+      await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
+      const intake = registry.get(currentClassicFlowSessionAtom)?.intake;
+      expect(intake).toMatchObject({
+        _tag: "Exit",
+        receiveToken: { address: usdsAddress, symbol: "USDS" },
+      });
+      if (intake?._tag !== "Exit") {
+        throw new Error("Expected an active Exit intake");
+      }
+      expect(intake.request.arguments).toHaveProperty(
+        "outputToken",
+        usdsAddress
+      );
     } finally {
       registry.dispose();
     }
@@ -412,6 +617,7 @@ describe("Position Details exit command", () => {
 
     try {
       registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        exitReceiveTokenAddress: null,
         pendingActions: new Map(),
         unstakeAmount: new BigNumber(0),
         unstakeUseMaxAmount: false,
@@ -495,6 +701,7 @@ describe("Position Details exit command", () => {
 
     try {
       registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        exitReceiveTokenAddress: null,
         pendingActions: new Map(),
         unstakeAmount: new BigNumber("0.4"),
         unstakeUseMaxAmount: false,
@@ -656,6 +863,7 @@ describe("Position Details exit command", () => {
 
       await vi.waitFor(() => expect(trackEvent).toHaveBeenCalledOnce());
       expect(registry.get(positionDetailsWorkflowAtom(workflowKey))).toEqual({
+        exitReceiveTokenAddress: null,
         pendingActions: new Map(),
         unstakeAmount: new BigNumber(1),
         unstakeUseMaxAmount: true,
@@ -682,6 +890,7 @@ describe("Position Details exit command", () => {
 
     try {
       registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        exitReceiveTokenAddress: null,
         pendingActions: new Map(),
         unstakeAmount: new BigNumber("0.4"),
         unstakeUseMaxAmount: false,
@@ -752,6 +961,7 @@ describe("Position Details exit command", () => {
 
     try {
       registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        exitReceiveTokenAddress: null,
         pendingActions: new Map(),
         unstakeAmount: new BigNumber("0.4"),
         unstakeUseMaxAmount: false,

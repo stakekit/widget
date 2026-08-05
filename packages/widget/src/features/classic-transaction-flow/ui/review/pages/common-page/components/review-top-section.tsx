@@ -11,6 +11,7 @@ import { EstimatedRewardAmounts } from "../../../../../../earn/components";
 import { headingStyles } from "../../style.css";
 
 type Props = {
+  facts?: ReadonlyArray<Readonly<{ label: string; value: string }>>;
   title: string;
   token: AppToken | null;
   metadata: ComponentProps<typeof TokenIcon>["metadata"] | null;
@@ -23,6 +24,7 @@ type Props = {
 };
 
 const ReviewTopSection = ({
+  facts,
   title,
   token,
   metadata,
@@ -65,6 +67,25 @@ const ReviewTopSection = ({
           {info}
         </Heading>
       </motion.div>
+
+      {facts?.length ? (
+        <Box display="flex" flexDirection="column" gap="2" marginTop="4">
+          {facts.map((fact) => (
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              gap="3"
+              key={fact.label}
+            >
+              <Text variant={{ type: "muted", weight: "normal" }}>
+                {fact.label}
+              </Text>
+              <Text variant={{ weight: "semibold" }}>{fact.value}</Text>
+            </Box>
+          ))}
+        </Box>
+      ) : null}
 
       {rewardTokenDetailsProps?.type === "stake" ? (
         <Box marginTop="4" display="flex" flexDirection="column" gap="1">

@@ -154,6 +154,10 @@ _Avoid_: Best-effort arguments, Earn-only mechanics
 The prepared instruction describing the protocol action the user intends to perform before that action is created.
 _Avoid_: Request DTO
 
+**Exit Receive Token**:
+The asset a user elects to receive from an Exit Action. It is independent of the position token and the token originally used to enter the position.
+_Avoid_: Deposit token, position token, output token
+
 **Action Preview**:
 A freshly prepared Yield Action candidate derived from the Flow Session intake and inspected during Review. Continuing promotes that candidate into one Execution attempt; returning to Review always requires a fresh candidate.
 _Avoid_: Attached action, prepared action

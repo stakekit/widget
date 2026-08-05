@@ -17,6 +17,7 @@ import {
   AmountBlock,
   UnstakeInfo,
 } from "../../classic/components/amount-block";
+import { ExitReceiveTokenSelect } from "../../classic/components/exit-receive-token-select";
 import { StaticActionBlock } from "../../classic/components/static-action-block";
 import { usePositionDetails } from "../../classic/hooks/use-position-details";
 import { PositionDetailsActionTabs } from "./position-details-action-tabs";
@@ -86,6 +87,8 @@ export const PositionDetailsActions = () => {
     kycGateIsChecking,
     kycProviderName,
     onKycStatusRefresh,
+    exitReceiveTokenSelection,
+    onReceiveTokenSelect,
   } = positionDetails;
   const { plain } = useUnstakeOrPendingActionParams();
 
@@ -220,6 +223,13 @@ export const PositionDetailsActions = () => {
                 providerName={kycProviderName}
               />
             )}
+
+            {exitReceiveTokenSelection ? (
+              <ExitReceiveTokenSelect
+                onSelect={onReceiveTokenSelect}
+                selection={exitReceiveTokenSelection}
+              />
+            ) : null}
 
             <AmountBlock
               unstakeMaxAmount={unstakeMaxAmountValue}

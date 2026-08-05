@@ -5,7 +5,7 @@ import { XIcon } from "../../../../shared/ui/primitives/icons/x-icon";
 import { AccountModal, ChainModal } from "../../../wallet/ui";
 import { parentButton } from "../../header/styles.css";
 import { useHeader } from "../../header/use-header";
-import { headerContainer, middleItem } from "./styles.css";
+import { disconnectButton, headerContainer, middleItem } from "./styles.css";
 
 export const Header = () => {
   const {
@@ -50,6 +50,7 @@ export const Header = () => {
       {showDisconnect && (
         <Box
           as="button"
+          className={disconnectButton}
           onClick={onXPress}
           display="flex"
           alignItems="center"

@@ -20,6 +20,7 @@ import {
   openPendingActionModal,
   reconcilePendingActionModalReceipt,
 } from "../../src/features/position-details/model/classic-flow-actions";
+import { resolvePositionDetailsExitReceiveTokenSelection } from "../../src/features/position-details/model/exit-receive-token";
 import { dispatchPositionDetailsWorkflowAtom } from "../../src/features/position-details/state/classic-view";
 import {
   PositionDetailsWorkflowKey,
@@ -32,6 +33,7 @@ import {
 import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
   yieldApiValidatorFixture,
+  yieldApiYieldDtoFixture,
   yieldApiYieldFixture,
   yieldBalanceFixture,
 } from "../fixtures";
@@ -66,6 +68,166 @@ const balance = Schema.decodeUnknownSync(EarnBalance)(
 const pendingActionDto = balance.pendingActions[0]!;
 
 describe("Position Details action model", () => {
+  it("defaults an eligible Sky Savings Rate exit to USDS", () => {
+    const baseYield = yieldApiYieldDtoFixture();
+    const usds = {
+      ...baseYield.token,
+      address: "0x1111111111111111111111111111111111111111",
+      name: "USDS",
+      symbol: "USDS",
+    };
+    const usdc = {
+      ...baseYield.token,
+      address: "0x2222222222222222222222222222222222222222",
+      name: "USD Coin",
+      symbol: "USDC",
+    };
+    const skySavingsRate = yieldApiYieldFixture({
+      id: "sky-savings-rate-from-decoded-fields",
+      inputTokens: [usds, usdc],
+      mechanics: {
+        ...baseYield.mechanics,
+        arguments: {
+          ...baseYield.mechanics.arguments,
+          exit: {
+            fields: [
+              {
+                label: "Output Token",
+                name: "outputToken",
+                options: [
+                  "0x1111111111111111111111111111111111111111",
+                  "0x2222222222222222222222222222222222222222",
+                ],
+                required: false,
+                type: "string",
+              },
+            ],
+          },
+        },
+      },
+      outputToken: {
+        ...baseYield.token,
+        address: "0x3333333333333333333333333333333333333333",
+        name: "Savings USDS",
+        symbol: "sUSDS",
+      },
+      providerId: "sky",
+      token: usds,
+      tokens: [usds],
+    });
+
+    expect(
+      resolvePositionDetailsExitReceiveTokenSelection({
+        integration: skySavingsRate,
+        selectedAddress: null,
+      })
+    ).toEqual({
+      options: [
+        {
+          address: "0x1111111111111111111111111111111111111111",
+          symbol: "USDS",
+        },
+        {
+          address: "0x2222222222222222222222222222222222222222",
+          symbol: "USDC",
+        },
+      ],
+      selected: {
+        address: "0x1111111111111111111111111111111111111111",
+        symbol: "USDS",
+      },
+    });
+  });
+
+  it("does not enable receive-token selection for another yield", () => {
+    const baseYield = yieldApiYieldDtoFixture();
+    const otherSkySavingsRoute = yieldApiYieldFixture({
+      id: "ethereum-usds-oav-sky-savings-rate",
+      mechanics: {
+        ...baseYield.mechanics,
+        arguments: {
+          ...baseYield.mechanics.arguments,
+          exit: {
+            fields: [
+              {
+                label: "Output Token",
+                name: "outputToken",
+                options: [
+                  "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+                  "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                ],
+                type: "string",
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    expect(
+      resolvePositionDetailsExitReceiveTokenSelection({
+        integration: otherSkySavingsRoute,
+        selectedAddress: null,
+      })
+    ).toBeNull();
+  });
+
+  it("uses every receive token advertised by Sky Savings Rate", () => {
+    const baseYield = yieldApiYieldDtoFixture();
+    const usds = {
+      ...baseYield.token,
+      address: "0x1111111111111111111111111111111111111111",
+      name: "USDS",
+      symbol: "USDS",
+    };
+    const incompleteSkySavingsRate = yieldApiYieldFixture({
+      inputTokens: [usds],
+      mechanics: {
+        ...baseYield.mechanics,
+        arguments: {
+          ...baseYield.mechanics.arguments,
+          exit: {
+            fields: [
+              {
+                label: "Output Token",
+                name: "outputToken",
+                options: ["0x1111111111111111111111111111111111111111"],
+                type: "string",
+              },
+            ],
+          },
+        },
+      },
+      outputToken: {
+        ...baseYield.token,
+        address: "0x3333333333333333333333333333333333333333",
+        name: "Savings USDS",
+        symbol: "sUSDS",
+      },
+      providerId: "sky",
+      token: usds,
+      tokens: [usds],
+    });
+
+    expect(
+      resolvePositionDetailsExitReceiveTokenSelection({
+        integration: incompleteSkySavingsRate,
+        selectedAddress: null,
+      })
+    ).toEqual({
+      options: [
+        {
+          address: "0x1111111111111111111111111111111111111111",
+          symbol: "USDS",
+        },
+      ],
+      selected: {
+        address: "0x1111111111111111111111111111111111111111",
+        symbol: "USDS",
+      },
+    });
+  });
+
   it("closes only the pending-action attempt acknowledged by Started", () => {
     const first = openPendingActionModal({
       input: { pendingActionDto, yieldBalance: balance },

@@ -26,6 +26,7 @@ export type MetaInfoProps =
   | { showMetaInfo: false; metaInfoProps?: never };
 
 type ReviewPageProps = {
+  facts?: ComponentProps<typeof ReviewTopSection>["facts"];
   fee: string;
   title: string;
   token: AppToken | null;
@@ -48,6 +49,7 @@ type ReviewPageProps = {
 } & MetaInfoProps;
 
 export const ReviewPage = ({
+  facts,
   fee,
   title,
   token,
@@ -75,6 +77,7 @@ export const ReviewPage = ({
     <AnimationPage>
       <PageContainer>
         <ReviewTopSection
+          facts={facts}
           info={info}
           metadata={metadata}
           rewardTokenDetailsProps={rewardTokenDetailsProps}
