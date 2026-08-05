@@ -51,8 +51,7 @@
       "deposited": "Dépôt de {{token}}",
       "withdrew": "Retrait de {{token}}",
       "rewards": "Récompenses",
-      "generic": "{{action}} {{token}}",
-      "unknown_token": "Jeton inconnu"
+      "generic": "{{action}} {{token}}"
     },
     "time": {
       "now": "à l'instant",

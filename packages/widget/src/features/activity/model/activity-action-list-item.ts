@@ -81,60 +81,46 @@ const getActivityDirection = (type: ActionType): ActivityDirection => {
   return "other";
 };
 
-const ADDRESS_LIKE_TOKEN = /^0x[0-9a-fA-F]{40}$/;
+const ADDRESS_LIKE_TOKEN = /^0x[0-9a-fA-F]{40}$/i;
 
 const getReadableRawTokenSymbol = (
   value: string | null | undefined
 ): string | null => {
-  if (!value || value === "0x" || ADDRESS_LIKE_TOKEN.test(value)) {
+  const normalizedValue = value?.trim();
+
+  if (
+    !normalizedValue ||
+    normalizedValue.toLowerCase() === "0x" ||
+    ADDRESS_LIKE_TOKEN.test(normalizedValue)
+  ) {
     return null;
   }
 
-  return value;
-};
-
-const getFallbackTokenSymbol = ({
-  direction,
-  inputToken,
-  outputToken,
-  unknownTokenLabel,
-}: {
-  readonly direction: ActivityDirection;
-  readonly inputToken: string | null | undefined;
-  readonly outputToken: string | null | undefined;
-  readonly unknownTokenLabel: string;
-}) => {
-  const preferredToken =
-    direction === "withdraw" || direction === "other"
-      ? (outputToken ?? inputToken)
-      : (inputToken ?? outputToken);
-
-  return getReadableRawTokenSymbol(preferredToken) ?? unknownTokenLabel;
+  return normalizedValue;
 };
 
 const resolveTokenSymbol = ({
   action,
   direction,
-  unknownTokenLabel,
 }: {
   readonly action: ActivityActionItem;
   readonly direction: ActivityDirection;
-  readonly unknownTokenLabel: string;
-}): string => {
+}): string | null => {
   const yieldData = action.yieldData;
 
   if (!yieldData) {
-    return getFallbackTokenSymbol({
-      direction,
-      inputToken: action.actionData.rawArguments?.inputToken,
-      outputToken: action.actionData.rawArguments?.outputToken,
-      unknownTokenLabel,
-    });
+    const { inputToken, outputToken } = action.actionData.rawArguments ?? {};
+    const preferredToken =
+      direction === "withdraw" || direction === "other"
+        ? (outputToken ?? inputToken)
+        : (inputToken ?? outputToken);
+
+    return getReadableRawTokenSymbol(preferredToken);
   }
 
-  const yieldToken = yieldData.token;
+  const yieldTokenSymbol = getReadableRawTokenSymbol(yieldData.token.symbol);
   if (direction === "withdraw" || direction === "other") {
-    return yieldToken.symbol;
+    return yieldTokenSymbol;
   }
 
   const inputToken = getActionInputToken({
@@ -142,8 +128,16 @@ const resolveTokenSymbol = ({
     yieldDto: yieldData,
   });
 
-  return inputToken?.symbol ?? yieldToken.symbol;
+  return getReadableRawTokenSymbol(inputToken?.symbol) ?? yieldTokenSymbol;
 };
+
+export const getActivityActionTokenSymbol = (
+  action: ActivityActionItem
+): string | null =>
+  resolveTokenSymbol({
+    action,
+    direction: getActivityDirection(action.actionData.type),
+  });
 
 const resolveAmountSign = ({
   amount,
@@ -223,19 +217,18 @@ export const projectActivityActionListItem = ({
   action,
   locale,
   presentationTime,
-  unknownTokenLabel,
 }: {
   readonly action: ActivityActionItem;
   readonly locale: string;
   readonly presentationTime: ActivityPresentationTime | null;
-  readonly unknownTokenLabel: string;
-}): ActivityActionListItemProjection => {
+}): ActivityActionListItemProjection | null => {
   const direction = getActivityDirection(action.actionData.type);
   const tokenSymbol = resolveTokenSymbol({
     action,
     direction,
-    unknownTokenLabel,
   });
+  if (!tokenSymbol) return null;
+
   const amount =
     action.actionData.amount == null
       ? null

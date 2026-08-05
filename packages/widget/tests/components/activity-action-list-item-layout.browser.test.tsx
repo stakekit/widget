@@ -28,8 +28,8 @@ vi.mock(
       showUnavailableYieldDetails: true,
       timestampAbsolute: "Today · 13:43",
       timestampRelative: "21m ago",
-      title: "Deposited Unknown token",
-      tokenSymbol: "Unknown token",
+      title: "Deposited POL",
+      tokenSymbol: "POL",
     }),
   })
 );
@@ -52,7 +52,7 @@ it("hides activity amounts in the widget variant", async () => {
       <ActionListItem action={{} as never} onActionSelect={vi.fn()} />
     </div>
   );
-  const amount = findExactText(app.container, "+0.001 Unknown token");
+  const amount = findExactText(app.container, "+0.001 POL");
   const unavailableDetails = findExactText(
     app.container,
     "Yield details unavailable"
@@ -69,7 +69,7 @@ it("keeps activity amounts visible outside the widget variant", async () => {
       <ActionListItem action={{} as never} onActionSelect={vi.fn()} />
     </div>
   );
-  const amount = findExactText(app.container, "+0.001 Unknown token");
+  const amount = findExactText(app.container, "+0.001 POL");
   const unavailableDetails = findExactText(
     app.container,
     "Yield details unavailable"

@@ -39,6 +39,13 @@ const makeActionItem = (id: string): ActivityActionItem => {
   };
 };
 
+const makeUnavailableActionItem = (id: string): ActivityActionItem => ({
+  actionData: yieldApiActionFixture({ id, type: "VOTE" }),
+  validatorsData: [],
+  walletScope,
+  yieldData: null,
+});
+
 const makeActionsResult = ({
   actions = [],
   done = true,
@@ -224,6 +231,28 @@ describe("Activity page projection", () => {
       showingCount: 2,
       status: "ready",
       total: 3,
+    });
+  });
+
+  it("removes activity actions without a readable token", () => {
+    const visible = makeActionItem("visible");
+    const hidden = makeUnavailableActionItem("hidden");
+
+    expect(
+      projectActivityPageView({
+        actionsResult: makeActionsResult({
+          actions: [visible, hidden],
+          total: 2,
+        }),
+        filterOptionsResult: filterOptions,
+        selectedFilter: "all",
+        walletStatus: "connected",
+      })
+    ).toMatchObject({
+      actions: [visible],
+      showingCount: 1,
+      total: 1,
+      status: "ready",
     });
   });
 

@@ -29,6 +29,10 @@ export const ActionListItem = ({
   ) => void;
 }) => {
   const { t } = useTranslation();
+  const listItemView = useActionListItem(action);
+
+  if (!listItemView) return null;
+
   const {
     canOpenDetails,
     providersDetails,
@@ -42,7 +46,7 @@ export const ActionListItem = ({
     timestampRelative,
     showFailedBadge,
     badgeLabel,
-  } = useActionListItem(action);
+  } = listItemView;
 
   const firstProvider = providersDetails?.[0];
   const providerLabel = firstProvider

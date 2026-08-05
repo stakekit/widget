@@ -52,8 +52,7 @@
       "deposited": "Deposited {{token}}",
       "withdrew": "Withdrew {{token}}",
       "rewards": "Rewards",
-      "generic": "{{action}} {{token}}",
-      "unknown_token": "Unknown token"
+      "generic": "{{action}} {{token}}"
     },
     "time": {
       "now": "just now",

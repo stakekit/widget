@@ -32,7 +32,6 @@ describe("Activity action list item projection", () => {
         now: DateTime.makeUnsafe("2026-07-28T10:00:00.000Z"),
         timeZone: DateTime.zoneMakeNamedUnsafe("UTC"),
       },
-      unknownTokenLabel: "Unknown",
     });
 
     expect(projection).toMatchObject({
@@ -54,7 +53,7 @@ describe("Activity action list item projection", () => {
     });
   });
 
-  it("projects a generic unavailable action with its fallback token label", () => {
+  it("does not project an unavailable action without a readable token", () => {
     const projection = projectActivityActionListItem({
       action: makeItem(
         yieldApiActionFixture({
@@ -65,21 +64,50 @@ describe("Activity action list item projection", () => {
       ),
       locale: "en-US",
       presentationTime: null,
-      unknownTokenLabel: "Unknown",
     });
 
-    expect(projection).toMatchObject({
-      canOpenDetails: false,
-      direction: "other",
-      showUnavailableYieldDetails: true,
-      timestamp: null,
-      title: {
-        _tag: "generic",
-        actionLabel: "Vote",
-        tokenSymbol: "Unknown",
-      },
-      tokenSymbol: "Unknown",
+    expect(projection).toBeNull();
+  });
+
+  it.each([
+    "",
+    "  ",
+    "0x",
+    "0X0000000000000000000000000000000000000001",
+    "0x0000000000000000000000000000000000000001",
+  ])(
+    "does not project an action with an unusable raw token value (%s)",
+    (inputToken) => {
+      const projection = projectActivityActionListItem({
+        action: makeItem(
+          yieldApiActionFixture({
+            rawArguments: { inputToken },
+            type: "VOTE",
+          }),
+          null
+        ),
+        locale: "en-US",
+        presentationTime: null,
+      });
+
+      expect(projection).toBeNull();
+    }
+  );
+
+  it("keeps a readable raw token for an unavailable yield", () => {
+    const projection = projectActivityActionListItem({
+      action: makeItem(
+        yieldApiActionFixture({
+          rawArguments: { inputToken: "POL" },
+          type: "VOTE",
+        }),
+        null
+      ),
+      locale: "en-US",
+      presentationTime: null,
     });
+
+    expect(projection?.tokenSymbol).toBe("POL");
   });
 
   it.each(["CANCELED", "STALE"] as const)(
@@ -96,10 +124,9 @@ describe("Activity action list item projection", () => {
         ),
         locale: "en-US",
         presentationTime: null,
-        unknownTokenLabel: "Unknown",
       });
 
-      expect(projection.canOpenDetails).toBe(false);
+      expect(projection?.canOpenDetails).toBe(false);
     }
   );
 });

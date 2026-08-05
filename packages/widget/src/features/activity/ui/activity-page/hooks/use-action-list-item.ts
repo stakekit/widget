@@ -37,8 +37,9 @@ export const useActionListItem = (action: ActivityActionItem) => {
     action,
     locale,
     presentationTime,
-    unknownTokenLabel: t("activity.item.unknown_token"),
   });
+  if (!projection) return null;
+
   const title = Match.value(projection.title).pipe(
     Match.when({ _tag: "deposited" }, ({ tokenSymbol }) =>
       t("activity.item.deposited", { token: tokenSymbol })
