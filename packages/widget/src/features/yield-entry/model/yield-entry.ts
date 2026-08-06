@@ -189,7 +189,7 @@ export const getYieldEntryCta = ({
   readonly ledgerAccountPlaceholder: boolean;
   readonly preparationAvailable: boolean;
 }): YieldEntryCta => {
-  if (hasNoYields) return { _tag: "Hidden" };
+  if (connected && hasNoYields) return { _tag: "Hidden" };
   if (connected && !ledgerAccountPlaceholder) {
     return {
       _tag: "Submit",

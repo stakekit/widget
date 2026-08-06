@@ -280,8 +280,17 @@ describe("Yield Entry", () => {
   it.each([
     {
       expected: { _tag: "Hidden" },
-      name: "no yields",
+      name: "connected with no yields",
       override: { hasNoYields: true },
+    },
+    {
+      expected: {
+        _tag: "ConnectWallet",
+        disabled: false,
+        loading: false,
+      },
+      name: "disconnected with no yields",
+      override: { connected: false, hasNoYields: true },
     },
     {
       expected: { _tag: "Hidden" },
