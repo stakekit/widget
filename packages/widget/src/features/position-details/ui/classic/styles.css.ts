@@ -22,7 +22,3 @@ export const unstakeSignContainer = style({
   paddingLeft: "25px",
   paddingRight: "25px",
 });
-
-export const priceTxt = style({
-  flexGrow: 999,
-});

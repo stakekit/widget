@@ -1,13 +1,13 @@
 import { useMatch } from "react-router";
-import { useUnstakeOrPendingActionMatch } from "./use-unstake-or-pending-action-match";
+import { usePositionDetailsHubMatch } from "./use-position-details-hub-match";
 
 export const usePositionDetailsStakeMatch = (path?: string) => {
-  const positionDetailsIndexMatch = useMatch(
-    "positions/:integrationId/:balanceId"
+  const stakeFlowMatch = useMatch(
+    `positions/:integrationId/:balanceId/stake/${path ?? "*"}`
   );
-  const stakeMatch = useUnstakeOrPendingActionMatch(`stake/${path ?? "*"}`);
+  const hubMatch = usePositionDetailsHubMatch();
 
-  if (path) return stakeMatch;
+  if (path) return stakeFlowMatch;
 
-  return stakeMatch ?? positionDetailsIndexMatch;
+  return hubMatch;
 };

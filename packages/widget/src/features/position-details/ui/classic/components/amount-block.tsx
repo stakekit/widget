@@ -9,23 +9,15 @@ import {
   defaultFormattedNumber,
   formatNumber,
 } from "../../../../../shared/lib/number-format";
-import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import * as AmountToggle from "../../../../../shared/ui/components/amount-toggle";
-import { MaxButton } from "../../../../../shared/ui/components/max-button";
-import {
-  NumberInput,
-  type NumberInputProps,
-} from "../../../../../shared/ui/components/number-input";
-import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
-import { Box, type BoxProps } from "../../../../../shared/ui/primitives/box";
+import { AmountTokenSection } from "../../../../../shared/ui/components/amount-token-section";
+import type { NumberInputProps } from "../../../../../shared/ui/components/number-input";
+import { SelectedToken } from "../../../../../shared/ui/components/selected-token";
+import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import {
-  selectTokenSection,
-  useYieldMetaInfo,
-} from "../../../../earn/components";
-import { priceTxt } from "../styles.css";
+import { useYieldMetaInfo } from "../../../../earn/components";
 
 type AmountBlockProps = {
   onAmountChange: NumberInputProps["onChange"];
@@ -78,7 +70,6 @@ export const AmountBlock = ({
 }: AmountBlockProps) => {
   const { t } = useTranslation();
   const dashboardVariant = useWidgetConfig("dashboardVariant");
-  const variant = useWidgetConfig("variant");
 
   const unstakeProps =
     rest.variant === "unstake"
@@ -96,144 +87,90 @@ export const AmountBlock = ({
       : `${t("shared.max")} ${formatNumber(
           new BigNumber(unstakeProps.unstakeMaxAmount)
         )} ${unstakeProps.unstakeToken.symbol}`;
-  const minMaxUnstakeAmount =
-    unstakeProps &&
-    (min || max || unstakeProps.unstakeIsGreaterOrLessIntegrationLimitError) ? (
-      <Box
-        display="flex"
-        justifyContent="flex-end"
-        alignItems="center"
-        marginTop="2"
-        marginRight="2"
-      >
-        <Text
-          key="min"
-          variant={{
-            type: unstakeProps.unstakeIsGreaterOrLessIntegrationLimitError
-              ? "danger"
-              : "muted",
-          }}
-          textAlign="right"
-        >
-          {min && max ? `${min} / ${max}` : (min ?? max)}
-        </Text>
-      </Box>
-    ) : null;
+  const hasMinMax =
+    !!unstakeProps &&
+    !!(min || max || unstakeProps.unstakeIsGreaterOrLessIntegrationLimitError);
+  const minMaxLabel = (() => {
+    if (!hasMinMax) return null;
+    if (min && max) return `${min} / ${max}`;
+    return min ?? max;
+  })();
 
-  const variantProps: BoxProps =
-    rest.variant === "action"
-      ? {
-          background: "background",
-          borderWidth: 1,
-          borderStyle: "solid",
-          borderColor: "backgroundMuted",
-        }
-      : {
-          background: "stakeSectionBackground",
-          borderWidth: 1,
-          borderStyle: "solid",
-          className: combineRecipeWithVariant({
-            rec: selectTokenSection,
-            variant,
-            state: unstakeAmountError ? "danger" : "default",
-          }),
-        };
   const showCardCta =
     rest.variant === "action" || rest.ctaPlacement !== "footer";
+  const showAmount = rest.variant === "action" || rest.canUnstake;
+
+  if (!showAmount) {
+    if (rest.variant === "unstake" && rest.showUnstakeInfo !== false) {
+      return (
+        <Box>
+          <UnstakeInfo
+            validators={rest.validators}
+            yieldDto={rest.yieldDto}
+            unstakeToken={rest.unstakeToken}
+          />
+        </Box>
+      );
+    }
+    return null;
+  }
+
+  const accessory = showCardCta ? (
+    <Button
+      onClick={onClick}
+      disabled={disabled}
+      variant={{
+        size: "small",
+        color: rest.variant === "unstake" ? "smallButton" : "smallButtonLight",
+      }}
+    >
+      <Text>{label}</Text>
+    </Button>
+  ) : (
+    <SelectedToken token={rest.unstakeToken} />
+  );
+
+  const balanceContent = balance ? (
+    <AmountToggle.Root>
+      <AmountToggle.Amount>
+        {({ state }) => (
+          <span>
+            {t("position_details.available", {
+              amount:
+                state === "full"
+                  ? formatNumber(balance.amount)
+                  : defaultFormattedNumber(balance.amount),
+              symbol: balance.token?.symbol ?? "",
+            })}
+          </span>
+        )}
+      </AmountToggle.Amount>
+    </AmountToggle.Root>
+  ) : null;
 
   return (
-    <Box {...variantProps} borderRadius="xl" py="4" px="4">
-      {(rest.variant === "action" || rest.canUnstake) && (
-        <Box>
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Box minWidth="0" display="flex" marginRight="2" flex={1}>
-              <NumberInput
-                onChange={onAmountChange}
-                value={value}
-                disabled={!canChangeAmount}
-                shakeOnInvalid
-                isInvalid={unstakeAmountError}
-              />
-            </Box>
-
-            {showCardCta ? (
-              <Button
-                onClick={onClick}
-                disabled={disabled}
-                variant={{
-                  size: "small",
-                  color:
-                    rest.variant === "unstake"
-                      ? "smallButton"
-                      : "smallButtonLight",
-                }}
-              >
-                <Text>{label}</Text>
-              </Button>
-            ) : (
-              <Box display="flex" alignItems="center" gap="2">
-                <TokenIcon token={rest.unstakeToken} />
-                <Text variant={{ weight: "bold" }}>
-                  {rest.unstakeToken.symbol}
-                </Text>
-              </Box>
-            )}
-          </Box>
-          {minMaxUnstakeAmount}
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            marginTop="2"
-            flexWrap="wrap"
-          >
-            <Box className={priceTxt}>
-              <Text variant={{ type: "muted", weight: "normal" }}>
-                {formattedAmount}
-              </Text>
-            </Box>
-
-            <Box
-              flexGrow={1}
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              {balance && (
-                <AmountToggle.Root>
-                  <AmountToggle.Amount>
-                    {({ state }) => (
-                      <Text variant={{ weight: "normal" }}>
-                        {t("position_details.available", {
-                          amount:
-                            state === "full"
-                              ? formatNumber(balance.amount)
-                              : defaultFormattedNumber(balance.amount),
-                          symbol: balance.token?.symbol ?? "",
-                        })}
-                      </Text>
-                    )}
-                  </AmountToggle.Amount>
-                </AmountToggle.Root>
-              )}
-              {canChangeAmount && onMaxClick && (
-                <MaxButton
-                  onMaxClick={onMaxClick}
-                  {...(rest.variant === "action"
-                    ? { background: "backgroundMuted" as const }
-                    : {})}
-                />
-              )}
-            </Box>
-          </Box>
-        </Box>
-      )}
-
-      {rest.variant === "unstake" && rest.showUnstakeInfo !== false && (
+    <AmountTokenSection
+      value={value}
+      onChange={onAmountChange}
+      disabled={!canChangeAmount}
+      isInvalid={unstakeAmountError}
+      accessory={accessory}
+      formattedPrice={formattedAmount}
+      balance={balanceContent}
+      onMaxClick={canChangeAmount ? onMaxClick : null}
+      maxButtonProps={
+        rest.variant === "action"
+          ? { background: "backgroundMuted" as const }
+          : undefined
+      }
+      minMaxLabel={minMaxLabel}
+      minMaxError={
+        unstakeProps?.unstakeIsGreaterOrLessIntegrationLimitError ?? false
+      }
+      state={unstakeAmountError ? "danger" : "default"}
+      tone={rest.variant === "action" ? "action" : "stake"}
+    >
+      {rest.variant === "unstake" && rest.showUnstakeInfo !== false ? (
         <Box marginTop={dashboardVariant ? "0" : "2"}>
           <UnstakeInfo
             validators={rest.validators}
@@ -241,8 +178,8 @@ export const AmountBlock = ({
             unstakeToken={rest.unstakeToken}
           />
         </Box>
-      )}
-    </Box>
+      ) : null}
+    </AmountTokenSection>
   );
 };
 

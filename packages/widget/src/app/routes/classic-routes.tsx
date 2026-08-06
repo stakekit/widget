@@ -89,7 +89,7 @@ export const ClassicRoutes = () => {
                     {/* Stake flow */}
                     {createClassicFlowRoutes({ journey: "Enter" })}
 
-                    {/* Unstake or pending actions flow */}
+                    {/* Position details hub + flow mounts */}
                     <Route path="positions/:integrationId/:balanceId">
                       <Route index element={<ClassicPositionDetailsPage />} />
                       <Route
@@ -97,15 +97,39 @@ export const ClassicRoutes = () => {
                         element={<ClassicPositionDetailsPage />}
                       />
 
+                      {/* Legacy / accidental stake prefix → hub (no form) */}
+                      <Route path="stake">
+                        <Route index element={<Navigate replace to=".." />} />
+                        <Route
+                          path="*"
+                          element={<Navigate replace to="../.." />}
+                        />
+                      </Route>
+
                       {/* Unstaking */}
                       <Route path="unstake">
+                        <Route index element={<Navigate replace to=".." />} />
                         {createClassicFlowRoutes({ journey: "Exit" })}
+                        <Route
+                          path="*"
+                          element={<Navigate replace to="../.." />}
+                        />
                       </Route>
 
                       {/* Pending Actions */}
                       <Route path="pending-action">
+                        <Route index element={<Navigate replace to=".." />} />
                         {createClassicFlowRoutes({ journey: "Manage" })}
+                        <Route
+                          path="*"
+                          element={<Navigate replace to="../.." />}
+                        />
                       </Route>
+
+                      <Route
+                        path="*"
+                        element={<Navigate replace relative="path" to=".." />}
+                      />
                     </Route>
                   </Route>
 

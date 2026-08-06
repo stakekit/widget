@@ -3,6 +3,12 @@ import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
 import * as AmountToggle from "../../../../../../../shared/ui/components/amount-toggle";
+import {
+  minMaxContainer,
+  priceTxt,
+  selectTokenBalance,
+  selectTokenSection,
+} from "../../../../../../../shared/ui/components/amount-token-section/styles.css";
 import { MaxButton } from "../../../../../../../shared/ui/components/max-button";
 import { NumberInput } from "../../../../../../../shared/ui/components/number-input";
 import {
@@ -16,12 +22,6 @@ import {
   useEarnTokenSelection,
 } from "../../../../../react/use-earn-facades";
 import { SelectToken } from "./select-token";
-import {
-  minMaxContainer,
-  priceTxt,
-  selectTokenBalance,
-  selectTokenSection,
-} from "./styles.css";
 import { SelectTokenTitle } from "./title";
 
 export const SelectTokenSection = ({

@@ -1,5 +1,6 @@
 import { Context, Effect, Layer, Ref, Stream } from "effect";
 import { ClassicTransactionFlowService as ClassicFlow } from "../../features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
+import { getPositionDetailsHubPath } from "../../features/position-details/state";
 import {
   toWidgetPath,
   WidgetNavigation,
@@ -178,7 +179,10 @@ export class DeepLinkCoordinator extends Context.Service<
               .execute({
                 _tag: "Push",
                 path: toWidgetPath(
-                  `/positions/${position.yieldId}/${position.balanceId}`
+                  getPositionDetailsHubPath({
+                    balanceId: position.balanceId,
+                    integrationId: position.yieldId,
+                  })
                 ),
               })
               .pipe(Effect.as(true))

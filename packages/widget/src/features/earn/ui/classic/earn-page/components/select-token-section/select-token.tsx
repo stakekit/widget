@@ -6,6 +6,7 @@ import { useWidgetConfig } from "../../../../../../../app/config/use-widget-conf
 import { equalTokens } from "../../../../../../../domain/types/tokens";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
 import { SelectModal } from "../../../../../../../shared/ui/components/select-modal";
+import { SelectedToken } from "../../../../../../../shared/ui/components/selected-token";
 import { TokenIcon } from "../../../../../../../shared/ui/components/token-icon";
 import { VirtualList } from "../../../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
@@ -44,25 +45,7 @@ export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
   if (!data) return null;
 
   if (!canSelect) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        borderRadius="2xl"
-        px="2"
-        py="1"
-        gap="2"
-        data-testid="select-token"
-        className={combineRecipeWithVariant({
-          variant,
-          rec: selectTokenButton,
-        })}
-      >
-        <TokenIcon token={data.st} />
-        <Text variant={{ weight: "bold" }}>{data.st.symbol}</Text>
-      </Box>
-    );
+    return <SelectedToken token={data.st} />;
   }
 
   return (

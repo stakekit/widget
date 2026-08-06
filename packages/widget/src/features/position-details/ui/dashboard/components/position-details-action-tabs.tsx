@@ -1,53 +1,37 @@
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { pressAnimation } from "../../../../../shared/ui/primitives/button/styles.css";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useUnstakeMatch } from "../../../react/use-unstake-match";
-import { useUnstakeOrPendingActionParams } from "../../../react/use-unstake-or-pending-action-params";
+import type {
+  PositionDetailsActionCapabilities,
+  PositionDetailsActionMode,
+} from "../../../model/hub";
 import * as styles from "./styles.css";
-
-type PositionDetailsActionMode = "stake" | "unstake";
 
 export const PositionDetailsActionTabs = ({
   canStake,
   canUnstake,
-}: {
-  canStake: boolean;
-  canUnstake: boolean;
+  selectedMode,
+  onSelectMode,
+}: PositionDetailsActionCapabilities & {
+  selectedMode: PositionDetailsActionMode;
+  onSelectMode: (mode: PositionDetailsActionMode) => void;
 }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { plain } = useUnstakeOrPendingActionParams();
-  const unstakeMatch = useUnstakeMatch();
-  const selectedMode: PositionDetailsActionMode = unstakeMatch
-    ? "unstake"
-    : "stake";
 
-  const basePath = `/positions/${plain.integrationId}/${plain.balanceId}`;
   const tabs = [
-    canStake
-      ? ({
-          id: "stake",
-          label: t("dashboard.position_details.action_tabs.stake"),
-          path: basePath,
-        } satisfies {
-          id: PositionDetailsActionMode;
-          label: string;
-          path: string;
-        })
-      : null,
     canUnstake
-      ? ({
-          id: "unstake",
+      ? {
+          id: "unstake" as const,
           label: t("dashboard.position_details.action_tabs.unstake"),
-          path: `${basePath}/unstake`,
-        } satisfies {
-          id: PositionDetailsActionMode;
-          label: string;
-          path: string;
-        })
+        }
+      : null,
+    canStake
+      ? {
+          id: "stake" as const,
+          label: t("dashboard.position_details.action_tabs.stake"),
+        }
       : null,
   ].filter((tab): tab is NonNullable<typeof tab> => !!tab);
 
@@ -71,8 +55,7 @@ export const PositionDetailsActionTabs = ({
             key={tab.id}
             onClick={() => {
               if (isSelected) return;
-
-              navigate(tab.path, { replace: true });
+              onSelectMode(tab.id);
             }}
           >
             <Text

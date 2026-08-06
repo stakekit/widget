@@ -2,12 +2,12 @@ import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import { EarnBalance } from "../../src/domain/schema/earn-models";
-import { positionDetailsPageShouldShowActionsPane } from "../../src/features/position-details/ui/dashboard";
 import {
-  getPositionDetailsRootPath,
-  positionDetailsActionsHasContent,
-  shouldRedirectFromPositionDetailsActions,
-} from "../../src/features/position-details/ui/dashboard/components/position-details-actions";
+  getPositionDetailsHubPath,
+  positionDetailsExitHasContent,
+  positionDetailsPendingHasContent,
+} from "../../src/features/position-details/model/hub";
+import { positionDetailsPageShouldShowActionsPane } from "../../src/features/position-details/ui/dashboard";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 
 const balance = Schema.decodeUnknownSync(EarnBalance)(
@@ -36,14 +36,13 @@ describe("position details action content", () => {
   it("does not treat an unavailable exit as an available action", () => {
     const view = makeView();
 
-    expect(positionDetailsActionsHasContent(view)).toBe(false);
-    expect(shouldRedirectFromPositionDetailsActions(view)).toBe(true);
+    expect(positionDetailsExitHasContent(view)).toBe(false);
     expect(positionDetailsPageShouldShowActionsPane(view)).toBe(true);
   });
 
   it("keeps a real pending action in the action pane", () => {
     expect(
-      positionDetailsActionsHasContent(
+      positionDetailsPendingHasContent(
         makeView({
           pendingActions: [{ pendingActionDto: { type: "CLAIM_REWARDS" } }],
         })
@@ -53,7 +52,7 @@ describe("position details action content", () => {
 
   it("keeps an available exit in the action pane", () => {
     expect(
-      positionDetailsActionsHasContent(
+      positionDetailsExitHasContent(
         makeView({
           canUnstake: true,
           integrationData: yieldApiYieldFixture({
@@ -64,9 +63,9 @@ describe("position details action content", () => {
     ).toBe(true);
   });
 
-  it("redirects to the position root path", () => {
+  it("builds the position hub path", () => {
     expect(
-      getPositionDetailsRootPath({
+      getPositionDetailsHubPath({
         balanceId: "balance-1",
         integrationId: "yield-1",
       })

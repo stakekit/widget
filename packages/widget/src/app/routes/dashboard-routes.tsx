@@ -1,4 +1,4 @@
-import { Route, Routes, useLocation } from "react-router";
+import { Navigate, Route, Routes, useLocation } from "react-router";
 import { ActivityTabPage } from "../../features/activity/ui";
 import {
   createBorrowEntryRoutes,
@@ -10,8 +10,7 @@ import { EarnPageContent } from "../../features/earn/ui";
 import { ManagePage } from "../../features/portfolio/ui";
 import {
   DashboardPositionDetailsPage,
-  PositionDetailsActions,
-  PositionDetailsStakeActions,
+  PositionDetailsHub,
 } from "../../features/position-details/ui";
 import { WalletScopeRouteGuard } from "../../features/wallet/ui";
 import { GlobalModals } from "../../features/widget-shell/ui";
@@ -19,11 +18,8 @@ import { BorrowFeatureRoute } from "./borrow-feature-route";
 import { DashboardOverview } from "./dashboard-overview";
 import { DashboardShell } from "./dashboard-shell";
 
-const positionDetailsStakeFooterPath =
-  /^\/positions\/[^/]+\/[^/]+(?:\/stake)?$/;
-
 export const shouldRegisterDashboardEarnFooterButton = (pathname: string) =>
-  pathname === "/" || positionDetailsStakeFooterPath.test(pathname);
+  pathname === "/";
 
 export const DashboardRoutes = () => {
   const location = useLocation();
@@ -69,12 +65,12 @@ export const DashboardRoutes = () => {
                 path=":integrationId/:balanceId"
                 element={<DashboardPositionDetailsPage />}
               >
-                <Route index element={<PositionDetailsStakeActions />} />
+                <Route index element={<PositionDetailsHub />} />
 
-                {/* Staking */}
                 <Route path="stake">
-                  <Route index element={<PositionDetailsStakeActions />} />
+                  <Route index element={<Navigate replace to=".." />} />
                   {createClassicFlowRoutes({ journey: "Enter" })}
+                  <Route path="*" element={<Navigate replace to="../.." />} />
                 </Route>
 
                 <Route
@@ -82,24 +78,26 @@ export const DashboardRoutes = () => {
                   element={<DashboardPositionDetailsPage />}
                 />
 
-                {/* Unstaking */}
                 <Route path="unstake">
-                  <Route index element={<PositionDetailsActions />} />
+                  <Route index element={<Navigate replace to=".." />} />
                   {createClassicFlowRoutes({ journey: "Exit" })}
+                  <Route path="*" element={<Navigate replace to="../.." />} />
                 </Route>
 
-                {/* Pending Actions */}
                 <Route path="pending-action">
+                  <Route index element={<Navigate replace to=".." />} />
                   {createClassicFlowRoutes({ journey: "Manage" })}
+                  <Route path="*" element={<Navigate replace to="../.." />} />
                 </Route>
+
+                <Route
+                  path="*"
+                  element={<Navigate replace relative="path" to=".." />}
+                />
               </Route>
             </Route>
           </Route>
 
-          {/* Rewards Tab */}
-          {/* <Route path="rewards" element={<RewardsTabPage />} /> */}
-
-          {/* Activity Tab */}
           <Route path="activity" element={<ActivityTabPage />}>
             <Route element={<WalletScopeRouteGuard fallbackPath="/activity" />}>
               {createClassicFlowRoutes({
