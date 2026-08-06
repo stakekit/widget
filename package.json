@@ -13,6 +13,7 @@
     }
   },
   "scripts": {
+    "dev": "pnpm --filter @stakekit/widget dev",
     "build": "turbo run build",
     "lint": "turbo run lint //#lint:ast",
     "lint:ast": "ast-grep scan --error=no-suppress-all --error=unused-suppression packages/widget --color=never && pnpm run test:ast",
