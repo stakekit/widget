@@ -34,6 +34,21 @@ const hasCampaignRewardRate = (
   rewardRate: YieldRewardRateDto | null | undefined
 ) => getRewardRateBreakdown(rewardRate).some((item) => item.key === "campaign");
 
+const formatUnstakeAmount = ({
+  amount,
+  amountUsd,
+  unstakeAmount,
+}: {
+  readonly amount: BigNumber;
+  readonly amountUsd: BigNumber;
+  readonly unstakeAmount: BigNumber;
+}) =>
+  formatUsd(
+    amount.isZero()
+      ? 0
+      : amountUsd.dividedBy(amount).multipliedBy(unstakeAmount)
+  );
+
 const getExitResourcesKey = (
   view: Atom.Type<ReturnType<typeof positionDetailsWorkflowViewAtom>>
 ) =>
@@ -137,7 +152,10 @@ export const positionDetailsClassicViewAtom = Atom.family(
           !canUnstake ||
           exitResources.kyc.isBlocking,
         unstakeFormattedAmount: workflow.reducedStakedOrLiquidBalance
-          ? formatUsd(workflow.reducedStakedOrLiquidBalance.amountUsd)
+          ? formatUnstakeAmount({
+              ...workflow.reducedStakedOrLiquidBalance,
+              unstakeAmount: workflow.unstakeAmount,
+            })
           : "",
         unstakeIsGreaterOrLessIntegrationLimitError:
           workflow.unstakeIsGreaterOrLessIntegrationLimitError,

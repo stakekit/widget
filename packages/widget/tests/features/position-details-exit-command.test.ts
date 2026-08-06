@@ -877,6 +877,65 @@ describe("Position Details exit command", () => {
     }
   });
 
+  it("formats a partial Exit from the entered amount", () => {
+    const yieldDto = yieldApiYieldDtoFixture();
+    const partialExitYield = yieldApiYieldFixture({
+      ...skySavingsRateFields,
+      id: selectedYield.id,
+      metadata: selectedYield.metadata,
+      mechanics: {
+        ...yieldDto.mechanics,
+        arguments: {
+          ...yieldDto.mechanics.arguments,
+          exit: {
+            fields: [
+              {
+                label: "Amount",
+                maximum: "2",
+                minimum: "0",
+                name: "amount",
+                required: true,
+                type: "string",
+              },
+            ],
+          },
+        },
+      },
+    });
+    const partialBalance = Schema.decodeUnknownSync(EarnBalance)(
+      yieldBalanceFixture({
+        amount: "2",
+        amountUsd: "10",
+        token: partialExitYield.token,
+      })
+    );
+    const registry = makeRegistry({
+      push: vi.fn(),
+      trackEvent: () => Effect.void,
+      yieldBalance: partialBalance,
+      yieldOpportunity: partialExitYield,
+    });
+    const viewAtom = positionDetailsClassicViewAtom(workflowKey);
+    const unmountView = registry.mount(viewAtom);
+
+    try {
+      registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        exitReceiveTokenAddress: null,
+        pendingActions: new Map(),
+        unstakeAmount: new BigNumber("0.5"),
+        unstakeUseMaxAmount: false,
+      });
+
+      expect(registry.get(viewAtom)).toMatchObject({
+        unstakeAmount: new BigNumber("0.5"),
+        unstakeFormattedAmount: "$2.50",
+      });
+    } finally {
+      unmountView();
+      registry.dispose();
+    }
+  });
+
   it("rejects a stale Exit command after the Wallet Scope Owner changes", async () => {
     const push = vi.fn<(path: WidgetPath) => void>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
