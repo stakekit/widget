@@ -43,7 +43,17 @@ export class Prices {
     readonly network: string;
     readonly address?: string;
   }) {
-    return this.value.get(tokenString(token)) ?? null;
+    const price = this.value.get(tokenString(token));
+
+    return (
+      price ??
+      // The legacy price API serializes native tokens with an `undefined`
+      // address, while local token identity intentionally uses an empty one.
+      (token.address === undefined
+        ? this.value.get(`${token.network}-undefined`)
+        : undefined) ??
+      null
+    );
   }
 }
 
