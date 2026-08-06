@@ -14,7 +14,7 @@ export const formPane = style([
     display: "flex",
     flex: 1,
     flexDirection: "column",
-    gap: "4",
+    gap: "2",
   }),
   {
     "@container": {

@@ -37,7 +37,7 @@ export const BorrowFormDetails = ({
   });
 
   return (
-    <Box display="flex" flexDirection="column" gap="2">
+    <Box display="flex" flexDirection="column" gap="4">
       <Text variant={{ weight: "bold" }}>
         {t("dashboard.borrow.form.details")}
       </Text>

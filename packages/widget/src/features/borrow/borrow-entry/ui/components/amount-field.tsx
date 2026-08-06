@@ -37,7 +37,7 @@ export const AmountField = ({
   readonly usdValue: BigNumber;
   readonly validationText?: string | null;
 }) => (
-  <Box display="flex" flexDirection="column" gap="2">
+  <Box display="flex" flexDirection="column" gap="4">
     <Text variant={{ weight: "bold" }}>{label}</Text>
     <Box
       className={clsx(
