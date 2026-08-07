@@ -13,6 +13,7 @@ import { AnimationPage, PageContainer } from "../../../widget-shell/components";
 import { AmountBlock } from "./components/amount-block";
 import { PositionBalances } from "./components/position-balances";
 import { PositionDetailsUnstakeActions } from "./components/position-details-unstake-actions";
+import { PositionDetailsValidatorModal } from "./components/position-details-validator-modal";
 import { ProviderDetails } from "./components/provider-details";
 import { StaticActionBlock } from "./components/static-action-block";
 import { usePositionDetails } from "./hooks/use-position-details";
@@ -233,6 +234,8 @@ const PositionDetails = () => {
               {/* Unstake */}
               <PositionDetailsUnstakeActions />
             </Box>
+
+            <PositionDetailsValidatorModal />
           </Box>
         ) : null}
       </PageContainer>

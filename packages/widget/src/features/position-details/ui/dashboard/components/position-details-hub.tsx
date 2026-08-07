@@ -15,6 +15,7 @@ import {
 } from "../../../model/hub";
 import { AmountBlock } from "../../classic/components/amount-block";
 import { PositionDetailsUnstakeActions } from "../../classic/components/position-details-unstake-actions";
+import { PositionDetailsValidatorModal } from "../../classic/components/position-details-validator-modal";
 import { StaticActionBlock } from "../../classic/components/static-action-block";
 import { usePositionDetails } from "../../classic/hooks/use-position-details";
 import { PositionDetailsActionTabs } from "./position-details-action-tabs";
@@ -165,6 +166,8 @@ export const PositionDetailsHub = () => {
         ) : null}
         {mode === "stake" ? <PositionDetailsStakeActions /> : null}
       </Box>
+
+      <PositionDetailsValidatorModal />
     </Box>
   );
 };

@@ -1,8 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { getExtendedYieldType } from "../../../../../domain/types/yields";
 import { Box } from "../../../../../shared/ui/primitives/box";
-import { Button } from "../../../../../shared/ui/primitives/button";
-import { KycGateCard, SelectValidator } from "../../../../earn/components";
+import { KycGateCard } from "../../../../earn/components";
 import {
   type PageCta,
   PageCtaButton,
@@ -15,10 +14,6 @@ import { ExitReceiveTokenNote } from "./exit-receive-token-note";
 export const PositionDetailsUnstakeActions = () => {
   const {
     integrationData: integrationDataValue,
-    validatorsData,
-    hasMoreValidators,
-    isLoadingMoreValidators,
-    onLoadMoreValidators,
     unstakeToken: unstakeTokenValue,
     providersDetails,
     unstakeMaxAmount: unstakeMaxAmountValue,
@@ -33,8 +28,6 @@ export const PositionDetailsUnstakeActions = () => {
     onUnstakeClick,
     unstakeAmountError,
     onMaxClick,
-    validatorAddressesHandling,
-    onValidatorsSubmit,
     kycGate,
     kycGateIsChecking,
     kycProviderName,
@@ -123,52 +116,6 @@ export const PositionDetailsUnstakeActions = () => {
       </Box>
 
       <PageCtaButton cta={unstakeCta} />
-
-      {validatorAddressesHandling.showValidatorsModal && (
-        <SelectValidator
-          selectedValidators={validatorAddressesHandling.selectedValidators}
-          onItemClick={(val) => {
-            validatorAddressesHandling.onItemClick(val.address);
-
-            if (validatorAddressesHandling.multiSelect) return;
-
-            onValidatorsSubmit([val.address]);
-          }}
-          selectedStake={integrationDataValue}
-          validators={validatorsData}
-          hasMore={hasMoreValidators}
-          isLoadingMore={isLoadingMoreValidators}
-          onLoadMore={onLoadMoreValidators}
-          multiSelect={validatorAddressesHandling.multiSelect}
-          state={validatorAddressesHandling.modalState}
-        >
-          {validatorAddressesHandling.multiSelect && (
-            <Box
-              px="4"
-              paddingTop="3"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <Button
-                variant={{
-                  color: validatorAddressesHandling.submitDisabled
-                    ? "disabled"
-                    : "primary",
-                }}
-                disabled={validatorAddressesHandling.submitDisabled}
-                onClick={() =>
-                  onValidatorsSubmit([
-                    ...validatorAddressesHandling.selectedValidators.values(),
-                  ])
-                }
-              >
-                {t("position_details.select_validators.submit")}
-              </Button>
-            </Box>
-          )}
-        </SelectValidator>
-      )}
     </>
   );
 };
