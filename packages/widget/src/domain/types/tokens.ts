@@ -1,16 +1,8 @@
-import type {
-  TokenDto as LegacyTokenDto,
-  TokenControllerGetTokensParams as TokenGetTokensParams,
-} from "../../generated/api/legacy";
-import type { TokenDto as YieldTokenDtoGenerated } from "../../generated/api/yield";
+import type { AppToken } from "../schema/legacy-models";
 
-export type YieldTokenDto = YieldTokenDtoGenerated;
-export type TokenDto = LegacyTokenDto | YieldTokenDto;
-export type { TokenGetTokensParams };
+export type TokenString = `${AppToken["network"]}-${string}`;
 
-export type TokenString = `${TokenDto["network"]}-${TokenDto["address"]}`;
-
-type TokenLike = Pick<TokenDto, "symbol"> & {
+type TokenLike = Pick<AppToken, "symbol"> & {
   network: string;
   address?: string;
 };

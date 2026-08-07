@@ -1,18 +1,36 @@
+import { Array as EArray, Match } from "effect";
 import type {
-  RewardDto,
-  ValidatorDto,
-  YieldDto,
-} from "../../generated/api/yield";
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../schema/earn-models";
+import type { ValidatorKey } from "./validators";
 
-type YieldRewardDto = RewardDto;
-export type YieldRewardRateDto = NonNullable<YieldDto["rewardRate"]>;
-type YieldWithRewardRate = Pick<YieldDto, "rewardRate">;
-type ValidatorRewardRateDto = NonNullable<ValidatorDto["rewardRate"]>;
+export type YieldRewardRateDto = NonNullable<
+  EarnYieldWithProvider["rewardRate"]
+>;
+type YieldRewardDto = YieldRewardRateDto["components"][number];
+type YieldWithRewardRate = Pick<EarnYieldWithProvider, "rewardRate">;
+type ValidatorRewardRateDto = NonNullable<EarnValidator["rewardRate"]>;
 export type SelectedValidators =
-  | ReadonlyArray<ValidatorDto>
-  | ReadonlyMap<ValidatorDto["address"], ValidatorDto>;
+  | ReadonlyArray<EarnValidator>
+  | ReadonlyMap<ValidatorKey, EarnValidator>;
 
 type RewardRateBreakdownKey = "native" | "protocol_incentive" | "campaign";
+
+const isSelectedValidatorMap = (
+  validators: SelectedValidators
+): validators is ReadonlyMap<ValidatorKey, EarnValidator> =>
+  validators instanceof Map;
+
+const getSelectedValidators = (
+  selectedValidators: SelectedValidators | null | undefined
+): ReadonlyArray<EarnValidator> => {
+  if (!selectedValidators) return [];
+  if (isSelectedValidatorMap(selectedValidators)) {
+    return [...selectedValidators.values()];
+  }
+  return selectedValidators;
+};
 
 export type RewardRateBreakdownItem = {
   key: RewardRateBreakdownKey;
@@ -30,11 +48,11 @@ const breakdownOrder: RewardRateBreakdownKey[] = [
 const getBreakdownKey = (
   yieldSource: YieldRewardDto["yieldSource"]
 ): RewardRateBreakdownKey =>
-  yieldSource === "campaign_incentive"
-    ? "campaign"
-    : yieldSource === "protocol_incentive"
-      ? "protocol_incentive"
-      : "native";
+  Match.value(yieldSource).pipe(
+    Match.when("campaign_incentive", () => "campaign" as const),
+    Match.when("protocol_incentive", () => "protocol_incentive" as const),
+    Match.orElse(() => "native" as const)
+  );
 
 const getYieldRewardRateDetails = (
   yieldDto: YieldWithRewardRate | null | undefined
@@ -53,24 +71,19 @@ export const getEffectiveYieldRewardRateDetails = ({
 const getSelectedValidatorsRewardRate = (
   selectedValidators: SelectedValidators | null | undefined
 ) => {
-  const validators = selectedValidators
-    ? selectedValidators instanceof Map
-      ? [...selectedValidators.values()]
-      : [...selectedValidators]
-    : [];
+  const validators = getSelectedValidators(selectedValidators);
   const rewardRates = validators.flatMap((validator) =>
     validator.rewardRate ? [validator.rewardRate] : []
   );
 
-  if (rewardRates.length < 2) {
-    return rewardRates[0];
-  }
+  if (!EArray.isArrayNonEmpty(rewardRates)) return undefined;
+  if (rewardRates.length === 1) return EArray.headNonEmpty(rewardRates);
 
   return averageRewardRates(rewardRates);
 };
 
 const averageRewardRates = (
-  rewardRates: ValidatorRewardRateDto[]
+  rewardRates: EArray.NonEmptyArray<ValidatorRewardRateDto>
 ): ValidatorRewardRateDto => {
   const componentsByKey = rewardRates.reduce((acc, rewardRate) => {
     rewardRate.components.forEach((component) => {
@@ -84,13 +97,13 @@ const averageRewardRates = (
     });
 
     return acc;
-  }, new Map<string, { component: RewardDto; rate: number }>());
+  }, new Map<string, { component: YieldRewardDto; rate: number }>());
 
   return {
     total:
       rewardRates.reduce((acc, rewardRate) => acc + rewardRate.total, 0) /
       rewardRates.length,
-    rateType: rewardRates[0].rateType,
+    rateType: EArray.headNonEmpty(rewardRates).rateType,
     components: [...componentsByKey.values()].map(({ component, rate }) => ({
       ...component,
       rate: rate / rewardRates.length,

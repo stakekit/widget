@@ -1,0 +1,178 @@
+import BigNumber from "bignumber.js";
+import { Array as EArray } from "effect";
+import { userEvent } from "vitest/browser";
+import { getYieldSummaryRewardToken } from "../../../src/features/yield-summary/model/yield-summary";
+import { formatAddress } from "../../../src/shared/lib/general";
+import { formatNumber } from "../../../src/shared/lib/number-format";
+import { describe, expect, it } from "../../utils/test-extend";
+import { renderApp } from "../../utils/test-utils";
+import { setup } from "./setup";
+
+describe("Staking flow", () => {
+  it("Works as expected", async ({ worker }) => {
+    const {
+      customConnectors,
+      yieldOp,
+      transactionConstruct,
+      account,
+      requestFn,
+    } = await setup(worker);
+
+    const app = await renderApp({
+      wagmi: {
+        __customConnectors__: customConnectors,
+        forceWalletConnectOnly: false,
+      },
+    });
+
+    await expect
+      .element(app.getByText(formatAddress(account)))
+      .toBeInTheDocument();
+
+    await app.getByTestId("select-opportunity").click();
+
+    const selectContainer = app.getByTestId("select-modal__container");
+
+    await selectContainer
+      .getByTestId(/^select-opportunity__item_avalanche-avax-liquid-staking/)
+      .click();
+
+    await expect
+      .poll(
+        () =>
+          app
+            .getByTestId("select-opportunity")
+            .getByText(yieldOp.outputToken?.symbol ?? yieldOp.token.symbol)
+            .length
+      )
+      .greaterThan(0);
+
+    const stakeAmount = "0.1";
+
+    await userEvent.click(app.getByTestId("number-input"));
+    await userEvent.keyboard(stakeAmount);
+
+    await expect
+      .element(app.getByTestId("number-input"))
+      .toHaveValue(stakeAmount);
+
+    await expect.element(app.getByText("Stake").first()).toBeInTheDocument();
+
+    await expect
+      .element(app.getByTestId("estimated-reward__percent").getByText("5.08%"))
+      .toBeInTheDocument();
+
+    await expect
+      .element(
+        app
+          .getByTestId("estimated-reward__yearly")
+          .getByText(`0.00508 ${yieldOp.token.symbol}`)
+      )
+      .toBeInTheDocument();
+
+    await expect
+      .element(
+        app
+          .getByTestId("estimated-reward__monthly")
+          .getByText(`0.00042 ${yieldOp.token.symbol}`)
+      )
+      .toBeInTheDocument();
+
+    const rewardTokenDetails = getYieldSummaryRewardToken(yieldOp)!;
+
+    await expect
+      .element(app.getByText(`You'll receive`).first())
+      .toBeInTheDocument();
+    await expect
+      .element(
+        app
+          .getByText(
+            `${EArray.getUnsafe(rewardTokenDetails.rewardTokens, 0).symbol}`
+          )
+          .first()
+      )
+      .toBeInTheDocument();
+
+    await expect.element(app.getByText("Stake").first()).toBeInTheDocument();
+
+    await userEvent.click(app.getByText("Stake").last());
+
+    const totalGasFee = new BigNumber(
+      transactionConstruct.gasEstimate?.amount ?? 0
+    );
+
+    await expect
+      .element(
+        app
+          .getByTestId("estimated_gas_fee")
+          .getByText(
+            `${formatNumber(totalGasFee, 10)} ${yieldOp.token.symbol}`,
+            { exact: false }
+          )
+      )
+      .toBeInTheDocument();
+
+    await expect
+      .element(app.getByText(stakeAmount).first())
+      .toBeInTheDocument();
+
+    await expect
+      .element(app.getByText(yieldOp.token.symbol).first())
+      .toBeInTheDocument();
+    await expect.element(app.getByText("& earn").first()).toBeInTheDocument();
+    await expect.element(app.getByText("5.08%").first()).toBeInTheDocument();
+
+    await expect
+      .element(
+        app
+          .getByTestId("estimated-reward__yearly")
+          .getByText(`0.00508 ${yieldOp.token.symbol}`)
+      )
+      .toBeInTheDocument();
+
+    await expect
+      .element(
+        app
+          .getByTestId("estimated-reward__monthly")
+          .getByText(`0.00042 ${yieldOp.token.symbol}`)
+      )
+      .toBeInTheDocument();
+
+    const confirmButton = app.getByRole("button", {
+      exact: true,
+      name: "Confirm",
+    });
+
+    await expect.element(confirmButton).toBeInTheDocument();
+
+    await userEvent.click(confirmButton);
+
+    await expect.element(app.getByText("Follow Steps")).toBeInTheDocument();
+
+    await expect
+      .poll(() => requestFn, { timeout: 1000 * 5 })
+      .toHaveBeenCalledWith(
+        {
+          method: "eth_sendTransaction",
+          params: expect.anything(),
+        },
+        undefined
+      );
+
+    await expect
+      .poll(() => requestFn, { timeout: 1000 * 5 })
+      .toHaveBeenCalledWith({ method: "eth_chainId" }, undefined);
+
+    await expect
+      .element(
+        app.getByText(
+          `Successfully staked ${stakeAmount} ${yieldOp.token.symbol}`
+        )
+      )
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByText("View Stake transaction"))
+      .toBeInTheDocument();
+    await app.unmount();
+  });
+});

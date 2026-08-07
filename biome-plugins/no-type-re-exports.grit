@@ -1,0 +1,9 @@
+language js(typescript, jsx)
+
+or {
+  `export type { $exports } from $source` as $re_export,
+  `export type * from $source` as $re_export,
+  `export { type $exports } from $source` as $re_export
+} where {
+  register_diagnostic(span=$re_export, message="Import types from the module that defines them instead of re-exporting them.")
+}

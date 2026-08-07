@@ -1,15 +1,16 @@
-import type { Wallet } from "@solana/wallet-adapter-react";
 import {
   type Connection,
   Transaction,
   VersionedTransaction,
 } from "@solana/web3.js";
+import { Array as EArray } from "effect";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { decodeSolanaTransactionToBuffer } from "../../src/domain/types/transaction";
 import {
   deserializeSolanaTransaction,
   getSolanaConnectors,
-} from "../../src/providers/misc/solana-connector";
+} from "../../src/services/wallet/connectors/misc/solana-connector";
+import type { SolanaWalletDescriptor } from "../../src/services/wallet/solana-runtime";
 
 const createConnectorForTest = ({
   sendTransaction = vi.fn(async () => "signed-hash"),
@@ -29,14 +30,19 @@ const createConnectorForTest = ({
       disconnect: vi.fn(),
       sendTransaction,
     },
-  } as unknown as Wallet;
+    readyState: "Installed",
+    source: "fallback",
+  } as unknown as SolanaWalletDescriptor;
 
-  const walletFactory = getSolanaConnectors({
-    wallets: [wallet],
-    forceWalletConnectOnly: false,
-    connection,
-    variant: "default",
-  }).wallets[0];
+  const walletFactory = EArray.getUnsafe(
+    getSolanaConnectors({
+      wallets: [wallet],
+      forceWalletConnectOnly: false,
+      connection,
+      variant: "default",
+    }).wallets,
+    0
+  );
 
   const connectorFactory = walletFactory({} as never).createConnector(
     {} as never

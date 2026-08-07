@@ -1,67 +1,161 @@
 import BigNumber from "bignumber.js";
 import type {
-  BalanceDto,
-  BalancesRequestDto,
-  ValidatorDto,
-  YieldBalancesDto,
-  BalanceType as YieldBalanceTypeGenerated,
-} from "../../generated/api/yield";
-import { equalTokens } from "..";
+  EarnBalance,
+  EarnPosition,
+  EarnValidator,
+} from "../schema/earn-models";
+import type { YieldId } from "../schema/identifiers";
 import type { YieldRewardRateDto } from "./reward-rate";
-import type { TokenDto } from "./tokens";
+import { equalTokens } from "./tokens";
+import type { ValidatorKey } from "./validators";
 
-export type YieldBalanceDto = BalanceDto;
-export type YieldBalancesByYieldDto = YieldBalancesDto;
-export type YieldBalancesRequestDto = BalancesRequestDto;
-export type YieldBalanceType = YieldBalanceTypeGenerated;
+export type YieldBalanceType = EarnBalance["type"];
 
 export type PositionBalancesByType = Map<
   YieldBalanceType,
-  (YieldBalanceDto & {
+  (EarnBalance & {
     tokenPriceInUsd: BigNumber;
   })[]
 >;
+export type PositionValidators = ReadonlyArray<EarnValidator>;
 
 export type PositionDetailsLabelType = "hasFrozenV1";
 
 type BalanceType = "validators" | "default";
 
-export type BalanceDataKey =
-  | BalanceType
-  | `validator::${ValidatorDto["address"]}`;
+export type BalanceDataKey = BalanceType | `validator::${ValidatorKey}`;
 
 export type PositionsData = Map<
-  YieldBalancesByYieldDto["yieldId"],
+  YieldId,
   {
-    yieldId: YieldBalancesByYieldDto["yieldId"];
+    yieldId: YieldId;
     rewardRate?: YieldRewardRateDto | null;
     balanceData: Map<
       BalanceDataKey,
-      { balances: YieldBalanceDto[] } & (
-        | { type: "validators"; validators: ReadonlyArray<ValidatorDto> }
+      { balances: EarnBalance[] } & (
+        | { type: "validators"; validators: PositionValidators }
         | { type: "default" }
       )
     >;
   }
 >;
 
+export type PositionData =
+  PositionsData extends Map<YieldId, infer Value> ? Value : never;
+
+type PositionBalances =
+  PositionData["balanceData"] extends Map<BalanceDataKey, infer Value>
+    ? Value & { rewardRate: PositionData["rewardRate"] }
+    : never;
+
 export const getPositionBalanceDataKey = (
-  balance: YieldBalanceDto
+  balance: EarnBalance
 ): BalanceDataKey => {
   if (Array.isArray(balance.validators) && balance.validators.length > 1) {
     return "validators";
   }
 
-  if (balance.validator?.address) {
-    return `validator::${balance.validator.address}` as BalanceDataKey;
+  const validator = balance.validator ?? balance.validators?.[0];
+
+  if (validator) {
+    return `validator::${validator.key}` as BalanceDataKey;
   }
 
   return "default";
 };
 
+const getBalanceValidators = (balance: EarnBalance) =>
+  balance.validators ?? (balance.validator ? [balance.validator] : []);
+
+export const toPositionsData = (
+  balancesData: ReadonlyArray<EarnPosition>
+): PositionsData =>
+  balancesData.reduce((positions, position) => {
+    positions.set(position.yieldId, {
+      yieldId: position.yieldId,
+      rewardRate: position.rewardRate,
+      balanceData: [...position.balances]
+        .sort((a, b) =>
+          getPositionBalanceDataKey(a).localeCompare(
+            getPositionBalanceDataKey(b)
+          )
+        )
+        .reduce(
+          (balances, balance) => {
+            const key = getPositionBalanceDataKey(balance);
+            const previous = balances.get(key);
+
+            if (previous) {
+              previous.balances.push(balance);
+            } else if (key === "default") {
+              balances.set(key, {
+                balances: [balance],
+                type: "default",
+              });
+            } else {
+              balances.set(key, {
+                balances: [balance],
+                type: "validators",
+                validators: getBalanceValidators(balance),
+              });
+            }
+
+            return balances;
+          },
+          new Map() as PositionData["balanceData"]
+        ),
+    });
+
+    return positions;
+  }, new Map() as PositionsData);
+
+export const getPositionData = (
+  positions: PositionsData,
+  yieldId: YieldId | null
+): PositionData | null => (yieldId ? (positions.get(yieldId) ?? null) : null);
+
+export const getPositionBalances = (
+  position: PositionData | null,
+  balanceId: string | null
+): PositionBalances | null => {
+  if (!position || !balanceId) return null;
+
+  const balanceData =
+    position.balanceData.get(balanceId as BalanceDataKey) ??
+    position.balanceData.values().next().value;
+
+  return balanceData
+    ? { ...balanceData, rewardRate: position.rewardRate }
+    : null;
+};
+
+export const toPositionBalancesByType = (
+  balances: ReadonlyArray<EarnBalance>
+): PositionBalancesByType =>
+  balances.reduce((byType, balance) => {
+    const amount = new BigNumber(balance.amount);
+    if (amount.isZero() || amount.isNaN()) return byType;
+
+    const tokenPriceInUsd = new BigNumber(
+      String(balance.amountUsd ?? 0).replace(/,/g, "")
+    );
+    const previous = byType.get(balance.type);
+
+    byType.set(balance.type, [
+      ...(previous ?? []),
+      { ...balance, tokenPriceInUsd },
+    ]);
+
+    return byType;
+  }, new Map() as PositionBalancesByType);
+
 export const getPositionTotalAmount = (
-  balances: YieldBalanceDto[],
-  baseToken: TokenDto
+  balances: EarnBalance[],
+  baseToken: {
+    readonly address?: string;
+    readonly symbol: string;
+    readonly network: string;
+  }
 ) => {
   const baseTokenBalance = balances.find((b) =>
     equalTokens(b.token, baseToken)
@@ -70,10 +164,10 @@ export const getPositionTotalAmount = (
   const baseTokenPriceInUsd = (() => {
     if (!baseTokenBalance?.amountUsd) return null;
 
-    const amount = BigNumber(baseTokenBalance.amount);
+    const amount = baseTokenBalance.amount;
     if (amount.lte(0)) return null;
 
-    return BigNumber(baseTokenBalance.amountUsd).dividedBy(amount);
+    return baseTokenBalance.amountUsd.dividedBy(amount);
   })();
 
   return balances.reduce(
@@ -87,7 +181,7 @@ export const getPositionTotalAmount = (
         };
       }
 
-      const balanceAmountUsd = BigNumber(b.amountUsd ?? 0);
+      const balanceAmountUsd = b.amountUsd ?? BigNumber(0);
 
       if (baseTokenPriceInUsd && !baseTokenPriceInUsd.isZero()) {
         return {

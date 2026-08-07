@@ -1,28 +1,32 @@
 import type BigNumber from "bignumber.js";
-import type {
-  ActionDto as YieldActionDtoGenerated,
-  CreateActionDto as YieldCreateActionDtoGenerated,
-  CreateManageActionDto as YieldCreateManageActionDtoGenerated,
-  TransactionDto as YieldTransactionDtoGenerated,
-} from "../../generated/api/yield";
-import type { TokenDto } from "./tokens";
-import type { Yield } from "./yields";
+import { Option, Schema } from "effect";
+import {
+  type ActionCommand,
+  type ActionTransaction,
+  TransactionGasEstimateJson,
+  type YieldAction,
+} from "../schema/action-models";
+import type { EarnYieldWithProvider } from "../schema/earn-models";
+import type { TokenAddress, ValidatorAddress } from "../schema/identifiers";
+import type { AppToken } from "../schema/legacy-models";
 
-export type ActionDto = YieldActionDtoGenerated;
-export type TransactionDto = YieldTransactionDtoGenerated;
-export type TransactionType = TransactionDto["type"];
-export type ActionType = ActionDto["type"];
-export type ActionStatus = ActionDto["status"];
-export type TransactionStatus = TransactionDto["status"];
+export type TransactionType = ActionTransaction["type"];
+export type ActionType = YieldAction["type"];
+export type ActionStatus = YieldAction["status"];
+export type TransactionStatus = ActionTransaction["status"];
 
-export type YieldCreateActionDto = YieldCreateActionDtoGenerated;
-export type YieldCreateManageActionDto = YieldCreateManageActionDtoGenerated;
-export type YieldActionDto = ActionDto;
-export type YieldTransactionDto = TransactionDto;
+export type ExitReceiveToken = Readonly<{
+  readonly address: TokenAddress;
+  readonly symbol: string;
+}>;
+
+export const getActionProviderYieldId = (
+  command: Pick<ActionCommand, "arguments">
+) => command.arguments?.providerId ?? null;
 type TransactionGasEstimate = {
-  amount: string;
+  amount: BigNumber;
   gasLimit?: string;
-  token: TokenDto;
+  token: AppToken;
 } | null;
 
 export const ActionTypes = {
@@ -77,21 +81,15 @@ const NATIVE_TOKEN_PLACEHOLDER = "0x";
 
 const toLower = (value: string) => value.toLowerCase();
 
-type EncodedGasEstimate = {
-  amount?: string | null;
-  gasLimit?: string | null;
-  token?: TokenDto | null;
-};
-
 export const getActionInputToken = ({
   actionDto,
   inputToken,
   yieldDto,
 }: {
-  actionDto: ActionDto;
-  inputToken?: TokenDto;
-  yieldDto?: Yield | null;
-}): TokenDto | undefined => {
+  actionDto: YieldAction;
+  inputToken?: AppToken;
+  yieldDto?: EarnYieldWithProvider | null;
+}): AppToken | undefined => {
   if (inputToken) {
     return inputToken;
   }
@@ -124,49 +122,18 @@ export const getActionInputToken = ({
 };
 
 export const getActionValidatorAddresses = (
-  actionDto: ActionDto
-): ReadonlyArray<string> | null =>
+  actionDto: YieldAction
+): ReadonlyArray<ValidatorAddress> | null =>
   actionDto.rawArguments?.validatorAddresses ??
   (actionDto.rawArguments?.validatorAddress
     ? [actionDto.rawArguments.validatorAddress]
     : null);
 
 export const getTransactionGasEstimate = (
-  transactionDto: TransactionDto
-): TransactionGasEstimate => {
-  const gasEstimate = transactionDto.gasEstimate;
-
-  if (!gasEstimate) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(gasEstimate) as EncodedGasEstimate | null;
-
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return null;
-    }
-
-    const amount = parsed.amount ?? null;
-    const token = parsed.token;
-
-    if (!amount || !token) {
-      return null;
-    }
-
-    return {
-      amount,
-      token,
-    };
-  } catch {
-    return null;
-  }
-};
-
-export type ActionDtoWithGasEstimate = {
-  gasEstimate: {
-    amount: BigNumber;
-    token: TokenDto;
-    gasLimit?: string;
-  } | null;
-};
+  transactionDto: ActionTransaction
+): TransactionGasEstimate =>
+  transactionDto.gasEstimate
+    ? Schema.decodeOption(TransactionGasEstimateJson)(
+        transactionDto.gasEstimate
+      ).pipe(Option.getOrNull)
+    : null;

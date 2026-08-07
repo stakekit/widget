@@ -1,9 +1,9 @@
 import { HttpResponse, http } from "msw";
+import { legacyYieldFixture } from "../fixtures";
 import type {
   TokenDto,
   YieldRewardsSummaryResponseDto,
-} from "../../src/generated/api/legacy";
-import { legacyYieldFixture } from "../fixtures";
+} from "../generated/legacy-api-types";
 import { legacyApiRoute } from "./api-routes";
 import { mockDelay } from "./delay";
 

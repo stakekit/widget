@@ -1,105 +1,24 @@
 import BigNumber from "bignumber.js";
-import { List, Maybe } from "purify-ts";
-import type { ValidatorDto } from "../../generated/api/yield";
-import { tokenString } from "..";
-import type { SupportedSKChains } from "./chains";
+import { Array as EArray, Option } from "effect";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../schema/earn-models";
+import type { InitParams } from "../schema/init-params";
+import type { Network } from "../schema/network-model";
 import { Networks } from "./chains/networks";
-import type { InitParams } from "./init-params";
+
 import type { PositionsData } from "./positions";
-import type { TokenBalanceScanResponseDto } from "./token-balance";
-import type { TokenString } from "./tokens";
-import {
-  getYieldActionArg,
-  isBittensorStaking,
-  type Yield,
-  type YieldBase,
-} from "./yields";
-
-const amountGreaterThanZero = (val: TokenBalanceScanResponseDto) =>
-  new BigNumber(val.amount).isGreaterThan(0);
-
-const hasYields = (val: TokenBalanceScanResponseDto) =>
-  !!val.availableYields.length;
-
-const hasYieldsAndAmount = (val: TokenBalanceScanResponseDto) =>
-  hasYields(val) && amountGreaterThanZero(val);
-
-export type PreferredTokenYieldsPerNetwork = {
-  [Key in SupportedSKChains]?: Record<TokenString, "*" | (Yield["id"] & {})>;
-};
-
-export const getInitialToken = (args: {
-  initQueryParams: Maybe<InitParams>;
-  tokenBalances: ReadonlyArray<TokenBalanceScanResponseDto>;
-  defaultTokens: ReadonlyArray<TokenBalanceScanResponseDto>;
-  network: SupportedSKChains | null;
-  preferredTokenYieldsPerNetwork: PreferredTokenYieldsPerNetwork | null;
-}) =>
-  /**
-   * TB based on query params
-   */
-  args.initQueryParams
-    .filter((val) => !!val.token)
-    .chain((val) =>
-      List.find(
-        (t) => {
-          const tokenSymbolCompare =
-            val.token?.toLowerCase() === t.token.symbol.toLowerCase();
-
-          const tokenNetworkCompare =
-            val.network?.toLowerCase() === t.token.network.toLowerCase();
-
-          const tokenStringCompare = tokenString(t.token) === val.token;
-
-          return (
-            (tokenSymbolCompare && tokenNetworkCompare) || tokenStringCompare
-          );
-        },
-        [...args.tokenBalances, ...args.defaultTokens]
-      )
-    )
-    /**
-     * TB based on preferred token
-     */
-    .altLazy(() =>
-      Maybe.fromNullable(args.network)
-        .chain((n) =>
-          Maybe.fromNullable(args.preferredTokenYieldsPerNetwork?.[n])
-        )
-        .altLazy(() =>
-          Maybe.fromNullable(args.preferredTokenYieldsPerNetwork).chainNullable(
-            (v) => Object.values(v)[0]
-          )
-        )
-        .chain((preferredTokens) =>
-          List.find(
-            (val) => !!preferredTokens[tokenString(val.token)],
-            [...args.tokenBalances, ...args.defaultTokens]
-          )
-        )
-    )
-    /**
-     * TB based on first token with available yields and amount > 0
-     */
-    .altLazy(() => List.find(hasYieldsAndAmount, [...args.tokenBalances]))
-    /**
-     * TB based on first token with available yields
-     */
-    .altLazy(() => List.find(hasYields, [...args.tokenBalances]))
-    .altLazy(() => List.find(hasYields, [...args.defaultTokens]))
-    .altLazy(() => List.head([...args.defaultTokens]))
-    .map((val) => val.token);
+import type { ValidatorKey } from "./validators";
+import { getYieldActionArg, isBittensorStaking } from "./yields";
 
 export const canBeInitialYield = (args: {
-  initQueryParams: Maybe<InitParams>;
-  yieldDto: YieldBase;
+  initQueryParams: InitParams | null;
+  yieldDto: EarnYieldWithProvider;
   tokenBalanceAmount: BigNumber;
   positionsData: PositionsData;
 }) => {
-  const initYieldId = args.initQueryParams
-    .chainNullable((queryParams) => queryParams.yieldId)
-    .map((yieldId) => yieldId.toLowerCase())
-    .extractNullable();
+  const initYieldId = args.initQueryParams?.yieldId?.toLowerCase() ?? null;
 
   if (initYieldId) {
     return initYieldId === args.yieldDto.id.toLowerCase();
@@ -118,7 +37,7 @@ const balanceValidForYield = ({
   positionsData,
 }: {
   tokenBalanceAmount: BigNumber;
-  yieldDto: YieldBase;
+  yieldDto: EarnYieldWithProvider;
   positionsData: PositionsData;
 }) =>
   tokenBalanceAmount.isGreaterThanOrEqualTo(
@@ -126,45 +45,67 @@ const balanceValidForYield = ({
   );
 
 export const getInitSelectedValidators = (args: {
-  initQueryParams: Maybe<InitParams>;
-  validators: ValidatorDto[];
-}) =>
-  args.initQueryParams
-    .chainNullable((params) => params.validator)
-    .chain((initV) =>
-      List.find(
-        (val) =>
-          val.name?.toLowerCase() === initV.toLowerCase() ||
-          val.address === initV,
-        args.validators
-      )
-    )
-    .altLazy(() => List.head(args.validators))
-    .map((v) => new Map([[v.address, v]]))
-    .orDefault(new Map());
+  initQueryParams: InitParams | null;
+  validators: ReadonlyArray<EarnValidator>;
+}) => {
+  const initValidator = args.initQueryParams?.validator;
+  const selected =
+    (initValidator
+      ? EArray.findFirst(
+          args.validators,
+          (validator) =>
+            validator.name?.toLowerCase() === initValidator.toLowerCase() ||
+            validator.address === initValidator
+        ).pipe(Option.getOrUndefined)
+      : undefined) ?? EArray.head(args.validators).pipe(Option.getOrUndefined);
+
+  return selected
+    ? new Map<ValidatorKey, EarnValidator>([[selected.key, selected]])
+    : new Map<ValidatorKey, EarnValidator>();
+};
 
 export const isForceMaxAmount = (
-  args: { minimum?: number | null; maximum?: number | null } | null | undefined
-) => args?.minimum === -1 && args?.maximum === -1;
+  args: { minimum?: string | null; maximum?: string | null } | null | undefined
+) => args?.minimum === "-1" && args?.maximum === "-1";
 
-const yieldsWithEnterMinBasedOnPosition = new Map<Networks, Set<Yield["id"]>>([
+type EnterAmountConstraint =
+  | { readonly type: "force-max" }
+  | {
+      readonly maximum: BigNumber | null;
+      readonly minimum: BigNumber;
+      readonly type: "range";
+    };
+
+export const getEnterAmountConstraint = (
+  yieldDto: EarnYieldWithProvider,
+  positionsData: PositionsData
+): EnterAmountConstraint => {
+  const amountArgument = getYieldActionArg(yieldDto, "enter", "amount");
+
+  if (isForceMaxAmount(amountArgument)) {
+    return { type: "force-max" };
+  }
+
+  const maximum = new BigNumber(amountArgument?.maximum ?? 0);
+
+  return {
+    maximum: maximum.isGreaterThan(0) ? maximum : null,
+    minimum: getMinStakeAmount(yieldDto, positionsData),
+    type: "range",
+  };
+};
+
+const yieldsWithEnterMinBasedOnPosition = new Map<Network, Set<string>>([
   [Networks.Polkadot, new Set(["polkadot-dot-validator-staking"])],
 ]);
 
-export const isNetworkWithEnterMinBasedOnPosition = (network: Networks) =>
-  yieldsWithEnterMinBasedOnPosition.has(network);
-
-const isYieldWithEnterMinBasedOnPosition = (yieldDto: YieldBase) =>
-  Maybe.fromNullable(
-    yieldsWithEnterMinBasedOnPosition.get(
-      yieldDto.mechanics.gasFeeToken.network as Networks
-    )
-  )
-    .filter((set) => set.has(yieldDto.id))
-    .isJust();
+const isYieldWithEnterMinBasedOnPosition = (yieldDto: EarnYieldWithProvider) =>
+  yieldsWithEnterMinBasedOnPosition
+    .get(yieldDto.mechanics.gasFeeToken.network as Network)
+    ?.has(yieldDto.id) ?? false;
 
 export const getMinStakeAmount = (
-  yieldDto: YieldBase,
+  yieldDto: EarnYieldWithProvider,
   positionsData: PositionsData
 ) => {
   const integrationMin = new BigNumber(
@@ -172,12 +113,11 @@ export const getMinStakeAmount = (
   );
 
   if (isYieldWithEnterMinBasedOnPosition(yieldDto)) {
-    const hasStaked = Maybe.fromNullable(positionsData.get(yieldDto.id))
-      .map((val) => [...val.balanceData.values()])
-      .map((val) =>
-        val.some((v) => v.balances.some((b) => b.type === "active"))
-      )
-      .orDefault(false);
+    const hasStaked = EArray.some(
+      Array.from(positionsData.get(yieldDto.id)?.balanceData.values() ?? []),
+      (position) =>
+        EArray.some(position.balances, (balance) => balance.type === "active")
+    );
 
     if (hasStaked) {
       return new BigNumber(0);
@@ -190,7 +130,7 @@ export const getMinStakeAmount = (
 };
 
 export const getMinUnstakeAmount = (
-  yieldDto: Yield,
+  yieldDto: EarnYieldWithProvider,
   pricePerShare: string | null
 ) => {
   const integrationMin = new BigNumber(

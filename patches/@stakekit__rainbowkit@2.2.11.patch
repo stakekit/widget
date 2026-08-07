@@ -39,4 +39,16 @@ index 1655964e16e8a6b02bf4a136310816326bc924df..09c8a4145e9522f8a9dbdb12e9438437
 +    })
    };
  };
- 
+
+diff --git a/dist/index.js b/dist/index.js
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -3197,7 +3197,7 @@ function ProfileDetails({
+             size: mobile ? "20" : "18",
+             weight: "heavy"
+           },
+-          addr
++          formatAddress(addr)
+         ))
+       )
+     ))

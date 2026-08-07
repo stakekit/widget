@@ -21,8 +21,9 @@ import {
   unichain,
   viction,
 } from "viem/chains";
-import type { KebabToCamelCase } from "../../../types/utils";
-import { getNetworkLogo } from "../../../utils";
+import { EvmChainIds } from "../../../public-api/types";
+import type { KebabToCamelCase } from "../utils";
+import { getNetworkLogo } from "./logos";
 import { EvmNetworks } from "./networks";
 
 const supportedEVMChains = [
@@ -286,33 +287,6 @@ export const evmChainsMap: EvmChainsMap = {
     },
   },
 };
-
-export enum EvmChainIds {
-  Ethereum = 1,
-  Polygon = 137,
-  Optimism = 10,
-  Arbitrum = 42_161,
-  AvalancheC = 43_114,
-  Celo = 42_220,
-  Harmony = 1_666_600_000,
-  Viction = 88,
-  Binance = 56,
-  Base = 8453,
-  Linea = 59_144,
-  Core = 1116,
-  Sonic = 146,
-  EthereumHoodi = 560048,
-  EthereumGoerli = 5,
-  EthereumSepolia = 11_155_111,
-  Unichain = 130,
-  Katana = 747474,
-  Gnosis = 100,
-  Hyperevm = 999,
-  Plasma = 9745,
-  Monad = 143,
-  MonadTestnet = 10143,
-  Pharos = 1672,
-}
 
 EvmChainIds satisfies Record<
   Capitalize<KebabToCamelCase<SupportedEvmChain>>,

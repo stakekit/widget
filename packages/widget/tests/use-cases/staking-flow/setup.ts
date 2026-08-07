@@ -1,26 +1,31 @@
+import { Array as EArray, Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
-import type { YieldCreateActionDto } from "../../../src/domain/types/action";
+import type { ActionCommand } from "../../../src/domain/schema/action-models";
+import { EarnYieldWithProvider } from "../../../src/domain/schema/earn-models";
+import type { LegacyTransaction } from "../../../src/domain/schema/legacy-models";
+import {
+  yieldApiActionDtoFixture,
+  yieldApiProviderFixture,
+  yieldApiTransactionDtoFixture,
+  yieldApiTransactionFixture,
+  yieldApiValidatorsFixture,
+  yieldApiYieldDtoFixture,
+} from "../../fixtures";
 import type {
   ActionDto,
   AddressesDto,
   TokenDto,
-  TransactionDto,
   YieldDto,
-} from "../../../src/generated/api/legacy";
-import { waitForMs } from "../../../src/utils";
-import {
-  yieldApiActionFixture,
-  yieldApiProviderFixture,
-  yieldApiTransactionFixture,
-  yieldApiValidatorsFixture,
-  yieldApiYieldFixture,
-} from "../../fixtures";
+} from "../../generated/legacy-api-types";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
 import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
+import { waitForMs } from "../../utils/wait";
+
+type TransactionDto = typeof LegacyTransaction.Encoded;
 
 export const setup = async (worker: TestWorker) => {
   const token: TokenDto = {
@@ -91,7 +96,7 @@ export const setup = async (worker: TestWorker) => {
         name: "Benqi",
         description: "",
         externalLink: "https://benqi.fi/",
-        logoURI: "https://assets.stakek.it/providers/benqi.svg",
+        logoURI: "https://assets.stakek.it/app/composition/providers/benqi.svg",
       },
       revshare: {
         enabled: true,
@@ -129,8 +134,8 @@ export const setup = async (worker: TestWorker) => {
     validators: [],
     isAvailable: true,
   };
-  const yieldApiYieldBase = yieldApiYieldFixture();
-  const yieldApiYieldOp = yieldApiYieldFixture({
+  const yieldApiYieldBase = yieldApiYieldDtoFixture();
+  const yieldApiYieldOp = yieldApiYieldDtoFixture({
     id: yieldOp.id,
     network: token.network,
     providerId: yieldOp.metadata.provider?.id ?? "benqi",
@@ -333,10 +338,10 @@ export const setup = async (worker: TestWorker) => {
     http.post(yieldApiRoute("/v1/actions/enter"), async (info) => {
       await mockDelay();
 
-      const body = (await info.request.json()) as YieldCreateActionDto;
+      const body = (await info.request.json()) as ActionCommand;
 
       return HttpResponse.json(
-        yieldApiActionFixture({
+        yieldApiActionDtoFixture({
           id: enterAction.id,
           yieldId: enterAction.integrationId,
           type: enterAction.type,
@@ -345,8 +350,8 @@ export const setup = async (worker: TestWorker) => {
           amountRaw: body.arguments?.amount ?? null,
           amountUsd: null,
           transactions: [
-            yieldApiTransactionFixture({
-              id: enterAction.transactions[0].id,
+            yieldApiTransactionDtoFixture({
+              id: EArray.getUnsafe(enterAction.transactions, 0).id,
               network: transactionConstruct.network,
               status: "CREATED",
               type: "STAKE",
@@ -429,7 +434,7 @@ export const setup = async (worker: TestWorker) => {
     ...yieldApiYieldOp,
     provider: yieldApiProviderFixture({
       id: "benqi",
-      logoURI: "https://assets.stakek.it/providers/benqi.svg",
+      logoURI: "https://assets.stakek.it/app/composition/providers/benqi.svg",
       name: "Benqi",
       website: "https://benqi.fi/",
     }),
@@ -437,7 +442,7 @@ export const setup = async (worker: TestWorker) => {
 
   return {
     customConnectors,
-    yieldOp: mergedYieldOp,
+    yieldOp: Schema.decodeUnknownSync(EarnYieldWithProvider)(mergedYieldOp),
     enterAction,
     transactionConstruct,
     account,

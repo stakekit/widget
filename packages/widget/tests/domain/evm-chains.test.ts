@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  EvmChainIds,
   evmChainsMap,
   supportedEVMChainsSet,
 } from "../../src/domain/types/chains/evm";
 import { EvmNetworks } from "../../src/domain/types/chains/networks";
+import { EvmChainIds } from "../../src/public-api/types";
 
 describe("EVM chains", () => {
   it("configures Pharos with PROS as its native gas token", () => {

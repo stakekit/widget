@@ -1,28 +1,51 @@
 # Effect Atom Patterns
 
-Use this when writing or changing code that uses Effect's unstable atom
-reactivity APIs. The source of truth reviewed for these patterns is the vendored
-Effect repo: `@repos/effect/LLMS.md`,
-`@repos/effect/packages/effect/src/unstable/reactivity/Atom.ts`,
-`AtomRegistry.ts`, `AsyncResult.ts`, `Reactivity.ts`, `Hydration.ts`,
-`AtomHttpApi.ts`, `AtomRpc.ts`, and the tests in
-`@repos/effect/packages/effect/test/reactivity`.
+Use this guide for Effect's unstable reactivity APIs: local state, derived
+state, async resources, mutations, pagination, invalidation, persistence, and
+hydration.
+
+The source of truth is the vendored Effect repository, especially:
+
+- `@repos/effect/packages/effect/src/unstable/reactivity/Atom.ts`
+- `@repos/effect/packages/effect/src/unstable/reactivity/AtomRegistry.ts`
+- `@repos/effect/packages/effect/src/unstable/reactivity/AsyncResult.ts`
+- `@repos/effect/packages/effect/src/unstable/reactivity/Reactivity.ts`
+- `@repos/effect/packages/effect/src/unstable/reactivity/Hydration.ts`
+- `@repos/effect/packages/effect/src/unstable/reactivity/AtomHttpApi.ts`
+- `@repos/effect/packages/effect/src/unstable/reactivity/AtomRpc.ts`
+- `@repos/effect/packages/effect/test/reactivity`
 
 ## Imports
 
-Import atom APIs from the unstable reactivity barrel.
+Match nearby code. The reactivity barrel is convenient when several modules are
+used together; module imports are useful for namespace-style or type-only
+imports.
 
 ```ts
-import { Effect, Layer, Schema, Stream } from "effect"
-import { AsyncResult, Atom, AtomRegistry, Hydration } from "effect/unstable/reactivity"
+import { Effect, Option, Schema, Stream } from "effect"
+import {
+  AsyncResult,
+  Atom,
+  AtomRegistry,
+  Hydration
+} from "effect/unstable/reactivity"
 ```
 
-## Registry Owns State
+## Mental Model
 
-An `Atom` is a value description. An `AtomRegistry` owns cached values,
-dependency edges, subscriptions, running fibers, stream scopes, and disposal.
-Use one registry per isolated lifetime: UI root, request, route boundary, or
-test.
+An `Atom` is a stable description of how to read or write a value. An
+`AtomRegistry` owns the mutable runtime state:
+
+- cached values and serializable preloads
+- parent/child dependency edges
+- subscriptions and mounted nodes
+- running fibers, stream scopes, and finalizers
+- idle timers and disposal
+
+The same atom can hold different values in different registries. Use one
+registry per isolated lifetime, such as a UI root or test. Prefer
+`AtomRegistry.layer` when an Effect scope owns that lifetime; its finalizer
+disposes the registry.
 
 ```ts
 const count = Atom.make(0)
@@ -33,31 +56,25 @@ registry.set(count, 21)
 registry.get(doubled) // 42
 ```
 
-The same atom object can have different values in different registries. After
-`registry.dispose()`, later atom access is an error.
+A bare `registry.get(atom)` does not mount the atom. An unobserved node is
+eligible for disposal on a later scheduler turn. This matters for async work:
+mount or subscribe when the computation must remain alive.
 
-## Keep Atom Identity Stable
+After `registry.dispose()`, creating or accessing nodes throws. `reset()` clears
+nodes but leaves the registry reusable; `dispose()` is terminal.
 
-Do not create parameterized atoms inline during reads or renders. Atom identity
-is the cache key unless the atom is serializable. Use `Atom.family` for
-parameterized atoms so the same input returns the same atom object.
+## Choose The Right Shape
 
-```ts
-const userAtom = Atom.family((id: string) =>
-  UserClient.runtime.atom(UserClient.use((client) => client.getUser({ id }))).pipe(
-    Atom.withLabel(`user:${id}`)
-  )
-)
-```
-
-Use `Atom.withLabel` on important atoms. It only adds diagnostic metadata and
-does not change behavior.
-
-## Choose The Right Constructor
-
-Use `Atom.make(value)` for writable local state, `Atom.make((get) => value)` for
-derived synchronous state, and `Atom.make(effectOrStream)` for read atoms that
-produce `AsyncResult`.
+| Need | API | Exposed value |
+| --- | --- | --- |
+| Writable local state | `Atom.make(initial)` | `A` |
+| Synchronous derivation | `Atom.make((get) => value)` | `A` |
+| Async or stream resource | `Atom.make(effectOrStream)` | `AsyncResult<A, E>` |
+| Synchronous command | `Atom.fnSync` | `Option<A>` or configured initial `A` |
+| Async command/mutation | `Atom.fn` | `AsyncResult<A, E>` |
+| Incremental page/chunk loading | `Atom.pull` | `PullResult<A, E>` |
+| Existing mutable Effect state | `Atom.subscriptionRef` | writable resource atom |
+| Parameterized atom | `Atom.family` | same shape returned by the family |
 
 ```ts
 const search = Atom.make("")
@@ -72,57 +89,97 @@ const users = Atom.make((get) =>
 )
 ```
 
-Use `Atom.fn` for command-style effects that run when written to. Use
-`Atom.fnSync` for synchronous commands. Before the first write, `Atom.fn`
-returns `AsyncResult.initial()` unless `initialValue` is supplied, and
-`Atom.fnSync` returns `Option.none()` unless `initialValue` is supplied.
+Use `Atom.fn` for work that starts only when a value is written. Before the
+first write it is `AsyncResult.initial()` unless `initialValue` is supplied.
+The default latest write wins: refreshing the command atom disposes its prior
+lifetime and interrupts its computation.
 
 ```ts
-const saveUser = Atom.fn<{ readonly id: string; readonly name: string }>()(
-  Effect.fn("saveUser")(function*(input) {
-    return yield* UserApi.use((api) => api.save(input))
-  })
-)
+const saveUser = Atom.fn<{
+  readonly id: string
+  readonly name: string
+}>()(Effect.fn("saveUser")(function*(input) {
+  return yield* UserApi.use((api) => api.save(input))
+}))
 
 registry.set(saveUser, { id: "1", name: "Ada" })
 ```
 
-Write `Atom.Reset` to clear an `Atom.fn` result back to its initial state and
-`Atom.Interrupt` to interrupt the current computation. Set `{ concurrent: true }`
-only when multiple writes should run at the same time; the default interrupts
-and replaces the previous run.
+Write `Atom.Reset` to restore the initial command state and `Atom.Interrupt` to
+interrupt the active computation. Use `{ concurrent: true }` only when writes
+may overlap and a single shared result atom is still the correct interface. If
+callers need individually correlated results, model the operation as a normal
+Effect instead.
+
+## Keep Identity Stable
+
+Registry caching normally uses atom identity. Do not create parameterized atoms
+inline during reads or React renders. Use `Atom.family` so equal inputs return
+the same live atom object.
+
+```ts
+const userAtom = Atom.family((id: string) =>
+  UserRuntime.atom(
+    UserApi.use((api) => api.getUser(id))
+  ).pipe(Atom.withLabel(`user:${id}`))
+)
+```
+
+`Atom.family` uses Effect hashing/equality and weakly holds produced objects when
+the platform supports `WeakRef`. Prefer primitive ids or immutable Effect data
+as family keys; mutating an object used as a hashed key breaks lookup
+assumptions.
+
+Serializable atoms are different: their serialization key becomes the registry
+key. Two atom objects with the same serializable key alias the same registry
+node. Keys must therefore be unique and their schemas compatible throughout one
+registry.
+
+Use `Atom.withLabel` on important atoms for diagnostics. It does not change
+runtime behavior.
 
 ## Read Dependencies Deliberately
 
-Inside an atom read, `get(atom)` records a dependency. When that dependency
-changes, the current atom is invalidated. Use `get.once(atom)` when you need the
-current value without creating a dependency edge.
+In a normal atom read:
 
-Use `get.result(asyncAtom)` to await an `AsyncResult` atom from another effect
-atom. It waits while the result is `Initial`; pass `{ suspendOnWaiting: true }`
-when stale values marked `waiting` should also suspend.
+- `get(atom)` or `get.get(atom)` records a dependency.
+- `get.once(atom)` reads without a dependency edge.
+- `get.result(asyncAtom)` records a dependency and suspends the current atom
+  effect while the result is `Initial`.
+- `get.resultOnce(asyncAtom)` waits once without making it a reactive
+  dependency.
+
+Pass `{ suspendOnWaiting: true }` when stale values marked `waiting` must also
+suspend.
 
 ```ts
 const enrichedUser = Atom.make((get) =>
   Effect.gen(function*() {
-    const user = yield* get.result(userAtom("1"), { suspendOnWaiting: true })
+    const user = yield* get.result(userAtom("1"), {
+      suspendOnWaiting: true
+    })
     return { ...user, displayName: user.name.toUpperCase() }
   })
 )
 ```
 
-In `Atom.fn` bodies, `get.result` behaves as a one-shot wait instead of a normal
-dependency read. If the command should rerun from another atom changing, read
-that atom with `get(atom)` as part of the command trigger or use reactivity keys.
+`Atom.fn` and `Atom.fnSync` are commands, not reactive derivations. Reads through
+their `FnContext` are one-shot and do **not** add dependency edges. A command
+reruns only when written again. Use a normal derived atom when work should rerun
+because another atom changed, or pass the current value as part of the command
+input.
 
-## Handle AsyncResult As State
+Use `get.subscribe`, `get.mount`, and `get.addFinalizer` only for explicit
+lifecycle integration. Their cleanup is tied to the current atom lifetime.
+
+## Treat AsyncResult As A State Machine
 
 `AsyncResult` has three variants: `Initial`, `Success`, and `Failure`. The
 `waiting` flag is an overlay, not a fourth variant. A waiting success or failure
-can still contain the previous usable value.
+can retain useful stale data while a refresh runs.
 
 Prefer `AsyncResult.matchWithWaiting`, `AsyncResult.builder`, or explicit
-refinements instead of assuming any non-success is a loading state.
+refinements instead of equating every non-success with loading.
 
 ```ts
 const view = AsyncResult.matchWithWaiting(result, {
@@ -133,33 +190,42 @@ const view = AsyncResult.matchWithWaiting(result, {
 })
 ```
 
-`AsyncResult.value(result)` and `AsyncResult.getOrElse(result, fallback)` may
-return a previous success stored inside a failure. Inspect
-`AsyncResult.cause(result)` or `AsyncResult.error(result)` when current failure
-versus stale data matters.
+`AsyncResult.value(result)` and `AsyncResult.getOrElse(result, fallback)` can
+return a previous success stored inside a failure. This is useful for keeping
+already loaded pages or stale server data visible. Inspect
+`AsyncResult.cause(result)` or `AsyncResult.error(result)` when the current
+failure must be shown separately from the fallback value.
 
-## Manage Lifetime Explicitly
+Do not drop the `waiting` flag when mapping UI state. It is the signal that a
+displayed success or failure is stale and a new computation is active.
 
-Unobserved atoms are auto-disposed by default. That means local state can reset,
-effects can restart, streams can resubscribe, and finalizers can run after the
-last listener or dependent child disappears.
+## Make Lifetime A Product Decision
 
-Use the narrowest lifetime tool that matches the behavior:
+Unobserved atoms auto-dispose by default. Disposal can reset local state,
+interrupt effects, close stream scopes, remove subscriptions, and run
+finalizers.
 
-- `Atom.keepAlive` keeps an atom cached even when unobserved.
-- `Atom.setIdleTTL(duration)` keeps an unused atom around for a finite idle time.
-- `Atom.autoDispose` restores default disposal on a copied atom.
-- `registry.mount(atom)` keeps an atom alive until the returned release function
-  is called.
-- `Atom.mount(atom)` keeps an atom alive for the current Effect scope.
+Use the narrowest lifetime tool that matches the requirement:
 
-Always release `registry.subscribe` and `registry.mount` callbacks when
-integrating with external callback-based code.
+- `registry.subscribe(atom, listener)` observes until its release callback runs.
+- `registry.mount(atom)` keeps it alive until its release callback runs.
+- `Atom.mount(atom)` keeps it alive for the current Effect scope.
+- `Atom.setIdleTTL(duration)` retains it for a finite unobserved interval.
+- `Atom.keepAlive` retains it for the entire registry lifetime.
+- `Atom.autoDispose` removes a copied atom's `keepAlive` behavior.
 
-## Batch Related Writes
+Always release registry subscriptions and mounts. Be especially careful with a
+high-cardinality `Atom.family`: combining it with `keepAlive` or a long TTL can
+turn a weak family into an effectively unbounded registry cache.
 
-Use `Atom.batch` when multiple synchronous writes should invalidate dependents
-and notify listeners once after the final state is known.
+Registry `initialValues` seed a node but do not mount it. The seeded value is
+still subject to normal disposal and recomputation.
+
+## Batch Related Synchronous Writes
+
+Use `Atom.batch` when several synchronous writes form one logical state change.
+Dependents can rebuild from the latest values inside the batch, but listeners
+are notified after the outermost batch commits.
 
 ```ts
 Atom.batch(() => {
@@ -168,23 +234,21 @@ Atom.batch(() => {
 })
 ```
 
-Reads inside a batch can still rebuild from the latest written state, but
-listeners are notified after the batch commits.
+`Atom.batch` is not an Effect transaction and does not wait for async work. Use
+it only around synchronous registry operations.
 
 ## Use Runtime Atoms For Services
 
-Use `Atom.runtime(layer)` or `Atom.context({ memoMap })` when atom effects need
-Effect services. The runtime builds the layer with a memo map, provides
-`AtomRegistry`, `Scope`, `Scheduler`, and `Reactivity`, and exposes
-`runtime.atom`, `runtime.fn`, `runtime.pull`, and `runtime.subscriptionRef`.
+Plain async atoms may require only `Scope` and `AtomRegistry`. Use an atom
+runtime when effects also require application services.
 
 ```ts
 const UserRuntime = Atom.runtime(UserApi.layer)
 
 const user = Atom.family((id: string) =>
-  UserRuntime.atom(UserApi.use((api) => api.getUser(id)), {
-    initialValue: { id, name: "Loading" }
-  })
+  UserRuntime.atom(
+    UserApi.use((api) => api.getUser(id))
+  )
 )
 
 const saveUser = UserRuntime.fn(
@@ -195,49 +259,114 @@ const saveUser = UserRuntime.fn(
 )
 ```
 
-Use registry `initialValues` with `Atom.initialValue(runtime.layer, testLayer)`
-to replace runtime services in tests.
+`Atom.runtime(layer)` uses the default shared `Layer.MemoMap`.
+`Atom.context({ memoMap })` creates a factory with an explicit memoization
+boundary and exposes `addGlobalLayer`. The runtime supplies `AtomRegistry`,
+`Scope`, `Scheduler`, and `Reactivity` while building its layer.
 
-## Invalidate Server State With Reactivity Keys
-
-Use `Atom.withReactivity(keys)` for reads that should refresh after matching
-invalidations. Use `runtime.fn(..., { reactivityKeys })`,
-`Reactivity.mutation(effect, keys)`, or `Reactivity.invalidate(keys)` for writes
-that should trigger those refreshes after success.
-
-Keys can be a flat array or a record. Prefer stable primitive keys or stable ids;
-non-primitive keys are matched by `Hash.hash`.
+In tests, replace a runtime layer with registry initial values:
 
 ```ts
-const user = UserRuntime.atom(UserApi.use((api) => api.getUser("1"))).pipe(
-  UserRuntime.factory.withReactivity({ users: ["1"] })
-)
+const registry = AtomRegistry.make({
+  initialValues: [
+    Atom.initialValue(UserRuntime.layer, UserApi.testLayer)
+  ]
+})
+```
 
-const saveUser = UserRuntime.fn(
-  (input: User) => UserApi.use((api) => api.saveUser(input)),
-  { reactivityKeys: { users: ["1"] } }
+Mount the resource under test so the seeded runtime and async work are not
+disposed between assertions.
+
+## Model Server Resources With SWR And TTL
+
+`Atom.swr` adds stale-while-revalidate behavior to an `AsyncResult` atom.
+`staleTime` controls freshness; `revalidateOnMount` and `revalidateOnFocus`
+control automatic refresh triggers.
+
+```ts
+const usersResource = UserRuntime.atom(
+  UserApi.use((api) => api.listUsers())
+).pipe(
+  Atom.swr({
+    staleTime: "30 seconds",
+    revalidateOnMount: true,
+    revalidateOnFocus: true,
+    focusSignal: appFocusSignal
+  }),
+  Atom.setIdleTTL("5 minutes")
 )
 ```
 
+Important details:
+
+- A manual registry refresh is forceful even while data is fresh.
+- A stale success or failure keeps its previous success while revalidation
+  runs.
+- Focus revalidation requires both `revalidateOnFocus` and a `focusSignal`.
+- `true` respects `staleTime`; `"always"` forces a refresh on every signal.
+- Freshness uses `AsyncResult` timestamps and host `Date.now`.
+
+Apply resource policy combinators before `Atom.serializable`. Transforming an
+atom can intentionally remove its serializable marker; serialize the final
+public resource that should cross registries.
+
+## Invalidate Server State With Reactivity Keys
+
+Attach keys to reads with `Atom.withReactivity` or
+`runtime.factory.withReactivity`. Invalidate them through
+`runtime.fn(..., { reactivityKeys })`, `Reactivity.mutation`, or
+`Reactivity.invalidate`.
+
+```ts
+const user = UserRuntime.atom(
+  UserApi.use((api) => api.getUser("1"))
+).pipe(
+  UserRuntime.factory.withReactivity({ users: ["1"] })
+)
+```
+
+Key matching is hash based, not deep structural matching. Prefer primitives or
+immutable Effect data. Record keys have hierarchical behavior:
+`{ users: ["1"] }` registers both `"users"` and `"users:1"`. Consequently,
+two records with the same `users` group overlap even when their ids differ. Use
+a flat composite key such as `["users:1"]` when invalidation must be strictly
+per id.
+
+`Reactivity.mutation(effect, keys)` invalidates only after an Effect succeeds.
+A stream-returning runtime command uses stream finalization to invalidate, so it
+also invalidates when that stream ends through failure or interruption. Choose
+the command shape with that distinction in mind.
+
 ## Streams, Pulls, And SubscriptionRefs
 
-An `Atom.make(stream)` stores the latest emitted item in an `AsyncResult`. An
-empty stream completes as `NoSuchElementError`. Failures preserve the latest
-previous success when possible.
+`Atom.make(stream)` subscribes while the atom is alive and stores the latest
+emitted item as an `AsyncResult`. A stream that completes without emitting fails
+with `NoSuchElementError`. A later failure preserves a previous success when one
+exists.
 
-Use `Atom.pull(stream)` or `runtime.pull(stream)` for paginated or incremental
-streams that should advance only when the atom is written to. It accumulates
-items by default; pass `{ disableAccumulation: true }` when each pull should
-replace the previous batch.
+Use `Atom.pull` for demand-driven pagination. The first chunk is pulled when the
+atom is read; each write requests another chunk.
+
+```ts
+const pages = Atom.pull(
+  Stream.paginate(initialCursor, fetchPage)
+)
+```
+
+With default accumulation, the success value contains `{ items, done }` and
+`done` becomes true after the terminal pull. Pass
+`{ disableAccumulation: true }` when each pull should replace the prior batch or
+when retaining the entire history would be too expensive. In that mode, a
+terminal pull with no new items can surface `NoSuchElementError` instead of a
+final accumulated `{ done: true }` value. Avoid issuing another write while the
+pull result is already waiting unless overlapping pulls are intentional.
 
 Use `Atom.subscriptionRef(refOrEffect)` when state already lives in a
-`SubscriptionRef`; writes to the atom update the ref.
+`SubscriptionRef`; atom writes update the ref.
 
 ## Persistence And Hydration
 
-Mark atoms that cross registry boundaries with `Atom.serializable({ key,
-schema })`. Only serializable atoms are included in `Hydration.dehydrate`, and
-`Hydration.hydrate` must run before the matching atoms are first read.
+Mark only state that crosses registry boundaries as serializable.
 
 ```ts
 const user = userAtom("1").pipe(
@@ -254,53 +383,66 @@ const state = Hydration.dehydrate(serverRegistry)
 Hydration.hydrate(clientRegistry, state)
 ```
 
-Stable keys matter more than atom identity during hydration. The target atom must
-use a compatible schema. `Hydration.dehydrate(..., { encodeInitialAs: "promise" })`
-uses a live JavaScript promise for initial async results, so do not serialize
-that form across JSON or processes.
+Hydrate before the target atom is first read. Hydration preloads encoded values
+by key; it does not replace an already-built node. Serialization uses
+synchronous JSON codecs, so schemas must not require Effect services.
 
-For browser URL state, `Atom.searchParam` requires synchronous schemas with no
-Effect context. For storage-backed state, use `Atom.kvs` with an atom runtime
-that provides `KeyValueStore`.
+`dehydrate` ignores `AsyncResult.Initial` by default. The other modes are:
+
+- `"value-only"` encodes the initial value itself.
+- `"promise"` includes a live promise that later updates the target registry.
+
+The promise mode is process-local JavaScript state. Do not JSON-serialize it or
+send it across a network/process boundary.
+
+For browser URL state, `Atom.searchParam` requires a synchronous schema with no
+context. For storage state, use `Atom.kvs` with a runtime providing
+`KeyValueStore`.
 
 ## Remote API Helpers
 
-Use `AtomHttpApi.Service` or `AtomRpc.Service` when typed HTTP API or RPC
-clients should participate in atom caching, invalidation, and hydration.
+Use `AtomHttpApi.Service` or `AtomRpc.Service` when a typed HTTP API or RPC
+client should participate directly in atom caching and invalidation.
 
-- Queries return `Atom<AsyncResult<...>>` for non-streaming endpoints.
+- Non-streaming queries return `Atom<AsyncResult<...>>`.
 - Mutations return `AtomResultFn`.
-- `reactivityKeys` connect successful mutations to query refreshes.
-- `timeToLive` maps to `Atom.setIdleTTL` for finite durations and
-  `Atom.keepAlive` for infinite durations.
-- `serializationKey` is required for serializable queries, and should uniquely
-  identify the endpoint plus request.
-- RPC streaming queries return pull atoms and are not serializable query atoms.
+- `reactivityKeys` connect commands to query refreshes.
+- `timeToLive` maps finite values to idle TTL and infinity to `keepAlive`.
+- Serializable queries require a unique `serializationKey` per endpoint and
+  request.
+- Streaming RPC queries return pull atoms and are not serializable query atoms.
 
-## Testing Patterns
+Prefer the project's generated client plus hand-written transport/service layer
+when those helpers would duplicate existing abstractions.
 
-Use `it.effect` for Effect-based tests, `AtomRegistry.make()` for an isolated
-cache, fake timers or `TestClock` for delayed atoms, and explicit
-`registry.mount(atom)` when async work must stay alive during the test.
+## Testing
 
-```ts
-it.effect("refreshes after mutation", () =>
-  Effect.gen(function*() {
-    const registry = AtomRegistry.make()
-    const unmount = registry.mount(user)
+Create a fresh registry per test and dispose it or release every mount. Test the
+state machine, not only the final success:
 
-    registry.set(saveUser, { id: "1", name: "Grace" })
-    yield* Effect.yieldNow
+- initial and waiting state
+- stale success during refresh
+- failure with and without previous success
+- interruption or latest-write-wins behavior
+- finalizers and disposal
+- pagination completion and accumulated items
 
-    const result = registry.get(user)
-    assert(AsyncResult.isSuccess(result))
-    assert.strictEqual(result.value.name, "Grace")
+Use regular Vitest tests for purely imperative registry logic. Run effectful
+assertions with the repository's existing `Effect.runPromise` pattern. Mount
+async atoms before yielding or advancing time.
 
-    unmount()
-  }))
-```
+Registry idle TTL, `Atom.swr`, `Atom.debounce`, and several focus/storage helpers
+use host timers or `Date.now`; control those with the test runner's fake timers.
+Use `TestClock` only when the Effect inside the runtime is explicitly receiving
+the test clock service.
 
-Prefer `yield* Effect.yieldNow`, fake timer advancement, or `TestClock` over
-real sleeps. Assert `AsyncResult` variants and `waiting` flags directly. For
-lifetime behavior, assert node disposal by reading again after yielding, or use
-`keepAlive` / `mount` when state should persist.
+## Review Checklist
+
+- Atom and serializable identities are stable and unique.
+- Command reads are not mistaken for reactive dependencies.
+- Async UI preserves both stale values and the `waiting` flag.
+- Every subscription or mount has a matching release.
+- High-cardinality families have a bounded cache policy.
+- Reactivity keys have the intended broad or per-id overlap.
+- Hydration happens before first read and uses a synchronous compatible schema.
+- Time and finalization behavior are covered by tests.

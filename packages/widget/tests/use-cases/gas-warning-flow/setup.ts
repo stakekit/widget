@@ -1,18 +1,18 @@
 import { HttpResponse, http } from "msw";
 import { vitest } from "vitest";
-import type { YieldCreateActionDto } from "../../../src/domain/types/action";
-import { waitForMs } from "../../../src/utils";
+import type { ActionCommand } from "../../../src/domain/schema/action-models";
 import {
   legacyYieldFixture,
   yieldApiActionFixture,
   yieldApiTransactionFixture,
   yieldApiValidatorsFixture,
-  yieldApiYieldFixture,
+  yieldApiYieldDtoFixture,
 } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
 import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
+import { waitForMs } from "../../utils/wait";
 
 type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
 
@@ -36,7 +36,7 @@ export const setup = (worker: TestWorker) => {
   };
 
   const legacyYieldBase = legacyYieldFixture();
-  const yieldApiYieldBase = yieldApiYieldFixture();
+  const yieldApiYieldBase = yieldApiYieldDtoFixture();
   const createLegacyYield = ({
     id,
     token,
@@ -66,7 +66,7 @@ export const setup = (worker: TestWorker) => {
     token: LegacyTokenDto;
     gasFeeToken: LegacyTokenDto;
   }) =>
-    yieldApiYieldFixture({
+    yieldApiYieldDtoFixture({
       id,
       network: token.network,
       token,
@@ -275,7 +275,7 @@ export const setup = (worker: TestWorker) => {
     http.post(yieldApiRoute("/v1/actions/enter"), async (info) => {
       await mockDelay();
 
-      const body = (await info.request.json()) as YieldCreateActionDto;
+      const body = (await info.request.json()) as ActionCommand;
       const selectedYield =
         body.yieldId === yieldWithSameGasAndStakeToken.yieldDto.id
           ? yieldWithSameGasAndStakeToken

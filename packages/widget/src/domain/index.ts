@@ -1,29 +1,24 @@
 import BigNumber from "bignumber.js";
-import { Left, type Maybe, Right } from "purify-ts";
-import type { Override } from "../types/utils";
-import type {
-  ActionDto,
-  TransactionDto,
-  TransactionStatus,
-} from "./types/action";
+import { Result } from "effect";
+import type { ActionTransaction, YieldAction } from "./schema/action-models";
+import type { EarnYieldWithProvider } from "./schema/earn-models";
+import type { AppToken } from "./schema/legacy-models";
+import type { TransactionStatus } from "./types/action";
 import type { AnyPendingActionDto } from "./types/pending-action";
 import {
   isPendingActionValidatorAddressesRequired,
   isPendingActionValidatorAddressRequired,
 } from "./types/pending-action";
-import type { TokenDto } from "./types/tokens";
-import { equalTokens } from "./types/tokens";
-import type { Yield } from "./types/yields";
 
-export { getTokenPriceInUSD } from "./types/price";
-export { equalTokens, tokenString } from "./types/tokens";
+import { equalTokens } from "./types/tokens";
+import type { Override } from "./types/utils";
 
 export const stakeTokenSameAsGasToken = ({
   stakeToken,
   yieldDto,
 }: {
-  stakeToken: TokenDto;
-  yieldDto: Yield;
+  stakeToken: AppToken;
+  yieldDto: EarnYieldWithProvider;
 }) => equalTokens(stakeToken, yieldDto.mechanics.gasFeeToken);
 
 export const getMaxAmount = ({
@@ -33,11 +28,11 @@ export const getMaxAmount = ({
 }: {
   availableAmount: BigNumber;
   gasEstimateTotal: BigNumber;
-  integrationMaxLimit: Maybe<BigNumber>;
+  integrationMaxLimit: BigNumber | null;
 }) => {
   return BigNumber.max(
     BigNumber.min(
-      integrationMaxLimit.orDefault(BigNumber(Number.POSITIVE_INFINITY)),
+      integrationMaxLimit ?? BigNumber(Number.POSITIVE_INFINITY),
       availableAmount.minus(gasEstimateTotal)
     ),
     new BigNumber(0)
@@ -49,18 +44,18 @@ export const getMaxAmount = ({
  * @summary Get stake transactions available for signing or tx status check.
  * If any of the transactions are in a failed state, return an error
  */
-export const getValidStakeSessionTx = (stakeDto: ActionDto) => {
-  const val: ActionDto = {
+export const getValidStakeSessionTx = (stakeDto: YieldAction) => {
+  const val: YieldAction = {
     ...stakeDto,
     transactions: stakeDto.transactions.filter(
       (
         tx
       ): tx is Override<
-        TransactionDto,
+        ActionTransaction,
         {
           status: Override<
-            TransactionDto["status"],
-            Exclude<TransactionDto["status"], "SKIPPED">
+            ActionTransaction["status"],
+            Exclude<ActionTransaction["status"], "SKIPPED">
           >;
         }
       > => tx.status !== "SKIPPED"
@@ -68,8 +63,8 @@ export const getValidStakeSessionTx = (stakeDto: ActionDto) => {
   };
 
   return val.transactions.some((tx) => isTxError(tx.status))
-    ? Left(new Error("Transaction failed"))
-    : Right(val);
+    ? Result.fail(new Error("Transaction failed"))
+    : Result.succeed(val);
 };
 
 export const isTxError = (txStatus: TransactionStatus) =>

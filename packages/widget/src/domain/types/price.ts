@@ -1,35 +1,11 @@
 import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
-import type { PriceRequestDto as LegacyPriceRequestDto } from "../../generated/api/legacy";
-import { type TokenString, tokenString } from "./tokens";
+import type { Prices } from "../schema/health-price-models";
 
-export type PriceRequestDto = LegacyPriceRequestDto;
-export type PriceResponseDto = Record<
-  string,
-  {
-    price: number | undefined;
-    price_24_h: number | undefined;
-  }
->;
-
-type PriceToken = {
-  symbol: string;
-  network: string;
-  address?: string;
+type PriceLookupToken = {
+  readonly symbol: string;
+  readonly network: string;
+  readonly address?: string;
 };
-
-export type Price = {
-  price: number | undefined;
-  price24H: number | undefined;
-};
-
-export class Prices {
-  constructor(public value: Map<TokenString, Price>) {}
-
-  getByToken(token: PriceToken) {
-    return Maybe.fromNullable(this.value.get(tokenString(token)));
-  }
-}
 
 export const getTokenPriceInUSD = ({
   token,
@@ -38,8 +14,8 @@ export const getTokenPriceInUSD = ({
   prices,
   pricePerShare,
 }: {
-  token: PriceToken;
-  baseToken: PriceToken | null;
+  token: PriceLookupToken;
+  baseToken: PriceLookupToken | null;
   amount: string | BigNumber;
   pricePerShare: string | null;
   prices: Prices;
@@ -48,22 +24,14 @@ export const getTokenPriceInUSD = ({
 
   if (pricePerShare && baseToken) {
     const baseTokenPrice = new BigNumber(
-      prices
-        .getByToken(baseToken)
-        .chainNullable((v) => v.price)
-        .orDefault(0)
+      prices.getByToken(baseToken)?.price ?? 0
     );
     const pricePerShareBN = BigNumber(pricePerShare);
 
     return amountBN.times(baseTokenPrice).times(pricePerShareBN);
   }
 
-  const tokenPrice = new BigNumber(
-    prices
-      .getByToken(token)
-      .chainNullable((v) => v.price)
-      .orDefault(0)
-  );
+  const tokenPrice = new BigNumber(prices.getByToken(token)?.price ?? 0);
 
   return amountBN.times(tokenPrice);
 };

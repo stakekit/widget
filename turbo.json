@@ -1,8 +1,9 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "dangerouslyDisablePackageManagerCheck": true,
   "globalDependencies": [
     "biome.json",
+    "sgconfig.yml",
+    "tools/ast-grep/**",
     "pnpm-lock.yaml",
     "pnpm-workspace.yaml",
     "tsconfig.base.json",
@@ -17,6 +18,7 @@
     "lint": {
       "inputs": [
         "src/**",
+        "scripts/**",
         "tests/**",
         "tsconfig*.json",
         "vite/**/*.ts",
@@ -24,9 +26,19 @@
         "package.json"
       ]
     },
+    "//#lint:ast": {
+      "inputs": [
+        "packages/widget/src/**/*.{ts,tsx}",
+        "packages/widget/tests/**/*.{ts,tsx}",
+        "packages/widget/scripts/**/*.{ts,tsx}",
+        "sgconfig.yml",
+        "tools/ast-grep/**"
+      ]
+    },
     "format": {
       "inputs": [
         "src/**",
+        "scripts/**",
         "tests/**",
         "tsconfig*.json",
         "vite/**/*.ts",
@@ -37,12 +49,16 @@
     "test": {
       "inputs": [
         "src/**",
+        "scripts/**",
         "tests/**",
         "tsconfig*.json",
         "vite/**/*.ts",
         "vite.config.*",
         "package.json"
       ]
+    },
+    "clean": {
+      "cache": false
     }
   }
 }

@@ -3,128 +3,120 @@ import {
   type CommonMessageInfoRelaxedInternal,
   loadMessageRelaxed,
 } from "@ton/core";
-import type { GetType } from "purify-ts";
-import {
-  array,
-  boolean,
-  Codec,
-  Left,
-  number,
-  oneOf,
-  optional,
-  Right,
-  record,
-  string,
-  unknown,
-} from "purify-ts";
+import { Result, Schema, SchemaTransformation } from "effect";
 import { type Address, type Hex, numberToHex } from "viem";
-import type { TransactionVerificationMessageDto } from "../../generated/api/legacy";
-import type { GetEitherRight } from "../../types/utils";
 
-export type { TransactionVerificationMessageDto };
+const BigIntFromNumber = Schema.Number.pipe(
+  Schema.decodeTo(
+    Schema.BigInt,
+    SchemaTransformation.transform({
+      decode: (value) => BigInt(value),
+      encode: (value) => Number(value),
+    })
+  )
+);
 
-const bigintCodec = Codec.custom<bigint>({
-  decode: (input) => {
-    if (typeof input !== "string" && typeof input !== "number") {
-      return Left("Invalid value type");
-    }
+const BigIntFromString = Schema.String.pipe(
+  Schema.decodeTo(
+    Schema.BigInt,
+    SchemaTransformation.transform({
+      decode: (value) => BigInt(value),
+      encode: (value) => value.toString(),
+    })
+  )
+);
 
-    const val = BigInt(input);
+const BigIntFromStringOrNumber = Schema.Union([
+  BigIntFromString,
+  BigIntFromNumber,
+]);
 
-    return Right(val);
-  },
-  encode: (input) => input.toString(),
+const HexString = Schema.declare<Hex>(
+  (input): input is Hex => typeof input === "string" && input.startsWith("0x"),
+  { expected: "a 0x-prefixed hex string" }
+);
+
+const EvmAddress = Schema.declare<Address>(
+  (input): input is Address =>
+    typeof input === "string" && input.startsWith("0x"),
+  { expected: "a 0x-prefixed address" }
+);
+
+const UnsignedEvmTransaction = Schema.Struct({
+  data: HexString,
+  to: EvmAddress,
+  gasLimit: BigIntFromStringOrNumber,
+  from: EvmAddress,
+  value: Schema.optionalKey(BigIntFromStringOrNumber),
+  nonce: Schema.Number,
+  type: Schema.Number,
+  gasPrice: Schema.optionalKey(BigIntFromStringOrNumber),
+  maxFeePerGas: Schema.optionalKey(BigIntFromStringOrNumber),
+  maxPriorityFeePerGas: Schema.optionalKey(BigIntFromStringOrNumber),
+  chainId: Schema.Number,
 });
 
-const hexStringCodec = Codec.custom<Hex>({
-  decode: (input) =>
-    typeof input === "string" && input.startsWith("0x")
-      ? Right(input as Hex)
-      : Left("Invalid hex string"),
-  encode: (input) => input,
-});
+export const unsignedEVMTransactionCodec = UnsignedEvmTransaction;
 
-const addressCodec = Codec.custom<Address>({
-  decode: (input) =>
-    typeof input === "string" && input.startsWith("0x")
-      ? Right(input as Address)
-      : Left("Invalid address"),
-  encode: (input) => input,
-});
-
-export const unsignedEVMTransactionCodec = Codec.interface({
-  data: hexStringCodec,
-  to: addressCodec,
-  gasLimit: bigintCodec,
-  from: addressCodec,
-  value: optional(bigintCodec),
-  nonce: number,
-  type: number,
-  gasPrice: optional(bigintCodec),
-  maxFeePerGas: optional(bigintCodec),
-  maxPriorityFeePerGas: optional(bigintCodec),
-  chainId: number,
+const prepareDecodedEvmTransaction = (
+  decodedTx: typeof UnsignedEvmTransaction.Type,
+  address: Address
+) => ({
+  to: decodedTx.to,
+  from: address,
+  data: decodedTx.data,
+  value: decodedTx.value ? numberToHex(decodedTx.value) : undefined,
+  nonce: numberToHex(decodedTx.nonce),
+  gas: numberToHex(decodedTx.gasLimit),
+  chainId: numberToHex(decodedTx.chainId),
+  ...(decodedTx.maxFeePerGas
+    ? {
+        type: "0x2" as const,
+        maxFeePerGas: numberToHex(decodedTx.maxFeePerGas),
+        maxPriorityFeePerGas: decodedTx.maxPriorityFeePerGas
+          ? numberToHex(decodedTx.maxPriorityFeePerGas)
+          : undefined,
+      }
+    : {
+        type: "0x1" as const,
+        gasPrice: decodedTx.gasPrice
+          ? numberToHex(decodedTx.gasPrice)
+          : undefined,
+      }),
 });
 
 export const decodeAndPrepareEvmTransaction = ({
   address,
-  input,
+  tx,
 }: {
   address: Address;
-  input: unknown;
+  tx: string;
 }) =>
-  unsignedEVMTransactionCodec.decode(input).map((decodedTx) => ({
-    to: decodedTx.to,
-    from: address,
-    data: decodedTx.data,
-    value: decodedTx.value ? numberToHex(decodedTx.value) : undefined,
-    nonce: numberToHex(decodedTx.nonce),
-    gas: numberToHex(decodedTx.gasLimit),
-    chainId: numberToHex(decodedTx.chainId),
-    ...(decodedTx.maxFeePerGas
-      ? {
-          type: "0x2" as const,
-          maxFeePerGas: numberToHex(decodedTx.maxFeePerGas),
-          maxPriorityFeePerGas: decodedTx.maxPriorityFeePerGas
-            ? numberToHex(decodedTx.maxPriorityFeePerGas)
-            : undefined,
-        }
-      : {
-          type: "0x1" as const,
-          gasPrice: decodedTx.gasPrice
-            ? numberToHex(decodedTx.gasPrice)
-            : undefined,
-        }),
-  }));
+  Schema.decodeResult(Schema.fromJsonString(UnsignedEvmTransaction))(tx).pipe(
+    Result.map((decodedTx) => prepareDecodedEvmTransaction(decodedTx, address))
+  );
 
-export type DecodedEVMTransaction = GetEitherRight<
-  ReturnType<typeof decodeAndPrepareEvmTransaction>
->;
-
-export const unsignedTronTransactionCodec = Codec.interface({
-  raw_data: Codec.interface({
-    contract: array(record(string, unknown)),
-    ref_block_bytes: string,
-    ref_block_hash: string,
-    expiration: number,
-    timestamp: number,
-    data: optional(unknown),
-    fee_limit: optional(unknown),
+const UnsignedTronTransaction = Schema.Struct({
+  raw_data: Schema.Struct({
+    contract: Schema.Array(Schema.Record(Schema.String, Schema.Unknown)),
+    ref_block_bytes: Schema.String,
+    ref_block_hash: Schema.String,
+    expiration: Schema.Number,
+    timestamp: Schema.Number,
+    data: Schema.optionalKey(Schema.Unknown),
+    fee_limit: Schema.optionalKey(Schema.Unknown),
   }),
-  raw_data_hex: string,
-  txID: string,
-  visible: boolean,
+  raw_data_hex: Schema.String,
+  txID: Schema.String,
+  visible: Schema.Boolean,
 });
 
-export type DecodedTronTransaction = GetType<
-  typeof unsignedTronTransactionCodec
->;
+export const unsignedTronTransactionCodec = UnsignedTronTransaction;
 
-export const unsignedSolanaTransactionCodec = string;
+const UnsignedSolanaTransaction = Schema.String;
+export const unsignedSolanaTransactionCodec = UnsignedSolanaTransaction;
 
-export type DecodedSolanaTransaction = GetType<
-  typeof unsignedSolanaTransactionCodec
->;
+export type DecodedSolanaTransaction = typeof UnsignedSolanaTransaction.Type;
 
 type SolanaTransactionEncoding = "base64" | "hex";
 
@@ -172,23 +164,27 @@ export const normalizeSolanaTransactionToHex = (
 ): DecodedSolanaTransaction =>
   decodeSolanaTransactionToBuffer(tx).buffer.toString("hex");
 
-export const unsignedTonTransactionTonConnectCodec = Codec.interface({
-  seqno: bigintCodec,
-  message: string,
+const UnsignedTonTransactionTonConnect = Schema.Struct({
+  seqno: BigIntFromStringOrNumber,
+  message: Schema.String,
 });
 
-export const unsignedTonTransactionCodec = oneOf([
-  unsignedTonTransactionTonConnectCodec,
-  array(
-    Codec.interface({
-      address: string,
-      amount: string,
-      payload: string,
+const UnsignedTonTransaction = Schema.Union([
+  UnsignedTonTransactionTonConnect,
+  Schema.Array(
+    Schema.Struct({
+      address: Schema.String,
+      amount: Schema.String,
+      payload: Schema.String,
     })
   ),
 ]);
 
-export type DecodedTonTransaction = GetType<typeof unsignedTonTransactionCodec>;
+export const unsignedTonTransactionTonConnectCodec =
+  UnsignedTonTransactionTonConnect;
+export const unsignedTonTransactionCodec = UnsignedTonTransaction;
+
+type DecodedTonTransaction = typeof UnsignedTonTransaction.Type;
 
 type DecodedTonRawTransaction = Extract<
   DecodedTonTransaction,
@@ -198,8 +194,8 @@ type DecodedTonRawTransaction = Extract<
 export const normalizeTonTransactionToRaw = (
   tx: DecodedTonTransaction
 ): DecodedTonRawTransaction => {
-  if (Array.isArray(tx)) {
-    return tx;
+  if (!("message" in tx)) {
+    return tx as DecodedTonRawTransaction;
   }
 
   const parsedTx = loadMessageRelaxed(Cell.fromBase64(tx.message).beginParse());
@@ -214,28 +210,28 @@ export const normalizeTonTransactionToRaw = (
   ];
 };
 
-export const substratePayloadCodec = Codec.interface({
-  tx: Codec.interface({
-    address: string,
-    assetId: optional(hexStringCodec),
-    blockHash: hexStringCodec,
-    blockNumber: hexStringCodec,
-    era: hexStringCodec,
-    genesisHash: hexStringCodec,
-    metadataHash: optional(hexStringCodec),
-    method: string,
-    mode: optional(number),
-    nonce: hexStringCodec,
-    specVersion: hexStringCodec,
-    tip: hexStringCodec,
-    transactionVersion: hexStringCodec,
-    signedExtensions: array(string),
-    version: number,
-    metadataRpc: hexStringCodec,
+const SubstratePayload = Schema.Struct({
+  tx: Schema.Struct({
+    address: Schema.String,
+    assetId: Schema.optionalKey(HexString),
+    blockHash: HexString,
+    blockNumber: HexString,
+    era: HexString,
+    genesisHash: HexString,
+    metadataHash: Schema.optionalKey(HexString),
+    method: Schema.String,
+    mode: Schema.optionalKey(Schema.Number),
+    nonce: HexString,
+    specVersion: HexString,
+    tip: HexString,
+    transactionVersion: HexString,
+    signedExtensions: Schema.Array(Schema.String),
+    version: Schema.Number,
+    metadataRpc: HexString,
   }),
-  specName: string,
-  specVersion: number,
-  metadataRpc: hexStringCodec,
+  specName: Schema.String,
+  specVersion: Schema.Number,
+  metadataRpc: HexString,
 });
 
-export type DecodedSubstrateTransaction = GetType<typeof substratePayloadCodec>;
+export const substratePayloadCodec = SubstratePayload;

@@ -1,0 +1,17 @@
+id: no-local-storage
+language: Tsx
+severity: error
+message: Use the persistence service instead of localStorage.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+rule:
+  any:
+    - pattern: localStorage.$PROPERTY
+    - pattern: localStorage[$PROPERTY]
+    - pattern: window.localStorage
+    - pattern: globalThis.localStorage
+    - pattern: window["localStorage"]
+    - pattern: globalThis["localStorage"]

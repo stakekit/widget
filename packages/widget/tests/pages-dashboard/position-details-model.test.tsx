@@ -1,18 +1,27 @@
 import BigNumber from "bignumber.js";
+import { Schema } from "effect";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
+import { RewardsSummary } from "../../src/domain/schema/dashboard-models";
+import type { EarnYieldWithProvider } from "../../src/domain/schema/earn-models";
+import { EarnBalance } from "../../src/domain/schema/earn-models";
+import { TokenAddress } from "../../src/domain/schema/identifiers";
 import type { PositionBalancesByType } from "../../src/domain/types/positions";
-import type { Yield } from "../../src/domain/types/yields";
-import {
-  type DashboardPositionPendingAction,
-  getDashboardPositionDetailsModel,
-} from "../../src/pages-dashboard/position-details/position-details-model";
+
+import { getDashboardPositionDetailsModel } from "../../src/features/position-details/ui/dashboard/position-details-model";
 import {
   yieldApiProviderFixture,
   yieldApiYieldFixture,
   yieldBalanceFixture,
   yieldRewardRateFixture,
 } from "../fixtures";
+
+type DashboardPositionPendingAction = Parameters<
+  typeof getDashboardPositionDetailsModel
+>[0]["pendingActions"][number];
+
+const makeBalance = (overrides?: Parameters<typeof yieldBalanceFixture>[0]) =>
+  Schema.decodeUnknownSync(EarnBalance)(yieldBalanceFixture(overrides));
 
 const t = (key: string, options?: Record<string, unknown>): string => {
   const translations: Record<string, string> = {
@@ -58,7 +67,9 @@ const t = (key: string, options?: Record<string, unknown>): string => {
   return translations[key] ?? key;
 };
 
-const makeYield = (overrides?: Partial<Yield>): Yield =>
+const makeYield = (
+  overrides?: Partial<EarnYieldWithProvider>
+): EarnYieldWithProvider =>
   ({
     ...yieldApiYieldFixture({
       rewardRate: yieldRewardRateFixture({ total: 0.04 }),
@@ -74,7 +85,7 @@ const makeYield = (overrides?: Partial<Yield>): Yield =>
     }),
     provider: yieldApiProviderFixture({ name: "Rocket Pool" }),
     ...overrides,
-  }) as Yield;
+  }) as EarnYieldWithProvider;
 
 const makePositionBalances = (): PositionBalancesByType => {
   const token = yieldApiYieldFixture().token;
@@ -84,7 +95,7 @@ const makePositionBalances = (): PositionBalancesByType => {
       "active",
       [
         {
-          ...yieldBalanceFixture({
+          ...makeBalance({
             amount: "12",
             amountUsd: "41400",
             token,
@@ -98,7 +109,7 @@ const makePositionBalances = (): PositionBalancesByType => {
       "claimable",
       [
         {
-          ...yieldBalanceFixture({
+          ...makeBalance({
             amount: "0.25",
             amountUsd: "862",
             token,
@@ -112,7 +123,7 @@ const makePositionBalances = (): PositionBalancesByType => {
       "locked",
       [
         {
-          ...yieldBalanceFixture({
+          ...makeBalance({
             amount: "42",
             amountUsd: null,
             token: { ...token, isPoints: true, symbol: "PTS" },
@@ -153,14 +164,14 @@ describe("getDashboardPositionDetailsModel", () => {
       model.metricCards.find((card) => card.id === "balance")
     ).toMatchObject({
       label: "Balance",
-      subValue: "$41,400",
+      subValue: "$41.4K",
       value: "12 ETH",
     });
     expect(
       model.metricCards.find((card) => card.id === "rewards")
     ).toMatchObject({
       label: "Rewards",
-      subValue: "$862",
+      subValue: "$862.00",
       value: "0.25 ETH",
     });
     expect(model.metricCards.find((card) => card.id === "apy")).toMatchObject({
@@ -176,6 +187,71 @@ describe("getDashboardPositionDetailsModel", () => {
     expect(model.chartSections).toEqual([]);
   });
 
+  it("keeps claimable balances out of status when no action is pending", () => {
+    const activeToken = yieldApiYieldFixture().token;
+    const activeBalance = makeBalance({
+      amount: "0.000205427561919412",
+      amountUsd: "0.332550",
+      token: activeToken,
+      type: "active",
+    });
+    const pointsBalance = makeBalance({
+      amount: "1214.8591",
+      amountUsd: "0",
+      token: {
+        ...activeToken,
+        isPoints: true,
+        symbol: "KelpDAO Miles",
+      },
+      type: "claimable",
+    });
+    const tokenClaimableBalance = makeBalance({
+      amount: "0.25",
+      amountUsd: "862",
+      token: activeToken,
+      type: "claimable",
+    });
+
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: false,
+      integrationData: makeYield({
+        status: { enter: false, exit: false },
+      }),
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map([
+        [
+          "active",
+          [{ ...activeBalance, tokenPriceInUsd: new BigNumber("0.332550") }],
+        ],
+        [
+          "claimable",
+          [
+            {
+              ...tokenClaimableBalance,
+              tokenPriceInUsd: new BigNumber(862),
+            },
+            { ...pointsBalance, tokenPriceInUsd: new BigNumber(0) },
+          ],
+        ],
+      ]),
+      providersDetails: [{ name: "Rocket Pool", status: "active" }],
+      reducedStakedOrLiquidBalance: {
+        amount: new BigNumber(activeBalance.amount),
+        amountUsd: new BigNumber(activeBalance.amountUsd ?? 0),
+        token: activeToken,
+      },
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(model.statusSummary).toEqual({
+      label: "Status",
+      tone: "default",
+      value: "Withdrawal unavailable",
+    });
+  });
+
   it("summarizes pending actions and keeps claim CTA information separate", () => {
     const pendingActions: DashboardPositionPendingAction[] = [
       {
@@ -186,7 +262,7 @@ describe("getDashboardPositionDetailsModel", () => {
           passthrough: "claim",
           type: "CLAIM_REWARDS",
         },
-        yieldBalance: yieldBalanceFixture({ type: "claimable" }),
+        yieldBalance: makeBalance({ type: "claimable" }),
       },
     ];
 
@@ -222,7 +298,7 @@ describe("getDashboardPositionDetailsModel", () => {
         "active",
         [
           {
-            ...yieldBalanceFixture({
+            ...makeBalance({
               amount: "12",
               amountUsd: "41400",
               token,
@@ -241,7 +317,7 @@ describe("getDashboardPositionDetailsModel", () => {
           ...makeYield().mechanics,
           cooldownPeriod: { seconds: 7 * 24 * 60 * 60 },
         },
-      } as Partial<Yield>),
+      } as Partial<EarnYieldWithProvider>),
       pendingActions: [],
       personalizedRewardRate: null,
       positionBalancesByType,
@@ -279,7 +355,7 @@ describe("getDashboardPositionDetailsModel", () => {
       positionBalancesByType: makePositionBalances(),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
       reducedStakedOrLiquidBalance: null,
-      rewardsSummary: {
+      rewardsSummary: Schema.decodeUnknownSync(RewardsSummary)({
         rewards: {
           last24H: "0",
           last30D: "0",
@@ -288,7 +364,7 @@ describe("getDashboardPositionDetailsModel", () => {
           total: "1.5",
         },
         token: yieldApiYieldFixture().token,
-      },
+      }),
       t: t as TFunction,
     });
 
@@ -296,13 +372,13 @@ describe("getDashboardPositionDetailsModel", () => {
       {
         id: "active-ETH-0",
         label: "Active",
-        subValue: "$41,400",
+        subValue: "$41.4K",
         value: "12 ETH",
       },
       {
         id: "claimable-ETH-1",
         label: "Claimable",
-        subValue: "$862",
+        subValue: "$862.00",
         value: "0.25 ETH",
       },
       {
@@ -357,7 +433,9 @@ describe("getDashboardPositionDetailsModel", () => {
         },
         outputToken: {
           ...baseYield.token,
-          address: "0x0000000000000000000000000000000000000002",
+          address: Schema.decodeSync(TokenAddress)(
+            "0x0000000000000000000000000000000000000002"
+          ),
           symbol: "mUSDC",
         },
         state: {
@@ -369,7 +447,9 @@ describe("getDashboardPositionDetailsModel", () => {
         },
         token: {
           ...baseYield.token,
-          address: "0x0000000000000000000000000000000000000001",
+          address: Schema.decodeSync(TokenAddress)(
+            "0x0000000000000000000000000000000000000001"
+          ),
           symbol: "USDC",
         },
       }),

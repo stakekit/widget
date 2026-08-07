@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
+import type { EarnYieldWithProvider } from "../../src/domain/schema/earn-models";
 import {
-  DashboardYieldCategory,
   dashboardYieldCategories,
   getApiYieldTypesForDashboardCategory,
   getDashboardYieldCategory,
   getYieldTypeLabels,
   getYieldTypesSortRank,
   normalizeDashboardYieldCategoryOrder,
-  type YieldBase,
 } from "../../src/domain/types/yields";
+import { DashboardYieldCategory } from "../../src/public-api/types";
 
 const allApiYieldTypes = [
   "staking",
@@ -22,7 +22,7 @@ const allApiYieldTypes = [
   "liquid_staking",
 ] as const;
 
-const makeYield = (type: string): YieldBase =>
+const makeYield = (type: string): EarnYieldWithProvider =>
   ({
     mechanics: {
       type,
@@ -31,7 +31,7 @@ const makeYield = (type: string): YieldBase =>
       network: "ethereum",
       symbol: "USDC",
     },
-  }) as YieldBase;
+  }) as EarnYieldWithProvider;
 
 const t = ((key: string) => {
   const values: Record<string, string> = {

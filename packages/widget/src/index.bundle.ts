@@ -1,9 +1,21 @@
-export type { BundledSKWidgetProps } from "./App";
 export { renderSKWidget } from "./App";
-export type { SupportedSKChainIds } from "./domain/types/chains";
-export { EvmChainIds } from "./domain/types/chains/evm";
-export { MiscChainIds } from "./domain/types/chains/misc";
-export { SubstrateChainIds } from "./domain/types/chains/substrate";
-export type * from "./domain/types/wallets/generic-wallet";
-export { DashboardYieldCategory } from "./domain/types/yields";
-export { darkTheme, lightTheme } from "./styles/theme/themes";
+export type {
+  ActionMeta,
+  BittensorTx,
+  BundledSKWidgetProps,
+  SKBorrowExternalProviders,
+  SKBorrowTxMeta,
+  SKBorrowWallet,
+  SKTx,
+  SKTxMeta,
+  SKWallet,
+  SupportedSKChainIds,
+  TronTx,
+} from "./public-api/types";
+export {
+  DashboardYieldCategory,
+  EvmChainIds,
+  MiscChainIds,
+  SubstrateChainIds,
+} from "./public-api/types";
+export { darkTheme, lightTheme } from "./shared/styles/theme/themes";

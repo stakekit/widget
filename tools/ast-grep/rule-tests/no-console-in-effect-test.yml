@@ -1,0 +1,10 @@
+id: no-console-in-effect
+valid:
+  - 'Effect.gen(function* () { yield* Effect.logInfo("done") })'
+  - 'const render = () => console.log("done")'
+invalid:
+  - 'Effect.gen(function* () { console.log("done") })'
+  - 'Effect.fn("program")(function* () { console.error("failed") })'
+  - 'Effect.sync(() => console.log("done"))'
+  - 'Effect.tryPromise({ try: async () => value, catch: error => { console.error(error); return error } })'
+  - 'Effect.tap(program, () => console.info("done"))'

@@ -1,8 +1,10 @@
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
-import type { Yield } from "../../src/domain/types/yields";
-import { getEarnDetailsModel } from "../../src/pages-dashboard/overview/earn-details/earn-details-model";
+import type { EarnYieldWithProvider } from "../../src/domain/schema/earn-models";
+
+import { getEarnDetailsModel } from "../../src/features/earn/ui/dashboard/earn-details/earn-details-model";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
+import { decodeValidator } from "../utils/validators";
 
 const t = (key: string, options?: Record<string, unknown>): string => {
   const translations: Record<string, string> = {
@@ -23,12 +25,14 @@ const minStakeMechanics = {
   entryLimits: { minimum: "1", maximum: null, subsequentMinimum: null },
 };
 
-const makeYield = (overrides?: Partial<Yield>): Yield =>
+const makeYield = (
+  overrides?: Partial<EarnYieldWithProvider>
+): EarnYieldWithProvider =>
   ({
     ...yieldApiYieldFixture(),
     provider: { name: "Midas" },
     ...overrides,
-  }) as Yield;
+  }) as EarnYieldWithProvider;
 
 describe("getEarnDetailsModel", () => {
   it("includes price per share in details when yield state provides it", () => {
@@ -124,14 +128,18 @@ describe("getEarnDetailsModel", () => {
   });
 
   it("uses all selected validators in the header provider name", () => {
-    const firstValidator = yieldApiValidatorFixture({
-      address: "validator-1",
-      name: "Kiln",
-    });
-    const secondValidator = yieldApiValidatorFixture({
-      address: "validator-2",
-      name: "P2P",
-    });
+    const firstValidator = decodeValidator(
+      yieldApiValidatorFixture({
+        address: "validator-1",
+        name: "Kiln",
+      })
+    );
+    const secondValidator = decodeValidator(
+      yieldApiValidatorFixture({
+        address: "validator-2",
+        name: "P2P",
+      })
+    );
 
     const model = getEarnDetailsModel({
       selectedValidators: new Map([

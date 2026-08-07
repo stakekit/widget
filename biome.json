@@ -15,7 +15,7 @@
       "!**/region-iso-3166-codes.ts",
       "!**/mockServiceWorker.js",
       "!**/package.json",
-      "!**/repos"
+      "!**/@repos"
     ]
   },
   "formatter": {
@@ -32,10 +32,25 @@
       }
     }
   },
+  "plugins": [
+    {
+      "path": "./biome-plugins/no-type-re-exports.grit",
+      "includes": [
+        "**/packages/widget/src/**",
+        "!**/packages/widget/src/index.package.ts",
+        "!**/packages/widget/src/index.bundle.ts",
+        "!**/packages/widget/src/public-api/index.package.ts",
+        "!**/packages/widget/src/public-api/index.bundle.ts",
+        "!**/packages/widget/src/features/*/state.ts",
+        "!**/packages/widget/src/features/*/ui.ts",
+        "!**/packages/widget/src/features/*/components.ts"
+      ]
+    }
+  ],
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "style": {
         "noNonNullAssertion": "off",
         "noParameterAssign": "error",
@@ -47,7 +62,8 @@
         "noUnusedTemplateLiteral": "error",
         "useNumberNamespace": "error",
         "noInferrableTypes": "error",
-        "noUselessElse": "error"
+        "noUselessElse": "error",
+        "noNestedTernary": "error"
       },
       "suspicious": {
         "noArrayIndexKey": "off",
@@ -71,6 +87,78 @@
       "test": "recommended"
     }
   },
+  "overrides": [
+    {
+      "includes": [
+        "packages/widget/src/**",
+        "!packages/widget/src/index.package.ts",
+        "!packages/widget/src/index.bundle.ts",
+        "!packages/widget/src/public-api/index.package.ts",
+        "!packages/widget/src/public-api/index.bundle.ts",
+        "!packages/widget/src/features/*/state.ts",
+        "!packages/widget/src/features/*/ui.ts",
+        "!packages/widget/src/features/*/components.ts"
+      ],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noBarrelFile": "error"
+          },
+          "style": {
+            "useExportType": "error",
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["**/index.package", "**/index.bundle"],
+                    "message": "Public widget entrypoints are outbound-only; import from the defining module."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "packages/widget/src/domain/**",
+        "packages/widget/src/resources/**",
+        "packages/widget/src/services/**"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "react",
+                      "react/**",
+                      "react-dom",
+                      "react-dom/**",
+                      "@effect/atom-react",
+                      "@effect/atom-react/**",
+                      "@tanstack/react-query",
+                      "@tanstack/react-query/**"
+                    ],
+                    "message": "Headless domain, resource, and service modules must not import React integrations."
+                  },
+                  {
+                    "group": ["**/index.package", "**/index.bundle"],
+                    "message": "Public widget entrypoints are outbound-only; import from the defining module."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "javascript": {
     "formatter": {
       "semicolons": "always",

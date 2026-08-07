@@ -2,7 +2,7 @@ import { HttpResponse, http } from "msw";
 import {
   legacyYieldFixture,
   yieldApiValidatorsFixture,
-  yieldApiYieldFixture,
+  yieldApiYieldDtoFixture,
 } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
@@ -48,7 +48,7 @@ export const setup = (worker: TestWorker) => {
   };
 
   const legacyYieldBase = legacyYieldFixture();
-  const yieldApiYieldBase = yieldApiYieldFixture();
+  const yieldApiYieldBase = yieldApiYieldDtoFixture();
   const createLegacyNativeStaking = ({
     id,
     token,
@@ -74,7 +74,7 @@ export const setup = (worker: TestWorker) => {
     id: string;
     token: LegacyTokenDto;
   }) =>
-    yieldApiYieldFixture({
+    yieldApiYieldDtoFixture({
       id,
       network: token.network,
       token,

@@ -1,0 +1,14 @@
+id: no-react-query-outside-provider
+language: Tsx
+severity: error
+message: React Query is reserved for the third-party Wagmi/RainbowKit provider.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+ignores:
+  - packages/widget/src/app/composition/providers/query-client/**
+rule:
+  kind: import_statement
+  has:
+    kind: string
+    regex: ^[\"']@tanstack/react-query(?:/[^\"']*)?[\"']$

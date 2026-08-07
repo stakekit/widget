@@ -1,8 +1,6 @@
-import type { TokenDto } from "../../../generated/api/yield";
+import type { Network } from "../../schema/network-model";
 
-export type Networks = TokenDto["network"];
-
-type NetworkMap = Record<string, Networks>;
+type NetworkMap = Record<string, Network>;
 
 export const EvmNetworks = {
   Ethereum: "ethereum",

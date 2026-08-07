@@ -1,0 +1,14 @@
+id: no-global-fetch
+language: Tsx
+severity: error
+message: Use Effect HttpClient instead of fetch.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+rule:
+  pattern: $FETCH($$$ARGS)
+constraints:
+  FETCH:
+    regex: ^(?:(?:globalThis|window)\.)?fetch$

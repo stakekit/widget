@@ -252,10 +252,10 @@ export type RewardDto = {
 export type YieldFeeConfigurationDto = {
   readonly id: string;
   readonly default: boolean;
-  readonly managementFeeBps?: {} | null;
-  readonly performanceFeeBps?: {} | null;
-  readonly depositFeeBps?: {} | null;
-  readonly allocatorVaultContractAddress?: {} | null;
+  readonly managementFeeBps?: number | null;
+  readonly performanceFeeBps?: number | null;
+  readonly depositFeeBps?: number | null;
+  readonly allocatorVaultContractAddress?: string | null;
   readonly statistics?: {
     readonly tvlUsd?: string | null;
     readonly tvl?: string | null;
@@ -847,7 +847,10 @@ export type TransactionDto = {
   readonly createdAt: string;
   readonly broadcastedAt: string | null;
   readonly signedTransaction: string | null;
-  readonly unsignedTransaction: string | {} | null;
+  readonly unsignedTransaction:
+    | string
+    | { readonly [x: string]: unknown }
+    | null;
   readonly annotatedTransaction?: {} | null;
   readonly structuredTransaction?: {} | null;
   readonly stepIndex?: number;
@@ -863,13 +866,15 @@ export type PaginatedResponseDto = {
   readonly limit: number;
 };
 export type YieldRiskCredoraDto = {
-  readonly rating?: {};
-  readonly score?: {};
-  readonly psl?: {};
-  readonly publishDate?: {};
-  readonly curator?: {};
+  readonly rating?: string | null;
+  readonly score?: number | null;
+  readonly psl?: number | null;
+  readonly publishDate?: string | null;
+  readonly curator?: string | null;
 };
-export type YieldRiskStakingRewardsMetricsDto = { readonly users?: {} };
+export type YieldRiskStakingRewardsMetricsDto = {
+  readonly users?: number | null;
+};
 export type RewardRateSnapshotDto = {
   readonly timestamp: string;
   readonly rewardRate: string;
@@ -1645,7 +1650,7 @@ export type ProviderDto = {
   readonly logoURI: string;
   readonly description: string;
   readonly website: string;
-  readonly tvlUsd: {} | null;
+  readonly tvlUsd: string | null;
   readonly type: "protocol" | "validator_provider";
   readonly references?: ReadonlyArray<string>;
 };
@@ -1669,7 +1674,7 @@ export type ValidatorDto = {
     readonly logoURI: string;
     readonly description: string;
     readonly website: string;
-    readonly tvlUsd: {} | null;
+    readonly tvlUsd: string | null;
     readonly type: "protocol" | "validator_provider";
     readonly references?: ReadonlyArray<string>;
     readonly rank: number;
@@ -2046,19 +2051,19 @@ export type ActionDto = {
     | "STALE";
 };
 export type YieldRiskStakingRewardsDto = {
-  readonly rating?: {};
-  readonly score?: {};
-  readonly potentialRating?: {};
-  readonly potentialScore?: {};
-  readonly ratedAt?: {};
-  readonly ratedSince?: {};
-  readonly profileUrl?: {};
-  readonly reportUrl?: {};
-  readonly providerName?: {};
-  readonly version?: {};
-  readonly type?: {};
-  readonly chain?: {};
-  readonly contractAddress?: {};
+  readonly rating?: string | null;
+  readonly score?: number | null;
+  readonly potentialRating?: string | null;
+  readonly potentialScore?: number | null;
+  readonly ratedAt?: string | null;
+  readonly ratedSince?: string | null;
+  readonly profileUrl?: string | null;
+  readonly reportUrl?: string | null;
+  readonly providerName?: string | null;
+  readonly version?: string | null;
+  readonly type?: string | null;
+  readonly chain?: string | null;
+  readonly contractAddress?: string | null;
   readonly riskMetrics?: YieldRiskStakingRewardsMetricsDto;
 };
 export type RewardRateHistoryResponseDto = {
@@ -2750,9 +2755,9 @@ export type YieldDto = {
   readonly providerId: string;
   readonly prime: boolean;
   readonly curator?: {
-    readonly name?: {} | null;
-    readonly description?: {} | null;
-    readonly logoURI?: {} | null;
+    readonly name?: string | null;
+    readonly description?: string | null;
+    readonly logoURI?: string | null;
   };
   readonly tags?: ReadonlyArray<string>;
   readonly state?: {
@@ -3228,8 +3233,8 @@ export type YieldDto = {
       readonly remaining?: string | null;
     };
     readonly liquidityState?: {
-      readonly liquidity?: {} | null;
-      readonly utilization?: {} | null;
+      readonly liquidity?: string | null;
+      readonly utilization?: string | null;
     };
     readonly allocations?: ReadonlyArray<AllocationDto>;
   };
@@ -3381,7 +3386,7 @@ export type BalanceDto = {
       readonly logoURI: string;
       readonly description: string;
       readonly website: string;
-      readonly tvlUsd: {} | null;
+      readonly tvlUsd: string | null;
       readonly type: "protocol" | "validator_provider";
       readonly references?: ReadonlyArray<string>;
       readonly rank: number;
@@ -3440,7 +3445,7 @@ export type BalanceDto = {
       readonly logoURI: string;
       readonly description: string;
       readonly website: string;
-      readonly tvlUsd: {} | null;
+      readonly tvlUsd: string | null;
       readonly type: "protocol" | "validator_provider";
       readonly references?: ReadonlyArray<string>;
       readonly rank: number;
@@ -3485,7 +3490,7 @@ export type BalanceDto = {
   }>;
   readonly amountUsd?: string | null;
   readonly isEarning: boolean;
-  readonly priceRange?: {};
+  readonly priceRange?: { readonly min: string; readonly max: string };
   readonly tokenId?: string;
   readonly shareAmount?: string;
   readonly shareAmountRaw?: string;
@@ -3748,7 +3753,7 @@ export type YieldBalancesDto = {
         readonly logoURI: string;
         readonly description: string;
         readonly website: string;
-        readonly tvlUsd: {} | null;
+        readonly tvlUsd: string | null;
         readonly type: "protocol" | "validator_provider";
         readonly references?: ReadonlyArray<string>;
         readonly rank: number;
@@ -3807,7 +3812,7 @@ export type YieldBalancesDto = {
         readonly logoURI: string;
         readonly description: string;
         readonly website: string;
-        readonly tvlUsd: {} | null;
+        readonly tvlUsd: string | null;
         readonly type: "protocol" | "validator_provider";
         readonly references?: ReadonlyArray<string>;
         readonly rank: number;
@@ -3852,7 +3857,7 @@ export type YieldBalancesDto = {
     }>;
     readonly amountUsd?: string | null;
     readonly isEarning: boolean;
-    readonly priceRange?: {};
+    readonly priceRange?: { readonly min: string; readonly max: string };
     readonly tokenId?: string;
     readonly shareAmount?: string;
     readonly shareAmountRaw?: string;

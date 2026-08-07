@@ -1,0 +1,9 @@
+id: no-unsafe-date-time
+valid:
+  - 'const now = yield* DateTime.now'
+  - 'const now = yield* Clock.currentTimeMillis'
+  - 'const elapsed = DateTime.distance(start, end)'
+invalid:
+  - 'const now = DateTime.nowUnsafe()'
+  - 'const expired = DateTime.isPastUnsafe(timestamp)'
+  - 'const scheduled = DateTime.isFutureUnsafe(timestamp)'

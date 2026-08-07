@@ -3,5 +3,5 @@
   "compilerOptions": {
     "tsBuildInfoFile": "dist/.tsbuildinfo/tsconfig.tsbuildinfo"
   },
-  "exclude": ["node_modules", "repos"]
+  "exclude": ["node_modules", "@repos"]
 }

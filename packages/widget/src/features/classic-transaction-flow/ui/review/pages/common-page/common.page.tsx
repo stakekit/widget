@@ -1,0 +1,257 @@
+import type { ComponentProps, ReactNode } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import type { AppToken } from "../../../../../../domain/schema/legacy-models";
+import { Divider } from "../../../../../../shared/ui/components/divider";
+import { ToolTip } from "../../../../../../shared/ui/components/tooltip";
+import { Box } from "../../../../../../shared/ui/primitives/box";
+import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/content-loader";
+import { InfoIcon } from "../../../../../../shared/ui/primitives/icons/info";
+import { Text } from "../../../../../../shared/ui/primitives/typography/text";
+import { WarningBox } from "../../../../../../shared/ui/primitives/warning-box";
+import type { RewardTokenDetails } from "../../../../../earn/components";
+import { MetaInfo } from "../../../../../earn/components";
+import { useTrackEvent } from "../../../../../tracking/state";
+import {
+  AnimationPage,
+  PageContainer,
+  type PageCta,
+  PageCtaButton,
+} from "../../../../../widget-shell/components";
+import type { FeesBps } from "../../types";
+import { feeStyles, pointerStyles } from "../style.css";
+import ReviewTopSection from "./components/review-top-section";
+
+export type MetaInfoProps =
+  | { showMetaInfo: true; metaInfoProps: ComponentProps<typeof MetaInfo> }
+  | { showMetaInfo: false; metaInfoProps?: never };
+
+type ReviewPageProps = {
+  facts?: ComponentProps<typeof ReviewTopSection>["facts"];
+  fee: string;
+  title: string;
+  token: AppToken | null;
+  metadata: ComponentProps<typeof ReviewTopSection>["metadata"];
+  info: ReactNode;
+  rewardTokenDetailsProps: ComponentProps<typeof RewardTokenDetails> | null;
+  estimatedRewardAmounts?: {
+    earnYearly: string;
+    earnMonthly: string;
+  } | null;
+  isGasCheckError: boolean;
+  loading?: boolean;
+  depositFee: FeesBps | null;
+  managementFee: FeesBps | null;
+  performanceFee: FeesBps | null;
+  commissionFee: string | null;
+  notice?: ReactNode;
+  feeConfigLoading?: boolean;
+  cta: PageCta;
+} & MetaInfoProps;
+
+export const ReviewPage = ({
+  facts,
+  fee,
+  title,
+  token,
+  metadata,
+  info,
+  rewardTokenDetailsProps,
+  estimatedRewardAmounts,
+  isGasCheckError,
+  loading = false,
+  depositFee,
+  managementFee,
+  performanceFee,
+  feeConfigLoading = false,
+  commissionFee,
+  notice,
+  cta,
+  ...rest
+}: ReviewPageProps) => {
+  const trackEvent = useTrackEvent();
+  const { t } = useTranslation();
+
+  const isLoading = loading || feeConfigLoading;
+
+  return (
+    <AnimationPage>
+      <PageContainer>
+        <ReviewTopSection
+          facts={facts}
+          info={info}
+          metadata={metadata}
+          rewardTokenDetailsProps={rewardTokenDetailsProps}
+          estimatedRewardAmounts={estimatedRewardAmounts}
+          title={title}
+          token={token}
+        />
+
+        {notice && <Box marginTop="4">{notice}</Box>}
+
+        <Divider />
+
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          marginTop="4"
+        >
+          <Text variant={{ weight: "semibold" }}>{t("shared.fees")}</Text>
+        </Box>
+
+        <GasFee
+          label={t("review.estimated_gas_fee")}
+          price={fee}
+          loading={isLoading}
+        />
+
+        {commissionFee ? <CommissionFee commissionFee={commissionFee} /> : null}
+
+        {!isLoading && (
+          <>
+            {depositFee ? <ConfigFee feesBps={depositFee} /> : null}
+            {managementFee ? <ConfigFee feesBps={managementFee} /> : null}
+            {performanceFee ? <ConfigFee feesBps={performanceFee} /> : null}
+          </>
+        )}
+
+        {isGasCheckError && (
+          <Box marginBottom="2">
+            <WarningBox text="This action is unlikely to succeed due to insufficient funds to cover gas fees" />
+          </Box>
+        )}
+
+        <Divider />
+
+        {rest.showMetaInfo && (
+          <>
+            <Box marginBottom="4">
+              <Box my="4">
+                <Text variant={{ weight: "semibold" }}>
+                  {t("review.additional_info")}
+                </Text>
+              </Box>
+
+              <MetaInfo {...rest.metaInfoProps} />
+            </Box>
+
+            <Divider />
+          </>
+        )}
+
+        <Box marginTop="4" marginBottom="4">
+          <Text variant={{ weight: "normal", type: "muted" }}>
+            <Trans
+              i18nKey="review.terms_of_use"
+              components={{
+                underline0: (
+                  // biome-ignore lint: false
+                  <a
+                    target="_blank"
+                    onClick={() => trackEvent("termsClicked")}
+                    href="https://docs.yield.xyz/docs/terms-of-use"
+                    className={pointerStyles}
+                    rel="noreferrer"
+                  />
+                ),
+              }}
+            />
+          </Text>
+        </Box>
+
+        <PageCtaButton cta={cta} />
+      </PageContainer>
+    </AnimationPage>
+  );
+};
+
+const GasFee = ({
+  label,
+  price,
+  loading,
+}: {
+  label: string;
+  price: string;
+  loading: boolean;
+}) => {
+  return (
+    <Box
+      display="flex"
+      justifyContent="space-between"
+      alignItems="center"
+      marginTop="2"
+      marginBottom="2"
+      data-testid="estimated_gas_fee"
+      height="4"
+    >
+      <Text variant={{ weight: "normal", type: "muted" }}>{label}</Text>
+      {loading ? (
+        <Box width="40">
+          <ContentLoaderSquare heightPx={16} variant={{ size: "medium" }} />
+        </Box>
+      ) : (
+        <Text
+          className={feeStyles}
+          variant={{ type: "muted", weight: "normal" }}
+        >
+          {price}
+        </Text>
+      )}
+    </Box>
+  );
+};
+const CommissionFee = ({ commissionFee }: { commissionFee: string }) => {
+  const { t } = useTranslation();
+  return (
+    <Box
+      display="flex"
+      justifyContent="space-between"
+      alignItems="center"
+      marginTop="2"
+      marginBottom="2"
+      data-testid="commission_fee"
+      height="4"
+    >
+      <Text variant={{ weight: "normal", type: "muted" }}>
+        {t("review.staking_fee")}
+      </Text>
+
+      <Text className={feeStyles} variant={{ type: "muted", weight: "normal" }}>
+        {commissionFee}
+      </Text>
+    </Box>
+  );
+};
+
+const ConfigFee = ({ feesBps }: { feesBps: FeesBps }) => {
+  return (
+    <Box
+      display="flex"
+      justifyContent="space-between"
+      alignItems="center"
+      data-testid="estimated_gas_fee"
+      marginBottom="2"
+    >
+      <Box display="flex" alignItems="center" justifyContent="center" gap="1">
+        <Text variant={{ weight: "normal", type: "muted" }}>
+          {feesBps.label}
+        </Text>
+
+        <ToolTip label={feesBps.explanation}>
+          <Box display="flex">
+            <InfoIcon />
+          </Box>
+        </ToolTip>
+      </Box>
+
+      <ToolTip label={feesBps.inUSD}>
+        <Text
+          className={feeStyles}
+          variant={{ weight: "normal", type: "muted" }}
+        >
+          {feesBps.inPercentage}
+        </Text>
+      </ToolTip>
+    </Box>
+  );
+};

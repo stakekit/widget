@@ -1,0 +1,146 @@
+import type { Chain, WalletList } from "@stakekit/rainbowkit";
+import { Effect, Record } from "effect";
+import type { WalletAddress } from "../../../../domain/schema/identifiers";
+import type { Network } from "../../../../domain/schema/network-model";
+import type { CosmosChainsMap } from "../../../../domain/types/chains/cosmos";
+import { supportedCosmosChains } from "../../../../domain/types/chains/cosmos";
+
+import { WalletIntegrationError } from "../../domain/errors";
+import { getWagmiChain } from "./chains";
+
+const queryFn = ({
+  buildConnectors,
+  enabledNetworks,
+  forceWalletConnectOnly,
+  persistPublicKey,
+}: {
+  buildConnectors: boolean;
+  enabledNetworks: ReadonlySet<Network>;
+  forceWalletConnectOnly: boolean;
+  persistPublicKey: (input: {
+    readonly address: WalletAddress;
+    readonly publicKey: string;
+  }) => Promise<void>;
+}) =>
+  Effect.gen(function* () {
+    const networks = enabledNetworks;
+    const chainsToUse = supportedCosmosChains.filter((chain) =>
+      networks.has(chain)
+    );
+
+    if (!chainsToUse.length) {
+      return {
+        cosmosChainsMap: {},
+        cosmosWagmiChains: [],
+        connector: null,
+      } satisfies {
+        cosmosChainsMap: Partial<CosmosChainsMap>;
+        cosmosWagmiChains: Chain[];
+        connector: WalletList[number] | null;
+      };
+    }
+
+    const registry = yield* Effect.tryPromise({
+      try: () => import("./chains/chain-registry"),
+      catch: (cause) =>
+        new WalletIntegrationError({
+          cause,
+          message: "Could not import cosmos chain registry",
+          operation: "cosmos-chain-registry-import",
+        }),
+    });
+    const chainsToUseSet = new Set(chainsToUse);
+
+    const cosmosChainsMap: Partial<CosmosChainsMap> = Record.filter(
+      registry.cosmosRegistryChains.reduce((acc, next) => {
+        const skChainName =
+          registry.registryIdsToSKCosmosNetworks[next.chain_id];
+
+        if (!skChainName || !chainsToUseSet.has(skChainName)) {
+          return acc;
+        }
+
+        return {
+          // biome-ignore lint: false
+          ...acc,
+          [skChainName]: {
+            type: "cosmos",
+            skChainName,
+            chain: next,
+            wagmiChain: getWagmiChain(next),
+          },
+        };
+      }, {} as CosmosChainsMap),
+      (v) => networks.has(v.skChainName)
+    );
+
+    const cosmosWagmiChains = Object.values(cosmosChainsMap).map(
+      (value) => value.wagmiChain
+    );
+
+    if (!buildConnectors) {
+      return { cosmosChainsMap, cosmosWagmiChains, connector: null };
+    }
+
+    const walletManagerModule = yield* Effect.tryPromise({
+      try: () => import("./wallet-manager"),
+      catch: (cause) =>
+        new WalletIntegrationError({
+          cause,
+          message: "Could not import cosmos wallet manager",
+          operation: "cosmos-wallet-manager-import",
+        }),
+    });
+    const { connector, walletManager } = yield* Effect.try({
+      try: () =>
+        walletManagerModule.getWalletManager({
+          cosmosChainsMap,
+          forceWalletConnectOnly,
+          persistPublicKey,
+        }),
+      catch: (cause) =>
+        new WalletIntegrationError({
+          cause,
+          message: "Could not initialize cosmos wallet manager",
+          operation: "cosmos-wallet-manager-initialize",
+        }),
+    });
+
+    yield* Effect.matchEffect(
+      Effect.tryPromise({
+        try: () => walletManager.onMounted(),
+        catch: (error) => error,
+      }),
+      {
+        onFailure: () => {
+          const restorableWalletManager = walletManager as unknown as {
+            _restoreAccounts: () => Promise<void>;
+          };
+
+          return Effect.tryPromise({
+            try: () => restorableWalletManager._restoreAccounts(),
+            catch: (error) => error,
+          }).pipe(Effect.ignore);
+        },
+        onSuccess: () => Effect.void,
+      }
+    );
+
+    return {
+      cosmosChainsMap,
+      cosmosWagmiChains,
+      connector: cosmosWagmiChains.length ? connector : null,
+    };
+  });
+
+export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
+  queryFn(opts).pipe(
+    Effect.mapError(
+      (cause) =>
+        new WalletIntegrationError({
+          cause,
+          message: "Could not get cosmos config",
+          operation: "cosmos-config",
+        })
+    )
+  );

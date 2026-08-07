@@ -6,28 +6,36 @@
   ],
   "author": "Petar Todorovic <petar@omni.app> (https://github.com)",
   "license": "MIT",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.19.0"
+    }
+  },
   "scripts": {
+    "dev": "pnpm --filter @stakekit/widget dev",
     "build": "turbo run build",
-    "lint": "turbo run lint",
+    "lint": "turbo run lint //#lint:ast",
+    "lint:ast": "ast-grep scan --error=no-suppress-all --error=unused-suppression packages/widget --color=never && pnpm run test:ast",
+    "test:ast": "ast-grep test --skip-snapshot-tests --color=never",
     "test": "turbo run test",
     "format": "turbo run format",
     "clean": "turbo run clean",
     "prepare": "husky",
-    "check-hygiene": "rev-dep config run --list-all-issues",
-    "check": "turbo run lint && pnpm run check-hygiene && turbo run test && turbo run build"
+    "check-hygiene": "pnpm run check-hygiene:rev-dep && pnpm run check-hygiene:test-only-exports",
+    "check-hygiene:rev-dep": "rev-dep config run --list-all-issues",
+    "check-hygiene:test-only-exports": "tsx scripts/check-test-only-exports.ts",
+    "check": "turbo run lint //#lint:ast && pnpm run check-hygiene && turbo run test && turbo run build"
   },
   "devDependencies": {
+    "@ast-grep/cli": "catalog:",
     "@biomejs/biome": "catalog:",
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "husky": "catalog:",
+    "knip": "catalog:",
     "rev-dep": "catalog:",
+    "tsx": "catalog:",
     "turbo": "catalog:"
-  },
-  "pnpm": {
-    "patchedDependencies": {
-      "purify-ts": "patches/purify-ts.patch",
-      "@stakekit/rainbowkit@2.2.11": "patches/@stakekit__rainbowkit@2.2.11.patch"
-    }
   }
 }

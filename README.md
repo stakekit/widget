@@ -24,6 +24,10 @@ pnpm add @stakekit/widget
 
 To use Widget, first you'll need API key from Yield.xyz.
 
+### Supported widget instances
+
+Only one StakeKit Widget may be mounted in a browser document at a time. Unmounting it and later mounting another is supported; concurrently mounted Widget Instances are not supported.
+
 ## React component usage
 
 After you get the API key, you can import styles and widget component:
@@ -43,7 +47,7 @@ const App = () => {
 import "@stakekit/widget/bundle/css";
 import { renderSKWidget, lightTheme, darkTheme } from "@stakekit/widget/bundle";
 
-const { rerender } = renderSKWidget({
+const { rerender, unmount } = renderSKWidget({
   container: document.getElementById("sk_widget_container")!,
   apiKey: "your-api-key",
   theme: lightTheme,
@@ -53,7 +57,34 @@ rerender({
   apiKey: "your-api-key",
   theme: darkTheme,
 }) // pass new props here
+
+unmount() // release the document so another Widget Instance may be mounted
 ```
+
+### Settings lifecycle
+
+Most settings may be updated through React props or the bundled renderer's
+`rerender` method. The following mount-time settings instead identify one
+Widget generation:
+
+- `apiKey`
+- `baseUrl`
+- `borrowApiUrl`
+- `yieldsApiUrl`
+- `borrowEnabled`
+
+Changing any of them while the Widget remains mounted is rejected as an
+Application Runtime invariant violation. Unmount and remount the Widget to
+apply a different identity and create fresh state, workflows, resources, and
+router history.
+
+Wallet-topology settings are also captured during bootstrap, but they do not
+trigger this reset. Changing them after mount is unsupported and may be rejected
+or ignored.
+
+`borrowEnabled` defaults to `false`. Enabling it requires
+`dashboardVariant: true` and category yield grouping; incompatible settings are
+rejected during configuration normalization.
 
 ## Params
 
@@ -82,6 +113,8 @@ const App = () => {
 type SettingsProps = {
   apiKey: string;
   baseUrl?: string;
+  borrowApiUrl?: string;
+  yieldsApiUrl?: string;
   theme?: ThemeWrapperTheme;
   tracking?: {
     trackEvent?: (event: TrackEventVal, properties?: Properties) => void;
@@ -114,6 +147,7 @@ type SettingsProps = {
   chainIconMapping?:
     | Record<SupportedSKChains, string>
     | ((chain: SupportedSKChains) => string);
+  borrowEnabled?: boolean;
   dashboardVariant?: boolean;
   dashboardYieldCategoryOrder?: DashboardYieldCategory[];
   hideChainSelector?: boolean;

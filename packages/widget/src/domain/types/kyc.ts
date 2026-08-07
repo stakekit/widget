@@ -1,5 +1,5 @@
-import type { KycStatusResponseDto } from "../../generated/api/yield";
-import type { Yield } from "./yields";
+import type { KycStatus } from "../schema/dashboard-models";
+import type { EarnYieldWithProvider } from "../schema/earn-models";
 
 export type KycGate =
   | { state: "pass" }
@@ -14,12 +14,13 @@ export type KycGate =
     };
 
 type KycUrlSource = {
-  readonly status?: Pick<KycStatusResponseDto, "authorizeUrl"> | null;
-  readonly yieldDto?: Yield | null;
+  readonly status?: Pick<KycStatus, "authorizeUrl"> | null;
+  readonly yieldDto?: EarnYieldWithProvider | null;
 };
 
-export const getKycProviderName = (yieldDto: Yield | null | undefined) =>
-  yieldDto?.provider?.name ?? null;
+export const getKycProviderName = (
+  yieldDto: EarnYieldWithProvider | null | undefined
+) => yieldDto?.provider?.name ?? null;
 
 export const getKycUrl = ({ status, yieldDto }: KycUrlSource) =>
   status?.authorizeUrl ??
@@ -31,7 +32,7 @@ const getKycGateUrlFields = ({
   yieldDto,
 }: {
   readonly kycUrl?: string;
-  readonly yieldDto?: Yield | null;
+  readonly yieldDto?: EarnYieldWithProvider | null;
 }) => ({
   ...(kycUrl ? { kycUrl } : {}),
   ...(kycUrl && yieldDto?.mechanics.requirements?.kyc?.iframeAllowed === true
@@ -43,8 +44,8 @@ export const mapKycStatusToGate = ({
   status,
   yieldDto,
 }: {
-  readonly status?: KycStatusResponseDto | null;
-  readonly yieldDto?: Yield | null;
+  readonly status?: KycStatus | null;
+  readonly yieldDto?: EarnYieldWithProvider | null;
 }): KycGate => {
   const kycUrl = getKycUrl({ status, yieldDto });
 
