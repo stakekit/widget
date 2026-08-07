@@ -527,7 +527,10 @@
     "available": "{{amount}} {{symbol}} disponibles",
     "personalized_apy": "APY personnalise",
     "receive_token": {
-      "label": "Jeton reçu"
+      "label": "Jeton reçu",
+      "select_title": "Sélectionner le jeton reçu",
+      "note": "Vous recevrez {{symbol}} lors du retrait.",
+      "note_with_address": "Vous recevrez {{symbol}} ({{address}}) lors du retrait."
     },
     "select_validators": {
       "submit": "Envoyer"

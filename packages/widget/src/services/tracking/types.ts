@@ -27,6 +27,7 @@ export const trackEventMap = {
   connectWalletClicked: "Connect wallet clicked",
   addLedgerAccountClicked: "Add ledger account clicked",
   selectTokenModalOpened: "Select token modal opened",
+  exitReceiveTokenModalOpened: "Exit receive token modal opened",
   tokenSelected: "Token selected",
   selectYieldModalOpened: "Select yield modal opened",
   yieldSelected: "Yield selected",

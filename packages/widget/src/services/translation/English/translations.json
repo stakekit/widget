@@ -855,7 +855,10 @@
     "available": "{{amount}} {{symbol}} available",
     "personalized_apy": "Personalized APY",
     "receive_token": {
-      "label": "Receive token"
+      "label": "Receive token",
+      "select_title": "Select receive token",
+      "note": "You will receive {{symbol}} when you withdraw.",
+      "note_with_address": "You will receive {{symbol}} ({{address}}) when you withdraw."
     },
     "select_validators": {
       "submit": "Submit"

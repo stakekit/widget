@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
 import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
@@ -51,6 +51,8 @@ type AmountBlockProps = {
        */
       showUnstakeInfo?: boolean;
       ctaPlacement?: "card" | "footer";
+      /** Overrides the default position-token chip when CTA is in the footer. */
+      tokenAccessory?: ReactNode;
     }
   | { variant: "action" }
 );
@@ -127,7 +129,7 @@ export const AmountBlock = ({
       <Text>{label}</Text>
     </Button>
   ) : (
-    <SelectedToken token={rest.unstakeToken} />
+    (rest.tokenAccessory ?? <SelectedToken token={rest.unstakeToken} />)
   );
 
   const balanceContent = balance ? (

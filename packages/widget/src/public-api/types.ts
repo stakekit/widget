@@ -538,6 +538,7 @@ type TrackEvent =
   | "Connect wallet clicked"
   | "Add ledger account clicked"
   | "Select token modal opened"
+  | "Exit receive token modal opened"
   | "Token selected"
   | "Select yield modal opened"
   | "Yield selected"

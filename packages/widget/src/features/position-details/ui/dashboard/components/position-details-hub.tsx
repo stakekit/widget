@@ -14,11 +14,11 @@ import {
   shouldShowPositionDetailsActionTabs,
 } from "../../../model/hub";
 import { AmountBlock } from "../../classic/components/amount-block";
+import { PositionDetailsUnstakeActions } from "../../classic/components/position-details-unstake-actions";
 import { StaticActionBlock } from "../../classic/components/static-action-block";
 import { usePositionDetails } from "../../classic/hooks/use-position-details";
 import { PositionDetailsActionTabs } from "./position-details-action-tabs";
 import { PositionDetailsStakeActions } from "./position-details-stake-actions";
-import { PositionDetailsUnstakeActions } from "./position-details-unstake-actions";
 import { container } from "./styles.css";
 
 const PositionDetailsPendingActions = ({

@@ -7,12 +7,10 @@ import {
   type PageCta,
   PageCtaButton,
 } from "../../../../widget-shell/components";
-import {
-  AmountBlock,
-  UnstakeInfo,
-} from "../../classic/components/amount-block";
-import { ExitReceiveTokenSelect } from "../../classic/components/exit-receive-token-select";
-import { usePositionDetails } from "../../classic/hooks/use-position-details";
+import { usePositionDetails } from "../hooks/use-position-details";
+import { AmountBlock, UnstakeInfo } from "./amount-block";
+import { ExitReceiveTokenAccessory } from "./exit-receive-token-accessory";
+import { ExitReceiveTokenNote } from "./exit-receive-token-note";
 
 export const PositionDetailsUnstakeActions = () => {
   const {
@@ -77,13 +75,6 @@ export const PositionDetailsUnstakeActions = () => {
         />
       )}
 
-      {exitReceiveTokenSelection ? (
-        <ExitReceiveTokenSelect
-          onSelect={onReceiveTokenSelect}
-          selection={exitReceiveTokenSelection}
-        />
-      ) : null}
-
       <AmountBlock
         unstakeMaxAmount={unstakeMaxAmountValue}
         unstakeMinAmount={unstakeMinAmountValue}
@@ -109,13 +100,27 @@ export const PositionDetailsUnstakeActions = () => {
         validators={providersDetails ?? []}
         showUnstakeInfo={false}
         ctaPlacement="footer"
+        tokenAccessory={
+          <ExitReceiveTokenAccessory
+            integration={integrationDataValue}
+            onSelect={onReceiveTokenSelect}
+            positionToken={unstakeTokenValue}
+            selection={exitReceiveTokenSelection}
+          />
+        }
       />
 
-      <UnstakeInfo
-        unstakeToken={unstakeTokenValue}
-        validators={providersDetails ?? []}
-        yieldDto={integrationDataValue}
-      />
+      <Box display="flex" flexDirection="column" gap="2">
+        <ExitReceiveTokenNote
+          positionToken={unstakeTokenValue}
+          selection={exitReceiveTokenSelection}
+        />
+        <UnstakeInfo
+          unstakeToken={unstakeTokenValue}
+          validators={providersDetails ?? []}
+          yieldDto={integrationDataValue}
+        />
+      </Box>
 
       <PageCtaButton cta={unstakeCta} />
 

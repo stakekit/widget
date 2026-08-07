@@ -4,20 +4,15 @@ import { getExtendedYieldType } from "../../../../domain/types/yields";
 import { getRewardRateFormatted } from "../../../../shared/lib/formatters";
 import { TokenIcon } from "../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../shared/ui/primitives/box";
-import { Button } from "../../../../shared/ui/primitives/button";
 import { Spinner } from "../../../../shared/ui/primitives/spinner";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import {
-  KycGateCard,
-  RewardRateBreakdown,
-  SelectValidator,
-} from "../../../earn/components";
+import { RewardRateBreakdown } from "../../../earn/components";
 import { useTrackPage } from "../../../tracking/state";
 import { AnimationPage, PageContainer } from "../../../widget-shell/components";
 import { AmountBlock } from "./components/amount-block";
-import { ExitReceiveTokenSelect } from "./components/exit-receive-token-select";
 import { PositionBalances } from "./components/position-balances";
+import { PositionDetailsUnstakeActions } from "./components/position-details-unstake-actions";
 import { ProviderDetails } from "./components/provider-details";
 import { StaticActionBlock } from "./components/static-action-block";
 import { usePositionDetails } from "./hooks/use-position-details";
@@ -27,38 +22,13 @@ const PositionDetails = () => {
   const {
     onPendingActionAmountChange,
     integrationData: integrationDataValue,
-    validatorsData,
-    hasMoreValidators,
-    isLoadingMoreValidators,
-    onLoadMoreValidators,
     isLoading,
-    reducedStakedOrLiquidBalance: reducedStakedOrLiquidBalanceValue,
     positionBalancesByType: positionBalancesByTypeValue,
-    onUnstakeAmountChange,
-    unstakeAmount,
-    unstakeFormattedAmount,
-    canChangeUnstakeAmount: canChangeUnstakeAmountValue,
-    onMaxClick,
-    onUnstakeClick,
-    unstakeDisabled,
     onPendingActionClick,
     pendingActions: pendingActionsValue,
     providersDetails,
     shareToAmountConversions: shareToAmountConversionsValue,
-    validatorAddressesHandling,
-    onValidatorsSubmit,
     unstakeToken: unstakeTokenValue,
-    canUnstake,
-    unstakeAmountError,
-    unstakeMaxAmount: unstakeMaxAmountValue,
-    unstakeMinAmount: unstakeMinAmountValue,
-    unstakeIsGreaterOrLessIntegrationLimitError,
-    kycGate,
-    kycGateIsChecking,
-    kycProviderName,
-    onKycStatusRefresh,
-    exitReceiveTokenSelection,
-    onReceiveTokenSelect,
     personalizedRewardRate,
     apyCompositionRewardRate,
     apyCompositionShowsUpToCampaign,
@@ -261,100 +231,8 @@ const PositionDetails = () => {
                 )
               )}
               {/* Unstake */}
-              {reducedStakedOrLiquidBalanceValue &&
-              canChangeUnstakeAmountValue !== null &&
-              unstakeTokenValue ? (
-                <>
-                  {(kycGate.state !== "pass" || kycGateIsChecking) && (
-                    <KycGateCard
-                      gate={kycGate}
-                      isChecking={kycGateIsChecking}
-                      onCheckStatus={onKycStatusRefresh}
-                      providerName={kycProviderName}
-                    />
-                  )}
-
-                  {exitReceiveTokenSelection ? (
-                    <ExitReceiveTokenSelect
-                      onSelect={onReceiveTokenSelect}
-                      selection={exitReceiveTokenSelection}
-                    />
-                  ) : null}
-
-                  <AmountBlock
-                    unstakeMaxAmount={unstakeMaxAmountValue}
-                    unstakeMinAmount={unstakeMinAmountValue}
-                    unstakeIsGreaterOrLessIntegrationLimitError={
-                      unstakeIsGreaterOrLessIntegrationLimitError
-                    }
-                    variant="unstake"
-                    canUnstake={canUnstake}
-                    unstakeToken={unstakeTokenValue}
-                    onAmountChange={onUnstakeAmountChange}
-                    value={unstakeAmount}
-                    canChangeAmount={canChangeUnstakeAmountValue}
-                    disabled={unstakeDisabled}
-                    onClick={onUnstakeClick}
-                    unstakeAmountError={unstakeAmountError}
-                    onMaxClick={onMaxClick}
-                    label={t(
-                      `position_details.unstake_label.${getExtendedYieldType(integrationDataValue)}`
-                    )}
-                    formattedAmount={unstakeFormattedAmount}
-                    balance={reducedStakedOrLiquidBalanceValue}
-                    yieldDto={integrationDataValue}
-                    validators={providersDetails ?? []}
-                  />
-                </>
-              ) : null}
+              <PositionDetailsUnstakeActions />
             </Box>
-            {validatorAddressesHandling.showValidatorsModal && (
-              <SelectValidator
-                selectedValidators={
-                  validatorAddressesHandling.selectedValidators
-                }
-                onItemClick={(val) => {
-                  validatorAddressesHandling.onItemClick(val.address);
-
-                  if (validatorAddressesHandling.multiSelect) return;
-
-                  onValidatorsSubmit([val.address]);
-                }}
-                selectedStake={integrationDataValue}
-                validators={validatorsData}
-                hasMore={hasMoreValidators}
-                isLoadingMore={isLoadingMoreValidators}
-                onLoadMore={onLoadMoreValidators}
-                multiSelect={validatorAddressesHandling.multiSelect}
-                state={validatorAddressesHandling.modalState}
-              >
-                {validatorAddressesHandling.multiSelect && (
-                  <Box
-                    px="4"
-                    paddingTop="3"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Button
-                      variant={{
-                        color: validatorAddressesHandling.submitDisabled
-                          ? "disabled"
-                          : "primary",
-                      }}
-                      disabled={validatorAddressesHandling.submitDisabled}
-                      onClick={() =>
-                        onValidatorsSubmit([
-                          ...validatorAddressesHandling.selectedValidators.values(),
-                        ])
-                      }
-                    >
-                      {t("position_details.select_validators.submit")}
-                    </Button>
-                  </Box>
-                )}
-              </SelectValidator>
-            )}
           </Box>
         ) : null}
       </PageContainer>
