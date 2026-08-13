@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
-} from "../../../../../../../domain/schema/earn-models";
+} from "../../../../../../../domain/earn/models";
 import { formatCompactNumber } from "../../../../../../../shared/lib/formatters";
 import { APToPercentage } from "../../../../../../../shared/lib/general";
 import { Divider } from "../../../../../../../shared/ui/components/divider";

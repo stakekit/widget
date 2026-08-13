@@ -4,7 +4,7 @@ import { useSKWallet } from "../../wallet/state";
 import {
   type PositionItem,
   positionsTableDataAtom,
-} from "../resources/positions";
+} from "../state/read-models/positions";
 
 export const usePositions = () => {
   const positionsResult = useAtomValue(positionsTableDataAtom);

@@ -2,13 +2,13 @@ import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
-import { RewardsSummary } from "../../src/domain/schema/dashboard-models";
-import type { EarnYieldWithProvider } from "../../src/domain/schema/earn-models";
-import { EarnBalance } from "../../src/domain/schema/earn-models";
-import { TokenAddress } from "../../src/domain/schema/identifiers";
-import type { PositionBalancesByType } from "../../src/domain/types/positions";
+import type { EarnYieldWithProvider } from "../../src/domain/earn/models";
+import { EarnBalance } from "../../src/domain/earn/models";
+import { TokenAddress } from "../../src/domain/identity/identifiers";
+import { RewardsSummary } from "../../src/domain/portfolio/models";
+import type { PositionBalancesByType } from "../../src/domain/portfolio/positions";
 
-import { getDashboardPositionDetailsModel } from "../../src/features/position-details/ui/dashboard/position-details-model";
+import { getDashboardPositionDetailsModel } from "../../src/features/position-details/model/dashboard-position-details";
 import {
   yieldApiProviderFixture,
   yieldApiYieldFixture,
@@ -257,7 +257,7 @@ describe("getDashboardPositionDetailsModel", () => {
       {
         amount: null,
         formattedAmount: "$862",
-        pendingActionDto: {
+        pendingAction: {
           intent: "manage",
           passthrough: "claim",
           type: "CLAIM_REWARDS",

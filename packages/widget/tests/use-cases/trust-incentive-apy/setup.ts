@@ -2,11 +2,9 @@ import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
-import {
-  EarnToken,
-  type EarnYield,
-} from "../../../src/domain/schema/earn-models";
-import type { YieldRewardRateDto } from "../../../src/domain/types/reward-rate";
+import type { EarnYield } from "../../../src/domain/earn/models";
+import type { YieldRewardRate } from "../../../src/domain/earn/reward-rate";
+import { Token } from "../../../src/domain/token/token";
 import {
   legacyYieldFixture,
   yieldApiYieldDtoFixture,
@@ -56,7 +54,7 @@ export const setup = async (
     personalizedRewardRate: providedPersonalizedRewardRate,
     useRewardRateWithoutCampaign,
   }: {
-    personalizedRewardRate?: YieldRewardRateDto;
+    personalizedRewardRate?: YieldRewardRate;
     useRewardRateWithoutCampaign?: boolean;
   } = {}
 ) => {
@@ -71,7 +69,7 @@ export const setup = async (
     logoURI: "https://assets.stakek.it/tokens/usda.svg",
   };
 
-  const rewardToken = Schema.decodeUnknownSync(EarnToken)({
+  const rewardToken = Schema.decodeUnknownSync(Token)({
     name: "United Stables",
     symbol: "U",
     decimals: 18,
@@ -80,7 +78,7 @@ export const setup = async (
     logoURI: "https://assets.stakek.it/tokens/usda.svg",
   });
 
-  const morphoToken = Schema.decodeUnknownSync(EarnToken)({
+  const morphoToken = Schema.decodeUnknownSync(Token)({
     name: "Morpho Token",
     symbol: "MORPHO",
     decimals: 18,
@@ -89,7 +87,7 @@ export const setup = async (
     logoURI: "https://assets.stakek.it/tokens/usda.svg",
   });
 
-  const discoveryRewardRate: YieldRewardRateDto = yieldRewardRateFixture({
+  const discoveryRewardRate: YieldRewardRate = yieldRewardRateFixture({
     total: 0.045507546653006034,
     rateType: "APY",
     components: [
@@ -117,8 +115,8 @@ export const setup = async (
     ],
   });
 
-  const defaultPersonalizedRewardRate: YieldRewardRateDto =
-    yieldRewardRateFixture({
+  const defaultPersonalizedRewardRate: YieldRewardRate = yieldRewardRateFixture(
+    {
       total: 0.04530754665300604,
       rateType: "APY",
       components: [
@@ -144,9 +142,10 @@ export const setup = async (
           description: "Supply APY",
         },
       ],
-    });
+    }
+  );
 
-  const personalizedRewardRateWithoutCampaign: YieldRewardRateDto =
+  const personalizedRewardRateWithoutCampaign: YieldRewardRate =
     yieldRewardRateFixture({
       total: 0.04530754665300604,
       rateType: "APY",

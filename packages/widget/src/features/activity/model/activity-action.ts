@@ -1,14 +1,14 @@
 import { Match } from "effect";
-import type { YieldAction } from "../../../domain/schema/action-models";
-import type {
-  EarnValidator,
-  EarnYieldWithProvider,
-} from "../../../domain/schema/earn-models";
+import type { YieldAction } from "../../../domain/action/models";
 import {
   ActionStatus,
   type ActionStatus as ActionStatusValue,
-} from "../../../domain/types/action";
-import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
+} from "../../../domain/action/rules";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../../domain/earn/models";
+import type { WalletScopeKey } from "../../../services/wallet/wallet-scope";
 
 export type ActivityActionItem = {
   readonly actionData: YieldAction;

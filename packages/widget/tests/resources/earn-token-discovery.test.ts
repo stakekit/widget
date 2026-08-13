@@ -2,13 +2,13 @@ import { Cause, Effect, Layer, Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { ApiRequestError } from "../../src/domain/schema/api-errors";
 import { legacyTokenOptionsResourceAtom } from "../../src/resources/legacy-token-options/legacy-token-options";
 import {
   YieldTokensError,
   YieldTokensKey,
   yieldTokensPullAtom,
 } from "../../src/resources/yield-token-directory/yield-token-directory";
+import { ApiRequestError } from "../../src/services/api/api-errors";
 import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
 import {
   YieldResourceSource,

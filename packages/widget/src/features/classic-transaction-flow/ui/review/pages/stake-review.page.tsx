@@ -3,8 +3,8 @@ import { Trans } from "react-i18next";
 import { Highlight } from "../../../../../shared/ui/primitives/highlight";
 import { KycGateCard } from "../../../../earn/components";
 import { useTrackPage } from "../../../../tracking/state";
-import { useStakeReview } from "../hooks/use-stake-review.hook";
-import { ReviewPage } from "./common-page/common.page";
+import { useStakeReview } from "../hooks/use-stake-review.hook.ts";
+import { ReviewPage } from "./common-page/common.page.tsx";
 
 export const StakeReviewPage = () => {
   useTrackPage("stakeReview");

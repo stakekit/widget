@@ -12,8 +12,8 @@ import {
   emptyBorrowPositions,
 } from "../../../../domain/borrow/positions/borrow-positions";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
-import type { TokenBalance } from "../../../../domain/schema/financial-models";
-import type { WalletScopeKey } from "../../../../services/wallet/domain/scope";
+import type { TokenBalance } from "../../../../domain/finance/models";
+import type { WalletScopeKey } from "../../../../services/wallet/wallet-scope";
 import {
   type BorrowActionBlockReason,
   type BorrowActionPreparation,

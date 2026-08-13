@@ -9,20 +9,20 @@ import { Integration } from "../../src/domain/borrow/catalog/integration";
 import { Market } from "../../src/domain/borrow/catalog/market";
 import { isBorrowNetwork } from "../../src/domain/borrow/network";
 import { BorrowAccountSnapshot } from "../../src/domain/borrow/positions/borrow-account-snapshot";
-import { EarnLegacyTokenOptionsResponse } from "../../src/domain/schema/earn-models";
+import { EarnLegacyTokenOptionsResponse } from "../../src/domain/earn/models";
 import {
   TokenBalancesResponse,
   type YieldBalancesCommand,
-} from "../../src/domain/schema/financial-models";
-import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
+} from "../../src/domain/finance/models";
+import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
 import {
   ActivityFilterOptionsKey,
   activityFilterOptionsAtom,
-} from "../../src/features/activity/resources/activity-actions";
+} from "../../src/features/activity/state/read-models/activity-feed";
 import {
   ActivityActionsKey,
   getActivityHistoryKey,
-} from "../../src/features/activity/resources/activity-requests";
+} from "../../src/features/activity/state/read-models/activity-request";
 import {
   BorrowPositionKey,
   borrowPositionAtom,
@@ -30,11 +30,11 @@ import {
 import {
   mergedTokenOptionsAtom,
   positionsDataAtom,
-} from "../../src/features/earn/state/earn-selection/resources/atoms";
+} from "../../src/features/earn/state/earn-selection/catalog/catalog";
 import {
   PositionsDataKey,
   TokenOptionsKey,
-} from "../../src/features/earn/state/earn-selection/resources/keys";
+} from "../../src/features/earn/state/earn-selection/catalog/keys";
 import { activityHistoryPullAtom } from "../../src/resources/activity-history/activity-history";
 import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
 import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
@@ -49,7 +49,7 @@ import {
 import {
   WalletScopeKey,
   walletScopeOwnerKey,
-} from "../../src/services/wallet/domain/scope";
+} from "../../src/services/wallet/wallet-scope";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 

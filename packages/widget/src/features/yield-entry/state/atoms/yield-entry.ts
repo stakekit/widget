@@ -4,7 +4,7 @@ import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
 import type {
   WalletCommandIdentity,
   WalletScopeKey,
-} from "../../../../services/wallet/domain/scope";
+} from "../../../../services/wallet/wallet-scope";
 import {
   type ClassicTransactionFlowEnterMount,
   startClassicTransactionFlowAtom,

@@ -6,7 +6,7 @@ import {
   TokenBalanceScanCommand,
   TokenBalancesResponse,
   YieldBalancesCommand,
-} from "../../src/domain/schema/financial-models";
+} from "../../src/domain/finance/models";
 
 const token = {
   name: "Ethereum",

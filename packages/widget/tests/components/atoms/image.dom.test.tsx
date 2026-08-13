@@ -1,7 +1,7 @@
 import { act } from "react";
 import { describe, expect, it } from "vitest";
 import { Image } from "../../../src/shared/ui/primitives/image";
-import { render } from "../../utils/test-utils.dom";
+import { render } from "../../utils/test-utils.dom.tsx";
 
 const validSrcTwo =
   "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2'%20height='2'%3E%3C/svg%3E";

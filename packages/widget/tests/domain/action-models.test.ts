@@ -5,7 +5,7 @@ import {
   ActionCommand,
   TransactionGasEstimateJson,
   YieldAction,
-} from "../../src/domain/schema/action-models";
+} from "../../src/domain/action/models";
 import {
   yieldApiActionDtoFixture,
   yieldApiTransactionDtoFixture,

@@ -7,7 +7,7 @@ import {
   resolveActivityPageFilter,
   resolveActivityPageWalletStatus,
 } from "../../src/features/activity/state/page";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 
 type ActivityPageProjectionInput = Parameters<

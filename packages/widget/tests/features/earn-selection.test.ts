@@ -8,13 +8,10 @@ import {
   widgetConfigAtom,
 } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import type {
-  EarnValidator,
-  EarnYield,
-} from "../../src/domain/schema/earn-models";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
-import type { PositionsData } from "../../src/domain/types/positions";
-import { tokenString } from "../../src/domain/types/tokens";
+import type { EarnValidator, EarnYield } from "../../src/domain/earn/models";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
+import type { PositionsData } from "../../src/domain/portfolio/positions";
+import { tokenString } from "../../src/domain/token/token";
 import { earnEntryIntentEventProjectionAtom } from "../../src/features/earn/state";
 import {
   type EarnTokenOption,
@@ -45,7 +42,7 @@ import {
   positionsDataAtom,
   tokenOptionsPullAtom,
   yieldValidatorsAtom,
-} from "../../src/features/earn/state/earn-selection/resources/atoms";
+} from "../../src/features/earn/state/earn-selection/catalog/catalog";
 import {
   AvailableYieldCategoriesKey,
   DefaultTokenOptionsKey,
@@ -55,7 +52,7 @@ import {
   YieldCatalogKey,
   YieldValidatorsKey,
   YieldValidatorsPullKey,
-} from "../../src/features/earn/state/earn-selection/resources/keys";
+} from "../../src/features/earn/state/earn-selection/catalog/keys";
 import { earnMachineEntryAtom } from "../../src/features/earn/state/earn-selection/state/atoms";
 import {
   EarnCatalogError,
@@ -68,7 +65,7 @@ import {
 import {
   WalletScopeKey,
   walletScopeOwnerKey,
-} from "../../src/services/wallet/domain/scope";
+} from "../../src/services/wallet/wallet-scope";
 import {
   yieldApiValidatorFixture,
   yieldApiYieldDtoFixture,

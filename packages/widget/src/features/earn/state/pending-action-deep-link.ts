@@ -6,9 +6,8 @@ import {
   PAMultiValidatorsRequired,
   PASingleValidatorRequired,
 } from "../../../domain";
-import type { InitParams } from "../../../domain/schema/init-params";
-import { preparePendingActionRequestDto } from "../../../domain/types/pending-action-request";
-import { getPositionBalanceDataKey } from "../../../domain/types/positions";
+import { preparePendingActionCommand } from "../../../domain/action/action-command";
+import { getPositionBalanceDataKey } from "../../../domain/portfolio/positions";
 import {
   SingleYieldBalancesKey,
   singleYieldBalancesResourceAtom,
@@ -17,11 +16,12 @@ import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
 } from "../../../resources/yield-opportunity/provider";
+import type { ClassicTransactionWorkflowProviderDetail } from "../../../services/transaction-workflow/transaction-workflow-model";
+import type { InitParams } from "../../../services/wallet/init-params";
 import {
   type WalletScopeKey,
   walletScopeFromState,
-} from "../../../services/wallet/domain/scope";
-import type { ClassicTransactionWorkflowProviderDetail } from "../../../services/workflow/transaction-workflow-model";
+} from "../../../services/wallet/wallet-scope";
 import { initParamsAtom } from "../../init-params/state";
 import { walletConnectionStateAtom } from "../../wallet/state";
 
@@ -170,13 +170,13 @@ const projectPendingActionDeepLink = (value: PendingActionDeepLinkValue) => {
     };
   }
 
-  const prepared = preparePendingActionRequestDto({
+  const prepared = preparePendingActionCommand({
     pendingActionsState: new Map(),
     address: value.address,
     additionalAddresses: value.additionalAddresses,
     integration: value.yieldData,
     yieldBalance: balance,
-    pendingActionDto: value.pendingAction,
+    pendingAction: value.pendingAction,
     selectedValidators: [],
   });
 
@@ -185,7 +185,7 @@ const projectPendingActionDeepLink = (value: PendingActionDeepLinkValue) => {
         intentId: value.intentId,
         type: "review" as const,
         yieldOp: value.yieldData,
-        pendingActionDto: prepared.success,
+        pendingAction: prepared.success,
         balance,
         balanceId,
         providersDetails: getPendingActionProvidersDetails(value.yieldData),

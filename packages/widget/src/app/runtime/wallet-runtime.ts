@@ -14,10 +14,9 @@ import type { WidgetDomainEvents } from "../../services/events/widget-domain-eve
 import type { WidgetNavigation } from "../../services/navigation/widget-navigation";
 import type { WidgetPersistence } from "../../services/persistence/widget-persistence";
 import type { TrackingService } from "../../services/tracking/tracking-service";
-import { WalletAccountSetupService } from "../../services/wallet/wallet-account-setup-service";
+import { TransactionWorkflowService } from "../../services/transaction-workflow/transaction-workflow-service";
 import type { WalletModal } from "../../services/wallet/wallet-modal";
 import { WalletService } from "../../services/wallet/wallet-service";
-import { TransactionWorkflowService } from "../../services/workflow/transaction-workflow-service";
 import { appRuntime } from "./app-runtime";
 import { DeepLinkCoordinator } from "./deep-link-coordinator";
 
@@ -44,9 +43,6 @@ export const walletRuntime = Atom.runtime((get) => {
       .pipe(Effect.map((services) => Layer.succeedContext(services)))
   );
   const walletLayer = WalletService.defaultLayer.pipe(Layer.provide(appLayer));
-  const walletAccountSetupLayer = WalletAccountSetupService.layer.pipe(
-    Layer.provide(Layer.merge(appLayer, walletLayer))
-  );
   const transactionWorkflowLayer = TransactionWorkflowService.layer.pipe(
     Layer.provide(Layer.merge(appLayer, walletLayer))
   );
@@ -61,9 +57,7 @@ export const walletRuntime = Atom.runtime((get) => {
     )
   );
   const yieldEntrySubmissionLayer = YieldEntrySubmissionService.layer.pipe(
-    Layer.provide(
-      Layer.mergeAll(appLayer, walletLayer, walletAccountSetupLayer)
-    )
+    Layer.provide(Layer.mergeAll(appLayer, walletLayer))
   );
   const deepLinkCoordinatorLayer = DeepLinkCoordinator.layer.pipe(
     Layer.provide(
@@ -74,7 +68,6 @@ export const walletRuntime = Atom.runtime((get) => {
   return Layer.mergeAll(
     appLayer,
     walletLayer,
-    walletAccountSetupLayer,
     transactionWorkflowLayer,
     borrowTransactionFlowLayer,
     classicTransactionFlowLayer,

@@ -2,9 +2,9 @@ import BigNumber from "bignumber.js";
 import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
-import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
-import type { AppToken } from "../../../../../domain/schema/legacy-models";
-import type { ValidatorInput as ValidatorDto } from "../../../../../domain/types/validators";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
+import type { ValidatorInput as ValidatorDto } from "../../../../../domain/earn/validator";
+import type { Token } from "../../../../../domain/token/token";
 import {
   defaultFormattedNumber,
   formatNumber,
@@ -29,11 +29,11 @@ type AmountBlockProps = {
   onMaxClick: (() => void) | null;
   label: string;
   formattedAmount: string;
-  balance: { amount: BigNumber; token: AppToken } | null;
+  balance: { amount: BigNumber; token: Token } | null;
 } & (
   | {
       variant: "unstake";
-      unstakeToken: AppToken;
+      unstakeToken: Token;
       yieldDto: EarnYieldWithProvider;
       validators: {
         [Key in keyof Pick<
@@ -194,7 +194,7 @@ export const UnstakeInfo = ({
   validators: {
     [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
   }[];
-  unstakeToken: AppToken;
+  unstakeToken: Token;
 }) => {
   const { withdrawnTime, withdrawnNotAvailable, positionLocked } =
     useYieldMetaInfo({

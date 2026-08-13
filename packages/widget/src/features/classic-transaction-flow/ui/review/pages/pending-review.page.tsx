@@ -1,6 +1,6 @@
 import { useTrackPage } from "../../../../tracking/state";
-import { usePendingActionReview } from "../hooks/use-pending-review.hook";
-import { ReviewPage } from "./common-page/common.page";
+import { usePendingActionReview } from "../hooks/use-pending-review.hook.ts";
+import { ReviewPage } from "./common-page/common.page.tsx";
 
 export const PendingReviewPage = () => {
   const {

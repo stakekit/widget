@@ -11,18 +11,18 @@ import {
   normalizeWidgetBootstrapConfig,
   WidgetConfigService,
 } from "../../../src/services/config/widget-config";
+import { makeDefaultConfig } from "../../../src/services/wallet/default-wagmi-config";
 import {
   makeExternalProviderSnapshot,
   type WalletBootstrapResult,
-} from "../../../src/services/wallet/bootstrap";
-import { makeDefaultConfig } from "../../../src/services/wallet/default-wagmi-config";
-import type { WalletCoreState } from "../../../src/services/wallet/domain/state";
-import { disconnectedNormalizedWalletState } from "../../../src/services/wallet/domain/state";
-import { installExternalProviderSynchronization } from "../../../src/services/wallet/external-provider-sync";
+} from "../../../src/services/wallet/internal/runtime/bootstrap";
+import { installExternalProviderSynchronization } from "../../../src/services/wallet/internal/runtime/external-provider-sync";
 import type {
   WalletStateContext,
   WalletStateRuntime,
-} from "../../../src/services/wallet/wallet-state";
+} from "../../../src/services/wallet/internal/runtime/state";
+import type { WalletCoreState } from "../../../src/services/wallet/wallet-state";
+import { disconnectedNormalizedWalletState } from "../../../src/services/wallet/wallet-state";
 import { makeWalletTestController } from "./wallet-test-controller";
 
 const firstAddress = "0x0000000000000000000000000000000000000001";

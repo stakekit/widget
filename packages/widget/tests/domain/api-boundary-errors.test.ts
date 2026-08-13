@@ -4,7 +4,7 @@ import {
   ApiRequestError,
   type InputValidationError,
   ResponseDecodeError,
-} from "../../src/domain/schema/api-errors";
+} from "../../src/services/api/api-errors";
 import { withApiRequestError } from "../../src/services/api/api-operation";
 
 type ApiBoundaryError =

@@ -3,11 +3,11 @@ import BigNumber from "bignumber.js";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { getKycProviderName } from "../../../../../domain/types/kyc";
+import { getKycProviderName } from "../../../../../domain/earn/kyc";
 import {
   getExtendedYieldType,
   isUnstakeYieldType,
-} from "../../../../../domain/types/yields";
+} from "../../../../../domain/earn/yield";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import type { RewardTokenDetails } from "../../../../earn/components";
@@ -16,7 +16,7 @@ import {
   useClassicFlowIntake,
   useClassicFlowReview,
 } from "../../../react/classic-flow-route";
-import type { MetaInfoProps } from "../pages/common-page/common.page";
+import type { MetaInfoProps } from "../pages/common-page/common.page.tsx";
 
 export const useUnstakeActionReview = () => {
   const exitFlow = useClassicFlowIntake("Exit");

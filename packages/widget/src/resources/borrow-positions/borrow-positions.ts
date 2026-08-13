@@ -14,7 +14,7 @@ import {
   type WalletScopeKey,
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
-} from "../../services/wallet/domain/scope";
+} from "../../services/wallet/wallet-scope";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { withBorrowResourceError } from "../borrow/borrow-resource-error";
 import { borrowIntegrationsResourceAtom } from "../borrow-integrations/borrow-integrations";

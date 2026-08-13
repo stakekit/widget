@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import type { AppToken } from "../../../../../../domain/schema/legacy-models";
-import type { YieldMetadata } from "../../../../../../domain/types/yields";
+import type { YieldMetadata } from "../../../../../../domain/earn/yield";
+import type { Token } from "../../../../../../domain/token/token";
 import { config } from "../../../../../config/widget-defaults";
 import { useWidgetPresentation } from "../../../../widget-presentation";
 
 export const useVariantTokenUrls = (
-  token: AppToken,
+  token: Token,
   metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">
 ): {
   mainUrl: string | undefined;

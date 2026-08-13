@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 import { Trans } from "react-i18next";
-import type { YieldPendingActionType } from "../../../../../domain/types/pending-action";
+import type { YieldPendingActionType } from "../../../../../domain/action/pending-action";
 import { humanizePendingActionType } from "../../../../../shared/lib/formatters";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { MorphoStarsIcon } from "../../../../../shared/ui/primitives/icons/morpho-stars";

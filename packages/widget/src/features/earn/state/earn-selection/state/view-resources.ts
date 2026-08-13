@@ -1,7 +1,7 @@
 import { Match } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { EarnValidator } from "../../../../../domain/schema/earn-models";
+import type { EarnValidator } from "../../../../../domain/earn/models";
 import type { PullPage } from "../../../../../shared/effect/pagination";
 import {
   availableYieldCategoriesAtom,
@@ -11,8 +11,8 @@ import {
   positionsDataAtom,
   tokenOptionsPullAtom,
   yieldValidatorsAtom,
-} from "../resources/atoms";
-import { YieldValidatorsPullKey } from "../resources/keys";
+} from "../catalog/catalog";
+import { YieldValidatorsPullKey } from "../catalog/keys";
 import type { EarnRetryTarget } from "../types";
 import { earnMachineViewAtom } from "./atoms";
 

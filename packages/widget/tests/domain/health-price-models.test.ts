@@ -4,7 +4,8 @@ import {
   HealthStatus,
   PriceRequest,
   PriceResponse,
-} from "../../src/domain/schema/health-price-models";
+} from "../../src/domain/health/models";
+import { Token } from "../../src/domain/token/token";
 
 describe("health and price application schemas", () => {
   it("strictly decodes health responses", () => {
@@ -57,5 +58,30 @@ describe("health and price application schemas", () => {
       price: 150,
       price24H: undefined,
     });
+  });
+
+  it("looks up legacy price keys without conflating them with Token identity", async () => {
+    const prices = await Effect.runPromise(
+      Schema.decodeUnknownEffect(PriceResponse)({
+        "ethereum-": { price: 3000 },
+        "ethereum-0xabcd": { price: 1 },
+      })
+    );
+    const native = Schema.decodeUnknownSync(Token)({
+      decimals: 18,
+      name: "Ether",
+      network: "ethereum",
+      symbol: "ETH",
+    });
+    const addressed = Schema.decodeUnknownSync(Token)({
+      address: "0xAbCd",
+      decimals: 6,
+      name: "USD Coin",
+      network: "ethereum",
+      symbol: "USDC",
+    });
+
+    expect(prices.getByToken(native)?.price).toBe(3000);
+    expect(prices.getByToken(addressed)?.price).toBe(1);
   });
 });

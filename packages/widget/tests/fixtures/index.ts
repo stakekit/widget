@@ -1,20 +1,17 @@
 import { faker } from "@faker-js/faker";
 import { DateTime, Schema } from "effect";
-import {
-  ActionTransaction,
-  YieldAction,
-} from "../../src/domain/schema/action-models";
+import { ActionTransaction, YieldAction } from "../../src/domain/action/models";
 import type {
   EarnBalance,
   EarnProvider,
   EarnValidator,
-} from "../../src/domain/schema/earn-models";
+} from "../../src/domain/earn/models";
 import {
   EarnProvider as EarnProviderSchema,
   EarnYield,
-} from "../../src/domain/schema/earn-models";
-import { EvmNetworks } from "../../src/domain/types/chains/networks";
-import type { YieldRewardRateDto } from "../../src/domain/types/reward-rate";
+} from "../../src/domain/earn/models";
+import type { YieldRewardRate } from "../../src/domain/earn/reward-rate";
+import { EvmNetworks } from "../../src/domain/network/networks";
 import type {
   TokenDto as LegacyTokenDto,
   YieldDto as LegacyYieldDto,
@@ -26,8 +23,8 @@ type YieldApiProviderDto = typeof EarnProvider.Encoded;
 const apyFaker = () => faker.number.float({ min: 0, max: 0.05 });
 
 export const yieldRewardRateFixture = (
-  overrides?: Partial<YieldRewardRateDto>
-): YieldRewardRateDto => ({
+  overrides?: Partial<YieldRewardRate>
+): YieldRewardRate => ({
   total: apyFaker(),
   rateType: "APY",
   components: [],

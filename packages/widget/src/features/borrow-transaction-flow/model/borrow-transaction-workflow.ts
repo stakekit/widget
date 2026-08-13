@@ -5,7 +5,7 @@ import {
   getCurrentTransactionWorkflowTransaction,
   type TransactionWorkflowError,
   type TransactionWorkflowState,
-} from "../../../services/workflow/transaction-workflow-model";
+} from "../../../services/transaction-workflow/transaction-workflow-model";
 
 type BorrowExecutionPhase =
   | "advancing"

@@ -1,12 +1,12 @@
 import BigNumber from "bignumber.js";
 import { Data } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { TokenAddress } from "../../../domain/schema/identifiers";
-import type { AppToken } from "../../../domain/schema/legacy-models";
-import type { YieldPendingActionType } from "../../../domain/types/pending-action";
-import type { PendingActionStateKey } from "../../../domain/types/pending-action-request";
-import type { YieldBalanceType } from "../../../domain/types/positions";
-import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
+import type { PendingActionStateKey } from "../../../domain/action/action-command";
+import type { YieldPendingActionType } from "../../../domain/action/pending-action";
+import type { TokenAddress } from "../../../domain/identity/identifiers";
+import type { YieldBalanceType } from "../../../domain/portfolio/positions";
+import type { Token } from "../../../domain/token/token";
+import type { WalletScopeKey } from "../../../services/wallet/wallet-scope";
 
 export type PositionDetailsWorkflowState = {
   readonly exitReceiveTokenAddress: TokenAddress | null;
@@ -22,7 +22,7 @@ export type PendingActionAmountChange = {
     readonly amount: BigNumber;
     readonly balanceType: YieldBalanceType;
     readonly passthrough: string;
-    readonly token: AppToken;
+    readonly token: Token;
   };
 };
 

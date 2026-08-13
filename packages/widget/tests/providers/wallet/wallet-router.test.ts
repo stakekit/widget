@@ -2,20 +2,20 @@ import { Effect, Schema } from "effect";
 import { type Chain, type Hash, type Hex, zeroAddress } from "viem";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
-import { WalletAddress } from "../../../src/domain/schema/identifiers";
-import type { Network } from "../../../src/domain/schema/network-model";
-import {
-  disconnectedLedgerConnectorState,
-  disconnectedNormalizedWalletState,
-  type NormalizedWalletState,
-} from "../../../src/services/wallet/domain/state";
+import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import type { Network } from "../../../src/domain/network/network";
 import {
   routeWalletAccountSwitch,
   routeWalletLedgerAccountRequest,
   routeWalletTransaction,
   type WalletRoutingContext,
-} from "../../../src/services/wallet/router";
-import type { WagmiActions } from "../../../src/services/wallet/wagmi-actions";
+} from "../../../src/services/wallet/internal/runtime/router";
+import type { WagmiActions } from "../../../src/services/wallet/internal/runtime/wagmi-actions";
+import {
+  disconnectedLedgerConnectorState,
+  disconnectedNormalizedWalletState,
+  type NormalizedWalletState,
+} from "../../../src/services/wallet/wallet-state";
 
 const transactionInput = {
   family: "classic" as const,

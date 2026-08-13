@@ -4,7 +4,7 @@ import {
   decodeBorrowTransactionForWallet,
   Transaction,
 } from "../../../src/domain/borrow/execution/transaction";
-import { WalletAddress } from "../../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../../src/domain/identity/identifiers";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

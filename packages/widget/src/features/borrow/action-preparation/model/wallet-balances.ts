@@ -4,7 +4,7 @@ import type { Market } from "../../../../domain/borrow/catalog/market";
 import type { BorrowToken } from "../../../../domain/borrow/catalog/token";
 import { decodeTokenId, type TokenId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
-import type { TokenBalance } from "../../../../domain/schema/financial-models";
+import type { TokenBalance } from "../../../../domain/finance/models";
 
 type BorrowBalanceToken = Pick<
   BorrowToken,

@@ -1,13 +1,13 @@
 import BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
-import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
-import type { getEffectiveYieldRewardRateDetails } from "../../../../../domain/types/reward-rate";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
+import type { getEffectiveYieldRewardRateDetails } from "../../../../../domain/earn/reward-rate";
 import {
   getDashboardYieldCategory,
   getYieldActionArg,
   hasYieldBearingOutputToken,
   isNonZeroRewardRateYield,
-} from "../../../../../domain/types/yields";
+} from "../../../../../domain/earn/yield";
 import {
   formatCompactNumber,
   formatPercent,

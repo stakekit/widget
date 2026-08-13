@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigAtom } from "../../../../app/config/settings";
 import { toBorrowWalletStateProjection } from "../../../../services/borrow/wallet-state-projection";
-import { disconnectedNormalizedWalletState } from "../../../../services/wallet/domain/state";
+import { disconnectedNormalizedWalletState } from "../../../../services/wallet/wallet-state";
 import { walletStateResultAtom } from "../../../wallet/state";
 
 export const disconnectedBorrowWalletProjection = toBorrowWalletStateProjection(

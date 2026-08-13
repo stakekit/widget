@@ -4,7 +4,7 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import {
   disconnectedLedgerConnectorState,
   type LedgerConnectorState,
-} from "../../../services/wallet/domain/state";
+} from "../../../services/wallet/wallet-state";
 import { currentWalletLedgerStateAtom } from "../state/root-atom";
 
 export const useLedgerState = (): LedgerConnectorState => {

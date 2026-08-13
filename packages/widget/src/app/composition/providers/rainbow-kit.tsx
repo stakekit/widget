@@ -7,7 +7,6 @@ import {
 import type { PropsWithChildren } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { shouldShowDisconnect } from "../../../domain/types/connectors";
 import { useTrackEvent } from "../../../features/tracking/state";
 import {
   addLedgerAccountAtom,
@@ -15,6 +14,7 @@ import {
   useSKWallet,
   walletModalAdapterAtom,
 } from "../../../features/wallet/state";
+import { shouldShowDisconnect } from "../../../services/wallet/wallet-connectors";
 import { vars } from "../../../shared/styles/theme/contract.css";
 import { id } from "../../../shared/styles/theme/ids";
 import type { ConnectKitTheme } from "../../../shared/styles/tokens/connect-kit";

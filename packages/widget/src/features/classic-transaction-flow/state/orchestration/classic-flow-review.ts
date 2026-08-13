@@ -13,7 +13,7 @@ import type {
   ActionCommand,
   ManageActionCommand,
   YieldAction,
-} from "../../../../domain/schema/action-models";
+} from "../../../../domain/action/models";
 import { YieldOperations } from "../../../../services/api/yield-operations";
 import type { WidgetNavigationError } from "../../../../services/navigation/widget-navigation";
 import { TrackingService } from "../../../../services/tracking/tracking-service";

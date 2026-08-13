@@ -1,13 +1,13 @@
 import BigNumber from "bignumber.js";
 import { Trans, useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
-import type { EarnValidator } from "../../../../../../../domain/schema/earn-models";
-import type { AppToken } from "../../../../../../../domain/schema/legacy-models";
-import { getEffectiveYieldRewardRateDetails } from "../../../../../../../domain/types/reward-rate";
+import type { EarnValidator } from "../../../../../../../domain/earn/models";
+import { getEffectiveYieldRewardRateDetails } from "../../../../../../../domain/earn/reward-rate";
 import {
   getYieldOutputToken,
   getYieldTypeLabels,
-} from "../../../../../../../domain/types/yields";
+} from "../../../../../../../domain/earn/yield";
+import type { Token } from "../../../../../../../domain/token/token";
 import { formatNumber } from "../../../../../../../shared/lib/number-format";
 import { Divider } from "../../../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
@@ -200,7 +200,7 @@ const YieldStrategyDetails = ({
   yieldType,
 }: {
   outputAmount: string;
-  outputToken: AppToken | null;
+  outputToken: Token | null;
   providers: StrategyProvider[];
   yieldType: string;
 }) => {

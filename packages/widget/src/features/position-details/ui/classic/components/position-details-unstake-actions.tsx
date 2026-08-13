@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { getExtendedYieldType } from "../../../../../domain/types/yields";
+import { getExtendedYieldType } from "../../../../../domain/earn/yield";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { KycGateCard } from "../../../../earn/components";
 import {

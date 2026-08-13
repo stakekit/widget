@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   getEffectiveYieldRewardRateDetails,
   getRewardRateBreakdown,
-  type YieldRewardRateDto,
-} from "../../src/domain/types/reward-rate";
+  type YieldRewardRate,
+} from "../../src/domain/earn/reward-rate";
 import {
   yieldApiValidatorFixture,
   yieldApiYieldFixture,
@@ -15,7 +15,7 @@ const token = yieldApiYieldFixture().token;
 
 const nativeComponent = (
   rate: number
-): YieldRewardRateDto["components"][number] => ({
+): YieldRewardRate["components"][number] => ({
   rate,
   rateType: "APY",
   token,

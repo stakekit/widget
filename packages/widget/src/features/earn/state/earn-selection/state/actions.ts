@@ -1,9 +1,9 @@
+import type { TronResource } from "../../../../../domain/action/tron-resource";
 import type {
   EarnValidator,
   EarnValidatorKey,
-} from "../../../../../domain/schema/earn-models";
-import type { YieldId } from "../../../../../domain/schema/identifiers";
-import type { TronResource } from "../../../../../domain/schema/legacy-models";
+} from "../../../../../domain/earn/models";
+import type { YieldId } from "../../../../../domain/identity/identifiers";
 import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import type { EarnTokenKey } from "../types";
 

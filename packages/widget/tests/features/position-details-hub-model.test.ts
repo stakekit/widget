@@ -71,7 +71,7 @@ describe("position details hub model", () => {
         integrationData: yieldApiYieldFixture({
           status: { enter: false, exit: false },
         }),
-        pendingActions: [{ pendingActionDto: { type: "CLAIM_REWARDS" } }],
+        pendingActions: [{ pendingAction: { type: "CLAIM_REWARDS" } }],
         positionBalancesByType: new Map(),
         reducedStakedOrLiquidBalance: { amount: 1 },
         unstakeToken: { symbol: "ETH" },
@@ -120,7 +120,7 @@ describe("position details hub model", () => {
         integrationData: yieldApiYieldFixture({
           status: { enter: false, exit: false },
         }),
-        pendingActions: [{ pendingActionDto: { type: "CLAIM_REWARDS" } }],
+        pendingActions: [{ pendingAction: { type: "CLAIM_REWARDS" } }],
       })
     ).toBe(true);
   });

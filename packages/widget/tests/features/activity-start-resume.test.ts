@@ -5,7 +5,7 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { startActivityResumeAtom } from "../../src/features/activity/state/start-activity-resume";
 import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
 import { walletConnectionStateAtom } from "../../src/features/wallet/state";
@@ -15,9 +15,9 @@ import {
   type WidgetNavigationOptions,
   type WidgetPath,
 } from "../../src/services/navigation/widget-navigation";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
-import { disconnectedLedgerConnectorState } from "../../src/services/wallet/domain/state";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
+import { disconnectedLedgerConnectorState } from "../../src/services/wallet/wallet-state";
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,

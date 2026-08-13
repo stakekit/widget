@@ -1,6 +1,6 @@
 import { createContext, type PropsWithChildren, useContext } from "react";
-import type { AppToken } from "../../domain/schema/legacy-models";
-import type { Network } from "../../domain/schema/network-model";
+import type { Network } from "../../domain/network/network";
+import type { Token } from "../../domain/token/token";
 import type { WidgetVariant } from "../styles/recipe-variant";
 
 /**
@@ -16,7 +16,7 @@ export type WidgetPresentation = {
   readonly hideNetworkLogo: boolean;
   readonly locale: string;
   readonly mapNetworkIconUrl: (network: Network) => string | undefined;
-  readonly mapTokenIconUrl: (token: AppToken) => string | undefined;
+  readonly mapTokenIconUrl: (token: Token) => string | undefined;
   readonly portalContainer: HTMLElement | undefined;
   readonly variant: WidgetVariant;
 };

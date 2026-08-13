@@ -4,13 +4,6 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import {
-  ActivityFilterOptionsKey,
-  activityActionsPullAtom,
-  activityFilterOptionsAtom,
-  loadMoreActivityActionsAtom,
-} from "../../src/features/activity/resources/activity-actions";
-import { ActivityActionsKey } from "../../src/features/activity/resources/activity-requests";
 import { activityFilterAtom } from "../../src/features/activity/state/filter";
 import {
   activityPageViewAtom,
@@ -19,12 +12,19 @@ import {
   setActivityPageFilterAtom,
 } from "../../src/features/activity/state/page";
 import {
+  ActivityFilterOptionsKey,
+  activityActionsPullAtom,
+  activityFilterOptionsAtom,
+  loadMoreActivityActionsAtom,
+} from "../../src/features/activity/state/read-models/activity-feed";
+import { ActivityActionsKey } from "../../src/features/activity/state/read-models/activity-request";
+import {
   walletConfigResultAtom,
   walletConnectionStateAtom,
   walletScopeAtom,
 } from "../../src/features/wallet/state";
 import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 
 const address = Schema.decodeUnknownSync(

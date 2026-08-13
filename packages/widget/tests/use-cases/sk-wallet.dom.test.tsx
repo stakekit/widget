@@ -11,19 +11,22 @@ import { HttpResponse, http } from "msw";
 import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { ActionId, TransactionId } from "../../src/domain/schema/identifiers";
-import { solana, ton } from "../../src/domain/types/chains/misc";
-import { MiscNetworks } from "../../src/domain/types/chains/networks";
+import { ActionId, TransactionId } from "../../src/domain/identity/identifiers";
+import { MiscNetworks } from "../../src/domain/network/networks";
 import { useSKWallet } from "../../src/features/wallet/state";
 import { WagmiConfigProvider } from "../../src/features/wallet/ui";
 import type { SKExternalProviders, SKTxMeta } from "../../src/public-api/types";
-import type { WalletSignTransactionInput } from "../../src/services/wallet/domain/transactions";
+import {
+  solana,
+  ton,
+} from "../../src/services/wallet/internal/adapters/configured-chains";
 import { WalletService } from "../../src/services/wallet/wallet-service";
+import type { WalletSignTransactionInput } from "../../src/services/wallet/wallet-transactions";
 import { legacyApiRoute } from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
-import { describe, expect, it, vi } from "../utils/test-extend.dom";
-import { renderHook } from "../utils/test-utils.dom";
+import { describe, expect, it, vi } from "../utils/test-extend.dom.ts";
+import { renderHook } from "../utils/test-utils.dom.tsx";
 
 const signTransactionAtom = walletRuntime.fn(
   (input: WalletSignTransactionInput) =>

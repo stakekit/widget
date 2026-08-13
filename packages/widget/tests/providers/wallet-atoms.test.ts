@@ -2,26 +2,26 @@ import type { Connection as SolanaConnection } from "@solana/web3.js";
 import { Effect, Schema } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector, createConfig } from "wagmi";
-import { AdditionalAddresses } from "../../src/domain/schema/address-models";
-import { InitParams } from "../../src/domain/schema/init-params";
-import { EnabledNetworksResponse } from "../../src/domain/schema/wallet-models";
-import { getConfig as getEvmConfig } from "../../src/services/wallet/connectors/ethereum/config";
-import {
-  makeInitializeWallet,
-  type WalletInitialConnectionInput,
-} from "../../src/services/wallet/initial-connection";
+import { AdditionalAddresses } from "../../src/domain/wallet/address";
+import { EnabledNetworksResponse } from "../../src/domain/wallet/models";
+import { InitParams } from "../../src/services/wallet/init-params";
+import { getConfig as getEvmConfig } from "../../src/services/wallet/internal/adapters/evm/config";
 import {
   WagmiOperations,
   WagmiOperationsError,
   type WagmiOperationsService,
   wagmiOperations,
-} from "../../src/services/wallet/platform/wagmi-operations";
-import { makeWagmiActions } from "../../src/services/wallet/wagmi-actions";
+} from "../../src/services/wallet/internal/platform/wagmi-operations";
+import {
+  makeInitializeWallet,
+  type WalletInitialConnectionInput,
+} from "../../src/services/wallet/internal/runtime/initial-connection";
+import { makeWagmiActions } from "../../src/services/wallet/internal/runtime/wagmi-actions";
 import {
   buildWagmiConfig,
   getUnseenMipdProviders,
   scopedMipdSubscription,
-} from "../../src/services/wallet/wagmi-config";
+} from "../../src/services/wallet/internal/runtime/wagmi-config";
 
 const emptyInitParams = {
   accountId: null,

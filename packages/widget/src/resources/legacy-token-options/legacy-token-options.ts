@@ -1,11 +1,11 @@
 import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
+import type { Network } from "../../domain/network/network";
 import type {
   ApiRequestError,
   ResponseDecodeError,
-} from "../../domain/schema/api-errors";
-import type { Network } from "../../domain/schema/network-model";
+} from "../../services/api/api-errors";
 import { LegacyResourceSource } from "../../services/api/legacy-resource-source";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";

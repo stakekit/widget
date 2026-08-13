@@ -9,7 +9,7 @@ import {
   widgetConfigAtom,
 } from "../../src/app/config/settings";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { ActionCommand } from "../../src/domain/schema/action-models";
+import { ActionCommand } from "../../src/domain/action/models";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { startClassicTransactionFlowAtom } from "../../src/features/classic-transaction-flow/state";
 import {
@@ -27,10 +27,10 @@ import {
   WidgetNavigation,
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
-import { disconnectedLedgerConnectorState } from "../../src/services/wallet/domain/state";
+import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
-import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
+import { disconnectedLedgerConnectorState } from "../../src/services/wallet/wallet-state";
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,
@@ -38,8 +38,8 @@ import {
 } from "../fixtures";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { makeTestStakeKitApiLayer } from "../utils/stakekit-api-layer";
-import { describe, expect, it } from "../utils/test-extend.dom";
-import { renderHook } from "../utils/test-utils.dom";
+import { describe, expect, it } from "../utils/test-extend.dom.ts";
+import { renderHook } from "../utils/test-utils.dom.tsx";
 
 const yieldApiUrl = "https://yield.example.com";
 const command = Schema.decodeUnknownSync(ActionCommand)({

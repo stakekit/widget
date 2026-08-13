@@ -3,9 +3,9 @@ import clsx from "clsx";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
-import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
-import type { TokenAddress } from "../../../../../domain/schema/identifiers";
-import type { AppToken } from "../../../../../domain/schema/legacy-models";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
+import type { TokenAddress } from "../../../../../domain/identity/identifiers";
+import type { Token } from "../../../../../domain/token/token";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import {
   SelectModal,
@@ -38,7 +38,7 @@ export const ExitReceiveTokenAccessory = ({
 }: {
   readonly integration: EarnYieldWithProvider;
   readonly onSelect: (address: TokenAddress) => void;
-  readonly positionToken: AppToken;
+  readonly positionToken: Token;
   readonly selection: PositionDetailsExitReceiveTokenSelection | null;
 }) => {
   const { t } = useTranslation();

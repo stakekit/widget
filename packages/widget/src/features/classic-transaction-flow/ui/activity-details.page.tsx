@@ -1,15 +1,15 @@
 import {
   ActionStatus,
   type TransactionType,
-} from "../../../domain/types/action";
+} from "../../../domain/action/rules";
 import { Box } from "../../../shared/ui/primitives/box";
 import {
   ClassicFlowReviewScope,
   useClassicFlowIntake,
 } from "../react/classic-flow-route";
-import { useActivityHistoryComplete } from "./complete/hooks/use-activity-complete.hook";
-import { CompletePageComponent } from "./complete/pages/common.page";
-import { ActionReviewPage } from "./review/pages/action-review.page";
+import { useActivityHistoryComplete } from "./complete/hooks/use-activity-complete.hook.ts";
+import { CompletePageComponent } from "./complete/pages/common.page.tsx";
+import { ActionReviewPage } from "./review/pages/action-review.page.tsx";
 import { useViewTransaction } from "./use-view-transaction";
 
 export const ActivityDetailsPage = () => {

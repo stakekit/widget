@@ -4,28 +4,28 @@ import * as Reactivity from "effect/unstable/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { widgetConfigAtom } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { ApiRequestError } from "../../src/domain/schema/api-errors";
-import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { TokenBalancesResponse } from "../../src/domain/finance/models";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import {
   availableYieldCategoriesAtom,
   earnYieldCatalogAtom,
   mergedTokenOptionsAtom,
   yieldValidatorsAtom,
-} from "../../src/features/earn/state/earn-selection/resources/atoms";
+} from "../../src/features/earn/state/earn-selection/catalog/catalog";
 import {
   AvailableYieldCategoriesKey,
   TokenOptionsKey,
   YieldCatalogKey,
   YieldValidatorsKey,
-} from "../../src/features/earn/state/earn-selection/resources/keys";
+} from "../../src/features/earn/state/earn-selection/catalog/keys";
 import {
   MultiYieldsKey,
   visibleMultiYieldsAtom,
 } from "../../src/features/yield-summary/state/multi-yields";
+import { ApiRequestError } from "../../src/services/api/api-errors";
 import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
 import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import {
   yieldApiProviderFixture,
   yieldApiValidatorFixture,

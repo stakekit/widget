@@ -10,9 +10,9 @@ import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import {
   sameWalletScopeOwner,
   type WalletScopeOwnerKey,
-} from "../../services/wallet/domain/scope";
-import type { WalletState } from "../../services/wallet/domain/state";
+} from "../../services/wallet/wallet-scope";
 import { WalletService } from "../../services/wallet/wallet-service";
+import type { WalletState } from "../../services/wallet/wallet-state";
 import { walletRuntime } from "./wallet-runtime";
 
 type TransactionWorkflowEnded = Extract<

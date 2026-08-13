@@ -7,17 +7,21 @@ import {
   DetailRow,
   DetailsSection,
   EarnDetailsHeader,
+  RiskRatingBadge,
+  riskSummaryActions,
+  YieldRiskInfoTooltip,
 } from "../../../../earn/components";
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
 } from "../../../../yield-summary/state";
-import { usePositionDetails } from "../../classic/hooks/use-position-details";
 import {
+  type DashboardPositionDetailValue,
   type DashboardPositionMetricCard,
   getDashboardPositionDetailsModel,
   getPositionHeaderBadges,
-} from "../position-details-model";
+} from "../../../model/dashboard-position-details";
+import { usePositionDetails } from "../../classic/hooks/use-position-details";
 import * as styles from "./styles.css";
 
 const PositionMetricCards = ({
@@ -68,6 +72,16 @@ const PositionMetricCards = ({
     })}
   </Box>
 );
+
+const renderDetailValue = (value: DashboardPositionDetailValue) =>
+  typeof value === "string" ? (
+    value
+  ) : (
+    <div className={riskSummaryActions}>
+      <RiskRatingBadge risk={value.risk} />
+      <YieldRiskInfoTooltip />
+    </div>
+  );
 
 export const PositionDetailsInfo = () => {
   const positionDetails = usePositionDetails();
@@ -150,7 +164,12 @@ export const PositionDetailsInfo = () => {
 
         <DetailsSection title={t("dashboard.position_details.details")}>
           {model.detailRows.map((row) => (
-            <DetailRow key={row.id} {...row} />
+            <DetailRow
+              key={row.id}
+              id={row.id}
+              label={row.label}
+              value={renderDetailValue(row.value)}
+            />
           ))}
 
           {model.addressRows.length > 0 && (

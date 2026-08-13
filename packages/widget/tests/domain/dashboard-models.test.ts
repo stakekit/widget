@@ -5,7 +5,7 @@ import {
   RewardRateHistoryResponse,
   RewardsSummaryRecord,
   TvlHistoryResponse,
-} from "../../src/domain/schema/dashboard-models";
+} from "../../src/domain/portfolio/models";
 
 const envelope = {
   from: "2026-06-01T00:00:00.000Z",

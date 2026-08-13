@@ -1,9 +1,9 @@
 import BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { Prices } from "../../../domain/schema/health-price-models";
-import { getActionProviderYieldId } from "../../../domain/types/action";
-import { isBittensorStaking } from "../../../domain/types/yields";
+import { getActionProviderYieldId } from "../../../domain/action/rules";
+import { isBittensorStaking } from "../../../domain/earn/yield";
+import type { Prices } from "../../../domain/health/models";
 import { getFeesInUSD, getGasFeeInUSD } from "../../../shared/lib/formatters";
 import { getYieldEntryEstimatedRewards } from "../../yield-entry/state";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/state";

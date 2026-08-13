@@ -11,7 +11,7 @@ import {
   SubscriptionRef,
 } from "effect";
 import * as KeyValueStore from "effect/unstable/persistence/KeyValueStore";
-import type { WalletAddress } from "../../domain/schema/identifiers";
+import type { WalletAddress } from "../../domain/identity/identifiers";
 import { config } from "../../shared/config/widget-defaults";
 
 const storageKey = <Name extends string>(name: Name) =>

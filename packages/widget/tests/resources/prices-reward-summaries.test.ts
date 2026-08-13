@@ -2,13 +2,9 @@ import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { ApiRequestError } from "../../src/domain/schema/api-errors";
-import { RewardsAddresses } from "../../src/domain/schema/dashboard-models";
-import {
-  type PriceRequest,
-  Prices,
-} from "../../src/domain/schema/health-price-models";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { type PriceRequest, Prices } from "../../src/domain/health/models";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { RewardsAddresses } from "../../src/domain/portfolio/models";
 import {
   RewardSummariesError,
   RewardSummariesKey,
@@ -18,6 +14,7 @@ import {
   TokenPricesKey,
   tokenPricesResourceAtom,
 } from "../../src/resources/token-prices/token-prices";
+import { ApiRequestError } from "../../src/services/api/api-errors";
 import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
 import { yieldApiYieldFixture } from "../fixtures";
 

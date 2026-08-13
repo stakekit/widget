@@ -6,8 +6,8 @@ import {
   type WidgetNavigationService,
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
+import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
 import { WalletService } from "../../src/services/wallet/wallet-service";
-import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
 
 export const makeClassicFlowTestWalletLayer = ({
   navigation,

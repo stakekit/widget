@@ -2,8 +2,8 @@ import { useTranslation } from "react-i18next";
 import {
   getRewardRateBreakdown,
   type RewardRateBreakdownItem,
-  type YieldRewardRateDto,
-} from "../../../../../domain/types/reward-rate";
+  type YieldRewardRate,
+} from "../../../../../domain/earn/reward-rate";
 import { getRewardRateFormatted } from "../../../../../shared/lib/formatters";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
@@ -25,7 +25,7 @@ export const RewardRateBreakdown = ({
   title,
   testId,
 }: {
-  rewardRate: YieldRewardRateDto | null | undefined;
+  rewardRate: YieldRewardRate | null | undefined;
   showUpToCampaign?: boolean;
   title?: string;
   testId?: string;

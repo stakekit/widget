@@ -3,28 +3,28 @@ import {
   PAMultiValidatorsRequired,
   PASingleValidatorRequired,
 } from "../../../domain";
+import { preparePendingActionCommand } from "../../../domain/action/action-command";
 import {
   ActionCommand,
   type PendingAction,
-} from "../../../domain/schema/action-models";
-import type { AdditionalAddresses } from "../../../domain/schema/address-models";
+} from "../../../domain/action/models";
+import type { ExitReceiveToken } from "../../../domain/action/rules";
 import type {
   EarnBalance,
-  EarnToken,
   EarnValidator,
   EarnYieldWithProvider,
-} from "../../../domain/schema/earn-models";
-import type { WalletAddress } from "../../../domain/schema/identifiers";
-import type { ExitReceiveToken } from "../../../domain/types/action";
-import { preparePendingActionRequestDto } from "../../../domain/types/pending-action-request";
-import { getYieldActionArg } from "../../../domain/types/yields";
+} from "../../../domain/earn/models";
+import { getYieldActionArg } from "../../../domain/earn/yield";
+import type { WalletAddress } from "../../../domain/identity/identifiers";
+import type { Token } from "../../../domain/token/token";
+import type { AdditionalAddresses } from "../../../domain/wallet/address";
 
 class PendingActionAttemptId extends Data.Class<{
   readonly value: string;
 }> {}
 
 type PendingActionSelection = Readonly<{
-  readonly pendingActionDto: PendingAction;
+  readonly pendingAction: PendingAction;
   readonly yieldBalance: EarnBalance;
 }>;
 
@@ -71,15 +71,15 @@ export const makePendingActionModalStore = (): PendingActionModalStore => ({
 
 const makeOpenPendingActionModalState = ({
   attemptId,
-  pendingActionDto,
+  pendingAction,
   yieldBalance,
 }: PendingActionSelection & {
   readonly attemptId: PendingActionAttemptId;
 }): PendingActionModalState => ({
   _tag: "Open",
   attemptId,
-  multiSelect: PAMultiValidatorsRequired(pendingActionDto),
-  pendingAction: { pendingActionDto, yieldBalance },
+  multiSelect: PAMultiValidatorsRequired(pendingAction),
+  pendingAction: { pendingAction, yieldBalance },
   selectedValidators: new Set([
     ...(yieldBalance.validators?.map((validator) => validator.address) ?? []),
     ...(yieldBalance.validator?.address
@@ -115,10 +115,10 @@ export const makeAutomaticPendingActionModalState = (
         "automatic",
         input.yieldBalance.address,
         input.yieldBalance.type,
-        input.pendingActionDto.intent,
-        input.pendingActionDto.type,
-        input.pendingActionDto.passthrough,
-        input.pendingActionDto.amount ?? null,
+        input.pendingAction.intent,
+        input.pendingAction.type,
+        input.pendingAction.passthrough,
+        input.pendingAction.amount ?? null,
       ]),
     }),
   });
@@ -294,7 +294,7 @@ export const resolvePositionDetailsExitSubmission = ({
   readonly canMount: boolean;
   readonly facts: PositionDetailsExitFacts | null;
   readonly kycBlocking: boolean;
-  readonly token: EarnToken | null;
+  readonly token: Token | null;
 }) => {
   const prepared = facts ? preparePositionDetailsExitAction(facts) : null;
   return amountValid && canMount && !kycBlocking && prepared && token
@@ -305,7 +305,7 @@ export const resolvePositionDetailsExitSubmission = ({
 export type PositionPendingActionCommand =
   | Readonly<{
       readonly _tag: "Select";
-      readonly pendingActionDto: PendingAction;
+      readonly pendingAction: PendingAction;
       readonly yieldBalance: EarnBalance;
     }>
   | Readonly<{ readonly _tag: "SubmitValidators" }>;
@@ -341,7 +341,7 @@ export const resolvePositionPendingActionDecision = ({
   readonly integration: EarnYieldWithProvider | null;
   readonly modal: PendingActionModalState;
   readonly pendingActionsState: Parameters<
-    typeof preparePendingActionRequestDto
+    typeof preparePendingActionCommand
   >[0]["pendingActionsState"];
   readonly wallet: ConnectedPendingActionWallet | null;
 }) => {
@@ -351,7 +351,7 @@ export const resolvePositionPendingActionDecision = ({
     if (command._tag === "Select") {
       return {
         attemptId: null,
-        pendingActionDto: command.pendingActionDto,
+        pendingAction: command.pendingAction,
         selectedValidators: [] as EarnValidator["address"][],
         yieldBalance: command.yieldBalance,
       };
@@ -370,24 +370,24 @@ export const resolvePositionPendingActionDecision = ({
     command._tag === "Select"
       ? {
           _tag: "PendingActionClicked",
-          pendingActionType: selection.pendingActionDto.type,
+          pendingActionType: selection.pendingAction.type,
           yieldId: integration.id,
         }
       : {
           _tag: "ValidatorsSubmitted",
-          pendingActionType: selection.pendingActionDto.type,
+          pendingActionType: selection.pendingAction.type,
           validators: selection.selectedValidators,
           yieldId: integration.id,
         };
 
   if (
     command._tag === "Select" &&
-    pendingActionNeedsValidatorSelection(selection.pendingActionDto)
+    pendingActionNeedsValidatorSelection(selection.pendingAction)
   ) {
     return {
       _tag: "Open",
       input: {
-        pendingActionDto: selection.pendingActionDto,
+        pendingAction: selection.pendingAction,
         yieldBalance: selection.yieldBalance,
       },
       telemetry,
@@ -398,11 +398,11 @@ export const resolvePositionPendingActionDecision = ({
     return { _tag: "Unavailable", telemetry } as const;
   }
 
-  const prepared = preparePendingActionRequestDto({
+  const prepared = preparePendingActionCommand({
     additionalAddresses: wallet.additionalAddresses,
     address: wallet.address,
     integration,
-    pendingActionDto: selection.pendingActionDto,
+    pendingAction: selection.pendingAction,
     pendingActionsState,
     selectedValidators: selection.selectedValidators,
     yieldBalance: selection.yieldBalance,

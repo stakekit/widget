@@ -1,7 +1,7 @@
 import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { NormalizedWalletState } from "../../../services/wallet/domain/state";
+import type { NormalizedWalletState } from "../../../services/wallet/wallet-state";
 import { getPullResultItems } from "../../../shared/effect/pagination";
 import {
   walletConfigResultAtom,
@@ -11,14 +11,14 @@ import {
 import type { ActivityActionItem } from "../model/activity-action";
 import { getActivityActionTokenSymbol } from "../model/activity-action-list-item";
 import type { ActivityFilter, ActivityFilterOption } from "../model/filters";
+import { activityFilterAtom } from "./filter";
 import {
   ActivityFilterOptionsKey,
   activityActionsPullAtom,
   activityFilterOptionsAtom,
   loadMoreActivityActionsAtom,
-} from "../resources/activity-actions";
-import { ActivityActionsKey } from "../resources/activity-requests";
-import { activityFilterAtom } from "./filter";
+} from "./read-models/activity-feed";
+import { ActivityActionsKey } from "./read-models/activity-request";
 
 type ActivityPageWalletStatus = "connect-wallet" | "connected" | "connecting";
 

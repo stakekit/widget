@@ -1,12 +1,7 @@
 import { Effect, Schema } from "effect";
 import type { RefObject } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { ActionId, TransactionId } from "../../src/domain/schema/identifiers";
-import {
-  ExternalProvider,
-  ExternalProviderError,
-  type ExternalProviderSnapshot,
-} from "../../src/domain/types/external-providers";
+import { ActionId, TransactionId } from "../../src/domain/identity/identifiers";
 import type {
   SKBorrowTxMeta,
   SKBorrowWallet,
@@ -14,6 +9,11 @@ import type {
   SKTx,
   SKTxMeta,
 } from "../../src/public-api/types";
+import {
+  ExternalProvider,
+  ExternalProviderError,
+  type ExternalProviderSnapshot,
+} from "../../src/services/wallet/external-provider";
 
 const transaction = {
   type: "solana",

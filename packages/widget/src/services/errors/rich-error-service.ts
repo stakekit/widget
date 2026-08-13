@@ -1,8 +1,5 @@
 import { Context, Effect, Layer, Stream, SubscriptionRef } from "effect";
-import type {
-  ApiRequestError,
-  RichError,
-} from "../../domain/schema/api-errors";
+import type { ApiRequestError, RichError } from "../api/api-errors";
 
 import {
   normalizeWidgetApiConfig,

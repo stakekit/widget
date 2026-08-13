@@ -3,10 +3,10 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigAtom } from "../../../app/config/settings";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import type { EarnValidatorKey } from "../../../domain/schema/earn-models";
-import type { YieldId } from "../../../domain/schema/identifiers";
-import type { TronResource } from "../../../domain/schema/legacy-models";
-import { isYieldActionArgRequired } from "../../../domain/types/yields";
+import type { TronResource } from "../../../domain/action/tron-resource";
+import type { EarnValidatorKey } from "../../../domain/earn/models";
+import { isYieldActionArgRequired } from "../../../domain/earn/yield";
+import type { YieldId } from "../../../domain/identity/identifiers";
 import type { DashboardYieldCategory } from "../../../public-api/types";
 import {
   earnMachineIntentAtom,

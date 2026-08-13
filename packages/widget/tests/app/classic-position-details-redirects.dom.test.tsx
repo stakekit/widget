@@ -6,7 +6,7 @@ import {
   useLocation,
 } from "react-router";
 import { describe, expect, it } from "vitest";
-import { render } from "../utils/test-utils.dom";
+import { render } from "../utils/test-utils.dom.tsx";
 
 /**
  * Redirect contract for classic position-details mounts.

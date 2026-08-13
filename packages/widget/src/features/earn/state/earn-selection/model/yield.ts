@@ -1,15 +1,15 @@
 import BigNumber from "bignumber.js";
 import { Option, Schema } from "effect";
-import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
-import { YieldId } from "../../../../../domain/schema/identifiers";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
+import { canBeInitialYield } from "../../../../../domain/earn/stake";
+import { isNonZeroRewardRateYield } from "../../../../../domain/earn/yield";
+import { YieldId } from "../../../../../domain/identity/identifiers";
+import type { PositionsData } from "../../../../../domain/portfolio/positions";
+import { tokenString } from "../../../../../domain/token/token";
 import {
   isSupportedChain,
   type SupportedSKChains,
-} from "../../../../../domain/types/chains";
-import type { PositionsData } from "../../../../../domain/types/positions";
-import { canBeInitialYield } from "../../../../../domain/types/stake";
-import { tokenString } from "../../../../../domain/types/tokens";
-import { isNonZeroRewardRateYield } from "../../../../../domain/types/yields";
+} from "../../../../../services/wallet/supported-chains";
 import type { EarnEntry, EarnTokenOption } from "../types";
 
 export const resolveYieldOptions = ({

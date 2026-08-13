@@ -2,10 +2,10 @@ import type { AsyncResult } from "effect/unstable/reactivity/AsyncResult";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
-} from "../../../../../domain/schema/earn-models";
-import type { YieldId } from "../../../../../domain/schema/identifiers";
-import type { Network } from "../../../../../domain/schema/network-model";
-import type { PositionsData } from "../../../../../domain/types/positions";
+} from "../../../../../domain/earn/models";
+import type { YieldId } from "../../../../../domain/identity/identifiers";
+import type { Network } from "../../../../../domain/network/network";
+import type { PositionsData } from "../../../../../domain/portfolio/positions";
 import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import type { EarnCatalogError, EarnTokenOption } from "../types";
 

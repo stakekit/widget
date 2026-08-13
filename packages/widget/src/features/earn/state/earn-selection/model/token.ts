@@ -1,7 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Option, Schema } from "effect";
-import { YieldId } from "../../../../../domain/schema/identifiers";
-import { tokenString } from "../../../../../domain/types/tokens";
+import { YieldId } from "../../../../../domain/identity/identifiers";
+import { tokenString } from "../../../../../domain/token/token";
 import type { EarnEntry, EarnTokenKey, EarnTokenOption } from "../types";
 
 export const resolveToken = ({

@@ -2,12 +2,12 @@ import { Cause, DateTime, Effect, Layer, Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { ApiRequestError } from "../../src/domain/schema/api-errors";
 import {
   underMaintenanceAtom,
   WidgetHealthError,
   widgetHealthResourceAtom,
 } from "../../src/resources/widget-health/widget-health";
+import { ApiRequestError } from "../../src/services/api/api-errors";
 import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
 
 const makeRegistry = (getHealth: YieldResourceSource["Service"]["getHealth"]) =>

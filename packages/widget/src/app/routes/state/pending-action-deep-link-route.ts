@@ -43,12 +43,11 @@ const deepLinkRouteObservationAtom = Atom.make<DeepLinkRouteObservation>(
         input: {
           intake: {
             _tag: "Manage",
-            request: pendingActionValue.pendingActionDto.requestDto,
-            gasFeeToken: pendingActionValue.pendingActionDto.gasFeeToken,
-            integration: pendingActionValue.pendingActionDto.integrationData,
+            request: pendingActionValue.pendingAction.command,
+            gasFeeToken: pendingActionValue.pendingAction.gasFeeToken,
+            integration: pendingActionValue.pendingAction.integrationData,
             interactedToken: pendingActionValue.balance.token,
-            pendingActionType:
-              pendingActionValue.pendingActionDto.requestDto.action,
+            pendingActionType: pendingActionValue.pendingAction.command.action,
             providersDetails: pendingActionValue.providersDetails,
             walletScope: pendingActionValue.walletScope,
           },

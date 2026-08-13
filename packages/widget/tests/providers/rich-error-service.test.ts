@@ -4,8 +4,8 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { ApiRequestError } from "../../src/domain/schema/api-errors";
 import { richErrorAtom } from "../../src/features/widget-shell/react/use-rich-errors";
+import { ApiRequestError } from "../../src/services/api/api-errors";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
 

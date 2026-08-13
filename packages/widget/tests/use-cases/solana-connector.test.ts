@@ -5,12 +5,12 @@ import {
 } from "@solana/web3.js";
 import { Array as EArray } from "effect";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { decodeSolanaTransactionToBuffer } from "../../src/domain/types/transaction";
 import {
   deserializeSolanaTransaction,
   getSolanaConnectors,
-} from "../../src/services/wallet/connectors/misc/solana-connector";
-import type { SolanaWalletDescriptor } from "../../src/services/wallet/solana-runtime";
+} from "../../src/services/wallet/internal/adapters/solana/solana-connector";
+import { decodeSolanaTransactionToBuffer } from "../../src/services/wallet/internal/adapters/solana/transaction";
+import type { SolanaWalletDescriptor } from "../../src/services/wallet/internal/runtime/solana-runtime";
 
 const createConnectorForTest = ({
   sendTransaction = vi.fn(async () => "signed-hash"),

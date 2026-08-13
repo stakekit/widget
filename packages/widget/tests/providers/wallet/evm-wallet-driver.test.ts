@@ -2,11 +2,11 @@ import { Effect } from "effect";
 import type { Hash } from "viem";
 import { zeroAddress } from "viem";
 import { describe, expect, it, vi } from "vitest";
-import { WalletBroadcastError } from "../../../src/services/wallet/domain/errors";
 import {
   decodeEvmTransaction,
   makeEvmWalletDriver,
-} from "../../../src/services/wallet/drivers/evm";
+} from "../../../src/services/wallet/internal/adapters/evm/driver";
+import { WalletBroadcastError } from "../../../src/services/wallet/wallet-errors";
 
 const transaction = (fees: object) =>
   JSON.stringify({

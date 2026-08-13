@@ -10,18 +10,18 @@ import { Integration } from "../../src/domain/borrow/catalog/integration";
 import { Market } from "../../src/domain/borrow/catalog/market";
 import { BorrowAccountSnapshot } from "../../src/domain/borrow/positions/borrow-account-snapshot";
 import { deriveBorrowPositions } from "../../src/domain/borrow/positions/borrow-positions";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import {
   type BorrowPositionAction,
   getBorrowPositionActions,
 } from "../../src/features/borrow/market-position/model/details";
-import { BorrowPositionActionPage } from "../../src/features/borrow/market-position/ui/action.page";
+import { BorrowPositionActionPage } from "../../src/features/borrow/market-position/ui/action.page.tsx";
 import { currentBorrowPositionsAtom } from "../../src/features/borrow/positions/state/positions";
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { RootElementProvider } from "../../src/shared/react/root-element";
-import { render } from "../utils/test-utils.dom";
+import { render } from "../utils/test-utils.dom.tsx";
 
 const i18nInstance = createWidgetI18nInstance();
 

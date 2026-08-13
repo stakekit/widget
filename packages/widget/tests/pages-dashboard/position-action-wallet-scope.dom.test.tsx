@@ -1,13 +1,13 @@
 import { Schema } from "effect";
 import { act } from "react";
 import { describe, expect, it } from "vitest";
-import { EarnBalance } from "../../src/domain/schema/earn-models";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { EarnBalance } from "../../src/domain/earn/models";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { PositionDetailsWorkflowKey } from "../../src/features/position-details/state/workflow";
 import { useValidatorAddressesHandling } from "../../src/features/position-details/ui/classic/hooks/use-validator-addresses-handling";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
-import { render } from "../utils/test-utils.dom";
+import { render } from "../utils/test-utils.dom.tsx";
 
 const address = (suffix: string) =>
   Schema.decodeSync(WalletAddress)(`0x${suffix.padStart(40, "0")}`);
@@ -71,13 +71,11 @@ const ValidatorModalHarness = ({
         {modal.showValidatorsModal ? "open" : "closed"}
       </output>
       <output data-testid="payload">
-        {modal.showValidatorsModal
-          ? modal.pendingActionDto?.passthrough
-          : "none"}
+        {modal.showValidatorsModal ? modal.pendingAction?.passthrough : "none"}
       </output>
       <button
         onClick={() =>
-          modal.openModal({ pendingActionDto: pendingAction, yieldBalance })
+          modal.openModal({ pendingAction: pendingAction, yieldBalance })
         }
         type="button"
       >

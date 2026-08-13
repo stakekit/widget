@@ -9,8 +9,8 @@ import type {
 } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
 import type { BorrowPositions } from "../../../../domain/borrow/positions/borrow-positions";
-import type { TokenBalance } from "../../../../domain/schema/financial-models";
-import type { WalletAddress } from "../../../../domain/schema/identifiers";
+import type { TokenBalance } from "../../../../domain/finance/models";
+import type { WalletAddress } from "../../../../domain/identity/identifiers";
 import type { BorrowTransactionFlowReview } from "../../../borrow-transaction-flow/state";
 import type {
   BorrowCollateralToggleActionContext,

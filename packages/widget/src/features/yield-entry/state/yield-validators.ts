@@ -1,10 +1,10 @@
 import { Data, Array as EArray, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { EarnValidator } from "../../../domain/schema/earn-models";
-import type { YieldId } from "../../../domain/schema/identifiers";
-import type { Network } from "../../../domain/schema/network-model";
-import { filterValidators } from "../../../domain/types/yields";
+import type { EarnValidator } from "../../../domain/earn/models";
+import { filterValidators } from "../../../domain/earn/yield";
+import type { YieldId } from "../../../domain/identity/identifiers";
+import type { Network } from "../../../domain/network/network";
 import {
   type ValidatorsError,
   ValidatorsKey,

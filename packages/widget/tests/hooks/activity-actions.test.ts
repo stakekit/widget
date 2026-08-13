@@ -3,11 +3,11 @@ import { Atom, AtomRegistry } from "effect/unstable/reactivity";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { ActivityActionsPage } from "../../src/domain/schema/activity-models";
-import { activityActionsPullAtom } from "../../src/features/activity/resources/activity-actions";
-import { ActivityActionsKey } from "../../src/features/activity/resources/activity-requests";
+import { ActivityActionsPage } from "../../src/domain/activity/models";
+import { activityActionsPullAtom } from "../../src/features/activity/state/read-models/activity-feed";
+import { ActivityActionsKey } from "../../src/features/activity/state/read-models/activity-request";
 import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import {
   yieldApiActionDtoFixture,

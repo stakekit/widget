@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { PriceResponse } from "../../src/domain/schema/health-price-models";
-import { getTokenPriceInUSD } from "../../src/domain/types/price";
+import { getTokenPriceInUSD } from "../../src/domain/finance/price";
+import { PriceResponse } from "../../src/domain/health/models";
 import { formatUsd } from "../../src/shared/lib/formatters";
 
 describe("token USD prices", () => {

@@ -1,11 +1,11 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { walletScopeFromState } from "../../../services/wallet/domain/scope";
+import { walletScopeFromState } from "../../../services/wallet/wallet-scope";
 import {
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
-} from "../../../services/wallet/domain/state";
+} from "../../../services/wallet/wallet-state";
 import { selectAtom } from "../../../shared/effect/select-atom";
 import { currentWalletStateResultAtom } from "./root-atom";
 

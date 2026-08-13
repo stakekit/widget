@@ -3,7 +3,7 @@ import {
   allPositionsSummaryAtom,
   availableBalanceSummaryAtom,
   averageApySummaryAtom,
-} from "../resources/summary";
+} from "../state/read-models/summary";
 
 export const useSummary = () => ({
   allPositionsResult: useAtomValue(allPositionsSummaryAtom),

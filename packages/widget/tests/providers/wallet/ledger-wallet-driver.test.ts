@@ -3,7 +3,7 @@ import type { RawTransaction } from "@ledgerhq/wallet-api-core";
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
-import { makeLedgerWalletDriver } from "../../../src/services/wallet/drivers/ledger";
+import { makeLedgerWalletDriver } from "../../../src/services/wallet/internal/adapters/ledger/driver";
 
 const account = { id: "ledger-account" } as Account;
 type LedgerTransactionInput = Parameters<

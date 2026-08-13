@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import {
   CollapsibleArrow,
   CollapsibleContent,

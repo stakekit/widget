@@ -5,20 +5,20 @@ import type {
   PullResult,
   Writable,
 } from "effect/unstable/reactivity/Atom";
+import type { TronResource } from "../../../../domain/action/tron-resource";
 import type {
-  EarnToken,
   EarnValidator,
   EarnYieldWithProvider,
-} from "../../../../domain/schema/earn-models";
-import type { YieldId } from "../../../../domain/schema/identifiers";
-import type { InitParams } from "../../../../domain/schema/init-params";
-import type { TronResource } from "../../../../domain/schema/legacy-models";
-import type { PositionsData } from "../../../../domain/types/positions";
+} from "../../../../domain/earn/models";
+import type { YieldId } from "../../../../domain/identity/identifiers";
+import type { PositionsData } from "../../../../domain/portfolio/positions";
+import type { Token } from "../../../../domain/token/token";
 import type {
   DashboardYieldCategory,
   PreferredTokenYieldsPerNetwork,
 } from "../../../../public-api/types";
-import type { WalletScopeKey } from "../../../../services/wallet/domain/scope";
+import type { InitParams } from "../../../../services/wallet/init-params";
+import type { WalletScopeKey } from "../../../../services/wallet/wallet-scope";
 import type { PullPage } from "../../../../shared/effect/pagination";
 import type {
   AvailableYieldCategoriesKey,
@@ -29,10 +29,10 @@ import type {
   YieldCatalogKey,
   YieldValidatorsKey,
   YieldValidatorsPullKey,
-} from "./resources/keys";
+} from "./catalog/keys";
 
 export type EarnTokenOption = {
-  readonly token: EarnToken;
+  readonly token: Token;
   readonly availableYields: ReadonlyArray<YieldId>;
   readonly amount: string;
   readonly source: "balance" | "default" | "init";

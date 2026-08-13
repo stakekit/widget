@@ -3506,11 +3506,11 @@ export const PendingActionConstraintAmountDto = Schema.Struct({
   minimum: Schema.optionalKey(Schema.Number.check(Schema.isFinite())),
   maximum: Schema.optionalKey(Schema.Number.check(Schema.isFinite())),
 });
-export type YieldBalanceLabelDto = {
+export type YieldBalanceLabel = {
   readonly type: string;
   readonly params: {};
 };
-export const YieldBalanceLabelDto = Schema.Struct({
+export const YieldBalanceLabel = Schema.Struct({
   type: Schema.String,
   params: Schema.Struct({}),
 });
@@ -8919,7 +8919,7 @@ export type YieldBalanceDto = {
   readonly validatorAddress?: string;
   readonly validatorAddresses?: ReadonlyArray<string>;
   readonly providerId?: string;
-  readonly label?: YieldBalanceLabelDto;
+  readonly label?: YieldBalanceLabel;
   readonly feeConfigurationId?: string;
   readonly startDate?: string;
   readonly startEpoch?: number;
@@ -8943,7 +8943,7 @@ export const YieldBalanceDto = Schema.Struct({
   validatorAddress: Schema.optionalKey(Schema.String),
   validatorAddresses: Schema.optionalKey(Schema.Array(Schema.String)),
   providerId: Schema.optionalKey(Schema.String),
-  label: Schema.optionalKey(YieldBalanceLabelDto),
+  label: Schema.optionalKey(YieldBalanceLabel),
   feeConfigurationId: Schema.optionalKey(Schema.String),
   startDate: Schema.optionalKey(
     Schema.String.annotate({ format: "date-time" })

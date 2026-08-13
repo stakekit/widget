@@ -2,7 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
-import { getTokenPriceInUSD } from "../../../../../../domain/types/price";
+import { getTokenPriceInUSD } from "../../../../../../domain/finance/price";
 import {
   PricesKey,
   pricesAtom,
@@ -13,7 +13,7 @@ import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
 } from "../../../../../yield-summary/state";
-import type { PositionItem } from "../../../../resources/positions";
+import type { PositionItem } from "../../../../state/read-models/positions";
 import { usePositionListItem as useBasePositionListItem } from "../../../classic/positions-page/hooks/use-position-list-item";
 
 export const usePositionListItem = (item: PositionItem) => {

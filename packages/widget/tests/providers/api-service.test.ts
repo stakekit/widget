@@ -1,15 +1,15 @@
 import { Context, Effect, Layer, Option, Schema } from "effect";
 import * as HttpClientError from "effect/unstable/http/HttpClientError";
 import { describe, expect, it, vi } from "vitest";
+import { YieldAction } from "../../src/domain/action/models";
 import { BorrowFeatureDisabled } from "../../src/domain/borrow/availability";
-import { YieldAction } from "../../src/domain/schema/action-models";
+import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
+import { RewardsAddresses } from "../../src/domain/portfolio/models";
 import {
   ApiRequestError,
   MissingBorrowApiConfig,
   ResponseDecodeError,
-} from "../../src/domain/schema/api-errors";
-import { RewardsAddresses } from "../../src/domain/schema/dashboard-models";
-import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
+} from "../../src/services/api/api-errors";
 import {
   BorrowOperations,
   makeBorrowOperations,

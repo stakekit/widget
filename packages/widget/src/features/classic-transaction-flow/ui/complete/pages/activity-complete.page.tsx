@@ -1,8 +1,8 @@
 import {
   useActivityComplete,
   useActivityCompleteView,
-} from "../hooks/use-activity-complete.hook";
-import { CompletePage } from "./common.page";
+} from "../hooks/use-activity-complete.hook.ts";
+import { CompletePage } from "./common.page.tsx";
 
 const ActivityCompleteContent = ({
   view,

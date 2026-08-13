@@ -1,15 +1,15 @@
 import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
-import type {
-  ApiRequestError,
-  ResponseDecodeError,
-} from "../../domain/schema/api-errors";
+import type { YieldId } from "../../domain/identity/identifiers";
 import type {
   RewardsAddresses,
   RewardsSummary,
-} from "../../domain/schema/dashboard-models";
-import type { YieldId } from "../../domain/schema/identifiers";
+} from "../../domain/portfolio/models";
+import type {
+  ApiRequestError,
+  ResponseDecodeError,
+} from "../../services/api/api-errors";
 import { LegacyResourceSource } from "../../services/api/legacy-resource-source";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";

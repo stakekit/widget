@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
-} from "../../../../../domain/schema/earn-models";
-import type { ValidatorKey } from "../../../../../domain/types/validators";
+} from "../../../../../domain/earn/models";
+import type { ValidatorKey } from "../../../../../domain/earn/validator";
 import type { SelectModalProps } from "../../../../../shared/ui/components/select-modal";
 import { SelectModal } from "../../../../../shared/ui/components/select-modal";
 import { Box } from "../../../../../shared/ui/primitives/box";

@@ -3,14 +3,14 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
-} from "../../../domain/schema/earn-models";
-import type { YieldId } from "../../../domain/schema/identifiers";
-import type { ValidatorKey } from "../../../domain/types/validators";
+} from "../../../domain/earn/models";
+import type { ValidatorKey } from "../../../domain/earn/validator";
 import {
   getExtendedYieldType,
   getYieldRewardTokens,
   isYieldWithProviderOptions,
-} from "../../../domain/types/yields";
+} from "../../../domain/earn/yield";
+import type { YieldId } from "../../../domain/identity/identifiers";
 import { getRewardRateFormatted } from "../../../shared/lib/formatters";
 
 export type YieldSummaryProvider = Readonly<{

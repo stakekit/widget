@@ -1,34 +1,56 @@
 import type { Chain } from "@stakekit/rainbowkit";
 import { Context, Duration, Effect, Layer, Stream } from "effect";
-import type { WalletAddress } from "../../domain/schema/identifiers";
+import { makeScopedSerialOperations } from "../../shared/effect/scoped-serial-operations";
 import { WidgetPersistence } from "../persistence/widget-persistence";
-import { bootstrapWallet, WalletBootstrapError } from "./bootstrap";
-import type {
-  WalletDisconnectInput,
-  WalletSignMessageInput,
-  WalletSwitchAccountInput,
-} from "./domain/commands";
-import type { WalletSignTransactionInput } from "./domain/transactions";
-import { installExternalProviderSynchronization } from "./external-provider-sync";
-import { makeWalletLifecyclePolicy } from "./lifecycle";
-import { SolanaPlatform } from "./platform/solana-platform";
-import { WagmiPlatform } from "./platform/wagmi-platform";
-import { WalletEnvironment } from "./platform/wallet-environment";
-import type { WalletRoutingContext } from "./router";
+import { isLedgerLiveConnector } from "./internal/adapters/ledger/ledger-live-connector-meta";
+import { SolanaPlatform } from "./internal/platform/solana-platform";
+import { WagmiPlatform } from "./internal/platform/wagmi-platform";
+import { WalletEnvironment } from "./internal/platform/wallet-environment";
+import {
+  bootstrapWallet,
+  WalletBootstrapError,
+} from "./internal/runtime/bootstrap";
+import { installExternalProviderSynchronization } from "./internal/runtime/external-provider-sync";
+import { makeWalletLifecyclePolicy } from "./internal/runtime/lifecycle";
+import type { WalletRoutingContext } from "./internal/runtime/router";
 import {
   routeWalletAccountSwitch,
   routeWalletLedgerAccountRequest,
   routeWalletMessage,
   routeWalletTransaction,
-} from "./router";
+} from "./internal/runtime/router";
+import { makeWalletStateRuntime } from "./internal/runtime/state";
+import { WalletStorageCleanup } from "./internal/runtime/wallet-storage-cleanup";
+import type {
+  WalletSignMessageInput,
+  WalletSwitchAccountInput,
+} from "./wallet-commands";
+import type {
+  WalletIntegrationError,
+  WalletRuntimeInvariantError,
+} from "./wallet-errors";
 import { WalletModal } from "./wallet-modal";
-import { makeWalletStateRuntime } from "./wallet-state";
-import { WalletStorageCleanup } from "./wallet-storage-cleanup";
+import {
+  sameWalletCommandIdentity,
+  type WalletCommandIdentity,
+  walletCommandIdentity,
+} from "./wallet-scope";
+import type { WalletSignTransactionInput } from "./wallet-transactions";
+
+type AddLedgerAccountInput = Readonly<{
+  readonly expected: WalletCommandIdentity;
+  readonly targetChain?: Chain;
+}>;
+
+type AddLedgerAccountOutcome =
+  | Readonly<{ readonly _tag: "Added" }>
+  | Readonly<{ readonly _tag: "RejectedStale" }>;
 
 const makeWalletService = Effect.fn("makeWalletService")(function* () {
   const modal = yield* WalletModal;
   const persistence = yield* WidgetPersistence;
   const storageCleanup = yield* WalletStorageCleanup;
+  const accountOperations = yield* makeScopedSerialOperations();
   const bootstrap = yield* bootstrapWallet();
   const state = yield* makeWalletStateRuntime({
     controller: bootstrap.controller,
@@ -69,25 +91,51 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
 
   return {
     addLedgerAccount: Effect.fn("addLedgerAccount")(function* (
-      targetChain?: Chain
-    ) {
-      return yield* withContext((routing) =>
-        routeWalletLedgerAccountRequest(routing, targetChain)
+      input: AddLedgerAccountInput
+    ): Effect.fn.Return<
+      AddLedgerAccountOutcome,
+      WalletIntegrationError | WalletRuntimeInvariantError
+    > {
+      return yield* accountOperations.run(
+        Effect.gen(function* () {
+          const before = yield* state.context;
+          const connection = before.state.connection;
+          if (
+            !sameWalletCommandIdentity(
+              input.expected,
+              walletCommandIdentity(connection)
+            ) ||
+            connection.status !== "connected" ||
+            !isLedgerLiveConnector(connection.connector)
+          ) {
+            return { _tag: "RejectedStale" } as const;
+          }
+
+          const connectorUid = connection.connector.uid;
+          const outcome = yield* routeWalletLedgerAccountRequest(
+            before.routing,
+            input.targetChain
+          );
+          if (outcome._tag === "RejectedUnavailable") {
+            return { _tag: "RejectedStale" } as const;
+          }
+
+          const after = yield* state.context;
+          if (
+            after.state.connection.status !== "connected" ||
+            !isLedgerLiveConnector(after.state.connection.connector) ||
+            after.state.connection.connector.uid !== connectorUid
+          ) {
+            return { _tag: "RejectedStale" } as const;
+          }
+
+          yield* modal.closeChain;
+          return { _tag: "Added" } as const;
+        })
       );
-    }),
-    disconnect: Effect.fn("disconnect")(function* (
-      input?: WalletDisconnectInput
-    ) {
-      return yield* withContext((routing) => routing.actions.disconnect(input));
     }),
     enabledNetworks: bootstrap.snapshot.enabledNetworks,
     logout,
-    persistPublicKey: Effect.fn("persistPublicKey")(function* (input: {
-      readonly address: WalletAddress;
-      readonly publicKey: string;
-    }) {
-      yield* persistence.upsertStoredPublicKey(input);
-    }),
     signMessage: Effect.fn("signMessage")(function* (
       input: WalletSignMessageInput
     ) {

@@ -1,6 +1,6 @@
 import { Box } from "../../../../shared/ui/primitives/box";
 import { AnimationPage } from "../../../widget-shell/components";
-import { PositionsPage } from "./positions/positions.page";
+import { PositionsPage } from "./positions/positions.page.tsx";
 import { Summary } from "./summary";
 
 export const ManagePage = () => {

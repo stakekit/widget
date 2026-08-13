@@ -5,9 +5,9 @@ import * as Reactivity from "effect/unstable/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
-import type { PositionsData } from "../../src/domain/types/positions";
-import { tokenString } from "../../src/domain/types/tokens";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
+import type { PositionsData } from "../../src/domain/portfolio/positions";
+import { tokenString } from "../../src/domain/token/token";
 import {
   type EarnTokenOption,
   earnSelectionStatusViewAtom,
@@ -21,13 +21,13 @@ import {
   initYieldAtom,
   mergedTokenOptionsAtom,
   positionsDataAtom,
-} from "../../src/features/earn/state/earn-selection/resources/atoms";
+} from "../../src/features/earn/state/earn-selection/catalog/catalog";
 import {
   InitYieldKey,
   PositionsDataKey,
   TokenOptionsKey,
   YieldCatalogKey,
-} from "../../src/features/earn/state/earn-selection/resources/keys";
+} from "../../src/features/earn/state/earn-selection/catalog/keys";
 import { EarnCatalogError } from "../../src/features/earn/state/earn-selection/types";
 import {
   earnPageInputAtom,
@@ -43,14 +43,14 @@ import {
   type YieldDirectoryRequest,
   YieldResourceSource,
 } from "../../src/services/api/yield-resource-source";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
   type WalletState,
-} from "../../src/services/wallet/domain/state";
-import { WalletService } from "../../src/services/wallet/wallet-service";
+} from "../../src/services/wallet/wallet-state";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
 
 const baseDto = yieldApiYieldDtoFixture();

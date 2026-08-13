@@ -5,21 +5,21 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigAtom } from "../../../app/config/settings";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import { stakeTokenSameAsGasToken } from "../../../domain";
-import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
-import type { TronResource } from "../../../domain/schema/legacy-models";
-import { getKycProviderName } from "../../../domain/types/kyc";
-import type {
-  BalanceDataKey,
-  PositionsData,
-} from "../../../domain/types/positions";
-import { getTokenPriceInUSD } from "../../../domain/types/price";
-import { getInitSelectedValidators } from "../../../domain/types/stake";
-import { equalTokens } from "../../../domain/types/tokens";
+import type { TronResource } from "../../../domain/action/tron-resource";
+import { getKycProviderName } from "../../../domain/earn/kyc";
+import type { EarnYieldWithProvider } from "../../../domain/earn/models";
+import { getInitSelectedValidators } from "../../../domain/earn/stake";
 import {
   getYieldActionArg,
   getYieldProviderYieldIds,
   isYieldValidatorSelectionRequired,
-} from "../../../domain/types/yields";
+} from "../../../domain/earn/yield";
+import { getTokenPriceInUSD } from "../../../domain/finance/price";
+import type {
+  BalanceDataKey,
+  PositionsData,
+} from "../../../domain/portfolio/positions";
+import { equalTokens } from "../../../domain/token/token";
 import {
   getTokensPricesRequest,
   PricesKey,
@@ -29,22 +29,22 @@ import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
 } from "../../../resources/yield-opportunity/provider";
+import {
+  PositionBalancesKey,
+  positionBalancesByTypeAtom,
+} from "../../../resources/yield-positions/yield-positions";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import {
   sameWalletScopeOwner,
   walletCommandIdentity,
-} from "../../../services/wallet/domain/scope";
+} from "../../../services/wallet/wallet-scope";
 import { getPullResultItems } from "../../../shared/effect/pagination";
 import { formatUsd } from "../../../shared/lib/formatters";
 import {
   defaultFormattedNumber,
   formatNumber,
 } from "../../../shared/lib/number-format";
-import {
-  PositionBalancesKey,
-  positionBalancesByTypeAtom,
-  tokenBalancesScanAtom,
-} from "../../portfolio/state";
+import { tokenBalancesScanAtom } from "../../portfolio/state";
 import { walletConnectionStateAtom, walletScopeAtom } from "../../wallet/state";
 import {
   makeYieldEntry,

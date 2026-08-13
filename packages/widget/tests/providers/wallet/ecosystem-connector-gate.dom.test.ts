@@ -1,20 +1,20 @@
 import type { Connection as SolanaConnection } from "@solana/web3.js";
 import { Effect, Schema } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import { InitParams } from "../../../src/domain/schema/init-params";
-import type { Network } from "../../../src/domain/schema/network-model";
-import type { CurrentRef } from "../../../src/domain/types/external-providers";
+import type { Network } from "../../../src/domain/network/network";
 import type { SKExternalProviders } from "../../../src/public-api/types";
-import { buildsEcosystemConnectors } from "../../../src/services/wallet/connector-mode";
-import { getConfig as getCosmosConfig } from "../../../src/services/wallet/connectors/cosmos/config";
-import { getConfig as getMiscConfig } from "../../../src/services/wallet/connectors/misc/config";
-import { getConfig as getSubstrateConfig } from "../../../src/services/wallet/connectors/substrate/config";
-import { WagmiOperations } from "../../../src/services/wallet/platform/wagmi-operations";
-import { makeWagmiActions } from "../../../src/services/wallet/wagmi-actions";
+import type { CurrentRef } from "../../../src/services/wallet/external-provider";
+import { InitParams } from "../../../src/services/wallet/init-params";
+import { getConfig as getMiscConfig } from "../../../src/services/wallet/internal/adapters/config";
+import { getConfig as getCosmosConfig } from "../../../src/services/wallet/internal/adapters/cosmos/config";
+import { getConfig as getSubstrateConfig } from "../../../src/services/wallet/internal/adapters/substrate/config";
+import { WagmiOperations } from "../../../src/services/wallet/internal/platform/wagmi-operations";
+import { buildsEcosystemConnectors } from "../../../src/services/wallet/internal/runtime/connector-mode";
+import { makeWagmiActions } from "../../../src/services/wallet/internal/runtime/wagmi-actions";
 import {
   type BuildWagmiConfigOptions,
   buildWagmiConfig,
-} from "../../../src/services/wallet/wagmi-config";
+} from "../../../src/services/wallet/internal/runtime/wagmi-config";
 
 const browser = vi.hoisted(() => ({ isLedgerDappBrowser: false }));
 
@@ -37,7 +37,7 @@ vi.mock("../../../src/services/wallet/browser-environment", () => ({
 }));
 
 vi.mock(
-  "../../../src/services/wallet/connectors/substrate/substrate-connector",
+  "../../../src/services/wallet/internal/adapters/substrate/substrate-connector",
   () => {
     evaluated.substrateConnector += 1;
 
@@ -48,14 +48,17 @@ vi.mock(
   }
 );
 
-vi.mock("../../../src/services/wallet/connectors/misc/tron-connector", () => {
-  evaluated.tronConnector += 1;
+vi.mock(
+  "../../../src/services/wallet/internal/adapters/tron/tron-connector",
+  () => {
+    evaluated.tronConnector += 1;
 
-  return { getTronConnectors: () => ({ groupName: "Tron", wallets: [] }) };
-});
+    return { getTronConnectors: () => ({ groupName: "Tron", wallets: [] }) };
+  }
+);
 
 vi.mock(
-  "../../../src/services/wallet/connectors/misc/cardano-connector",
+  "../../../src/services/wallet/internal/adapters/cardano/cardano-connector",
   () => {
     evaluated.cardanoConnector += 1;
 
@@ -65,22 +68,28 @@ vi.mock(
   }
 );
 
-vi.mock("../../../src/services/wallet/connectors/misc/ton-connector", () => {
-  evaluated.tonConnector += 1;
+vi.mock(
+  "../../../src/services/wallet/internal/adapters/ton/ton-connector",
+  () => {
+    evaluated.tonConnector += 1;
 
-  return { getTonConnectors: () => ({ groupName: "TON", wallets: [] }) };
-});
+    return { getTonConnectors: () => ({ groupName: "TON", wallets: [] }) };
+  }
+);
 
-vi.mock("../../../src/services/wallet/connectors/cosmos/wallet-manager", () => {
-  evaluated.cosmosWalletManager += 1;
+vi.mock(
+  "../../../src/services/wallet/internal/adapters/cosmos/wallet-manager",
+  () => {
+    evaluated.cosmosWalletManager += 1;
 
-  return {
-    getWalletManager: () => ({
-      connector: { groupName: "Cosmos", wallets: [] },
-      walletManager: { onMounted: async () => undefined },
-    }),
-  };
-});
+    return {
+      getWalletManager: () => ({
+        connector: { groupName: "Cosmos", wallets: [] },
+        walletManager: { onMounted: async () => undefined },
+      }),
+    };
+  }
+);
 
 const cosmosNetworks = new Set<Network>(["cosmos"]);
 const miscNetworks = new Set<Network>(["cardano", "ton", "tron"]);

@@ -4,7 +4,7 @@ import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { PageCtaButton } from "../../src/features/widget-shell/components";
-import { render } from "../utils/test-utils.dom";
+import { render } from "../utils/test-utils.dom.tsx";
 
 const settings = normalizeWidgetConfig({
   apiKey: "test-api-key",

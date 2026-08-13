@@ -1,6 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { vitest } from "vitest";
-import type { ActionCommand } from "../../../src/domain/schema/action-models";
+import type { ActionCommand } from "../../../src/domain/action/models";
 import {
   legacyYieldFixture,
   yieldApiActionFixture,

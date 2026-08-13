@@ -239,16 +239,6 @@ export const metricSubValueText = style({
   lineHeight: "16px",
 });
 
-export const sectionDivider = style([
-  atoms({
-    background: "backgroundMuted",
-  }),
-  {
-    height: "1px",
-    width: "100%",
-  },
-]);
-
 export const rangeButton = recipe({
   base: [
     atoms({

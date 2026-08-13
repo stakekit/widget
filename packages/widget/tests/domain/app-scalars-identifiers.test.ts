@@ -1,17 +1,17 @@
 import { DateTime, Schema } from "effect";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import {
+  BigIntFromString,
+  PrecisionDecimalFromString,
+  UtcDateTimeFromString,
+} from "../../src/domain/finance/scalars";
+import {
   type ActionId,
   type ProviderId,
   TokenAddress,
   type TransactionId,
   type YieldId,
-} from "../../src/domain/schema/identifiers";
-import {
-  BigIntFromString,
-  PrecisionDecimalFromString,
-  UtcDateTimeFromString,
-} from "../../src/domain/schema/scalars";
+} from "../../src/domain/identity/identifiers";
 
 describe("application scalar and identifier schemas", () => {
   it("uses lossless representations for raw units and decimal values", () => {

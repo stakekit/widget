@@ -55,6 +55,12 @@ _Avoid_: Current wallet, Wallet Scope
 The latest host-supplied external wallet identity, supported chains, and wallet operations. It may be replaced during a Wallet Runtime without changing Wallet Topology.
 _Avoid_: External provider configuration
 
+## Token Language
+
+**Token Identity**:
+The identity of a token, consisting of its canonical network, exact case-sensitive symbol, and contract address when present. EVM addresses compare case-insensitively, non-EVM addresses compare exactly, and an addressless native token is identified by its network and symbol.
+_Avoid_: Token string, token metadata
+
 ## Earn Language
 
 **Earn Selection**:

@@ -7,7 +7,7 @@ import {
   type SubmitTransactionHashCommand,
   type TransactionStatusCommand,
   YieldAction,
-} from "../../domain/schema/action-models";
+} from "../../domain/action/models";
 import type * as YieldApi from "../../generated/api/yield";
 import { decodeApiResponse, encodeApiRequest } from "./api-operation";
 import { ApiTransportService } from "./transport";

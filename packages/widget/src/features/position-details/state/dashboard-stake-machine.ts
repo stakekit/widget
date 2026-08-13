@@ -1,8 +1,8 @@
 import { Data } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { YieldId } from "../../../domain/schema/identifiers";
-import type { TronResource } from "../../../domain/schema/legacy-models";
-import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
+import type { TronResource } from "../../../domain/action/tron-resource";
+import type { YieldId } from "../../../domain/identity/identifiers";
+import type { WalletScopeKey } from "../../../services/wallet/wallet-scope";
 
 type PositionDetailsStakeEntryParams = {
   integrationId: YieldId;

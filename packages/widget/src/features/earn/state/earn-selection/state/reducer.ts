@@ -1,5 +1,5 @@
 import { Match } from "effect";
-import type { YieldId } from "../../../../../domain/schema/identifiers";
+import type { YieldId } from "../../../../../domain/identity/identifiers";
 import type { EarnMachineIntent } from "../types";
 import type { EarnAction } from "./actions";
 

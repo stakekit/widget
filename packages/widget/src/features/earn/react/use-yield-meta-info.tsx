@@ -1,10 +1,8 @@
 import { Array as EArray, Option } from "effect";
 import { type ReactNode, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
-import type { AppToken } from "../../../domain/schema/legacy-models";
-import { MiscNetworks } from "../../../domain/types/chains/networks";
-import type { ValidatorInput as ValidatorDto } from "../../../domain/types/validators";
+import type { EarnYieldWithProvider } from "../../../domain/earn/models";
+import type { ValidatorInput as ValidatorDto } from "../../../domain/earn/validator";
 import {
   getExtendedYieldType,
   getYieldCooldownPeriod,
@@ -13,7 +11,9 @@ import {
   getYieldWarmupPeriod,
   hasYieldFeeConfigurationEnabled,
   isEthenaUsdeStaking,
-} from "../../../domain/types/yields";
+} from "../../../domain/earn/yield";
+import { MiscNetworks } from "../../../domain/network/networks";
+import type { Token } from "../../../domain/token/token";
 import { SKAnchor } from "../../../shared/ui/primitives/anchor";
 
 export const useYieldMetaInfo = ({
@@ -25,7 +25,7 @@ export const useYieldMetaInfo = ({
   validators: {
     [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
   }[];
-  tokenDto: AppToken | null;
+  tokenDto: Token | null;
 }) => {
   const { t } = useTranslation();
 

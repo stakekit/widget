@@ -34,20 +34,20 @@ import { ThirdPartyQueryClientProvider } from "../../src/app/composition/provide
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { solana } from "../../src/domain/types/chains/misc";
-import { EvmNetworks } from "../../src/domain/types/chains/networks";
+import { EvmNetworks } from "../../src/domain/network/networks";
 import {
   useWalletConfig,
   walletStateResultAtom,
 } from "../../src/features/wallet/state";
 import { WagmiConfigProvider } from "../../src/features/wallet/ui";
 import { GeoBlockService } from "../../src/services/api/geo-block-state";
-import type { SolanaRuntime } from "../../src/services/wallet/platform/solana-platform";
-import { installSolanaConnectorMembership } from "../../src/services/wallet/solana-connector-membership";
+import { solana } from "../../src/services/wallet/internal/adapters/configured-chains";
+import type { SolanaRuntime } from "../../src/services/wallet/internal/platform/solana-platform";
+import { installSolanaConnectorMembership } from "../../src/services/wallet/internal/runtime/solana-connector-membership";
 import type {
   SolanaWalletDescriptor,
   SolanaWalletSnapshot,
-} from "../../src/services/wallet/solana-runtime";
+} from "../../src/services/wallet/internal/runtime/solana-runtime";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import { legacyApiRoute } from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";

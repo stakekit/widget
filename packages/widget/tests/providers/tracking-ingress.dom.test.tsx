@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { TrackingContextProvider } from "../../src/app/composition/providers/tracking";
 import { useTrackEvent } from "../../src/features/tracking/react/use-track-event";
 import { useTrackPage } from "../../src/features/tracking/react/use-track-page";
-import { renderHook } from "../utils/test-utils.dom";
+import { renderHook } from "../utils/test-utils.dom.tsx";
 
 describe("public tracking ingress", () => {
   it("delivers event and page commands to host and variant adapters", async () => {

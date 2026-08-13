@@ -2,8 +2,8 @@ import { useAtomValue } from "@effect/atom-react";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
-import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
-import type { YieldId } from "../../../../../domain/schema/identifiers";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
+import type { YieldId } from "../../../../../domain/identity/identifiers";
 import type { SelectModalProps } from "../../../../../shared/ui/components/select-modal";
 import {
   SelectModal,

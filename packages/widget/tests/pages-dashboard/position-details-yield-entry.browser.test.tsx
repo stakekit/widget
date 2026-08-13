@@ -20,13 +20,9 @@ import {
   applicationRouterRuntime,
 } from "../../src/app/runtime/application-router-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
-import {
-  PositionBalancesKey,
-  positionBalancesByTypeAtom,
-  tokenBalancesScanAtom,
-} from "../../src/features/portfolio/state";
+import { tokenBalancesScanAtom } from "../../src/features/portfolio/state";
 import {
   positionDetailsStakeViewAtom,
   setPositionDetailsStakeAmountAtom,
@@ -41,14 +37,18 @@ import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
 } from "../../src/resources/yield-opportunity/provider";
+import {
+  PositionBalancesKey,
+  positionBalancesByTypeAtom,
+} from "../../src/resources/yield-positions/yield-positions";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
 import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   type NormalizedWalletState,
-} from "../../src/services/wallet/domain/state";
-import { WalletService } from "../../src/services/wallet/wallet-service";
+} from "../../src/services/wallet/wallet-state";
 import { yieldApiYieldFixture } from "../fixtures";
 import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
 import { render } from "../utils/test-utils";

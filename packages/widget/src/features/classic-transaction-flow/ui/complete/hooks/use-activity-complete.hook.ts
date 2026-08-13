@@ -1,6 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
-import type { YieldAction } from "../../../../../domain/schema/action-models";
-import type { AppToken } from "../../../../../domain/schema/legacy-models";
+import type { YieldAction } from "../../../../../domain/action/models";
+import type { Token } from "../../../../../domain/token/token";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useTrackPage } from "../../../../tracking/state";
 import {
@@ -22,7 +22,7 @@ type ActivityCompleteView<Action> = Pick<
   ActivityIntake,
   "selectedValidators" | "selectedYield"
 > & {
-  readonly inputToken: AppToken | null;
+  readonly inputToken: Token | null;
   readonly selectedAction: Action;
 };
 

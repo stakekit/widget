@@ -11,8 +11,8 @@ import { Integration } from "../../../src/domain/borrow/catalog/integration";
 import { Market } from "../../../src/domain/borrow/catalog/market";
 import { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borrow-account-snapshot";
 import { deriveBorrowPositions } from "../../../src/domain/borrow/positions/borrow-positions";
-import { TokenBalancesResponse } from "../../../src/domain/schema/financial-models";
-import { WalletAddress } from "../../../src/domain/schema/identifiers";
+import { TokenBalancesResponse } from "../../../src/domain/finance/models";
+import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { getBorrowPositionActions } from "../../../src/features/borrow/market-position/model/details";
 import {
   borrowRepayFormAtom,
@@ -33,13 +33,13 @@ import {
 import {
   WalletScopeKey,
   walletScopeOwnerKey,
-} from "../../../src/services/wallet/domain/scope";
+} from "../../../src/services/wallet/wallet-scope";
+import { WalletService } from "../../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   type NormalizedWalletState,
   type WalletState,
-} from "../../../src/services/wallet/domain/state";
-import { WalletService } from "../../../src/services/wallet/wallet-service";
+} from "../../../src/services/wallet/wallet-state";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

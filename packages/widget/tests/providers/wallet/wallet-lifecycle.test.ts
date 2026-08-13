@@ -2,11 +2,11 @@ import { Effect, Layer, Schema } from "effect";
 import { mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
-import { WalletAddress } from "../../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
-import type { NormalizedWalletState } from "../../../src/services/wallet/domain/state";
-import { disconnectedNormalizedWalletState } from "../../../src/services/wallet/domain/state";
-import { makeWalletLifecyclePolicy } from "../../../src/services/wallet/lifecycle";
+import { makeWalletLifecyclePolicy } from "../../../src/services/wallet/internal/runtime/lifecycle";
+import type { NormalizedWalletState } from "../../../src/services/wallet/wallet-state";
+import { disconnectedNormalizedWalletState } from "../../../src/services/wallet/wallet-state";
 
 const firstAddress = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

@@ -13,8 +13,8 @@ import {
   WidgetNavigation,
   type WidgetNavigationError,
 } from "../../../../services/navigation/widget-navigation";
-import type { WalletRuntimeInvariantError } from "../../../../services/wallet/domain/errors";
-import { walletScopeFromState } from "../../../../services/wallet/domain/scope";
+import type { WalletRuntimeInvariantError } from "../../../../services/wallet/wallet-errors";
+import { walletScopeFromState } from "../../../../services/wallet/wallet-scope";
 import { WalletService } from "../../../../services/wallet/wallet-service";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 import {

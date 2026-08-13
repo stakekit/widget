@@ -28,10 +28,10 @@ import { describe, expect, expectTypeOf, it } from "vitest";
  *   `build:types`.
  */
 
-type PackageContract = typeof import("../../src/public-api/index.package");
-type PackageRuntime = typeof import("../../src/index.package");
-type BundleContract = typeof import("../../src/public-api/index.bundle");
-type BundleRuntime = typeof import("../../src/index.bundle");
+type PackageContract = typeof import("../../src/public-api/index.package.ts");
+type PackageRuntime = typeof import("../../src/index.package.ts");
+type BundleContract = typeof import("../../src/public-api/index.bundle.ts");
+type BundleRuntime = typeof import("../../src/index.bundle.ts");
 type PublicSKAppProps = import("../../src/public-api/types").SKAppProps;
 
 type ClassicExternalProviderProps = {

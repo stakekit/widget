@@ -5,11 +5,11 @@ import { useTranslation } from "react-i18next";
 import type {
   EarnBalance,
   EarnYieldWithProvider,
-} from "../../../../../domain/schema/earn-models";
+} from "../../../../../domain/earn/models";
 import {
   getExtendedYieldType,
   isDepositYieldType,
-} from "../../../../../domain/types/yields";
+} from "../../../../../domain/earn/yield";
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
 import { getDisplayDurationUntil } from "../../../../../shared/lib/date";
 import { formatUsd } from "../../../../../shared/lib/formatters";

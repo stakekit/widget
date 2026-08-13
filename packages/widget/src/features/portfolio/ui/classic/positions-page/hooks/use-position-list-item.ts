@@ -3,7 +3,7 @@ import BigNumber from "bignumber.js";
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
-import { getPositionTotalAmount } from "../../../../../../domain/types/positions";
+import { getPositionTotalAmount } from "../../../../../../domain/portfolio/positions";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
@@ -14,7 +14,7 @@ import {
   YieldSummaryKey,
   yieldSummaryAtom,
 } from "../../../../../yield-summary/state";
-import type { PositionItem } from "../../../../resources/positions";
+import type { PositionItem } from "../../../../state/read-models/positions";
 
 export const usePositionListItem = (item: PositionItem) => {
   const yieldOpportunityResult = useAtomValue(

@@ -1,14 +1,14 @@
-import type { YieldAction } from "../../../domain/schema/action-models";
+import type { YieldAction } from "../../../domain/action/models";
 import type {
   ClassicTransactionWorkflowInput,
   TransactionWorkflowState,
   TransactionWorkflowTransactionMeta,
-} from "../../../services/workflow/transaction-workflow-model";
+} from "../../../services/transaction-workflow/transaction-workflow-model";
 import {
   flattenTransactionWorkflowTransactions,
   getCurrentTransactionWorkflowTransaction,
   getTransactionSignCustomMessage,
-} from "../../../services/workflow/transaction-workflow-model";
+} from "../../../services/transaction-workflow/transaction-workflow-model";
 
 export enum ClassicTransactionStepState {
   SIGN_IDLE = 0,

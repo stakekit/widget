@@ -9,19 +9,19 @@ import {
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
-import type { ActivityActionsPage } from "../../domain/schema/activity-models";
+import type { ActivityActionsPage } from "../../domain/activity/models";
+import type { ActivityActionsQuery } from "../../domain/activity/query";
 import type {
   ApiRequestError,
   ResponseDecodeError,
-} from "../../domain/schema/api-errors";
-import type { ActivityActionsQuery } from "../../domain/schema/legacy-models";
+} from "../../services/api/api-errors";
 import { YieldResourceSource } from "../../services/api/yield-resource-source";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import {
   type WalletScopeKey,
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
-} from "../../services/wallet/domain/scope";
+} from "../../services/wallet/wallet-scope";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { getNextPageOffset } from "../../shared/effect/pagination";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";

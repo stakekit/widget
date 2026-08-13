@@ -5,12 +5,12 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import type { Chain } from "viem";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { useWalletScopeRoute } from "../../src/features/wallet/ui";
-import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
-import { disconnectedNormalizedWalletState } from "../../src/services/wallet/domain/state";
-import { render } from "../utils/test-utils.dom";
+import type { NormalizedWalletState } from "../../src/services/wallet/wallet-state";
+import { disconnectedNormalizedWalletState } from "../../src/services/wallet/wallet-state";
+import { render } from "../utils/test-utils.dom.tsx";
 
 const firstAddress = Schema.decodeSync(WalletAddress)("0xwallet-a");
 const secondAddress = Schema.decodeSync(WalletAddress)("0xwallet-b");

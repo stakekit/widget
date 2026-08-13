@@ -1,14 +1,13 @@
 import type { ReactElement } from "react";
-import type { AppToken } from "../../../../../domain/schema/legacy-models";
-import type { Network } from "../../../../../domain/schema/network-model";
-
-import type { YieldMetadata } from "../../../../../domain/types/yields";
+import type { YieldMetadata } from "../../../../../domain/earn/yield";
+import type { Network } from "../../../../../domain/network/network";
+import type { Token } from "../../../../../domain/token/token";
 import { Box } from "../../../primitives/box";
 import { useVariantNetworkUrls } from "./hooks/use-variant-network-urls";
 import { useVariantTokenUrls } from "./hooks/use-variant-token-urls";
 
 type TokenIconContainerProps = {
-  token: AppToken;
+  token: Token;
   metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">;
   hideNetwork?: boolean;
   children: (props: TokenIconContainerReturnType) => ReactElement;

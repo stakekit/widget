@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
-import type { EarnYieldWithProvider } from "../../src/domain/schema/earn-models";
+import type { EarnYieldWithProvider } from "../../src/domain/earn/models";
 
 import { getEarnDetailsModel } from "../../src/features/earn/ui/dashboard/earn-details/earn-details-model";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";

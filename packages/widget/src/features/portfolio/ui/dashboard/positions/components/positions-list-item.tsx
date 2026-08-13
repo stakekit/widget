@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import type { MarketPosition } from "../../../../../../domain/borrow/positions/market-position";
-import type { PositionDetailsLabelType } from "../../../../../../domain/types/positions";
+import type { PositionDetailsLabelType } from "../../../../../../domain/portfolio/positions";
 import { TokenIcon } from "../../../../../../shared/ui/components/token-icon";
 import { ToolTip } from "../../../../../../shared/ui/components/tooltip";
 import { Box } from "../../../../../../shared/ui/primitives/box";
@@ -10,7 +10,7 @@ import { SKLink } from "../../../../../../shared/ui/primitives/link";
 import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
 import { Spinner } from "../../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import type { UnifiedPositionItem } from "../../../../resources/positions";
+import type { UnifiedPositionItem } from "../../../../state/read-models/positions";
 import {
   listItem,
   noWrap,

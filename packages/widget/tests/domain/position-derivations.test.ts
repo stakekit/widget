@@ -3,23 +3,23 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
-import { EarnPosition } from "../../src/domain/schema/earn-models";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { EarnPosition } from "../../src/domain/earn/models";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import {
   getPositionBalances,
   getPositionData,
   toPositionBalancesByType,
   toPositionsData,
-} from "../../src/domain/types/positions";
+} from "../../src/domain/portfolio/positions";
+import { toPositionItems } from "../../src/features/portfolio/state/read-models/positions";
 import {
   PositionBalancesKey,
   PositionDataKey,
   positionBalancesAtom,
   positionDataAtom,
-  toPositionItems,
-} from "../../src/features/portfolio/resources/positions";
-import { yieldPositionsResourceAtom } from "../../src/resources/yield-positions/yield-positions";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+  yieldPositionsResourceAtom,
+} from "../../src/resources/yield-positions/yield-positions";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 
 const makePosition = () => {

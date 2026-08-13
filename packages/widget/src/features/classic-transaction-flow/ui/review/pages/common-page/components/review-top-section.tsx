@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { AppToken } from "../../../../../../../domain/schema/legacy-models";
+import type { Token } from "../../../../../../../domain/token/token";
 import { TokenIcon } from "../../../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { Heading } from "../../../../../../../shared/ui/primitives/typography/heading";
@@ -13,7 +13,7 @@ import { headingStyles } from "../../style.css";
 type Props = {
   facts?: ReadonlyArray<Readonly<{ label: string; value: string }>>;
   title: string;
-  token: AppToken | null;
+  token: Token | null;
   metadata: ComponentProps<typeof TokenIcon>["metadata"] | null;
   info: ReactNode;
   rewardTokenDetailsProps?: ComponentProps<typeof RewardTokenDetails> | null;

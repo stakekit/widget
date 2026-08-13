@@ -3,7 +3,7 @@ import { AccountExtraInfoContext } from "@stakekit/rainbowkit";
 import type { PropsWithChildren } from "react";
 import type { Address } from "viem";
 import { useSKWallet } from "../../../../features/wallet/state";
-import type { WalletSwitchAccountInput } from "../../../../services/wallet/domain/commands";
+import type { WalletSwitchAccountInput } from "../../../../services/wallet/wallet-commands";
 import { WalletService } from "../../../../services/wallet/wallet-service";
 import { walletRuntime } from "../../../runtime/wallet-runtime";
 import { RainbowKitProviderWithTheme } from "../rainbow-kit";

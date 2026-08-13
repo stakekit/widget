@@ -2,28 +2,28 @@ import BigNumber from "bignumber.js";
 import { Option, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { PendingAction } from "../../../domain/schema/action-models";
-import { YieldId } from "../../../domain/schema/identifiers";
+import { getPendingActionStateKey } from "../../../domain/action/action-command";
+import type { PendingAction } from "../../../domain/action/models";
 import {
   getPendingActionAmountConfig,
   isPendingActionAmountRequired,
-} from "../../../domain/types/pending-action";
-import { getPendingActionStateKey } from "../../../domain/types/pending-action-request";
-import type { PositionBalancesByType } from "../../../domain/types/positions";
-import { getTokenPriceInUSD } from "../../../domain/types/price";
-import { getYieldActionArg, isERC4626 } from "../../../domain/types/yields";
+} from "../../../domain/action/pending-action";
+import { getYieldActionArg, isERC4626 } from "../../../domain/earn/yield";
+import { getTokenPriceInUSD } from "../../../domain/finance/price";
+import { YieldId } from "../../../domain/identity/identifiers";
+import type { PositionBalancesByType } from "../../../domain/portfolio/positions";
 import { PricesKey, pricesAtom } from "../../../resources/token-prices/prices";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
 } from "../../../resources/yield-opportunity/provider";
-import { config } from "../../../shared/config/widget-defaults";
-import { formatUsd } from "../../../shared/lib/formatters";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
   positionBalancesByTypeAtom,
-} from "../../portfolio/state";
+} from "../../../resources/yield-positions/yield-positions";
+import { config } from "../../../shared/config/widget-defaults";
+import { formatUsd } from "../../../shared/lib/formatters";
 import { getYieldAmountConstraints } from "../../yield-entry/state";
 import { resolvePositionDetailsExitReceiveTokenSelection } from "../model/exit-receive-token";
 import {
@@ -242,7 +242,7 @@ type PricedEarnBalance =
 type PositionDetailsPendingActionView = {
   readonly amount: BigNumber | null;
   readonly formattedAmount: string;
-  readonly pendingActionDto: PendingAction;
+  readonly pendingAction: PendingAction;
   readonly yieldBalance: PricedEarnBalance;
 };
 
@@ -284,13 +284,13 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
       return view.positionBalancesByType
         ? [...view.positionBalancesByType.values()].flatMap((balances) =>
             balances.flatMap((balance) =>
-              balance.pendingActions.map((pendingActionDto) => {
-                const amount = isPendingActionAmountRequired(pendingActionDto)
+              balance.pendingActions.map((pendingAction) => {
+                const amount = isPendingActionAmountRequired(pendingAction)
                   ? (view.pendingActions.get(
                       getPendingActionStateKey({
-                        actionType: pendingActionDto.type,
+                        actionType: pendingAction.type,
                         balanceType: balance.type,
-                        passthrough: pendingActionDto.passthrough,
+                        passthrough: pendingAction.passthrough,
                         token: balance.token,
                       })
                     ) ?? new BigNumber(0))
@@ -313,7 +313,7 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
                 return {
                   amount,
                   formattedAmount,
-                  pendingActionDto,
+                  pendingAction,
                   yieldBalance: balance,
                 };
               })

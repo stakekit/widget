@@ -3,7 +3,7 @@ import { identity, Schema, SchemaTransformation } from "effect";
 import {
   TokenAddress as CanonicalTokenAddress,
   WalletAddress as CanonicalWalletAddress,
-} from "../schema/identifiers";
+} from "../identity/identifiers";
 
 export const ChainId = Schema.String.pipe(Schema.brand("BorrowChainId"));
 export type ChainId = typeof ChainId.Type;

@@ -1,8 +1,8 @@
 import BigNumber from "bignumber.js";
 import { Effect, Logger, References, Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { logDecodeRejection } from "../../src/domain/schema/decode-diagnostics";
-import { PrecisionDecimalFromString } from "../../src/domain/schema/scalars";
+import { logDecodeRejection } from "../../src/domain/decoding/decode-diagnostics";
+import { PrecisionDecimalFromString } from "../../src/domain/finance/scalars";
 
 describe("API boundary foundation decisions", () => {
   it("decodes precision-sensitive decimals to BigNumber without precision loss", () => {

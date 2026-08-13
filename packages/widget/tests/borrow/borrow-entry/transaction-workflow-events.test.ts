@@ -6,7 +6,7 @@ import {
   widgetConfigAtom,
 } from "../../../src/app/config/settings";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
-import { WalletAddress } from "../../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { currentBorrowEntryAtom } from "../../../src/features/borrow/borrow-entry/state/borrow-entry";
 import { borrowEntryIntentEventProjectionAtom } from "../../../src/features/borrow/state";
 import { tokenBalancesScanAtom } from "../../../src/features/portfolio/state";
@@ -19,7 +19,7 @@ import {
 import {
   WalletScopeKey,
   walletScopeOwnerKey,
-} from "../../../src/services/wallet/domain/scope";
+} from "../../../src/services/wallet/wallet-scope";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

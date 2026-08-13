@@ -2,8 +2,8 @@ import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { makeScopedEffectAtom } from "../../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
-import type { YieldAction } from "../../../../domain/schema/action-models";
-import { getActionInputToken } from "../../../../domain/types/action";
+import type { YieldAction } from "../../../../domain/action/models";
+import { getActionInputToken } from "../../../../domain/action/rules";
 import {
   type ClassicFlowSession,
   type ClassicTransactionFlowIntake,

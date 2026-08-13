@@ -3,7 +3,7 @@ import { Effect, Layer, Schema, Stream } from "effect";
 import type { PropsWithChildren } from "react";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import {
   activityResumeDashboardViewAtom,
   startClassicTransactionFlowAtom,
@@ -16,13 +16,13 @@ import {
   type WidgetNavigationOptions,
   type WidgetPath,
 } from "../../src/services/navigation/widget-navigation";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
-import { disconnectedLedgerConnectorState } from "../../src/services/wallet/domain/state";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
+import { disconnectedLedgerConnectorState } from "../../src/services/wallet/wallet-state";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
-import { describe, expect, it, vi } from "../utils/test-extend.dom";
-import { renderHook } from "../utils/test-utils.dom";
+import { describe, expect, it, vi } from "../utils/test-extend.dom.ts";
+import { renderHook } from "../utils/test-utils.dom.tsx";
 
 const walletScope = new WalletScopeKey({
   address: Schema.decodeSync(WalletAddress)(

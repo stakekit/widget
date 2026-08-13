@@ -1,6 +1,6 @@
 import BigNumber from "bignumber.js";
-import type { TokenBalance } from "../../../../domain/schema/financial-models";
-import type { WalletAddress } from "../../../../domain/schema/identifiers";
+import type { TokenBalance } from "../../../../domain/finance/models";
+import type { WalletAddress } from "../../../../domain/identity/identifiers";
 import type {
   BorrowCollateralToggleActionContext,
   BorrowRepayActionContext,

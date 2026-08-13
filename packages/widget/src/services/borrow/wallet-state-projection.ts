@@ -13,8 +13,8 @@ import type {
   DisconnectedWalletState,
   WalletChain,
 } from "../../domain/borrow/wallet";
-import type { WalletAddress } from "../../domain/schema/identifiers";
-import type { NormalizedWalletState } from "../wallet/domain/state";
+import type { WalletAddress } from "../../domain/identity/identifiers";
+import type { NormalizedWalletState } from "../wallet/wallet-state";
 
 type BorrowWalletBridgeInput = {
   readonly address: WalletAddress | null;

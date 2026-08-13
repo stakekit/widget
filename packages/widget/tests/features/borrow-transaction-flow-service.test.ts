@@ -15,7 +15,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Action } from "../../src/domain/borrow/execution/action";
 import { Transaction } from "../../src/domain/borrow/execution/transaction";
 import { IntegrationId, MarketId } from "../../src/domain/borrow/ids";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import type { BorrowTransactionFlowIntake } from "../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import { BorrowActionCreationError } from "../../src/features/borrow-transaction-flow/state/orchestration/borrow-flow-review";
 import { BorrowTransactionFlowService } from "../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
@@ -29,20 +29,20 @@ import {
   WidgetNavigationError,
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { initializeTransactionWorkflow } from "../../src/services/transaction-workflow/internal/model";
+import {
+  BorrowTransactionWorkflowInput,
+  type TransactionWorkflowInput,
+  type TransactionWorkflowState,
+} from "../../src/services/transaction-workflow/transaction-workflow-model";
+import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   type NormalizedWalletState,
   type WalletState,
-} from "../../src/services/wallet/domain/state";
-import { WalletService } from "../../src/services/wallet/wallet-service";
-import {
-  BorrowTransactionWorkflowInput,
-  initializeTransactionWorkflow,
-  type TransactionWorkflowInput,
-  type TransactionWorkflowState,
-} from "../../src/services/workflow/transaction-workflow-model";
-import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
+} from "../../src/services/wallet/wallet-state";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

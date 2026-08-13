@@ -1,7 +1,7 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { describe, expect, it } from "vitest";
-import type { PositionsData } from "../../src/domain/types/positions";
+import type { PositionsData } from "../../src/domain/portfolio/positions";
 import { resolveEarnView } from "../../src/features/earn/state/earn-selection/model/view";
 import type { EarnViewObservations } from "../../src/features/earn/state/earn-selection/model/view-inputs";
 import {

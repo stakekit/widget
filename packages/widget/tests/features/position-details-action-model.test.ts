@@ -3,17 +3,12 @@ import { Result, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
-import { EarnBalance } from "../../src/domain/schema/earn-models";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   getPendingActionStateKey,
-  preparePendingActionRequestDto,
-} from "../../src/domain/types/pending-action-request";
-import {
-  PositionBalancesKey,
-  positionBalancesAtom,
-  positionBalancesByTypeAtom,
-} from "../../src/features/portfolio/state";
+  preparePendingActionCommand,
+} from "../../src/domain/action/action-command";
+import { EarnBalance } from "../../src/domain/earn/models";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import {
   makeAutomaticPendingActionModalState,
   makePendingActionModalStore,
@@ -30,7 +25,12 @@ import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
 } from "../../src/resources/yield-opportunity/provider";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import {
+  PositionBalancesKey,
+  positionBalancesAtom,
+  positionBalancesByTypeAtom,
+} from "../../src/resources/yield-positions/yield-positions";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import {
   yieldApiValidatorFixture,
   yieldApiYieldDtoFixture,
@@ -65,7 +65,7 @@ const balance = Schema.decodeUnknownSync(EarnBalance)(
     validators: [yieldApiValidatorFixture({ address: "validator-a" })],
   })
 );
-const pendingActionDto = balance.pendingActions[0]!;
+const pendingAction = balance.pendingActions[0]!;
 
 describe("Position Details action model", () => {
   it("defaults an eligible Sky Savings Rate exit to USDS", () => {
@@ -230,7 +230,7 @@ describe("Position Details action model", () => {
 
   it("closes only the pending-action attempt acknowledged by Started", () => {
     const first = openPendingActionModal({
-      input: { pendingActionDto, yieldBalance: balance },
+      input: { pendingAction, yieldBalance: balance },
       store: makePendingActionModalStore(),
     });
     if (first.state._tag !== "Open") {
@@ -244,7 +244,7 @@ describe("Position Details action model", () => {
     expect(closed.state._tag).toBe("Closed");
 
     const reopened = openPendingActionModal({
-      input: { pendingActionDto, yieldBalance: balance },
+      input: { pendingAction, yieldBalance: balance },
       store: closed,
     });
     expect(reopened.state._tag).toBe("Open");
@@ -258,15 +258,15 @@ describe("Position Details action model", () => {
 
   it("does not apply an automatic receipt to a different pending action", () => {
     const first = makeAutomaticPendingActionModalState({
-      pendingActionDto,
+      pendingAction,
       yieldBalance: balance,
     });
     const nextPendingAction = {
-      ...pendingActionDto,
+      ...pendingAction,
       passthrough: "different-pending-action",
     };
     const second = makeAutomaticPendingActionModalState({
-      pendingActionDto: nextPendingAction,
+      pendingAction: nextPendingAction,
       yieldBalance: balance,
     });
     if (first._tag !== "Open") {
@@ -286,7 +286,7 @@ describe("Position Details action model", () => {
       yieldBalanceFixture({
         pendingActions: [
           {
-            ...pendingActionDto,
+            ...pendingAction,
             arguments: {
               fields: [
                 {
@@ -301,7 +301,7 @@ describe("Position Details action model", () => {
             },
           },
           {
-            ...pendingActionDto,
+            ...pendingAction,
             arguments: {
               fields: [
                 {
@@ -414,17 +414,17 @@ describe("Position Details action model", () => {
     expect(pendingActions.get(firstKey)?.toString(10)).toBe("1");
     expect(pendingActions.get(secondKey)?.toString(10)).toBe("5");
 
-    const prepared = preparePendingActionRequestDto({
+    const prepared = preparePendingActionCommand({
       additionalAddresses: null,
       address: Schema.decodeSync(WalletAddress)(balance.address),
       integration: selectedYield,
-      pendingActionDto: secondPendingAction,
+      pendingAction: secondPendingAction,
       pendingActionsState: pendingActions,
       selectedValidators: [],
       yieldBalance: collisionBalance,
     });
 
-    expect(Result.getOrThrow(prepared).requestDto).toMatchObject({
+    expect(Result.getOrThrow(prepared).command).toMatchObject({
       arguments: { amount: "5" },
       passthrough: "claim-rewards-second-tranche",
     });

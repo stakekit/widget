@@ -10,10 +10,10 @@ import {
 } from "effect";
 import { TestClock } from "effect/testing";
 import { describe, expect, it, vi } from "vitest";
+import type { ActionTransaction } from "../../src/domain/action/models";
 import { Action } from "../../src/domain/borrow/execution/action";
 import { Transaction } from "../../src/domain/borrow/execution/transaction";
-import type { ActionTransaction } from "../../src/domain/schema/action-models";
-import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
+import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
 import type { ActionMeta } from "../../src/public-api/types";
 import { BorrowOperations } from "../../src/services/api/borrow-operations";
 import { YieldOperations } from "../../src/services/api/yield-operations";
@@ -22,21 +22,21 @@ import {
   WidgetDomainEvents,
 } from "../../src/services/events/widget-domain-events";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
-import { WalletSigningError } from "../../src/services/wallet/domain/errors";
-import {
-  WalletScopeKey,
-  walletScopeOwnerKey,
-} from "../../src/services/wallet/domain/scope";
-import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   BorrowTransactionWorkflowInput,
   ClassicTransactionWorkflowInput,
   type TransactionWorkflowState,
-} from "../../src/services/workflow/transaction-workflow-model";
+} from "../../src/services/transaction-workflow/transaction-workflow-model";
 import {
   type TransactionWorkflowHandle,
   TransactionWorkflowService,
-} from "../../src/services/workflow/transaction-workflow-service";
+} from "../../src/services/transaction-workflow/transaction-workflow-service";
+import { WalletSigningError } from "../../src/services/wallet/wallet-errors";
+import {
+  WalletScopeKey,
+  walletScopeOwnerKey,
+} from "../../src/services/wallet/wallet-scope";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import { yieldApiTransactionFixture } from "../fixtures";
 import {
   makeTransactionWorkflowTestLayer,

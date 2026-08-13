@@ -10,7 +10,7 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../../../widget-shell/components";
-import { useSteps } from "../hooks/use-steps.hook";
+import { useSteps } from "../hooks/use-steps.hook.ts";
 import { stepsErrorBanner, utilaPendingApprovalsBanner } from "./styles.css";
 import { TxState } from "./tx-state";
 

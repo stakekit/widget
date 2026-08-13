@@ -3,8 +3,8 @@ import { BorrowOperations } from "../../src/services/api/borrow-operations";
 import { YieldOperations } from "../../src/services/api/yield-operations";
 import { WidgetDomainEvents } from "../../src/services/events/widget-domain-events";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
+import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
 import { WalletService } from "../../src/services/wallet/wallet-service";
-import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
 
 export type TransactionWorkflowTestCapabilities = Readonly<{
   readonly borrow: BorrowOperations["Service"];

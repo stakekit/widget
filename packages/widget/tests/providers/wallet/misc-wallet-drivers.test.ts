@@ -1,12 +1,10 @@
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
-import {
-  makeCardanoWalletDriver,
-  makeSolanaWalletDriver,
-  makeTonWalletDriver,
-  makeTronWalletDriver,
-} from "../../../src/services/wallet/drivers/misc";
+import { makeCardanoWalletDriver } from "../../../src/services/wallet/internal/adapters/cardano/driver";
+import { makeSolanaWalletDriver } from "../../../src/services/wallet/internal/adapters/solana/driver";
+import { makeTonWalletDriver } from "../../../src/services/wallet/internal/adapters/ton/driver";
+import { makeTronWalletDriver } from "../../../src/services/wallet/internal/adapters/tron/driver";
 
 const tronTx = JSON.stringify({
   raw_data: {
@@ -21,7 +19,7 @@ const tronTx = JSON.stringify({
   visible: true,
 });
 
-describe("miscellaneous wallet drivers", () => {
+describe("non-EVM wallet drivers", () => {
   it("normalizes a Tron signed transaction to a JSON payload", async () => {
     const signTransaction = vi.fn(async () => ({ txID: "signed" }));
     const connector = {

@@ -1,7 +1,7 @@
 import {
   isYieldActionArgRequired,
   isYieldValidatorSelectionRequired,
-} from "../../../../../../../domain/types/yields";
+} from "../../../../../../../domain/earn/yield";
 import { SelectValidator } from "../../../../components/select-validator";
 import { SelectValidatorTrigger } from "./select-validator-trigger";
 import { useSelectValidator } from "./use-select-validator";

@@ -2,17 +2,16 @@ import { Cause, Deferred, Effect, Exit, Fiber, Layer, Stream } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { YieldEntrySubmissionService } from "../../src/features/yield-entry/state/orchestration/yield-entry-submission-service";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
-import { WalletIntegrationError } from "../../src/services/wallet/domain/errors";
-import { walletCommandIdentity } from "../../src/services/wallet/domain/scope";
+import { WalletIntegrationError } from "../../src/services/wallet/wallet-errors";
+import { WalletModal } from "../../src/services/wallet/wallet-modal";
+import { walletCommandIdentity } from "../../src/services/wallet/wallet-scope";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
   type WalletState,
-} from "../../src/services/wallet/domain/state";
-import { WalletAccountSetupService } from "../../src/services/wallet/wallet-account-setup-service";
-import { WalletModal } from "../../src/services/wallet/wallet-modal";
-import { WalletService } from "../../src/services/wallet/wallet-service";
+} from "../../src/services/wallet/wallet-state";
 
 const disconnectedWalletState: WalletState = {
   connection: disconnectedNormalizedWalletState,
@@ -50,14 +49,7 @@ type SubmissionDependencies = TrackingService | WalletModal | WalletService;
 
 const makeSubmissionLayer = (
   dependencies: Layer.Layer<SubmissionDependencies>
-) => {
-  const accountSetupLayer = WalletAccountSetupService.layer.pipe(
-    Layer.provide(dependencies)
-  );
-  return YieldEntrySubmissionService.layer.pipe(
-    Layer.provide(Layer.merge(dependencies, accountSetupLayer))
-  );
-};
+) => YieldEntrySubmissionService.layer.pipe(Layer.provide(dependencies));
 
 describe("YieldEntrySubmissionService", () => {
   it("tracks a connection intent and opens the wallet modal", async () => {
@@ -210,9 +202,8 @@ describe("YieldEntrySubmissionService", () => {
     expect(opened).toBe(1);
   });
 
-  it("tracks and adds a Ledger account before closing the wallet modal", async () => {
+  it("tracks and delegates an eligible Ledger account request", async () => {
     const events: string[] = [];
-    let closed = 0;
     const addLedgerAccount = vi.fn(() =>
       Effect.succeed({ _tag: "Added" } as const)
     );
@@ -230,9 +221,7 @@ describe("YieldEntrySubmissionService", () => {
       Layer.succeed(
         WalletModal,
         WalletModal.of({
-          closeChain: Effect.sync(() => {
-            closed += 1;
-          }),
+          closeChain: Effect.void,
           install: () => Effect.void,
           openConnect: Effect.void,
           uninstall: () => Effect.void,
@@ -262,7 +251,6 @@ describe("YieldEntrySubmissionService", () => {
     expect(outcome).toEqual({ _tag: "Accepted" });
     expect(events).toEqual(["addLedgerAccountClicked"]);
     expect(addLedgerAccount).toHaveBeenCalledOnce();
-    expect(closed).toBe(1);
   });
 
   it("tracks but rejects Ledger setup when the canonical wallet is stale", async () => {

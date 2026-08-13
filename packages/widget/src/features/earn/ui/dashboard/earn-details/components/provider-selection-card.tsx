@@ -4,11 +4,11 @@ import { useTranslation } from "react-i18next";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
-} from "../../../../../../domain/schema/earn-models";
+} from "../../../../../../domain/earn/models";
 import {
   isYieldActionArgRequired,
   isYieldValidatorSelectionRequired,
-} from "../../../../../../domain/types/yields";
+} from "../../../../../../domain/earn/yield";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { CaretDownIcon } from "../../../../../../shared/ui/primitives/icons/caret-down";
 import { PlusIcon } from "../../../../../../shared/ui/primitives/icons/plus";

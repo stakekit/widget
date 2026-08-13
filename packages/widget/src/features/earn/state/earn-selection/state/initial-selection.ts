@@ -1,4 +1,4 @@
-import { tokenString } from "../../../../../domain/types/tokens";
+import { tokenString } from "../../../../../domain/token/token";
 import type { EarnEntry, EarnMachineIntent, EarnMachineView } from "../types";
 
 const sameValidators = (

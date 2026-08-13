@@ -13,7 +13,7 @@ import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom,
 } from "../../../../resources/borrow-positions/borrow-positions";
-import type { WalletScopeKey } from "../../../../services/wallet/domain/scope";
+import type { WalletScopeKey } from "../../../../services/wallet/wallet-scope";
 import { walletScopeAtom } from "../../../wallet/state";
 
 export { BorrowMarketsKey, BorrowPositionsKey };

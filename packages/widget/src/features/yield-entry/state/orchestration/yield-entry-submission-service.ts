@@ -3,14 +3,13 @@ import { TrackingService } from "../../../../services/tracking/tracking-service"
 import type {
   WalletIntegrationError,
   WalletRuntimeInvariantError,
-} from "../../../../services/wallet/domain/errors";
+} from "../../../../services/wallet/wallet-errors";
+import { WalletModal } from "../../../../services/wallet/wallet-modal";
 import {
   sameWalletCommandIdentity,
   type WalletCommandIdentity,
   walletCommandIdentity,
-} from "../../../../services/wallet/domain/scope";
-import { WalletAccountSetupService } from "../../../../services/wallet/wallet-account-setup-service";
-import { WalletModal } from "../../../../services/wallet/wallet-modal";
+} from "../../../../services/wallet/wallet-scope";
 import { WalletService } from "../../../../services/wallet/wallet-service";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 
@@ -37,7 +36,6 @@ const makeYieldEntrySubmissionService = Effect.fn(
   "makeYieldEntrySubmissionService"
 )(function* () {
   const modal = yield* WalletModal;
-  const accountSetup = yield* WalletAccountSetupService;
   const tracking = yield* TrackingService;
   const wallet = yield* WalletService;
   const operations = yield* makeScopedSerialOperations();
@@ -90,7 +88,7 @@ const makeYieldEntrySubmissionService = Effect.fn(
         const [, outcome] = yield* Effect.all(
           [
             tracking.trackEvent("addLedgerAccountClicked"),
-            accountSetup.addLedgerAccount({ expected }),
+            wallet.addLedgerAccount({ expected }),
           ],
           { concurrency: "unbounded" }
         );

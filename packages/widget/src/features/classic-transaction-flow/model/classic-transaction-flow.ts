@@ -4,30 +4,30 @@ import type {
   ActionCommand,
   ManageActionCommand,
   YieldAction,
-} from "../../../domain/schema/action-models";
+} from "../../../domain/action/models";
+import type { YieldPendingActionType } from "../../../domain/action/pending-action";
+import type { ExitReceiveToken } from "../../../domain/action/rules";
+import { getActionInputToken } from "../../../domain/action/rules";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
-} from "../../../domain/schema/earn-models";
-import type { AppToken } from "../../../domain/schema/legacy-models";
-import type { ExitReceiveToken } from "../../../domain/types/action";
-import { getActionInputToken } from "../../../domain/types/action";
-import type { YieldPendingActionType } from "../../../domain/types/pending-action";
-import type { ValidatorKey } from "../../../domain/types/validators";
+} from "../../../domain/earn/models";
+import type { ValidatorKey } from "../../../domain/earn/validator";
+import type { Token } from "../../../domain/token/token";
 import {
   toWidgetPath,
   type WidgetPath,
   type WidgetPathInput,
 } from "../../../services/navigation/widget-navigation";
 import {
-  sameWalletScopeOwner,
-  WalletScopeKey,
-} from "../../../services/wallet/domain/scope";
-import {
   type ClassicTransactionWorkflowInput,
   type ClassicTransactionWorkflowProviderDetail,
   makeClassicTransactionWorkflowInput,
-} from "../../../services/workflow/transaction-workflow-model";
+} from "../../../services/transaction-workflow/transaction-workflow-model";
+import {
+  sameWalletScopeOwner,
+  WalletScopeKey,
+} from "../../../services/wallet/wallet-scope";
 
 type EnterClassicTransactionFlowIntake = {
   readonly _tag: "Enter";
@@ -35,7 +35,7 @@ type EnterClassicTransactionFlowIntake = {
   readonly providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>;
   readonly request: ActionCommand;
   readonly selectedStake: EarnYieldWithProvider;
-  readonly selectedToken: AppToken;
+  readonly selectedToken: Token;
   readonly selectedValidators: ReadonlyMap<ValidatorKey, EarnValidator>;
   readonly walletScope: WalletScopeKey;
 };
@@ -48,15 +48,15 @@ type ExitClassicTransactionFlowIntake = {
   readonly receiveToken: ExitReceiveToken | null;
   readonly request: ActionCommand;
   readonly unstakeAmount: BigNumber;
-  readonly unstakeToken: AppToken;
+  readonly unstakeToken: Token;
   readonly walletScope: WalletScopeKey;
 };
 
 type ManageClassicTransactionFlowIntake = {
   readonly _tag: "Manage";
-  readonly gasFeeToken: AppToken;
+  readonly gasFeeToken: Token;
   readonly integration: EarnYieldWithProvider;
-  readonly interactedToken: AppToken;
+  readonly interactedToken: Token;
   readonly pendingActionType: YieldPendingActionType;
   readonly providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>;
   readonly request: ManageActionCommand;
@@ -375,7 +375,7 @@ export const isClassicFlowSessionPath = (
 };
 
 type ClassicTransactionFlowReviewPricingInput = {
-  readonly token: AppToken;
+  readonly token: Token;
   readonly yield: EarnYieldWithProvider;
 };
 
@@ -414,9 +414,9 @@ export const getClassicTransactionFlowKycYield = (
 };
 
 type ClassicTransactionFlowGasWarningInput = {
-  readonly gasFeeToken: AppToken;
+  readonly gasFeeToken: Token;
   readonly stakeAmount: BigNumber | null;
-  readonly stakeToken: AppToken | null;
+  readonly stakeToken: Token | null;
   readonly walletScope: WalletScopeKey;
 };
 

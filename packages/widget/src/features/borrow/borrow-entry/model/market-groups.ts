@@ -5,9 +5,9 @@ import {
 } from "../../../../domain/borrow/catalog/market";
 import type { BorrowToken } from "../../../../domain/borrow/catalog/token";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
-import type { AppToken } from "../../../../domain/schema/legacy-models";
+import type { Token } from "../../../../domain/token/token";
 
-export type BorrowEntryToken = AppToken & { network: BorrowNetwork };
+export type BorrowEntryToken = Token & { network: BorrowNetwork };
 
 type BorrowMarketGroup = {
   readonly bestRate: number;

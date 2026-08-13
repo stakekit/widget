@@ -7,8 +7,8 @@ import {
   WagmiOperations,
   WagmiOperationsError,
   type WagmiOperationsService,
-} from "../../../src/services/wallet/platform/wagmi-operations";
-import { makeWagmiActions } from "../../../src/services/wallet/wagmi-actions";
+} from "../../../src/services/wallet/internal/platform/wagmi-operations";
+import { makeWagmiActions } from "../../../src/services/wallet/internal/runtime/wagmi-actions";
 
 const connector = {
   id: "test",

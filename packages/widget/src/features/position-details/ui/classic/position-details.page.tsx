@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import type { YieldPendingActionType } from "../../../../domain/types/pending-action";
-import { getExtendedYieldType } from "../../../../domain/types/yields";
+import type { YieldPendingActionType } from "../../../../domain/action/pending-action";
+import { getExtendedYieldType } from "../../../../domain/earn/yield";
 import { getRewardRateFormatted } from "../../../../shared/lib/formatters";
 import { TokenIcon } from "../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../shared/ui/primitives/box";
@@ -194,14 +194,14 @@ const PositionDetails = () => {
               {pendingActionsValue?.map((val) =>
                 val.amount ? (
                   <AmountBlock
-                    key={`${val.pendingActionDto.type}-${val.pendingActionDto.passthrough}`}
+                    key={`${val.pendingAction.type}-${val.pendingAction.passthrough}`}
                     variant="action"
                     onAmountChange={(amount) =>
                       onPendingActionAmountChange({
                         balanceType: val.yieldBalance.type,
                         token: val.yieldBalance.token,
-                        actionType: val.pendingActionDto.type,
-                        passthrough: val.pendingActionDto.passthrough,
+                        actionType: val.pendingAction.type,
+                        passthrough: val.pendingAction.passthrough,
                         amount,
                       })
                     }
@@ -209,13 +209,13 @@ const PositionDetails = () => {
                     canChangeAmount
                     onClick={() =>
                       onPendingActionClick({
-                        pendingActionDto: val.pendingActionDto,
+                        pendingAction: val.pendingAction,
                         yieldBalance: val.yieldBalance,
                       })
                     }
                     label={t(
                       `position_details.pending_action_button.${
-                        val.pendingActionDto.type.toLowerCase() as Lowercase<YieldPendingActionType>
+                        val.pendingAction.type.toLowerCase() as Lowercase<YieldPendingActionType>
                       }`
                     )}
                     onMaxClick={null}
@@ -225,7 +225,7 @@ const PositionDetails = () => {
                 ) : (
                   <StaticActionBlock
                     {...val}
-                    key={`${val.pendingActionDto.type}-${val.pendingActionDto.passthrough}`}
+                    key={`${val.pendingAction.type}-${val.pendingAction.passthrough}`}
                     onPendingActionClick={onPendingActionClick}
                     yieldId={integrationDataValue.id}
                   />

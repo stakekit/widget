@@ -2,12 +2,12 @@ import { capitalize, toLowerCase } from "effect/String";
 import { motion } from "motion/react";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import type { AppToken } from "../../../../../domain/schema/legacy-models";
-import type { YieldPendingActionType } from "../../../../../domain/types/pending-action";
+import type { YieldPendingActionType } from "../../../../../domain/action/pending-action";
 import {
   type ExtendedYieldType,
   isEthenaUsdeStaking,
-} from "../../../../../domain/types/yields";
+} from "../../../../../domain/earn/yield";
+import type { Token } from "../../../../../domain/token/token";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { CheckCircleIcon } from "../../../../../shared/ui/primitives/icons/check-circle";
@@ -19,13 +19,13 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../../../widget-shell/components";
-import { useComplete } from "../hooks/use-complete.hook";
+import { useComplete } from "../hooks/use-complete.hook.ts";
 
 type CompletePageModel = ReturnType<typeof useComplete>;
 
 type Props = {
   completion: CompletePageModel;
-  token: AppToken | null;
+  token: Token | null;
   metadata: ComponentProps<typeof TokenIcon>["metadata"] | null;
   network: string;
   amount: string;

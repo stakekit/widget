@@ -2,9 +2,9 @@ import { type JSX, type ReactNode, useMemo } from "react";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
-} from "../../../../../domain/schema/earn-models";
-import type { AppToken } from "../../../../../domain/schema/legacy-models";
-import type { ValidatorKey } from "../../../../../domain/types/validators";
+} from "../../../../../domain/earn/models";
+import type { ValidatorKey } from "../../../../../domain/earn/validator";
+import type { Token } from "../../../../../domain/token/token";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { ArrowsLeftRightIcon } from "../../../../../shared/ui/primitives/icons/arrows-left-right";
@@ -22,7 +22,7 @@ type Props = {
   isLoading?: boolean;
   selectedStake: EarnYieldWithProvider | null;
   selectedValidators: Map<ValidatorKey, EarnValidator>;
-  selectedToken: AppToken | null;
+  selectedToken: Token | null;
   textSize?: MetaInfoTextSize;
 };
 

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import {
   getYieldProviderYieldIds,
   isYieldWithProviderOptions,
-} from "../../../../../../../domain/types/yields";
+} from "../../../../../../../domain/earn/yield";
 import { formatUsd } from "../../../../../../../shared/lib/formatters";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../../shared/ui/primitives/content-loader";

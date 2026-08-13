@@ -1,19 +1,11 @@
 import { Option, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type * as Atom from "effect/unstable/reactivity/Atom";
-import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
-import { YieldId } from "../../../../../domain/schema/identifiers";
-import { Network } from "../../../../../domain/schema/network-model";
-import { isYieldValidatorSelectionRequired } from "../../../../../domain/types/yields";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
+import { isYieldValidatorSelectionRequired } from "../../../../../domain/earn/yield";
+import { YieldId } from "../../../../../domain/identity/identifiers";
+import { Network } from "../../../../../domain/network/network";
 import type { DashboardYieldCategory } from "../../../../../public-api/types";
-import { resolveEarnView } from "../model/view";
-import type {
-  CategoryObservation,
-  EarnResourceResult,
-  EarnViewObservations,
-  InitialViewObservations,
-  ValidatorObservation,
-} from "../model/view-inputs";
 import {
   availableYieldCategoriesAtom,
   earnYieldCatalogAtom,
@@ -21,7 +13,7 @@ import {
   mergedTokenOptionsAtom,
   positionsDataAtom,
   yieldValidatorsAtom,
-} from "../resources/atoms";
+} from "../catalog/catalog";
 import {
   AvailableYieldCategoriesKey,
   DefaultTokenOptionsKey,
@@ -30,7 +22,15 @@ import {
   TokenOptionsKey,
   YieldCatalogKey,
   YieldValidatorsKey,
-} from "../resources/keys";
+} from "../catalog/keys";
+import { resolveEarnView } from "../model/view";
+import type {
+  CategoryObservation,
+  EarnResourceResult,
+  EarnViewObservations,
+  InitialViewObservations,
+  ValidatorObservation,
+} from "../model/view-inputs";
 import type {
   EarnEntry,
   EarnMachineView,

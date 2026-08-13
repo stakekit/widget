@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
 import { Market } from "../../../src/domain/borrow/catalog/market";
 import { decodeTokenId } from "../../../src/domain/borrow/ids";
-import { TokenBalancesResponse } from "../../../src/domain/schema/financial-models";
+import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import {
   deriveBorrowMarketWalletBalances,
   deriveBorrowTokenWalletBalance,

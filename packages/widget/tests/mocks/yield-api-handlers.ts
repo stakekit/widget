@@ -3,8 +3,8 @@ import { HttpResponse, http } from "msw";
 import type {
   ActionCommand,
   ManageActionCommand,
-} from "../../src/domain/schema/action-models";
-import type { AppToken } from "../../src/domain/schema/legacy-models";
+} from "../../src/domain/action/models";
+import type { Token } from "../../src/domain/token/token";
 
 import {
   yieldApiActionDtoFixture,
@@ -18,7 +18,7 @@ import {
 import { yieldApiRoute } from "./api-routes";
 import { mockDelay } from "./delay";
 
-const defaultToken: AppToken = {
+const defaultToken: Token = {
   name: "Ethereum",
   symbol: "ETH",
   decimals: 18,

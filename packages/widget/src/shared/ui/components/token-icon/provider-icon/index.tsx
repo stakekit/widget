@@ -1,6 +1,5 @@
-import type { AppToken } from "../../../../../domain/schema/legacy-models";
-
-import type { YieldMetadata } from "../../../../../domain/types/yields";
+import type { YieldMetadata } from "../../../../../domain/earn/yield";
+import type { Token } from "../../../../../domain/token/token";
 import type { Atoms } from "../../../../styles/theme/atoms.css";
 import { NetworkLogoImage } from "../network-icon-image";
 import { TokenIconContainer } from "../token-icon-container";
@@ -13,7 +12,7 @@ export const ProviderIcon = ({
   tokenNetworkLogoHw,
   hideNetwork,
 }: {
-  token: AppToken;
+  token: Token;
   metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">;
   tokenLogoHw?: Atoms["hw"];
   tokenNetworkLogoHw?: Atoms["hw"];

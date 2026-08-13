@@ -3,24 +3,22 @@ import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import * as Reactivity from "effect/unstable/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { ApiRequestError } from "../../src/domain/schema/api-errors";
-import { EarnPosition } from "../../src/domain/schema/earn-models";
-import type { YieldBalancesCommand } from "../../src/domain/schema/financial-models";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
-import { positionsDataAtom as earnPositionsDataAtom } from "../../src/features/earn/state/earn-selection/resources/atoms";
-import { PositionsDataKey } from "../../src/features/earn/state/earn-selection/resources/keys";
+import { EarnPosition } from "../../src/domain/earn/models";
+import type { YieldBalancesCommand } from "../../src/domain/finance/models";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { positionsDataAtom as earnPositionsDataAtom } from "../../src/features/earn/state/earn-selection/catalog/catalog";
+import { PositionsDataKey } from "../../src/features/earn/state/earn-selection/catalog/keys";
 import {
   PositionDataKey,
   positionDataAtom,
-} from "../../src/features/portfolio/resources/positions";
-import {
   refreshYieldPositionsAtom,
   YieldPositionsError,
   yieldPositionsResourceAtom,
 } from "../../src/resources/yield-positions/yield-positions";
+import { ApiRequestError } from "../../src/services/api/api-errors";
 import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
 import { resourceInvalidationKeys } from "../../src/services/resource-invalidation";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 
 const address = Schema.decodeSync(WalletAddress)(

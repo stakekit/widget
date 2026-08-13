@@ -117,7 +117,7 @@ describe("feature facade architecture", () => {
       "utf8"
     );
     const activity = readFileSync(
-      join(sourceRoot, "features/activity/resources/activity-actions.ts"),
+      join(sourceRoot, "features/activity/state/read-models/activity-feed.ts"),
       "utf8"
     );
     const resourceFiles = sourceFiles(join(sourceRoot, "resources")).filter(

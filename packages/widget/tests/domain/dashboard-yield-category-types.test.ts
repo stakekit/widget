@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { EarnYieldWithProvider } from "../../src/domain/schema/earn-models";
+import type { EarnYieldWithProvider } from "../../src/domain/earn/models";
 import {
   dashboardYieldCategories,
   getApiYieldTypesForDashboardCategory,
@@ -7,7 +7,7 @@ import {
   getYieldTypeLabels,
   getYieldTypesSortRank,
   normalizeDashboardYieldCategoryOrder,
-} from "../../src/domain/types/yields";
+} from "../../src/domain/earn/yield";
 import { DashboardYieldCategory } from "../../src/public-api/types";
 
 const allApiYieldTypes = [

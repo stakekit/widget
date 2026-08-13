@@ -2,13 +2,13 @@ import type { Account } from "@ledgerhq/wallet-api-client";
 import { mainnet, optimism } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
-import { evmChainsMap } from "../../src/domain/types/chains/evm";
-import type { WalletCoreState } from "../../src/services/wallet/domain/state";
-import { disconnectedLedgerConnectorState } from "../../src/services/wallet/domain/state";
+import { evmChainsMap } from "../../src/services/wallet/internal/adapters/evm/chains";
 import {
   normalizeWalletState,
   type WalletStateController,
-} from "../../src/services/wallet/state-projection";
+} from "../../src/services/wallet/internal/runtime/state-projection";
+import type { WalletCoreState } from "../../src/services/wallet/wallet-state";
+import { disconnectedLedgerConnectorState } from "../../src/services/wallet/wallet-state";
 
 type WalletConnectionSnapshot = WalletCoreState["connection"];
 

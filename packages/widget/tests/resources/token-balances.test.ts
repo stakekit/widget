@@ -2,17 +2,17 @@ import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { ApiRequestError } from "../../src/domain/schema/api-errors";
-import type { TokenBalanceScanCommand } from "../../src/domain/schema/financial-models";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import type { TokenBalanceScanCommand } from "../../src/domain/finance/models";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { tokenBalancesScanAtom as portfolioTokenBalancesAtom } from "../../src/features/portfolio/state";
 import {
   refreshTokenBalancesAtom,
   TokenBalancesError,
   tokenBalancesResourceAtom,
 } from "../../src/resources/token-balances/token-balances";
+import { ApiRequestError } from "../../src/services/api/api-errors";
 import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useTrackEvent } from "../../../../tracking/state";
 import type { PageCta } from "../../../../widget-shell/components";
 import { useClassicFlowExecution } from "../../../react/classic-flow-route";
-import { useTransactionWorkflow } from "./use-transaction-workflow.hook";
+import { useTransactionWorkflow } from "./use-transaction-workflow.hook.ts";
 
 export const useSteps = () => {
   const { dispatch, result, steps } = useTransactionWorkflow();

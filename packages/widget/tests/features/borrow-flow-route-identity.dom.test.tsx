@@ -5,7 +5,7 @@ import type { BorrowFlowSession } from "../../src/features/borrow-transaction-fl
 import { BorrowTransactionFlowRoute } from "../../src/features/borrow-transaction-flow/react/borrow-flow-route";
 import { currentBorrowFlowSessionAtom } from "../../src/features/borrow-transaction-flow/state/atoms/borrow-flow";
 import { currentBorrowFlowSessionRootAtom } from "../../src/features/borrow-transaction-flow/state/atoms/borrow-flow-session";
-import { render } from "../utils/test-utils.dom";
+import { render } from "../utils/test-utils.dom.tsx";
 
 const LocationProbe = () => {
   const location = useLocation();

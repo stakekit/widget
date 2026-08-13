@@ -7,19 +7,19 @@ import {
   ClassicFlowReviewScope,
   ClassicFlowRoute,
 } from "../react/classic-flow-route";
-import { ActivityDetailsPage } from "./activity-details.page";
-import { ActivityCompletePage } from "./complete/pages/activity-complete.page";
-import { PendingCompletePage } from "./complete/pages/pending-complete.page";
-import { StakeCompletePage } from "./complete/pages/stake-complete.page";
-import { UnstakeCompletePage } from "./complete/pages/unstake-complete.page";
-import { ActionReviewPage } from "./review/pages/action-review.page";
-import { PendingReviewPage } from "./review/pages/pending-review.page";
-import { StakeReviewPage } from "./review/pages/stake-review.page";
-import { UnstakeReviewPage } from "./review/pages/unstake-review.page";
-import { ActivityStepsPage } from "./steps/pages/activity-steps.page";
-import { PendingStepsPage } from "./steps/pages/pending-steps.page";
-import { StakeStepsPage } from "./steps/pages/stake-steps.page";
-import { UnstakeStepsPage } from "./steps/pages/unstake-steps.page";
+import { ActivityDetailsPage } from "./activity-details.page.tsx";
+import { ActivityCompletePage } from "./complete/pages/activity-complete.page.tsx";
+import { PendingCompletePage } from "./complete/pages/pending-complete.page.tsx";
+import { StakeCompletePage } from "./complete/pages/stake-complete.page.tsx";
+import { UnstakeCompletePage } from "./complete/pages/unstake-complete.page.tsx";
+import { ActionReviewPage } from "./review/pages/action-review.page.tsx";
+import { PendingReviewPage } from "./review/pages/pending-review.page.tsx";
+import { StakeReviewPage } from "./review/pages/stake-review.page.tsx";
+import { UnstakeReviewPage } from "./review/pages/unstake-review.page.tsx";
+import { ActivityStepsPage } from "./steps/pages/activity-steps.page.tsx";
+import { PendingStepsPage } from "./steps/pages/pending-steps.page.tsx";
+import { StakeStepsPage } from "./steps/pages/stake-steps.page.tsx";
+import { UnstakeStepsPage } from "./steps/pages/unstake-steps.page.tsx";
 
 type ClassicFlowRouteMount =
   | {

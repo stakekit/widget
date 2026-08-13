@@ -10,7 +10,7 @@ import {
   reconcileWidgetI18n,
   WidgetTranslation,
 } from "../../src/services/translation/widget-translation";
-import { render } from "../utils/test-utils.dom";
+import { render } from "../utils/test-utils.dom.tsx";
 
 const TranslationProbe = () => {
   const { t } = useTranslation();

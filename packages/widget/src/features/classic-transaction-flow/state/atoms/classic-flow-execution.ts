@@ -3,11 +3,11 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { makeScopedEffectStateAtom } from "../../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
-import { getActionInputToken } from "../../../../domain/types/action";
+import { getActionInputToken } from "../../../../domain/action/rules";
 import type {
   TransactionWorkflowCommand,
   TransactionWorkflowInputError,
-} from "../../../../services/workflow/transaction-workflow-model";
+} from "../../../../services/transaction-workflow/transaction-workflow-model";
 import {
   type ClassicFlowSession,
   getClassicTransactionFlowIntakeVariant,

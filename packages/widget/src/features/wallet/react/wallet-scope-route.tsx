@@ -8,7 +8,7 @@ import {
   sameWalletScopeOwner,
   type WalletScopeKey,
   walletScopeFromState,
-} from "../../../services/wallet/domain/scope";
+} from "../../../services/wallet/wallet-scope";
 import { currentWalletStateResultAtom } from "../state/root-atom";
 
 const WalletScopeRouteContext = createContext<WalletScopeKey | null>(null);

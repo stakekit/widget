@@ -2,14 +2,14 @@ import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import {
   makePositionDetailsWorkflowState,
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
   reducePositionDetailsWorkflow,
 } from "../../src/features/position-details/state/workflow";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 
 const scopeA = new WalletScopeKey({
   address: Schema.decodeSync(WalletAddress)(

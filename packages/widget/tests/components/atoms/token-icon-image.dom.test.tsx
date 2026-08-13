@@ -1,7 +1,7 @@
 import { act } from "react";
 import { describe, expect, it } from "vitest";
 import { TokenIconImage } from "../../../src/shared/ui/components/token-icon/token-icon-image";
-import { render } from "../../utils/test-utils.dom";
+import { render } from "../../utils/test-utils.dom.tsx";
 
 const validSrc =
   "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1'%20height='1'%3E%3C/svg%3E";

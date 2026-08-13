@@ -1,5 +1,5 @@
-import type { WalletScopeOwnerKey } from "../../../../../services/wallet/domain/scope";
-import { sameWalletScopeOwner } from "../../../../../services/wallet/domain/scope";
+import type { WalletScopeOwnerKey } from "../../../../../services/wallet/wallet-scope";
+import { sameWalletScopeOwner } from "../../../../../services/wallet/wallet-scope";
 import { type EarnMachineIntent, makeDefaultEarnIntent } from "../types";
 
 type EarnInitializationPhase =

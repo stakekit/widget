@@ -1,0 +1,683 @@
+import BigNumber from "bignumber.js";
+import type { TFunction } from "i18next";
+import type { PendingAction } from "../../../domain/action/models";
+import type {
+  EarnBalance,
+  EarnYieldWithProvider,
+} from "../../../domain/earn/models";
+import type { YieldRewardRate } from "../../../domain/earn/reward-rate";
+import {
+  getExtendedYieldType,
+  getYieldCooldownPeriod,
+  getYieldLockupPeriod,
+  getYieldRiskDisplay,
+  getYieldTypeLabels,
+  getYieldWarmupPeriod,
+} from "../../../domain/earn/yield";
+import type { RewardsSummary } from "../../../domain/portfolio/models";
+import type {
+  PositionBalancesByType,
+  YieldBalanceType,
+} from "../../../domain/portfolio/positions";
+import {
+  formatNetworkName,
+  formatUsd,
+  humanizeEnumValue,
+} from "../../../shared/lib/formatters";
+import { APToPercentage } from "../../../shared/lib/general";
+import { defaultFormattedNumber } from "../../../shared/lib/number-format";
+import {
+  formatCooldownDays,
+  formatMinStake,
+  formatMinStakeLabel,
+  formatOptionalDays,
+  formatPricePerShare,
+  formatRewardClaiming,
+  formatRewardRateLabel,
+  formatRewardTokenLabel,
+} from "../../earn/components";
+
+type DashboardPositionStatusTone = "action" | "claim" | "default";
+
+export type DashboardPositionMetricCard = {
+  id: string;
+  label: string;
+  subValue?: string;
+  tone?: DashboardPositionStatusTone;
+  value: string;
+};
+
+type DashboardPositionStatusSummary = {
+  label: string;
+  tone: DashboardPositionStatusTone;
+  value: string;
+} | null;
+
+type DashboardPositionBreakdownRow = {
+  id: string;
+  label: string;
+  subValue?: string;
+  value: string;
+};
+
+export type DashboardPositionDetailValue =
+  | string
+  | Readonly<{
+      readonly _tag: "Risk";
+      readonly risk: NonNullable<ReturnType<typeof getYieldRiskDisplay>>;
+    }>;
+
+type DashboardPositionDetailRow = {
+  id: string;
+  label: string;
+  value: DashboardPositionDetailValue;
+};
+
+type DashboardPositionAddressRow = {
+  address: string;
+  label: string;
+};
+
+type DashboardPositionChartSection = {
+  id: string;
+  title: string;
+};
+
+type DashboardPositionDetailsModel = {
+  addressRows: DashboardPositionAddressRow[];
+  breakdownRows: DashboardPositionBreakdownRow[];
+  chartSections: DashboardPositionChartSection[];
+  detailRows: DashboardPositionDetailRow[];
+  metricCards: DashboardPositionMetricCard[];
+  providerName: string;
+  statusSummary: DashboardPositionStatusSummary;
+};
+
+type DashboardPositionPendingAction = {
+  amount: BigNumber | null;
+  formattedAmount: string;
+  pendingAction: PendingAction;
+  yieldBalance: EarnBalance;
+};
+
+type ProviderDetail = {
+  address?: string;
+  name?: string;
+  rewardRate?: number | null;
+  status?: string | null;
+};
+
+export const getDashboardPositionDetailsModel = ({
+  canUnstake,
+  integrationData,
+  pendingActions,
+  personalizedRewardRate,
+  positionBalancesByType,
+  providersDetails,
+  reducedStakedOrLiquidBalance,
+  rewardsSummary,
+  t,
+}: {
+  canUnstake: boolean;
+  integrationData: EarnYieldWithProvider;
+  pendingActions: DashboardPositionPendingAction[];
+  personalizedRewardRate?: YieldRewardRate | null;
+  positionBalancesByType: PositionBalancesByType;
+  providersDetails: ProviderDetail[];
+  reducedStakedOrLiquidBalance: {
+    amount: BigNumber;
+    amountUsd: BigNumber;
+    token: { readonly symbol: string };
+  } | null;
+  rewardsSummary?: RewardsSummary;
+  t: TFunction;
+}): DashboardPositionDetailsModel => {
+  const promotedFactIds = new Set<string>();
+  const providerName = getPositionProviderName({
+    integrationData,
+    providersDetails,
+  });
+  const statusSummary = getStatusSummary({
+    canUnstake,
+    pendingActions,
+    positionBalancesByType,
+    providersDetails,
+    t,
+  });
+  const balanceMetric = getBalanceMetric({
+    positionBalancesByType,
+    promotedFactIds,
+    reducedStakedOrLiquidBalance,
+    t,
+  });
+  const rewardsMetric = getRewardsMetric({
+    pendingActions,
+    positionBalancesByType,
+    promotedFactIds,
+    rewardsSummary,
+    t,
+  });
+  const apyMetric = getApyMetric({
+    integrationData,
+    personalizedRewardRate,
+    promotedFactIds,
+    t,
+  });
+  const statusMetric = statusSummary
+    ? {
+        id: "status",
+        label: statusSummary.label,
+        tone: statusSummary.tone,
+        value: statusSummary.value,
+      }
+    : null;
+
+  const baseCards = [
+    balanceMetric,
+    rewardsMetric,
+    apyMetric,
+    statusMetric,
+  ].filter((card): card is DashboardPositionMetricCard => !!card);
+
+  // Keep the 2-column grid balanced: when there is an odd number of cards,
+  // surface the next most useful fact so the layout never leaves an empty cell.
+  const fillerMetric =
+    baseCards.length % 2 === 1
+      ? getFillerMetric({ integrationData, promotedFactIds, t })
+      : null;
+
+  return {
+    addressRows: getAddressRows(integrationData, t),
+    breakdownRows: getBreakdownRows({ positionBalancesByType, t }),
+    chartSections: [],
+    detailRows: getDetailRows({
+      integrationData,
+      promotedFactIds,
+      providerName,
+      t,
+    }),
+    metricCards: fillerMetric ? [...baseCards, fillerMetric] : baseCards,
+    providerName,
+    statusSummary,
+  };
+};
+
+const getFillerMetric = ({
+  integrationData,
+  promotedFactIds,
+  t,
+}: {
+  integrationData: EarnYieldWithProvider;
+  promotedFactIds: Set<string>;
+  t: TFunction;
+}): DashboardPositionMetricCard | null => {
+  const cooldownDays = getYieldCooldownPeriod(integrationData)?.days ?? 0;
+
+  if (cooldownDays > 0) {
+    promotedFactIds.add("cooldown");
+
+    return {
+      id: "unstaking-period",
+      label: t("dashboard.earn_details.cooldown"),
+      value: t("dashboard.earn_details.cooldown_days", { count: cooldownDays }),
+    };
+  }
+
+  const rewardToken = formatRewardTokenLabel(integrationData, t);
+
+  if (rewardToken) {
+    promotedFactIds.add("reward-token");
+
+    return {
+      id: "reward-token",
+      label: t("dashboard.earn_details.reward_token"),
+      value: rewardToken,
+    };
+  }
+
+  return null;
+};
+
+const getPositionProviderName = ({
+  integrationData,
+  providersDetails,
+}: {
+  integrationData: EarnYieldWithProvider;
+  providersDetails: ProviderDetail[];
+}) => {
+  const [provider] = providersDetails;
+
+  return (
+    provider?.name ??
+    provider?.address ??
+    integrationData.provider?.name ??
+    integrationData.providerId
+  );
+};
+
+const getBalanceMetric = ({
+  positionBalancesByType,
+  promotedFactIds,
+  reducedStakedOrLiquidBalance,
+  t,
+}: {
+  positionBalancesByType: PositionBalancesByType;
+  promotedFactIds: Set<string>;
+  reducedStakedOrLiquidBalance: {
+    amount: BigNumber;
+    amountUsd: BigNumber;
+    token: { readonly symbol: string };
+  } | null;
+  t: TFunction;
+}): DashboardPositionMetricCard | null => {
+  if (reducedStakedOrLiquidBalance?.amount.isGreaterThan(0)) {
+    promotedFactIds.add("balance");
+
+    return {
+      id: "balance",
+      label: t("dashboard.position_details.balance"),
+      subValue: formatUsdSubValue(reducedStakedOrLiquidBalance.amountUsd),
+      value: `${defaultFormattedNumber(reducedStakedOrLiquidBalance.amount)} ${
+        reducedStakedOrLiquidBalance.token.symbol
+      }`,
+    };
+  }
+
+  const totalUsd = getNonPointsBalances(positionBalancesByType).reduce(
+    (acc, balance) => acc.plus(balance.amountUsd ?? 0),
+    new BigNumber(0)
+  );
+
+  if (!totalUsd.isGreaterThan(0)) return null;
+
+  promotedFactIds.add("balance");
+
+  return {
+    id: "balance",
+    label: t("dashboard.position_details.balance"),
+    value: formatUsd(totalUsd),
+  };
+};
+
+const getRewardsMetric = ({
+  pendingActions,
+  positionBalancesByType,
+  promotedFactIds,
+  rewardsSummary,
+  t,
+}: {
+  pendingActions: DashboardPositionPendingAction[];
+  positionBalancesByType: PositionBalancesByType;
+  promotedFactIds: Set<string>;
+  rewardsSummary?: RewardsSummary;
+  t: TFunction;
+}): DashboardPositionMetricCard | null => {
+  const claimableBalance = getBalancesByPriority(positionBalancesByType)
+    .filter(
+      (balance) => balance.type === "claimable" && !balance.token.isPoints
+    )
+    .find((balance) => BigNumber(balance.amount).isGreaterThan(0));
+
+  if (claimableBalance) {
+    promotedFactIds.add("rewards");
+
+    return {
+      id: "rewards",
+      label: t("dashboard.position_details.rewards"),
+      subValue: formatUsdSubValue(claimableBalance.amountUsd),
+      value: `${defaultFormattedNumber(claimableBalance.amount)} ${
+        claimableBalance.token.symbol
+      }`,
+    };
+  }
+
+  if (
+    rewardsSummary &&
+    BigNumber(rewardsSummary.rewards.total).isGreaterThan(0)
+  ) {
+    promotedFactIds.add("rewards");
+
+    return {
+      id: "rewards",
+      label: t("dashboard.position_details.rewards"),
+      subValue: t("dashboard.position_details.rewards_total"),
+      value: `${defaultFormattedNumber(rewardsSummary.rewards.total)} ${
+        rewardsSummary.token.symbol
+      }`,
+    };
+  }
+
+  const claimAction = pendingActions.find(
+    (action) => action.pendingAction.type === "CLAIM_REWARDS"
+  );
+
+  if (!claimAction) return null;
+
+  promotedFactIds.add("rewards");
+
+  return {
+    id: "rewards",
+    label: t("dashboard.position_details.rewards"),
+    subValue: claimAction.formattedAmount || undefined,
+    value: t("position_details.pending_action.claim_rewards"),
+  };
+};
+
+const getApyMetric = ({
+  integrationData,
+  personalizedRewardRate,
+  promotedFactIds,
+  t,
+}: {
+  integrationData: EarnYieldWithProvider;
+  personalizedRewardRate?: YieldRewardRate | null;
+  promotedFactIds: Set<string>;
+  t: TFunction;
+}): DashboardPositionMetricCard | null => {
+  const rewardRate =
+    personalizedRewardRate?.total ?? integrationData.rewardRate.total;
+  const amount = BigNumber(rewardRate);
+
+  if (!amount.isFinite() || amount.isZero()) return null;
+
+  promotedFactIds.add("apy");
+
+  return {
+    id: "apy",
+    label: personalizedRewardRate
+      ? t("position_details.personalized_apy")
+      : formatRewardRateLabel(integrationData, t),
+    value: `${APToPercentage(amount.toNumber())}%`,
+  };
+};
+
+const getStatusSummary = ({
+  canUnstake,
+  pendingActions,
+  positionBalancesByType,
+  providersDetails,
+  t,
+}: {
+  canUnstake: boolean;
+  pendingActions: DashboardPositionPendingAction[];
+  positionBalancesByType: PositionBalancesByType;
+  providersDetails: ProviderDetail[];
+  t: TFunction;
+}): DashboardPositionStatusSummary => {
+  const inactiveProvider = providersDetails.find(
+    (provider) => provider.status && provider.status !== "active"
+  );
+
+  if (inactiveProvider) {
+    return {
+      label: t("dashboard.position_details.action_required"),
+      tone: "action",
+      value:
+        inactiveProvider.status === "jailed"
+          ? t("details.validators_jailed")
+          : t("details.validators_inactive"),
+    };
+  }
+
+  const [pendingAction] = pendingActions;
+
+  if (pendingAction) {
+    return {
+      label: t("dashboard.position_details.action_required"),
+      tone:
+        pendingAction.pendingAction.type === "CLAIM_REWARDS"
+          ? "claim"
+          : "action",
+      value: formatPendingActionLabel(pendingAction.pendingAction.type, t),
+    };
+  }
+
+  const statusBalance = getBalancesByPriority(positionBalancesByType).find(
+    (balance) =>
+      balance.type === "locked" ||
+      balance.type === "withdrawable" ||
+      balance.type === "exiting" ||
+      balance.type === "entering"
+  );
+
+  if (statusBalance) {
+    return {
+      label: t("dashboard.position_details.status"),
+      tone: "default",
+      value: formatBalanceTypeLabel(statusBalance.type, t),
+    };
+  }
+
+  return {
+    label: t("dashboard.position_details.status"),
+    tone: "default",
+    value: canUnstake
+      ? t("dashboard.position_details.active")
+      : t("dashboard.position_details.withdrawal_unavailable"),
+  };
+};
+
+const getBreakdownRows = ({
+  positionBalancesByType,
+  t,
+}: {
+  positionBalancesByType: PositionBalancesByType;
+  t: TFunction;
+}): DashboardPositionBreakdownRow[] =>
+  getBalancesByPriority(positionBalancesByType).map((balance, index) => ({
+    id: `${balance.type}-${balance.token.symbol}-${index}`,
+    label: formatBalanceTypeLabel(balance.type, t),
+    subValue: balance.token.isPoints
+      ? t("shared.points")
+      : formatUsdSubValue(balance.amountUsd),
+    value: `${defaultFormattedNumber(balance.amount)} ${balance.token.symbol}`,
+  }));
+
+const getDetailRows = ({
+  integrationData,
+  promotedFactIds,
+  providerName,
+  t,
+}: {
+  integrationData: EarnYieldWithProvider;
+  promotedFactIds: Set<string>;
+  providerName: string;
+  t: TFunction;
+}): DashboardPositionDetailRow[] => {
+  const risk = getYieldRiskDisplay(integrationData);
+  const minStake = formatMinStake(integrationData, t);
+  const pricePerShare = formatPricePerShare(integrationData);
+  const cooldown = formatCooldownDays(
+    getYieldCooldownPeriod(integrationData)?.days ?? 0,
+    t
+  );
+  const warmup = formatOptionalDays(
+    getYieldWarmupPeriod(integrationData)?.days,
+    t
+  );
+  const lockup = formatOptionalDays(
+    getYieldLockupPeriod(integrationData)?.days,
+    t
+  );
+
+  const rows: Array<DashboardPositionDetailRow | null> = [
+    {
+      id: "network",
+      label: t("dashboard.earn_details.network"),
+      value: formatNetworkName(integrationData.network),
+    },
+    {
+      id: "provider",
+      label: t("dashboard.earn_details.provider"),
+      value: providerName,
+    },
+    promotedFactIds.has("reward-token")
+      ? null
+      : {
+          id: "reward-token",
+          label: t("dashboard.earn_details.reward_token"),
+          value: formatRewardTokenLabel(integrationData, t),
+        },
+    pricePerShare
+      ? {
+          id: "price-per-share",
+          label: t("dashboard.earn_details.price_per_share"),
+          value: pricePerShare,
+        }
+      : null,
+    {
+      id: "type",
+      label: t("dashboard.earn_details.type"),
+      value: getYieldTypeLabels(integrationData, t).title,
+    },
+    {
+      id: "reward-schedule",
+      label: t("dashboard.earn_details.reward_schedule"),
+      value: humanizeEnumValue(integrationData.mechanics.rewardSchedule),
+    },
+    {
+      id: "reward-claiming",
+      label: t("dashboard.earn_details.reward_claiming"),
+      value: formatRewardClaiming(integrationData, t),
+    },
+    promotedFactIds.has("apy")
+      ? null
+      : {
+          id: "apy",
+          label: formatRewardRateLabel(integrationData, t),
+          value: `${APToPercentage(integrationData.rewardRate.total)}%`,
+        },
+    minStake
+      ? {
+          id: "min-stake",
+          label: formatMinStakeLabel(integrationData, t),
+          value: minStake.value,
+        }
+      : null,
+    promotedFactIds.has("cooldown")
+      ? null
+      : {
+          id: "cooldown",
+          label: t("dashboard.earn_details.cooldown"),
+          value: cooldown,
+        },
+    warmup
+      ? {
+          id: "warmup",
+          label: t("dashboard.earn_details.warmup"),
+          value: warmup,
+        }
+      : null,
+    lockup
+      ? {
+          id: "lockup",
+          label: t("dashboard.earn_details.lockup"),
+          value: lockup,
+        }
+      : null,
+    risk
+      ? {
+          id: "risk",
+          label: t("dashboard.earn_details.risk"),
+          value: { _tag: "Risk", risk },
+        }
+      : null,
+  ];
+
+  return rows.filter((row): row is DashboardPositionDetailRow => !!row);
+};
+
+const getAddressRows = (
+  integrationData: EarnYieldWithProvider,
+  t: TFunction
+): DashboardPositionAddressRow[] => {
+  const rows: Array<DashboardPositionAddressRow | null> = [
+    integrationData.outputToken?.address
+      ? {
+          label: t("dashboard.earn_details.vault"),
+          address: integrationData.outputToken.address,
+        }
+      : null,
+    integrationData.token.address
+      ? {
+          label: t("dashboard.earn_details.asset", {
+            symbol: integrationData.token.symbol,
+          }),
+          address: integrationData.token.address,
+        }
+      : null,
+  ];
+
+  return rows.filter((row): row is DashboardPositionAddressRow => row !== null);
+};
+
+const getBalancesByPriority = (
+  positionBalancesByType: PositionBalancesByType
+) =>
+  balanceTypePriority.flatMap((type) => positionBalancesByType.get(type) ?? []);
+
+const getNonPointsBalances = (positionBalancesByType: PositionBalancesByType) =>
+  getBalancesByPriority(positionBalancesByType).filter(
+    (balance) => !balance.token.isPoints
+  );
+
+const balanceTypePriority: YieldBalanceType[] = [
+  "active",
+  "entering",
+  "exiting",
+  "withdrawable",
+  "claimable",
+  "locked",
+];
+
+const formatBalanceTypeLabel = (type: YieldBalanceType, t: TFunction) =>
+  t(`position_details.balance_type.${type}`);
+
+// Pending action types come from the API and can outpace our translation map
+// (e.g. RWA-specific actions). Fall back to a humanized version of the type so
+// the card never renders a raw translation key.
+const formatPendingActionLabel = (type: PendingAction["type"], t: TFunction) =>
+  t(`position_details.pending_action.${type.toLowerCase()}`, {
+    defaultValue: humanizeEnumValue(type),
+  });
+
+const formatUsdSubValue = (
+  value: string | number | BigNumber | null | undefined
+) => {
+  if (value == null) return undefined;
+
+  const amount = BigNumber(value);
+
+  return amount.isGreaterThan(0) ? formatUsd(amount) : undefined;
+};
+
+export const getPositionHeaderBadges = (
+  integrationData: EarnYieldWithProvider,
+  t: TFunction
+) => {
+  const yieldType = getExtendedYieldType(integrationData);
+  const badges: { label: string; tone: "auto" | "default" }[] = [];
+
+  if (yieldType === "native_staking") {
+    badges.push({
+      label: t("dashboard.earn_details.native"),
+      tone: "default",
+    });
+  }
+
+  if (yieldType === "pooled_staking") {
+    badges.push({
+      label: t("dashboard.earn_details.pooled"),
+      tone: "default",
+    });
+  }
+
+  if (integrationData.mechanics.rewardClaiming === "auto") {
+    badges.push({
+      label: t("dashboard.earn_details.auto_compound"),
+      tone: "auto",
+    });
+  }
+
+  return badges;
+};

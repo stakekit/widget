@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import {
   TolerantTopLevelArray,
   TolerantTopLevelRecord,
-} from "../../src/domain/schema/response";
-import { PrecisionDecimalFromString } from "../../src/domain/schema/scalars";
+} from "../../src/domain/decoding/response-schema";
+import { PrecisionDecimalFromString } from "../../src/domain/finance/scalars";
 
 const ItemId = Schema.String.pipe(Schema.brand("ResponseSchemaTestItemId"));
 const Item = Schema.Struct({

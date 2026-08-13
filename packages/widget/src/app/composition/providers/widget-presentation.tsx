@@ -1,8 +1,8 @@
 import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
-import type { AppToken } from "../../../domain/schema/legacy-models";
-import type { Network } from "../../../domain/schema/network-model";
-import type { SupportedSKChains } from "../../../domain/types/chains";
+import type { Network } from "../../../domain/network/network";
+import type { Token } from "../../../domain/token/token";
+import type { SupportedSKChains } from "../../../services/wallet/supported-chains";
 import {
   type WidgetPresentation,
   WidgetPresentationProvider,
@@ -33,7 +33,7 @@ export const WidgetPresentationAdapter = ({ children }: PropsWithChildren) => {
       typeof chainIconMapping === "function"
         ? chainIconMapping(network as SupportedSKChains)
         : chainIconMapping?.[network as SupportedSKChains],
-    mapTokenIconUrl: (token: AppToken) => {
+    mapTokenIconUrl: (token: Token) => {
       if (!tokenIconMapping) return undefined;
 
       return typeof tokenIconMapping === "function"

@@ -6,7 +6,7 @@ import {
   widgetConfigAtom,
 } from "../../src/app/config/settings";
 import { BorrowFeatureRoute } from "../../src/app/routes/borrow-feature-route";
-import { render } from "../utils/test-utils.dom";
+import { render } from "../utils/test-utils.dom.tsx";
 
 const LocationProbe = () => {
   const location = useLocation();

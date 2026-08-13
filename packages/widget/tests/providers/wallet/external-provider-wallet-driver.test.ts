@@ -2,8 +2,8 @@ import { Effect } from "effect";
 import { zeroAddress } from "viem";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
-import { ExternalProviderError } from "../../../src/domain/types/external-providers";
-import { makeExternalProviderWalletDriver } from "../../../src/services/wallet/drivers/external-provider";
+import { ExternalProviderError } from "../../../src/services/wallet/external-provider";
+import { makeExternalProviderWalletDriver } from "../../../src/services/wallet/internal/adapters/external-provider/driver";
 
 const tx = JSON.stringify({
   chainId: 1,

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
-import { getYieldTypeLabels } from "../../../../../../../domain/types/yields";
+import { getYieldTypeLabels } from "../../../../../../../domain/earn/yield";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { Spinner } from "../../../../../../../shared/ui/primitives/spinner";

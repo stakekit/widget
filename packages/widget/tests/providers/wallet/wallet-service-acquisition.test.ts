@@ -17,20 +17,20 @@ import { YieldResourceSource } from "../../../src/services/api/yield-resource-so
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
-import { WalletBootstrapError } from "../../../src/services/wallet/bootstrap";
 import { makeDefaultConfig } from "../../../src/services/wallet/default-wagmi-config";
 import {
   SolanaPlatform,
   type SolanaRuntime,
-} from "../../../src/services/wallet/platform/solana-platform";
+} from "../../../src/services/wallet/internal/platform/solana-platform";
 import {
   WagmiPlatform,
   type WagmiPlatformService,
-} from "../../../src/services/wallet/platform/wagmi-platform";
-import { WalletEnvironment } from "../../../src/services/wallet/platform/wallet-environment";
+} from "../../../src/services/wallet/internal/platform/wagmi-platform";
+import { WalletEnvironment } from "../../../src/services/wallet/internal/platform/wallet-environment";
+import { WalletBootstrapError } from "../../../src/services/wallet/internal/runtime/bootstrap";
+import { WalletStorageCleanup } from "../../../src/services/wallet/internal/runtime/wallet-storage-cleanup";
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
-import { WalletStorageCleanup } from "../../../src/services/wallet/wallet-storage-cleanup";
 import { makeWalletTestController } from "./wallet-test-controller";
 
 const settings = normalizeWidgetConfig({
@@ -313,7 +313,7 @@ describe("WalletService acquisition", () => {
             })
           );
           const streamFailure = yield* Fiber.join(terminal);
-          const commandFailure = yield* wallet.disconnect().pipe(Effect.flip);
+          const commandFailure = yield* wallet.state.pipe(Effect.flip);
           return { commandFailure, streamFailure };
         }).pipe(Effect.provide(layer))
       )

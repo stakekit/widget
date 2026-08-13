@@ -2,15 +2,15 @@ import { Data, Duration, Effect, Option, Result } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import type {
-  ApiRequestError,
-  ResponseDecodeError,
-} from "../../domain/schema/api-errors";
-import type {
   EarnYield,
   EarnYieldWithProvider,
-} from "../../domain/schema/earn-models";
-import type { ProviderId, YieldId } from "../../domain/schema/identifiers";
-import type { Network } from "../../domain/schema/network-model";
+} from "../../domain/earn/models";
+import type { ProviderId, YieldId } from "../../domain/identity/identifiers";
+import type { Network } from "../../domain/network/network";
+import type {
+  ApiRequestError,
+  ResponseDecodeError,
+} from "../../services/api/api-errors";
 import { YieldResourceSource } from "../../services/api/yield-resource-source";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import {

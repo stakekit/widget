@@ -1,11 +1,11 @@
 import type { RawTransaction } from "@ledgerhq/wallet-api-core";
 import { Effect, Result } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import type { Network } from "../../../src/domain/schema/network-model";
-import { SubstrateNetworks } from "../../../src/domain/types/chains/networks";
+import type { Network } from "../../../src/domain/network/network";
+import { SubstrateNetworks } from "../../../src/domain/network/networks";
 import type { SKTxMeta } from "../../../src/public-api/types";
-import { makePrepareLedgerLiveTransaction } from "../../../src/services/wallet/connectors/ledger/prepare-ledger-live-transaction";
-import { getConfig as getSubstrateConfig } from "../../../src/services/wallet/connectors/substrate/config";
+import { makePrepareLedgerLiveTransaction } from "../../../src/services/wallet/internal/adapters/ledger/prepare-ledger-live-transaction";
+import { getConfig as getSubstrateConfig } from "../../../src/services/wallet/internal/adapters/substrate/config";
 
 /**
  * `@polkadot/types` inflates a large network registry when it is evaluated, and
@@ -27,7 +27,7 @@ const buildPolkadotLedgerTransaction = vi.hoisted(() =>
 );
 
 vi.mock(
-  "../../../src/services/wallet/connectors/substrate/extrinsic-encoding",
+  "../../../src/services/wallet/internal/adapters/substrate/extrinsic-encoding",
   () => {
     evaluated.extrinsicEncoding += 1;
 
@@ -36,7 +36,7 @@ vi.mock(
 );
 
 vi.mock(
-  "../../../src/services/wallet/connectors/ledger/polkadot-ledger-transaction",
+  "../../../src/services/wallet/internal/adapters/ledger/polkadot-ledger-transaction",
   () => {
     evaluated.polkadotLedgerTransaction += 1;
 

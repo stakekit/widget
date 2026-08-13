@@ -9,7 +9,7 @@ import {
   useAbandonActivityResume,
 } from "../../../../classic-transaction-flow/state";
 import { AnimationPage } from "../../../../widget-shell/components";
-import { ActivityPage } from "./activity.page";
+import { ActivityPage } from "./activity.page.tsx";
 import { activityDetailsContainer } from "./styles.css";
 
 export const ActivityTabPage = () => {

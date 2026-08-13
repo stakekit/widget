@@ -11,7 +11,7 @@ import {
 import { HttpResponse, http } from "msw";
 import { version as widgetVersion } from "../../package.json";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
-import { ActionCommand } from "../../src/domain/schema/action-models";
+import { ActionCommand } from "../../src/domain/action/models";
 import {
   mountAnimationStateAtom,
   useMountAnimation,
@@ -29,8 +29,8 @@ import {
 } from "../../src/services/config/widget-config";
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
 import { config } from "../../src/shared/config/widget-defaults";
-import { describe, expect, it } from "../utils/test-extend.dom";
-import { render } from "../utils/test-utils.dom";
+import { describe, expect, it } from "../utils/test-extend.dom.ts";
+import { render } from "../utils/test-utils.dom.tsx";
 
 const MountPresentationProbe = () => {
   const { mountAnimationFinished } = useMountAnimation();

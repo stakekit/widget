@@ -1,6 +1,6 @@
 import BigNumber from "bignumber.js";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { tokenString } from "../../../domain/types/tokens";
+import { tokenString } from "../../../domain/token/token";
 import { type EarnSelection, earnSelectionViewAtom } from "./earn-selection";
 
 export const earnPageSearchAtom = Atom.make({

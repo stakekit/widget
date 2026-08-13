@@ -1,7 +1,7 @@
 import { Context, type Effect, Equal, Layer, type Stream } from "effect";
-import type { ExternalProviderSnapshot } from "../../domain/types/external-providers";
 import type { SettingsProps, VariantProps } from "../../public-api/types";
 import { config } from "../../shared/config/widget-defaults";
+import type { ExternalProviderSnapshot } from "../wallet/external-provider";
 
 type ResolvedSettingsProps = Omit<
   SettingsProps,

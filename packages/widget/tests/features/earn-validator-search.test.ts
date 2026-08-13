@@ -2,17 +2,17 @@ import { Duration, Effect, Layer } from "effect";
 import { Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import type { EarnYield } from "../../src/domain/schema/earn-models";
+import type { EarnYield } from "../../src/domain/earn/models";
+import { yieldValidatorsAtom } from "../../src/features/earn/state/earn-selection/catalog/catalog";
+import {
+  YieldValidatorsKey,
+  YieldValidatorsPullKey,
+} from "../../src/features/earn/state/earn-selection/catalog/keys";
 import {
   earnValidatorSelectionViewAtom,
   selectEarnValidatorAtom,
   setEarnValidatorSearchAtom,
-} from "../../src/features/earn/state/earn-facade";
-import { yieldValidatorsAtom } from "../../src/features/earn/state/earn-selection/resources/atoms";
-import {
-  YieldValidatorsKey,
-  YieldValidatorsPullKey,
-} from "../../src/features/earn/state/earn-selection/resources/keys";
+} from "../../src/features/earn/state/facades/runtime";
 import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
 import {
   type ValidatorDirectoryRequest,

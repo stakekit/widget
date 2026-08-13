@@ -2,7 +2,7 @@ import BigNumber from "bignumber.js";
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
-import type { EarnYieldWithProvider } from "../../src/domain/schema/earn-models";
+import type { EarnYieldWithProvider } from "../../src/domain/earn/models";
 
 import type { useSelectValidator } from "../../src/features/earn/ui/classic/earn-page/components/select-validator-section/use-select-validator";
 import { SelectYieldRewardDetails } from "../../src/features/earn/ui/classic/earn-page/components/select-yield-section/select-yield-reward-details";

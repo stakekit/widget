@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { TokenAddress } from "../../src/domain/schema/identifiers";
-import type { AppToken } from "../../src/domain/schema/legacy-models";
+import { TokenAddress } from "../../src/domain/identity/identifiers";
+import type { Token } from "../../src/domain/token/token";
 import {
   projectExitReceiveTokenOption,
   resolveExitReceiveTokenAccessory,
@@ -15,16 +15,16 @@ const usdsAddress = address("0x1111111111111111111111111111111111111111");
 const usdcAddress = address("0x2222222222222222222222222222222222222222");
 const otherUsdcAddress = address("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48");
 
-const baseToken = yieldApiYieldDtoFixture().token as AppToken;
+const baseToken = yieldApiYieldDtoFixture().token as Token;
 
-const usds: AppToken = {
+const usds: Token = {
   ...baseToken,
   address: usdsAddress,
   name: "USDS",
   symbol: "USDS",
 };
 
-const usdc: AppToken = {
+const usdc: Token = {
   ...baseToken,
   address: usdcAddress,
   name: "USD Coin",

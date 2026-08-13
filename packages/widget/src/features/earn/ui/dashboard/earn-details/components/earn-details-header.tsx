@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import type { EarnYieldWithProvider } from "../../../../../../domain/schema/earn-models";
-import { getDashboardYieldCategory } from "../../../../../../domain/types/yields";
+import type { EarnYieldWithProvider } from "../../../../../../domain/earn/models";
+import { getDashboardYieldCategory } from "../../../../../../domain/earn/yield";
 import { formatNetworkName } from "../../../../../../shared/lib/formatters";
 import { TokenIcon } from "../../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../../shared/ui/primitives/box";

@@ -31,7 +31,7 @@ import type {
   Transaction as BorrowTransaction,
   SubmitTransactionCommand,
 } from "../../src/domain/borrow/execution/transaction";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import type {
   BorrowFlowSession,
   BorrowTransactionFlowReview,
@@ -58,12 +58,12 @@ import {
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
-} from "../../src/services/wallet/domain/state";
-import { WalletService } from "../../src/services/wallet/wallet-service";
+} from "../../src/services/wallet/wallet-state";
 import { render } from "../utils/test-utils";
 import { makeTransactionWorkflowTestLayer } from "../utils/transaction-workflow-layer";
 import type { WalletOperations } from "../utils/wallet-operations";

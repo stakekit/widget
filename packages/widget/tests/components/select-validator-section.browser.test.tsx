@@ -1,7 +1,7 @@
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
-import type { EarnYieldWithProvider } from "../../src/domain/schema/earn-models";
+import type { EarnYieldWithProvider } from "../../src/domain/earn/models";
 import { SelectValidatorSection } from "../../src/features/earn/ui/classic/earn-page/components/select-validator-section";
 import type { useSelectValidator } from "../../src/features/earn/ui/classic/earn-page/components/select-validator-section/use-select-validator";
 import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";

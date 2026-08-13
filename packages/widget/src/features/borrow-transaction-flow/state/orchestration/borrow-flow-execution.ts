@@ -9,8 +9,8 @@ import {
   type TransactionWorkflowCommand,
   type TransactionWorkflowInputError,
   type TransactionWorkflowState,
-} from "../../../../services/workflow/transaction-workflow-model";
-import { TransactionWorkflowService } from "../../../../services/workflow/transaction-workflow-service";
+} from "../../../../services/transaction-workflow/transaction-workflow-model";
+import { TransactionWorkflowService } from "../../../../services/transaction-workflow/transaction-workflow-service";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 import type { BorrowTransactionFlowIntake } from "../../model/borrow-transaction-flow";
 import { getBorrowTransactionFlowRoutes } from "../../model/borrow-transaction-flow";
@@ -67,7 +67,7 @@ export const makeBorrowFlowExecutionFactory = Effect.fn(
     readonly commitTransition: CommitBorrowFlowTransition;
     readonly intake: BorrowTransactionFlowIntake;
     readonly runOperation: RunBorrowFlowExecutionOperation;
-    readonly walletScope: import("../../../../services/wallet/domain/scope").WalletScopeKey;
+    readonly walletScope: import("../../../../services/wallet/wallet-scope").WalletScopeKey;
   }): Effect.fn.Return<
     BorrowFlowExecutionHandle,
     TransactionWorkflowInputError,

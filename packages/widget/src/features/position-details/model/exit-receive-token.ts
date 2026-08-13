@@ -1,8 +1,8 @@
-import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
-import type { TokenAddress } from "../../../domain/schema/identifiers";
-import type { AppToken } from "../../../domain/schema/legacy-models";
-import type { ExitReceiveToken } from "../../../domain/types/action";
-import { getYieldActionArg } from "../../../domain/types/yields";
+import type { ExitReceiveToken } from "../../../domain/action/rules";
+import type { EarnYieldWithProvider } from "../../../domain/earn/models";
+import { getYieldActionArg } from "../../../domain/earn/yield";
+import type { TokenAddress } from "../../../domain/identity/identifiers";
+import type { Token } from "../../../domain/token/token";
 import { formatAddress } from "../../../shared/lib/general";
 
 export type PositionDetailsExitReceiveTokenSelection = Readonly<{
@@ -14,17 +14,17 @@ type ExitReceiveTokenOptionView = Readonly<{
   address: TokenAddress;
   symbol: string;
   formattedAddress: string;
-  token: AppToken;
+  token: Token;
 }>;
 
 type ExitReceiveTokenAccessoryView =
   | Readonly<{
       _tag: "Static";
-      token: AppToken;
+      token: Token;
     }>
   | Readonly<{
       _tag: "Selectable";
-      token: AppToken;
+      token: Token;
     }>;
 
 type ExitReceiveTokenNoteView = Readonly<{
@@ -90,8 +90,8 @@ export const resolvePositionDetailsExitReceiveTokenSelection = ({
 
 export const buildExitReceiveTokensByAddress = (
   integration: EarnYieldWithProvider
-): ReadonlyMap<string, AppToken> => {
-  const tokens = new Map<string, AppToken>();
+): ReadonlyMap<string, Token> => {
+  const tokens = new Map<string, Token>();
   for (const token of integration.inputTokens) {
     if (token.address) {
       tokens.set(token.address.toLowerCase(), token);
@@ -106,8 +106,8 @@ export const projectExitReceiveTokenOption = ({
   tokensByAddress,
 }: {
   readonly option: ExitReceiveToken;
-  readonly positionToken: AppToken;
-  readonly tokensByAddress: ReadonlyMap<string, AppToken>;
+  readonly positionToken: Token;
+  readonly tokensByAddress: ReadonlyMap<string, Token>;
 }): ExitReceiveTokenOptionView => {
   const known = tokensByAddress.get(option.address.toLowerCase());
   const token =
@@ -119,7 +119,7 @@ export const projectExitReceiveTokenOption = ({
       symbol: option.symbol,
       logoURI: undefined,
       coinGeckoId: undefined,
-    } satisfies AppToken);
+    } satisfies Token);
 
   return {
     address: option.address,
@@ -134,9 +134,9 @@ export const resolveExitReceiveTokenAccessory = ({
   selection,
   tokensByAddress = new Map(),
 }: {
-  readonly positionToken: AppToken;
+  readonly positionToken: Token;
   readonly selection: PositionDetailsExitReceiveTokenSelection | null;
-  readonly tokensByAddress?: ReadonlyMap<string, AppToken>;
+  readonly tokensByAddress?: ReadonlyMap<string, Token>;
 }): ExitReceiveTokenAccessoryView => {
   if (!selection) {
     return { _tag: "Static", token: positionToken };
@@ -158,7 +158,7 @@ export const resolveExitReceiveTokenNote = ({
   positionToken,
   selected,
 }: {
-  readonly positionToken: AppToken;
+  readonly positionToken: Token;
   readonly selected: ExitReceiveToken;
 }): ExitReceiveTokenNoteView | null => {
   const positionAddress = positionToken.address;

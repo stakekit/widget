@@ -1,8 +1,8 @@
 import BigNumber from "bignumber.js";
-import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
-import type { PositionsData } from "../../../../../domain/types/positions";
-import { getEnterAmountConstraint } from "../../../../../domain/types/stake";
-import { getYieldActionArg } from "../../../../../domain/types/yields";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
+import { getEnterAmountConstraint } from "../../../../../domain/earn/stake";
+import { getYieldActionArg } from "../../../../../domain/earn/yield";
+import type { PositionsData } from "../../../../../domain/portfolio/positions";
 import type { EarnMachineForm, EarnMachineIntent } from "../types";
 
 export const canSubmitEarnForm = ({

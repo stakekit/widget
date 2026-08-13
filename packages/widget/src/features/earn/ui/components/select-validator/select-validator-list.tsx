@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
-} from "../../../../../domain/schema/earn-models";
-import type { ValidatorKey } from "../../../../../domain/types/validators";
+} from "../../../../../domain/earn/models";
+import type { ValidatorKey } from "../../../../../domain/earn/validator";
 import {
   getRewardRateFormatted,
   getRewardTypeFormatted,

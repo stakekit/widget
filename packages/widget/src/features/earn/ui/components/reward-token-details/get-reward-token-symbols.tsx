@@ -1,10 +1,10 @@
 import React from "react";
-import type { AppToken } from "../../../../../domain/schema/legacy-models";
-import { tokenString } from "../../../../../domain/types/tokens";
+import type { Token } from "../../../../../domain/token/token";
+import { tokenString } from "../../../../../domain/token/token";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { symbolIcon } from "./symbol.css";
 
-export const getRewardTokenSymbols = (rewardTokens: AppToken[]) =>
+export const getRewardTokenSymbols = (rewardTokens: Token[]) =>
   rewardTokens.map((token, index) =>
     token.isPoints ? (
       <Box as="span" display="inline-block" key={tokenString(token)}>

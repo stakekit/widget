@@ -1,12 +1,7 @@
 import { Context, Effect, Layer, Option, Schema } from "effect";
 import * as HttpClientError from "effect/unstable/http/HttpClientError";
-import { ActivityActionsPage } from "../../domain/schema/activity-models";
-import {
-  type HistoryPeriod,
-  KycStatus,
-  RewardRateHistoryResponse,
-  TvlHistoryResponse,
-} from "../../domain/schema/dashboard-models";
+import { ActivityActionsPage } from "../../domain/activity/models";
+import type { ActivityActionsQuery } from "../../domain/activity/query";
 import {
   EarnPositionsResponse,
   EarnProvider,
@@ -15,16 +10,21 @@ import {
   EarnYield,
   EarnYieldBalancesResponse,
   EarnYieldPage,
-} from "../../domain/schema/earn-models";
-import type { YieldBalancesCommand } from "../../domain/schema/financial-models";
-import { HealthStatus } from "../../domain/schema/health-price-models";
+} from "../../domain/earn/models";
+import type { YieldBalancesCommand } from "../../domain/finance/models";
+import { HealthStatus } from "../../domain/health/models";
 import type {
   ProviderId,
   WalletAddress,
   YieldId,
-} from "../../domain/schema/identifiers";
-import type { ActivityActionsQuery } from "../../domain/schema/legacy-models";
-import type { Network } from "../../domain/schema/network-model";
+} from "../../domain/identity/identifiers";
+import type { Network } from "../../domain/network/network";
+import {
+  type HistoryPeriod,
+  KycStatus,
+  RewardRateHistoryResponse,
+  TvlHistoryResponse,
+} from "../../domain/portfolio/models";
 import type * as YieldApi from "../../generated/api/yield";
 import {
   decodeApiResponse,

@@ -1,8 +1,8 @@
 import { KycGateCard } from "../../../../earn/components";
 import { UnstakeSignPopup } from "../../../../position-details/ui";
 import { useTrackPage } from "../../../../tracking/state";
-import { useUnstakeActionReview } from "../hooks/use-unstake-review.hook";
-import { ReviewPage } from "./common-page/common.page";
+import { useUnstakeActionReview } from "../hooks/use-unstake-review.hook.ts";
+import { ReviewPage } from "./common-page/common.page.tsx";
 
 export const UnstakeReviewPage = () => {
   const {

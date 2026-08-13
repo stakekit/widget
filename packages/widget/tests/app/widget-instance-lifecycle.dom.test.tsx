@@ -7,7 +7,7 @@ import {
 } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render } from "../utils/test-utils.dom";
+import { render } from "../utils/test-utils.dom.tsx";
 
 const providersRendered = vi.hoisted(() =>
   vi.fn<(runtimeIdentity: object) => void>()

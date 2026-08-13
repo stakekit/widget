@@ -13,7 +13,7 @@ import {
 } from "effect";
 import { TestClock } from "effect/testing";
 import { describe, expect, it, vi } from "vitest";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import {
@@ -28,18 +28,16 @@ import {
   WidgetNavigationError,
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { initializeTransactionWorkflow } from "../../src/services/transaction-workflow/internal/model";
+import type { TransactionWorkflowInput } from "../../src/services/transaction-workflow/transaction-workflow-model";
+import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   type NormalizedWalletState,
   type WalletState,
-} from "../../src/services/wallet/domain/state";
-import { WalletService } from "../../src/services/wallet/wallet-service";
-import {
-  initializeTransactionWorkflow,
-  type TransactionWorkflowInput,
-} from "../../src/services/workflow/transaction-workflow-model";
-import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
+} from "../../src/services/wallet/wallet-state";
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,

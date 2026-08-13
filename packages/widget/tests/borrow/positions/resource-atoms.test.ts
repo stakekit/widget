@@ -13,7 +13,7 @@ import {
   deriveBorrowPositions,
   emptyBorrowPositions,
 } from "../../../src/domain/borrow/positions/borrow-positions";
-import { WalletAddress } from "../../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import {
   BorrowPositionKey,
   BorrowPositionNotFound,
@@ -35,7 +35,7 @@ import {
   BorrowResourceSource,
   makeBorrowResourceSource,
 } from "../../../src/services/api/borrow-resource-source";
-import { WalletScopeKey } from "../../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../../src/services/wallet/wallet-scope";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

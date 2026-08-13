@@ -2,16 +2,16 @@ import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { ApiRequestError } from "../../src/domain/schema/api-errors";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import {
   ActivityHistoryError,
   ActivityHistoryKey,
   activityCountResourceAtom,
   activityHistoryPullAtom,
 } from "../../src/resources/activity-history/activity-history";
+import { ApiRequestError } from "../../src/services/api/api-errors";
 import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 

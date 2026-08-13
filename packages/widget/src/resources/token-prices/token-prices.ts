@@ -1,16 +1,13 @@
 import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
+import { type PriceRequest, Prices } from "../../domain/health/models";
+import { tokenString } from "../../domain/token/token";
 import type {
   ApiRequestError,
   InputValidationError,
   ResponseDecodeError,
-} from "../../domain/schema/api-errors";
-import {
-  type PriceRequest,
-  Prices,
-} from "../../domain/schema/health-price-models";
-import { tokenString } from "../../domain/types/tokens";
+} from "../../services/api/api-errors";
 import { LegacyResourceSource } from "../../services/api/legacy-resource-source";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";

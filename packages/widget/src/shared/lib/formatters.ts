@@ -1,8 +1,8 @@
 import BigNumber from "bignumber.js";
-import type { EarnYieldWithProvider } from "../../domain/schema/earn-models";
-import { Prices } from "../../domain/schema/health-price-models";
-import type { AppToken } from "../../domain/schema/legacy-models";
-import { getTokenPriceInUSD } from "../../domain/types/price";
+import type { EarnYieldWithProvider } from "../../domain/earn/models";
+import { getTokenPriceInUSD } from "../../domain/finance/price";
+import { Prices } from "../../domain/health/models";
+import type { Token } from "../../domain/token/token";
 import { APToPercentage } from "./general";
 import { formatNumber } from "./number-format";
 
@@ -71,7 +71,7 @@ export const getFeesInUSD = ({
   token,
 }: {
   amount: BigNumber | null;
-  token: AppToken | null;
+  token: Token | null;
   prices: Prices | null;
 }) => {
   if (!token || !amount) return "";

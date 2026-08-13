@@ -1,5 +1,5 @@
-import type { HistoryPeriod } from "../../../../../domain/schema/dashboard-models";
-import type { YieldId } from "../../../../../domain/schema/identifiers";
+import type { YieldId } from "../../../../../domain/identity/identifiers";
+import type { HistoryPeriod } from "../../../../../domain/portfolio/models";
 import {
   YieldHistoryKey,
   yieldRewardRateHistoryAtom,

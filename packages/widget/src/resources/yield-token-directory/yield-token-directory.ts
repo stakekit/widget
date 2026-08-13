@@ -1,12 +1,12 @@
 import { Data, Duration, Effect, Stream } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
+import type { EarnTokenPage, EarnYield } from "../../domain/earn/models";
+import type { Network } from "../../domain/network/network";
 import type {
   ApiRequestError,
   ResponseDecodeError,
-} from "../../domain/schema/api-errors";
-import type { EarnTokenPage, EarnYield } from "../../domain/schema/earn-models";
-import type { Network } from "../../domain/schema/network-model";
+} from "../../services/api/api-errors";
 import { YieldResourceSource } from "../../services/api/yield-resource-source";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import {

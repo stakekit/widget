@@ -9,17 +9,17 @@ import { WidgetConfigService } from "../../../src/services/config/widget-config"
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
 import { makeDefaultConfig } from "../../../src/services/wallet/default-wagmi-config";
-import { WalletConnectionError } from "../../../src/services/wallet/domain/errors";
-import type { WalletCoreState } from "../../../src/services/wallet/domain/state";
-import { SolanaPlatform } from "../../../src/services/wallet/platform/solana-platform";
-import { WagmiPlatform } from "../../../src/services/wallet/platform/wagmi-platform";
-import { WalletEnvironment } from "../../../src/services/wallet/platform/wallet-environment";
-import { WalletModal } from "../../../src/services/wallet/wallet-modal";
-import { WalletService } from "../../../src/services/wallet/wallet-service";
+import { SolanaPlatform } from "../../../src/services/wallet/internal/platform/solana-platform";
+import { WagmiPlatform } from "../../../src/services/wallet/internal/platform/wagmi-platform";
+import { WalletEnvironment } from "../../../src/services/wallet/internal/platform/wallet-environment";
 import {
   WalletStorageCleanup,
   WalletStorageCleanupError,
-} from "../../../src/services/wallet/wallet-storage-cleanup";
+} from "../../../src/services/wallet/internal/runtime/wallet-storage-cleanup";
+import { WalletConnectionError } from "../../../src/services/wallet/wallet-errors";
+import { WalletModal } from "../../../src/services/wallet/wallet-modal";
+import { WalletService } from "../../../src/services/wallet/wallet-service";
+import type { WalletCoreState } from "../../../src/services/wallet/wallet-state";
 import { makeWalletTestController } from "./wallet-test-controller";
 
 const connector = {

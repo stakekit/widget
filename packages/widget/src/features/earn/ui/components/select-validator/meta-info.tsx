@@ -2,8 +2,8 @@ import BigNumber from "bignumber.js";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { AppToken } from "../../../../../domain/schema/legacy-models";
-import type { ValidatorInput as ValidatorDto } from "../../../../../domain/types/validators";
+import type { ValidatorInput as ValidatorDto } from "../../../../../domain/earn/validator";
+import type { Token } from "../../../../../domain/token/token";
 import {
   getRewardRateFormatted,
   getRewardTypeFormatted,
@@ -44,7 +44,7 @@ export const useMetaInfo = ({
   subnetName?: ValidatorSubnet["name"];
   marketCap?: ValidatorSubnet["tvl"];
   tokenSymbol?: ValidatorSubnet["tokenSymbol"];
-  stakedBalanceToken: AppToken | undefined;
+  stakedBalanceToken: Token | undefined;
   rewardRate: number | undefined;
   rewardType: string | undefined;
 }) => {

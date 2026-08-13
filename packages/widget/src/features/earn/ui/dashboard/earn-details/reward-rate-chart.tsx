@@ -1,7 +1,7 @@
 import { DateTime } from "effect";
 import { useId } from "react";
 import { Area, AreaChart, XAxis, YAxis } from "recharts";
-import type { HistoryPoint } from "../../../../../domain/schema/dashboard-models";
+import type { HistoryPoint } from "../../../../../domain/portfolio/models";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";

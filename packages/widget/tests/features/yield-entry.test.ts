@@ -10,7 +10,7 @@ import {
 } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import { getYieldEntryCta } from "../../src/features/yield-entry/model/yield-entry";
@@ -22,18 +22,17 @@ import {
   WidgetNavigation,
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
+import { WalletModal } from "../../src/services/wallet/wallet-modal";
 import {
   WalletScopeKey,
   walletCommandIdentity,
-} from "../../src/services/wallet/domain/scope";
+} from "../../src/services/wallet/wallet-scope";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
   type WalletState,
-} from "../../src/services/wallet/domain/state";
-import { WalletAccountSetupService } from "../../src/services/wallet/wallet-account-setup-service";
-import { WalletModal } from "../../src/services/wallet/wallet-modal";
-import { WalletService } from "../../src/services/wallet/wallet-service";
+} from "../../src/services/wallet/wallet-state";
 import { yieldApiYieldFixture } from "../fixtures";
 import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
 
@@ -195,13 +194,10 @@ const makeObservableRegistry = (
     ports.layer,
     Layer.succeed(WalletService, wallet)
   );
-  const accountSetupLayer = WalletAccountSetupService.layer.pipe(
-    Layer.provide(yieldEntryDependencies)
-  );
   const runtimeLayer = Layer.merge(
     flowLayer,
     YieldEntrySubmissionService.layer.pipe(
-      Layer.provide(Layer.merge(yieldEntryDependencies, accountSetupLayer))
+      Layer.provide(yieldEntryDependencies)
     )
   );
 
@@ -586,7 +582,7 @@ describe("Yield Entry", () => {
         "ledger-account"
       );
       expect(ports.trackEvent).toHaveBeenCalledWith("addLedgerAccountClicked");
-      expect(ports.closeChain).toHaveBeenCalledOnce();
+      expect(ports.closeChain).not.toHaveBeenCalled();
       expect(ports.openConnect).not.toHaveBeenCalled();
       expect(ports.push).not.toHaveBeenCalled();
       expect(

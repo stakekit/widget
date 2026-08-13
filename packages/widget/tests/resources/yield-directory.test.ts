@@ -2,15 +2,15 @@ import { Cause, Deferred, Effect, Layer, Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { ApiRequestError } from "../../src/domain/schema/api-errors";
-import { availableYieldCategoriesAtom } from "../../src/features/earn/state/earn-selection/resources/atoms";
-import { AvailableYieldCategoriesKey } from "../../src/features/earn/state/earn-selection/resources/keys";
+import { availableYieldCategoriesAtom } from "../../src/features/earn/state/earn-selection/catalog/catalog";
+import { AvailableYieldCategoriesKey } from "../../src/features/earn/state/earn-selection/catalog/keys";
 import {
   enrichedYieldDirectoryResourceAtom,
   YieldDirectoryError,
   YieldDirectoryKey,
   yieldDirectoryResourceAtom,
 } from "../../src/resources/yield-directory/yield-directory";
+import { ApiRequestError } from "../../src/services/api/api-errors";
 import {
   type YieldDirectoryRequest,
   YieldResourceSource,

@@ -3,7 +3,7 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type {
   HistoryPeriod,
   HistoryPoint,
-} from "../../../../../../domain/schema/dashboard-models";
+} from "../../../../../../domain/portfolio/models";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import { HistoryChart } from "../reward-rate-chart";

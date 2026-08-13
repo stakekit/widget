@@ -6,7 +6,7 @@ import {
   makeScopedEffectStateAtom,
 } from "../../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
-import type { YieldAction } from "../../../../domain/schema/action-models";
+import type { YieldAction } from "../../../../domain/action/models";
 import {
   CurrentYieldKycGateKey,
   currentYieldKycGateAtom,
@@ -16,13 +16,13 @@ import {
   type ClassicFlowSession,
   getClassicTransactionFlowKycYield,
 } from "../../model/classic-transaction-flow";
-import {
-  makeClassicFlowActivityActionExpiredAtom,
-  makeClassicFlowSessionReviewResources,
-} from "../../resources/classic-flow-review-resources";
 import type { ClassicFlowReviewHandle } from "../orchestration/classic-flow-review";
 import type { AcquireClassicFlowSessionOutcome } from "../orchestration/classic-transaction-flow-service";
 import { makeClassicFlowStakeReviewViewAtom } from "../yield-summary";
+import {
+  makeClassicFlowActivityActionExpiredAtom,
+  makeClassicFlowSessionReviewResources,
+} from "./classic-flow-review-view";
 
 class ClassicFlowScopeUnavailableError extends Data.TaggedError(
   "ClassicFlowScopeUnavailableError"

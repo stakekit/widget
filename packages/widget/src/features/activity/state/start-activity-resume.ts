@@ -1,8 +1,8 @@
 import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
+import type { ClassicTransactionWorkflowProviderDetail } from "../../../services/transaction-workflow/transaction-workflow-model";
 import { WalletModal } from "../../../services/wallet/wallet-modal";
-import type { ClassicTransactionWorkflowProviderDetail } from "../../../services/workflow/transaction-workflow-model";
 import { startClassicTransactionFlowAtom } from "../../classic-transaction-flow/state";
 import { walletConnectionStateAtom } from "../../wallet/state";
 import {

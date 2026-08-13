@@ -1,11 +1,11 @@
 import { useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import type { SKWallet } from "../../../domain/types/wallet";
+import type { SKWallet } from "../../../services/wallet/wallet-connection";
 import {
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
-} from "../../../services/wallet/domain/state";
+} from "../../../services/wallet/wallet-state";
 import { currentWalletStateResultAtom } from "../state/root-atom";
 import { useWalletConfig } from "./use-wallet-config";
 

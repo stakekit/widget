@@ -19,7 +19,7 @@ import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
   isActiveClassicTransactionFlowPathAtom,
@@ -28,12 +28,12 @@ import {
 import { walletScopeAtom } from "../../src/features/wallet/state";
 import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
-import { disconnectedLedgerConnectorState } from "../../src/services/wallet/domain/state";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
+import { disconnectedLedgerConnectorState } from "../../src/services/wallet/wallet-state";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
-import { render } from "../utils/test-utils.dom";
+import { render } from "../utils/test-utils.dom.tsx";
 
 type LifecycleProbe = {
   initialized: number;

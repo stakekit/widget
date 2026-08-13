@@ -1,8 +1,8 @@
 import { Effect, Ref, type Scope, type Stream } from "effect";
-import type { YieldAction } from "../../../../domain/schema/action-models";
+import type { YieldAction } from "../../../../domain/action/models";
 import type { WidgetNavigationError } from "../../../../services/navigation/widget-navigation";
 import { WidgetNavigation } from "../../../../services/navigation/widget-navigation";
-import type { TransactionWorkflowInputError } from "../../../../services/workflow/transaction-workflow-model";
+import type { TransactionWorkflowInputError } from "../../../../services/transaction-workflow/transaction-workflow-model";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 import type {
   ClassicFlowSession,

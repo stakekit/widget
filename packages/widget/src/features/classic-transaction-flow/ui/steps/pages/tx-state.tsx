@@ -1,8 +1,8 @@
 import clsx from "clsx";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { YieldAction } from "../../../../../domain/schema/action-models";
-import { isEthenaUsdeStaking } from "../../../../../domain/types/yields";
+import type { YieldAction } from "../../../../../domain/action/models";
+import { isEthenaUsdeStaking } from "../../../../../domain/earn/yield";
 import {
   CollapsibleArrow,
   CollapsibleContent,
@@ -15,7 +15,7 @@ import { XIcon } from "../../../../../shared/ui/primitives/icons/x-icon";
 import { Spinner } from "../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { ClassicTransactionStepState } from "../../../model/classic-transaction-workflow";
-import type { useSteps } from "../hooks/use-steps.hook";
+import type { useSteps } from "../hooks/use-steps.hook.ts";
 import {
   halfOpacityAfter,
   stepsAfter,

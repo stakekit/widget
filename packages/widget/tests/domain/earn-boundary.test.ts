@@ -8,8 +8,8 @@ import {
   EarnValidatorPage,
   EarnYield,
   EarnYieldPage,
-} from "../../src/domain/schema/earn-models";
-import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
+} from "../../src/domain/earn/models";
+import { TokenBalancesResponse } from "../../src/domain/finance/models";
 import { yieldApiYieldDtoFixture } from "../fixtures";
 
 const token = {

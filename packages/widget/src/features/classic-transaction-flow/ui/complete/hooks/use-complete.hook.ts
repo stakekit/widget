@@ -1,7 +1,7 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
-import type { TransactionType } from "../../../../../domain/types/action";
+import type { TransactionType } from "../../../../../domain/action/rules";
 import { isMobile } from "../../../../../shared/lib/general";
 import {
   usePendingActionMatch,
@@ -11,8 +11,8 @@ import { useSKWallet } from "../../../../wallet/state";
 import type { PageCta } from "../../../../widget-shell/components";
 import { useClassicFlowExecution } from "../../../react/classic-flow-route";
 import { useActivityPendingActionMatch } from "../../../react/use-activity-pending-action-match";
-import { useActivityReviewMatch } from "../../../react/use-activity-review.match";
-import { useActivityUnstakeActionMatch } from "../../../react/use-activity-unstake.match";
+import { useActivityReviewMatch } from "../../../react/use-activity-review.match.ts";
+import { useActivityUnstakeActionMatch } from "../../../react/use-activity-unstake.match.ts";
 import { useViewTransaction } from "../../use-view-transaction";
 
 export const useComplete = () => {

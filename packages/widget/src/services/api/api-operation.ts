@@ -4,7 +4,7 @@ import {
   InputValidationError,
   ResponseDecodeError,
   RichError,
-} from "../../domain/schema/api-errors";
+} from "./api-errors";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;

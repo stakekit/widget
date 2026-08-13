@@ -1,15 +1,15 @@
 import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
+import type { GasBalancesCommand } from "../../domain/finance/models";
 import type {
   ApiRequestError,
   ResponseDecodeError,
-} from "../../domain/schema/api-errors";
-import type { GasBalancesCommand } from "../../domain/schema/financial-models";
-import { isSupportedChain } from "../../domain/types/chains";
+} from "../../services/api/api-errors";
 import { LegacyResourceSource } from "../../services/api/legacy-resource-source";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
-import { WalletScopeKey } from "../../services/wallet/domain/scope";
+import { isSupportedChain } from "../../services/wallet/supported-chains";
+import { WalletScopeKey } from "../../services/wallet/wallet-scope";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 

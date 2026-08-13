@@ -1,6 +1,6 @@
 import { Duration, Effect, Schedule, type Scope, Stream } from "effect";
-import type { YieldAction } from "../../../../domain/schema/action-models";
-import type { TransactionType } from "../../../../domain/types/action";
+import type { YieldAction } from "../../../../domain/action/models";
+import type { TransactionType } from "../../../../domain/action/rules";
 import {
   toWidgetPath,
   WidgetNavigation,
@@ -12,8 +12,8 @@ import {
   type TransactionWorkflowCommand,
   type TransactionWorkflowInputError,
   type TransactionWorkflowState,
-} from "../../../../services/workflow/transaction-workflow-model";
-import { TransactionWorkflowService } from "../../../../services/workflow/transaction-workflow-service";
+} from "../../../../services/transaction-workflow/transaction-workflow-model";
+import { TransactionWorkflowService } from "../../../../services/transaction-workflow/transaction-workflow-service";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 import {
   type ClassicTransactionFlowIntake,

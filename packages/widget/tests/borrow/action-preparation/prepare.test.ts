@@ -9,8 +9,8 @@ import {
   deriveBorrowPositions,
   emptyBorrowPositions,
 } from "../../../src/domain/borrow/positions/borrow-positions";
-import { TokenBalancesResponse } from "../../../src/domain/schema/financial-models";
-import { WalletAddress } from "../../../src/domain/schema/identifiers";
+import { TokenBalancesResponse } from "../../../src/domain/finance/models";
+import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { prepareBorrowAction } from "../../../src/features/borrow/action-preparation/model/prepare";
 
 const address = Schema.decodeSync(WalletAddress)(

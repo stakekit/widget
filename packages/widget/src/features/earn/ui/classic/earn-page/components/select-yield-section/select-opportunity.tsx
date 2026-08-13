@@ -6,7 +6,7 @@ import { useWidgetConfig } from "../../../../../../../app/config/use-widget-conf
 import {
   getYieldOutputToken,
   getYieldTypeLabels,
-} from "../../../../../../../domain/types/yields";
+} from "../../../../../../../domain/earn/yield";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
 import {
   SelectModal,

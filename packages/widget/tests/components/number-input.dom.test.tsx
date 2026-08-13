@@ -7,7 +7,7 @@ import {
   type WidgetPresentation,
   WidgetPresentationProvider,
 } from "../../src/shared/ui/widget-presentation";
-import { render } from "../utils/test-utils.dom";
+import { render } from "../utils/test-utils.dom.tsx";
 
 const presentation = (locale: string): WidgetPresentation => ({
   disableInputAutoResize: true,

@@ -2,8 +2,7 @@ import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { ApiRequestError } from "../../src/domain/schema/api-errors";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import {
   YieldHistoryResourceKey,
   YieldInsightError,
@@ -12,6 +11,7 @@ import {
   yieldRewardRateHistoryResourceAtom,
   yieldTvlHistoryResourceAtom,
 } from "../../src/resources/yield-insights/yield-insights";
+import { ApiRequestError } from "../../src/services/api/api-errors";
 import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
 import { yieldApiYieldFixture } from "../fixtures";
 

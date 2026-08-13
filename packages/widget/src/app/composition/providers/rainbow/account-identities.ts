@@ -1,7 +1,7 @@
 import {
   isEvmChain,
   type SupportedSKChains,
-} from "../../../../domain/types/chains";
+} from "../../../../services/wallet/supported-chains";
 
 type LedgerAccountIdentity = {
   readonly address: string;

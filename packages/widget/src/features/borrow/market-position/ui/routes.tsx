@@ -2,9 +2,9 @@ import { Navigate, Route } from "react-router";
 import { createBorrowTransactionFlowRoutes } from "../../../borrow-transaction-flow/ui";
 import { WalletScopeRouteGuard } from "../../../wallet/ui";
 import { BorrowConnectedWalletRoute } from "../../wallet/ui/connected-wallet-route";
-import { BorrowPositionActionPage } from "./action.page";
-import { BorrowPositionActionsPage } from "./actions.page";
-import { BorrowPositionDetailsPage } from "./details.page";
+import { BorrowPositionActionPage } from "./action.page.tsx";
+import { BorrowPositionActionsPage } from "./actions.page.tsx";
+import { BorrowPositionDetailsPage } from "./details.page.tsx";
 
 export const createBorrowMarketPositionRoutes = () => (
   <>

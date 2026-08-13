@@ -1,23 +1,22 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import type { ValidatorInput as ValidatorDto } from "../../../../../domain/types/validators";
+import type { ValidatorInput as ValidatorDto } from "../../../../../domain/earn/validator";
 import type { SelectModalProps } from "../../../../../shared/ui/components/select-modal";
-import {
-  closePositionPendingActionModalAtom,
-  openPositionPendingActionModalAtom,
-  positionPendingActionModalViewAtom,
-  togglePositionPendingActionValidatorAtom,
-} from "../../../state/classic-flow-actions";
+import { positionDetailsPendingActions } from "../../../state/classic-actions/pending-action";
 import type { PositionDetailsWorkflowKey } from "../../../state/workflow";
 
 export const useValidatorAddressesHandling = (
   workflowKey: PositionDetailsWorkflowKey
 ) => {
-  const state = useAtomValue(positionPendingActionModalViewAtom(workflowKey));
-  const close = useAtomSet(closePositionPendingActionModalAtom(workflowKey));
-  const toggle = useAtomSet(
-    togglePositionPendingActionValidatorAtom(workflowKey)
+  const state = useAtomValue(
+    positionDetailsPendingActions.modalView(workflowKey)
   );
-  const open = useAtomSet(openPositionPendingActionModalAtom(workflowKey));
+  const close = useAtomSet(
+    positionDetailsPendingActions.closeModal(workflowKey)
+  );
+  const toggle = useAtomSet(
+    positionDetailsPendingActions.toggleValidator(workflowKey)
+  );
+  const open = useAtomSet(positionDetailsPendingActions.openModal(workflowKey));
   const isOpen = state._tag === "Open";
   const modalState: SelectModalProps["state"] = {
     isOpen,
@@ -32,7 +31,7 @@ export const useValidatorAddressesHandling = (
     multiSelect: state.multiSelect,
     onItemClick: (validator: ValidatorDto["address"]) => toggle(validator),
     openModal: open,
-    pendingActionDto: isOpen ? state.pendingAction.pendingActionDto : null,
+    pendingAction: isOpen ? state.pendingAction.pendingAction : null,
     selectedValidators: state.selectedValidators,
     showValidatorsModal: isOpen,
     submitDisabled: state.selectedValidators.size === 0,

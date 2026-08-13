@@ -1,11 +1,11 @@
 import { useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
-} from "../../../../portfolio/state";
+} from "../../../../../resources/yield-positions/yield-positions";
+import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useUnstakeOrPendingActionParams } from "../../../../position-details/state";
 import { useTrackPage } from "../../../../tracking/state";
 import {
@@ -13,7 +13,7 @@ import {
   yieldSummaryAtom,
 } from "../../../../yield-summary/state";
 import { useClassicFlowIntake } from "../../../react/classic-flow-route";
-import { CompletePage } from "./common.page";
+import { CompletePage } from "./common.page.tsx";
 
 export const PendingCompletePage = () => {
   const { plain } = useUnstakeOrPendingActionParams();

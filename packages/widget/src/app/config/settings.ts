@@ -1,8 +1,7 @@
 import { Record as EffectRecord } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { validateBorrowFeatureConfiguration } from "../../domain/borrow/availability";
-import { hasValidBorrowProviderContract } from "../../domain/types/external-providers";
-import { normalizeDashboardYieldCategoryOrder } from "../../domain/types/yields";
+import { normalizeDashboardYieldCategoryOrder } from "../../domain/earn/yield";
 import type {
   PreferredTokenYieldsPerNetwork,
   SKAppProps,
@@ -11,6 +10,7 @@ import {
   defaultWidgetBootstrapConfig,
   type WidgetConfig,
 } from "../../services/config/widget-config";
+import { hasValidBorrowProviderContract } from "../../services/wallet/external-provider";
 import { config } from "../../shared/config/widget-defaults";
 import { selectAtom } from "../../shared/effect/select-atom";
 

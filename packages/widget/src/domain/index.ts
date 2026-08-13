@@ -1,23 +1,27 @@
 import BigNumber from "bignumber.js";
 import { Result } from "effect";
-import type { ActionTransaction, YieldAction } from "./schema/action-models";
-import type { EarnYieldWithProvider } from "./schema/earn-models";
-import type { AppToken } from "./schema/legacy-models";
-import type { TransactionStatus } from "./types/action";
-import type { AnyPendingActionDto } from "./types/pending-action";
+
+type Override<T1, T2> = Omit<T1, keyof T2> & T2;
+
+import type {
+  ActionTransaction,
+  PendingAction,
+  YieldAction,
+} from "./action/models";
 import {
   isPendingActionValidatorAddressesRequired,
   isPendingActionValidatorAddressRequired,
-} from "./types/pending-action";
-
-import { equalTokens } from "./types/tokens";
-import type { Override } from "./types/utils";
+} from "./action/pending-action";
+import type { TransactionStatus } from "./action/rules";
+import type { EarnYieldWithProvider } from "./earn/models";
+import type { Token } from "./token/token";
+import { equalTokens } from "./token/token";
 
 export const stakeTokenSameAsGasToken = ({
   stakeToken,
   yieldDto,
 }: {
-  stakeToken: AppToken;
+  stakeToken: Token;
   yieldDto: EarnYieldWithProvider;
 }) => equalTokens(stakeToken, yieldDto.mechanics.gasFeeToken);
 
@@ -70,10 +74,10 @@ export const getValidStakeSessionTx = (stakeDto: YieldAction) => {
 export const isTxError = (txStatus: TransactionStatus) =>
   txStatus === "FAILED" || txStatus === "BLOCKED";
 
-export const PAMultiValidatorsRequired = (pa: AnyPendingActionDto) =>
+export const PAMultiValidatorsRequired = (pa: PendingAction) =>
   isPendingActionValidatorAddressesRequired(pa);
 
-export const PASingleValidatorRequired = (pa: AnyPendingActionDto) =>
+export const PASingleValidatorRequired = (pa: PendingAction) =>
   isPendingActionValidatorAddressRequired(pa);
 
 export const skNormalizeChainId = (chainId: string) => {

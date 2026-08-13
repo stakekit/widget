@@ -128,8 +128,10 @@ decoding; Authoritative Resources add caching and reactive lifetimes.
 React hooks and components invoke effects through feature-owned atoms. Network,
 persistence, tracking, wallet, polling, and transaction side effects belong in
 Effect services and Authoritative Resources rather than UI hooks. Generated
-runtime API clients are private to `services/api`; approved `domain/schema` and
-`domain/borrow` modules may import generated schema artifacts only.
+runtime API clients are private to `services/api`; approved concept modules in
+`domain` may import generated schema artifacts to define canonical App Models.
+Those modules colocate runtime schemas with the rules for the same concept;
+technical-kind `schema` and `types` folders are not used.
 
 ## Application orchestration
 
@@ -191,7 +193,7 @@ that constructs the scoped `ApplicationRouter` around the memory router.
 configuration, focused Yield, Legacy, and Borrow capability ports, rich errors,
 persistence, tracking, `WidgetTranslation`, `WidgetNavigation`, wallet-modal
 commands, and one `WidgetDomainEvents` service. The derived `wallet-runtime.ts` receives the application context and adds its scoped
-wallet, wallet-account-setup, transaction-workflow, Classic Transaction Flow,
+wallet, transaction-workflow, Classic Transaction Flow,
 Borrow Transaction Flow, and Yield Entry submission services. It is the sole privileged importer
 of those private feature orchestration services; exact-file rev-dep exceptions
 permit those composition edges without making the services public feature
@@ -448,10 +450,11 @@ Transaction execution is split by ownership:
   journey and its Flow Session. Each Borrow journey starts it through immutable
   entry-specific intake and observes only matching read-only lifecycle
   outcomes; the flow never imports the Borrow feature.
-- `features/transaction-workflow` owns one fresh scoped execution machine per
-  immutable Transaction Workflow Input. Its scoped Atom is the sole lifecycle
-  owner; returned read capabilities are passive and retained commands cannot
-  revive the machine after that scope exits.
+- `services/transaction-workflow` owns the shared execution-mechanics module.
+  `TransactionWorkflowService.make` creates one fresh scoped workflow handle
+  per immutable Transaction Workflow Input; the enclosing Classic or Borrow
+  Execution scope owns its lifetime, and retained commands cannot revive it
+  after that scope exits.
 
 The shared Transaction Workflow contains execution mechanics only. Journey
 projection, navigation decisions, handoff cleanup, and completion behavior

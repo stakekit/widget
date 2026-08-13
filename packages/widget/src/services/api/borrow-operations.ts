@@ -6,9 +6,9 @@ import {
   type SubmitTransactionCommand as BorrowSubmitTransactionCommand,
   SubmitTransactionResult as BorrowSubmitTransactionResult,
 } from "../../domain/borrow/execution/transaction";
-import { MissingBorrowApiConfig } from "../../domain/schema/api-errors";
 import type * as BorrowApi from "../../generated/api/borrow-client";
 import { WidgetConfigService } from "../config/widget-config";
+import { MissingBorrowApiConfig } from "./api-errors";
 import {
   decodeApiResponse,
   withApiRequestError,

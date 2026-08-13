@@ -1,12 +1,12 @@
 import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
+import type { WalletAddress, YieldId } from "../../domain/identity/identifiers";
+import type { HistoryPeriod } from "../../domain/portfolio/models";
 import type {
   ApiRequestError,
   ResponseDecodeError,
-} from "../../domain/schema/api-errors";
-import type { HistoryPeriod } from "../../domain/schema/dashboard-models";
-import type { WalletAddress, YieldId } from "../../domain/schema/identifiers";
+} from "../../services/api/api-errors";
 import { YieldResourceSource } from "../../services/api/yield-resource-source";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";

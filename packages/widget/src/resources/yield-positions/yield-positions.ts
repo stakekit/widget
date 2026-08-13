@@ -1,18 +1,26 @@
 import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
+import type { YieldBalancesCommand } from "../../domain/finance/models";
+import type { YieldId } from "../../domain/identity/identifiers";
+import {
+  getPositionBalances,
+  getPositionData,
+  type PositionBalancesByType,
+  toPositionBalancesByType,
+  toPositionsData,
+} from "../../domain/portfolio/positions";
 import type {
   ApiRequestError,
   ResponseDecodeError,
-} from "../../domain/schema/api-errors";
-import type { YieldBalancesCommand } from "../../domain/schema/financial-models";
+} from "../../services/api/api-errors";
 import { YieldResourceSource } from "../../services/api/yield-resource-source";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import {
   type WalletScopeKey,
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
-} from "../../services/wallet/domain/scope";
+} from "../../services/wallet/wallet-scope";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
@@ -85,3 +93,44 @@ const refreshYieldPositionsByOwnerAtom = Atom.family(
 
 export const refreshYieldPositionsAtom = (scope: WalletScopeKey) =>
   refreshYieldPositionsByOwnerAtom(walletScopeOwnerKey(scope));
+
+const positionsDataAtom = Atom.family((scope: WalletScopeKey) =>
+  yieldPositionsResourceAtom.foreground(scope).pipe(
+    Atom.mapResult((page) => toPositionsData(page.items)),
+    Atom.withLabel("positionsDataAtom")
+  )
+);
+
+export class PositionDataKey extends Data.Class<{
+  readonly scope: WalletScopeKey;
+  readonly yieldId: YieldId | null;
+}> {}
+
+export const positionDataAtom = Atom.family((key: PositionDataKey) =>
+  positionsDataAtom(key.scope).pipe(
+    Atom.mapResult((positions) => getPositionData(positions, key.yieldId))
+  )
+);
+
+export class PositionBalancesKey extends Data.Class<{
+  readonly balanceId: string | null;
+  readonly scope: WalletScopeKey;
+  readonly yieldId: YieldId | null;
+}> {}
+
+export const positionBalancesAtom = Atom.family((key: PositionBalancesKey) =>
+  positionDataAtom(
+    new PositionDataKey({ scope: key.scope, yieldId: key.yieldId })
+  ).pipe(
+    Atom.mapResult((position) => getPositionBalances(position, key.balanceId))
+  )
+);
+
+export const positionBalancesByTypeAtom = Atom.family(
+  (key: PositionBalancesKey) =>
+    positionBalancesAtom(key).pipe(
+      Atom.mapResult((position): PositionBalancesByType | null =>
+        position ? toPositionBalancesByType(position.balances) : null
+      )
+    )
+);

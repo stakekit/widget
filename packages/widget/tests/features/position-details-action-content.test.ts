@@ -1,7 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { EarnBalance } from "../../src/domain/schema/earn-models";
+import { EarnBalance } from "../../src/domain/earn/models";
 import {
   getPositionDetailsHubPath,
   positionDetailsExitHasContent,
@@ -44,7 +44,7 @@ describe("position details action content", () => {
     expect(
       positionDetailsPendingHasContent(
         makeView({
-          pendingActions: [{ pendingActionDto: { type: "CLAIM_REWARDS" } }],
+          pendingActions: [{ pendingAction: { type: "CLAIM_REWARDS" } }],
         })
       )
     ).toBe(true);

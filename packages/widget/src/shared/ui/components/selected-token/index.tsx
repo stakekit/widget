@@ -1,4 +1,4 @@
-import type { AppToken } from "../../../../domain/schema/legacy-models";
+import type { Token } from "../../../../domain/token/token";
 import { combineRecipeWithVariant } from "../../../styles/recipe-variant";
 import { Box } from "../../primitives/box";
 import { selectTokenButton } from "../../primitives/button/styles.css";
@@ -7,7 +7,7 @@ import { useWidgetPresentation } from "../../widget-presentation";
 import { TokenIcon } from "../token-icon";
 
 /** Non-interactive selected-token chip shown beside amount inputs. */
-export const SelectedToken = ({ token }: { readonly token: AppToken }) => {
+export const SelectedToken = ({ token }: { readonly token: Token }) => {
   const { variant } = useWidgetPresentation();
 
   return (

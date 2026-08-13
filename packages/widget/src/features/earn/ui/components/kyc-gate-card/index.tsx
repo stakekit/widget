@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { KycGate } from "../../../../../domain/types/kyc";
+import type { KycGate } from "../../../../../domain/earn/kyc";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";

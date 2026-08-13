@@ -3,34 +3,34 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
-import type { EarnYield } from "../../src/domain/schema/earn-models";
-import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
-import type { PositionsData } from "../../src/domain/types/positions";
-import { getEnterAmountConstraint } from "../../src/domain/types/stake";
+import type { EarnYield } from "../../src/domain/earn/models";
+import { getEnterAmountConstraint } from "../../src/domain/earn/stake";
+import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
+import type { PositionsData } from "../../src/domain/portfolio/positions";
 import { earnSelectionViewAtom } from "../../src/features/earn/state/earn-selection";
-import {
-  canSubmitEarnForm,
-  resolveForm,
-} from "../../src/features/earn/state/earn-selection/model/form";
 import {
   earnYieldCatalogAtom,
   initYieldAtom,
   mergedTokenOptionsAtom,
   positionsDataAtom,
-} from "../../src/features/earn/state/earn-selection/resources/atoms";
+} from "../../src/features/earn/state/earn-selection/catalog/catalog";
 import {
   InitYieldKey,
   PositionsDataKey,
   TokenOptionsKey,
   YieldCatalogKey,
-} from "../../src/features/earn/state/earn-selection/resources/keys";
+} from "../../src/features/earn/state/earn-selection/catalog/keys";
+import {
+  canSubmitEarnForm,
+  resolveForm,
+} from "../../src/features/earn/state/earn-selection/model/form";
 import { earnMachineEntryAtom } from "../../src/features/earn/state/earn-selection/state/atoms";
 import {
   type EarnEntry,
   type EarnMachineIntent,
   makeDefaultEarnIntent,
 } from "../../src/features/earn/state/earn-selection/types";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
 
 const positionsData: PositionsData = new Map();

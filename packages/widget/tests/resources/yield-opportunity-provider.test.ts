@@ -2,10 +2,9 @@ import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { ApiRequestError } from "../../src/domain/schema/api-errors";
-import { YieldId } from "../../src/domain/schema/identifiers";
-import { initYieldAtom } from "../../src/features/earn/state/earn-selection/resources/atoms";
-import { InitYieldKey } from "../../src/features/earn/state/earn-selection/resources/keys";
+import { YieldId } from "../../src/domain/identity/identifiers";
+import { initYieldAtom } from "../../src/features/earn/state/earn-selection/catalog/catalog";
+import { InitYieldKey } from "../../src/features/earn/state/earn-selection/catalog/keys";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
@@ -18,6 +17,7 @@ import {
   YieldProviderError,
   yieldProviderResourceAtom,
 } from "../../src/resources/yield-provider/yield-provider";
+import { ApiRequestError } from "../../src/services/api/api-errors";
 import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
 import { yieldApiYieldFixture } from "../fixtures";
 

@@ -1,15 +1,15 @@
 import { Data, Duration, Effect, Option, Schema, Stream } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
-import {
-  type ApiRequestError,
-  ResponseDecodeError,
-} from "../../domain/schema/api-errors";
-import { EarnValidator } from "../../domain/schema/earn-models";
+import { EarnValidator } from "../../domain/earn/models";
 import type {
   ValidatorAddress,
   YieldId,
-} from "../../domain/schema/identifiers";
+} from "../../domain/identity/identifiers";
+import {
+  type ApiRequestError,
+  ResponseDecodeError,
+} from "../../services/api/api-errors";
 import {
   type ValidatorDirectoryRequest,
   YieldResourceSource,

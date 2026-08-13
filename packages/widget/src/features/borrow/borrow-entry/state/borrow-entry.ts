@@ -16,7 +16,7 @@ import {
   sameWalletScopeOwner,
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
-} from "../../../../services/wallet/domain/scope";
+} from "../../../../services/wallet/wallet-scope";
 import { startBorrowTransactionFlowAtom } from "../../../borrow-transaction-flow/state";
 import { tokenBalancesScanAtom } from "../../../portfolio/state";
 import { walletScopeAtom } from "../../../wallet/state";

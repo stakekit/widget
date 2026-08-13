@@ -5,10 +5,10 @@ import {
   EarnBalance,
   EarnPosition,
   EarnProvider,
-  EarnToken,
   EarnValidator,
   EarnYield,
-} from "../../src/domain/schema/earn-models";
+} from "../../src/domain/earn/models";
+import { Token } from "../../src/domain/token/token";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
 
 const token = {
@@ -21,7 +21,7 @@ const token = {
 
 describe("Earn application models", () => {
   it("brands token/provider identifiers without changing case-sensitive addresses", () => {
-    const decodedToken = Schema.decodeUnknownSync(EarnToken)(token);
+    const decodedToken = Schema.decodeUnknownSync(Token)(token);
     const provider = Schema.decodeUnknownSync(EarnProvider)({
       id: "stakekit",
       name: "StakeKit",

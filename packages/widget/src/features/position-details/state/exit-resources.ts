@@ -1,9 +1,9 @@
 import { Data, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { YieldId } from "../../../domain/schema/identifiers";
-import { getKycProviderName } from "../../../domain/types/kyc";
-import { isYieldValidatorSelectionRequired } from "../../../domain/types/yields";
+import { getKycProviderName } from "../../../domain/earn/kyc";
+import { isYieldValidatorSelectionRequired } from "../../../domain/earn/yield";
+import type { YieldId } from "../../../domain/identity/identifiers";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,

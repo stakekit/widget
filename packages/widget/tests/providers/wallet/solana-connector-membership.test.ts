@@ -9,10 +9,10 @@ import type { Address } from "viem";
 import { describe, expect, it } from "vitest";
 import { createConfig, createConnector, http } from "wagmi";
 import { connect, disconnect, watchConnectors } from "wagmi/actions";
-import { solana } from "../../../src/domain/types/chains/misc";
-import type { SolanaRuntime } from "../../../src/services/wallet/platform/solana-platform";
-import { installSolanaConnectorMembership } from "../../../src/services/wallet/solana-connector-membership";
-import type { SolanaWalletDescriptor } from "../../../src/services/wallet/solana-runtime";
+import { solana } from "../../../src/services/wallet/internal/adapters/configured-chains";
+import type { SolanaRuntime } from "../../../src/services/wallet/internal/platform/solana-platform";
+import { installSolanaConnectorMembership } from "../../../src/services/wallet/internal/runtime/solana-connector-membership";
+import type { SolanaWalletDescriptor } from "../../../src/services/wallet/internal/runtime/solana-runtime";
 
 const account = "0x0000000000000000000000000000000000000501" as Address;
 

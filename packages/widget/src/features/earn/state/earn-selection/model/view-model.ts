@@ -1,5 +1,5 @@
 import { Option } from "effect";
-import type { PositionsData } from "../../../../../domain/types/positions";
+import type { PositionsData } from "../../../../../domain/portfolio/positions";
 import type {
   EarnMachineForm,
   EarnMachineIntent,

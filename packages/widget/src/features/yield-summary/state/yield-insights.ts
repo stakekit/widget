@@ -1,17 +1,17 @@
 import { Data, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { HistoryPeriod } from "../../../domain/schema/dashboard-models";
-import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
-import type {
-  WalletAddress,
-  YieldId,
-} from "../../../domain/schema/identifiers";
 import {
   isKycGateBlocking,
   mapKycStatusToGate,
-} from "../../../domain/types/kyc";
-import { isValidYieldIdForRewardsSummary } from "../../../domain/types/rewards";
+} from "../../../domain/earn/kyc";
+import type { EarnYieldWithProvider } from "../../../domain/earn/models";
+import type {
+  WalletAddress,
+  YieldId,
+} from "../../../domain/identity/identifiers";
+import type { HistoryPeriod } from "../../../domain/portfolio/models";
+import { isValidYieldIdForRewardsSummary } from "../../../domain/portfolio/rewards";
 import {
   RewardSummariesKey,
   rewardSummariesResourceAtom,

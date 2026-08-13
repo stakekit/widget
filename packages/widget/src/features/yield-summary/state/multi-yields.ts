@@ -1,12 +1,12 @@
 import { Data } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { YieldId } from "../../../domain/schema/identifiers";
-import { isSupportedChain } from "../../../domain/types/chains";
+import type { YieldId } from "../../../domain/identity/identifiers";
 import {
   enrichedYieldDirectoryResourceAtom,
   YieldDirectoryKey,
 } from "../../../resources/yield-directory/yield-directory";
+import { isSupportedChain } from "../../../services/wallet/supported-chains";
 import { walletConnectedNetworkAtom } from "../../wallet/state";
 
 export class MultiYieldsKey extends Data.Class<{

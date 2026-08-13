@@ -4,7 +4,7 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { delay, HttpResponse, http } from "msw";
 import type { PropsWithChildren } from "react";
 import { normalizeWidgetConfig } from "../../src/app/config/settings";
-import { YieldId } from "../../src/domain/schema/identifiers";
+import { YieldId } from "../../src/domain/identity/identifiers";
 import {
   YieldValidatorsKey,
   yieldValidatorsPullAtom,
@@ -12,8 +12,8 @@ import {
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import { yieldApiValidatorFixture } from "../fixtures";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
-import { describe, expect, it } from "../utils/test-extend.dom";
-import { renderHook } from "../utils/test-utils.dom";
+import { describe, expect, it } from "../utils/test-extend.dom.ts";
+import { renderHook } from "../utils/test-utils.dom.tsx";
 
 const yieldApiUrl = "https://yield.example.com";
 

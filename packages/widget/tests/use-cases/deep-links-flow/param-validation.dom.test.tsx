@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { decodeInitParams } from "../../../src/domain/schema/init-params";
-import type { ActionType } from "../../../src/domain/types/action";
+import type { ActionType } from "../../../src/domain/action/rules";
+import { decodeInitParams } from "../../../src/services/wallet/init-params";
 import { setUrl as _setUrl } from "./utils";
 
 const decodeCurrentUrl = () =>

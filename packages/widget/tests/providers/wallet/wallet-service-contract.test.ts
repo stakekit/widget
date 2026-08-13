@@ -9,12 +9,12 @@ import {
   type WalletRuntimeInvariantError,
   WalletSigningError,
   WalletSwitchError,
-} from "../../../src/services/wallet/domain/errors";
+} from "../../../src/services/wallet/wallet-errors";
+import type { WalletService } from "../../../src/services/wallet/wallet-service";
 import type {
   WalletBroadcastResult,
   WalletSignedPayloadResult,
-} from "../../../src/services/wallet/domain/transactions";
-import type { WalletService } from "../../../src/services/wallet/wallet-service";
+} from "../../../src/services/wallet/wallet-transactions";
 
 type WalletTransactionResult =
   | WalletSignedPayloadResult
@@ -69,16 +69,11 @@ describe("wallet service contract", () => {
 
   it("defines Effect commands without a React dependency", () => {
     expectTypeOf<
-      WalletService["Service"]["disconnect"]
-    >().returns.toEqualTypeOf<
-      Effect.Effect<void, WalletConnectionError | WalletRuntimeInvariantError>
-    >();
-    expectTypeOf<
       WalletService["Service"]["addLedgerAccount"]
     >().returns.toEqualTypeOf<
       Effect.Effect<
         | Readonly<{ readonly _tag: "Added" }>
-        | Readonly<{ readonly _tag: "RejectedUnavailable" }>,
+        | Readonly<{ readonly _tag: "RejectedStale" }>,
         WalletIntegrationError | WalletRuntimeInvariantError
       >
     >();

@@ -4,7 +4,7 @@ import type {
   WidgetNavigationCommand,
   WidgetNavigationError,
 } from "../../../../services/navigation/widget-navigation";
-import type { TransactionWorkflowInputError } from "../../../../services/workflow/transaction-workflow-model";
+import type { TransactionWorkflowInputError } from "../../../../services/transaction-workflow/transaction-workflow-model";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 import {
   type BorrowFlowSession,

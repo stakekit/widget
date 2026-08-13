@@ -2,12 +2,12 @@ import { Equal, Schema } from "effect";
 import type { Chain } from "viem";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
-import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
-import { earnYieldCatalogAtom } from "../../src/features/earn/state/earn-selection/resources/atoms";
+import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
+import { earnYieldCatalogAtom } from "../../src/features/earn/state/earn-selection/catalog/catalog";
 import {
   TokenYieldScopeKey,
   YieldCatalogKey,
-} from "../../src/features/earn/state/earn-selection/resources/keys";
+} from "../../src/features/earn/state/earn-selection/catalog/keys";
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
@@ -21,9 +21,9 @@ import {
   sameWalletScopeOwner,
   WalletScopeKey,
   walletScopeFromState,
-} from "../../src/services/wallet/domain/scope";
-import type { NormalizedWalletState } from "../../src/services/wallet/domain/state";
-import { disconnectedNormalizedWalletState } from "../../src/services/wallet/domain/state";
+} from "../../src/services/wallet/wallet-scope";
+import type { NormalizedWalletState } from "../../src/services/wallet/wallet-state";
+import { disconnectedNormalizedWalletState } from "../../src/services/wallet/wallet-state";
 
 const firstYieldId = Schema.decodeSync(YieldId)("yield-a");
 const secondYieldId = Schema.decodeSync(YieldId)("yield-b");

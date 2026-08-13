@@ -6,19 +6,13 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { EarnBalance } from "../../src/domain/schema/earn-models";
+import { EarnBalance } from "../../src/domain/earn/models";
 import {
   TokenAddress,
   WalletAddress,
-} from "../../src/domain/schema/identifiers";
+} from "../../src/domain/identity/identifiers";
 import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
 import { currentClassicFlowSessionAtom } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow";
-import {
-  PositionBalancesKey,
-  positionBalancesAtom,
-  positionBalancesByTypeAtom,
-} from "../../src/features/portfolio/state";
-import { positionDetailsClassicViewAtom } from "../../src/features/position-details/state/classic-facade";
 import {
   openPositionPendingActionModalAtom,
   positionPendingActionModalViewAtom,
@@ -26,7 +20,8 @@ import {
   setPositionDetailsExitMaxAmountAtom,
   setPositionDetailsExitReceiveTokenAtom,
   submitPositionDetailsExitAtom,
-} from "../../src/features/position-details/state/classic-flow-actions";
+} from "../../src/features/position-details/state/classic-actions/runtime";
+import { positionDetailsClassicViewAtom } from "../../src/features/position-details/state/classic-facade";
 import {
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
@@ -37,17 +32,22 @@ import {
   yieldOpportunityAtom,
 } from "../../src/resources/yield-opportunity/provider";
 import {
+  PositionBalancesKey,
+  positionBalancesAtom,
+  positionBalancesByTypeAtom,
+} from "../../src/resources/yield-positions/yield-positions";
+import {
   makeWidgetNavigation,
   WidgetNavigation,
   type WidgetPath,
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   type NormalizedWalletState,
-} from "../../src/services/wallet/domain/state";
-import { WalletService } from "../../src/services/wallet/wallet-service";
+} from "../../src/services/wallet/wallet-state";
 import {
   yieldApiValidatorFixture,
   yieldApiYieldDtoFixture,
@@ -383,7 +383,7 @@ describe("Position Details exit command", () => {
     try {
       registry.set(commandAtom, {
         _tag: "Select",
-        pendingActionDto: manageAction,
+        pendingAction: manageAction,
         yieldBalance: manageBalance,
       });
 
@@ -414,7 +414,7 @@ describe("Position Details exit command", () => {
     try {
       registry.set(commandAtom, {
         _tag: "Select",
-        pendingActionDto: manageAction,
+        pendingAction: manageAction,
         yieldBalance: manageBalance,
       });
 
@@ -763,7 +763,7 @@ describe("Position Details exit command", () => {
 
       try {
         registry.set(openPositionPendingActionModalAtom(workflowKey), {
-          pendingActionDto: requiredAction,
+          pendingAction: requiredAction,
           yieldBalance: requiredManageBalance,
         });
         registry.set(runPositionPendingActionAtom(workflowKey), {
@@ -816,7 +816,7 @@ describe("Position Details exit command", () => {
         validators: [yieldApiValidatorFixture({ address: "validator-a" })],
       })
     );
-    const pendingActionDto = validatorBalance.pendingActions[0]!;
+    const pendingAction = validatorBalance.pendingActions[0]!;
     const registry = makeRegistry({
       push,
       trackEvent,
@@ -827,7 +827,7 @@ describe("Position Details exit command", () => {
 
     try {
       registry.set(openPositionPendingActionModalAtom(workflowKey), {
-        pendingActionDto,
+        pendingAction,
         yieldBalance: validatorBalance,
       });
       expect(registry.get(modalAtom)._tag).toBe("Open");
@@ -841,7 +841,7 @@ describe("Position Details exit command", () => {
       );
 
       registry.set(openPositionPendingActionModalAtom(workflowKey), {
-        pendingActionDto,
+        pendingAction,
         yieldBalance: validatorBalance,
       });
       expect(registry.get(modalAtom)._tag).toBe("Open");
@@ -985,7 +985,7 @@ describe("Position Details exit command", () => {
     try {
       registry.set(runPositionPendingActionAtom(workflowKey), {
         _tag: "Select",
-        pendingActionDto: manageAction,
+        pendingAction: manageAction,
         yieldBalance: manageBalance,
       });
 
@@ -1057,7 +1057,7 @@ describe("Position Details exit command", () => {
     try {
       registry.set(runPositionPendingActionAtom(workflowKey), {
         _tag: "Select",
-        pendingActionDto: manageAction,
+        pendingAction: manageAction,
         yieldBalance: manageBalance,
       });
 

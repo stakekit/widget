@@ -1,6 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
-import { getActionProviderYieldId } from "../../../../../domain/types/action";
+import { getActionProviderYieldId } from "../../../../../domain/action/rules";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useTrackPage } from "../../../../tracking/state";
 import {
@@ -8,7 +8,7 @@ import {
   yieldSummaryAtom,
 } from "../../../../yield-summary/state";
 import { useClassicFlowIntake } from "../../../react/classic-flow-route";
-import { CompletePage } from "./common.page";
+import { CompletePage } from "./common.page.tsx";
 
 export const StakeCompletePage = () => {
   useTrackPage("stakeComplete");

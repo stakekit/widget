@@ -7,8 +7,8 @@ import {
   type WalletScopeOwnerKey,
   walletScopeFromState,
   walletScopeOwnerKey,
-} from "../../../../../services/wallet/domain/scope";
-import { disconnectedNormalizedWalletState } from "../../../../../services/wallet/domain/state";
+} from "../../../../../services/wallet/wallet-scope";
+import { disconnectedNormalizedWalletState } from "../../../../../services/wallet/wallet-state";
 import { initParamsAtom } from "../../../../init-params/state";
 import { walletStateResultAtom } from "../../../../wallet/state";
 import { makeResolvingWalletView } from "../model/view-model";

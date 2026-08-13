@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   getYieldActionArg,
   getYieldTypeLabels,
-} from "../../../../../domain/types/yields";
+} from "../../../../../domain/earn/yield";
 import * as AmountToggle from "../../../../../shared/ui/components/amount-toggle";
 import { AmountTokenSection } from "../../../../../shared/ui/components/amount-token-section";
 import { Dropdown } from "../../../../../shared/ui/components/dropdown";

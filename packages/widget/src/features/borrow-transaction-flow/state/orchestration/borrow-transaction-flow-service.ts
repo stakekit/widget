@@ -14,12 +14,12 @@ import {
   type WidgetNavigationError,
 } from "../../../../services/navigation/widget-navigation";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
-import type { WalletRuntimeInvariantError } from "../../../../services/wallet/domain/errors";
+import type { WalletRuntimeInvariantError } from "../../../../services/wallet/wallet-errors";
 import {
   sameWalletScopeOwner,
   WalletScopeKey,
   walletScopeFromState,
-} from "../../../../services/wallet/domain/scope";
+} from "../../../../services/wallet/wallet-scope";
 import { WalletService } from "../../../../services/wallet/wallet-service";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 import {

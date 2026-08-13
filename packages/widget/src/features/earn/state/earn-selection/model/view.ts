@@ -1,9 +1,9 @@
 import { Match, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
-import type { YieldId } from "../../../../../domain/schema/identifiers";
-import { tokenString } from "../../../../../domain/types/tokens";
-import { getDashboardYieldCategory } from "../../../../../domain/types/yields";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
+import { getDashboardYieldCategory } from "../../../../../domain/earn/yield";
+import type { YieldId } from "../../../../../domain/identity/identifiers";
+import { tokenString } from "../../../../../domain/token/token";
 import type {
   EarnCatalogError,
   EarnEntry,

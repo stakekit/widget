@@ -1,7 +1,7 @@
 import { Option, Schema } from "effect";
 import { useMemo } from "react";
-import { YieldId } from "../../../domain/schema/identifiers";
-import type { YieldPendingActionType } from "../../../domain/types/pending-action";
+import type { YieldPendingActionType } from "../../../domain/action/pending-action";
+import { YieldId } from "../../../domain/identity/identifiers";
 import { usePendingActionSelectValidatorMatch } from "./use-pending-action-select-validator-match";
 import { useUnstakeOrPendingActionMatch } from "./use-unstake-or-pending-action-match";
 

@@ -1,5 +1,5 @@
 import { useTrackPage } from "../../../../tracking/state";
-import { StepsPage } from "./common.page";
+import { StepsPage } from "./common.page.tsx";
 
 export const PendingStepsPage = () => {
   useTrackPage("pendingActionSteps");

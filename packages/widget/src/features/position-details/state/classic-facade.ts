@@ -1,22 +1,17 @@
 import BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { AppToken } from "../../../domain/schema/legacy-models";
 import {
   getRewardRateBreakdown,
-  type YieldRewardRateDto,
-} from "../../../domain/types/reward-rate";
-import { isForceMaxAmount } from "../../../domain/types/stake";
-import { getYieldActionArg } from "../../../domain/types/yields";
+  type YieldRewardRate,
+} from "../../../domain/earn/reward-rate";
+import { isForceMaxAmount } from "../../../domain/earn/stake";
+import { getYieldActionArg } from "../../../domain/earn/yield";
+import type { Token } from "../../../domain/token/token";
 import { formatUsd } from "../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../shared/lib/number-format";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/state";
-import {
-  positionDetailsExitActionViewAtom,
-  setPositionDetailsExitMaxAmountAtom,
-  setPositionDetailsExitReceiveTokenAtom,
-  submitPositionDetailsExitAtom,
-} from "./classic-flow-actions";
+import { positionDetailsExitActions } from "./classic-actions/exit";
 import {
   dispatchPositionDetailsWorkflowAtom,
   positionDetailsPricesAtom,
@@ -31,7 +26,7 @@ import {
 import type { PositionDetailsWorkflowKey } from "./workflow";
 
 const hasCampaignRewardRate = (
-  rewardRate: YieldRewardRateDto | null | undefined
+  rewardRate: YieldRewardRate | null | undefined
 ) => getRewardRateBreakdown(rewardRate).some((item) => item.key === "campaign");
 
 const formatUnstakeAmount = ({
@@ -115,11 +110,11 @@ export const positionDetailsClassicViewAtom = Atom.family(
                   });
                 return conversions;
               },
-              new Map<AppToken["symbol"], string>()
+              new Map<Token["symbol"], string>()
             )
           : null;
       const canUnstake = Boolean(integration?.status.exit);
-      const action = get(positionDetailsExitActionViewAtom(key));
+      const action = get(positionDetailsExitActions.view(key));
 
       return {
         apyCompositionRewardRate: personalizedRewardRate ?? fallbackRewardRate,
@@ -211,8 +206,8 @@ export const refreshPositionDetailsKycAtom = Atom.family(
     )
 );
 
-export {
-  setPositionDetailsExitMaxAmountAtom,
-  setPositionDetailsExitReceiveTokenAtom,
-  submitPositionDetailsExitAtom,
-};
+export const setPositionDetailsExitMaxAmountAtom =
+  positionDetailsExitActions.setMaxAmount;
+export const setPositionDetailsExitReceiveTokenAtom =
+  positionDetailsExitActions.setReceiveToken;
+export const submitPositionDetailsExitAtom = positionDetailsExitActions.submit;

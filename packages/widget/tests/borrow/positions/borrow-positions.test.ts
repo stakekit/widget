@@ -6,7 +6,7 @@ import { Integration } from "../../../src/domain/borrow/catalog/integration";
 import { Market } from "../../../src/domain/borrow/catalog/market";
 import { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borrow-account-snapshot";
 import { deriveBorrowPositions } from "../../../src/domain/borrow/positions/borrow-positions";
-import { WalletAddress } from "../../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { getBorrowDetailsModel } from "../../../src/features/borrow/borrow-entry/model/details";
 import {
   getBorrowPositionActions,

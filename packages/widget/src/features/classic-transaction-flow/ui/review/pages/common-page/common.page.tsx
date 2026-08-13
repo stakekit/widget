@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import type { AppToken } from "../../../../../../domain/schema/legacy-models";
+import type { Token } from "../../../../../../domain/token/token";
 import { Divider } from "../../../../../../shared/ui/components/divider";
 import { ToolTip } from "../../../../../../shared/ui/components/tooltip";
 import { Box } from "../../../../../../shared/ui/primitives/box";
@@ -29,7 +29,7 @@ type ReviewPageProps = {
   facts?: ComponentProps<typeof ReviewTopSection>["facts"];
   fee: string;
   title: string;
-  token: AppToken | null;
+  token: Token | null;
   metadata: ComponentProps<typeof ReviewTopSection>["metadata"];
   info: ReactNode;
   rewardTokenDetailsProps: ComponentProps<typeof RewardTokenDetails> | null;

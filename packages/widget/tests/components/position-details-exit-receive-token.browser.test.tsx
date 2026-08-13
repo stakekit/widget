@@ -3,9 +3,9 @@ import { useState } from "react";
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
-import { TokenAddress } from "../../src/domain/schema/identifiers";
-import type { AppToken } from "../../src/domain/schema/legacy-models";
-import type { ExitReceiveToken } from "../../src/domain/types/action";
+import type { ExitReceiveToken } from "../../src/domain/action/rules";
+import { TokenAddress } from "../../src/domain/identity/identifiers";
+import type { Token } from "../../src/domain/token/token";
 import { ExitReceiveTokenAccessory } from "../../src/features/position-details/ui/classic/components/exit-receive-token-accessory";
 import { ExitReceiveTokenNote } from "../../src/features/position-details/ui/classic/components/exit-receive-token-note";
 import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
@@ -26,13 +26,13 @@ const options: ReadonlyArray<ExitReceiveToken> = [
   { address: usdcAddress, symbol: "USDC" },
 ];
 
-const usds: AppToken = {
+const usds: Token = {
   ...yieldApiYieldFixture().token,
   address: usdsAddress,
   name: "USDS",
   symbol: "USDS",
 };
-const usdc: AppToken = {
+const usdc: Token = {
   ...yieldApiYieldFixture().token,
   address: usdcAddress,
   name: "USD Coin",

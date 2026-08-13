@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Stream, SubscriptionRef } from "effect";
-import type { GeolocationError } from "../../domain/schema/legacy-models";
-import { GeolocationErrorType } from "../../domain/types/errors";
+import type { GeolocationError } from "./geolocation-error";
+import { GeolocationErrorType } from "./geolocation-error";
 
 type GeoBlockState =
   | false

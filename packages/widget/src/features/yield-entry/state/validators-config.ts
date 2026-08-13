@@ -1,7 +1,7 @@
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigFieldAtom } from "../../../app/config/settings";
-import type { SupportedSKChains } from "../../../domain/types/chains";
-import type { ValidatorsConfig } from "../../../domain/types/yields";
+import type { ValidatorsConfig } from "../../../domain/earn/yield";
+import type { SupportedSKChains } from "../../../services/wallet/supported-chains";
 
 export const validatorsConfigAtom = Atom.make((get) => {
   const validatorsConfig = get(widgetConfigFieldAtom("validatorsConfig"));

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { AppToken } from "../../../../../domain/schema/legacy-models";
+import type { Token } from "../../../../../domain/token/token";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
@@ -12,7 +12,7 @@ export const ExitReceiveTokenNote = ({
   positionToken,
   selection,
 }: {
-  readonly positionToken: AppToken;
+  readonly positionToken: Token;
   readonly selection: PositionDetailsExitReceiveTokenSelection | null;
 }) => {
   const { t } = useTranslation();

@@ -1,6 +1,6 @@
 import { Data } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { getYieldProviderYieldIds } from "../../../domain/types/yields";
+import { getYieldProviderYieldIds } from "../../../domain/earn/yield";
 import {
   resolveYieldSummaryView,
   type YieldSummaryInput,

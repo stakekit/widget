@@ -9,12 +9,12 @@ import {
 } from "../../src/features/wallet/state";
 import { currentWalletLedgerStateAtom as walletLedgerStateAtom } from "../../src/features/wallet/state/root-atom";
 import { makeDefaultConfig } from "../../src/services/wallet/default-wagmi-config";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
   type WalletState,
-} from "../../src/services/wallet/domain/state";
-import { WalletService } from "../../src/services/wallet/wallet-service";
+} from "../../src/services/wallet/wallet-state";
 
 describe("WalletService projections", () => {
   it("projects one cohesive Wallet State and stable Wagmi config", async () => {

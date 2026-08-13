@@ -1454,7 +1454,7 @@ export type PendingActionConstraintAmountDto = {
   readonly minimum?: number;
   readonly maximum?: number;
 };
-export type YieldBalanceLabelDto = {
+export type YieldBalanceLabel = {
   readonly type: string;
   readonly params: {};
 };
@@ -3494,7 +3494,7 @@ export type YieldBalanceDto = {
   readonly validatorAddress?: string;
   readonly validatorAddresses?: ReadonlyArray<string>;
   readonly providerId?: string;
-  readonly label?: YieldBalanceLabelDto;
+  readonly label?: YieldBalanceLabel;
   readonly feeConfigurationId?: string;
   readonly startDate?: string;
   readonly startEpoch?: number;

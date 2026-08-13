@@ -1,6 +1,6 @@
 import { Match } from "effect";
 import { useTranslation } from "react-i18next";
-import type { ClassicTransactionWorkflowProviderDetail } from "../../../../services/workflow/transaction-workflow-model";
+import type { ClassicTransactionWorkflowProviderDetail } from "../../../../services/transaction-workflow/transaction-workflow-model";
 import { VirtualList } from "../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Button } from "../../../../shared/ui/primitives/button";

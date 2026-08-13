@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   SolanaPlatform,
   type SolanaRuntime,
-} from "../../../src/services/wallet/platform/solana-platform";
+} from "../../../src/services/wallet/internal/platform/solana-platform";
 
 describe("SolanaPlatform", () => {
   it("constructs only a scoped connection when adapters are disabled", async () => {

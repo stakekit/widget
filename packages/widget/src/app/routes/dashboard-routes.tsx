@@ -4,7 +4,7 @@ import {
   createBorrowEntryRoutes,
   createBorrowMarketPositionRoutes,
 } from "../../features/borrow/ui";
-// import { RewardsTabPage } from "../../domain/types/rewards";
+// import { RewardsTabPage } from "../../domain/portfolio/rewards";
 import { createClassicFlowRoutes } from "../../features/classic-transaction-flow/ui";
 import { EarnPageContent } from "../../features/earn/ui";
 import { ManagePage } from "../../features/portfolio/ui";

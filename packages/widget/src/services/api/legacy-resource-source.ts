@@ -1,22 +1,19 @@
 import { Context, Effect, Layer, Schema } from "effect";
-import {
-  type RewardsAddresses,
-  RewardsSummaryRecord,
-} from "../../domain/schema/dashboard-models";
-import { EarnLegacyTokenOptionsResponse } from "../../domain/schema/earn-models";
+import { EarnLegacyTokenOptionsResponse } from "../../domain/earn/models";
 import {
   type GasBalancesCommand,
   GasTokenBalancesResponse,
   type TokenBalanceScanCommand,
   TokenBalancesResponse,
-} from "../../domain/schema/financial-models";
+} from "../../domain/finance/models";
+import { PriceRequest, PriceResponse } from "../../domain/health/models";
+import type { YieldId } from "../../domain/identity/identifiers";
+import type { Network } from "../../domain/network/network";
 import {
-  PriceRequest,
-  PriceResponse,
-} from "../../domain/schema/health-price-models";
-import type { YieldId } from "../../domain/schema/identifiers";
-import type { Network } from "../../domain/schema/network-model";
-import { EnabledNetworksResponse } from "../../domain/schema/wallet-models";
+  type RewardsAddresses,
+  RewardsSummaryRecord,
+} from "../../domain/portfolio/models";
+import { EnabledNetworksResponse } from "../../domain/wallet/models";
 import type * as LegacyApi from "../../generated/api/legacy";
 import {
   decodeApiResponse,

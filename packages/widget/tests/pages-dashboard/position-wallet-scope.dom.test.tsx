@@ -10,21 +10,21 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { act } from "react";
 import { describe, expect, it } from "vitest";
-import { EarnPosition } from "../../src/domain/schema/earn-models";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
-import {
-  PositionBalancesKey,
-  positionBalancesAtom,
-  positionBalancesByTypeAtom,
-} from "../../src/features/portfolio/state";
+import { EarnPosition } from "../../src/domain/earn/models";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import {
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
 } from "../../src/features/position-details/state/workflow";
-import { yieldPositionsResourceAtom } from "../../src/resources/yield-positions/yield-positions";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import {
+  PositionBalancesKey,
+  positionBalancesAtom,
+  positionBalancesByTypeAtom,
+  yieldPositionsResourceAtom,
+} from "../../src/resources/yield-positions/yield-positions";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
-import { render } from "../utils/test-utils.dom";
+import { render } from "../utils/test-utils.dom.tsx";
 
 const address = (suffix: string) =>
   Schema.decodeSync(WalletAddress)(`0x${suffix.padStart(40, "0")}`);

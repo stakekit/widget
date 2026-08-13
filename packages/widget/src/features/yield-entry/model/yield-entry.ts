@@ -1,38 +1,36 @@
 import BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import { getMaxAmount } from "../../../domain";
-import { ActionCommand } from "../../../domain/schema/action-models";
-import type { AdditionalAddresses } from "../../../domain/schema/address-models";
+import { ActionCommand } from "../../../domain/action/models";
+import type { TronResource } from "../../../domain/action/tron-resource";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
-} from "../../../domain/schema/earn-models";
-import type {
-  WalletAddress,
-  YieldId,
-} from "../../../domain/schema/identifiers";
-import type {
-  AppToken,
-  TronResource,
-} from "../../../domain/schema/legacy-models";
-import type { PositionsData } from "../../../domain/types/positions";
+} from "../../../domain/earn/models";
 import {
   getMinStakeAmount,
   getMinUnstakeAmount,
   isForceMaxAmount,
-} from "../../../domain/types/stake";
-import type { ValidatorKey } from "../../../domain/types/validators";
+} from "../../../domain/earn/stake";
+import type { ValidatorKey } from "../../../domain/earn/validator";
 import {
   getYieldActionArg,
   isBittensorStaking,
-} from "../../../domain/types/yields";
+} from "../../../domain/earn/yield";
+import type {
+  WalletAddress,
+  YieldId,
+} from "../../../domain/identity/identifiers";
+import type { PositionsData } from "../../../domain/portfolio/positions";
+import type { Token } from "../../../domain/token/token";
+import type { AdditionalAddresses } from "../../../domain/wallet/address";
 import { getRewardRateFormatted } from "../../../shared/lib/formatters";
 import { formatNumber } from "../../../shared/lib/number-format";
 
 type YieldEntryInput = Readonly<{
   readonly amount: BigNumber;
   readonly selectedProviderYieldId: YieldId | null;
-  readonly token: AppToken | null;
+  readonly token: Token | null;
   readonly tronResource: TronResource | null;
   readonly useMaxAmount: boolean;
   readonly validators: ReadonlyMap<ValidatorKey, EarnValidator>;

@@ -21,7 +21,7 @@ import {
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { applicationRouterRuntime } from "../../src/app/runtime/application-router-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { ActionCommand } from "../../src/domain/schema/action-models";
+import { ActionCommand } from "../../src/domain/action/models";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
   ClassicFlowExecutionScope,
@@ -44,19 +44,19 @@ import {
   WidgetNavigation,
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
   type WalletState,
-} from "../../src/services/wallet/domain/state";
-import { WalletService } from "../../src/services/wallet/wallet-service";
-import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
+} from "../../src/services/wallet/wallet-state";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 import { makeTestStakeKitApiLayer } from "../utils/stakekit-api-layer";
-import { describe, expect, it, vi } from "../utils/test-extend.dom";
-import { render } from "../utils/test-utils.dom";
+import { describe, expect, it, vi } from "../utils/test-extend.dom.ts";
+import { render } from "../utils/test-utils.dom.tsx";
 
 const yieldApiUrl = "https://yield.example.com";
 const legacyApiUrl = "https://api.example.com";

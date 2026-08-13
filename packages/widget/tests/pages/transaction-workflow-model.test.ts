@@ -1,29 +1,31 @@
 import { Equal, Schema } from "effect";
 import { describe, expect, it } from "vitest";
+import type { ActionTransaction } from "../../src/domain/action/models";
 import { Action } from "../../src/domain/borrow/execution/action";
 import { Transaction } from "../../src/domain/borrow/execution/transaction";
-import type { ActionTransaction } from "../../src/domain/schema/action-models";
-import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
+import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
 import type { ActionMeta } from "../../src/public-api/types";
-import { WalletBroadcastError } from "../../src/services/wallet/domain/errors";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
   appendTransactionWorkflowBatch,
+  getTransactionWorkflowAction,
+  initializeTransactionWorkflow,
+  makeBorrowTransactionWorkflowBatch,
+  updateCurrentTransactionWorkflowTransaction,
+  validateTransactionWorkflowInput,
+} from "../../src/services/transaction-workflow/internal/model";
+import {
   BorrowTransactionWorkflowInput,
   ClassicTransactionWorkflowInput,
   getCurrentTransactionWorkflowTransaction,
   getTransactionSignCustomMessage,
-  getTransactionWorkflowAction,
-  initializeTransactionWorkflow,
-  makeBorrowTransactionWorkflowBatch,
   makeTransactionSignError,
   TransactionAdvanceError,
   TransactionConfirmationError,
   TransactionSignError,
   TransactionSubmissionError,
-  updateCurrentTransactionWorkflowTransaction,
-  validateTransactionWorkflowInput,
-} from "../../src/services/workflow/transaction-workflow-model";
+} from "../../src/services/transaction-workflow/transaction-workflow-model";
+import { WalletBroadcastError } from "../../src/services/wallet/wallet-errors";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiTransactionFixture } from "../fixtures";
 
 const address = Schema.decodeSync(WalletAddress)(

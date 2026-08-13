@@ -7,12 +7,12 @@ import {
   ActionTypes,
   getActionInputToken,
   TransactionStatus,
-} from "../../../../../domain/types/action";
+} from "../../../../../domain/action/rules";
 import {
   getExtendedYieldType,
   getYieldTypeLabels,
   isUnstakeYieldType,
-} from "../../../../../domain/types/yields";
+} from "../../../../../domain/earn/yield";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useTrackPage } from "../../../../tracking/state";
 import type { PageCta } from "../../../../widget-shell/components";

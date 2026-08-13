@@ -9,6 +9,14 @@ import {
 } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import {
+  type EarnTokenOption,
+  earnSelectionStatusViewAtom,
+  earnSelectionTokenOptionsViewAtom,
+  earnSelectionValidatorOptionsViewAtom,
+  earnSelectionViewAtom,
+  earnSelectionYieldOptionsViewAtom,
+} from "../../src/features/earn/state/earn-selection";
+import {
   earnTokenSelectionViewAtom,
   earnValidatorModalEventAtom,
   earnValidatorSelectionViewAtom,
@@ -17,15 +25,7 @@ import {
   setEarnTokenSearchAtom,
   setEarnValidatorSearchAtom,
   setEarnYieldSearchAtom,
-} from "../../src/features/earn/state/earn-facade";
-import {
-  type EarnTokenOption,
-  earnSelectionStatusViewAtom,
-  earnSelectionTokenOptionsViewAtom,
-  earnSelectionValidatorOptionsViewAtom,
-  earnSelectionViewAtom,
-  earnSelectionYieldOptionsViewAtom,
-} from "../../src/features/earn/state/earn-selection";
+} from "../../src/features/earn/state/facades/runtime";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 import { decodeValidator } from "../utils/validators";

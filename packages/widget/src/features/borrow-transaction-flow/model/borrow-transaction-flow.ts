@@ -4,7 +4,7 @@ import {
   toWidgetPath,
   type WidgetPathInput,
 } from "../../../services/navigation/widget-navigation";
-import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
+import type { WalletScopeKey } from "../../../services/wallet/wallet-scope";
 
 type BorrowReviewCommon = {
   readonly marketLabel: string;

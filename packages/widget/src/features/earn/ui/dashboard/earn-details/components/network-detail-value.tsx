@@ -1,4 +1,4 @@
-import type { Network } from "../../../../../../domain/schema/network-model";
+import type { Network } from "../../../../../../domain/network/network";
 import { formatNetworkName } from "../../../../../../shared/lib/formatters";
 import { useVariantNetworkUrls } from "../../../../../../shared/ui/components/token-icon/token-icon-container/hooks/use-variant-network-urls";
 import { Box } from "../../../../../../shared/ui/primitives/box";

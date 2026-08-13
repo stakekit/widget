@@ -8,19 +8,19 @@ import {
   widgetConfigAtom,
 } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { EarnPosition } from "../../src/domain/schema/earn-models";
-import { toPositionsData } from "../../src/domain/types/positions";
-import { getDashboardYieldCategory } from "../../src/domain/types/yields";
+import { EarnPosition } from "../../src/domain/earn/models";
+import { getDashboardYieldCategory } from "../../src/domain/earn/yield";
+import { toPositionsData } from "../../src/domain/portfolio/positions";
 import {
   currentGroupedPositionsAtom,
   positionsTableDataAtom,
   toPositionItems,
-} from "../../src/features/portfolio/resources/positions";
+} from "../../src/features/portfolio/state/read-models/positions";
 import {
   allPositionsSummaryAtom,
   getPositionsAverageApy,
   getPositionsTotal,
-} from "../../src/features/portfolio/resources/summary";
+} from "../../src/features/portfolio/state/read-models/summary";
 import {
   MultiYieldsKey,
   multiYieldsByIdAtom,

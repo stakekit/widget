@@ -9,7 +9,7 @@ import {
   sameWalletScopeOwner,
   type WalletScopeKey,
   walletScopeFromState,
-} from "../../services/wallet/domain/scope";
+} from "../../services/wallet/wallet-scope";
 import { WalletService } from "../../services/wallet/wallet-service";
 import { makeScopedSerialOperations } from "../../shared/effect/scoped-serial-operations";
 

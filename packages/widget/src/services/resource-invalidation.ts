@@ -1,11 +1,11 @@
 import { Data } from "effect";
 import type { BorrowNetwork } from "../domain/borrow/network";
-import type { WalletAddress } from "../domain/schema/identifiers";
+import type { WalletAddress } from "../domain/identity/identifiers";
 import {
   type WalletScopeKey,
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
-} from "./wallet/domain/scope";
+} from "./wallet/wallet-scope";
 
 export class WalletBalancesInvalidationKey extends Data.TaggedClass(
   "WalletBalancesInvalidationKey"

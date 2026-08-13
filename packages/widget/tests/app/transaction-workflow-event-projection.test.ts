@@ -10,7 +10,7 @@ import { TestClock } from "effect/testing";
 import * as Reactivity from "effect/unstable/reactivity/Reactivity";
 import { describe, expect, it } from "vitest";
 import { transactionWorkflowResourceEventProjection } from "../../src/app/runtime/transaction-workflow-event-projection";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import {
   type WidgetDomainEvent,
   WidgetDomainEvents,
@@ -24,14 +24,14 @@ import {
 import {
   WalletScopeKey,
   walletScopeOwnerKey,
-} from "../../src/services/wallet/domain/scope";
+} from "../../src/services/wallet/wallet-scope";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
   type WalletState,
-} from "../../src/services/wallet/domain/state";
-import { WalletService } from "../../src/services/wallet/wallet-service";
+} from "../../src/services/wallet/wallet-state";
 
 const owner = walletScopeOwnerKey(
   new WalletScopeKey({

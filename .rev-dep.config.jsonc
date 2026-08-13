@@ -119,8 +119,18 @@
           "files": ["src/generated/api/**"],
           "allowImporters": [
             "src/domain/borrow/**",
-            "src/domain/schema/**",
+            "src/domain/action/**",
+            "src/domain/activity/**",
             "src/services/api/**",
+            "src/services/wallet/wallet-transactions.ts",
+            "src/domain/earn/**",
+            "src/domain/finance/**",
+            "src/domain/health/**",
+            "src/domain/legacy/**",
+            "src/domain/network/**",
+            "src/domain/portfolio/**",
+            "src/domain/token/**",
+            "src/domain/wallet/**",
             "scripts/**",
             "tests/generated/**"
           ]
@@ -131,7 +141,7 @@
           "allowImporters": [
             "src/app/runtime/**",
             "src/resources/**",
-            "src/services/wallet/bootstrap.ts",
+            "src/services/wallet/internal/runtime/bootstrap.ts",
             "tests/**"
           ]
         },
@@ -141,7 +151,7 @@
           "allowImporters": [
             "src/app/runtime/**",
             "src/resources/**",
-            "src/services/wallet/bootstrap.ts",
+            "src/services/wallet/internal/runtime/bootstrap.ts",
             "tests/**"
           ]
         },
@@ -160,8 +170,8 @@
           "allowImporters": [
             "src/app/runtime/**",
             "src/features/classic-transaction-flow/state/orchestration/classic-flow-review.ts",
-            "src/services/workflow/transaction-workflow-runtime/confirmation.ts",
-            "src/services/workflow/transaction-workflow-runtime/submission.ts",
+            "src/services/transaction-workflow/internal/confirmation.ts",
+            "src/services/transaction-workflow/internal/submission.ts",
             "tests/**"
           ]
         },
@@ -171,9 +181,9 @@
           "allowImporters": [
             "src/app/runtime/**",
             "src/features/borrow-transaction-flow/state/orchestration/borrow-flow-review.ts",
-            "src/services/workflow/transaction-workflow-runtime/advancement.ts",
-            "src/services/workflow/transaction-workflow-runtime/confirmation.ts",
-            "src/services/workflow/transaction-workflow-runtime/submission.ts",
+            "src/services/transaction-workflow/internal/advancement.ts",
+            "src/services/transaction-workflow/internal/confirmation.ts",
+            "src/services/transaction-workflow/internal/submission.ts",
             "tests/**"
           ]
         },
@@ -418,20 +428,6 @@
           "allowImporters": [
             "**/*.css.ts",
             "src/features/tracking/**",
-            "tests/**"
-          ]
-        },
-        {
-          "enabled": true,
-          "files": [
-            "src/features/transaction-workflow/**",
-            "!src/features/transaction-workflow/state.ts",
-            "!src/features/transaction-workflow/ui.ts",
-            "!src/features/transaction-workflow/components.ts"
-          ],
-          "allowImporters": [
-            "**/*.css.ts",
-            "src/features/transaction-workflow/**",
             "tests/**"
           ]
         },

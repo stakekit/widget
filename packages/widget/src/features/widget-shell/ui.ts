@@ -1,6 +1,6 @@
 export { ClassicLayout } from "./classic-layout";
 export { Header as DashboardHeader } from "./dashboard/components/header";
-export { Details } from "./details/details.page";
+export { Details } from "./details/details.page.tsx";
 export { Header } from "./header";
 export { AnimationLayout } from "./ui/animation-layout";
 export { CurrentLayoutProvider } from "./ui/current-layout";

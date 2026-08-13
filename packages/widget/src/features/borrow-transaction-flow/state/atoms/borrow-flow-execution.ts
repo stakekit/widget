@@ -3,7 +3,7 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { makeScopedEffectStateAtom } from "../../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
-import type { TransactionWorkflowCommand } from "../../../../services/workflow/transaction-workflow-model";
+import type { TransactionWorkflowCommand } from "../../../../services/transaction-workflow/transaction-workflow-model";
 import {
   emptyBorrowExecutionView,
   getBorrowExecutionSetupError,
@@ -22,7 +22,7 @@ export const makeBorrowFlowExecutionScopeAtom = <E>(
       Effect.gen(function* (): Effect.fn.Return<
         AcquireBorrowFlowExecutionOutcome,
         | E
-        | import("../../../../services/workflow/transaction-workflow-model").TransactionWorkflowInputError,
+        | import("../../../../services/transaction-workflow/transaction-workflow-model").TransactionWorkflowInputError,
         import("effect").Scope.Scope
       > {
         const sessionOutcome = yield* context.result(sessionOutcomeAtom);

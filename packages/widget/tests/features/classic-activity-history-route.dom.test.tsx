@@ -13,7 +13,7 @@ import {
 import { vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { startClassicTransactionFlowAtom } from "../../src/features/classic-transaction-flow/state";
 import { createClassicFlowRoutes } from "../../src/features/classic-transaction-flow/ui";
@@ -23,16 +23,16 @@ import {
   makeWidgetNavigation,
   WidgetNavigation,
 } from "../../src/services/navigation/widget-navigation";
-import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   type NormalizedWalletState,
-} from "../../src/services/wallet/domain/state";
-import { WalletService } from "../../src/services/wallet/wallet-service";
+} from "../../src/services/wallet/wallet-state";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
-import { describe, expect, it } from "../utils/test-extend.dom";
-import { render } from "../utils/test-utils.dom";
+import { describe, expect, it } from "../utils/test-extend.dom.ts";
+import { render } from "../utils/test-utils.dom.tsx";
 
 vi.mock(
   "../../src/features/classic-transaction-flow/ui/activity-details.page",

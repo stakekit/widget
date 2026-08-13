@@ -3,7 +3,7 @@ import {
   ActionStatus,
   type ActionType,
   getActionInputToken,
-} from "../../../domain/types/action";
+} from "../../../domain/action/rules";
 import {
   getActivityDayKind,
   getActivityRelativeTime,

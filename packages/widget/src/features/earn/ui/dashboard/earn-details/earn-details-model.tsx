@@ -1,10 +1,10 @@
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
-import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import {
   getEffectiveYieldRewardRateDetails,
   type SelectedValidators,
-} from "../../../../../domain/types/reward-rate";
+} from "../../../../../domain/earn/reward-rate";
 import {
   getDashboardYieldCategory,
   getExtendedYieldType,
@@ -16,7 +16,7 @@ import {
   getYieldTvlUsd,
   getYieldTypeLabels,
   getYieldWarmupPeriod,
-} from "../../../../../domain/types/yields";
+} from "../../../../../domain/earn/yield";
 import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import {
   formatNetworkName,

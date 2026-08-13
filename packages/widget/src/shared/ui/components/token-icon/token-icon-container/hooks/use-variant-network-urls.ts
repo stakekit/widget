@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Network } from "../../../../../../domain/schema/network-model";
+import type { Network } from "../../../../../../domain/network/network";
 import { networkLogoUrl } from "../../../../../assets/network-logo";
 import { useWidgetPresentation } from "../../../../widget-presentation";
 

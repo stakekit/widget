@@ -1,12 +1,12 @@
 import BigNumber from "bignumber.js";
 import { Trans, useTranslation } from "react-i18next";
-import type { PendingAction } from "../../../../../domain/schema/action-models";
+import type { PendingAction } from "../../../../../domain/action/models";
+import type { YieldPendingActionType } from "../../../../../domain/action/pending-action";
 import type {
   EarnBalance,
   EarnYieldWithProvider,
-} from "../../../../../domain/schema/earn-models";
-import type { YieldPendingActionType } from "../../../../../domain/types/pending-action";
-import { isEthenaUsdeStaking } from "../../../../../domain/types/yields";
+} from "../../../../../domain/earn/models";
+import { isEthenaUsdeStaking } from "../../../../../domain/earn/yield";
 import { humanizePendingActionType } from "../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
@@ -15,7 +15,7 @@ import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import type { usePositionDetails } from "../hooks/use-position-details";
 
 type StaticActionBlockProps = {
-  pendingActionDto: PendingAction;
+  pendingAction: PendingAction;
   yieldBalance: EarnBalance & {
     tokenPriceInUsd: BigNumber;
   };
@@ -26,7 +26,7 @@ type StaticActionBlockProps = {
 };
 
 export const StaticActionBlock = ({
-  pendingActionDto,
+  pendingAction,
   yieldBalance,
   onPendingActionClick,
   yieldId,
@@ -56,15 +56,13 @@ export const StaticActionBlock = ({
               symbol: yieldBalance.token.symbol,
               pendingAction: t(
                 `position_details.pending_action.${
-                  pendingActionDto.type.toLowerCase() as Lowercase<YieldPendingActionType>
+                  pendingAction.type.toLowerCase() as Lowercase<YieldPendingActionType>
                 }`,
                 {
                   context: isEthenaUsdeStaking(yieldId)
                     ? "ethena_usde"
                     : undefined,
-                  defaultValue: humanizePendingActionType(
-                    pendingActionDto.type
-                  ),
+                  defaultValue: humanizePendingActionType(pendingAction.type),
                 }
               ),
             }}
@@ -90,17 +88,17 @@ export const StaticActionBlock = ({
           onClick={() =>
             onPendingActionClick({
               yieldBalance: yieldBalance,
-              pendingActionDto: pendingActionDto,
+              pendingAction: pendingAction,
             })
           }
         >
           <Text>
             {t(
               `position_details.pending_action_button.${
-                pendingActionDto.type.toLowerCase() as Lowercase<YieldPendingActionType>
+                pendingAction.type.toLowerCase() as Lowercase<YieldPendingActionType>
               }`,
               {
-                defaultValue: humanizePendingActionType(pendingActionDto.type),
+                defaultValue: humanizePendingActionType(pendingAction.type),
               }
             )}
           </Text>

@@ -7,10 +7,10 @@ import {
   BorrowIntegrationsResponse,
   BorrowMarketsResponse,
 } from "../../domain/borrow/responses";
-import { MissingBorrowApiConfig } from "../../domain/schema/api-errors";
-import type { WalletAddress } from "../../domain/schema/identifiers";
+import type { WalletAddress } from "../../domain/identity/identifiers";
 import type * as BorrowApi from "../../generated/api/borrow-client";
 import { WidgetConfigService } from "../config/widget-config";
+import { MissingBorrowApiConfig } from "./api-errors";
 import {
   decodeApiResponse,
   withApiRequestError,

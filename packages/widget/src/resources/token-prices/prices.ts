@@ -1,9 +1,9 @@
 import { Data } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { EarnYieldWithProvider } from "../../domain/schema/earn-models";
-import type { PriceRequest } from "../../domain/schema/health-price-models";
-import type { AppToken } from "../../domain/schema/legacy-models";
+import type { EarnYieldWithProvider } from "../../domain/earn/models";
+import type { PriceRequest } from "../../domain/health/models";
+import type { Token } from "../../domain/token/token";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 import { TokenPricesKey, tokenPricesResourceAtom } from "./token-prices";
 
@@ -17,7 +17,7 @@ export const getTokensPricesRequest = ({
   token,
   yieldDto,
 }: {
-  readonly token: AppToken | null;
+  readonly token: Token | null;
   readonly yieldDto: EarnYieldWithProvider | null;
 }): PriceRequest | null =>
   token && yieldDto

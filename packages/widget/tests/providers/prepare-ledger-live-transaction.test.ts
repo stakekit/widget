@@ -1,13 +1,13 @@
 import { Effect, Schema } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import { ValidatorAddress } from "../../src/domain/schema/identifiers";
+import { ValidatorAddress } from "../../src/domain/identity/identifiers";
 import {
   CosmosNetworks,
   MiscNetworks,
   SubstrateNetworks,
-} from "../../src/domain/types/chains/networks";
+} from "../../src/domain/network/networks";
 import type { SKTxMeta } from "../../src/public-api/types";
-import { makePrepareLedgerLiveTransaction } from "../../src/services/wallet/connectors/ledger/prepare-ledger-live-transaction";
+import { makePrepareLedgerLiveTransaction } from "../../src/services/wallet/internal/adapters/ledger/prepare-ledger-live-transaction";
 
 const substrateMethod = vi.hoisted(() => ({
   current: {

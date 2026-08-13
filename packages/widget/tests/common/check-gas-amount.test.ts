@@ -1,8 +1,8 @@
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { TokenBalance } from "../../src/domain/schema/financial-models";
-import { checkGasAmount } from "../../src/domain/types/gas";
+import { checkGasAmount } from "../../src/domain/finance/gas";
+import { TokenBalance } from "../../src/domain/finance/models";
 
 const gasTokenBalance = Schema.decodeUnknownSync(TokenBalance)({
   amount: "1",
