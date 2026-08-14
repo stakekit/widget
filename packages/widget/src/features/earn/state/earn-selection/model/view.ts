@@ -1,7 +1,10 @@
 import { Match, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
-import { getDashboardYieldCategory } from "../../../../../domain/earn/yield";
+import {
+  filterValidators,
+  getDashboardYieldCategory,
+} from "../../../../../domain/earn/yield";
 import type { YieldId } from "../../../../../domain/identity/identifiers";
 import { tokenString } from "../../../../../domain/token/token";
 import type {
@@ -338,9 +341,18 @@ export const resolveEarnView = ({
     }
   }
 
+  const selectedValidatorIntent =
+    validatorInput._tag === "enabled" && intent.selectedValidators !== null
+      ? filterValidators({
+          network: selectedYield.token.network,
+          validators: intent.selectedValidators,
+          validatorsConfig: validatorInput.validatorsConfig,
+          yieldId: selectedYield.id,
+        })
+      : null;
   const selectedValidators = resolveValidators({
     entry,
-    selectedValidators: intent.selectedValidators,
+    selectedValidators: selectedValidatorIntent,
     validatorOptions,
   });
 

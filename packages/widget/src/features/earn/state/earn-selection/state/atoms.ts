@@ -104,6 +104,39 @@ const isInitializationTerminal = (view: EarnMachineView): boolean =>
   view.status === "no-yields" ||
   view.status === "no-validators";
 
+const sameValidatorSelection = (
+  first: ReadonlyArray<{ readonly key: string }>,
+  second: ReadonlyArray<{ readonly key: string }>
+) =>
+  first.length === second.length &&
+  first.every((validator, index) => validator.key === second[index]?.key);
+
+const reconcileEarnValidatorIntent = (
+  state: EarnMachineState,
+  view: EarnMachineView
+): EarnMachineState => {
+  const selectedValidators = state.intent.selectedValidators;
+  const canReconcile =
+    selectedValidators !== null &&
+    view.resources.validators.enabled &&
+    (view.status === "ready" || view.status === "no-validators");
+
+  if (
+    !canReconcile ||
+    sameValidatorSelection(selectedValidators, view.selection.validators)
+  ) {
+    return state;
+  }
+
+  return {
+    ...state,
+    intent: {
+      ...state.intent,
+      selectedValidators: view.selection.validators,
+    },
+  };
+};
+
 const earnMachineProjectionAtom = Atom.readable<EarnMachineProjection>(
   (context) => {
     const baseEntry = context.get(earnMachineEntryAtom);
@@ -152,16 +185,21 @@ const earnMachineProjectionAtom = Atom.readable<EarnMachineProjection>(
     const initializationComplete =
       state.initializationPhase === "applying-init-params" &&
       isInitializationTerminal(view);
+    const validatorReconciledState = reconcileEarnValidatorIntent(state, view);
     const committedState = initializationComplete
       ? {
-          ...state,
+          ...validatorReconciledState,
           initializationPhase: "complete" as const,
           intent:
             view.status === "failed"
-              ? state.intent
-              : commitEarnInitialSelection(entry, state.intent, view),
+              ? validatorReconciledState.intent
+              : commitEarnInitialSelection(
+                  entry,
+                  validatorReconciledState.intent,
+                  view
+                ),
         }
-      : state;
+      : validatorReconciledState;
 
     return { sourceState, state: committedState, view };
   }

@@ -133,11 +133,12 @@ type SettingsProps = {
   customTranslations?: RecursivePartial<typeof localResources>;
   tokensForEnabledYieldsOnly?: boolean;
   validatorsConfig?: {
-    [Key in SupportedSKChains]?: {
+    [Key in SupportedSKChains | "*"]?: {
       allowed?: string[];
       blocked?: string[];
       preferred?: string[];
       mergePreferredWithDefault?: boolean;
+      preferredOnly?: boolean;
     };
   };
   tokenIconMapping?:
@@ -155,6 +156,13 @@ type SettingsProps = {
   portalContainer?: HTMLElement;
 };
 ```
+
+Validator policy may be configured for a specific network or with `"*"` as a
+fallback. EVM validator addresses are matched case-insensitively; non-EVM
+addresses are matched exactly. `blocked` takes precedence over `allowed` and
+`preferred`, while `preferredOnly` restricts selection to preferred validators.
+Policy changes revalidate the current Earn-page selection before a transaction
+flow starts without changing the validator address received from the API.
 
 ### Dashboard category tab order
 

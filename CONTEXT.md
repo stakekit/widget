@@ -95,6 +95,18 @@ _Avoid_: Page loaded, no spinner
 The yield-advertised action inputs whose constraints and options determine additional Earn form and transaction values. Only arguments understood by the Widget participate in Earn Selection.
 _Avoid_: Raw mechanic fields, yield contract
 
+**Validator Address Identity**:
+The network-sensitive identity of a validator address. EVM validator addresses compare case-insensitively while non-EVM validator addresses compare exactly; the original address remains the action and presentation value.
+_Avoid_: Normalized validator address, validator string
+
+**Validator Policy**:
+The network-specific or wildcard Host Configuration that constrains which validators are eligible or preferred for an Earn Selection.
+_Avoid_: Validators config, validator filter
+
+**Eligible Validator**:
+A validator that satisfies the selected yield's requirements and its current Validator Policy.
+_Avoid_: Available validator, visible validator
+
 **Wallet Scope Owner**:
 The owner identity of a Wallet Scope, consisting only of its network and primary address. Additional-address changes do not change the Wallet Scope Owner.
 _Avoid_: Wallet Scope key, connector identity

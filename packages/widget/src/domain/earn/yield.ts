@@ -10,6 +10,10 @@ import type { Network } from "../network/network";
 import { EvmNetworks } from "../network/networks";
 import { equalTokens, tokenString } from "../token/token";
 import type { EarnProvider, EarnYieldWithProvider } from "./models";
+import {
+  validatorAddressIdentities,
+  validatorAddressIdentity,
+} from "./validator";
 
 type YieldRiskRatingTone = "positive" | "warning" | "danger" | "neutral";
 type YieldRiskEntry = NonNullable<
@@ -153,13 +157,22 @@ export const filterValidators = <T extends ValidatorDto>({
           mergePreferredWithDefault,
           preferredOnly,
         } = valConfig;
+        const toAddressIdentities = (addresses: Set<string> | undefined) =>
+          addresses && new Set(validatorAddressIdentities(network, addresses));
+        const allowedIdentities = toAddressIdentities(allowed);
+        const blockedIdentities = toAddressIdentities(blocked);
+        const preferredIdentities = toAddressIdentities(preferred);
 
         return validators.flatMap((v) => {
-          if (allowed && !allowed.has(v.address)) return [];
-          if (blocked?.has(v.address)) return [];
+          const addressIdentity = validatorAddressIdentity(network, v.address);
+
+          if (allowedIdentities && !allowedIdentities.has(addressIdentity)) {
+            return [];
+          }
+          if (blockedIdentities?.has(addressIdentity)) return [];
 
           const isPreferred =
-            preferred?.has(v.address) ||
+            preferredIdentities?.has(addressIdentity) ||
             !!(mergePreferredWithDefault && v.preferred);
 
           if (preferredOnly) {

@@ -6,6 +6,7 @@ import { isYieldValidatorSelectionRequired } from "../../../../../domain/earn/yi
 import { YieldId } from "../../../../../domain/identity/identifiers";
 import { Network } from "../../../../../domain/network/network";
 import type { DashboardYieldCategory } from "../../../../../public-api/types";
+import { validatorsConfigAtom } from "../../../../yield-entry/state";
 import {
   availableYieldCategoriesAtom,
   earnYieldCatalogAtom,
@@ -210,6 +211,7 @@ export const makeEarnResourceAdapter = (context: Atom.AtomContext) => {
         Option.getOrElse(() => [])
       ),
       result: initial,
+      validatorsConfig: context.get(validatorsConfigAtom),
     };
   };
 

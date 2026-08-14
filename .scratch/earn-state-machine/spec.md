@@ -186,11 +186,12 @@ Yield visibility is determined by API-key-scoped data, enter capability, and sup
 ### Validators
 
 - Authoritative Resources retain raw canonical validators. Earn state applies network or wildcard allow/block/preference configuration and yield-specific eligibility before selection, empty-state, readiness, and capability decisions; React does not filter a second time.
+- Validator address identity is case-insensitive on EVM networks and exact on non-EVM networks. That identity governs allow, block, preference, deduplication, and selection revalidation; the original API address remains the display and action payload. Block rules win, and `preferredOnly` adds an eligibility constraint.
 - Preferred-validator acquisition and the first default-validator page both settle before readiness because either can change the correct initial selection.
 - Single-select replaces the selection.
 - Multi-select toggles membership but cannot remove the final validator.
 - Explicit removal is a no-op for the final validator.
-- After authoritative refresh, retain the valid selected subset. If none remain, choose a still-valid one-time init validator, then the first preferred validator, then the first active validator.
+- After authoritative refresh or a live Host Configuration update, retain the valid selected subset. If none remain, choose a still-valid one-time init validator, then the first currently loaded preferred validator, then the first currently loaded active validator. Commit that reconciliation so relaxing the policy cannot restore a previously removed explicit selection. A started transaction flow keeps its captured validator inputs.
 - Successful required-validator acquisition with no validators publishes `no-validators`.
 - Search results have independent keyed pagination, pass through the same eligibility projection, and do not reorder or replace the default loaded list.
 - A selected search result may be remembered by the base validator resource.

@@ -10,11 +10,8 @@ export const resolveValidators = ({
   selectedValidators: ReadonlyArray<EarnValidator> | null;
   validatorOptions: ReadonlyArray<EarnValidator>;
 }) => {
-  if (validatorOptions.length === 0) {
-    return [];
-  }
-
-  if (selectedValidators !== null) return selectedValidators;
+  if (selectedValidators?.length) return selectedValidators;
+  if (validatorOptions.length === 0) return [];
 
   const initialValidator = entry.initParams?.validator
     ? validatorOptions.find(

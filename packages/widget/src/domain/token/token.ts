@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { TokenAddress } from "../identity/identifiers";
-import { EvmNetworks } from "../network/networks";
+import { isEvmNetwork } from "../network/networks";
 
 export const Token = Schema.Struct({
   ...YieldApi.TokenDto.fields,
@@ -17,11 +17,9 @@ type TokenLike = Pick<Token, "symbol"> & {
   address?: string;
 };
 
-const evmNetworks = new Set<string>(Object.values(EvmNetworks));
-
 const identityAddress = (token: TokenLike) => {
   if (token.address === undefined) return "<no-address>";
-  return evmNetworks.has(token.network)
+  return isEvmNetwork(token.network)
     ? token.address.toLowerCase()
     : token.address;
 };

@@ -4,6 +4,7 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { updateWidgetConfigAtom } from "../../src/app/runtime/widget-config";
 import type { EarnValidator, EarnYield } from "../../src/domain/earn/models";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import type { PositionsData } from "../../src/domain/portfolio/positions";
@@ -54,6 +55,10 @@ import {
   EarnCatalogError,
   type EarnEntry,
 } from "../../src/features/earn/state/earn-selection/types";
+import {
+  type ValidatorDirectoryRequest,
+  YieldResourceSource,
+} from "../../src/services/api/yield-resource-source";
 import {
   type WidgetDomainEvent,
   WidgetDomainEvents,
@@ -937,6 +942,174 @@ describe("Earn Selection", () => {
       registry.dispose();
     }
   });
+
+  it.each([
+    { mode: "single-select", multiselect: false },
+    { mode: "multi-select", multiselect: true },
+  ])(
+    "reconciles $mode validator selection after a host policy update",
+    async ({ multiselect }) => {
+      const selectedValidator = decodeValidator(
+        yieldApiValidatorFixture({
+          address: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+          name: "Selected Validator",
+        })
+      );
+      const fallbackValidator = decodeValidator(
+        yieldApiValidatorFixture({
+          address: "0x1111111111111111111111111111111111111111",
+          name: "Fallback Validator",
+          preferred: true,
+        })
+      );
+      const requiredYield = {
+        ...firstYield,
+        mechanics: {
+          ...firstYield.mechanics,
+          arguments: multiselect
+            ? {
+                ...firstYield.mechanics.arguments,
+                enter: {
+                  fields: {
+                    validatorAddresses: { required: true },
+                  },
+                },
+              }
+            : firstYield.mechanics.arguments,
+          requiresValidatorSelection: true,
+        },
+      } satisfies EarnYield;
+      const registry = AtomRegistry.make({
+        initialValues: [
+          applicationRuntimeInitInitialValue(),
+          Atom.initialValue(earnMachineEntryAtom, classicEntry),
+          Atom.initialValue(
+            appRuntime.layer,
+            Layer.succeed(
+              YieldResourceSource,
+              YieldResourceSource.of({
+                listValidators: (request: ValidatorDirectoryRequest) =>
+                  Effect.succeed({
+                    items: request.preferred
+                      ? []
+                      : [selectedValidator, fallbackValidator],
+                    limit: request.limit,
+                    offset: request.offset,
+                    total: request.preferred ? 0 : 2,
+                  }),
+              } as never)
+            )
+          ),
+          [
+            initYieldAtom(new InitYieldKey({ yieldId: null })),
+            AsyncResult.success(null),
+          ],
+          [
+            mergedTokenOptionsAtom(
+              new TokenOptionsKey({
+                category: null,
+                initToken: null,
+                initTokenNetwork: null,
+                initYieldId: null,
+                scope: null,
+                tokensForEnabledYieldsOnly: false,
+              })
+            ),
+            AsyncResult.success([toTokenOption(requiredYield)]),
+          ],
+          [
+            positionsDataAtom(new PositionsDataKey({ scope: null })),
+            AsyncResult.success(new Map() as PositionsData),
+          ],
+          [
+            earnYieldCatalogAtom(
+              new YieldCatalogKey({
+                category: null,
+                network: requiredYield.token.network,
+                yieldIds: [requiredYield.id],
+              })
+            ),
+            AsyncResult.success([requiredYield]),
+          ],
+        ],
+      });
+      const unmount = registry.mount(earnSelectionValidatorOptionsViewAtom);
+
+      try {
+        await vi.waitFor(() =>
+          expect(
+            registry
+              .get(earnSelectionValidatorOptionsViewAtom)
+              .items.map((validator) => validator.key)
+          ).toEqual([fallbackValidator.key, selectedValidator.key])
+        );
+
+        registry.set(selectEarnSelectionValidatorAtom, selectedValidator.key);
+        expect(
+          registry
+            .get(earnSelectionValidatorOptionsViewAtom)
+            .selected.map((validator) => validator.key)
+        ).toEqual(
+          multiselect
+            ? [fallbackValidator.key, selectedValidator.key]
+            : [selectedValidator.key]
+        );
+
+        registry.set(updateWidgetConfigAtom, {
+          apiKey: "test-api-key",
+          validatorsConfig: {
+            ethereum: {
+              blocked: ["0xAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfAbCd"],
+            },
+          },
+          variant: "default",
+        });
+
+        await vi.waitFor(() =>
+          expect(
+            registry
+              .get(earnSelectionValidatorOptionsViewAtom)
+              .selected.map((validator) => validator.key)
+          ).toEqual([fallbackValidator.key])
+        );
+
+        registry.set(updateWidgetConfigAtom, {
+          apiKey: "test-api-key",
+          variant: "default",
+        });
+
+        await vi.waitFor(() =>
+          expect(
+            registry
+              .get(earnSelectionValidatorOptionsViewAtom)
+              .selected.map((validator) => validator.key)
+          ).toEqual([fallbackValidator.key])
+        );
+
+        registry.set(updateWidgetConfigAtom, {
+          apiKey: "test-api-key",
+          validatorsConfig: {
+            ethereum: {
+              blocked: [selectedValidator.address, fallbackValidator.address],
+            },
+          },
+          variant: "default",
+        });
+
+        await vi.waitFor(() => {
+          expect(
+            registry.get(earnSelectionValidatorOptionsViewAtom).selected
+          ).toEqual([]);
+          expect(registry.get(earnSelectionStatusViewAtom).status).toBe(
+            "no-validators"
+          );
+        });
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    }
+  );
 
   it.each([
     {

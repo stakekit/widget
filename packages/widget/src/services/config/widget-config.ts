@@ -9,6 +9,7 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
+import { validatorAddressIdentities } from "../../domain/earn/validator";
 import { dashboardYieldCategories } from "../../domain/earn/yield";
 import type {
   DashboardYieldCategory,
@@ -218,15 +219,15 @@ const normalizeWidgetConfig = (
         network,
         {
           allowed: validators.allowed
-            ? [...new Set(validators.allowed)]
+            ? validatorAddressIdentities(network, validators.allowed)
             : undefined,
           blocked: validators.blocked
-            ? [...new Set(validators.blocked)]
+            ? validatorAddressIdentities(network, validators.blocked)
             : undefined,
           mergePreferredWithDefault:
             validators.mergePreferredWithDefault ?? true,
           preferred: validators.preferred
-            ? [...new Set(validators.preferred)]
+            ? validatorAddressIdentities(network, validators.preferred)
             : undefined,
           preferredOnly: validators.preferredOnly ?? false,
         },

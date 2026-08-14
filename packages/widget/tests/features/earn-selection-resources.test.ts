@@ -392,4 +392,62 @@ describe("Earn Selection resources", () => {
       allowed.address,
     ]);
   });
+
+  it("matches wildcard validator policy by selected network address identity", () => {
+    const yieldModel = yieldApiYieldFixture();
+    const blocked = {
+      ...yieldApiValidatorFixture({
+        address: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+      }),
+      key: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd" as never,
+    };
+    const allowed = {
+      ...yieldApiValidatorFixture({
+        address: "0x1111111111111111111111111111111111111111",
+      }),
+      key: "0x1111111111111111111111111111111111111111" as never,
+    };
+    const registry = AtomRegistry.make({
+      initialValues: [
+        applicationRuntimeInitInitialValue({
+          apiKey: "test-api-key",
+          validatorsConfig: {
+            "*": {
+              blocked: ["0xAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfAbCd"],
+            },
+          },
+          variant: "default",
+        }),
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.succeed(
+            YieldResourceSource,
+            YieldResourceSource.of({
+              listValidators: () =>
+                Effect.succeed({
+                  items: [blocked, allowed],
+                  limit: 100,
+                  offset: 0,
+                  total: 2,
+                }),
+            } as never)
+          )
+        ),
+      ],
+    });
+    const validators = yieldValidatorsAtom(
+      new YieldValidatorsKey({
+        network: yieldModel.token.network,
+        selectedYieldId: yieldModel.id,
+      })
+    );
+
+    const initial = AsyncResult.getOrThrow(
+      registry.get(validators.initialValidatorsResultAtom)
+    );
+
+    expect(initial.map((validator) => validator.address)).toEqual([
+      allowed.address,
+    ]);
+  });
 });

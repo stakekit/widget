@@ -124,6 +124,40 @@ describe("WidgetConfigService", () => {
     expect(current.externalProviders?.supportedChainIds).toEqual([1, 10, 137]);
   });
 
+  it("normalizes validator policy addresses by network identity", () => {
+    const current = Effect.runSync(
+      WidgetConfigService.use((config) => config.current).pipe(
+        Effect.provide(
+          WidgetConfigService.layer({
+            apiKey: "api-key",
+            validatorsConfig: {
+              cosmos: {
+                blocked: ["CosmosValidator", "cosmosvalidator"],
+              },
+              ethereum: {
+                allowed: ["0xAbC", "0xabc"],
+                blocked: ["0xDeF", "0xdef"],
+                preferred: ["0xF00", "0xf00"],
+              },
+            },
+            variant: "default",
+          })
+        )
+      )
+    );
+
+    expect(current.validatorsConfig).toMatchObject({
+      cosmos: {
+        blocked: ["CosmosValidator", "cosmosvalidator"],
+      },
+      ethereum: {
+        allowed: ["0xabc"],
+        blocked: ["0xdef"],
+        preferred: ["0xf00"],
+      },
+    });
+  });
+
   it("publishes the current value immediately and valid dynamic updates", async () => {
     const values = await Effect.runPromise(
       Effect.gen(function* () {

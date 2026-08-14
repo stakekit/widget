@@ -3,6 +3,7 @@ import type {
   EarnValidator,
   EarnYieldWithProvider,
 } from "../../../../../domain/earn/models";
+import type { ValidatorsConfig } from "../../../../../domain/earn/yield";
 import type { YieldId } from "../../../../../domain/identity/identifiers";
 import type { Network } from "../../../../../domain/network/network";
 import type { PositionsData } from "../../../../../domain/portfolio/positions";
@@ -34,6 +35,7 @@ export type ValidatorObservation =
       readonly _tag: "enabled";
       readonly options: ReadonlyArray<EarnValidator>;
       readonly result: EarnResourceResult<ReadonlyArray<EarnValidator>>;
+      readonly validatorsConfig: ValidatorsConfig;
     }>;
 
 export type EarnViewObservations = Readonly<{

@@ -44,6 +44,11 @@ export const EvmNetworks = {
 
 export type EvmNetworks = (typeof EvmNetworks)[keyof typeof EvmNetworks];
 
+const evmNetworkSet = new Set<string>(Object.values(EvmNetworks));
+
+export const isEvmNetwork = (network: string): network is EvmNetworks =>
+  evmNetworkSet.has(network);
+
 export const CosmosNetworks = {
   Agoric: "agoric",
   Akash: "akash",
