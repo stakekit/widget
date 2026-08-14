@@ -129,7 +129,6 @@ const makeHarness = async ({
       current: Effect.succeed(context.core),
       states: Stream.never,
     },
-    externalProviderMode: true,
     externalProviders: { current: snapshot },
     snapshot: {
       browser: {
@@ -294,11 +293,14 @@ describe("external-provider synchronization", () => {
     );
   });
 
-  it("fails the runtime when a comparable wallet field changes", async () => {
+  it("keeps synchronizing when a comparable wallet field changes", async () => {
+    const notified = await Effect.runPromise(Deferred.make<void>());
     const connector = {
       id: "externalProviderConnector",
       name: "External",
-      onAccountsChanged: () => undefined,
+      onAccountsChanged: () => {
+        void Effect.runPromise(Deferred.succeed(notified, undefined));
+      },
       onChainChanged: () => undefined,
       onSupportedChainsChanged: () => undefined,
       type: "externalProvider",
@@ -306,27 +308,31 @@ describe("external-provider synchronization", () => {
     } as unknown as Connector;
     const harness = await makeHarness({ connected: true, connector });
 
-    const failure = await Effect.runPromise(
+    const failed = await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
           yield* installExternalProviderSynchronization(harness);
           const config = yield* WidgetConfigService;
           yield* config.update({
             apiKey: "api-key",
-            externalProviders: externalProviders(),
+            externalProviders: externalProviders({
+              currentAddress: secondAddress,
+            }),
             isSafe: true,
             variant: "default",
           });
+          yield* Deferred.await(notified);
+          yield* Effect.yieldNow;
 
-          return yield* Deferred.await(harness.invariant);
+          return yield* Deferred.isDone(harness.invariant);
         }).pipe(Effect.provide(harness.configLayer))
       )
     );
 
-    expect(failure).toMatchObject({
-      _tag: "WalletRuntimeInvariantError",
-      reason: "wallet-topology-changed",
-    });
+    expect(failed).toBe(false);
+    expect(harness.bootstrap.externalProviders?.current.currentAddress).toBe(
+      secondAddress
+    );
   });
 
   it("fails the runtime when the fixed external connector is missing", async () => {

@@ -58,7 +58,6 @@ type WalletBootstrapSnapshot = {
 export type WalletBootstrapResult = {
   readonly controller: WalletController;
   readonly core: WagmiCoreObservation;
-  readonly externalProviderMode: boolean;
   readonly externalProviders: MutableExternalProviderRef | undefined;
   readonly snapshot: WalletBootstrapSnapshot;
 };
@@ -211,7 +210,6 @@ export const bootstrapWallet = Effect.gen(function* () {
   return {
     controller,
     core,
-    externalProviderMode: walletConfig.hasExternalProvider,
     externalProviders,
     snapshot,
   };

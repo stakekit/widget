@@ -258,7 +258,7 @@ describe("WalletService acquisition", () => {
     });
   });
 
-  it("terminates state and commands when wallet topology changes", async () => {
+  it("keeps state and commands available when wallet topology changes", async () => {
     const configLayer = makeConfigLayer();
     const wagmiConfig = makeDefaultConfig();
     const controller = makeWalletTestController({
@@ -280,28 +280,20 @@ describe("WalletService acquisition", () => {
         Effect.gen(function* () {
           const wallet = yield* WalletService;
           const config = yield* WidgetConfigService;
-          const terminal = yield* wallet.states.pipe(
-            Stream.runDrain,
-            Effect.flip,
-            Effect.forkChild({ startImmediately: true })
-          );
           yield* config.update({
             apiKey: "api-key",
             variant: "default",
             wagmi: { forceWalletConnectOnly: true },
           });
-          const streamFailure = yield* Fiber.join(terminal);
-          const commandFailure = yield* wallet.state.pipe(Effect.flip);
-          return { commandFailure, streamFailure };
+          yield* Effect.yieldNow;
+          const state = yield* wallet.state;
+          return { config: wallet.wagmiConfig, state };
         }).pipe(Effect.provide(layer))
       )
     );
 
-    expect(result.streamFailure).toMatchObject({
-      _tag: "WalletRuntimeInvariantError",
-      reason: "wallet-topology-changed",
-    });
-    expect(result.commandFailure).toBe(result.streamFailure);
+    expect(result.config).toBe(wagmiConfig);
+    expect(result.state).toBeDefined();
   });
 
   it("constructs fresh scoped services after remount", async () => {

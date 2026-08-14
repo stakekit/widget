@@ -603,7 +603,6 @@ type SettingsPropsBase = {
     forceWalletConnectOnly?: boolean;
     __customConnectors__?: (chains: Chain[]) => WalletList;
   };
-  disableGasCheck?: boolean;
   hideNetworkLogo?: boolean;
   disableInitLayoutAnimation?: boolean;
   disableResizingInputFontSize?: boolean;

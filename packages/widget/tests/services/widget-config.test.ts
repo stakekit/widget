@@ -54,7 +54,6 @@ describe("WidgetConfigService", () => {
       dashboardVariant: true,
       dashboardYieldCategoryOrder: ["stake", "rwa", "defi"],
       disableAutoScrollToTop: false,
-      disableGasCheck: false,
       disableInitLayoutAnimation: false,
       disableInjectedProviderDiscovery: false,
       disableResizingInputFontSize: false,

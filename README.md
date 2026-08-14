@@ -122,7 +122,6 @@ type SettingsProps = {
   };
   onMountAnimationComplete?: () => void;
   externalProviders?: SKExternalProviders;
-  disableGasCheck?: boolean;
   hideNetworkLogo?: boolean;
   disableInitLayoutAnimation?: boolean;
   disableResizingInputFontSize?: boolean;

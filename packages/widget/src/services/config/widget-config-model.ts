@@ -43,7 +43,6 @@ export type WidgetConfig = {
     SettingsProps["dashboardYieldCategoryOrder"]
   >;
   readonly disableAutoScrollToTop: boolean;
-  readonly disableGasCheck: boolean;
   readonly disableInitLayoutAnimation: boolean;
   readonly disableInjectedProviderDiscovery: boolean;
   readonly disableResizingInputFontSize: boolean;

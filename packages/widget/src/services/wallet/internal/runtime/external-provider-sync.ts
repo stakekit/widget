@@ -52,7 +52,7 @@ export const installExternalProviderSynchronization = Effect.fn(
 }): Effect.fn.Return<void, never, Scope.Scope | WidgetConfigService> {
   const config = yield* WidgetConfigService;
   const memory = yield* Ref.make(initialMemory);
-  const reportedUnstableKeys = yield* Ref.make<ReadonlyArray<string>>([]);
+  const reportedIgnoredKeys = yield* Ref.make<ReadonlyArray<string>>([]);
 
   const failInvariant = Effect.fn("failInvariant")(function* (
     reason: WalletRuntimeInvariantError["reason"],
@@ -69,21 +69,27 @@ export const installExternalProviderSynchronization = Effect.fn(
     yield* state.failInvariant(error);
   });
 
-  const reportUnstableWalletProps = Effect.fn("reportUnstableWalletProps")(
-    function* (keys: ReadonlyArray<string>) {
-      const reported = yield* Ref.get(reportedUnstableKeys);
+  const reportIgnoredWalletProps = Effect.fn("reportIgnoredWalletProps")(
+    function* ({
+      event,
+      keys,
+      message,
+    }: {
+      readonly event: string;
+      readonly keys: ReadonlyArray<string>;
+      readonly message: string;
+    }) {
+      const reported = yield* Ref.get(reportedIgnoredKeys);
       const fresh = keys.filter((key) => !reported.includes(key));
       if (fresh.length === 0) return;
 
-      yield* Ref.update(reportedUnstableKeys, (current) => [
+      yield* Ref.update(reportedIgnoredKeys, (current) => [
         ...current,
         ...fresh,
       ]);
-      yield* Effect.logWarning(
-        "Wallet configuration functions changed identity after bootstrap and were ignored"
-      ).pipe(
+      yield* Effect.logWarning(message).pipe(
         Effect.annotateLogs({
-          event: "wallet_config_function_unstable",
+          event,
           keys: fresh,
         })
       );
@@ -93,7 +99,7 @@ export const installExternalProviderSynchronization = Effect.fn(
   const synchronize = Effect.fn("synchronize")(function* (
     context: WalletStateContext
   ) {
-    if (!bootstrap.externalProviderMode || !bootstrap.externalProviders) {
+    if (!bootstrap.externalProviders) {
       return;
     }
 
@@ -233,17 +239,26 @@ export const installExternalProviderSynchronization = Effect.fn(
         const snapshot = next.externalProviders;
 
         if (difference.material.length > 0) {
-          yield* failInvariant("wallet-topology-changed", {
-            changedKeys: difference.material,
+          yield* reportIgnoredWalletProps({
+            event: "wallet_topology_changed",
+            keys: difference.material,
+            message: "Wallet topology changed after bootstrap and was ignored",
           });
-          return snapshot;
         }
 
         if (difference.opaque.length > 0) {
-          yield* reportUnstableWalletProps(difference.opaque);
+          yield* reportIgnoredWalletProps({
+            event: "wallet_config_function_unstable",
+            keys: difference.opaque,
+            message:
+              "Wallet configuration functions changed identity after bootstrap and were ignored",
+          });
         }
 
-        if ((snapshot !== undefined) !== bootstrap.externalProviderMode) {
+        if (
+          (snapshot !== undefined) !==
+          (bootstrap.externalProviders !== undefined)
+        ) {
           yield* failInvariant("external-provider-presence-changed");
           return snapshot;
         }

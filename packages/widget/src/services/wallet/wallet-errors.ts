@@ -53,8 +53,7 @@ export class WalletRuntimeInvariantError extends Data.TaggedError(
   readonly reason:
     | "external-provider-connector-mismatch"
     | "external-provider-connector-missing"
-    | "external-provider-presence-changed"
-    | "wallet-topology-changed";
+    | "external-provider-presence-changed";
 }> {}
 
 export class WalletIntegrationError extends Data.TaggedError(

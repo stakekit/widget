@@ -259,7 +259,6 @@ const normalizeWidgetConfig = (
     dashboardVariant,
     dashboardYieldCategoryOrder,
     disableAutoScrollToTop: hostConfiguration.disableAutoScrollToTop ?? false,
-    disableGasCheck: hostConfiguration.disableGasCheck ?? false,
     disableInitLayoutAnimation:
       hostConfiguration.disableInitLayoutAnimation ?? false,
     disableInjectedProviderDiscovery:
