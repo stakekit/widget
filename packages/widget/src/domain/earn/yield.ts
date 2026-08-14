@@ -84,32 +84,6 @@ export const dashboardYieldCategories = [
   DashboardYieldCategory.Stake,
 ] as const satisfies ReadonlyArray<DashboardYieldCategoryType>;
 
-const dashboardYieldCategoryValues = new Set<string>(dashboardYieldCategories);
-
-export const normalizeDashboardYieldCategoryOrder = (
-  order?: ReadonlyArray<unknown> | null
-): DashboardYieldCategoryType[] => {
-  const normalized: DashboardYieldCategoryType[] = [];
-
-  for (const category of order ?? []) {
-    if (
-      typeof category === "string" &&
-      dashboardYieldCategoryValues.has(category) &&
-      !normalized.includes(category as DashboardYieldCategoryType)
-    ) {
-      normalized.push(category as DashboardYieldCategoryType);
-    }
-  }
-
-  for (const category of dashboardYieldCategories) {
-    if (!normalized.includes(category)) {
-      normalized.push(category);
-    }
-  }
-
-  return normalized;
-};
-
 /**
  * Maps locally known API yield types to dashboard categories. Unknown future
  * API types are intentionally not included in filtered queries because the app

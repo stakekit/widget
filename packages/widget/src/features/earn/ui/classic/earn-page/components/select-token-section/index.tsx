@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
+import { useWidgetConfig } from "../../../../../../../app/composition/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
 import * as AmountToggle from "../../../../../../../shared/ui/components/amount-toggle";
 import {

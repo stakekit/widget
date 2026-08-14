@@ -3,7 +3,7 @@ import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
-import { useWidgetConfig } from "../../../app/config/use-widget-config";
+import { useWidgetConfig } from "../../../app/composition/use-widget-config";
 import { shouldShowDisconnect } from "../../../services/wallet/wallet-connectors";
 import { useTrackEvent } from "../../tracking/state";
 import { useSKWallet, useWalletConfig } from "../../wallet/state";

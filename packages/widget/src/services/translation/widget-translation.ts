@@ -1,5 +1,6 @@
 import {
   Context,
+  Deferred,
   Effect,
   Equal,
   Layer,
@@ -17,10 +18,8 @@ import { createInstance } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import merge from "lodash.merge";
 import { initReactI18next } from "react-i18next";
-import {
-  type WidgetConfig,
-  WidgetConfigService,
-} from "../config/widget-config";
+import { WidgetConfigService } from "../config/widget-config";
+import type { WidgetConfig } from "../config/widget-config-model";
 import translationEN from "./English/translations.json";
 import utilaTranslations from "./English/utila-variant.json";
 import translationFR from "./French/translations.json";
@@ -250,17 +249,18 @@ const makeWidgetTranslation = Effect.fn("makeWidgetTranslation")(
     // Local resources are ready before the module is exposed. Remote error
     // enrichment and subsequent configuration reconciliation remain scoped,
     // non-blocking background work for this Application Runtime Generation.
-    const initialSettings = selectWidgetTranslationSettings(config.initial);
-    yield* applyConfig(initialSettings);
-    yield* Stream.concat(
-      Stream.succeed(initialSettings),
-      config.changes.pipe(Stream.map(selectWidgetTranslationSettings))
-    ).pipe(
+    const ready = yield* Deferred.make<void>();
+    yield* config.values.pipe(
+      Stream.map(selectWidgetTranslationSettings),
       Stream.changesWith(equalWidgetTranslationSettings),
-      Stream.drop(1),
-      Stream.runForEach(applyConfig),
+      Stream.runForEach((settings) =>
+        applyConfig(settings).pipe(
+          Effect.ensuring(Deferred.succeed(ready, undefined))
+        )
+      ),
       Effect.forkScoped({ startImmediately: true })
     );
+    yield* Deferred.await(ready);
 
     return WidgetTranslation.of({ i18n });
   }

@@ -1,6 +1,5 @@
-import { Effect, Layer, Stream } from "effect";
+import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 
@@ -27,26 +26,23 @@ describe("tracking service", () => {
     const firstTrackEvent = vi.fn();
     const secondTrackEvent = vi.fn();
     const trackPageView = vi.fn();
-    let input = normalizeWidgetConfig({
+    const input = {
       apiKey: "",
       tracking: { trackEvent: firstTrackEvent, trackPageView },
-      variant: "default",
-    });
-    const layer = TrackingService.layer.pipe(
-      Layer.provide(
-        WidgetConfigService.layer({
-          initial: input,
-          changes: Stream.never,
-          current: Effect.sync(() => input),
-        })
-      )
+      variant: "default" as const,
+    };
+    const configLayer = WidgetConfigService.layer(input);
+    const layer = Layer.merge(
+      configLayer,
+      TrackingService.layer.pipe(Layer.provide(configLayer))
     );
 
     await Effect.runPromise(
       TrackingService.use((tracking) =>
         Effect.gen(function* () {
+          const config = yield* WidgetConfigService;
           yield* tracking.trackEvent("txSigned", { txId: "first" });
-          input = normalizeWidgetConfig({
+          yield* config.update({
             apiKey: "",
             tracking: { trackEvent: secondTrackEvent, trackPageView },
             variant: "default",
@@ -69,20 +65,13 @@ describe("tracking service", () => {
   });
 
   it("initializes variant tracking once during layer construction", async () => {
-    const input = normalizeWidgetConfig({
+    const input = {
       apiKey: "",
       chainModal: () => null,
-      tracking: undefined,
-      variant: "zerion",
-    });
+      variant: "zerion" as const,
+    };
     const layer = TrackingService.layer.pipe(
-      Layer.provide(
-        WidgetConfigService.layer({
-          initial: input,
-          changes: Stream.never,
-          current: Effect.succeed(input),
-        })
-      )
+      Layer.provide(WidgetConfigService.layer(input))
     );
 
     await Effect.runPromise(

@@ -1,7 +1,6 @@
 import { Option } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetConfigAtom } from "../../../app/config/settings";
-import { config } from "../../../shared/config/widget-defaults";
+import { widgetConfigAtom } from "../../../app/runtime/widget-config";
 
 type MountAnimationState = {
   readonly earnPage: boolean;
@@ -33,12 +32,9 @@ export const mountAnimationStateAtom = Atom.writable<
     context.self<MountAnimationState>().pipe(
       Option.getOrElse(() => {
         const widgetConfig = context.once(widgetConfigAtom);
-        const testModeStartsFinished =
-          config.env.isTestMode &&
-          widgetConfig.disableInitLayoutAnimation === undefined;
 
         return makeMountAnimationState(
-          !!widgetConfig.dashboardVariant || testModeStartsFinished
+          widgetConfig.mountAnimationStartsFinished
         );
       })
     ),

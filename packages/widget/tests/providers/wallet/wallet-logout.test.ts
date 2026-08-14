@@ -2,7 +2,6 @@ import { Deferred, Effect, Fiber, Layer, Stream } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 import { mainnet } from "wagmi/chains";
-import { normalizeWidgetConfig } from "../../../src/app/config/settings";
 import { LegacyResourceSource } from "../../../src/services/api/legacy-resource-source";
 import { YieldResourceSource } from "../../../src/services/api/yield-resource-source";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
@@ -51,16 +50,12 @@ const makeLogoutLayer = ({
   readonly close: Effect.Effect<void>;
   readonly disconnect: Effect.Effect<void, WalletConnectionError>;
 }) => {
-  const settings = normalizeWidgetConfig({
+  const settings = {
     apiKey: "api-key",
     disableInjectedProviderDiscovery: true,
-    variant: "default",
-  });
-  const configLayer = WidgetConfigService.layer({
-    changes: Stream.never,
-    current: Effect.succeed(settings),
-    initial: settings,
-  });
+    variant: "default" as const,
+  };
+  const configLayer = WidgetConfigService.layer(settings);
   const wagmiConfig = makeDefaultConfig();
   const controller = makeWalletTestController({
     actions: { disconnect: () => disconnect },

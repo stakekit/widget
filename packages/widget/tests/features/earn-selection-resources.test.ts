@@ -2,7 +2,6 @@ import { Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import * as Reactivity from "effect/unstable/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
-import { widgetConfigAtom } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { TokenBalancesResponse } from "../../src/domain/finance/models";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
@@ -31,6 +30,7 @@ import {
   yieldApiValidatorFixture,
   yieldApiYieldFixture,
 } from "../fixtures";
+import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 describe("Earn Selection resources", () => {
   it("uses balances only to enrich canonical tokens with amounts", async () => {
@@ -323,6 +323,7 @@ describe("Earn Selection resources", () => {
     const yieldModel = yieldApiYieldFixture();
     const registry = AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue(),
         Atom.initialValue(
           appRuntime.layer,
           Layer.succeed(YieldResourceSource, {
@@ -352,6 +353,13 @@ describe("Earn Selection resources", () => {
     };
     const registry = AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue({
+          apiKey: "test-api-key",
+          validatorsConfig: {
+            ethereum: { blocked: [blocked.address] },
+          },
+          variant: "default",
+        }),
         Atom.initialValue(
           appRuntime.layer,
           Layer.succeed(
@@ -368,12 +376,6 @@ describe("Earn Selection resources", () => {
           )
         ),
       ],
-    });
-    registry.set(widgetConfigAtom, {
-      ...registry.get(widgetConfigAtom),
-      validatorsConfig: {
-        ethereum: { blocked: [blocked.address] },
-      },
     });
     const validators = yieldValidatorsAtom(
       new YieldValidatorsKey({

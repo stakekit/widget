@@ -1,23 +1,235 @@
+import { Effect, Fiber, Result, Stream } from "effect";
 import { describe, expect, it } from "vitest";
-import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import type { SettingsProps } from "../../src/public-api/types";
 import {
   diffWidgetWalletConfig,
-  normalizeWidgetBootstrapConfig,
+  InvalidWidgetConfiguration,
+  selectWidgetBootstrapSnapshot,
+  WidgetConfigService,
 } from "../../src/services/config/widget-config";
 
 const walletTopology = (overrides: Partial<SettingsProps> = {}) => {
-  const settings = normalizeWidgetConfig({
-    ...overrides,
-    apiKey: "api-key",
-    variant: "default",
+  return Effect.runSync(
+    Effect.gen(function* () {
+      const config = yield* WidgetConfigService;
+      const settings = yield* config.current;
+
+      return selectWidgetBootstrapSnapshot(settings).wallet;
+    }).pipe(
+      Effect.provide(
+        WidgetConfigService.layer({
+          ...overrides,
+          apiKey: "api-key",
+          variant: "default",
+        })
+      )
+    )
+  );
+};
+
+describe("WidgetConfigService", () => {
+  it("normalizes Host Configuration into one complete Widget Configuration", () => {
+    const current = Effect.runSync(
+      WidgetConfigService.use((config) => config.current).pipe(
+        Effect.provide(
+          WidgetConfigService.layer({
+            apiKey: "api-key",
+            dashboardVariant: true,
+            dashboardYieldCategoryOrder: ["stake", "stake", "rwa"],
+            preferredTokenYieldsPerNetwork: {
+              ethereum: {
+                "ETHEREUM-ETH": "ethereum-eth-native-staking",
+              },
+            },
+            variant: "default",
+          })
+        )
+      )
+    );
+
+    expect(current).toMatchObject({
+      baseUrl: "https://api.stakek.it/",
+      borrowApiUrl: "https://borrow.yield.xyz",
+      borrowEnabled: false,
+      dashboardVariant: true,
+      dashboardYieldCategoryOrder: ["stake", "rwa", "defi"],
+      disableAutoScrollToTop: false,
+      disableGasCheck: false,
+      disableInitLayoutAnimation: false,
+      disableInjectedProviderDiscovery: false,
+      disableResizingInputFontSize: false,
+      hideAccountAndChainSelector: false,
+      hideChainSelector: false,
+      hideNetworkLogo: false,
+      institutionalWallets: false,
+      isSafe: false,
+      mountAnimationStartsFinished: true,
+      preferredTokenYieldsPerNetwork: {
+        ethereum: {
+          "ethereum-eth": "ethereum-eth-native-staking",
+        },
+      },
+      yieldGrouping: "category",
+      yieldsApiUrl: "https://api.yield.xyz/",
+    });
   });
 
-  return normalizeWidgetBootstrapConfig({
-    isLedgerLive: settings.isLedgerLive,
-    settings,
-  }).wallet;
-};
+  it("fails startup when initial Host Configuration is semantically invalid", () => {
+    const result = Effect.runSync(
+      WidgetConfigService.use((config) => config.current).pipe(
+        Effect.provide(
+          WidgetConfigService.layer({
+            apiKey: "api-key",
+            borrowEnabled: true,
+            variant: "default",
+          })
+        ),
+        Effect.result
+      )
+    );
+
+    expect(Result.isFailure(result)).toBe(true);
+    if (Result.isFailure(result)) {
+      expect(result.failure).toBeInstanceOf(InvalidWidgetConfiguration);
+      expect(result.failure.issues).toEqual([
+        "borrow-requires-dashboard",
+        "borrow-requires-category-grouping",
+      ]);
+    }
+  });
+
+  it("canonicalizes external-provider chains and resolved Borrow API URLs", () => {
+    const current = Effect.runSync(
+      WidgetConfigService.use((config) => config.current).pipe(
+        Effect.provide(
+          WidgetConfigService.layer({
+            apiKey: "api-key",
+            borrowApiUrl: "  https://borrow.example.com///  ",
+            externalProviders: {
+              currentAddress: "0xWallet",
+              provider: {
+                sendTransaction: async () => "hash",
+                signMessage: async () => "0xSignature",
+                switchChain: async () => {},
+              },
+              supportedChainIds: [137, 1, 137, 10],
+              type: "generic",
+            },
+            variant: "default",
+          })
+        )
+      )
+    );
+
+    expect(current.borrowApiUrl).toBe("https://borrow.example.com");
+    expect(current.externalProviders?.supportedChainIds).toEqual([1, 10, 137]);
+  });
+
+  it("publishes the current value immediately and valid dynamic updates", async () => {
+    const values = await Effect.runPromise(
+      Effect.gen(function* () {
+        const config = yield* WidgetConfigService;
+        const collected = yield* config.values.pipe(
+          Stream.take(2),
+          Stream.runCollect,
+          Effect.forkScoped({ startImmediately: true })
+        );
+
+        yield* Effect.yieldNow;
+        const outcome = yield* config.update({
+          apiKey: "api-key",
+          borrowEnabled: true,
+          dashboardVariant: true,
+          variant: "default",
+        });
+        const values = yield* Fiber.join(collected);
+
+        return { outcome, values };
+      }).pipe(
+        Effect.provide(
+          WidgetConfigService.layer({ apiKey: "api-key", variant: "default" })
+        ),
+        Effect.scoped
+      )
+    );
+
+    expect(values.outcome).toEqual({ _tag: "Updated" });
+    expect(values.values.map((value) => value.borrowEnabled)).toEqual([
+      false,
+      true,
+    ]);
+  });
+
+  it("rejects semantically invalid updates and retains the last valid value", async () => {
+    const result = await Effect.runPromise(
+      Effect.gen(function* () {
+        const config = yield* WidgetConfigService;
+        const outcome = yield* config.update({
+          apiKey: "api-key",
+          borrowEnabled: true,
+          variant: "default",
+        });
+        const current = yield* config.current;
+
+        return { current, outcome };
+      }).pipe(
+        Effect.provide(
+          WidgetConfigService.layer({ apiKey: "api-key", variant: "default" })
+        )
+      )
+    );
+
+    expect(result.outcome._tag).toBe("RejectedInvalid");
+    expect(result.current.apiKey).toBe("api-key");
+  });
+
+  it("treats a changed host function identity as an update", async () => {
+    const first: NonNullable<SettingsProps["mapWalletFn"]> = (wallet) => wallet;
+    const second: NonNullable<SettingsProps["mapWalletFn"]> = (wallet) =>
+      wallet;
+    const outcome = await Effect.runPromise(
+      WidgetConfigService.use((config) =>
+        config.update({
+          apiKey: "api-key",
+          mapWalletFn: second,
+          variant: "default",
+        })
+      ).pipe(
+        Effect.provide(
+          WidgetConfigService.layer({
+            apiKey: "api-key",
+            mapWalletFn: first,
+            variant: "default",
+          })
+        )
+      )
+    );
+
+    expect(outcome).toEqual({ _tag: "Updated" });
+  });
+
+  it("applies a changed API key as an ordinary update", async () => {
+    const result = await Effect.runPromise(
+      Effect.gen(function* () {
+        const config = yield* WidgetConfigService;
+        const update = yield* config.update({
+          apiKey: "different-api-key",
+          variant: "default",
+        });
+        const current = yield* config.current;
+
+        return { current, update };
+      }).pipe(
+        Effect.provide(
+          WidgetConfigService.layer({ apiKey: "api-key", variant: "default" })
+        )
+      )
+    );
+
+    expect(result.update).toEqual({ _tag: "Updated" });
+    expect(result.current.apiKey).toBe("different-api-key");
+  });
+});
 
 describe("wallet topology difference", () => {
   it("reports nothing for separately built but equal configurations", () => {

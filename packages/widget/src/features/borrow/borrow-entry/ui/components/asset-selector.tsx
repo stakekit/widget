@@ -1,7 +1,7 @@
 import { Trigger } from "@radix-ui/react-dialog";
 import clsx from "clsx";
 import type { ReactNode } from "react";
-import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
+import { useWidgetConfig } from "../../../../../app/composition/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";

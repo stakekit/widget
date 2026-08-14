@@ -3,10 +3,6 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import type { EarnValidator, EarnYield } from "../../src/domain/earn/models";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
@@ -72,6 +68,7 @@ import {
   yieldApiYieldFixture,
 } from "../fixtures";
 import { decodeValidator } from "../utils/validators";
+import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const firstYield = yieldApiYieldFixture();
 const secondYield = yieldApiYieldFixture({
@@ -145,6 +142,7 @@ const makeClassicRegistry = ({
 } = {}) =>
   AtomRegistry.make({
     initialValues: [
+      applicationRuntimeInitInitialValue(),
       Atom.initialValue(earnMachineEntryAtom, classicEntry),
       [
         initYieldAtom(new InitYieldKey({ yieldId: null })),
@@ -239,6 +237,7 @@ const makeRequiredValidatorRegistry = (
   return {
     registry: AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue(),
         Atom.initialValue(earnMachineEntryAtom, classicEntry),
         [
           initYieldAtom(new InitYieldKey({ yieldId: null })),
@@ -297,15 +296,12 @@ const makeDashboardRegistry = () => {
 
   return AtomRegistry.make({
     initialValues: [
-      [
-        widgetConfigAtom,
-        normalizeWidgetConfig({
-          apiKey: "test-key",
-          dashboardVariant: true,
-          variant: "default",
-          yieldGrouping: "category",
-        }),
-      ],
+      applicationRuntimeInitInitialValue({
+        apiKey: "test-key",
+        dashboardVariant: true,
+        variant: "default",
+        yieldGrouping: "category",
+      }),
       Atom.initialValue(earnMachineEntryAtom, {
         ...classicEntry,
         categoryOrder,
@@ -396,6 +392,7 @@ describe("Earn Selection", () => {
     const tokenOptions = [toTokenOption(firstYield)];
     const registry = AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue(),
         Atom.initialValue(
           appRuntime.layer,
           Layer.succeed(
@@ -475,7 +472,9 @@ describe("Earn Selection", () => {
   });
 
   it("discards validator search when its entry surface is released", async () => {
-    const registry = AtomRegistry.make();
+    const registry = AtomRegistry.make({
+      initialValues: [applicationRuntimeInitInitialValue()],
+    });
     let unmount = registry.mount(earnSelectionValidatorOptionsViewAtom);
 
     try {
@@ -831,6 +830,11 @@ describe("Earn Selection", () => {
     ({ categories, expectedStatus }) => {
       const registry = AtomRegistry.make({
         initialValues: [
+          applicationRuntimeInitInitialValue({
+            apiKey: "test-key",
+            dashboardVariant: true,
+            variant: "default",
+          }),
           Atom.initialValue(earnMachineEntryAtom, {
             ...classicEntry,
             categoryOrder,

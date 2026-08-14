@@ -1,10 +1,10 @@
 import { RegistryProvider } from "@effect/atom-react";
 import type { ComponentProps, PropsWithChildren } from "react";
 import { WidgetConfigBoundaryAdapter } from "../../src/app/composition/providers/widget-config-binding";
-import { widgetConfigAtom } from "../../src/app/config/settings";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
-import { applicationRoutesAtom } from "../../src/app/runtime/application-router-runtime";
-import type { WidgetConfig } from "../../src/services/config/widget-config";
+import { applicationRuntimeInitAtom } from "../../src/app/runtime/application-runtime-init";
+import type { SKAppProps } from "../../src/public-api/types";
+import type { WidgetConfig } from "../../src/services/config/widget-config-model";
 
 export const TestAtomRuntimeProvider = ({
   children,
@@ -19,11 +19,17 @@ export const TestAtomRuntimeProvider = ({
   <RegistryProvider
     initialValues={[
       ...(initialValues ?? []),
-      [widgetConfigAtom, settings],
-      [applicationRoutesAtom, applicationRoutes],
+      [
+        applicationRuntimeInitAtom,
+        {
+          hostConfiguration: settings as SKAppProps,
+          isLedgerLive: settings.isLedgerLive,
+          routes: applicationRoutes,
+        },
+      ],
     ]}
   >
-    <WidgetConfigBoundaryAdapter settings={settings}>
+    <WidgetConfigBoundaryAdapter hostConfiguration={settings as SKAppProps}>
       {children}
     </WidgetConfigBoundaryAdapter>
   </RegistryProvider>

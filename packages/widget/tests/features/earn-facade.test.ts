@@ -3,10 +3,6 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import {
   type EarnTokenOption,
@@ -29,6 +25,7 @@ import {
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 import { decodeValidator } from "../utils/validators";
+import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const trackingLayer = (trackEvent: () => Effect.Effect<void>) =>
   Atom.initialValue(
@@ -46,6 +43,7 @@ describe("Earn facade", () => {
     const trackEvent = vi.fn(() => Effect.void);
     const registry = AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue(),
         trackingLayer(trackEvent),
         Atom.initialValue(earnSelectionValidatorOptionsViewAtom, {
           canSelect: true,
@@ -118,10 +116,7 @@ describe("Earn facade", () => {
     } satisfies EarnTokenOption;
     const registry = AtomRegistry.make({
       initialValues: [
-        Atom.initialValue(
-          widgetConfigAtom,
-          normalizeWidgetConfig({ apiKey: "test", variant: "default" })
-        ),
+        applicationRuntimeInitInitialValue(),
         Atom.initialValue(earnSelectionStatusViewAtom, {
           canRetry: false,
           failureStage: null,
@@ -167,7 +162,9 @@ describe("Earn facade", () => {
   });
 
   it("forwards validator search into the stable selection view", () => {
-    const registry = AtomRegistry.make();
+    const registry = AtomRegistry.make({
+      initialValues: [applicationRuntimeInitInitialValue()],
+    });
     const unmount = registry.mount(earnValidatorSelectionViewAtom);
 
     try {

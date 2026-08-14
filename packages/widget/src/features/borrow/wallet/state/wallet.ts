@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetConfigAtom } from "../../../../app/config/settings";
+import { widgetConfigAtom } from "../../../../app/runtime/widget-config";
 import { toBorrowWalletStateProjection } from "../../../../services/borrow/wallet-state-projection";
 import { disconnectedNormalizedWalletState } from "../../../../services/wallet/wallet-state";
 import { walletStateResultAtom } from "../../../wallet/state";

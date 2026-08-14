@@ -1,7 +1,7 @@
 import type { MotionProps, TargetAndTransition } from "motion/react";
 import { motion } from "motion/react";
 import type { PropsWithChildren } from "react";
-import { useWidgetConfig } from "../../../app/config/use-widget-config";
+import { useWidgetConfig } from "../../../app/composition/use-widget-config";
 import { useDisableTransitionDuration } from "../../../shared/react/layout-transition";
 import {
   useMountAnimation,

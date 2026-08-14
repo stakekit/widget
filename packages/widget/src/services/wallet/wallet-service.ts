@@ -51,7 +51,7 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
   const persistence = yield* WidgetPersistence;
   const storageCleanup = yield* WalletStorageCleanup;
   const accountOperations = yield* makeScopedSerialOperations();
-  const bootstrap = yield* bootstrapWallet();
+  const bootstrap = yield* bootstrapWallet;
   const state = yield* makeWalletStateRuntime({
     controller: bootstrap.controller,
     core: bootstrap.core,

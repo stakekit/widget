@@ -1,5 +1,4 @@
-import { Effect, Layer, Stream } from "effect";
-import { normalizeWidgetConfig } from "../../src/app/config/settings";
+import { Layer } from "effect";
 import { BorrowOperations } from "../../src/services/api/borrow-operations";
 import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
 import { GeoBlockService } from "../../src/services/api/geo-block-state";
@@ -8,22 +7,17 @@ import { ApiTransportService } from "../../src/services/api/transport";
 import { YieldOperations } from "../../src/services/api/yield-operations";
 import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
 import {
-  type WidgetApiConfig,
+  type ApplicationApiIdentity,
   WidgetConfigService,
 } from "../../src/services/config/widget-config";
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
 
-const makeTestLayers = (api: WidgetApiConfig) => {
-  const config = normalizeWidgetConfig({
+const makeTestLayers = (api: ApplicationApiIdentity) => {
+  const configLayer = WidgetConfigService.layer({
     ...api,
     borrowEnabled: true,
     dashboardVariant: true,
     variant: "default",
-  });
-  const configLayer = WidgetConfigService.layer({
-    initial: config,
-    changes: Stream.never,
-    current: Effect.succeed(config),
   });
   const richErrorLayer = RichErrorService.layer.pipe(
     Layer.provide(configLayer)
@@ -45,7 +39,7 @@ const makeTestLayers = (api: WidgetApiConfig) => {
   return { apiLayer, geoBlockLayer, richErrorLayer } as const;
 };
 
-export const makeTestStakeKitApiLayer = (api: WidgetApiConfig) => {
+export const makeTestStakeKitApiLayer = (api: ApplicationApiIdentity) => {
   const { apiLayer, geoBlockLayer, richErrorLayer } = makeTestLayers(api);
 
   return Layer.mergeAll(apiLayer, geoBlockLayer, richErrorLayer).pipe(

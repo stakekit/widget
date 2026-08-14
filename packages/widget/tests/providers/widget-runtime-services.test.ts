@@ -2,16 +2,12 @@ import { Cause, Deferred, Effect, Fiber, Option, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../src/app/config/settings";
+import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { applicationRuntimeInitAtom } from "../../src/app/runtime/application-runtime-init";
+import type { SKAppProps } from "../../src/public-api/types";
 import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
-import {
-  type WidgetConfig,
-  WidgetConfigService,
-} from "../../src/services/config/widget-config";
+import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 
 const firstTrackingProbeAtom = appRuntime.atom(
@@ -27,15 +23,25 @@ const widgetConfigProbeAtom = appRuntime.atom(
   WidgetConfigService.use((config) => Effect.succeed(config))
 );
 
-const makeConfig = (trackEvent: (event: string, properties?: object) => void) =>
-  normalizeWidgetConfig({
-    apiKey: "test-api-key",
-    tracking: { trackEvent },
-    variant: "default",
-  });
+const makeConfig = (
+  trackEvent: (event: string, properties?: object) => void
+) => ({
+  apiKey: "test-api-key",
+  tracking: { trackEvent },
+  variant: "default" as const,
+});
 
-const runtimeInitialValues = (config: WidgetConfig) =>
-  [[widgetConfigAtom, config]] as const;
+const runtimeInitialValues = (hostConfiguration: SKAppProps) =>
+  [
+    [
+      applicationRuntimeInitAtom,
+      {
+        hostConfiguration,
+        isLedgerLive: false,
+        routes: applicationRoutes,
+      },
+    ],
+  ] as const;
 
 describe("widget runtime service graph", () => {
   it("exposes the current widget config and registry-scoped changes", async () => {
@@ -51,10 +57,9 @@ describe("widget runtime service graph", () => {
       const config = AsyncResult.getOrThrow(
         registry.get(widgetConfigProbeAtom)
       );
-      expect(config.initial).toBe(initialConfig);
       const ready = await Effect.runPromise(Deferred.make<void>());
       const changesFiber = Effect.runFork(
-        config.changes.pipe(
+        config.values.pipe(
           Stream.tap(() => Deferred.succeed(ready, undefined)),
           Stream.take(2),
           Stream.runCollect
@@ -62,15 +67,22 @@ describe("widget runtime service graph", () => {
       );
 
       await Effect.runPromise(Deferred.await(ready));
-      expect(await Effect.runPromise(config.current)).toBe(initialConfig);
+      expect(
+        (await Effect.runPromise(config.current)).tracking?.trackEvent
+      ).toBe(firstTrack);
 
-      registry.set(widgetConfigAtom, replacementConfig);
+      await Effect.runPromise(config.update(replacementConfig));
 
       const changes = Array.from(
         await Effect.runPromise(Fiber.join(changesFiber))
       );
-      expect(changes).toEqual([initialConfig, replacementConfig]);
-      expect(await Effect.runPromise(config.current)).toBe(replacementConfig);
+      expect(changes.map((value) => value.tracking?.trackEvent)).toEqual([
+        firstTrack,
+        replacementTrack,
+      ]);
+      expect(
+        (await Effect.runPromise(config.current)).tracking?.trackEvent
+      ).toBe(replacementTrack);
     } finally {
       registry.dispose();
     }
@@ -117,7 +129,10 @@ describe("widget runtime service graph", () => {
       });
 
       const replacementTrack = vi.fn();
-      firstRegistry.set(widgetConfigAtom, makeConfig(replacementTrack));
+      const firstConfig = AsyncResult.getOrThrow(
+        firstRegistry.get(widgetConfigProbeAtom)
+      );
+      await Effect.runPromise(firstConfig.update(makeConfig(replacementTrack)));
       await Effect.runPromise(
         firstService.trackEvent("txSigned", { registry: "first-updated" })
       );
@@ -158,14 +173,14 @@ describe("widget runtime service graph", () => {
   });
 
   it("keeps the runtime available when a Borrow operation is unavailable", () => {
-    const config = normalizeWidgetConfig({
+    const config = {
       apiKey: "test-api-key",
       borrowApiUrl: "",
       borrowEnabled: true,
       dashboardVariant: true,
       tracking: { trackEvent: vi.fn() },
-      variant: "default",
-    });
+      variant: "default" as const,
+    };
     const registry = AtomRegistry.make({
       initialValues: runtimeInitialValues(config),
     });

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
+import { useWidgetConfig } from "../../../../../../../app/composition/use-widget-config";
 import { getYieldActionArg } from "../../../../../../../domain/earn/yield";
 import { Divider } from "../../../../../../../shared/ui/components/divider";
 import { Dropdown } from "../../../../../../../shared/ui/components/dropdown";

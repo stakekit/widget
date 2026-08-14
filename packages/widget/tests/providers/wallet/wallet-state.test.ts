@@ -12,7 +12,6 @@ import type { Chain } from "viem";
 import { mainnet, optimism } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
-import { normalizeWidgetConfig } from "../../../src/app/config/settings";
 import { LegacyResourceSource } from "../../../src/services/api/legacy-resource-source";
 import { YieldResourceSource } from "../../../src/services/api/yield-resource-source";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
@@ -130,16 +129,12 @@ describe("WalletService authoritative Wallet State", () => {
         connectors: [firstConnector, secondConnector],
       })
     );
-    const settings = normalizeWidgetConfig({
+    const settings = {
       apiKey: "api-key",
       disableInjectedProviderDiscovery: true,
-      variant: "default",
-    });
-    const configLayer = WidgetConfigService.layer({
-      changes: Stream.never,
-      current: Effect.succeed(settings),
-      initial: settings,
-    });
+      variant: "default" as const,
+    };
+    const configLayer = WidgetConfigService.layer(settings);
     const layer = WalletService.layer.pipe(
       Layer.provide(
         Layer.mergeAll(

@@ -67,6 +67,7 @@ import {
 import { render } from "../utils/test-utils";
 import { makeTransactionWorkflowTestLayer } from "../utils/transaction-workflow-layer";
 import type { WalletOperations } from "../utils/wallet-operations";
+import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -386,9 +387,10 @@ const renderExecution = async (
     Layer.succeed(BorrowOperations, borrow as never),
     Layer.succeed(TrackingService, tracking),
     WidgetConfigService.layer({
-      changes: Stream.never,
-      current: Effect.succeed({ borrowEnabled: true } as never),
-      initial: { borrowEnabled: true } as never,
+      apiKey: "",
+      borrowEnabled: true,
+      dashboardVariant: true,
+      variant: "default",
     }),
     Layer.succeed(WidgetNavigation, navigationService),
     Layer.succeed(WalletService, flowWallet),
@@ -409,12 +411,24 @@ const renderExecution = async (
     <I18nextProvider i18n={i18nInstance}>
       <RegistryProvider
         initialValues={[
+          applicationRuntimeInitInitialValue({
+            apiKey: "",
+            borrowEnabled: true,
+            dashboardVariant: true,
+            variant: "default",
+          }),
           [
             appRuntime.layer,
             Layer.mergeAll(
               Layer.succeed(BorrowOperations, borrow as never),
               Layer.succeed(TrackingService, tracking),
-              Layer.succeed(WidgetNavigation, navigationService)
+              Layer.succeed(WidgetNavigation, navigationService),
+              WidgetConfigService.layer({
+                apiKey: "",
+                borrowEnabled: true,
+                dashboardVariant: true,
+                variant: "default",
+              })
             ).pipe(Layer.fresh),
           ],
           [

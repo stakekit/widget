@@ -4,7 +4,6 @@ import { Schema } from "effect";
 import { act, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
-import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import {
@@ -15,10 +14,10 @@ import {
 import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { render } from "../utils/test-utils.dom.tsx";
 
-const settings = normalizeWidgetConfig({
+const settings = {
   apiKey: "test-api-key",
-  variant: "default",
-});
+  variant: "default" as const,
+};
 
 const positionWorkflowAtom = positionDetailsWorkflowAtom(
   new PositionDetailsWorkflowKey({
@@ -58,7 +57,10 @@ const PositionAmountHarness = () => {
 
 const renderWorkflow = (children: ReactNode) =>
   render(
-    <SKAtomRegistryProvider routes={applicationRoutes} settings={settings}>
+    <SKAtomRegistryProvider
+      routes={applicationRoutes}
+      hostConfiguration={settings}
+    >
       {children}
     </SKAtomRegistryProvider>
   );

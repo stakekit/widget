@@ -8,10 +8,7 @@ import { version as widgetVersion } from "../../../package.json";
 import * as BorrowApi from "../../generated/api/borrow-client";
 import * as LegacyApi from "../../generated/api/legacy";
 import * as YieldApi from "../../generated/api/yield";
-import {
-  normalizeWidgetApiConfig,
-  WidgetConfigService,
-} from "../config/widget-config";
+import { WidgetConfigService } from "../config/widget-config";
 import { RichErrorService } from "../errors/rich-error-service";
 import { GeoBlockService } from "./geo-block-state";
 
@@ -75,11 +72,10 @@ const configureClient = ({
 
 const makeApiTransport = Effect.gen(function* () {
   const widgetConfig = yield* WidgetConfigService;
-  const api = normalizeWidgetApiConfig(widgetConfig.initial);
+  const api = yield* widgetConfig.current;
   const httpClient = yield* HttpClient.HttpClient;
   const geoBlock = yield* GeoBlockService;
   const richErrors = yield* RichErrorService;
-  const borrowApiUrl = api.borrowApiUrl.trim();
   const makeClient = ({
     baseUrl,
     publishRichErrors,
@@ -96,8 +92,10 @@ const makeApiTransport = Effect.gen(function* () {
       richErrors,
     });
   const makeBorrowClient = (publishRichErrors: boolean) =>
-    borrowApiUrl
-      ? BorrowApi.make(makeClient({ baseUrl: borrowApiUrl, publishRichErrors }))
+    api.borrowApiUrl
+      ? BorrowApi.make(
+          makeClient({ baseUrl: api.borrowApiUrl, publishRichErrors })
+        )
       : null;
 
   return {

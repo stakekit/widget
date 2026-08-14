@@ -9,7 +9,6 @@ import {
 import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
-import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { ActionId, TransactionId } from "../../src/domain/identity/identifiers";
 import { MiscNetworks } from "../../src/domain/network/networks";
@@ -27,6 +26,7 @@ import { mockDelay } from "../mocks/delay";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { describe, expect, it, vi } from "../utils/test-extend.dom.ts";
 import { renderHook } from "../utils/test-utils.dom.tsx";
+import { getTestWidgetConfig } from "../utils/widget-config";
 
 const signTransactionAtom = walletRuntime.fn(
   (input: WalletSignTransactionInput) =>
@@ -55,7 +55,7 @@ const renderHookWithExternalProvider = (
     wrapper: ({ children }) => (
       <ThirdPartyQueryClientProvider>
         <TestAtomRuntimeProvider
-          settings={normalizeWidgetConfig({
+          settings={getTestWidgetConfig({
             apiKey: import.meta.env.VITE_API_KEY,
             borrowEnabled: false,
             externalProviders,

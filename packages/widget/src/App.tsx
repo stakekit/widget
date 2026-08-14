@@ -8,8 +8,7 @@ import { RouterProvider } from "react-router/dom";
 import { ApplicationRouteContentProvider } from "./app/composition/application-route-content";
 import { Providers } from "./app/composition/providers";
 import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";
-import { normalizeWidgetConfig } from "./app/config/settings";
-import { useWidgetConfig } from "./app/config/use-widget-config";
+import { useWidgetConfig } from "./app/composition/use-widget-config";
 import { acquireWidgetInstanceClaim } from "./app/embedding/widget-instance-claim";
 import { WidgetInstanceReactBoundary } from "./app/embedding/widget-instance-react-boundary";
 import { ApplicationRouteEffects } from "./app/routes/application-route-effects";
@@ -20,7 +19,7 @@ import { applicationRouterAtom } from "./app/runtime/application-router-runtime"
 import { walletEnabledNetworksResultAtom } from "./features/wallet/state";
 import { AppContainerProvider } from "./features/widget-shell/components";
 import { NoEnabledYields } from "./features/widget-shell/ui";
-import type { SKAppProps, VariantProps } from "./public-api/types";
+import type { SKAppProps } from "./public-api/types";
 import { isLedgerDappBrowserProvider } from "./services/wallet/browser-environment";
 import { preloadImages } from "./shared/assets/images";
 
@@ -48,11 +47,8 @@ const Root = () => (
   </Providers>
 );
 
-const SKAppRouter = ({
-  dashboardVariant,
-}: {
-  readonly dashboardVariant: boolean;
-}) => {
+const SKAppRouter = () => {
+  const dashboardVariant = useWidgetConfig("dashboardVariant");
   const router = useAtomValue(applicationRouterAtom);
 
   return (
@@ -66,19 +62,14 @@ const SKAppRouter = ({
 
 const SKAppContent = (props: SKAppProps) => {
   const [isLedgerDappBrowser] = useState(isLedgerDappBrowserProvider);
-  const variantProps: VariantProps =
-    props.variant === "zerion"
-      ? { variant: props.variant, chainModal: props.chainModal }
-      : { variant: props.variant ?? "default" };
-
-  const settings = normalizeWidgetConfig(
-    { ...props, ...variantProps },
-    { isLedgerLive: isLedgerDappBrowser }
-  );
 
   return (
-    <SKAtomRegistryProvider routes={applicationRoutes} settings={settings}>
-      <SKAppRouter dashboardVariant={!!settings.dashboardVariant} />
+    <SKAtomRegistryProvider
+      hostConfiguration={props}
+      isLedgerLive={isLedgerDappBrowser}
+      routes={applicationRoutes}
+    >
+      <SKAppRouter />
     </SKAtomRegistryProvider>
   );
 };

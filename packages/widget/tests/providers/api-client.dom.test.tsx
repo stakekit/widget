@@ -10,7 +10,6 @@ import {
 } from "effect";
 import { HttpResponse, http } from "msw";
 import { version as widgetVersion } from "../../package.json";
-import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { ActionCommand } from "../../src/domain/action/models";
 import {
   mountAnimationStateAtom,
@@ -24,7 +23,7 @@ import { ApiTransportService } from "../../src/services/api/transport";
 import { YieldOperations } from "../../src/services/api/yield-operations";
 import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
 import {
-  type WidgetApiConfig,
+  type ApplicationApiIdentity,
   WidgetConfigService,
 } from "../../src/services/config/widget-config";
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
@@ -42,22 +41,20 @@ const MountPresentationProbe = () => {
   );
 };
 
-const createTestClient = async (options: Partial<WidgetApiConfig> = {}) => {
-  const config = normalizeWidgetConfig({
+const createTestClient = async (
+  options: Partial<ApplicationApiIdentity> = {}
+) => {
+  const config = {
     apiKey: "test-key",
     baseUrl: "https://api.example.com",
     borrowEnabled: true,
     borrowApiUrl: "https://borrow.example.com",
     dashboardVariant: true,
     yieldsApiUrl: "https://yield.example.com",
-    variant: "default",
+    variant: "default" as const,
     ...options,
-  });
-  const configLayer = WidgetConfigService.layer({
-    initial: config,
-    changes: Stream.never,
-    current: Effect.succeed(config),
-  });
+  };
+  const configLayer = WidgetConfigService.layer(config);
   const richErrorLayer = RichErrorService.layer.pipe(
     Layer.provide(configLayer)
   );

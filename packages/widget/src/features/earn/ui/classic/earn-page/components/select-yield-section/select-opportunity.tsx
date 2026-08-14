@@ -2,7 +2,7 @@ import { Trigger } from "@radix-ui/react-dialog";
 import clsx from "clsx";
 import { Array as EArray, Option } from "effect";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
+import { useWidgetConfig } from "../../../../../../../app/composition/use-widget-config";
 import {
   getYieldOutputToken,
   getYieldTypeLabels,

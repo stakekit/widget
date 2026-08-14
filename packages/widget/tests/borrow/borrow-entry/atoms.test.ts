@@ -1,10 +1,6 @@
 import { Effect, Layer, Schema, SubscriptionRef } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../../src/app/config/settings";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { Integration } from "../../../src/domain/borrow/catalog/integration";
@@ -37,6 +33,7 @@ import {
   type NormalizedWalletState,
   type WalletState,
 } from "../../../src/services/wallet/wallet-state";
+import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -374,15 +371,12 @@ describe("Borrow Entry atoms", () => {
           } as never)
         ),
         Atom.initialValue(walletScopeAtom, walletScope),
-        Atom.initialValue(
-          widgetConfigAtom,
-          normalizeWidgetConfig({
-            apiKey: "api-key",
-            borrowEnabled: true,
-            dashboardVariant: true,
-            variant: "default",
-          })
-        ),
+        applicationRuntimeInitInitialValue({
+          apiKey: "api-key",
+          borrowEnabled: true,
+          dashboardVariant: true,
+          variant: "default",
+        }),
         Atom.initialValue(tokenBalancesScanAtom, {
           enabled: true,
           result: AsyncResult.success([]),
@@ -435,15 +429,12 @@ describe("Borrow Entry atoms", () => {
           } as never)
         ),
         Atom.initialValue(walletScopeAtom, walletScope),
-        Atom.initialValue(
-          widgetConfigAtom,
-          normalizeWidgetConfig({
-            apiKey: "api-key",
-            borrowEnabled: true,
-            dashboardVariant: true,
-            variant: "default",
-          })
-        ),
+        applicationRuntimeInitInitialValue({
+          apiKey: "api-key",
+          borrowEnabled: true,
+          dashboardVariant: true,
+          variant: "default",
+        }),
         Atom.initialValue(tokenBalancesScanAtom, {
           enabled: true,
           result: AsyncResult.success([]),
@@ -521,15 +512,12 @@ describe("Borrow Entry atoms", () => {
             wagmiConfig: {},
           } as never) as never
         ),
-        Atom.initialValue(
-          widgetConfigAtom,
-          normalizeWidgetConfig({
-            apiKey: "api-key",
-            borrowEnabled: true,
-            dashboardVariant: true,
-            variant: "default",
-          })
-        ),
+        applicationRuntimeInitInitialValue({
+          apiKey: "api-key",
+          borrowEnabled: true,
+          dashboardVariant: true,
+          variant: "default",
+        }),
         Atom.initialValue(tokenBalancesScanAtom, {
           enabled: true,
           result: AsyncResult.success([]),

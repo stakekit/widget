@@ -37,6 +37,7 @@ import {
   yieldApiYieldFixture,
   yieldBalanceFixture,
 } from "../fixtures";
+import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const selectedYield = yieldApiYieldFixture();
 const balance = Schema.decodeUnknownSync(EarnBalance)(
@@ -354,6 +355,7 @@ describe("Position Details action model", () => {
     });
     const registry = AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue(),
         [
           yieldOpportunityAtom(
             new YieldOpportunityKey({ yieldId: selectedYield.id })

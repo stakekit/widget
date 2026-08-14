@@ -1,10 +1,6 @@
 import { Effect, Layer, Schema, SubscriptionRef } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../../src/app/config/settings";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { currentBorrowEntryAtom } from "../../../src/features/borrow/borrow-entry/state/borrow-entry";
@@ -20,6 +16,7 @@ import {
   WalletScopeKey,
   walletScopeOwnerKey,
 } from "../../../src/services/wallet/wallet-scope";
+import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -63,15 +60,12 @@ describe("Borrow Entry transaction-workflow events", () => {
             Layer.succeed(WidgetDomainEvents, domainEvents)
           ) as never
         ),
-        Atom.initialValue(
-          widgetConfigAtom,
-          normalizeWidgetConfig({
-            apiKey: "api-key",
-            borrowEnabled: true,
-            dashboardVariant: true,
-            variant: "default",
-          })
-        ),
+        applicationRuntimeInitInitialValue({
+          apiKey: "api-key",
+          borrowEnabled: true,
+          dashboardVariant: true,
+          variant: "default",
+        }),
         Atom.initialValue(walletScopeAtom, walletScope),
         Atom.initialValue(tokenBalancesScanAtom, {
           enabled: true,

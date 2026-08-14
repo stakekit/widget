@@ -1,10 +1,6 @@
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../../src/app/config/settings";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { Integration } from "../../../src/domain/borrow/catalog/integration";
 import { Market } from "../../../src/domain/borrow/catalog/market";
@@ -36,6 +32,7 @@ import {
   makeBorrowResourceSource,
 } from "../../../src/services/api/borrow-resource-source";
 import { WalletScopeKey } from "../../../src/services/wallet/wallet-scope";
+import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -197,15 +194,12 @@ describe("Borrow Positions resource atoms", () => {
           )
         ),
         Atom.initialValue(walletScopeAtom, walletScope),
-        Atom.initialValue(
-          widgetConfigAtom,
-          normalizeWidgetConfig({
-            apiKey: "api-key",
-            borrowEnabled: true,
-            dashboardVariant: true,
-            variant: "default",
-          })
-        ),
+        applicationRuntimeInitInitialValue({
+          apiKey: "api-key",
+          borrowEnabled: true,
+          dashboardVariant: true,
+          variant: "default",
+        }),
       ],
     });
 

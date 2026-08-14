@@ -7,12 +7,12 @@ import {
   type WidgetPresentation,
   WidgetPresentationProvider,
 } from "../../../shared/ui/widget-presentation";
-import { useWidgetConfig } from "../../config/use-widget-config";
+import { useWidgetConfig } from "../../composition/use-widget-config";
 
 /**
  * Populates the shared UI kit's rendering environment from widget config, so
  * `shared/ui` components render host preferences without importing
- * `app/config`. Only host overrides are forwarded; the kit owns its defaults.
+ * Widget Configuration. Only host overrides are forwarded; the kit owns its defaults.
  */
 export const WidgetPresentationAdapter = ({ children }: PropsWithChildren) => {
   const { i18n } = useTranslation();

@@ -52,6 +52,7 @@ import {
   type WalletState,
 } from "../../src/services/wallet/wallet-state";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
+import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const baseDto = yieldApiYieldDtoFixture();
 const firstYield = yieldApiYieldFixture();
@@ -118,6 +119,7 @@ const makeReadyRegistry = () => {
 
   return AtomRegistry.make({
     initialValues: [
+      applicationRuntimeInitInitialValue(),
       [
         walletStateResultAtom,
         AsyncResult.success(disconnectedNormalizedWalletState),
@@ -163,7 +165,10 @@ const makeReadyRegistry = () => {
 describe("earn page workflow atoms", () => {
   it("waits for Wallet Bootstrap before resolving Earn Initialization", () => {
     const registry = AtomRegistry.make({
-      initialValues: [[walletStateResultAtom, AsyncResult.initial(true)]],
+      initialValues: [
+        applicationRuntimeInitInitialValue(),
+        [walletStateResultAtom, AsyncResult.initial(true)],
+      ],
     });
 
     expect(registry.get(earnSelectionStatusViewAtom).status).toBe(
@@ -175,6 +180,7 @@ describe("earn page workflow atoms", () => {
   it("treats a failed Wallet Bootstrap attempt as settled", () => {
     const registry = AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue(),
         [
           walletStateResultAtom,
           AsyncResult.failure(Cause.fail(new Error("wallet bootstrap failed"))),
@@ -200,6 +206,7 @@ describe("earn page workflow atoms", () => {
     );
     const registry = AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue(),
         [
           walletRuntime.layer,
           Layer.succeed(
@@ -258,6 +265,7 @@ describe("earn page workflow atoms", () => {
     const yields = [firstYield, secondYield];
     const registry = AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue(),
         [
           appRuntime.layer,
           Layer.mergeAll(
@@ -362,6 +370,7 @@ describe("earn page workflow atoms", () => {
     ];
     const registry = AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue(),
         [
           walletStateResultAtom,
           AsyncResult.success(disconnectedNormalizedWalletState),
@@ -465,6 +474,7 @@ describe("earn page workflow atoms", () => {
     ];
     const registry = AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue(),
         [
           walletRuntime.layer,
           Layer.succeed(
@@ -580,6 +590,7 @@ describe("earn page workflow atoms", () => {
     ];
     const registry = AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue(),
         [
           walletStateResultAtom,
           AsyncResult.success(disconnectedNormalizedWalletState),
@@ -668,7 +679,9 @@ describe("earn page workflow atoms", () => {
   });
 
   it("derives input, selection, and quote models from the feature machine", () => {
-    const registry = AtomRegistry.make();
+    const registry = AtomRegistry.make({
+      initialValues: [applicationRuntimeInitInitialValue()],
+    });
 
     expect(registry.get(earnPageInputAtom).stakeAmount).toBe("0");
     expect(registry.get(earnPageSelectionAtom).yield).toBeNull();
@@ -694,7 +707,9 @@ describe("earn page workflow atoms", () => {
   });
 
   it("discards page-local search state when its entry surface is released", async () => {
-    const registry = AtomRegistry.make();
+    const registry = AtomRegistry.make({
+      initialValues: [applicationRuntimeInitInitialValue()],
+    });
     let unmount = registry.mount(earnPageSearchAtom);
 
     registry.set(earnPageSearchAtom, {

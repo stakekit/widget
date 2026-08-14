@@ -7,7 +7,9 @@ import {
   type WalletAddress as WalletAddressType,
 } from "../../../../domain/identity/identifiers";
 import { AdditionalAddresses } from "../../../../domain/wallet/address";
+import { config } from "../../../../shared/config/widget-defaults";
 import type { StoredPublicKeys } from "../../../persistence/widget-persistence";
+import type { SKWallet } from "../../wallet-connection";
 import { isConnectorWithFilteredChains } from "../../wallet-connectors";
 import {
   disconnectedLedgerConnectorState,
@@ -26,10 +28,31 @@ import {
 import type { EvmChainsMap } from "../adapters/evm/chains";
 import { isLedgerLiveConnector } from "../adapters/ledger/ledger-live-connector-meta";
 import type { SubstrateChainsMap } from "../adapters/substrate/chains";
-import { forcedWalletAddress } from "./environment";
-import { wagmiNetworkToSKNetwork } from "./network";
 import type { WalletRoutingContext } from "./router";
 import type { WalletController } from "./wagmi-config";
+
+const wagmiNetworkToSKNetwork = ({
+  chain,
+  cosmosChainsMap,
+  evmChainsMap,
+  miscChainsMap,
+  substrateChainsMap,
+}: {
+  chain: Chain;
+  evmChainsMap: Partial<EvmChainsMap>;
+  cosmosChainsMap: Partial<CosmosChainsMap>;
+  miscChainsMap: Partial<MiscChainsMap>;
+  substrateChainsMap: Partial<SubstrateChainsMap>;
+}): SKWallet["network"] => {
+  return (
+    Object.values({
+      ...evmChainsMap,
+      ...cosmosChainsMap,
+      ...miscChainsMap,
+      ...substrateChainsMap,
+    }).find((c) => c.wagmiChain.id === chain.id)?.skChainName ?? null
+  );
+};
 
 export type WalletStateController = {
   readonly cosmosConfig: { readonly cosmosChainsMap: Partial<CosmosChainsMap> };
@@ -300,7 +323,7 @@ export const makeCompleteWalletStateStream = ({
               connection: projection.connection,
               connectorChains: chains,
               controller,
-              forceAddress: forcedWalletAddress,
+              forceAddress: config.env.forceAddress,
               ledgerState: ledger,
             });
 

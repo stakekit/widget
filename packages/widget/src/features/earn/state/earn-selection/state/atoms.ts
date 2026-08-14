@@ -1,7 +1,7 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetConfigAtom } from "../../../../../app/config/settings";
+import { widgetConfigAtom } from "../../../../../app/runtime/widget-config";
 import {
   sameWalletScopeOwner,
   type WalletScopeOwnerKey,
@@ -48,11 +48,10 @@ export const earnMachineEntryAtom = Atom.make<EarnEntry>((context) => {
   return {
     categoryOrder: config.dashboardYieldCategoryOrder,
     dashboardVariant:
-      !!config.dashboardVariant && config.yieldGrouping === "category",
+      config.dashboardVariant && config.yieldGrouping === "category",
     initParams,
-    preferredTokenYieldsPerNetwork:
-      config.preferredTokenYieldsPerNetwork ?? null,
-    tokensForEnabledYieldsOnly: !!config.tokensForEnabledYieldsOnly,
+    preferredTokenYieldsPerNetwork: config.preferredTokenYieldsPerNetwork,
+    tokensForEnabledYieldsOnly: config.tokensForEnabledYieldsOnly,
     walletScope: wallet.walletScope,
     walletResolution: wallet.walletResolution,
   };

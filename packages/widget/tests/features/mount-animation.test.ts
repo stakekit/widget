@@ -1,30 +1,29 @@
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../src/app/config/settings";
+import { updateWidgetConfigAtom } from "../../src/app/runtime/widget-config";
 import {
   mountAnimationCompletionAtom,
   mountAnimationStateAtom,
 } from "../../src/features/mount-animation/state";
+import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const makeWidgetConfig = (
   dashboardVariant: boolean,
   onMountAnimationComplete?: () => void
-) =>
-  normalizeWidgetConfig({
-    apiKey: "api-key",
-    dashboardVariant,
-    disableInitLayoutAnimation: false,
-    onMountAnimationComplete,
-    variant: "default",
-  });
+) => ({
+  apiKey: "api-key",
+  dashboardVariant,
+  disableInitLayoutAnimation: false,
+  onMountAnimationComplete,
+  variant: "default" as const,
+});
 
 describe("mount animation state", () => {
   it("tracks page and layout completion in the registry", () => {
     const registry = AtomRegistry.make({
-      initialValues: [[widgetConfigAtom, makeWidgetConfig(false)]],
+      initialValues: [
+        applicationRuntimeInitInitialValue(makeWidgetConfig(false)),
+      ],
     });
 
     expect(registry.get(mountAnimationStateAtom)).toEqual({
@@ -47,7 +46,9 @@ describe("mount animation state", () => {
 
   it("derives its initial state from the initial widget configuration", () => {
     const registry = AtomRegistry.make({
-      initialValues: [[widgetConfigAtom, makeWidgetConfig(true)]],
+      initialValues: [
+        applicationRuntimeInitInitialValue(makeWidgetConfig(true)),
+      ],
     });
 
     expect(registry.get(mountAnimationStateAtom)).toEqual({
@@ -55,7 +56,7 @@ describe("mount animation state", () => {
       layout: true,
     });
 
-    registry.set(widgetConfigAtom, makeWidgetConfig(false));
+    registry.set(updateWidgetConfigAtom, makeWidgetConfig(false));
 
     expect(registry.get(mountAnimationStateAtom)).toEqual({
       earnPage: true,
@@ -67,7 +68,9 @@ describe("mount animation state", () => {
     const onMountAnimationComplete = vi.fn();
     const registry = AtomRegistry.make({
       initialValues: [
-        [widgetConfigAtom, makeWidgetConfig(false, onMountAnimationComplete)],
+        applicationRuntimeInitInitialValue(
+          makeWidgetConfig(false, onMountAnimationComplete)
+        ),
       ],
     });
 
@@ -92,7 +95,9 @@ describe("mount animation state", () => {
     const onMountAnimationComplete = vi.fn();
     const registry = AtomRegistry.make({
       initialValues: [
-        [widgetConfigAtom, makeWidgetConfig(true, onMountAnimationComplete)],
+        applicationRuntimeInitInitialValue(
+          makeWidgetConfig(true, onMountAnimationComplete)
+        ),
       ],
     });
 

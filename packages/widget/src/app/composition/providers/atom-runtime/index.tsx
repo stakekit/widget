@@ -1,29 +1,32 @@
 import { RegistryProvider } from "@effect/atom-react";
 import type { PropsWithChildren } from "react";
 import type { RouteObject } from "react-router";
-import type { WidgetConfig } from "../../../../services/config/widget-config";
-import { widgetConfigAtom } from "../../../config/settings";
-import { applicationRoutesAtom } from "../../../runtime/application-router-runtime";
+import type { SKAppProps } from "../../../../public-api/types";
+import { applicationRuntimeInitAtom } from "../../../runtime/application-runtime-init";
 import { WidgetConfigBoundaryAdapter } from "../widget-config-binding";
 
 type SKAtomRegistryProviderProps = PropsWithChildren<{
+  readonly hostConfiguration: SKAppProps;
+  readonly isLedgerLive?: boolean;
   readonly routes: ReadonlyArray<RouteObject>;
-  readonly settings: WidgetConfig;
 }>;
 
 export const SKAtomRegistryProvider = ({
   children,
+  hostConfiguration,
+  isLedgerLive = false,
   routes,
-  settings,
 }: SKAtomRegistryProviderProps) => {
   return (
     <RegistryProvider
       initialValues={[
-        [widgetConfigAtom, settings],
-        [applicationRoutesAtom, routes],
+        [
+          applicationRuntimeInitAtom,
+          { hostConfiguration, isLedgerLive, routes },
+        ],
       ]}
     >
-      <WidgetConfigBoundaryAdapter settings={settings}>
+      <WidgetConfigBoundaryAdapter hostConfiguration={hostConfiguration}>
         {children}
       </WidgetConfigBoundaryAdapter>
     </RegistryProvider>

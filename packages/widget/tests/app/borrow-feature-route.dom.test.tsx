@@ -1,15 +1,23 @@
-import { RegistryProvider } from "@effect/atom-react";
+import { useEffect } from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
-import { describe, expect, it } from "vitest";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../src/app/config/settings";
+import { describe, expect, it, vi } from "vitest";
 import { BorrowFeatureRoute } from "../../src/app/routes/borrow-feature-route";
 import { render } from "../utils/test-utils.dom.tsx";
+import { TestWidgetConfigProvider } from "../utils/widget-config-provider";
 
 const LocationProbe = () => {
   const location = useLocation();
+
+  return <output data-testid="location">{location.pathname}</output>;
+};
+
+const BorrowScopeProbe = ({
+  onUnmount,
+}: {
+  readonly onUnmount: () => void;
+}) => {
+  const location = useLocation();
+  useEffect(() => onUnmount, [onUnmount]);
 
   return <output data-testid="location">{location.pathname}</output>;
 };
@@ -22,18 +30,11 @@ const renderRoute = ({
   readonly initialPath: string;
 }) =>
   render(
-    <RegistryProvider
-      initialValues={[
-        [
-          widgetConfigAtom,
-          normalizeWidgetConfig({
-            apiKey: "api-key",
-            borrowEnabled,
-            dashboardVariant: true,
-            variant: "default",
-          }),
-        ],
-      ]}
+    <TestWidgetConfigProvider
+      apiKey="api-key"
+      borrowEnabled={borrowEnabled}
+      dashboardVariant
+      variant="default"
     >
       <MemoryRouter initialEntries={[initialPath]}>
         <Routes>
@@ -47,7 +48,7 @@ const renderRoute = ({
           <Route path="/positions" element={<LocationProbe />} />
         </Routes>
       </MemoryRouter>
-    </RegistryProvider>
+    </TestWidgetConfigProvider>
   );
 
 describe("BorrowFeatureRoute", () => {
@@ -75,4 +76,37 @@ describe("BorrowFeatureRoute", () => {
       ).toBe(initialPath);
     }
   );
+
+  it("unmounts the Borrow route scope when Borrow is disabled", async () => {
+    const finalized = vi.fn();
+    const routeTree = (borrowEnabled: boolean) => (
+      <TestWidgetConfigProvider
+        apiKey="api-key"
+        borrowEnabled={borrowEnabled}
+        dashboardVariant
+        variant="default"
+      >
+        <MemoryRouter initialEntries={["/borrow/review"]}>
+          <Routes>
+            <Route element={<BorrowFeatureRoute fallbackPath="/" />}>
+              <Route
+                path="/borrow/*"
+                element={<BorrowScopeProbe onUnmount={finalized} />}
+              />
+            </Route>
+            <Route path="/" element={<LocationProbe />} />
+          </Routes>
+        </MemoryRouter>
+      </TestWidgetConfigProvider>
+    );
+    const app = await render(routeTree(true));
+
+    expect(finalized).not.toHaveBeenCalled();
+    await app.rerender(routeTree(false));
+
+    expect(
+      app.container.querySelector('[data-testid="location"]')?.textContent
+    ).toBe("/");
+    expect(finalized).toHaveBeenCalledOnce();
+  });
 });

@@ -2,8 +2,8 @@ import BigNumber from "bignumber.js";
 import { Effect, Match, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetConfigAtom } from "../../../../app/config/settings";
 import { appRuntime } from "../../../../app/runtime/app-runtime";
+import { widgetConfigAtom } from "../../../../app/runtime/widget-config";
 import { stakeTokenSameAsGasToken } from "../../../../domain";
 import type { TronResource } from "../../../../domain/action/tron-resource";
 import { getKycProviderName } from "../../../../domain/earn/kyc";
@@ -235,7 +235,7 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
       )
     : all;
   const categoryGrouping =
-    !!config.dashboardVariant && config.yieldGrouping === "category";
+    config.dashboardVariant && config.yieldGrouping === "category";
   const category = yieldOptions.selectedCategory;
   const categoryFiltered =
     categoryGrouping && category

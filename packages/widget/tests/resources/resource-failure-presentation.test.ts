@@ -1,9 +1,8 @@
-import { Effect, Layer, Stream } from "effect";
+import { Layer } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { richErrorAtom } from "../../src/features/widget-shell/react/use-rich-errors";
 import { makePresentableResource } from "../../src/resources/resource-failure-presentation";
@@ -19,13 +18,9 @@ const makeRegistry = () =>
         RichErrorService.layer.pipe(
           Layer.provide(
             WidgetConfigService.layer({
-              initial: normalizeWidgetConfig({
-                apiKey: "",
-                baseUrl: "https://api.example.com",
-                variant: "default",
-              }),
-              changes: Stream.never,
-              current: Effect.never,
+              apiKey: "",
+              baseUrl: "https://api.example.com",
+              variant: "default",
             })
           ),
           Layer.fresh

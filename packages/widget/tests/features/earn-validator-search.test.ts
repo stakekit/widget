@@ -20,6 +20,7 @@ import {
 } from "../../src/services/api/yield-resource-source";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
+import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const yieldId = yieldApiYieldFixture().id;
 
@@ -67,6 +68,7 @@ describe("Earn validator search", () => {
     });
     const registry = AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue(),
         Atom.initialValue(
           appRuntime.layer,
           Layer.succeed(
@@ -169,6 +171,7 @@ describe("Earn validator search", () => {
     );
     const registry = AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue(),
         Atom.initialValue(
           appRuntime.layer,
           Layer.mergeAll(

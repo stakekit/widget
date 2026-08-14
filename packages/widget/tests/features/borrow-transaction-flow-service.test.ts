@@ -135,12 +135,12 @@ const makeServiceLayer = (
     push: (path, options) => execute({ ...options, _tag: "Push", path }),
     replace: (path, options) => execute({ ...options, _tag: "Replace", path }),
   });
-  const config = { borrowEnabled: overrides.borrowEnabled ?? true } as never;
   const dependencies = Layer.mergeAll(
     WidgetConfigService.layer({
-      changes: Stream.succeed(config),
-      current: Effect.succeed(config),
-      initial: config,
+      apiKey: "",
+      borrowEnabled: overrides.borrowEnabled ?? true,
+      dashboardVariant: true,
+      variant: "default",
     }),
     Layer.succeed(WidgetNavigation, navigation),
     Layer.succeed(

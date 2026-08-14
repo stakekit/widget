@@ -1,64 +1,66 @@
-import { Context, type Effect, Equal, Layer, type Stream } from "effect";
-import type { SettingsProps, VariantProps } from "../../public-api/types";
+import {
+  Context,
+  Data,
+  Effect,
+  Equal,
+  Layer,
+  Result,
+  Semaphore,
+  Stream,
+  SubscriptionRef,
+} from "effect";
+import { dashboardYieldCategories } from "../../domain/earn/yield";
+import type {
+  DashboardYieldCategory,
+  PreferredTokenYieldsPerNetwork,
+  SettingsProps,
+  SKAppProps,
+  VariantProps,
+} from "../../public-api/types";
 import { config } from "../../shared/config/widget-defaults";
 import type { ExternalProviderSnapshot } from "../wallet/external-provider";
-
-type ResolvedSettingsProps = Omit<
-  SettingsProps,
-  | "borrowEnabled"
-  | "dashboardYieldCategoryOrder"
-  | "externalProviders"
-  | "yieldGrouping"
-> & {
-  readonly borrowEnabled: boolean;
-  readonly dashboardYieldCategoryOrder: NonNullable<
-    SettingsProps["dashboardYieldCategoryOrder"]
-  >;
-  readonly externalProviders?: ExternalProviderSnapshot;
-  readonly yieldGrouping: NonNullable<SettingsProps["yieldGrouping"]>;
-};
-
-type ZerionChainModal = Extract<
-  VariantProps,
-  { readonly variant: "zerion" }
->["chainModal"];
-
-export type WidgetConfig = ResolvedSettingsProps & {
-  readonly chainModal?: ZerionChainModal;
-  readonly isLedgerLive: boolean;
-  readonly variant: VariantProps["variant"];
-};
+import { hasValidBorrowProviderContract } from "../wallet/external-provider";
+import type { WidgetConfig } from "./widget-config-model";
 
 type WagmiSettings = NonNullable<SettingsProps["wagmi"]>;
+type InvalidWidgetConfigurationIssue =
+  | "borrow-provider-capability-missing"
+  | "borrow-requires-category-grouping"
+  | "borrow-requires-dashboard"
+  | "zerion-chain-modal-missing";
 
-export type WidgetApiConfig = {
+type WidgetConfigEnvironment = Readonly<{
+  allowCustomConnectors: boolean;
+  apiUrl: string;
+  borrowApiUrl: string;
+  isLedgerLive: boolean;
+  mountAnimationStartsFinishedByDefault: boolean;
+  yieldsApiUrl: string;
+}>;
+
+export class InvalidWidgetConfiguration extends Data.TaggedError(
+  "InvalidWidgetConfiguration"
+)<{
+  readonly issues: ReadonlyArray<InvalidWidgetConfigurationIssue>;
+}> {}
+
+export type ApplicationApiIdentity = {
   readonly apiKey: string;
   readonly baseUrl: string;
   readonly borrowApiUrl: string;
   readonly yieldsApiUrl: string;
 };
 
-export const normalizeWidgetApiConfig = (
-  settings: WidgetConfig
-): WidgetApiConfig => ({
-  apiKey: settings.apiKey,
-  baseUrl: settings.baseUrl ?? config.env.apiUrl,
-  borrowApiUrl: settings.borrowApiUrl ?? config.env.borrowApiUrl,
-  yieldsApiUrl: settings.yieldsApiUrl ?? config.env.yieldsApiUrl,
-});
-
-type WidgetTrackingConfig = {
+type WidgetTrackingSnapshot = {
   readonly tracking: SettingsProps["tracking"];
   readonly variant: VariantProps["variant"];
 };
 
-type WidgetWalletConfig = {
+type WidgetWalletSnapshot = {
   readonly chainIconMapping: SettingsProps["chainIconMapping"];
   readonly customConnectors: WagmiSettings["__customConnectors__"];
   readonly disableInjectedProviderDiscovery: boolean;
-  readonly externalProviderInitToken: NonNullable<
-    ExternalProviderSnapshot["initToken"]
-  > | null;
+  readonly externalProviderInitToken: ExternalProviderSnapshot["initToken"];
   readonly hasExternalProvider: boolean;
   readonly forceWalletConnectOnly: boolean;
   readonly institutionalWallets: boolean;
@@ -70,63 +72,35 @@ type WidgetWalletConfig = {
   readonly variant: VariantProps["variant"];
 };
 
-export const defaultWidgetBootstrapConfig = {
-  api: {
-    apiKey: "",
-    baseUrl: config.env.apiUrl,
-    borrowApiUrl: config.env.borrowApiUrl,
-    yieldsApiUrl: config.env.yieldsApiUrl,
-  },
-  tracking: {
-    tracking: undefined,
-    variant: "default",
-  },
-  wallet: {
-    chainIconMapping: undefined,
-    customConnectors: undefined,
-    disableInjectedProviderDiscovery: true,
-    externalProviderInitToken: null,
-    forceWalletConnectOnly: false,
-    hasExternalProvider: false,
-    institutionalWallets: false,
-    isLedgerLive: false,
-    isSafe: false,
-    mapWalletFn: undefined,
-    mapWalletListFn: undefined,
-    tonConnectManifestUrl: undefined,
-    variant: "default",
-  },
-} as const satisfies WidgetBootstrapConfigValue;
-
-export type WidgetBootstrapConfigValue = {
-  readonly api: WidgetApiConfig;
-  readonly tracking: WidgetTrackingConfig;
-  readonly wallet: WidgetWalletConfig;
+export type WidgetBootstrapSnapshot = {
+  readonly api: ApplicationApiIdentity;
+  readonly tracking: WidgetTrackingSnapshot;
+  readonly wallet: WidgetWalletSnapshot;
 };
 
-export const normalizeWidgetBootstrapConfig = ({
-  isLedgerLive,
-  settings,
-}: {
-  readonly isLedgerLive: boolean;
-  readonly settings: WidgetConfig;
-}): WidgetBootstrapConfigValue => ({
-  api: normalizeWidgetApiConfig(settings),
+export const selectWidgetBootstrapSnapshot = (
+  settings: WidgetConfig
+): WidgetBootstrapSnapshot => ({
+  api: {
+    apiKey: settings.apiKey,
+    baseUrl: settings.baseUrl,
+    borrowApiUrl: settings.borrowApiUrl,
+    yieldsApiUrl: settings.yieldsApiUrl,
+  },
   tracking: {
     tracking: settings.tracking,
     variant: settings.variant,
   },
   wallet: {
     chainIconMapping: settings.chainIconMapping,
-    customConnectors: settings.wagmi?.__customConnectors__,
-    disableInjectedProviderDiscovery:
-      !!settings.disableInjectedProviderDiscovery,
-    externalProviderInitToken: settings.externalProviders?.initToken ?? null,
-    forceWalletConnectOnly: !!settings.wagmi?.forceWalletConnectOnly,
+    customConnectors: settings.wagmi.__customConnectors__,
+    disableInjectedProviderDiscovery: settings.disableInjectedProviderDiscovery,
+    externalProviderInitToken: settings.externalProviders?.initToken,
+    forceWalletConnectOnly: settings.wagmi.forceWalletConnectOnly,
     hasExternalProvider: settings.externalProviders !== undefined,
-    institutionalWallets: !!settings.institutionalWallets,
-    isLedgerLive,
-    isSafe: !!settings.isSafe,
+    institutionalWallets: settings.institutionalWallets,
+    isLedgerLive: settings.isLedgerLive,
+    isSafe: settings.isSafe,
     mapWalletFn: settings.mapWalletFn,
     mapWalletListFn: settings.mapWalletListFn,
     tonConnectManifestUrl: settings.tonConnectManifestUrl,
@@ -134,23 +108,34 @@ export const normalizeWidgetBootstrapConfig = ({
   },
 });
 
-const walletConfigKeys = Object.keys(
-  defaultWidgetBootstrapConfig.wallet
-) as ReadonlyArray<keyof WidgetWalletConfig>;
+const walletSnapshotKeys = [
+  "chainIconMapping",
+  "customConnectors",
+  "disableInjectedProviderDiscovery",
+  "externalProviderInitToken",
+  "forceWalletConnectOnly",
+  "hasExternalProvider",
+  "institutionalWallets",
+  "isLedgerLive",
+  "isSafe",
+  "mapWalletFn",
+  "mapWalletListFn",
+  "tonConnectManifestUrl",
+  "variant",
+] as const satisfies ReadonlyArray<keyof WidgetWalletSnapshot>;
 
 type WalletConfigDifference = {
-  readonly material: ReadonlyArray<keyof WidgetWalletConfig>;
-  readonly opaque: ReadonlyArray<keyof WidgetWalletConfig>;
+  readonly material: ReadonlyArray<keyof WidgetWalletSnapshot>;
+  readonly opaque: ReadonlyArray<keyof WidgetWalletSnapshot>;
 };
 
 export const diffWidgetWalletConfig = (
-  next: WidgetWalletConfig,
-  bootstrapped: WidgetWalletConfig
+  next: WidgetWalletSnapshot,
+  bootstrapped: WidgetWalletSnapshot
 ): WalletConfigDifference => {
-  const isOpaque = (key: keyof WidgetWalletConfig) =>
+  const isOpaque = (key: keyof WidgetWalletSnapshot) =>
     typeof next[key] === "function" || typeof bootstrapped[key] === "function";
-
-  const changed = walletConfigKeys.filter(
+  const changed = walletSnapshotKeys.filter(
     (key) => !Equal.equals(next[key], bootstrapped[key])
   );
 
@@ -160,17 +145,238 @@ export const diffWidgetWalletConfig = (
   };
 };
 
+type WidgetConfigUpdateOutcome =
+  | Readonly<{
+      readonly _tag: "RejectedInvalid";
+      readonly error: InvalidWidgetConfiguration;
+    }>
+  | Readonly<{ readonly _tag: "Updated" }>;
+
 type WidgetConfigServiceValue = {
-  readonly initial: WidgetConfig;
   readonly current: Effect.Effect<WidgetConfig>;
-  readonly changes: Stream.Stream<WidgetConfig>;
+  readonly update: (
+    hostConfiguration: SKAppProps
+  ) => Effect.Effect<WidgetConfigUpdateOutcome>;
+  readonly values: Stream.Stream<WidgetConfig>;
+};
+
+const normalizeWidgetConfig = (
+  hostConfiguration: SKAppProps,
+  environment: WidgetConfigEnvironment
+): Result.Result<WidgetConfig, InvalidWidgetConfiguration> => {
+  const borrowEnabled = hostConfiguration.borrowEnabled ?? false;
+  const dashboardVariant = hostConfiguration.dashboardVariant ?? false;
+  const yieldGrouping =
+    hostConfiguration.yieldGrouping ?? (dashboardVariant ? "category" : "flat");
+  const issues: InvalidWidgetConfigurationIssue[] = [];
+
+  if (borrowEnabled && !dashboardVariant) {
+    issues.push("borrow-requires-dashboard");
+  }
+  if (borrowEnabled && yieldGrouping !== "category") {
+    issues.push("borrow-requires-category-grouping");
+  }
+  if (
+    borrowEnabled &&
+    hostConfiguration.externalProviders &&
+    !hasValidBorrowProviderContract(hostConfiguration.externalProviders)
+  ) {
+    issues.push("borrow-provider-capability-missing");
+  }
+  if (hostConfiguration.variant === "zerion" && !hostConfiguration.chainModal) {
+    issues.push("zerion-chain-modal-missing");
+  }
+  if (issues.length > 0) {
+    return Result.fail(new InvalidWidgetConfiguration({ issues }));
+  }
+
+  const dashboardYieldCategoryOrder = [
+    ...new Set([
+      ...(hostConfiguration.dashboardYieldCategoryOrder ?? []),
+      ...dashboardYieldCategories,
+    ]),
+  ] as DashboardYieldCategory[];
+  const preferredTokenYieldsPerNetwork =
+    hostConfiguration.preferredTokenYieldsPerNetwork
+      ? (Object.fromEntries(
+          Object.entries(hostConfiguration.preferredTokenYieldsPerNetwork).map(
+            ([network, preferences]) => [
+              network,
+              Object.fromEntries(
+                Object.entries(preferences).map(([token, yieldId]) => [
+                  token.toLowerCase(),
+                  yieldId,
+                ])
+              ),
+            ]
+          )
+        ) as PreferredTokenYieldsPerNetwork)
+      : undefined;
+  const validatorsConfig = Object.fromEntries(
+    Object.entries(hostConfiguration.validatorsConfig ?? {}).map(
+      ([network, validators]) => [
+        network,
+        {
+          allowed: validators.allowed
+            ? [...new Set(validators.allowed)]
+            : undefined,
+          blocked: validators.blocked
+            ? [...new Set(validators.blocked)]
+            : undefined,
+          mergePreferredWithDefault:
+            validators.mergePreferredWithDefault ?? true,
+          preferred: validators.preferred
+            ? [...new Set(validators.preferred)]
+            : undefined,
+          preferredOnly: validators.preferredOnly ?? false,
+        },
+      ]
+    )
+  );
+  const externalProviders = hostConfiguration.externalProviders
+    ? {
+        ...hostConfiguration.externalProviders,
+        supportedChainIds: hostConfiguration.externalProviders.supportedChainIds
+          ? [
+              ...new Set(hostConfiguration.externalProviders.supportedChainIds),
+            ].sort((first, second) => first - second)
+          : undefined,
+      }
+    : undefined;
+  return Result.succeed({
+    apiKey: hostConfiguration.apiKey,
+    baseUrl: hostConfiguration.baseUrl ?? environment.apiUrl,
+    borrowApiUrl: (hostConfiguration.borrowApiUrl ?? environment.borrowApiUrl)
+      .trim()
+      .replace(/\/+$/, ""),
+    borrowEnabled,
+    chainIconMapping: hostConfiguration.chainIconMapping,
+    chainModal:
+      hostConfiguration.variant === "zerion"
+        ? hostConfiguration.chainModal
+        : undefined,
+    customTranslations: hostConfiguration.customTranslations,
+    dashboardVariant,
+    dashboardYieldCategoryOrder,
+    disableAutoScrollToTop: hostConfiguration.disableAutoScrollToTop ?? false,
+    disableGasCheck: hostConfiguration.disableGasCheck ?? false,
+    disableInitLayoutAnimation:
+      hostConfiguration.disableInitLayoutAnimation ?? false,
+    disableInjectedProviderDiscovery:
+      hostConfiguration.disableInjectedProviderDiscovery ?? false,
+    disableResizingInputFontSize:
+      hostConfiguration.disableResizingInputFontSize ?? false,
+    externalProviders,
+    hideAccountAndChainSelector:
+      hostConfiguration.hideAccountAndChainSelector ?? false,
+    hideChainSelector: hostConfiguration.hideChainSelector ?? false,
+    hideNetworkLogo: hostConfiguration.hideNetworkLogo ?? false,
+    initialChain: hostConfiguration.initialChain,
+    institutionalWallets: hostConfiguration.institutionalWallets ?? false,
+    isLedgerLive: environment.isLedgerLive,
+    isSafe: hostConfiguration.isSafe ?? false,
+    language: hostConfiguration.language,
+    mapWalletFn: hostConfiguration.mapWalletFn,
+    mapWalletListFn: hostConfiguration.mapWalletListFn,
+    mountAnimationStartsFinished:
+      dashboardVariant ||
+      (hostConfiguration.disableInitLayoutAnimation === undefined &&
+        environment.mountAnimationStartsFinishedByDefault),
+    onMountAnimationComplete: hostConfiguration.onMountAnimationComplete,
+    portalContainer: hostConfiguration.portalContainer,
+    preferredTokenYieldsPerNetwork,
+    theme: hostConfiguration.theme,
+    tokenIconMapping: hostConfiguration.tokenIconMapping,
+    tokensForEnabledYieldsOnly:
+      hostConfiguration.tokensForEnabledYieldsOnly ?? false,
+    tonConnectManifestUrl: hostConfiguration.tonConnectManifestUrl,
+    tracking: hostConfiguration.tracking,
+    validatorsConfig,
+    variant: hostConfiguration.variant ?? "default",
+    wagmi: {
+      __customConnectors__: environment.allowCustomConnectors
+        ? hostConfiguration.wagmi?.__customConnectors__
+        : undefined,
+      forceWalletConnectOnly:
+        hostConfiguration.wagmi?.forceWalletConnectOnly ?? false,
+    },
+    yieldGrouping,
+    yieldsApiUrl: hostConfiguration.yieldsApiUrl ?? environment.yieldsApiUrl,
+  });
 };
 
 export class WidgetConfigService extends Context.Service<
   WidgetConfigService,
   WidgetConfigServiceValue
 >()("stakekit/widget/WidgetConfigService") {
-  static layer(value: WidgetConfigServiceValue) {
-    return Layer.succeed(WidgetConfigService, value);
+  static layer(
+    initialHostConfiguration: SKAppProps,
+    options: { readonly isLedgerLive?: boolean } = {}
+  ) {
+    return Layer.effect(
+      WidgetConfigService,
+      Effect.gen(function* () {
+        const environment = {
+          allowCustomConnectors: config.env.isTestMode,
+          apiUrl: config.env.apiUrl,
+          borrowApiUrl: config.env.borrowApiUrl,
+          isLedgerLive: options.isLedgerLive ?? false,
+          mountAnimationStartsFinishedByDefault: config.env.isTestMode,
+          yieldsApiUrl: config.env.yieldsApiUrl,
+        } satisfies WidgetConfigEnvironment;
+        const initialResult = normalizeWidgetConfig(
+          initialHostConfiguration,
+          environment
+        );
+        if (Result.isFailure(initialResult)) {
+          yield* Effect.logError(
+            "Initial Widget Configuration is invalid"
+          ).pipe(
+            Effect.annotateLogs({
+              event: "invalid_initial_widget_configuration",
+              issues: initialResult.failure.issues,
+            })
+          );
+          return yield* initialResult.failure;
+        }
+
+        const initial = initialResult.success;
+        const state = yield* SubscriptionRef.make(initial);
+        const updatePermit = yield* Semaphore.make(1);
+        const current: WidgetConfigServiceValue["current"] =
+          SubscriptionRef.get(state);
+        const values: WidgetConfigServiceValue["values"] =
+          SubscriptionRef.changes(state).pipe(
+            Stream.changesWith((previous, next) => Equal.equals(previous, next))
+          );
+        const update = Effect.fn("WidgetConfigService.update")(function* (
+          hostConfiguration: SKAppProps
+        ) {
+          const nextResult = normalizeWidgetConfig(
+            hostConfiguration,
+            environment
+          );
+          if (Result.isFailure(nextResult)) {
+            yield* Effect.logWarning(
+              "Widget Configuration update rejected"
+            ).pipe(
+              Effect.annotateLogs({
+                event: "invalid_widget_configuration_update",
+                issues: nextResult.failure.issues,
+              })
+            );
+            return {
+              _tag: "RejectedInvalid",
+              error: nextResult.failure,
+            } as const;
+          }
+
+          yield* SubscriptionRef.set(state, nextResult.success);
+          return { _tag: "Updated" } as const;
+        }, updatePermit.withPermit);
+
+        return WidgetConfigService.of({ current, update, values });
+      })
+    );
   }
 }

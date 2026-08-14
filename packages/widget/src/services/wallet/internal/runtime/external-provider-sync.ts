@@ -1,15 +1,12 @@
 import { Effect, Ref, type Scope, Stream } from "effect";
 import {
   diffWidgetWalletConfig,
-  normalizeWidgetBootstrapConfig,
+  selectWidgetBootstrapSnapshot,
   WidgetConfigService,
 } from "../../../config/widget-config";
 import { WalletRuntimeInvariantError } from "../../wallet-errors";
 import { isExternalProviderConnector } from "../adapters/external-provider";
-import {
-  makeExternalProviderSnapshot,
-  type WalletBootstrapResult,
-} from "./bootstrap";
+import type { WalletBootstrapResult } from "./bootstrap";
 import type { WalletStateContext, WalletStateRuntime } from "./state";
 
 type SynchronizationMemory = {
@@ -226,20 +223,14 @@ export const installExternalProviderSynchronization = Effect.fn(
     }
   });
 
-  const settings = Stream.concat(
-    Stream.succeed(yield* config.current),
-    config.changes
-  ).pipe(
+  const settings = config.values.pipe(
     Stream.mapEffect((next) =>
       Effect.gen(function* () {
         const difference = diffWidgetWalletConfig(
-          normalizeWidgetBootstrapConfig({
-            isLedgerLive: next.isLedgerLive,
-            settings: next,
-          }).wallet,
+          selectWidgetBootstrapSnapshot(next).wallet,
           bootstrap.snapshot.config.wallet
         );
-        const snapshot = makeExternalProviderSnapshot(next);
+        const snapshot = next.externalProviders;
 
         if (difference.material.length > 0) {
           yield* failInvariant("wallet-topology-changed", {

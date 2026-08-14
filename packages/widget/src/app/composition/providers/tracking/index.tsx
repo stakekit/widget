@@ -1,11 +1,7 @@
 import { RegistryProvider } from "@effect/atom-react";
 import type { PropsWithChildren } from "react";
-import { useState } from "react";
 import type { TrackingConfig } from "../../../../public-api/types";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../../config/settings";
+import { applicationRuntimeInitAtom } from "../../../runtime/application-runtime-init";
 import { WidgetConfigBoundaryAdapter } from "../widget-config-binding";
 
 type TrackingProviderProps = PropsWithChildren<{
@@ -32,16 +28,25 @@ export const TrackingContextProvider = ({
   tracking,
   variantTracking,
 }: TrackingProviderProps) => {
-  const settings = normalizeWidgetConfig({
+  const hostConfiguration = {
     apiKey: "",
     tracking: makeTrackingConfig({ tracking, variantTracking }),
-    variant: "default",
-  });
-  const [initialSettings] = useState(settings);
+  } as const;
 
   return (
-    <RegistryProvider initialValues={[[widgetConfigAtom, initialSettings]]}>
-      <WidgetConfigBoundaryAdapter settings={settings}>
+    <RegistryProvider
+      initialValues={[
+        [
+          applicationRuntimeInitAtom,
+          {
+            hostConfiguration,
+            isLedgerLive: false,
+            routes: [{ path: "*" }],
+          },
+        ],
+      ]}
+    >
+      <WidgetConfigBoundaryAdapter hostConfiguration={hostConfiguration}>
         {children}
       </WidgetConfigBoundaryAdapter>
     </RegistryProvider>

@@ -7,7 +7,7 @@ import type { DashboardYieldCategory } from "../../../public-api/types";
 import { combineRecipeWithVariant } from "../../../shared/styles/recipe-variant";
 import { Divider } from "../../../shared/ui/components/divider";
 import { Box } from "../../../shared/ui/primitives/box";
-import { useWidgetConfig } from "../../config/use-widget-config";
+import { useWidgetConfig } from "../../composition/use-widget-config";
 import {
   divider,
   tabsContainer,

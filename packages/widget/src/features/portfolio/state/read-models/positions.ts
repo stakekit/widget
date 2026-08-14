@@ -1,8 +1,10 @@
 import BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetConfigAtom } from "../../../../app/config/settings";
-import { widgetBootstrapConfigAtom } from "../../../../app/config/widget-config";
+import {
+  widgetBootstrapSnapshotAtom,
+  widgetConfigAtom,
+} from "../../../../app/runtime/widget-config";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
 import type { EarnBalance } from "../../../../domain/earn/models";
@@ -127,7 +129,7 @@ const positionsDataAtom = yieldBalancesScanAtom.pipe(
 );
 
 export const positionsTableDataAtom = Atom.make((get) => {
-  const variant = get(widgetBootstrapConfigAtom).wallet.variant;
+  const variant = get(widgetBootstrapSnapshotAtom).wallet.variant;
 
   return get(positionsDataAtom).pipe(
     AsyncResult.map((positions) =>

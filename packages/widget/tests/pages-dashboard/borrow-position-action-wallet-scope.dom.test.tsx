@@ -22,6 +22,7 @@ import { createWidgetI18nInstance } from "../../src/services/translation/widget-
 import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { RootElementProvider } from "../../src/shared/react/root-element";
 import { render } from "../utils/test-utils.dom.tsx";
+import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const i18nInstance = createWidgetI18nInstance();
 
@@ -203,6 +204,7 @@ const renderAction = ({
   return (
     <RegistryProvider
       initialValues={[
+        applicationRuntimeInitInitialValue(),
         [walletScopeAtom, scope],
         [currentBorrowPositionsAtom, AsyncResult.success([position])],
       ]}

@@ -2,7 +2,7 @@ import { Trigger } from "@radix-ui/react-dialog";
 import clsx from "clsx";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
+import { useWidgetConfig } from "../../../../../../../app/composition/use-widget-config";
 import { equalTokens } from "../../../../../../../domain/token/token";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
 import { SelectModal } from "../../../../../../../shared/ui/components/select-modal";

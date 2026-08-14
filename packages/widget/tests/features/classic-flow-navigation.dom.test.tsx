@@ -14,10 +14,6 @@ import {
   useNavigate,
 } from "react-router";
 import { ApplicationRouteContentProvider } from "../../src/app/composition/application-route-content";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../src/app/config/settings";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { applicationRouterRuntime } from "../../src/app/runtime/application-router-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
@@ -38,6 +34,7 @@ import {
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { walletScopeAtom } from "../../src/features/wallet/state";
+import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
 import {
   makeWidgetNavigation,
@@ -328,20 +325,20 @@ const FlowTestApp = ({
   readonly initialPath?: string;
   readonly walletState?: NormalizedWalletState;
 }) => {
-  const settings = normalizeWidgetConfig({
+  const hostConfiguration = {
     apiKey: "test-key",
     baseUrl: legacyApiUrl,
-    variant: "default",
+    variant: "default" as const,
     yieldsApiUrl: yieldApiUrl,
-  });
+  };
   const [router] = useState(() =>
     createMemoryRouter([...applicationRoutes], {
       initialEntries: [initialPath],
     })
   );
-  const applicationRouterLayer = Layer.succeed(
-    ApplicationRouter,
-    ApplicationRouter.of({ router })
+  const applicationRouterLayer = Layer.merge(
+    Layer.succeed(ApplicationRouter, ApplicationRouter.of({ router })),
+    WidgetConfigService.layer(hostConfiguration)
   );
   const navigationLayer = Layer.succeed(
     WidgetNavigation,
@@ -379,7 +376,6 @@ const FlowTestApp = ({
   return (
     <RegistryProvider
       initialValues={[
-        [widgetConfigAtom, settings],
         [walletScopeAtom, walletScope],
         [walletRuntime.layer, classicWalletLayer as never],
         [applicationRouterRuntime.layer, applicationRouterLayer],

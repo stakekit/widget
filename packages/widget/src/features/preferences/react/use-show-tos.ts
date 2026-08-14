@@ -1,7 +1,7 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { useWidgetConfig } from "../../../app/config/use-widget-config";
+import { useWidgetConfig } from "../../../app/composition/use-widget-config";
 import { acknowledgeTosAtom, tosAcknowledgementAtom } from "../state/tos-atoms";
 
 export const useShowTOS = () => {

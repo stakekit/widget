@@ -1,10 +1,7 @@
 import { Context, Effect, Layer, Stream, SubscriptionRef } from "effect";
 import type { ApiRequestError, RichError } from "../api/api-errors";
 
-import {
-  normalizeWidgetApiConfig,
-  WidgetConfigService,
-} from "../config/widget-config";
+import { WidgetConfigService } from "../config/widget-config";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -20,7 +17,7 @@ export class RichErrorService extends Context.Service<RichErrorService>()(
   {
     make: Effect.gen(function* () {
       const widgetConfig = yield* WidgetConfigService;
-      const api = normalizeWidgetApiConfig(widgetConfig.initial);
+      const api = yield* widgetConfig.current;
       const current = yield* SubscriptionRef.make<RichError | null>(null);
       const presentedRequestErrors = new WeakSet<ApiRequestError>();
       const allowedUrls = [api.baseUrl, api.borrowApiUrl, api.yieldsApiUrl];

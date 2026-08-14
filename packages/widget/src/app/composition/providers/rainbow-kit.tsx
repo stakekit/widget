@@ -20,7 +20,7 @@ import { id } from "../../../shared/styles/theme/ids";
 import type { ConnectKitTheme } from "../../../shared/styles/tokens/connect-kit";
 import { connectKitTheme } from "../../../shared/styles/tokens/connect-kit";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { useWidgetConfig } from "../../config/use-widget-config";
+import { useWidgetConfig } from "../../composition/use-widget-config";
 
 const finalTheme: ConnectKitTheme = {
   ...connectKitTheme.lightMode,

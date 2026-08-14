@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { useLocation, useNavigate } from "react-router";
-import { useWidgetConfig } from "../../../../app/config/use-widget-config";
+import { useWidgetConfig } from "../../../../app/composition/use-widget-config";
 import { Divider } from "../../../../shared/ui/components/divider";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { useMountAnimation } from "../../../mount-animation/state";

@@ -1,7 +1,7 @@
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../app/config/use-widget-config";
+import { useWidgetConfig } from "../../../../../app/composition/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../shared/ui/primitives/box";

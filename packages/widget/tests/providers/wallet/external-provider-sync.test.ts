@@ -1,21 +1,17 @@
-import { Deferred, Effect, Stream, SubscriptionRef } from "effect";
+import { Deferred, Effect, Stream } from "effect";
 import { mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
-import { normalizeWidgetConfig } from "../../../src/app/config/settings";
 import type {
   SettingsProps,
   SKExternalProviders,
 } from "../../../src/public-api/types";
 import {
-  normalizeWidgetBootstrapConfig,
+  selectWidgetBootstrapSnapshot,
   WidgetConfigService,
 } from "../../../src/services/config/widget-config";
 import { makeDefaultConfig } from "../../../src/services/wallet/default-wagmi-config";
-import {
-  makeExternalProviderSnapshot,
-  type WalletBootstrapResult,
-} from "../../../src/services/wallet/internal/runtime/bootstrap";
+import type { WalletBootstrapResult } from "../../../src/services/wallet/internal/runtime/bootstrap";
 import { installExternalProviderSynchronization } from "../../../src/services/wallet/internal/runtime/external-provider-sync";
 import type {
   WalletStateContext,
@@ -23,6 +19,7 @@ import type {
 } from "../../../src/services/wallet/internal/runtime/state";
 import type { WalletCoreState } from "../../../src/services/wallet/wallet-state";
 import { disconnectedNormalizedWalletState } from "../../../src/services/wallet/wallet-state";
+import { getTestWidgetConfig } from "../../utils/widget-config";
 import { makeWalletTestController } from "./wallet-test-controller";
 
 const firstAddress = "0x0000000000000000000000000000000000000001";
@@ -104,14 +101,13 @@ const makeHarness = async ({
     >
   >;
 }) => {
-  const initial = normalizeWidgetConfig({
+  const initial = getTestWidgetConfig({
     ...settings,
     apiKey: "api-key",
     borrowEnabled: false,
     externalProviders: externalProviders(),
     variant: "default",
   });
-  const config = await Effect.runPromise(SubscriptionRef.make(initial));
   const invariant = await Effect.runPromise(Deferred.make<unknown>());
   const context = makeContext(connector, connected);
   const state = {
@@ -126,7 +122,7 @@ const makeHarness = async ({
     queryParamsInitChainId: undefined,
     wagmiConfig,
   });
-  const snapshot = makeExternalProviderSnapshot(initial)!;
+  const snapshot = initial.externalProviders!;
   const bootstrap = {
     controller,
     core: {
@@ -141,21 +137,20 @@ const makeHarness = async ({
         isLedgerDappBrowser: false,
         isMobileWallet: false,
       },
-      config: normalizeWidgetBootstrapConfig({
-        isLedgerLive: initial.isLedgerLive,
-        settings: initial,
-      }),
+      config: selectWidgetBootstrapSnapshot(initial),
       enabledNetworks: new Set(["ethereum"]),
       externalProviders: { current: snapshot },
       initParams: {} as never,
     },
   } satisfies WalletBootstrapResult;
   const configLayer = WidgetConfigService.layer({
-    changes: SubscriptionRef.changes(config),
-    current: SubscriptionRef.get(config),
-    initial,
+    ...settings,
+    apiKey: "api-key",
+    borrowEnabled: false,
+    externalProviders: externalProviders(),
+    variant: "default",
   });
-  return { bootstrap, config, configLayer, invariant, state };
+  return { bootstrap, configLayer, invariant, state };
 };
 
 describe("external-provider synchronization", () => {
@@ -187,14 +182,12 @@ describe("external-provider synchronization", () => {
       Effect.scoped(
         Effect.gen(function* () {
           yield* installExternalProviderSynchronization(harness);
-          yield* SubscriptionRef.set(
-            harness.config,
-            normalizeWidgetConfig({
-              apiKey: "api-key",
-              externalProviders: nextProviders,
-              variant: "default",
-            })
-          );
+          const config = yield* WidgetConfigService;
+          yield* config.update({
+            apiKey: "api-key",
+            externalProviders: nextProviders,
+            variant: "default",
+          });
           yield* Deferred.await(notified);
           yield* Effect.yieldNow;
         }).pipe(Effect.provide(harness.configLayer))
@@ -202,13 +195,11 @@ describe("external-provider synchronization", () => {
     );
 
     expect(harness.bootstrap.externalProviders?.current).toEqual(
-      makeExternalProviderSnapshot(
-        normalizeWidgetConfig({
-          apiKey: "api-key",
-          externalProviders: nextProviders,
-          variant: "default",
-        })
-      )
+      getTestWidgetConfig({
+        apiKey: "api-key",
+        externalProviders: nextProviders,
+        variant: "default",
+      }).externalProviders
     );
     expect(accountsChanged).toHaveBeenCalledWith([secondAddress]);
     expect(chainChanged).toHaveBeenCalledWith("10");
@@ -243,10 +234,11 @@ describe("external-provider synchronization", () => {
         Effect.gen(function* () {
           yield* installExternalProviderSynchronization(harness);
           yield* Deferred.await(started);
-          const current = yield* SubscriptionRef.get(harness.config);
-          yield* SubscriptionRef.set(harness.config, {
-            ...current,
+          const config = yield* WidgetConfigService;
+          yield* config.update({
+            apiKey: "api-key",
             externalProviders: externalProviders({ currentChain: 10 }),
+            variant: "default",
           });
           yield* Effect.yieldNow;
           expect(connect).toHaveBeenCalledOnce();
@@ -279,17 +271,15 @@ describe("external-provider synchronization", () => {
       Effect.scoped(
         Effect.gen(function* () {
           yield* installExternalProviderSynchronization(harness);
-          yield* SubscriptionRef.set(
-            harness.config,
-            normalizeWidgetConfig({
-              apiKey: "api-key",
-              externalProviders: externalProviders({
-                currentAddress: secondAddress,
-              }),
-              mapWalletFn: (wallet) => wallet,
-              variant: "default",
-            })
-          );
+          const config = yield* WidgetConfigService;
+          yield* config.update({
+            apiKey: "api-key",
+            externalProviders: externalProviders({
+              currentAddress: secondAddress,
+            }),
+            mapWalletFn: (wallet) => wallet,
+            variant: "default",
+          });
           yield* Deferred.await(notified);
           yield* Effect.yieldNow;
 
@@ -320,15 +310,13 @@ describe("external-provider synchronization", () => {
       Effect.scoped(
         Effect.gen(function* () {
           yield* installExternalProviderSynchronization(harness);
-          yield* SubscriptionRef.set(
-            harness.config,
-            normalizeWidgetConfig({
-              apiKey: "api-key",
-              externalProviders: externalProviders(),
-              isSafe: true,
-              variant: "default",
-            })
-          );
+          const config = yield* WidgetConfigService;
+          yield* config.update({
+            apiKey: "api-key",
+            externalProviders: externalProviders(),
+            isSafe: true,
+            variant: "default",
+          });
 
           return yield* Deferred.await(harness.invariant);
         }).pipe(Effect.provide(harness.configLayer))

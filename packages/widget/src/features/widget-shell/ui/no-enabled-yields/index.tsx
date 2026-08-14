@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../app/config/use-widget-config";
+import { useWidgetConfig } from "../../../../app/composition/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";

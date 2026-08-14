@@ -17,7 +17,7 @@ const runtimeReleased = vi.hoisted(() => vi.fn());
 vi.mock("../../src/app/composition/providers", async () => {
   const { useAtomValue } = await import("@effect/atom-react");
   const Atom = await import("effect/unstable/reactivity/Atom");
-  const { widgetConfigAtom } = await import("../../src/app/config/settings");
+  const { widgetConfigAtom } = await import("../utils/widget-config");
   const { useLayoutEffect } = await import("react");
   const runtimeIdentityAtom = Atom.make(() => ({}));
 
@@ -175,7 +175,7 @@ describe("Widget Instance lifecycle", () => {
     act(() => secondaryRoot.unmount());
   });
 
-  it("rejects a bundled API identity change and keeps the claim until unmount", async () => {
+  it("accepts a bundled API key change and keeps the claim until unmount", async () => {
     const container = document.createElement("div");
     document.body.append(container);
     let controller: ReturnType<typeof renderSKWidget>;
@@ -184,14 +184,13 @@ describe("Widget Instance lifecycle", () => {
       await act(async () => {
         controller = renderSKWidget({ apiKey: "api-key", container });
       });
-      await expect(
-        act(async () => {
-          controller.rerender({ apiKey: "updated-api-key" });
-        })
-      ).rejects.toMatchObject({
-        name: "ApplicationRuntimeIdentityChangedError",
+      await act(async () => {
+        controller.rerender({ apiKey: "updated-api-key" });
       });
 
+      expect(
+        container.querySelector('[data-testid="bundled-api-key"]')?.textContent
+      ).toBe("updated-api-key");
       expect(() =>
         renderSKWidget({
           apiKey: "other-api-key",

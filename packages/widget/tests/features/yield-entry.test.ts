@@ -4,10 +4,6 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
@@ -35,6 +31,7 @@ import {
 } from "../../src/services/wallet/wallet-state";
 import { yieldApiYieldFixture } from "../fixtures";
 import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
+import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
@@ -203,10 +200,10 @@ const makeObservableRegistry = (
 
   return AtomRegistry.make({
     initialValues: [
-      [
-        widgetConfigAtom,
-        normalizeWidgetConfig({ apiKey: "test", variant: "default" }),
-      ],
+      applicationRuntimeInitInitialValue({
+        apiKey: "test",
+        variant: "default",
+      }),
       [walletScopeAtom, walletScope],
       [appRuntime.layer, ports.layer],
       [walletRuntime.layer, runtimeLayer as never],
@@ -441,10 +438,10 @@ describe("Yield Entry", () => {
     const navigationLayer = Layer.succeed(WidgetNavigation, navigation);
     const registry = AtomRegistry.make({
       initialValues: [
-        [
-          widgetConfigAtom,
-          normalizeWidgetConfig({ apiKey: "test", variant: "default" }),
-        ],
+        applicationRuntimeInitInitialValue({
+          apiKey: "test",
+          variant: "default",
+        }),
         [walletScopeAtom, walletScope],
         [appRuntime.layer, navigationLayer as never],
         [

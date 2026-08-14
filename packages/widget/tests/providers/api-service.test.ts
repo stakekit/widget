@@ -99,9 +99,12 @@ describe("application API services", () => {
     const markets = vi.fn(() =>
       Effect.succeed({ items: [], limit: 100, offset: 0, total: 0 })
     );
-    const source = makeBorrowResourceSource({
-      MarketsControllerGetMarketsV1: markets,
-    } as never);
+    const source = makeBorrowResourceSource(
+      {
+        MarketsControllerGetMarketsV1: markets,
+      } as never,
+      true
+    );
     const request = {
       limit: 100,
       network: "ethereum" as const,
@@ -120,9 +123,12 @@ describe("application API services", () => {
 
   it("maps Borrow action polling through the narrow operation capability", async () => {
     const getAction = vi.fn(() => Effect.succeed(null));
-    const operations = makeBorrowOperations({
-      ActionsControllerGetActionV1: getAction,
-    } as never);
+    const operations = makeBorrowOperations(
+      {
+        ActionsControllerGetActionV1: getAction,
+      } as never,
+      true
+    );
 
     expect(await Effect.runPromise(operations.getAction("borrow-action"))).toBe(
       null

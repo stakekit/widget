@@ -3,10 +3,6 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { EarnPosition } from "../../src/domain/earn/models";
 import { getDashboardYieldCategory } from "../../src/domain/earn/yield";
@@ -31,6 +27,7 @@ import {
   yieldApiYieldFixture,
   yieldBalanceFixture,
 } from "../fixtures";
+import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const makePosition = ({
   amountUsd,
@@ -142,6 +139,7 @@ describe("summary atom derivations", () => {
     const key = new MultiYieldsKey({ yieldIds: [position.yieldDto.id] });
     const successfulRegistry = AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue(),
         [positionsTableDataAtom, AsyncResult.success([position.item])],
         [
           multiYieldsByIdAtom(key),
@@ -161,6 +159,7 @@ describe("summary atom derivations", () => {
     const failure = new Error("Yield summary unavailable");
     const failedRegistry = AtomRegistry.make({
       initialValues: [
+        applicationRuntimeInitInitialValue(),
         [positionsTableDataAtom, AsyncResult.success([position.item])],
         [multiYieldsByIdAtom(key), AsyncResult.fail(failure)],
       ],
@@ -198,17 +197,14 @@ describe("summary atom derivations", () => {
             listYields,
           } as never)
         ),
-        [
-          widgetConfigAtom,
-          normalizeWidgetConfig({
-            apiKey: "test-key",
-            baseUrl: "https://api.example.com",
-            dashboardVariant: true,
-            variant: "default",
-            yieldGrouping: "category",
-            yieldsApiUrl: "https://yield.example.com",
-          }),
-        ],
+        applicationRuntimeInitInitialValue({
+          apiKey: "test-key",
+          baseUrl: "https://api.example.com",
+          dashboardVariant: true,
+          variant: "default",
+          yieldGrouping: "category",
+          yieldsApiUrl: "https://yield.example.com",
+        }),
         [positionsTableDataAtom, AsyncResult.success([position.item])],
       ],
     });

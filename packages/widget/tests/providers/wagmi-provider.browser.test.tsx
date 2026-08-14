@@ -31,7 +31,6 @@ import {
 import { watchConnectors } from "wagmi/actions";
 import { optimism } from "wagmi/chains";
 import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
-import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { EvmNetworks } from "../../src/domain/network/networks";
@@ -55,6 +54,7 @@ import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { rkMockWallet } from "../utils/mock-connector";
 import { describe, expect, it, vi } from "../utils/test-extend";
 import { render, renderHook } from "../utils/test-utils";
+import { getTestWidgetConfig } from "../utils/widget-config";
 
 class RuntimeErrorBoundary extends Component<
   PropsWithChildren<{ readonly onError: (error: unknown) => void }>,
@@ -190,7 +190,7 @@ const ControllerHarness = ({
   <ThirdPartyQueryClientProvider>
     <StrictMode>
       <TestAtomRuntimeProvider
-        settings={normalizeWidgetConfig({
+        settings={getTestWidgetConfig({
           apiKey: import.meta.env.VITE_API_KEY,
           disableInjectedProviderDiscovery: true,
           variant: "default",
@@ -358,7 +358,7 @@ describe("WagmiConfigProvider", () => {
         <ThirdPartyQueryClientProvider>
           <StrictMode>
             <TestAtomRuntimeProvider
-              settings={normalizeWidgetConfig({
+              settings={getTestWidgetConfig({
                 apiKey: import.meta.env.VITE_API_KEY,
                 disableInjectedProviderDiscovery: true,
                 variant: "default",
@@ -440,7 +440,7 @@ describe("WagmiConfigProvider", () => {
       wrapper: ({ children }) => (
         <ThirdPartyQueryClientProvider>
           <TestAtomRuntimeProvider
-            settings={normalizeWidgetConfig({
+            settings={getTestWidgetConfig({
               apiKey: import.meta.env.VITE_API_KEY,
               disableInjectedProviderDiscovery: true,
               variant: "default",

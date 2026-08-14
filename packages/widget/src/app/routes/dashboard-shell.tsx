@@ -6,7 +6,7 @@ import {
 import { DashboardHeader, PoweredBy } from "../../features/widget-shell/ui";
 import { combineRecipeWithVariant } from "../../shared/styles/recipe-variant";
 import { Box } from "../../shared/ui/primitives/box";
-import { useWidgetConfig } from "../config/use-widget-config";
+import { useWidgetConfig } from "../composition/use-widget-config";
 import { DashboardTabs } from "./dashboard-tabs";
 
 export const DashboardShell = () => {

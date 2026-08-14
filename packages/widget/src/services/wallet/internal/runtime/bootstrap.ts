@@ -1,4 +1,4 @@
-import { Duration, Effect, Schedule, Schema, type Scope } from "effect";
+import { Duration, Effect, Schedule, Schema } from "effect";
 import type { EarnYield } from "../../../../domain/earn/models";
 import type { EnabledNetworks } from "../../../../domain/wallet/models";
 import {
@@ -9,9 +9,8 @@ import {
 import { LegacyResourceSource } from "../../../api/legacy-resource-source";
 import { YieldResourceSource } from "../../../api/yield-resource-source";
 import {
-  normalizeWidgetBootstrapConfig,
-  type WidgetBootstrapConfigValue,
-  type WidgetConfig,
+  selectWidgetBootstrapSnapshot,
+  type WidgetBootstrapSnapshot as WidgetConfigBootstrapSnapshot,
   WidgetConfigService,
 } from "../../../config/widget-config";
 import { WidgetPersistence } from "../../../persistence/widget-persistence";
@@ -50,7 +49,7 @@ type WalletBootstrapSnapshot = {
     readonly isLedgerDappBrowser: boolean;
     readonly isMobileWallet: boolean;
   };
-  readonly config: WidgetBootstrapConfigValue;
+  readonly config: WidgetConfigBootstrapSnapshot;
   readonly enabledNetworks: EnabledNetworks;
   readonly externalProviders: MutableExternalProviderRef | undefined;
   readonly initParams: InitParams;
@@ -72,22 +71,6 @@ const enabledNetworksRetrySchedule = Schedule.exponential(
     Effect.succeed(Duration.min(duration, Duration.seconds(5)))
   )
 );
-
-export const makeExternalProviderSnapshot = (
-  settings: WidgetConfig
-): ExternalProviderSnapshot | undefined => {
-  const externalProviders = settings.externalProviders;
-  if (!externalProviders) return undefined;
-
-  return Object.freeze({
-    ...externalProviders,
-    supportedChainIds: externalProviders.supportedChainIds
-      ? [...new Set(externalProviders.supportedChainIds)].sort(
-          (first, second) => first - second
-        )
-      : undefined,
-  });
-};
 
 const resolveWalletInitParams = Effect.fn("resolveWalletInitParams")(function* (
   initParams: InitParams,
@@ -113,141 +96,123 @@ const resolveWalletInitParams = Effect.fn("resolveWalletInitParams")(function* (
   };
 });
 
-export const bootstrapWallet = Effect.fn("bootstrapWallet")(
-  function* (): Effect.fn.Return<
-    WalletBootstrapResult,
-    WalletBootstrapError,
-    | LegacyResourceSource
-    | Scope.Scope
-    | SolanaPlatform
-    | WagmiPlatform
-    | WalletEnvironment
-    | WidgetConfigService
-    | WidgetPersistence
-    | YieldResourceSource
-  > {
-    const config = yield* WidgetConfigService;
-    const environment = yield* WalletEnvironment;
-    const legacySource = yield* LegacyResourceSource;
-    const persistence = yield* WidgetPersistence;
-    const solana = yield* SolanaPlatform;
-    const wagmi = yield* WagmiPlatform;
-    const yieldSource = yield* YieldResourceSource;
-    const settings = yield* config.current;
-    const [href, isMobileWallet] = yield* Effect.all([
-      environment.href,
-      environment.isMobileWallet,
-    ]);
-    const normalizedConfig = normalizeWidgetBootstrapConfig({
-      isLedgerLive: settings.isLedgerLive,
-      settings,
-    });
-    const browser = Object.freeze({
-      href,
-      isLedgerDappBrowser: normalizedConfig.wallet.isLedgerLive,
-      isMobileWallet,
-    });
-    const initParams = decodeInitParams({
-      externalProviderInitToken:
-        normalizedConfig.wallet.externalProviderInitToken,
-      href: browser.href,
-    });
-    const externalProviderSnapshot = makeExternalProviderSnapshot(settings);
-    const externalProviders = externalProviderSnapshot
-      ? ({
-          current: externalProviderSnapshot,
-        } satisfies MutableExternalProviderRef)
-      : undefined;
-    const enabledNetworks = yield* legacySource.getEnabledNetworks().pipe(
-      Effect.retry(enabledNetworksRetrySchedule),
+export const bootstrapWallet = Effect.gen(function* () {
+  const config = yield* WidgetConfigService;
+  const environment = yield* WalletEnvironment;
+  const legacySource = yield* LegacyResourceSource;
+  const persistence = yield* WidgetPersistence;
+  const solana = yield* SolanaPlatform;
+  const wagmi = yield* WagmiPlatform;
+  const yieldSource = yield* YieldResourceSource;
+  const settings = yield* config.current;
+  const [href, isMobileWallet] = yield* Effect.all([
+    environment.href,
+    environment.isMobileWallet,
+  ]);
+  const configSnapshot = selectWidgetBootstrapSnapshot(settings);
+  const browser = Object.freeze({
+    href,
+    isLedgerDappBrowser: configSnapshot.wallet.isLedgerLive,
+    isMobileWallet,
+  });
+  const initParams = decodeInitParams({
+    externalProviderInitToken: configSnapshot.wallet.externalProviderInitToken,
+    href: browser.href,
+  });
+  const externalProviderSnapshot = settings.externalProviders;
+  const externalProviders = externalProviderSnapshot
+    ? ({
+        current: externalProviderSnapshot,
+      } satisfies MutableExternalProviderRef)
+    : undefined;
+  const enabledNetworks = yield* legacySource.getEnabledNetworks().pipe(
+    Effect.retry(enabledNetworksRetrySchedule),
+    Effect.mapError(
+      (cause) => new WalletBootstrapError({ cause, stage: "enabled-networks" })
+    )
+  );
+  const queryParams = yield* resolveWalletInitParams(
+    initParams,
+    yieldSource.getOpportunity
+  ).pipe(
+    Effect.mapError(
+      (cause) =>
+        new WalletBootstrapError({ cause, stage: "initial-parameters" })
+    )
+  );
+  const snapshot = Object.freeze({
+    browser,
+    config: Object.freeze({
+      ...configSnapshot,
+      api: Object.freeze(configSnapshot.api),
+      tracking: Object.freeze(configSnapshot.tracking),
+      wallet: Object.freeze(configSnapshot.wallet),
+    }),
+    enabledNetworks: new Set(enabledNetworks),
+    externalProviders,
+    initParams: Object.freeze(queryParams),
+  } satisfies WalletBootstrapSnapshot);
+  const walletConfig = snapshot.config.wallet;
+  const includeSolanaWalletAdapters =
+    snapshot.enabledNetworks.has("solana") &&
+    !walletConfig.hasExternalProvider &&
+    !walletConfig.forceWalletConnectOnly &&
+    !walletConfig.isLedgerLive &&
+    !walletConfig.isSafe &&
+    !walletConfig.customConnectors;
+  const solanaRuntime = yield* solana
+    .makeRuntime({ includeWalletAdapters: includeSolanaWalletAdapters })
+    .pipe(
       Effect.mapError(
-        (cause) =>
-          new WalletBootstrapError({ cause, stage: "enabled-networks" })
+        (cause) => new WalletBootstrapError({ cause, stage: "solana" })
       )
     );
-    const queryParams = yield* resolveWalletInitParams(
-      initParams,
-      yieldSource.getOpportunity
-    ).pipe(
+  const solanaSnapshot = yield* solanaRuntime.current;
+  const controller = yield* wagmi
+    .buildConfig({
+      ...walletConfig,
+      enabledNetworks: snapshot.enabledNetworks,
+      externalProviders: snapshot.externalProviders,
+      persistPublicKey: persistence.upsertStoredPublicKey,
+      queryParams: snapshot.initParams,
+      solanaConnection: solanaRuntime.connection,
+      solanaWallets: solanaSnapshot.wallets,
+    })
+    .pipe(
       Effect.mapError(
-        (cause) =>
-          new WalletBootstrapError({ cause, stage: "initial-parameters" })
+        (cause) => new WalletBootstrapError({ cause, stage: "wagmi-config" })
       )
     );
-    const snapshot = Object.freeze({
-      browser,
-      config: Object.freeze({
-        ...normalizedConfig,
-        api: Object.freeze(normalizedConfig.api),
-        tracking: Object.freeze(normalizedConfig.tracking),
-        wallet: Object.freeze(normalizedConfig.wallet),
-      }),
-      enabledNetworks: new Set(enabledNetworks),
-      externalProviders,
-      initParams: Object.freeze(queryParams),
-    } satisfies WalletBootstrapSnapshot);
-    const walletConfig = snapshot.config.wallet;
-    const includeSolanaWalletAdapters =
-      snapshot.enabledNetworks.has("solana") &&
-      !walletConfig.hasExternalProvider &&
-      !walletConfig.forceWalletConnectOnly &&
-      !walletConfig.isLedgerLive &&
-      !walletConfig.isSafe &&
-      !walletConfig.customConnectors;
-    const solanaRuntime = yield* solana
-      .makeRuntime({ includeWalletAdapters: includeSolanaWalletAdapters })
-      .pipe(
-        Effect.mapError(
-          (cause) => new WalletBootstrapError({ cause, stage: "solana" })
-        )
-      );
-    const solanaSnapshot = yield* solanaRuntime.current;
-    const controller = yield* wagmi
-      .buildConfig({
-        ...walletConfig,
-        enabledNetworks: snapshot.enabledNetworks,
-        externalProviders: snapshot.externalProviders,
-        persistPublicKey: persistence.upsertStoredPublicKey,
-        queryParams: snapshot.initParams,
-        solanaConnection: solanaRuntime.connection,
-        solanaWallets: solanaSnapshot.wallets,
-      })
-      .pipe(
-        Effect.mapError(
-          (cause) => new WalletBootstrapError({ cause, stage: "wagmi-config" })
-        )
-      );
-    const core = yield* wagmi
-      .observeCore(controller)
-      .pipe(
-        Effect.mapError(
-          (cause) =>
-            new WalletBootstrapError({ cause, stage: "wagmi-observation" })
-        )
-      );
-    if (includeSolanaWalletAdapters && controller.solanaConnectorMode) {
-      yield* installSolanaConnectorMembership({
-        actions: controller.actions,
-        config: controller.wagmiConfig,
-        core,
-        createConnector: controller.createSolanaConnector,
-        runtime: solanaRuntime,
-      });
-    }
-    yield* wagmi.initialize({
-      hasExternalProvider: walletConfig.hasExternalProvider,
-      isLedgerDappBrowser: browser.isLedgerDappBrowser,
-      isMobileWallet: browser.isMobileWallet,
-      queryParamsInitChainId: controller.queryParamsInitChainId,
-      wagmiConfig: controller.wagmiConfig,
-    });
-
-    return {
-      controller,
+  const core = yield* wagmi
+    .observeCore(controller)
+    .pipe(
+      Effect.mapError(
+        (cause) =>
+          new WalletBootstrapError({ cause, stage: "wagmi-observation" })
+      )
+    );
+  if (includeSolanaWalletAdapters && controller.solanaConnectorMode) {
+    yield* installSolanaConnectorMembership({
+      actions: controller.actions,
+      config: controller.wagmiConfig,
       core,
-      externalProviderMode: walletConfig.hasExternalProvider,
-      externalProviders,
-      snapshot,
-    };
+      createConnector: controller.createSolanaConnector,
+      runtime: solanaRuntime,
+    });
   }
-);
+  yield* wagmi.initialize({
+    hasExternalProvider: walletConfig.hasExternalProvider,
+    isLedgerDappBrowser: browser.isLedgerDappBrowser,
+    isMobileWallet: browser.isMobileWallet,
+    queryParamsInitChainId: controller.queryParamsInitChainId,
+    wagmiConfig: controller.wagmiConfig,
+  });
+
+  return {
+    controller,
+    core,
+    externalProviderMode: walletConfig.hasExternalProvider,
+    externalProviders,
+    snapshot,
+  };
+});

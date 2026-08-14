@@ -1,36 +1,29 @@
-import { Deferred, Effect, Layer, Ref, SubscriptionRef } from "effect";
+import { Deferred, Effect, Layer, Ref } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/unstable/http";
 import { describe, expect, it } from "vitest";
-import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import type { SKAppProps } from "../../src/public-api/types";
-import {
-  type WidgetConfig,
-  WidgetConfigService,
-} from "../../src/services/config/widget-config";
+import { WidgetConfigService } from "../../src/services/config/widget-config";
+import type { WidgetConfig } from "../../src/services/config/widget-config-model";
 import {
   composeWidgetTranslationResources,
   createWidgetI18nInstance,
   reconcileWidgetI18n,
   WidgetTranslation,
 } from "../../src/services/translation/widget-translation";
+import { getTestWidgetConfig } from "../utils/widget-config";
 
 const makeSettings = (overrides: Partial<WidgetConfig> = {}): WidgetConfig =>
-  normalizeWidgetConfig({
+  getTestWidgetConfig({
     apiKey: "test-key",
     variant: "default",
     ...overrides,
   } as SKAppProps);
 
 const makeTranslationLayer = (
-  config: SubscriptionRef.SubscriptionRef<WidgetConfig>,
   initial: WidgetConfig,
   load: (language: string) => Effect.Effect<Readonly<Record<string, unknown>>>
 ) => {
-  const configLayer = WidgetConfigService.layer({
-    changes: SubscriptionRef.changes(config),
-    current: SubscriptionRef.get(config),
-    initial,
-  });
+  const configLayer = WidgetConfigService.layer(initial as SKAppProps);
   const httpClientLayer = Layer.succeed(
     HttpClient.HttpClient,
     HttpClient.make((request, url) => {
@@ -50,9 +43,10 @@ const makeTranslationLayer = (
     })
   );
 
-  return WidgetTranslation.layerNoDeps.pipe(
+  const translationLayer = WidgetTranslation.layerNoDeps.pipe(
     Layer.provide(Layer.merge(configLayer, httpClientLayer))
   );
+  return Layer.merge(configLayer, translationLayer);
 };
 
 const expectEventually = <T>(read: () => T, expected: T) =>
@@ -69,7 +63,6 @@ describe("WidgetTranslation", () => {
         },
       },
     });
-    const config = await Effect.runPromise(SubscriptionRef.make(initial));
     const loadStarted = await Effect.runPromise(Deferred.make<void>());
 
     await Effect.runPromise(
@@ -84,7 +77,7 @@ describe("WidgetTranslation", () => {
         })
       ).pipe(
         Effect.provide(
-          makeTranslationLayer(config, initial, () =>
+          makeTranslationLayer(initial, () =>
             Deferred.succeed(loadStarted, undefined).pipe(
               Effect.andThen(Effect.never)
             )
@@ -106,13 +99,13 @@ describe("WidgetTranslation", () => {
       },
       variant: "utila",
     });
-    const config = await Effect.runPromise(SubscriptionRef.make(initial));
     const loaded = await Effect.runPromise(Deferred.make<void>());
 
     await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
           const translation = yield* WidgetTranslation;
+          const config = yield* WidgetConfigService;
 
           expect(translation.i18n.t("details.rewards.receive_output")).toBe(
             "CUSTOM"
@@ -126,7 +119,7 @@ describe("WidgetTranslation", () => {
           );
           expect(translation.i18n.t("errors.stale")).toBe("API");
 
-          yield* SubscriptionRef.set(config, makeSettings());
+          yield* config.update(makeSettings() as SKAppProps);
           yield* expectEventually(
             () => translation.i18n.t("details.rewards.receive_output"),
             "You'll receive"
@@ -137,7 +130,7 @@ describe("WidgetTranslation", () => {
         })
       ).pipe(
         Effect.provide(
-          makeTranslationLayer(config, initial, () =>
+          makeTranslationLayer(initial, () =>
             Deferred.succeed(loaded, undefined).pipe(
               Effect.as({ shared: "REMOTE", stale: "API" })
             )
@@ -149,7 +142,6 @@ describe("WidgetTranslation", () => {
 
   it("does not apply a stale language response after config changes", async () => {
     const initial = makeSettings({ language: "en" });
-    const config = await Effect.runPromise(SubscriptionRef.make(initial));
     const englishStarted = await Effect.runPromise(Deferred.make<void>());
     const releaseEnglish = await Effect.runPromise(Deferred.make<void>());
     const frenchStarted = await Effect.runPromise(Deferred.make<void>());
@@ -158,9 +150,10 @@ describe("WidgetTranslation", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const translation = yield* WidgetTranslation;
+          const config = yield* WidgetConfigService;
           yield* Deferred.await(englishStarted);
 
-          yield* SubscriptionRef.set(config, makeSettings({ language: "fr" }));
+          yield* config.update(makeSettings({ language: "fr" }) as SKAppProps);
           yield* Deferred.await(frenchStarted);
           yield* expectEventually(
             () => translation.i18n.t("errors.shared"),
@@ -174,7 +167,7 @@ describe("WidgetTranslation", () => {
         })
       ).pipe(
         Effect.provide(
-          makeTranslationLayer(config, initial, (language) => {
+          makeTranslationLayer(initial, (language) => {
             if (language === "fr") {
               return Deferred.succeed(frenchStarted, undefined).pipe(
                 Effect.as({ shared: "FR_CURRENT" })
@@ -193,7 +186,6 @@ describe("WidgetTranslation", () => {
 
   it("ignores unrelated config changes while enrichment is pending", async () => {
     const initial = makeSettings({ language: "en" });
-    const config = await Effect.runPromise(SubscriptionRef.make(initial));
     const loadCount = await Effect.runPromise(Ref.make(0));
     const loadStarted = await Effect.runPromise(Deferred.make<void>());
     const releaseLoad = await Effect.runPromise(Deferred.make<void>());
@@ -202,14 +194,14 @@ describe("WidgetTranslation", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const translation = yield* WidgetTranslation;
+          const config = yield* WidgetConfigService;
           yield* Deferred.await(loadStarted);
 
-          yield* SubscriptionRef.set(
-            config,
+          yield* config.update(
             makeSettings({
               disableInjectedProviderDiscovery: true,
               language: "en",
-            })
+            }) as SKAppProps
           );
           yield* Effect.sleep("20 millis");
           yield* Deferred.succeed(releaseLoad, undefined);
@@ -222,7 +214,7 @@ describe("WidgetTranslation", () => {
         })
       ).pipe(
         Effect.provide(
-          makeTranslationLayer(config, initial, () =>
+          makeTranslationLayer(initial, () =>
             Ref.updateAndGet(loadCount, (count) => count + 1).pipe(
               Effect.tap(() => Deferred.succeed(loadStarted, undefined)),
               Effect.andThen(Deferred.await(releaseLoad)),
@@ -236,7 +228,6 @@ describe("WidgetTranslation", () => {
 
   it("does not cache an older same-language response that resolves last", async () => {
     const initial = makeSettings({ language: "en" });
-    const config = await Effect.runPromise(SubscriptionRef.make(initial));
     const loadCount = await Effect.runPromise(Ref.make(0));
     const firstStarted = await Effect.runPromise(Deferred.make<void>());
     const releaseFirst = await Effect.runPromise(Deferred.make<void>());
@@ -246,16 +237,16 @@ describe("WidgetTranslation", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const translation = yield* WidgetTranslation;
+          const config = yield* WidgetConfigService;
           yield* Deferred.await(firstStarted);
 
-          yield* SubscriptionRef.set(
-            config,
+          yield* config.update(
             makeSettings({
               customTranslations: {
                 en: { translation: { details: { earn: "CUSTOM" } } },
               },
               language: "en",
-            })
+            }) as SKAppProps
           );
           yield* Deferred.await(secondStarted);
           yield* expectEventually(
@@ -265,9 +256,8 @@ describe("WidgetTranslation", () => {
 
           yield* Deferred.succeed(releaseFirst, undefined);
           yield* Effect.yieldNow;
-          yield* SubscriptionRef.set(
-            config,
-            makeSettings({ language: "en", variant: "utila" })
+          yield* config.update(
+            makeSettings({ language: "en", variant: "utila" }) as SKAppProps
           );
           yield* expectEventually(
             () => translation.i18n.t("details.earn"),
@@ -278,7 +268,7 @@ describe("WidgetTranslation", () => {
         })
       ).pipe(
         Effect.provide(
-          makeTranslationLayer(config, initial, () =>
+          makeTranslationLayer(initial, () =>
             Ref.updateAndGet(loadCount, (count) => count + 1).pipe(
               Effect.flatMap((call) => {
                 if (call === 1) {
@@ -301,11 +291,10 @@ describe("WidgetTranslation", () => {
 
   it("creates a clean i18next instance for each scoped generation", async () => {
     const acquire = async (settings: WidgetConfig) => {
-      const config = await Effect.runPromise(SubscriptionRef.make(settings));
       return Effect.runPromise(
         Effect.scoped(WidgetTranslation).pipe(
           Effect.provide(
-            makeTranslationLayer(config, settings, () => Effect.succeed({}))
+            makeTranslationLayer(settings, () => Effect.succeed({}))
           )
         )
       );

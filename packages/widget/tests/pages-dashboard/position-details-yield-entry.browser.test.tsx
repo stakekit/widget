@@ -10,10 +10,6 @@ import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { Connector } from "wagmi";
 import { ApplicationRouteContentProvider } from "../../src/app/composition/application-route-content";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../src/app/config/settings";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import {
   applicationRouterAtom,
@@ -41,6 +37,7 @@ import {
   PositionBalancesKey,
   positionBalancesByTypeAtom,
 } from "../../src/resources/yield-positions/yield-positions";
+import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
 import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
@@ -195,19 +192,18 @@ const TestApp = () => {
       initialValues={[
         [
           applicationRouterRuntime.layer,
-          ApplicationRouter.layer(applicationRoutes, {
-            initialEntries: [`/positions/${selectedYield.id}/balance-1`],
-          }).pipe(Layer.fresh),
+          Layer.merge(
+            ApplicationRouter.layer(applicationRoutes, {
+              initialEntries: [`/positions/${selectedYield.id}/balance-1`],
+            }),
+            WidgetConfigService.layer({
+              apiKey: "test",
+              dashboardVariant: true,
+              variant: "default",
+            })
+          ).pipe(Layer.fresh),
         ],
         [walletRuntime.layer, classicWalletLayer],
-        [
-          widgetConfigAtom,
-          normalizeWidgetConfig({
-            apiKey: "test",
-            dashboardVariant: true,
-            variant: "default",
-          }),
-        ],
         [walletConnectionStateAtom, connectedWalletState],
         [walletScopeAtom, walletScope],
         [

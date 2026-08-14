@@ -46,7 +46,7 @@
           "pattern": "src/features/**",
           "allow": [
             "src/features/**",
-            "src/app/config/**",
+            "src/app/composition/use-widget-config.ts",
             "src/app/runtime/**",
             "src/resources/**",
             "src/services/**",

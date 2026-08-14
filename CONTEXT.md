@@ -9,8 +9,20 @@ A mounted StakeKit Widget within a browser document. A document may contain at m
 _Avoid_: Concurrent widgets, multiple widget instances
 
 **Application Runtime Generation**:
-One continuous lifetime of widget application state created when a Widget Instance mounts and ended when it unmounts. Its normalized API configuration and mount-time feature configuration are immutable; changing that identity is an invalid host integration that requires unmounting and remounting the Widget. Live settings changes remain within the same generation.
+One continuous lifetime of widget application state created when a Widget Instance mounts and ended when it unmounts. Its current Widget Configuration may change without beginning a new generation.
 _Avoid_: Widget Runtime, app mount
+
+**Application API Identity**:
+The normalized API key and endpoint set selected from Widget Configuration. Consumers may project it for transport construction; it is not a fixed generation lifetime constraint.
+_Avoid_: Runtime Identity, API settings
+
+**Host Configuration**:
+The typed configuration supplied by the embedding host. It is trusted at the public boundary and becomes usable only after normalization into Widget Configuration.
+_Avoid_: Settings, current configuration
+
+**Widget Configuration**:
+The authoritative current configuration of a Widget Instance produced by applying all defaults and normalization to Host Configuration exactly once. Its Wallet Bootstrap Snapshot imposes explicit lifetime constraints; other values may change.
+_Avoid_: Host props, runtime identity, settings
 
 **Widget Domain Event**:
 An immutable fact that a meaningful occurrence completed within an Application Runtime Generation. Its payload carries the domain identity observers need to determine relevance; it never prescribes an observer mutation.

@@ -4,9 +4,10 @@
 
 Production code is organized by ownership rather than by React mechanism:
 
-- `src/app` owns public-input normalization, runtime construction, provider
+- `src/app` owns the Host Configuration binding, runtime construction, provider
   composition, Classic/Dashboard shell route composition, feature route mount
-  paths, and app-level route guards.
+  paths, and app-level route guards. `src/services/config` owns Host
+  Configuration defaults and normalization.
 - `src/resources` owns Authoritative Resources: app-runtime-scoped, cacheable
   remote reads shared across features. Each remote fact has one named, typed
   resource module rather than a global registry.
@@ -92,7 +93,7 @@ element, the theme variant its recipe styles resolve against, icon overrides,
 or the input auto-resize switch — it reads the `WidgetPresentation` contract
 that `shared/ui` itself declares, and
 `app/composition/providers/widget-presentation.tsx` populates that contract
-from `app/config`. The dependency therefore points from app into shared, and
+from the read-only Widget Configuration projection. The dependency therefore points from app into shared, and
 the `shared` boundary stays limited to `shared` and `domain`.
 
 A feature's `components.ts` publishes only components that carry that feature's
@@ -188,7 +189,14 @@ projections do not feed orchestration.
 ## Application runtime
 
 `src/app/runtime/application-router-runtime.ts` is a synchronous base runtime
-that constructs the scoped `ApplicationRouter` around the memory router.
+that constructs `WidgetConfigService` from Host Configuration and the scoped
+`ApplicationRouter` around the memory router. `WidgetConfigService` trusts the
+typed public boundary and exclusively owns one pure normalization pass, the
+current Widget Configuration, and its non-failing value stream. The root React
+binding is its only update adapter; read-only Atoms project current
+configuration for React and reactive feature reads. Consumer projections may
+select, regroup, or index canonical values but never apply configuration
+defaults or canonicalization.
 `app-runtime.ts` consumes that router context and composes bootstrap
 configuration, focused Yield, Legacy, and Borrow capability ports, rich errors,
 persistence, tracking, `WidgetTranslation`, `WidgetNavigation`, wallet-modal
@@ -210,9 +218,9 @@ Mounting a widget creates a new registry and lifecycle-sensitive service state;
 remounting therefore starts cleanly.
 
 `ApplicationRouter` owns one memory router for an Application Runtime
-Generation and disposes it when the Widget Instance unmounts. Runtime Identity
-is fixed for that mounted generation; changing it requires the host to unmount
-and remount. The root route configuration is
+Generation and disposes it when the Widget Instance unmounts. Application API
+Identity is fixed for that mounted generation; changing it terminally fails the
+configuration service and unmounts the React tree. The root route configuration is
 assembled at the top-level React composition seam in `App.tsx` and seeded into
 the registry when it is created, so runtime construction does not import React
 composition. React synchronously reads the router from an internal Atom only to
@@ -226,7 +234,7 @@ Declarative route guards and view-local navigation remain React concerns.
 
 ## Effect Atom state conventions
 
-Effect atoms own application configuration, asynchronous resources,
+Effect atoms project Widget Configuration and own asynchronous resources,
 feature-local synchronous state, reactive resource binding, passive workflow
 state projections, mutation adapters, and cross-feature read models.
 Effect-native lifecycle modules own authoritative workflow state and
@@ -394,10 +402,11 @@ lifecycle state is recreated for that new mount.
 
 ## React Context policy
 
-Effect atoms own widget configuration, feature workflow state, shared read
-models, and application lifecycle state. React Context is reserved for values
-whose meaning is the React subtree itself or for libraries that require their
-own provider.
+`WidgetConfigService` owns Widget Configuration; Effect atoms expose its
+read-only reactive projection. Effect atoms own feature workflow state, shared
+read models, and application lifecycle state. React Context is reserved for
+values whose meaning is the React subtree itself or for libraries that require
+their own provider.
 
 The remaining widget-owned contexts are intentional:
 
@@ -416,8 +425,8 @@ The remaining widget-owned contexts are intentional:
 - `WidgetPresentationContext` supplies the host-owned rendering environment —
   overlay portal element, theme variant, icon overrides, input auto-resize — to
   the `shared/ui` kit. It is the inversion that lets shared components render
-  host preferences without importing `app/config`; its value is immutable host
-  configuration for the subtree, not widget state, and it is installed once at
+  host preferences without importing application configuration machinery. Its
+  value is projected from current Widget Configuration and it is installed at
   the application composition seam.
 
 Effect Atom's registry context and the contexts supplied by i18next, TanStack

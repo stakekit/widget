@@ -1,3 +1,4 @@
+import { RegistryProvider } from "@effect/atom-react";
 import { HttpResponse, http } from "msw";
 import { mainnet } from "viem/chains";
 import { userEvent } from "vitest/browser";
@@ -11,6 +12,7 @@ import { legacyApiRoute, yieldApiRoute } from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";
 import { describe, expect, it, vi } from "../utils/test-extend";
 import { render, renderApp } from "../utils/test-utils";
+import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 import { setup as setupStakingFlow } from "./staking-flow/setup";
 import { setup as setupTrustPosition } from "./trust-incentive-apy/setup";
 
@@ -255,15 +257,17 @@ describe("RWA KYC flow", () => {
   it("opens iframe modal for iframe-allowed verification and refreshes status on close", async () => {
     const onCheckStatus = vi.fn();
     const app = await render(
-      <KycGateCard
-        gate={{
-          state: "start_kyc",
-          kycUrl: "https://issuer.example/verify",
-          iframeAllowed: true,
-        }}
-        onCheckStatus={onCheckStatus}
-        providerName="Superstate"
-      />
+      <RegistryProvider initialValues={[applicationRuntimeInitInitialValue()]}>
+        <KycGateCard
+          gate={{
+            state: "start_kyc",
+            kycUrl: "https://issuer.example/verify",
+            iframeAllowed: true,
+          }}
+          onCheckStatus={onCheckStatus}
+          providerName="Superstate"
+        />
+      </RegistryProvider>
     );
 
     await expect

@@ -1,8 +1,8 @@
 import { Data, Effect, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetConfigAtom } from "../../../../app/config/settings";
 import { appRuntime } from "../../../../app/runtime/app-runtime";
+import { widgetConfigAtom } from "../../../../app/runtime/widget-config";
 import { BorrowFeatureDisabled } from "../../../../domain/borrow/availability";
 import type { MarketId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";

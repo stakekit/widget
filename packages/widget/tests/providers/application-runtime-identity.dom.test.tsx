@@ -7,14 +7,10 @@ import {
 import { Deferred, Effect, Equal, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { act, Component, type PropsWithChildren, type ReactNode } from "react";
+import { act } from "react";
 import type { DataRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../src/app/config/settings";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
@@ -34,6 +30,7 @@ import { disconnectedLedgerConnectorState } from "../../src/services/wallet/wall
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
 import { render } from "../utils/test-utils.dom.tsx";
+import { widgetConfigAtom } from "../utils/widget-config";
 
 type LifecycleProbe = {
   initialized: number;
@@ -234,7 +231,11 @@ const ApplicationRouterHarness = ({
   const router = useAtomValue(applicationRouterAtom);
 
   return (
-    <button type="button" onClick={() => capture(router)}>
+    <button
+      data-testid="capture-router"
+      type="button"
+      onClick={() => capture(router)}
+    >
       Capture router
     </button>
   );
@@ -249,37 +250,13 @@ const WidgetConfigProjection = ({
   return null;
 };
 
-const settings = (trackEvent: (event: string) => void, apiKey = "api-key") =>
-  normalizeWidgetConfig({
-    apiKey,
-    tracking: { trackEvent },
-    variant: "default",
-  });
+const settings = (trackEvent: (event: string) => void, apiKey = "api-key") => ({
+  apiKey,
+  tracking: { trackEvent },
+  variant: "default" as const,
+});
 
-class RuntimeInvariantBoundary extends Component<
-  PropsWithChildren<{ readonly onError: (error: unknown) => void }>,
-  { readonly failed: boolean }
-> {
-  override state = { failed: false };
-
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-
-  override componentDidCatch(error: unknown) {
-    this.props.onError(error);
-  }
-
-  override render(): ReactNode {
-    return this.state.failed ? (
-      <div>runtime rejected</div>
-    ) : (
-      this.props.children
-    );
-  }
-}
-
-describe("Application Runtime identity", () => {
+describe("dynamic Widget Configuration", () => {
   it("does not publish value-equal widget config across rerenders", async () => {
     const track = vi.fn();
     const customConnectors = vi.fn();
@@ -288,24 +265,26 @@ describe("Application Runtime identity", () => {
       projectionRead();
       return get(widgetConfigAtom).apiKey;
     });
-    const makeInlineSettings = () =>
-      normalizeWidgetConfig({
-        apiKey: "api-key",
-        preferredTokenYieldsPerNetwork: {
-          ethereum: {
-            "ethereum-eth": "ethereum-eth-native-staking",
-          },
+    const makeInlineSettings = () => ({
+      apiKey: "api-key",
+      preferredTokenYieldsPerNetwork: {
+        ethereum: {
+          "ethereum-eth": "ethereum-eth-native-staking",
         },
-        tracking: { trackEvent: track },
-        variant: "default",
-        wagmi: { __customConnectors__: customConnectors },
-      });
+      },
+      tracking: { trackEvent: track },
+      variant: "default" as const,
+      wagmi: { __customConnectors__: customConnectors },
+    });
     const firstSettings = makeInlineSettings();
     const equalInlineSettings = makeInlineSettings();
     const renderProvider = (
       settings: ReturnType<typeof makeInlineSettings>
     ) => (
-      <SKAtomRegistryProvider routes={applicationRoutes} settings={settings}>
+      <SKAtomRegistryProvider
+        routes={applicationRoutes}
+        hostConfiguration={settings}
+      >
         <WidgetConfigProjection projection={projection} />
       </SKAtomRegistryProvider>
     );
@@ -326,26 +305,42 @@ describe("Application Runtime identity", () => {
     expect(projectionRead).toHaveBeenCalledOnce();
   });
 
-  it("preserves router history for live settings and rejects a changed API identity", async () => {
+  it("preserves router history for live settings including a changed API key", async () => {
     const firstTrack = vi.fn();
     const secondTrack = vi.fn();
     const routers: DataRouter[] = [];
-    const onError = vi.fn<(error: unknown) => void>();
+    const lifecycleProbe: LifecycleProbe = { disposed: 0, initialized: 0 };
+    const workflowProbe: WorkflowProbe = {
+      deferredSigning: await Effect.runPromise(Deferred.make<void>()),
+      finalized: 0,
+      machine: null,
+      starts: 0,
+      states: [],
+      submissions: 0,
+      walletPrompts: 0,
+    };
     const renderProvider = (currentSettings: ReturnType<typeof settings>) => (
-      <RuntimeInvariantBoundary onError={onError}>
-        <SKAtomRegistryProvider
-          routes={applicationRoutes}
-          settings={currentSettings}
-        >
-          <ApplicationRouterHarness
-            capture={(router) => routers.push(router)}
-          />
-        </SKAtomRegistryProvider>
-      </RuntimeInvariantBoundary>
+      <SKAtomRegistryProvider
+        routes={applicationRoutes}
+        hostConfiguration={currentSettings}
+      >
+        <ApplicationRouterHarness capture={(router) => routers.push(router)} />
+        <RuntimeHarness probe={lifecycleProbe} workflowProbe={workflowProbe} />
+      </SKAtomRegistryProvider>
     );
     const app = await render(renderProvider(settings(firstTrack)));
     const capture = () =>
-      app.container.querySelector<HTMLButtonElement>("button")?.click();
+      app.container
+        .querySelector<HTMLButtonElement>('[data-testid="capture-router"]')
+        ?.click();
+
+    await vi.waitFor(() => expect(lifecycleProbe.initialized).toBe(1));
+    await act(async () =>
+      [...app.container.querySelectorAll<HTMLButtonElement>("button")]
+        .find((button) => button.textContent === "Stage workflow")
+        ?.click()
+    );
+    await vi.waitFor(() => expect(workflowProbe.starts).toBe(1));
 
     await act(async () => capture());
     const firstRouter = routers[0];
@@ -364,13 +359,12 @@ describe("Application Runtime identity", () => {
     await app.rerender(
       renderProvider(settings(secondTrack, "replacement-api-key"))
     );
+    await act(async () => capture());
 
-    expect(app.container.textContent).toContain("runtime rejected");
-    expect(onError).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: "ApplicationRuntimeIdentityChangedError",
-      })
-    );
+    expect(routers[2]).toBe(firstRouter);
+    expect(routers[2]?.state.location.pathname).toBe("/review");
+    expect(lifecycleProbe.disposed).toBe(0);
+    expect(workflowProbe.finalized).toBe(0);
   });
 
   it("retains intake while live settings change", async () => {
@@ -379,7 +373,7 @@ describe("Application Runtime identity", () => {
     const app = await render(
       <SKAtomRegistryProvider
         routes={applicationRoutes}
-        settings={settings(firstTrack)}
+        hostConfiguration={settings(firstTrack)}
       >
         <ClassicFlowRuntimeHarness />
       </SKAtomRegistryProvider>
@@ -401,7 +395,7 @@ describe("Application Runtime identity", () => {
     await app.rerender(
       <SKAtomRegistryProvider
         routes={applicationRoutes}
-        settings={settings(secondTrack)}
+        hostConfiguration={settings(secondTrack)}
       >
         <ClassicFlowRuntimeHarness />
       </SKAtomRegistryProvider>
@@ -428,7 +422,7 @@ describe("Application Runtime identity", () => {
     const app = await render(
       <SKAtomRegistryProvider
         routes={applicationRoutes}
-        settings={settings(firstTrack)}
+        hostConfiguration={settings(firstTrack)}
       >
         <RuntimeHarness probe={probe} workflowProbe={workflowProbe} />
       </SKAtomRegistryProvider>
@@ -450,7 +444,7 @@ describe("Application Runtime identity", () => {
     await app.rerender(
       <SKAtomRegistryProvider
         routes={applicationRoutes}
-        settings={settings(secondTrack)}
+        hostConfiguration={settings(secondTrack)}
       >
         <RuntimeHarness probe={probe} workflowProbe={workflowProbe} />
       </SKAtomRegistryProvider>

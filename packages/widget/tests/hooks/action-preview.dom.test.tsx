@@ -1,13 +1,9 @@
-import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Effect, Layer, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { HttpResponse, http } from "msw";
 import { type PropsWithChildren, useEffect } from "react";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../src/app/config/settings";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { ActionCommand } from "../../src/domain/action/models";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
@@ -40,6 +36,7 @@ import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { makeTestStakeKitApiLayer } from "../utils/stakekit-api-layer";
 import { describe, expect, it } from "../utils/test-extend.dom.ts";
 import { renderHook } from "../utils/test-utils.dom.tsx";
+import { getTestWidgetConfig } from "../utils/widget-config";
 
 const yieldApiUrl = "https://yield.example.com";
 const command = Schema.decodeUnknownSync(ActionCommand)({
@@ -120,7 +117,7 @@ const Wrapper = ({ children }: PropsWithChildren) => (
       [walletScopeAtom, walletScope],
       [walletRuntime.layer, classicWalletLayer as never],
     ]}
-    settings={normalizeWidgetConfig({
+    settings={getTestWidgetConfig({
       apiKey: "test-key",
       baseUrl: "https://api.example.com",
       variant: "default",
@@ -131,7 +128,7 @@ const Wrapper = ({ children }: PropsWithChildren) => (
   </TestAtomRuntimeProvider>
 );
 
-const settings = normalizeWidgetConfig({
+const settings = getTestWidgetConfig({
   apiKey: "test-key",
   baseUrl: "https://api.example.com",
   variant: "default",
@@ -187,9 +184,8 @@ const sessionAttachedActionAtom = Atom.make((get) => {
 });
 
 const ConnectedWrapper = ({ children }: PropsWithChildren) => (
-  <RegistryProvider
+  <TestAtomRuntimeProvider
     initialValues={[
-      [widgetConfigAtom, settings],
       [walletRuntime.layer, classicWalletLayer as never],
       [
         walletStateResultAtom,
@@ -207,9 +203,10 @@ const ConnectedWrapper = ({ children }: PropsWithChildren) => (
         }),
       ],
     ]}
+    settings={settings}
   >
     {children}
-  </RegistryProvider>
+  </TestAtomRuntimeProvider>
 );
 
 describe("action preview", () => {

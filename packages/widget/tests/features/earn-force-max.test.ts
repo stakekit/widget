@@ -32,6 +32,7 @@ import {
 } from "../../src/features/earn/state/earn-selection/types";
 import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
+import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const positionsData: PositionsData = new Map();
 const address = Schema.decodeSync(WalletAddress)("0xwallet");
@@ -129,6 +130,7 @@ describe("Earn force-max amount resolution", () => {
       });
       const registry = AtomRegistry.make({
         initialValues: [
+          applicationRuntimeInitInitialValue(),
           Atom.initialValue(earnMachineEntryAtom, entry),
           [
             initYieldAtom(new InitYieldKey({ yieldId: null })),

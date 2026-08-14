@@ -5,7 +5,7 @@ import {
 } from "@stakekit/rainbowkit";
 import { useContext } from "react";
 import type { Address } from "viem";
-import { useWidgetConfig } from "../../../../app/config/use-widget-config";
+import { useWidgetConfig } from "../../../../app/composition/use-widget-config";
 import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { CaretDownIcon } from "../../../../shared/ui/primitives/icons/caret-down";

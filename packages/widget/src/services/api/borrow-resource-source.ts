@@ -20,7 +20,7 @@ import { ApiTransportService } from "./transport";
 
 export const makeBorrowResourceSource = (
   borrow: BorrowApi.BorrowApi | null,
-  borrowEnabled = true
+  borrowEnabled: boolean
 ) => {
   const requireTransport = Effect.fn("BorrowResourceSource.requireTransport")(
     function* () {
@@ -106,7 +106,7 @@ export class BorrowResourceSource extends Context.Service<BorrowResourceSource>(
 
       return makeBorrowResourceSource(
         resources.borrow,
-        widgetConfig.initial.borrowEnabled
+        (yield* widgetConfig.current).borrowEnabled
       );
     }),
   }

@@ -1,6 +1,6 @@
 import BigNumber from "bignumber.js";
 import { Trans, useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../../../app/config/use-widget-config";
+import { useWidgetConfig } from "../../../../../../../app/composition/use-widget-config";
 import type { EarnValidator } from "../../../../../../../domain/earn/models";
 import { getEffectiveYieldRewardRateDetails } from "../../../../../../../domain/earn/reward-rate";
 import {

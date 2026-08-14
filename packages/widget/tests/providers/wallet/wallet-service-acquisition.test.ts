@@ -1,17 +1,8 @@
-import {
-  Deferred,
-  Effect,
-  Fiber,
-  Layer,
-  Option,
-  Stream,
-  SubscriptionRef,
-} from "effect";
+import { Deferred, Effect, Fiber, Layer, Option, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import { describe, expect, it } from "vitest";
 import type { Config } from "wagmi";
 import { getConnection, getConnectors } from "wagmi/actions";
-import { normalizeWidgetConfig } from "../../../src/app/config/settings";
 import { LegacyResourceSource } from "../../../src/services/api/legacy-resource-source";
 import { YieldResourceSource } from "../../../src/services/api/yield-resource-source";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
@@ -33,11 +24,11 @@ import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
 import { makeWalletTestController } from "./wallet-test-controller";
 
-const settings = normalizeWidgetConfig({
+const settings = {
   apiKey: "api-key",
   disableInjectedProviderDiscovery: true,
-  variant: "default",
-});
+  variant: "default" as const,
+};
 
 const environmentLayer = Layer.succeed(
   WalletEnvironment,
@@ -68,15 +59,7 @@ const apiLayer = Layer.mergeAll(
   } as never)
 );
 
-const makeConfigLayer = (
-  current = Effect.succeed(settings),
-  changes: Stream.Stream<typeof settings> = Stream.never
-) =>
-  WidgetConfigService.layer({
-    changes,
-    current,
-    initial: settings,
-  });
+const makeConfigLayer = () => WidgetConfigService.layer(settings);
 
 const makeWalletLayer = (
   wagmi: WagmiPlatformService,
@@ -84,7 +67,7 @@ const makeWalletLayer = (
   walletApiLayer = apiLayer
 ) => {
   const trackingLayer = TrackingService.layer.pipe(Layer.provide(configLayer));
-  return WalletService.layer.pipe(
+  const walletLayer = WalletService.layer.pipe(
     Layer.provide(
       Layer.mergeAll(
         walletApiLayer,
@@ -99,6 +82,7 @@ const makeWalletLayer = (
       )
     )
   );
+  return Layer.merge(configLayer, walletLayer);
 };
 
 const makeObservation = (wagmiConfig: Config) => {
@@ -275,11 +259,7 @@ describe("WalletService acquisition", () => {
   });
 
   it("terminates state and commands when wallet topology changes", async () => {
-    const configRef = await Effect.runPromise(SubscriptionRef.make(settings));
-    const configLayer = makeConfigLayer(
-      SubscriptionRef.get(configRef),
-      SubscriptionRef.changes(configRef)
-    );
+    const configLayer = makeConfigLayer();
     const wagmiConfig = makeDefaultConfig();
     const controller = makeWalletTestController({
       actions: {},
@@ -299,19 +279,17 @@ describe("WalletService acquisition", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const wallet = yield* WalletService;
+          const config = yield* WidgetConfigService;
           const terminal = yield* wallet.states.pipe(
             Stream.runDrain,
             Effect.flip,
             Effect.forkChild({ startImmediately: true })
           );
-          yield* SubscriptionRef.set(
-            configRef,
-            normalizeWidgetConfig({
-              apiKey: "api-key",
-              variant: "default",
-              wagmi: { forceWalletConnectOnly: true },
-            })
-          );
+          yield* config.update({
+            apiKey: "api-key",
+            variant: "default",
+            wagmi: { forceWalletConnectOnly: true },
+          });
           const streamFailure = yield* Fiber.join(terminal);
           const commandFailure = yield* wallet.state.pipe(Effect.flip);
           return { commandFailure, streamFailure };

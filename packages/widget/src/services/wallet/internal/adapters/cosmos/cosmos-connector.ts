@@ -21,10 +21,12 @@ import { CosmosNetworks } from "../../../../../domain/network/networks";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { getWalletNetworkLogo } from "../../runtime/assets";
-import { waitForWalletDelay } from "../../runtime/delay";
 import type { CosmosChainsMap } from "./chains";
 import type { ExtraProps } from "./cosmos-connector-meta";
 import { configMeta } from "./cosmos-connector-meta";
+
+const waitForWalletDelay = (milliseconds: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 
 const getCosmosWalletInstalled = (
   wallet: MainWalletBase

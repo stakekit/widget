@@ -1,12 +1,10 @@
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import {
-  normalizeWidgetConfig,
-  widgetConfigAtom,
-} from "../../src/app/config/settings";
+import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
+import { applicationRuntimeInitAtom } from "../../src/app/runtime/application-runtime-init";
 import {
   toWidgetPath,
   WidgetNavigation,
@@ -25,8 +23,12 @@ const makeRegistry = () =>
   AtomRegistry.make({
     initialValues: [
       [
-        widgetConfigAtom,
-        normalizeWidgetConfig({ apiKey: "test", variant: "default" }),
+        applicationRuntimeInitAtom,
+        {
+          hostConfiguration: { apiKey: "test", variant: "default" },
+          isLedgerLive: false,
+          routes: applicationRoutes,
+        },
       ],
     ],
   });
@@ -52,12 +54,16 @@ describe("ApplicationRouter runtime", () => {
     const registry = AtomRegistry.make({
       initialValues: [
         [
-          widgetConfigAtom,
-          normalizeWidgetConfig({
-            apiKey: "test",
-            dashboardVariant: true,
-            variant: "default",
-          }),
+          applicationRuntimeInitAtom,
+          {
+            hostConfiguration: {
+              apiKey: "test",
+              dashboardVariant: true,
+              variant: "default",
+            },
+            isLedgerLive: false,
+            routes: applicationRoutes,
+          },
         ],
       ],
     });
@@ -112,11 +118,9 @@ describe("ApplicationRouter runtime", () => {
 
   it("preserves one router within a generation and resets fresh generations", async () => {
     const firstRegistry = makeRegistry();
-    const secondRegistry = makeRegistry();
+    const firstRouter = firstRegistry.get(applicationRouterAtom);
 
     try {
-      const firstRouter = firstRegistry.get(applicationRouterAtom);
-
       firstRegistry.set(navigationCommandAtom, {
         _tag: "Push",
         path: toWidgetPath("/review"),
@@ -127,12 +131,16 @@ describe("ApplicationRouter runtime", () => {
       );
 
       expect(firstRegistry.get(applicationRouterAtom)).toBe(firstRouter);
+    } finally {
+      firstRegistry.dispose();
+    }
 
+    const secondRegistry = makeRegistry();
+    try {
       const secondRouter = secondRegistry.get(applicationRouterAtom);
       expect(secondRouter).not.toBe(firstRouter);
       expect(secondRouter.state.location.pathname).toBe("/");
     } finally {
-      firstRegistry.dispose();
       secondRegistry.dispose();
     }
   });

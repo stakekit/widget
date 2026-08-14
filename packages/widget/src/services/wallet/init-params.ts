@@ -56,11 +56,12 @@ export const decodeInitParams = ({
   externalProviderInitToken,
   href,
 }: {
-  readonly externalProviderInitToken: string | null;
+  readonly externalProviderInitToken: string | null | undefined;
   readonly href: string;
 }): InitParams => {
   const url = new URL(href);
-  const token = url.searchParams.get("token") ?? externalProviderInitToken;
+  const token =
+    url.searchParams.get("token") ?? externalProviderInitToken ?? null;
 
   return Schema.decodeUnknownSync(InitParams)({
     accountId: url.searchParams.get("accountId"),

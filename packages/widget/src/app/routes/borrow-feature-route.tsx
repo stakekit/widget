@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Navigate, Outlet } from "react-router";
-import { useWidgetConfig } from "../config/use-widget-config";
+import { useWidgetConfig } from "../composition/use-widget-config";
 
 export const BorrowFeatureRoute = ({
   fallbackPath,

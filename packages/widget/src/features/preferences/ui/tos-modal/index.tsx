@@ -10,7 +10,7 @@ import {
 import type { PropsWithChildren, ReactNode } from "react";
 import { useEffect } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../app/config/use-widget-config";
+import { useWidgetConfig } from "../../../../app/composition/use-widget-config";
 import { id } from "../../../../shared/styles/theme/ids";
 import { SKAnchor } from "../../../../shared/ui/primitives/anchor";
 import { Box } from "../../../../shared/ui/primitives/box";

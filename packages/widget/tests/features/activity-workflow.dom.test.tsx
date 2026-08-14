@@ -4,7 +4,6 @@ import { I18nextProvider } from "react-i18next";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
-import { normalizeWidgetConfig } from "../../src/app/config/settings";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import type { ActivityActionItem } from "../../src/features/activity/model/activity-action";
 import type { ActivityPageView } from "../../src/features/activity/state/page";
@@ -26,13 +25,16 @@ vi.mock(
   })
 );
 
-const settings = normalizeWidgetConfig({
+const settings = {
   apiKey: "test-api-key",
-  variant: "default",
-});
+  variant: "default" as const,
+};
 
 const wrap = (children: ReactNode) => (
-  <SKAtomRegistryProvider routes={applicationRoutes} settings={settings}>
+  <SKAtomRegistryProvider
+    routes={applicationRoutes}
+    hostConfiguration={settings}
+  >
     <I18nextProvider i18n={i18nInstance}>
       <MemoryRouter>{children}</MemoryRouter>
     </I18nextProvider>
