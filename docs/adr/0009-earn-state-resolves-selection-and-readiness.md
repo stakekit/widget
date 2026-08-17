@@ -22,7 +22,12 @@ Earn Initialization seeds selection once per Widget Instance and never becomes a
 
 Per ADR-0016, the Widget Instance owns one stable Atom Registry. That aligns one-shot Earn machine state with the Widget Instance lifetime without a second lifecycle registry.
 
-The detailed status vocabulary, precedence rules, loading dependencies, form invariants, pagination behavior, and verification matrix are specified in `.scratch/earn-state-machine/spec.md`.
+The detailed status vocabulary, precedence rules, loading dependencies, form
+invariants, pagination behavior, and verification matrix formerly lived in
+`.scratch/earn-state-machine/spec.md`. That specification was removed when
+ADR-0022 superseded its state-machine, retry, reconciliation-commit, pagination,
+and initialization mechanics. This ADR's mechanic-argument and validator-policy
+decisions remain accepted.
 
 ## Considered options
 

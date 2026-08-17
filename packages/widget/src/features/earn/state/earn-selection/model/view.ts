@@ -1,19 +1,13 @@
-import { Match, Option } from "effect";
+import { Option, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
-import {
-  filterValidators,
-  getDashboardYieldCategory,
-} from "../../../../../domain/earn/yield";
-import type { YieldId } from "../../../../../domain/identity/identifiers";
+import { filterValidators } from "../../../../../domain/earn/yield";
+import { YieldId } from "../../../../../domain/identity/identifiers";
 import { tokenString } from "../../../../../domain/token/token";
 import type {
-  EarnCatalogError,
-  EarnEntry,
-  EarnMachineIntent,
-  EarnMachineView,
-} from "../types";
-import { resolveCategory } from "./category";
+  DashboardYieldCategory,
+  PreferredTokenYieldsPerNetwork,
+} from "../../../../../public-api/types";
+import type { EarnEntry, EarnEntryIntent, EarnSelectionView } from "../types";
 import { canSubmitEarnForm, resolveForm } from "./form";
 import { resolveToken } from "./token";
 import { resolveValidators } from "./validators";
@@ -23,7 +17,7 @@ import {
   type EarnViewObservations,
 } from "./view-inputs";
 import {
-  type EarnViewStage,
+  type EarnViewFacts,
   makeEarnView,
   makeEmptyPositionsData,
 } from "./view-model";
@@ -32,56 +26,95 @@ import { resolveYield, resolveYieldOptions } from "./yield";
 const getAvailableValue = <A>(result: EarnResourceResult<A>, fallback: A): A =>
   AsyncResult.getOrElse(result, () => fallback);
 
-const mapAvailableValue = <A, B>(
-  result: EarnResourceResult<A>,
-  map: (value: A) => B
-): EarnResourceResult<B> => result.pipe(AsyncResult.map(map));
-
 const hasAvailableValue = <A>(result: EarnResourceResult<A>) =>
   Option.isSome(AsyncResult.value(result));
 
 const isResolving = <A>(result: EarnResourceResult<A>) =>
   result.waiting ||
-  (!hasAvailableValue(result) && Option.isNone(AsyncResult.error(result)));
+  (!hasAvailableValue(result) && !AsyncResult.isFailure(result));
 
-const getBlockingError = <A>(result: EarnResourceResult<A>) =>
-  hasAvailableValue(result)
-    ? null
-    : result.pipe(AsyncResult.error, Option.getOrNull);
+const isBlockingFailure = <A>(result: EarnResourceResult<A>) =>
+  AsyncResult.isFailure(result) && !hasAvailableValue(result);
 
-const getInitYieldCategory = ({
-  dashboardVariant,
-  initYield,
-  initYieldId,
-}: {
-  readonly dashboardVariant: boolean;
-  readonly initYield: EarnYieldWithProvider | null;
-  readonly initYieldId: EarnYieldWithProvider["id"] | null;
-}) =>
-  dashboardVariant && initYieldId && initYield
-    ? getDashboardYieldCategory(initYield)
+const decodeInitYieldId = (entry: EarnEntry) =>
+  entry.initParams?.yieldId
+    ? Schema.decodeOption(YieldId)(entry.initParams.yieldId).pipe(
+        Option.getOrNull
+      )
     : null;
 
-const mergeYieldOptions = (
-  yields: ReadonlyArray<EarnYieldWithProvider | null>
-) => {
-  const byId = new Map<YieldId, EarnYieldWithProvider>();
+const findPreferredCategory = ({
+  catalogs,
+  preferred,
+}: {
+  readonly catalogs: Extract<
+    EarnViewObservations["category"],
+    { readonly _tag: "enabled" }
+  >["catalogs"];
+  readonly preferred: PreferredTokenYieldsPerNetwork | null;
+}) =>
+  catalogs.find(({ result }) => {
+    const options = getAvailableValue(result, []);
+    return options.some((option) => {
+      const network = preferred?.[option.token.network];
+      return !!network?.[tokenString(option.token)];
+    });
+  })?.category ?? null;
 
-  for (const yieldModel of yields) {
-    if (yieldModel) byId.set(yieldModel.id, yieldModel);
+const resolveCategorySelection = ({
+  entry,
+  intent,
+  observations,
+  previous,
+}: {
+  readonly entry: EarnEntry;
+  readonly intent: EarnEntryIntent;
+  readonly observations: EarnViewObservations;
+  readonly previous: EarnSelectionView | null;
+}) => {
+  if (observations.category._tag === "disabled") {
+    return {
+      available: [] as ReadonlyArray<DashboardYieldCategory>,
+      blockingFailure: false,
+      category: null,
+      loading: false,
+    };
   }
 
-  return [...byId.values()];
-};
+  const catalogs = observations.category.catalogs;
+  const categoryResult = observations.category.result;
+  const available = getAvailableValue(categoryResult, []);
+  const initYieldId = decodeInitYieldId(entry);
+  const initCategory = initYieldId
+    ? (catalogs.find(({ result }) =>
+        getAvailableValue(result, []).some((option) =>
+          option.availableYields.includes(initYieldId)
+        )
+      )?.category ?? null)
+    : null;
+  const preferredCategory = findPreferredCategory({
+    catalogs,
+    preferred: entry.preferredTokenYieldsPerNetwork ?? null,
+  });
+  const candidates = [
+    intent.selectedCategory,
+    initCategory,
+    previous?.selection.category ?? null,
+    preferredCategory,
+    ...entry.categoryOrder,
+  ];
 
-const makeFailure = (
-  stage: NonNullable<EarnMachineView["failure"]>["stage"],
-  error: EarnCatalogError
-): NonNullable<EarnMachineView["failure"]> => ({
-  _tag: "ResourceFailure",
-  error,
-  stage,
-});
+  return {
+    available,
+    blockingFailure: isBlockingFailure(categoryResult),
+    category:
+      candidates.find(
+        (candidate): candidate is DashboardYieldCategory =>
+          candidate !== null && available.includes(candidate)
+      ) ?? null,
+    loading: !hasAvailableValue(categoryResult) && isResolving(categoryResult),
+  };
+};
 
 export const resolveEarnView = ({
   entry,
@@ -89,256 +122,181 @@ export const resolveEarnView = ({
   observations,
   previous = null,
 }: {
-  entry: EarnEntry;
-  intent: EarnMachineIntent;
-  observations: EarnViewObservations;
-  previous?: EarnMachineView | null;
-}): EarnMachineView => {
-  const initial = observations.initial;
-  const initYield = getAvailableValue(initial.initYield, null);
-  const positionsForSelection = getAvailableValue(
-    initial.positions,
-    makeEmptyPositionsData()
-  );
-  const initYieldCategory = getInitYieldCategory({
-    dashboardVariant: entry.dashboardVariant,
-    initYield,
-    initYieldId: initial.initYieldId,
+  readonly entry: EarnEntry;
+  readonly intent: EarnEntryIntent;
+  readonly observations: EarnViewObservations;
+  readonly previous?: EarnSelectionView | null;
+}): EarnSelectionView => {
+  const positions = observations.initial.positions;
+  const positionsData = getAvailableValue(positions, makeEmptyPositionsData());
+  const category = resolveCategorySelection({
+    entry,
+    intent,
+    observations,
+    previous,
   });
-  const categoryInput = observations.category;
-  const availableCategories =
-    categoryInput._tag === "enabled"
-      ? getAvailableValue(categoryInput.result, [])
-      : [];
-  const categoryStage: EarnViewStage = {
-    availableCategories,
-    resources: {
-      positions: {
-        data: positionsForSelection,
-        waiting: initial.positions.waiting,
-      },
+  const categoryFacts: EarnViewFacts = {
+    availableCategories: category.available,
+    blockingFailure: category.blockingFailure,
+    empty: {
+      categories:
+        entry.dashboardVariant &&
+        !category.loading &&
+        !category.blockingFailure &&
+        category.available.length === 0,
     },
-  };
-
-  if (categoryInput._tag === "enabled") {
-    const failed = getBlockingError(categoryInput.result);
-
-    if (failed) {
-      return makeEarnView({
-        ...categoryStage,
-        intent,
-        status: "failed",
-        failure: makeFailure("categories", failed),
-      });
-    }
-
-    if (!hasAvailableValue(categoryInput.result)) {
-      return makeEarnView({
-        ...categoryStage,
-        intent,
-        status: "loading-categories",
-      });
-    }
-
-    if (availableCategories.length === 0) {
-      return makeEarnView({
-        ...categoryStage,
-        intent,
-        status: "no-categories",
-      });
-    }
-  }
-
-  const category = resolveCategory({
-    availableCategories,
-    categoryOrder: entry.categoryOrder,
-    selectedCategory: intent.selectedCategory ?? initYieldCategory,
-    dashboardVariant: entry.dashboardVariant,
-  });
-  const tokenInput = observations.tokenOptions;
-  const tokenOptions = getAvailableValue(tokenInput, []);
-  const tokenStage: EarnViewStage = {
-    ...categoryStage,
+    loading: { categories: category.loading },
     resources: {
-      ...categoryStage.resources,
-      tokenOptions: {
-        items: tokenOptions,
-        waiting: tokenInput.waiting,
-        pullKey: null,
-      },
+      positions: { data: positionsData, waiting: positions.waiting },
     },
-    selection: { category },
+    selection: { category: category.category },
   };
 
   if (
-    !intent.selectedTokenKey &&
-    !intent.selectedYieldId &&
-    (!!entry.initParams?.token || !!entry.initParams?.yieldId) &&
-    isResolving(tokenInput)
+    category.blockingFailure ||
+    category.loading ||
+    (entry.dashboardVariant && !category.category)
   ) {
-    return makeEarnView({
-      ...tokenStage,
-      intent,
-      status: "loading-initial-selection",
-    });
+    return makeEarnView({ ...categoryFacts, intent });
   }
 
-  const explicitTokenPending =
-    !!intent.selectedTokenKey &&
-    !tokenOptions.some(
-      (option) => tokenString(option.token) === intent.selectedTokenKey
-    ) &&
-    isResolving(tokenInput);
+  const tokenResult = observations.tokenOptions;
+  const tokenOptions = getAvailableValue(tokenResult, []);
   const previousToken =
-    previous?.selection.category === category ? previous.selection.token : null;
-  const selectedToken = explicitTokenPending
-    ? null
-    : resolveToken({
-        entry,
-        previousToken,
-        selectedTokenKey: intent.selectedTokenKey,
-        tokenOptions,
-      });
+    previous?.selection.category === category.category
+      ? previous.selection.token
+      : null;
+  const selectedToken = resolveToken({
+    entry,
+    previousToken,
+    selectedTokenKey: intent.selectedTokenKey,
+    tokenOptions,
+  });
+  const tokenLoading = isResolving(tokenResult) && tokenOptions.length === 0;
+  const tokenFailure = isBlockingFailure(tokenResult);
+  const tokenFacts: EarnViewFacts = {
+    ...categoryFacts,
+    blockingFailure: tokenFailure,
+    empty: {
+      ...categoryFacts.empty,
+      tokens: !tokenLoading && !tokenFailure && tokenOptions.length === 0,
+    },
+    loading: {
+      ...categoryFacts.loading,
+      initialSelection:
+        tokenLoading &&
+        (!!entry.initParams?.token || !!entry.initParams?.yieldId),
+      tokens: tokenLoading,
+    },
+    resources: {
+      ...categoryFacts.resources,
+      tokenOptions: { items: tokenOptions, waiting: tokenResult.waiting },
+    },
+  };
 
-  if (!selectedToken) {
-    const failed = getBlockingError(tokenInput);
-    const failureStage =
-      failed?.operation === "init-yield" ||
-      failed?.operation === "init-token-option"
-        ? "initial-selection"
-        : "token-options";
-    const tokenOptionsResolving =
-      AsyncResult.isInitial(tokenInput) ||
-      (tokenOptions.length === 0 &&
-        hasAvailableValue(tokenInput) &&
-        tokenInput.waiting);
-    const status = Match.value({
-      failed: failed !== null,
-      loading: explicitTokenPending || tokenOptionsResolving,
-    }).pipe(
-      Match.when({ failed: true }, (): EarnMachineView["status"] => "failed"),
-      Match.when(
-        { loading: true },
-        (): EarnMachineView["status"] => "loading-token-options"
-      ),
-      Match.orElse((): EarnMachineView["status"] => "no-tokens")
-    );
-
-    return makeEarnView({
-      ...tokenStage,
-      intent,
-      status,
-      failure: failed ? makeFailure(failureStage, failed) : null,
-    });
+  if (!selectedToken || tokenFailure) {
+    return makeEarnView({ ...tokenFacts, intent });
   }
 
-  const yieldCatalogInput = observations.yieldCatalog;
-  const yieldObservation = mapAvailableValue(
-    yieldCatalogInput,
-    (catalogYieldOptions) =>
-      resolveYieldOptions({
-        selectedToken,
-        yieldsById: mergeYieldOptions([...catalogYieldOptions, initYield]),
-      })
-  );
-  const yieldOptions = getAvailableValue(yieldObservation, []);
+  const yieldResult = observations.yieldCatalog;
+  const yieldCatalog = getAvailableValue(yieldResult, []);
+  const yieldOptions = resolveYieldOptions({
+    selectedToken,
+    yieldsById: yieldCatalog,
+  });
+  const previousYield =
+    previous?.selection.token &&
+    previous.selection.token.token.network === selectedToken.token.network
+      ? previous.selection.yield
+      : null;
   const selectedYield = resolveYield({
     entry,
-    positionsData: positionsForSelection,
+    previousYield,
     selectedToken,
     selectedYieldId: intent.selectedYieldId,
     yieldOptions,
   });
-  const yieldStage: EarnViewStage = {
-    ...tokenStage,
-    resources: {
-      ...tokenStage.resources,
-      yields: {
-        items: yieldOptions,
-        waiting: yieldCatalogInput.waiting,
-      },
+  const yieldLoading = isResolving(yieldResult) && yieldOptions.length === 0;
+  const yieldFailure = isBlockingFailure(yieldResult);
+  const yieldFacts: EarnViewFacts = {
+    ...tokenFacts,
+    blockingFailure: yieldFailure,
+    empty: {
+      ...tokenFacts.empty,
+      yields: !yieldLoading && !yieldFailure && yieldOptions.length === 0,
     },
-    selection: { category, token: selectedToken },
+    loading: { ...tokenFacts.loading, yields: yieldLoading },
+    resources: {
+      ...tokenFacts.resources,
+      yields: { items: yieldOptions, waiting: yieldResult.waiting },
+    },
+    selection: { category: category.category, token: selectedToken },
   };
 
-  if (!selectedYield) {
-    const failed = getBlockingError(yieldObservation);
-    const status = Match.value({
-      failed: failed !== null,
-      loading: isResolving(yieldObservation),
-    }).pipe(
-      Match.when({ failed: true }, (): EarnMachineView["status"] => "failed"),
-      Match.when(
-        { loading: true },
-        (): EarnMachineView["status"] => "loading-yields"
-      ),
-      Match.orElse((): EarnMachineView["status"] => "no-yields")
-    );
-
-    return makeEarnView({
-      ...yieldStage,
-      intent,
-      status,
-      failure: failed ? makeFailure("yields", failed) : null,
-    });
+  if (!selectedYield || yieldFailure) {
+    return makeEarnView({ ...yieldFacts, intent });
   }
 
-  if (!hasAvailableValue(initial.positions)) {
-    const failed = getBlockingError(initial.positions);
-
+  if (!hasAvailableValue(positions)) {
     return makeEarnView({
-      ...yieldStage,
+      ...yieldFacts,
+      blockingFailure: isBlockingFailure(positions),
       intent,
-      status: failed ? "failed" : "loading-positions",
-      failure: failed ? makeFailure("positions", failed) : null,
+      loading: {
+        ...yieldFacts.loading,
+        positions: isResolving(positions),
+      },
+      selection: {
+        category: category.category,
+        token: selectedToken,
+        yield: selectedYield,
+      },
     });
   }
 
   const validatorInput = observations.validators;
   const validatorOptions =
     validatorInput._tag === "enabled" ? validatorInput.options : [];
-  const availableAmount = entry.walletScope ? selectedToken.amount : null;
+  const availableAmount =
+    entry.walletScope && selectedToken.amount !== null
+      ? selectedToken.amount
+      : null;
   const form = resolveForm({
     availableAmount,
     intent,
-    positionsData: positionsForSelection,
+    positionsData,
     selectedYield,
   });
-  const validatorStage: EarnViewStage = {
-    ...yieldStage,
+  const validatorFacts: EarnViewFacts = {
+    ...yieldFacts,
     form,
     resources: {
-      ...yieldStage.resources,
+      ...yieldFacts.resources,
       validators:
         validatorInput._tag === "enabled"
           ? { enabled: true, items: validatorOptions, key: null }
           : disabledValidatorsViewResource,
     },
-    selection: { category, token: selectedToken, yield: selectedYield },
+    selection: {
+      category: category.category,
+      token: selectedToken,
+      yield: selectedYield,
+    },
   };
 
-  if (validatorInput._tag === "enabled") {
-    if (!hasAvailableValue(validatorInput.result)) {
-      const failed = getBlockingError(validatorInput.result);
-
-      return makeEarnView({
-        ...validatorStage,
-        intent,
-        status: failed ? "failed" : "loading-validators",
-        failure: failed ? makeFailure("validators", failed) : null,
-      });
-    }
-
-    if (
-      validatorOptions.length === 0 &&
-      (intent.selectedValidators?.length ?? 0) === 0
-    ) {
-      return makeEarnView({
-        ...validatorStage,
-        intent,
-        status: "no-validators",
-      });
-    }
+  if (
+    validatorInput._tag === "enabled" &&
+    !hasAvailableValue(validatorInput.result)
+  ) {
+    return makeEarnView({
+      ...validatorFacts,
+      blockingFailure: isBlockingFailure(validatorInput.result),
+      intent,
+      loading: {
+        ...validatorFacts.loading,
+        validators: isResolving(validatorInput.result),
+      },
+    });
   }
 
   const selectedValidatorIntent =
@@ -355,28 +313,33 @@ export const resolveEarnView = ({
     selectedValidators: selectedValidatorIntent,
     validatorOptions,
   });
+  const validatorsEmpty =
+    validatorInput._tag === "enabled" &&
+    validatorOptions.length === 0 &&
+    selectedValidators.length === 0;
 
   return makeEarnView({
-    ...validatorStage,
-    intent,
-    status: "ready",
-    selection: {
-      category,
-      token: selectedToken,
-      validators: selectedValidators,
-      yield: selectedYield,
-    },
+    ...validatorFacts,
     can: {
       selectValidator: validatorInput._tag === "enabled",
       submit:
         entry.walletScope !== null &&
+        availableAmount !== null &&
         (validatorInput._tag === "disabled" || selectedValidators.length > 0) &&
         canSubmitEarnForm({
           availableAmount,
           form,
-          positionsData: positionsForSelection,
+          positionsData,
           selectedYield,
         }),
+    },
+    empty: { ...validatorFacts.empty, validators: validatorsEmpty },
+    intent,
+    selection: {
+      category: category.category,
+      token: selectedToken,
+      validators: selectedValidators,
+      yield: selectedYield,
     },
   });
 };

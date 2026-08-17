@@ -45,6 +45,16 @@ export const resolveToken = ({
     }
   }
 
+  if (previousToken) {
+    const selected = findTokenByKey(
+      tokenOptions,
+      tokenString(previousToken.token)
+    );
+    if (selected) {
+      return selected;
+    }
+  }
+
   const network = entry.walletScope?.network ?? null;
   const preferredTokens = network
     ? entry.preferredTokenYieldsPerNetwork?.[network]
@@ -58,18 +68,10 @@ export const resolveToken = ({
     }
   }
 
-  if (previousToken) {
-    const selected = findTokenByKey(
-      tokenOptions,
-      tokenString(previousToken.token)
-    );
-    if (selected) {
-      return selected;
-    }
-  }
-
   const positiveBalanceToken = tokenOptions.find((option) =>
-    new BigNumber(option.amount).isGreaterThan(0)
+    option.amount === null
+      ? false
+      : new BigNumber(option.amount).isGreaterThan(0)
   );
   if (positiveBalanceToken) {
     return positiveBalanceToken;

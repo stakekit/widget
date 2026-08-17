@@ -261,11 +261,7 @@ describe("semantic resource invalidation", () => {
       mergedTokenOptionsAtom(
         new TokenOptionsKey({
           category: null,
-          initToken: null,
-          initTokenNetwork: null,
-          initYieldId: null,
           scope,
-          tokensForEnabledYieldsOnly: false,
         })
       );
     const positions = (scope: WalletScopeKey) =>

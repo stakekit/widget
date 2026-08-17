@@ -13,38 +13,6 @@ type InitialSelectionParams = {
   readonly yieldId: YieldId | null;
 };
 
-export const canBeInitialYield = (args: {
-  initQueryParams: InitialSelectionParams | null;
-  yieldDto: EarnYieldWithProvider;
-  tokenBalanceAmount: BigNumber;
-  positionsData: PositionsData;
-}) => {
-  const initYieldId = args.initQueryParams?.yieldId?.toLowerCase() ?? null;
-
-  if (initYieldId) {
-    return initYieldId === args.yieldDto.id.toLowerCase();
-  }
-
-  return balanceValidForYield({
-    tokenBalanceAmount: args.tokenBalanceAmount,
-    yieldDto: args.yieldDto,
-    positionsData: args.positionsData,
-  });
-};
-
-const balanceValidForYield = ({
-  tokenBalanceAmount,
-  yieldDto,
-  positionsData,
-}: {
-  tokenBalanceAmount: BigNumber;
-  yieldDto: EarnYieldWithProvider;
-  positionsData: PositionsData;
-}) =>
-  tokenBalanceAmount.isGreaterThanOrEqualTo(
-    getMinStakeAmount(yieldDto, positionsData)
-  );
-
 export const getInitSelectedValidators = (args: {
   initQueryParams: InitialSelectionParams | null;
   validators: ReadonlyArray<EarnValidator>;

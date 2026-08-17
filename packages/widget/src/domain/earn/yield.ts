@@ -45,7 +45,7 @@ const knownApiYieldTypes = [
   "liquid_staking",
 ] as const satisfies ReadonlyArray<EarnYieldWithProvider["mechanics"]["type"]>;
 
-type KnownApiYieldType = (typeof knownApiYieldTypes)[number];
+export type KnownApiYieldType = (typeof knownApiYieldTypes)[number];
 type LocallyDerivedYieldType = "native_staking" | "pooled_staking";
 type KnownExtendedYieldType = KnownApiYieldType | LocallyDerivedYieldType;
 export type ExtendedYieldType = KnownExtendedYieldType | "unknown";

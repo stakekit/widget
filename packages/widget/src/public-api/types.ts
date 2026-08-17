@@ -624,6 +624,10 @@ type SettingsPropsBase = {
   customTranslations?: Partial<
     Record<Languages, { translation: TranslationTree }>
   >;
+  /**
+   * @deprecated Earn now always derives project-enabled, enterable options from
+   * the canonical Earn Catalog. This setting has no effect.
+   */
   tokensForEnabledYieldsOnly?: boolean;
   validatorsConfig?: Record<
     string,

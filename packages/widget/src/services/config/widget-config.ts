@@ -287,8 +287,6 @@ const normalizeWidgetConfig = (
     preferredTokenYieldsPerNetwork,
     theme: hostConfiguration.theme,
     tokenIconMapping: hostConfiguration.tokenIconMapping,
-    tokensForEnabledYieldsOnly:
-      hostConfiguration.tokensForEnabledYieldsOnly ?? false,
     tonConnectManifestUrl: hostConfiguration.tonConnectManifestUrl,
     tracking: hostConfiguration.tracking,
     validatorsConfig,

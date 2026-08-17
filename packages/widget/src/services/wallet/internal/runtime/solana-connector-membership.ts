@@ -217,5 +217,4 @@ export const installSolanaConnectorMembership = Effect.fn(
     ),
     Effect.forkScoped({ startImmediately: true })
   );
-  yield* Effect.yieldNow;
 });

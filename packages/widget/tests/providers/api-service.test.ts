@@ -252,38 +252,25 @@ describe("application API services", () => {
     expect(list).toHaveBeenCalledWith({ params: request });
   });
 
-  it("maps Yield and Legacy token discovery through narrow read capabilities", async () => {
-    const yieldTokens = vi.fn(() =>
-      Effect.succeed({ items: [], limit: 100, offset: 0, total: 0 })
-    );
+  it("maps the canonical Earn Catalog through the Legacy read capability", async () => {
     const legacyTokens = vi.fn(() => Effect.succeed([]));
-    const yieldSource = makeYieldResourceSource({
-      TokensControllerGetTokens: yieldTokens,
-    } as never);
     const legacySource = makeLegacyResourceSource({
       TokenControllerGetTokens: legacyTokens,
     } as never);
 
     await Effect.runPromise(
-      yieldSource.listYieldTokens({
-        limit: 100,
-        networks: ["ethereum"],
-        offset: 0,
+      legacySource.getTokenOptions({
+        enter: true,
+        network: "ethereum",
         yieldTypes: ["staking"],
       })
     );
-    await Effect.runPromise(legacySource.getTokenOptions("ethereum"));
-
-    expect(yieldTokens).toHaveBeenCalledWith({
+    expect(legacyTokens).toHaveBeenCalledWith({
       params: {
-        limit: 100,
-        networks: ["ethereum"],
-        offset: 0,
+        enter: true,
+        network: "ethereum",
         yieldTypes: ["staking"],
       },
-    });
-    expect(legacyTokens).toHaveBeenCalledWith({
-      params: { network: "ethereum" },
     });
   });
 

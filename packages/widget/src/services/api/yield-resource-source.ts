@@ -5,7 +5,6 @@ import type { ActivityActionsQuery } from "../../domain/activity/query";
 import {
   EarnPositionsResponse,
   EarnProvider,
-  EarnTokenPage,
   EarnValidatorPage,
   EarnYield,
   EarnYieldBalancesResponse,
@@ -39,15 +38,6 @@ export type YieldDirectoryRequest = {
   readonly offset: number;
   readonly types?: ReadonlyArray<(typeof EarnYield.Type)["mechanics"]["type"]>;
   readonly yieldIds?: ReadonlyArray<YieldId>;
-};
-
-export type YieldTokenDirectoryRequest = {
-  readonly limit: number;
-  readonly networks?: ReadonlyArray<Network>;
-  readonly offset: number;
-  readonly yieldTypes?: ReadonlyArray<
-    (typeof EarnYield.Type)["mechanics"]["type"]
-  >;
 };
 
 export type ValidatorDirectoryRequest = {
@@ -157,23 +147,6 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
       .pipe(decodeApiResponse("yield-directory", EarnYieldPage));
   });
 
-  const listYieldTokens = Effect.fn("YieldResourceSource.listYieldTokens")(
-    function* (request: YieldTokenDirectoryRequest) {
-      return yield* yieldApi
-        .TokensControllerGetTokens({
-          params: {
-            limit: request.limit,
-            offset: request.offset,
-            ...(request.networks ? { networks: [...request.networks] } : {}),
-            ...(request.yieldTypes
-              ? { yieldTypes: [...request.yieldTypes] }
-              : {}),
-          },
-        })
-        .pipe(decodeApiResponse("yield-token-directory", EarnTokenPage));
-    }
-  );
-
   const listValidators = Effect.fn("YieldResourceSource.listValidators")(
     function* (request: ValidatorDirectoryRequest) {
       return yield* yieldApi
@@ -246,7 +219,6 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
     getRewardRateHistory,
     getTvlHistory,
     listYields,
-    listYieldTokens,
     listValidators,
     listActivity,
   } as const;

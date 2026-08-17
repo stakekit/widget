@@ -2,58 +2,58 @@ import BigNumber from "bignumber.js";
 import { Effect, Match, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../../app/runtime/app-runtime";
-import { widgetConfigAtom } from "../../../../app/runtime/widget-config";
-import { stakeTokenSameAsGasToken } from "../../../../domain";
-import type { TronResource } from "../../../../domain/action/tron-resource";
-import { getKycProviderName } from "../../../../domain/earn/kyc";
+import { appRuntime } from "../../../app/runtime/app-runtime";
+import { widgetConfigAtom } from "../../../app/runtime/widget-config";
+import { stakeTokenSameAsGasToken } from "../../../domain";
+import type { TronResource } from "../../../domain/action/tron-resource";
+import { getKycProviderName } from "../../../domain/earn/kyc";
 import type {
   EarnValidator,
   EarnValidatorKey,
   EarnYieldWithProvider,
-} from "../../../../domain/earn/models";
+} from "../../../domain/earn/models";
 import {
   getDashboardYieldCategory,
   getExtendedYieldType,
   getYieldRewardTokens,
   getYieldTypesSortRank,
   isBittensorStaking,
-} from "../../../../domain/earn/yield";
-import { getTokenPriceInUSD } from "../../../../domain/finance/price";
-import type { YieldId } from "../../../../domain/identity/identifiers";
-import { tokenString } from "../../../../domain/token/token";
-import type { DashboardYieldCategory } from "../../../../public-api/types";
+} from "../../../domain/earn/yield";
+import { getTokenPriceInUSD } from "../../../domain/finance/price";
+import type { YieldId } from "../../../domain/identity/identifiers";
+import { tokenString } from "../../../domain/token/token";
+import type { DashboardYieldCategory } from "../../../public-api/types";
 import {
   getTokensPricesRequest,
   PricesKey,
   pricesAtom,
-} from "../../../../resources/token-prices/prices";
-import { TrackingService } from "../../../../services/tracking/tracking-service";
-import { walletCommandIdentity } from "../../../../services/wallet/wallet-scope";
-import { formatUsd } from "../../../../shared/lib/formatters";
+} from "../../../resources/token-prices/prices";
+import { TrackingService } from "../../../services/tracking/tracking-service";
+import { walletCommandIdentity } from "../../../services/wallet/wallet-scope";
+import { formatUsd } from "../../../shared/lib/formatters";
 import {
   defaultFormattedNumber,
   formatNumber,
-} from "../../../../shared/lib/number-format";
+} from "../../../shared/lib/number-format";
 import {
   isMountAnimationFinished,
   mountAnimationStateAtom,
-} from "../../../mount-animation/state";
+} from "../../mount-animation/state";
 import {
   walletConfigResultAtom,
   walletConnectionStateAtom,
   walletScopeAtom,
-} from "../../../wallet/state";
+} from "../../wallet/state";
 import {
   getYieldAmountConstraints,
   makeYieldEntry,
-} from "../../../yield-entry/state";
+} from "../../yield-entry/state";
 import {
   CurrentYieldKycGateKey,
   currentYieldKycGateAtom,
   makeYieldSummary,
   refreshCurrentYieldKycAtom,
-} from "../../../yield-summary/state";
+} from "../../yield-summary/state";
 import {
   type EarnTokenOption,
   earnSelectionStatusViewAtom,
@@ -61,10 +61,8 @@ import {
   earnSelectionValidatorOptionsViewAtom,
   earnSelectionViewAtom,
   earnSelectionYieldOptionsViewAtom,
-  loadMoreEarnSelectionTokensAtom,
   loadMoreEarnSelectionValidatorsAtom,
   removeEarnSelectionValidatorAtom,
-  retryEarnSelectionAtom,
   selectEarnSelectionCategoryAtom,
   selectEarnSelectionProviderAtom,
   selectEarnSelectionTokenAtom,
@@ -74,15 +72,15 @@ import {
   setEarnSelectionAmountAtom,
   setEarnSelectionMaxAmountAtom,
   setEarnSelectionValidatorSearchAtom,
-} from "../earn-selection";
+} from "./earn-selection";
 import {
   earnPageInputAtom,
   earnPageQuoteAtom,
   earnPageSearchAtom,
   earnPageSelectionAtom,
   getEarnPageValidationKey,
-} from "../page-workflow";
-import { pendingActionDeepLinkViewAtom } from "../pending-action-deep-link";
+} from "./page-workflow";
+import { pendingActionDeepLinkViewAtom } from "./pending-action-deep-link";
 
 const selectedValidatorsAtom = Atom.make(
   (get) =>
@@ -126,7 +124,7 @@ const earnYieldSummary = makeYieldSummary(yieldSummaryInputAtom);
 
 export const earnTokenSelectionViewAtom = Atom.make((get) => {
   const options = get(earnSelectionTokenOptionsViewAtom);
-  const status = get(earnSelectionStatusViewAtom).status;
+  const status = get(earnSelectionStatusViewAtom);
   const search = get(earnPageSearchAtom).token;
   const all = [...options.items];
   const normalizedSearch = search.toLowerCase();
@@ -138,17 +136,15 @@ export const earnTokenSelectionViewAtom = Atom.make((get) => {
       )
     : all;
   const loading =
-    status === "resolving-wallet" ||
-    status === "loading-token-options" ||
-    status === "loading-initial-selection" ||
+    status.loading.wallet ||
+    status.loading.tokens ||
+    status.loading.initialSelection ||
     (options.waiting && all.length === 0);
 
   return {
     all,
     filtered,
-    hasMore: options.page.hasMore,
     isLoading: loading,
-    isLoadingMore: options.page.isLoadingMore,
     search,
     selected: options.selected,
   } as const;
@@ -167,8 +163,6 @@ export const selectEarnTokenAtom = appRuntime
     );
   })
   .pipe(Atom.withLabel("selectEarnTokenAtom"));
-
-export const loadMoreEarnTokensAtom = loadMoreEarnSelectionTokensAtom;
 
 const groupYields = (items: ReadonlyArray<EarnYieldWithProvider>) => {
   const groups = new Map<
@@ -207,7 +201,7 @@ const resolveValidatorsData = ({
 
 export const earnYieldSelectionViewAtom = Atom.make((get) => {
   const config = get(widgetConfigAtom);
-  const status = get(earnSelectionStatusViewAtom).status;
+  const status = get(earnSelectionStatusViewAtom);
   const tokenOptions = get(earnSelectionTokenOptionsViewAtom);
   const yieldOptions = get(earnSelectionYieldOptionsViewAtom);
   const selected = yieldOptions.selected;
@@ -248,7 +242,7 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
   );
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;
-  const yieldLoading = status === "loading-yields" || yieldOptions.waiting;
+  const yieldLoading = status.loading.yields || yieldOptions.waiting;
 
   return {
     all,
@@ -258,8 +252,8 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
     filtered,
     groups: groupYields(filtered),
     isLoading:
-      status === "resolving-wallet" ||
-      status === "loading-initial-selection" ||
+      status.loading.wallet ||
+      status.loading.initialSelection ||
       yieldLoading ||
       tokenOptionsLoading,
     search,
@@ -284,7 +278,7 @@ export const selectEarnCategoryAtom = Atom.fnSync(
 
 export const earnValidatorSelectionViewAtom = Atom.make((get) => {
   const config = get(widgetConfigAtom);
-  const status = get(earnSelectionStatusViewAtom).status;
+  const status = get(earnSelectionStatusViewAtom);
   const tokenOptions = get(earnSelectionTokenOptionsViewAtom);
   const validatorOptions = get(earnSelectionValidatorOptionsViewAtom);
   const yieldOptions = get(earnSelectionYieldOptionsViewAtom);
@@ -300,7 +294,7 @@ export const earnValidatorSelectionViewAtom = Atom.make((get) => {
   });
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;
-  const yieldLoading = status === "loading-yields" || yieldOptions.waiting;
+  const yieldLoading = status.loading.yields || yieldOptions.waiting;
 
   return {
     data,
@@ -395,7 +389,7 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
   const wallet = get(walletConnectionStateAtom);
   const walletScope = get(walletScopeAtom);
   const summary = get(earnYieldSummary.viewAtom);
-  const availableAmount = selectedTokenOption
+  const availableAmount = selectedTokenOption?.amount
     ? new BigNumber(selectedTokenOption.amount)
     : null;
   const connected = wallet.status === "connected";
@@ -406,8 +400,7 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
   );
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;
-  const yieldLoading =
-    status.status === "loading-yields" || yieldOptions.waiting;
+  const yieldLoading = status.loading.yields || yieldOptions.waiting;
 
   return {
     availableAmount,
@@ -425,7 +418,7 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
     },
     externalProviders: Boolean(config.externalProviders),
     footerIsLoading: tokenOptionsLoading || yieldLoading,
-    hasNoYields: status.status === "no-yields",
+    hasNoYields: status.empty.yields,
     isAppLoading: get(earnAppLoadingAtom).isLoading,
     isFetching: status.isFetching,
     isKycBlocking: kyc.isBlocking,
@@ -601,15 +594,11 @@ export const refreshEarnKycAtom = Atom.fnSync(
   { initialValue: undefined }
 ).pipe(Atom.withLabel("refreshEarnKycAtom"));
 
-export const retryEarnPageAtom = retryEarnSelectionAtom;
-
 export const earnPageStatusViewAtom = Atom.make((get) => {
   const status = get(earnSelectionStatusViewAtom);
   return {
-    canRetry: status.canRetry,
-    hasNoYields: status.status === "no-yields",
-    isError: status.status === "failed",
-    machineStatus: status.status,
+    hasNoYields: status.empty.yields,
+    isError: status.blockingFailure,
     presentationFrozen: get(earnAppLoadingAtom).presentationFrozen,
   } as const;
 }).pipe(Atom.withLabel("earnPageStatusViewAtom"));

@@ -163,6 +163,7 @@ const makeSolanaRuntime = (initial: SolanaWalletSnapshot) => {
             Queue.offerUnsafe(queue, snapshot);
           };
           listeners.add(listener);
+          listener();
           return listener;
         }),
         (listener) => Effect.sync(() => listeners.delete(listener))
@@ -258,7 +259,9 @@ describe("WagmiConfigProvider", () => {
               Effect.succeed(makeSolanaConnectorFactory(wallet)),
             runtime: runtime.runtime,
           });
-          expect(runtime.listenerCount()).toBe(1);
+          yield* Effect.promise(() =>
+            expect.poll(() => runtime.listenerCount()).toBe(1)
+          );
           const configIdentity = config;
           const hook = yield* Effect.promise(() =>
             renderHook(() => useConnectors(), {

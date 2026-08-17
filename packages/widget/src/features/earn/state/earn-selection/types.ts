@@ -21,12 +21,6 @@ import type { InitParams } from "../../../../services/wallet/init-params";
 import type { WalletScopeKey } from "../../../../services/wallet/wallet-scope";
 import type { PullPage } from "../../../../shared/effect/pagination";
 import type {
-  AvailableYieldCategoriesKey,
-  DefaultTokenOptionsKey,
-  InitYieldKey,
-  PositionsDataKey,
-  TokenOptionsKey,
-  YieldCatalogKey,
   YieldValidatorsKey,
   YieldValidatorsPullKey,
 } from "./catalog/keys";
@@ -34,40 +28,24 @@ import type {
 export type EarnTokenOption = {
   readonly token: Token;
   readonly availableYields: ReadonlyArray<YieldId>;
-  readonly amount: string;
-  readonly source: "balance" | "default" | "init";
+  readonly amount: string | null;
+  readonly source: "balance" | "default";
 };
 export type EarnTokenKey = string;
 
 export type EarnCatalogOperation =
   | "available-yield-categories"
-  | "default-token-options"
+  | "earn-token-catalog"
   | "earn-yield-catalog"
-  | "init-token-option"
-  | "init-yield"
-  | "legacy-token-options"
   | "positions-data"
   | "preferred-validators"
-  | "runtime"
   | "token-balances-scan"
-  | "token-yield-scope"
   | "validators";
 
 export class EarnCatalogError extends Data.TaggedError("EarnCatalogError")<{
   readonly operation: EarnCatalogOperation;
   readonly cause: unknown;
 }> {}
-
-export type EarnRetryTarget =
-  | {
-      readonly _tag: "AvailableCategories";
-      readonly key: AvailableYieldCategoriesKey;
-    }
-  | { readonly _tag: "InitYield"; readonly key: InitYieldKey }
-  | { readonly _tag: "PositionsData"; readonly key: PositionsDataKey }
-  | { readonly _tag: "TokenOptions"; readonly key: TokenOptionsKey }
-  | { readonly _tag: "YieldCatalog"; readonly key: YieldCatalogKey }
-  | { readonly _tag: "YieldValidators"; readonly key: YieldValidatorsKey };
 
 export type EarnEntry = {
   readonly walletScope: WalletScopeKey | null;
@@ -76,10 +54,9 @@ export type EarnEntry = {
   readonly categoryOrder: ReadonlyArray<DashboardYieldCategory>;
   readonly initParams?: InitParams | null;
   readonly preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork | null;
-  readonly tokensForEnabledYieldsOnly?: boolean;
 };
 
-export type EarnMachineIntent = {
+export type EarnEntryIntent = {
   amountInput: "manual" | "max" | "untouched";
   selectedTokenKey: EarnTokenKey | null;
   selectedYieldId: YieldId | null;
@@ -91,59 +68,24 @@ export type EarnMachineIntent = {
   tronResource: TronResource | null;
 };
 
-type EarnMachineSelection = {
+export type EarnSelection = {
   category: DashboardYieldCategory | null;
   token: EarnTokenOption | null;
   yield: EarnYieldWithProvider | null;
   validators: ReadonlyArray<EarnValidator>;
 };
 
-export type EarnMachineForm = {
+export type EarnSelectionForm = {
   providerYieldId: YieldId | null;
   stakeAmount: string;
   useMaxAmount: boolean;
   tronResource: TronResource | null;
 };
 
-type EarnMachineStatus =
-  | "resolving-wallet"
-  | "loading-categories"
-  | "no-categories"
-  | "loading-initial-selection"
-  | "loading-token-options"
-  | "no-tokens"
-  | "loading-yields"
-  | "no-yields"
-  | "loading-positions"
-  | "loading-validators"
-  | "no-validators"
-  | "failed"
-  | "ready";
-
-type EarnFailureStage =
-  | "categories"
-  | "initial-selection"
-  | "token-options"
-  | "yields"
-  | "positions"
-  | "validators";
-
-type EarnMachineFailure = {
-  readonly _tag: "ResourceFailure";
-  readonly stage: EarnFailureStage;
-  readonly error: EarnCatalogError;
-};
-
 export type EarnTokenOptionsState = AsyncResult<
   ReadonlyArray<EarnTokenOption>,
   EarnCatalogError
 >;
-
-type EarnTokenOptionsViewResource = {
-  readonly items: ReadonlyArray<EarnTokenOption>;
-  readonly waiting: boolean;
-  readonly pullKey: DefaultTokenOptionsKey | null;
-};
 
 export type EarnValidatorsResource = {
   readonly enabled: boolean;
@@ -155,40 +97,54 @@ export type EarnValidatorsResource = {
   ) => Writable<PullResult<PullPage<EarnValidator>, EarnCatalogError>, void>;
 };
 
-type EarnValidatorsViewResource = {
-  readonly enabled: boolean;
-  readonly items: ReadonlyArray<EarnValidator>;
-  readonly key: YieldValidatorsKey | null;
-};
-
-export type EarnMachineView = {
-  status: EarnMachineStatus;
-  failure: EarnMachineFailure | null;
-  retryTarget: EarnRetryTarget | null;
-  selection: EarnMachineSelection;
-  form: EarnMachineForm;
-  availableCategories: ReadonlyArray<DashboardYieldCategory>;
-  resources: {
-    positions: {
+export type EarnSelectionView = {
+  readonly blockingFailure: boolean;
+  readonly selection: EarnSelection;
+  readonly form: EarnSelectionForm;
+  readonly availableCategories: ReadonlyArray<DashboardYieldCategory>;
+  readonly loading: {
+    readonly wallet: boolean;
+    readonly categories: boolean;
+    readonly initialSelection: boolean;
+    readonly tokens: boolean;
+    readonly yields: boolean;
+    readonly positions: boolean;
+    readonly validators: boolean;
+  };
+  readonly empty: {
+    readonly categories: boolean;
+    readonly tokens: boolean;
+    readonly yields: boolean;
+    readonly validators: boolean;
+  };
+  readonly resources: {
+    readonly positions: {
       readonly data: PositionsData;
       readonly waiting: boolean;
     };
-    tokenOptions: EarnTokenOptionsViewResource;
-    yields: {
+    readonly tokenOptions: {
+      readonly items: ReadonlyArray<EarnTokenOption>;
+      readonly waiting: boolean;
+    };
+    readonly yields: {
       readonly items: ReadonlyArray<EarnYieldWithProvider>;
       readonly waiting: boolean;
     };
-    validators: EarnValidatorsViewResource;
+    readonly validators: {
+      readonly enabled: boolean;
+      readonly items: ReadonlyArray<EarnValidator>;
+      readonly key: YieldValidatorsKey | null;
+    };
   };
-  can: {
-    selectToken: boolean;
-    selectYield: boolean;
-    selectValidator: boolean;
-    submit: boolean;
+  readonly can: {
+    readonly selectToken: boolean;
+    readonly selectYield: boolean;
+    readonly selectValidator: boolean;
+    readonly submit: boolean;
   };
 };
 
-export const makeDefaultEarnIntent = (): EarnMachineIntent => ({
+export const makeDefaultEarnIntent = (): EarnEntryIntent => ({
   amountInput: "untouched",
   selectedProviderYieldId: null,
   selectedTokenKey: null,

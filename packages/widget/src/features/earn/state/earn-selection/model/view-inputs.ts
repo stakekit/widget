@@ -4,7 +4,6 @@ import type {
   EarnYieldWithProvider,
 } from "../../../../../domain/earn/models";
 import type { ValidatorsConfig } from "../../../../../domain/earn/yield";
-import type { YieldId } from "../../../../../domain/identity/identifiers";
 import type { Network } from "../../../../../domain/network/network";
 import type { PositionsData } from "../../../../../domain/portfolio/positions";
 import type { DashboardYieldCategory } from "../../../../../public-api/types";
@@ -13,11 +12,8 @@ import type { EarnCatalogError, EarnTokenOption } from "../types";
 export type EarnResourceResult<A> = AsyncResult<A, EarnCatalogError>;
 
 export type InitialViewObservations = {
-  readonly initYield: EarnResourceResult<EarnYieldWithProvider | null>;
-  readonly initYieldId: YieldId | null;
   readonly network: Network | null;
   readonly positions: EarnResourceResult<PositionsData>;
-  readonly selectionSeedYieldId: YieldId | null;
 };
 
 export type CategoryObservation =
@@ -27,6 +23,10 @@ export type CategoryObservation =
       readonly result: EarnResourceResult<
         ReadonlyArray<DashboardYieldCategory>
       >;
+      readonly catalogs: ReadonlyArray<{
+        readonly category: DashboardYieldCategory;
+        readonly result: EarnResourceResult<ReadonlyArray<EarnTokenOption>>;
+      }>;
     }>;
 
 export type ValidatorObservation =

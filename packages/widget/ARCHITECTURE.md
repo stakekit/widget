@@ -319,11 +319,11 @@ deriving semantic states such as readiness, eligibility, pagination phase, or a
 KYC gate; such projections publish only the semantic facts consumers use.
 
 Earn Selection remains Atom-owned synchronous intent. Its Atom adapter owns
-concrete Authoritative Resource identity, staged observation, pagination, and
-exact retry routing, then supplies authoritative `AsyncResult` values and plain
-resource-independent inputs to the deterministic Earn model. Feature model code
-never imports Effect Atom or accepts an Atom context, including through
-type-only dependencies.
+concrete Authoritative Resource identity, canonical catalog observation, and
+Validator pagination, then supplies authoritative `AsyncResult` values and
+plain resource-independent inputs to deterministic Earn reconciliation. Feature
+model code never imports Effect Atom or accepts an Atom context, including
+through type-only dependencies.
 
 Borrow action preparation is one deterministic feature-owned seam over a
 normalized draft, `Borrow Positions`, and the governing `Risk Position`. The

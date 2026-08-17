@@ -12,17 +12,13 @@ import { disconnectedNormalizedWalletState } from "../../../../../services/walle
 import { initParamsAtom } from "../../../../init-params/state";
 import { walletStateResultAtom } from "../../../../wallet/state";
 import { makeResolvingWalletView } from "../model/view-model";
+import type { EarnEntry, EarnEntryIntent, EarnSelectionView } from "../types";
 import {
-  type EarnEntry,
-  type EarnMachineIntent,
-  type EarnMachineView,
-  makeDefaultEarnIntent,
-} from "../types";
-import type { EarnAction } from "./actions";
-import { commitEarnInitialSelection } from "./initial-selection";
-import { type EarnMachineState, reconcileEarnMachineOwner } from "./owner";
-import { applyEarnAction } from "./reducer";
-import { makeEarnResourceAdapter } from "./resource-observations";
+  type EarnEntryState,
+  reconcileEarnEntryOwner,
+  resetEarnEntryIntent,
+} from "./owner";
+import { resolveEarnViewFromResources } from "./resource-observations";
 
 const earnWalletSnapshotAtom = Atom.make((context) => {
   const result = context.get(walletStateResultAtom);
@@ -40,132 +36,63 @@ const earnWalletSnapshotAtom = Atom.make((context) => {
   };
 }).pipe(Atom.withLabel("earnWalletSnapshotAtom"));
 
-export const earnMachineEntryAtom = Atom.make<EarnEntry>((context) => {
+export const earnEntryAtom = Atom.make<EarnEntry>((context) => {
   const config = context.get(widgetConfigAtom);
   const wallet = context.get(earnWalletSnapshotAtom);
-  const initParams = context.get(initParamsAtom);
 
   return {
     categoryOrder: config.dashboardYieldCategoryOrder,
     dashboardVariant:
       config.dashboardVariant && config.yieldGrouping === "category",
-    initParams,
+    initParams: context.get(initParamsAtom),
     preferredTokenYieldsPerNetwork: config.preferredTokenYieldsPerNetwork,
-    tokensForEnabledYieldsOnly: config.tokensForEnabledYieldsOnly,
     walletScope: wallet.walletScope,
     walletResolution: wallet.walletResolution,
   };
-}).pipe(Atom.withLabel("earnMachineEntryAtom"));
+}).pipe(Atom.withLabel("earnEntryAtom"));
 
-const earnMachineStateAtom = Atom.writable<EarnMachineState, EarnMachineState>(
+const earnEntryStateAtom = Atom.writable<EarnEntryState, EarnEntryState>(
   (context) => {
-    const entry = context.get(earnMachineEntryAtom);
-    const scope = entry.walletScope;
-    const owner = scope ? walletScopeOwnerKey(scope) : null;
-    const previous = context.self<EarnMachineState>().pipe(Option.getOrNull);
-
-    return reconcileEarnMachineOwner(
+    const entry = context.get(earnEntryAtom);
+    const owner = entry.walletScope
+      ? walletScopeOwnerKey(entry.walletScope)
+      : null;
+    const previous = context.self<EarnEntryState>().pipe(Option.getOrNull);
+    return reconcileEarnEntryOwner(
       previous,
       owner,
       entry.dashboardVariant,
-      entry.walletResolution
+      entry.walletResolution,
+      entry.initParams ?? null
     );
   },
   (context, state) => context.setSelf(state)
-).pipe(Atom.withLabel("earnMachineStateAtom"));
+).pipe(Atom.keepAlive, Atom.withLabel("earnEntryStateAtom"));
 
-const earnInitialSelectionConsumedAtom = Atom.make(false).pipe(
-  Atom.keepAlive,
-  Atom.withLabel("earnInitialSelectionConsumedAtom")
-);
-
-type EarnMachineProjection = {
-  readonly sourceState: EarnMachineState;
-  readonly state: EarnMachineState;
-  readonly view: EarnMachineView;
+type EarnSelectionProjection = {
+  readonly state: EarnEntryState;
+  readonly view: EarnSelectionView;
 };
 
 const hasSameOwner = (
   first: WalletScopeOwnerKey | null,
   second: WalletScopeOwnerKey | null
-) => {
-  if (!first || !second) {
-    return first === second;
-  }
+) => (first && second ? sameWalletScopeOwner(first, second) : first === second);
 
-  return sameWalletScopeOwner(first, second);
-};
-
-const isInitializationTerminal = (view: EarnMachineView): boolean =>
-  view.status === "failed" ||
-  view.status === "ready" ||
-  view.status === "no-categories" ||
-  view.status === "no-tokens" ||
-  view.status === "no-yields" ||
-  view.status === "no-validators";
-
-const sameValidatorSelection = (
-  first: ReadonlyArray<{ readonly key: string }>,
-  second: ReadonlyArray<{ readonly key: string }>
-) =>
-  first.length === second.length &&
-  first.every((validator, index) => validator.key === second[index]?.key);
-
-const reconcileEarnValidatorIntent = (
-  state: EarnMachineState,
-  view: EarnMachineView
-): EarnMachineState => {
-  const selectedValidators = state.intent.selectedValidators;
-  const canReconcile =
-    selectedValidators !== null &&
-    view.resources.validators.enabled &&
-    (view.status === "ready" || view.status === "no-validators");
-
-  if (
-    !canReconcile ||
-    sameValidatorSelection(selectedValidators, view.selection.validators)
-  ) {
-    return state;
-  }
-
-  return {
-    ...state,
-    intent: {
-      ...state.intent,
-      selectedValidators: view.selection.validators,
-    },
-  };
-};
-
-const earnMachineProjectionAtom = Atom.readable<EarnMachineProjection>(
+const earnSelectionProjectionAtom = Atom.readable<EarnSelectionProjection>(
   (context) => {
-    const baseEntry = context.get(earnMachineEntryAtom);
-    const sourceState = context.get(earnMachineStateAtom);
-    const previousMachine = context
-      .self<EarnMachineProjection>()
+    const state = context.get(earnEntryStateAtom);
+    const previousProjection = context
+      .self<EarnSelectionProjection>()
       .pipe(Option.getOrNull);
-    const reconciledState =
-      previousMachine?.sourceState === sourceState
-        ? previousMachine.state
-        : sourceState;
-    const state =
-      context.once(earnInitialSelectionConsumedAtom) &&
-      reconciledState.initializationPhase === "applying-init-params"
-        ? {
-            ...reconciledState,
-            initializationPhase: "complete" as const,
-          }
-        : reconciledState;
-    const entry = {
-      ...baseEntry,
-      initParams:
-        state.initializationPhase === "applying-init-params"
-          ? baseEntry.initParams
-          : null,
+    const entry: EarnEntry = {
+      ...context.get(earnEntryAtom),
+      initParams: state.initParams,
     };
     const previousView =
-      previousMachine && hasSameOwner(previousMachine.state.owner, state.owner)
-        ? previousMachine.view
+      previousProjection &&
+      hasSameOwner(previousProjection.state.owner, state.owner)
+        ? previousProjection.view
         : null;
     const view =
       entry.walletResolution === "pending"
@@ -173,73 +100,44 @@ const earnMachineProjectionAtom = Atom.readable<EarnMachineProjection>(
             intent: state.intent,
             previous: Option.fromNullishOr(previousView),
           })
-        : (() => {
-            const resources = makeEarnResourceAdapter(context);
-            return resources.resolve({
-              entry,
-              intent: state.intent,
-              previous: previousView,
-            });
-          })();
+        : resolveEarnViewFromResources(context, {
+            entry,
+            intent: state.intent,
+            previous: previousView,
+          });
 
-    const initializationComplete =
-      state.initializationPhase === "applying-init-params" &&
-      isInitializationTerminal(view);
-    const validatorReconciledState = reconcileEarnValidatorIntent(state, view);
-    const committedState = initializationComplete
-      ? {
-          ...validatorReconciledState,
-          initializationPhase: "complete" as const,
-          intent:
-            view.status === "failed"
-              ? validatorReconciledState.intent
-              : commitEarnInitialSelection(
-                  entry,
-                  validatorReconciledState.intent,
-                  view
-                ),
-        }
-      : validatorReconciledState;
-
-    return { sourceState, state: committedState, view };
+    return { state, view };
   }
-).pipe(Atom.withLabel("earnMachineProjectionAtom"));
+).pipe(Atom.withLabel("earnSelectionProjectionAtom"));
 
-export const earnMachineIntentAtom = Atom.writable<
-  EarnMachineIntent,
-  EarnAction
+export const earnEntryIntentAtom = Atom.writable<
+  EarnEntryIntent,
+  EarnEntryIntent
 >(
-  (context) => context.get(earnMachineProjectionAtom).state.intent,
-  (context, action) => {
-    const state = context.get(earnMachineProjectionAtom).state;
-    const intent = applyEarnAction({ action, intent: state.intent });
-
-    context.set(earnMachineStateAtom, { ...state, intent });
+  (context) => context.get(earnSelectionProjectionAtom).state.intent,
+  (context, intent) => {
+    const state = context.get(earnSelectionProjectionAtom).state;
+    context.set(earnEntryStateAtom, {
+      ...state,
+      initializationPhase: "complete",
+      initParams: null,
+      intent,
+    });
   }
-).pipe(Atom.withLabel("earnMachineIntentAtom"));
+).pipe(Atom.withLabel("earnEntryIntentAtom"));
 
 export const resetEarnEntryIntentForOwnerAtom = Atom.fnSync(
   (owner: WalletScopeOwnerKey, context) => {
-    const state = context(earnMachineStateAtom);
+    const state = context(earnEntryStateAtom);
     if (!state.owner || !sameWalletScopeOwner(state.owner, owner)) return;
 
-    context.set(earnMachineStateAtom, {
-      ...state,
-      initializationPhase: "complete",
-      intent: makeDefaultEarnIntent(),
-    });
+    const reset = resetEarnEntryIntent(state);
+    if (reset === state) return;
+
+    context.set(earnEntryStateAtom, reset);
   }
 ).pipe(Atom.withLabel("resetEarnEntryIntentForOwnerAtom"));
 
-export const earnMachineViewAtom = Atom.make((context) => {
-  const projection = context.get(earnMachineProjectionAtom);
-  if (
-    projection.state.initializationPhase === "complete" &&
-    !context.once(earnInitialSelectionConsumedAtom)
-  ) {
-    // The projection observes this marker with `once`, so recording the
-    // application-generation fact cannot replace this terminal view.
-    context.set(earnInitialSelectionConsumedAtom, true);
-  }
-  return projection.view;
-}).pipe(Atom.withLabel("earnMachineViewAtom"));
+export const earnSelectionViewAtom = Atom.make(
+  (context) => context.get(earnSelectionProjectionAtom).view
+).pipe(Atom.withLabel("earnSelectionViewAtom"));

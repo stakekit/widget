@@ -75,21 +75,37 @@ _Avoid_: Token string, token metadata
 
 ## Earn Language
 
+**Earn Catalog**:
+The authoritative project-enabled and enterable categories, tokens, yields, and validators available for an Earn journey under the active network and category filters. Initialization parameters and host preferences may select from the Earn Catalog but never expand it.
+_Avoid_: Token list, init options, preferred catalog
+
 **Earn Selection**:
 The category, token, yield, validators, and entry form values currently resolved for starting an Earn journey. It is valid only against the authoritative facts for the active Wallet Scope Owner.
 _Avoid_: Atom state, selected stake data
+
+**Earn Selection Reconciliation**:
+The deterministic comparison of the previous Earn Selection, current Entry Intent, initialization seed, live preferences, and current Earn Catalog. It preserves previously resolved values while they remain valid, may retain the previous selection as ineligible presentation while Wallet State is unresolved, and replaces values invalidated by a confirmed Wallet Scope Owner or authoritative fact without writing derived choices into Entry Intent.
+_Avoid_: State synchronization, intent repair, projection write
 
 **Yield Entry**:
 A user's pre-execution attempt to add tokens to an Earn Selection. An eligible Yield Entry culminates in an Enter Action Command.
 _Avoid_: Enter Action, stake form
 
 **Earn Initialization**:
-The one-time use of host or deep-link initialization parameters to seed the first Earn Selection of a Widget Instance. Its first ready, empty, or failed result completes the attempt; a completed or owner-invalidated target does not run again.
+The one-time capture of host or deep-link parameters into a seed for the first Earn Selection after Wallet Bootstrap settles. Capture consumes the initialization for that Widget Instance; the seed may wait for the Earn Catalog, but leaving its entry surface, changing its owner, or making an explicit selection abandons it without replay.
 _Avoid_: Permanent default, init fallback
 
+**Unknown Earn Balance**:
+The absence of usable wallet balance data for a canonical Earn token. It is distinct from a zero balance: the token remains available for browsing, while amount-dependent Yield Entry is ineligible.
+_Avoid_: Zero balance, missing token
+
 **Earn Readiness**:
-The condition in which every authoritative fact needed to resolve the Earn Selection and determine whether it may be submitted has settled with a usable value. Pagination and later refreshes may continue without ending Earn Readiness.
+The condition in which each authoritative fact required by the current resolved Earn path has a usable value and submission eligibility can be determined. Initial token selection waits for the Earn Catalog and first balance attempt; later pagination or refresh with a retained usable value does not end Earn Readiness.
 _Avoid_: Page loaded, no spinner
+
+**Blocking Earn Failure**:
+The absence of usable data after an authoritative resource required by the current resolved Earn path fails. Failures in unselected categories and wallet balance enrichment are not blocking while the Earn Catalog remains usable.
+_Avoid_: Failure stage, retry target, catalog operation error
 
 **Earn Mechanic Arguments**:
 The yield-advertised action inputs whose constraints and options determine additional Earn form and transaction values. Only arguments understood by the Widget participate in Earn Selection.

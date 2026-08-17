@@ -4,10 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
 import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
 import { earnYieldCatalogAtom } from "../../src/features/earn/state/earn-selection/catalog/catalog";
-import {
-  TokenYieldScopeKey,
-  YieldCatalogKey,
-} from "../../src/features/earn/state/earn-selection/catalog/keys";
+import { YieldCatalogKey } from "../../src/features/earn/state/earn-selection/catalog/keys";
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
@@ -78,19 +75,6 @@ describe("atom family key identity", () => {
 
     expect(first.yieldIds).toEqual([firstYieldId, secondYieldId]);
     expect(earnYieldCatalogAtom(first)).toBe(earnYieldCatalogAtom(equivalent));
-  });
-
-  it("uses value-equal scope keys for companion state", () => {
-    const first = new TokenYieldScopeKey({
-      category: "stake",
-      yieldIds: [secondYieldId, firstYieldId, secondYieldId],
-    });
-    const equivalent = new TokenYieldScopeKey({
-      category: "stake",
-      yieldIds: [firstYieldId, secondYieldId],
-    });
-
-    expect(Equal.equals(first, equivalent)).toBe(true);
   });
 
   it("normalizes reconstructed wallet scope values", () => {

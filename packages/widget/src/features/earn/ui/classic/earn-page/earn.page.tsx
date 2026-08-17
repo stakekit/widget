@@ -3,7 +3,6 @@ import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../app/composition/use-widget-config";
 import { Box } from "../../../../../shared/ui/primitives/box";
-import { Button } from "../../../../../shared/ui/primitives/button";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Spinner } from "../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
@@ -82,7 +81,7 @@ const EarnPageComponent = () => {
 
   const variant = useWidgetConfig("variant");
 
-  const { retry, view: status } = useEarnPageStatus();
+  const { view: status } = useEarnPageStatus();
 
   return (
     <Box position="relative">
@@ -127,11 +126,6 @@ const EarnPageComponent = () => {
               <Text variant={{ type: "danger" }} textAlign="center">
                 {t("shared.something_went_wrong")}
               </Text>
-              {status.canRetry && (
-                <Button data-rk="earn-retry" onClick={() => retry(undefined)}>
-                  {t("shared.retry")}
-                </Button>
-              )}
             </Box>
           )}
 

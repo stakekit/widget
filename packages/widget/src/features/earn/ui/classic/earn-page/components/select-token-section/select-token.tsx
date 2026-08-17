@@ -1,6 +1,5 @@
 import { Trigger } from "@radix-ui/react-dialog";
 import clsx from "clsx";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../../../app/composition/use-widget-config";
 import { equalTokens } from "../../../../../../../domain/token/token";
@@ -25,7 +24,7 @@ import { validatorVirtuosoContainer } from "../../styles.css";
 import { SelectTokenListItem } from "./select-token-list-item";
 
 export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
-  const { loadMore, select, setSearch, view } = useEarnTokenSelection();
+  const { select, setSearch, view } = useEarnTokenSelection();
   const { view: entry } = useEarnEntry();
 
   const variant = useWidgetConfig("variant");
@@ -34,13 +33,9 @@ export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
 
   const { t } = useTranslation();
 
-  const data = useMemo(
-    () =>
-      entry.selectedToken
-        ? { st: entry.selectedToken, tokenBalances: view.filtered }
-        : null,
-    [entry.selectedToken, view.filtered]
-  );
+  const data = entry.selectedToken
+    ? { st: entry.selectedToken, tokenBalances: view.filtered }
+    : null;
 
   if (!data) return null;
 
@@ -92,16 +87,12 @@ export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
         className={validatorVirtuosoContainer}
         data={data.tokenBalances}
         estimateSize={() => 60}
-        hasNextPage={view.hasMore}
-        isFetchingNextPage={view.isLoadingMore}
-        fetchNextPage={() => loadMore(undefined)}
         itemContent={(_index, item) => {
           return (
             <SelectTokenListItem
               item={item}
               isSelected={equalTokens(item.token, data.st)}
               onTokenBalanceSelect={select}
-              isConnected={entry.connected}
             />
           );
         }}

@@ -1,49 +1,47 @@
 import { Option } from "effect";
 import type { PositionsData } from "../../../../../domain/portfolio/positions";
 import type {
-  EarnMachineForm,
-  EarnMachineIntent,
-  EarnMachineView,
+  EarnEntryIntent,
+  EarnSelectionForm,
+  EarnSelectionView,
 } from "../types";
 import { disabledValidatorsViewResource } from "./view-inputs";
 
 export const makeEmptyPositionsData = (): PositionsData => new Map();
 
-const getIntentForm = (intent: EarnMachineIntent): EarnMachineForm => ({
+const getIntentForm = (intent: EarnEntryIntent): EarnSelectionForm => ({
   providerYieldId: intent.selectedProviderYieldId,
   stakeAmount: intent.stakeAmount,
   tronResource: intent.tronResource,
   useMaxAmount: intent.useMaxAmount,
 });
 
-export type EarnViewStage = {
-  readonly availableCategories?: EarnMachineView["availableCategories"];
-  readonly form?: EarnMachineForm;
-  readonly resources?: Partial<EarnMachineView["resources"]>;
-  readonly selection?: Partial<EarnMachineView["selection"]>;
+export type EarnViewFacts = {
+  readonly availableCategories?: EarnSelectionView["availableCategories"];
+  readonly blockingFailure?: boolean;
+  readonly can?: Partial<EarnSelectionView["can"]>;
+  readonly empty?: Partial<EarnSelectionView["empty"]>;
+  readonly form?: EarnSelectionForm;
+  readonly loading?: Partial<EarnSelectionView["loading"]>;
+  readonly resources?: Partial<EarnSelectionView["resources"]>;
+  readonly selection?: Partial<EarnSelectionView["selection"]>;
 };
 
 export const makeEarnView = ({
   availableCategories = [],
+  blockingFailure = false,
   can,
-  failure = null,
+  empty,
   form,
   intent,
+  loading,
   resources,
-  retryTarget = null,
   selection,
-  status,
-}: EarnViewStage & {
-  readonly can?: Partial<EarnMachineView["can"]>;
-  readonly failure?: EarnMachineView["failure"];
-  readonly intent: EarnMachineIntent;
-  readonly retryTarget?: EarnMachineView["retryTarget"];
-  readonly status: EarnMachineView["status"];
-}): EarnMachineView => ({
-  status,
-  failure,
-  retryTarget,
+}: EarnViewFacts & {
+  readonly intent: EarnEntryIntent;
+}): EarnSelectionView => ({
   availableCategories,
+  blockingFailure,
   selection: {
     category: null,
     token: null,
@@ -52,6 +50,23 @@ export const makeEarnView = ({
     ...selection,
   },
   form: form ?? getIntentForm(intent),
+  loading: {
+    wallet: false,
+    categories: false,
+    initialSelection: false,
+    tokens: false,
+    yields: false,
+    positions: false,
+    validators: false,
+    ...loading,
+  },
+  empty: {
+    categories: false,
+    tokens: false,
+    yields: false,
+    validators: false,
+    ...empty,
+  },
   resources: {
     positions: {
       data: makeEmptyPositionsData(),
@@ -60,7 +75,6 @@ export const makeEarnView = ({
     tokenOptions: {
       items: [],
       waiting: false,
-      pullKey: null,
     },
     validators: disabledValidatorsViewResource,
     yields: {
@@ -82,15 +96,14 @@ export const makeResolvingWalletView = ({
   intent,
   previous,
 }: {
-  readonly intent: EarnMachineIntent;
-  readonly previous: Option.Option<EarnMachineView>;
-}): EarnMachineView => {
+  readonly intent: EarnEntryIntent;
+  readonly previous: Option.Option<EarnSelectionView>;
+}): EarnSelectionView => {
   if (Option.isSome(previous)) {
     return {
       ...previous.value,
-      status: "resolving-wallet",
-      failure: null,
-      retryTarget: null,
+      blockingFailure: false,
+      loading: { ...previous.value.loading, wallet: true },
       can: {
         selectToken: false,
         selectYield: false,
@@ -100,8 +113,5 @@ export const makeResolvingWalletView = ({
     };
   }
 
-  return makeEarnView({
-    intent,
-    status: "resolving-wallet",
-  });
+  return makeEarnView({ intent, loading: { wallet: true } });
 };

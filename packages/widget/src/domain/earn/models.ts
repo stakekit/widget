@@ -388,11 +388,6 @@ const EarnTokenWithAvailableYieldItems = TolerantTopLevelArray(
   { operation: "default-token-options" }
 );
 
-export const EarnTokenPage = Schema.Struct({
-  ...YieldApi.TokensControllerGetTokens200.fields,
-  items: Schema.optionalKey(EarnTokenWithAvailableYieldItems),
-});
-
 export const EarnLegacyTokenOptionsResponse = EarnTokenWithAvailableYieldItems;
 
 const EarnValidatorItems = TolerantTopLevelArray(EarnValidator, {

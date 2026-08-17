@@ -3,7 +3,7 @@ import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import { getEnterAmountConstraint } from "../../../../../domain/earn/stake";
 import { getYieldActionArg } from "../../../../../domain/earn/yield";
 import type { PositionsData } from "../../../../../domain/portfolio/positions";
-import type { EarnMachineForm, EarnMachineIntent } from "../types";
+import type { EarnEntryIntent, EarnSelectionForm } from "../types";
 
 export const canSubmitEarnForm = ({
   availableAmount,
@@ -12,7 +12,7 @@ export const canSubmitEarnForm = ({
   selectedYield,
 }: {
   readonly availableAmount: string | null;
-  readonly form: EarnMachineForm;
+  readonly form: EarnSelectionForm;
   readonly positionsData: PositionsData;
   readonly selectedYield: EarnYieldWithProvider;
 }): boolean => {
@@ -52,10 +52,10 @@ export const resolveForm = ({
   selectedYield,
 }: {
   availableAmount: string | null;
-  intent: EarnMachineIntent;
+  intent: EarnEntryIntent;
   positionsData: PositionsData;
   selectedYield: EarnYieldWithProvider;
-}): EarnMachineForm => {
+}): EarnSelectionForm => {
   const constraint = getEnterAmountConstraint(selectedYield, positionsData);
 
   return {
@@ -72,7 +72,7 @@ export const resolveForm = ({
 
 const resolveProviderYieldId = (
   selectedYield: EarnYieldWithProvider,
-  intent: EarnMachineIntent
+  intent: EarnEntryIntent
 ) => {
   const providerArg = getYieldActionArg(selectedYield, "enter", "providerId");
   const providerYieldIds = providerArg?.options ?? [];
@@ -93,7 +93,7 @@ const resolveProviderYieldId = (
 
 const resolveTronResource = (
   selectedYield: EarnYieldWithProvider,
-  intent: EarnMachineIntent
+  intent: EarnEntryIntent
 ) => {
   const tronArg = getYieldActionArg(selectedYield, "enter", "tronResource");
   const options = tronArg?.options ?? [];
@@ -112,7 +112,7 @@ const resolveStakeAmount = ({
 }: {
   availableAmount: string | null;
   constraint: ReturnType<typeof getEnterAmountConstraint>;
-  intent: EarnMachineIntent;
+  intent: EarnEntryIntent;
 }) => {
   if (constraint.type === "force-max") {
     return availableAmount ?? "0";

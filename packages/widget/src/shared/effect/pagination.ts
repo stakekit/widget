@@ -1,4 +1,4 @@
-import { Array as EArray, Effect, Option, Stream } from "effect";
+import { Array as EArray, Effect, Option } from "effect";
 import { chunksOf } from "effect/Array";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
@@ -25,10 +25,6 @@ type PaginationMetadata = {
   readonly total: number;
 };
 
-type PaginatedStreamPage<Item> = PaginationMetadata & {
-  readonly items: ReadonlyArray<Item>;
-};
-
 export const API_MAX_PAGE_SIZE = 100;
 
 export const getNextPageOffset = ({
@@ -42,57 +38,6 @@ export const getNextPageOffset = ({
     ? Option.some(nextOffset)
     : Option.none<number>();
 };
-
-/**
- * Pagination advances from the validated raw envelope metadata, never from the
- * number of domain items that survived tolerant top-level decoding.
- */
-type PaginatedApiStreamOptions<Item, E, R> = {
-  readonly fetchPage: (
-    offset: number
-  ) => Effect.Effect<PaginatedStreamPage<Item>, E, R>;
-  readonly initialOffset?: number;
-};
-
-export function paginatedApiStream<Item, E, R>(
-  options: PaginatedApiStreamOptions<Item, E, R>
-): Stream.Stream<PullPage<Item>, E, R>;
-export function paginatedApiStream<Item, E, R, Batch extends PullBatch>(
-  options: PaginatedApiStreamOptions<Item, E, R> & {
-    readonly mapPage: (
-      page: PaginatedStreamPage<Item>,
-      hasNextPage: boolean
-    ) => Batch;
-  }
-): Stream.Stream<Batch, E, R>;
-export function paginatedApiStream<Item, E, R, Batch extends PullBatch>({
-  fetchPage,
-  initialOffset = 0,
-  mapPage,
-}: PaginatedApiStreamOptions<Item, E, R> & {
-  readonly mapPage?: (
-    page: PaginatedStreamPage<Item>,
-    hasNextPage: boolean
-  ) => Batch;
-}): Stream.Stream<PullPage<Item> | Batch, E, R> {
-  return Stream.paginate(initialOffset, (offset) =>
-    fetchPage(offset).pipe(
-      Effect.map((page) => {
-        const nextOffset = getNextPageOffset(page);
-        const hasNextPage = Option.isSome(nextOffset);
-
-        return [
-          [
-            mapPage
-              ? mapPage(page, hasNextPage)
-              : { hasNextPage, items: page.items },
-          ],
-          nextOffset,
-        ] as const;
-      })
-    )
-  );
-}
 
 export const withPullPageDone = <Page extends PullBatch, E>(
   resource: Atom.Writable<Atom.PullResult<Page, E>, void>

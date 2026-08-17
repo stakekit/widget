@@ -2,8 +2,6 @@ import { Cause, Deferred, Effect, Layer, Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { availableYieldCategoriesAtom } from "../../src/features/earn/state/earn-selection/catalog/catalog";
-import { AvailableYieldCategoriesKey } from "../../src/features/earn/state/earn-selection/catalog/keys";
 import {
   enrichedYieldDirectoryResourceAtom,
   YieldDirectoryError,
@@ -15,7 +13,6 @@ import {
   type YieldDirectoryRequest,
   YieldResourceSource,
 } from "../../src/services/api/yield-resource-source";
-import { API_MAX_PAGE_SIZE } from "../../src/shared/effect/pagination";
 import { yieldApiProviderFixture, yieldApiYieldFixture } from "../fixtures";
 
 const makeYield = (id: string, type: "lending" | "staking" = "staking") => {
@@ -128,56 +125,6 @@ describe("Yield Directory resource", () => {
       ["yield-a"],
       ["yield-b"],
     ]);
-  });
-
-  it("issues one max-size Yield request per category", () => {
-    const listYields = vi.fn((request: YieldDirectoryRequest) => {
-      const getItems = (): Array<ReturnType<typeof makeYield>> => {
-        if (request.types?.includes("staking")) return [makeYield("stake")];
-        if (request.types?.includes("lending")) {
-          return [makeYield("defi", "lending")];
-        }
-        return [];
-      };
-      const items = getItems();
-
-      return Effect.succeed({
-        items,
-        limit: request.limit,
-        offset: request.offset,
-        total: items.length,
-      });
-    });
-    const registry = makeRegistry(
-      YieldResourceSource.of({ listYields } as never)
-    );
-    const categories = registry.get(
-      availableYieldCategoriesAtom(
-        new AvailableYieldCategoriesKey({
-          categoryOrder: ["stake", "defi", "rwa"],
-          network: "ethereum",
-        })
-      )
-    );
-
-    expect(AsyncResult.getOrThrow(categories)).toEqual(["stake", "defi"]);
-    expect(listYields).toHaveBeenCalledTimes(3);
-    expect(
-      listYields.mock.calls.map(([request]) => ({
-        limit: request.limit,
-        network: request.network,
-        offset: request.offset,
-      }))
-    ).toEqual([
-      { limit: API_MAX_PAGE_SIZE, network: "ethereum", offset: 0 },
-      { limit: API_MAX_PAGE_SIZE, network: "ethereum", offset: 0 },
-      { limit: API_MAX_PAGE_SIZE, network: "ethereum", offset: 0 },
-    ]);
-    expect(
-      listYields.mock.calls.every(
-        ([request]) => request.types !== undefined && request.types.length > 0
-      )
-    ).toBe(true);
   });
 
   it("deduplicates provider enrichment through the provider resource", () => {

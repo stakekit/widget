@@ -1,5 +1,6 @@
 import { Context, Effect, Layer, Schema } from "effect";
 import { EarnLegacyTokenOptionsResponse } from "../../domain/earn/models";
+import type { KnownApiYieldType } from "../../domain/earn/yield";
 import {
   type GasBalancesCommand,
   GasTokenBalancesResponse,
@@ -22,6 +23,12 @@ import {
   withResponseDecodeError,
 } from "./api-operation";
 import { ApiTransportService } from "./transport";
+
+export type EarnTokenCatalogRequest = {
+  readonly network?: Network;
+  readonly enter: true;
+  readonly yieldTypes?: ReadonlyArray<KnownApiYieldType>;
+};
 
 export const makeLegacyResourceSource = (legacyApi: LegacyApi.LegacyApi) => {
   const getEnabledNetworks = Effect.fn(
@@ -78,9 +85,15 @@ export const makeLegacyResourceSource = (legacyApi: LegacyApi.LegacyApi) => {
   });
 
   const getTokenOptions = Effect.fn("LegacyResourceSource.getTokenOptions")(
-    function* (network?: Network) {
+    function* (request: EarnTokenCatalogRequest) {
       return yield* legacyApi
-        .TokenControllerGetTokens({ params: { network } })
+        .TokenControllerGetTokens({
+          params: {
+            enter: request.enter,
+            network: request.network,
+            yieldTypes: request.yieldTypes,
+          },
+        })
         .pipe(
           decodeApiResponse(
             "legacy-token-options",

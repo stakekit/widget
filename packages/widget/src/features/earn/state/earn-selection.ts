@@ -9,34 +9,34 @@ import { isYieldActionArgRequired } from "../../../domain/earn/yield";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import type { DashboardYieldCategory } from "../../../public-api/types";
 import {
-  earnMachineIntentAtom,
-  earnMachineViewAtom,
+  removeValidator,
+  selectCategory,
+  selectProvider,
+  selectToken,
+  selectTronResource,
+  selectValidator,
+  selectYield,
+  setAmount,
+  setMaxAmount,
+} from "./earn-selection/model/transitions";
+import {
+  earnEntryIntentAtom,
+  earnSelectionViewAtom as internalEarnSelectionViewAtom,
 } from "./earn-selection/state/atoms";
 import {
-  earnTokenOptionsPageAtom,
   earnValidatorsPageAtom,
-  loadMoreEarnTokenOptionsAtom,
   loadMoreEarnValidatorsPageAtom,
-  retryEarnMachineAtom,
 } from "./earn-selection/state/view-resources";
-import type {
-  EarnMachineView,
-  EarnTokenKey as InternalEarnTokenKey,
-  EarnTokenOption as InternalEarnTokenOption,
-} from "./earn-selection/types";
+import type { EarnTokenKey } from "./earn-selection/types";
 
-type EarnTokenKey = InternalEarnTokenKey;
-export type EarnTokenOption = InternalEarnTokenOption;
-export type EarnSelection = EarnMachineView["selection"];
+export type { EarnSelection, EarnTokenOption } from "./earn-selection/types";
 
 const validatorSearchAtom = Atom.make("").pipe(
   Atom.withLabel("earnSelectionValidatorSearchAtom")
 );
-
 const normalizedValidatorSearchAtom = Atom.make((get) =>
   get(validatorSearchAtom).trim()
 ).pipe(Atom.withLabel("normalizedEarnSelectionValidatorSearchAtom"));
-
 const debouncedValidatorSearchResultAtom = appRuntime
   .atom((get) =>
     get
@@ -44,7 +44,6 @@ const debouncedValidatorSearchResultAtom = appRuntime
       .pipe(Stream.changes, Stream.debounce(Duration.millis(300)))
   )
   .pipe(Atom.withLabel("debouncedEarnSelectionValidatorSearchResultAtom"));
-
 const debouncedValidatorSearchAtom = Atom.make((get) =>
   get(debouncedValidatorSearchResultAtom).pipe(
     AsyncResult.value,
@@ -53,66 +52,60 @@ const debouncedValidatorSearchAtom = Atom.make((get) =>
 ).pipe(Atom.withLabel("debouncedEarnSelectionValidatorSearchAtom"));
 
 export const earnSelectionViewAtom = Atom.make((get) => {
-  const machine = get(earnMachineViewAtom);
-
+  const view = get(internalEarnSelectionViewAtom);
   return {
-    canSubmit: machine.can.submit,
-    form: machine.form,
-    positions: machine.resources.positions.data,
-    selection: machine.selection,
+    canSubmit: view.can.submit,
+    form: view.form,
+    positions: view.resources.positions.data,
+    selection: view.selection,
   } as const;
 }).pipe(Atom.withLabel("earnSelectionViewAtom"));
 
 export const earnSelectionStatusViewAtom = Atom.make((get) => {
-  const machine = get(earnMachineViewAtom);
-
+  const view = get(internalEarnSelectionViewAtom);
   return {
-    canRetry: machine.failure !== null,
-    failureStage: machine.failure?.stage ?? null,
+    blockingFailure: view.blockingFailure,
     isFetching:
-      machine.resources.positions.waiting ||
-      machine.resources.tokenOptions.waiting ||
-      machine.resources.yields.waiting,
-    status: machine.status,
+      view.loading.positions ||
+      view.resources.tokenOptions.waiting ||
+      view.resources.yields.waiting,
+    loading: view.loading,
+    empty: view.empty,
   } as const;
 }).pipe(Atom.withLabel("earnSelectionStatusViewAtom"));
 
 export const earnSelectionTokenOptionsViewAtom = Atom.make((get) => {
-  const machine = get(earnMachineViewAtom);
-  const page = get(earnTokenOptionsPageAtom);
-
+  const view = get(internalEarnSelectionViewAtom);
   return {
-    canSelect: machine.can.selectToken,
-    items: machine.resources.tokenOptions.items,
-    page,
-    selected: machine.selection.token,
-    waiting: machine.resources.tokenOptions.waiting,
+    canSelect: view.can.selectToken,
+    items: view.resources.tokenOptions.items,
+    selected: view.selection.token,
+    waiting: view.resources.tokenOptions.waiting,
   } as const;
 }).pipe(Atom.withLabel("earnSelectionTokenOptionsViewAtom"));
 
 export const earnSelectionYieldOptionsViewAtom = Atom.make((get) => {
-  const machine = get(earnMachineViewAtom);
-
+  const view = get(internalEarnSelectionViewAtom);
   return {
-    availableCategories: machine.availableCategories,
-    canSelect: machine.can.selectYield,
-    items: machine.resources.yields.items,
-    selected: machine.selection.yield,
-    selectedCategory: machine.selection.category,
-    waiting: machine.resources.yields.waiting,
+    availableCategories: view.availableCategories,
+    canSelect: view.can.selectYield,
+    items: view.resources.yields.items,
+    selected: view.selection.yield,
+    selectedCategory: view.selection.category,
+    waiting: view.resources.yields.waiting,
   } as const;
 }).pipe(Atom.withLabel("earnSelectionYieldOptionsViewAtom"));
 
 export const earnSelectionValidatorOptionsViewAtom = Atom.make((get) => {
-  const machine = get(earnMachineViewAtom);
+  const view = get(internalEarnSelectionViewAtom);
   const search = get(validatorSearchAtom);
   const debouncedSearch = get(debouncedValidatorSearchAtom);
   const normalizedSearch = get(normalizedValidatorSearchAtom);
   const page = get(earnValidatorsPageAtom(debouncedSearch || null));
 
   return {
-    canSelect: machine.can.selectValidator,
-    enabled: machine.resources.validators.enabled,
+    canSelect: view.can.selectValidator,
+    enabled: view.resources.validators.enabled,
     isDebouncing: normalizedSearch !== debouncedSearch,
     items: page.items,
     page: {
@@ -121,8 +114,8 @@ export const earnSelectionValidatorOptionsViewAtom = Atom.make((get) => {
       isLoadingMore: page.isLoadingMore,
     },
     search,
-    selected: machine.selection.validators,
-    selectedYield: machine.selection.yield,
+    selected: view.selection.validators,
+    selectedYield: view.selection.yield,
   } as const;
 }).pipe(Atom.withLabel("earnSelectionValidatorOptionsViewAtom"));
 
@@ -132,15 +125,18 @@ export const setEarnSelectionValidatorSearchAtom = Atom.fnSync(
 
 export const selectEarnSelectionTokenAtom = Atom.fnSync(
   (tokenKey: EarnTokenKey, context) =>
-    context.set(earnMachineIntentAtom, {
-      type: "token/select",
-      tokenKey,
-    })
+    context.set(
+      earnEntryIntentAtom,
+      selectToken(context(earnEntryIntentAtom), tokenKey)
+    )
 ).pipe(Atom.withLabel("selectEarnSelectionTokenAtom"));
 
 export const selectEarnSelectionYieldAtom = Atom.fnSync(
   (yieldId: YieldId, context) =>
-    context.set(earnMachineIntentAtom, { type: "yield/select", yieldId })
+    context.set(
+      earnEntryIntentAtom,
+      selectYield(context(earnEntryIntentAtom), yieldId)
+    )
 ).pipe(Atom.withLabel("selectEarnSelectionYieldAtom"));
 
 export const selectEarnSelectionCategoryAtom = Atom.fnSync(
@@ -149,15 +145,14 @@ export const selectEarnSelectionCategoryAtom = Atom.fnSync(
     if (
       !config.dashboardVariant ||
       config.yieldGrouping !== "category" ||
-      context(earnMachineViewAtom).selection.category === category
+      context(internalEarnSelectionViewAtom).selection.category === category
     ) {
       return;
     }
-
-    context.set(earnMachineIntentAtom, {
-      type: "category/select",
-      category,
-    });
+    context.set(
+      earnEntryIntentAtom,
+      selectCategory(context(earnEntryIntentAtom), category)
+    );
   }
 ).pipe(Atom.withLabel("selectEarnSelectionCategoryAtom"));
 
@@ -169,16 +164,18 @@ export const selectEarnSelectionValidatorAtom = Atom.fnSync(
       (candidate) => candidate.key === validatorKey
     );
     if (!selectedYield || !validator) return;
-
     context.set(
-      earnMachineIntentAtom,
-      isYieldActionArgRequired(selectedYield, "enter", "validatorAddresses")
-        ? {
-            type: "validator/multiselect",
-            fallbackSelection: view.selected,
-            validator,
-          }
-        : { type: "validator/select", validator }
+      earnEntryIntentAtom,
+      selectValidator({
+        fallbackSelection: view.selected,
+        intent: context(earnEntryIntentAtom),
+        multiselect: isYieldActionArgRequired(
+          selectedYield,
+          "enter",
+          "validatorAddresses"
+        ),
+        validator,
+      })
     );
   }
 ).pipe(Atom.withLabel("selectEarnSelectionValidatorAtom"));
@@ -186,47 +183,48 @@ export const selectEarnSelectionValidatorAtom = Atom.fnSync(
 export const removeEarnSelectionValidatorAtom = Atom.fnSync(
   (validatorKey: EarnValidatorKey, context) => {
     const selected = context(earnSelectionValidatorOptionsViewAtom).selected;
-    context.set(earnMachineIntentAtom, {
-      type: "validator/remove",
-      fallbackSelection: selected,
-      validatorKey,
-    });
+    context.set(
+      earnEntryIntentAtom,
+      removeValidator({
+        fallbackSelection: selected,
+        intent: context(earnEntryIntentAtom),
+        validatorKey,
+      })
+    );
   }
 ).pipe(Atom.withLabel("removeEarnSelectionValidatorAtom"));
 
 export const selectEarnSelectionProviderAtom = Atom.fnSync(
   (providerYieldId: YieldId, context) =>
-    context.set(earnMachineIntentAtom, {
-      type: "providerYieldId/select",
-      providerYieldId,
-    })
+    context.set(
+      earnEntryIntentAtom,
+      selectProvider(context(earnEntryIntentAtom), providerYieldId)
+    )
 ).pipe(Atom.withLabel("selectEarnSelectionProviderAtom"));
 
 export const setEarnSelectionAmountAtom = Atom.fnSync(
   (amount: string, context) =>
-    context.set(earnMachineIntentAtom, {
-      type: "stakeAmount/change",
-      amount,
-    })
+    context.set(
+      earnEntryIntentAtom,
+      setAmount(context(earnEntryIntentAtom), amount)
+    )
 ).pipe(Atom.withLabel("setEarnSelectionAmountAtom"));
 
 export const setEarnSelectionMaxAmountAtom = Atom.fnSync(
   (amount: string, context) =>
-    context.set(earnMachineIntentAtom, {
-      type: "stakeAmount/max",
-      amount,
-    })
+    context.set(
+      earnEntryIntentAtom,
+      setMaxAmount(context(earnEntryIntentAtom), amount)
+    )
 ).pipe(Atom.withLabel("setEarnSelectionMaxAmountAtom"));
 
 export const selectEarnSelectionTronResourceAtom = Atom.fnSync(
   (tronResource: TronResource, context) =>
-    context.set(earnMachineIntentAtom, {
-      type: "tronResource/select",
-      tronResource,
-    })
+    context.set(
+      earnEntryIntentAtom,
+      selectTronResource(context(earnEntryIntentAtom), tronResource)
+    )
 ).pipe(Atom.withLabel("selectEarnSelectionTronResourceAtom"));
-
-export const loadMoreEarnSelectionTokensAtom = loadMoreEarnTokenOptionsAtom;
 
 export const loadMoreEarnSelectionValidatorsAtom = Atom.fnSync(
   (_input: undefined, context) => {
@@ -237,5 +235,3 @@ export const loadMoreEarnSelectionValidatorsAtom = Atom.fnSync(
   },
   { initialValue: undefined }
 ).pipe(Atom.withLabel("loadMoreEarnSelectionValidatorsAtom"));
-
-export const retryEarnSelectionAtom = retryEarnMachineAtom;

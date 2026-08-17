@@ -4,7 +4,6 @@ import {
   EarnLegacyTokenOptionsResponse,
   EarnPositionsResponse,
   EarnProvider,
-  EarnTokenPage,
   EarnValidatorPage,
   EarnYield,
   EarnYieldPage,
@@ -129,13 +128,7 @@ describe("Earn API boundary policies", () => {
       ...validOption,
       token: { ...token, decimals: "18" },
     };
-    const [page, legacyOptions, balances] = await Promise.all([
-      decode(EarnTokenPage, {
-        items: [validOption, malformedOption],
-        limit: 2,
-        offset: 0,
-        total: 2,
-      }),
+    const [legacyOptions, balances] = await Promise.all([
       decode(EarnLegacyTokenOptionsResponse, [validOption, malformedOption]),
       decode(TokenBalancesResponse, [
         { ...validOption, amount: "1.5" },
@@ -143,8 +136,6 @@ describe("Earn API boundary policies", () => {
       ]),
     ]);
 
-    expect(page.items).toHaveLength(1);
-    expect(page.total).toBe(2);
     expect(legacyOptions).toHaveLength(1);
     expect(balances).toHaveLength(1);
     expect(balances[0]?.amount.toFixed()).toBe("1.5");

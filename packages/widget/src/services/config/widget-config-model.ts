@@ -63,7 +63,6 @@ export type WidgetConfig = {
   readonly preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork;
   readonly theme?: SettingsProps["theme"];
   readonly tokenIconMapping?: SettingsProps["tokenIconMapping"];
-  readonly tokensForEnabledYieldsOnly: boolean;
   readonly tonConnectManifestUrl?: SettingsProps["tonConnectManifestUrl"];
   readonly tracking?: SettingsProps["tracking"];
   readonly validatorsConfig: NormalizedValidatorsConfig;

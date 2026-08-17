@@ -3,7 +3,6 @@ import { useWidgetConfig } from "../../../../../app/composition/use-widget-confi
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Divider } from "../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../shared/ui/primitives/box";
-import { Button } from "../../../../../shared/ui/primitives/button";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useEarnPageStatus } from "../../../react/use-earn-facades";
 import { ExtraArgsSelection } from "../../classic/earn-page/components/extra-args-selection";
@@ -23,7 +22,7 @@ export const EarnPageContent = ({
   const { t } = useTranslation();
   const dashboardVariant = useWidgetConfig("dashboardVariant");
   const variant = useWidgetConfig("variant");
-  const { retry, view: status } = useEarnPageStatus();
+  const { view: status } = useEarnPageStatus();
 
   return (
     <Box className={container}>
@@ -59,14 +58,6 @@ export const EarnPageContent = ({
           <Text textAlign="center" variant={{ type: "danger" }}>
             {t("shared.something_went_wrong")}
           </Text>
-          {status.canRetry && (
-            <Button
-              data-rk="earn-dashboard-retry"
-              onClick={() => retry(undefined)}
-            >
-              {t("shared.retry")}
-            </Button>
-          )}
         </Box>
       )}
 

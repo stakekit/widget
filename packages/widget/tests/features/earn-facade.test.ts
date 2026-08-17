@@ -21,7 +21,7 @@ import {
   setEarnTokenSearchAtom,
   setEarnValidatorSearchAtom,
   setEarnYieldSearchAtom,
-} from "../../src/features/earn/state/facades/runtime";
+} from "../../src/features/earn/state/runtime";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 import { decodeValidator } from "../utils/validators";
@@ -118,19 +118,27 @@ describe("Earn facade", () => {
       initialValues: [
         applicationRuntimeInitInitialValue(),
         Atom.initialValue(earnSelectionStatusViewAtom, {
-          canRetry: false,
-          failureStage: null,
+          blockingFailure: false,
+          empty: {
+            categories: false,
+            tokens: false,
+            yields: false,
+            validators: false,
+          },
           isFetching: false,
-          status: "ready",
+          loading: {
+            wallet: false,
+            categories: false,
+            initialSelection: false,
+            tokens: false,
+            yields: false,
+            positions: false,
+            validators: false,
+          },
         }),
         Atom.initialValue(earnSelectionTokenOptionsViewAtom, {
           canSelect: true,
           items: [tokenOption],
-          page: {
-            hasMore: true,
-            isLoadingFirstPage: false,
-            isLoadingMore: false,
-          },
           selected: tokenOption,
           waiting: false,
         }),
@@ -151,7 +159,6 @@ describe("Earn facade", () => {
 
       expect(registry.get(earnTokenSelectionViewAtom)).toMatchObject({
         filtered: [tokenOption],
-        hasMore: true,
       });
       expect(registry.get(earnYieldSelectionViewAtom).filtered).toEqual([
         selectedYield,

@@ -1,10 +1,7 @@
-import BigNumber from "bignumber.js";
 import { Option, Schema } from "effect";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
-import { canBeInitialYield } from "../../../../../domain/earn/stake";
 import { isNonZeroRewardRateYield } from "../../../../../domain/earn/yield";
 import { YieldId } from "../../../../../domain/identity/identifiers";
-import type { PositionsData } from "../../../../../domain/portfolio/positions";
 import { tokenString } from "../../../../../domain/token/token";
 import {
   isSupportedChain,
@@ -31,15 +28,18 @@ export const resolveYieldOptions = ({
   );
 };
 
+const canShowYieldOption = (yieldOption: EarnYieldWithProvider) =>
+  yieldOption.status.enter && isSupportedChain(yieldOption.token.network);
+
 export const resolveYield = ({
   entry,
-  positionsData,
+  previousYield,
   selectedYieldId,
   selectedToken,
   yieldOptions,
 }: {
   entry: EarnEntry;
-  positionsData: PositionsData;
+  previousYield: EarnYieldWithProvider | null;
   selectedYieldId: YieldId | null;
   selectedToken: EarnTokenOption;
   yieldOptions: ReadonlyArray<EarnYieldWithProvider>;
@@ -59,6 +59,13 @@ export const resolveYield = ({
     const selected = decodedInitYieldId
       ? findYieldById(yieldOptions, decodedInitYieldId)
       : null;
+    if (selected) {
+      return selected;
+    }
+  }
+
+  if (previousYield) {
+    const selected = findYieldById(yieldOptions, previousYield.id);
     if (selected) {
       return selected;
     }
@@ -85,22 +92,8 @@ export const resolveYield = ({
     }
   }
 
-  const tokenBalanceAmount = new BigNumber(selectedToken.amount);
-  const eligibleYield =
-    yieldOptions.find((yieldDto) =>
-      canBeInitialYield({
-        initQueryParams: entry.initParams ?? null,
-        yieldDto,
-        tokenBalanceAmount,
-        positionsData,
-      })
-    ) ?? null;
-
-  return eligibleYield ?? getDefaultYield(yieldOptions);
+  return getDefaultYield(yieldOptions);
 };
-
-const canShowYieldOption = (yieldOption: EarnYieldWithProvider) =>
-  yieldOption.status.enter && isSupportedChain(yieldOption.token.network);
 
 const findYieldById = (
   yieldOptions: ReadonlyArray<EarnYieldWithProvider>,

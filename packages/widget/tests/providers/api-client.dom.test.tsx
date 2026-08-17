@@ -114,12 +114,14 @@ describe("Effect API client", () => {
     );
     const { client } = await createTestClient();
 
-    await Effect.runPromise(client.legacySource.getTokenOptions());
+    await Effect.runPromise(
+      client.legacySource.getTokenOptions({ enter: true })
+    );
     await Effect.runPromise(client.yieldSource.getHealth());
     await Effect.runPromise(client.borrowSource.getIntegrations());
 
     expect(calls.map((call) => call.url)).toEqual([
-      "https://api.example.com/v1/tokens",
+      "https://api.example.com/v1/tokens?enter=true",
       "https://yield.example.com/health",
       "https://borrow.example.com/v1/integrations",
     ]);
@@ -181,7 +183,7 @@ describe("Effect API client", () => {
 
     try {
       const resourceError = await Effect.runPromise(
-        client.legacySource.getTokenOptions().pipe(Effect.flip)
+        client.legacySource.getTokenOptions({ enter: true }).pipe(Effect.flip)
       );
       expect(resourceError._tag).toBe("ApiRequestError");
       if (resourceError._tag !== "ApiRequestError") {
@@ -220,7 +222,7 @@ describe("Effect API client", () => {
 
       response = "geo";
       await expect(
-        Effect.runPromise(client.legacySource.getTokenOptions())
+        Effect.runPromise(client.legacySource.getTokenOptions({ enter: true }))
       ).rejects.toBeTruthy();
       await expect
         .poll(() =>
@@ -277,7 +279,9 @@ describe("Effect API client", () => {
     );
     const { client } = await createTestClient();
 
-    await Effect.runPromise(client.legacySource.getTokenOptions());
+    await Effect.runPromise(
+      client.legacySource.getTokenOptions({ enter: true })
+    );
     await Effect.runPromise(client.yieldSource.getHealth());
     await Effect.runPromise(client.borrowSource.getIntegrations());
     expect(transientAttempts).toEqual({ borrow: 3, legacy: 3, yield: 3 });
@@ -292,7 +296,7 @@ describe("Effect API client", () => {
       })
     );
     await expect(
-      Effect.runPromise(client.legacySource.getTokenOptions())
+      Effect.runPromise(client.legacySource.getTokenOptions({ enter: true }))
     ).rejects.toBeTruthy();
     expect(badRequestAttempts).toBe(1);
   });
@@ -321,7 +325,9 @@ describe("Effect API client", () => {
     );
 
     try {
-      await Effect.runPromise(client.legacySource.getTokenOptions());
+      await Effect.runPromise(
+        client.legacySource.getTokenOptions({ enter: true })
+      );
 
       expect(
         presentation.container.querySelector(

@@ -1,16 +1,19 @@
+import { Equal } from "effect";
+import type { InitParams } from "../../../../../services/wallet/init-params";
 import type { WalletScopeOwnerKey } from "../../../../../services/wallet/wallet-scope";
 import { sameWalletScopeOwner } from "../../../../../services/wallet/wallet-scope";
-import { type EarnMachineIntent, makeDefaultEarnIntent } from "../types";
+import { type EarnEntryIntent, makeDefaultEarnIntent } from "../types";
 
 type EarnInitializationPhase =
   | "waiting-for-wallet"
   | "applying-init-params"
   | "complete";
 
-export type EarnMachineState = {
+export type EarnEntryState = {
   readonly dashboardVariant: boolean;
   readonly initializationPhase: EarnInitializationPhase;
-  readonly intent: EarnMachineIntent;
+  readonly initParams: InitParams | null;
+  readonly intent: EarnEntryIntent;
   readonly owner: WalletScopeOwnerKey | null;
 };
 
@@ -22,19 +25,34 @@ const sameOwner = (
     ? first === second
     : sameWalletScopeOwner(first, second);
 
-export const reconcileEarnMachineOwner = (
-  previous: EarnMachineState | null,
+export const resetEarnEntryIntent = (
+  previous: EarnEntryState
+): EarnEntryState => {
+  const next: EarnEntryState = {
+    ...previous,
+    initializationPhase: "complete",
+    initParams: null,
+    intent: makeDefaultEarnIntent(),
+  };
+
+  return Equal.equals(previous, next) ? previous : next;
+};
+
+export const reconcileEarnEntryOwner = (
+  previous: EarnEntryState | null,
   owner: WalletScopeOwnerKey | null,
   dashboardVariant = false,
-  walletResolution: "pending" | "settled" = "settled"
-): EarnMachineState => {
+  walletResolution: "pending" | "settled" = "settled",
+  initParams: InitParams | null = null
+): EarnEntryState => {
   if (!previous) {
+    const applying = walletResolution === "settled";
     return {
       dashboardVariant,
-      initializationPhase:
-        walletResolution === "pending"
-          ? "waiting-for-wallet"
-          : "applying-init-params",
+      initializationPhase: applying
+        ? "applying-init-params"
+        : "waiting-for-wallet",
+      initParams: applying ? initParams : null,
       intent: makeDefaultEarnIntent(),
       owner,
     };
@@ -42,7 +60,7 @@ export const reconcileEarnMachineOwner = (
 
   if (walletResolution === "pending") {
     return previous.initializationPhase === "applying-init-params"
-      ? { ...previous, initializationPhase: "complete" }
+      ? { ...previous, initializationPhase: "complete", initParams: null }
       : previous;
   }
 
@@ -57,12 +75,11 @@ export const reconcileEarnMachineOwner = (
     return previous;
   }
 
+  const applying = previous.initializationPhase === "waiting-for-wallet";
   return {
     dashboardVariant,
-    initializationPhase:
-      previous.initializationPhase === "waiting-for-wallet"
-        ? "applying-init-params"
-        : "complete",
+    initializationPhase: applying ? "applying-init-params" : "complete",
+    initParams: applying ? initParams : null,
     intent: makeDefaultEarnIntent(),
     owner,
   };

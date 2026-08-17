@@ -3,8 +3,6 @@ import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { YieldId } from "../../src/domain/identity/identifiers";
-import { initYieldAtom } from "../../src/features/earn/state/earn-selection/catalog/catalog";
-import { InitYieldKey } from "../../src/features/earn/state/earn-selection/catalog/keys";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
@@ -53,21 +51,6 @@ const makeRegistry = (source: YieldResourceSource["Service"]) =>
   });
 
 describe("Yield opportunity and provider resources", () => {
-  it("shares one opportunity between ordinary and initialization projections", () => {
-    const { getOpportunity, getProvider, source } = makeSource();
-    const registry = makeRegistry(source);
-
-    const ordinary = registry.get(
-      yieldOpportunityAtom(new YieldOpportunityKey({ yieldId }))
-    );
-    const initial = registry.get(initYieldAtom(new InitYieldKey({ yieldId })));
-
-    expect(AsyncResult.getOrThrow(ordinary)?.id).toBe(yieldId);
-    expect(AsyncResult.getOrThrow(initial)?.id).toBe(yieldId);
-    expect(getOpportunity).toHaveBeenCalledOnce();
-    expect(getProvider).toHaveBeenCalledOnce();
-  });
-
   it("shares equivalent direct opportunity and provider requests", () => {
     const { getOpportunity, getProvider, source } = makeSource();
     const registry = makeRegistry(source);

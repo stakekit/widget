@@ -43,21 +43,6 @@ export class YieldDirectoryKey extends Data.TaggedClass("YieldDirectoryKey")<{
   }
 }
 
-export class YieldFirstPageKey extends Data.TaggedClass("YieldFirstPageKey")<{
-  readonly network: Network | null;
-  readonly types: ReadonlyArray<YieldType>;
-}> {
-  constructor(input: {
-    readonly network?: Network | null;
-    readonly types: ReadonlyArray<YieldType>;
-  }) {
-    super({
-      network: input.network ?? null,
-      types: [...new Set(input.types)].sort(),
-    });
-  }
-}
-
 export class YieldDirectoryError extends Data.TaggedError(
   "YieldDirectoryError"
 )<{
@@ -79,30 +64,6 @@ type EnrichedYieldDirectoryResult = {
 const directoryPolicy = withApiResourcePolicy({
   staleTime: Duration.minutes(5),
 });
-
-const yieldFirstPageCanonicalAtom = Atom.family((key: YieldFirstPageKey) =>
-  appRuntime
-    .atom(() =>
-      YieldResourceSource.use((source) =>
-        source
-          .listYields({
-            limit: API_MAX_PAGE_SIZE,
-            offset: 0,
-            ...(key.network ? { network: key.network } : {}),
-            types: key.types,
-          })
-          .pipe(
-            Effect.map((page) => page.items ?? []),
-            Effect.mapError((cause) => new YieldDirectoryError({ cause }))
-          )
-      )
-    )
-    .pipe(directoryPolicy, Atom.withLabel("yieldFirstPageResourceAtom"))
-);
-
-export const yieldFirstPageResourceAtom = makePresentableResourceFamily(
-  yieldFirstPageCanonicalAtom
-);
 
 const yieldDirectoryCanonicalAtom = Atom.family((key: YieldDirectoryKey) =>
   appRuntime

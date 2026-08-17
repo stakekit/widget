@@ -1,44 +1,60 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { earnEntryFacade } from "../state/facades/entry";
-import { earnPageStatusFacade } from "../state/facades/page-status";
-import { tokenSelectionFacade } from "../state/facades/token-selection";
-import { validatorSelectionFacade } from "../state/facades/validator-selection";
-import { yieldSelectionFacade } from "../state/facades/yield-selection";
+import {
+  earnEntryViewAtom,
+  earnPageStatusViewAtom,
+  earnTokenSelectionViewAtom,
+  earnValidatorModalEventAtom,
+  earnValidatorSelectionViewAtom,
+  earnYieldSelectionViewAtom,
+  loadMoreEarnValidatorsAtom,
+  refreshEarnKycAtom,
+  removeEarnValidatorAtom,
+  runEarnPrimaryActionAtom,
+  selectEarnCategoryAtom,
+  selectEarnProviderAtom,
+  selectEarnTokenAtom,
+  selectEarnTronResourceAtom,
+  selectEarnValidatorAtom,
+  selectEarnYieldAtom,
+  setEarnAmountAtom,
+  setEarnMaxAmountAtom,
+  setEarnTokenSearchAtom,
+  setEarnValidatorSearchAtom,
+  setEarnYieldSearchAtom,
+} from "../state/runtime";
 
 export const useEarnTokenSelection = () => ({
-  loadMore: useAtomSet(tokenSelectionFacade.loadMore),
-  select: useAtomSet(tokenSelectionFacade.select),
-  setSearch: useAtomSet(tokenSelectionFacade.setSearch),
-  view: useAtomValue(tokenSelectionFacade.view),
+  select: useAtomSet(selectEarnTokenAtom),
+  setSearch: useAtomSet(setEarnTokenSearchAtom),
+  view: useAtomValue(earnTokenSelectionViewAtom),
 });
 
 export const useEarnYieldSelection = () => ({
-  select: useAtomSet(yieldSelectionFacade.select),
-  selectCategory: useAtomSet(yieldSelectionFacade.selectCategory),
-  setSearch: useAtomSet(yieldSelectionFacade.setSearch),
-  view: useAtomValue(yieldSelectionFacade.view),
+  select: useAtomSet(selectEarnYieldAtom),
+  selectCategory: useAtomSet(selectEarnCategoryAtom),
+  setSearch: useAtomSet(setEarnYieldSearchAtom),
+  view: useAtomValue(earnYieldSelectionViewAtom),
 });
 
 export const useEarnValidatorSelection = () => ({
-  recordModalEvent: useAtomSet(validatorSelectionFacade.recordModalEvent),
-  loadMore: useAtomSet(validatorSelectionFacade.loadMore),
-  remove: useAtomSet(validatorSelectionFacade.remove),
-  select: useAtomSet(validatorSelectionFacade.select),
-  setSearch: useAtomSet(validatorSelectionFacade.setSearch),
-  view: useAtomValue(validatorSelectionFacade.view),
+  recordModalEvent: useAtomSet(earnValidatorModalEventAtom),
+  loadMore: useAtomSet(loadMoreEarnValidatorsAtom),
+  remove: useAtomSet(removeEarnValidatorAtom),
+  select: useAtomSet(selectEarnValidatorAtom),
+  setSearch: useAtomSet(setEarnValidatorSearchAtom),
+  view: useAtomValue(earnValidatorSelectionViewAtom),
 });
 
 export const useEarnEntry = () => ({
-  refreshKyc: useAtomSet(earnEntryFacade.refreshKyc),
-  runPrimaryAction: useAtomSet(earnEntryFacade.runPrimaryAction),
-  selectProvider: useAtomSet(earnEntryFacade.selectProvider),
-  selectTronResource: useAtomSet(earnEntryFacade.selectTronResource),
-  setAmount: useAtomSet(earnEntryFacade.setAmount),
-  setMaxAmount: useAtomSet(earnEntryFacade.setMaxAmount),
-  view: useAtomValue(earnEntryFacade.view),
+  refreshKyc: useAtomSet(refreshEarnKycAtom),
+  runPrimaryAction: useAtomSet(runEarnPrimaryActionAtom),
+  selectProvider: useAtomSet(selectEarnProviderAtom),
+  selectTronResource: useAtomSet(selectEarnTronResourceAtom),
+  setAmount: useAtomSet(setEarnAmountAtom),
+  setMaxAmount: useAtomSet(setEarnMaxAmountAtom),
+  view: useAtomValue(earnEntryViewAtom),
 });
 
 export const useEarnPageStatus = () => ({
-  retry: useAtomSet(earnPageStatusFacade.retry),
-  view: useAtomValue(earnPageStatusFacade.view),
+  view: useAtomValue(earnPageStatusViewAtom),
 });
