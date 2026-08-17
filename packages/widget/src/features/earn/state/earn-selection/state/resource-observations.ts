@@ -1,10 +1,10 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type * as Atom from "effect/unstable/reactivity/Atom";
+import { widgetConfigAtom } from "../../../../../app/runtime/widget-config";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import { isYieldValidatorSelectionRequired } from "../../../../../domain/earn/yield";
 import { EarnTokenCatalogKey } from "../../../../../resources/earn-token-catalog/earn-token-catalog";
-import { validatorsConfigAtom } from "../../../../yield-entry/state";
 import {
   availableYieldCategoriesAtom,
   earnTokenCatalogAtom,
@@ -139,7 +139,7 @@ const readValidators = (
         Option.getOrElse(() => [])
       ),
       result: initial,
-      validatorsConfig: context.get(validatorsConfigAtom),
+      validatorsConfig: context.get(widgetConfigAtom).validatorsConfig,
     },
   };
 };

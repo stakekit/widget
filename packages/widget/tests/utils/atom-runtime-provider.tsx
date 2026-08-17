@@ -22,14 +22,16 @@ export const TestAtomRuntimeProvider = ({
       [
         applicationRuntimeInitAtom,
         {
-          hostConfiguration: settings as SKAppProps,
+          hostConfiguration: settings as unknown as SKAppProps,
           isLedgerLive: settings.isLedgerLive,
           routes: applicationRoutes,
         },
       ],
     ]}
   >
-    <WidgetConfigBoundaryAdapter hostConfiguration={settings as SKAppProps}>
+    <WidgetConfigBoundaryAdapter
+      hostConfiguration={settings as unknown as SKAppProps}
+    >
       {children}
     </WidgetConfigBoundaryAdapter>
   </RegistryProvider>

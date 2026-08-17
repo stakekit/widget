@@ -10,7 +10,11 @@ import {
   SubscriptionRef,
 } from "effect";
 import { validatorAddressIdentities } from "../../domain/earn/validator";
-import { dashboardYieldCategories } from "../../domain/earn/yield";
+import {
+  dashboardYieldCategories,
+  type ValidatorsConfig,
+} from "../../domain/earn/yield";
+import type { Network } from "../../domain/network/network";
 import type {
   DashboardYieldCategory,
   PreferredTokenYieldsPerNetwork,
@@ -213,25 +217,28 @@ const normalizeWidgetConfig = (
           )
         ) as PreferredTokenYieldsPerNetwork)
       : undefined;
-  const validatorsConfig = Object.fromEntries(
+  const validatorsConfig: ValidatorsConfig = new Map(
     Object.entries(hostConfiguration.validatorsConfig ?? {}).map(
-      ([network, validators]) => [
-        network,
-        {
-          allowed: validators.allowed
-            ? validatorAddressIdentities(network, validators.allowed)
-            : undefined,
-          blocked: validators.blocked
-            ? validatorAddressIdentities(network, validators.blocked)
-            : undefined,
-          mergePreferredWithDefault:
-            validators.mergePreferredWithDefault ?? true,
-          preferred: validators.preferred
-            ? validatorAddressIdentities(network, validators.preferred)
-            : undefined,
-          preferredOnly: validators.preferredOnly ?? false,
-        },
-      ]
+      ([network, validators]) =>
+        [
+          network as Network | "*",
+          {
+            allowed: validators.allowed
+              ? new Set(validatorAddressIdentities(network, validators.allowed))
+              : undefined,
+            blocked: validators.blocked
+              ? new Set(validatorAddressIdentities(network, validators.blocked))
+              : undefined,
+            mergePreferredWithDefault:
+              validators.mergePreferredWithDefault ?? true,
+            preferred: validators.preferred
+              ? new Set(
+                  validatorAddressIdentities(network, validators.preferred)
+                )
+              : undefined,
+            preferredOnly: validators.preferredOnly ?? false,
+          },
+        ] as const
     )
   );
   const externalProviders = hostConfiguration.externalProviders

@@ -1,22 +1,10 @@
+import type { ValidatorsConfig } from "../../domain/earn/yield";
 import type {
   PreferredTokenYieldsPerNetwork,
   SettingsProps,
   VariantProps,
 } from "../../public-api/types";
 import type { ExternalProviderSnapshot } from "../wallet/external-provider";
-
-type NormalizedValidatorsConfig = Readonly<
-  Record<
-    string,
-    {
-      readonly allowed?: ReadonlyArray<string>;
-      readonly blocked?: ReadonlyArray<string>;
-      readonly mergePreferredWithDefault: boolean;
-      readonly preferred?: ReadonlyArray<string>;
-      readonly preferredOnly: boolean;
-    }
-  >
->;
 
 type NormalizedWagmiConfig = {
   readonly __customConnectors__?: NonNullable<
@@ -65,7 +53,7 @@ export type WidgetConfig = {
   readonly tokenIconMapping?: SettingsProps["tokenIconMapping"];
   readonly tonConnectManifestUrl?: SettingsProps["tonConnectManifestUrl"];
   readonly tracking?: SettingsProps["tracking"];
-  readonly validatorsConfig: NormalizedValidatorsConfig;
+  readonly validatorsConfig: ValidatorsConfig;
   readonly variant: VariantProps["variant"];
   readonly wagmi: NormalizedWagmiConfig;
   readonly yieldGrouping: NonNullable<SettingsProps["yieldGrouping"]>;

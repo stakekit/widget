@@ -71,15 +71,15 @@ type YieldTypeLabelsMap = {
   };
 };
 
-export type ValidatorsConfig = Map<
+export type ValidatorsConfig = ReadonlyMap<
   Network | "*",
-  {
-    allowed?: Set<string>;
-    blocked?: Set<string>;
-    preferred?: Set<string>;
+  Readonly<{
+    allowed?: ReadonlySet<string>;
+    blocked?: ReadonlySet<string>;
+    preferred?: ReadonlySet<string>;
     mergePreferredWithDefault: boolean;
     preferredOnly: boolean;
-  }
+  }>
 >;
 
 export const dashboardYieldCategories = [
@@ -157,7 +157,10 @@ export const filterValidators = <T extends ValidatorDto>({
           mergePreferredWithDefault,
           preferredOnly,
         } = valConfig;
-        const toAddressIdentities = (addresses: Set<string> | undefined) =>
+        // A wildcard policy must be normalized against the concrete network.
+        const toAddressIdentities = (
+          addresses: ReadonlySet<string> | undefined
+        ) =>
           addresses && new Set(validatorAddressIdentities(network, addresses));
         const allowedIdentities = toAddressIdentities(allowed);
         const blockedIdentities = toAddressIdentities(blocked);

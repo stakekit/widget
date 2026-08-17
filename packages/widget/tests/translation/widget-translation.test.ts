@@ -19,11 +19,14 @@ const makeSettings = (overrides: Partial<WidgetConfig> = {}): WidgetConfig =>
     ...overrides,
   } as SKAppProps);
 
+const asHostConfiguration = (settings: WidgetConfig): SKAppProps =>
+  settings as unknown as SKAppProps;
+
 const makeTranslationLayer = (
   initial: WidgetConfig,
   load: (language: string) => Effect.Effect<Readonly<Record<string, unknown>>>
 ) => {
-  const configLayer = WidgetConfigService.layer(initial as SKAppProps);
+  const configLayer = WidgetConfigService.layer(asHostConfiguration(initial));
   const httpClientLayer = Layer.succeed(
     HttpClient.HttpClient,
     HttpClient.make((request, url) => {
@@ -119,7 +122,7 @@ describe("WidgetTranslation", () => {
           );
           expect(translation.i18n.t("errors.stale")).toBe("API");
 
-          yield* config.update(makeSettings() as SKAppProps);
+          yield* config.update(asHostConfiguration(makeSettings()));
           yield* expectEventually(
             () => translation.i18n.t("details.rewards.receive_output"),
             "You'll receive"
@@ -153,7 +156,9 @@ describe("WidgetTranslation", () => {
           const config = yield* WidgetConfigService;
           yield* Deferred.await(englishStarted);
 
-          yield* config.update(makeSettings({ language: "fr" }) as SKAppProps);
+          yield* config.update(
+            asHostConfiguration(makeSettings({ language: "fr" }))
+          );
           yield* Deferred.await(frenchStarted);
           yield* expectEventually(
             () => translation.i18n.t("errors.shared"),
@@ -198,10 +203,12 @@ describe("WidgetTranslation", () => {
           yield* Deferred.await(loadStarted);
 
           yield* config.update(
-            makeSettings({
-              disableInjectedProviderDiscovery: true,
-              language: "en",
-            }) as SKAppProps
+            asHostConfiguration(
+              makeSettings({
+                disableInjectedProviderDiscovery: true,
+                language: "en",
+              })
+            )
           );
           yield* Effect.sleep("20 millis");
           yield* Deferred.succeed(releaseLoad, undefined);
@@ -241,12 +248,14 @@ describe("WidgetTranslation", () => {
           yield* Deferred.await(firstStarted);
 
           yield* config.update(
-            makeSettings({
-              customTranslations: {
-                en: { translation: { details: { earn: "CUSTOM" } } },
-              },
-              language: "en",
-            }) as SKAppProps
+            asHostConfiguration(
+              makeSettings({
+                customTranslations: {
+                  en: { translation: { details: { earn: "CUSTOM" } } },
+                },
+                language: "en",
+              })
+            )
           );
           yield* Deferred.await(secondStarted);
           yield* expectEventually(
@@ -257,7 +266,9 @@ describe("WidgetTranslation", () => {
           yield* Deferred.succeed(releaseFirst, undefined);
           yield* Effect.yieldNow;
           yield* config.update(
-            makeSettings({ language: "en", variant: "utila" }) as SKAppProps
+            asHostConfiguration(
+              makeSettings({ language: "en", variant: "utila" })
+            )
           );
           yield* expectEventually(
             () => translation.i18n.t("details.earn"),

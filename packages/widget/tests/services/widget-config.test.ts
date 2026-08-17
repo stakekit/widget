@@ -146,15 +146,20 @@ describe("WidgetConfigService", () => {
       )
     );
 
-    expect(current.validatorsConfig).toMatchObject({
-      cosmos: {
-        blocked: ["CosmosValidator", "cosmosvalidator"],
-      },
-      ethereum: {
-        allowed: ["0xabc"],
-        blocked: ["0xdef"],
-        preferred: ["0xf00"],
-      },
+    expect(current.validatorsConfig).toBeInstanceOf(Map);
+    expect(current.validatorsConfig.get("cosmos")).toEqual({
+      allowed: undefined,
+      blocked: new Set(["CosmosValidator", "cosmosvalidator"]),
+      mergePreferredWithDefault: true,
+      preferred: undefined,
+      preferredOnly: false,
+    });
+    expect(current.validatorsConfig.get("ethereum")).toEqual({
+      allowed: new Set(["0xabc"]),
+      blocked: new Set(["0xdef"]),
+      mergePreferredWithDefault: true,
+      preferred: new Set(["0xf00"]),
+      preferredOnly: false,
     });
   });
 

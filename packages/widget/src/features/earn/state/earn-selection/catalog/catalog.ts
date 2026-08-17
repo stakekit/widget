@@ -2,6 +2,7 @@ import BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import { widgetConfigAtom } from "../../../../../app/runtime/widget-config";
 import type { EarnValidator } from "../../../../../domain/earn/models";
 import { filterValidators } from "../../../../../domain/earn/yield";
 import type { PositionsData } from "../../../../../domain/portfolio/positions";
@@ -24,7 +25,6 @@ import {
 } from "../../../../../resources/yield-directory/yield-directory";
 import { yieldPositionsResourceAtom } from "../../../../../resources/yield-positions/yield-positions";
 import { mapAsyncResultError } from "../../../../../shared/effect/async-result";
-import { validatorsConfigAtom } from "../../../../yield-entry/state";
 import {
   EarnCatalogError,
   type EarnCatalogOperation,
@@ -264,7 +264,7 @@ export const yieldValidatorsAtom = Atom.family(
         Atom.map(mapAsyncResultError(toCatalogError("validators")))
       );
     const initialValidatorsResultAtom = Atom.make((get) => {
-      const validatorsConfig = get(validatorsConfigAtom);
+      const validatorsConfig = get(widgetConfigAtom).validatorsConfig;
       return AsyncResult.all({
         defaults: get(defaultValidatorsResultAtom),
         preferred: get(preferredValidatorsAtom),
@@ -307,7 +307,7 @@ export const yieldValidatorsAtom = Atom.family(
                   network,
                   selectedYieldId,
                   validators: page.items,
-                  validatorsConfig: get(validatorsConfigAtom),
+                  validatorsConfig: get(widgetConfigAtom).validatorsConfig,
                 }),
               })),
             })),

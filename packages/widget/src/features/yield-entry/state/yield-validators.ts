@@ -1,6 +1,7 @@
 import { Data, Array as EArray, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import { widgetConfigAtom } from "../../../app/runtime/widget-config";
 import type { EarnValidator } from "../../../domain/earn/models";
 import { filterValidators } from "../../../domain/earn/yield";
 import type { YieldId } from "../../../domain/identity/identifiers";
@@ -14,7 +15,6 @@ import {
   type PullPage,
   withPullPageDone,
 } from "../../../shared/effect/pagination";
-import { validatorsConfigAtom } from "./validators-config";
 
 export class YieldValidatorsKey extends Data.Class<{
   readonly network: Network | null;
@@ -46,7 +46,7 @@ export const yieldValidatorsPullAtom = Atom.family(
     );
 
     return Atom.transform(source, (get) => {
-      const validatorsConfig = get(validatorsConfigAtom);
+      const validatorsConfig = get(widgetConfigAtom).validatorsConfig;
 
       return get(source).pipe(
         AsyncResult.map(({ done, items }) => ({
