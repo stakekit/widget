@@ -1,11 +1,11 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../app/composition/use-widget-config";
 import { getKycProviderName } from "../../../../../domain/earn/kyc";
 import { getYieldTypeLabels } from "../../../../../domain/earn/yield";
+import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import type { PageCta } from "../../../../widget-shell/components";
+import type { PageCta } from "../../../../widget-shell/views";
 import {
   useClassicFlowIntake,
   useClassicFlowReview,

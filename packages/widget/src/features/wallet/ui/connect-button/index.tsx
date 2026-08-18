@@ -3,7 +3,7 @@ import { useConnectModal } from "@stakekit/rainbowkit";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../../../shared/ui/primitives/button";
-import { useTrackEvent } from "../../../tracking/state";
+import { useTrackEvent } from "../../../tracking/index";
 import { useSKWallet } from "../../react/use-wallet";
 import { addLedgerAccountAtom } from "../../state/workflows";
 

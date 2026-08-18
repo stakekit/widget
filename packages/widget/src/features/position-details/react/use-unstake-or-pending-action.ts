@@ -1,5 +1,5 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { useWalletScopeRoute } from "../../wallet/ui";
+import { useWalletScopeRoute } from "../../wallet/index";
 import {
   dispatchPositionDetailsWorkflowAtom,
   positionDetailsWorkflowViewAtom,

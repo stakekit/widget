@@ -22,8 +22,8 @@ import {
   walletConfigResultAtom,
   walletConnectionStateAtom,
   walletScopeAtom,
-} from "../../src/features/wallet/state";
-import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
+} from "../../src/features/wallet/index";
+import { YieldResourceSource } from "../../src/services/api/resource-sources";
 import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 

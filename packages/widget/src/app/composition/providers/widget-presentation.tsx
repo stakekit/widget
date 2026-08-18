@@ -2,12 +2,12 @@ import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 import type { Network } from "../../../domain/network/network";
 import type { Token } from "../../../domain/token/token";
+import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import type { SupportedSKChains } from "../../../services/wallet/supported-chains";
 import {
   type WidgetPresentation,
   WidgetPresentationProvider,
 } from "../../../shared/ui/widget-presentation";
-import { useWidgetConfig } from "../../composition/use-widget-config";
 
 /**
  * Populates the shared UI kit's rendering environment from widget config, so

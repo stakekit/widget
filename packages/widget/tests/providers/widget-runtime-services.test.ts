@@ -6,7 +6,7 @@ import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationRuntimeInitAtom } from "../../src/app/runtime/application-runtime-init";
 import type { SKAppProps } from "../../src/public-api/types";
-import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
+import { BorrowResourceSource } from "../../src/services/api/resource-sources";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 

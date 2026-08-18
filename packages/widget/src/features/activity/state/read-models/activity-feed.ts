@@ -16,12 +16,12 @@ import {
   type ActivityHistoryError,
   activityCountResourceAtom,
   activityHistoryPullAtom,
-} from "../../../../resources/activity-history/activity-history";
+} from "../../../../resources/activity-history/index";
 import {
   ValidatorByAddressKey,
   validatorByAddressAtom,
-} from "../../../../resources/validator-directory/validator-directory";
-import { enrichedYieldOpportunityResourceAtom } from "../../../../resources/yield-opportunity/yield-opportunity";
+} from "../../../../resources/validator-directory/index";
+import { enrichedYieldOpportunityResourceAtom } from "../../../../resources/yield-opportunity/index";
 import type { WalletScopeKey } from "../../../../services/wallet/wallet-scope";
 import { mapAsyncResultError } from "../../../../shared/effect/async-result";
 import { withPullPageDone } from "../../../../shared/effect/pagination";

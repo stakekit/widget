@@ -34,12 +34,12 @@ import { ThirdPartyQueryClientProvider } from "../../src/app/composition/provide
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { EvmNetworks } from "../../src/domain/network/networks";
+import { WagmiConfigProvider } from "../../src/features/wallet/composition";
 import {
   useWalletConfig,
   walletStateResultAtom,
-} from "../../src/features/wallet/state";
-import { WagmiConfigProvider } from "../../src/features/wallet/ui";
-import { GeoBlockService } from "../../src/services/api/geo-block-state";
+} from "../../src/features/wallet/index";
+import { GeoBlockService } from "../../src/services/geoblocking";
 import { solana } from "../../src/services/wallet/internal/adapters/configured-chains";
 import type { SolanaRuntime } from "../../src/services/wallet/internal/platform/solana-platform";
 import { installSolanaConnectorMembership } from "../../src/services/wallet/internal/runtime/solana-connector-membership";

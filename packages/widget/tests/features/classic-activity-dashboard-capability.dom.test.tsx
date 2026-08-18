@@ -8,8 +8,8 @@ import {
   activityResumeDashboardViewAtom,
   startClassicTransactionFlowAtom,
   useAbandonActivityResume,
-} from "../../src/features/classic-transaction-flow/state";
-import { walletScopeAtom } from "../../src/features/wallet/state";
+} from "../../src/features/classic-transaction-flow/index";
+import { walletScopeAtom } from "../../src/features/wallet/index";
 import {
   makeWidgetNavigation,
   WidgetNavigation,

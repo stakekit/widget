@@ -3,8 +3,6 @@ import { TestClock } from "effect/testing";
 import { describe, expect, it } from "vitest";
 import type { Config } from "wagmi";
 import { getConnection, getConnectors } from "wagmi/actions";
-import { LegacyResourceSource } from "../../../src/services/api/legacy-resource-source";
-import { YieldResourceSource } from "../../../src/services/api/yield-resource-source";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
@@ -20,6 +18,7 @@ import {
 import { WalletEnvironment } from "../../../src/services/wallet/internal/platform/wallet-environment";
 import { WalletBootstrapError } from "../../../src/services/wallet/internal/runtime/bootstrap";
 import { WalletStorageCleanup } from "../../../src/services/wallet/internal/runtime/wallet-storage-cleanup";
+import { WalletBootstrapSource } from "../../../src/services/wallet/wallet-bootstrap-source";
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
 import { makeWalletTestController } from "./wallet-test-controller";
@@ -50,13 +49,12 @@ const solanaLayer = Layer.succeed(
   })
 );
 
-const apiLayer = Layer.mergeAll(
-  Layer.succeed(LegacyResourceSource, {
+const apiLayer = Layer.succeed(
+  WalletBootstrapSource,
+  WalletBootstrapSource.of({
     getEnabledNetworks: () => Effect.succeed(new Set(["ethereum"])),
-  } as never),
-  Layer.succeed(YieldResourceSource, {
     getOpportunity: () => Effect.die("unused"),
-  } as never)
+  })
 );
 
 const makeConfigLayer = () => WidgetConfigService.layer(settings);
@@ -222,13 +220,12 @@ describe("WalletService acquisition", () => {
 
   it("fails acquisition after bounded enabled-network retries", async () => {
     const cause = new Error("enabled networks unavailable");
-    const failingApiLayer = Layer.mergeAll(
-      Layer.succeed(LegacyResourceSource, {
+    const failingApiLayer = Layer.succeed(
+      WalletBootstrapSource,
+      WalletBootstrapSource.of({
         getEnabledNetworks: () => Effect.fail(cause),
-      } as never),
-      Layer.succeed(YieldResourceSource, {
         getOpportunity: () => Effect.die("unused"),
-      } as never)
+      })
     );
     const layer = makeWalletLayer(
       {

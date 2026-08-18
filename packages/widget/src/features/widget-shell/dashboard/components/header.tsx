@@ -2,7 +2,7 @@ import { ConnectButton } from "@stakekit/rainbowkit";
 import classNames from "clsx";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { XIcon } from "../../../../shared/ui/primitives/icons/x-icon";
-import { AccountModal, ChainModal } from "../../../wallet/ui";
+import { AccountModal, ChainModal } from "../../../wallet/views";
 import { parentButton } from "../../header/styles.css";
 import { useHeader } from "../../header/use-header";
 import { disconnectButton, headerContainer, middleItem } from "./styles.css";

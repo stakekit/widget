@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../../../app/composition/use-widget-config";
 import { getYieldActionArg } from "../../../../../../../domain/earn/yield";
+import { useWidgetConfig } from "../../../../../../../features/widget-configuration/index";
 import { Divider } from "../../../../../../../shared/ui/components/divider";
 import { Dropdown } from "../../../../../../../shared/ui/components/dropdown";
 import { Box } from "../../../../../../../shared/ui/primitives/box";

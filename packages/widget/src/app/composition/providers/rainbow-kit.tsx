@@ -7,20 +7,20 @@ import {
 import type { PropsWithChildren } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useTrackEvent } from "../../../features/tracking/state";
+import { useTrackEvent } from "../../../features/tracking/index";
 import {
   addLedgerAccountAtom,
   useLedgerDisabledChain,
   useSKWallet,
   walletModalAdapterAtom,
-} from "../../../features/wallet/state";
+} from "../../../features/wallet/index";
+import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import { shouldShowDisconnect } from "../../../services/wallet/wallet-connectors";
 import { vars } from "../../../shared/styles/theme/contract.css";
 import { id } from "../../../shared/styles/theme/ids";
 import type { ConnectKitTheme } from "../../../shared/styles/tokens/connect-kit";
 import { connectKitTheme } from "../../../shared/styles/tokens/connect-kit";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { useWidgetConfig } from "../../composition/use-widget-config";
 
 const finalTheme: ConnectKitTheme = {
   ...connectKitTheme.lightMode,

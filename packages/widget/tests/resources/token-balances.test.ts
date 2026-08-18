@@ -4,14 +4,16 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import type { TokenBalanceScanCommand } from "../../src/domain/finance/models";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
-import { tokenBalancesScanAtom as portfolioTokenBalancesAtom } from "../../src/features/portfolio/state";
+import { tokenBalancesScanAtom as portfolioTokenBalancesAtom } from "../../src/features/portfolio/index";
 import {
   refreshTokenBalancesAtom,
   TokenBalancesError,
   tokenBalancesResourceAtom,
 } from "../../src/resources/token-balances/token-balances";
-import { ApiRequestError } from "../../src/services/api/api-errors";
-import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
+import {
+  ApiRequestError,
+  LegacyResourceSource,
+} from "../../src/services/api/resource-sources";
 import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 
 const address = Schema.decodeSync(WalletAddress)(

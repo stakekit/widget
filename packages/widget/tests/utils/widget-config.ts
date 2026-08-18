@@ -5,15 +5,12 @@ import {
   type ApplicationRuntimeInit,
   applicationRuntimeInitAtom,
 } from "../../src/app/runtime/application-runtime-init";
-import {
-  widgetConfigAtom,
-  widgetConfigFieldAtom,
-} from "../../src/app/runtime/widget-config";
+import { widgetConfigAtom } from "../../src/features/widget-configuration/index";
 import type { SKAppProps } from "../../src/public-api/types";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import type { WidgetConfig } from "../../src/services/config/widget-config-model";
 
-export { widgetConfigAtom, widgetConfigFieldAtom };
+export { widgetConfigAtom };
 
 export const getTestWidgetConfig = (
   hostConfiguration: SKAppProps,
@@ -32,7 +29,7 @@ const defaultHostConfiguration: SKAppProps = {
 
 const defaultRoutes: ReadonlyArray<RouteObject> = [{ path: "*" }];
 
-export const applicationRuntimeInit = ({
+const applicationRuntimeInit = ({
   hostConfiguration = defaultHostConfiguration,
   isLedgerLive = false,
   routes = defaultRoutes,

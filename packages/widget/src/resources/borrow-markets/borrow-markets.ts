@@ -2,14 +2,14 @@ import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import type { BorrowNetwork } from "../../domain/borrow/network";
-import { BorrowResourceSource } from "../../services/api/borrow-resource-source";
+import { BorrowResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import {
   API_MAX_PAGE_SIZE,
   loadAllPages,
 } from "../../shared/effect/pagination";
-import { withBorrowResourceError } from "../borrow/borrow-resource-error";
+import { withBorrowResourceError } from "../borrow/index";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 const CONCURRENCY = 5;

@@ -1,7 +1,7 @@
 import type { ComponentProps, PropsWithChildren } from "react";
 import { StrictMode } from "react";
-import { WagmiConfigProvider } from "../../../features/wallet/ui";
-import { CurrentLayoutProvider } from "../../../features/widget-shell/ui";
+import { WagmiConfigProvider } from "../../../features/wallet/composition";
+import { CurrentLayoutProvider } from "../../../features/widget-shell/composition";
 import { RootElementProvider } from "../../../shared/react/root-element";
 import { MountAnimationEffects } from "./mount-animation";
 import { ThirdPartyQueryClientProvider } from "./query-client";

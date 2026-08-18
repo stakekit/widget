@@ -41,9 +41,18 @@
         "!**/packages/widget/src/index.bundle.ts",
         "!**/packages/widget/src/public-api/index.package.ts",
         "!**/packages/widget/src/public-api/index.bundle.ts",
-        "!**/packages/widget/src/features/*/state.ts",
-        "!**/packages/widget/src/features/*/ui.ts",
-        "!**/packages/widget/src/features/*/components.ts"
+        "!**/packages/widget/src/features/*/index.ts",
+        "!**/packages/widget/src/features/*/composition.ts",
+        "!**/packages/widget/src/features/*/views.ts",
+        "!**/packages/widget/src/features/*/runtime.ts",
+        "!**/packages/widget/src/features/borrow/*/index.ts",
+        "!**/packages/widget/src/features/borrow/*/composition.ts",
+        "!**/packages/widget/src/features/borrow/*/views.ts",
+        "!**/packages/widget/src/features/borrow/*/runtime.ts",
+        "!**/packages/widget/src/resources/*/index.ts",
+        "!**/packages/widget/src/services/api/operations.ts",
+        "!**/packages/widget/src/services/api/resource-sources.ts",
+        "!**/packages/widget/src/services/api/runtime.ts"
       ]
     }
   ],
@@ -95,9 +104,18 @@
         "!packages/widget/src/index.bundle.ts",
         "!packages/widget/src/public-api/index.package.ts",
         "!packages/widget/src/public-api/index.bundle.ts",
-        "!packages/widget/src/features/*/state.ts",
-        "!packages/widget/src/features/*/ui.ts",
-        "!packages/widget/src/features/*/components.ts"
+        "!packages/widget/src/features/*/index.ts",
+        "!packages/widget/src/features/*/composition.ts",
+        "!packages/widget/src/features/*/views.ts",
+        "!packages/widget/src/features/*/runtime.ts",
+        "!packages/widget/src/features/borrow/*/index.ts",
+        "!packages/widget/src/features/borrow/*/composition.ts",
+        "!packages/widget/src/features/borrow/*/views.ts",
+        "!packages/widget/src/features/borrow/*/runtime.ts",
+        "!packages/widget/src/resources/*/index.ts",
+        "!packages/widget/src/services/api/operations.ts",
+        "!packages/widget/src/services/api/resource-sources.ts",
+        "!packages/widget/src/services/api/runtime.ts"
       ],
       "linter": {
         "rules": {

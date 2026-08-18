@@ -4,12 +4,8 @@ import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import {
-  AddressRow,
-  DetailRow,
-  DetailsSection,
-} from "../../../../earn/components";
-import { positionDetailsComponentStyles as positionDetailsStyles } from "../../../../position-details/ui";
+import { AddressRow, DetailRow, DetailsSection } from "../../../../earn/views";
+import { positionDetailsComponentStyles as positionDetailsStyles } from "../../../../position-details/views";
 import type {
   BorrowPositionAction,
   getBorrowPositionDetailsModel,

@@ -9,8 +9,10 @@ import {
   activityCountResourceAtom,
   activityHistoryPullAtom,
 } from "../../src/resources/activity-history/activity-history";
-import { ApiRequestError } from "../../src/services/api/api-errors";
-import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
+import {
+  ApiRequestError,
+  YieldResourceSource,
+} from "../../src/services/api/resource-sources";
 import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";

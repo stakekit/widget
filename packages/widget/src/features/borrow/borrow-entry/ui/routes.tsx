@@ -1,11 +1,21 @@
+import type { ComponentType, ReactNode } from "react";
 import { Navigate, Route } from "react-router";
-import { createBorrowTransactionFlowRoutes } from "../../../borrow-transaction-flow/ui";
-import { WalletScopeRouteGuard } from "../../../wallet/ui";
-import { BorrowConnectedWalletRoute } from "../../wallet/ui/connected-wallet-route";
 import { BorrowLayout } from "./layout";
 import { BorrowFormPage } from "./page";
 
-export const createBorrowEntryRoutes = () => (
+type BorrowEntryRouteComposition = Readonly<{
+  BorrowConnectedWalletRoute: ComponentType;
+  WalletScopeRouteGuard: ComponentType<{ readonly fallbackPath: string }>;
+  createBorrowTransactionFlowRoutes: (input: {
+    readonly entry: "BorrowEntry";
+  }) => ReactNode;
+}>;
+
+export const createBorrowEntryRoutes = ({
+  BorrowConnectedWalletRoute,
+  WalletScopeRouteGuard,
+  createBorrowTransactionFlowRoutes,
+}: BorrowEntryRouteComposition) => (
   <>
     <Route path="borrow" element={<BorrowLayout />}>
       <Route index element={<BorrowFormPage />} />

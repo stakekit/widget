@@ -1,4 +1,4 @@
-import { useTrackPage } from "../../../../tracking/state";
+import { useTrackPage } from "../../../../tracking/index";
 import { usePendingActionReview } from "../hooks/use-pending-review.hook.ts";
 import { ReviewPage } from "./common-page/common.page.tsx";
 

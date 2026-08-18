@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
-import { useMountAnimation } from "../../../../mount-animation/state";
-import { PageContainer } from "../../../../widget-shell/components";
+import { useMountAnimation } from "../../../../mount-animation/index";
+import { PageContainer } from "../../../../widget-shell/views";
 import { ActivityPageContent } from "../../activity-page/activity-page-content";
 
 export const AnimatedActivityPage = () => {

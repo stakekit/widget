@@ -5,8 +5,8 @@ import type { GasBalancesCommand } from "../../domain/finance/models";
 import type {
   ApiRequestError,
   ResponseDecodeError,
-} from "../../services/api/api-errors";
-import { LegacyResourceSource } from "../../services/api/legacy-resource-source";
+} from "../../services/api/resource-sources";
+import { LegacyResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { isSupportedChain } from "../../services/wallet/supported-chains";
 import { WalletScopeKey } from "../../services/wallet/wallet-scope";

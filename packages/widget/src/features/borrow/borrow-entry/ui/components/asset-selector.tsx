@@ -1,7 +1,7 @@
 import { Trigger } from "@radix-ui/react-dialog";
 import clsx from "clsx";
 import type { ReactNode } from "react";
-import { useWidgetConfig } from "../../../../../app/composition/use-widget-config";
+import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
@@ -11,7 +11,7 @@ import {
 } from "../../../../../shared/ui/primitives/button/styles.css";
 import { CaretDownIcon } from "../../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import * as amountStyles from "../../../amount-input/ui/styles.css";
+import * as amountStyles from "../../../amount-input/views";
 import type { BorrowEntryToken } from "../../model/market-groups";
 import * as styles from "../styles.css";
 

@@ -15,8 +15,10 @@ import { Action } from "../../src/domain/borrow/execution/action";
 import { Transaction } from "../../src/domain/borrow/execution/transaction";
 import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
 import type { ActionMeta } from "../../src/public-api/types";
-import { BorrowOperations } from "../../src/services/api/borrow-operations";
-import { YieldOperations } from "../../src/services/api/yield-operations";
+import {
+  BorrowOperations,
+  YieldOperations,
+} from "../../src/services/api/operations";
 import {
   type WidgetDomainEvent,
   WidgetDomainEvents,

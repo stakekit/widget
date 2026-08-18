@@ -6,8 +6,7 @@ import {
   isUnsuccessfulBorrowActionStatus,
 } from "../../../domain/borrow/execution/action";
 import type { Transaction as BorrowTransaction } from "../../../domain/borrow/execution/transaction";
-import { BorrowOperations } from "../../api/borrow-operations";
-import { YieldOperations } from "../../api/yield-operations";
+import { BorrowOperations, YieldOperations } from "../../api/operations";
 import {
   TransactionConfirmationError,
   type TransactionWorkflowContext,

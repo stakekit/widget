@@ -1,4 +1,4 @@
-import { useTrackPage } from "../../../tracking/state";
+import { useTrackPage } from "../../../tracking/index";
 import { useActivityPage } from "../../react/use-activity-page";
 import type { ActivityResumePresentation } from "../../state/start-activity-resume";
 import { ActivityPagePresentation } from "./activity-page-presentation";

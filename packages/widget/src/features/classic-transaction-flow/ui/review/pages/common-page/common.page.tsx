@@ -8,15 +8,15 @@ import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/cont
 import { InfoIcon } from "../../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import { WarningBox } from "../../../../../../shared/ui/primitives/warning-box";
-import type { RewardTokenDetails } from "../../../../../earn/components";
-import { MetaInfo } from "../../../../../earn/components";
-import { useTrackEvent } from "../../../../../tracking/state";
+import type { RewardTokenDetails } from "../../../../../earn/views";
+import { MetaInfo } from "../../../../../earn/views";
+import { useTrackEvent } from "../../../../../tracking/index";
 import {
   AnimationPage,
   PageContainer,
   type PageCta,
   PageCtaButton,
-} from "../../../../../widget-shell/components";
+} from "../../../../../widget-shell/views";
 import type { FeesBps } from "../../types";
 import { feeStyles, pointerStyles } from "../style.css";
 import ReviewTopSection from "./components/review-top-section";

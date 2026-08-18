@@ -8,11 +8,11 @@ import { getPositionTotalAmount } from "../../../../domain/portfolio/positions";
 import {
   PricesKey,
   pricesAtom,
-} from "../../../../resources/token-prices/prices";
+} from "../../../../resources/token-prices/index";
 import {
   MultiYieldsKey,
   multiYieldsByIdAtom,
-} from "../../../yield-summary/state";
+} from "../../../yield-summary/index";
 import { type PositionItem, positionsTableDataAtom } from "./positions";
 import { tokenBalancesScanAtom } from "./token-balances";
 

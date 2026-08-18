@@ -1,13 +1,9 @@
 import { Effect, Layer } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { BorrowTransactionFlowService } from "../../features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
-import { ClassicTransactionFlowService } from "../../features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
-import { YieldEntrySubmissionService } from "../../features/yield-entry/state/orchestration/yield-entry-submission-service";
-import type { BorrowOperations } from "../../services/api/borrow-operations";
-import type { BorrowResourceSource } from "../../services/api/borrow-resource-source";
-import type { LegacyResourceSource } from "../../services/api/legacy-resource-source";
-import type { YieldOperations } from "../../services/api/yield-operations";
-import type { YieldResourceSource } from "../../services/api/yield-resource-source";
+import { BorrowTransactionFlowService } from "../../features/borrow-transaction-flow/runtime";
+import { ClassicTransactionFlowService } from "../../features/classic-transaction-flow/runtime";
+import { YieldEntrySubmissionService } from "../../features/yield-entry/runtime";
+import type { ApiServices } from "../../services/api/runtime";
 import type { WidgetConfigService } from "../../services/config/widget-config";
 import type { RichErrorService } from "../../services/errors/rich-error-service";
 import type { WidgetDomainEvents } from "../../services/events/widget-domain-events";
@@ -15,24 +11,22 @@ import type { WidgetNavigation } from "../../services/navigation/widget-navigati
 import type { WidgetPersistence } from "../../services/persistence/widget-persistence";
 import type { TrackingService } from "../../services/tracking/tracking-service";
 import { TransactionWorkflowService } from "../../services/transaction-workflow/transaction-workflow-service";
+import type { WalletBootstrapSource } from "../../services/wallet/wallet-bootstrap-source";
 import type { WalletModal } from "../../services/wallet/wallet-modal";
 import { WalletService } from "../../services/wallet/wallet-service";
 import { appRuntime } from "./app-runtime";
 import { DeepLinkCoordinator } from "./deep-link-coordinator";
 
 type AppServices =
-  | BorrowOperations
-  | BorrowResourceSource
-  | LegacyResourceSource
+  | ApiServices
   | RichErrorService
   | WidgetDomainEvents
   | TrackingService
+  | WalletBootstrapSource
   | WalletModal
   | WidgetNavigation
   | WidgetConfigService
-  | WidgetPersistence
-  | YieldOperations
-  | YieldResourceSource;
+  | WidgetPersistence;
 
 const appServicesAtom = appRuntime.atom(Effect.context<AppServices>());
 

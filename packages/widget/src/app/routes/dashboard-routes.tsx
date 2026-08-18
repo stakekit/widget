@@ -1,22 +1,28 @@
 import { Navigate, Route, Routes, useLocation } from "react-router";
-import { ActivityTabPage } from "../../features/activity/ui";
+import { ActivityTabPage } from "../../features/activity/composition";
 import {
   createBorrowEntryRoutes,
   createBorrowMarketPositionRoutes,
-} from "../../features/borrow/ui";
+} from "../../features/borrow/composition";
+import { createBorrowTransactionFlowRoutes } from "../../features/borrow-transaction-flow/composition";
 // import { RewardsTabPage } from "../../domain/portfolio/rewards";
-import { createClassicFlowRoutes } from "../../features/classic-transaction-flow/ui";
-import { EarnPageContent } from "../../features/earn/ui";
-import { ManagePage } from "../../features/portfolio/ui";
+import { createClassicFlowRoutes } from "../../features/classic-transaction-flow/composition";
+import { EarnPageContent } from "../../features/earn/composition";
+import { ManagePage } from "../../features/portfolio/composition";
 import {
   DashboardPositionDetailsPage,
   PositionDetailsHub,
-} from "../../features/position-details/ui";
-import { WalletScopeRouteGuard } from "../../features/wallet/ui";
-import { GlobalModals } from "../../features/widget-shell/ui";
+} from "../../features/position-details/composition";
+import { WalletScopeRouteGuard } from "../../features/wallet/composition";
+import { GlobalModals } from "../../features/widget-shell/composition";
 import { BorrowFeatureRoute } from "./borrow-feature-route";
 import { DashboardOverview } from "./dashboard-overview";
 import { DashboardShell } from "./dashboard-shell";
+
+const borrowRouteComposition = {
+  WalletScopeRouteGuard,
+  createBorrowTransactionFlowRoutes,
+};
 
 export const shouldRegisterDashboardEarnFooterButton = (pathname: string) =>
   pathname === "/";
@@ -49,14 +55,14 @@ export const DashboardRoutes = () => {
 
           {/* Borrow Tab */}
           <Route element={<BorrowFeatureRoute fallbackPath="/" />}>
-            {createBorrowEntryRoutes()}
+            {createBorrowEntryRoutes(borrowRouteComposition)}
           </Route>
 
           {/* Manage Tab + Position Details */}
           <Route path="positions">
             <Route index element={<ManagePage />} />
             <Route element={<BorrowFeatureRoute fallbackPath="/positions" />}>
-              {createBorrowMarketPositionRoutes()}
+              {createBorrowMarketPositionRoutes(borrowRouteComposition)}
             </Route>
             <Route
               element={<WalletScopeRouteGuard fallbackPath="/positions" />}

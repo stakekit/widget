@@ -1,11 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { getExtendedYieldType } from "../../../../../domain/earn/yield";
 import { Box } from "../../../../../shared/ui/primitives/box";
-import { KycGateCard } from "../../../../earn/components";
-import {
-  type PageCta,
-  PageCtaButton,
-} from "../../../../widget-shell/components";
+import { KycGateCard } from "../../../../earn/views";
+import { type PageCta, PageCtaButton } from "../../../../widget-shell/views";
 import { usePositionDetails } from "../hooks/use-position-details";
 import { AmountBlock, UnstakeInfo } from "./amount-block";
 import { ExitReceiveTokenAccessory } from "./exit-receive-token-accessory";

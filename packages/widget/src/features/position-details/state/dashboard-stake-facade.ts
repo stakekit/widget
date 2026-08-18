@@ -3,7 +3,6 @@ import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import { widgetConfigAtom } from "../../../app/runtime/widget-config";
 import { stakeTokenSameAsGasToken } from "../../../domain";
 import type { TronResource } from "../../../domain/action/tron-resource";
 import { getKycProviderName } from "../../../domain/earn/kyc";
@@ -20,19 +19,20 @@ import type {
   PositionsData,
 } from "../../../domain/portfolio/positions";
 import { equalTokens } from "../../../domain/token/token";
+import { widgetConfigAtom } from "../../../features/widget-configuration/index";
 import {
   getTokensPricesRequest,
   PricesKey,
   pricesAtom,
-} from "../../../resources/token-prices/prices";
+} from "../../../resources/token-prices/index";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
-} from "../../../resources/yield-opportunity/provider";
+} from "../../../resources/yield-opportunity/index";
 import {
   PositionBalancesKey,
   positionBalancesByTypeAtom,
-} from "../../../resources/yield-positions/yield-positions";
+} from "../../../resources/yield-positions/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import {
   sameWalletScopeOwner,
@@ -44,19 +44,19 @@ import {
   defaultFormattedNumber,
   formatNumber,
 } from "../../../shared/lib/number-format";
-import { tokenBalancesScanAtom } from "../../portfolio/state";
-import { walletConnectionStateAtom, walletScopeAtom } from "../../wallet/state";
+import { tokenBalancesScanAtom } from "../../portfolio/index";
+import { walletConnectionStateAtom, walletScopeAtom } from "../../wallet/index";
 import {
   makeYieldEntry,
   YieldValidatorsKey,
   yieldValidatorsPullAtom,
-} from "../../yield-entry/state";
+} from "../../yield-entry/index";
 import {
   CurrentYieldKycGateKey,
   currentYieldKycGateAtom,
   makeYieldSummary,
   refreshCurrentYieldKycAtom,
-} from "../../yield-summary/state";
+} from "../../yield-summary/index";
 import {
   type PositionDetailsStakeEntryKey,
   positionDetailsStakeAtom,

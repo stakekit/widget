@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
-import { EarnDetails } from "../../features/earn/ui";
+import { EarnDetails } from "../../features/earn/composition";
 import {
   AnimationPage,
   BackButtonProvider,
   SplitView,
-} from "../../features/widget-shell/components";
+} from "../../features/widget-shell/views";
 import { Box } from "../../shared/ui/primitives/box";
 import {
   earnDetailsWrapper,

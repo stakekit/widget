@@ -7,8 +7,8 @@ Borrow is one feature with two peer journeys:
 - `market-position` owns an existing Market Position's details and actions,
   and the `/borrow/:marketId` route mount.
 
-The journeys never import each other. `ui.ts` publishes their two route
-factories, while `state.ts` publishes composition-owned event-projection
+The journeys never import each other. `composition.ts` publishes their two route
+factories, while `index.ts` publishes composition-owned event-projection
 lifecycles. Each factory owns its relative route topology and mounts Borrow Transaction Flow with an immutable
 `BorrowEntry` or `MarketPosition` entry. The app owns only the surrounding
 Dashboard route composition.

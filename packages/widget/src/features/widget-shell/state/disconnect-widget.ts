@@ -1,6 +1,6 @@
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
-import { logoutAtom } from "../../wallet/state";
+import { logoutAtom } from "../../wallet/index";
 
 export const disconnectWidgetAtom = walletRuntime
   .fn((_input: undefined, context) => context.setResult(logoutAtom, undefined))

@@ -70,11 +70,11 @@ describe("feature facade architecture", () => {
 
   it("keeps remaining workflow transitions out of React adapters", () => {
     const pendingActions = readFileSync(
-      join(sourceRoot, "features/position-details/ui.ts"),
+      join(sourceRoot, "features/position-details/views.ts"),
       "utf8"
     );
     const positionDetails = readFileSync(
-      join(sourceRoot, "features/position-details/ui.ts"),
+      join(sourceRoot, "features/position-details/composition.ts"),
       "utf8"
     );
     const positionDetailsStateAdapter = readFileSync(

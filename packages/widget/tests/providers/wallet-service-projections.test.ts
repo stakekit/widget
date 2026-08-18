@@ -6,7 +6,7 @@ import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import {
   walletConfigResultAtom,
   walletStateResultAtom,
-} from "../../src/features/wallet/state";
+} from "../../src/features/wallet/index";
 import { currentWalletLedgerStateAtom as walletLedgerStateAtom } from "../../src/features/wallet/state/root-atom";
 import { makeDefaultConfig } from "../../src/services/wallet/default-wagmi-config";
 import { WalletService } from "../../src/services/wallet/wallet-service";

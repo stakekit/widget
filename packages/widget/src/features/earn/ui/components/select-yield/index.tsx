@@ -14,7 +14,7 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import {
   MultiYieldsKey,
   visibleMultiYieldsAtom,
-} from "../../../../yield-summary/state";
+} from "../../../../yield-summary/index";
 import { SelectOpportunityListItem } from "../select-opportunity-list-item";
 
 type SelectYieldProps = PropsWithChildren<

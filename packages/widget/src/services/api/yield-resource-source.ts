@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Option, Schema } from "effect";
+import { Effect, Option, Schema } from "effect";
 import * as HttpClientError from "effect/unstable/http/HttpClientError";
 import { ActivityActionsPage } from "../../domain/activity/models";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
@@ -17,7 +17,6 @@ import type {
   WalletAddress,
   YieldId,
 } from "../../domain/identity/identifiers";
-import type { Network } from "../../domain/network/network";
 import {
   type HistoryPeriod,
   KycStatus,
@@ -30,25 +29,10 @@ import {
   withApiRequestError,
   withResponseDecodeError,
 } from "./api-operation";
-import { ApiTransportService } from "./transport";
-
-export type YieldDirectoryRequest = {
-  readonly limit: number;
-  readonly network?: Network;
-  readonly offset: number;
-  readonly types?: ReadonlyArray<(typeof EarnYield.Type)["mechanics"]["type"]>;
-  readonly yieldIds?: ReadonlyArray<YieldId>;
-};
-
-export type ValidatorDirectoryRequest = {
-  readonly address?: string;
-  readonly limit: number;
-  readonly name?: string;
-  readonly offset: number;
-  readonly preferred?: boolean;
-  readonly status?: "active";
-  readonly yieldId: YieldId;
-};
+import type {
+  ValidatorDirectoryRequest,
+  YieldDirectoryRequest,
+} from "./resource-sources";
 
 const isNotFoundHttpClientError = (cause: unknown): boolean =>
   HttpClientError.isHttpClientError(cause) &&
@@ -223,17 +207,3 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
     listActivity,
   } as const;
 };
-
-export class YieldResourceSource extends Context.Service<YieldResourceSource>()(
-  "stakekit/widget/services/api/YieldResourceSource",
-  {
-    make: Effect.map(ApiTransportService, ({ resources }) =>
-      makeYieldResourceSource(resources.yield)
-    ),
-  }
-) {
-  static readonly layer = Layer.effect(
-    YieldResourceSource,
-    YieldResourceSource.make
-  );
-}

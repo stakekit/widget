@@ -7,7 +7,7 @@ import { Box } from "../../../../../../shared/ui/primitives/box";
 import { HeaderBadge } from "../../../../../../shared/ui/primitives/header-badge";
 import { Image } from "../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import { formatDisplayTokenSymbol } from "../earn-details-formatters";
+import { formatDisplayTokenSymbol } from "../../../../model/earn-details-formatters";
 import type { EarnDetailsHeaderBadge } from "../earn-details-model";
 import * as styles from "../styles.css";
 

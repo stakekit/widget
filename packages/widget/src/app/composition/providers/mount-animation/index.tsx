@@ -4,7 +4,7 @@ import { useLocation } from "react-router";
 import {
   mountAnimationCompletionAtom,
   useMountAnimation,
-} from "../../../../features/mount-animation/state";
+} from "../../../../features/mount-animation/index";
 
 export const MountAnimationEffects = () => {
   const location = useLocation();

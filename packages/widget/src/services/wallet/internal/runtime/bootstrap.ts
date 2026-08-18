@@ -6,8 +6,6 @@ import {
   type InitParams,
   InitParams as InitParamsSchema,
 } from "../../../../services/wallet/init-params";
-import { LegacyResourceSource } from "../../../api/legacy-resource-source";
-import { YieldResourceSource } from "../../../api/yield-resource-source";
 import {
   selectWidgetBootstrapSnapshot,
   type WidgetBootstrapSnapshot as WidgetConfigBootstrapSnapshot,
@@ -15,6 +13,7 @@ import {
 } from "../../../config/widget-config";
 import { WidgetPersistence } from "../../../persistence/widget-persistence";
 import type { ExternalProviderSnapshot } from "../../external-provider";
+import { WalletBootstrapSource } from "../../wallet-bootstrap-source";
 import { SolanaPlatform } from "../platform/solana-platform";
 import {
   type WagmiCoreObservation,
@@ -98,11 +97,10 @@ const resolveWalletInitParams = Effect.fn("resolveWalletInitParams")(function* (
 export const bootstrapWallet = Effect.gen(function* () {
   const config = yield* WidgetConfigService;
   const environment = yield* WalletEnvironment;
-  const legacySource = yield* LegacyResourceSource;
+  const bootstrapSource = yield* WalletBootstrapSource;
   const persistence = yield* WidgetPersistence;
   const solana = yield* SolanaPlatform;
   const wagmi = yield* WagmiPlatform;
-  const yieldSource = yield* YieldResourceSource;
   const settings = yield* config.current;
   const [href, isMobileWallet] = yield* Effect.all([
     environment.href,
@@ -124,7 +122,7 @@ export const bootstrapWallet = Effect.gen(function* () {
         current: externalProviderSnapshot,
       } satisfies MutableExternalProviderRef)
     : undefined;
-  const enabledNetworks = yield* legacySource.getEnabledNetworks().pipe(
+  const enabledNetworks = yield* bootstrapSource.getEnabledNetworks().pipe(
     Effect.retry(enabledNetworksRetrySchedule),
     Effect.mapError(
       (cause) => new WalletBootstrapError({ cause, stage: "enabled-networks" })
@@ -132,7 +130,7 @@ export const bootstrapWallet = Effect.gen(function* () {
   );
   const queryParams = yield* resolveWalletInitParams(
     initParams,
-    yieldSource.getOpportunity
+    bootstrapSource.getOpportunity
   ).pipe(
     Effect.mapError(
       (cause) =>

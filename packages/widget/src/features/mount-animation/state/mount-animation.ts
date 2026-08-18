@@ -1,6 +1,6 @@
 import { Option } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetConfigAtom } from "../../../app/runtime/widget-config";
+import { widgetConfigAtom } from "../../../features/widget-configuration/index";
 
 type MountAnimationState = {
   readonly earnPage: boolean;

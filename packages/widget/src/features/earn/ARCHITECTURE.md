@@ -91,7 +91,7 @@ reload provides recovery.
 
 ## Interface and tests
 
-The root `state.ts` facade continues to publish focused selection, option,
+The root `index.ts` facade continues to publish focused selection, option,
 entry, status, and command Atoms without resource identities. Token load-more
 and manual retry leave that interface. React renders those views and dispatches
 semantic commands; it does not interpret catalog keys or resource failures.

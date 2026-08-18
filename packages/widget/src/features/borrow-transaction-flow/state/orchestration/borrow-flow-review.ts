@@ -3,7 +3,7 @@ import {
   type Action,
   isTerminalBorrowActionStatus,
 } from "../../../../domain/borrow/execution/action";
-import { BorrowOperations } from "../../../../services/api/borrow-operations";
+import { BorrowOperations } from "../../../../services/api/operations";
 import type { WidgetNavigationError } from "../../../../services/navigation/widget-navigation";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 

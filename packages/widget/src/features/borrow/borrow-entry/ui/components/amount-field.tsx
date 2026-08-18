@@ -12,7 +12,7 @@ import { MaxButton } from "../../../../../shared/ui/components/max-button";
 import { NumberInput } from "../../../../../shared/ui/components/number-input";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import * as styles from "../../../amount-input/ui/styles.css";
+import * as styles from "../../../amount-input/views";
 
 export const AmountField = ({
   amount,

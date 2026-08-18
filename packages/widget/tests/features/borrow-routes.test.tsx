@@ -4,7 +4,14 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createBorrowEntryRoutes,
   createBorrowMarketPositionRoutes,
-} from "../../src/features/borrow/ui";
+} from "../../src/features/borrow/composition";
+import { createBorrowTransactionFlowRoutes } from "../../src/features/borrow-transaction-flow/composition";
+import { WalletScopeRouteGuard } from "../../src/features/wallet/composition";
+
+const routeComposition = {
+  WalletScopeRouteGuard,
+  createBorrowTransactionFlowRoutes,
+};
 
 vi.mock("../../src/features/borrow/borrow-entry/ui/layout", () => ({
   BorrowLayout: function BorrowLayout() {
@@ -36,12 +43,12 @@ vi.mock("../../src/features/borrow/wallet/ui/connected-wallet-route", () => ({
     return null;
   },
 }));
-vi.mock("../../src/features/wallet/ui", () => ({
+vi.mock("../../src/features/wallet/composition", () => ({
   WalletScopeRouteGuard: function WalletScopeRouteGuard() {
     return null;
   },
 }));
-vi.mock("../../src/features/borrow-transaction-flow/ui", async () => {
+vi.mock("../../src/features/borrow-transaction-flow/composition", async () => {
   const { Route } = await import("react-router");
   return {
     createBorrowTransactionFlowRoutes: ({
@@ -81,7 +88,9 @@ const describeRoute = (route: RouteObject): RouteContract => ({
 
 describe("Borrow routes", () => {
   it("publishes the Borrow Entry topology", () => {
-    const routes = createRoutesFromElements(createBorrowEntryRoutes());
+    const routes = createRoutesFromElements(
+      createBorrowEntryRoutes(routeComposition)
+    );
 
     expect(routes.map(describeRoute)).toEqual([
       {
@@ -127,7 +136,9 @@ describe("Borrow routes", () => {
   });
 
   it("publishes the Market Position topology", () => {
-    const routes = createRoutesFromElements(createBorrowMarketPositionRoutes());
+    const routes = createRoutesFromElements(
+      createBorrowMarketPositionRoutes(routeComposition)
+    );
 
     expect(routes.map(describeRoute)).toEqual([
       {

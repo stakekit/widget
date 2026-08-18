@@ -5,31 +5,23 @@ import { YieldAction } from "../../src/domain/action/models";
 import { BorrowFeatureDisabled } from "../../src/domain/borrow/availability";
 import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
 import { RewardsAddresses } from "../../src/domain/portfolio/models";
-import {
-  ApiRequestError,
-  MissingBorrowApiConfig,
-  ResponseDecodeError,
-} from "../../src/services/api/api-errors";
+import { makeBorrowOperations } from "../../src/services/api/borrow-operations";
+import { makeBorrowResourceSource } from "../../src/services/api/borrow-resource-source";
+import { makeLegacyResourceSource } from "../../src/services/api/legacy-resource-source";
 import {
   BorrowOperations,
-  makeBorrowOperations,
-} from "../../src/services/api/borrow-operations";
-import {
-  BorrowResourceSource,
-  makeBorrowResourceSource,
-} from "../../src/services/api/borrow-resource-source";
-import {
-  LegacyResourceSource,
-  makeLegacyResourceSource,
-} from "../../src/services/api/legacy-resource-source";
-import {
-  makeYieldOperations,
   YieldOperations,
-} from "../../src/services/api/yield-operations";
+} from "../../src/services/api/operations";
 import {
-  makeYieldResourceSource,
+  ApiRequestError,
+  BorrowResourceSource,
+  LegacyResourceSource,
+  MissingBorrowApiConfig,
+  ResponseDecodeError,
   YieldResourceSource,
-} from "../../src/services/api/yield-resource-source";
+} from "../../src/services/api/resource-sources";
+import { makeYieldOperations } from "../../src/services/api/yield-operations";
+import { makeYieldResourceSource } from "../../src/services/api/yield-resource-source";
 import {
   yieldApiActionDtoFixture,
   yieldApiProviderFixture,

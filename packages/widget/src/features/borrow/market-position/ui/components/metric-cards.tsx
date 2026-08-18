@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { positionDetailsComponentStyles as positionDetailsStyles } from "../../../../position-details/ui";
+import { positionDetailsComponentStyles as positionDetailsStyles } from "../../../../position-details/views";
 import type { getBorrowPositionDetailsModel } from "../../model/details";
 import * as styles from "../styles.css";
 

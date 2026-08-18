@@ -3,8 +3,8 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { ClassicTransactionWorkflowProviderDetail } from "../../../services/transaction-workflow/transaction-workflow-model";
 import { WalletModal } from "../../../services/wallet/wallet-modal";
-import { startClassicTransactionFlowAtom } from "../../classic-transaction-flow/state";
-import { walletConnectionStateAtom } from "../../wallet/state";
+import { startClassicTransactionFlowAtom } from "../../classic-transaction-flow/index";
+import { walletConnectionStateAtom } from "../../wallet/index";
 import {
   type ActivityActionItem,
   getActivityActionOpenTarget,

@@ -17,8 +17,8 @@ import {
 } from "../../src/app/runtime/application-router-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
-import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
-import { tokenBalancesScanAtom } from "../../src/features/portfolio/state";
+import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/index";
+import { tokenBalancesScanAtom } from "../../src/features/portfolio/index";
 import {
   positionDetailsStakeViewAtom,
   setPositionDetailsStakeAmountAtom,
@@ -28,7 +28,7 @@ import { PositionDetailsStakeEntryKey } from "../../src/features/position-detail
 import {
   walletConnectionStateAtom,
   walletScopeAtom,
-} from "../../src/features/wallet/state";
+} from "../../src/features/wallet/index";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,

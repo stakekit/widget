@@ -1,7 +1,7 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetConfigAtom } from "../../../../../app/runtime/widget-config";
+import { widgetConfigAtom } from "../../../../../features/widget-configuration/index";
 import {
   sameWalletScopeOwner,
   type WalletScopeOwnerKey,
@@ -9,8 +9,8 @@ import {
   walletScopeOwnerKey,
 } from "../../../../../services/wallet/wallet-scope";
 import { disconnectedNormalizedWalletState } from "../../../../../services/wallet/wallet-state";
-import { initParamsAtom } from "../../../../init-params/state";
-import { walletStateResultAtom } from "../../../../wallet/state";
+import { initParamsAtom } from "../../../../init-params/index";
+import { walletStateResultAtom } from "../../../../wallet/index";
 import { makeResolvingWalletView } from "../model/view-model";
 import type { EarnEntry, EarnEntryIntent, EarnSelectionView } from "../types";
 import {

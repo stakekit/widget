@@ -11,8 +11,10 @@ import {
   yieldRewardRateHistoryResourceAtom,
   yieldTvlHistoryResourceAtom,
 } from "../../src/resources/yield-insights/yield-insights";
-import { ApiRequestError } from "../../src/services/api/api-errors";
-import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
+import {
+  ApiRequestError,
+  YieldResourceSource,
+} from "../../src/services/api/resource-sources";
 import { yieldApiYieldFixture } from "../fixtures";
 
 const yieldId = yieldApiYieldFixture().id;

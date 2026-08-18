@@ -10,11 +10,7 @@ import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content
 import { HeaderBadge } from "../../../../../shared/ui/primitives/header-badge";
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import {
-  AddressRow,
-  DetailRow,
-  DetailsSection,
-} from "../../../../earn/components";
+import { AddressRow, DetailRow, DetailsSection } from "../../../../earn/views";
 import type { BorrowEntryView } from "../../model/borrow-entry";
 import { getBorrowDetailsModel } from "../../model/details";
 import { toBorrowEntryToken } from "../../model/market-groups";

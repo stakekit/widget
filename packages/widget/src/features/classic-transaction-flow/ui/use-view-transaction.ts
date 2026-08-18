@@ -1,4 +1,4 @@
-import { useTrackEvent } from "../../tracking/state";
+import { useTrackEvent } from "../../tracking/index";
 
 export const useViewTransaction = () => {
   const trackEvent = useTrackEvent();

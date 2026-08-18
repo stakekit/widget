@@ -17,7 +17,7 @@ import {
 } from "../../src/features/borrow/market-position/model/details";
 import { BorrowPositionActionPage } from "../../src/features/borrow/market-position/ui/action.page.tsx";
 import { currentBorrowPositionsAtom } from "../../src/features/borrow/positions/state/positions";
-import { walletScopeAtom } from "../../src/features/wallet/state";
+import { walletScopeAtom } from "../../src/features/wallet/index";
 import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
 import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { RootElementProvider } from "../../src/shared/react/root-element";

@@ -15,18 +15,18 @@ import { isValidYieldIdForRewardsSummary } from "../../../domain/portfolio/rewar
 import {
   RewardSummariesKey,
   rewardSummariesResourceAtom,
-} from "../../../resources/reward-summaries/reward-summaries";
+} from "../../../resources/reward-summaries/index";
 import {
   YieldHistoryResourceKey,
   YieldKycStatusKey,
   yieldKycStatusResourceAtom,
   yieldRewardRateHistoryResourceAtom,
   yieldTvlHistoryResourceAtom,
-} from "../../../resources/yield-insights/yield-insights";
+} from "../../../resources/yield-insights/index";
 import {
   selectCurrentWalletAtom,
   walletConnectionStateAtom,
-} from "../../wallet/state";
+} from "../../wallet/index";
 
 class YieldKycKey extends Data.Class<{
   readonly address: WalletAddress | null;

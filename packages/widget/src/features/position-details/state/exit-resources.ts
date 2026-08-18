@@ -7,17 +7,17 @@ import type { YieldId } from "../../../domain/identity/identifiers";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
-} from "../../../resources/yield-opportunity/provider";
+} from "../../../resources/yield-opportunity/index";
 import { getPullResultItems } from "../../../shared/effect/pagination";
 import {
   YieldValidatorsKey,
   yieldValidatorsPullAtom,
-} from "../../yield-entry/state";
+} from "../../yield-entry/index";
 import {
   CurrentYieldKycGateKey,
   currentYieldKycGateAtom,
   refreshCurrentYieldKycAtom,
-} from "../../yield-summary/state";
+} from "../../yield-summary/index";
 
 export class PositionDetailsExitResourcesKey extends Data.Class<{
   readonly yieldId: YieldId | null;

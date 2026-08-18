@@ -3,7 +3,7 @@ import {
   type Action as BorrowAction,
   isUnsuccessfulBorrowActionStatus,
 } from "../../../domain/borrow/execution/action";
-import { BorrowOperations } from "../../api/borrow-operations";
+import { BorrowOperations } from "../../api/operations";
 import {
   getCurrentTransactionWorkflowBatch,
   TransactionAdvanceError,

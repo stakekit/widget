@@ -10,11 +10,11 @@ import {
   validatorByAddressAtom,
   validatorsPullAtom,
 } from "../../src/resources/validator-directory/validator-directory";
-import { ApiRequestError } from "../../src/services/api/api-errors";
 import {
+  ApiRequestError,
   type ValidatorDirectoryRequest,
   YieldResourceSource,
-} from "../../src/services/api/yield-resource-source";
+} from "../../src/services/api/resource-sources";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 

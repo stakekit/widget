@@ -2,6 +2,7 @@ import { assignInlineVars } from "@vanilla-extract/dynamic";
 import merge from "lodash.merge";
 import type { PropsWithChildren } from "react";
 import { useMemo } from "react";
+import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import type { WidgetConfig } from "../../../services/config/widget-config-model";
 import { vars } from "../../../shared/styles/theme/contract.css";
 import { rootSelector } from "../../../shared/styles/theme/ids";
@@ -10,7 +11,6 @@ import { getFineryThemeOverrides } from "../../../shared/styles/theme/variant-ov
 import { portoThemeOverrides } from "../../../shared/styles/theme/variant-overrides/porto";
 import { utilaThemeOverrides } from "../../../shared/styles/theme/variant-overrides/utila";
 import type { RecursivePartial } from "../../../shared/types/utils";
-import { useWidgetConfig } from "../../composition/use-widget-config";
 
 export const getThemeOverrides = ({
   baseTheme,

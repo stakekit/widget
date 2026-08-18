@@ -2,8 +2,6 @@ import { Deferred, Effect, Fiber, Layer, Stream } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 import { mainnet } from "wagmi/chains";
-import { LegacyResourceSource } from "../../../src/services/api/legacy-resource-source";
-import { YieldResourceSource } from "../../../src/services/api/yield-resource-source";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
@@ -15,6 +13,7 @@ import {
   WalletStorageCleanup,
   WalletStorageCleanupError,
 } from "../../../src/services/wallet/internal/runtime/wallet-storage-cleanup";
+import { WalletBootstrapSource } from "../../../src/services/wallet/wallet-bootstrap-source";
 import { WalletConnectionError } from "../../../src/services/wallet/wallet-errors";
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
@@ -79,12 +78,10 @@ const makeLogoutLayer = ({
     Layer.provide(
       Layer.mergeAll(
         configLayer,
-        Layer.succeed(LegacyResourceSource, {
+        Layer.succeed(WalletBootstrapSource, {
           getEnabledNetworks: () => Effect.succeed(new Set(["ethereum"])),
-        } as never),
-        Layer.succeed(YieldResourceSource, {
           getOpportunity: () => Effect.die("unused"),
-        } as never),
+        }),
         Layer.succeed(WalletEnvironment, {
           href: Effect.succeed("https://widget.test/?network=ethereum"),
           isMobileWallet: Effect.succeed(false),

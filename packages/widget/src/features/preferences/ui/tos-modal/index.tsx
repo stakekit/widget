@@ -10,7 +10,7 @@ import {
 import type { PropsWithChildren, ReactNode } from "react";
 import { useEffect } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../app/composition/use-widget-config";
+import { useWidgetConfig } from "../../../../features/widget-configuration/index";
 import { id } from "../../../../shared/styles/theme/ids";
 import { SKAnchor } from "../../../../shared/ui/primitives/anchor";
 import { Box } from "../../../../shared/ui/primitives/box";
@@ -18,7 +18,7 @@ import { Button } from "../../../../shared/ui/primitives/button";
 import { XIcon } from "../../../../shared/ui/primitives/icons/x-icon";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../tracking/state";
+import { useTrackEvent } from "../../../tracking/index";
 import {
   closeButton,
   container,

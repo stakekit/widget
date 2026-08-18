@@ -14,19 +14,23 @@ import { ActionCommand } from "../../src/domain/action/models";
 import {
   mountAnimationStateAtom,
   useMountAnimation,
-} from "../../src/features/mount-animation/state";
-import { BorrowOperations } from "../../src/services/api/borrow-operations";
-import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
-import { GeoBlockService } from "../../src/services/api/geo-block-state";
-import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
-import { ApiTransportService } from "../../src/services/api/transport";
-import { YieldOperations } from "../../src/services/api/yield-operations";
-import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
+} from "../../src/features/mount-animation/index";
+import {
+  BorrowOperations,
+  YieldOperations,
+} from "../../src/services/api/operations";
+import {
+  BorrowResourceSource,
+  LegacyResourceSource,
+  YieldResourceSource,
+} from "../../src/services/api/resource-sources";
+import { apiLayer } from "../../src/services/api/runtime";
 import {
   type ApplicationApiIdentity,
   WidgetConfigService,
 } from "../../src/services/config/widget-config";
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
+import { GeoBlockService } from "../../src/services/geoblocking";
 import { config } from "../../src/shared/config/widget-defaults";
 import { describe, expect, it } from "../utils/test-extend.dom.ts";
 import { render } from "../utils/test-utils.dom.tsx";
@@ -59,18 +63,11 @@ const createTestClient = async (
     Layer.provide(configLayer)
   );
   const geoBlockLayer = GeoBlockService.layer;
-  const transportLayer = ApiTransportService.layer.pipe(
+  const clientLayer = apiLayer.pipe(
     Layer.provide(geoBlockLayer),
     Layer.provide(richErrorLayer),
     Layer.provide(configLayer)
   );
-  const clientLayer = Layer.mergeAll(
-    BorrowOperations.layer,
-    BorrowResourceSource.layer,
-    LegacyResourceSource.layer,
-    YieldOperations.layer,
-    YieldResourceSource.layer
-  ).pipe(Layer.provide(transportLayer), Layer.provide(configLayer));
   const context = await Effect.runPromise(
     Layer.build(
       Layer.mergeAll(clientLayer, geoBlockLayer, richErrorLayer)

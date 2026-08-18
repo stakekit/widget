@@ -1,19 +1,19 @@
 import { motion } from "motion/react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../app/composition/use-widget-config";
+import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Spinner } from "../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useMountAnimation } from "../../../../mount-animation/state";
-import { useTrackPage } from "../../../../tracking/state";
-import { ZerionChainModal } from "../../../../wallet/ui";
+import { useMountAnimation } from "../../../../mount-animation/index";
+import { useTrackPage } from "../../../../tracking/index";
+import { ZerionChainModal } from "../../../../wallet/views";
 import {
   PageContainer,
   type PageCta,
   PageCtaButton,
-} from "../../../../widget-shell/components";
+} from "../../../../widget-shell/views";
 import { useEarnPageStatus } from "../../../react/use-earn-facades";
 import { EarnKycGate } from "../../components/earn-kyc-gate";
 import { EarnPageCta } from "../../components/earn-page-cta";

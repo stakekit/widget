@@ -21,7 +21,7 @@ vi.mock("@stakekit/rainbowkit", async (importOriginal) => {
   };
 });
 
-vi.mock("../../src/features/wallet/ui", async (importOriginal) => {
+vi.mock("../../src/features/wallet/views", async (importOriginal) => {
   const actual = await importOriginal<object>();
 
   return {

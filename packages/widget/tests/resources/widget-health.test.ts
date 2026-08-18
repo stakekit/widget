@@ -7,8 +7,10 @@ import {
   WidgetHealthError,
   widgetHealthResourceAtom,
 } from "../../src/resources/widget-health/widget-health";
-import { ApiRequestError } from "../../src/services/api/api-errors";
-import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
+import {
+  ApiRequestError,
+  YieldResourceSource,
+} from "../../src/services/api/resource-sources";
 
 const makeRegistry = (getHealth: YieldResourceSource["Service"]["getHealth"]) =>
   AtomRegistry.make({

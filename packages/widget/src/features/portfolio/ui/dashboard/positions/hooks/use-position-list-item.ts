@@ -6,13 +6,13 @@ import { getTokenPriceInUSD } from "../../../../../../domain/finance/price";
 import {
   PricesKey,
   pricesAtom,
-} from "../../../../../../resources/token-prices/prices";
+} from "../../../../../../resources/token-prices/index";
 import { config } from "../../../../../../shared/config/widget-defaults";
 import { defaultFormattedNumber } from "../../../../../../shared/lib/number-format";
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
-} from "../../../../../yield-summary/state";
+} from "../../../../../yield-summary/index";
 import type { PositionItem } from "../../../../state/read-models/positions";
 import { usePositionListItem as useBasePositionListItem } from "../../../classic/positions-page/hooks/use-position-list-item";
 

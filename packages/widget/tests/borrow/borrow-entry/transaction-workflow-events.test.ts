@@ -4,10 +4,10 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { currentBorrowEntryAtom } from "../../../src/features/borrow/borrow-entry/state/borrow-entry";
-import { borrowEntryIntentEventProjectionAtom } from "../../../src/features/borrow/state";
-import { tokenBalancesScanAtom } from "../../../src/features/portfolio/state";
-import { walletScopeAtom } from "../../../src/features/wallet/state";
-import { BorrowResourceSource } from "../../../src/services/api/borrow-resource-source";
+import { borrowEntryIntentEventProjectionAtom } from "../../../src/features/borrow/index";
+import { tokenBalancesScanAtom } from "../../../src/features/portfolio/index";
+import { walletScopeAtom } from "../../../src/features/wallet/index";
+import { BorrowResourceSource } from "../../../src/services/api/resource-sources";
 import {
   type WidgetDomainEvent,
   WidgetDomainEvents,

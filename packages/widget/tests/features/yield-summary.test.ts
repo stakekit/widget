@@ -4,10 +4,8 @@ import { describe, expect, it } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { resolveYieldSummaryView } from "../../src/features/yield-summary/model/yield-summary";
 import { makeYieldSummary } from "../../src/features/yield-summary/state/yield-summary";
-import {
-  type YieldDirectoryRequest,
-  YieldResourceSource,
-} from "../../src/services/api/yield-resource-source";
+import type { YieldDirectoryRequest } from "../../src/services/api/resource-sources";
+import { YieldResourceSource } from "../../src/services/api/resource-sources";
 import {
   yieldApiProviderFixture,
   yieldApiValidatorFixture,

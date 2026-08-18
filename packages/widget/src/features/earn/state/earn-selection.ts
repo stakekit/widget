@@ -2,11 +2,11 @@ import { Duration, Option, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import { widgetConfigAtom } from "../../../app/runtime/widget-config";
 import type { TronResource } from "../../../domain/action/tron-resource";
 import type { EarnValidatorKey } from "../../../domain/earn/models";
 import { isYieldActionArgRequired } from "../../../domain/earn/yield";
 import type { YieldId } from "../../../domain/identity/identifiers";
+import { widgetConfigAtom } from "../../../features/widget-configuration/index";
 import type { DashboardYieldCategory } from "../../../public-api/types";
 import {
   removeValidator,

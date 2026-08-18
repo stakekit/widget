@@ -18,13 +18,13 @@ import {
   shouldResetBorrowFormForCatalog,
 } from "../../../src/features/borrow/borrow-entry/model/borrow-entry";
 import { currentBorrowEntryAtom } from "../../../src/features/borrow/borrow-entry/state/borrow-entry";
-import { tokenBalancesScanAtom } from "../../../src/features/portfolio/state";
-import { walletScopeAtom } from "../../../src/features/wallet/state";
+import { tokenBalancesScanAtom } from "../../../src/features/portfolio/index";
+import { walletScopeAtom } from "../../../src/features/wallet/index";
 import {
   BorrowMarketsKey,
   borrowMarketsResourceAtom as borrowMarketsAtom,
 } from "../../../src/resources/borrow-markets/borrow-markets";
-import { BorrowResourceSource } from "../../../src/services/api/borrow-resource-source";
+import { BorrowResourceSource } from "../../../src/services/api/resource-sources";
 import { WalletScopeKey } from "../../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
 import {

@@ -2,7 +2,7 @@ import { Effect, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../app/runtime/app-runtime";
-import type { ApiRequestError } from "../services/api/api-errors";
+import type { ApiRequestError } from "../services/api/resource-sources";
 import { RichErrorService } from "../services/errors/rich-error-service";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

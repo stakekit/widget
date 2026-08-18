@@ -6,8 +6,8 @@ import { useTranslation } from "react-i18next";
 import type { YieldPendingActionType } from "../../../../../domain/action/pending-action";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import type { RewardTokenDetails } from "../../../../earn/components";
-import type { PageCta } from "../../../../widget-shell/components";
+import type { RewardTokenDetails } from "../../../../earn/views";
+import type { PageCta } from "../../../../widget-shell/views";
 import {
   useClassicFlowIntake,
   useClassicFlowReview,

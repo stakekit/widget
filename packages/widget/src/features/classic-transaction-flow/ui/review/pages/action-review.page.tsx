@@ -5,12 +5,12 @@ import { ToolTip } from "../../../../../shared/ui/components/tooltip";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../../tracking/state";
+import { useTrackEvent } from "../../../../tracking/index";
 import {
   AnimationPage,
   PageContainer,
   PageCtaButton,
-} from "../../../../widget-shell/components";
+} from "../../../../widget-shell/views";
 import { useActionReview } from "../hooks/use-action-review.hook.ts";
 import ReviewTopSection from "./common-page/components/review-top-section";
 import { pointerStyles } from "./style.css";

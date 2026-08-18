@@ -1,6 +1,6 @@
 import { useOutletContext } from "react-router";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
-import type { useBorrowPosition } from "../../positions/react/use-borrow-positions";
+import type { useBorrowPosition } from "../../positions/index";
 import type {
   BorrowPositionAction,
   getBorrowPositionDetailsModel,

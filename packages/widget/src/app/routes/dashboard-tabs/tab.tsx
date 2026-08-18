@@ -1,10 +1,10 @@
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
+import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../shared/styles/recipe-variant";
 import { Box } from "../../../shared/ui/primitives/box";
 import { pressAnimation } from "../../../shared/ui/primitives/button/styles.css";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { useWidgetConfig } from "../../composition/use-widget-config";
 import { tab, tabBorder, tabContainer, tabText } from "./styles.css";
 
 type Props = {

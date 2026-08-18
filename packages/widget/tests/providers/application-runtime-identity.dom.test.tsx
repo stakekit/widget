@@ -16,12 +16,12 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
-import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
   isActiveClassicTransactionFlowPathAtom,
   startClassicTransactionFlowAtom,
-} from "../../src/features/classic-transaction-flow/state";
-import { walletScopeAtom } from "../../src/features/wallet/state";
+} from "../../src/features/classic-transaction-flow/index";
+import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import { walletScopeAtom } from "../../src/features/wallet/index";
 import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";

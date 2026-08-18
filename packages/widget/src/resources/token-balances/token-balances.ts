@@ -5,8 +5,8 @@ import type { TokenBalanceScanCommand } from "../../domain/finance/models";
 import type {
   ApiRequestError,
   ResponseDecodeError,
-} from "../../services/api/api-errors";
-import { LegacyResourceSource } from "../../services/api/legacy-resource-source";
+} from "../../services/api/resource-sources";
+import { LegacyResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import type { WalletScopeKey } from "../../services/wallet/wallet-scope";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";

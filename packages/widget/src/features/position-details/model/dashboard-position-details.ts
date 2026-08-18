@@ -35,7 +35,7 @@ import {
   formatRewardClaiming,
   formatRewardRateLabel,
   formatRewardTokenLabel,
-} from "../../earn/components";
+} from "../../earn/index";
 
 type DashboardPositionStatusTone = "action" | "claim" | "default";
 

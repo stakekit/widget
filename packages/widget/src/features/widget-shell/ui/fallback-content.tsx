@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../app/composition/use-widget-config";
+import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import { Box } from "../../../shared/ui/primitives/box";
 import { Spinner } from "../../../shared/ui/primitives/spinner";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { ConnectButton } from "../../wallet/ui";
+import { ConnectButton } from "../../wallet/views";
 
 export const FallbackContent = ({
   type,

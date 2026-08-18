@@ -2,8 +2,8 @@ import { useAtomSet } from "@effect/atom-react";
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
-import { useTrackEvent } from "../../../../tracking/state";
-import type { PageCta } from "../../../../widget-shell/components";
+import { useTrackEvent } from "../../../../tracking/index";
+import type { PageCta } from "../../../../widget-shell/views";
 import { useClassicFlowExecution } from "../../../react/classic-flow-route";
 import { useTransactionWorkflow } from "./use-transaction-workflow.hook.ts";
 

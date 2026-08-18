@@ -49,8 +49,10 @@ import { BorrowReviewPage } from "../../src/features/borrow-transaction-flow/ui/
 import { BorrowStepsPage } from "../../src/features/borrow-transaction-flow/ui/steps";
 import { useBorrowExecution } from "../../src/features/borrow-transaction-flow/ui/use-borrow-execution";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
-import { BorrowOperations } from "../../src/services/api/borrow-operations";
-import { YieldOperations } from "../../src/services/api/yield-operations";
+import {
+  BorrowOperations,
+  YieldOperations,
+} from "../../src/services/api/operations";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import {
   makeWidgetNavigation,

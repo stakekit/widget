@@ -1,6 +1,5 @@
-import { Context, Effect, Layer, Schema } from "effect";
+import { Effect, Schema } from "effect";
 import { EarnLegacyTokenOptionsResponse } from "../../domain/earn/models";
-import type { KnownApiYieldType } from "../../domain/earn/yield";
 import {
   type GasBalancesCommand,
   GasTokenBalancesResponse,
@@ -9,7 +8,6 @@ import {
 } from "../../domain/finance/models";
 import { PriceRequest, PriceResponse } from "../../domain/health/models";
 import type { YieldId } from "../../domain/identity/identifiers";
-import type { Network } from "../../domain/network/network";
 import {
   type RewardsAddresses,
   RewardsSummaryRecord,
@@ -22,13 +20,7 @@ import {
   withApiRequestError,
   withResponseDecodeError,
 } from "./api-operation";
-import { ApiTransportService } from "./transport";
-
-export type EarnTokenCatalogRequest = {
-  readonly network?: Network;
-  readonly enter: true;
-  readonly yieldTypes?: ReadonlyArray<KnownApiYieldType>;
-};
+import type { EarnTokenCatalogRequest } from "./resource-sources";
 
 export const makeLegacyResourceSource = (legacyApi: LegacyApi.LegacyApi) => {
   const getEnabledNetworks = Effect.fn(
@@ -120,17 +112,3 @@ export const makeLegacyResourceSource = (legacyApi: LegacyApi.LegacyApi) => {
     scanTokenBalances,
   } as const;
 };
-
-export class LegacyResourceSource extends Context.Service<LegacyResourceSource>()(
-  "stakekit/widget/services/api/LegacyResourceSource",
-  {
-    make: Effect.map(ApiTransportService, ({ resources }) =>
-      makeLegacyResourceSource(resources.legacy)
-    ),
-  }
-) {
-  static readonly layer = Layer.effect(
-    LegacyResourceSource,
-    LegacyResourceSource.make
-  );
-}

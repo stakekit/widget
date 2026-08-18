@@ -12,19 +12,19 @@ import { getYieldActionArg, isERC4626 } from "../../../domain/earn/yield";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
 import { YieldId } from "../../../domain/identity/identifiers";
 import type { PositionBalancesByType } from "../../../domain/portfolio/positions";
-import { PricesKey, pricesAtom } from "../../../resources/token-prices/prices";
+import { PricesKey, pricesAtom } from "../../../resources/token-prices/index";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
-} from "../../../resources/yield-opportunity/provider";
+} from "../../../resources/yield-opportunity/index";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
   positionBalancesByTypeAtom,
-} from "../../../resources/yield-positions/yield-positions";
+} from "../../../resources/yield-positions/index";
 import { config } from "../../../shared/config/widget-defaults";
 import { formatUsd } from "../../../shared/lib/formatters";
-import { getYieldAmountConstraints } from "../../yield-entry/state";
+import { getYieldAmountConstraints } from "../../yield-entry/index";
 import { resolvePositionDetailsExitReceiveTokenSelection } from "../model/exit-receive-token";
 import {
   type PendingActionAmountChange,

@@ -10,14 +10,14 @@ import type {
 import type { TokenAddress } from "../../../../domain/identity/identifiers";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
 import { walletScopeOwnerKey } from "../../../../services/wallet/wallet-scope";
-import { startClassicTransactionFlowAtom } from "../../../classic-transaction-flow/state";
-import { walletConnectionStateAtom } from "../../../wallet/state";
+import { startClassicTransactionFlowAtom } from "../../../classic-transaction-flow/index";
+import { walletConnectionStateAtom } from "../../../wallet/index";
 import {
   CurrentYieldKycGateKey,
   currentYieldKycGateAtom,
   YieldSummaryKey,
   yieldSummaryAtom,
-} from "../../../yield-summary/state";
+} from "../../../yield-summary/index";
 import {
   closedPendingActionModalState,
   closePendingActionModal,

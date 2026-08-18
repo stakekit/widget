@@ -4,7 +4,8 @@ status: accepted
 
 # Classic Transaction Flow owns its route topology
 
-Classic Transaction Flow publishes one route-element factory from its UI entry.
+Classic Transaction Flow publishes one route-element factory from its
+`composition.ts` entry.
 The factory accepts an Enter, Exit, Manage, or Activity Resume mount and returns
 the relative React Router route elements for that journey. Activity Resume has
 explicit Classic and Dashboard presentations because those existing route

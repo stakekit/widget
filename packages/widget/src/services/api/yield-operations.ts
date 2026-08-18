@@ -1,4 +1,4 @@
-import { Context, Effect, Layer } from "effect";
+import { Effect } from "effect";
 import {
   ActionCommand,
   ActionTransaction,
@@ -10,17 +10,7 @@ import {
 } from "../../domain/action/models";
 import type * as YieldApi from "../../generated/api/yield";
 import { decodeApiResponse, encodeApiRequest } from "./api-operation";
-import { ApiTransportService } from "./transport";
-
-export type ActionPreviewRequest =
-  | {
-      readonly intent: "enter" | "exit";
-      readonly command: ActionCommand;
-    }
-  | {
-      readonly intent: "manage";
-      readonly command: ManageActionCommand;
-    };
+import type { ActionPreviewRequest } from "./operations";
 
 export const makeYieldOperations = (yieldApi: YieldApi.YieldApi) => {
   const previewAction = Effect.fn("YieldOperations.previewAction")(function* (
@@ -92,14 +82,3 @@ export const makeYieldOperations = (yieldApi: YieldApi.YieldApi) => {
     submitTransactionHash,
   } as const;
 };
-
-export class YieldOperations extends Context.Service<YieldOperations>()(
-  "stakekit/widget/services/api/YieldOperations",
-  {
-    make: Effect.map(ApiTransportService, ({ operations }) =>
-      makeYieldOperations(operations.yield)
-    ),
-  }
-) {
-  static readonly layer = Layer.effect(YieldOperations, YieldOperations.make);
-}

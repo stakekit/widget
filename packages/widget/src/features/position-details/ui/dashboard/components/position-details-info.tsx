@@ -10,11 +10,11 @@ import {
   RiskRatingBadge,
   riskSummaryActions,
   YieldRiskInfoTooltip,
-} from "../../../../earn/components";
+} from "../../../../earn/views";
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
-} from "../../../../yield-summary/state";
+} from "../../../../yield-summary/index";
 import {
   type DashboardPositionDetailValue,
   type DashboardPositionMetricCard,

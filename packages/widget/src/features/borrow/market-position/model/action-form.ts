@@ -6,7 +6,7 @@ import type {
   BorrowRepayActionContext,
   BorrowWithdrawActionContext,
   BorrowWithdrawTokenOption,
-} from "../../action-preparation/model/action-context";
+} from "../../action-preparation/index";
 import {
   type BorrowActionBlockReason,
   type BorrowActionPreparation,
@@ -14,7 +14,7 @@ import {
   prepareBorrowAction,
   type RepayProjection,
   type WithdrawProjection,
-} from "../../action-preparation/model/prepare";
+} from "../../action-preparation/index";
 
 export type BorrowPositionActionFormError =
   | "repayDebt"

@@ -5,8 +5,8 @@ import { getActionProviderYieldId } from "../../../domain/action/rules";
 import { isBittensorStaking } from "../../../domain/earn/yield";
 import type { Prices } from "../../../domain/health/models";
 import { getFeesInUSD, getGasFeeInUSD } from "../../../shared/lib/formatters";
-import { getYieldEntryEstimatedRewards } from "../../yield-entry/state";
-import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/state";
+import { getYieldEntryEstimatedRewards } from "../../yield-entry/index";
+import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
 import type { ClassicTransactionFlowIntake } from "../model/classic-transaction-flow";
 
 type ClassicFlowEnterIntake = Extract<

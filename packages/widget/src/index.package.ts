@@ -1,6 +1,6 @@
 export { SKApp } from "./App";
 export { TrackingContextProvider } from "./app/composition/providers/tracking";
-export { HelpModal } from "./features/preferences/ui";
+export { HelpModal } from "./features/preferences/views";
 export type {
   ActionMeta,
   BittensorTx,

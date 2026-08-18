@@ -15,17 +15,17 @@ import { PlusIcon } from "../../../../../../shared/ui/primitives/icons/plus";
 import { XIcon } from "../../../../../../shared/ui/primitives/icons/x-icon";
 import { Image } from "../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import type { YieldSummaryProvider } from "../../../../../yield-summary/state";
-import { useEarnEntry } from "../../../../react/use-earn-facades";
-import { useSelectValidator } from "../../../classic/earn-page/components/select-validator-section/use-select-validator";
-import { SelectValidator } from "../../../components/select-validator";
+import type { YieldSummaryProvider } from "../../../../../yield-summary/index";
 import {
   formatCommission,
   formatProviderStatus,
   formatProviderTvl,
   formatProviderWebsite,
   formatProviderWebsiteHref,
-} from "../earn-details-formatters";
+} from "../../../../model/earn-details-formatters";
+import { useEarnEntry } from "../../../../react/use-earn-facades";
+import { useSelectValidator } from "../../../classic/earn-page/components/select-validator-section/use-select-validator";
+import { SelectValidator } from "../../../components/select-validator";
 import * as styles from "../styles.css";
 
 type ProviderDetailsItem = YieldSummaryProvider;

@@ -10,7 +10,7 @@ import * as LegacyApi from "../../generated/api/legacy";
 import * as YieldApi from "../../generated/api/yield";
 import { WidgetConfigService } from "../config/widget-config";
 import { RichErrorService } from "../errors/rich-error-service";
-import { GeoBlockService } from "./geo-block-state";
+import { GeoBlockService } from "../geoblocking";
 
 type ApiTransport = {
   readonly operations: {

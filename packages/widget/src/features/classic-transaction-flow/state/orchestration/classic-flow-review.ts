@@ -14,7 +14,7 @@ import type {
   ManageActionCommand,
   YieldAction,
 } from "../../../../domain/action/models";
-import { YieldOperations } from "../../../../services/api/yield-operations";
+import { YieldOperations } from "../../../../services/api/operations";
 import type { WidgetNavigationError } from "../../../../services/navigation/widget-navigation";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";

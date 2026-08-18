@@ -10,16 +10,16 @@ import type { Network } from "../../domain/network/network";
 import type {
   ApiRequestError,
   ResponseDecodeError,
-} from "../../services/api/api-errors";
-import { YieldResourceSource } from "../../services/api/yield-resource-source";
+} from "../../services/api/resource-sources";
+import { YieldResourceSource } from "../../services/api/resource-sources";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import {
   API_MAX_PAGE_SIZE,
   loadAllPagesByIdChunks,
 } from "../../shared/effect/pagination";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
-import type { YieldProviderError } from "../yield-provider/yield-provider";
-import { yieldProviderResourceAtom } from "../yield-provider/yield-provider";
+import type { YieldProviderError } from "../yield-provider/index";
+import { yieldProviderResourceAtom } from "../yield-provider/index";
 
 const CONCURRENCY = 5;
 

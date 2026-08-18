@@ -2,11 +2,11 @@ import { useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
 import { getActionProviderYieldId } from "../../../../../domain/action/rules";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import { useTrackPage } from "../../../../tracking/state";
+import { useTrackPage } from "../../../../tracking/index";
 import {
   YieldSummaryKey,
   yieldSummaryAtom,
-} from "../../../../yield-summary/state";
+} from "../../../../yield-summary/index";
 import { useClassicFlowIntake } from "../../../react/classic-flow-route";
 import { CompletePage } from "./common.page.tsx";
 

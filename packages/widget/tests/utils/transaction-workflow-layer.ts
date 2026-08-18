@@ -1,6 +1,8 @@
 import { Layer } from "effect";
-import { BorrowOperations } from "../../src/services/api/borrow-operations";
-import { YieldOperations } from "../../src/services/api/yield-operations";
+import {
+  BorrowOperations,
+  YieldOperations,
+} from "../../src/services/api/operations";
 import { WidgetDomainEvents } from "../../src/services/events/widget-domain-events";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";

@@ -1,10 +1,6 @@
 import BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import {
-  widgetBootstrapSnapshotAtom,
-  widgetConfigAtom,
-} from "../../../../app/runtime/widget-config";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
 import type { EarnBalance } from "../../../../domain/earn/models";
@@ -16,17 +12,21 @@ import {
   toPositionsData,
 } from "../../../../domain/portfolio/positions";
 import type { YieldBalanceLabel } from "../../../../domain/portfolio/token-balance";
+import {
+  widgetBootstrapSnapshotAtom,
+  widgetConfigAtom,
+} from "../../../../features/widget-configuration/index";
 import type { DashboardYieldCategory } from "../../../../public-api/types";
 import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom,
-} from "../../../../resources/borrow-positions/borrow-positions";
+} from "../../../../resources/borrow-positions/index";
 import {
   YieldDirectoryKey,
   yieldDirectoryResourceAtom,
-} from "../../../../resources/yield-directory/yield-directory";
+} from "../../../../resources/yield-directory/index";
 import { defaultFormattedNumber } from "../../../../shared/lib/number-format";
-import { walletScopeAtom } from "../../../wallet/state";
+import { walletScopeAtom } from "../../../wallet/index";
 import { yieldBalancesScanAtom } from "./yield-balances";
 
 export type PositionItem = {

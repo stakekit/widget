@@ -1,7 +1,10 @@
 import { Context, Effect, Layer, Stream, SubscriptionRef } from "effect";
-import type { ApiRequestError, RichError } from "../api/api-errors";
-
 import { WidgetConfigService } from "../config/widget-config";
+import type { RichError } from "./rich-error";
+
+type PresentableRequestError = object & {
+  readonly richError: RichError | null;
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -19,7 +22,7 @@ export class RichErrorService extends Context.Service<RichErrorService>()(
       const widgetConfig = yield* WidgetConfigService;
       const api = yield* widgetConfig.current;
       const current = yield* SubscriptionRef.make<RichError | null>(null);
-      const presentedRequestErrors = new WeakSet<ApiRequestError>();
+      const presentedRequestErrors = new WeakSet<PresentableRequestError>();
       const allowedUrls = [api.baseUrl, api.borrowApiUrl, api.yieldsApiUrl];
 
       const publishResponse = ({
@@ -41,7 +44,7 @@ export class RichErrorService extends Context.Service<RichErrorService>()(
         return SubscriptionRef.set(current, data);
       };
 
-      const presentRequestError = (error: ApiRequestError) =>
+      const presentRequestError = (error: PresentableRequestError) =>
         Effect.suspend(() => {
           if (!error.richError || presentedRequestErrors.has(error)) {
             return Effect.void;

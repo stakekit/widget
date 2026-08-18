@@ -1,5 +1,5 @@
 import { Data } from "effect";
-import { ActivityHistoryKey } from "../../../../resources/activity-history/activity-history";
+import { ActivityHistoryKey } from "../../../../resources/activity-history/index";
 import type { WalletScopeKey } from "../../../../services/wallet/wallet-scope";
 import {
   type ActivityFilter,

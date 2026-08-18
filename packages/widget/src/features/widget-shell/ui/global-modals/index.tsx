@@ -3,8 +3,8 @@ import {
   useGeoBlock,
   useRegionCodeName,
   useShowTOS,
-} from "../../../preferences/state";
-import { HelpModal, TosModal } from "../../../preferences/ui";
+} from "../../../preferences/index";
+import { HelpModal, TosModal } from "../../../preferences/views";
 import { RichErrorModal } from "../rich-error-modal";
 
 export const GlobalModals = () => {

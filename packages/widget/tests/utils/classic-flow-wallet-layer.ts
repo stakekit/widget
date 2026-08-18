@@ -1,6 +1,6 @@
 import { Effect, Layer } from "effect";
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
-import { YieldOperations } from "../../src/services/api/yield-operations";
+import { YieldOperations } from "../../src/services/api/operations";
 import {
   WidgetNavigation,
   type WidgetNavigationService,

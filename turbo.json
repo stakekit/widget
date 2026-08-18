@@ -26,6 +26,17 @@
         "package.json"
       ]
     },
+    "check-hygiene": {
+      "inputs": [
+        "src/**",
+        "scripts/**",
+        "tests/**",
+        "knip.json",
+        "tsconfig*.json",
+        "vite/**/*.ts",
+        "package.json"
+      ]
+    },
     "//#lint:ast": {
       "inputs": [
         "packages/widget/src/**/*.{ts,tsx}",

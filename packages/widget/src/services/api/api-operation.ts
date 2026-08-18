@@ -1,10 +1,10 @@
 import { Effect, Option, Schema } from "effect";
+import { RichError } from "../errors/rich-error";
 import {
   ApiRequestError,
   InputValidationError,
   ResponseDecodeError,
-  RichError,
-} from "./api-errors";
+} from "./resource-sources";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;

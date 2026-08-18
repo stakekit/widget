@@ -7,7 +7,7 @@ import {
   walletConfigResultAtom,
   walletConnectionStateAtom,
   walletScopeAtom,
-} from "../../wallet/state";
+} from "../../wallet/index";
 import type { ActivityActionItem } from "../model/activity-action";
 import { getActivityActionTokenSymbol } from "../model/activity-action-list-item";
 import type { ActivityFilter, ActivityFilterOption } from "../model/filters";

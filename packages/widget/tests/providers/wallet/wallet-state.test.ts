@@ -12,8 +12,6 @@ import type { Chain } from "viem";
 import { mainnet, optimism } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
-import { LegacyResourceSource } from "../../../src/services/api/legacy-resource-source";
-import { YieldResourceSource } from "../../../src/services/api/yield-resource-source";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
@@ -27,6 +25,7 @@ import { WalletEnvironment } from "../../../src/services/wallet/internal/platfor
 import { makeWalletStateRuntime } from "../../../src/services/wallet/internal/runtime/state";
 import type { WalletController } from "../../../src/services/wallet/internal/runtime/wagmi-config";
 import { WalletStorageCleanup } from "../../../src/services/wallet/internal/runtime/wallet-storage-cleanup";
+import { WalletBootstrapSource } from "../../../src/services/wallet/wallet-bootstrap-source";
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
 import type { WalletCoreState } from "../../../src/services/wallet/wallet-state";
@@ -139,12 +138,10 @@ describe("WalletService authoritative Wallet State", () => {
       Layer.provide(
         Layer.mergeAll(
           configLayer,
-          Layer.succeed(LegacyResourceSource, {
+          Layer.succeed(WalletBootstrapSource, {
             getEnabledNetworks: () => Effect.succeed(new Set(["ethereum"])),
-          } as never),
-          Layer.succeed(YieldResourceSource, {
             getOpportunity: () => Effect.die("unused"),
-          } as never),
+          }),
           Layer.succeed(
             WalletEnvironment,
             WalletEnvironment.of({

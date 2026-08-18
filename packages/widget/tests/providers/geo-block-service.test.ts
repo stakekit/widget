@@ -1,6 +1,6 @@
 import { Effect, Option, Stream } from "effect";
 import { describe, expect, it } from "vitest";
-import { GeoBlockService } from "../../src/services/api/geo-block-state";
+import { GeoBlockService } from "../../src/services/geoblocking";
 
 const readGeneration = (response?: {
   readonly data: unknown;

@@ -12,9 +12,11 @@ import {
   SingleYieldBalancesKey,
   singleYieldBalancesResourceAtom,
 } from "../../src/resources/single-yield-balances/single-yield-balances";
-import { ApiRequestError } from "../../src/services/api/api-errors";
-import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
-import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
+import {
+  ApiRequestError,
+  LegacyResourceSource,
+  YieldResourceSource,
+} from "../../src/services/api/resource-sources";
 import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiYieldFixture } from "../fixtures";
 

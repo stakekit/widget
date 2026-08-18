@@ -5,9 +5,9 @@ import type { YieldId } from "../../../domain/identity/identifiers";
 import {
   enrichedYieldDirectoryResourceAtom,
   YieldDirectoryKey,
-} from "../../../resources/yield-directory/yield-directory";
+} from "../../../resources/yield-directory/index";
 import { isSupportedChain } from "../../../services/wallet/supported-chains";
-import { walletConnectedNetworkAtom } from "../../wallet/state";
+import { walletConnectedNetworkAtom } from "../../wallet/index";
 
 export class MultiYieldsKey extends Data.Class<{
   readonly yieldIds: ReadonlyArray<YieldId>;

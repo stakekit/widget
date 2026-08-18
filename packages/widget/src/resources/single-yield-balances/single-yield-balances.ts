@@ -5,8 +5,8 @@ import type { WalletAddress, YieldId } from "../../domain/identity/identifiers";
 import type {
   ApiRequestError,
   ResponseDecodeError,
-} from "../../services/api/api-errors";
-import { YieldResourceSource } from "../../services/api/yield-resource-source";
+} from "../../services/api/resource-sources";
+import { YieldResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";

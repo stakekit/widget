@@ -4,14 +4,14 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
-} from "../../../../../resources/yield-positions/yield-positions";
+} from "../../../../../resources/yield-positions/index";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import { useUnstakeOrPendingActionParams } from "../../../../position-details/state";
-import { useTrackPage } from "../../../../tracking/state";
+import { useUnstakeOrPendingActionParams } from "../../../../position-details/index";
+import { useTrackPage } from "../../../../tracking/index";
 import {
   YieldSummaryKey,
   yieldSummaryAtom,
-} from "../../../../yield-summary/state";
+} from "../../../../yield-summary/index";
 import { useClassicFlowIntake } from "../../../react/classic-flow-route";
 import { CompletePage } from "./common.page.tsx";
 

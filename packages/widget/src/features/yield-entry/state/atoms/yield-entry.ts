@@ -8,8 +8,8 @@ import type {
 import {
   type ClassicTransactionFlowEnterMount,
   startClassicTransactionFlowAtom,
-} from "../../../classic-transaction-flow/state";
-import type { YieldSummaryProvider } from "../../../yield-summary/state";
+} from "../../../classic-transaction-flow/index";
+import type { YieldSummaryProvider } from "../../../yield-summary/index";
 import {
   projectYieldEntry,
   type YieldEntryProjectionInput,

@@ -1,16 +1,16 @@
 import { Data, Array as EArray, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetConfigAtom } from "../../../app/runtime/widget-config";
 import type { EarnValidator } from "../../../domain/earn/models";
 import { filterValidators } from "../../../domain/earn/yield";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import type { Network } from "../../../domain/network/network";
+import { widgetConfigAtom } from "../../../features/widget-configuration/index";
 import {
   type ValidatorsError,
   ValidatorsKey,
   validatorsPullAtom,
-} from "../../../resources/validator-directory/validator-directory";
+} from "../../../resources/validator-directory/index";
 import {
   type PullPage,
   withPullPageDone,

@@ -17,7 +17,7 @@ import { formatNumber } from "../../../../shared/lib/number-format";
 import type {
   BorrowPositionPendingActionContext,
   BorrowWithdrawTokenOption,
-} from "../../action-preparation/model/action-context";
+} from "../../action-preparation/index";
 
 type BorrowPositionMetricCard = {
   readonly id: string;

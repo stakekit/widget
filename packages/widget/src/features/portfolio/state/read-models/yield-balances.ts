@@ -3,8 +3,8 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import {
   refreshYieldPositionsAtom,
   yieldPositionsResourceAtom,
-} from "../../../../resources/yield-positions/yield-positions";
-import { walletScopeAtom } from "../../../wallet/state";
+} from "../../../../resources/yield-positions/index";
+import { walletScopeAtom } from "../../../wallet/index";
 
 const yieldBalancesScanResourceAtom = Atom.readable((get) => {
   const scope = get(walletScopeAtom);

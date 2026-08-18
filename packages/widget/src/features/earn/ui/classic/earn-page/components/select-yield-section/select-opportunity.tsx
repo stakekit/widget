@@ -2,11 +2,11 @@ import { Trigger } from "@radix-ui/react-dialog";
 import clsx from "clsx";
 import { Array as EArray, Option } from "effect";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../../../app/composition/use-widget-config";
 import {
   getYieldOutputToken,
   getYieldTypeLabels,
 } from "../../../../../../../domain/earn/yield";
+import { useWidgetConfig } from "../../../../../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
 import {
   SelectModal,
@@ -19,7 +19,7 @@ import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { pressAnimation } from "../../../../../../../shared/ui/primitives/button/styles.css";
 import { CaretDownIcon } from "../../../../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../../../../tracking/state";
+import { useTrackEvent } from "../../../../../../tracking/index";
 import { useEarnYieldSelection } from "../../../../../react/use-earn-facades";
 import { SelectOpportunityListItem } from "../../../../components/select-opportunity-list-item";
 import { selectOpportunityButton } from "./styles.css";

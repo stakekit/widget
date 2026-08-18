@@ -15,28 +15,10 @@ Production code is organized by ownership rather than by React mechanism:
   persistence, tracking, translation, widget navigation, wallet integration,
   workflow execution, and borrow execution.
 - `src/features/<feature>` owns feature state, contextual read models, command
-  atoms, React adapters, and screens. A feature publishes cross-feature
-  collaboration only through root entry files, of which there are exactly three
-  kinds, and everything else it contains is private — subdirectory modules and
-  other root-level modules alike, so a module at the feature root is not a way
-  to escape the boundary:
-  - `state.ts` — the headless interface: view atoms, command atoms, pure
-    projections and constructors, and zero-logic React adapter hooks over them.
-  - `ui.ts` — rendered views the feature owns: pages, routes, and layouts.
-  - `components.ts` — presentational components the feature publishes for reuse
-    by other features.
+  atoms, React adapters, and screens. Each Feature is an owned Module in the
+  declared Feature Module Collection; its implementation is private and its
+  finite interfaces are described below.
 
-  A feature only creates the entries it actually shares; an entry with no
-  cross-feature consumer is deleted rather than kept empty. A small flat feature
-  keeps its implementation in `state/` behind `state.ts`; a single-module feature
-  whose one module is the entire headless interface may keep that implementation
-  in `state.ts` itself. Migrated orchestration-heavy features separate
-  deterministic `model/`, Atom-independent `state/orchestration/`, and reactive
-  `state/atoms/` internals. Keep the barrels narrow. A root entry that re-exports a feature's whole page graph creates
-  import cycles and drags unrelated modules into consumers' builds, so publish
-  the collaboration contract rather than the implementation. Build-time
-  `*.css.ts` modules are exempt: vanilla-extract evaluates them outside the
-  React module graph, so they import style modules directly.
 - `src/domain` owns framework-independent schemas, identifiers, and business
   rules. Approved domain schema modules may adapt generated schemas, but domain
   code must not depend on React, services, features, or `shared`. `shared`
@@ -46,6 +28,47 @@ Production code is organized by ownership rather than by React mechanism:
   UI primitives, including the widget's UI kit in `src/shared/ui`. Shared
   modules must not depend on app, services, or features. Kit components are
   imported directly by path; `shared` publishes no barrels.
+
+### Module interfaces
+
+ADR-0023 replaced the repeated per-Feature entry convention with a generic
+Module Collection policy.
+
+Production dependencies are default-deny across App, Feature, Resource,
+Service, Domain, Shared, Generated, and Public API layers. A declared Module
+Collection discovers every current and future child Module without listing its
+names. Same-Module imports may reach implementation directly; every dependency
+from outside the owner must use an interface allowed for that Module Kind.
+
+A Feature Module may publish only the interfaces it actually needs:
+
+- `index.ts` — non-rendering models, Atoms, commands, published types, and
+  zero-logic React adapter hooks.
+- `composition.ts` — routes, screens, layouts, providers, guards, and global
+  mounts consumed by application or enclosing-Module composition.
+- `views.ts` — rendered elements and rendering-only hooks intentionally reusable
+  by the application, peer Modules, or an outbound package entrypoint.
+- `runtime.ts` — Effect modules and Layers consumed only by application or
+  enclosing-Module runtime assembly.
+
+A Resource Module is each immediate child of `src/resources` and publishes one
+required `index.ts`. It publishes no composition, view, or runtime interface.
+Nested Module Collections use the same interface roles. An enclosing Module
+composes a child interface behind an owner-defined facade or composer; it does
+not deep-import the child or transitively publish child-owned symbols.
+
+Interface files may define behavior or explicitly re-export owned symbols.
+Wildcard and namespace-wildcard exports are forbidden. A Module's own
+implementation does not import through its interfaces, and type-only and
+dynamic imports follow the same ownership and layer rules as value imports.
+The singular API Module is the deliberate internal composition case: its
+`runtime.ts` assembles the capability Tags declared by its audience interfaces,
+while the transport and capability implementations remain private.
+Tests may deep-import implementation. Cross-Module style implementation access
+is allowed only from one `*.css.ts` module to another; ordinary TypeScript and
+TSX callers use an interface.
+All other exceptions are exact, named importer-to-target rules with a rationale
+and, when temporary, a removal condition.
 
 The retired top-level `hooks`, `providers`, `pages`, `pages-dashboard`,
 `components`, `common`, `atoms`, and `borrow` ownership buckets must not be
@@ -59,29 +82,44 @@ The intended read direction is:
 
 `public entry -> app composition/routes -> feature public entries -> resources -> app runtime -> services -> domain/shared`
 
-Feature commands and workflows may use operation capability services through
-the app runtime, but feature read models do not bypass Authoritative Resources
+Feature orchestration and workflows may use operation capability services
+through the app runtime, but feature read models and command Atoms do not bypass Authoritative Resources
 to call read-side API capabilities directly. The owning operation importers are
 the Classic and Borrow Flow Review orchestration modules, and the Transaction
-Workflow runtime. Wallet Bootstrap is the only read-source exception: it
-acquires enabled networks and an optional initial Yield while constructing the
-wallet runtime, before feature resources are available.
+Workflow runtime. Wallet Bootstrap depends on its own `WalletBootstrapSource`
+port. API runtime adapts the required enabled-network and initial-Yield reads to
+that port, so Wallet does not import the Resource Source interface.
 
-Feature-to-feature collaboration must use an explicit supported entrypoint;
-deep imports into another feature are forbidden and rev-dep fails the build on
-them. Importing a feature's root module that is not one of its three entries
-counts as a deep import and fails the same check. Tests may deep-import feature
+Feature-to-feature collaboration must use an allowed Module interface;
+deep imports into another Feature fail the architecture check. Importing a
+Feature root module that is not one of its four interface kinds counts as a
+deep import and fails the same check. Tests may deep-import Feature
 internals, since they assert on internal behaviour by design. Resources may depend on the
 app runtime, resource-source capability services, domain, shared code, and
 public types, but never on features or React. Services may depend on other
 services, domain, shared code, and generated clients where approved, but never
-on resources, React, or features. Rev-dep enforces module direction,
-public-entry usage, resource-source importer restrictions, cycles, unresolved
-imports, and orphaned modules. Biome confines generated API imports, rejects
-React dependencies in Authoritative Resources, and blocks retired architecture
-paths. Application runtime composition and tests are permitted to construct
-capability layers; approved domain schema adapters may import generated schema
+on resources, React, or features. The executable architecture policy enforces
+module direction, interface usage, resource-source importer restrictions,
+cycles, and unresolved imports. Knip detects unused files, exports, types, and
+dependencies.
+Dependency-cruiser keeps generated runtime clients private to the API Module.
+Biome rejects React dependencies in Authoritative Resources and limits barrel
+locations. The API
+`runtime.ts` interface is the only production Layer assembly seam for API
+capabilities; approved domain schema adapters may import generated schema
 artifacts, but generated runtime clients remain private to `services/api`.
+
+The executable dependency policy in
+`scripts/dependency-cruiser.config.mts` owns the layer matrix, Module
+interfaces, privileged importers, cycles, and resolution. Knip's ordinary and
+production modes own unused files, exports, types, packages, and production
+reachability. The required Resource `index.ts` remains a Module contract:
+dependency-cruiser rejects external deep imports, while Knip rejects
+unreachable Resource implementations. Ast-grep rejects wildcard exports from
+Module interfaces. The dependency scan is restricted to production `src`; it
+does not test whether Biome or ast-grep configuration mirrors the policy.
+Rev-dep and its repeated
+per-Feature configuration were removed after the ADR-0023 cutover.
 
 ### The shared UI kit and its inverted configuration
 
@@ -96,25 +134,26 @@ that `shared/ui` itself declares, and
 from the read-only Widget Configuration projection. The dependency therefore points from app into shared, and
 the `shared` boundary stays limited to `shared` and `domain`.
 
-A feature's `components.ts` publishes only components that carry that feature's
-domain meaning. `widget-shell/components.ts` publishes shell chrome — page
+A Feature's `views.ts` publishes rendered elements and rendering-only hooks
+that carry that Feature's domain meaning. `widget-shell/views.ts` publishes shell chrome — page
 container, page CTA, back button, tab and layout styles, maintenance screen —
-and `earn/components.ts` publishes yield, validator, and KYC presentation typed
+and `earn/views.ts` publishes yield, validator, and KYC presentation typed
 on those domain models. A generic component that acquires no domain meaning
 belongs in the kit, not behind a feature entry.
 
 ## Effect services
 
-Each Effect service keeps its service definition and common layer builders
-colocated. Alternative implementations are additional layer builders on the
-service or layers defined next to the integrating adapter; contract and default
-implementation are not split into files without a concrete reason.
+Each Effect service normally keeps its service definition and common layer
+builders colocated. Alternative implementations are additional layer builders
+on the service or layers defined next to the integrating adapter. The singular
+API Module is the concrete exception: audience interfaces own explicit
+capability contracts and `runtime.ts` privately assembles their implementations.
 
 Backend integration is exposed through coarse capability ports rather than one
 broad service or one port per endpoint. Resource-source capabilities contain
 cacheable reads and may be consumed only by `src/resources`; operation
 capabilities contain mutations and transient execution operations and may be
-consumed by feature command atoms or deeper workflow operation modules. A
+consumed only by Feature orchestration or Transaction Workflow internals. A
 backend without mutations does not receive an empty operation capability for
 symmetry.
 
@@ -197,15 +236,14 @@ binding is its only update adapter; read-only Atoms project current
 configuration for React and reactive feature reads. Consumer projections may
 select, regroup, or index canonical values but never apply configuration
 defaults or canonicalization.
-`app-runtime.ts` consumes that router context and composes bootstrap
-configuration, focused Yield, Legacy, and Borrow capability ports, rich errors,
+`app-runtime.ts` consumes that router context and composes the API Module's
+single runtime Layer, bootstrap configuration, rich errors,
 persistence, tracking, `WidgetTranslation`, `WidgetNavigation`, wallet-modal
 commands, and one `WidgetDomainEvents` service. The derived `wallet-runtime.ts` receives the application context and adds its scoped
 wallet, transaction-workflow, Classic Transaction Flow,
-Borrow Transaction Flow, and Yield Entry submission services. It is the sole privileged importer
-of those private feature orchestration services; exact-file rev-dep exceptions
-permit those composition edges without making the services public feature
-entries.
+Borrow Transaction Flow, and Yield Entry submission services. It consumes the
+three Feature `runtime.ts` interfaces without exposing their private
+orchestration modules.
 Borrow configuration is optional at construction time; invoking an unavailable
 borrow capability produces the typed error.
 
@@ -448,12 +486,12 @@ mount-animation state are registry-scoped atoms or models derived from atoms.
 Transaction execution is split by ownership:
 
 - `features/classic-transaction-flow` owns the Classic Review, Steps, and
-  Complete journey and its Flow Session. Its UI entry publishes one route
+  Complete journey and its Flow Session. Its `composition.ts` entry publishes one route
   module that owns the relative phase paths, intake guard, Review and Execution
   scope topology, and pages for each Classic journey mount. The app chooses the
   Classic or Dashboard shell, parent mount path, and app-level guards.
 - `features/borrow` contains peer Borrow Entry and Market Position journeys.
-  Its UI entry publishes one route factory for each; the journeys may depend on
+  Its `composition.ts` entry publishes one route factory for each; the journeys may depend on
   supporting Borrow modules but never import each other.
 - `features/borrow-transaction-flow` owns the Borrow Review, Steps, and Complete
   journey and its Flow Session. Each Borrow journey starts it through immutable

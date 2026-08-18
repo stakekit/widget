@@ -36,12 +36,12 @@ import {
   TokenOptionsKey,
 } from "../../src/features/earn/state/earn-selection/catalog/keys";
 import { activityHistoryPullAtom } from "../../src/resources/activity-history/activity-history";
-import { BorrowResourceSource } from "../../src/services/api/borrow-resource-source";
-import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
+import type { YieldDirectoryRequest } from "../../src/services/api/resource-sources";
 import {
-  type YieldDirectoryRequest,
+  BorrowResourceSource,
+  LegacyResourceSource,
   YieldResourceSource,
-} from "../../src/services/api/yield-resource-source";
+} from "../../src/services/api/resource-sources";
 import {
   ActivityInvalidationKey,
   resourceInvalidationKeys,

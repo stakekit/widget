@@ -12,8 +12,8 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import { PreferredIcon } from "../../../../../shared/ui/primitives/icons/preferred";
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useMetaInfo } from "../../../../earn/components";
-import type { YieldSummaryProvider as ProviderDetailsModel } from "../../../../yield-summary/state";
+import { useMetaInfo } from "../../../../earn/views";
+import type { YieldSummaryProvider as ProviderDetailsModel } from "../../../../yield-summary/index";
 import { inactiveContainer, noWrap } from "../styles.css";
 
 export const ProviderDetails = ({

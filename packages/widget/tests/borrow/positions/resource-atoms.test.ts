@@ -16,7 +16,7 @@ import {
   borrowPositionAtom,
   currentBorrowPositionsAtom,
 } from "../../../src/features/borrow/positions/state/positions";
-import { walletScopeAtom } from "../../../src/features/wallet/state";
+import { walletScopeAtom } from "../../../src/features/wallet/index";
 import { BorrowResourceError as BorrowAtomError } from "../../../src/resources/borrow/borrow-resource-error";
 import { borrowIntegrationsResourceAtom as borrowIntegrationsAtom } from "../../../src/resources/borrow-integrations/borrow-integrations";
 import {
@@ -27,10 +27,8 @@ import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom as borrowPositionsAtom,
 } from "../../../src/resources/borrow-positions/borrow-positions";
-import {
-  BorrowResourceSource,
-  makeBorrowResourceSource,
-} from "../../../src/services/api/borrow-resource-source";
+import { makeBorrowResourceSource } from "../../../src/services/api/borrow-resource-source";
+import { BorrowResourceSource } from "../../../src/services/api/resource-sources";
 import { WalletScopeKey } from "../../../src/services/wallet/wallet-scope";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 

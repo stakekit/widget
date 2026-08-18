@@ -5,7 +5,7 @@ import {
   type RouteObject,
 } from "react-router";
 import { describe, expect, it, vi } from "vitest";
-import { createClassicFlowRoutes } from "../../src/features/classic-transaction-flow/ui";
+import { createClassicFlowRoutes } from "../../src/features/classic-transaction-flow/composition";
 
 vi.mock(
   "../../src/features/classic-transaction-flow/react/classic-flow-route",

@@ -9,11 +9,11 @@ import {
   EarnTokenCatalogKey,
   earnTokenCatalogResourceAtom,
 } from "../../src/resources/earn-token-catalog/earn-token-catalog";
-import { ApiRequestError } from "../../src/services/api/api-errors";
+import type { EarnTokenCatalogRequest } from "../../src/services/api/resource-sources";
 import {
-  type EarnTokenCatalogRequest,
+  ApiRequestError,
   LegacyResourceSource,
-} from "../../src/services/api/legacy-resource-source";
+} from "../../src/services/api/resource-sources";
 import { yieldApiYieldFixture } from "../fixtures";
 
 const yieldModel = yieldApiYieldFixture();

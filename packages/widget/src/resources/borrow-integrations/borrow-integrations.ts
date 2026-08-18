@@ -1,8 +1,8 @@
 import { Duration, Effect } from "effect";
 import { appRuntime } from "../../app/runtime/app-runtime";
-import { BorrowResourceSource } from "../../services/api/borrow-resource-source";
+import { BorrowResourceSource } from "../../services/api/resource-sources";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
-import { withBorrowResourceError } from "../borrow/borrow-resource-error";
+import { withBorrowResourceError } from "../borrow/index";
 import { makePresentableResource } from "../resource-failure-presentation";
 
 const borrowCatalogPolicy = withApiResourcePolicy({

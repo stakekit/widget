@@ -57,37 +57,61 @@ everything else runs in Node.
 problem, not a config problem to silence. Do not add blanket suppressions —
 `lint:ast` fails on suppress-all and on unused ones.
 
-- `check-hygiene` runs `rev-dep` against `.rev-dep.config.jsonc` (module
-  boundaries, feature-internal imports, cycles, orphans, unused exports) plus
-  `scripts/check-test-only-exports.ts`. Run it whenever you move, rename, add,
-  or delete a module — plain `lint` will not catch these.
-- Biome confines generated API imports, rejects React in `domain`/`resources`/`services`,
-  and allows barrel files only at the declared public entries.
+- `check-hygiene` delegates to the widget-owned dependency-cruiser policy and
+  Knip's ordinary and production analyses. Run it whenever you move, rename,
+  add, or delete a module — plain `lint` will not catch dependency-graph or
+  reachability problems.
+- Dependency-cruiser keeps generated runtime clients private to `services/api`.
+  Biome rejects React in `domain`/`resources`/`services` and allows barrel files
+  only at the declared public entries.
 - ast-grep (`tools/ast-grep/rules`) catches ad hoc Atom runtimes, direct Effect
-  runtime execution, native `Date`, global `fetch`, and throws inside Effect generators.
+  runtime execution, native `Date`, global `fetch`, throws inside Effect
+  generators, and wildcard exports from Module interfaces.
 
-## Feature module layout
+## Module interfaces
 
-Each `src/features/<name>` publishes up to three root entries; **everything
-else is private**, whether nested or at the feature root.
+Each `src/features/<name>` publishes only the root interfaces it needs;
+**everything else is private**, whether nested or at the Feature root.
 
-- `state.ts` — headless entry: view Atoms, command Atoms, pure projections, published types, and zero-logic React adapter hooks.
-- `ui.ts` — rendered views the feature owns: routes, pages, layouts.
-- `components.ts` — presentational components published for reuse.
+- `index.ts` — non-rendering models, Atoms, commands, published types, and
+  zero-logic React adapter hooks.
+- `composition.ts` — routes, screens, layouts, providers, guards, and global
+  mounts for application or enclosing-Module composition.
+- `views.ts` — rendered elements and rendering-only hooks intentionally reusable
+  by the application, peer Modules, or an outbound package entrypoint.
+- `runtime.ts` — Effect modules and Layers for application or enclosing-Module
+  runtime assembly.
 - Internals live in `model/` (pure TS), `state/` (Effect + Atom), `react/` (hook adapters), `ui/` (components and pages). Migrated orchestration-heavy features split `state/orchestration/` (Atom-independent Effect modules) from `state/atoms/` (reactive and lifecycle adapters).
 
-Adapter hooks go in `state.ts`, not `ui.ts` — a hook that only reads an Atom is
-part of the headless interface, and routing it through the page barrel drags the
-whole page graph into consumers and creates import cycles.
+Adapter hooks go in `index.ts`, not `composition.ts` or `views.ts` — a hook
+that only reads an Atom is part of the headless interface, and routing it
+through rendered entries drags their page graphs into consumers.
 
 Keep barrels narrow: publish the collaboration contract, not the machinery.
 Create only the entries a feature actually shares, and delete ones with no
 consumer. Adding a root module is not a way to publish something. Test-only
 machinery stays private and is deep-imported by the test.
 
-Biome's `noBarrelFile` is whitelisted for exactly these three filenames, so they
-need no suppression comment and no fourth entry name will work. New features
-also need a `restrictedDirectImportersDetection` entry in `.rev-dep.config.jsonc`.
+Each immediate child of `src/resources` is a Resource Module and must publish
+`index.ts`. Nested Module Collections follow the same interface roles; their
+enclosing Module consumes the child interface and defines its own facade or
+composer instead of re-exporting child-owned symbols.
+
+`src/services/api` is a singular owned Module. It publishes
+`resource-sources.ts` to Resource Modules, `operations.ts` to Feature
+orchestration and Transaction Workflow internals, and `runtime.ts` to
+application runtime assembly. Transport, generated clients, and capability
+implementations are private. `runtime.ts` owns the single composed API Layer;
+there is no API `index.ts`.
+
+Biome's `noBarrelFile` is whitelisted only for declared interfaces. Interfaces
+use explicit named exports, never `export *` or `export * as`; implementation
+imports directly within its owner, while outside value, type-only, and dynamic
+dependencies use an allowed interface. Tests retain deep-import access, and
+cross-Module style implementation imports are allowed only from one `*.css.ts`
+module to another. Other
+exceptions must be exact, named, justified, and give a removal condition when
+temporary. New Modules require no per-name architecture registration.
 
 ## Coding rules
 

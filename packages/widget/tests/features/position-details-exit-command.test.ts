@@ -11,7 +11,7 @@ import {
   TokenAddress,
   WalletAddress,
 } from "../../src/domain/identity/identifiers";
-import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
+import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/index";
 import { currentClassicFlowSessionAtom } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow";
 import {
   openPositionPendingActionModalAtom,
@@ -26,7 +26,7 @@ import {
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
 } from "../../src/features/position-details/state/workflow";
-import { walletConnectionStateAtom } from "../../src/features/wallet/state";
+import { walletConnectionStateAtom } from "../../src/features/wallet/index";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,

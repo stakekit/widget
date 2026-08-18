@@ -11,7 +11,7 @@ import {
   CurrentYieldKycGateKey,
   currentYieldKycGateAtom,
   refreshCurrentYieldKycAtom,
-} from "../../../yield-summary/state";
+} from "../../../yield-summary/index";
 import {
   type ClassicFlowSession,
   getClassicTransactionFlowKycYield,

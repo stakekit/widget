@@ -1,11 +1,11 @@
 import { ConnectButton } from "@stakekit/rainbowkit";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../app/composition/use-widget-config";
+import { useWidgetConfig } from "../../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { CaretDownIcon } from "../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../tracking/state";
+import { useTrackEvent } from "../../../tracking/index";
 import { useSKWallet } from "../../react/use-wallet";
 import { container, titleStyle } from "./styles.css";
 

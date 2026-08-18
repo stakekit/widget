@@ -15,8 +15,10 @@ import {
   YieldPositionsError,
   yieldPositionsResourceAtom,
 } from "../../src/resources/yield-positions/yield-positions";
-import { ApiRequestError } from "../../src/services/api/api-errors";
-import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
+import {
+  ApiRequestError,
+  YieldResourceSource,
+} from "../../src/services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../src/services/resource-invalidation";
 import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";

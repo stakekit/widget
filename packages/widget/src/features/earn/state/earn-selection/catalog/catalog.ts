@@ -2,28 +2,28 @@ import BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetConfigAtom } from "../../../../../app/runtime/widget-config";
 import type { EarnValidator } from "../../../../../domain/earn/models";
 import { filterValidators } from "../../../../../domain/earn/yield";
 import type { PositionsData } from "../../../../../domain/portfolio/positions";
 import { toPositionsData } from "../../../../../domain/portfolio/positions";
 import { tokenString } from "../../../../../domain/token/token";
+import { widgetConfigAtom } from "../../../../../features/widget-configuration/index";
 import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import {
   EarnTokenCatalogKey,
   earnTokenCatalogResourceAtom,
-} from "../../../../../resources/earn-token-catalog/earn-token-catalog";
-import { tokenBalancesResourceAtom } from "../../../../../resources/token-balances/token-balances";
+} from "../../../../../resources/earn-token-catalog/index";
+import { tokenBalancesResourceAtom } from "../../../../../resources/token-balances/index";
 import {
   preferredValidatorsResourceAtom,
   ValidatorsKey,
   validatorsPullAtom as validatorsResourcePullAtom,
-} from "../../../../../resources/validator-directory/validator-directory";
+} from "../../../../../resources/validator-directory/index";
 import {
   enrichedYieldDirectoryResourceAtom,
   YieldDirectoryKey,
-} from "../../../../../resources/yield-directory/yield-directory";
-import { yieldPositionsResourceAtom } from "../../../../../resources/yield-positions/yield-positions";
+} from "../../../../../resources/yield-directory/index";
+import { yieldPositionsResourceAtom } from "../../../../../resources/yield-positions/index";
 import { mapAsyncResultError } from "../../../../../shared/effect/async-result";
 import {
   EarnCatalogError,

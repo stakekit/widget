@@ -7,13 +7,13 @@ import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ListItem } from "../../../../../shared/ui/primitives/list/list-item";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { DetailRow, DetailsSection } from "../../../../earn/components";
-import { PageCtaButton } from "../../../../widget-shell/components";
-import { BorrowNotice } from "../../../action-feedback/ui/notice";
+import { DetailRow, DetailsSection } from "../../../../earn/views";
+import { PageCtaButton } from "../../../../widget-shell/views";
+import { BorrowNotice } from "../../../action-feedback/views";
 import type {
   BorrowWithdrawActionContext,
   BorrowWithdrawTokenOption,
-} from "../../../action-preparation/model/action-context";
+} from "../../../action-preparation/index";
 import type { BorrowPositionAction } from "../../model/details";
 import { useBorrowWithdrawForm } from "../../react/use-action-form";
 import * as styles from "../styles.css";

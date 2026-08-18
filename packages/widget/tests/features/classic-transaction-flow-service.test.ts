@@ -16,10 +16,8 @@ import { describe, expect, it, vi } from "vitest";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
-import {
-  type ActionPreviewRequest,
-  YieldOperations,
-} from "../../src/services/api/yield-operations";
+import type { ActionPreviewRequest } from "../../src/services/api/operations";
+import { YieldOperations } from "../../src/services/api/operations";
 import {
   makeWidgetNavigation,
   toWidgetPath,

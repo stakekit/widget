@@ -5,12 +5,12 @@ import {
 } from "@stakekit/rainbowkit";
 import { useContext } from "react";
 import type { Address } from "viem";
-import { useWidgetConfig } from "../../../../app/composition/use-widget-config";
+import { useWidgetConfig } from "../../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { CaretDownIcon } from "../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../tracking/state";
+import { useTrackEvent } from "../../../tracking/index";
 import { useSKWallet } from "../../react/use-wallet";
 import { avatarContainer, container, titleStyle } from "./styles.css";
 

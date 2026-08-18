@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
 import { Box } from "../../../../shared/ui/primitives/box";
-import { AnimationPage, SplitView } from "../../../widget-shell/components";
-import { useBorrowWalletView } from "../../wallet/react/use-borrow-wallet";
+import { AnimationPage, SplitView } from "../../../widget-shell/views";
+import { useBorrowWalletView } from "../../wallet/index";
 import { useBorrowEntryView } from "../react/use-borrow-entry";
 import { BorrowDetailsPanel } from "./components/details-panel";
 import { BorrowDetailsEmpty } from "./components/notices";

@@ -1,14 +1,14 @@
 import { useAtomValue } from "@effect/atom-react";
 import { Outlet } from "react-router";
-import { useWidgetConfig } from "../../../../../app/composition/use-widget-config";
+import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../../../shared/ui/primitives/icons/caret-left";
 import {
   activityResumeDashboardViewAtom,
   useAbandonActivityResume,
-} from "../../../../classic-transaction-flow/state";
-import { AnimationPage } from "../../../../widget-shell/components";
+} from "../../../../classic-transaction-flow/index";
+import { AnimationPage } from "../../../../widget-shell/views";
 import { ActivityPage } from "./activity.page.tsx";
 import { activityDetailsContainer } from "./styles.css";
 

@@ -8,13 +8,13 @@ import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
 import { CheckCircleIcon } from "../../../shared/ui/primitives/icons/check-circle";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { DetailRow } from "../../earn/components";
-import { useTrackPage } from "../../tracking/state";
+import { DetailRow } from "../../earn/views";
+import { useTrackPage } from "../../tracking/index";
 import {
   AnimationPage,
   PageContainer,
   PageCtaButton,
-} from "../../widget-shell/components";
+} from "../../widget-shell/views";
 import {
   getBorrowTransactionFlowAmountLabelKey,
   projectBorrowTransactionFlowSummary,

@@ -18,7 +18,7 @@ import {
   AnimationPage,
   PageContainer,
   PageCtaButton,
-} from "../../../../widget-shell/components";
+} from "../../../../widget-shell/views";
 import { useComplete } from "../hooks/use-complete.hook.ts";
 
 type CompletePageModel = ReturnType<typeof useComplete>;

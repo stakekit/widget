@@ -1,12 +1,12 @@
 import type { MotionProps, TargetAndTransition } from "motion/react";
 import { motion } from "motion/react";
 import type { PropsWithChildren } from "react";
-import { useWidgetConfig } from "../../../app/composition/use-widget-config";
+import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import { useDisableTransitionDuration } from "../../../shared/react/layout-transition";
 import {
   useMountAnimation,
   useMountRevealReady,
-} from "../../mount-animation/state";
+} from "../../mount-animation/index";
 import { useHeaderHeight } from "../header/use-sync-header-height";
 import { useCurrentLayout } from "./current-layout";
 import { animationContainer } from "./layout.css";

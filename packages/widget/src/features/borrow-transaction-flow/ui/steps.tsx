@@ -1,17 +1,17 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../app/composition/use-widget-config";
+import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
 import { Spinner } from "../../../shared/ui/primitives/spinner";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { useTrackPage } from "../../tracking/state";
+import { useTrackPage } from "../../tracking/index";
 import {
   AnimationPage,
   PageContainer,
   PageCtaButton,
-} from "../../widget-shell/components";
+} from "../../widget-shell/views";
 import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowExecution,

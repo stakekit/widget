@@ -15,8 +15,10 @@ import {
   YieldProviderError,
   yieldProviderResourceAtom,
 } from "../../src/resources/yield-provider/yield-provider";
-import { ApiRequestError } from "../../src/services/api/api-errors";
-import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
+import {
+  ApiRequestError,
+  YieldResourceSource,
+} from "../../src/services/api/resource-sources";
 import { yieldApiYieldFixture } from "../fixtures";
 
 const yieldModel = yieldApiYieldFixture();

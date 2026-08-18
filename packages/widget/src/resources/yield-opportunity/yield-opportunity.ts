@@ -6,11 +6,11 @@ import type { YieldId } from "../../domain/identity/identifiers";
 import type {
   ApiRequestError,
   ResponseDecodeError,
-} from "../../services/api/api-errors";
-import { YieldResourceSource } from "../../services/api/yield-resource-source";
+} from "../../services/api/resource-sources";
+import { YieldResourceSource } from "../../services/api/resource-sources";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
-import { yieldProviderResourceAtom } from "../yield-provider/yield-provider";
+import { yieldProviderResourceAtom } from "../yield-provider/index";
 
 export class YieldOpportunityError extends Data.TaggedError(
   "YieldOpportunityError"

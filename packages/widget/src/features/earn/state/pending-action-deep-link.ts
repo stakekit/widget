@@ -11,19 +11,19 @@ import { getPositionBalanceDataKey } from "../../../domain/portfolio/positions";
 import {
   SingleYieldBalancesKey,
   singleYieldBalancesResourceAtom,
-} from "../../../resources/single-yield-balances/single-yield-balances";
+} from "../../../resources/single-yield-balances/index";
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
-} from "../../../resources/yield-opportunity/provider";
+} from "../../../resources/yield-opportunity/index";
 import type { ClassicTransactionWorkflowProviderDetail } from "../../../services/transaction-workflow/transaction-workflow-model";
 import type { InitParams } from "../../../services/wallet/init-params";
 import {
   type WalletScopeKey,
   walletScopeFromState,
 } from "../../../services/wallet/wallet-scope";
-import { initParamsAtom } from "../../init-params/state";
-import { walletConnectionStateAtom } from "../../wallet/state";
+import { initParamsAtom } from "../../init-params/index";
+import { walletConnectionStateAtom } from "../../wallet/index";
 
 class PendingActionDeepLinkRequestKey extends Data.Class<{
   readonly pendingAction: NonNullable<InitParams["pendingaction"]>;

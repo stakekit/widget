@@ -8,11 +8,11 @@ import {
   YieldDirectoryKey,
   yieldDirectoryResourceAtom,
 } from "../../src/resources/yield-directory/yield-directory";
-import { ApiRequestError } from "../../src/services/api/api-errors";
+import type { YieldDirectoryRequest } from "../../src/services/api/resource-sources";
 import {
-  type YieldDirectoryRequest,
+  ApiRequestError,
   YieldResourceSource,
-} from "../../src/services/api/yield-resource-source";
+} from "../../src/services/api/resource-sources";
 import { yieldApiProviderFixture, yieldApiYieldFixture } from "../fixtures";
 
 const makeYield = (id: string, type: "lending" | "staking" = "staking") => {

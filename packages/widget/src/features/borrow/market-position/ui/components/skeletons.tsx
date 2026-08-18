@@ -3,7 +3,7 @@ import {
   ContentLoaderCircle,
   ContentLoaderLine,
 } from "../../../../../shared/ui/primitives/content-loader";
-import { positionDetailsComponentStyles as positionDetailsStyles } from "../../../../position-details/ui";
+import { positionDetailsComponentStyles as positionDetailsStyles } from "../../../../position-details/views";
 import * as styles from "../styles.css";
 
 export const BorrowPositionActionsSkeleton = () => (

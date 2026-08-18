@@ -3,8 +3,8 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import {
   refreshTokenBalancesAtom,
   tokenBalancesResourceAtom,
-} from "../../../../resources/token-balances/token-balances";
-import { walletScopeAtom } from "../../../wallet/state";
+} from "../../../../resources/token-balances/index";
+import { walletScopeAtom } from "../../../wallet/index";
 
 const tokenBalancesScanResourceAtom = Atom.readable((get) => {
   const scope = get(walletScopeAtom);

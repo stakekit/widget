@@ -13,11 +13,11 @@ import {
   selectEarnValidatorAtom,
   setEarnValidatorSearchAtom,
 } from "../../src/features/earn/state/runtime";
-import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
 import {
+  LegacyResourceSource,
   type ValidatorDirectoryRequest,
   YieldResourceSource,
-} from "../../src/services/api/yield-resource-source";
+} from "../../src/services/api/resource-sources";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";

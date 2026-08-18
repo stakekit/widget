@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { richErrorAtom } from "../../src/features/widget-shell/react/use-rich-errors";
 import { makePresentableResource } from "../../src/resources/resource-failure-presentation";
-import { ApiRequestError } from "../../src/services/api/api-errors";
+import { ApiRequestError } from "../../src/services/api/resource-sources";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
 

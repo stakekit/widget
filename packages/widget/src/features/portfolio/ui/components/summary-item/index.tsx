@@ -1,5 +1,5 @@
 import type BigNumber from "bignumber.js";
-import { useWidgetConfig } from "../../../../../app/composition/use-widget-config";
+import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { formatUsd } from "../../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../../shared/lib/number-format";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";

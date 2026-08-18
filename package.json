@@ -22,9 +22,7 @@
     "format": "turbo run format",
     "clean": "turbo run clean",
     "prepare": "husky",
-    "check-hygiene": "pnpm run check-hygiene:rev-dep && pnpm run check-hygiene:test-only-exports",
-    "check-hygiene:rev-dep": "rev-dep config run --list-all-issues",
-    "check-hygiene:test-only-exports": "tsx scripts/check-test-only-exports.ts",
+    "check-hygiene": "turbo run check-hygiene --filter=@stakekit/widget",
     "check": "turbo run lint //#lint:ast && pnpm run check-hygiene && turbo run test && turbo run build"
   },
   "devDependencies": {
@@ -33,9 +31,6 @@
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "husky": "catalog:",
-    "knip": "catalog:",
-    "rev-dep": "catalog:",
-    "tsx": "catalog:",
     "turbo": "catalog:"
   }
 }

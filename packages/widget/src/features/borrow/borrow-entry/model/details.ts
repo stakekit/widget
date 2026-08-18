@@ -14,7 +14,7 @@ import {
   formatUsd,
 } from "../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../shared/lib/number-format";
-import type { BorrowMarketWalletBalances } from "../../action-preparation/model/wallet-balances";
+import type { BorrowMarketWalletBalances } from "../../action-preparation/index";
 import type { BorrowFormProjection } from "./borrow-entry";
 
 type BorrowDetailsRow = {

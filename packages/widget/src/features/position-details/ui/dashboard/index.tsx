@@ -7,7 +7,7 @@ import {
   BackButton,
   BackButtonProvider,
   SplitView,
-} from "../../../widget-shell/components";
+} from "../../../widget-shell/views";
 import { usePositionDetails } from "../classic/hooks/use-position-details";
 import { PositionDetailsInfo } from "./components/position-details-info";
 import {

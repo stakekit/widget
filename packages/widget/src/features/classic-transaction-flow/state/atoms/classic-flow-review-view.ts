@@ -9,13 +9,13 @@ import type { GasBalancesCommand } from "../../../../domain/finance/models";
 import {
   GasTokenBalancesKey,
   gasTokenBalancesResourceAtom,
-} from "../../../../resources/gas-token-balances/gas-token-balances";
+} from "../../../../resources/gas-token-balances/index";
 import {
   getTokensPricesRequest,
   PricesKey,
   pricesAtom,
-} from "../../../../resources/token-prices/prices";
-import type { CurrentYieldKycGate } from "../../../yield-summary/state";
+} from "../../../../resources/token-prices/index";
+import type { CurrentYieldKycGate } from "../../../yield-summary/index";
 import {
   type ClassicTransactionFlowIntake,
   getClassicTransactionFlowGasWarningInput,

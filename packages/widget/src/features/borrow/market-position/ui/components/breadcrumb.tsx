@@ -2,11 +2,8 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { breadcrumb, breadcrumbName } from "../../../../position-details/ui";
-import {
-  BackButton,
-  BackButtonProvider,
-} from "../../../../widget-shell/components";
+import { breadcrumb, breadcrumbName } from "../../../../position-details/views";
+import { BackButton, BackButtonProvider } from "../../../../widget-shell/views";
 
 export const BorrowPositionBreadcrumb = ({
   backPath = "/positions",

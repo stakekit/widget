@@ -6,7 +6,7 @@ import { Box } from "../../../../shared/ui/primitives/box";
 import { Button } from "../../../../shared/ui/primitives/button";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { FallbackContent } from "../../../widget-shell/components";
+import { FallbackContent } from "../../../widget-shell/views";
 import type { ActivityActionItem } from "../../model/activity-action";
 import type { ActivityFilter } from "../../model/filters";
 import type {

@@ -1,7 +1,7 @@
 import { useAtomSet } from "@effect/atom-react";
 import { type PropsWithChildren, useLayoutEffect } from "react";
+import { updateWidgetConfigAtom } from "../../../features/widget-configuration/index";
 import type { SKAppProps } from "../../../public-api/types";
-import { updateWidgetConfigAtom } from "../../runtime/widget-config";
 
 export const WidgetConfigBoundaryAdapter = ({
   children,

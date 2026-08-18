@@ -1,8 +1,8 @@
 import { Trigger } from "@radix-ui/react-dialog";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../../../app/composition/use-widget-config";
 import { equalTokens } from "../../../../../../../domain/token/token";
+import { useWidgetConfig } from "../../../../../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
 import { SelectModal } from "../../../../../../../shared/ui/components/select-modal";
 import { SelectedToken } from "../../../../../../../shared/ui/components/selected-token";
@@ -15,7 +15,7 @@ import {
 } from "../../../../../../../shared/ui/primitives/button/styles.css";
 import { CaretDownIcon } from "../../../../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../../../../tracking/state";
+import { useTrackEvent } from "../../../../../../tracking/index";
 import {
   useEarnEntry,
   useEarnTokenSelection,

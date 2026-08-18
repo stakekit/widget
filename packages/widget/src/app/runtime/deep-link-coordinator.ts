@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Ref, Stream } from "effect";
-import { ClassicTransactionFlowService as ClassicFlow } from "../../features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
-import { getPositionDetailsHubPath } from "../../features/position-details/state";
+import { ClassicTransactionFlowService as ClassicFlow } from "../../features/classic-transaction-flow/runtime";
+import { getPositionDetailsHubPath } from "../../features/position-details/index";
 import {
   toWidgetPath,
   WidgetNavigation,

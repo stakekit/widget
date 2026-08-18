@@ -6,10 +6,10 @@ import { Text } from "../../../../shared/ui/primitives/typography/text";
 import {
   posistionDetailsInfoContainer,
   positionDetailsActionsContainer,
-} from "../../../position-details/ui";
-import { useTrackPage } from "../../../tracking/state";
-import { AnimationPage, SplitView } from "../../../widget-shell/components";
-import { useBorrowPosition } from "../../positions/react/use-borrow-positions";
+} from "../../../position-details/views";
+import { useTrackPage } from "../../../tracking/index";
+import { AnimationPage, SplitView } from "../../../widget-shell/views";
+import { useBorrowPosition } from "../../positions/index";
 import {
   type BorrowPositionAction,
   getBorrowPositionActions,

@@ -1,11 +1,11 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
+import { withApiRequestError } from "../../src/services/api/api-operation";
 import {
   ApiRequestError,
   type InputValidationError,
   ResponseDecodeError,
-} from "../../src/services/api/api-errors";
-import { withApiRequestError } from "../../src/services/api/api-operation";
+} from "../../src/services/api/resource-sources";
 
 type ApiBoundaryError =
   | ApiRequestError

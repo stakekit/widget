@@ -3,7 +3,7 @@ import type { HistoryPeriod } from "../../../../../domain/portfolio/models";
 import {
   YieldHistoryKey,
   yieldTvlHistoryAtom,
-} from "../../../../yield-summary/state";
+} from "../../../../yield-summary/index";
 import { useYieldHistory } from "./use-yield-history";
 
 export const useYieldTvlHistory = ({

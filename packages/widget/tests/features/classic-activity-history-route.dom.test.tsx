@@ -14,11 +14,11 @@ import { vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { createClassicFlowRoutes } from "../../src/features/classic-transaction-flow/composition";
+import { startClassicTransactionFlowAtom } from "../../src/features/classic-transaction-flow/index";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { startClassicTransactionFlowAtom } from "../../src/features/classic-transaction-flow/state";
-import { createClassicFlowRoutes } from "../../src/features/classic-transaction-flow/ui";
+import { walletScopeAtom } from "../../src/features/wallet/index";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
-import { walletScopeAtom } from "../../src/features/wallet/state";
 import {
   makeWidgetNavigation,
   WidgetNavigation,

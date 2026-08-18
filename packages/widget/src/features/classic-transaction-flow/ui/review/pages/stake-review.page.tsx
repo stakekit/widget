@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { Trans } from "react-i18next";
 import { Highlight } from "../../../../../shared/ui/primitives/highlight";
-import { KycGateCard } from "../../../../earn/components";
-import { useTrackPage } from "../../../../tracking/state";
+import { KycGateCard } from "../../../../earn/views";
+import { useTrackPage } from "../../../../tracking/index";
 import { useStakeReview } from "../hooks/use-stake-review.hook.ts";
 import { ReviewPage } from "./common-page/common.page.tsx";
 

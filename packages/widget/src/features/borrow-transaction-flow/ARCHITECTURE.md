@@ -144,7 +144,8 @@ initializers yield every static Effect dependency and close over the resolved
 adapters. Runtime factory calls accept only dynamic Session, intake, reserved
 action, route, and private parent-capability values. They neither receive
 concrete service instances nor call local `Effect.provideService`; the
-application runtime is the sole privileged importer for layer wiring.
+service is published through `runtime.ts`, whose audience is limited to the
+application runtime for layer wiring.
 
 Behavior tests cross the production `BorrowTransactionFlowService` interface
 using its real layer and test adapters for external capabilities. A small Atom
@@ -169,7 +170,7 @@ the guard Replace-navigates to the immutable entry's base route, releases the
 Flow Session, and preserves Entry Intent; it does not render a dead-end Steps
 setup-error Retry. Failures published by a constructed workflow remain retryable.
 
-The root `state.ts` collaboration contract retains the Start Atom and published
+The root `index.ts` collaboration contract retains the Start Atom and published
 intake types, but no Borrow Flow outcome Atom or outcome types. Start narrows
 from a caller-selected intake-plus-navigation command to immutable intake alone.
 The Atom-owned store and facade, private React route adapters, and internal file

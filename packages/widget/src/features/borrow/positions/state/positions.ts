@@ -1,20 +1,20 @@
 import { Data } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetConfigAtom } from "../../../../app/runtime/widget-config";
 import type { MarketId } from "../../../../domain/borrow/ids";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
-import { borrowIntegrationsResourceAtom } from "../../../../resources/borrow-integrations/borrow-integrations";
+import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
+import { borrowIntegrationsResourceAtom } from "../../../../resources/borrow-integrations/index";
 import {
   BorrowMarketsKey,
   borrowMarketsResourceAtom,
-} from "../../../../resources/borrow-markets/borrow-markets";
+} from "../../../../resources/borrow-markets/index";
 import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom,
-} from "../../../../resources/borrow-positions/borrow-positions";
+} from "../../../../resources/borrow-positions/index";
 import type { WalletScopeKey } from "../../../../services/wallet/wallet-scope";
-import { walletScopeAtom } from "../../../wallet/state";
+import { walletScopeAtom } from "../../../wallet/index";
 
 export { BorrowMarketsKey, BorrowPositionsKey };
 export const borrowIntegrationsAtom = borrowIntegrationsResourceAtom.foreground;

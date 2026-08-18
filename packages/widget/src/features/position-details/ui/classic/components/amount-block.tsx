@@ -1,10 +1,10 @@
 import BigNumber from "bignumber.js";
 import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../app/composition/use-widget-config";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import type { ValidatorInput as ValidatorDto } from "../../../../../domain/earn/validator";
 import type { Token } from "../../../../../domain/token/token";
+import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import {
   defaultFormattedNumber,
   formatNumber,
@@ -17,7 +17,7 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useYieldMetaInfo } from "../../../../earn/components";
+import { useYieldMetaInfo } from "../../../../earn/views";
 
 type AmountBlockProps = {
   onAmountChange: NumberInputProps["onChange"];

@@ -5,8 +5,8 @@ import { appRuntime } from "../../app/runtime/app-runtime";
 import type {
   ApiRequestError,
   ResponseDecodeError,
-} from "../../services/api/api-errors";
-import { YieldResourceSource } from "../../services/api/yield-resource-source";
+} from "../../services/api/resource-sources";
+import { YieldResourceSource } from "../../services/api/resource-sources";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResource } from "../resource-failure-presentation";
 

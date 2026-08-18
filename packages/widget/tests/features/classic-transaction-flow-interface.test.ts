@@ -7,12 +7,12 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
-import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
   isActiveClassicTransactionFlowPathAtom,
   startClassicTransactionFlowAtom,
-} from "../../src/features/classic-transaction-flow/state";
-import { walletScopeAtom } from "../../src/features/wallet/state";
+} from "../../src/features/classic-transaction-flow/index";
+import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import { walletScopeAtom } from "../../src/features/wallet/index";
 import {
   makeWidgetNavigation,
   WidgetNavigation,

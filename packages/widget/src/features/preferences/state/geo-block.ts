@@ -2,7 +2,7 @@ import { Effect, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import { GeoBlockService } from "../../../services/api/geo-block-state";
+import { GeoBlockService } from "../../../services/geoblocking";
 
 const geoBlockResultAtom = appRuntime
   .atom(

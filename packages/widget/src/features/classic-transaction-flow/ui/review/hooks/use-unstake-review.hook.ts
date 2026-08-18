@@ -10,8 +10,8 @@ import {
 } from "../../../../../domain/earn/yield";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import type { RewardTokenDetails } from "../../../../earn/components";
-import type { PageCta } from "../../../../widget-shell/components";
+import type { RewardTokenDetails } from "../../../../earn/views";
+import type { PageCta } from "../../../../widget-shell/views";
 import {
   useClassicFlowIntake,
   useClassicFlowReview,

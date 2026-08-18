@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import type { CSSProperties, PropsWithChildren } from "react";
-import { useWidgetConfig } from "../../../app/composition/use-widget-config";
+import { useWidgetConfig } from "../../../features/widget-configuration/index";
 
 export const AnimationPage = ({ children }: PropsWithChildren) => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");

@@ -14,8 +14,8 @@ import type { ActivityActionsQuery } from "../../domain/activity/query";
 import type {
   ApiRequestError,
   ResponseDecodeError,
-} from "../../services/api/api-errors";
-import { YieldResourceSource } from "../../services/api/yield-resource-source";
+} from "../../services/api/resource-sources";
+import { YieldResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import {
   type WalletScopeKey,

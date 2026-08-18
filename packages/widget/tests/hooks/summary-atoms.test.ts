@@ -21,7 +21,7 @@ import {
   MultiYieldsKey,
   multiYieldsByIdAtom,
 } from "../../src/features/yield-summary/state/multi-yields";
-import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
+import { YieldResourceSource } from "../../src/services/api/resource-sources";
 import {
   yieldApiProviderFixture,
   yieldApiYieldFixture,

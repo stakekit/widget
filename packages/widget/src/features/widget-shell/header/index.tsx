@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { Box } from "../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
 import { XIcon } from "../../../shared/ui/primitives/icons/x-icon";
-import { AccountModal, ChainModal } from "../../wallet/ui";
+import { AccountModal, ChainModal } from "../../wallet/views";
 import { animationContainer, parentButton } from "./styles.css";
 import { useHeader } from "./use-header";
 

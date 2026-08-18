@@ -5,7 +5,7 @@ import { presentationClockAtom } from "../../../../../shared/effect/presentation
 import {
   YieldSummaryKey,
   yieldSummaryAtom,
-} from "../../../../yield-summary/state";
+} from "../../../../yield-summary/index";
 import type { ActivityActionItem } from "../../../model/activity-action";
 import {
   type ActivityDirection,

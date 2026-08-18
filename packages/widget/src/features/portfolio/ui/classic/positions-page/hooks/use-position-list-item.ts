@@ -7,13 +7,13 @@ import { getPositionTotalAmount } from "../../../../../../domain/portfolio/posit
 import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
-} from "../../../../../../resources/yield-opportunity/provider";
+} from "../../../../../../resources/yield-opportunity/index";
 import { getRewardRateFormatted } from "../../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../../shared/lib/number-format";
 import {
   YieldSummaryKey,
   yieldSummaryAtom,
-} from "../../../../../yield-summary/state";
+} from "../../../../../yield-summary/index";
 import type { PositionItem } from "../../../../state/read-models/positions";
 
 export const usePositionListItem = (item: PositionItem) => {

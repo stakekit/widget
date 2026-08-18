@@ -1,6 +1,5 @@
 import { Effect, Match } from "effect";
-import { BorrowOperations } from "../../api/borrow-operations";
-import { YieldOperations } from "../../api/yield-operations";
+import { BorrowOperations, YieldOperations } from "../../api/operations";
 import { TrackingService } from "../../tracking/tracking-service";
 import {
   TransactionSubmissionError,

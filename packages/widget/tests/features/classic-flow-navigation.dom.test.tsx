@@ -18,6 +18,10 @@ import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { applicationRouterRuntime } from "../../src/app/runtime/application-router-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { ActionCommand } from "../../src/domain/action/models";
+import {
+  isActiveClassicTransactionFlowPathAtom,
+  startClassicTransactionFlowAtom,
+} from "../../src/features/classic-transaction-flow/index";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
   ClassicFlowExecutionScope,
@@ -27,13 +31,9 @@ import {
   useClassicFlowReview,
   useClassicFlowSession,
 } from "../../src/features/classic-transaction-flow/react/classic-flow-route";
-import {
-  isActiveClassicTransactionFlowPathAtom,
-  startClassicTransactionFlowAtom,
-} from "../../src/features/classic-transaction-flow/state";
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
+import { walletScopeAtom } from "../../src/features/wallet/index";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
-import { walletScopeAtom } from "../../src/features/wallet/state";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
 import {

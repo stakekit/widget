@@ -3,7 +3,6 @@ import { Effect, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../../app/runtime/app-runtime";
-import { widgetConfigAtom } from "../../../../app/runtime/widget-config";
 import { BorrowFeatureDisabled } from "../../../../domain/borrow/availability";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
 import { decodeTokenId } from "../../../../domain/borrow/ids";
@@ -11,22 +10,23 @@ import {
   type BorrowNetwork,
   isBorrowNetwork,
 } from "../../../../domain/borrow/network";
+import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
 import {
   sameWalletScopeOwner,
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
 } from "../../../../services/wallet/wallet-scope";
-import { startBorrowTransactionFlowAtom } from "../../../borrow-transaction-flow/state";
-import { tokenBalancesScanAtom } from "../../../portfolio/state";
-import { walletScopeAtom } from "../../../wallet/state";
+import { startBorrowTransactionFlowAtom } from "../../../borrow-transaction-flow/index";
+import { tokenBalancesScanAtom } from "../../../portfolio/index";
+import { walletScopeAtom } from "../../../wallet/index";
 import {
   BorrowMarketsKey,
   BorrowPositionsKey,
   borrowIntegrationsAtom,
   borrowMarketsAtom,
   borrowPositionsAtom,
-} from "../../positions/state/positions";
+} from "../../positions/index";
 import {
   applyBorrowFormAction,
   BorrowEntryKey,

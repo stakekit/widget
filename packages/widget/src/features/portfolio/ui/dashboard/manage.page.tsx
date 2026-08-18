@@ -1,5 +1,5 @@
 import { Box } from "../../../../shared/ui/primitives/box";
-import { AnimationPage } from "../../../widget-shell/components";
+import { AnimationPage } from "../../../widget-shell/views";
 import { PositionsPage } from "./positions/positions.page.tsx";
 import { Summary } from "./summary";
 

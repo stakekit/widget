@@ -1,6 +1,6 @@
 import { Content, Overlay, Portal, Root, Title } from "@radix-ui/react-dialog";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../app/composition/use-widget-config";
+import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { id } from "../../../../../shared/styles/theme/ids";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { XIcon } from "../../../../../shared/ui/primitives/icons/x-icon";

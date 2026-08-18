@@ -3,12 +3,12 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
-import { useTrackPage } from "../../../tracking/state";
-import { ConnectButton } from "../../../wallet/ui";
-import { PageCtaButton } from "../../../widget-shell/components";
-import { BorrowNotice } from "../../action-feedback/ui/notice";
-import type { BorrowWalletView } from "../../wallet/model/wallet-view";
-import { useBorrowWalletView } from "../../wallet/react/use-borrow-wallet";
+import { useTrackPage } from "../../../tracking/index";
+import { ConnectButton } from "../../../wallet/views";
+import { PageCtaButton } from "../../../widget-shell/views";
+import { BorrowNotice } from "../../action-feedback/views";
+import type { BorrowWalletView } from "../../wallet/index";
+import { useBorrowWalletView } from "../../wallet/index";
 import type { BorrowEntryView } from "../model/borrow-entry";
 import { useBorrowEntryView } from "../react/use-borrow-entry";
 import {

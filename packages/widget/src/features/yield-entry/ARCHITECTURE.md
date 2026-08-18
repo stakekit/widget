@@ -1,9 +1,9 @@
 # Yield Entry
 
 Yield Entry is the shared pre-execution capability consumed by Earn and
-Position Details. Its public `state.ts` entry publishes the Atom facade and
-deterministic helpers; its private Effect service is composed only by the
-Wallet Runtime.
+Position Details. Its public `index.ts` entry publishes the Atom facade and
+deterministic helpers; its separate `runtime.ts` entry publishes the Effect
+service for composition by the Wallet Runtime.
 
 ## Ownership
 

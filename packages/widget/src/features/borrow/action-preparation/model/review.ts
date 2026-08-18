@@ -2,7 +2,7 @@ import type BigNumber from "bignumber.js";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
 import type { Market } from "../../../../domain/borrow/catalog/market";
 import type { TokenAddress } from "../../../../domain/borrow/ids";
-import type { BorrowTransactionFlowReview } from "../../../borrow-transaction-flow/state";
+import type { BorrowTransactionFlowReview } from "../../../borrow-transaction-flow/index";
 import type {
   BorrowRiskProjection,
   OpenPositionFinancialFacts,

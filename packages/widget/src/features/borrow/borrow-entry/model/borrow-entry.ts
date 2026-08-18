@@ -17,13 +17,11 @@ import type { WalletScopeKey } from "../../../../services/wallet/wallet-scope";
 import {
   type BorrowActionBlockReason,
   type BorrowActionPreparation,
-  type OpenPositionProjection,
-  prepareBorrowAction,
-} from "../../action-preparation/model/prepare";
-import {
   type BorrowMarketWalletBalances,
   deriveBorrowMarketWalletBalances,
-} from "../../action-preparation/model/wallet-balances";
+  type OpenPositionProjection,
+  prepareBorrowAction,
+} from "../../action-preparation/index";
 import type { BorrowAtomResultError } from "./errors";
 
 export type BorrowFormIntent = {

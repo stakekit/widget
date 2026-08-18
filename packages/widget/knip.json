@@ -1,0 +1,30 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/index.package.ts!",
+    "src/index.bundle.ts!",
+    "src/public-api/index.package.ts!",
+    "src/public-api/index.bundle.ts!",
+    "vite/*.ts!",
+    "scripts/*.test.ts",
+    "tests/utils/setup.browser.ts",
+    "tests/utils/setup.dom.ts",
+    "tests/**/*.test.ts",
+    "tests/**/*.test.tsx"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}!",
+    "scripts/**/*.{ts,mts}",
+    "tests/**/*.{ts,tsx}",
+    "vite/**/*.ts!"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "ignoreIssues": {
+    "src/generated/**": ["exports", "types"]
+  },
+  "ignoreDependencies": [
+    "@effect/openapi-generator",
+    "@effect/platform-node",
+    "swagger2openapi"
+  ]
+}

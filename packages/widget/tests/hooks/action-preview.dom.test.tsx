@@ -6,8 +6,8 @@ import { HttpResponse, http } from "msw";
 import { type PropsWithChildren, useEffect } from "react";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { ActionCommand } from "../../src/domain/action/models";
+import { startClassicTransactionFlowAtom } from "../../src/features/classic-transaction-flow/index";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { startClassicTransactionFlowAtom } from "../../src/features/classic-transaction-flow/state";
 import {
   currentClassicFlowSessionRootAtom,
   makeClassicFlowExecutionScope,
@@ -17,7 +17,7 @@ import { ClassicTransactionFlowService } from "../../src/features/classic-transa
 import {
   walletScopeAtom,
   walletStateResultAtom,
-} from "../../src/features/wallet/state";
+} from "../../src/features/wallet/index";
 import {
   makeWidgetNavigation,
   WidgetNavigation,

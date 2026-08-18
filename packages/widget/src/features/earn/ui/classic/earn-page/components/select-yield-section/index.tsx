@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../../../app/composition/use-widget-config";
+import { useWidgetConfig } from "../../../../../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
 import { Divider } from "../../../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../../../shared/ui/primitives/box";

@@ -3,7 +3,7 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { type PropsWithChildren, useState } from "react";
 import { WagmiContext } from "wagmi";
 import { makeDefaultConfig } from "../../../services/wallet/default-wagmi-config";
-import { useGeoBlock } from "../../preferences/state";
+import { useGeoBlock } from "../../preferences/index";
 import { useWalletConfig } from "./use-wallet-config";
 
 export const WagmiConfigProvider = ({ children }: PropsWithChildren) => {

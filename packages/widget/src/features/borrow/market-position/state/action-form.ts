@@ -2,20 +2,20 @@ import { Data, Effect, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../../app/runtime/app-runtime";
-import { widgetConfigAtom } from "../../../../app/runtime/widget-config";
 import { BorrowFeatureDisabled } from "../../../../domain/borrow/availability";
 import type { MarketId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
+import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
 import {
   sameWalletScopeOwner,
   type WalletScopeKey,
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
 } from "../../../../services/wallet/wallet-scope";
-import { startBorrowTransactionFlowAtom } from "../../../borrow-transaction-flow/state";
-import { tokenBalancesScanAtom } from "../../../portfolio/state";
-import { walletScopeAtom } from "../../../wallet/state";
-import { currentBorrowPositionsAtom } from "../../positions/state/positions";
+import { startBorrowTransactionFlowAtom } from "../../../borrow-transaction-flow/index";
+import { tokenBalancesScanAtom } from "../../../portfolio/index";
+import { walletScopeAtom } from "../../../wallet/index";
+import { currentBorrowPositionsAtom } from "../../positions/index";
 import {
   applyBorrowRepayFormAction,
   applyBorrowWithdrawFormAction,

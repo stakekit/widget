@@ -1,5 +1,5 @@
 import { Data } from "effect";
-import type { BorrowResourceError } from "../../../../resources/borrow/borrow-resource-error";
+import type { BorrowResourceError } from "../../../../resources/borrow/index";
 
 class MissingBorrowApiClient extends Data.TaggedError(
   "MissingBorrowApiClient"

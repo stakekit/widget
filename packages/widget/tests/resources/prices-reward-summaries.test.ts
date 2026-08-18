@@ -14,8 +14,10 @@ import {
   TokenPricesKey,
   tokenPricesResourceAtom,
 } from "../../src/resources/token-prices/token-prices";
-import { ApiRequestError } from "../../src/services/api/api-errors";
-import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
+import {
+  ApiRequestError,
+  LegacyResourceSource,
+} from "../../src/services/api/resource-sources";
 import { yieldApiYieldFixture } from "../fixtures";
 
 const yieldModel = yieldApiYieldFixture();

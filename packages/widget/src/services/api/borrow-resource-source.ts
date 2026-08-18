@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Schema } from "effect";
+import { Effect, Schema } from "effect";
 import { BorrowFeatureDisabled } from "../../domain/borrow/availability";
 import type { Integration } from "../../domain/borrow/catalog/integration";
 import type { BorrowNetwork } from "../../domain/borrow/network";
@@ -9,14 +9,12 @@ import {
 } from "../../domain/borrow/responses";
 import type { WalletAddress } from "../../domain/identity/identifiers";
 import type * as BorrowApi from "../../generated/api/borrow-client";
-import { WidgetConfigService } from "../config/widget-config";
-import { MissingBorrowApiConfig } from "./api-errors";
 import {
   decodeApiResponse,
   withApiRequestError,
   withResponseDecodeError,
 } from "./api-operation";
-import { ApiTransportService } from "./transport";
+import { MissingBorrowApiConfig } from "./resource-sources";
 
 export const makeBorrowResourceSource = (
   borrow: BorrowApi.BorrowApi | null,
@@ -96,23 +94,3 @@ export const makeBorrowResourceSource = (
 
   return { getIntegrations, getMarkets, getPositionData } as const;
 };
-
-export class BorrowResourceSource extends Context.Service<BorrowResourceSource>()(
-  "stakekit/widget/services/api/BorrowResourceSource",
-  {
-    make: Effect.gen(function* () {
-      const { resources } = yield* ApiTransportService;
-      const widgetConfig = yield* WidgetConfigService;
-
-      return makeBorrowResourceSource(
-        resources.borrow,
-        (yield* widgetConfig.current).borrowEnabled
-      );
-    }),
-  }
-) {
-  static readonly layer = Layer.effect(
-    BorrowResourceSource,
-    BorrowResourceSource.make
-  );
-}

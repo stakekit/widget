@@ -8,7 +8,7 @@ import {
 } from "../../domain/borrow/network";
 import { deriveBorrowPositions } from "../../domain/borrow/positions/borrow-positions";
 import type { BorrowIntegrationPositionsResponse } from "../../domain/borrow/responses";
-import { BorrowResourceSource } from "../../services/api/borrow-resource-source";
+import { BorrowResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
 import {
   type WalletScopeKey,
@@ -16,12 +16,12 @@ import {
   walletScopeOwnerKey,
 } from "../../services/wallet/wallet-scope";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
-import { withBorrowResourceError } from "../borrow/borrow-resource-error";
-import { borrowIntegrationsResourceAtom } from "../borrow-integrations/borrow-integrations";
+import { withBorrowResourceError } from "../borrow/index";
+import { borrowIntegrationsResourceAtom } from "../borrow-integrations/index";
 import {
   BorrowMarketsKey,
   borrowMarketsResourceAtom,
-} from "../borrow-markets/borrow-markets";
+} from "../borrow-markets/index";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 export class BorrowPositionsKey extends Data.TaggedClass("BorrowPositionsKey")<{

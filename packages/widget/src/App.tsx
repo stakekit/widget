@@ -8,7 +8,6 @@ import { RouterProvider } from "react-router/dom";
 import { ApplicationRouteContentProvider } from "./app/composition/application-route-content";
 import { Providers } from "./app/composition/providers";
 import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";
-import { useWidgetConfig } from "./app/composition/use-widget-config";
 import { acquireWidgetInstanceClaim } from "./app/embedding/widget-instance-claim";
 import { WidgetInstanceReactBoundary } from "./app/embedding/widget-instance-react-boundary";
 import { ApplicationRouteEffects } from "./app/routes/application-route-effects";
@@ -16,9 +15,12 @@ import { applicationRoutes } from "./app/routes/application-routes";
 import { ClassicRoutes } from "./app/routes/classic-routes";
 import { DashboardRoutes } from "./app/routes/dashboard-routes";
 import { applicationRouterAtom } from "./app/runtime/application-router-runtime";
-import { walletEnabledNetworksResultAtom } from "./features/wallet/state";
-import { AppContainerProvider } from "./features/widget-shell/components";
-import { NoEnabledYields } from "./features/widget-shell/ui";
+import { walletEnabledNetworksResultAtom } from "./features/wallet/index";
+import { useWidgetConfig } from "./features/widget-configuration/index";
+import {
+  AppContainerProvider,
+  NoEnabledYields,
+} from "./features/widget-shell/composition";
 import type { SKAppProps } from "./public-api/types";
 import { isLedgerDappBrowserProvider } from "./services/wallet/browser-environment";
 import { preloadImages } from "./shared/assets/images";

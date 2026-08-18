@@ -10,7 +10,7 @@ import { getYieldActionArg } from "../../../domain/earn/yield";
 import type { Token } from "../../../domain/token/token";
 import { formatUsd } from "../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../shared/lib/number-format";
-import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/state";
+import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
 import { positionDetailsExitActions } from "./classic-actions/exit";
 import {
   dispatchPositionDetailsWorkflowAtom,

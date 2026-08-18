@@ -19,7 +19,7 @@ import { WalletAddress } from "../../src/domain/identity/identifiers";
 import type { BorrowTransactionFlowIntake } from "../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import { BorrowActionCreationError } from "../../src/features/borrow-transaction-flow/state/orchestration/borrow-flow-review";
 import { BorrowTransactionFlowService } from "../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
-import { BorrowOperations } from "../../src/services/api/borrow-operations";
+import { BorrowOperations } from "../../src/services/api/operations";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import {
   makeWidgetNavigation,

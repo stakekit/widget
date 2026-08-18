@@ -9,19 +9,19 @@ import { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borr
 import { deriveBorrowPositions } from "../../../src/domain/borrow/positions/borrow-positions";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import { borrowMarketPositionIntentEventProjectionAtom } from "../../../src/features/borrow/index";
 import { getBorrowPositionActions } from "../../../src/features/borrow/market-position/model/details";
 import {
   borrowRepayFormAtom,
   makeBorrowPositionActionRouteKey,
 } from "../../../src/features/borrow/market-position/state/action-form";
-import { borrowMarketPositionIntentEventProjectionAtom } from "../../../src/features/borrow/state";
-import { tokenBalancesScanAtom } from "../../../src/features/portfolio/state";
-import { walletScopeAtom } from "../../../src/features/wallet/state";
+import { tokenBalancesScanAtom } from "../../../src/features/portfolio/index";
+import { walletScopeAtom } from "../../../src/features/wallet/index";
 import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom as borrowPositionsAtom,
 } from "../../../src/resources/borrow-positions/borrow-positions";
-import { BorrowResourceSource } from "../../../src/services/api/borrow-resource-source";
+import { BorrowResourceSource } from "../../../src/services/api/resource-sources";
 import {
   type WidgetDomainEvent,
   WidgetDomainEvents,

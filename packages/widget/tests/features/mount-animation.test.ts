@@ -1,10 +1,10 @@
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import { updateWidgetConfigAtom } from "../../src/app/runtime/widget-config";
 import {
   mountAnimationCompletionAtom,
   mountAnimationStateAtom,
-} from "../../src/features/mount-animation/state";
+} from "../../src/features/mount-animation/index";
+import { updateWidgetConfigAtom } from "../../src/features/widget-configuration/index";
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const makeWidgetConfig = (

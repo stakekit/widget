@@ -1,7 +1,7 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { createRoutesFromElements, type RouteObject } from "react-router";
 import { describe, expect, it, vi } from "vitest";
-import { createBorrowTransactionFlowRoutes } from "../../src/features/borrow-transaction-flow/ui";
+import { createBorrowTransactionFlowRoutes } from "../../src/features/borrow-transaction-flow/composition";
 
 vi.mock(
   "../../src/features/borrow-transaction-flow/react/borrow-flow-route",

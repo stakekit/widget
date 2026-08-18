@@ -15,9 +15,11 @@ import {
 } from "../../src/features/earn/state/earn-selection";
 import { earnEntryAtom } from "../../src/features/earn/state/earn-selection/state/atoms";
 import type { EarnEntry } from "../../src/features/earn/state/earn-selection/types";
-import { ApiRequestError } from "../../src/services/api/api-errors";
-import { LegacyResourceSource } from "../../src/services/api/legacy-resource-source";
-import { YieldResourceSource } from "../../src/services/api/yield-resource-source";
+import {
+  ApiRequestError,
+  LegacyResourceSource,
+  YieldResourceSource,
+} from "../../src/services/api/resource-sources";
 import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";

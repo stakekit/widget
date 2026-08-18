@@ -7,10 +7,10 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
-import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/state";
-import { walletScopeAtom } from "../../src/features/wallet/state";
+import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/index";
+import { walletScopeAtom } from "../../src/features/wallet/index";
+import { makeYieldEntry } from "../../src/features/yield-entry/index";
 import { getYieldEntryCta } from "../../src/features/yield-entry/model/yield-entry";
-import { makeYieldEntry } from "../../src/features/yield-entry/state";
 import type { YieldEntryFacadeInput } from "../../src/features/yield-entry/state/atoms/yield-entry";
 import { YieldEntrySubmissionService } from "../../src/features/yield-entry/state/orchestration/yield-entry-submission-service";
 import {

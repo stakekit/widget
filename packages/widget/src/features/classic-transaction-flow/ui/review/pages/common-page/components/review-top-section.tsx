@@ -6,8 +6,8 @@ import { TokenIcon } from "../../../../../../../shared/ui/components/token-icon"
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { Heading } from "../../../../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import type { RewardTokenDetails } from "../../../../../../earn/components";
-import { EstimatedRewardAmounts } from "../../../../../../earn/components";
+import type { RewardTokenDetails } from "../../../../../../earn/views";
+import { EstimatedRewardAmounts } from "../../../../../../earn/views";
 import { headingStyles } from "../../style.css";
 
 type Props = {

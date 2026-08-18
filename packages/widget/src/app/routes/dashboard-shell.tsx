@@ -1,12 +1,15 @@
 import { Outlet } from "react-router";
+import { useWidgetConfig } from "../../features/widget-configuration/index";
+import {
+  DashboardHeader,
+  PoweredBy,
+} from "../../features/widget-shell/composition";
 import {
   dashboardOutletWrapper,
   dashboardWrapper,
-} from "../../features/widget-shell/components";
-import { DashboardHeader, PoweredBy } from "../../features/widget-shell/ui";
+} from "../../features/widget-shell/views";
 import { combineRecipeWithVariant } from "../../shared/styles/recipe-variant";
 import { Box } from "../../shared/ui/primitives/box";
-import { useWidgetConfig } from "../composition/use-widget-config";
 import { DashboardTabs } from "./dashboard-tabs";
 
 export const DashboardShell = () => {

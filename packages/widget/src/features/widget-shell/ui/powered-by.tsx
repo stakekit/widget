@@ -2,12 +2,12 @@ import { useAtom } from "@effect/atom-react";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { motion } from "motion/react";
 import { Trans, useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../app/composition/use-widget-config";
+import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import { useSyncElementHeight } from "../../../shared/react/use-sync-element-height";
 import { Box } from "../../../shared/ui/primitives/box";
 import { SKLogo } from "../../../shared/ui/primitives/icons/sk-logo";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { useMountAnimation } from "../../mount-animation/state";
+import { useMountAnimation } from "../../mount-animation/index";
 
 const poweredByHeightAtom = Atom.make(0);
 

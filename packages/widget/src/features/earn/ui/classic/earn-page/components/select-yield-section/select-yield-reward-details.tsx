@@ -1,6 +1,5 @@
 import BigNumber from "bignumber.js";
 import { Trans, useTranslation } from "react-i18next";
-import { useWidgetConfig } from "../../../../../../../app/composition/use-widget-config";
 import type { EarnValidator } from "../../../../../../../domain/earn/models";
 import { getEffectiveYieldRewardRateDetails } from "../../../../../../../domain/earn/reward-rate";
 import {
@@ -8,6 +7,7 @@ import {
   getYieldTypeLabels,
 } from "../../../../../../../domain/earn/yield";
 import type { Token } from "../../../../../../../domain/token/token";
+import { useWidgetConfig } from "../../../../../../../features/widget-configuration/index";
 import { formatNumber } from "../../../../../../../shared/lib/number-format";
 import { Divider } from "../../../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../../../shared/ui/primitives/box";

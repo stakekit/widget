@@ -1,6 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { useSKWallet } from "../../wallet/state";
+import { useSKWallet } from "../../wallet/index";
 import {
   type PositionItem,
   positionsTableDataAtom,

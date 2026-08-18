@@ -1,22 +1,13 @@
 import { useAtomValue } from "@effect/atom-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
-import { AnimatedActivityPage } from "../../features/activity/ui";
-import { isActiveClassicTransactionFlowPathAtom } from "../../features/classic-transaction-flow/state";
-import { createClassicFlowRoutes } from "../../features/classic-transaction-flow/ui";
-import { AnimatedEarnPage } from "../../features/earn/ui";
-import { AnimatedPositionsPage } from "../../features/portfolio/ui";
-import { ClassicPositionDetailsPage } from "../../features/position-details/ui";
-import { WalletScopeRouteGuard } from "../../features/wallet/ui";
-import {
-  container,
-  headerContainer,
-  UnderMaintenance,
-} from "../../features/widget-shell/components";
-import {
-  useDetailsMatch,
-  useUnderMaintenance,
-} from "../../features/widget-shell/state";
+import { AnimatedActivityPage } from "../../features/activity/composition";
+import { createClassicFlowRoutes } from "../../features/classic-transaction-flow/composition";
+import { isActiveClassicTransactionFlowPathAtom } from "../../features/classic-transaction-flow/index";
+import { AnimatedEarnPage } from "../../features/earn/composition";
+import { AnimatedPositionsPage } from "../../features/portfolio/composition";
+import { ClassicPositionDetailsPage } from "../../features/position-details/composition";
+import { WalletScopeRouteGuard } from "../../features/wallet/composition";
 import {
   AnimationLayout,
   ClassicLayout,
@@ -24,7 +15,16 @@ import {
   GlobalModals,
   Header,
   PoweredBy,
-} from "../../features/widget-shell/ui";
+} from "../../features/widget-shell/composition";
+import {
+  useDetailsMatch,
+  useUnderMaintenance,
+} from "../../features/widget-shell/index";
+import {
+  container,
+  headerContainer,
+  UnderMaintenance,
+} from "../../features/widget-shell/views";
 
 export const ClassicRoutes = () => {
   const underMaintenance = useUnderMaintenance();

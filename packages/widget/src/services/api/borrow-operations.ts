@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Schema } from "effect";
+import { Effect, Schema } from "effect";
 import { BorrowFeatureDisabled } from "../../domain/borrow/availability";
 import { Action as BorrowAction } from "../../domain/borrow/execution/action";
 import type { ActionCommand as BorrowActionCommand } from "../../domain/borrow/execution/action-command";
@@ -7,14 +7,12 @@ import {
   SubmitTransactionResult as BorrowSubmitTransactionResult,
 } from "../../domain/borrow/execution/transaction";
 import type * as BorrowApi from "../../generated/api/borrow-client";
-import { WidgetConfigService } from "../config/widget-config";
-import { MissingBorrowApiConfig } from "./api-errors";
 import {
   decodeApiResponse,
   withApiRequestError,
   withResponseDecodeError,
 } from "./api-operation";
-import { ApiTransportService } from "./transport";
+import { MissingBorrowApiConfig } from "./resource-sources";
 
 export const makeBorrowOperations = (
   borrow: BorrowApi.BorrowApi | null,
@@ -95,20 +93,3 @@ export const makeBorrowOperations = (
     submitTransaction,
   } as const;
 };
-
-export class BorrowOperations extends Context.Service<BorrowOperations>()(
-  "stakekit/widget/services/api/BorrowOperations",
-  {
-    make: Effect.gen(function* () {
-      const { operations } = yield* ApiTransportService;
-      const widgetConfig = yield* WidgetConfigService;
-
-      return makeBorrowOperations(
-        operations.borrow,
-        (yield* widgetConfig.current).borrowEnabled
-      );
-    }),
-  }
-) {
-  static readonly layer = Layer.effect(BorrowOperations, BorrowOperations.make);
-}

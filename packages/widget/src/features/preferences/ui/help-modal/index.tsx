@@ -12,7 +12,7 @@ import { Button } from "../../../../shared/ui/primitives/button";
 import { HelpIcon } from "../../../../shared/ui/primitives/icons/help";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useTrackEvent } from "../../../tracking/state";
+import { useTrackEvent } from "../../../tracking/index";
 import type { useGeoBlock } from "../../react/use-geo-block";
 import { container, imageStyle } from "./style.css";
 

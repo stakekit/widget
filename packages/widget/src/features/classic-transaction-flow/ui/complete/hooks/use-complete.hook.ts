@@ -6,9 +6,9 @@ import { isMobile } from "../../../../../shared/lib/general";
 import {
   usePendingActionMatch,
   useUnstakeMatch,
-} from "../../../../position-details/state";
-import { useSKWallet } from "../../../../wallet/state";
-import type { PageCta } from "../../../../widget-shell/components";
+} from "../../../../position-details/index";
+import { useSKWallet } from "../../../../wallet/index";
+import type { PageCta } from "../../../../widget-shell/views";
 import { useClassicFlowExecution } from "../../../react/classic-flow-route";
 import { useActivityPendingActionMatch } from "../../../react/use-activity-pending-action-match";
 import { useActivityReviewMatch } from "../../../react/use-activity-review.match.ts";

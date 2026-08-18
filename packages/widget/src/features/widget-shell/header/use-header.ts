@@ -3,12 +3,12 @@ import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
-import { useWidgetConfig } from "../../../app/composition/use-widget-config";
+import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import { shouldShowDisconnect } from "../../../services/wallet/wallet-connectors";
-import { useTrackEvent } from "../../tracking/state";
-import { useSKWallet, useWalletConfig } from "../../wallet/state";
+import { useTrackEvent } from "../../tracking/index";
+import { useSKWallet, useWalletConfig } from "../../wallet/index";
 import { useDetailsMatch } from "../react/use-details-match";
-import { disconnectWidgetAtom } from "../state";
+import { disconnectWidgetAtom } from "../state/disconnect-widget";
 import { useSyncHeaderHeight } from "./use-sync-header-height";
 
 export const useHeader = () => {

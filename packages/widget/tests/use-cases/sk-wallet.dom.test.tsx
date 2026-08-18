@@ -12,8 +12,8 @@ import { ThirdPartyQueryClientProvider } from "../../src/app/composition/provide
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { ActionId, TransactionId } from "../../src/domain/identity/identifiers";
 import { MiscNetworks } from "../../src/domain/network/networks";
-import { useSKWallet } from "../../src/features/wallet/state";
-import { WagmiConfigProvider } from "../../src/features/wallet/ui";
+import { WagmiConfigProvider } from "../../src/features/wallet/composition";
+import { useSKWallet } from "../../src/features/wallet/index";
 import type { SKExternalProviders, SKTxMeta } from "../../src/public-api/types";
 import {
   solana,

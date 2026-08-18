@@ -14,13 +14,13 @@ import { Divider } from "../../../shared/ui/components/divider";
 import { Box } from "../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { DetailRow } from "../../earn/components";
-import { useTrackPage } from "../../tracking/state";
+import { DetailRow } from "../../earn/views";
+import { useTrackPage } from "../../tracking/index";
 import {
   AnimationPage,
   PageContainer,
   PageCtaButton,
-} from "../../widget-shell/components";
+} from "../../widget-shell/views";
 import {
   getBorrowTransactionFlowAmountLabelKey,
   projectBorrowTransactionFlowSummary,

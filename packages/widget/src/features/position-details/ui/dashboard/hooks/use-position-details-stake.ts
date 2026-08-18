@@ -1,6 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { YieldId } from "../../../../../domain/identity/identifiers";
-import { useWalletScopeRoute } from "../../../../wallet/ui";
+import { useWalletScopeRoute } from "../../../../wallet/index";
 import { usePositionDetailsStakeMatch } from "../../../react/use-position-details-stake-match";
 import {
   positionDetailsStakeViewAtom,

@@ -3,7 +3,6 @@ import { Effect, Match, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import { widgetConfigAtom } from "../../../app/runtime/widget-config";
 import { stakeTokenSameAsGasToken } from "../../../domain";
 import type { TronResource } from "../../../domain/action/tron-resource";
 import { getKycProviderName } from "../../../domain/earn/kyc";
@@ -22,12 +21,13 @@ import {
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import { tokenString } from "../../../domain/token/token";
+import { widgetConfigAtom } from "../../../features/widget-configuration/index";
 import type { DashboardYieldCategory } from "../../../public-api/types";
 import {
   getTokensPricesRequest,
   PricesKey,
   pricesAtom,
-} from "../../../resources/token-prices/prices";
+} from "../../../resources/token-prices/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import { walletCommandIdentity } from "../../../services/wallet/wallet-scope";
 import { formatUsd } from "../../../shared/lib/formatters";
@@ -38,22 +38,22 @@ import {
 import {
   isMountAnimationFinished,
   mountAnimationStateAtom,
-} from "../../mount-animation/state";
+} from "../../mount-animation/index";
 import {
   walletConfigResultAtom,
   walletConnectionStateAtom,
   walletScopeAtom,
-} from "../../wallet/state";
+} from "../../wallet/index";
 import {
   getYieldAmountConstraints,
   makeYieldEntry,
-} from "../../yield-entry/state";
+} from "../../yield-entry/index";
 import {
   CurrentYieldKycGateKey,
   currentYieldKycGateAtom,
   makeYieldSummary,
   refreshCurrentYieldKycAtom,
-} from "../../yield-summary/state";
+} from "../../yield-summary/index";
 import {
   type EarnTokenOption,
   earnSelectionStatusViewAtom,

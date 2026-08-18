@@ -9,8 +9,8 @@ import type {
 import type {
   ApiRequestError,
   ResponseDecodeError,
-} from "../../services/api/api-errors";
-import { LegacyResourceSource } from "../../services/api/legacy-resource-source";
+} from "../../services/api/resource-sources";
+import { LegacyResourceSource } from "../../services/api/resource-sources";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
