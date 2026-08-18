@@ -17,7 +17,8 @@ Supporting modules point toward neither journey:
 
 - `action-preparation` provides the single `prepareBorrowAction` seam. Its
   private action-specific modules derive projections and aligned review input.
-- `positions` and `wallet` adapt authoritative resources for Borrow.
+- `positions` adapts authoritative resources for Borrow, while `wallet` derives
+  a Borrow view from authoritative Wallet State.
 - `amount-input` and `action-feedback` contain intentionally shared
   presentation pieces.
 
@@ -44,5 +45,5 @@ not import a Borrow feature facade.
 
 The domain model under `domain/borrow` is grouped by responsibility:
 `catalog`, `positions`, `risk`, and `execution`. Root files hold cross-cutting
-identities, network, wallet, availability, and decoded response schemas. There
+identities, network, availability, and decoded response schemas. There
 are no domain barrels; callers import the owning module directly.

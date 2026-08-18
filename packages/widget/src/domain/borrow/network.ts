@@ -11,14 +11,14 @@ export const BorrowNetwork = Schema.Literals([
 ]);
 export type BorrowNetwork = typeof BorrowNetwork.Type;
 
-export const borrowChainsByNetwork: Record<BorrowNetwork, Chain> = {
+const borrowChainsByNetwork: Record<BorrowNetwork, Chain> = {
   ethereum: mainnet,
   base,
   arbitrum,
   optimism,
 };
 
-export const borrowChainEntries = Object.entries(borrowChainsByNetwork) as [
+const borrowChainEntries = Object.entries(borrowChainsByNetwork) as [
   BorrowNetwork,
   Chain,
 ][];
@@ -29,10 +29,6 @@ const borrowChainIdsToNetworks = Object.fromEntries(
     network,
   ])
 ) as Record<ChainId, BorrowNetwork>;
-
-export const borrowViemChains = Object.values(
-  borrowChainsByNetwork
-) as ReadonlyArray<Chain>;
 
 export const isBorrowNetwork = Schema.is(BorrowNetwork);
 

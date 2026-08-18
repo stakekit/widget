@@ -2,16 +2,13 @@ import { useAtomSet } from "@effect/atom-react";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type {
-  BorrowWalletBridgeState,
-  BorrowWalletConnectedBridgeState,
-} from "../../../../services/borrow/wallet-state-projection";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
 import { useTrackPage } from "../../../tracking/state";
 import { ConnectButton } from "../../../wallet/ui";
 import { PageCtaButton } from "../../../widget-shell/components";
 import { BorrowNotice } from "../../action-feedback/ui/notice";
-import { useBorrowWalletBridge } from "../../wallet/react/use-borrow-wallet";
+import type { BorrowWalletView } from "../../wallet/model/wallet-view";
+import { useBorrowWalletView } from "../../wallet/react/use-borrow-wallet";
 import type { BorrowEntryView } from "../model/borrow-entry";
 import { useBorrowEntryView } from "../react/use-borrow-entry";
 import {
@@ -25,20 +22,20 @@ import { CollateralSelectModal } from "./components/collateral-select-modal";
 import { BorrowFormDetails } from "./components/form-details";
 import { MarketSelectModal } from "./components/market-select-modal";
 
-type BorrowEntryWalletBridge = Exclude<
-  BorrowWalletBridgeState,
-  BorrowWalletConnectedBridgeState
+type BorrowEntryWalletView = Exclude<
+  BorrowWalletView,
+  { readonly status: "ready" }
 >;
 
 export const BorrowFormPage = () => {
   useTrackPage("borrow");
 
-  const walletBridge = useBorrowWalletBridge();
+  const walletView = useBorrowWalletView();
 
-  return walletBridge.status === "connected" ? (
+  return walletView.status === "ready" ? (
     <BorrowConnectedFormPage />
   ) : (
-    <BorrowEntryFormPage walletBridge={walletBridge} />
+    <BorrowEntryFormPage walletView={walletView} />
   );
 };
 
@@ -49,13 +46,13 @@ const BorrowConnectedFormPage = () => {
 };
 
 const BorrowEntryFormPage = ({
-  walletBridge,
+  walletView,
 }: {
-  readonly walletBridge: BorrowEntryWalletBridge;
+  readonly walletView: BorrowEntryWalletView;
 }) => {
   const { t } = useTranslation();
 
-  return walletBridge.status === "disconnected" ? (
+  return walletView.status === "connection-required" ? (
     <>
       <BorrowNotice title={t("dashboard.borrow.connect_title")}>
         {t("dashboard.borrow.connect_description")}

@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { AnimationPage, SplitView } from "../../../widget-shell/components";
-import { useBorrowWalletBridge } from "../../wallet/react/use-borrow-wallet";
+import { useBorrowWalletView } from "../../wallet/react/use-borrow-wallet";
 import { useBorrowEntryView } from "../react/use-borrow-entry";
 import { BorrowDetailsPanel } from "./components/details-panel";
 import { BorrowDetailsEmpty } from "./components/notices";
@@ -21,7 +21,7 @@ const BorrowConnectedDetailsPane = () => {
  */
 export const BorrowLayout = () => {
   const { t } = useTranslation();
-  const walletBridge = useBorrowWalletBridge();
+  const walletView = useBorrowWalletView();
 
   return (
     <AnimationPage>
@@ -35,7 +35,7 @@ export const BorrowLayout = () => {
         }
         secondary={
           <Box className={styles.detailsPaneWrapper} flex={1} width="0">
-            {walletBridge.status === "connected" ? (
+            {walletView.status === "ready" ? (
               <BorrowConnectedDetailsPane />
             ) : (
               <BorrowDetailsEmpty

@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import { Navigate, Outlet } from "react-router";
-import { useBorrowWalletBridge } from "../react/use-borrow-wallet";
+import { useBorrowWalletView } from "../react/use-borrow-wallet";
 
 export const BorrowConnectedWalletRoute = (): ReactNode => {
-  const walletBridge = useBorrowWalletBridge();
+  const walletView = useBorrowWalletView();
 
-  return walletBridge.status === "connected" ? (
+  return walletView.status === "ready" ? (
     <Outlet />
   ) : (
     <Navigate to="/borrow" replace />

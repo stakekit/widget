@@ -1,30 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
-import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import type {
-  BorrowWalletBridgeState,
-  BorrowWalletConnectedBridgeState,
-} from "../../../../services/borrow/wallet-state-projection";
-import {
-  currentBorrowWalletStateAtom,
-  disconnectedBorrowWalletProjection,
-} from "../state/wallet";
+import type { BorrowWalletView } from "../model/wallet-view";
+import { currentBorrowWalletViewAtom } from "../state/wallet";
 
-export const useBorrowWalletBridge = (): BorrowWalletBridgeState =>
-  useAtomValue(currentBorrowWalletStateAtom).pipe(
-    AsyncResult.value,
-    Option.getOrElse(() => disconnectedBorrowWalletProjection)
-  );
-
-export const useBorrowConnectedWalletBridge =
-  (): BorrowWalletConnectedBridgeState => {
-    const walletBridge = useBorrowWalletBridge();
-
-    if (walletBridge.status !== "connected") {
-      throw new Error(
-        "useBorrowConnectedWalletBridge requires a connected borrow wallet"
-      );
-    }
-
-    return walletBridge;
-  };
+export const useBorrowWalletView = (): BorrowWalletView =>
+  useAtomValue(currentBorrowWalletViewAtom);
