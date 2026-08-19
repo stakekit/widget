@@ -3,6 +3,7 @@ import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
   ActivityHistoryError,
   ActivityHistoryKey,
@@ -13,7 +14,6 @@ import {
   ApiRequestError,
   YieldResourceSource,
 } from "../../src/services/api/resource-sources";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 

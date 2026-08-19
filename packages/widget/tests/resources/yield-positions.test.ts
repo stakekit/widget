@@ -6,6 +6,7 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { EarnPosition } from "../../src/domain/earn/models";
 import type { YieldBalancesCommand } from "../../src/domain/finance/models";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { positionsDataAtom as earnPositionsDataAtom } from "../../src/features/earn/state/earn-selection/catalog/catalog";
 import { PositionsDataKey } from "../../src/features/earn/state/earn-selection/catalog/keys";
 import {
@@ -20,7 +21,6 @@ import {
   YieldResourceSource,
 } from "../../src/services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../src/services/resource-invalidation";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 
 const address = Schema.decodeSync(WalletAddress)(

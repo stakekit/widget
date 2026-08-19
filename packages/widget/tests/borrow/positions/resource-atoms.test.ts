@@ -10,6 +10,7 @@ import {
   emptyBorrowPositions,
 } from "../../../src/domain/borrow/positions/borrow-positions";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   BorrowPositionKey,
   BorrowPositionNotFound,
@@ -17,7 +18,6 @@ import {
   currentBorrowPositionsAtom,
 } from "../../../src/features/borrow/positions/state/positions";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
-import { BorrowResourceError as BorrowAtomError } from "../../../src/resources/borrow/borrow-resource-error";
 import { borrowIntegrationsResourceAtom as borrowIntegrationsAtom } from "../../../src/resources/borrow-integrations/borrow-integrations";
 import {
   BorrowMarketsKey,
@@ -27,9 +27,9 @@ import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom as borrowPositionsAtom,
 } from "../../../src/resources/borrow-positions/borrow-positions";
+import { BorrowResourceError as BorrowAtomError } from "../../../src/resources/borrow-resource-error";
 import { makeBorrowResourceSource } from "../../../src/services/api/borrow-resource-source";
 import { BorrowResourceSource } from "../../../src/services/api/resource-sources";
-import { WalletScopeKey } from "../../../src/services/wallet/wallet-scope";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const address = Schema.decodeSync(WalletAddress)(

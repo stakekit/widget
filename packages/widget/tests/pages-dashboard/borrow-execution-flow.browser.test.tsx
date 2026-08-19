@@ -32,6 +32,7 @@ import type {
   SubmitTransactionCommand,
 } from "../../src/domain/borrow/execution/transaction";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import type {
   BorrowFlowSession,
   BorrowTransactionFlowReview,
@@ -60,7 +61,6 @@ import {
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedNormalizedWalletState,

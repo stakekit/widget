@@ -4,17 +4,6 @@ import { appRuntime } from "../../app/runtime/app-runtime";
 import { projectTransactionWorkflowStarted } from "../../services/events/widget-domain-events";
 import { resetEarnEntryIntentForOwnerAtom } from "./state/earn-selection/state/atoms";
 
-export {
-  formatCooldownDays,
-  formatMinStake,
-  formatMinStakeLabel,
-  formatOptionalDays,
-  formatPricePerShare,
-  formatRewardClaiming,
-  formatRewardRateLabel,
-  formatRewardTokenLabel,
-} from "./model/earn-details-formatters";
-
 export const earnEntryIntentEventProjectionAtom = appRuntime
   .atom((context) =>
     projectTransactionWorkflowStarted(

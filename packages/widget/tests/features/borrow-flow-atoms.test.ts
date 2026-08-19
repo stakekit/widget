@@ -7,6 +7,7 @@ import { Action } from "../../src/domain/borrow/execution/action";
 import { Transaction } from "../../src/domain/borrow/execution/transaction";
 import { IntegrationId, MarketId } from "../../src/domain/borrow/ids";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import type {
   BorrowFlowSession,
   BorrowTransactionFlowIntake,
@@ -24,7 +25,6 @@ import type { BorrowFlowSessionHandle } from "../../src/features/borrow-transact
 import { BorrowTransactionFlowService } from "../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
 import { initializeTransactionWorkflow } from "../../src/services/transaction-workflow/internal/model";
 import { BorrowTransactionWorkflowInput } from "../../src/services/transaction-workflow/transaction-workflow-model";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

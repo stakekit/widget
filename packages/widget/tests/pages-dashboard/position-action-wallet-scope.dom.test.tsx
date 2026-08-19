@@ -3,9 +3,9 @@ import { act } from "react";
 import { describe, expect, it } from "vitest";
 import { EarnBalance } from "../../src/domain/earn/models";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { PositionDetailsWorkflowKey } from "../../src/features/position-details/state/workflow";
 import { useValidatorAddressesHandling } from "../../src/features/position-details/ui/classic/hooks/use-validator-addresses-handling";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 import { render } from "../utils/test-utils.dom.tsx";
 

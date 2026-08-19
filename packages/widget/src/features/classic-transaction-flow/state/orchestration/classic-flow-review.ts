@@ -8,12 +8,12 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
-import { getValidStakeSessionTx } from "../../../../domain";
 import type {
   ActionCommand,
   ManageActionCommand,
   YieldAction,
 } from "../../../../domain/action/models";
+import { getValidStakeSessionTx } from "../../../../domain/action/rules";
 import { YieldOperations } from "../../../../services/api/operations";
 import type { WidgetNavigationError } from "../../../../services/navigation/widget-navigation";
 import { TrackingService } from "../../../../services/tracking/tracking-service";

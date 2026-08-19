@@ -3,23 +3,13 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type { MarketId } from "../../../../domain/borrow/ids";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
+import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
 import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
-import { borrowIntegrationsResourceAtom } from "../../../../resources/borrow-integrations/index";
-import {
-  BorrowMarketsKey,
-  borrowMarketsResourceAtom,
-} from "../../../../resources/borrow-markets/index";
 import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom,
 } from "../../../../resources/borrow-positions/index";
-import type { WalletScopeKey } from "../../../../services/wallet/wallet-scope";
 import { walletScopeAtom } from "../../../wallet/index";
-
-export { BorrowMarketsKey, BorrowPositionsKey };
-export const borrowIntegrationsAtom = borrowIntegrationsResourceAtom.foreground;
-export const borrowMarketsAtom = borrowMarketsResourceAtom.foreground;
-export const borrowPositionsAtom = borrowPositionsResourceAtom.foreground;
 
 export class BorrowPositionNotFound extends Data.TaggedError(
   "BorrowPositionNotFound"

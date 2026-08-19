@@ -13,11 +13,11 @@ import { Effect, Result, Stream } from "effect";
 import type { Address } from "viem";
 import type { CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
-import { skNormalizeChainId } from "../../../../../domain";
 import type { InitParams } from "../../../../../services/wallet/init-params";
 import type { SupportedSKChains } from "../../../../../services/wallet/supported-chains";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import { WalletIntegrationError } from "../../../wallet-errors";
+import { normalizeChainId } from "../../normalize-chain-id";
 import { walletImages } from "../../runtime/assets";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import {
@@ -287,7 +287,7 @@ const createLedgerLiveConnector = ({
     const onChainChanged: ReturnType<CreateConnectorFn>["onChainChanged"] = (
       chainId
     ) => {
-      config.emitter.emit("change", { chainId: skNormalizeChainId(chainId) });
+      config.emitter.emit("change", { chainId: normalizeChainId(chainId) });
     };
 
     const onDisconnect: ReturnType<CreateConnectorFn>["onDisconnect"] = () => {

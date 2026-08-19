@@ -1,5 +1,6 @@
 import type { Chain } from "@stakekit/rainbowkit";
 import { MiscNetworks } from "../../../../domain/network/networks";
+import type { WalletNetwork } from "../../../../domain/wallet/network";
 import { MiscChainIds } from "../../../../public-api/types";
 import type { KebabToCamelCase } from "../../../../shared/type-helpers";
 import { getTokenLogo } from "../../network-assets";
@@ -11,7 +12,7 @@ const supportedMiscChains = [
   MiscNetworks.Tron,
   MiscNetworks.Ton,
   MiscNetworks.Cardano,
-] as const;
+] as const satisfies ReadonlyArray<WalletNetwork>;
 
 export const supportedMiscChainsSet = new Set(supportedMiscChains);
 

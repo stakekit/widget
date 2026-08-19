@@ -14,6 +14,7 @@ import {
 import { TestClock } from "effect/testing";
 import { describe, expect, it, vi } from "vitest";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import type { ActionPreviewRequest } from "../../src/services/api/operations";
@@ -29,7 +30,6 @@ import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { initializeTransactionWorkflow } from "../../src/services/transaction-workflow/internal/model";
 import type { TransactionWorkflowInput } from "../../src/services/transaction-workflow/transaction-workflow-model";
 import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,

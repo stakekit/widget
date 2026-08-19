@@ -8,8 +8,8 @@ import {
   type Stream,
   SubscriptionRef,
 } from "effect";
+import { walletScopeOwnerKey } from "../../domain/wallet/wallet-scope";
 import { WidgetDomainEvents } from "../events/widget-domain-events";
-import { walletScopeOwnerKey } from "../wallet/wallet-scope";
 import {
   getTransactionWorkflowAction,
   initializeTransactionWorkflow,

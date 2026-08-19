@@ -1,10 +1,10 @@
 import type { ActionCommand } from "../../../domain/borrow/execution/action-command";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
+import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 import {
   toWidgetPath,
   type WidgetPathInput,
 } from "../../../services/navigation/widget-navigation";
-import type { WalletScopeKey } from "../../../services/wallet/wallet-scope";
 
 type BorrowReviewCommon = {
   readonly marketLabel: string;

@@ -1,7 +1,7 @@
 import { keyframes, style } from "@vanilla-extract/css";
 import { atoms } from "../../../../../shared/styles/theme/atoms.css";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
-import { OUTLET_PADDING } from "../styles.css";
+import { DASHBOARD_OUTLET_PADDING } from "../../../../../shared/styles/tokens/layout";
 
 export const container = style({
   alignItems: "stretch",
@@ -92,11 +92,11 @@ export const bar = style([
  * to the card edge on whichever side it currently lives.
  */
 export const barBleedRight = style({
-  marginRight: `calc(8px - ${OUTLET_PADDING})`,
+  marginRight: `calc(8px - ${DASHBOARD_OUTLET_PADDING})`,
 });
 
 export const barBleedLeft = style({
-  marginLeft: `calc(8px - ${OUTLET_PADDING})`,
+  marginLeft: `calc(8px - ${DASHBOARD_OUTLET_PADDING})`,
 });
 
 export const barIcon = style({

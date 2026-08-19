@@ -1,5 +1,6 @@
 import type { Chain } from "@stakekit/rainbowkit";
 import { SubstrateNetworks } from "../../../../../domain/network/networks";
+import type { WalletNetwork } from "../../../../../domain/wallet/network";
 import { SubstrateChainIds } from "../../../../../public-api/types";
 import type { KebabToCamelCase } from "../../../../../shared/type-helpers";
 import { getNetworkLogo } from "../../../network-assets";
@@ -7,7 +8,7 @@ import { getNetworkLogo } from "../../../network-assets";
 const supportedSubstrateChains = [
   SubstrateNetworks.Polkadot,
   SubstrateNetworks.Bittensor,
-] as const;
+] as const satisfies ReadonlyArray<WalletNetwork>;
 
 export const supportedSubstrateChainsSet = new Set(supportedSubstrateChains);
 

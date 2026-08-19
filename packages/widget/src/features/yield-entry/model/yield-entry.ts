@@ -1,6 +1,5 @@
 import BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
-import { getMaxAmount } from "../../../domain";
 import { ActionCommand } from "../../../domain/action/models";
 import type { TronResource } from "../../../domain/action/tron-resource";
 import type {
@@ -8,6 +7,7 @@ import type {
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
 import {
+  getMaxAmount,
   getMinStakeAmount,
   getMinUnstakeAmount,
   isForceMaxAmount,

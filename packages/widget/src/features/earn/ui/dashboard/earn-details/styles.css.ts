@@ -2,51 +2,19 @@ import { globalStyle, keyframes, style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../../../shared/styles/theme/atoms.css";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
-import { OUTLET_PADDING } from "../../../../widget-shell/dashboard/components/styles.css";
+import { DASHBOARD_OUTLET_PADDING } from "../../../../../shared/styles/tokens/layout";
 
 export const container = style({
   bottom: 0,
   boxSizing: "border-box",
   left: 0,
-  marginRight: `calc(-1 * ${OUTLET_PADDING})`,
+  marginRight: `calc(-1 * ${DASHBOARD_OUTLET_PADDING})`,
   overflowY: "auto",
-  paddingRight: OUTLET_PADDING,
+  paddingRight: DASHBOARD_OUTLET_PADDING,
   position: "absolute",
   right: 0,
   scrollbarGutter: "stable",
   top: 0,
-});
-
-export const headerProviderText = style({
-  fontSize: "13px",
-  lineHeight: "18px",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-});
-
-export const titleText = style({
-  fontSize: "16px",
-  lineHeight: "120%",
-});
-
-export const headerProviderLabelText = style({
-  fontSize: "13px",
-  lineHeight: "18px",
-});
-
-export const headerBadgeRow = style({
-  alignItems: "center",
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "4px 6px",
-  minWidth: 0,
-});
-
-export const headerBadgeSeparator = style({
-  flexShrink: 0,
-  fontSize: "13px",
-  lineHeight: "18px",
 });
 
 export const autoBadge = style([

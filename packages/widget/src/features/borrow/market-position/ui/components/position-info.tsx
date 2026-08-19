@@ -5,11 +5,14 @@ import {
   DetailRow,
   DetailsSection,
 } from "../../../../../shared/ui/components/details-section";
+import {
+  PositionBreakdownRows,
+  PositionDetailsScrollArea,
+} from "../../../../../shared/ui/components/position-details";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { positionDetailsComponentStyles as positionDetailsStyles } from "../../../../position-details/views";
 import type {
   BorrowPositionAction,
   getBorrowPositionDetailsModel,
@@ -42,12 +45,7 @@ export const BorrowPositionInfo = ({
   }
 
   return (
-    <Box
-      className={positionDetailsStyles.infoContainer}
-      display="flex"
-      flexDirection="column"
-      gap="4"
-    >
+    <PositionDetailsScrollArea>
       <Box display="flex" alignItems="center" gap="2">
         <TokenIcon token={model.headerToken} tokenLogoHw="12" />
         <Box minWidth="0">
@@ -92,29 +90,7 @@ export const BorrowPositionInfo = ({
 
       {model.breakdownRows.length > 0 && (
         <DetailsSection title={t("dashboard.position_details.breakdown")}>
-          <Box display="flex" flexDirection="column">
-            {model.breakdownRows.map((row) => (
-              <Box className={positionDetailsStyles.breakdownRow} key={row.id}>
-                <Text variant={{ type: "muted", weight: "normal" }}>
-                  {row.label}
-                </Text>
-
-                <Box className={positionDetailsStyles.breakdownAmounts}>
-                  <Text className={positionDetailsStyles.breakdownValue}>
-                    {row.value}
-                  </Text>
-                  {row.subValue && (
-                    <Text
-                      className={positionDetailsStyles.breakdownSubValue}
-                      variant={{ type: "muted", weight: "normal" }}
-                    >
-                      {row.subValue}
-                    </Text>
-                  )}
-                </Box>
-              </Box>
-            ))}
-          </Box>
+          <PositionBreakdownRows rows={model.breakdownRows} />
         </DetailsSection>
       )}
 
@@ -130,6 +106,6 @@ export const BorrowPositionInfo = ({
           />
         </Box>
       </DetailsSection>
-    </Box>
+    </PositionDetailsScrollArea>
   );
 };

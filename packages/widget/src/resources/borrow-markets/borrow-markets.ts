@@ -9,7 +9,7 @@ import {
   API_MAX_PAGE_SIZE,
   loadAllPages,
 } from "../../shared/effect/pagination";
-import { withBorrowResourceError } from "../borrow/index";
+import { withBorrowResourceError } from "../borrow-resource-error";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
 const CONCURRENCY = 5;

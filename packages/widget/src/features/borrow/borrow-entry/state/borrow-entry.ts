@@ -10,23 +10,25 @@ import {
   type BorrowNetwork,
   isBorrowNetwork,
 } from "../../../../domain/borrow/network";
-import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
-import { TrackingService } from "../../../../services/tracking/tracking-service";
 import {
   sameWalletScopeOwner,
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
-} from "../../../../services/wallet/wallet-scope";
+} from "../../../../domain/wallet/wallet-scope";
+import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
+import { borrowIntegrationsResourceAtom } from "../../../../resources/borrow-integrations/index";
+import {
+  BorrowMarketsKey,
+  borrowMarketsResourceAtom,
+} from "../../../../resources/borrow-markets/index";
+import {
+  BorrowPositionsKey,
+  borrowPositionsResourceAtom,
+} from "../../../../resources/borrow-positions/index";
+import { TrackingService } from "../../../../services/tracking/tracking-service";
 import { startBorrowTransactionFlowAtom } from "../../../borrow-transaction-flow/index";
 import { tokenBalancesScanAtom } from "../../../portfolio/index";
 import { walletScopeAtom } from "../../../wallet/index";
-import {
-  BorrowMarketsKey,
-  BorrowPositionsKey,
-  borrowIntegrationsAtom,
-  borrowMarketsAtom,
-  borrowPositionsAtom,
-} from "../../positions/index";
 import {
   applyBorrowFormAction,
   BorrowEntryKey,
@@ -94,7 +96,9 @@ const borrowFormStateAtom = Atom.writable<
         ? previous
         : makeDefaultBorrowFormState(owner);
     const marketsResult = context.get(
-      borrowMarketsAtom(new BorrowMarketsKey({ network: owner.network }))
+      borrowMarketsResourceAtom.foreground(
+        new BorrowMarketsKey({ network: owner.network })
+      )
     );
     const shouldReset =
       AsyncResult.isSuccess(marketsResult) &&
@@ -130,7 +134,9 @@ const borrowFormStateAtom = Atom.writable<
         ? state
         : makeDefaultBorrowFormState(owner);
     const marketsResult = context.get(
-      borrowMarketsAtom(new BorrowMarketsKey({ network: owner.network }))
+      borrowMarketsResourceAtom.foreground(
+        new BorrowMarketsKey({ network: owner.network })
+      )
     );
     const shouldPinDefaults = action.type !== "market/select";
     const intent =
@@ -171,17 +177,23 @@ export const currentBorrowEntryAtom = Atom.writable<
     const key = context.get(currentBorrowEntryKeyAtom);
     if (!key || !state) return null;
     const marketsResult = context.get(
-      borrowMarketsAtom(new BorrowMarketsKey({ network: key.network }))
+      borrowMarketsResourceAtom.foreground(
+        new BorrowMarketsKey({ network: key.network })
+      )
     );
 
     return {
       ...resolveBorrowEntryView({
-        integrationsResult: context.get(borrowIntegrationsAtom),
+        integrationsResult: context.get(
+          borrowIntegrationsResourceAtom.foreground
+        ),
         intent: state.intent,
         key,
         marketsResult,
         positionsResult: context.get(
-          borrowPositionsAtom(new BorrowPositionsKey({ scope: key.scope }))
+          borrowPositionsResourceAtom.foreground(
+            new BorrowPositionsKey({ scope: key.scope })
+          )
         ),
         tokenBalances:
           AsyncResult.getOrElse(

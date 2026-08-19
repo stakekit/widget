@@ -1,6 +1,6 @@
 import { Data } from "effect";
+import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
 import { ActivityHistoryKey } from "../../../../resources/activity-history/index";
-import type { WalletScopeKey } from "../../../../services/wallet/wallet-scope";
 import {
   type ActivityFilter,
   getActivityFilterYieldTypes,

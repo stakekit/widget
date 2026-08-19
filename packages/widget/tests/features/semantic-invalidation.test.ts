@@ -16,6 +16,10 @@ import {
 } from "../../src/domain/finance/models";
 import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
 import {
+  WalletScopeKey,
+  walletScopeOwnerKey,
+} from "../../src/domain/wallet/wallet-scope";
+import {
   ActivityFilterOptionsKey,
   activityFilterOptionsAtom,
 } from "../../src/features/activity/state/read-models/activity-feed";
@@ -46,10 +50,6 @@ import {
   ActivityInvalidationKey,
   resourceInvalidationKeys,
 } from "../../src/services/resource-invalidation";
-import {
-  WalletScopeKey,
-  walletScopeOwnerKey,
-} from "../../src/services/wallet/wallet-scope";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 

@@ -1,13 +1,13 @@
 import { Data, Array as EArray, Option, Result } from "effect";
-import {
-  PAMultiValidatorsRequired,
-  PASingleValidatorRequired,
-} from "../../../domain";
 import { preparePendingActionCommand } from "../../../domain/action/action-command";
 import {
   ActionCommand,
   type PendingAction,
 } from "../../../domain/action/models";
+import {
+  isPendingActionValidatorAddressesRequired,
+  isPendingActionValidatorAddressRequired,
+} from "../../../domain/action/pending-action";
 import type { ExitReceiveToken } from "../../../domain/action/rules";
 import type {
   EarnBalance,
@@ -78,7 +78,7 @@ const makeOpenPendingActionModalState = ({
 }): PendingActionModalState => ({
   _tag: "Open",
   attemptId,
-  multiSelect: PAMultiValidatorsRequired(pendingAction),
+  multiSelect: isPendingActionValidatorAddressesRequired(pendingAction),
   pendingAction: { pendingAction, yieldBalance },
   selectedValidators: new Set([
     ...(yieldBalance.validators?.map((validator) => validator.address) ?? []),
@@ -167,8 +167,8 @@ export const togglePendingActionValidator = ({
 export const pendingActionNeedsValidatorSelection = (
   pendingAction: PendingAction
 ): boolean =>
-  PAMultiValidatorsRequired(pendingAction) ||
-  PASingleValidatorRequired(pendingAction);
+  isPendingActionValidatorAddressesRequired(pendingAction) ||
+  isPendingActionValidatorAddressRequired(pendingAction);
 
 type PositionDetailsExitFacts = Readonly<{
   readonly additionalAddresses: AdditionalAddresses | null;

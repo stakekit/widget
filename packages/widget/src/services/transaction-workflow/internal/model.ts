@@ -1,6 +1,6 @@
 import type { YieldAction } from "../../../domain/action/models";
 import type { Action as BorrowAction } from "../../../domain/borrow/execution/action";
-import { sameWalletScopeOwner } from "../../wallet/wallet-scope";
+import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
 import {
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,

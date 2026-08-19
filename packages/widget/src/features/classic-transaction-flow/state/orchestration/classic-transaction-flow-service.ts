@@ -14,7 +14,7 @@ import {
   type WidgetNavigationError,
 } from "../../../../services/navigation/widget-navigation";
 import type { WalletRuntimeInvariantError } from "../../../../services/wallet/wallet-errors";
-import { walletScopeFromState } from "../../../../services/wallet/wallet-scope";
+import { walletScopeFromState } from "../../../../services/wallet/wallet-scope-adapter";
 import { WalletService } from "../../../../services/wallet/wallet-service";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 import {

@@ -2,7 +2,7 @@ import { globalStyle, style } from "@vanilla-extract/css";
 import { atoms } from "../../../../shared/styles/theme/atoms.css";
 import { vars } from "../../../../shared/styles/theme/contract.css";
 import { splitExpandedContainerQuery } from "../../../../shared/styles/tokens/breakpoints";
-import { OUTLET_PADDING } from "../../../widget-shell/dashboard/components/styles.css";
+import { DASHBOARD_OUTLET_PADDING } from "../../../../shared/styles/tokens/layout";
 
 const pane = style({
   minWidth: 0,
@@ -38,9 +38,9 @@ export const detailsScroll = style({
   bottom: 0,
   boxSizing: "border-box",
   left: 0,
-  marginRight: `calc(-1 * ${OUTLET_PADDING})`,
+  marginRight: `calc(-1 * ${DASHBOARD_OUTLET_PADDING})`,
   overflowY: "auto",
-  paddingRight: OUTLET_PADDING,
+  paddingRight: DASHBOARD_OUTLET_PADDING,
   position: "absolute",
   right: 0,
   scrollbarGutter: "stable",

@@ -5,13 +5,13 @@ import { appRuntime } from "../../../../app/runtime/app-runtime";
 import { BorrowFeatureDisabled } from "../../../../domain/borrow/availability";
 import type { MarketId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
-import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
 import {
   sameWalletScopeOwner,
   type WalletScopeKey,
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
-} from "../../../../services/wallet/wallet-scope";
+} from "../../../../domain/wallet/wallet-scope";
+import { widgetConfigAtom } from "../../../../features/widget-configuration/index";
 import { startBorrowTransactionFlowAtom } from "../../../borrow-transaction-flow/index";
 import { tokenBalancesScanAtom } from "../../../portfolio/index";
 import { walletScopeAtom } from "../../../wallet/index";

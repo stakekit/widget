@@ -16,6 +16,7 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
   isActiveClassicTransactionFlowPathAtom,
   startClassicTransactionFlowAtom,
@@ -24,7 +25,6 @@ import type { ClassicTransactionFlowIntake } from "../../src/features/classic-tr
 import { walletScopeAtom } from "../../src/features/wallet/index";
 import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import { disconnectedLedgerConnectorState } from "../../src/services/wallet/wallet-state";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";

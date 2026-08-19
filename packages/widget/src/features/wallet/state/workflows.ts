@@ -1,6 +1,6 @@
 import type { Chain } from "@stakekit/rainbowkit";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
-import { walletCommandIdentity } from "../../../services/wallet/wallet-scope";
+import { walletCommandIdentity } from "../../../services/wallet/wallet-command-identity";
 import { WalletService } from "../../../services/wallet/wallet-service";
 import { currentWalletStateAtom } from "./selectors";
 

@@ -2,10 +2,10 @@ import { Effect, Match } from "effect";
 import type { Action as BorrowAction } from "../../../domain/borrow/execution/action";
 import { decodeBorrowTransactionForWallet } from "../../../domain/borrow/execution/transaction";
 import type { Network } from "../../../domain/network/network";
+import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
 import type { SKBorrowTxMeta } from "../../../public-api/types";
 import { TrackingService } from "../../tracking/tracking-service";
 import type { WalletRuntimeInvariantError } from "../../wallet/wallet-errors";
-import { sameWalletScopeOwner } from "../../wallet/wallet-scope";
 import { WalletService } from "../../wallet/wallet-service";
 import {
   makeTransactionSignError,

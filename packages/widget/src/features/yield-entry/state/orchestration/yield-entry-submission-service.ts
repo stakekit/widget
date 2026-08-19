@@ -1,15 +1,15 @@
 import { Context, Effect, Layer } from "effect";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
+import {
+  sameWalletCommandIdentity,
+  type WalletCommandIdentity,
+  walletCommandIdentity,
+} from "../../../../services/wallet/wallet-command-identity";
 import type {
   WalletIntegrationError,
   WalletRuntimeInvariantError,
 } from "../../../../services/wallet/wallet-errors";
 import { WalletModal } from "../../../../services/wallet/wallet-modal";
-import {
-  sameWalletCommandIdentity,
-  type WalletCommandIdentity,
-  walletCommandIdentity,
-} from "../../../../services/wallet/wallet-scope";
 import { WalletService } from "../../../../services/wallet/wallet-service";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 

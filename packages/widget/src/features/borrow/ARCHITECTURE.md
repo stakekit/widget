@@ -17,8 +17,10 @@ Supporting modules point toward neither journey:
 
 - `action-preparation` provides the single `prepareBorrowAction` seam. Its
   private action-specific modules derive projections and aligned review input.
-- `positions` adapts authoritative resources for Borrow, while `wallet` derives
-  a Borrow view from authoritative Wallet State.
+- `positions` publishes Borrow position views and the single-position adapter,
+  while `wallet` derives a Borrow view from authoritative Wallet State. It does
+  not republish Resource keys or Atom families; Borrow Entry consumes the
+  Authoritative Resources it needs through their own interfaces.
 - `amount-input` and `action-feedback` contain intentionally shared
   presentation pieces.
 

@@ -4,10 +4,14 @@ import {
   DetailRow,
   DetailsSection,
 } from "../../../../../shared/ui/components/details-section";
+import {
+  PositionBreakdownRows,
+  PositionDetailsScrollArea,
+  PositionMetricCards,
+} from "../../../../../shared/ui/components/position-details";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { EarnDetailsHeader } from "../../../../earn/views";
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
@@ -15,65 +19,15 @@ import {
 import {
   RiskRatingBadge,
   riskSummaryActions,
+  YieldDetailsHeader,
   YieldRiskInfoTooltip,
 } from "../../../../yield-summary/views";
 import {
   type DashboardPositionDetailValue,
-  type DashboardPositionMetricCard,
   getDashboardPositionDetailsModel,
   getPositionHeaderBadges,
 } from "../../../model/dashboard-position-details";
 import { usePositionDetails } from "../../classic/hooks/use-position-details";
-import * as styles from "./styles.css";
-
-const PositionMetricCards = ({
-  cards,
-}: {
-  cards: DashboardPositionMetricCard[];
-}) => (
-  <Box className={styles.metricGrid}>
-    {cards.map((card) => {
-      const tone = card.tone ?? "default";
-
-      return (
-        <Box
-          className={styles.metricCard({ tone })}
-          display="flex"
-          flexDirection="column"
-          gap="1"
-          key={card.id}
-        >
-          <Text
-            className={styles.metricLabelText}
-            variant={{ type: "muted", weight: "normal" }}
-          >
-            {card.label}
-          </Text>
-
-          {typeof card.value === "string" ? (
-            <Text
-              className={styles.metricValueText({ tone })}
-              variant={{ weight: "bold" }}
-            >
-              {card.value}
-            </Text>
-          ) : (
-            <Box>{card.value}</Box>
-          )}
-
-          {card.subValue && (
-            <Text
-              className={styles.metricSubValueText}
-              variant={{ type: "muted", weight: "normal" }}
-            >
-              {card.subValue}
-            </Text>
-          )}
-        </Box>
-      );
-    })}
-  </Box>
-);
 
 const renderDetailValue = (value: DashboardPositionDetailValue) =>
   typeof value === "string" ? (
@@ -124,13 +78,8 @@ export const PositionDetailsInfo = () => {
     });
 
     return (
-      <Box
-        className={styles.infoContainer}
-        display="flex"
-        flexDirection="column"
-        gap="4"
-      >
-        <EarnDetailsHeader
+      <PositionDetailsScrollArea>
+        <YieldDetailsHeader
           headerBadges={getPositionHeaderBadges(integrationData, t)}
           providerName={model.providerName}
           yieldDto={integrationData}
@@ -140,27 +89,7 @@ export const PositionDetailsInfo = () => {
 
         {model.breakdownRows.length > 0 && (
           <DetailsSection title={t("dashboard.position_details.breakdown")}>
-            <Box display="flex" flexDirection="column">
-              {model.breakdownRows.map((row) => (
-                <Box className={styles.breakdownRow} key={row.id}>
-                  <Text variant={{ type: "muted", weight: "normal" }}>
-                    {row.label}
-                  </Text>
-
-                  <Box className={styles.breakdownAmounts}>
-                    <Text className={styles.breakdownValue}>{row.value}</Text>
-                    {row.subValue && (
-                      <Text
-                        className={styles.breakdownSubValue}
-                        variant={{ type: "muted", weight: "normal" }}
-                      >
-                        {row.subValue}
-                      </Text>
-                    )}
-                  </Box>
-                </Box>
-              ))}
-            </Box>
+            <PositionBreakdownRows rows={model.breakdownRows} />
           </DetailsSection>
         )}
 
@@ -182,21 +111,18 @@ export const PositionDetailsInfo = () => {
             </Box>
           )}
         </DetailsSection>
-      </Box>
+      </PositionDetailsScrollArea>
     );
   }
 
   return (
-    <Box
-      alignItems="center"
-      className={styles.infoContainer}
-      display="flex"
-      justifyContent="center"
-    >
-      <Text variant={{ type: "muted", weight: "normal" }}>
-        {t("dashboard.position_details.empty")}
-      </Text>
-    </Box>
+    <PositionDetailsScrollArea>
+      <Box alignItems="center" display="flex" justifyContent="center">
+        <Text variant={{ type: "muted", weight: "normal" }}>
+          {t("dashboard.position_details.empty")}
+        </Text>
+      </Box>
+    </PositionDetailsScrollArea>
   );
 };
 

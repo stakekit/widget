@@ -11,6 +11,7 @@ import { Market } from "../../src/domain/borrow/catalog/market";
 import { BorrowAccountSnapshot } from "../../src/domain/borrow/positions/borrow-account-snapshot";
 import { deriveBorrowPositions } from "../../src/domain/borrow/positions/borrow-positions";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
   type BorrowPositionAction,
   getBorrowPositionActions,
@@ -19,7 +20,6 @@ import { BorrowPositionActionPage } from "../../src/features/borrow/market-posit
 import { currentBorrowPositionsAtom } from "../../src/features/borrow/positions/state/positions";
 import { walletScopeAtom } from "../../src/features/wallet/index";
 import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { RootElementProvider } from "../../src/shared/react/root-element";
 import { render } from "../utils/test-utils.dom.tsx";
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";

@@ -2,12 +2,13 @@ import { Data, Effect, Result } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import {
-  PAMultiValidatorsRequired,
-  PASingleValidatorRequired,
-} from "../../../domain";
 import { preparePendingActionCommand } from "../../../domain/action/action-command";
+import {
+  isPendingActionValidatorAddressesRequired,
+  isPendingActionValidatorAddressRequired,
+} from "../../../domain/action/pending-action";
 import { getPositionBalanceDataKey } from "../../../domain/portfolio/positions";
+import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 import {
   SingleYieldBalancesKey,
   singleYieldBalancesResourceAtom,
@@ -18,10 +19,7 @@ import {
 } from "../../../resources/yield-opportunity/index";
 import type { ClassicTransactionWorkflowProviderDetail } from "../../../services/transaction-workflow/transaction-workflow-model";
 import type { InitParams } from "../../../services/wallet/init-params";
-import {
-  type WalletScopeKey,
-  walletScopeFromState,
-} from "../../../services/wallet/wallet-scope";
+import { walletScopeFromState } from "../../../services/wallet/wallet-scope-adapter";
 import { initParamsAtom } from "../../init-params/index";
 import { walletConnectionStateAtom } from "../../wallet/index";
 
@@ -156,8 +154,8 @@ const projectPendingActionDeepLink = (value: PendingActionDeepLinkValue) => {
   const balanceId = getPositionBalanceDataKey(balance);
 
   if (
-    PAMultiValidatorsRequired(value.pendingAction) ||
-    PASingleValidatorRequired(value.pendingAction)
+    isPendingActionValidatorAddressesRequired(value.pendingAction) ||
+    isPendingActionValidatorAddressRequired(value.pendingAction)
   ) {
     return {
       intentId: value.intentId,

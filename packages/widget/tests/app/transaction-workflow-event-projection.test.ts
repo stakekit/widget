@@ -12,6 +12,10 @@ import { describe, expect, it } from "vitest";
 import { transactionWorkflowResourceEventProjection } from "../../src/app/runtime/transaction-workflow-event-projection";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import {
+  WalletScopeKey,
+  walletScopeOwnerKey,
+} from "../../src/domain/wallet/wallet-scope";
+import {
   type WidgetDomainEvent,
   WidgetDomainEvents,
 } from "../../src/services/events/widget-domain-events";
@@ -21,10 +25,6 @@ import {
   WalletBalancesInvalidationKey,
   YieldPositionsInvalidationKey,
 } from "../../src/services/resource-invalidation";
-import {
-  WalletScopeKey,
-  walletScopeOwnerKey,
-} from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,

@@ -13,12 +13,12 @@ import type {
 import type { YieldId } from "../../../../domain/identity/identifiers";
 import type { PositionsData } from "../../../../domain/portfolio/positions";
 import type { Token } from "../../../../domain/token/token";
+import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
 import type {
   DashboardYieldCategory,
   PreferredTokenYieldsPerNetwork,
 } from "../../../../public-api/types";
 import type { InitParams } from "../../../../services/wallet/init-params";
-import type { WalletScopeKey } from "../../../../services/wallet/wallet-scope";
 import type { PullPage } from "../../../../shared/effect/pagination";
 import type {
   YieldValidatorsKey,

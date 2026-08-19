@@ -14,6 +14,10 @@ import type { ActionTransaction } from "../../src/domain/action/models";
 import { Action } from "../../src/domain/borrow/execution/action";
 import { Transaction } from "../../src/domain/borrow/execution/transaction";
 import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
+import {
+  WalletScopeKey,
+  walletScopeOwnerKey,
+} from "../../src/domain/wallet/wallet-scope";
 import type { ActionMeta } from "../../src/public-api/types";
 import {
   BorrowOperations,
@@ -34,10 +38,6 @@ import {
   TransactionWorkflowService,
 } from "../../src/services/transaction-workflow/transaction-workflow-service";
 import { WalletSigningError } from "../../src/services/wallet/wallet-errors";
-import {
-  WalletScopeKey,
-  walletScopeOwnerKey,
-} from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import { yieldApiTransactionFixture } from "../fixtures";
 import {

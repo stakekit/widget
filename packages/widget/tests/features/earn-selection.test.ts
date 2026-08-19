@@ -6,6 +6,7 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { TokenBalancesResponse } from "../../src/domain/finance/models";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { tokenString } from "../../src/domain/token/token";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
   earnSelectionStatusViewAtom,
   earnSelectionTokenOptionsViewAtom,
@@ -20,7 +21,6 @@ import {
   LegacyResourceSource,
   YieldResourceSource,
 } from "../../src/services/api/resource-sources";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 

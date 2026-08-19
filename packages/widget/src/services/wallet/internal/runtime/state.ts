@@ -7,9 +7,9 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
+import { sameWalletScopeOwner } from "../../../../domain/wallet/wallet-scope";
 import type { WidgetPersistence } from "../../../persistence/widget-persistence";
 import type { WalletRuntimeInvariantError } from "../../wallet-errors";
-import { sameWalletScopeOwner } from "../../wallet-scope";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,

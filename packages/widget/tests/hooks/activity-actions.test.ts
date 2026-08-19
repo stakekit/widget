@@ -4,10 +4,10 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { ActivityActionsPage } from "../../src/domain/activity/models";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { activityActionsPullAtom } from "../../src/features/activity/state/read-models/activity-feed";
 import { ActivityActionsKey } from "../../src/features/activity/state/read-models/activity-request";
 import { YieldResourceSource } from "../../src/services/api/resource-sources";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import {
   yieldApiActionDtoFixture,

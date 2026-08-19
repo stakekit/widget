@@ -1,12 +1,8 @@
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router";
-import { Box } from "../../../../shared/ui/primitives/box";
+import { PositionDetailsPane } from "../../../../shared/ui/components/position-details";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import {
-  posistionDetailsInfoContainer,
-  positionDetailsActionsContainer,
-} from "../../../position-details/views";
 import { useTrackPage } from "../../../tracking/index";
 import { AnimationPage, SplitView } from "../../../widget-shell/views";
 import { useBorrowPosition } from "../../positions/index";
@@ -76,27 +72,15 @@ export const BorrowPositionDetailsPage = () => {
           primaryBarLabel={t("dashboard.split_view.actions")}
           secondaryBarLabel={t("dashboard.split_view.details")}
           primary={
-            <Box
-              className={positionDetailsActionsContainer}
-              display="flex"
-              flex={1}
-              flexDirection="column"
-              gap="4"
-              width="0"
-            >
+            <PositionDetailsPane kind="actions">
               <BorrowPositionBreadcrumb positionName={null} />
               <BorrowPositionActionsSkeleton />
-            </Box>
+            </PositionDetailsPane>
           }
           secondary={
-            <Box
-              className={posistionDetailsInfoContainer}
-              display="flex"
-              flexDirection="column"
-              gap="4"
-            >
+            <PositionDetailsPane kind="info">
               <BorrowPositionInfoSkeleton />
-            </Box>
+            </PositionDetailsPane>
           }
         />
       </AnimationPage>
@@ -134,31 +118,19 @@ export const BorrowPositionDetailsPage = () => {
         secondaryBarLabel={t("dashboard.split_view.details")}
         primary={
           shouldShowLeftPane ? (
-            <Box
-              className={positionDetailsActionsContainer}
-              display="flex"
-              flex={1}
-              flexDirection="column"
-              gap="4"
-              width="0"
-            >
+            <PositionDetailsPane kind="actions">
               <Outlet context={context} />
-            </Box>
+            </PositionDetailsPane>
           ) : null
         }
         secondary={
-          <Box
-            className={posistionDetailsInfoContainer}
-            display="flex"
-            flexDirection="column"
-            gap="4"
-          >
+          <PositionDetailsPane kind="info">
             {shouldShowLeftPane ? null : (
               <BorrowPositionBreadcrumb positionName={model?.title ?? null} />
             )}
 
             {rightContent}
-          </Box>
+          </PositionDetailsPane>
         }
       />
     </AnimationPage>

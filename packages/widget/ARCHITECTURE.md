@@ -24,6 +24,9 @@ Production code is organized by ownership rather than by React mechanism:
   code must not depend on React, services, features, or `shared`. `shared`
   depends on `domain`, so the edge runs one way only; a utility that only
   domain uses belongs in `domain`.
+  Wallet Network, Wallet Scope, and Wallet Scope Owner identity are domain
+  concepts. Wallet adapters own conversion from Wallet State and the stricter
+  command identity that includes connector details.
 - `src/shared` owns framework-neutral utilities and genuinely reusable React or
   UI primitives, including the widget's UI kit in `src/shared/ui`. Shared
   modules must not depend on app, services, or features. Kit components are
@@ -151,13 +154,14 @@ the `shared` boundary stays limited to `shared` and `domain`.
 A Feature's `views.ts` publishes rendered elements and rendering-only hooks
 that carry that Feature's domain meaning. `widget-shell/views.ts` publishes shell chrome — page
 container, page CTA, back button, tab and layout styles, maintenance screen.
-Generic detail rows and sections belong in `shared/ui`; shared yield read
-presentation such as KYC, reward, provider, risk, and metadata belongs to Yield
-Summary; Validator and entry interaction presentation belongs to Yield Entry;
-Earn publishes only Earn-journey presentation. A generic component that
-acquires no domain meaning belongs in the kit, not behind a feature entry. The
-existing broader `earn/views.ts` surface is migration debt while those owners
-are established.
+Generic detail rows, position-detail panes, breadcrumbs, metrics, and
+breakdowns belong in `shared/ui`; shared yield read presentation such as the
+yield detail header, formatting rules, KYC, reward, provider, risk, and
+metadata belongs to Yield Summary; Validator and entry interaction
+presentation belongs to Yield Entry; Earn publishes only Earn-journey
+presentation. A generic component that acquires no domain meaning belongs in
+the kit, not behind a feature entry. Position Details does not publish raw
+style contracts to peer Features.
 
 Application composition owns peer Feature composition. When shell chrome needs
 a Portfolio projection such as pending-action count, the application supplies
@@ -435,10 +439,11 @@ Start tail delegation. Pending Action modal attempts have opaque identities,
 and only a Started receipt for the same attempt closes the modal; the feature
 does not import the private Classic orchestration service.
 
+Exit and Pending Action each own their Atom implementation. Position Details
+does not route either interface through a shared runtime pass-through file.
+
 The current Yield Entry deepening changes only Position Details' Dashboard
 Stake adapter and removes Classic Transaction Flow's reverse route dependency.
-Exit and Pending Action state are outside that migration and require a separate
-ownership decision before material redesign.
 
 `features/yield-entry` owns the shared Yield Entry capability used by Earn and
 position details. Concept-owned pure Earn rules, including amount constraints,

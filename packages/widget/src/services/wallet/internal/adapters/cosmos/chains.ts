@@ -1,6 +1,7 @@
 import type { Chain } from "@stakekit/rainbowkit";
 import type { chains } from "chain-registry";
 import { CosmosNetworks } from "../../../../../domain/network/networks.ts";
+import type { WalletNetwork } from "../../../../../domain/wallet/network";
 
 export type CosmosChain = (typeof chains)[number];
 export type WithWagmiName<T> = T & { readonly wagmiName: string };
@@ -42,7 +43,7 @@ export const supportedCosmosChains = [
   CosmosNetworks.Injective,
   CosmosNetworks.Sei,
   CosmosNetworks.Mantra,
-] as const;
+] as const satisfies ReadonlyArray<WalletNetwork>;
 
 export const supportedCosmosChainsSet = new Set(supportedCosmosChains);
 

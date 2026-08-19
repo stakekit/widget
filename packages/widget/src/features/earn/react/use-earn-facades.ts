@@ -1,27 +1,33 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import {
   earnEntryViewAtom,
-  earnPageStatusViewAtom,
-  earnTokenSelectionViewAtom,
-  earnValidatorModalEventAtom,
-  earnValidatorSelectionViewAtom,
-  earnYieldSelectionViewAtom,
-  loadMoreEarnValidatorsAtom,
   refreshEarnKycAtom,
-  removeEarnValidatorAtom,
   runEarnPrimaryActionAtom,
-  selectEarnCategoryAtom,
   selectEarnProviderAtom,
-  selectEarnTokenAtom,
   selectEarnTronResourceAtom,
-  selectEarnValidatorAtom,
-  selectEarnYieldAtom,
   setEarnAmountAtom,
   setEarnMaxAmountAtom,
+} from "../state/entry";
+import { earnPageStatusViewAtom } from "../state/page-status";
+import {
+  earnTokenSelectionViewAtom,
+  selectEarnTokenAtom,
   setEarnTokenSearchAtom,
+} from "../state/token-selection";
+import {
+  earnValidatorModalEventAtom,
+  earnValidatorSelectionViewAtom,
+  loadMoreEarnValidatorsAtom,
+  removeEarnValidatorAtom,
+  selectEarnValidatorAtom,
   setEarnValidatorSearchAtom,
+} from "../state/validator-selection";
+import {
+  earnYieldSelectionViewAtom,
+  selectEarnCategoryAtom,
+  selectEarnYieldAtom,
   setEarnYieldSearchAtom,
-} from "../state/runtime";
+} from "../state/yield-selection";
 
 export const useEarnTokenSelection = () => ({
   select: useAtomSet(selectEarnTokenAtom),

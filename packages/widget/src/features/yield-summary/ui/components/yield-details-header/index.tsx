@@ -1,24 +1,28 @@
 import { useTranslation } from "react-i18next";
-import type { EarnYieldWithProvider } from "../../../../../../domain/earn/models";
-import { getDashboardYieldCategory } from "../../../../../../domain/earn/yield";
-import { formatNetworkName } from "../../../../../../shared/lib/formatters";
-import { TokenIcon } from "../../../../../../shared/ui/components/token-icon";
-import { Box } from "../../../../../../shared/ui/primitives/box";
-import { HeaderBadge } from "../../../../../../shared/ui/primitives/header-badge";
-import { Image } from "../../../../../../shared/ui/primitives/image";
-import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import { formatDisplayTokenSymbol } from "../../../../model/earn-details-formatters";
-import type { EarnDetailsHeaderBadge } from "../earn-details-model";
-import * as styles from "../styles.css";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
+import { getDashboardYieldCategory } from "../../../../../domain/earn/yield";
+import { formatNetworkName } from "../../../../../shared/lib/formatters";
+import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
+import { Box } from "../../../../../shared/ui/primitives/box";
+import { HeaderBadge } from "../../../../../shared/ui/primitives/header-badge";
+import { Image } from "../../../../../shared/ui/primitives/image";
+import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { formatDisplayTokenSymbol } from "../../../model/yield-details-formatters";
+import * as styles from "./styles.css";
 
-export const EarnDetailsHeader = ({
+type YieldDetailsHeaderBadge = Readonly<{
+  readonly label: string;
+  readonly tone: "default" | "auto";
+}>;
+
+export const YieldDetailsHeader = ({
   headerBadges,
   providerName,
   yieldDto,
 }: {
-  headerBadges: EarnDetailsHeaderBadge[];
-  providerName: string;
-  yieldDto: EarnYieldWithProvider;
+  readonly headerBadges: ReadonlyArray<YieldDetailsHeaderBadge>;
+  readonly providerName: string;
+  readonly yieldDto: EarnYieldWithProvider;
 }) => (
   <Box display="flex" alignItems="center" gap="1">
     <TokenIcon
@@ -75,8 +79,8 @@ const ProviderLabel = ({
   providerName,
   yieldDto,
 }: {
-  providerName: string;
-  yieldDto: EarnYieldWithProvider;
+  readonly providerName: string;
+  readonly yieldDto: EarnYieldWithProvider;
 }) => {
   const { t } = useTranslation();
 
@@ -102,8 +106,8 @@ const formatDetailsTitle = ({
   providerName,
   yieldDto,
 }: {
-  providerName: string;
-  yieldDto: EarnYieldWithProvider;
+  readonly providerName: string;
+  readonly yieldDto: EarnYieldWithProvider;
 }) => {
   const name = yieldDto.metadata.name;
 

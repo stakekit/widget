@@ -11,17 +11,17 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import type { ActivityActionsPage } from "../../domain/activity/models";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
+import {
+  type WalletScopeKey,
+  type WalletScopeOwnerKey,
+  walletScopeOwnerKey,
+} from "../../domain/wallet/wallet-scope";
 import type {
   ApiRequestError,
   ResponseDecodeError,
 } from "../../services/api/resource-sources";
 import { YieldResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
-import {
-  type WalletScopeKey,
-  type WalletScopeOwnerKey,
-  walletScopeOwnerKey,
-} from "../../services/wallet/wallet-scope";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { getNextPageOffset } from "../../shared/effect/pagination";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";

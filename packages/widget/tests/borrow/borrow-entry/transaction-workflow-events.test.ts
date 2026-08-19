@@ -3,6 +3,10 @@ import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import {
+  WalletScopeKey,
+  walletScopeOwnerKey,
+} from "../../../src/domain/wallet/wallet-scope";
 import { currentBorrowEntryAtom } from "../../../src/features/borrow/borrow-entry/state/borrow-entry";
 import { borrowEntryIntentEventProjectionAtom } from "../../../src/features/borrow/index";
 import { tokenBalancesScanAtom } from "../../../src/features/portfolio/index";
@@ -12,10 +16,6 @@ import {
   type WidgetDomainEvent,
   WidgetDomainEvents,
 } from "../../../src/services/events/widget-domain-events";
-import {
-  WalletScopeKey,
-  walletScopeOwnerKey,
-} from "../../../src/services/wallet/wallet-scope";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const address = Schema.decodeSync(WalletAddress)(

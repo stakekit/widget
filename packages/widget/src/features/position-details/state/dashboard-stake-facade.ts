@@ -3,10 +3,12 @@ import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import { stakeTokenSameAsGasToken } from "../../../domain";
 import type { TronResource } from "../../../domain/action/tron-resource";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
-import { getInitSelectedValidators } from "../../../domain/earn/stake";
+import {
+  getInitSelectedValidators,
+  stakeTokenSameAsGasToken,
+} from "../../../domain/earn/stake";
 import {
   getYieldActionArg,
   getYieldProviderYieldIds,
@@ -14,6 +16,7 @@ import {
 } from "../../../domain/earn/yield";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
 import { equalTokens } from "../../../domain/token/token";
+import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
 import {
   getTokensPricesRequest,
   PricesKey,
@@ -28,7 +31,6 @@ import {
   positionBalancesByTypeAtom,
 } from "../../../resources/yield-positions/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
-import { sameWalletScopeOwner } from "../../../services/wallet/wallet-scope";
 import { getPullResultItems } from "../../../shared/effect/pagination";
 import { formatUsd } from "../../../shared/lib/formatters";
 import {

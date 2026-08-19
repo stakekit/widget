@@ -1,5 +1,5 @@
 import type BigNumber from "bignumber.js";
-import { Option, Schema } from "effect";
+import { Option, Result, Schema } from "effect";
 import type { EarnYieldWithProvider } from "../earn/models";
 import type { TokenAddress, ValidatorAddress } from "../identity/identifiers";
 import type { Token } from "../token/token";
@@ -14,6 +14,8 @@ export type TransactionType = ActionTransaction["type"];
 export type ActionType = YieldAction["type"];
 export type ActionStatus = YieldAction["status"];
 export type TransactionStatus = ActionTransaction["status"];
+
+type Override<T1, T2> = Omit<T1, keyof T2> & T2;
 
 export type ExitReceiveToken = Readonly<{
   readonly address: TokenAddress;
@@ -137,3 +139,35 @@ export const getTransactionGasEstimate = (
         transactionDto.gasEstimate
       ).pipe(Option.getOrNull)
     : null;
+
+/**
+ * Returns stake transactions that can be signed or checked. A failed or
+ * blocked transaction makes the complete Action invalid.
+ */
+export const getValidStakeSessionTx = (action: YieldAction) => {
+  const validAction: YieldAction = {
+    ...action,
+    transactions: action.transactions.filter(
+      (
+        transaction
+      ): transaction is Override<
+        ActionTransaction,
+        {
+          status: Override<
+            ActionTransaction["status"],
+            Exclude<ActionTransaction["status"], "SKIPPED">
+          >;
+        }
+      > => transaction.status !== "SKIPPED"
+    ),
+  };
+
+  return validAction.transactions.some((transaction) =>
+    isTransactionError(transaction.status)
+  )
+    ? Result.fail(new Error("Transaction failed"))
+    : Result.succeed(validAction);
+};
+
+export const isTransactionError = (status: TransactionStatus) =>
+  status === "FAILED" || status === "BLOCKED";

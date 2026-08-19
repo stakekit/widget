@@ -9,6 +9,7 @@ import {
 } from "../../src/domain/action/action-command";
 import { EarnBalance } from "../../src/domain/earn/models";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
   makeAutomaticPendingActionModalState,
   makePendingActionModalStore,
@@ -30,7 +31,6 @@ import {
   positionBalancesAtom,
   positionBalancesByTypeAtom,
 } from "../../src/resources/yield-positions/yield-positions";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import {
   yieldApiValidatorFixture,
   yieldApiYieldDtoFixture,

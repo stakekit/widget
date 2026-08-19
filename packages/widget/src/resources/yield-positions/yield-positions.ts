@@ -10,17 +10,17 @@ import {
   toPositionBalancesByType,
   toPositionsData,
 } from "../../domain/portfolio/positions";
+import {
+  type WalletScopeKey,
+  type WalletScopeOwnerKey,
+  walletScopeOwnerKey,
+} from "../../domain/wallet/wallet-scope";
 import type {
   ApiRequestError,
   ResponseDecodeError,
 } from "../../services/api/resource-sources";
 import { YieldResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
-import {
-  type WalletScopeKey,
-  type WalletScopeOwnerKey,
-  walletScopeOwnerKey,
-} from "../../services/wallet/wallet-scope";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 

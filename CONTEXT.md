@@ -30,6 +30,10 @@ _Avoid_: Reset signal, Atom instruction, callback
 
 ## Wallet Language
 
+**Wallet Network**:
+A network for which the Widget can construct and operate a wallet connection. Wallet State and Wallet Scope use only Wallet Networks.
+_Avoid_: SupportedSKChains, supported chain
+
 **Wallet Scope**:
 An immutable snapshot of a connected wallet's network, primary address, and relevant additional addresses for execution inputs. Its owner identity is the network plus primary address (with case-insensitive EVM address comparison); a prepared action can enter execution only when its owner matches the captured Wallet Scope, and disconnecting or changing that owner invalidates Wallet Scope-bound flows while additional-address changes alone do not.
 _Avoid_: Connector scope

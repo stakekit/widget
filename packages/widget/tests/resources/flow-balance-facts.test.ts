@@ -3,6 +3,7 @@ import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
   GasTokenBalancesKey,
   gasTokenBalancesResourceAtom,
@@ -17,7 +18,6 @@ import {
   LegacyResourceSource,
   YieldResourceSource,
 } from "../../src/services/api/resource-sources";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiYieldFixture } from "../fixtures";
 
 const address = Schema.decodeSync(WalletAddress)(

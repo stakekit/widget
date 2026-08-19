@@ -8,6 +8,10 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
+import {
+  sameWalletScopeOwner,
+  WalletScopeKey,
+} from "../../../../domain/wallet/wallet-scope";
 import { WidgetConfigService } from "../../../../services/config/widget-config";
 import {
   WidgetNavigation,
@@ -15,11 +19,7 @@ import {
 } from "../../../../services/navigation/widget-navigation";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
 import type { WalletRuntimeInvariantError } from "../../../../services/wallet/wallet-errors";
-import {
-  sameWalletScopeOwner,
-  WalletScopeKey,
-  walletScopeFromState,
-} from "../../../../services/wallet/wallet-scope";
+import { walletScopeFromState } from "../../../../services/wallet/wallet-scope-adapter";
 import { WalletService } from "../../../../services/wallet/wallet-service";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 import {

@@ -8,7 +8,7 @@ import type {
   EarnValidator,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
-import type { WalletScopeKey } from "../../../services/wallet/wallet-scope";
+import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 
 export type ActivityActionItem = {
   readonly actionData: YieldAction;

@@ -1,6 +1,6 @@
 import { Data, Duration, Effect, Match, pipe, Ref, Schedule } from "effect";
-import { isTxError } from "../../../domain";
 import type { ActionTransaction } from "../../../domain/action/models";
+import { isTransactionError } from "../../../domain/action/rules";
 import {
   type Action as BorrowAction,
   isUnsuccessfulBorrowActionStatus,
@@ -81,7 +81,7 @@ export const makeConfirmCurrent = Effect.gen(function* () {
                 ConfirmationCheckResult,
                 ConfirmationPendingError | TransactionConfirmationError
               > => {
-                if (isTxError(status.status)) {
+                if (isTransactionError(status.status)) {
                   return Effect.fail(
                     fail(`Transaction ended with ${status.status} status.`)
                   );

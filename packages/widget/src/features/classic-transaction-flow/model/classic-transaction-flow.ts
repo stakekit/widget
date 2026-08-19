@@ -15,6 +15,10 @@ import type {
 import type { ValidatorKey } from "../../../domain/earn/validator";
 import type { Token } from "../../../domain/token/token";
 import {
+  sameWalletScopeOwner,
+  WalletScopeKey,
+} from "../../../domain/wallet/wallet-scope";
+import {
   toWidgetPath,
   type WidgetPath,
   type WidgetPathInput,
@@ -24,10 +28,6 @@ import {
   type ClassicTransactionWorkflowProviderDetail,
   makeClassicTransactionWorkflowInput,
 } from "../../../services/transaction-workflow/transaction-workflow-model";
-import {
-  sameWalletScopeOwner,
-  WalletScopeKey,
-} from "../../../services/wallet/wallet-scope";
 
 type EnterClassicTransactionFlowIntake = {
   readonly _tag: "Enter";

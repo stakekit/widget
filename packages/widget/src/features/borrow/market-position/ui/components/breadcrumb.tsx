@@ -1,8 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { breadcrumb, breadcrumbName } from "../../../../position-details/views";
+import { PositionDetailsBreadcrumb } from "../../../../../shared/ui/components/position-details";
 import { BackButton, BackButtonProvider } from "../../../../widget-shell/views";
 
 export const BorrowPositionBreadcrumb = ({
@@ -17,25 +15,16 @@ export const BorrowPositionBreadcrumb = ({
 
   return (
     <BackButtonProvider>
-      <Box className={breadcrumb}>
-        <BackButton
-          data-testid="borrow-position-details-back"
-          onClick={() => navigate(backPath)}
-        />
-
-        <Text variant={{ weight: "bold" }}>
-          {t("dashboard.position_details.breadcrumb_root")}
-        </Text>
-
-        {positionName ? (
-          <Text
-            className={breadcrumbName}
-            variant={{ type: "muted", weight: "normal" }}
-          >
-            {`/ ${positionName}`}
-          </Text>
-        ) : null}
-      </Box>
+      <PositionDetailsBreadcrumb
+        backButton={
+          <BackButton
+            data-testid="borrow-position-details-back"
+            onClick={() => navigate(backPath)}
+          />
+        }
+        positionName={positionName}
+        rootLabel={t("dashboard.position_details.breadcrumb_root")}
+      />
     </BackButtonProvider>
   );
 };

@@ -3,9 +3,35 @@ import { Array as EArray, Option } from "effect";
 import type { YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import { Networks } from "../network/networks";
+import { equalTokens, type Token } from "../token/token";
 import type { EarnValidator, EarnYieldWithProvider } from "./models";
 import type { ValidatorKey } from "./validator";
 import { getYieldActionArg, isBittensorStaking } from "./yield";
+
+export const stakeTokenSameAsGasToken = ({
+  stakeToken,
+  yieldDto,
+}: {
+  stakeToken: Token;
+  yieldDto: EarnYieldWithProvider;
+}) => equalTokens(stakeToken, yieldDto.mechanics.gasFeeToken);
+
+export const getMaxAmount = ({
+  availableAmount,
+  gasEstimateTotal,
+  integrationMaxLimit,
+}: {
+  availableAmount: BigNumber;
+  gasEstimateTotal: BigNumber;
+  integrationMaxLimit: BigNumber | null;
+}) =>
+  BigNumber.max(
+    BigNumber.min(
+      integrationMaxLimit ?? BigNumber(Number.POSITIVE_INFINITY),
+      availableAmount.minus(gasEstimateTotal)
+    ),
+    new BigNumber(0)
+  );
 
 type InitialSelectionParams = {
   readonly validator: string | null;

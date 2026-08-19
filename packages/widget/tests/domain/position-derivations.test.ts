@@ -12,6 +12,7 @@ import {
   toPositionBalancesByType,
   toPositionsData,
 } from "../../src/domain/portfolio/positions";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { toPositionItems } from "../../src/features/portfolio/state/read-models/positions";
 import {
   PositionBalancesKey,
@@ -20,7 +21,6 @@ import {
   positionDataAtom,
   yieldPositionsResourceAtom,
 } from "../../src/resources/yield-positions/yield-positions";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 
 const makePosition = () => {

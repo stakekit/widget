@@ -11,6 +11,7 @@ import type {
   ValidatorAddress,
   YieldId,
 } from "../../../../domain/identity/identifiers";
+import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
 import {
   type ActivityHistoryBatch,
   type ActivityHistoryError,
@@ -22,7 +23,6 @@ import {
   validatorByAddressAtom,
 } from "../../../../resources/validator-directory/index";
 import { enrichedYieldOpportunityResourceAtom } from "../../../../resources/yield-opportunity/index";
-import type { WalletScopeKey } from "../../../../services/wallet/wallet-scope";
 import { mapAsyncResultError } from "../../../../shared/effect/async-result";
 import { withPullPageDone } from "../../../../shared/effect/pagination";
 import type { ActivityActionItem } from "../../model/activity-action";

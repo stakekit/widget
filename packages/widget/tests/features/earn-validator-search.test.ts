@@ -12,7 +12,7 @@ import {
   earnValidatorSelectionViewAtom,
   selectEarnValidatorAtom,
   setEarnValidatorSearchAtom,
-} from "../../src/features/earn/state/runtime";
+} from "../../src/features/earn/state/validator-selection";
 import {
   LegacyResourceSource,
   type ValidatorDirectoryRequest,

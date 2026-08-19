@@ -6,12 +6,12 @@ import { describe, expect, it } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
   reducePositionDetailsWorkflow,
 } from "../../src/features/position-details/state/workflow";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { render } from "../utils/test-utils.dom.tsx";
 
 const settings = {

@@ -23,7 +23,7 @@ import {
   formatProviderTvl,
   formatProviderWebsite,
   formatProviderWebsiteHref,
-} from "../../../../model/earn-details-formatters";
+} from "../../../../../yield-summary/index";
 import { useEarnEntry } from "../../../../react/use-earn-facades";
 import { useSelectValidator } from "../../../classic/earn-page/components/select-validator-section/use-select-validator";
 import * as styles from "../styles.css";

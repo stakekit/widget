@@ -2,9 +2,9 @@ import { Cause, Deferred, Effect, Exit, Fiber, Layer, Stream } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { YieldEntrySubmissionService } from "../../src/features/yield-entry/state/orchestration/yield-entry-submission-service";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
+import { walletCommandIdentity } from "../../src/services/wallet/wallet-command-identity";
 import { WalletIntegrationError } from "../../src/services/wallet/wallet-errors";
 import { WalletModal } from "../../src/services/wallet/wallet-modal";
-import { walletCommandIdentity } from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,

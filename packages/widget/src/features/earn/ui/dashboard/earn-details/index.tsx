@@ -13,11 +13,11 @@ import {
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { YieldDetailsHeader } from "../../../../yield-summary/views";
 import {
   useEarnEntry,
   useEarnYieldSelection,
 } from "../../../react/use-earn-facades";
-import { EarnDetailsHeader } from "./components/earn-details-header";
 import { EarnDetailsMetrics } from "./components/earn-details-metrics";
 import {
   HistoryChartSection,
@@ -107,7 +107,7 @@ const EarnDetailsView = ({
       flexDirection="column"
       gap="4"
     >
-      <EarnDetailsHeader
+      <YieldDetailsHeader
         headerBadges={headerBadges}
         providerName={providerName}
         yieldDto={yieldDto}

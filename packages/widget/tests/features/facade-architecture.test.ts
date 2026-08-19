@@ -14,6 +14,22 @@ const sourceFiles = (directory: string): ReadonlyArray<string> =>
   });
 
 describe("feature facade architecture", () => {
+  it("keeps retired catch-all and pass-through modules deleted", () => {
+    const retiredPaths = [
+      "domain/index.ts",
+      "features/earn/state/runtime.ts",
+      "features/position-details/state/classic-actions/runtime.ts",
+      "features/position-details/views.ts",
+      "resources/borrow/index.ts",
+      "resources/borrow/borrow-resource-error.ts",
+      "services/wallet/wallet-scope.ts",
+    ];
+
+    for (const path of retiredPaths) {
+      expect(existsSync(join(sourceRoot, path)), path).toBe(false);
+    }
+  });
+
   it("does not retain the aggregate Earn bridge", () => {
     const aggregateModel = join(
       sourceRoot,
@@ -70,7 +86,10 @@ describe("feature facade architecture", () => {
 
   it("keeps remaining workflow transitions out of React adapters", () => {
     const pendingActions = readFileSync(
-      join(sourceRoot, "features/position-details/views.ts"),
+      join(
+        sourceRoot,
+        "features/position-details/state/classic-actions/pending-action.ts"
+      ),
       "utf8"
     );
     const positionDetails = readFileSync(

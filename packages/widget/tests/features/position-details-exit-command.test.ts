@@ -11,16 +11,11 @@ import {
   TokenAddress,
   WalletAddress,
 } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/index";
 import { currentClassicFlowSessionAtom } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow";
-import {
-  openPositionPendingActionModalAtom,
-  positionPendingActionModalViewAtom,
-  runPositionPendingActionAtom,
-  setPositionDetailsExitMaxAmountAtom,
-  setPositionDetailsExitReceiveTokenAtom,
-  submitPositionDetailsExitAtom,
-} from "../../src/features/position-details/state/classic-actions/runtime";
+import { positionDetailsExitActions } from "../../src/features/position-details/state/classic-actions/exit";
+import { positionDetailsPendingActions } from "../../src/features/position-details/state/classic-actions/pending-action";
 import { positionDetailsClassicViewAtom } from "../../src/features/position-details/state/classic-facade";
 import {
   PositionDetailsWorkflowKey,
@@ -42,7 +37,6 @@ import {
   type WidgetPath,
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
@@ -55,6 +49,17 @@ import {
   yieldBalanceFixture,
 } from "../fixtures";
 import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
+
+const {
+  setMaxAmount: setPositionDetailsExitMaxAmountAtom,
+  setReceiveToken: setPositionDetailsExitReceiveTokenAtom,
+  submit: submitPositionDetailsExitAtom,
+} = positionDetailsExitActions;
+const {
+  modalView: positionPendingActionModalViewAtom,
+  openModal: openPositionPendingActionModalAtom,
+  run: runPositionPendingActionAtom,
+} = positionDetailsPendingActions;
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"

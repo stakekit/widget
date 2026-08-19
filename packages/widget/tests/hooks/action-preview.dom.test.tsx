@@ -6,6 +6,7 @@ import { HttpResponse, http } from "msw";
 import { type PropsWithChildren, useEffect } from "react";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { ActionCommand } from "../../src/domain/action/models";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { startClassicTransactionFlowAtom } from "../../src/features/classic-transaction-flow/index";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
@@ -24,7 +25,6 @@ import {
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import { disconnectedLedgerConnectorState } from "../../src/services/wallet/wallet-state";
 import {

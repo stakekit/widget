@@ -17,6 +17,7 @@ import {
 } from "../../src/app/runtime/application-router-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/index";
 import { tokenBalancesScanAtom } from "../../src/features/portfolio/index";
 import {
@@ -40,7 +41,6 @@ import {
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
 import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,

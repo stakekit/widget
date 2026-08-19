@@ -1,9 +1,9 @@
+import { PositionMetricCards } from "../../../../../shared/ui/components/position-details";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import {
   ContentLoaderCircle,
   ContentLoaderLine,
 } from "../../../../../shared/ui/primitives/content-loader";
-import { positionDetailsComponentStyles as positionDetailsStyles } from "../../../../position-details/views";
 import * as styles from "../styles.css";
 
 export const BorrowPositionActionsSkeleton = () => (
@@ -50,24 +50,21 @@ export const BorrowPositionInfoSkeleton = () => (
       </Box>
     </Box>
 
-    <Box className={positionDetailsStyles.metricGrid}>
-      {[0, 1, 2, 3].map((index) => (
-        <Box
-          className={positionDetailsStyles.metricCard({ tone: "default" })}
-          display="flex"
-          flexDirection="column"
-          gap="2"
-          key={index}
-        >
+    <PositionMetricCards
+      cards={[0, 1, 2, 3].map((index) => ({
+        id: String(index),
+        label: (
           <Box style={{ width: "70%" }}>
             <ContentLoaderLine heightPx={12} />
           </Box>
+        ),
+        value: (
           <Box style={{ width: "50%" }}>
             <ContentLoaderLine heightPx={18} />
           </Box>
-        </Box>
-      ))}
-    </Box>
+        ),
+      }))}
+    />
 
     <Box className={styles.ltvGauge}>
       <Box display="flex" gap="2" justifyContent="space-between">

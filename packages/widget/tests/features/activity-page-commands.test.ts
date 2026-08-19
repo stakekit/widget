@@ -4,6 +4,7 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { activityFilterAtom } from "../../src/features/activity/state/filter";
 import {
   activityPageViewAtom,
@@ -24,7 +25,6 @@ import {
   walletScopeAtom,
 } from "../../src/features/wallet/index";
 import { YieldResourceSource } from "../../src/services/api/resource-sources";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 
 const address = Schema.decodeUnknownSync(

@@ -4,6 +4,7 @@ import type { ActionTransaction } from "../../src/domain/action/models";
 import { Action } from "../../src/domain/borrow/execution/action";
 import { Transaction } from "../../src/domain/borrow/execution/transaction";
 import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import type { ActionMeta } from "../../src/public-api/types";
 import {
   appendTransactionWorkflowBatch,
@@ -25,7 +26,6 @@ import {
   TransactionSubmissionError,
 } from "../../src/services/transaction-workflow/transaction-workflow-model";
 import { WalletBroadcastError } from "../../src/services/wallet/wallet-errors";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiTransactionFixture } from "../fixtures";
 
 const address = Schema.decodeSync(WalletAddress)(

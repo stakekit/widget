@@ -5,6 +5,7 @@ import {
   type DeepLinkRouteObservation,
 } from "../../src/app/runtime/deep-link-coordinator";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import {
   makeWidgetNavigation,
@@ -12,7 +13,6 @@ import {
   WidgetNavigationError,
   type WidgetPath,
 } from "../../src/services/navigation/widget-navigation";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,

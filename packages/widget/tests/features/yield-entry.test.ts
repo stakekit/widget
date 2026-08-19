@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/index";
 import { walletScopeAtom } from "../../src/features/wallet/index";
 import { makeYieldEntry } from "../../src/features/yield-entry/index";
@@ -19,7 +20,6 @@ import {
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletModal } from "../../src/services/wallet/wallet-modal";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,

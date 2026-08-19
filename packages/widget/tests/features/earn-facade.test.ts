@@ -14,14 +14,18 @@ import {
 } from "../../src/features/earn/state/earn-selection";
 import {
   earnTokenSelectionViewAtom,
+  setEarnTokenSearchAtom,
+} from "../../src/features/earn/state/token-selection";
+import {
   earnValidatorModalEventAtom,
   earnValidatorSelectionViewAtom,
-  earnYieldSelectionViewAtom,
   selectEarnValidatorAtom,
-  setEarnTokenSearchAtom,
   setEarnValidatorSearchAtom,
+} from "../../src/features/earn/state/validator-selection";
+import {
+  earnYieldSelectionViewAtom,
   setEarnYieldSearchAtom,
-} from "../../src/features/earn/state/runtime";
+} from "../../src/features/earn/state/yield-selection";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 import { decodeValidator } from "../utils/validators";

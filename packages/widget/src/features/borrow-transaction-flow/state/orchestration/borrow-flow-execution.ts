@@ -67,7 +67,7 @@ export const makeBorrowFlowExecutionFactory = Effect.fn(
     readonly commitTransition: CommitBorrowFlowTransition;
     readonly intake: BorrowTransactionFlowIntake;
     readonly runOperation: RunBorrowFlowExecutionOperation;
-    readonly walletScope: import("../../../../services/wallet/wallet-scope").WalletScopeKey;
+    readonly walletScope: import("../../../../domain/wallet/wallet-scope").WalletScopeKey;
   }): Effect.fn.Return<
     BorrowFlowExecutionHandle,
     TransactionWorkflowInputError,

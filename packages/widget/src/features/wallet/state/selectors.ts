@@ -1,7 +1,7 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { walletScopeFromState } from "../../../services/wallet/wallet-scope";
+import { walletScopeFromState } from "../../../services/wallet/wallet-scope-adapter";
 import {
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,

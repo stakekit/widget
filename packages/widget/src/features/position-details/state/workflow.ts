@@ -6,7 +6,7 @@ import type { YieldPendingActionType } from "../../../domain/action/pending-acti
 import type { TokenAddress } from "../../../domain/identity/identifiers";
 import type { YieldBalanceType } from "../../../domain/portfolio/positions";
 import type { Token } from "../../../domain/token/token";
-import type { WalletScopeKey } from "../../../services/wallet/wallet-scope";
+import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 
 export type PositionDetailsWorkflowState = {
   readonly exitReceiveTokenAddress: TokenAddress | null;

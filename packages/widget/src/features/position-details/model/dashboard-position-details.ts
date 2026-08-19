@@ -35,7 +35,7 @@ import {
   formatRewardClaiming,
   formatRewardRateLabel,
   formatRewardTokenLabel,
-} from "../../earn/index";
+} from "../../yield-summary/index";
 
 type DashboardPositionStatusTone = "action" | "claim" | "default";
 

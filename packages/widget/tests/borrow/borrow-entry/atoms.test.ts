@@ -10,6 +10,7 @@ import { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borr
 import { deriveBorrowPositions } from "../../../src/domain/borrow/positions/borrow-positions";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   applyBorrowFormAction,
   BorrowEntryKey,
@@ -25,7 +26,6 @@ import {
   borrowMarketsResourceAtom as borrowMarketsAtom,
 } from "../../../src/resources/borrow-markets/borrow-markets";
 import { BorrowResourceSource } from "../../../src/services/api/resource-sources";
-import { WalletScopeKey } from "../../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,

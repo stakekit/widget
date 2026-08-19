@@ -3,7 +3,7 @@ import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
 import { getKycProviderName } from "../../../../domain/earn/kyc";
-import { walletCommandIdentity } from "../../../../services/wallet/wallet-scope";
+import { walletCommandIdentity } from "../../../../services/wallet/wallet-command-identity";
 import {
   type ClassicTransactionFlowEnterMount,
   startClassicTransactionFlowAtom,

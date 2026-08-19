@@ -1,6 +1,7 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../../shared/styles/theme/atoms.css";
+import { DASHBOARD_OUTLET_PADDING } from "../../../../shared/styles/tokens/layout";
 
 export const wrapper = recipe({
   base: [
@@ -60,19 +61,17 @@ export const disconnectButton = style({
  * content) bleed past this value and re-apply it as inner padding, so this is
  * the single source of truth both sides must reference.
  */
-export const OUTLET_PADDING = "18px";
-
 export const outletWrapper = recipe({
   variants: {
     variant: {
       default: {
-        padding: OUTLET_PADDING,
+        padding: DASHBOARD_OUTLET_PADDING,
       },
       utila: {
-        padding: OUTLET_PADDING,
+        padding: DASHBOARD_OUTLET_PADDING,
       },
       porto: {
-        padding: OUTLET_PADDING,
+        padding: DASHBOARD_OUTLET_PADDING,
       },
     },
   },

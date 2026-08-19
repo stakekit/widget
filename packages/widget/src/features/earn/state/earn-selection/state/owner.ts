@@ -1,7 +1,7 @@
 import { Equal } from "effect";
+import type { WalletScopeOwnerKey } from "../../../../../domain/wallet/wallet-scope";
+import { sameWalletScopeOwner } from "../../../../../domain/wallet/wallet-scope";
 import type { InitParams } from "../../../../../services/wallet/init-params";
-import type { WalletScopeOwnerKey } from "../../../../../services/wallet/wallet-scope";
-import { sameWalletScopeOwner } from "../../../../../services/wallet/wallet-scope";
 import { type EarnEntryIntent, makeDefaultEarnIntent } from "../types";
 
 type EarnInitializationPhase =

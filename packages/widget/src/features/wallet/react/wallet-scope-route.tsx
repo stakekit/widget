@@ -7,8 +7,8 @@ import { Navigate, Outlet } from "react-router";
 import {
   sameWalletScopeOwner,
   type WalletScopeKey,
-  walletScopeFromState,
-} from "../../../services/wallet/wallet-scope";
+} from "../../../domain/wallet/wallet-scope";
+import { walletScopeFromState } from "../../../services/wallet/wallet-scope-adapter";
 import { currentWalletStateResultAtom } from "../state/root-atom";
 
 const WalletScopeRouteContext = createContext<WalletScopeKey | null>(null);

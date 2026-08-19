@@ -3,6 +3,10 @@ import type { Chain } from "viem";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
 import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
+import {
+  sameWalletScopeOwner,
+  WalletScopeKey,
+} from "../../src/domain/wallet/wallet-scope";
 import { earnYieldCatalogAtom } from "../../src/features/earn/state/earn-selection/catalog/catalog";
 import { YieldCatalogKey } from "../../src/features/earn/state/earn-selection/catalog/keys";
 import {
@@ -14,11 +18,7 @@ import {
   BorrowMarketsInvalidationKey,
   WalletBalancesInvalidationKey,
 } from "../../src/services/resource-invalidation";
-import {
-  sameWalletScopeOwner,
-  WalletScopeKey,
-  walletScopeFromState,
-} from "../../src/services/wallet/wallet-scope";
+import { walletScopeFromState } from "../../src/services/wallet/wallet-scope-adapter";
 import type { NormalizedWalletState } from "../../src/services/wallet/wallet-state";
 import { disconnectedNormalizedWalletState } from "../../src/services/wallet/wallet-state";
 

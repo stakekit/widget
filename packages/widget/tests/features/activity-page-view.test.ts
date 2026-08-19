@@ -1,13 +1,13 @@
 import { Cause, Option, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { describe, expect, it } from "vitest";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import type { ActivityActionItem } from "../../src/features/activity/model/activity-action";
 import {
   projectActivityPageView,
   resolveActivityPageFilter,
   resolveActivityPageWalletStatus,
 } from "../../src/features/activity/state/page";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 
 type ActivityPageProjectionInput = Parameters<

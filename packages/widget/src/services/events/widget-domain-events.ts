@@ -1,5 +1,5 @@
 import { Context, Effect, Layer, PubSub, Stream } from "effect";
-import type { WalletScopeOwnerKey } from "../wallet/wallet-scope";
+import type { WalletScopeOwnerKey } from "../../domain/wallet/wallet-scope";
 
 export type WidgetDomainEvent =
   | Readonly<{

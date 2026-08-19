@@ -91,10 +91,16 @@ reload provides recovery.
 
 ## Interface and tests
 
-The root `index.ts` facade continues to publish focused selection, option,
-entry, status, and command Atoms without resource identities. Token load-more
-and manual retry leave that interface. React renders those views and dispatches
-semantic commands; it does not interpret catalog keys or resource failures.
+The root `index.ts` publishes only collaborators used outside Earn. React
+adapters keep the existing focused hooks, while their private implementation is
+split into Token Selection, Yield Selection, Validator Selection, Yield Entry,
+and Page Status modules. No private runtime file republishes their Atom
+identities. React renders focused views and dispatches semantic commands; it
+does not interpret catalog keys or resource failures.
+
+Yield Summary owns yield-detail formatting and the reusable yield-detail
+header. Earn consumes those interfaces for its dashboard page and does not
+republish them for Position Details.
 
 Tests cross the same feature interface. They cover one-time initialization,
 Wallet Scope Owner changes, previous-view reconciliation, direct transition

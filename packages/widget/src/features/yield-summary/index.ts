@@ -1,4 +1,23 @@
 export { getYieldEstimatedRewards } from "./model/estimated-rewards";
+export {
+  formatCommission,
+  formatCooldownDays,
+  formatMeaningfulCompactNumber,
+  formatMeaningfulCompactUsd,
+  formatMinStake,
+  formatMinStakeLabel,
+  formatOptionalDays,
+  formatPricePerShare,
+  formatProviderStatus,
+  formatProviderTvl,
+  formatProviderWebsite,
+  formatProviderWebsiteHref,
+  formatRequirementStatus,
+  formatRewardClaiming,
+  formatRewardRate,
+  formatRewardRateLabel,
+  formatRewardTokenLabel,
+} from "./model/yield-details-formatters";
 export type { YieldSummaryProvider } from "./model/yield-summary";
 export {
   MultiYieldsKey,

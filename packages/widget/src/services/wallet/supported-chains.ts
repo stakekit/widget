@@ -4,6 +4,7 @@ import {
   MiscNetworks,
   SubstrateNetworks,
 } from "../../domain/network/networks";
+import type { WalletNetwork } from "../../domain/wallet/network";
 import {
   type SupportedMiscChains,
   supportedMiscChainsSet,
@@ -59,8 +60,4 @@ export const evmChainGroup: ChainGroup = {
   id: "evm",
 };
 
-export type SupportedSKChains =
-  | SupportedCosmosChains
-  | SupportedEvmChain
-  | SupportedMiscChains
-  | SupportedSubstrateChains;
+export type SupportedSKChains = WalletNetwork;

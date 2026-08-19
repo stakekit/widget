@@ -9,6 +9,10 @@ import { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borr
 import { deriveBorrowPositions } from "../../../src/domain/borrow/positions/borrow-positions";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import {
+  WalletScopeKey,
+  walletScopeOwnerKey,
+} from "../../../src/domain/wallet/wallet-scope";
 import { borrowMarketPositionIntentEventProjectionAtom } from "../../../src/features/borrow/index";
 import { getBorrowPositionActions } from "../../../src/features/borrow/market-position/model/details";
 import {
@@ -26,10 +30,6 @@ import {
   type WidgetDomainEvent,
   WidgetDomainEvents,
 } from "../../../src/services/events/widget-domain-events";
-import {
-  WalletScopeKey,
-  walletScopeOwnerKey,
-} from "../../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,

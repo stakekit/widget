@@ -4,6 +4,7 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import type {
   ClassicFlowSession,
   ClassicTransactionFlowIntake,
@@ -19,7 +20,6 @@ import { currentClassicFlowSessionRootAtom } from "../../src/features/classic-tr
 import type { ClassicFlowSessionHandle } from "../../src/features/classic-transaction-flow/state/orchestration/classic-flow-session";
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import { toWidgetPath } from "../../src/services/navigation/widget-navigation";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 
 const address = Schema.decodeSync(WalletAddress)(

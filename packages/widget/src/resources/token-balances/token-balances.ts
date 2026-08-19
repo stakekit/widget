@@ -2,13 +2,13 @@ import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import type { TokenBalanceScanCommand } from "../../domain/finance/models";
+import type { WalletScopeKey } from "../../domain/wallet/wallet-scope";
 import type {
   ApiRequestError,
   ResponseDecodeError,
 } from "../../services/api/resource-sources";
 import { LegacyResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
-import type { WalletScopeKey } from "../../services/wallet/wallet-scope";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 

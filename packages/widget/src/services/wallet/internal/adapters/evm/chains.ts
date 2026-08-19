@@ -22,6 +22,7 @@ import {
   viction,
 } from "viem/chains";
 import { EvmNetworks } from "../../../../../domain/network/networks";
+import type { WalletNetwork } from "../../../../../domain/wallet/network";
 import { EvmChainIds } from "../../../../../public-api/types";
 import type { KebabToCamelCase } from "../../../../../shared/type-helpers";
 import { getNetworkLogo } from "../../../network-assets";
@@ -51,7 +52,7 @@ const supportedEVMChains = [
   EvmNetworks.Monad,
   EvmNetworks.MonadTestnet,
   EvmNetworks.Pharos,
-] as const;
+] as const satisfies ReadonlyArray<WalletNetwork>;
 
 export const supportedEVMChainsSet = new Set(supportedEVMChains);
 

@@ -21,6 +21,11 @@ import {
 } from "./internal/runtime/router";
 import { makeWalletStateRuntime } from "./internal/runtime/state";
 import { WalletStorageCleanup } from "./internal/runtime/wallet-storage-cleanup";
+import {
+  sameWalletCommandIdentity,
+  type WalletCommandIdentity,
+  walletCommandIdentity,
+} from "./wallet-command-identity";
 import type {
   WalletSignMessageInput,
   WalletSwitchAccountInput,
@@ -30,11 +35,6 @@ import type {
   WalletRuntimeInvariantError,
 } from "./wallet-errors";
 import { WalletModal } from "./wallet-modal";
-import {
-  sameWalletCommandIdentity,
-  type WalletCommandIdentity,
-  walletCommandIdentity,
-} from "./wallet-scope";
 import type { WalletSignTransactionInput } from "./wallet-transactions";
 
 type AddLedgerAccountInput = Readonly<{

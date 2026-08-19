@@ -5,7 +5,7 @@ import {
   type WalletScopeKey,
   type WalletScopeOwnerKey,
   walletScopeOwnerKey,
-} from "./wallet/wallet-scope";
+} from "../domain/wallet/wallet-scope";
 
 export class WalletBalancesInvalidationKey extends Data.TaggedClass(
   "WalletBalancesInvalidationKey"

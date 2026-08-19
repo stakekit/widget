@@ -3,14 +3,14 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import * as Reactivity from "effect/unstable/reactivity/Reactivity";
 import { isBorrowNetwork } from "../../domain/borrow/network";
 import {
+  sameWalletScopeOwner,
+  type WalletScopeOwnerKey,
+} from "../../domain/wallet/wallet-scope";
+import {
   type WidgetDomainEvent,
   WidgetDomainEvents,
 } from "../../services/events/widget-domain-events";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
-import {
-  sameWalletScopeOwner,
-  type WalletScopeOwnerKey,
-} from "../../services/wallet/wallet-scope";
 import { WalletService } from "../../services/wallet/wallet-service";
 import type { WalletState } from "../../services/wallet/wallet-state";
 import { walletRuntime } from "./wallet-runtime";

@@ -1,13 +1,13 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { widgetConfigAtom } from "../../../../../features/widget-configuration/index";
 import {
   sameWalletScopeOwner,
   type WalletScopeOwnerKey,
-  walletScopeFromState,
   walletScopeOwnerKey,
-} from "../../../../../services/wallet/wallet-scope";
+} from "../../../../../domain/wallet/wallet-scope";
+import { widgetConfigAtom } from "../../../../../features/widget-configuration/index";
+import { walletScopeFromState } from "../../../../../services/wallet/wallet-scope-adapter";
 import { disconnectedNormalizedWalletState } from "../../../../../services/wallet/wallet-state";
 import { initParamsAtom } from "../../../../init-params/index";
 import { walletStateResultAtom } from "../../../../wallet/index";

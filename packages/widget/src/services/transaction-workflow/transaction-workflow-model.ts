@@ -5,6 +5,7 @@ import type {
 } from "../../domain/action/models";
 import type { Action as BorrowAction } from "../../domain/borrow/execution/action";
 import type { Transaction as BorrowTransaction } from "../../domain/borrow/execution/transaction";
+import { WalletScopeKey } from "../../domain/wallet/wallet-scope";
 import type { ActionMeta } from "../../public-api/types";
 import type {
   WalletBroadcastError,
@@ -13,7 +14,6 @@ import type {
   WalletRuntimeInvariantError,
   WalletSigningError,
 } from "../wallet/wallet-errors";
-import { WalletScopeKey } from "../wallet/wallet-scope";
 
 type ClassicTransactionWorkflowInputFields = {
   readonly actionMeta: ActionMeta;

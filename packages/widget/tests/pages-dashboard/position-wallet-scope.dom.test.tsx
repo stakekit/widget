@@ -12,6 +12,7 @@ import { act } from "react";
 import { describe, expect, it } from "vitest";
 import { EarnPosition } from "../../src/domain/earn/models";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
@@ -22,7 +23,6 @@ import {
   positionBalancesByTypeAtom,
   yieldPositionsResourceAtom,
 } from "../../src/resources/yield-positions/yield-positions";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 import { render } from "../utils/test-utils.dom.tsx";
 

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import type { TokenBalanceScanCommand } from "../../src/domain/finance/models";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { tokenBalancesScanAtom as portfolioTokenBalancesAtom } from "../../src/features/portfolio/index";
 import {
   refreshTokenBalancesAtom,
@@ -14,7 +15,6 @@ import {
   ApiRequestError,
   LegacyResourceSource,
 } from "../../src/services/api/resource-sources";
-import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

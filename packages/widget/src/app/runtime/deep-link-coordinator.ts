@@ -1,15 +1,15 @@
 import { Context, Effect, Layer, Ref, Stream } from "effect";
+import {
+  sameWalletScopeOwner,
+  type WalletScopeKey,
+} from "../../domain/wallet/wallet-scope";
 import { ClassicTransactionFlowService as ClassicFlow } from "../../features/classic-transaction-flow/runtime";
 import { getPositionDetailsHubPath } from "../../features/position-details/index";
 import {
   toWidgetPath,
   WidgetNavigation,
 } from "../../services/navigation/widget-navigation";
-import {
-  sameWalletScopeOwner,
-  type WalletScopeKey,
-  walletScopeFromState,
-} from "../../services/wallet/wallet-scope";
+import { walletScopeFromState } from "../../services/wallet/wallet-scope-adapter";
 import { WalletService } from "../../services/wallet/wallet-service";
 import { makeScopedSerialOperations } from "../../shared/effect/scoped-serial-operations";
 
