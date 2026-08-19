@@ -236,17 +236,17 @@ catalogs:
       specifier: 2.15.1
       version: 2.15.1
     '@effect/atom-react':
-      specifier: ^4.0.0-beta.102
-      version: 4.0.0-beta.102
+      specifier: 4.0.0-rc.109
+      version: 4.0.0-rc.109
     '@effect/openapi-generator':
-      specifier: ^4.0.0-beta.102
-      version: 4.0.0-beta.102
+      specifier: 4.0.0-rc.109
+      version: 4.0.0-rc.109
     '@effect/platform-browser':
-      specifier: 4.0.0-beta.102
-      version: 4.0.0-beta.102
+      specifier: 4.0.0-rc.109
+      version: 4.0.0-rc.109
     '@effect/platform-node':
-      specifier: 4.0.0-beta.102
-      version: 4.0.0-beta.102
+      specifier: 4.0.0-rc.109
+      version: 4.0.0-rc.109
     '@faker-js/faker':
       specifier: ^10.5.0
       version: 10.5.0
@@ -401,8 +401,8 @@ catalogs:
       specifier: ^18.1.0
       version: 18.2.0
     effect:
-      specifier: 4.0.0-beta.102
-      version: 4.0.0-beta.102
+      specifier: 4.0.0-rc.109
+      version: 4.0.0-rc.109
     eventemitter3:
       specifier: ^5.0.4
       version: 5.0.4
@@ -510,7 +510,6 @@ packageExtensionsChecksum: sha256-FZ9pA8g2+w7cg8p8CU69qpPAEhtGVHP/kzcJxOvNvcM=
 
 patchedDependencies:
   '@stakekit/rainbowkit@2.2.11': 337be35435cb461cd028a33948d9df7a604880ea8d15a3e6891afe07c28e6707
-  effect@4.0.0-beta.102: a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c
 
 importers:
 
@@ -635,16 +634,16 @@ importers:
         version: 2.15.1(@cosmjs/amino@0.36.2)(@cosmjs/proto-signing@0.36.2)(@react-native-async-storage/async-storage@1.24.0(react-native@0.81.1(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.18)(bufferutil@4.0.9)(react@19.2.8)(supports-color@8.1.1)(utf-8-validate@5.0.10)))(@typescript/typescript6@6.0.2)(@walletconnect/types@2.11.0(@react-native-async-storage/async-storage@1.24.0(react-native@0.81.1(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.18)(bufferutil@4.0.9)(react@19.2.8)(supports-color@8.1.1)(utf-8-validate@5.0.10)))(ioredis@5.10.1(supports-color@8.1.1)))(bufferutil@4.0.9)(encoding@0.1.13)(ioredis@5.10.1(supports-color@8.1.1))(supports-color@8.1.1)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@effect/atom-react':
         specifier: 'catalog:'
-        version: 4.0.0-beta.102(effect@4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c))(react@19.2.8)(scheduler@0.27.0)
+        version: 4.0.0-rc.109(effect@4.0.0-rc.109)(react@19.2.8)(scheduler@0.27.0)
       '@effect/openapi-generator':
         specifier: 'catalog:'
-        version: 4.0.0-beta.102(@effect/platform-node@4.0.0-beta.102(bufferutil@4.0.9)(effect@4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c))(ioredis@5.10.1(supports-color@8.1.1))(utf-8-validate@5.0.10))(effect@4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c))(encoding@0.1.13)
+        version: 4.0.0-rc.109(@effect/platform-node@4.0.0-rc.109(bufferutil@4.0.9)(effect@4.0.0-rc.109)(redis@6.2.1)(utf-8-validate@5.0.10))(effect@4.0.0-rc.109)(encoding@0.1.13)
       '@effect/platform-browser':
         specifier: 'catalog:'
-        version: 4.0.0-beta.102(effect@4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c))
+        version: 4.0.0-rc.109(effect@4.0.0-rc.109)
       '@effect/platform-node':
         specifier: 'catalog:'
-        version: 4.0.0-beta.102(bufferutil@4.0.9)(effect@4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c))(ioredis@5.10.1(supports-color@8.1.1))(utf-8-validate@5.0.10)
+        version: 4.0.0-rc.109(bufferutil@4.0.9)(effect@4.0.0-rc.109)(redis@6.2.1)(utf-8-validate@5.0.10)
       '@faker-js/faker':
         specifier: 'catalog:'
         version: 10.5.0
@@ -797,7 +796,7 @@ importers:
         version: 18.2.0
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c)
+        version: 4.0.0-rc.109
       eventemitter3:
         specifier: 'catalog:'
         version: 5.0.4
@@ -1606,37 +1605,37 @@ packages:
     resolution: {integrity: sha512-WXTuFvL3G+74SchFAtz3FgIYVOe196ycvGsMgvSH/8Goptb1qpIQtIuM4SOK9G9lhMWYpHxnXyy544ZhluFOew==}
     engines: {node: '>=6'}
 
-  '@effect/atom-react@4.0.0-beta.102':
-    resolution: {integrity: sha512-6SX11h7OFwje4YhxYUml9qGjBU8hvnEMrLWe3TKI3lEH/W6tkU/BzajC263eXkxM68h+BJNzE81Ipi5DTfEgug==}
+  '@effect/atom-react@4.0.0-rc.109':
+    resolution: {integrity: sha512-pMx01t0DnS9rPAR3aFOIoPUmuJjxflxw081ofTzXBlG81+hIaenJTdVJ+X+miRCGbcf00XEn15dHGoM3UjpIZQ==}
     peerDependencies:
-      effect: ^4.0.0-beta.102
-      react: ^19.2.4
-      scheduler: '*'
+      effect: ^4.0.0-rc.109
+      react: '>=19.2.7 <20.0.0'
+      scheduler: '>=0.27.0 <0.28.0'
 
-  '@effect/openapi-generator@4.0.0-beta.102':
-    resolution: {integrity: sha512-LeUj+Z1J58+Xj1WtyhF/cpFIcTOEAHvcQe++Sh6b/o4tZPaC2UDb0144bOFjTNPgOBKcNb6FvVQXwPGV2wv3ZQ==}
+  '@effect/openapi-generator@4.0.0-rc.109':
+    resolution: {integrity: sha512-CCnzH1uubdg7UCl9EFxfKxLH6eX/bzTdBtmVJSGqcShgkomXTxl36IqNMo5TK6FErFJQi+6nvBZA2YES07Uk/g==}
     hasBin: true
     peerDependencies:
-      '@effect/platform-node': ^4.0.0-beta.102
-      effect: ^4.0.0-beta.102
+      '@effect/platform-node': ^4.0.0-rc.109
+      effect: ^4.0.0-rc.109
 
-  '@effect/platform-browser@4.0.0-beta.102':
-    resolution: {integrity: sha512-DXXVt+oOpukqI3lEaGvvXQxSobzIy3lAsIQvlpVK+MuYBm1o4FHZrHKbrOFItDUvSR1t0kiTncFPRi01YaJUmA==}
+  '@effect/platform-browser@4.0.0-rc.109':
+    resolution: {integrity: sha512-63/hM2dCh0HQb7sRkAhAoZjO4swjRD2vT/eUrs8nXA0LzJMz52ChPsxdnL1D0yg+ZeXtMHQM0MFJxITJXjv+EA==}
     peerDependencies:
-      effect: ^4.0.0-beta.102
+      effect: ^4.0.0-rc.109
 
-  '@effect/platform-node-shared@4.0.0-beta.102':
-    resolution: {integrity: sha512-gVd793I72MrkX4dXo7eYtRKfNj0RW4eMRfVEKEJI16h2+mBDCzQ+gqMrog2hSTHQnaIbvbYShNQ4TVGuRCYZeQ==}
+  '@effect/platform-node-shared@4.0.0-rc.109':
+    resolution: {integrity: sha512-jhZJnf81N7Z5+Z41Qr0cKT75WzGu6M1W05xrSdu/V8PK0kSFtU5hJMBxSGDWNlgWhBwK0WRZtnMHY8HLdONg1w==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      effect: ^4.0.0-beta.102
+      effect: ^4.0.0-rc.109
 
-  '@effect/platform-node@4.0.0-beta.102':
-    resolution: {integrity: sha512-wYVAU9jAePT+gouMr/EVz1CaW6yDLjPAgXYeEFLz7wugT5iZhFRag6mqajV/wwN3bzWP2fzZHokLuPmqD/rqeA==}
+  '@effect/platform-node@4.0.0-rc.109':
+    resolution: {integrity: sha512-LE/GTh6MCZ0uzbEFH9WmxQkC9snjWuFyh8vW04AAgbKKxSHXsepHSK9RcE/2oYKr6RhrOTD0C2wC0i+J9qoe2g==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      effect: ^4.0.0-beta.102
-      ioredis: ^5.7.0
+      effect: ^4.0.0-rc.109
+      redis: '>=5.0.0 <7.0.0'
 
   '@emnapi/core@1.11.2':
     resolution: {integrity: sha512-TC8MkTuZUtcTSiFeuC0ksCh9QIJ5+F21MvZ4Wn4ORfYaFJ/0dsiudv5tVkejgwZlwQ39jL9WWDe2lz8x0WglOA==}
@@ -3565,6 +3564,42 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  '@redis/bloom@6.2.1':
+    resolution: {integrity: sha512-huQgNLaCIZfQ9SeLn4q9124uOUd8HbZDYHwwUzNcRgHqCHiHKl2dDxMqJCeWh8cMqZAoWuHR8XnWbDMIf+o7ag==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.2.1
+
+  '@redis/client@6.2.1':
+    resolution: {integrity: sha512-LzxBY7SIBvvJiyCgcaJZZakE3fJrZZ++i24+EDW9fKpCl68D35uJcKFpZZwCfOoG9WZTbyZlMzMeM0gtOAMU9Q==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@node-rs/xxhash': ^1.1.0
+      '@opentelemetry/api': '>=1 <2'
+    peerDependenciesMeta:
+      '@node-rs/xxhash':
+        optional: true
+      '@opentelemetry/api':
+        optional: true
+
+  '@redis/json@6.2.1':
+    resolution: {integrity: sha512-AFIUJ8Gj0DaaSBHYuSt8+O0oYWM+50OK1c0OmodB7XERIA8+BbyV3O4v76f9iccWasd1/7qjfZTpuzexUaZtrQ==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.2.1
+
+  '@redis/search@6.2.1':
+    resolution: {integrity: sha512-2vfOAOyYFE7UUw3sBBlkqqruBtOUS4HRY5MtW4hp83llrwvtrTE4r22CEqXddlV+54zkLxBE4nmsIJ/dpezQrQ==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.2.1
+
+  '@redis/time-series@6.2.1':
+    resolution: {integrity: sha512-kiYniph04dJOole+L359B6C9E+jYS2uDP7hca6Onj0xF38ZIpyxARO0Iq0W4ZRn1e8Q6vqW00QFZVSMRA/2Ijw==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.2.1
 
   '@reduxjs/toolkit@2.12.0':
     resolution: {integrity: sha512-KiT+RzZbp6mQET+Mg+h2c97+9j1sNflUxQkIHI7Yuzf6Peu+OYpmkn6nbHWmLLWj+1ZODUJFwGZ7gx3L9R9EOw==}
@@ -7088,6 +7123,7 @@ packages:
 
   crypto-js@4.2.0:
     resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
+    deprecated: Active development of CryptoJS has been discontinued. This library is no longer maintained.
 
   css-tree@3.2.1:
     resolution: {integrity: sha512-X7sjQzceUhu1u7Y/ylrRZFU2FS6LRiFVp6rKLPg23y3x3c3DOKAwuXGDp+PAGjh6CSnCjYeAul8pcT8bAl+lSA==}
@@ -7326,8 +7362,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  effect@4.0.0-beta.102:
-    resolution: {integrity: sha512-z8Y+Q76Hh/kjLFZrXu8tGn6e+tDsg45R+UHhxd190pXxD53OGwf/G/zDxXTkse4HJ5mobNZfitLfUCp4fMvu6w==}
+  effect@4.0.0-rc.109:
+    resolution: {integrity: sha512-6ubcOCtfdbmFO5+vgcT2HsTw5s+n3aMUj4eAIbVpUxP7+VYCwXxxcBHgiWgizOrGO1eGmuOBFek3mM0dFcwaWA==}
 
   electron-to-chromium@1.5.396:
     resolution: {integrity: sha512-yHiw2Y3C3H9U6TMbOfoWK/BPreiOPXRfTWPBwQBoZG6/8TB6eOPnsy5oaRYuatR7Fw2SJ4kKforgufeo7fq0EQ==}
@@ -7611,9 +7647,6 @@ packages:
   finalhandler@1.1.2:
     resolution: {integrity: sha512-aAWcW57uxVNrQZqFXjITpW3sIUQmHGG3qSb9mUah9MgMC4NeWhNOlNjXEYq3HjRAvL6arUviZGGJsBg6z0zsWA==}
     engines: {node: '>= 0.8'}
-
-  find-my-way-ts@0.1.6:
-    resolution: {integrity: sha512-a85L9ZoXtNAey3Y6Z+eBWW658kO/MwR7zIafkIUPUMf3isZG0NCs2pjW2wtjxAKuJPxMAsHUIP4ZPGv0o5gyTA==}
 
   find-up@4.1.0:
     resolution: {integrity: sha512-PpOwAdQ/YlXQ2vj8a3h8IipDuYRi3wceVQQGYWxNINccq40Anw7BlsEXCMbt1Zt+OLA6Fq9suIpIWD0OsnISlw==}
@@ -7958,10 +7991,6 @@ packages:
   ini@6.0.0:
     resolution: {integrity: sha512-IBTdIkzZNOpqm7q3dRqJvMaldXjDHWkEDfrwGEQTs5eaQMWV+djAhR+wahyNNMAa+qpbDUhBMVt4ZKNwpPm7xQ==}
     engines: {node: ^20.17.0 || >=22.9.0}
-
-  ini@7.0.0:
-    resolution: {integrity: sha512-ifK0CgjALofS5bkrcTy4RaQ9Vx2Knf/eLeIO+NaswQEpH1UblrtTSCIvN71qQDMq0PeQ/SSPojvEJp9vvvfr+w==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
 
   int64-buffer@1.1.0:
     resolution: {integrity: sha512-94smTCQOvigN4d/2R/YDjz8YVG0Sufvv2aAh8P5m42gwhCsDAJqnbNOrxJsrADuAFAA69Q/ptGzxvNcNuIJcvw==}
@@ -8334,9 +8363,6 @@ packages:
     resolution: {integrity: sha512-NbeIEmUS2VUMjAkbiSNOKPJeV9wpCsr0660sUyKyMQbk4Iom0++nTLInVp4MJ+LfR4kORnw67bDi5tvO7YLnzA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
-
-  kubernetes-types@1.30.0:
-    resolution: {integrity: sha512-Dew1okvhM/SQcIa2rcgujNndZwU8VnSapDgdxlYoB84ZlpAD43U6KLAFqYo17ykSFGHNPrg0qry0bP+GJd9v7Q==}
 
   less@4.2.2:
     resolution: {integrity: sha512-tkuLHQlvWUTeQ3doAqnHbNn8T6WX1KA8yvbKG9x4VtKtIjHsVKQZCH11zRgAfbDAXC2UNIg/K9BYAAcEzUIrNg==}
@@ -8798,9 +8824,6 @@ packages:
 
   multiformats@9.9.0:
     resolution: {integrity: sha512-HoMUjhH9T8DDBNT+6xzkrd9ga/XiBI4xLr58LJACwK6G3HTOPeMz4nB4KJs33L2BelrIJa7P0VuNaVF3hMYfjg==}
-
-  multipasta@0.2.8:
-    resolution: {integrity: sha512-ZPWuMKyv0cSO29f7hozp+k6+crZbQijV8ipMvxNxRf2SwtYGTX1ZX89Kd20VV4H9Znonx+EQn+iy1wGQsJ+b+Q==}
 
   mute-stream@3.0.0:
     resolution: {integrity: sha512-dkEJPVvun4FryqBmZ5KhDo0K9iDXAwn08tMLDinNdRBNPcYEDiWYysLcc6k3mjTMlbP9KyylvRpd4wFtwrT9rw==}
@@ -9645,6 +9668,10 @@ packages:
     resolution: {integrity: sha512-DJnGAeenTdpMEH6uAJRK/uiyEIH9WVsUmoLwzudwGJUwZPp80PDBWPHXSAGNPwNvIXAbe7MSUB1zQFugFml66A==}
     engines: {node: '>=4'}
 
+  redis@6.2.1:
+    resolution: {integrity: sha512-Z9VHtgYs48PiQC77X9O2Er8Hj4T+5BtFjT91/vi5Is1D04N72cA946ZslM1ImJw8ZctFBZWAVjM7S5wJNeHMpg==}
+    engines: {node: '>= 20.0.0'}
+
   redux-thunk@3.1.0:
     resolution: {integrity: sha512-NW2r5T6ksUKXCabzhL9z+h206HQw/NJkcLm1GPImRQ8IzfXwRGqjVhKJGauHirT0DAuyy6hjdnMZaRoAcy0Klw==}
     peerDependencies:
@@ -10263,10 +10290,6 @@ packages:
   toml@3.0.0:
     resolution: {integrity: sha512-y/mWCZinnvxjTKYhJ+pYxwD0mRLVvOtdS2Awbgxln6iEnt4rk0yBxeSBHkGJcPucRiG0e55mwWp+g/05rsrd6w==}
 
-  toml@4.3.0:
-    resolution: {integrity: sha512-lVb8X9BsPVuH0M4BKeS91tXAmJvCjQ5UIyAbQFaxkKGyUFK2RPkhwaFSQH8vbpl1d23eu/IBH+dwVMHWaq9A5A==}
-    engines: {node: '>=20'}
-
   totalist@3.0.1:
     resolution: {integrity: sha512-sf4i37nQ2LBx4m3wB74y+ubopq6W/dIzXg0FDGjsYnZHVa1Da8FH853wlL2gtUhg+xJXjfk3kUZS3BRoQeoQBQ==}
     engines: {node: '>=6'}
@@ -10608,10 +10631,6 @@ packages:
 
   uuid@11.1.1:
     resolution: {integrity: sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==}
-    hasBin: true
-
-  uuid@14.0.1:
-    resolution: {integrity: sha512-6ZxzVpzDXDa3bJWaHilVayA+BH/1zmxCJoVgvmqJnid/gPoKHxUrS/aC/T6LGQtNHT+XHG9fXPJB4d+IrU30Ew==}
     hasBin: true
 
   uuid@8.3.2:
@@ -12464,40 +12483,39 @@ snapshots:
       '@leichtgewicht/ip-codec': 2.0.5
       utf8-codec: 1.0.0
 
-  '@effect/atom-react@4.0.0-beta.102(effect@4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c))(react@19.2.8)(scheduler@0.27.0)':
+  '@effect/atom-react@4.0.0-rc.109(effect@4.0.0-rc.109)(react@19.2.8)(scheduler@0.27.0)':
     dependencies:
-      effect: 4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c)
+      effect: 4.0.0-rc.109
       react: 19.2.8
       scheduler: 0.27.0
 
-  '@effect/openapi-generator@4.0.0-beta.102(@effect/platform-node@4.0.0-beta.102(bufferutil@4.0.9)(effect@4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c))(ioredis@5.10.1(supports-color@8.1.1))(utf-8-validate@5.0.10))(effect@4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c))(encoding@0.1.13)':
+  '@effect/openapi-generator@4.0.0-rc.109(@effect/platform-node@4.0.0-rc.109(bufferutil@4.0.9)(effect@4.0.0-rc.109)(redis@6.2.1)(utf-8-validate@5.0.10))(effect@4.0.0-rc.109)(encoding@0.1.13)':
     dependencies:
-      '@effect/platform-node': 4.0.0-beta.102(bufferutil@4.0.9)(effect@4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c))(ioredis@5.10.1(supports-color@8.1.1))(utf-8-validate@5.0.10)
-      effect: 4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c)
+      '@effect/platform-node': 4.0.0-rc.109(bufferutil@4.0.9)(effect@4.0.0-rc.109)(redis@6.2.1)(utf-8-validate@5.0.10)
+      effect: 4.0.0-rc.109
       swagger2openapi: 7.0.8(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
-  '@effect/platform-browser@4.0.0-beta.102(effect@4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c))':
+  '@effect/platform-browser@4.0.0-rc.109(effect@4.0.0-rc.109)':
     dependencies:
-      effect: 4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c)
-      multipasta: 0.2.8
+      effect: 4.0.0-rc.109
 
-  '@effect/platform-node-shared@4.0.0-beta.102(bufferutil@4.0.9)(effect@4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c))(utf-8-validate@5.0.10)':
+  '@effect/platform-node-shared@4.0.0-rc.109(bufferutil@4.0.9)(effect@4.0.0-rc.109)(utf-8-validate@5.0.10)':
     dependencies:
       '@types/ws': 8.18.1
-      effect: 4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c)
+      effect: 4.0.0-rc.109
       ws: 8.21.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@effect/platform-node@4.0.0-beta.102(bufferutil@4.0.9)(effect@4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c))(ioredis@5.10.1(supports-color@8.1.1))(utf-8-validate@5.0.10)':
+  '@effect/platform-node@4.0.0-rc.109(bufferutil@4.0.9)(effect@4.0.0-rc.109)(redis@6.2.1)(utf-8-validate@5.0.10)':
     dependencies:
-      '@effect/platform-node-shared': 4.0.0-beta.102(bufferutil@4.0.9)(effect@4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c))(utf-8-validate@5.0.10)
-      effect: 4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c)
-      ioredis: 5.10.1(supports-color@8.1.1)
+      '@effect/platform-node-shared': 4.0.0-rc.109(bufferutil@4.0.9)(effect@4.0.0-rc.109)(utf-8-validate@5.0.10)
+      effect: 4.0.0-rc.109
       mime: 4.1.0
+      redis: 6.2.1
       undici: 8.9.0
     transitivePeerDependencies:
       - bufferutil
@@ -12911,7 +12929,8 @@ snapshots:
     optionalDependencies:
       '@types/node': 26.1.2
 
-  '@ioredis/commands@1.5.1': {}
+  '@ioredis/commands@1.5.1':
+    optional: true
 
   '@isaacs/ttlcache@1.4.1': {}
 
@@ -14519,6 +14538,26 @@ snapshots:
       react-native: 0.81.1(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.18)(bufferutil@4.0.9)(react@19.2.8)(supports-color@8.1.1)(utf-8-validate@5.0.10)
     optionalDependencies:
       '@types/react': 19.2.18
+
+  '@redis/bloom@6.2.1(@redis/client@6.2.1)':
+    dependencies:
+      '@redis/client': 6.2.1
+
+  '@redis/client@6.2.1':
+    dependencies:
+      cluster-key-slot: 1.1.2
+
+  '@redis/json@6.2.1(@redis/client@6.2.1)':
+    dependencies:
+      '@redis/client': 6.2.1
+
+  '@redis/search@6.2.1(@redis/client@6.2.1)':
+    dependencies:
+      '@redis/client': 6.2.1
+
+  '@redis/time-series@6.2.1(@redis/client@6.2.1)':
+    dependencies:
+      '@redis/client': 6.2.1
 
   '@reduxjs/toolkit@2.12.0(react-redux@9.3.0(@types/react@19.2.18)(react@19.2.8)(redux@5.0.1))(react@19.2.8)':
     dependencies:
@@ -21206,7 +21245,8 @@ snapshots:
 
   delayed-stream@1.0.0: {}
 
-  denque@2.1.0: {}
+  denque@2.1.0:
+    optional: true
 
   depd@2.0.0: {}
 
@@ -21294,18 +21334,11 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  effect@4.0.0-beta.102(patch_hash=a7fa91c4b3422a01c7219d3723db8c6a1b13f82985ce8293672aad0f79de9b6c):
+  effect@4.0.0-rc.109:
     dependencies:
       '@standard-schema/spec': 1.1.0
       fast-check: 4.9.0
-      find-my-way-ts: 0.1.6
-      ini: 7.0.0
-      kubernetes-types: 1.30.0
       msgpackr: 2.0.5
-      multipasta: 0.2.8
-      toml: 4.3.0
-      uuid: 14.0.1
-      yaml: 2.9.0
 
   electron-to-chromium@1.5.396: {}
 
@@ -21610,8 +21643,6 @@ snapshots:
       unpipe: 1.0.0
     transitivePeerDependencies:
       - supports-color
-
-  find-my-way-ts@0.1.6: {}
 
   find-up@4.1.0:
     dependencies:
@@ -21949,8 +21980,6 @@ snapshots:
 
   ini@6.0.0: {}
 
-  ini@7.0.0: {}
-
   int64-buffer@1.1.0: {}
 
   internmap@2.0.3: {}
@@ -21974,6 +22003,7 @@ snapshots:
       standard-as-callback: 2.1.0
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   ip-address@10.2.0: {}
 
@@ -22387,8 +22417,6 @@ snapshots:
       yaml: 2.9.0
       zod: 4.4.3
 
-  kubernetes-types@1.30.0: {}
-
   less@4.2.2:
     dependencies:
       copy-anything: 2.0.6
@@ -22536,9 +22564,11 @@ snapshots:
 
   lodash.clonedeep@4.5.0: {}
 
-  lodash.defaults@4.2.0: {}
+  lodash.defaults@4.2.0:
+    optional: true
 
-  lodash.isarguments@3.1.0: {}
+  lodash.isarguments@3.1.0:
+    optional: true
 
   lodash.isequal@4.5.0: {}
 
@@ -22959,8 +22989,6 @@ snapshots:
   multiformats@14.0.4: {}
 
   multiformats@9.9.0: {}
-
-  multipasta@0.2.8: {}
 
   mute-stream@3.0.0: {}
 
@@ -23998,11 +24026,24 @@ snapshots:
     dependencies:
       esprima: 4.0.1
 
-  redis-errors@1.2.0: {}
+  redis-errors@1.2.0:
+    optional: true
 
   redis-parser@3.0.0:
     dependencies:
       redis-errors: 1.2.0
+    optional: true
+
+  redis@6.2.1:
+    dependencies:
+      '@redis/bloom': 6.2.1(@redis/client@6.2.1)
+      '@redis/client': 6.2.1
+      '@redis/json': 6.2.1(@redis/client@6.2.1)
+      '@redis/search': 6.2.1(@redis/client@6.2.1)
+      '@redis/time-series': 6.2.1(@redis/client@6.2.1)
+    transitivePeerDependencies:
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
 
   redux-thunk@3.1.0(redux@5.0.1):
     dependencies:
@@ -24518,7 +24559,8 @@ snapshots:
     dependencies:
       type-fest: 0.7.1
 
-  standard-as-callback@2.1.0: {}
+  standard-as-callback@2.1.0:
+    optional: true
 
   starknet@8.9.2:
     dependencies:
@@ -24727,8 +24769,6 @@ snapshots:
   toidentifier@1.0.1: {}
 
   toml@3.0.0: {}
-
-  toml@4.3.0: {}
 
   totalist@3.0.1: {}
 
@@ -25062,8 +25102,6 @@ snapshots:
   utils-merge@1.0.1: {}
 
   uuid@11.1.1: {}
-
-  uuid@14.0.1: {}
 
   uuid@8.3.2: {}
 

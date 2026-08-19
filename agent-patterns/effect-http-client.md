@@ -6,14 +6,14 @@ tests.
 
 The source of truth is the vendored Effect repository, especially:
 
-- `@repos/effect/packages/effect/src/unstable/http/HttpClient.ts`
-- `@repos/effect/packages/effect/src/unstable/http/HttpClientRequest.ts`
-- `@repos/effect/packages/effect/src/unstable/http/HttpClientResponse.ts`
-- `@repos/effect/packages/effect/src/unstable/http/HttpClientError.ts`
-- `@repos/effect/packages/effect/src/unstable/http/HttpIncomingMessage.ts`
-- `@repos/effect/packages/effect/src/unstable/http/FetchHttpClient.ts`
-- `@repos/effect/packages/effect/src/unstable/persistence/RateLimiter.ts`
-- `@repos/effect/packages/effect/test/unstable/http`
+- `.repos/effect/packages/effect/src/unstable/http/HttpClient.ts`
+- `.repos/effect/packages/effect/src/unstable/http/HttpClientRequest.ts`
+- `.repos/effect/packages/effect/src/unstable/http/HttpClientResponse.ts`
+- `.repos/effect/packages/effect/src/unstable/http/HttpClientError.ts`
+- `.repos/effect/packages/effect/src/unstable/http/HttpIncomingMessage.ts`
+- `.repos/effect/packages/effect/src/unstable/http/FetchHttpClient.ts`
+- `.repos/effect/packages/effect/src/unstable/persistence/RateLimiter.ts`
+- `.repos/effect/packages/effect/test/unstable/http`
 
 Read `effect-stream.md` as well when a request or response body is streamed.
 
@@ -89,7 +89,7 @@ export class TodoApi extends Context.Service<TodoApi, {
   ).pipe(Layer.provide(FetchHttpClient.layer))
 }
 
-export class TodoApiError extends Schema.TaggedErrorClass<TodoApiError>()(
+export class TodoApiError extends Schema.TaggedError<TodoApiError>()(
   "TodoApiError",
   { cause: Schema.Defect() }
 ) {}

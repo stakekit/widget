@@ -46,9 +46,9 @@ const richErrorFrom = (cause: unknown): RichError | null => {
 
   if (!description) return null;
 
-  const parsed = Schema.decodeUnknownOption(Schema.UnknownFromJsonString)(
-    description
-  ).pipe(Option.getOrNull);
+  const parsed = Schema.decodeUnknownOption(
+    Schema.fromJsonString(Schema.Unknown)
+  )(description).pipe(Option.getOrNull);
 
   return decodeRichError(parsed);
 };

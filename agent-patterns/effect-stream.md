@@ -6,11 +6,11 @@ pipelines, and resource-backed producers.
 
 The source of truth is the vendored Effect repository, especially:
 
-- `@repos/effect/packages/effect/src/Stream.ts`
-- `@repos/effect/ai-docs/src/02_stream`
-- `@repos/effect/packages/effect/test/Stream.test.ts`
+- `.repos/effect/packages/effect/src/Stream.ts`
+- `.repos/effect/ai-docs/src/02_stream`
+- `.repos/effect/packages/effect/test/Stream.test.ts`
 - platform adapters such as
-  `@repos/effect/packages/platform-node-shared/src/NodeStream.ts`
+  `.repos/effect/packages/platform-node-shared/src/NodeStream.ts`
 
 Read `effect-http-client.md` as well for HTTP response or request bodies, and
 `effect-atoms.md` when a stream backs an atom.

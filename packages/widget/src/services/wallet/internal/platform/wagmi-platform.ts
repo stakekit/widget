@@ -24,7 +24,7 @@ import {
 } from "../runtime/wagmi-config";
 import { WagmiOperations } from "./wagmi-operations";
 
-class WagmiPlatformError extends Schema.TaggedErrorClass<WagmiPlatformError>()(
+class WagmiPlatformError extends Schema.TaggedError<WagmiPlatformError>()(
   "WagmiPlatformError",
   {
     cause: Schema.Defect(),

@@ -53,7 +53,7 @@ describe("WidgetNavigation", () => {
 
   it("rejects route-relative application paths", () => {
     expect(() => Schema.decodeUnknownSync(WidgetPath)("positions/one")).toThrow(
-      'Expected a string matching template literal parts, got "positions/one"'
+      "Expected a string matching template literal parts"
     );
   });
 

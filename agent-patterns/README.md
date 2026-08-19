@@ -1,7 +1,7 @@
 # Effect Agent Patterns
 
 These guides describe the Effect APIs used by this repository. They target the
-vendored Effect snapshot under `@repos/effect`; unstable APIs can change, so the
+shallow Effect snapshot under `.repos/effect`; unstable APIs can change, so the
 vendored source wins whenever a guide and a signature disagree.
 
 ## Pick The Smallest Relevant Guide
@@ -24,14 +24,14 @@ Read more than one guide when a boundary crosses modules. In particular:
 
 Before writing Effect code:
 
-1. Read `@repos/effect/LLMS.md`.
+1. Read `.repos/effect/LLMS.md`.
 2. Read the relevant guide from this directory.
 3. Inspect the exact exported signature and nearby implementation in
-   `@repos/effect/packages`.
+   `.repos/effect/packages`.
 4. Inspect the corresponding vendored tests for lifecycle or concurrency
    behavior that the type signature cannot express.
 
-Use `rg --no-ignore` when searching `@repos/effect`, because the vendored clone
+Use `rg --no-ignore` when searching `.repos/effect`, because the vendored clone
 may be ignored by Git locally. Do not use `node_modules` or web documentation as
 the authority for Effect behavior in this repository.
 

@@ -69,7 +69,7 @@ export type PrepareLedgerLiveTransaction = (
   params: PrepareLedgerLiveTransactionParams
 ) => Effect.Effect<RawTransaction, LedgerTransactionPreparationError>;
 
-export class LedgerTransactionPreparationError extends Schema.TaggedErrorClass<LedgerTransactionPreparationError>()(
+export class LedgerTransactionPreparationError extends Schema.TaggedError<LedgerTransactionPreparationError>()(
   "LedgerTransactionPreparationError",
   {
     message: Schema.String,

@@ -23,7 +23,7 @@ import { WalletEnvironment } from "../platform/wallet-environment";
 import { installSolanaConnectorMembership } from "./solana-connector-membership";
 import type { WalletController } from "./wagmi-config";
 
-export class WalletBootstrapError extends Schema.TaggedErrorClass<WalletBootstrapError>()(
+export class WalletBootstrapError extends Schema.TaggedError<WalletBootstrapError>()(
   "WalletBootstrapError",
   {
     cause: Schema.Defect(),

@@ -6,14 +6,14 @@ hydration.
 
 The source of truth is the vendored Effect repository, especially:
 
-- `@repos/effect/packages/effect/src/unstable/reactivity/Atom.ts`
-- `@repos/effect/packages/effect/src/unstable/reactivity/AtomRegistry.ts`
-- `@repos/effect/packages/effect/src/unstable/reactivity/AsyncResult.ts`
-- `@repos/effect/packages/effect/src/unstable/reactivity/Reactivity.ts`
-- `@repos/effect/packages/effect/src/unstable/reactivity/Hydration.ts`
-- `@repos/effect/packages/effect/src/unstable/reactivity/AtomHttpApi.ts`
-- `@repos/effect/packages/effect/src/unstable/reactivity/AtomRpc.ts`
-- `@repos/effect/packages/effect/test/reactivity`
+- `.repos/effect/packages/effect/src/unstable/reactivity/Atom.ts`
+- `.repos/effect/packages/effect/src/unstable/reactivity/AtomRegistry.ts`
+- `.repos/effect/packages/effect/src/unstable/reactivity/AsyncResult.ts`
+- `.repos/effect/packages/effect/src/unstable/reactivity/Reactivity.ts`
+- `.repos/effect/packages/effect/src/unstable/reactivity/Hydration.ts`
+- `.repos/effect/packages/effect/src/unstable/reactivity/AtomHttpApi.ts`
+- `.repos/effect/packages/effect/src/unstable/reactivity/AtomRpc.ts`
+- `.repos/effect/packages/effect/test/reactivity`
 
 ## Imports
 

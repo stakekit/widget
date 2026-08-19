@@ -22,7 +22,7 @@ import type { WalletRoutingContext } from "./router";
 import { makeCompleteWalletStateStream } from "./state-projection";
 import type { WalletController } from "./wagmi-config";
 
-class WalletStateInitializationError extends Schema.TaggedErrorClass<WalletStateInitializationError>()(
+class WalletStateInitializationError extends Schema.TaggedError<WalletStateInitializationError>()(
   "WalletStateInitializationError",
   { cause: Schema.Defect() }
 ) {}

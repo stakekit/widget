@@ -18,7 +18,7 @@ import type {
 } from "../../wallet-commands";
 import type { WalletEvmTransactionInput } from "../../wallet-transactions";
 
-export class WagmiOperationsError extends Schema.TaggedErrorClass<WagmiOperationsError>()(
+export class WagmiOperationsError extends Schema.TaggedError<WagmiOperationsError>()(
   "WagmiOperationsError",
   {
     cause: Schema.Defect(),

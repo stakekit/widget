@@ -78,7 +78,7 @@ export class MissingBorrowApiConfig extends Data.TaggedError(
   readonly message: string;
 }> {}
 
-export class ApiRequestError extends Schema.TaggedErrorClass<ApiRequestError>()(
+export class ApiRequestError extends Schema.TaggedError<ApiRequestError>()(
   "ApiRequestError",
   {
     operation: Schema.String,
@@ -95,7 +95,7 @@ export class ApiRequestError extends Schema.TaggedErrorClass<ApiRequestError>()(
   }
 }
 
-export class ResponseDecodeError extends Schema.TaggedErrorClass<ResponseDecodeError>()(
+export class ResponseDecodeError extends Schema.TaggedError<ResponseDecodeError>()(
   "ResponseDecodeError",
   {
     operation: Schema.String,
@@ -104,7 +104,7 @@ export class ResponseDecodeError extends Schema.TaggedErrorClass<ResponseDecodeE
   }
 ) {}
 
-export class InputValidationError extends Schema.TaggedErrorClass<InputValidationError>()(
+export class InputValidationError extends Schema.TaggedError<InputValidationError>()(
   "InputValidationError",
   {
     operation: Schema.String,

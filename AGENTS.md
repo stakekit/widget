@@ -16,7 +16,7 @@ deliberately does not restate the architecture.
 | Domain vocabulary (use it in code, tests, commits) | `CONTEXT.md` |
 | Accepted decisions and their rationale | `docs/adr/` |
 | Transaction journeys | `ARCHITECTURE.md` next to `features/{classic-transaction-flow,borrow-transaction-flow,transaction-workflow}` |
-| Effect APIs before writing Effect code | `@repos/effect/LLMS.md`, then the smallest relevant `agent-patterns/*.md` (see its README) |
+| Effect APIs before writing Effect code | `.repos/effect/LLMS.md`, then the smallest relevant `agent-patterns/*.md` (see its README) |
 | Issue tracker / triage labels / domain docs | `docs/agents/` |
 
 `packages/widget/src` is organized by ownership, not by React mechanism: `app/`
@@ -194,4 +194,4 @@ entrypoint from inside `src` — they are outbound-only.
 - Test Effect-native orchestration through the real service layer's semantic
   operations and production-observable state; keep registry tests limited to
   service lookup, Atom projection and forwarding, and route-scope lifecycle.
-- Do not edit `@repos/` (read-only vendored reference) or import from it.
+- Treat `.repos/` as read-only agent reference material; never import from it.

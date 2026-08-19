@@ -122,7 +122,7 @@ describe("wallet Effect Atom boundaries", () => {
         "ethereum",
         "not-a-network",
       ])
-    ).toThrow("not-a-network");
+    ).toThrow(/Expected Networks[\s\S]*at \[1\]/);
   });
 
   it("decodes valid initialization parameters and ignores invalid fields", () => {

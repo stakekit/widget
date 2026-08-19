@@ -15,7 +15,7 @@
       "!**/region-iso-3166-codes.ts",
       "!**/mockServiceWorker.js",
       "!**/package.json",
-      "!**/@repos"
+      "!**/.repos"
     ]
   },
   "formatter": {
