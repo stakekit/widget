@@ -1,3 +1,5 @@
+export { getYieldEstimatedRewards } from "./model/estimated-rewards";
+export type { YieldSummaryProvider } from "./model/yield-summary";
 export {
   MultiYieldsKey,
   multiYieldsByIdAtom,
@@ -17,7 +19,5 @@ export {
 export {
   makeYieldSummary,
   YieldSummaryKey,
-  type YieldSummaryProvider,
-  type YieldSummaryRewardToken,
   yieldSummaryAtom,
 } from "./state/yield-summary";

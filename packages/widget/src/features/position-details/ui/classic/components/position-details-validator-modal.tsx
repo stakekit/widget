@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
-import { SelectValidator } from "../../../../earn/views";
+import { SelectValidator } from "../../../../yield-entry/views";
 import { usePositionDetails } from "../hooks/use-position-details";
 
 /**

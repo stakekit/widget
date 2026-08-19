@@ -26,6 +26,11 @@ import {
 import { APToPercentage } from "../../../../../shared/lib/general";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import {
+  RiskRatingBadge,
+  riskSummaryActions,
+  YieldRiskInfoTooltip,
+} from "../../../../yield-summary/views";
+import {
   formatCooldownDays,
   formatMeaningfulCompactNumber,
   formatMeaningfulCompactUsd,
@@ -39,11 +44,6 @@ import {
   formatRewardRateLabel,
   formatRewardTokenLabel,
 } from "../../../model/earn-details-formatters";
-import {
-  RiskRatingBadge,
-  YieldRiskInfoTooltip,
-} from "../../components/yield-risk";
-import { riskSummaryActions } from "../../components/yield-risk/styles.css";
 import { NetworkDetailValue } from "./components/network-detail-value";
 
 export type EarnDetailsMetricCard = {

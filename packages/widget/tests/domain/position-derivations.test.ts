@@ -8,6 +8,7 @@ import { WalletAddress } from "../../src/domain/identity/identifiers";
 import {
   getPositionBalances,
   getPositionData,
+  hasActivePositionForYield,
   toPositionBalancesByType,
   toPositionsData,
 } from "../../src/domain/portfolio/positions";
@@ -55,6 +56,13 @@ describe("position derivations", () => {
     expect(selected?.yieldId).toBe(position.yieldId);
     expect(balances?.balances).toHaveLength(2);
     expect(balances?.type).toBe("default");
+    expect(hasActivePositionForYield(positions, position.yieldId)).toBe(true);
+    expect(
+      hasActivePositionForYield(
+        positions,
+        yieldApiYieldFixture({ id: "missing-yield" }).id
+      )
+    ).toBe(false);
   });
 
   it("groups non-zero balances and projects visible table rows", () => {

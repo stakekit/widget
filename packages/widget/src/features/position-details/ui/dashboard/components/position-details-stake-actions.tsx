@@ -11,8 +11,8 @@ import { SelectedToken } from "../../../../../shared/ui/components/selected-toke
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { KycGateCard, MetaInfo } from "../../../../earn/views";
 import { type PageCta, PageCtaButton } from "../../../../widget-shell/views";
+import { KycGateCard, MetaInfo } from "../../../../yield-summary/views";
 import { usePositionDetailsStake } from "../hooks/use-position-details-stake";
 
 type PositionDetailsStakeState = ReturnType<typeof usePositionDetailsStake>;

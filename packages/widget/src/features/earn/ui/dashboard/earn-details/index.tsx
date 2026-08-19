@@ -5,6 +5,11 @@ import type { SelectedValidators } from "../../../../../domain/earn/reward-rate"
 import type { HistoryPeriod } from "../../../../../domain/portfolio/models";
 import { formatUsd } from "../../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../../shared/lib/number-format";
+import {
+  AddressRow,
+  DetailRow,
+  DetailsSection,
+} from "../../../../../shared/ui/components/details-section";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
@@ -12,11 +17,6 @@ import {
   useEarnEntry,
   useEarnYieldSelection,
 } from "../../../react/use-earn-facades";
-import {
-  AddressRow,
-  DetailRow,
-  DetailsSection,
-} from "./components/details-section";
 import { EarnDetailsHeader } from "./components/earn-details-header";
 import { EarnDetailsMetrics } from "./components/earn-details-metrics";
 import {

@@ -2,7 +2,10 @@ import BigNumber from "bignumber.js";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import { getEnterAmountConstraint } from "../../../../../domain/earn/stake";
 import { getYieldActionArg } from "../../../../../domain/earn/yield";
-import type { PositionsData } from "../../../../../domain/portfolio/positions";
+import {
+  hasActivePositionForYield,
+  type PositionsData,
+} from "../../../../../domain/portfolio/positions";
 import type { EarnEntryIntent, EarnSelectionForm } from "../types";
 
 export const canSubmitEarnForm = ({
@@ -19,7 +22,10 @@ export const canSubmitEarnForm = ({
   const amount = new BigNumber(form.stakeAmount);
   if (!amount.isFinite() || !amount.isGreaterThan(0)) return false;
 
-  const constraint = getEnterAmountConstraint(selectedYield, positionsData);
+  const constraint = getEnterAmountConstraint(
+    selectedYield,
+    hasActivePositionForYield(positionsData, selectedYield.id)
+  );
   if (constraint.type === "force-max") {
     return (
       availableAmount !== null &&
@@ -56,7 +62,10 @@ export const resolveForm = ({
   positionsData: PositionsData;
   selectedYield: EarnYieldWithProvider;
 }): EarnSelectionForm => {
-  const constraint = getEnterAmountConstraint(selectedYield, positionsData);
+  const constraint = getEnterAmountConstraint(
+    selectedYield,
+    hasActivePositionForYield(positionsData, selectedYield.id)
+  );
 
   return {
     providerYieldId: resolveProviderYieldId(selectedYield, intent),

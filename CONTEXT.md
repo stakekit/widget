@@ -65,6 +65,7 @@ _Avoid_: Current wallet, Wallet Scope
 
 **External Provider Snapshot**:
 The latest host-supplied external wallet identity, supported chains, and wallet operations. It may be replaced during a Wallet Runtime without changing Wallet Topology.
+Its host-facing contract belongs to Public API; Wallet owns the adapter that executes it.
 _Avoid_: External provider configuration
 
 ## Token Language
@@ -90,6 +91,14 @@ _Avoid_: State synchronization, intent repair, projection write
 **Yield Entry**:
 A user's pre-execution attempt to add tokens to an Earn Selection. An eligible Yield Entry culminates in an Enter Action Command.
 _Avoid_: Enter Action, stake form
+
+**Yield Entry Readiness**:
+The closed submission-availability state supplied by an entry surface to Yield Entry: Loading, Empty, Ineligible, Refreshing, or Ready. Yield Entry combines it with its internally owned Wallet, Widget Configuration, KYC, and provider facts; Refreshing retains presentation data but temporarily prevents submission.
+_Avoid_: Loading flags, can submit, page readiness
+
+**Yield Entry Amount Initialization**:
+The explicit policy for deriving the displayed amount from Entry Intent: Preserve Intent or Default to Minimum. It changes only a zero intent when the selected yield has a positive allowed minimum.
+_Avoid_: Default amount flag, prefilled stake amount
 
 **Earn Initialization**:
 The one-time capture of host or deep-link parameters into a seed for the first Earn Selection after Wallet Bootstrap settles. Capture consumes the initialization for that Widget Instance; the seed may wait for the Earn Catalog, but leaving its entry surface, changing its owner, or making an explicit selection abandons it without replay.

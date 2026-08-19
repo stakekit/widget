@@ -3,11 +3,14 @@ import type { BorrowNetwork } from "../../../../../domain/borrow/network";
 import { borrowTokenToAppToken } from "../../../../../shared/lib/borrow-token";
 import { formatPercent, formatUsd } from "../../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../../shared/lib/number-format";
+import {
+  DetailRow,
+  DetailsSection,
+} from "../../../../../shared/ui/components/details-section";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ListItem } from "../../../../../shared/ui/primitives/list/list-item";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { DetailRow, DetailsSection } from "../../../../earn/views";
 import { PageCtaButton } from "../../../../widget-shell/views";
 import { BorrowNotice } from "../../../action-feedback/views";
 import type {

@@ -1,6 +1,7 @@
 import { Duration, Effect, Schedule, Schema } from "effect";
 import type { EarnYield } from "../../../../domain/earn/models";
 import type { EnabledNetworks } from "../../../../domain/wallet/models";
+import type { ExternalProviderSnapshot } from "../../../../public-api/external-provider-contract";
 import {
   decodeInitParams,
   type InitParams,
@@ -12,7 +13,6 @@ import {
   WidgetConfigService,
 } from "../../../config/widget-config";
 import { WidgetPersistence } from "../../../persistence/widget-persistence";
-import type { ExternalProviderSnapshot } from "../../external-provider";
 import { WalletBootstrapSource } from "../../wallet-bootstrap-source";
 import { SolanaPlatform } from "../platform/solana-platform";
 import {

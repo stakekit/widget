@@ -3,7 +3,6 @@ import { Array as EArray, Option } from "effect";
 import type { YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import { Networks } from "../network/networks";
-import type { PositionsData } from "../portfolio/positions";
 import type { EarnValidator, EarnYieldWithProvider } from "./models";
 import type { ValidatorKey } from "./validator";
 import { getYieldActionArg, isBittensorStaking } from "./yield";
@@ -47,7 +46,7 @@ type EnterAmountConstraint =
 
 export const getEnterAmountConstraint = (
   yieldDto: EarnYieldWithProvider,
-  positionsData: PositionsData
+  selectedYieldHasActivePosition: boolean
 ): EnterAmountConstraint => {
   const amountArgument = getYieldActionArg(yieldDto, "enter", "amount");
 
@@ -59,7 +58,7 @@ export const getEnterAmountConstraint = (
 
   return {
     maximum: maximum.isGreaterThan(0) ? maximum : null,
-    minimum: getMinStakeAmount(yieldDto, positionsData),
+    minimum: getMinStakeAmount(yieldDto, selectedYieldHasActivePosition),
     type: "range",
   };
 };
@@ -75,20 +74,14 @@ const isYieldWithEnterMinBasedOnPosition = (yieldDto: EarnYieldWithProvider) =>
 
 export const getMinStakeAmount = (
   yieldDto: EarnYieldWithProvider,
-  positionsData: PositionsData
+  selectedYieldHasActivePosition: boolean
 ) => {
   const integrationMin = new BigNumber(
     getYieldActionArg(yieldDto, "enter", "amount")?.minimum ?? 0
   );
 
   if (isYieldWithEnterMinBasedOnPosition(yieldDto)) {
-    const hasStaked = EArray.some(
-      Array.from(positionsData.get(yieldDto.id)?.balanceData.values() ?? []),
-      (position) =>
-        EArray.some(position.balances, (balance) => balance.type === "active")
-    );
-
-    if (hasStaked) {
+    if (selectedYieldHasActivePosition) {
       return new BigNumber(0);
     }
 

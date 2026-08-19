@@ -36,19 +36,6 @@ export const selectOpportunityButton = recipe({
   },
 });
 
-export const selectYieldRewardsText = recipe({
-  variants: {
-    variant: {
-      default: {},
-      utila: {},
-      finery: {
-        color: vars.color.text,
-      },
-      porto: {},
-    },
-  },
-});
-
 export const selectYieldSection = recipe({
   base: atoms({
     borderRadius: "xl",

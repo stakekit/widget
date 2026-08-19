@@ -17,7 +17,7 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useYieldMetaInfo } from "../../../../earn/views";
+import { useYieldMetaInfo } from "../../../../yield-summary/views";
 
 type AmountBlockProps = {
   onAmountChange: NumberInputProps["onChange"];

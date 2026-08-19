@@ -3,21 +3,18 @@ import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
 import type { TransactionType } from "../../../../../domain/action/rules";
 import { isMobile } from "../../../../../shared/lib/general";
-import {
-  usePendingActionMatch,
-  useUnstakeMatch,
-} from "../../../../position-details/index";
 import { useSKWallet } from "../../../../wallet/index";
 import type { PageCta } from "../../../../widget-shell/views";
-import { useClassicFlowExecution } from "../../../react/classic-flow-route";
-import { useActivityPendingActionMatch } from "../../../react/use-activity-pending-action-match";
-import { useActivityReviewMatch } from "../../../react/use-activity-review.match.ts";
-import { useActivityUnstakeActionMatch } from "../../../react/use-activity-unstake.match.ts";
+import {
+  useClassicFlowExecution,
+  useClassicFlowSession,
+} from "../../../react/classic-flow-route";
 import { useViewTransaction } from "../../use-view-transaction";
 
 export const useComplete = () => {
   const location = useLocation();
   const execution = useClassicFlowExecution();
+  const session = useClassicFlowSession();
   const finish = useAtomSet(execution.finishAtom);
 
   const { isLedgerLive } = useSKWallet();
@@ -38,12 +35,15 @@ export const useComplete = () => {
     finish(undefined);
   };
 
-  const unstakeMatch = useUnstakeMatch();
-  const pendingActionMatch = usePendingActionMatch();
-
-  const activityUnstakeMatch = useActivityUnstakeActionMatch();
-  const activityPendingMatch = useActivityPendingActionMatch();
-  const activityReviewMatch = useActivityReviewMatch();
+  const activityAction =
+    session.intake._tag === "ActivityResume" ? session.intake.action : null;
+  const unstake =
+    session.mount._tag === "PositionExit" || activityAction?.type === "UNSTAKE";
+  const pendingAction =
+    session.mount._tag === "PositionManage" ||
+    (activityAction !== null &&
+      activityAction.type !== "STAKE" &&
+      activityAction.type !== "UNSTAKE");
 
   const { t } = useTranslation();
 
@@ -54,13 +54,13 @@ export const useComplete = () => {
       context: isLedgerLive ? "ledger" : undefined,
     }),
     onClick,
-    hide: !!activityReviewMatch,
+    hide: false,
   });
 
   return {
     urls,
-    unstakeMatch: !!(unstakeMatch || activityUnstakeMatch),
-    pendingActionMatch: !!(pendingActionMatch || activityPendingMatch),
+    unstakeMatch: unstake,
+    pendingActionMatch: pendingAction,
     onViewTransactionClick,
     cta: resolveCta(),
   };

@@ -1,7 +1,4 @@
-export {
-  getYieldAmountConstraints,
-  getYieldEntryEstimatedRewards,
-} from "./model/yield-entry";
+export { getYieldAmountConstraints } from "./model/yield-entry";
 export { makeYieldEntry } from "./state/atoms/yield-entry";
 export {
   YieldValidatorsKey,

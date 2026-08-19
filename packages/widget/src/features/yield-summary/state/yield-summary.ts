@@ -1,4 +1,5 @@
 import { Data } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { getYieldProviderYieldIds } from "../../../domain/earn/yield";
 import {
@@ -6,11 +7,6 @@ import {
   type YieldSummaryInput,
 } from "../model/yield-summary";
 import { MultiYieldsKey, visibleMultiYieldsAtom } from "./multi-yields";
-
-export type {
-  YieldSummaryProvider,
-  YieldSummaryRewardToken,
-} from "../model/yield-summary";
 
 export class YieldSummaryKey extends Data.Class<YieldSummaryInput> {
   constructor(input: YieldSummaryInput) {
@@ -27,12 +23,15 @@ export class YieldSummaryKey extends Data.Class<YieldSummaryInput> {
 export const makeYieldSummary = (inputAtom: Atom.Atom<YieldSummaryInput>) => {
   const providerYieldsResultAtom = Atom.make((get) => {
     const selectedYield = get(inputAtom).yield;
+    const yieldIds = selectedYield
+      ? getYieldProviderYieldIds(selectedYield)
+      : [];
+    if (yieldIds.length === 0) return AsyncResult.success(null);
+
     return get(
       visibleMultiYieldsAtom(
         new MultiYieldsKey({
-          yieldIds: selectedYield
-            ? getYieldProviderYieldIds(selectedYield)
-            : [],
+          yieldIds,
         })
       )
     );

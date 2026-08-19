@@ -4,11 +4,11 @@ import {
   formatBorrowProviderName,
   formatNetworkName,
 } from "../../../shared/lib/formatters";
+import { DetailRow } from "../../../shared/ui/components/details-section";
 import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
 import { CheckCircleIcon } from "../../../shared/ui/primitives/icons/check-circle";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { DetailRow } from "../../earn/views";
 import { useTrackPage } from "../../tracking/index";
 import {
   AnimationPage,

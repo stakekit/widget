@@ -13,19 +13,14 @@ import {
   isForceMaxAmount,
 } from "../../../domain/earn/stake";
 import type { ValidatorKey } from "../../../domain/earn/validator";
-import {
-  getYieldActionArg,
-  isBittensorStaking,
-} from "../../../domain/earn/yield";
+import { getYieldActionArg } from "../../../domain/earn/yield";
 import type {
   WalletAddress,
   YieldId,
 } from "../../../domain/identity/identifiers";
-import type { PositionsData } from "../../../domain/portfolio/positions";
 import type { Token } from "../../../domain/token/token";
 import type { AdditionalAddresses } from "../../../domain/wallet/address";
-import { getRewardRateFormatted } from "../../../shared/lib/formatters";
-import { formatNumber } from "../../../shared/lib/number-format";
+import { getYieldEstimatedRewards } from "../../yield-summary/index";
 
 type YieldEntryInput = Readonly<{
   readonly amount: BigNumber;
@@ -47,21 +42,29 @@ type YieldEntryRewardProvider = Readonly<{
   readonly rewardRate?: number | null;
 }>;
 
+export type YieldEntryAmountInitialization =
+  | "PreserveIntent"
+  | "DefaultToMinimum";
+
+export type YieldEntryReadiness =
+  | Readonly<{ readonly _tag: "Loading" }>
+  | Readonly<{ readonly _tag: "Refreshing" }>
+  | Readonly<{ readonly _tag: "Ready" }>
+  | Readonly<{ readonly _tag: "Blocked" }>;
+
 export type YieldEntryProjectionInput = Readonly<{
   readonly additionalValidationErrors?: Readonly<Record<string, boolean>>;
   readonly availableAmount: BigNumber | null;
-  readonly canSubmit: boolean;
   readonly connected: boolean;
-  readonly defaultToMinimum: boolean;
+  readonly amountInitialization: YieldEntryAmountInitialization;
   readonly entry: YieldEntryInput;
   readonly externalProviders: boolean;
   readonly hasNoYields: boolean;
-  readonly isAppLoading: boolean;
-  readonly isFetching: boolean;
   readonly isKycBlocking: boolean;
   readonly isKycLoading: boolean;
   readonly isLedgerAccountPlaceholder: boolean;
-  readonly positionsData: PositionsData;
+  readonly readiness: YieldEntryReadiness;
+  readonly selectedYieldHasActivePosition: boolean;
   readonly providers: ReadonlyArray<YieldEntryRewardProvider> | null;
   readonly validateAmount: boolean;
   readonly wallet: YieldEntryWallet;
@@ -165,38 +168,35 @@ type YieldEntryValidationErrors = Readonly<{
 }>;
 
 export const getYieldEntryCta = ({
-  appLoading,
-  canSubmit,
   connected,
   externalProviders,
   hasNoYields,
-  isFetching,
   kycBlocking,
   kycLoading,
   ledgerAccountPlaceholder,
   preparationAvailable,
+  readiness,
 }: {
-  readonly appLoading: boolean;
-  readonly canSubmit: boolean;
   readonly connected: boolean;
   readonly externalProviders: boolean;
   readonly hasNoYields: boolean;
-  readonly isFetching: boolean;
   readonly kycBlocking: boolean;
   readonly kycLoading: boolean;
   readonly ledgerAccountPlaceholder: boolean;
   readonly preparationAvailable: boolean;
+  readonly readiness: YieldEntryReadiness;
 }): YieldEntryCta => {
   if (connected && hasNoYields) return { _tag: "Hidden" };
   if (connected && !ledgerAccountPlaceholder) {
     return {
       _tag: "Submit",
       disabled:
-        isFetching || !canSubmit || !preparationAvailable || kycBlocking,
-      loading: isFetching || kycLoading,
+        readiness._tag !== "Ready" || !preparationAvailable || kycBlocking,
+      loading: readiness._tag === "Refreshing" || kycLoading,
     };
   }
   if (externalProviders) return { _tag: "Hidden" };
+  const appLoading = readiness._tag === "Loading";
   return {
     _tag: ledgerAccountPlaceholder ? "AddLedgerAccount" : "ConnectWallet",
     disabled: appLoading,
@@ -211,7 +211,7 @@ type YieldAmountConstraintsInput = Readonly<{
   (
     | Readonly<{
         readonly type: "enter";
-        readonly positionsData: PositionsData;
+        readonly selectedYieldHasActivePosition: boolean;
       }>
     | Readonly<{
         readonly type: "exit";
@@ -228,7 +228,7 @@ const resolveMinimum = (
 
   return new BigNumber(
     input.type === "enter"
-      ? getMinStakeAmount(input.yield, input.positionsData)
+      ? getMinStakeAmount(input.yield, input.selectedYieldHasActivePosition)
       : getMinUnstakeAmount(input.yield, input.pricePerShare)
   );
 };
@@ -330,51 +330,6 @@ const getYieldEntryValidation = ({
   } as const;
 };
 
-export const getYieldEntryEstimatedRewards = ({
-  amount,
-  providers,
-  validators,
-  yield: selectedYield,
-}: {
-  readonly amount: BigNumber;
-  readonly providers: ReadonlyArray<YieldEntryRewardProvider> | null;
-  readonly validators: ReadonlyMap<ValidatorKey, EarnValidator>;
-  readonly yield: EarnYieldWithProvider | null;
-}) => {
-  const firstValidator = EArray.head([...validators.values()]).pipe(
-    Option.getOrNull
-  );
-  const pricePerShare = firstValidator?.subnet?.pricePerShare;
-  const rewardAmount =
-    selectedYield && isBittensorStaking(selectedYield.id) && pricePerShare
-      ? amount.dividedBy(pricePerShare)
-      : amount;
-  if (!providers || !selectedYield) return null;
-
-  const rewardRateAverage = providers
-    .reduce(
-      (total, provider) => total.plus(new BigNumber(provider.rewardRate ?? 0)),
-      new BigNumber(0)
-    )
-    .dividedBy(providers.length);
-
-  return {
-    monthly: rewardRateAverage.isGreaterThan(0)
-      ? formatNumber(
-          rewardAmount.times(rewardRateAverage).dividedBy(12).decimalPlaces(5)
-        )
-      : "-",
-    percentage: getRewardRateFormatted({
-      rewardRate: rewardRateAverage.toNumber(),
-    }),
-    rewardRateAverage,
-    rewardType: selectedYield.rewardRate.rateType?.toLowerCase(),
-    yearly: rewardRateAverage.isGreaterThan(0)
-      ? formatNumber(rewardAmount.times(rewardRateAverage).decimalPlaces(5))
-      : "-",
-  } as const;
-};
-
 export const projectYieldEntry = ({
   input,
   submitted,
@@ -385,11 +340,11 @@ export const projectYieldEntry = ({
   const constraints = getYieldAmountConstraints({
     type: "enter",
     availableAmount: input.availableAmount,
-    positionsData: input.positionsData,
+    selectedYieldHasActivePosition: input.selectedYieldHasActivePosition,
     yield: input.entry.yield,
   });
   const amount =
-    input.defaultToMinimum &&
+    input.amountInitialization === "DefaultToMinimum" &&
     input.entry.amount.isZero() &&
     constraints.allowedMinimum.isGreaterThan(0)
       ? constraints.allowedMinimum
@@ -417,18 +372,16 @@ export const projectYieldEntry = ({
   return {
     constraints,
     cta: getYieldEntryCta({
-      appLoading: input.isAppLoading,
-      canSubmit: input.canSubmit,
       connected: input.connected,
       externalProviders: input.externalProviders,
       hasNoYields: input.hasNoYields,
-      isFetching: input.isFetching,
       kycBlocking: input.isKycBlocking,
       kycLoading: input.isKycLoading,
       ledgerAccountPlaceholder: input.isLedgerAccountPlaceholder,
       preparationAvailable: preparation !== null,
+      readiness: input.readiness,
     }),
-    estimatedRewards: getYieldEntryEstimatedRewards({
+    estimatedRewards: getYieldEstimatedRewards({
       amount,
       providers: input.providers,
       validators: input.entry.validators,

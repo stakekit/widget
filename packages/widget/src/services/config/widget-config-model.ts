@@ -1,10 +1,10 @@
 import type { ValidatorsConfig } from "../../domain/earn/yield";
+import type { ExternalProviderSnapshot } from "../../public-api/external-provider-contract";
 import type {
   PreferredTokenYieldsPerNetwork,
   SettingsProps,
   VariantProps,
 } from "../../public-api/types";
-import type { ExternalProviderSnapshot } from "../wallet/external-provider";
 
 type NormalizedWagmiConfig = {
   readonly __customConnectors__?: NonNullable<

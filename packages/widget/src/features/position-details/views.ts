@@ -15,7 +15,6 @@ import {
   metricValueText,
 } from "./ui/dashboard/components/styles.css";
 
-export { UnstakeSignPopup } from "./ui/classic/components/unstake-sign-popup";
 export {
   breadcrumb,
   breadcrumbName,

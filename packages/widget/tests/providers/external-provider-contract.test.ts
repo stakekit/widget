@@ -2,6 +2,7 @@ import { Effect, Schema } from "effect";
 import type { RefObject } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ActionId, TransactionId } from "../../src/domain/identity/identifiers";
+import type { ExternalProviderSnapshot } from "../../src/public-api/external-provider-contract";
 import type {
   SKBorrowTxMeta,
   SKBorrowWallet,
@@ -12,7 +13,6 @@ import type {
 import {
   ExternalProvider,
   ExternalProviderError,
-  type ExternalProviderSnapshot,
 } from "../../src/services/wallet/external-provider";
 
 const transaction = {

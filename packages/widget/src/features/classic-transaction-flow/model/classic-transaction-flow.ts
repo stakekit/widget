@@ -156,6 +156,7 @@ export type ClassicFlowSession = Readonly<{
   readonly destination: ClassicTransactionFlowDestination;
   readonly epoch: number;
   readonly intake: ClassicTransactionFlowIntake;
+  readonly mount: ClassicTransactionFlowMount;
 }>;
 
 type ClassicFlowSessionDraft = Omit<ClassicFlowSession, "epoch">;
@@ -321,6 +322,7 @@ export const resolveClassicTransactionFlowStart = (
         : {}),
       destination,
       intake: copyClassicTransactionFlowIntake(command.intake, walletScope),
+      mount: structuredClone(mount),
     },
   };
 };

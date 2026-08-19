@@ -19,17 +19,14 @@ import {
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletModal } from "../../src/services/wallet/wallet-modal";
-import {
-  WalletScopeKey,
-  walletCommandIdentity,
-} from "../../src/services/wallet/wallet-scope";
+import { WalletScopeKey } from "../../src/services/wallet/wallet-scope";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
   type WalletState,
 } from "../../src/services/wallet/wallet-state";
-import { yieldApiYieldFixture } from "../fixtures";
+import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
 import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
@@ -38,12 +35,6 @@ const address = Schema.decodeSync(WalletAddress)(
 );
 const walletScope = new WalletScopeKey({
   address,
-  network: "ethereum",
-});
-const otherWalletScope = new WalletScopeKey({
-  address: Schema.decodeSync(WalletAddress)(
-    "0x2234567890123456789012345678901234567890"
-  ),
   network: "ethereum",
 });
 const walletState = {
@@ -83,19 +74,13 @@ const ledgerPlaceholderWalletService = makeWalletService({
     isLedgerLiveAccountPlaceholder: true,
   },
 });
-const ledgerPlaceholderWalletState = Effect.runSync(
-  ledgerPlaceholderWalletService.state
-);
-
 const makeFacadeInput = (
   override: Partial<YieldEntryFacadeInput> = {}
 ): YieldEntryFacadeInput => {
   const selectedYield = yieldApiYieldFixture();
   return {
+    amountInitialization: "PreserveIntent",
     availableAmount: new BigNumber(10),
-    canSubmit: true,
-    connected: true,
-    defaultToMinimum: false,
     entry: {
       amount: new BigNumber(1),
       selectedProviderYieldId: null,
@@ -105,34 +90,11 @@ const makeFacadeInput = (
       validators: new Map(),
       yield: selectedYield,
     },
-    externalProviders: false,
-    hasNoYields: false,
-    isAppLoading: false,
-    isFetching: false,
-    isKycBlocking: false,
-    isKycLoading: false,
-    isLedgerAccountPlaceholder: false,
-    isWalletConnecting: false,
     mount: { _tag: "Earn" },
-    positionsData: new Map(),
-    providers: [
-      {
-        logo: undefined,
-        name: "Provider",
-        rewardRate: 0.12,
-        rewardRateFormatted: "12%",
-        rewardType: "apy",
-      },
-    ],
+    hasNoYields: false,
+    readiness: { _tag: "Ready" },
+    selectedYieldHasActivePosition: false,
     validationKey: "earn:default",
-    validateAmount: true,
-    wallet: {
-      additionalAddresses: null,
-      address,
-      isLedgerLive: false,
-    },
-    walletCommandIdentity: walletCommandIdentity(walletState.connection),
-    walletScope,
     ...override,
   };
 };
@@ -181,7 +143,8 @@ const makeObservablePorts = () => {
 
 const makeObservableRegistry = (
   ports: ReturnType<typeof makeObservablePorts>,
-  wallet: WalletService["Service"] = walletService
+  wallet: WalletService["Service"] = walletService,
+  scope: WalletScopeKey | null = walletScope
 ) => {
   const flowLayer = makeClassicFlowTestWalletLayer({
     navigation: ports.navigation,
@@ -204,7 +167,7 @@ const makeObservableRegistry = (
         apiKey: "test",
         variant: "default",
       }),
-      [walletScopeAtom, walletScope],
+      [walletScopeAtom, scope],
       [appRuntime.layer, ports.layer],
       [walletRuntime.layer, runtimeLayer as never],
     ],
@@ -251,9 +214,10 @@ describe("Yield Entry", () => {
   });
 
   it("publishes a stable derived entry view from caller-owned input", () => {
-    const inputAtom = Atom.make(makeFacadeInput());
+    const input = makeFacadeInput();
+    const inputAtom = Atom.make(input);
     const facade = makeYieldEntry(inputAtom);
-    const registry = AtomRegistry.make();
+    const registry = makeObservableRegistry(makeObservablePorts());
 
     try {
       const view = registry.get(facade.viewAtom);
@@ -264,11 +228,72 @@ describe("Yield Entry", () => {
       });
       expect(view.preparation?.command.arguments?.amount).toBe("1");
       expect(view.validation.hasErrors).toBe(false);
-      expect(view.estimatedRewards?.rewardRateAverage.toNumber()).toBe(0.12);
+      expect(view.estimatedRewards?.rewardRateAverage.toNumber()).toBe(
+        input.entry.yield?.rewardRate.total
+      );
     } finally {
       registry.dispose();
     }
   });
+
+  it.each([
+    {
+      expectedAmount: "0",
+      policy: "PreserveIntent",
+    },
+    {
+      expectedAmount: "2",
+      policy: "DefaultToMinimum",
+    },
+  ] as const)(
+    "$policy controls whether a zero intent is projected to the minimum",
+    ({ expectedAmount, policy }) => {
+      const baseDto = yieldApiYieldDtoFixture();
+      const selectedYield = yieldApiYieldFixture({
+        mechanics: {
+          ...baseDto.mechanics,
+          arguments: {
+            ...baseDto.mechanics.arguments,
+            enter: {
+              fields: [
+                {
+                  label: "Amount",
+                  minimum: "2",
+                  name: "amount",
+                  type: "string",
+                },
+              ],
+            },
+          },
+        },
+      });
+      const baseInput = makeFacadeInput();
+      const facade = makeYieldEntry(
+        Atom.make(
+          makeFacadeInput({
+            amountInitialization: policy,
+            entry: {
+              ...baseInput.entry,
+              amount: new BigNumber(0),
+              token: selectedYield.token,
+              yield: selectedYield,
+            },
+          })
+        )
+      );
+      const registry = makeObservableRegistry(makeObservablePorts());
+
+      try {
+        const view = registry.get(facade.viewAtom);
+        expect(view.amount.toFixed()).toBe(expectedAmount);
+        expect(view.preparation?.command.arguments?.amount).toBe(
+          expectedAmount
+        );
+      } finally {
+        registry.dispose();
+      }
+    }
+  );
 
   it.each([
     {
@@ -297,7 +322,7 @@ describe("Yield Entry", () => {
         loading: true,
       },
       name: "wallet is connecting",
-      override: { appLoading: true, connected: false },
+      override: { connected: false, readiness: { _tag: "Loading" as const } },
     },
     {
       expected: {
@@ -310,8 +335,8 @@ describe("Yield Entry", () => {
     },
     {
       expected: { _tag: "Submit", disabled: true, loading: false },
-      name: "entry is invalid",
-      override: { canSubmit: false },
+      name: "entry is blocked",
+      override: { readiness: { _tag: "Blocked" as const } },
     },
     {
       expected: { _tag: "Submit", disabled: true, loading: false },
@@ -326,16 +351,14 @@ describe("Yield Entry", () => {
   ])("resolves the $name CTA branch", ({ expected, override }) => {
     expect(
       getYieldEntryCta({
-        appLoading: false,
-        canSubmit: true,
         connected: true,
         externalProviders: false,
         hasNoYields: false,
-        isFetching: false,
         kycBlocking: false,
         kycLoading: false,
         ledgerAccountPlaceholder: false,
         preparationAvailable: true,
+        readiness: { _tag: "Ready" },
         ...override,
       })
     ).toEqual(expected);
@@ -368,7 +391,10 @@ describe("Yield Entry", () => {
         registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
       ).toBe(false);
 
-      registry.set(inputAtom, { ...validInput, isKycBlocking: true });
+      registry.set(inputAtom, {
+        ...validInput,
+        readiness: { _tag: "Blocked" },
+      });
       registry.set(facade.submitAtom, undefined);
       await expect
         .poll(() =>
@@ -376,7 +402,7 @@ describe("Yield Entry", () => {
             .get(facade.submitAtom)
             .pipe(AsyncResult.value, Option.getOrNull)
         )
-        .toBe("kyc-blocked");
+        .toBe("unavailable");
       expect(
         registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
       ).toBe(false);
@@ -472,22 +498,13 @@ describe("Yield Entry", () => {
 
   it("opens the wallet modal and tracks the intent without starting a session", async () => {
     const ports = makeObservablePorts();
-    const inputAtom = Atom.make(
-      makeFacadeInput({
-        connected: false,
-        wallet: {
-          additionalAddresses: null,
-          address: null,
-          isLedgerLive: false,
-        },
-        walletCommandIdentity: walletCommandIdentity(
-          disconnectedNormalizedWalletState
-        ),
-        walletScope: null,
-      })
-    );
+    const inputAtom = Atom.make(makeFacadeInput());
     const facade = makeYieldEntry(inputAtom);
-    const registry = makeObservableRegistry(ports, disconnectedWalletService);
+    const registry = makeObservableRegistry(
+      ports,
+      disconnectedWalletService,
+      null
+    );
 
     try {
       registry.set(facade.submitAtom, undefined);
@@ -506,45 +523,10 @@ describe("Yield Entry", () => {
     }
   });
 
-  it("maps a stale canonical wallet connection to unavailable", async () => {
-    const ports = makeObservablePorts();
-    const inputAtom = Atom.make(
-      makeFacadeInput({
-        connected: false,
-        wallet: {
-          additionalAddresses: null,
-          address: null,
-          isLedgerLive: false,
-        },
-        walletCommandIdentity: walletCommandIdentity(
-          disconnectedNormalizedWalletState
-        ),
-        walletScope: null,
-      })
-    );
-    const facade = makeYieldEntry(inputAtom);
-    const registry = makeObservableRegistry(ports, walletService);
-
-    try {
-      registry.set(facade.submitAtom, undefined);
-      await readSubmitOutcome(registry, facade.submitAtom).toBe("unavailable");
-      expect(ports.trackEvent).toHaveBeenCalledWith("connectWalletClicked");
-      expect(ports.openConnect).not.toHaveBeenCalled();
-    } finally {
-      registry.dispose();
-    }
-  });
-
   it("opens Connect Wallet for a connected entry whose scope is unavailable", async () => {
     const ports = makeObservablePorts();
-    const facade = makeYieldEntry(
-      Atom.make(
-        makeFacadeInput({
-          walletScope: null,
-        })
-      )
-    );
-    const registry = makeObservableRegistry(ports);
+    const facade = makeYieldEntry(Atom.make(makeFacadeInput()));
+    const registry = makeObservableRegistry(ports, walletService, null);
 
     try {
       registry.set(facade.submitAtom, undefined);
@@ -559,14 +541,7 @@ describe("Yield Entry", () => {
 
   it("routes Ledger placeholders to account setup only", async () => {
     const ports = makeObservablePorts();
-    const inputAtom = Atom.make(
-      makeFacadeInput({
-        isLedgerAccountPlaceholder: true,
-        walletCommandIdentity: walletCommandIdentity(
-          ledgerPlaceholderWalletState.connection
-        ),
-      })
-    );
+    const inputAtom = Atom.make(makeFacadeInput());
     const facade = makeYieldEntry(inputAtom);
     const registry = makeObservableRegistry(
       ports,
@@ -592,11 +567,6 @@ describe("Yield Entry", () => {
 
   it.each([
     {
-      expected: "stale-owner",
-      name: "stale owner",
-      override: { walletScope: otherWalletScope },
-    },
-    {
       expected: "invalid",
       name: "entry failing validation",
       override: {
@@ -607,9 +577,9 @@ describe("Yield Entry", () => {
       },
     },
     {
-      expected: "kyc-blocked",
-      name: "KYC-blocked entry",
-      override: { isKycBlocking: true },
+      expected: "unavailable",
+      name: "blocked entry",
+      override: { readiness: { _tag: "Blocked" } },
     },
     {
       expected: "unavailable",
@@ -619,34 +589,6 @@ describe("Yield Entry", () => {
           ...makeFacadeInput().entry,
           token: null,
         },
-      },
-    },
-    {
-      expected: "unavailable",
-      name: "external-provider-owned connection",
-      override: {
-        connected: false,
-        externalProviders: true,
-        wallet: {
-          additionalAddresses: null,
-          address: null,
-          isLedgerLive: false,
-        },
-        walletScope: null,
-      },
-    },
-    {
-      expected: "unavailable",
-      name: "wallet connection already in progress",
-      override: {
-        connected: false,
-        isWalletConnecting: true,
-        wallet: {
-          additionalAddresses: null,
-          address: null,
-          isLedgerLive: false,
-        },
-        walletScope: null,
       },
     },
   ] as const)(

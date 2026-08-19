@@ -14,11 +14,13 @@ import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { MorphoStarsIcon } from "../../../../../../../shared/ui/primitives/icons/morpho-stars";
 import { Image } from "../../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
+import {
+  EstimatedRewardAmounts,
+  getRewardTokenSymbols,
+  isMorphoProvider,
+  RewardRateBreakdown,
+} from "../../../../../../yield-summary/views";
 import { useEarnEntry } from "../../../../../react/use-earn-facades";
-import { EstimatedRewardAmounts } from "../../../../components/estimated-reward-amounts";
-import { RewardRateBreakdown } from "../../../../components/reward-rate-breakdown";
-import { isMorphoProvider } from "../../../../components/reward-token-details";
-import { getRewardTokenSymbols } from "../../../../components/reward-token-details/get-reward-token-symbols";
 import { viaProviderImage } from "./styles.css";
 
 type StrategyProvider = {

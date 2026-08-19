@@ -6,6 +6,7 @@ import { createClassicFlowRoutes } from "../../features/classic-transaction-flow
 import { isActiveClassicTransactionFlowPathAtom } from "../../features/classic-transaction-flow/index";
 import { AnimatedEarnPage } from "../../features/earn/composition";
 import { AnimatedPositionsPage } from "../../features/portfolio/composition";
+import { usePortfolioPendingActionsCount } from "../../features/portfolio/index";
 import { ClassicPositionDetailsPage } from "../../features/position-details/composition";
 import { WalletScopeRouteGuard } from "../../features/wallet/composition";
 import {
@@ -25,6 +26,11 @@ import {
   headerContainer,
   UnderMaintenance,
 } from "../../features/widget-shell/views";
+
+const ClassicDetails = () => {
+  const pendingActionsCount = usePortfolioPendingActionsCount();
+  return <Details pendingActionsCount={pendingActionsCount} />;
+};
 
 export const ClassicRoutes = () => {
   const underMaintenance = useUnderMaintenance();
@@ -68,7 +74,7 @@ export const ClassicRoutes = () => {
                   }
                 >
                   {/* Home + Tabs */}
-                  <Route element={<Details />}>
+                  <Route element={<ClassicDetails />}>
                     <Route index element={<AnimatedEarnPage />} />
                     <Route
                       path="positions"

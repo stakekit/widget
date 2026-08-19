@@ -64,16 +64,44 @@ const makeSession = (
   intake: ClassicTransactionFlowIntake,
   epoch: number,
   activityPresentation?: "Classic" | "Dashboard"
-): ClassicFlowSession => ({
-  ...(activityPresentation ? { activityPresentation } : {}),
-  destination: {
-    completePath: toWidgetPath("/complete"),
-    reviewPath: toWidgetPath("/review"),
-    stepsPath: toWidgetPath("/steps"),
-  },
-  epoch,
-  intake,
-});
+): ClassicFlowSession => {
+  const mount = (() => {
+    switch (intake._tag) {
+      case "Enter":
+        return { _tag: "Earn" } as const;
+      case "Exit":
+        return {
+          _tag: "PositionExit",
+          balanceId: "balance",
+          integrationId: intake.integration.id,
+        } as const;
+      case "Manage":
+        return {
+          _tag: "PositionManage",
+          balanceId: "balance",
+          integrationId: intake.integration.id,
+        } as const;
+      case "ActivityResume":
+        return {
+          _tag: "ActivityResume",
+          presentation: activityPresentation ?? "Classic",
+          target: "FreshReview",
+        } as const;
+    }
+  })();
+
+  return {
+    ...(activityPresentation ? { activityPresentation } : {}),
+    destination: {
+      completePath: toWidgetPath("/complete"),
+      reviewPath: toWidgetPath("/review"),
+      stepsPath: toWidgetPath("/steps"),
+    },
+    epoch,
+    intake,
+    mount,
+  };
+};
 
 const makeSessionHandle = (
   session: ClassicFlowSession

@@ -1,19 +1,26 @@
 import type { ReactNode } from "react";
-import { formatAddress } from "../../../../../../shared/lib/general";
+import { formatAddress } from "../../../lib/general";
+import { Box } from "../../primitives/box";
+import * as CopyText from "../../primitives/copy-text";
+import { Text } from "../../primitives/typography/text";
 import {
   CollapsibleArrow,
   CollapsibleContent,
   CollapsibleRoot,
   CollapsibleTrigger,
-} from "../../../../../../shared/ui/components/collapsible";
-import { Box } from "../../../../../../shared/ui/primitives/box";
-import * as CopyText from "../../../../../../shared/ui/primitives/copy-text";
-import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import type {
-  EarnDetailAddressRow,
-  EarnDetailRow,
-} from "../earn-details-model";
-import * as styles from "../styles.css";
+} from "../collapsible";
+import * as styles from "./styles.css";
+
+type DetailRowProps = Readonly<{
+  readonly id?: string;
+  readonly label: string;
+  readonly value: ReactNode;
+}>;
+
+type AddressRowProps = Readonly<{
+  readonly address: string;
+  readonly label: string;
+}>;
 
 export const DetailsSection = ({
   children,
@@ -41,7 +48,7 @@ export const DetailsSection = ({
   </CollapsibleRoot>
 );
 
-export const DetailRow = ({ label, value }: EarnDetailRow) => (
+export const DetailRow = ({ label, value }: DetailRowProps) => (
   <Box className={styles.detailRow}>
     <Text
       as="span"
@@ -64,7 +71,7 @@ export const DetailRow = ({ label, value }: EarnDetailRow) => (
   </Box>
 );
 
-export const AddressRow = ({ address, label }: EarnDetailAddressRow) => (
+export const AddressRow = ({ address, label }: AddressRowProps) => (
   <Box className={styles.addressBox}>
     <Text variant={{ type: "muted", weight: "normal" }}>{label}</Text>
     <CopyText.Provider text={address}>

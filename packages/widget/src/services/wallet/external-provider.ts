@@ -1,6 +1,9 @@
 import { Data, Effect } from "effect";
+import {
+  type ExternalProviderSnapshot,
+  isBorrowExternalProvider,
+} from "../../public-api/external-provider-contract";
 import type {
-  SKBorrowExternalProviders,
   SKBorrowTxMeta,
   SKExternalProviders,
   SKTx,
@@ -18,21 +21,6 @@ export class ExternalProviderError extends Data.TaggedError(
 export type CurrentRef<A> = {
   readonly current: A;
 };
-
-export type ExternalProviderSnapshot =
-  | Readonly<SKExternalProviders>
-  | Readonly<SKBorrowExternalProviders>;
-
-const isBorrowExternalProvider = (
-  snapshot: ExternalProviderSnapshot
-): snapshot is Readonly<SKBorrowExternalProviders> =>
-  snapshot.supportsBorrow === true;
-
-export const hasValidBorrowProviderContract = (
-  snapshot: ExternalProviderSnapshot
-): boolean =>
-  isBorrowExternalProvider(snapshot) &&
-  typeof snapshot.provider.sendBorrowTransaction === "function";
 
 export class ExternalProvider {
   constructor(private variantProvider: CurrentRef<ExternalProviderSnapshot>) {}

@@ -6,11 +6,11 @@ import { Divider } from "../../../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
+import { YieldRiskRatingSummary } from "../../../../../../yield-summary/views";
 import {
   useEarnEntry,
   useEarnYieldSelection,
 } from "../../../../../react/use-earn-facades";
-import { YieldRiskRatingSummary } from "../../../../components/yield-risk";
 import { apyYield } from "../../styles.css";
 import { SelectOpportunity } from "./select-opportunity";
 import { SelectYieldRewardDetails } from "./select-yield-reward-details";

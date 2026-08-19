@@ -1,9 +1,9 @@
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import type { Market } from "../../../../../domain/borrow/catalog/market";
+import { DetailRow } from "../../../../../shared/ui/components/details-section";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { DetailRow } from "../../../../earn/views";
 import type { BorrowMarketWalletBalances } from "../../../action-preparation/index";
 import type { BorrowFormProjection } from "../../model/borrow-entry";
 import { getBorrowDetailsModel } from "../../model/details";

@@ -5,7 +5,7 @@ import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-va
 import { VerticalDivider } from "../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { selectYieldRewardsText } from "../../classic/earn-page/components/select-yield-section/styles.css";
+import { selectYieldRewardsText } from "./styles.css";
 
 type EstimatedRewardAmountsProps = {
   earnYearly: string;

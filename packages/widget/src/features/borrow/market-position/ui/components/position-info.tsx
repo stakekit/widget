@@ -1,10 +1,14 @@
 import { useTranslation } from "react-i18next";
 import type { MarketPosition } from "../../../../../domain/borrow/positions/market-position";
+import {
+  AddressRow,
+  DetailRow,
+  DetailsSection,
+} from "../../../../../shared/ui/components/details-section";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { AddressRow, DetailRow, DetailsSection } from "../../../../earn/views";
 import { positionDetailsComponentStyles as positionDetailsStyles } from "../../../../position-details/views";
 import type {
   BorrowPositionAction,

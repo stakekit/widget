@@ -2,9 +2,9 @@ import { animate, useMotionValue, useTransform } from "motion/react";
 import { useEffect } from "react";
 import { config } from "../../../../../../../shared/config/widget-defaults";
 import { APToPercentage } from "../../../../../../../shared/lib/general";
-import type { getYieldEntryEstimatedRewards } from "../../../../../../yield-entry/index";
+import type { getYieldEstimatedRewards } from "../../../../../../yield-summary/index";
 
-type EstimatedRewards = ReturnType<typeof getYieldEntryEstimatedRewards>;
+type EstimatedRewards = ReturnType<typeof getYieldEstimatedRewards>;
 
 const resolvePerReward = (
   estimatedRewards: EstimatedRewards

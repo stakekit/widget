@@ -5,7 +5,7 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { Heading } from "../../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { unstakeSignContainer, unstakeSignImageStyle } from "../styles.css";
+import { unstakeSignContainer, unstakeSignImageStyle } from "./style.css";
 
 export const UnstakeSignPopup = ({
   onCancel,

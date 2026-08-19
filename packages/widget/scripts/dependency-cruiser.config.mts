@@ -25,7 +25,7 @@ type LayerDeclaration = Readonly<{
   additionalTargets?: ReadonlyArray<"app-runtime">;
 }>;
 
-type ModuleCollectionDeclaration = Readonly<{
+export type ModuleCollectionDeclaration = Readonly<{
   kind: "feature" | "nested-feature" | "resource";
   root: string;
   interfaces: ReadonlyArray<InterfaceName>;
@@ -36,7 +36,7 @@ type ModuleCollectionDeclaration = Readonly<{
   parent?: string;
 }>;
 
-type OwnedModuleDeclaration = Readonly<{
+export type OwnedModuleDeclaration = Readonly<{
   kind: "api";
   root: string;
   interfaces: Readonly<
@@ -55,7 +55,7 @@ const moduleCollection = (declaration: ModuleCollectionDeclaration) =>
   declaration;
 const ownedModule = (declaration: OwnedModuleDeclaration) => declaration;
 
-const architecturePolicy = {
+export const architecturePolicy = {
   layers: [
     defineLayer({
       name: "app",

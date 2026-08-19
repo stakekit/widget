@@ -5,7 +5,6 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import { stakeTokenSameAsGasToken } from "../../../domain";
 import type { TronResource } from "../../../domain/action/tron-resource";
-import { getKycProviderName } from "../../../domain/earn/kyc";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import { getInitSelectedValidators } from "../../../domain/earn/stake";
 import {
@@ -14,12 +13,7 @@ import {
   isYieldValidatorSelectionRequired,
 } from "../../../domain/earn/yield";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
-import type {
-  BalanceDataKey,
-  PositionsData,
-} from "../../../domain/portfolio/positions";
 import { equalTokens } from "../../../domain/token/token";
-import { widgetConfigAtom } from "../../../features/widget-configuration/index";
 import {
   getTokensPricesRequest,
   PricesKey,
@@ -34,10 +28,7 @@ import {
   positionBalancesByTypeAtom,
 } from "../../../resources/yield-positions/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
-import {
-  sameWalletScopeOwner,
-  walletCommandIdentity,
-} from "../../../services/wallet/wallet-scope";
+import { sameWalletScopeOwner } from "../../../services/wallet/wallet-scope";
 import { getPullResultItems } from "../../../shared/effect/pagination";
 import { formatUsd } from "../../../shared/lib/formatters";
 import {
@@ -45,18 +36,12 @@ import {
   formatNumber,
 } from "../../../shared/lib/number-format";
 import { tokenBalancesScanAtom } from "../../portfolio/index";
-import { walletConnectionStateAtom, walletScopeAtom } from "../../wallet/index";
+import { walletScopeAtom } from "../../wallet/index";
 import {
   makeYieldEntry,
   YieldValidatorsKey,
   yieldValidatorsPullAtom,
 } from "../../yield-entry/index";
-import {
-  CurrentYieldKycGateKey,
-  currentYieldKycGateAtom,
-  makeYieldSummary,
-  refreshCurrentYieldKycAtom,
-} from "../../yield-summary/index";
 import {
   type PositionDetailsStakeEntryKey,
   positionDetailsStakeAtom,
@@ -131,15 +116,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         validators: getPullResultItems(result).flatMap((page) => page.items),
       });
     }).pipe(Atom.withLabel("positionDetailsStakeSelectedValidatorsAtom"));
-    const summary = makeYieldSummary(
-      Atom.make((get) => ({
-        selectedProviderYieldId: resolveProviderYieldId(get(selectedYieldAtom)),
-        validators: get(selectedValidatorsAtom),
-        yield: get(selectedYieldAtom),
-      }))
-    );
     const yieldEntryInputAtom = Atom.make((get) => {
-      const config = get(widgetConfigAtom);
       const intent = get(intentAtom);
       const selectedYield = get(selectedYieldAtom);
       const selectedToken = selectedYield?.token ?? null;
@@ -160,46 +137,16 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         AsyncResult.value,
         Option.getOrNull
       );
-      const positionsData = selectedYield
-        ? (new Map([
-            [
-              selectedYield.id,
-              {
-                balanceData: new Map([
-                  [
-                    "default" as BalanceDataKey,
-                    {
-                      balances: positionsByType
-                        ? [...positionsByType.values()].flat()
-                        : [],
-                      type: "default" as const,
-                    },
-                  ],
-                ]),
-                rewardRate: selectedYield.rewardRate,
-                yieldId: selectedYield.id,
-              },
-            ],
-          ]) as PositionsData)
-        : (new Map() as PositionsData);
+      const selectedYieldHasActivePosition =
+        (positionsByType?.get("active")?.length ?? 0) > 0;
       const rawAmount = new BigNumber(intent.stakeAmount);
       const amount =
         intent.useMaxAmount || !rawAmount.isZero()
           ? rawAmount
           : new BigNumber(0);
       const validators = get(selectedValidatorsAtom);
-      const summaryView = get(summary.viewAtom);
-      const wallet = get(walletConnectionStateAtom);
       const tronResource =
         intent.tronResource ?? resolveTronResource(selectedYield);
-      const kyc = get(
-        currentYieldKycGateAtom(
-          new CurrentYieldKycGateKey({
-            enabled: true,
-            yieldDto: selectedYield,
-          })
-        )
-      );
       const pricesRequest = getTokensPricesRequest({
         token: selectedToken,
         yieldDto: selectedYield,
@@ -244,12 +191,16 @@ const positionDetailsStakeFacadeAtom = Atom.family(
             )
           )
         ) || !selectedYield;
+      const readiness = (() => {
+        if (appLoading) return { _tag: "Loading" } as const;
+        if (isFetching) return { _tag: "Refreshing" } as const;
+        if (!ownerCurrent) return { _tag: "Blocked" } as const;
+        return { _tag: "Ready" } as const;
+      })();
 
       return {
+        amountInitialization: "DefaultToMinimum",
         availableAmount,
-        canSubmit: ownerCurrent,
-        connected: wallet.status === "connected",
-        defaultToMinimum: true,
         entry: {
           amount,
           selectedProviderYieldId: resolveProviderYieldId(selectedYield),
@@ -259,65 +210,28 @@ const positionDetailsStakeFacadeAtom = Atom.family(
           validators,
           yield: selectedYield,
         },
-        externalProviders: Boolean(config.externalProviders),
         hasNoYields: false,
-        isAppLoading: appLoading,
         isFetching,
-        isKycBlocking: kyc.isBlocking,
-        isKycLoading: kyc.isLoading,
-        isLedgerAccountPlaceholder:
-          wallet.status === "connected" &&
-          wallet.isLedgerLiveAccountPlaceholder,
-        isWalletConnecting: wallet.status === "connecting",
         mount: {
           _tag: "PositionStake",
           balanceId: key.balanceId,
           integrationId: key.integrationId,
         },
-        kyc: {
-          gate: kyc.gate,
-          isBlocking: kyc.isBlocking,
-          isChecking: kyc.isChecking,
-          providerName: getKycProviderName(selectedYield),
-        },
         ownerCurrent,
-        positionsData,
-        providers: summaryView.providers,
         prices,
+        readiness,
         selectedStake: selectedYield,
+        selectedYieldHasActivePosition,
         selectedToken,
         selectedValidators: validators,
         stakeAmount: amount,
         symbol,
         tronResource,
         validationKey: getPositionDetailsStakeValidationKey(key),
-        validateAmount: true,
-        wallet: {
-          additionalAddresses:
-            wallet.status === "connected" ? wallet.additionalAddresses : null,
-          address: wallet.status === "connected" ? wallet.address : null,
-          isLedgerLive: wallet.isLedgerLive,
-        },
-        walletCommandIdentity: walletCommandIdentity(wallet),
-        walletScope: key.walletScope,
       } as const;
     }).pipe(Atom.withLabel("positionDetailsStakeYieldEntryInputAtom"));
 
     const yieldEntry = makeYieldEntry(yieldEntryInputAtom);
-    const refreshKycAtom = Atom.fnSync(
-      (_input: undefined, context) => {
-        context.set(
-          refreshCurrentYieldKycAtom(
-            new CurrentYieldKycGateKey({
-              enabled: true,
-              yieldDto: context(yieldEntryInputAtom).selectedStake,
-            })
-          ),
-          undefined
-        );
-      },
-      { initialValue: undefined }
-    ).pipe(Atom.withLabel("refreshPositionDetailsStakeKycAtom"));
 
     const viewAtom = Atom.make((get) => {
       const input = get(yieldEntryInputAtom);
@@ -334,7 +248,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
           : entry.cta;
 
       return {
-        appLoading: input.isAppLoading,
+        appLoading: entry.appLoading,
         cta,
         estimatedRewards: entry.estimatedRewards,
         footerIsLoading: input.isFetching,
@@ -358,10 +272,10 @@ const positionDetailsStakeFacadeAtom = Atom.family(
                 yieldDto: selectedYield,
               })
             : false,
-        kyc: input.kyc,
+        kyc: entry.kyc,
         ownerCurrent: input.ownerCurrent,
         preparation: entry.preparation,
-        providers: input.providers,
+        providers: entry.providers,
         selectedStake: selectedYield,
         selectedToken,
         selectedTokenAvailableAmount: availableAmount
@@ -420,7 +334,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
       );
     });
     return Atom.make({
-      refreshKycAtom,
+      refreshKycAtom: yieldEntry.refreshKycAtom,
       setAmountAtom,
       setMaxAmountAtom,
       setTronResourceAtom,

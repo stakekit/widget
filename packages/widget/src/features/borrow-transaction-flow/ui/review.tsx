@@ -10,11 +10,11 @@ import {
   formatPercent,
   formatUsd,
 } from "../../../shared/lib/formatters";
+import { DetailRow } from "../../../shared/ui/components/details-section";
 import { Divider } from "../../../shared/ui/components/divider";
 import { Box } from "../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
 import { Text } from "../../../shared/ui/primitives/typography/text";
-import { DetailRow } from "../../earn/views";
 import { useTrackPage } from "../../tracking/index";
 import {
   AnimationPage,

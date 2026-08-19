@@ -25,3 +25,15 @@ export const usePositions = () => {
     showPositions,
   };
 };
+
+export const usePortfolioPendingActionsCount = () => {
+  const { positions } = usePositions();
+
+  return positions.reduce(
+    (count, position) =>
+      position.hasPendingClaimRewards || position.actionRequired
+        ? count + 1
+        : count,
+    0
+  );
+};

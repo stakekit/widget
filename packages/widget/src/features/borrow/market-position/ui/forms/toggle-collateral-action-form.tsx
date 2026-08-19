@@ -4,10 +4,10 @@ import {
   formatPercent,
 } from "../../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../../shared/lib/number-format";
+import { DetailRow } from "../../../../../shared/ui/components/details-section";
 import { Divider } from "../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { DetailRow } from "../../../../earn/views";
 import { PageCtaButton } from "../../../../widget-shell/views";
 import { BorrowNotice } from "../../../action-feedback/views";
 import type { BorrowCollateralToggleActionContext } from "../../../action-preparation/index";

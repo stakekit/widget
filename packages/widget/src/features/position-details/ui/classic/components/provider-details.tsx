@@ -12,7 +12,7 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import { PreferredIcon } from "../../../../../shared/ui/primitives/icons/preferred";
 import { Image } from "../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useMetaInfo } from "../../../../earn/views";
+import { useMetaInfo } from "../../../../yield-entry/views";
 import type { YieldSummaryProvider as ProviderDetailsModel } from "../../../../yield-summary/index";
 import { inactiveContainer, noWrap } from "../styles.css";
 

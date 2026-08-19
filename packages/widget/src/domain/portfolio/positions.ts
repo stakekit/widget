@@ -36,6 +36,14 @@ export type PositionsData = Map<
   }
 >;
 
+export const hasActivePositionForYield = (
+  positions: PositionsData,
+  yieldId: YieldId
+) =>
+  Array.from(positions.get(yieldId)?.balanceData.values() ?? []).some(
+    (position) => position.balances.some((balance) => balance.type === "active")
+  );
+
 export type PositionData =
   PositionsData extends Map<YieldId, infer Value> ? Value : never;
 

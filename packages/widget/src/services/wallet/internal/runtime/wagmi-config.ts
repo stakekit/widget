@@ -14,15 +14,13 @@ import type { Chain } from "wagmi/chains";
 import type { WalletAddress } from "../../../../domain/identity/identifiers";
 import type { Network } from "../../../../domain/network/network";
 import type { EnabledNetworks } from "../../../../domain/wallet/models";
+import type { ExternalProviderSnapshot } from "../../../../public-api/external-provider-contract";
 import type { SettingsProps, VariantProps } from "../../../../public-api/types";
 import type { InitParams } from "../../../../services/wallet/init-params";
 import { evmChainGroup } from "../../../../services/wallet/supported-chains";
 import { config } from "../../../../shared/config/widget-defaults";
 import { omitEnsUniversalResolver } from "../../default-wagmi-config";
-import type {
-  CurrentRef,
-  ExternalProviderSnapshot,
-} from "../../external-provider";
+import type { CurrentRef } from "../../external-provider";
 import { WalletIntegrationError } from "../../wallet-errors";
 import { getConfig as getMiscConfig } from "../adapters/config";
 import type { MiscChainsMap } from "../adapters/configured-chains";

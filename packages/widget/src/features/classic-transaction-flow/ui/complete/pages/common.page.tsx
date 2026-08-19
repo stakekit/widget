@@ -31,8 +31,8 @@ type Props = {
   amount: string;
   pendingActionType?: YieldPendingActionType;
   providersDetails: ReadonlyArray<{
-    logo: string | undefined;
-    name: string | undefined;
+    logo?: string;
+    name?: string;
   }> | null;
   yieldType: ExtendedYieldType | null;
   integrationId: string;

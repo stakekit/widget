@@ -1,51 +1,15 @@
-import { useAtomValue } from "@effect/atom-react";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import {
-  PositionBalancesKey,
-  positionBalancesAtom,
-} from "../../../../../resources/yield-positions/index";
+import { getExtendedYieldType } from "../../../../../domain/earn/yield";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import { useUnstakeOrPendingActionParams } from "../../../../position-details/index";
 import { useTrackPage } from "../../../../tracking/index";
-import {
-  YieldSummaryKey,
-  yieldSummaryAtom,
-} from "../../../../yield-summary/index";
 import { useClassicFlowIntake } from "../../../react/classic-flow-route";
 import { CompletePage } from "./common.page.tsx";
 
 export const UnstakeCompletePage = () => {
-  const { plain } = useUnstakeOrPendingActionParams();
   const exitFlow = useClassicFlowIntake("Exit");
-  const positionBalances = AsyncResult.getOrElse(
-    useAtomValue(
-      positionBalancesAtom(
-        new PositionBalancesKey({
-          balanceId: plain.balanceId ?? null,
-          scope: exitFlow.walletScope,
-          yieldId: plain.integrationId ?? null,
-        })
-      )
-    ),
-    () => null
-  );
   const integrationData = exitFlow.integration;
   const token = exitFlow.unstakeToken;
 
   useTrackPage("unstakeComplete");
-
-  const yieldSummary = useAtomValue(
-    yieldSummaryAtom(
-      new YieldSummaryKey({
-        yield: integrationData,
-        validators:
-          positionBalances?.type === "validators"
-            ? positionBalances.validators
-            : null,
-        selectedProviderYieldId: null,
-      })
-    )
-  );
 
   return (
     <CompletePage
@@ -57,9 +21,9 @@ export const UnstakeCompletePage = () => {
         provider: integrationData.provider,
       }}
       network={token.symbol}
-      providersDetails={yieldSummary.providers}
+      providersDetails={exitFlow.providersDetails}
       token={token}
-      yieldType={yieldSummary.yieldType}
+      yieldType={getExtendedYieldType(integrationData)}
     />
   );
 };

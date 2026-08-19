@@ -118,6 +118,20 @@ dependency-cruiser rejects external deep imports, while Knip rejects
 unreachable Resource implementations. Ast-grep rejects wildcard exports from
 Module interfaces. The dependency scan is restricted to production `src`; it
 does not test whether Biome or ast-grep configuration mirrors the policy.
+Cycle detection applies to both concrete source files and the graph produced by
+collapsing those files to their declared owned Modules. A pair or cluster of
+Modules may not depend on one another merely because their individual files do
+not form a concrete import cycle. The Module-level check consumes
+dependency-cruiser's resolved graph and the same typed Module Collection
+declarations; it does not maintain a rev-dep-style ownership configuration.
+Every declared Feature, nested Feature, Resource, and singular owned Module is
+a graph node; the most-specific nested owner wins, parent-root files remain in
+the parent, and intra-Module dependencies are ignored. Exact directed edges in
+the existing cyclic components may be temporarily baselined only during their
+active removal slice, with a stated removal condition. Baselining only component
+membership is insufficient because it could conceal a new edge. No baseline
+remains after the migration. A failure reports both the owned-Module cycle and
+the contributing concrete file imports.
 Rev-dep and its repeated
 per-Feature configuration were removed after the ADR-0023 cutover.
 
@@ -136,10 +150,19 @@ the `shared` boundary stays limited to `shared` and `domain`.
 
 A Feature's `views.ts` publishes rendered elements and rendering-only hooks
 that carry that Feature's domain meaning. `widget-shell/views.ts` publishes shell chrome — page
-container, page CTA, back button, tab and layout styles, maintenance screen —
-and `earn/views.ts` publishes yield, validator, and KYC presentation typed
-on those domain models. A generic component that acquires no domain meaning
-belongs in the kit, not behind a feature entry.
+container, page CTA, back button, tab and layout styles, maintenance screen.
+Generic detail rows and sections belong in `shared/ui`; shared yield read
+presentation such as KYC, reward, provider, risk, and metadata belongs to Yield
+Summary; Validator and entry interaction presentation belongs to Yield Entry;
+Earn publishes only Earn-journey presentation. A generic component that
+acquires no domain meaning belongs in the kit, not behind a feature entry. The
+existing broader `earn/views.ts` surface is migration debt while those owners
+are established.
+
+Application composition owns peer Feature composition. When shell chrome needs
+a Portfolio projection such as pending-action count, the application supplies
+that projection to the shell interface; Widget Shell and Portfolio do not
+import one another.
 
 ## Effect services
 
@@ -412,19 +435,47 @@ Start tail delegation. Pending Action modal attempts have opaque identities,
 and only a Started receipt for the same attempt closes the modal; the feature
 does not import the private Classic orchestration service.
 
+The current Yield Entry deepening changes only Position Details' Dashboard
+Stake adapter and removes Classic Transaction Flow's reverse route dependency.
+Exit and Pending Action state are outside that migration and require a separate
+ownership decision before material redesign.
+
 `features/yield-entry` owns the shared Yield Entry capability used by Earn and
-position details. Its deterministic model owns amount constraints, validation,
-CTA and submission decisions, and Enter Action Command preparation. Its private
+position details. Concept-owned pure Earn rules, including amount constraints,
+live in `domain/earn`; Yield Entry owns validation, CTA and submission
+decisions, Enter Action Command preparation, and entry-specific formatted
+projections. Its private
 wallet-runtime service owns serialized wallet-connect and delegates Ledger
 account setup to the wallet-owned semantic service, while its Atom facade owns validation-attempt presentation state and
 tail-delegates an eligible Enter Action Command to Classic Transaction Flow.
-KYC refresh remains owned by the Authoritative Resource adapter in each
-consumer.
+The Atom facade, rather than a second Effect service, owns reactive composition.
+It resolves current Wallet state, Wallet Scope and command identity, relevant
+Widget Configuration, the current Yield KYC gate and refresh, and the Yield
+Summary provider projection. Consumers supply only their Entry Intent,
+available amount, whether the selected yield already has an active position,
+mount identity, validation identity, an explicit Preserve Intent or Default to
+Minimum amount-initialization policy, and one closed Yield Entry Readiness
+projection: Loading, Empty, Ineligible, Refreshing, or Ready. They do not pass
+the full Positions Data or independent loading, empty, fetching, and eligibility
+booleans for Yield Entry to reinterpret. Refreshing preserves the current
+presentation while disabling submission.
+Yield Entry Readiness governs submission availability only. Infrastructure
+failures, retry eligibility, and diagnostics remain in their authoritative
+Resource or page projections rather than being folded into `Ineligible`.
 `features/yield-summary` owns shared read-only yield projections such as
-provider details, reward-token details, and semantic yield type. Earn,
+provider details, reward-token details, semantic yield type, and their shared
+KYC, reward, provider, risk, and metadata presentation. Earn,
 position details, transaction flows, activity, and portfolio consume these
 modules through narrow public entries rather than importing implementation
 from one another.
+
+Service ownership is reviewed independently of the Feature and Resource Module
+collections. The host-facing External Provider contract is owned by
+`public-api`; `services/config` validates that contract and
+`services/wallet` owns its executable wallet adapter. This keeps Config from
+depending on Wallet and leaves the service dependency direction as Wallet to
+Tracking to Config. Service directories are not declared owned Modules merely
+to make that review mechanically uniform.
 
 Use React Context only when the value is inherently tree-scoped, such as a
 compound component, host DOM element, router-rendered application route

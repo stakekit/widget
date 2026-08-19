@@ -1,6 +1,6 @@
 import { Box } from "../../../../shared/ui/primitives/box";
+import { KycGateCard } from "../../../yield-summary/views";
 import { useEarnEntry } from "../../react/use-earn-facades";
-import { KycGateCard } from "./kyc-gate-card";
 
 export const EarnKycGate = () => {
   const { refreshKyc, view } = useEarnEntry();

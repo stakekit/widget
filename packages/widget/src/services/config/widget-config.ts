@@ -15,6 +15,10 @@ import {
   type ValidatorsConfig,
 } from "../../domain/earn/yield";
 import type { Network } from "../../domain/network/network";
+import {
+  type ExternalProviderSnapshot,
+  hasValidBorrowProviderContract,
+} from "../../public-api/external-provider-contract";
 import type {
   DashboardYieldCategory,
   PreferredTokenYieldsPerNetwork,
@@ -23,8 +27,6 @@ import type {
   VariantProps,
 } from "../../public-api/types";
 import { config } from "../../shared/config/widget-defaults";
-import type { ExternalProviderSnapshot } from "../wallet/external-provider";
-import { hasValidBorrowProviderContract } from "../wallet/external-provider";
 import type { WidgetConfig } from "./widget-config-model";
 
 type WagmiSettings = NonNullable<SettingsProps["wagmi"]>;

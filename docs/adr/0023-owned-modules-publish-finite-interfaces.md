@@ -63,7 +63,13 @@ architectural roles rather than lists of current caller files. The finalized
 policy has no manual importer-to-target exceptions. Cross-Feature composition is performed by
 the application: application composition injects the Transaction Flow and
 Wallet route collaborators into Borrow composition rather than granting Borrow
-a direct peer-composition exception. Semantic judgments that cannot be derived
+a direct peer-composition exception. The same rule applies when shell chrome
+needs a peer Feature's semantic projection: application composition supplies
+the projection, while neither Feature imports the other. Reusable rendered
+elements belong to the narrowest existing concept owner: generic structures in
+`shared/ui`, shared yield read presentation in Yield Summary, and Yield Entry
+interaction presentation in Yield Entry. A new horizontal presentation Module
+is not introduced merely to relocate a cyclic dependency. Semantic judgments that cannot be derived
 reliably from paths and import relationships remain review rules rather than
 fragile automated checks.
 
@@ -72,7 +78,11 @@ architectural declarations and privately compiles them into rules; callers do
 not configure ownership through dependency-cruiser-shaped regular expressions.
 Dependency-cruiser checks production `src` dependencies and exclusively owns
 dependency direction, Module privacy, interface audiences, generated
-runtime-client privacy, cycles, and resolution. Biome owns React restrictions
+runtime-client privacy, cycles, and resolution. Cycles are forbidden both
+between concrete source files and between declared owned Modules after their
+implementation files are collapsed to Module ownership; file-level acyclicity
+alone is insufficient because mutually dependent Modules cannot be changed or
+replaced independently. Biome owns React restrictions
 and permitted barrel locations, while ast-grep owns explicit interface-export
 syntax. Knip's ordinary and production modes own unused files, exports, types,
 packages, and production reachability through tests. A Resource Module's
@@ -111,6 +121,29 @@ The completed warm hygiene suite measured 8.44 seconds and about 1.26 GB peak
 RSS, within the previously finalized 8.28-second and 1.31-GB result. Improvement
 toward the former runtime remains desirable, but the obsolete 20% gate is not
 restored while Knip intentionally performs broader analysis.
+
+Module-level cycle enforcement consumes dependency-cruiser's resolved graph
+and the same typed Module Collection declarations rather than introducing a
+second ownership configuration or restoring rev-dep. During the cycle-removal
+migration, every declared Feature, nested Feature, Resource, and singular owned
+Module is a node, with the most-specific nested owner taking precedence and
+intra-Module edges ignored. Only the exact directed edges in the existing cyclic
+components are baselined, each with an explicit removal condition; component
+membership alone is not a valid baseline. The baseline is removed edge by edge
+as the behavior-preserving vertical slices land. Each slice runs its targeted
+unit, DOM, and relevant browser tests plus widget lint and root hygiene,
+followed by the full repository check when the final baseline is removed.
+Cycle failures report both the owned-Module path and the contributing concrete
+file imports. The migration is complete only when the graph has no owned-Module
+strongly connected components and no temporary baselines remain.
+
+The subsequent Service ownership review keeps service directories outside an
+inferred Module Collection until each has a deliberate interface design. The
+first seam separates the host-facing External Provider contract from its Wallet
+adapter: `public-api` owns the snapshot type and capability predicates, Config
+validates that neutral contract, and Wallet owns the executable adapter. This
+removes Config's reverse dependency on Wallet; the remaining dependency
+direction is Wallet to Tracking to Config.
 
 The enforcement was subsequently simplified around its two graph-analysis
 owners. The dependency-cruiser configuration, Knip configuration, commands,

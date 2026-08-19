@@ -65,7 +65,7 @@
     "gen:api": "tsx scripts/generate-effect-openapi.ts && tsx scripts/check-generated-schemas.ts",
     "check:generated-schemas": "tsx scripts/check-generated-schemas.ts",
     "check-hygiene": "pnpm check-hygiene:architecture && pnpm check-hygiene:unused && pnpm check-hygiene:production",
-    "check-hygiene:architecture": "depcruise --config scripts/dependency-cruiser.config.mts --output-type err-long src",
+    "check-hygiene:architecture": "tsx scripts/check-architecture.ts",
     "check-hygiene:unused": "knip --include files,dependencies,unlisted,exports,nsExports,types,nsTypes --no-progress --treat-config-hints-as-errors",
     "check-hygiene:production": "knip --production --include files,dependencies,unlisted,exports,nsExports,types,nsTypes --no-progress --treat-config-hints-as-errors"
   },

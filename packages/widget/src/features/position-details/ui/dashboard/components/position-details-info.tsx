@@ -1,20 +1,22 @@
 import { useTranslation } from "react-i18next";
-import { Box } from "../../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import {
   AddressRow,
   DetailRow,
   DetailsSection,
-  EarnDetailsHeader,
-  RiskRatingBadge,
-  riskSummaryActions,
-  YieldRiskInfoTooltip,
-} from "../../../../earn/views";
+} from "../../../../../shared/ui/components/details-section";
+import { Box } from "../../../../../shared/ui/primitives/box";
+import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
+import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { EarnDetailsHeader } from "../../../../earn/views";
 import {
   CurrentRewardsSummaryKey,
   currentRewardsSummaryAtom,
 } from "../../../../yield-summary/index";
+import {
+  RiskRatingBadge,
+  riskSummaryActions,
+  YieldRiskInfoTooltip,
+} from "../../../../yield-summary/views";
 import {
   type DashboardPositionDetailValue,
   type DashboardPositionMetricCard,

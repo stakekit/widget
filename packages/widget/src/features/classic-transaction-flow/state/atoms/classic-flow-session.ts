@@ -59,6 +59,7 @@ const makeClassicFlowSessionModule = (session: ClassicFlowSession) =>
         activityHistoryViewAtom,
         getIntake,
         intake: session.intake,
+        mount: session.mount,
       } as const;
 
       return {

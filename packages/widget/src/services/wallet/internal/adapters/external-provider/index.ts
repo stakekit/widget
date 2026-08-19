@@ -5,13 +5,10 @@ import type { Connector, CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import { skNormalizeChainId } from "../../../../../domain";
+import type { ExternalProviderSnapshot } from "../../../../../public-api/external-provider-contract";
 import { config } from "../../../../../shared/config/widget-defaults";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
-import {
-  type CurrentRef,
-  ExternalProvider,
-  type ExternalProviderSnapshot,
-} from "../../../external-provider";
+import { type CurrentRef, ExternalProvider } from "../../../external-provider";
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 

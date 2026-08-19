@@ -82,6 +82,11 @@ URL summary, while Activity completion presentation remains a safe nullable Atom
 projection of the terminal Transaction Workflow state. Navigation retries every
 100 milliseconds until success or scope interruption.
 
+Complete presentation derives its journey meaning from the Flow Session's
+captured intake and mount. It does not inspect Position Details or other
+originating Feature routes to rediscover whether the Session represents Exit,
+Manage, Enter, or Activity Resume.
+
 Classic transaction confirmation treats `NOT_FOUND` as an intermediate status:
 the status endpoint can report it before the submitted transaction becomes
 visible. Like other non-terminal statuses, it remains eligible for the Classic

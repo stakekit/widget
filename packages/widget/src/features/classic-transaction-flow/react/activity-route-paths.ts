@@ -3,7 +3,3 @@ export const historicalActivityCompletePaths = {
   unstake: "unstake-review/complete",
   pending: "pending-review/complete",
 } as const;
-
-export const toActivityRouteMatchPath = (
-  path: (typeof historicalActivityCompletePaths)[keyof typeof historicalActivityCompletePaths]
-) => `activity/${path}` as const;
