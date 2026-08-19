@@ -104,14 +104,17 @@ application runtime assembly. Transport, generated clients, and capability
 implementations are private. `runtime.ts` owns the single composed API Layer;
 there is no API `index.ts`.
 
-Biome's `noBarrelFile` is whitelisted only for declared interfaces. Interfaces
-use explicit named exports, never `export *` or `export * as`; implementation
-imports directly within its owner, while outside value, type-only, and dynamic
-dependencies use an allowed interface. Tests retain deep-import access, and
-cross-Module style implementation imports are allowed only from one `*.css.ts`
-module to another. Other
-exceptions must be exact, named, justified, and give a removal condition when
-temporary. New Modules require no per-name architecture registration.
+Biome's `noBarrelFile` forbids unofficial value re-export-only files and is
+whitelisted only for declared Module interface paths. It ignores type-only
+exports. Interfaces use explicit named exports, never `export *` or
+`export * as`; implementation imports directly within its owner, while outside
+value, type-only, and dynamic dependencies use an allowed interface. Tests
+retain deep-import access, and cross-Module style implementation imports are
+allowed only from one `*.css.ts` module to another. Other exceptions must be
+exact, named, justified, and give a removal condition when temporary. New
+Modules require no per-name architecture registration. When a nested Module
+Collection is added, extend the `noBarrelFile` whitelist with the same
+path-shaped interface globs — do not except every `index.ts`.
 
 ## Coding rules
 

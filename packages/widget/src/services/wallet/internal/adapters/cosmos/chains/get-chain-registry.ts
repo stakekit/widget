@@ -1,12 +1,12 @@
 import { assets, chains as RegistryChains } from "chain-registry";
 import { Array as EArray, Option } from "effect";
-import { CosmosNetworks } from "../../../../../../domain/network/networks";
+import { CosmosNetworks } from "../../../../../../domain/network/networks.ts";
 import {
   type CosmosChain,
   type SupportedCosmosChains,
   supportedCosmosChains,
   type WithWagmiName,
-} from "../chains";
+} from "../chains.ts";
 
 type AssetList = (typeof assets)[number];
 type Asset = AssetList["assets"][number];

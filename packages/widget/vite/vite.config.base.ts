@@ -68,7 +68,7 @@ export const getConfig = (
             /[/\\]node_modules[/\\]|^\0rolldown\/runtime\.js$/,
             /[/\\]src[/\\]generated[/\\]/,
             // Macro-inlined cosmos chain registry data.
-            /[/\\]connectors[/\\]cosmos[/\\]chains[/\\]chain-registry\.ts$/,
+            /[/\\]adapters[/\\]cosmos[/\\]chains[/\\]chain-registry\.ts$/,
           ],
         }),
         vanillaExtractPlugin(),
