@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Data } from "effect";
+import { Data, Option } from "effect";
 import type { AsyncResult as AtomAsyncResult } from "effect/unstable/reactivity/AsyncResult";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
@@ -263,6 +263,7 @@ export const resolveBorrowEntryView = ({
   marketsResult,
   positionsResult = AsyncResult.success(emptyBorrowPositions),
   tokenBalances,
+  tokenBalancesAvailable = true,
 }: {
   readonly integrationsResult: AtomAsyncResult<
     ReadonlyArray<Integration>,
@@ -279,21 +280,21 @@ export const resolveBorrowEntryView = ({
     BorrowAtomResultError
   >;
   readonly tokenBalances: ReadonlyArray<TokenBalance>;
+  readonly tokenBalancesAvailable?: boolean;
 }): BorrowEntryView => {
   const markets = AsyncResult.getOrElse(marketsResult, () => []).filter(
     (market) => market.isBorrowEnabled
   );
   const integrations = AsyncResult.getOrElse(integrationsResult, () => []);
-  const positions = AsyncResult.getOrElse(
-    positionsResult,
-    () => emptyBorrowPositions
-  );
+  const positions = positionsResult.pipe(AsyncResult.value, Option.getOrNull);
   const selectedMarket = getSelectedMarket({ intent, markets });
   const selectedMarketId = selectedMarket?.id ?? null;
-  const selectedMarketPosition = selectedMarket
-    ? (positions.items.find((position) => position.id === selectedMarket.id) ??
-      null)
-    : null;
+  const selectedMarketPosition =
+    selectedMarket && positions
+      ? (positions.items.find(
+          (position) => position.id === selectedMarket.id
+        ) ?? null)
+      : null;
   const selectedCollateralToken = getSelectedCollateralToken({
     intent,
     selectedMarket,
@@ -318,8 +319,11 @@ export const resolveBorrowEntryView = ({
     walletBalances?.selectedCollateralToken ?? null;
   const borrowAmount = new BigNumber(intent.borrowAmount || 0);
   const collateralAmount = new BigNumber(intent.collateralAmount || 0);
+  const hasRequiredFacts =
+    (!borrowAmount.gt(0) || positions !== null) &&
+    (!collateralAmount.gt(0) || tokenBalancesAvailable);
   const preparation =
-    selectedMarket && selectedCollateralToken
+    selectedMarket && selectedCollateralToken && hasRequiredFacts
       ? prepareBorrowAction({
           _tag: "OpenPositionDraft",
           address: key.scope.address,
@@ -328,7 +332,7 @@ export const resolveBorrowEntryView = ({
           collateralToken: selectedCollateralToken,
           integrations,
           market: selectedMarket,
-          positions,
+          positions: positions ?? emptyBorrowPositions,
           tokenBalances,
         })
       : null;
@@ -358,7 +362,8 @@ export const resolveBorrowEntryView = ({
     "ProjectedDebtBelowMarketMinimum"
   );
   const hasValidationError = reasons.length > 0;
-  const isActionReady = preparation?._tag === "Ready";
+  const isActionReady =
+    preparation?._tag === "Ready" && !AsyncResult.isFailure(marketsResult);
   const projection: BorrowFormProjection = {
     borrowMaxAmount: preparedProjection?.borrowMaxAmount ?? new BigNumber(0),
     borrowUsd: preparedProjection?.borrowUsd ?? new BigNumber(0),

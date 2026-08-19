@@ -5,6 +5,7 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
 import {
   getPendingActionStateKey,
+  PendingActionStateKey,
   preparePendingActionCommand,
 } from "../../src/domain/action/action-command";
 import { EarnBalance } from "../../src/domain/earn/models";
@@ -17,7 +18,10 @@ import {
   reconcilePendingActionModalReceipt,
 } from "../../src/features/position-details/model/classic-flow-actions";
 import { resolvePositionDetailsExitReceiveTokenSelection } from "../../src/features/position-details/model/exit-receive-token";
-import { dispatchPositionDetailsWorkflowAtom } from "../../src/features/position-details/state/classic-view";
+import {
+  dispatchPositionDetailsWorkflowAtom,
+  positionDetailsPendingActionsViewAtom,
+} from "../../src/features/position-details/state/classic-view";
 import {
   PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
@@ -69,6 +73,19 @@ const balance = Schema.decodeUnknownSync(EarnBalance)(
 const pendingAction = balance.pendingActions[0]!;
 
 describe("Position Details action model", () => {
+  it("constructs opaque Pending Action state keys through the domain factory", () => {
+    const key = getPendingActionStateKey({
+      actionType: pendingAction.type,
+      balanceType: balance.type,
+      passthrough: pendingAction.passthrough,
+      token: balance.token,
+    });
+
+    expect(Schema.is(PendingActionStateKey)(key)).toBe(true);
+    expect(Schema.is(PendingActionStateKey)("")).toBe(false);
+    expect(key).toContain(pendingAction.passthrough);
+  });
+
   it("defaults an eligible Sky Savings Rate exit to USDS", () => {
     const baseYield = yieldApiYieldDtoFixture();
     const usds = {
@@ -413,8 +430,13 @@ describe("Position Details action model", () => {
       positionDetailsWorkflowAtom(workflowKey)
     ).pendingActions;
 
-    expect(pendingActions.get(firstKey)?.toString(10)).toBe("1");
-    expect(pendingActions.get(secondKey)?.toString(10)).toBe("5");
+    expect(pendingActions.get(firstKey)?.toString(10)).toBe("4");
+    expect(pendingActions.get(secondKey)?.toString(10)).toBe("4");
+    expect(
+      registry
+        .get(positionDetailsPendingActionsViewAtom(workflowKey))
+        ?.map(({ validation }) => validation)
+    ).toEqual(["AboveMaximum", "BelowMinimum"]);
 
     const prepared = preparePendingActionCommand({
       additionalAddresses: null,
@@ -427,7 +449,7 @@ describe("Position Details action model", () => {
     });
 
     expect(Result.getOrThrow(prepared).command).toMatchObject({
-      arguments: { amount: "5" },
+      arguments: { amount: "4" },
       passthrough: "claim-rewards-second-tranche",
     });
 

@@ -1,5 +1,9 @@
 import { Data, Array as EArray, Option, Result } from "effect";
-import { preparePendingActionCommand } from "../../../domain/action/action-command";
+import {
+  getPendingActionStateKey,
+  type PendingActionStateKey,
+  preparePendingActionCommand,
+} from "../../../domain/action/action-command";
 import {
   ActionCommand,
   type PendingAction,
@@ -333,21 +337,34 @@ export const resolvePositionPendingActionDecision = ({
   command,
   integration,
   modal,
+  pendingActionIndex,
   pendingActionsState,
+  pendingActionValidations,
   wallet,
 }: {
   readonly canMount: boolean;
   readonly command: PositionPendingActionCommand;
   readonly integration: EarnYieldWithProvider | null;
   readonly modal: PendingActionModalState;
+  readonly pendingActionIndex: ReadonlyMap<
+    PendingActionStateKey,
+    Readonly<{
+      readonly balance: EarnBalance;
+      readonly pendingAction: PendingAction;
+    }>
+  >;
   readonly pendingActionsState: Parameters<
     typeof preparePendingActionCommand
   >[0]["pendingActionsState"];
+  readonly pendingActionValidations: ReadonlyMap<
+    PendingActionStateKey,
+    "AboveMaximum" | "BelowMinimum" | "Required" | null
+  >;
   readonly wallet: ConnectedPendingActionWallet | null;
 }) => {
   if (!integration) return { _tag: "Unavailable" } as const;
 
-  const selection = (() => {
+  const requestedSelection = (() => {
     if (command._tag === "Select") {
       return {
         attemptId: null,
@@ -364,7 +381,23 @@ export const resolvePositionPendingActionDecision = ({
         }
       : null;
   })();
-  if (!selection) return { _tag: "Unavailable" } as const;
+  if (!requestedSelection) return { _tag: "Unavailable" } as const;
+
+  const pendingActionKey = getPendingActionStateKey({
+    actionType: requestedSelection.pendingAction.type,
+    balanceType: requestedSelection.yieldBalance.type,
+    passthrough: requestedSelection.pendingAction.passthrough,
+    token: requestedSelection.yieldBalance.token,
+  });
+  const current = pendingActionIndex.get(pendingActionKey);
+  if (!current || pendingActionValidations.get(pendingActionKey)) {
+    return { _tag: "Unavailable" } as const;
+  }
+  const selection = {
+    ...requestedSelection,
+    pendingAction: current.pendingAction,
+    yieldBalance: current.balance,
+  };
 
   const telemetry: PendingActionTelemetry =
     command._tag === "Select"

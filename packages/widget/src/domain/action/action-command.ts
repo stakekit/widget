@@ -1,11 +1,11 @@
 import type BigNumber from "bignumber.js";
-import { Array as EArray, Option, Result } from "effect";
+import { Array as EArray, Option, Result, Schema } from "effect";
 import type { EarnBalance, EarnYieldWithProvider } from "../earn/models";
 import type { ValidatorInput as ValidatorDto } from "../earn/validator";
 import type { WalletAddress } from "../identity/identifiers";
 import type { YieldBalanceType } from "../portfolio/positions";
 import type { Token } from "../token/token";
-import { type TokenString, tokenString } from "../token/token";
+import { tokenString } from "../token/token";
 import type { AdditionalAddresses } from "../wallet/address";
 import type { ManageActionCommand, PendingAction } from "./models";
 import {
@@ -15,8 +15,12 @@ import {
   type YieldPendingActionType,
 } from "./pending-action";
 
-export type PendingActionStateKey =
-  `${YieldBalanceType}-${TokenString}-${YieldPendingActionType}-${string}`;
+export const PendingActionStateKey = Schema.NonEmptyString.pipe(
+  Schema.brand("PendingActionStateKey")
+);
+export type PendingActionStateKey = typeof PendingActionStateKey.Type;
+
+const makePendingActionStateKey = Schema.decodeSync(PendingActionStateKey);
 
 type PendingActionBalance = {
   amount: BigNumber;
@@ -41,7 +45,9 @@ export const getPendingActionStateKey = ({
   actionType: YieldPendingActionType;
   passthrough: string;
 }): PendingActionStateKey =>
-  `${balanceType}-${tokenString(token)}-${actionType}-${passthrough}`;
+  makePendingActionStateKey(
+    `${balanceType}-${tokenString(token)}-${actionType}-${passthrough}`
+  );
 
 export const preparePendingActionCommand = ({
   pendingActionsState,

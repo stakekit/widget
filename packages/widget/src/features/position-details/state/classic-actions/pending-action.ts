@@ -216,7 +216,13 @@ const runPositionPendingActionAtom = Atom.family(
           command,
           integration: facts.integration,
           modal,
+          pendingActionIndex: facts.workflow.pendingActionIndex,
           pendingActionsState: facts.workflow.pendingActions,
+          pendingActionValidations: new Map(
+            [...facts.workflow.pendingActionProjections].map(
+              ([pendingKey, projection]) => [pendingKey, projection.validation]
+            )
+          ),
           wallet:
             facts.wallet.status === "connected"
               ? {

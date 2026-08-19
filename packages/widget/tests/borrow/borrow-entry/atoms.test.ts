@@ -1,4 +1,4 @@
-import { Effect, Layer, Schema, SubscriptionRef } from "effect";
+import { Cause, Effect, Layer, Option, Schema, SubscriptionRef } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
@@ -264,6 +264,87 @@ describe("Borrow Entry atoms", () => {
         marketId: market.id,
       },
     });
+  });
+
+  it("blocks borrow review when authoritative positions are unavailable", () => {
+    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const view = resolveBorrowEntryView({
+      integrationsResult: AsyncResult.success([]),
+      intent: {
+        borrowAmount: "1",
+        collateralAmount: "0",
+        selectedCollateralTokenId: decodeTokenId(
+          market.collateralTokens[0]!.token
+        ),
+        selectedMarketId: market.id,
+      },
+      key: new BorrowEntryKey({ network: "ethereum", scope: walletScope }),
+      marketsResult: AsyncResult.success([market]),
+      positionsResult: AsyncResult.failure(Cause.fail(undefined as never)),
+      tokenBalances: [],
+    });
+
+    expect(view.preparation).toBeNull();
+    expect(view.isActionReady).toBe(false);
+  });
+
+  it("blocks collateral review when wallet balances are unavailable", () => {
+    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const view = resolveBorrowEntryView({
+      integrationsResult: AsyncResult.success([]),
+      intent: {
+        borrowAmount: "0",
+        collateralAmount: "1",
+        selectedCollateralTokenId: decodeTokenId(
+          market.collateralTokens[0]!.token
+        ),
+        selectedMarketId: market.id,
+      },
+      key: new BorrowEntryKey({ network: "ethereum", scope: walletScope }),
+      marketsResult: AsyncResult.success([market]),
+      tokenBalances: [],
+      tokenBalancesAvailable: false,
+    });
+
+    expect(view.preparation).toBeNull();
+    expect(view.isActionReady).toBe(false);
+  });
+
+  it("keeps retained markets visible but blocks review after refresh failure", () => {
+    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const previousMarkets = AsyncResult.success([market]);
+    const view = resolveBorrowEntryView({
+      integrationsResult: AsyncResult.success([]),
+      intent: {
+        borrowAmount: "0",
+        collateralAmount: "1",
+        selectedCollateralTokenId: decodeTokenId(
+          market.collateralTokens[0]!.token
+        ),
+        selectedMarketId: market.id,
+      },
+      key: new BorrowEntryKey({ network: "ethereum", scope: walletScope }),
+      marketsResult: AsyncResult.failure(Cause.fail(undefined as never), {
+        previousSuccess: Option.some(previousMarkets),
+      }),
+      tokenBalances: Schema.decodeUnknownSync(TokenBalancesResponse)([
+        {
+          amount: "2",
+          availableYields: [],
+          token: {
+            address: marketDto.collateralTokens[0].token.address,
+            decimals: 18,
+            name: "Wrapped Ether",
+            network: "ethereum",
+            symbol: "WETH",
+          },
+        },
+      ]),
+    });
+
+    expect(view.selectedMarket?.id).toBe(market.id);
+    expect(view.preparation?._tag).toBe("Ready");
+    expect(view.isActionReady).toBe(false);
   });
 
   it("defaults the form to the first market where borrowing is enabled", () => {

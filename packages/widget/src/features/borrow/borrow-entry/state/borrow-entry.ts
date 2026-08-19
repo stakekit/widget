@@ -181,6 +181,11 @@ export const currentBorrowEntryAtom = Atom.writable<
         new BorrowMarketsKey({ network: key.network })
       )
     );
+    const tokenBalancesResult = context.get(tokenBalancesScanAtom).result;
+    const tokenBalances = tokenBalancesResult.pipe(
+      AsyncResult.value,
+      Option.getOrNull
+    );
 
     return {
       ...resolveBorrowEntryView({
@@ -195,11 +200,8 @@ export const currentBorrowEntryAtom = Atom.writable<
             new BorrowPositionsKey({ scope: key.scope })
           )
         ),
-        tokenBalances:
-          AsyncResult.getOrElse(
-            context.get(tokenBalancesScanAtom).result,
-            () => []
-          ) ?? [],
+        tokenBalances: tokenBalances ?? [],
+        tokenBalancesAvailable: tokenBalances !== null,
       }),
       catalogResetNotice: state.catalogResetNotice,
     };

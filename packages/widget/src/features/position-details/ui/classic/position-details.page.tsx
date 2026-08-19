@@ -221,6 +221,7 @@ const PositionDetails = () => {
                     onMaxClick={null}
                     formattedAmount={val.formattedAmount}
                     balance={null}
+                    unstakeAmountError={val.validation !== null}
                   />
                 ) : (
                   <StaticActionBlock

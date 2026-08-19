@@ -130,15 +130,15 @@ const readValidators = (
   });
   const resource = yieldValidatorsAtom(key);
   const initial = context.get(resource.initialValidatorsResultAtom);
+  const initialValue = initial.pipe(AsyncResult.value, Option.getOrNull);
+  const result = initial.pipe(AsyncResult.map(({ items }) => items));
   return {
     key,
     observation: {
       _tag: "enabled",
-      options: initial.pipe(
-        AsyncResult.value,
-        Option.getOrElse(() => [])
-      ),
-      result: initial,
+      complete: initialValue?.complete ?? false,
+      options: initialValue?.items ?? [],
+      result,
       validatorsConfig: context.get(widgetConfigAtom).validatorsConfig,
     },
   };

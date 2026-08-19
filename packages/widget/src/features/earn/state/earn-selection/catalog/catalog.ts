@@ -260,7 +260,10 @@ export const yieldValidatorsAtom = Atom.family(
         })
       )
       .pipe(
-        Atom.mapResult(({ items }) => items.flatMap((page) => page.items)),
+        Atom.mapResult(({ done, items }) => ({
+          complete: done,
+          items: items.flatMap((page) => page.items),
+        })),
         Atom.map(mapAsyncResultError(toCatalogError("validators")))
       );
     const initialValidatorsResultAtom = Atom.make((get) => {
@@ -269,21 +272,22 @@ export const yieldValidatorsAtom = Atom.family(
         defaults: get(defaultValidatorsResultAtom),
         preferred: get(preferredValidatorsAtom),
       }).pipe(
-        AsyncResult.map(({ defaults, preferred }) =>
-          projectValidators({
+        AsyncResult.map(({ defaults, preferred }) => ({
+          complete: defaults.complete,
+          items: projectValidators({
             network,
             selectedYieldId,
             validators: [
               ...new Map(
-                [...preferred, ...defaults].map((validator) => [
+                [...preferred, ...defaults.items].map((validator) => [
                   validator.key,
                   validator,
                 ])
               ).values(),
             ],
             validatorsConfig,
-          })
-        )
+          }),
+        }))
       );
     });
     const validatorsPullAtom = Atom.family(

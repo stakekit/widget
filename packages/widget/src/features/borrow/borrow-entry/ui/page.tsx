@@ -131,12 +131,13 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
 
   const getFormContent = (): ReactNode => {
     if (
-      AsyncResult.isInitial(marketsResult) ||
-      AsyncResult.isWaiting(marketsResult)
+      markets.length === 0 &&
+      (AsyncResult.isInitial(marketsResult) ||
+        AsyncResult.isWaiting(marketsResult))
     ) {
       return <ContentLoaderSquare heightPx={340} />;
     }
-    if (AsyncResult.isFailure(marketsResult)) {
+    if (markets.length === 0 && AsyncResult.isFailure(marketsResult)) {
       return (
         <BorrowNotice tone="error" title={t("dashboard.borrow.error_title")}>
           {t("dashboard.borrow.error_description")}

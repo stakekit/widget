@@ -33,6 +33,7 @@ export type ValidatorObservation =
   | Readonly<{ readonly _tag: "disabled" }>
   | Readonly<{
       readonly _tag: "enabled";
+      readonly complete: boolean;
       readonly options: ReadonlyArray<EarnValidator>;
       readonly result: EarnResourceResult<ReadonlyArray<EarnValidator>>;
       readonly validatorsConfig: ValidatorsConfig;

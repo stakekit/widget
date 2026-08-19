@@ -65,8 +65,9 @@ export const BorrowDetailsPanel = ({
   } = view;
 
   if (
-    AsyncResult.isInitial(marketsResult) ||
-    AsyncResult.isWaiting(marketsResult) ||
+    (view.markets.length === 0 &&
+      (AsyncResult.isInitial(marketsResult) ||
+        AsyncResult.isWaiting(marketsResult))) ||
     AsyncResult.isInitial(integrationsResult) ||
     AsyncResult.isWaiting(integrationsResult)
   ) {
@@ -74,7 +75,7 @@ export const BorrowDetailsPanel = ({
   }
 
   if (
-    AsyncResult.isFailure(marketsResult) ||
+    (view.markets.length === 0 && AsyncResult.isFailure(marketsResult)) ||
     AsyncResult.isFailure(integrationsResult)
   ) {
     return (

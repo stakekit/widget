@@ -6,6 +6,7 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
+import { getPendingActionStateKey } from "../../src/domain/action/action-command";
 import { EarnBalance } from "../../src/domain/earn/models";
 import {
   TokenAddress,
@@ -406,6 +407,89 @@ describe("Position Details exit command", () => {
     }
   });
 
+  it("rejects a Pending Action that disappeared from current balances", async () => {
+    const push = vi.fn<(path: WidgetPath) => void>();
+    const registry = makeRegistry({
+      push,
+      trackEvent: () => Effect.void,
+    });
+
+    try {
+      registry.set(runPositionPendingActionAtom(workflowKey), {
+        _tag: "Select",
+        pendingAction: manageAction,
+        yieldBalance: manageBalance,
+      });
+
+      await Promise.resolve();
+      expect(push).not.toHaveBeenCalled();
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("rejects a Pending Action amount invalidated by current constraints", async () => {
+    const push = vi.fn<(path: WidgetPath) => void>();
+    const constrainedBalance = Schema.decodeUnknownSync(EarnBalance)(
+      yieldBalanceFixture({
+        address,
+        amount: "10",
+        pendingActions: [
+          {
+            amount: "10",
+            arguments: {
+              fields: [
+                {
+                  label: "Amount",
+                  maximum: "10",
+                  minimum: "5",
+                  name: "amount",
+                  required: true,
+                  type: "string",
+                },
+              ],
+            },
+            intent: "manage",
+            passthrough: "constrained-action",
+            type: "CLAIM_REWARDS",
+          },
+        ],
+        token: selectedYield.token,
+      })
+    );
+    const constrainedAction = constrainedBalance.pendingActions[0]!;
+    const constrainedKey = getPendingActionStateKey({
+      actionType: constrainedAction.type,
+      balanceType: constrainedBalance.type,
+      passthrough: constrainedAction.passthrough,
+      token: constrainedBalance.token,
+    });
+    const registry = makeRegistry({
+      push,
+      trackEvent: () => Effect.void,
+      yieldBalance: constrainedBalance,
+    });
+
+    try {
+      registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        exitReceiveTokenAddress: null,
+        pendingActions: new Map([[constrainedKey, new BigNumber(4)]]),
+        unstakeAmount: new BigNumber(0),
+        unstakeUseMaxAmount: false,
+      });
+      registry.set(runPositionPendingActionAtom(workflowKey), {
+        _tag: "Select",
+        pendingAction: constrainedAction,
+        yieldBalance: constrainedBalance,
+      });
+
+      await Promise.resolve();
+      expect(push).not.toHaveBeenCalled();
+    } finally {
+      registry.dispose();
+    }
+  });
+
   it("does not order Pending Action start behind telemetry", async () => {
     const push = vi.fn<(path: WidgetPath) => void>();
     const trackingRelease = await Effect.runPromise(Deferred.make<void>());
@@ -764,7 +848,11 @@ describe("Position Details exit command", () => {
         })
       );
       const requiredAction = requiredManageBalance.pendingActions[0]!;
-      const registry = makeRegistry({ push, trackEvent });
+      const registry = makeRegistry({
+        push,
+        trackEvent,
+        yieldBalance: requiredManageBalance,
+      });
 
       try {
         registry.set(openPositionPendingActionModalAtom(workflowKey), {
@@ -878,6 +966,41 @@ describe("Position Details exit command", () => {
       });
       expect(push).not.toHaveBeenCalled();
     } finally {
+      registry.dispose();
+    }
+  });
+
+  it("keeps semantic Exit Max bound to the latest live maximum", async () => {
+    const refreshedBalance = Schema.decodeUnknownSync(EarnBalance)(
+      yieldBalanceFixture({
+        address,
+        amount: "0.75",
+        token: selectedYield.token,
+      })
+    );
+    const registry = makeRegistry({
+      push: vi.fn(),
+      trackEvent: () => Effect.void,
+      yieldBalance: refreshedBalance,
+    });
+    const viewAtom = positionDetailsClassicViewAtom(workflowKey);
+    const unmount = registry.mount(viewAtom);
+
+    try {
+      registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        exitReceiveTokenAddress: null,
+        pendingActions: new Map(),
+        unstakeAmount: new BigNumber(1),
+        unstakeUseMaxAmount: true,
+      });
+
+      expect(registry.get(viewAtom).unstakeAmount.toString()).toBe("0.75");
+      expect(
+        registry.get(positionDetailsWorkflowAtom(workflowKey))
+          .unstakeUseMaxAmount
+      ).toBe(true);
+    } finally {
+      unmount();
       registry.dispose();
     }
   });
@@ -1057,6 +1180,7 @@ describe("Position Details exit command", () => {
         additionalAddresses: { cosmosPubKey: "cosmos-refreshed" },
         address: sameAddressDifferentCase,
       }),
+      yieldBalance: manageBalance,
     });
 
     try {

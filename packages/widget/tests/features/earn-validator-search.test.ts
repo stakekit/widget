@@ -1,5 +1,5 @@
 import { Duration, Effect, Layer } from "effect";
-import { Atom, AtomRegistry } from "effect/unstable/reactivity";
+import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import type { EarnYield } from "../../src/domain/earn/models";
@@ -37,6 +37,68 @@ const validatorSelectionYield = (): typeof EarnYield.Type => {
 };
 
 describe("Earn validator search", () => {
+  it("marks the initial directory complete only after every default page is loaded", async () => {
+    const validators = Array.from({ length: 101 }, (_, index) => ({
+      ...yieldApiValidatorFixture({ address: `validator-${index}` }),
+      key: `validator-${index}` as never,
+    }));
+    const listValidators = vi.fn((request: ValidatorDirectoryRequest) => {
+      const items = request.preferred
+        ? []
+        : validators.slice(request.offset, request.offset + request.limit);
+      return Effect.succeed({
+        items,
+        limit: request.limit,
+        offset: request.offset,
+        total: request.preferred ? 0 : validators.length,
+      });
+    });
+    const registry = AtomRegistry.make({
+      initialValues: [
+        applicationRuntimeInitInitialValue(),
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.succeed(
+            YieldResourceSource,
+            YieldResourceSource.of({ listValidators } as never)
+          )
+        ),
+      ],
+    });
+    const resource = yieldValidatorsAtom(
+      new YieldValidatorsKey({ selectedYieldId: yieldId })
+    );
+    const unmount = registry.mount(resource.initialValidatorsResultAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(
+          AsyncResult.getOrThrow(
+            registry.get(resource.initialValidatorsResultAtom)
+          )
+        ).toMatchObject({ complete: false })
+      );
+
+      registry.set(
+        resource.validatorsPullAtom(
+          new YieldValidatorsPullKey({ search: null })
+        ),
+        undefined
+      );
+
+      await vi.waitFor(() =>
+        expect(
+          AsyncResult.getOrThrow(
+            registry.get(resource.initialValidatorsResultAtom)
+          )
+        ).toMatchObject({ complete: true })
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
   it("searches name and address independently and merges the results", async () => {
     const search = "needle";
     const byName = {
@@ -132,17 +194,20 @@ describe("Earn validator search", () => {
       "Beta"
     );
     const listValidators = vi.fn((request: ValidatorDirectoryRequest) => {
-      const page = (items: ReadonlyArray<typeof catalogValidator>) =>
+      const page = (
+        items: ReadonlyArray<typeof catalogValidator>,
+        total = items.length
+      ) =>
         Effect.succeed({
           items,
           limit: request.limit,
           offset: request.offset,
-          total: items.length,
+          total,
         });
       const query = request.name ?? request.address ?? null;
 
       if (request.preferred) return page([]);
-      if (query === null) return page([catalogValidator]);
+      if (query === null) return page([catalogValidator], 101);
       // Only the name branch matches these fixtures. The Alpha response is
       // delayed past the point where the query has moved on to Beta.
       if (query === "Alpha") {

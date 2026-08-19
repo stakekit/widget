@@ -90,7 +90,13 @@ export type EarnTokenOptionsState = AsyncResult<
 export type EarnValidatorsResource = {
   readonly enabled: boolean;
   readonly initialValidatorsResultAtom: Atom<
-    AsyncResult<ReadonlyArray<EarnValidator>, EarnCatalogError>
+    AsyncResult<
+      Readonly<{
+        readonly complete: boolean;
+        readonly items: ReadonlyArray<EarnValidator>;
+      }>,
+      EarnCatalogError
+    >
   >;
   readonly validatorsPullAtom: (
     key: YieldValidatorsPullKey

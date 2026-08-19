@@ -2,7 +2,10 @@ import BigNumber from "bignumber.js";
 import { Option, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { getPendingActionStateKey } from "../../../domain/action/action-command";
+import {
+  getPendingActionStateKey,
+  type PendingActionStateKey,
+} from "../../../domain/action/action-command";
 import type { PendingAction } from "../../../domain/action/models";
 import {
   getPendingActionAmountConfig,
@@ -59,7 +62,18 @@ const getPendingActionIndex = (
       : []
   );
 
-const clampPendingActionAmount = ({
+type PendingActionAmountValidation =
+  | "AboveMaximum"
+  | "BelowMinimum"
+  | "Required"
+  | null;
+
+type PendingActionAmountProjection = Readonly<{
+  readonly amount: BigNumber | null;
+  readonly validation: PendingActionAmountValidation;
+}>;
+
+const setPendingActionAmount = ({
   action,
   current,
   index,
@@ -78,16 +92,80 @@ const clampPendingActionAmount = ({
   if (!pending) return current;
 
   const next = new Map(current);
-  const amountConfig = getPendingActionAmountConfig(pending.pendingAction);
-  const maximum = new BigNumber(
-    amountConfig?.maximum ?? Number.POSITIVE_INFINITY
-  );
-  const minimum = new BigNumber(amountConfig?.minimum ?? 0);
-  const amount = amountConfig?.forceMax
-    ? new BigNumber(pending.balance.amount)
-    : BigNumber.max(minimum, BigNumber.min(maximum, action.amount));
-  next.set(key, amount);
+  next.set(key, action.amount);
   return next;
+};
+
+const projectPendingActionAmount = ({
+  balanceAmount,
+  current,
+  key,
+  pendingAction,
+}: {
+  readonly balanceAmount: BigNumber;
+  readonly current: ReadonlyMap<PendingActionStateKey, BigNumber>;
+  readonly key: PendingActionStateKey;
+  readonly pendingAction: PendingAction;
+}): PendingActionAmountProjection => {
+  if (!isPendingActionAmountRequired(pendingAction)) {
+    return { amount: null, validation: null };
+  }
+
+  const config = getPendingActionAmountConfig(pendingAction);
+  const configuredMaximum = config?.maximum;
+  const maximum =
+    configuredMaximum === null ||
+    configuredMaximum === undefined ||
+    configuredMaximum === -1
+      ? balanceAmount
+      : BigNumber.min(balanceAmount, configuredMaximum);
+  const configuredMinimum = config?.minimum;
+  const minimum = new BigNumber(
+    configuredMinimum === null ||
+      configuredMinimum === undefined ||
+      configuredMinimum === -1
+      ? 0
+      : configuredMinimum
+  );
+  const amount = config?.forceMax
+    ? balanceAmount
+    : (current.get(key) ??
+      BigNumber.max(minimum, BigNumber.min(maximum, balanceAmount)));
+  const validation = (() => {
+    if (!amount.isGreaterThan(0)) return "Required" as const;
+    if (amount.isLessThan(minimum)) return "BelowMinimum" as const;
+    if (amount.isGreaterThan(maximum)) return "AboveMaximum" as const;
+    return null;
+  })();
+
+  return { amount, validation };
+};
+
+const resolveUnstakeAmount = ({
+  canChangeAmount,
+  forceMax,
+  liveBalance,
+  maximum,
+  storedAmount,
+  useMax,
+}: {
+  readonly canChangeAmount: boolean | null;
+  readonly forceMax: boolean;
+  readonly liveBalance: BigNumber | null;
+  readonly maximum: BigNumber;
+  readonly storedAmount: BigNumber;
+  readonly useMax: boolean;
+}) => {
+  if (useMax) return maximum;
+  if (
+    liveBalance &&
+    canChangeAmount !== null &&
+    (!canChangeAmount || forceMax) &&
+    !liveBalance.isEqualTo(storedAmount)
+  ) {
+    return liveBalance;
+  }
+  return storedAmount;
 };
 
 export const positionDetailsWorkflowViewAtom = Atom.family(
@@ -153,13 +231,14 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
             selectedAddress: workflow.exitReceiveTokenAddress,
           })
         : null;
-      const unstakeAmount =
-        reducedStakedOrLiquidBalance &&
-        canChangeUnstakeAmount !== null &&
-        (!canChangeUnstakeAmount || amountConstraints.forceMax) &&
-        !reducedStakedOrLiquidBalance.amount.isEqualTo(workflow.unstakeAmount)
-          ? reducedStakedOrLiquidBalance.amount
-          : workflow.unstakeAmount;
+      const unstakeAmount = resolveUnstakeAmount({
+        canChangeAmount: canChangeUnstakeAmount,
+        forceMax: amountConstraints.forceMax,
+        liveBalance: reducedStakedOrLiquidBalance?.amount ?? null,
+        maximum: amountConstraints.allowedMaximum,
+        storedAmount: workflow.unstakeAmount,
+        useMax: workflow.unstakeUseMaxAmount,
+      });
       const unstakeIsGreaterThanMax = unstakeAmount.isGreaterThan(
         amountConstraints.allowedMaximum
       );
@@ -174,6 +253,23 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
         (!unstakeAmount.isZero() && unstakeIsLessThanMin) ||
         unstakeIsGreaterThanMax ||
         unstakeIsGreaterOrLessIntegrationLimitError;
+      const pendingActionIndex = getPendingActionIndex(positionBalancesByType);
+      const pendingActionProjections = new Map(
+        [...pendingActionIndex].map(([pendingKey, pending]) => [
+          pendingKey,
+          projectPendingActionAmount({
+            balanceAmount: new BigNumber(pending.balance.amount),
+            current: workflow.pendingActions,
+            key: pendingKey,
+            pendingAction: pending.pendingAction,
+          }),
+        ])
+      );
+      const pendingActions = new Map(
+        [...pendingActionProjections].flatMap(([pendingKey, projection]) =>
+          projection.amount ? [[pendingKey, projection.amount] as const] : []
+        )
+      );
       return {
         ...workflow,
         canChangeUnstakeAmount,
@@ -182,7 +278,9 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
         integrationData,
         maxUnstakeAmount: amountConstraints.allowedMaximum,
         minUnstakeAmount: amountConstraints.allowedMinimum,
-        pendingActionIndex: getPendingActionIndex(positionBalancesByType),
+        pendingActionIndex,
+        pendingActionProjections,
+        pendingActions,
         pendingActionType: key.pendingActionType,
         positionBalances,
         positionBalancesByType,
@@ -211,7 +309,7 @@ export const dispatchPositionDetailsWorkflowAtom = Atom.family(
       const view = context(positionDetailsWorkflowViewAtom(key));
       const pendingActions =
         action.type === "pendingAction/amount/change"
-          ? clampPendingActionAmount({
+          ? setPendingActionAmount({
               action: action.data,
               current: view.pendingActions,
               index: view.pendingActionIndex,
@@ -243,6 +341,7 @@ type PositionDetailsPendingActionView = {
   readonly amount: BigNumber | null;
   readonly formattedAmount: string;
   readonly pendingAction: PendingAction;
+  readonly validation: PendingActionAmountValidation;
   readonly yieldBalance: PricedEarnBalance;
 };
 
@@ -285,16 +384,15 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
         ? [...view.positionBalancesByType.values()].flatMap((balances) =>
             balances.flatMap((balance) =>
               balance.pendingActions.map((pendingAction) => {
-                const amount = isPendingActionAmountRequired(pendingAction)
-                  ? (view.pendingActions.get(
-                      getPendingActionStateKey({
-                        actionType: pendingAction.type,
-                        balanceType: balance.type,
-                        passthrough: pendingAction.passthrough,
-                        token: balance.token,
-                      })
-                    ) ?? new BigNumber(0))
-                  : null;
+                const pendingKey = getPendingActionStateKey({
+                  actionType: pendingAction.type,
+                  balanceType: balance.type,
+                  passthrough: pendingAction.passthrough,
+                  token: balance.token,
+                });
+                const projection =
+                  view.pendingActionProjections.get(pendingKey);
+                const amount = projection?.amount ?? null;
                 const formattedAmount =
                   prices &&
                   amount &&
@@ -314,6 +412,7 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
                   amount,
                   formattedAmount,
                   pendingAction,
+                  validation: projection?.validation ?? null,
                   yieldBalance: balance,
                 };
               })
