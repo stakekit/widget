@@ -125,4 +125,42 @@ describe("borrow balance adapter", () => {
     expect(balance.amountValue.isZero()).toBe(true);
     expect(balance.balance).toBeNull();
   });
+
+  it("does not match addressed tokens with different symbols", () => {
+    const balance = deriveBorrowTokenWalletBalance({
+      balances,
+      network: market.network,
+      token: { ...market.loanToken, symbol: "USDC.e" },
+    });
+
+    expect(balance.balance).toBeNull();
+    expect(balance.amount).toBe("0");
+  });
+
+  it("does not fold native token symbol casing", () => {
+    const nativeBalances = Schema.decodeUnknownSync(TokenBalancesResponse)([
+      {
+        amount: "2",
+        availableYields: [],
+        token: {
+          decimals: 18,
+          name: "Ether",
+          network: "ethereum",
+          symbol: "eth",
+        },
+      },
+    ]);
+    const balance = deriveBorrowTokenWalletBalance({
+      balances: nativeBalances,
+      network: "ethereum",
+      token: {
+        decimals: 18,
+        name: "Ether",
+        symbol: "ETH",
+      },
+    });
+
+    expect(balance.balance).toBeNull();
+    expect(balance.amount).toBe("0");
+  });
 });

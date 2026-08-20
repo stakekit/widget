@@ -781,6 +781,7 @@ describe("Borrow action preparation", () => {
         tokens: [
           {
             action: withdrawAction,
+            availableAmount: new BigNumber("0.5"),
             collateralToken,
             supplyBalance,
           },
@@ -789,6 +790,7 @@ describe("Borrow action preparation", () => {
       },
       token: {
         action: withdrawAction,
+        availableAmount: new BigNumber("0.5"),
         collateralToken,
         supplyBalance,
       },
@@ -819,9 +821,60 @@ describe("Borrow action preparation", () => {
     });
   });
 
+  it("preserves an exact Withdraw Max amount through review", () => {
+    const availableAmount = new BigNumber("0.123456789012345678");
+    const preciseSupplyBalance = {
+      ...supplyBalance,
+      balance: 0.12345678901234568,
+      balanceRaw: 123_456_789_012_345_678n,
+    };
+    const token = {
+      action: withdrawAction,
+      availableAmount,
+      collateralToken,
+      supplyBalance: preciseSupplyBalance,
+    };
+    const context = {
+      position,
+      tokens: [token],
+      type: "withdraw" as const,
+    };
+    const exact = prepareBorrowAction({
+      _tag: "WithdrawDraft",
+      address,
+      amount: availableAmount,
+      context,
+      token,
+    });
+    const above = prepareBorrowAction({
+      _tag: "WithdrawDraft",
+      address,
+      amount: availableAmount.plus("0.000000000000000001"),
+      context,
+      token,
+    });
+
+    expect(exact).toMatchObject({
+      _tag: "Ready",
+      review: {
+        command: {
+          args: { amount: "0.123456789012345678" },
+        },
+        summary: {
+          collateralAmount: "0.123456789012345678",
+        },
+      },
+    });
+    expect(above).toMatchObject({
+      _tag: "Blocked",
+      reasons: ["AmountExceedsPositionBalance"],
+    });
+  });
+
   it("reports both balance and Risk Position withdrawal blocks", () => {
     const token = {
       action: withdrawAction,
+      availableAmount: new BigNumber("0.5"),
       collateralToken,
       supplyBalance,
     };

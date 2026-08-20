@@ -21,6 +21,8 @@ import {
   AppContainerProvider,
   NoEnabledYields,
 } from "./features/widget-shell/composition";
+import { useUnderMaintenance } from "./features/widget-shell/index";
+import { UnderMaintenance } from "./features/widget-shell/views";
 import type { SKAppProps } from "./public-api/types";
 import { isLedgerDappBrowserProvider } from "./services/wallet/browser-environment";
 import { preloadImages } from "./shared/assets/images";
@@ -30,15 +32,21 @@ preloadImages();
 const App = () => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");
   const enabledNetworks = useAtomValue(walletEnabledNetworksResultAtom);
+  const underMaintenance = useUnderMaintenance();
   const noEnabledYields =
     AsyncResult.isSuccess(enabledNetworks) && enabledNetworks.value.size === 0;
 
-  if (noEnabledYields) return <NoEnabledYields />;
+  if (noEnabledYields && !underMaintenance) return <NoEnabledYields />;
+
+  const routeContent = (() => {
+    if (underMaintenance) return <UnderMaintenance />;
+    return dashboardVariant ? <DashboardRoutes /> : <ClassicRoutes />;
+  })();
 
   return (
     <>
       <ApplicationRouteEffects />
-      {dashboardVariant ? <DashboardRoutes /> : <ClassicRoutes />}
+      {routeContent}
     </>
   );
 };

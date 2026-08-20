@@ -19,6 +19,7 @@ import type { ClassicTransactionFlowIntake } from "../../src/features/classic-tr
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import type { ActionPreviewRequest } from "../../src/services/api/operations";
 import { YieldOperations } from "../../src/services/api/operations";
+import { InputValidationError } from "../../src/services/api/resource-sources";
 import {
   makeWidgetNavigation,
   toWidgetPath,
@@ -115,6 +116,29 @@ const makeExitIntake = (): Extract<
     },
     unstakeAmount: new BigNumber(1),
     unstakeToken: integration.token,
+    walletScope,
+  };
+};
+
+const makeManageIntake = (): Extract<
+  ClassicTransactionFlowIntake,
+  { readonly _tag: "Manage" }
+> => {
+  const integration = yieldApiYieldFixture();
+
+  return {
+    _tag: "Manage",
+    gasFeeToken: integration.mechanics.gasFeeToken,
+    integration,
+    interactedToken: integration.token,
+    pendingActionType: "CLAIM_REWARDS",
+    providersDetails: [],
+    request: {
+      action: "CLAIM_REWARDS",
+      address: walletScope.address,
+      passthrough: "claim-rewards",
+      yieldId: integration.id,
+    },
     walletScope,
   };
 };
@@ -550,12 +574,268 @@ describe("ClassicTransactionFlowService", () => {
         value: {
           preview: {
             _tag: "Failure",
-            error: { _tag: "ClassicFlowInvalidExitPreviewError" },
+            error: { _tag: "ClassicFlowInvalidPreviewError" },
           },
         },
       },
     });
     expect(commands).toHaveLength(1);
+  });
+
+  it("keeps an invalid Enter preview in Review", async () => {
+    const invalidAction = yieldApiActionFixture({
+      transactions: [
+        yieldApiTransactionFixture({
+          id: "blocked-transaction",
+          status: "BLOCKED",
+        }),
+      ],
+    });
+    const walletState = await Effect.runPromise(
+      SubscriptionRef.make(connectedWalletState(walletScope))
+    );
+
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const service = yield* ClassicTransactionFlowService;
+          const acquired = yield* acquireStartedSession(service);
+          const review =
+            yield* acquired.session.acquireReview(readyEligibility);
+          const state = yield* review.states.pipe(
+            Stream.filter((current) => current.preview._tag === "Failure"),
+            Stream.runHead
+          );
+          const confirmation = yield* review.confirm();
+          const execution = yield* acquired.session.acquireExecution();
+          return { confirmation, execution, state };
+        })
+      ).pipe(
+        Effect.provide(
+          makeServiceLayer(walletState, {
+            previewAction: () => Effect.succeed(invalidAction),
+          })
+        )
+      )
+    );
+
+    expect(result).toMatchObject({
+      confirmation: { _tag: "RejectedPreview" },
+      execution: { _tag: "RejectedNoReservation" },
+      state: {
+        _tag: "Some",
+        value: {
+          preview: {
+            _tag: "Failure",
+            error: { _tag: "ClassicFlowInvalidPreviewError" },
+          },
+        },
+      },
+    });
+  });
+
+  it.each([
+    {
+      label: "Manage",
+      startInput: {
+        intake: makeManageIntake(),
+        mount: {
+          _tag: "PositionManage" as const,
+          balanceId: "balance",
+          integrationId: "integration",
+        },
+      },
+    },
+    {
+      label: "Activity Resume",
+      startInput: {
+        intake: makeActivityIntake(),
+        mount: {
+          _tag: "ActivityResume" as const,
+          presentation: "Classic" as const,
+          target: "FreshReview" as const,
+        },
+      },
+    },
+  ])("keeps an invalid $label preview in Review", async ({ startInput }) => {
+    const invalidAction = yieldApiActionFixture({
+      transactions: [
+        yieldApiTransactionFixture({
+          id: "failed-transaction",
+          status: "FAILED",
+        }),
+      ],
+    });
+    const walletState = await Effect.runPromise(
+      SubscriptionRef.make(connectedWalletState(walletScope))
+    );
+
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const service = yield* ClassicTransactionFlowService;
+          const started = yield* service.start(startInput);
+          if (started._tag !== "Started") {
+            return yield* Effect.die("Expected a Classic Flow Session");
+          }
+          const acquired = yield* service.acquireSession(started.session);
+          if (acquired._tag !== "Acquired") {
+            return yield* Effect.die("Expected an acquired Session");
+          }
+          const review =
+            yield* acquired.session.acquireReview(readyEligibility);
+          const state = yield* review.states.pipe(
+            Stream.filter((current) => current.preview._tag === "Failure"),
+            Stream.runHead
+          );
+          const confirmation = yield* review.confirm();
+          return { confirmation, state };
+        })
+      ).pipe(
+        Effect.provide(
+          makeServiceLayer(walletState, {
+            previewAction: () => Effect.succeed(invalidAction),
+          })
+        )
+      )
+    );
+
+    expect(result).toMatchObject({
+      confirmation: { _tag: "RejectedPreview" },
+      state: {
+        _tag: "Some",
+        value: {
+          preview: {
+            _tag: "Failure",
+            error: { _tag: "ClassicFlowInvalidPreviewError" },
+          },
+        },
+      },
+    });
+  });
+
+  it("removes skipped transactions and preserves pending transactions", async () => {
+    const executableTransaction = yieldApiTransactionFixture({
+      id: "executable-transaction",
+      status: "PENDING",
+    });
+    const preview = yieldApiActionFixture({
+      transactions: [
+        yieldApiTransactionFixture({
+          id: "skipped-transaction",
+          status: "SKIPPED",
+        }),
+        executableTransaction,
+      ],
+    });
+    const walletState = await Effect.runPromise(
+      SubscriptionRef.make(connectedWalletState(walletScope))
+    );
+    let workflowInput: TransactionWorkflowInput | null = null;
+
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const service = yield* ClassicTransactionFlowService;
+          const acquired = yield* acquireStartedSession(service);
+          const review =
+            yield* acquired.session.acquireReview(readyEligibility);
+          yield* review.states.pipe(
+            Stream.filter((state) => state.preview._tag === "Success"),
+            Stream.runHead
+          );
+          yield* review.confirm();
+          yield* acquired.session.acquireExecution();
+        })
+      ).pipe(
+        Effect.provide(
+          makeServiceLayer(walletState, {
+            makeWorkflow: (input) =>
+              Effect.sync(() => {
+                workflowInput = input;
+                return {
+                  dispatch: () => Effect.void,
+                  states: Stream.never,
+                };
+              }),
+            previewAction: () => Effect.succeed(preview),
+          })
+        )
+      )
+    );
+
+    expect(workflowInput).toMatchObject({
+      _tag: "Classic",
+      transactions: [{ id: executableTransaction.id, status: "PENDING" }],
+    });
+  });
+
+  it("completes an all-skipped preview without an executable transaction", async () => {
+    const preview = yieldApiActionFixture({
+      transactions: [
+        yieldApiTransactionFixture({
+          id: "skipped-transaction",
+          status: "SKIPPED",
+        }),
+      ],
+    });
+    const completionNavigation = await Effect.runPromise(
+      Deferred.make<WidgetNavigationCommand>()
+    );
+    const walletState = await Effect.runPromise(
+      SubscriptionRef.make(connectedWalletState(walletScope))
+    );
+    let workflowInput: TransactionWorkflowInput | null = null;
+
+    const command = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const service = yield* ClassicTransactionFlowService;
+          const acquired = yield* acquireStartedSession(service);
+          const review =
+            yield* acquired.session.acquireReview(readyEligibility);
+          yield* review.states.pipe(
+            Stream.filter((state) => state.preview._tag === "Success"),
+            Stream.runHead
+          );
+          yield* review.confirm();
+          const execution = yield* acquired.session.acquireExecution();
+          if (execution._tag !== "Acquired") {
+            return yield* Effect.die("Expected an Execution acquisition");
+          }
+          return yield* Deferred.await(completionNavigation);
+        })
+      ).pipe(
+        Effect.timeout("1 second"),
+        Effect.provide(
+          makeServiceLayer(walletState, {
+            execute: (navigationCommand) =>
+              navigationCommand._tag === "Replace" &&
+              navigationCommand.path === toWidgetPath("/complete")
+                ? Deferred.succeed(completionNavigation, navigationCommand)
+                : Effect.void,
+            makeWorkflow: (input) =>
+              Effect.sync(() => {
+                workflowInput = input;
+                return {
+                  dispatch: () => Effect.void,
+                  states: Stream.succeed(initializeTransactionWorkflow(input)),
+                };
+              }),
+            previewAction: () => Effect.succeed(preview),
+          })
+        )
+      )
+    );
+
+    expect(workflowInput).toMatchObject({
+      _tag: "Classic",
+      transactions: [],
+    });
+    expect(command).toMatchObject({
+      _tag: "Replace",
+      path: toWidgetPath("/complete"),
+    });
   });
 
   it("rejects confirmation when Activity eligibility has expired", async () => {
@@ -680,6 +960,62 @@ describe("ClassicTransactionFlowService", () => {
       { _tag: "Replace", path: toWidgetPath("/review") },
       { _tag: "Push", path: toWidgetPath("/") },
     ]);
+  });
+
+  it("does not retry an invalid Action Preview request", async () => {
+    const walletState = await Effect.runPromise(
+      SubscriptionRef.make(connectedWalletState(walletScope))
+    );
+    let previewAttempts = 0;
+
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const service = yield* ClassicTransactionFlowService;
+          const acquired = yield* acquireStartedSession(service);
+          const review =
+            yield* acquired.session.acquireReview(readyEligibility);
+          const state = yield* review.states.pipe(
+            Stream.filter((current) => current.preview._tag === "Failure"),
+            Stream.runHead
+          );
+          const confirmation = yield* review.confirm();
+          return { confirmation, state };
+        })
+      ).pipe(
+        Effect.provide(
+          makeServiceLayer(walletState, {
+            previewAction: () => {
+              previewAttempts += 1;
+              return Effect.fail(
+                new InputValidationError({
+                  cause: new Error("invalid amount"),
+                  issue: "amount must be a decimal string",
+                  operation: "previewAction",
+                })
+              );
+            },
+          })
+        )
+      )
+    );
+
+    expect(result).toMatchObject({
+      confirmation: { _tag: "RejectedPreview" },
+      state: {
+        _tag: "Some",
+        value: {
+          preview: {
+            _tag: "Failure",
+            error: {
+              _tag: "ClassicFlowInvalidPreviewRequestError",
+              retryable: false,
+            },
+          },
+        },
+      },
+    });
+    expect(previewAttempts).toBe(1);
   });
 
   it("revalidates eligibility after an in-flight preview retry", async () => {

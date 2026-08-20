@@ -17,15 +17,8 @@ import {
   Header,
   PoweredBy,
 } from "../../features/widget-shell/composition";
-import {
-  useDetailsMatch,
-  useUnderMaintenance,
-} from "../../features/widget-shell/index";
-import {
-  container,
-  headerContainer,
-  UnderMaintenance,
-} from "../../features/widget-shell/views";
+import { useDetailsMatch } from "../../features/widget-shell/index";
+import { container, headerContainer } from "../../features/widget-shell/views";
 
 const ClassicDetails = () => {
   const pendingActionsCount = usePortfolioPendingActionsCount();
@@ -33,8 +26,6 @@ const ClassicDetails = () => {
 };
 
 export const ClassicRoutes = () => {
-  const underMaintenance = useUnderMaintenance();
-
   const location = useLocation();
   const isActiveClassicFlowPath = useAtomValue(
     isActiveClassicTransactionFlowPathAtom(location.pathname)
@@ -54,8 +45,6 @@ export const ClassicRoutes = () => {
     return location.key;
   };
   const key = resolveRouteKey();
-
-  if (underMaintenance) return <UnderMaintenance />;
 
   return (
     <>

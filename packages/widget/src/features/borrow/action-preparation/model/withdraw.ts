@@ -54,7 +54,7 @@ export const prepareWithdrawAction = (
   }
 
   const reasons: BorrowActionBlockReason[] = [];
-  if (amount.gt(token.supplyBalance.balance)) {
+  if (amount.gt(token.availableAmount)) {
     reasons.push("AmountExceedsPositionBalance");
   }
   if (assessment.decision === "block") {

@@ -55,11 +55,14 @@ the Action Preview state Stream and `confirm()`. KYC and Activity expiry remain
 reactive Atom-owned observations supplied as one normalized, read-only
 eligibility Stream; eligibility is consumed privately and is not republished as
 Review state. Review autonomously starts Preview when eligibility unblocks.
-`confirm()` ensures or retries Preview according to existing policy, promotes
-the action, revalidates the latest eligibility immediately before reservation,
-records tracking, and navigates with rollback. Atom and UI callers do not
-sequence those steps. Cacheable prices, balances, gas checks, and KYC resources
-remain Authoritative Resources.
+`confirm()` ensures or retries Preview according to explicit failure policy.
+Immutable request validation failures are nonretryable, while remote request and
+response failures remain retryable. Every Action Preview removes `SKIPPED`
+transactions and rejects `FAILED` or `BLOCKED` transactions before promotion.
+Confirmation promotes the action, revalidates the latest eligibility immediately
+before reservation, records tracking, and navigates with rollback. Atom and UI
+callers do not sequence those steps. Cacheable prices, balances, gas checks, and
+KYC resources remain Authoritative Resources.
 
 Session owns one private atomic `promoteToExecution(action)` capability. It
 validates current ownership, rejects duplicate reservation, reserves the action,

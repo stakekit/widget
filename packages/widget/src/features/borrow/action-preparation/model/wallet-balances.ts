@@ -5,6 +5,7 @@ import type { BorrowToken } from "../../../../domain/borrow/catalog/token";
 import { decodeTokenId, type TokenId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
 import type { TokenBalance } from "../../../../domain/finance/models";
+import { equalTokens } from "../../../../domain/token/token";
 
 type BorrowBalanceToken = Pick<
   BorrowToken,
@@ -29,22 +30,6 @@ export type BorrowMarketWalletBalances = {
   readonly selectedCollateralToken: BorrowCollateralWalletBalance | null;
 };
 
-const normalizeAddress = (address?: string) => address?.toLowerCase();
-
-const sameAddress = (left?: string, right?: string) => {
-  const normalizedLeft = normalizeAddress(left);
-  const normalizedRight = normalizeAddress(right);
-
-  return (
-    !!normalizedLeft && !!normalizedRight && normalizedLeft === normalizedRight
-  );
-};
-
-const sameNativeToken = (token: BorrowBalanceToken, balance: TokenBalance) =>
-  !token.address &&
-  !balance.token.address &&
-  token.symbol.toLowerCase() === balance.token.symbol.toLowerCase();
-
 const isBorrowTokenBalanceMatch = ({
   balance,
   network,
@@ -53,10 +38,7 @@ const isBorrowTokenBalanceMatch = ({
   readonly balance: TokenBalance;
   readonly network: BorrowNetwork;
   readonly token: BorrowBalanceToken;
-}) =>
-  balance.token.network === network &&
-  (sameAddress(token.address, balance.token.address) ||
-    sameNativeToken(token, balance));
+}) => equalTokens({ ...token, network }, balance.token);
 
 export const deriveBorrowTokenWalletBalance = ({
   balances,

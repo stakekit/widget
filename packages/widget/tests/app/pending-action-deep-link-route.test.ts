@@ -27,27 +27,28 @@ const otherAddress = Schema.decodeSync(WalletAddress)(
 );
 const scope = new WalletScopeKey({ address, network: "ethereum" });
 
-const walletState = (owner = address) => ({
+const walletState = (ownerScope = scope) => ({
   connection: {
     additionalAddresses: null,
-    address: owner,
+    address: ownerScope.address,
     chain: {} as never,
     connector: {} as never,
     connectorChains: [],
     isLedgerLive: false,
     isLedgerLiveAccountPlaceholder: false,
     ledgerAccounts: [],
-    network: "ethereum" as const,
+    network: ownerScope.network,
     status: "connected" as const,
   },
   ledger: disconnectedLedgerConnectorState,
 });
 
-const pendingObservation = (): DeepLinkRouteObservation => ({
+const pendingObservation = (ownerScope = scope): DeepLinkRouteObservation => ({
+  maintenance: false,
   pendingAction: {
     _tag: "StartClassicFlow",
     input: {
-      intake: { walletScope: scope } as never,
+      intake: { walletScope: ownerScope } as never,
       mount: {
         _tag: "PositionManage",
         balanceId: "balance-1",
@@ -55,13 +56,13 @@ const pendingObservation = (): DeepLinkRouteObservation => ({
       },
     },
     intent: {
-      address,
-      network: "ethereum",
+      address: ownerScope.address,
+      network: ownerScope.network,
       pendingAction: "CLAIM_REWARDS",
       validator: null,
       yieldId: "yield-1",
     },
-    walletScope: scope,
+    walletScope: ownerScope,
   },
   position: null,
   ready: true,
@@ -71,6 +72,7 @@ const makeLayer = ({
   connected = true,
   navigate = () => Effect.void,
   owner = address,
+  ownerScopes,
   start,
 }: {
   readonly connected?: boolean;
@@ -78,8 +80,13 @@ const makeLayer = ({
     path: WidgetPath
   ) => Effect.Effect<void, WidgetNavigationError>;
   readonly owner?: typeof address;
+  readonly ownerScopes?: ReadonlyArray<WalletScopeKey>;
   readonly start: ReturnType<typeof vi.fn>;
 }) => {
+  const scopes = ownerScopes ?? [
+    new WalletScopeKey({ address: owner, network: "ethereum" }),
+  ];
+  let walletReadIndex = 0;
   const navigation = makeWidgetNavigation({
     back: () => Effect.void,
     push: navigate,
@@ -100,14 +107,18 @@ const makeLayer = ({
         Layer.succeed(
           WalletService,
           WalletService.of({
-            state: Effect.succeed(
-              connected
-                ? walletState(owner)
-                : {
-                    connection: disconnectedNormalizedWalletState,
-                    ledger: disconnectedLedgerConnectorState,
-                  }
-            ),
+            state: connected
+              ? Effect.sync(() => {
+                  const ownerScope =
+                    scopes[Math.min(walletReadIndex, scopes.length - 1)] ??
+                    scope;
+                  walletReadIndex += 1;
+                  return walletState(ownerScope);
+                })
+              : Effect.succeed({
+                  connection: disconnectedNormalizedWalletState,
+                  ledger: disconnectedLedgerConnectorState,
+                }),
             states: Stream.never,
             wagmiConfig: {},
           } as never)
@@ -153,6 +164,19 @@ describe("DeepLinkCoordinator", () => {
     }
   });
 
+  it("does not start a pending-action Flow during maintenance", async () => {
+    const start = vi.fn(() =>
+      Effect.succeed({ _tag: "Started", session: {} } as const)
+    );
+
+    await runObservations(
+      [{ ...pendingObservation(), maintenance: true }],
+      makeLayer({ start })
+    );
+
+    expect(start).not.toHaveBeenCalled();
+  });
+
   it("rejects a pending-action intent after its wallet owner changes", async () => {
     const start = vi.fn(() =>
       Effect.succeed({ _tag: "Started", session: {} } as const)
@@ -164,6 +188,27 @@ describe("DeepLinkCoordinator", () => {
     );
 
     expect(start).not.toHaveBeenCalled();
+  });
+
+  it("claims case-distinct non-EVM wallet owners separately", async () => {
+    const firstScope = new WalletScopeKey({
+      address: Schema.decodeSync(WalletAddress)("CaseSensitiveOwner"),
+      network: "solana",
+    });
+    const secondScope = new WalletScopeKey({
+      address: Schema.decodeSync(WalletAddress)("casesensitiveowner"),
+      network: "solana",
+    });
+    const start = vi.fn(() =>
+      Effect.succeed({ _tag: "Started", session: {} } as const)
+    );
+
+    await runObservations(
+      [pendingObservation(firstScope), pendingObservation(secondScope)],
+      makeLayer({ ownerScopes: [firstScope, secondScope], start })
+    );
+
+    expect(start).toHaveBeenCalledTimes(2);
   });
 
   it("retries an unclaimed position intent on the next meaningful observation", async () => {
@@ -179,6 +224,7 @@ describe("DeepLinkCoordinator", () => {
       )
       .mockReturnValue(Effect.void);
     const position = {
+      maintenance: false,
       pendingAction: null,
       position: { balanceId: "balance-1", yieldId: "yield-1" },
       ready: true,
@@ -209,6 +255,7 @@ describe("DeepLinkCoordinator", () => {
     await runObservations(
       [
         {
+          maintenance: false,
           pendingAction: null,
           position: { balanceId: "balance-1", yieldId: "yield-1" },
           ready: true,

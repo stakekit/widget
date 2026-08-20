@@ -1,4 +1,5 @@
 import { RegistryProvider } from "@effect/atom-react";
+import BigNumber from "bignumber.js";
 import * as Schema from "effect/Schema";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { TFunction } from "i18next";
@@ -132,7 +133,7 @@ const makePosition = ({
             {
               apy: "0.02",
               balance: supplied,
-              balanceRaw: "500000000000000000",
+              balanceRaw: new BigNumber(supplied).shiftedBy(18).toFixed(0),
               balanceUsd: (Number(supplied) * 2000).toString(),
               isCollateral: true,
               marketId: market.id,
@@ -255,6 +256,26 @@ const enterAmount = async (container: HTMLElement, value: string) => {
 };
 
 describe("Borrow position action wallet ownership", () => {
+  it("sets Withdraw Max from the exact supplied balance", async () => {
+    const owner = address("1");
+    const supplied = "0.123456789012345678";
+    const position = makePosition({ owner, supplied });
+    const action = getAction(position, "withdraw");
+    const app = await render(renderAction({ action, owner, position }));
+    const maxButton = app.container.querySelector<HTMLButtonElement>(
+      '[data-rk="stake-token-section-max-button"]'
+    );
+    if (!maxButton) throw new Error("Expected Max button");
+
+    await act(async () => maxButton.click());
+
+    expect(
+      app.container.querySelector<HTMLInputElement>(
+        '[data-testid="number-input"]'
+      )?.value
+    ).toBe(supplied);
+  });
+
   it("resets a mounted withdraw form when its wallet owner changes", async () => {
     const ownerA = address("1");
     const ownerB = address("2");

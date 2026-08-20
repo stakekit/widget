@@ -82,6 +82,34 @@ describe("unified Manage positions state", () => {
     });
   });
 
+  it("shows a full error when the only active source fails", () => {
+    expect(
+      getState({
+        borrowWalletIsConnected: false,
+        earnIsError: true,
+        showEarnPositions: false,
+      })
+    ).toMatchObject({
+      hasOnlyErrors: true,
+      hasPartialError: false,
+      showEmptyPositions: false,
+    });
+  });
+
+  it("shows incomplete portfolio data when one active source fails", () => {
+    expect(
+      getState({
+        earnIsError: true,
+        showEarnPositions: false,
+      })
+    ).toMatchObject({
+      hasOnlyErrors: false,
+      hasPartialError: true,
+      showEmptyPositions: false,
+      showPositionsList: true,
+    });
+  });
+
   it("keeps loading state from either module from becoming final empty", () => {
     expect(
       getState({

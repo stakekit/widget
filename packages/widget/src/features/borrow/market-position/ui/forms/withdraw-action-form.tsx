@@ -124,7 +124,7 @@ export const WithdrawActionForm = ({
       <AmountInputCard
         amount={view.amount}
         balanceLabel={t("dashboard.borrow.position_details.withdrawable", {
-          amount: formatNumber(selectedToken.supplyBalance.balance, 6),
+          amount: formatNumber(selectedToken.availableAmount, 6),
           symbol: selectedToken.supplyBalance.tokenSymbol,
         })}
         error={error}
@@ -132,7 +132,7 @@ export const WithdrawActionForm = ({
         onAmountChange={(amount) => dispatch({ amount, type: "amount/set" })}
         onMaxClick={() =>
           dispatch({
-            amount: selectedToken.supplyBalance.balance,
+            amount: selectedToken.availableAmount,
             type: "amount/set",
           })
         }

@@ -5,6 +5,7 @@ import { pendingActionDeepLinkViewAtom } from "../../../features/earn/index";
 import { initParamsAtom } from "../../../features/init-params/index";
 import { mountAnimationStateAtom } from "../../../features/mount-animation/index";
 import { walletConnectionStateAtom } from "../../../features/wallet/index";
+import { underMaintenanceAtom } from "../../../resources/widget-health/index";
 import {
   DeepLinkCoordinator,
   type DeepLinkRouteObservation,
@@ -20,6 +21,7 @@ const deepLinkRouteObservationAtom = Atom.make<DeepLinkRouteObservation>(
   (get) => {
     const animation = get(mountAnimationStateAtom);
     const initParams = get(initParamsAtom);
+    const maintenance = get(underMaintenanceAtom);
     const wallet = get(walletConnectionStateAtom);
     const pendingActionValue = get(pendingActionDeepLinkViewAtom).pipe(
       AsyncResult.value,
@@ -73,6 +75,7 @@ const deepLinkRouteObservationAtom = Atom.make<DeepLinkRouteObservation>(
         : null;
 
     return {
+      maintenance,
       pendingAction,
       position,
       ready: animation.layout && animation.earnPage,

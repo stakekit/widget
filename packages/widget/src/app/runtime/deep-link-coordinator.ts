@@ -2,6 +2,7 @@ import { Context, Effect, Layer, Ref, Stream } from "effect";
 import {
   sameWalletScopeOwner,
   type WalletScopeKey,
+  walletScopeOwnerKey,
 } from "../../domain/wallet/wallet-scope";
 import { ClassicTransactionFlowService as ClassicFlow } from "../../features/classic-transaction-flow/runtime";
 import { getPositionDetailsHubPath } from "../../features/position-details/index";
@@ -40,6 +41,7 @@ export type PendingActionDeepLinkObservation =
     }>;
 
 export type DeepLinkRouteObservation = Readonly<{
+  readonly maintenance: boolean;
   readonly pendingAction: PendingActionDeepLinkObservation | null;
   readonly position: {
     readonly balanceId: string;
@@ -59,15 +61,18 @@ type DeepLinkClaims = Readonly<{
   readonly reserved: ReadonlySet<string>;
 }>;
 
-const pendingActionClaimKey = (intent: PendingActionIntent) =>
-  JSON.stringify([
+const pendingActionClaimKey = (intent: PendingActionIntent) => {
+  const owner = walletScopeOwnerKey(intent);
+
+  return JSON.stringify([
     "pending-action",
-    intent.address.toLowerCase(),
-    intent.network,
+    owner.address,
+    owner.network,
     intent.pendingAction,
     intent.validator,
     intent.yieldId,
   ]);
+};
 
 const positionClaimKey = ({
   balanceId,
@@ -169,7 +174,7 @@ export class DeepLinkCoordinator extends Context.Service<
       const consider = Effect.fn("DeepLinkCoordinator.consider")(function* (
         observation: DeepLinkRouteObservation
       ): Effect.fn.Return<void, unknown, never> {
-        if (!observation.ready) return;
+        if (observation.maintenance || !observation.ready) return;
 
         if (observation.position) {
           if (!(yield* walletIsConnected)) return;

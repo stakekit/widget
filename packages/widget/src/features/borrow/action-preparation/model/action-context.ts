@@ -1,3 +1,4 @@
+import type BigNumber from "bignumber.js";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
 import type {
   DebtBalance,
@@ -13,6 +14,7 @@ import type {
 
 export type BorrowWithdrawTokenOption = {
   readonly action: WithdrawPendingAction;
+  readonly availableAmount: BigNumber;
   readonly collateralToken: CollateralToken;
   readonly supplyBalance: SupplyBalance;
 };

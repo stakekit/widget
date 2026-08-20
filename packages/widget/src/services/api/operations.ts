@@ -22,6 +22,8 @@ import type {
   ResponseDecodeError,
 } from "./resource-sources";
 
+export type { InputValidationError } from "./resource-sources";
+
 export type ActionPreviewRequest =
   | {
       readonly intent: "enter" | "exit";

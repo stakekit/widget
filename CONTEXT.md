@@ -28,6 +28,10 @@ _Avoid_: Host props, runtime identity, settings
 An immutable fact that a meaningful occurrence completed within an Application Runtime Generation. Its payload carries the domain identity observers need to determine relevance; it never prescribes an observer mutation.
 _Avoid_: Reset signal, Atom instruction, callback
 
+**Widget Maintenance**:
+An application-wide unavailable state in which neither presentation variant permits a new user journey. Health recovery restores the current route.
+_Avoid_: Dashboard maintenance, maintenance popup
+
 ## Wallet Language
 
 **Wallet Network**:
@@ -77,6 +81,14 @@ _Avoid_: External provider configuration
 **Token Identity**:
 The identity of a token, consisting of its canonical network, exact case-sensitive symbol, and contract address when present. EVM addresses compare case-insensitively, non-EVM addresses compare exactly, and an addressless native token is identified by its network and symbol.
 _Avoid_: Token string, token metadata
+
+**Exact Token Amount**:
+A token quantity expressed in token units without loss and at a precision no finer than the token's decimals. Amount limits, Max actions, action eligibility, and Action Commands use it; rounded display and fiat values do not.
+_Avoid_: Display amount, token balance number, raw amount
+
+**Base Unit Amount**:
+A token quantity expressed as an integer count of the token's smallest indivisible unit. Wallet transactions and raw balance facts use it.
+_Avoid_: Raw number, decimal amount
 
 ## Earn Language
 
@@ -183,6 +195,12 @@ A Risk Position owned by one isolated market. Its current facts use the market's
 A typed, user-visible result meaning the Widget lacks consistent inputs for a risk projection. It does not block an action; known projected borrow-capacity violations do.
 _Avoid_: Infinite limit, safe fallback
 
+## Portfolio Language
+
+**Portfolio Completeness**:
+Whether every position source active for the current Wallet Scope has usable data. An incomplete portfolio may show retained positions but is neither empty nor fully known.
+_Avoid_: Loaded positions, empty positions
+
 ## Transaction Flow Language
 
 **Entry Intent**:
@@ -218,7 +236,7 @@ The asset a user elects to receive from an Exit Action. It is independent of the
 _Avoid_: Deposit token, position token, output token
 
 **Action Preview**:
-A freshly prepared Yield Action candidate derived from the Flow Session intake and inspected during Review. Continuing promotes that candidate into one Execution attempt; returning to Review always requires a fresh candidate.
+A freshly prepared Yield Action candidate derived from the Flow Session intake and inspected during Review. An executable Action Preview contains no terminal-failure transactions, and terminal-success skipped transactions do not enter execution; continuing promotes the candidate into one Execution attempt, while returning to Review always requires a fresh candidate.
 _Avoid_: Attached action, prepared action
 
 **Yield Action**:

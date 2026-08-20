@@ -89,15 +89,23 @@ export const getUnifiedManagePositionsState = ({
     borrowWalletIsConnected &&
     (AsyncResult.isInitial(borrowPositionsResult) ||
       AsyncResult.isWaiting(borrowPositionsResult));
-  const borrowIsError = AsyncResult.isFailure(borrowPositionsResult);
+  const borrowIsError =
+    borrowWalletIsConnected && AsyncResult.isFailure(borrowPositionsResult);
+  const earnIsActive = isConnected;
+  const activeSourceCount =
+    Number(earnIsActive) + Number(borrowWalletIsConnected);
+  const failedSourceCount =
+    Number(earnIsActive && earnIsError) + Number(borrowIsError);
   const totalPositionsCount = earnPositionsCount + borrowPositionsCount;
   const isAnyPositionsLoading =
     (earnIsLoading && earnIsFetching) || borrowIsLoading;
   const hasOnlyErrors =
-    earnIsError && borrowIsError && totalPositionsCount === 0;
-  const hasPartialError =
-    totalPositionsCount > 0 && (earnIsError || borrowIsError);
-  const showPositionsList = showEarnPositions || borrowPositionsCount > 0;
+    activeSourceCount > 0 &&
+    failedSourceCount === activeSourceCount &&
+    totalPositionsCount === 0;
+  const hasPartialError = failedSourceCount > 0 && !hasOnlyErrors;
+  const showPositionsList =
+    showEarnPositions || borrowPositionsCount > 0 || hasPartialError;
 
   return {
     hasOnlyErrors,
@@ -105,7 +113,10 @@ export const getUnifiedManagePositionsState = ({
     isAnyPositionsLoading,
     showConnectWallet: !isConnected && !isConnecting,
     showEmptyPositions:
-      isConnected && !isAnyPositionsLoading && totalPositionsCount === 0,
+      isConnected &&
+      !isAnyPositionsLoading &&
+      failedSourceCount === 0 &&
+      totalPositionsCount === 0,
     showPositionsList,
     totalPositionsCount,
   };

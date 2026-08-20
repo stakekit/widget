@@ -14,7 +14,10 @@ import type {
   YieldAction,
 } from "../../../../domain/action/models";
 import { getValidStakeSessionTx } from "../../../../domain/action/rules";
-import { YieldOperations } from "../../../../services/api/operations";
+import {
+  type InputValidationError,
+  YieldOperations,
+} from "../../../../services/api/operations";
 import type { WidgetNavigationError } from "../../../../services/navigation/widget-navigation";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
@@ -28,10 +31,18 @@ class ClassicFlowPreviewError extends Data.TaggedError(
   readonly retryable: true;
 }> {}
 
-class ClassicFlowInvalidExitPreviewError extends Data.TaggedError(
-  "ClassicFlowInvalidExitPreviewError"
+class ClassicFlowInvalidPreviewError extends Data.TaggedError(
+  "ClassicFlowInvalidPreviewError"
 )<{
   readonly cause: unknown;
+  readonly message: string;
+  readonly retryable: false;
+}> {}
+
+class ClassicFlowInvalidPreviewRequestError extends Data.TaggedError(
+  "ClassicFlowInvalidPreviewRequestError"
+)<{
+  readonly cause: InputValidationError;
   readonly message: string;
   readonly retryable: false;
 }> {}
@@ -44,7 +55,8 @@ class ClassicFlowUnsupportedActivityPreviewError extends Data.TaggedError(
 }> {}
 
 type ClassicFlowReviewError =
-  | ClassicFlowInvalidExitPreviewError
+  | ClassicFlowInvalidPreviewError
+  | ClassicFlowInvalidPreviewRequestError
   | ClassicFlowPreviewError
   | ClassicFlowUnsupportedActivityPreviewError;
 
@@ -175,22 +187,26 @@ export const makeClassicFlowReviewFactory = Effect.fn(
       if (!previewRequest) return yield* unsupportedPreview;
       yield* SubscriptionRef.set(stateRef, { preview: { _tag: "Loading" } });
       const action = yield* yieldOperations.previewAction(previewRequest).pipe(
-        Effect.mapError(
-          (cause) =>
-            new ClassicFlowPreviewError({
-              cause,
-              message: "Classic Transaction Flow Action preview failed.",
-              retryable: true,
-            })
+        Effect.mapError((cause) =>
+          cause._tag === "InputValidationError"
+            ? new ClassicFlowInvalidPreviewRequestError({
+                cause,
+                message:
+                  "Classic Transaction Flow Action preview request is invalid.",
+                retryable: false,
+              })
+            : new ClassicFlowPreviewError({
+                cause,
+                message: "Classic Transaction Flow Action preview failed.",
+                retryable: true,
+              })
         )
       );
-      if (intake._tag !== "Exit") return action;
-
       const validation = getValidStakeSessionTx(action);
       if (Result.isFailure(validation)) {
-        return yield* new ClassicFlowInvalidExitPreviewError({
+        return yield* new ClassicFlowInvalidPreviewError({
           cause: validation.failure,
-          message: "Classic Transaction Flow Exit preview is not executable.",
+          message: "Classic Transaction Flow Action preview is not executable.",
           retryable: false,
         });
       }
