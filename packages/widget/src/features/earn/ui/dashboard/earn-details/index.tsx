@@ -25,7 +25,10 @@ import {
 } from "./components/history-chart-section";
 import { IntegrationDocsLink } from "./components/integration-docs-link";
 import { ProviderSelectionCard } from "./components/provider-selection-card";
-import { getEarnDetailsModel } from "./earn-details-model";
+import {
+  canPresentRewardRateHistory,
+  getEarnDetailsModel,
+} from "./earn-details-model";
 import * as styles from "./styles.css";
 import { useYieldRewardRateHistory } from "./use-yield-reward-rate-history";
 import { useYieldTvlHistory } from "./use-yield-tvl-history";
@@ -56,10 +59,13 @@ const EarnDetailsView = ({
     useState<HistoryPeriod>("90d");
   const [tvlPeriod, setTvlPeriod] = useState<HistoryPeriod>("90d");
   const { t } = useTranslation();
+  const presentsRewardRateHistory = yieldDto
+    ? canPresentRewardRateHistory(yieldDto)
+    : false;
 
   const rewardRateHistory = useYieldRewardRateHistory({
     period: rewardRatePeriod,
-    yieldId: yieldDto?.id,
+    yieldId: presentsRewardRateHistory ? yieldDto?.id : undefined,
   });
   const tvlHistory = useYieldTvlHistory({
     period: tvlPeriod,
@@ -117,17 +123,18 @@ const EarnDetailsView = ({
 
       <ProviderSelectionCard />
 
-      {shouldRenderHistoryChart(rewardRateHistory) && (
-        <HistoryChartSection
-          chartId="reward-rate"
-          history={rewardRateHistory}
-          onPeriodChange={setRewardRatePeriod}
-          period={rewardRatePeriod}
-          tickFormatter={(value) => `${formatNumber(value, 2)}%`}
-          title={t("dashboard.earn_details.reward_rate")}
-          value={rewardRateFormatted}
-        />
-      )}
+      {presentsRewardRateHistory &&
+        shouldRenderHistoryChart(rewardRateHistory) && (
+          <HistoryChartSection
+            chartId="reward-rate"
+            history={rewardRateHistory}
+            onPeriodChange={setRewardRatePeriod}
+            period={rewardRatePeriod}
+            tickFormatter={(value) => `${formatNumber(value, 2)}%`}
+            title={t("dashboard.earn_details.reward_rate")}
+            value={rewardRateFormatted}
+          />
+        )}
 
       {!isStakeCategory && shouldRenderHistoryChart(tvlHistory) && (
         <HistoryChartSection

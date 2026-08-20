@@ -16,6 +16,7 @@ import {
   getYieldTvlUsd,
   getYieldTypeLabels,
   getYieldWarmupPeriod,
+  isYieldValidatorSelectionRequired,
 } from "../../../../../domain/earn/yield";
 import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import {
@@ -130,6 +131,9 @@ const kpiPriorities = {
 >;
 
 const maxMetricCards = 3;
+
+export const canPresentRewardRateHistory = (yieldDto: EarnYieldWithProvider) =>
+  !isYieldValidatorSelectionRequired(yieldDto);
 
 export const getEarnDetailsModel = ({
   selectedValidators,
