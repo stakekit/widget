@@ -349,8 +349,8 @@ describe("Market Position action preparation atoms", () => {
     );
     const refreshedView = registry.get(formAtom);
     expect(refreshedView?.preparation).toMatchObject({
-      _tag: "Blocked",
-      reasons: ["AmountExceedsPositionBalance"],
+      _tag: "Ready",
+      warnings: ["AmountExceedsPositionBalance"],
     });
     await Effect.runPromise(
       SubscriptionRef.set(events, {

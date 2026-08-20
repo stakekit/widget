@@ -49,9 +49,12 @@
     "no_previous_activity": "Aucune activité précédente",
     "item": {
       "deposited": "Dépôt de {{token}}",
+      "deposited_without_token": "Dépôt",
       "withdrew": "Retrait de {{token}}",
+      "withdrew_without_token": "Retrait",
       "rewards": "Récompenses",
-      "generic": "{{action}} {{token}}"
+      "generic": "{{action}} {{token}}",
+      "generic_without_token": "{{action}}"
     },
     "time": {
       "now": "à l'instant",
@@ -792,7 +795,6 @@
       "title": "Emprunter",
       "review": "Vérifier l'emprunt",
       "enter_amounts": "Saisissez les montants",
-      "fix_errors": "Corrigez les erreurs",
       "connect_title": "Connecter un portefeuille",
       "connect_description": "Connectez un portefeuille pour consulter les marchés d'emprunt et démarrer une action d'emprunt.",
       "unsupported_network": "Réseau non pris en charge",
@@ -804,10 +806,6 @@
       "form_reset": {
         "title": "Formulaire d'emprunt réinitialisé",
         "description": "La disponibilité du marché a changé, le formulaire d'emprunt a donc été réinitialisé."
-      },
-      "risk_unavailable": {
-        "title": "Risque projeté indisponible",
-        "description": "Les informations de risque ne sont pas disponibles pour cette combinaison de garanties. Vous pouvez continuer, mais la transaction peut être rejetée par le fournisseur ou sur la blockchain."
       },
       "form": {
         "borrow": "Emprunt",
@@ -890,6 +888,15 @@
         "projected_health_factor": "Facteur de santé projeté",
         "estimated_fee": "Frais estimés",
         "estimated_fee_pending": "Affichés dans le portefeuille",
+        "warning_title": "Avertissement avant confirmation",
+        "warnings": {
+          "AmountExceedsAvailableLiquidity": "Le montant dépasse la liquidité actuellement disponible sur le marché. Le fournisseur ou la blockchain peut rejeter cette action.",
+          "AmountExceedsPositionBalance": "Le montant dépasse le solde actuel de la position. Le fournisseur ou la blockchain peut rejeter cette action.",
+          "AmountExceedsWalletBalance": "Le montant dépasse le solde actuel du portefeuille. Le fournisseur ou la blockchain peut rejeter cette action.",
+          "ProjectedDebtBelowMarketMinimum": "La dette résultante est inférieure au minimum actuel du marché. Le fournisseur ou la blockchain peut rejeter cette action.",
+          "RemainingDebtBelowMarketMinimum": "La dette restante est inférieure au minimum actuel du marché. Le fournisseur ou la blockchain peut rejeter cette action.",
+          "RiskCapacityExceeded": "Cette action dépasse la capacité d'emprunt actuellement connue. Le fournisseur ou la blockchain peut rejeter cette action."
+        },
         "risk_disclosures": {
           "borrow": "L'emprunt augmente la dette et le risque de liquidation si la valeur de la garantie baisse.",
           "borrowAndSupply": "Fournir une garantie et emprunter modifie votre LTV et le risque de liquidation.",

@@ -4,6 +4,7 @@ import type { Market } from "../../../../../domain/borrow/catalog/market";
 import { DetailRow } from "../../../../../shared/ui/components/details-section";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { WarningBox } from "../../../../../shared/ui/primitives/warning-box";
 import type { BorrowMarketWalletBalances } from "../../../action-preparation/index";
 import type { BorrowFormProjection } from "../../model/borrow-entry";
 import { getBorrowDetailsModel } from "../../model/details";
@@ -46,11 +47,11 @@ export const BorrowFormDetails = ({
           <DetailRow key={row.id} {...row} />
         ))}
       </Box>
-      <BorrowInfoNote tone={ltvGreaterThanMax ? "error" : "default"}>
-        {ltvGreaterThanMax
-          ? t("dashboard.borrow.form.validation.ltv")
-          : t("dashboard.borrow.form.ltv_note")}
-      </BorrowInfoNote>
+      {ltvGreaterThanMax ? (
+        <WarningBox text={t("dashboard.borrow.form.validation.ltv")} />
+      ) : (
+        <BorrowInfoNote>{t("dashboard.borrow.form.ltv_note")}</BorrowInfoNote>
+      )}
     </Box>
   );
 };

@@ -53,7 +53,7 @@ describe("Activity action list item projection", () => {
     });
   });
 
-  it("does not project an unavailable action without a readable token", () => {
+  it("projects an unavailable action without inventing a token", () => {
     const projection = projectActivityActionListItem({
       action: makeItem(
         yieldApiActionFixture({
@@ -66,7 +66,14 @@ describe("Activity action list item projection", () => {
       presentationTime: null,
     });
 
-    expect(projection).toBeNull();
+    expect(projection).toMatchObject({
+      title: {
+        _tag: "generic",
+        actionLabel: "Vote",
+        tokenSymbol: null,
+      },
+      tokenSymbol: null,
+    });
   });
 
   it.each([
@@ -76,7 +83,7 @@ describe("Activity action list item projection", () => {
     "0X0000000000000000000000000000000000000001",
     "0x0000000000000000000000000000000000000001",
   ])(
-    "does not project an action with an unusable raw token value (%s)",
+    "projects an action while omitting an unusable raw token value (%s)",
     (inputToken) => {
       const projection = projectActivityActionListItem({
         action: makeItem(
@@ -90,7 +97,7 @@ describe("Activity action list item projection", () => {
         presentationTime: null,
       });
 
-      expect(projection).toBeNull();
+      expect(projection.tokenSymbol).toBeNull();
     }
   );
 
@@ -107,7 +114,7 @@ describe("Activity action list item projection", () => {
       presentationTime: null,
     });
 
-    expect(projection?.tokenSymbol).toBe("POL");
+    expect(projection.tokenSymbol).toBe("POL");
   });
 
   it.each(["CANCELED", "STALE"] as const)(
@@ -126,7 +133,7 @@ describe("Activity action list item projection", () => {
         presentationTime: null,
       });
 
-      expect(projection?.canOpenDetails).toBe(false);
+      expect(projection.canOpenDetails).toBe(false);
     }
   );
 });

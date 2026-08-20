@@ -5,6 +5,7 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
+import type { ActivityFilterOption } from "../../src/features/activity/model/filters";
 import { activityFilterAtom } from "../../src/features/activity/state/filter";
 import {
   activityPageViewAtom,
@@ -52,7 +53,10 @@ const filterOptionsAtom = activityFilterOptionsAtom(
 
 type ListActivity = YieldResourceSource["Service"]["listActivity"];
 
-const makeRegistry = (listActivity: ListActivity) =>
+const makeRegistry = (
+  listActivity: ListActivity,
+  filterOptions: ActivityFilterOption[] = []
+) =>
   AtomRegistry.make({
     initialValues: [
       Atom.initialValue(
@@ -66,7 +70,7 @@ const makeRegistry = (listActivity: ListActivity) =>
           } as never)
         )
       ),
-      Atom.initialValue(filterOptionsAtom, AsyncResult.success([])),
+      Atom.initialValue(filterOptionsAtom, AsyncResult.success(filterOptions)),
       Atom.initialValue(
         walletConfigResultAtom,
         AsyncResult.success({} as never)
@@ -87,6 +91,40 @@ describe("Activity page commands", () => {
 
       expect(registry.get(activityFilterAtom)).toBe("defi");
     } finally {
+      registry.dispose();
+    }
+  });
+
+  it("prefetches every non-empty category when Activity is observed", async () => {
+    const listActivity = vi.fn<ListActivity>((request) =>
+      Effect.succeed({
+        items: [],
+        limit: request.limit ?? 50,
+        offset: request.offset ?? 0,
+        total: 2,
+      })
+    );
+    const registry = makeRegistry(listActivity, [
+      { count: 2, filter: "all" },
+      { count: 2, filter: "stake" },
+    ]);
+    const unmount = registry.mount(activityPageViewAtom);
+
+    try {
+      await vi.waitFor(() => {
+        const historyRequests = listActivity.mock.calls
+          .map(([request]) => request)
+          .filter((request) => request.limit === 50);
+
+        expect(
+          historyRequests.some((request) => request.yieldTypes === undefined)
+        ).toBe(true);
+        expect(
+          historyRequests.some((request) => request.yieldTypes !== undefined)
+        ).toBe(true);
+      });
+    } finally {
+      unmount();
       registry.dispose();
     }
   });

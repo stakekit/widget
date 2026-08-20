@@ -300,6 +300,38 @@ describe("borrow position items", () => {
     );
   });
 
+  it("omits unavailable entry risk facts without placeholder values", () => {
+    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const model = getBorrowDetailsModel({
+      balances: null,
+      borrowAmount: new BigNumber(1),
+      collateralAmount: new BigNumber(1),
+      integration: Schema.decodeUnknownSync(Integration)(integrationDto),
+      market,
+      projection: {
+        borrowMaxAmount: new BigNumber(10),
+        borrowUsd: new BigNumber(1),
+        collateralMaxAmount: new BigNumber(10),
+        collateralUsd: new BigNumber(1),
+        existingCollateralUsd: new BigNumber(0),
+        existingDebtUsd: new BigNumber(0),
+        maxLtv: null,
+        projectedCollateralUsd: new BigNumber(1),
+        projectedDebtUsd: new BigNumber(1),
+        projectedHealthFactor: null,
+        projectedLtv: new BigNumber(1),
+        riskStatus: "unavailable",
+      },
+      t,
+    });
+
+    expect(model.formRows.map((row) => row.id)).not.toContain("ltv");
+    expect(model.formRows.map((row) => row.id)).not.toContain("health-factor");
+    expect(model.formRows.find((row) => row.id === "max-ltv")?.value).not.toBe(
+      "-"
+    );
+  });
+
   it("keeps same-token collateral isolated by market and preserves API risk state", () => {
     const collateralAddress = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
     const usdcMarketId = "morpho-blue-borrow-ethereum-cbbtc-usdc";

@@ -15,8 +15,8 @@ import type {
 import { prepareWithdrawAction } from "./withdraw";
 
 export type {
-  BorrowActionBlockReason,
   BorrowActionPreparation,
+  BorrowConstraintWarning,
   CollateralToggleProjection,
   OpenPositionProjection,
   RepayProjection,

@@ -6,8 +6,8 @@ export type {
   BorrowWithdrawTokenOption,
 } from "./model/action-context";
 export type {
-  BorrowActionBlockReason,
   BorrowActionPreparation,
+  BorrowConstraintWarning,
   CollateralToggleProjection,
   OpenPositionProjection,
   RepayProjection,

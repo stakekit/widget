@@ -24,10 +24,6 @@ export const amountCardHighlighted = style({
   borderColor: vars.color.tokenSelectBorder,
 });
 
-export const amountCardInvalid = style({
-  borderColor: vars.color.textDanger,
-});
-
 export const amountCardHeader = style({
   alignItems: "center",
   display: "grid",

@@ -85,12 +85,19 @@ export const CollateralList = ({
                   {toggleAction ? (
                     <Box
                       as="button"
+                      aria-checked={item.isCollateral}
                       aria-label={toggleAction.label}
                       className={clsx(
                         styles.switchButton,
                         item.isCollateral && styles.switchButtonChecked
                       )}
-                      onClick={() => onActionSelect(toggleAction)}
+                      data-rk={`borrow-collateral-toggle__${toggleAction.type}`}
+                      data-testid={`borrow-collateral-toggle__${toggleAction.type}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onActionSelect(toggleAction);
+                      }}
+                      role="switch"
                       type="button"
                     >
                       <Box

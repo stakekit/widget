@@ -8,8 +8,8 @@ import {
 import { toBorrowTransactionFlowReview } from "./review";
 import { toBorrowRiskProjection } from "./risk-projection";
 import type {
-  BorrowActionBlockReason,
   BorrowActionPreparation,
+  BorrowConstraintWarning,
   WithdrawDraft,
   WithdrawProjection,
 } from "./types";
@@ -61,23 +61,12 @@ export const prepareWithdrawAction = (
     return { _tag: "Idle", projection };
   }
 
-  const reasons: BorrowActionBlockReason[] = [];
+  const warnings: BorrowConstraintWarning[] = [];
   if (executableAmount.gt(token.availableAmount)) {
-    reasons.push("AmountExceedsPositionBalance");
+    warnings.push("AmountExceedsPositionBalance");
   }
   if (assessment.decision === "block") {
-    reasons.push("RiskCapacityExceeded");
-  }
-
-  if (reasons.length > 0) {
-    return {
-      _tag: "Blocked",
-      projection,
-      reasons: reasons as [
-        BorrowActionBlockReason,
-        ...BorrowActionBlockReason[],
-      ],
-    };
+    warnings.push("RiskCapacityExceeded");
   }
 
   return {
@@ -97,6 +86,8 @@ export const prepareWithdrawAction = (
       projectedCollateralUsd,
       providerName: position.integration.name,
       risk,
+      warnings,
     }),
+    warnings,
   };
 };

@@ -111,14 +111,12 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
   const {
     borrowAmountGreaterThanAvailable,
     collateralAmountGreaterThanBalance,
-    hasAmounts,
-    hasValidationError,
     ltvGreaterThanMax,
     projectedDebtBelowMinimum,
   } = validation;
   const onReviewClick = () => startReview(undefined);
   const integrations = AsyncResult.getOrElse(integrationsResult, () => []);
-  const getBorrowAmountValidationText = () => {
+  const getBorrowAmountWarningText = () => {
     if (borrowAmountGreaterThanAvailable) {
       return t("dashboard.borrow.form.validation.available_liquidity");
     }
@@ -127,7 +125,7 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
     }
     return null;
   };
-  const borrowAmountValidationText = getBorrowAmountValidationText();
+  const borrowAmountWarningText = getBorrowAmountWarningText();
 
   const getFormContent = (): ReactNode => {
     if (
@@ -157,9 +155,6 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
         <AmountField
           amount={borrowAmount}
           balanceLabel={null}
-          isInvalid={
-            borrowAmountGreaterThanAvailable || projectedDebtBelowMinimum
-          }
           label={t("dashboard.borrow.form.borrow")}
           highlight
           onMaxClick={null}
@@ -172,7 +167,7 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
             />
           }
           usdValue={borrowAmount.multipliedBy(selectedMarket.loanTokenPriceUsd)}
-          validationText={borrowAmountValidationText}
+          warningText={borrowAmountWarningText}
         />
 
         <AmountField
@@ -183,7 +178,6 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
               symbol={selectedCollateralToken.token.symbol}
             />
           }
-          isInvalid={collateralAmountGreaterThanBalance}
           label={t("dashboard.borrow.form.collateral")}
           onMaxClick={
             canSelectCollateralMaxAmount
@@ -201,7 +195,7 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
           usdValue={collateralAmount.multipliedBy(
             selectedCollateralToken.priceUsd
           )}
-          validationText={
+          warningText={
             collateralAmountGreaterThanBalance
               ? t("dashboard.borrow.form.validation.wallet_balance")
               : null
@@ -223,7 +217,6 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
 
   const getCtaLabel = () => {
     if (isActionReady) return t("dashboard.borrow.review");
-    if (hasValidationError) return t("dashboard.borrow.fix_errors");
     return t("dashboard.borrow.enter_amounts");
   };
   const ctaLabel = getCtaLabel();
@@ -233,12 +226,6 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
       {catalogResetNotice ? (
         <BorrowNotice title={t("dashboard.borrow.form_reset.title")}>
           {t("dashboard.borrow.form_reset.description")}
-        </BorrowNotice>
-      ) : null}
-
-      {projection.riskStatus === "unavailable" && hasAmounts ? (
-        <BorrowNotice title={t("dashboard.borrow.risk_unavailable.title")}>
-          {t("dashboard.borrow.risk_unavailable.description")}
         </BorrowNotice>
       ) : null}
 

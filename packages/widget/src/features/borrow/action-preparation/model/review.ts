@@ -99,6 +99,7 @@ export const toBorrowTransactionFlowReview = (
     marketLabel: facts.marketLabel,
     network: facts.network,
     providerName: facts.providerName,
+    warnings: facts.warnings,
     ...getRiskSummary(facts.risk),
   };
 

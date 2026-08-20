@@ -12,7 +12,6 @@ import { Box } from "../../../../../shared/ui/primitives/box";
 import { ListItem } from "../../../../../shared/ui/primitives/list/list-item";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { PageCtaButton } from "../../../../widget-shell/views";
-import { BorrowNotice } from "../../../action-feedback/views";
 import type {
   BorrowWithdrawActionContext,
   BorrowWithdrawTokenOption,
@@ -21,7 +20,7 @@ import type { BorrowPositionAction } from "../../model/details";
 import { useBorrowWithdrawForm } from "../../react/use-action-form";
 import * as styles from "../styles.css";
 import { AmountInputCard } from "./amount-input-card";
-import { getBorrowPositionFormErrorMessage } from "./form-error";
+import { getBorrowPositionFormWarningMessage } from "./form-warning";
 import { useStartBorrowPositionReview } from "./use-start-review";
 
 const WithdrawTokenPicker = ({
@@ -105,7 +104,10 @@ export const WithdrawActionForm = ({
 
   const { position } = context;
   const { selectedToken } = view;
-  const error = getBorrowPositionFormErrorMessage({ error: view.error, t });
+  const warning = getBorrowPositionFormWarningMessage({
+    warning: view.warning,
+    t,
+  });
 
   return (
     <Box display="flex" flexDirection="column" gap="4">
@@ -127,7 +129,6 @@ export const WithdrawActionForm = ({
           amount: formatNumber(selectedToken.availableAmount, 6),
           symbol: selectedToken.supplyBalance.tokenSymbol,
         })}
-        error={error}
         label={t("dashboard.borrow.position_details.actions.withdraw")}
         onAmountChange={(amount) => dispatch({ amount, type: "amount/set" })}
         onMaxClick={() =>
@@ -138,22 +139,23 @@ export const WithdrawActionForm = ({
         }
         tokenSymbol={selectedToken.supplyBalance.tokenSymbol}
         usdValue={view.withdrawUsd}
+        warning={warning}
       />
 
-      {view.riskStatus === "unavailable" && view.amount.gt(0) ? (
-        <BorrowNotice title={t("dashboard.borrow.risk_unavailable.title")}>
-          {t("dashboard.borrow.risk_unavailable.description")}
-        </BorrowNotice>
-      ) : null}
-
       <Box className={styles.formCard}>
-        <DetailRow
-          id="ltv"
-          label={t("dashboard.borrow.form.ltv_ratio")}
-          value={`${formatPercent(view.currentLtv)} -> ${formatPercent(
-            view.projectedLtv
-          )}`}
-        />
+        {view.projectedLtv === null ? null : (
+          <DetailRow
+            id="ltv"
+            label={t("dashboard.borrow.form.ltv_ratio")}
+            value={
+              view.currentLtv === null
+                ? formatPercent(view.projectedLtv)
+                : `${formatPercent(view.currentLtv)} -> ${formatPercent(
+                    view.projectedLtv
+                  )}`
+            }
+          />
+        )}
         <DetailRow
           id="collateral"
           label={t("dashboard.borrow.form.collateral_value")}

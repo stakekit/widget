@@ -6,10 +6,19 @@ import {
   type WidgetPathInput,
 } from "../../../services/navigation/widget-navigation";
 
+export type BorrowConstraintWarning =
+  | "AmountExceedsAvailableLiquidity"
+  | "AmountExceedsPositionBalance"
+  | "AmountExceedsWalletBalance"
+  | "ProjectedDebtBelowMarketMinimum"
+  | "RemainingDebtBelowMarketMinimum"
+  | "RiskCapacityExceeded";
+
 type BorrowReviewCommon = {
   readonly marketLabel: string;
   readonly network: BorrowNetwork;
   readonly providerName: string;
+  readonly warnings: ReadonlyArray<BorrowConstraintWarning>;
 };
 
 type AvailableBorrowReviewRisk = {

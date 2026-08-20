@@ -283,7 +283,7 @@ describe("Borrow action preparation", () => {
       },
     ]);
 
-    const blocked = prepareBorrowAction({
+    const warned = prepareBorrowAction({
       _tag: "OpenPositionDraft",
       address,
       borrowAmount: new BigNumber(78),
@@ -295,13 +295,13 @@ describe("Borrow action preparation", () => {
       tokenBalances: feeTokenBalances,
     });
 
-    expect(blocked).toMatchObject({
-      _tag: "Blocked",
+    expect(warned).toMatchObject({
+      _tag: "Ready",
       projection: {
         collateralUsd: new BigNumber(95),
         financials: { projectedCollateralUsd: new BigNumber(95) },
       },
-      reasons: ["RiskCapacityExceeded"],
+      warnings: ["RiskCapacityExceeded"],
     });
 
     const ready = prepareBorrowAction({
@@ -396,7 +396,7 @@ describe("Borrow action preparation", () => {
     }
   );
 
-  it("returns every applicable semantic block without constructing a review", () => {
+  it("returns every applicable semantic warning with a review", () => {
     const result = prepareBorrowAction({
       _tag: "OpenPositionDraft",
       address,
@@ -410,17 +410,17 @@ describe("Borrow action preparation", () => {
     });
 
     expect(result).toMatchObject({
-      _tag: "Blocked",
-      reasons: [
+      _tag: "Ready",
+      warnings: [
         "AmountExceedsAvailableLiquidity",
         "AmountExceedsWalletBalance",
         "RiskCapacityExceeded",
       ],
     });
-    expect("review" in result).toBe(false);
+    expect("review" in result).toBe(true);
   });
 
-  it("blocks an exact Action Command amount above known risk capacity", () => {
+  it("warns for an exact Action Command amount above known risk capacity", () => {
     const precisionMarket = {
       ...market,
       collateralTokens: [
@@ -471,12 +471,12 @@ describe("Borrow action preparation", () => {
     });
 
     expect(result).toMatchObject({
-      _tag: "Blocked",
-      reasons: ["RiskCapacityExceeded"],
+      _tag: "Ready",
+      warnings: ["RiskCapacityExceeded"],
     });
   });
 
-  it("blocks a new debt amount below the market minimum", () => {
+  it("warns when new debt is below the market minimum", () => {
     const minimumMarket = { ...market, minLoan: new BigNumber(10) };
     const result = prepareBorrowAction({
       _tag: "OpenPositionDraft",
@@ -491,12 +491,12 @@ describe("Borrow action preparation", () => {
     });
 
     expect(result).toMatchObject({
-      _tag: "Blocked",
-      reasons: ["ProjectedDebtBelowMarketMinimum"],
+      _tag: "Ready",
+      warnings: ["ProjectedDebtBelowMarketMinimum"],
     });
   });
 
-  it("keeps Risk Unavailable visible and nonblocking", () => {
+  it("keeps Risk Unavailable internal and nonblocking", () => {
     const unavailableSnapshot = {
       ...accountSnapshot,
       supplyBalances: accountSnapshot.supplyBalances.map((balance) => ({
@@ -696,7 +696,7 @@ describe("Borrow action preparation", () => {
     }
   });
 
-  it("preserves unavailable wallet-balance policy while blocking known limits", () => {
+  it("preserves unavailable wallet-balance policy while warning on known limits", () => {
     const context = {
       action: repayAction,
       debtBalance,
@@ -734,12 +734,12 @@ describe("Borrow action preparation", () => {
 
     expect(unknownBalance._tag).toBe("Ready");
     expect(knownInsufficientBalance).toMatchObject({
-      _tag: "Blocked",
-      reasons: ["AmountExceedsWalletBalance"],
+      _tag: "Ready",
+      warnings: ["AmountExceedsWalletBalance"],
     });
   });
 
-  it("blocks a repayment that leaves debt below the market minimum", () => {
+  it("warns when repayment leaves debt below the market minimum", () => {
     const minimumMarket = { ...market, minLoan: new BigNumber(10) };
     const minimumPosition = deriveBorrowPositions({
       integrationAccountSnapshots: [{ accountSnapshot, integration }],
@@ -764,8 +764,8 @@ describe("Borrow action preparation", () => {
     });
 
     expect(result).toMatchObject({
-      _tag: "Blocked",
-      reasons: ["RemainingDebtBelowMarketMinimum"],
+      _tag: "Ready",
+      warnings: ["RemainingDebtBelowMarketMinimum"],
     });
   });
 
@@ -864,12 +864,12 @@ describe("Borrow action preparation", () => {
       },
     });
     expect(above).toMatchObject({
-      _tag: "Blocked",
-      reasons: ["AmountExceedsPositionBalance"],
+      _tag: "Ready",
+      warnings: ["AmountExceedsPositionBalance"],
     });
   });
 
-  it("reports both balance and Risk Position withdrawal blocks", () => {
+  it("reports both balance and Risk Position withdrawal warnings", () => {
     const token = {
       action: withdrawAction,
       availableAmount: new BigNumber("0.5"),
@@ -889,12 +889,12 @@ describe("Borrow action preparation", () => {
     });
 
     expect(result).toMatchObject({
-      _tag: "Blocked",
-      reasons: ["AmountExceedsPositionBalance", "RiskCapacityExceeded"],
+      _tag: "Ready",
+      warnings: ["AmountExceedsPositionBalance", "RiskCapacityExceeded"],
     });
   });
 
-  it("blocks a collateral toggle when Risk Position rejects it", () => {
+  it("warns on a collateral toggle when Risk Position rejects it", () => {
     const result = prepareBorrowAction({
       _tag: "CollateralToggleIntent",
       address,
@@ -907,10 +907,10 @@ describe("Borrow action preparation", () => {
     });
 
     expect(result).toMatchObject({
-      _tag: "Blocked",
-      reasons: ["RiskCapacityExceeded"],
+      _tag: "Ready",
+      warnings: ["RiskCapacityExceeded"],
     });
-    expect("review" in result).toBe(false);
+    expect("review" in result).toBe(true);
   });
 
   it("creates a collateral-toggle review when Risk Position allows it", () => {

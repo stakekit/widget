@@ -154,7 +154,7 @@ const emptyPosition: PositionDto = {
 };
 
 describe("Borrow position details", () => {
-  it("warns without blocking when withdraw risk is unavailable", async ({
+  it("omits unavailable withdraw risk without blocking review", async ({
     worker,
   }) => {
     worker.use(
@@ -195,20 +195,25 @@ describe("Borrow position details", () => {
 
     await userEvent.click(app.getByText("Manage"));
     await userEvent.click(app.getByText("WETH/USDC"));
+    await expect
+      .element(app.getByText("Health factor"))
+      .not.toBeInTheDocument();
+    await expect
+      .element(app.getByText("Loan to value"))
+      .not.toBeInTheDocument();
     await app.getByTestId("borrow-position-action__withdraw").click();
     await userEvent.click(app.getByTestId("number-input"));
-    await userEvent.keyboard("0.1");
+    await userEvent.keyboard("0.6");
 
     await expect
       .element(app.getByText("Projected risk unavailable"))
+      .not.toBeInTheDocument();
+    await expect
+      .element(app.getByText("Amount exceeds withdrawable balance."))
       .toBeInTheDocument();
     await expect
-      .element(
-        app.getByText(
-          /Risk information is unavailable for this collateral combination/
-        )
-      )
-      .toBeInTheDocument();
+      .element(app.getByTestId("number-input"))
+      .not.toHaveAttribute("aria-invalid", "true");
     await expect
       .element(app.getByRole("button", { name: "Review borrow" }))
       .toBeEnabled();
@@ -356,7 +361,17 @@ describe("Borrow position details", () => {
       .toBeInTheDocument();
     await expect
       .element(app.getByTestId("borrow-position-action__disableCollateral"))
-      .toBeInTheDocument();
+      .not.toBeInTheDocument();
+    await app.getByRole("button", { name: "Details" }).click();
+    await expect
+      .element(app.getByTestId("borrow-collateral-toggle__disableCollateral"))
+      .toHaveAttribute("aria-checked", "true");
+    await app
+      .getByTestId("borrow-collateral-toggle__disableCollateral")
+      .click();
+    await expect.element(app.getByText("Review borrow")).toBeInTheDocument();
+    await app.getByRole("button", { name: "Back to position" }).click();
+    await expect.element(app.getByText("Actions")).toBeInTheDocument();
 
     await app.getByTestId("borrow-position-action__withdraw").click();
 
@@ -374,13 +389,8 @@ describe("Borrow position details", () => {
       .element(app.getByRole("button", { name: "Back to position" }))
       .toBeInTheDocument();
 
-    const backToPosition = app.container.querySelector<HTMLButtonElement>(
-      '[aria-label="Back to position"]'
-    );
-    expect(backToPosition).not.toBeNull();
     await expect.element(app.getByText("Borrow details")).toBeInTheDocument();
-
-    backToPosition!.click();
+    await app.getByRole("button", { name: "Back to position" }).click();
 
     await expect.element(app.getByText("Actions")).toBeInTheDocument();
 

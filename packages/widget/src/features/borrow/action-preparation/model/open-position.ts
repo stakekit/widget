@@ -7,8 +7,8 @@ import {
 import { makeOpenPositionFacts, toBorrowTransactionFlowReview } from "./review";
 import { toBorrowRiskProjection } from "./risk-projection";
 import type {
-  BorrowActionBlockReason,
   BorrowActionPreparation,
+  BorrowConstraintWarning,
   OpenPositionDraft,
   OpenPositionFinancialFacts,
   OpenPositionProjection,
@@ -119,15 +119,15 @@ export const prepareOpenPositionAction = (
     return { _tag: "Idle", projection };
   }
 
-  const reasons: BorrowActionBlockReason[] = [];
+  const warnings: BorrowConstraintWarning[] = [];
   if (executableBorrowAmount.gt(borrowMaxAmount)) {
-    reasons.push("AmountExceedsAvailableLiquidity");
+    warnings.push("AmountExceedsAvailableLiquidity");
   }
   if (executableCollateralAmount.gt(collateralMaxAmount)) {
-    reasons.push("AmountExceedsWalletBalance");
+    warnings.push("AmountExceedsWalletBalance");
   }
   if (assessment.decision === "block") {
-    reasons.push("RiskCapacityExceeded");
+    warnings.push("RiskCapacityExceeded");
   }
   const existingDebtAmount =
     marketPosition?.balances.debt?.balance ?? exactZero();
@@ -139,18 +139,7 @@ export const prepareOpenPositionAction = (
       minimum: market.minLoan ?? exactZero(),
     })
   ) {
-    reasons.push("ProjectedDebtBelowMarketMinimum");
-  }
-
-  if (reasons.length > 0) {
-    return {
-      _tag: "Blocked",
-      projection,
-      reasons: reasons as [
-        BorrowActionBlockReason,
-        ...BorrowActionBlockReason[],
-      ],
-    };
+    warnings.push("ProjectedDebtBelowMarketMinimum");
   }
 
   const integration = integrations.find(
@@ -168,6 +157,7 @@ export const prepareOpenPositionAction = (
     projectedDebtUsd,
     providerName: integration?.name ?? market.integrationId,
     risk,
+    warnings,
   } satisfies PreparedActionCommonFacts & OpenPositionFinancialFacts;
   const facts = makeOpenPositionFacts({
     borrowAmount: executableBorrowAmount,
@@ -183,5 +173,6 @@ export const prepareOpenPositionAction = (
     _tag: "Ready",
     projection,
     review: toBorrowTransactionFlowReview(facts),
+    warnings,
   };
 };

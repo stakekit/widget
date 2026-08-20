@@ -9,7 +9,6 @@ import {
   walletScopeAtom,
 } from "../../wallet/index";
 import type { ActivityActionItem } from "../model/activity-action";
-import { getActivityActionTokenSymbol } from "../model/activity-action-list-item";
 import type { ActivityFilter, ActivityFilterOption } from "../model/filters";
 import { activityFilterAtom } from "./filter";
 import {
@@ -146,10 +145,7 @@ export const projectActivityPageView = ({
   }
 
   const batches = getPullResultItems(actionsResult);
-  const actions = EArray.filter(
-    EArray.flatMap(batches, (batch) => batch.actions),
-    (action) => getActivityActionTokenSymbol(action) !== null
-  );
+  const actions = EArray.flatMap(batches, (batch) => batch.actions);
 
   if (
     (AsyncResult.isInitial(actionsResult) || actionsResult.waiting) &&
@@ -238,6 +234,14 @@ function resolveActivityPageResources(context: Atom.FnContext) {
   });
   const actionsKey = new ActivityActionsKey({ filter: selectedFilter, scope });
   const actions = activityActionsPullAtom(actionsKey);
+
+  for (const option of getVisibleFilterOptions(filterOptionsResult)) {
+    context(
+      activityActionsPullAtom(
+        new ActivityActionsKey({ filter: option.filter, scope })
+      )
+    );
+  }
 
   return {
     actions,

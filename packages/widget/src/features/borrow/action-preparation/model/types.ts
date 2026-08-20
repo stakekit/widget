@@ -11,7 +11,10 @@ import type { BorrowNetwork } from "../../../../domain/borrow/network";
 import type { BorrowPositions } from "../../../../domain/borrow/positions/borrow-positions";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import type { WalletAddress } from "../../../../domain/identity/identifiers";
-import type { BorrowTransactionFlowReview } from "../../../borrow-transaction-flow/index";
+import type {
+  BorrowConstraintWarning as BorrowFlowConstraintWarning,
+  BorrowTransactionFlowReview,
+} from "../../../borrow-transaction-flow/index";
 import type {
   BorrowCollateralToggleActionContext,
   BorrowRepayActionContext,
@@ -19,13 +22,7 @@ import type {
   BorrowWithdrawTokenOption,
 } from "./action-context";
 
-export type BorrowActionBlockReason =
-  | "AmountExceedsAvailableLiquidity"
-  | "AmountExceedsPositionBalance"
-  | "AmountExceedsWalletBalance"
-  | "ProjectedDebtBelowMarketMinimum"
-  | "RemainingDebtBelowMarketMinimum"
-  | "RiskCapacityExceeded";
+export type BorrowConstraintWarning = BorrowFlowConstraintWarning;
 
 export type BorrowRiskProjection =
   | {
@@ -131,6 +128,7 @@ export type PreparedActionCommonFacts = {
   readonly network: BorrowNetwork;
   readonly providerName: string;
   readonly risk: BorrowRiskProjection;
+  readonly warnings: ReadonlyArray<BorrowConstraintWarning>;
 };
 
 export type OpenPositionFinancialFacts = {
@@ -197,22 +195,13 @@ type IdleBorrowActionPreparation<P> = {
   readonly projection: P;
 };
 
-type BlockedBorrowActionPreparation<P> = {
-  readonly _tag: "Blocked";
-  readonly projection: P;
-  readonly reasons: readonly [
-    BorrowActionBlockReason,
-    ...ReadonlyArray<BorrowActionBlockReason>,
-  ];
-};
-
 type ReadyBorrowActionPreparation<P> = {
   readonly _tag: "Ready";
   readonly projection: P;
   readonly review: BorrowTransactionFlowReview;
+  readonly warnings: ReadonlyArray<BorrowConstraintWarning>;
 };
 
 export type BorrowActionPreparation<P> =
   | IdleBorrowActionPreparation<P>
-  | BlockedBorrowActionPreparation<P>
   | ReadyBorrowActionPreparation<P>;

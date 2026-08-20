@@ -38,21 +38,26 @@ export const useActionListItem = (action: ActivityActionItem) => {
     locale,
     presentationTime,
   });
-  if (!projection) return null;
 
   const title = Match.value(projection.title).pipe(
     Match.when({ _tag: "deposited" }, ({ tokenSymbol }) =>
-      t("activity.item.deposited", { token: tokenSymbol })
+      tokenSymbol
+        ? t("activity.item.deposited", { token: tokenSymbol })
+        : t("activity.item.deposited_without_token")
     ),
     Match.when({ _tag: "withdrew" }, ({ tokenSymbol }) =>
-      t("activity.item.withdrew", { token: tokenSymbol })
+      tokenSymbol
+        ? t("activity.item.withdrew", { token: tokenSymbol })
+        : t("activity.item.withdrew_without_token")
     ),
     Match.when({ _tag: "rewards" }, () => t("activity.item.rewards")),
     Match.when({ _tag: "generic" }, ({ actionLabel, tokenSymbol }) =>
-      t("activity.item.generic", {
-        action: actionLabel,
-        token: tokenSymbol,
-      })
+      tokenSymbol
+        ? t("activity.item.generic", {
+            action: actionLabel,
+            token: tokenSymbol,
+          })
+        : t("activity.item.generic_without_token", { action: actionLabel })
     ),
     Match.exhaustive
   );

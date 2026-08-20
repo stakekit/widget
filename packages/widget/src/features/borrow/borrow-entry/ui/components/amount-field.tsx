@@ -12,48 +12,41 @@ import { MaxButton } from "../../../../../shared/ui/components/max-button";
 import { NumberInput } from "../../../../../shared/ui/components/number-input";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { WarningBox } from "../../../../../shared/ui/primitives/warning-box";
 import * as styles from "../../../amount-input/views";
 
 export const AmountField = ({
   amount,
   balanceLabel,
   highlight = false,
-  isInvalid,
   label,
   onMaxClick,
   onAmountChange,
   tokenSelector,
   usdValue,
-  validationText,
+  warningText,
 }: {
   readonly amount: BigNumber;
   readonly balanceLabel: ReactNode;
   readonly highlight?: boolean;
-  readonly isInvalid?: boolean;
   readonly label: string;
   readonly onMaxClick: (() => void) | null;
   readonly onAmountChange: (amount: BigNumber) => void;
   readonly tokenSelector: ReactNode;
   readonly usdValue: BigNumber;
-  readonly validationText?: string | null;
+  readonly warningText?: string | null;
 }) => (
   <Box display="flex" flexDirection="column" gap="4">
     <Text variant={{ weight: "bold" }}>{label}</Text>
     <Box
       className={clsx(
         styles.amountCard,
-        highlight && styles.amountCardHighlighted,
-        isInvalid && styles.amountCardInvalid
+        highlight && styles.amountCardHighlighted
       )}
       data-rk="borrow-amount-section"
     >
       <Box className={styles.amountCardHeader}>
-        <NumberInput
-          isInvalid={isInvalid}
-          onChange={onAmountChange}
-          shakeOnInvalid
-          value={amount}
-        />
+        <NumberInput onChange={onAmountChange} value={amount} />
 
         {tokenSelector}
       </Box>
@@ -69,11 +62,7 @@ export const AmountField = ({
           {onMaxClick ? <MaxButton onMaxClick={onMaxClick} /> : null}
         </Box>
       </Box>
-      {validationText ? (
-        <Text variant={{ type: "danger", weight: "normal" }}>
-          {validationText}
-        </Text>
-      ) : null}
+      {warningText ? <WarningBox text={warningText} /> : null}
     </Box>
   </Box>
 );

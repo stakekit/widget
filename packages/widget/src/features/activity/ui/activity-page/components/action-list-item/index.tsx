@@ -122,7 +122,7 @@ export const ActionListItem = ({
             {amount ? (
               <Text className={isPositive ? amountPositive : amountNeutral}>
                 {amountSign}
-                {amount} {tokenSymbol}
+                {tokenSymbol ? `${amount} ${tokenSymbol}` : amount}
               </Text>
             ) : null}
 

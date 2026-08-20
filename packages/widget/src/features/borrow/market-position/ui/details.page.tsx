@@ -1,6 +1,7 @@
+import { useAtomSet } from "@effect/atom-react";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
-import { Outlet, useLocation, useNavigate, useParams } from "react-router";
+import { Outlet, useLocation, useParams } from "react-router";
 import { PositionDetailsPane } from "../../../../shared/ui/components/position-details";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { useTrackPage } from "../../../tracking/index";
@@ -11,6 +12,10 @@ import {
   getBorrowPositionActions,
   getBorrowPositionDetailsModel,
 } from "../model/details";
+import {
+  makeBorrowPositionActionRouteKey,
+  startBorrowPositionActionReviewAtom,
+} from "../state/action-form";
 import { BorrowPositionBreadcrumb } from "./components/breadcrumb";
 import { BorrowPositionInfo } from "./components/position-info";
 import {
@@ -35,7 +40,7 @@ export const BorrowPositionDetailsPage = () => {
   const { marketId } = useParams();
   const location = useLocation();
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const startPositionReview = useAtomSet(startBorrowPositionActionReviewAtom);
   const borrowPosition = useBorrowPosition(marketId);
   const position = getPositionFromResult(borrowPosition);
   const model = position
@@ -61,9 +66,8 @@ export const BorrowPositionDetailsPage = () => {
     position,
   };
 
-  const openAction = (action: BorrowPositionAction) => {
-    navigate(`${getBorrowPositionBasePath(marketId)}/action/${action.id}`);
-  };
+  const startCollateralReview = (action: BorrowPositionAction) =>
+    startPositionReview(makeBorrowPositionActionRouteKey(action));
 
   if (isPositionLoading && !hasNestedRoute) {
     return (
@@ -105,7 +109,7 @@ export const BorrowPositionDetailsPage = () => {
         actions={actions}
         content={position && model ? "details" : "fallback"}
         model={model}
-        onActionSelect={openAction}
+        onActionSelect={startCollateralReview}
         position={position}
       />
     );
@@ -114,6 +118,7 @@ export const BorrowPositionDetailsPage = () => {
   return (
     <AnimationPage>
       <SplitView
+        key={hasNestedRoute ? "nested" : "base"}
         primaryBarLabel={t("dashboard.split_view.actions")}
         secondaryBarLabel={t("dashboard.split_view.details")}
         primary={

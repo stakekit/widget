@@ -18,13 +18,13 @@ import {
 export type ActivityDirection = "deposit" | "withdraw" | "rewards" | "other";
 
 type ActivityActionTitle =
-  | { readonly _tag: "deposited"; readonly tokenSymbol: string }
-  | { readonly _tag: "withdrew"; readonly tokenSymbol: string }
+  | { readonly _tag: "deposited"; readonly tokenSymbol: string | null }
+  | { readonly _tag: "withdrew"; readonly tokenSymbol: string | null }
   | { readonly _tag: "rewards" }
   | {
       readonly _tag: "generic";
       readonly actionLabel: string;
-      readonly tokenSymbol: string;
+      readonly tokenSymbol: string | null;
     };
 
 type ActivityPresentationTime = {
@@ -49,7 +49,7 @@ type ActivityActionListItemProjection = {
   readonly showUnavailableYieldDetails: boolean;
   readonly timestamp: ActivityActionTimestamp | null;
   readonly title: ActivityActionTitle;
-  readonly tokenSymbol: string;
+  readonly tokenSymbol: string | null;
 };
 
 const DEPOSIT_ACTIONS = new Set<ActionType>([
@@ -131,14 +131,6 @@ const resolveTokenSymbol = ({
   return getReadableRawTokenSymbol(inputToken?.symbol) ?? yieldTokenSymbol;
 };
 
-export const getActivityActionTokenSymbol = (
-  action: ActivityActionItem
-): string | null =>
-  resolveTokenSymbol({
-    action,
-    direction: getActivityDirection(action.actionData.type),
-  });
-
 const resolveAmountSign = ({
   amount,
   direction,
@@ -159,7 +151,7 @@ const resolveTitle = ({
 }: {
   readonly action: ActivityActionItem;
   readonly direction: ActivityDirection;
-  readonly tokenSymbol: string;
+  readonly tokenSymbol: string | null;
 }): ActivityActionTitle => {
   switch (direction) {
     case "deposit":
@@ -221,14 +213,12 @@ export const projectActivityActionListItem = ({
   readonly action: ActivityActionItem;
   readonly locale: string;
   readonly presentationTime: ActivityPresentationTime | null;
-}): ActivityActionListItemProjection | null => {
+}): ActivityActionListItemProjection => {
   const direction = getActivityDirection(action.actionData.type);
   const tokenSymbol = resolveTokenSymbol({
     action,
     direction,
   });
-  if (!tokenSymbol) return null;
-
   const amount =
     action.actionData.amount == null
       ? null

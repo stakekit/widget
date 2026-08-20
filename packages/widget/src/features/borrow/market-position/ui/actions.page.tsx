@@ -3,7 +3,10 @@ import { useNavigate } from "react-router";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Button } from "../../../../shared/ui/primitives/button";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import type { BorrowPositionAction } from "../model/details";
+import {
+  type BorrowPositionAction,
+  isBorrowCollateralToggleAction,
+} from "../model/details";
 import { BorrowPositionBreadcrumb } from "./components/breadcrumb";
 import { useBorrowPositionContext } from "./context";
 import * as styles from "./styles.css";
@@ -11,7 +14,14 @@ import * as styles from "./styles.css";
 export const BorrowPositionActionsPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { actions, model, position } = useBorrowPositionContext();
+  const {
+    actions: positionActions,
+    model,
+    position,
+  } = useBorrowPositionContext();
+  const actions = positionActions.filter(
+    (action) => !isBorrowCollateralToggleAction(action)
+  );
 
   const onActionSelect = (action: BorrowPositionAction) =>
     navigate(`action/${action.id}`);

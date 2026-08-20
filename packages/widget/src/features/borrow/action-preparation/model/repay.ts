@@ -8,8 +8,8 @@ import {
 import { toBorrowTransactionFlowReview } from "./review";
 import { toBorrowRiskProjection } from "./risk-projection";
 import type {
-  BorrowActionBlockReason,
   BorrowActionPreparation,
+  BorrowConstraintWarning,
   PreparedActionFacts,
   RepayDraft,
   RepayProjection,
@@ -70,12 +70,12 @@ export const prepareRepayAction = (
     return { _tag: "Idle", projection };
   }
 
-  const reasons: BorrowActionBlockReason[] = [];
+  const warnings: BorrowConstraintWarning[] = [];
   if (effectiveAmount.gt(debtBalance.balance)) {
-    reasons.push("AmountExceedsPositionBalance");
+    warnings.push("AmountExceedsPositionBalance");
   }
   if (tokenBalances && effectiveAmount.gt(walletBalance.amountValue)) {
-    reasons.push("AmountExceedsWalletBalance");
+    warnings.push("AmountExceedsWalletBalance");
   }
   if (
     isDebtBelowMarketMinimum({
@@ -83,18 +83,7 @@ export const prepareRepayAction = (
       minimum: position.market.minLoan ?? exactZero(),
     })
   ) {
-    reasons.push("RemainingDebtBelowMarketMinimum");
-  }
-
-  if (reasons.length > 0) {
-    return {
-      _tag: "Blocked",
-      projection,
-      reasons: reasons as [
-        BorrowActionBlockReason,
-        ...BorrowActionBlockReason[],
-      ],
-    };
+    warnings.push("RemainingDebtBelowMarketMinimum");
   }
 
   const facts: PreparedActionFacts = {
@@ -112,11 +101,13 @@ export const prepareRepayAction = (
     providerName: position.integration.name,
     repayAll,
     risk,
+    warnings,
   };
 
   return {
     _tag: "Ready",
     projection,
     review: toBorrowTransactionFlowReview(facts),
+    warnings,
   };
 };

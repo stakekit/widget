@@ -6,13 +6,12 @@ import { Divider } from "../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { PageCtaButton } from "../../../../widget-shell/views";
-import { BorrowNotice } from "../../../action-feedback/views";
 import type { BorrowRepayActionContext } from "../../../action-preparation/index";
 import type { BorrowPositionAction } from "../../model/details";
 import { useBorrowRepayForm } from "../../react/use-action-form";
 import * as styles from "../styles.css";
 import { AmountInputCard } from "./amount-input-card";
-import { getBorrowPositionFormErrorMessage } from "./form-error";
+import { getBorrowPositionFormWarningMessage } from "./form-warning";
 import { useStartBorrowPositionReview } from "./use-start-review";
 
 export const RepayActionForm = ({
@@ -31,7 +30,10 @@ export const RepayActionForm = ({
     return null;
   }
 
-  const error = getBorrowPositionFormErrorMessage({ error: view.error, t });
+  const warning = getBorrowPositionFormWarningMessage({
+    warning: view.warning,
+    t,
+  });
 
   return (
     <Box display="flex" flexDirection="column" gap="4">
@@ -42,19 +44,12 @@ export const RepayActionForm = ({
           symbol: debtBalance.tokenSymbol,
         })}
         disabled={view.repayAll}
-        error={error}
         label={t("dashboard.borrow.position_details.actions.repay")}
         onAmountChange={(amount) => dispatch({ amount, type: "amount/set" })}
         tokenSymbol={debtBalance.tokenSymbol}
         usdValue={view.repayUsd}
+        warning={warning}
       />
-
-      {view.riskStatus === "unavailable" &&
-      (view.repayAll || view.amount.gt(0)) ? (
-        <BorrowNotice title={t("dashboard.borrow.risk_unavailable.title")}>
-          {t("dashboard.borrow.risk_unavailable.description")}
-        </BorrowNotice>
-      ) : null}
 
       <Box className={styles.formCard}>
         <Box className={styles.checkboxRow}>
@@ -81,13 +76,19 @@ export const RepayActionForm = ({
 
         <Divider />
 
-        <DetailRow
-          id="ltv"
-          label={t("dashboard.borrow.form.ltv_ratio")}
-          value={`${formatPercent(view.currentLtv)} -> ${formatPercent(
-            view.projectedLtv
-          )}`}
-        />
+        {view.projectedLtv === null ? null : (
+          <DetailRow
+            id="ltv"
+            label={t("dashboard.borrow.form.ltv_ratio")}
+            value={
+              view.currentLtv === null
+                ? formatPercent(view.projectedLtv)
+                : `${formatPercent(view.currentLtv)} -> ${formatPercent(
+                    view.projectedLtv
+                  )}`
+            }
+          />
+        )}
         <DetailRow
           id="loan"
           label={t("dashboard.borrow.form.loan")}

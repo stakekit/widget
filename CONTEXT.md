@@ -192,8 +192,12 @@ A Risk Position shared by pool Market Positions for one integration and network.
 A Risk Position owned by one isolated market. Its current facts use the market's API-authoritative position state.
 
 **Risk Unavailable**:
-A typed, user-visible result meaning the Widget lacks consistent inputs for a risk projection. It does not block an action; known projected borrow-capacity violations do.
-_Avoid_: Infinite limit, safe fallback
+A typed result meaning the Widget lacks consistent inputs for a risk projection. It neither blocks an action nor becomes warning copy or substitute metric values; only an available Risk Position projection is shown.
+_Avoid_: Infinite limit, safe fallback, user-visible warning, projected-risk banner
+
+**Borrow Constraint Warning**:
+A known liquidity, balance, debt-minimum, or borrow-capacity violation attached to a constructible Action Command for Review. It does not block confirmation; the provider or blockchain makes the authoritative execution decision.
+_Avoid_: Borrow blocker, validation error
 
 ## Portfolio Language
 

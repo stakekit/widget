@@ -283,16 +283,16 @@ export const BorrowReviewPage = () => {
             </Box>
           ) : null}
 
-          {summary.riskStatus === "unavailable" ? (
-            <Box className={styles.formCard}>
+          {summary.warnings.map((warning) => (
+            <Box className={styles.formCard} key={warning}>
               <Text variant={{ weight: "bold" }}>
-                {t("dashboard.borrow.risk_unavailable.title")}
+                {t("dashboard.borrow.review_page.warning_title")}
               </Text>
               <Text variant={{ type: "muted", weight: "normal" }}>
-                {t("dashboard.borrow.risk_unavailable.description")}
+                {t(`dashboard.borrow.review_page.warnings.${warning}`)}
               </Text>
             </Box>
-          ) : null}
+          ))}
 
           <Text variant={{ type: "muted", weight: "normal" }}>
             {t(

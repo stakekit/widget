@@ -1,7 +1,6 @@
-import { useAtom, useAtomValue } from "@effect/atom-react";
+import { useAtom } from "@effect/atom-react";
 import type { BorrowPositionAction } from "../model/details";
 import {
-  borrowCollateralToggleFormAtom,
   borrowRepayFormAtom,
   borrowWithdrawFormAtom,
   makeBorrowPositionActionRouteKey,
@@ -12,8 +11,3 @@ export const useBorrowRepayForm = (action: BorrowPositionAction) =>
 
 export const useBorrowWithdrawForm = (action: BorrowPositionAction) =>
   useAtom(borrowWithdrawFormAtom(makeBorrowPositionActionRouteKey(action)));
-
-export const useBorrowCollateralToggleForm = (action: BorrowPositionAction) =>
-  useAtomValue(
-    borrowCollateralToggleFormAtom(makeBorrowPositionActionRouteKey(action))
-  );

@@ -50,6 +50,11 @@ export type BorrowPositionAction = {
     | "withdraw";
 };
 
+export const isBorrowCollateralToggleAction = (
+  action: BorrowPositionAction
+): boolean =>
+  action.type === "disableCollateral" || action.type === "enableCollateral";
+
 type BorrowPositionActionDescriptor = Omit<BorrowPositionAction, "label">;
 
 const getBorrowWithdrawTokenOptions = (
@@ -227,16 +232,24 @@ export const getBorrowPositionDetailsModel = ({
       subValue: debtBalance?.tokenSymbol,
       value: formatUsd(position.metrics.totalBorrowedUsd),
     },
-    {
-      id: "ltv",
-      label: t("dashboard.borrow.position_details.ltv"),
-      value: formatPercent(currentLtv),
-    },
-    {
-      id: "health-factor",
-      label: t("dashboard.borrow.position_details.health_factor"),
-      value: formatHealthFactor(healthFactor),
-    },
+    ...(currentLtv === null
+      ? []
+      : [
+          {
+            id: "ltv",
+            label: t("dashboard.borrow.position_details.ltv"),
+            value: formatPercent(currentLtv),
+          },
+        ]),
+    ...(healthFactor === null
+      ? []
+      : [
+          {
+            id: "health-factor",
+            label: t("dashboard.borrow.position_details.health_factor"),
+            value: formatHealthFactor(healthFactor),
+          },
+        ]),
   ];
   const breakdownRows: BorrowPositionRow[] = [
     ...supplyBalances.map((balance) => ({

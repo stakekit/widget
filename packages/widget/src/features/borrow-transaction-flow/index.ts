@@ -1,2 +1,5 @@
-export type { BorrowTransactionFlowReview } from "./model/borrow-transaction-flow";
+export type {
+  BorrowConstraintWarning,
+  BorrowTransactionFlowReview,
+} from "./model/borrow-transaction-flow";
 export { startBorrowTransactionFlowAtom } from "./state/atoms/borrow-flow";

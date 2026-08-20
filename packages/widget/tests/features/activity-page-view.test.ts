@@ -234,7 +234,7 @@ describe("Activity page projection", () => {
     });
   });
 
-  it("removes activity actions without a readable token", () => {
+  it("keeps activity actions without a readable token", () => {
     const visible = makeActionItem("visible");
     const hidden = makeUnavailableActionItem("hidden");
 
@@ -249,9 +249,9 @@ describe("Activity page projection", () => {
         walletStatus: "connected",
       })
     ).toMatchObject({
-      actions: [visible],
-      showingCount: 1,
-      total: 1,
+      actions: [visible, hidden],
+      showingCount: 2,
+      total: 2,
       status: "ready",
     });
   });

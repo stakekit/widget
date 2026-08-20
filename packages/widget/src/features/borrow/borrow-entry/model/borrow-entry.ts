@@ -16,8 +16,8 @@ import { exactDecimal, exactZero } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
 import {
-  type BorrowActionBlockReason,
   type BorrowActionPreparation,
+  type BorrowConstraintWarning,
   type BorrowMarketWalletBalances,
   deriveBorrowMarketWalletBalances,
   type OpenPositionProjection,
@@ -57,7 +57,6 @@ type BorrowFormValidation = {
   readonly borrowAmountGreaterThanAvailable: boolean;
   readonly collateralAmountGreaterThanBalance: boolean;
   readonly hasAmounts: boolean;
-  readonly hasValidationError: boolean;
   readonly ltvGreaterThanMax: boolean;
   readonly projectedDebtBelowMinimum: boolean;
 };
@@ -350,19 +349,18 @@ export const resolveBorrowEntryView = ({
   };
   const availableRisk = risk.status === "available" ? risk : null;
   const hasAmounts = borrowAmount.gt(0) || collateralAmount.gt(0);
-  const reasons: ReadonlyArray<BorrowActionBlockReason> =
-    preparation?._tag === "Blocked" ? preparation.reasons : [];
-  const borrowAmountGreaterThanAvailable = reasons.includes(
+  const warnings: ReadonlyArray<BorrowConstraintWarning> =
+    preparation?._tag === "Ready" ? preparation.warnings : [];
+  const borrowAmountGreaterThanAvailable = warnings.includes(
     "AmountExceedsAvailableLiquidity"
   );
-  const collateralAmountGreaterThanBalance = reasons.includes(
+  const collateralAmountGreaterThanBalance = warnings.includes(
     "AmountExceedsWalletBalance"
   );
-  const ltvGreaterThanMax = reasons.includes("RiskCapacityExceeded");
-  const projectedDebtBelowMinimum = reasons.includes(
+  const ltvGreaterThanMax = warnings.includes("RiskCapacityExceeded");
+  const projectedDebtBelowMinimum = warnings.includes(
     "ProjectedDebtBelowMarketMinimum"
   );
-  const hasValidationError = reasons.length > 0;
   const isActionReady =
     preparation?._tag === "Ready" && !AsyncResult.isFailure(marketsResult);
   const projection: BorrowFormProjection = {
@@ -403,7 +401,6 @@ export const resolveBorrowEntryView = ({
       borrowAmountGreaterThanAvailable,
       collateralAmountGreaterThanBalance,
       hasAmounts,
-      hasValidationError,
       ltvGreaterThanMax,
       projectedDebtBelowMinimum,
     },

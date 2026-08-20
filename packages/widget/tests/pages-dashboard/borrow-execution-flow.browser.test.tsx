@@ -112,6 +112,7 @@ const reviewState: BorrowTransactionFlowReview = {
     projectedDebtUsd: "425",
     providerName: "Morpho Blue",
     riskStatus: "unavailable",
+    warnings: [],
   },
 };
 const session: BorrowFlowSession = {
@@ -537,6 +538,7 @@ describe("borrow execution flow component", () => {
           providerName: "Morpho Blue",
           riskStatus: "available",
           projectedLtv: "0.25",
+          warnings: [],
         },
       },
     } as BorrowFlowSession;
@@ -554,7 +556,7 @@ describe("borrow execution flow component", () => {
     await app.unmount();
   });
 
-  it("warns on Review when projected risk is unavailable", async () => {
+  it("omits projected metrics when risk is unavailable", async () => {
     const unavailableSession: BorrowFlowSession = {
       ...session,
       intake: {
@@ -573,15 +575,36 @@ describe("borrow execution flow component", () => {
 
     await expect
       .element(app.getByText("Projected risk unavailable"))
-      .toBeInTheDocument();
+      .not.toBeInTheDocument();
     await expect.element(app.getByText("0.025 cbBTC")).toBeInTheDocument();
     await expect.element(app.getByText("0.475 cbBTC")).toBeInTheDocument();
     await expect
-      .element(
-        app.getByText(
-          /Risk information is unavailable for this collateral combination/
-        )
-      )
+      .element(app.getByRole("button", { name: "Confirm" }))
+      .toBeEnabled();
+
+    await app.unmount();
+  });
+
+  it("shows known constraint warnings without blocking Confirm", async () => {
+    const warnedSession: BorrowFlowSession = {
+      ...session,
+      intake: {
+        ...session.intake,
+        summary: {
+          ...session.intake.summary,
+          warnings: ["RiskCapacityExceeded"],
+        },
+      },
+    };
+    const app = await renderExecution(makeBorrowApi({}), {
+      autoStart: false,
+      reviewElement: <BorrowReviewPage />,
+      session: warnedSession,
+    });
+
+    await expect.element(app.getByText("Review warning")).toBeInTheDocument();
+    await expect
+      .element(app.getByText(/exceeds the currently known borrow capacity/))
       .toBeInTheDocument();
     await expect
       .element(app.getByRole("button", { name: "Confirm" }))

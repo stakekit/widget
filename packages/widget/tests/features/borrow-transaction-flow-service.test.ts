@@ -72,6 +72,7 @@ const intake: BorrowTransactionFlowIntake = {
     projectedDebtUsd: "1",
     providerName: "Provider",
     riskStatus: "unavailable",
+    warnings: [],
   },
 };
 

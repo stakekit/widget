@@ -382,14 +382,14 @@ describe("Borrow Entry atoms", () => {
   });
 
   it.each([
-    { borrowAmount: "5", expectedReady: true, minLoan: null },
-    { borrowAmount: "5", expectedReady: true, minLoan: "0" },
-    { borrowAmount: "10", expectedReady: true, minLoan: "10" },
-    { borrowAmount: "9.99", expectedReady: false, minLoan: "10" },
-    { borrowAmount: "10.01", expectedReady: true, minLoan: "10" },
+    { borrowAmount: "5", expectedWarning: false, minLoan: null },
+    { borrowAmount: "5", expectedWarning: false, minLoan: "0" },
+    { borrowAmount: "10", expectedWarning: false, minLoan: "10" },
+    { borrowAmount: "9.99", expectedWarning: true, minLoan: "10" },
+    { borrowAmount: "10.01", expectedWarning: false, minLoan: "10" },
   ])(
-    "enforces the projected debt floor for minLoan=$minLoan and borrowAmount=$borrowAmount",
-    ({ borrowAmount, expectedReady, minLoan }) => {
+    "warns on the projected debt floor for minLoan=$minLoan and borrowAmount=$borrowAmount",
+    ({ borrowAmount, expectedWarning, minLoan }) => {
       const market = Schema.decodeUnknownSync(Market)({
         ...marketDto,
         minLoan,
@@ -424,9 +424,9 @@ describe("Borrow Entry atoms", () => {
         ]),
       });
 
-      expect(view.isActionReady).toBe(expectedReady);
-      expect(view.validation.projectedDebtBelowMinimum).toBe(!expectedReady);
-      expect(view.preparation?._tag === "Ready").toBe(expectedReady);
+      expect(view.isActionReady).toBe(true);
+      expect(view.validation.projectedDebtBelowMinimum).toBe(expectedWarning);
+      expect(view.preparation?._tag).toBe("Ready");
     }
   );
 
@@ -976,10 +976,10 @@ describe("Borrow Entry atoms", () => {
     expect(view.projection.maxLtv).toEqual(new BigNumber("0.5"));
     expect(view.projection.projectedHealthFactor).toEqual(new BigNumber(1));
     expect(view.validation.ltvGreaterThanMax).toBe(true);
-    expect(view.isActionReady).toBe(false);
+    expect(view.isActionReady).toBe(true);
   });
 
-  it("allows review with an explicit warning when projected risk is unavailable", () => {
+  it("allows review without presenting unavailable projected risk", () => {
     const market = Schema.decodeUnknownSync(Market)({
       ...marketDto,
       collateralTokens: [

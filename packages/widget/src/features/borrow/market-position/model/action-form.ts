@@ -9,15 +9,15 @@ import type {
   BorrowWithdrawTokenOption,
 } from "../../action-preparation/index";
 import {
-  type BorrowActionBlockReason,
   type BorrowActionPreparation,
+  type BorrowConstraintWarning,
   type CollateralToggleProjection,
   prepareBorrowAction,
   type RepayProjection,
   type WithdrawProjection,
 } from "../../action-preparation/index";
 
-export type BorrowPositionActionFormError =
+export type BorrowPositionActionFormWarning =
   | "repayDebt"
   | "repayMinimum"
   | "walletBalance"
@@ -64,7 +64,7 @@ export type BorrowRepayFormView = {
   readonly amount: BigNumber;
   readonly canSubmit: boolean;
   readonly currentLtv: BigNumber | null;
-  readonly error: BorrowPositionActionFormError | null;
+  readonly warning: BorrowPositionActionFormWarning | null;
   readonly projectedLtv: BigNumber | null;
   readonly riskStatus: "available" | "unavailable";
   readonly remainingDebt: BigNumber;
@@ -78,7 +78,7 @@ export type BorrowWithdrawFormView = {
   readonly canSubmit: boolean;
   readonly currentCollateralUsd: BigNumber;
   readonly currentLtv: BigNumber | null;
-  readonly error: BorrowPositionActionFormError | null;
+  readonly warning: BorrowPositionActionFormWarning | null;
   readonly projectedCollateralUsd: BigNumber;
   readonly projectedLtv: BigNumber | null;
   readonly riskStatus: "available" | "unavailable";
@@ -161,12 +161,12 @@ export const resolveBorrowRepayFormView = ({
     tokenBalances,
   });
   const { projection } = preparation;
-  const reasons: ReadonlyArray<BorrowActionBlockReason> =
-    preparation._tag === "Blocked" ? preparation.reasons : [];
-  const getError = (): BorrowPositionActionFormError | null => {
-    if (reasons.includes("AmountExceedsPositionBalance")) return "repayDebt";
-    if (reasons.includes("AmountExceedsWalletBalance")) return "walletBalance";
-    if (reasons.includes("RemainingDebtBelowMarketMinimum")) {
+  const warnings: ReadonlyArray<BorrowConstraintWarning> =
+    preparation._tag === "Ready" ? preparation.warnings : [];
+  const getWarning = (): BorrowPositionActionFormWarning | null => {
+    if (warnings.includes("AmountExceedsPositionBalance")) return "repayDebt";
+    if (warnings.includes("AmountExceedsWalletBalance")) return "walletBalance";
+    if (warnings.includes("RemainingDebtBelowMarketMinimum")) {
       return "repayMinimum";
     }
     return null;
@@ -176,7 +176,6 @@ export const resolveBorrowRepayFormView = ({
     amount,
     canSubmit: preparation._tag === "Ready",
     currentLtv: projection.risk.currentLtv,
-    error: getError(),
     preparation,
     projectedLtv:
       projection.risk.status === "available"
@@ -186,6 +185,7 @@ export const resolveBorrowRepayFormView = ({
     repayAll: intent.repayAll,
     repayUsd: projection.repayUsd,
     riskStatus: projection.risk.status,
+    warning: getWarning(),
   };
 };
 
@@ -231,13 +231,13 @@ export const resolveBorrowWithdrawFormView = ({
     token: selectedToken,
   });
   const { projection } = preparation;
-  const reasons: ReadonlyArray<BorrowActionBlockReason> =
-    preparation._tag === "Blocked" ? preparation.reasons : [];
-  const getError = (): BorrowPositionActionFormError | null => {
-    if (reasons.includes("AmountExceedsPositionBalance")) {
+  const warnings: ReadonlyArray<BorrowConstraintWarning> =
+    preparation._tag === "Ready" ? preparation.warnings : [];
+  const getWarning = (): BorrowPositionActionFormWarning | null => {
+    if (warnings.includes("AmountExceedsPositionBalance")) {
       return "withdrawBalance";
     }
-    if (reasons.includes("RiskCapacityExceeded")) return "withdrawLtv";
+    if (warnings.includes("RiskCapacityExceeded")) return "withdrawLtv";
     return null;
   };
 
@@ -246,7 +246,6 @@ export const resolveBorrowWithdrawFormView = ({
     canSubmit: preparation._tag === "Ready",
     currentCollateralUsd: projection.financials.existingCollateralUsd,
     currentLtv: projection.risk.currentLtv,
-    error: getError(),
     preparation,
     projectedCollateralUsd: projection.financials.projectedCollateralUsd,
     projectedLtv:
@@ -255,6 +254,7 @@ export const resolveBorrowWithdrawFormView = ({
         : null,
     riskStatus: projection.risk.status,
     selectedToken,
+    warning: getWarning(),
     withdrawUsd: projection.withdrawUsd,
   };
 };

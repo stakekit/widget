@@ -4,7 +4,6 @@ export {
   amountCardFooter,
   amountCardHeader,
   amountCardHighlighted,
-  amountCardInvalid,
   amountTokenButton,
   amountTokenButtonCaret,
   amountTokenButtonSelectable,

@@ -34,14 +34,8 @@ export const prepareCollateralToggleAction = (
     financials: { existingCollateralUsd },
     risk,
   };
-
-  if (assessment.decision === "block") {
-    return {
-      _tag: "Blocked",
-      projection,
-      reasons: ["RiskCapacityExceeded"],
-    };
-  }
+  const warnings =
+    assessment.decision === "block" ? (["RiskCapacityExceeded"] as const) : [];
 
   return {
     _tag: "Ready",
@@ -61,6 +55,8 @@ export const prepareCollateralToggleAction = (
       network: position.market.network,
       providerName: position.integration.name,
       risk,
+      warnings,
     }),
+    warnings,
   };
 };

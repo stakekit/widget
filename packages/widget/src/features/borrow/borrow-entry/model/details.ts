@@ -92,9 +92,8 @@ export const getBorrowDetailsModel = ({
     debtUsd: borrowUsd,
   });
   const marketRisk = deriveMarketRiskLimits(market);
-  const maxLtv = projection
-    ? projection.maxLtv
-    : (collateralToken?.maxLtv ?? marketRisk.maxLtv);
+  const maxLtv =
+    projection?.maxLtv ?? collateralToken?.maxLtv ?? marketRisk.maxLtv;
   const displayedProjectedLtv = projection?.projectedLtv ?? projectedLtv;
   const existingLtv = projection
     ? deriveLtv({
@@ -134,9 +133,13 @@ export const getBorrowDetailsModel = ({
     },
   ];
 
-  const getLtvValue = (): string => {
-    if (projection?.riskStatus === "unavailable") return "-";
-    if (displayedCollateralUsd.isZero()) return "-";
+  const getLtvValue = (): string | null => {
+    if (
+      projection?.riskStatus === "unavailable" ||
+      displayedCollateralUsd.isZero()
+    ) {
+      return null;
+    }
     if (!hasExistingPosition) {
       return formatPercent(displayedProjectedLtv);
     }
@@ -161,11 +164,15 @@ export const getBorrowDetailsModel = ({
   const loanValue = getLoanValue();
 
   const formRows: BorrowDetailsRow[] = [
-    {
-      id: "ltv",
-      label: t("dashboard.borrow.form.ltv_ratio"),
-      value: ltvValue,
-    },
+    ...(ltvValue === null
+      ? []
+      : [
+          {
+            id: "ltv",
+            label: t("dashboard.borrow.form.ltv_ratio"),
+            value: ltvValue,
+          },
+        ]),
     {
       id: "max-ltv",
       label: t("dashboard.borrow.details.max_ltv"),
@@ -191,11 +198,15 @@ export const getBorrowDetailsModel = ({
       label: t("dashboard.borrow.form.borrow_rate"),
       value: formatPercent(market.borrowRate),
     },
-    {
-      id: "health-factor",
-      label: t("dashboard.borrow.form.health_factor"),
-      value: formatHealthFactor(healthFactor),
-    },
+    ...(healthFactor === null
+      ? []
+      : [
+          {
+            id: "health-factor",
+            label: t("dashboard.borrow.form.health_factor"),
+            value: formatHealthFactor(healthFactor),
+          },
+        ]),
   ];
 
   const marketRows: BorrowDetailsRow[] = [

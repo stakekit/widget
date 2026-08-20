@@ -1,26 +1,10 @@
-import clsx from "clsx";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import * as styles from "../styles.css";
 
-export const BorrowInfoNote = ({
-  children,
-  tone = "default",
-}: {
-  readonly children: string;
-  readonly tone?: "default" | "error";
-}) => (
-  <Box
-    className={clsx(styles.infoNote, tone === "error" && styles.infoNoteError)}
-  >
-    <Text
-      variant={{
-        type: tone === "error" ? "danger" : "muted",
-        weight: "normal",
-      }}
-    >
-      {children}
-    </Text>
+export const BorrowInfoNote = ({ children }: { readonly children: string }) => (
+  <Box className={styles.infoNote}>
+    <Text variant={{ type: "muted", weight: "normal" }}>{children}</Text>
   </Box>
 );
 

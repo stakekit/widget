@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router";
+import { Navigate, useParams } from "react-router";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import type { BorrowPositionAction } from "../model/details";
+import {
+  type BorrowPositionAction,
+  isBorrowCollateralToggleAction,
+} from "../model/details";
 import { BorrowPositionBreadcrumb } from "./components/breadcrumb";
 import { getBorrowPositionBasePath, useBorrowPositionContext } from "./context";
 import { RepayActionForm } from "./forms/repay-action-form";
-import { ToggleCollateralActionForm } from "./forms/toggle-collateral-action-form";
 import { WithdrawActionForm } from "./forms/withdraw-action-form";
 
 const BorrowPositionActionForm = ({
@@ -22,8 +24,9 @@ const BorrowPositionActionForm = ({
       return <RepayActionForm action={action} context={context} />;
     case "withdraw":
       return <WithdrawActionForm action={action} context={context} />;
-    default:
-      return <ToggleCollateralActionForm action={action} context={context} />;
+    case "disableCollateral":
+    case "enableCollateral":
+      return null;
   }
 };
 
@@ -39,6 +42,10 @@ export const BorrowPositionActionPage = () => {
           {t("dashboard.borrow.position_details.empty")}
         </Text>
       );
+    }
+
+    if (isBorrowCollateralToggleAction(action)) {
+      return <Navigate replace to={getBorrowPositionBasePath(marketId)} />;
     }
 
     return <BorrowPositionActionForm action={action} />;

@@ -50,9 +50,12 @@
     "no_previous_activity": "No previous activity",
     "item": {
       "deposited": "Deposited {{token}}",
+      "deposited_without_token": "Deposited",
       "withdrew": "Withdrew {{token}}",
+      "withdrew_without_token": "Withdrew",
       "rewards": "Rewards",
-      "generic": "{{action}} {{token}}"
+      "generic": "{{action}} {{token}}",
+      "generic_without_token": "{{action}}"
     },
     "time": {
       "now": "just now",
@@ -325,7 +328,6 @@
       "title": "Borrow",
       "review": "Review borrow",
       "enter_amounts": "Enter amounts",
-      "fix_errors": "Fix errors",
       "connect_title": "Connect wallet",
       "connect_description": "Connect a wallet to view borrow markets and start a borrow action.",
       "unsupported_network": "Unsupported network",
@@ -337,10 +339,6 @@
       "form_reset": {
         "title": "Borrow form reset",
         "description": "Market availability changed, so the borrow form was reset."
-      },
-      "risk_unavailable": {
-        "title": "Projected risk unavailable",
-        "description": "Risk information is unavailable for this collateral combination. You can continue, but the transaction may be rejected by the provider or onchain."
       },
       "form": {
         "borrow": "Borrow",
@@ -423,6 +421,15 @@
         "projected_health_factor": "Projected health factor",
         "estimated_fee": "Estimated fee",
         "estimated_fee_pending": "Shown in wallet",
+        "warning_title": "Review warning",
+        "warnings": {
+          "AmountExceedsAvailableLiquidity": "The amount exceeds the currently available market liquidity. The provider or blockchain may reject this action.",
+          "AmountExceedsPositionBalance": "The amount exceeds the current position balance. The provider or blockchain may reject this action.",
+          "AmountExceedsWalletBalance": "The amount exceeds the current wallet balance. The provider or blockchain may reject this action.",
+          "ProjectedDebtBelowMarketMinimum": "The resulting debt is below the current market minimum. The provider or blockchain may reject this action.",
+          "RemainingDebtBelowMarketMinimum": "The remaining debt is below the current market minimum. The provider or blockchain may reject this action.",
+          "RiskCapacityExceeded": "This action exceeds the currently known borrow capacity. The provider or blockchain may reject this action."
+        },
         "risk_disclosures": {
           "borrow": "Borrowing increases debt and liquidation risk if collateral value falls.",
           "borrowAndSupply": "Supplying collateral and borrowing changes your LTV and liquidation risk.",

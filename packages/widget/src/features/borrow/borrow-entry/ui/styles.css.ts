@@ -185,10 +185,6 @@ export const infoNote = style([
   },
 ]);
 
-export const infoNoteError = style({
-  borderColor: vars.color.textDanger,
-});
-
 export const detailsHeader = style({
   alignItems: "center",
   display: "flex",
