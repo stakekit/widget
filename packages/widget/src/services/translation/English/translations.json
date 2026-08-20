@@ -26,6 +26,218 @@
     "manage_validators": "Manage validators",
     "fee": "Fee"
   },
+  "errors": {
+    "InvalidArgumentError": {
+      "title": "Invalid Argument",
+      "details": "One or more arguments are invalid for this operation",
+      "solution": "Check the submitted information and try again"
+    },
+    "InvalidAddressError": {
+      "title": "Invalid Address",
+      "details": "The address is invalid or is not supported by the selected network",
+      "solution": "Check the address and network, then try again"
+    },
+    "BlockHeightUnavailableError": {
+      "title": "Block Height Unavailable",
+      "details": "The current block height is temporarily unavailable",
+      "solution": "Try again later or contact StakeKit support"
+    },
+    "MinimumAmountNotReachedError": {
+      "title": "Minimum Amount Not Reached",
+      "details": "The amount is below the minimum required for this operation",
+      "solution": "Increase the amount and try again"
+    },
+    "MaximumAmountExceededError": {
+      "title": "Maximum Amount Exceeded",
+      "details": "The amount exceeds the maximum allowed for this operation",
+      "solution": "Reduce the amount and try again"
+    },
+    "DelegationNotActiveError": {
+      "title": "Delegation Not Active",
+      "details": "The delegation must be active before this operation can be performed",
+      "solution": "Wait for the delegation to become active and try again"
+    },
+    "UnstakeTemporarilyDisabledError": {
+      "title": "Unstaking Temporarily Disabled",
+      "details": "Unstaking is temporarily unavailable for this yield",
+      "solution": "Try again later or contact StakeKit support"
+    },
+    "StakeTemporarilyDisabledError": {
+      "title": "Staking Temporarily Disabled",
+      "details": "Staking is temporarily unavailable for this yield",
+      "solution": "Try again later or contact StakeKit support"
+    },
+    "ValidatorNotActiveError": {
+      "title": "Validator Not Active",
+      "details": "The selected validator is not currently active",
+      "solution": "Select an active validator and try again"
+    },
+    "FigmentValidatorNotExitableError": {
+      "title": "Validator Cannot Exit",
+      "details": "The selected validator is not currently eligible to exit",
+      "solution": "Try again when the validator becomes eligible or contact StakeKit support"
+    },
+    "UnauthorizedError": {
+      "title": "Unauthorized Request",
+      "details": "This request is not authorized",
+      "solution": "Reconnect the wallet and try again or contact StakeKit support"
+    },
+    "TransactionConstructorNotFound": {
+      "title": "Transaction Construction Unsupported",
+      "details": "Transactions cannot currently be constructed for this operation",
+      "solution": "Try again later or contact StakeKit support"
+    },
+    "ShareConversionDidNotConvergeError": {
+      "title": "Share Conversion Failed",
+      "details": "The share amount could not be calculated reliably",
+      "solution": "Try again later or contact StakeKit support"
+    },
+    "RpcTimeoutError": {
+      "title": "Network Request Timed Out",
+      "details": "The blockchain network did not respond in time",
+      "solution": "Try again later or contact StakeKit support"
+    },
+    "WithdrawalLimitExceededError": {
+      "title": "Withdrawal Limit Exceeded",
+      "details": "The requested amount exceeds the current withdrawal limit",
+      "solution": "Reduce the amount or try again later"
+    },
+    "DecommissionedError": {
+      "title": "Service No Longer Available",
+      "details": "This staking service has been decommissioned",
+      "solution": "Select another yield or contact StakeKit support"
+    },
+    "SparkPoolFrozenError": {
+      "title": "Spark Pool Frozen",
+      "details": "The Spark pool is currently frozen and unavailable",
+      "solution": "Try again later or contact StakeKit support"
+    },
+    "SparkTokenPairNotFoundError": {
+      "title": "Spark Token Pair Not Found",
+      "details": "The specified Spark token pair could not be found",
+      "solution": "Try again later or contact StakeKit support"
+    },
+    "Snx420LockupPeriodNotElapsedError": {
+      "title": "Lockup Period Not Complete",
+      "details": "The Synthetix lockup period has not yet elapsed",
+      "solution": "Wait until the lockup period ends and try again"
+    },
+    "ContractFunctionNotFoundError": {
+      "title": "Contract Function Not Found",
+      "details": "The required smart contract function is not available",
+      "solution": "Try again later or contact StakeKit support"
+    },
+    "CardanoRewardAddressNotFoundError": {
+      "title": "Reward Address Not Found",
+      "details": "A Cardano reward address could not be found for this account",
+      "solution": "Check the connected account and try again"
+    },
+    "CardanoStakeAccountNotActiveError": {
+      "title": "Stake Account Not Active",
+      "details": "The Cardano stake account is not active",
+      "solution": "Activate the stake account and try again"
+    },
+    "CardanoNoUtxosFoundError": {
+      "title": "No UTXOs Found",
+      "details": "No spendable Cardano transaction outputs were found",
+      "solution": "Add funds to the account and try again"
+    },
+    "CosmosAccountNotFoundError": {
+      "title": "Cosmos Account Not Found",
+      "details": "The specified Cosmos account could not be found",
+      "solution": "Check the account and try again or contact StakeKit support"
+    },
+    "TonInvalidAddressError": {
+      "title": "Invalid TON Address",
+      "details": "The TON address is invalid",
+      "solution": "Check the address and try again"
+    },
+    "TronInvalidAddressError": {
+      "title": "Invalid Tron Address",
+      "details": "The Tron address is invalid",
+      "solution": "Check the address and try again"
+    },
+    "SolanaUnstakeRequiresFullAmountError": {
+      "title": "Full Unstake Required",
+      "details": "This Solana position can only be unstaked in full",
+      "solution": "Select the full staked amount and try again"
+    },
+    "SolanaUnableToEstimateGasForTransactionError": {
+      "title": "Unable to Estimate Transaction Fee",
+      "details": "The fee for the Solana transaction could not be estimated",
+      "solution": "Try again later or contact StakeKit support"
+    },
+    "SolanaTransactionSimulationError": {
+      "title": "Transaction Simulation Failed",
+      "details": "The Solana transaction failed during simulation",
+      "solution": "Review the transaction and try again or contact StakeKit support"
+    },
+    "SolanaStakeAccountsDeactivationLimitExceeded": {
+      "title": "Stake Account Deactivation Limit Exceeded",
+      "details": "Too many Solana stake accounts would need to be deactivated",
+      "solution": "Reduce the amount or number of stake accounts and try again"
+    },
+    "SolanaMarinadeMinStakeUnavailableError": {
+      "title": "Marinade Minimum Stake Unavailable",
+      "details": "The minimum Marinade stake amount is temporarily unavailable",
+      "solution": "Try again later or contact StakeKit support"
+    },
+    "DriftLendingNoDepositsFoundError": {
+      "title": "No Drift Deposits Found",
+      "details": "No Drift lending deposits were found for this account",
+      "solution": "Check the account and try again"
+    },
+    "DriftLendingUserAccountDoesNotExistError": {
+      "title": "Drift Account Not Found",
+      "details": "A Drift user account does not exist for this wallet",
+      "solution": "Create or initialize the Drift account and try again"
+    },
+    "DriftLendingInsufficientBalanceError": {
+      "title": "Insufficient Drift Balance",
+      "details": "The Drift lending balance is insufficient for this operation",
+      "solution": "Reduce the amount or add funds and try again"
+    },
+    "DriftLendingWithdrawalLimitExceededError": {
+      "title": "Drift Withdrawal Limit Exceeded",
+      "details": "The requested amount exceeds the current Drift withdrawal limit",
+      "solution": "Reduce the amount or try again later"
+    },
+    "DriftLendingInsufficientSolForRentError": {
+      "title": "Insufficient SOL for Account Rent",
+      "details": "There is not enough SOL to fund the account rent required by Drift",
+      "solution": "Add SOL to the account and try again"
+    },
+    "KaminoLendingNoDepositsFoundError": {
+      "title": "No Kamino Deposits Found",
+      "details": "No Kamino lending deposits were found for this account",
+      "solution": "Check the account and try again"
+    },
+    "KaminoLendingInsufficientBalanceError": {
+      "title": "Insufficient Kamino Balance",
+      "details": "The Kamino lending balance is insufficient for this operation",
+      "solution": "Reduce the amount or add funds and try again"
+    },
+    "KaminoLendingInsufficientSolForRentError": {
+      "title": "Insufficient SOL for Account Rent",
+      "details": "There is not enough SOL to fund the account rent required by Kamino Lending",
+      "solution": "Add SOL to the account and try again"
+    },
+    "KaminoVaultNoDepositsFoundError": {
+      "title": "No Kamino Vault Deposits Found",
+      "details": "No Kamino vault deposits were found for this account",
+      "solution": "Check the account and try again"
+    },
+    "KaminoVaultInsufficientBalanceError": {
+      "title": "Insufficient Kamino Vault Balance",
+      "details": "The Kamino vault balance is insufficient for this operation",
+      "solution": "Reduce the amount or add funds and try again"
+    },
+    "KaminoVaultInsufficientSolForRentError": {
+      "title": "Insufficient SOL for Account Rent",
+      "details": "There is not enough SOL to fund the account rent required by Kamino Vaults",
+      "solution": "Add SOL to the account and try again"
+    }
+  },
   "chain_modal": {
     "disabled_chain_info": "Add account"
   },

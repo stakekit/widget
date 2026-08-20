@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import type { SKAppProps } from "../../src/public-api/types";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import type { WidgetConfig } from "../../src/services/config/widget-config-model";
+import translationEN from "../../src/services/translation/English/translations.json";
+import translationFR from "../../src/services/translation/French/translations.json";
 import {
   composeWidgetTranslationResources,
   createWidgetI18nInstance,
@@ -332,6 +334,70 @@ describe("WidgetTranslation", () => {
 });
 
 describe("WidgetTranslation resource ownership", () => {
+  it("defines the same complete local error fallbacks in both languages", () => {
+    expect(Object.keys(translationEN.errors)).toHaveLength(42);
+    expect(Object.keys(translationFR.errors).sort()).toEqual(
+      Object.keys(translationEN.errors).sort()
+    );
+
+    for (const fallback of [
+      ...Object.values(translationEN.errors),
+      ...Object.values(translationFR.errors),
+    ]) {
+      expect(fallback).toEqual({
+        title: expect.any(String),
+        details: expect.any(String),
+        solution: expect.any(String),
+      });
+    }
+  });
+
+  it("uses local error copy only while the API catalog omits the identity", () => {
+    const local = composeWidgetTranslationResources({
+      apiErrors: undefined,
+      customTranslations: undefined,
+      language: "en",
+      variant: "default",
+    });
+    expect(
+      local.en.translation.errors.KaminoLendingInsufficientSolForRentError.title
+    ).toBe("Insufficient SOL for Account Rent");
+
+    const enriched = composeWidgetTranslationResources({
+      apiErrors: {
+        KaminoLendingInsufficientSolForRentError: {
+          title: "REMOTE TITLE",
+          details: "REMOTE DETAILS",
+          solution: "REMOTE SOLUTION",
+        },
+      },
+      customTranslations: {
+        en: {
+          translation: {
+            errors: {
+              KaminoLendingInsufficientSolForRentError: {
+                title: "HOST TITLE",
+              },
+            },
+          },
+        },
+      },
+      language: "en",
+      variant: "default",
+    });
+    expect(
+      enriched.en.translation.errors.KaminoLendingInsufficientSolForRentError
+    ).toEqual({
+      title: "HOST TITLE",
+      details: "REMOTE DETAILS",
+      solution: "REMOTE SOLUTION",
+    });
+    expect(
+      enriched.fr.translation.errors.KaminoLendingInsufficientSolForRentError
+        .title
+    ).toBe("SOL insuffisant pour le loyer du compte");
+  });
+
   it("rebuilds exact resources without mutating canonical translations", () => {
     const customized = composeWidgetTranslationResources({
       apiErrors: undefined,

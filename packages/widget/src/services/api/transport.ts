@@ -9,19 +9,12 @@ import * as BorrowApi from "../../generated/api/borrow-client";
 import * as LegacyApi from "../../generated/api/legacy";
 import * as YieldApi from "../../generated/api/yield";
 import { WidgetConfigService } from "../config/widget-config";
-import { RichErrorService } from "../errors/rich-error-service";
 import { GeoBlockService } from "../geoblocking";
 
 type ApiTransport = {
-  readonly operations: {
-    readonly borrow: BorrowApi.BorrowApi | null;
-    readonly yield: YieldApi.YieldApi;
-  };
-  readonly resources: {
-    readonly borrow: BorrowApi.BorrowApi | null;
-    readonly legacy: LegacyApi.LegacyApi;
-    readonly yield: YieldApi.YieldApi;
-  };
+  readonly borrow: BorrowApi.BorrowApi | null;
+  readonly legacy: LegacyApi.LegacyApi;
+  readonly yield: YieldApi.YieldApi;
 };
 
 const configureClient = ({
@@ -29,15 +22,11 @@ const configureClient = ({
   baseUrl,
   client,
   geoBlock,
-  publishRichErrors,
-  richErrors,
 }: {
   readonly apiKey: string;
   readonly baseUrl: string;
   readonly client: HttpClient.HttpClient;
   readonly geoBlock: GeoBlockService["Service"];
-  readonly publishRichErrors: boolean;
-  readonly richErrors: RichErrorService["Service"];
 }): HttpClient.HttpClient =>
   client.pipe(
     HttpClient.mapRequest(
@@ -59,13 +48,6 @@ const configureClient = ({
         );
 
         yield* geoBlock.observeResponse({ data, status: response.status });
-
-        if (publishRichErrors) {
-          yield* richErrors.publishResponse({
-            data,
-            url: response.request.url,
-          });
-        }
       })
     )
   );
@@ -75,45 +57,20 @@ const makeApiTransport = Effect.gen(function* () {
   const api = yield* widgetConfig.current;
   const httpClient = yield* HttpClient.HttpClient;
   const geoBlock = yield* GeoBlockService;
-  const richErrors = yield* RichErrorService;
-  const makeClient = ({
-    baseUrl,
-    publishRichErrors,
-  }: {
-    readonly baseUrl: string;
-    readonly publishRichErrors: boolean;
-  }) =>
+  const makeClient = (baseUrl: string) =>
     configureClient({
       apiKey: api.apiKey,
       baseUrl,
       client: httpClient,
       geoBlock,
-      publishRichErrors,
-      richErrors,
     });
-  const makeBorrowClient = (publishRichErrors: boolean) =>
-    api.borrowApiUrl
-      ? BorrowApi.make(
-          makeClient({ baseUrl: api.borrowApiUrl, publishRichErrors })
-        )
-      : null;
 
   return {
-    operations: {
-      borrow: makeBorrowClient(true),
-      yield: YieldApi.make(
-        makeClient({ baseUrl: api.yieldsApiUrl, publishRichErrors: true })
-      ),
-    },
-    resources: {
-      borrow: makeBorrowClient(false),
-      legacy: LegacyApi.make(
-        makeClient({ baseUrl: api.baseUrl, publishRichErrors: false })
-      ),
-      yield: YieldApi.make(
-        makeClient({ baseUrl: api.yieldsApiUrl, publishRichErrors: false })
-      ),
-    },
+    borrow: api.borrowApiUrl
+      ? BorrowApi.make(makeClient(api.borrowApiUrl))
+      : null,
+    legacy: LegacyApi.make(makeClient(api.baseUrl)),
+    yield: YieldApi.make(makeClient(api.yieldsApiUrl)),
   } satisfies ApiTransport;
 });
 

@@ -1,5 +1,6 @@
 import { Effect, Layer } from "effect";
 import { WidgetConfigService } from "../config/widget-config";
+import { RichErrorService } from "../errors/rich-error-service";
 import { WalletBootstrapSource } from "../wallet/wallet-bootstrap-source";
 import { makeBorrowOperations } from "./borrow-operations";
 import { makeBorrowResourceSource } from "./borrow-resource-source";
@@ -24,12 +25,14 @@ export type ApiServices =
 const borrowOperationsLayer = Layer.effect(
   BorrowOperations,
   Effect.gen(function* () {
-    const { operations } = yield* ApiTransportService;
+    const transport = yield* ApiTransportService;
+    const richErrors = yield* RichErrorService;
     const widgetConfig = yield* WidgetConfigService;
 
     return makeBorrowOperations(
-      operations.borrow,
-      (yield* widgetConfig.current).borrowEnabled
+      transport.borrow,
+      (yield* widgetConfig.current).borrowEnabled,
+      richErrors
     );
   })
 );
@@ -37,11 +40,11 @@ const borrowOperationsLayer = Layer.effect(
 const borrowResourceSourceLayer = Layer.effect(
   BorrowResourceSource,
   Effect.gen(function* () {
-    const { resources } = yield* ApiTransportService;
+    const transport = yield* ApiTransportService;
     const widgetConfig = yield* WidgetConfigService;
 
     return makeBorrowResourceSource(
-      resources.borrow,
+      transport.borrow,
       (yield* widgetConfig.current).borrowEnabled
     );
   })
@@ -49,22 +52,24 @@ const borrowResourceSourceLayer = Layer.effect(
 
 const legacyResourceSourceLayer = Layer.effect(
   LegacyResourceSource,
-  Effect.map(ApiTransportService, ({ resources }) =>
-    makeLegacyResourceSource(resources.legacy)
+  Effect.map(ApiTransportService, (transport) =>
+    makeLegacyResourceSource(transport.legacy)
   )
 );
 
 const yieldOperationsLayer = Layer.effect(
   YieldOperations,
-  Effect.map(ApiTransportService, ({ operations }) =>
-    makeYieldOperations(operations.yield)
-  )
+  Effect.gen(function* () {
+    const transport = yield* ApiTransportService;
+    const richErrors = yield* RichErrorService;
+    return makeYieldOperations(transport.yield, richErrors);
+  })
 );
 
 const yieldResourceSourceLayer = Layer.effect(
   YieldResourceSource,
-  Effect.map(ApiTransportService, ({ resources }) =>
-    makeYieldResourceSource(resources.yield)
+  Effect.map(ApiTransportService, (transport) =>
+    makeYieldResourceSource(transport.yield)
   )
 );
 

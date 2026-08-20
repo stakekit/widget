@@ -1,56 +1,64 @@
 import { Effect, Option, Schema } from "effect";
 import { RichError } from "../errors/rich-error";
+import type { RichErrorService } from "../errors/rich-error-service";
 import {
   ApiRequestError,
   InputValidationError,
   ResponseDecodeError,
 } from "./resource-sources";
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
+const Request = Schema.Struct({ url: Schema.String });
+const DirectApiFailure = Schema.Struct({
+  cause: Schema.Unknown,
+  request: Request,
+});
+const EncodedResponseFailure = Schema.Struct({
+  reason: Schema.Struct({
+    description: Schema.String,
+    response: Schema.Struct({ request: Request }),
+  }),
+});
+const EncodedRequestFailure = Schema.Struct({
+  reason: Schema.Struct({
+    description: Schema.String,
+    request: Request,
+  }),
+});
 
-const requestUrlFrom = (value: unknown): string | null => {
-  if (!isRecord(value)) return null;
-
-  if (isRecord(value.request) && typeof value.request.url === "string") {
-    return value.request.url;
-  }
-
-  if (isRecord(value.response)) {
-    const responseUrl = requestUrlFrom(value.response);
-    if (responseUrl) return responseUrl;
-  }
-
-  return isRecord(value.reason) ? requestUrlFrom(value.reason) : null;
-};
-
-const decodeRichError = (value: unknown): RichError | null => {
-  if (isRecord(value) && value.type === "GEO_LOCATION") return null;
-
-  return Schema.decodeUnknownOption(RichError)(value).pipe(Option.getOrNull);
-};
+const decodeDescription = (description: string): RichError | null =>
+  Schema.decodeUnknownOption(Schema.fromJsonString(RichError))(
+    description
+  ).pipe(Option.getOrNull);
 
 const richErrorFrom = (cause: unknown): RichError | null => {
-  const url = requestUrlFrom(cause);
-  if (url?.includes("gas-estimate")) return null;
+  const direct = Schema.decodeUnknownOption(DirectApiFailure)(cause).pipe(
+    Option.getOrNull
+  );
+  if (direct) {
+    return direct.request.url.includes("gas-estimate")
+      ? null
+      : Schema.decodeUnknownOption(RichError)(direct.cause).pipe(
+          Option.getOrNull
+        );
+  }
 
-  if (!isRecord(cause)) return null;
+  const responseFailure = Schema.decodeUnknownOption(EncodedResponseFailure)(
+    cause
+  ).pipe(Option.getOrNull);
+  if (responseFailure) {
+    return responseFailure.reason.response.request.url.includes("gas-estimate")
+      ? null
+      : decodeDescription(responseFailure.reason.description);
+  }
 
-  const decodedCause = decodeRichError(cause.cause);
-  if (decodedCause) return decodedCause;
+  const requestFailure = Schema.decodeUnknownOption(EncodedRequestFailure)(
+    cause
+  ).pipe(Option.getOrNull);
+  if (!requestFailure) return null;
 
-  const description =
-    isRecord(cause.reason) && typeof cause.reason.description === "string"
-      ? cause.reason.description
-      : null;
-
-  if (!description) return null;
-
-  const parsed = Schema.decodeUnknownOption(
-    Schema.fromJsonString(Schema.Unknown)
-  )(description).pipe(Option.getOrNull);
-
-  return decodeRichError(parsed);
+  return requestFailure.reason.request.url.includes("gas-estimate")
+    ? null
+    : decodeDescription(requestFailure.reason.description);
 };
 
 export const withApiRequestError = (operation: string) =>
@@ -66,6 +74,17 @@ export const withApiRequestError = (operation: string) =>
       )
     );
   };
+
+export const presentApiRequestError =
+  (richErrors: RichErrorService["Service"]) =>
+  <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+    effect.pipe(
+      Effect.tapError((error) =>
+        Schema.is(ApiRequestError)(error)
+          ? richErrors.present(error)
+          : Effect.void
+      )
+    );
 
 export const withResponseDecodeError = (operation: string) =>
   function mapResponseDecodeError<A, R>(

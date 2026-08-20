@@ -148,6 +148,22 @@ _Avoid_: Validators config, validator filter
 A validator that satisfies the selected yield's requirements and its current Validator Policy.
 _Avoid_: Available validator, visible validator
 
+**Yield Reward Rate**:
+The current reward rate advertised for a yield, independent of validator choice. APY and APR name its compounding convention, not a separate metric.
+_Avoid_: Average APY, yield APY, APY object
+
+**Validator Reward Rate**:
+The current reward rate belonging to one Eligible Validator.
+_Avoid_: Validator APY, validator APR
+
+**Effective Reward Rate**:
+The reward rate shown for the current Earn Selection: the unweighted mean of Validator Reward Rates on selected validators that have one, or the Yield Reward Rate when none of them have a rate. Selecting validators replaces the Yield Reward Rate entirely, including campaign and protocol components.
+_Avoid_: Displayed APY, selected APY, APY
+
+**Reward Rate History**:
+A yield-scoped time series of Yield Reward Rate snapshots. It is not a series of Validator Reward Rate or Effective Reward Rate.
+_Avoid_: APY graph, APY chart, validator history
+
 **Wallet Scope Owner**:
 The owner identity of a Wallet Scope, consisting only of its network and primary address. Additional-address changes do not change the Wallet Scope Owner.
 _Avoid_: Wallet Scope key, connector identity
@@ -198,6 +214,32 @@ _Avoid_: Infinite limit, safe fallback, user-visible warning, projected-risk ban
 **Borrow Constraint Warning**:
 A known liquidity, balance, debt-minimum, or borrow-capacity violation attached to a constructible Action Command for Review. It does not block confirmation; the provider or blockchain makes the authoritative execution decision.
 _Avoid_: Borrow blocker, validation error
+
+## Error Language
+
+**Rich Error**:
+A Schema-validated, presentable detail attached to an API Request Failure. It carries an API message and optional details; a stable API message may serve as its Rich Error Identity.
+_Avoid_: Error message, exception, toast error
+
+**API Request Failure**:
+A normalized failure of one Effect API request. It may carry one Rich Error and identifies one presentation occurrence across foreground observers.
+_Avoid_: HTTP error, response error, rich error
+
+**Rich Error Identity**:
+The stable API error name used as the lookup key for Error Copy, conventionally an error class name. It is not user-facing copy; arbitrary or dynamic API messages are not identities.
+_Avoid_: Error message, error code, error type
+
+**Error Copy**:
+The user-facing title, details, and solution for one Rich Error Identity.
+_Avoid_: Error translation, error description, error overlay
+
+**Remote Error Catalog**:
+The hosted list of Error Copy keyed by Rich Error Identity. The Widget does not own or deploy it.
+_Avoid_: Remote translations, i18n errors, API error list
+
+**Local Error Fallback**:
+Widget-owned Error Copy used when the Remote Error Catalog omits that Rich Error Identity. Catalog copy for the same identity replaces it; host custom translations replace both.
+_Avoid_: Local override, remote override, error override
 
 ## Portfolio Language
 

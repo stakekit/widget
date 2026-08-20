@@ -15,9 +15,10 @@ export const useRichErrors = (): {
 } => {
   const result = useAtomValue(richErrorAtom);
   const setRichError = useAtomSet(richErrorAtom);
+  const error = AsyncResult.getOrElse(result, () => null);
 
   return {
-    error: AsyncResult.getOrElse(result, () => null),
+    error,
     resetError: () => setRichError(null),
   };
 };

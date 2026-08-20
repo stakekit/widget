@@ -30,7 +30,10 @@ import {
 } from "../../../src/resources/borrow-positions/borrow-positions";
 import { BorrowResourceError as BorrowAtomError } from "../../../src/resources/borrow-resource-error";
 import { makeBorrowResourceSource } from "../../../src/services/api/borrow-resource-source";
-import { BorrowResourceSource } from "../../../src/services/api/resource-sources";
+import {
+  ApiRequestError,
+  BorrowResourceSource,
+} from "../../../src/services/api/resource-sources";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -422,7 +425,10 @@ describe("Borrow Positions resource atoms", () => {
     expect(AsyncResult.getOrThrow(waiting).id).toBe(market.id);
 
     const error = new BorrowAtomError({
-      cause: new Error("refresh failed"),
+      cause: new ApiRequestError({
+        cause: new Error("refresh failed"),
+        operation: "borrow-positions",
+      }),
       operation: "borrow-positions",
     });
     const failureRegistry = AtomRegistry.make({

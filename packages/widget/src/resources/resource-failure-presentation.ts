@@ -1,26 +1,49 @@
-import { Effect, Option } from "effect";
+import { type Cause, Effect, Option, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../app/runtime/app-runtime";
-import type { ApiRequestError } from "../services/api/resource-sources";
+import type { BorrowFeatureDisabled } from "../domain/borrow/availability";
+import {
+  ApiRequestError,
+  type InputValidationError,
+  type MissingBorrowApiConfig,
+  type ResponseDecodeError,
+} from "../services/api/resource-sources";
 import { RichErrorService } from "../services/errors/rich-error-service";
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
+type ResourceCause =
+  | ApiRequestError
+  | BorrowFeatureDisabled
+  | InputValidationError
+  | MissingBorrowApiConfig
+  | ResponseDecodeError;
 
-const findRequestError = (
-  value: unknown,
-  visited = new Set<unknown>()
-): ApiRequestError | null => {
-  if (!isRecord(value) || visited.has(value)) return null;
-  visited.add(value);
-
-  if (value._tag === "ApiRequestError") {
-    return value as unknown as ApiRequestError;
+type ValidResourceError<Error> =
+  Exclude<Error, Cause.NoSuchElementError> extends {
+    readonly cause: infer ErrorCause;
   }
+    ? [ErrorCause] extends [ResourceCause]
+      ? ApiRequestError extends ErrorCause
+        ? Error
+        : never
+      : never
+    : never;
 
-  return "cause" in value ? findRequestError(value.cause, visited) : null;
-};
+type EnforcesPresentableResourceError<Error> = [Error] extends [
+  ValidResourceError<Error>,
+]
+  ? unknown
+  : never;
+
+type ErrorOf<ResourceAtom> =
+  ResourceAtom extends Atom.Atom<
+    AsyncResult.AsyncResult<infer _Value, infer Error>
+  >
+    ? Error
+    : never;
+
+type PresentableAtom<ResourceAtom> = ResourceAtom &
+  EnforcesPresentableResourceError<ErrorOf<ResourceAtom>>;
 
 type PresentableResource<ResourceAtom extends Atom.Atom<unknown>> =
   Atom.WithoutSerializable<ResourceAtom> & {
@@ -36,21 +59,32 @@ type PresentableResourceFamily<
   readonly local: (key: Key) => ResourceAtom;
 };
 
+const ResourceFailure = Schema.Struct({ cause: Schema.Unknown });
+
+const requestErrorFrom = (error: unknown): ApiRequestError | null => {
+  const failure = Schema.decodeUnknownOption(ResourceFailure)(error).pipe(
+    Option.getOrNull
+  );
+
+  return failure && Schema.is(ApiRequestError)(failure.cause)
+    ? failure.cause
+    : null;
+};
+
 export const makePresentableResource = <
   Value,
   Error,
   ResourceAtom extends Atom.Atom<AsyncResult.AsyncResult<Value, Error>>,
 >(
-  local: ResourceAtom
+  local: PresentableAtom<ResourceAtom>
 ): PresentableResource<ResourceAtom> => {
   const reporterAtom = appRuntime.atom((get) => {
-    const error = get(local).pipe(AsyncResult.error, Option.getOrNull);
-    const requestError = findRequestError(error);
+    const requestError = requestErrorFrom(
+      get(local).pipe(AsyncResult.error, Option.getOrNull)
+    );
 
     return requestError
-      ? RichErrorService.use((service) =>
-          service.presentRequestError(requestError)
-        )
+      ? RichErrorService.use((service) => service.present(requestError))
       : Effect.void;
   });
 
@@ -68,7 +102,7 @@ export const makePresentableResourceFamily = <
   Error,
   ResourceAtom extends Atom.Atom<AsyncResult.AsyncResult<Value, Error>>,
 >(
-  local: (key: Key) => ResourceAtom
+  local: (key: Key) => PresentableAtom<ResourceAtom>
 ): PresentableResourceFamily<Key, ResourceAtom> => {
   const foreground = Atom.family(
     (key: Key) => makePresentableResource(local(key)).foreground

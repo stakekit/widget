@@ -32,7 +32,7 @@ const makeRegistry = (baseUrl: string) =>
   });
 
 describe("rich error service", () => {
-  it("publishes, resets, and isolates registry state", async () => {
+  it("presents, resets, and isolates registry state", async () => {
     const first = makeRegistry("https://first.example.com");
     const second = makeRegistry("https://second.example.com");
     const unmountFirst = first.mount(richErrorAtom);
@@ -47,10 +47,13 @@ describe("rich error service", () => {
       );
 
       await Effect.runPromise(
-        firstService.publishResponse({
-          data: { message: "First failure" },
-          url: "https://first.example.com/v1/tokens",
-        })
+        firstService.present(
+          new ApiRequestError({
+            cause: new Error("first"),
+            operation: "test",
+            richError: { message: "First failure" },
+          })
+        )
       );
 
       await vi.waitFor(() => {
@@ -65,12 +68,17 @@ describe("rich error service", () => {
       expect(AsyncResult.getOrThrow(second.get(richErrorAtom))).toBeNull();
 
       await Effect.runPromise(
-        secondService.publishResponse({
-          data: { message: "Ignored wrong origin" },
-          url: "https://first.example.com/v1/tokens",
-        })
+        secondService.present(
+          new ApiRequestError({
+            cause: new Error("second"),
+            operation: "test",
+            richError: { message: "Second failure" },
+          })
+        )
       );
-      expect(AsyncResult.getOrThrow(second.get(richErrorAtom))).toBeNull();
+      expect(AsyncResult.getOrThrow(second.get(richErrorAtom))).toEqual({
+        message: "Second failure",
+      });
     } finally {
       unmountFirst();
       unmountSecond();
@@ -92,12 +100,12 @@ describe("rich error service", () => {
         operation: "yield-directory",
         richError: { message: "First failure" },
       });
-      service.presentRequestError(firstFailure);
+      service.present(firstFailure);
 
       await Effect.runPromise(
         Effect.all([
-          service.presentRequestError(firstFailure),
-          service.presentRequestError(firstFailure),
+          service.present(firstFailure),
+          service.present(firstFailure),
         ])
       );
       expect(AsyncResult.getOrThrow(registry.get(richErrorAtom))).toEqual({
@@ -105,11 +113,11 @@ describe("rich error service", () => {
       });
 
       await Effect.runPromise(service.reset);
-      await Effect.runPromise(service.presentRequestError(firstFailure));
+      await Effect.runPromise(service.present(firstFailure));
       expect(AsyncResult.getOrThrow(registry.get(richErrorAtom))).toBeNull();
 
       await Effect.runPromise(
-        service.presentRequestError(
+        service.present(
           new ApiRequestError({
             cause: new Error("retry"),
             operation: "yield-directory",

@@ -9,10 +9,20 @@ import {
   YieldAction,
 } from "../../domain/action/models";
 import type * as YieldApi from "../../generated/api/yield";
-import { decodeApiResponse, encodeApiRequest } from "./api-operation";
+import type { RichErrorService } from "../errors/rich-error-service";
+import {
+  decodeApiResponse,
+  encodeApiRequest,
+  presentApiRequestError,
+} from "./api-operation";
 import type { ActionPreviewRequest } from "./operations";
 
-export const makeYieldOperations = (yieldApi: YieldApi.YieldApi) => {
+export const makeYieldOperations = (
+  yieldApi: YieldApi.YieldApi,
+  richErrors: RichErrorService["Service"]
+) => {
+  const presentRequestError = presentApiRequestError(richErrors);
+
   const previewAction = Effect.fn("YieldOperations.previewAction")(function* (
     request: ActionPreviewRequest
   ) {
@@ -24,7 +34,10 @@ export const makeYieldOperations = (yieldApi: YieldApi.YieldApi) => {
         )(request.command);
         return yield* yieldApi
           .ActionsControllerEnterYield({ payload })
-          .pipe(decodeApiResponse("action-enter-preview", YieldAction));
+          .pipe(
+            decodeApiResponse("action-enter-preview", YieldAction),
+            presentRequestError
+          );
       }
       case "exit": {
         const payload = yield* encodeApiRequest(
@@ -33,7 +46,10 @@ export const makeYieldOperations = (yieldApi: YieldApi.YieldApi) => {
         )(request.command);
         return yield* yieldApi
           .ActionsControllerExitYield({ payload })
-          .pipe(decodeApiResponse("action-exit-preview", YieldAction));
+          .pipe(
+            decodeApiResponse("action-exit-preview", YieldAction),
+            presentRequestError
+          );
       }
       case "manage": {
         const payload = yield* encodeApiRequest(
@@ -42,7 +58,10 @@ export const makeYieldOperations = (yieldApi: YieldApi.YieldApi) => {
         )(request.command);
         return yield* yieldApi
           .ActionsControllerManageYield({ payload })
-          .pipe(decodeApiResponse("action-manage-preview", YieldAction));
+          .pipe(
+            decodeApiResponse("action-manage-preview", YieldAction),
+            presentRequestError
+          );
       }
     }
   });
@@ -52,7 +71,10 @@ export const makeYieldOperations = (yieldApi: YieldApi.YieldApi) => {
   )(function* (command: TransactionStatusCommand) {
     return yield* yieldApi
       .TransactionsControllerGetTransaction(command.transactionId, undefined)
-      .pipe(decodeApiResponse("get-transaction-status", ActionTransaction));
+      .pipe(
+        decodeApiResponse("get-transaction-status", ActionTransaction),
+        presentRequestError
+      );
   });
 
   const submitTransactionHash = Effect.fn(
@@ -62,7 +84,10 @@ export const makeYieldOperations = (yieldApi: YieldApi.YieldApi) => {
       .TransactionsControllerSubmitTransactionHash(command.transactionId, {
         payload: command.payload,
       })
-      .pipe(decodeApiResponse("submit-transaction-hash", ActionTransaction));
+      .pipe(
+        decodeApiResponse("submit-transaction-hash", ActionTransaction),
+        presentRequestError
+      );
   });
 
   const submitSignedTransaction = Effect.fn(
@@ -72,7 +97,10 @@ export const makeYieldOperations = (yieldApi: YieldApi.YieldApi) => {
       .TransactionsControllerSubmitTransaction(command.transactionId, {
         payload: command.payload,
       })
-      .pipe(decodeApiResponse("submit-signed-transaction", ActionTransaction));
+      .pipe(
+        decodeApiResponse("submit-signed-transaction", ActionTransaction),
+        presentRequestError
+      );
   });
 
   return {

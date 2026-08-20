@@ -119,7 +119,8 @@ describe("application API services", () => {
       {
         ActionsControllerGetActionV1: getAction,
       } as never,
-      true
+      true,
+      { present: () => Effect.void } as never
     );
 
     expect(await Effect.runPromise(operations.getAction("borrow-action"))).toBe(
@@ -134,7 +135,8 @@ describe("application API services", () => {
       {
         ActionsControllerGetActionV1: getAction,
       } as never,
-      false
+      false,
+      { present: () => Effect.void } as never
     );
 
     await expect(
@@ -186,9 +188,12 @@ describe("application API services", () => {
     const action = yieldApiActionDtoFixture();
     const expected = Schema.decodeUnknownSync(YieldAction)(action);
     const enter = vi.fn(() => Effect.succeed(action));
-    const operations = makeYieldOperations({
-      ActionsControllerEnterYield: enter,
-    } as never);
+    const operations = makeYieldOperations(
+      {
+        ActionsControllerEnterYield: enter,
+      } as never,
+      { present: () => Effect.void } as never
+    );
     const command = {
       address,
       arguments: { amount: "1" },

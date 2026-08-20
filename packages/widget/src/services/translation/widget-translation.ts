@@ -33,7 +33,15 @@ declare module "i18next" {
   interface CustomTypeOptions {
     resources: {
       [Key in keyof (typeof localResources)["en"]]: (typeof localResources)["en"][Key] & {
-        errors: Record<string, string>;
+        errors: Record<
+          string,
+          | string
+          | {
+              readonly title: string;
+              readonly details: string;
+              readonly solution: string;
+            }
+        >;
       };
     };
   }

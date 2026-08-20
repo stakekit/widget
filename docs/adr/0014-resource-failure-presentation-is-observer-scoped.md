@@ -12,10 +12,12 @@ the canonical request identity, cache, retry, freshness, invalidation, and
 typed result.
 
 `ApiRequestError` retains a validated `richError` value when one is available.
-Resource transport capabilities normalize this evidence but do not publish it;
-geo-block handling remains transport-owned. Operation transport capabilities
-retain immediate rich-error publication because mutations and transient
-workflow calls are not Authoritative Resources.
+API capabilities normalize this evidence once at the Effect request boundary.
+Resource capabilities do not publish it; their foreground observers decide
+whether to present a request failure. Operation capabilities present request
+failures immediately through a shared Effect combinator because mutations and
+transient workflow calls are not Authoritative Resources. The common HTTP
+transport observes geo-block responses but does not present rich errors.
 
 Foreground presentation is deduplicated by `ApiRequestError` object identity
 within one Application Runtime Generation. Concurrent observers and remounts

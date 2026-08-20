@@ -135,6 +135,10 @@ describe("feature facade architecture", () => {
       join(sourceRoot, "services/api/transport.ts"),
       "utf8"
     );
+    const apiOperation = readFileSync(
+      join(sourceRoot, "services/api/api-operation.ts"),
+      "utf8"
+    );
     const activity = readFileSync(
       join(sourceRoot, "features/activity/state/read-models/activity-feed.ts"),
       "utf8"
@@ -143,10 +147,9 @@ describe("feature facade architecture", () => {
       (path) => readFileSync(path, "utf8").includes("ResourceSource")
     );
 
-    expect(transport).toContain("readonly operations");
-    expect(transport).toContain("readonly resources");
-    expect(transport).toContain("publishRichErrors: false");
-    expect(transport).toContain("publishRichErrors: true");
+    expect(transport).not.toContain("RichErrorService");
+    expect(transport).not.toContain("publishRichErrors");
+    expect(apiOperation).toContain("presentApiRequestError");
     expect(activity).toContain("enrichedYieldOpportunityResourceAtom.local");
     expect(activity).toContain("validatorByAddressAtom.local");
     expect(activity).toContain("activityHistoryPullAtom.foreground");

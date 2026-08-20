@@ -12,7 +12,12 @@ export const RichErrorModal = () => {
   const { i18n, t } = useTranslation();
   const { error, resetError } = useRichErrors();
   const { message, details } = error ?? {};
-  const hasKnownMessage = message ? i18n.exists(`errors.${message}`) : false;
+  const hasKnownMessage = message
+    ? (["title", "details", "solution"] as const).every((field) =>
+        i18n.exists(`errors.${message}.${field}`)
+      )
+    : false;
+  const unknownDetails = hasKnownMessage ? undefined : details?.reason;
 
   useEffect(() => resetError, [resetError]);
 
@@ -78,13 +83,15 @@ export const RichErrorModal = () => {
             <Heading variant={{ level: "h4" }}>
               {t("shared.something_went_wrong")}
             </Heading>
-            <Text
-              variant={{ type: "muted", weight: "normal" }}
-              textAlign="center"
-              marginTop="2"
-            >
-              {message}
-            </Text>
+            {unknownDetails && (
+              <Text
+                variant={{ type: "muted", weight: "normal" }}
+                textAlign="center"
+                marginTop="2"
+              >
+                {unknownDetails}
+              </Text>
+            )}
           </Box>
         )}
       </Box>
