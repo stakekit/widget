@@ -196,7 +196,7 @@ const acquireStartedSession = Effect.fn("test.acquireStartedBorrowSession")(
 );
 
 describe("BorrowTransactionFlowService", () => {
-  it("creates a fresh Session and derives Review navigation from immutable intake", async () => {
+  it("creates a fresh Session and derives Review navigation from a copied intake", async () => {
     const commands: Array<WidgetNavigationCommand> = [];
     const walletState = await Effect.runPromise(
       SubscriptionRef.make(connectedWalletState(walletScope))

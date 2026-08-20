@@ -12,6 +12,10 @@ import {
   isPendingActionAmountRequired,
 } from "../../../domain/action/pending-action";
 import { getYieldActionArg, isERC4626 } from "../../../domain/earn/yield";
+import {
+  exactZero,
+  truncateToTokenDecimals,
+} from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
 import { YieldId } from "../../../domain/identity/identifiers";
 import type { PositionBalancesByType } from "../../../domain/portfolio/positions";
@@ -99,11 +103,13 @@ const setPendingActionAmount = ({
 const projectPendingActionAmount = ({
   balanceAmount,
   current,
+  decimals,
   key,
   pendingAction,
 }: {
   readonly balanceAmount: BigNumber;
   readonly current: ReadonlyMap<PendingActionStateKey, BigNumber>;
+  readonly decimals: number;
   readonly key: PendingActionStateKey;
   readonly pendingAction: PendingAction;
 }): PendingActionAmountProjection => {
@@ -114,23 +120,19 @@ const projectPendingActionAmount = ({
   const config = getPendingActionAmountConfig(pendingAction);
   const configuredMaximum = config?.maximum;
   const maximum =
-    configuredMaximum === null ||
-    configuredMaximum === undefined ||
-    configuredMaximum === -1
+    configuredMaximum == null || configuredMaximum.isEqualTo(-1)
       ? balanceAmount
       : BigNumber.min(balanceAmount, configuredMaximum);
   const configuredMinimum = config?.minimum;
-  const minimum = new BigNumber(
-    configuredMinimum === null ||
-      configuredMinimum === undefined ||
-      configuredMinimum === -1
-      ? 0
-      : configuredMinimum
-  );
-  const amount = config?.forceMax
+  const minimum =
+    configuredMinimum == null || configuredMinimum.isEqualTo(-1)
+      ? exactZero()
+      : configuredMinimum;
+  const selectedAmount = config?.forceMax
     ? balanceAmount
     : (current.get(key) ??
       BigNumber.max(minimum, BigNumber.min(maximum, balanceAmount)));
+  const amount = truncateToTokenDecimals(selectedAmount, decimals);
   const validation = (() => {
     if (!amount.isGreaterThan(0)) return "Required" as const;
     if (amount.isLessThan(minimum)) return "BelowMinimum" as const;
@@ -205,8 +207,8 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
               token: balance.token,
             }),
             {
-              amount: new BigNumber(0),
-              amountUsd: new BigNumber(0),
+              amount: exactZero(),
+              amountUsd: exactZero(),
               token: firstBalance.token,
             }
           ) ?? null)
@@ -231,7 +233,7 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
             selectedAddress: workflow.exitReceiveTokenAddress,
           })
         : null;
-      const unstakeAmount = resolveUnstakeAmount({
+      const resolvedUnstakeAmount = resolveUnstakeAmount({
         canChangeAmount: canChangeUnstakeAmount,
         forceMax: amountConstraints.forceMax,
         liveBalance: reducedStakedOrLiquidBalance?.amount ?? null,
@@ -239,6 +241,13 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
         storedAmount: workflow.unstakeAmount,
         useMax: workflow.unstakeUseMaxAmount,
       });
+      const unstakeDecimals =
+        reducedStakedOrLiquidBalance?.token.decimals ??
+        integrationData?.token.decimals;
+      const unstakeAmount =
+        unstakeDecimals == null
+          ? resolvedUnstakeAmount
+          : truncateToTokenDecimals(resolvedUnstakeAmount, unstakeDecimals);
       const unstakeIsGreaterThanMax = unstakeAmount.isGreaterThan(
         amountConstraints.allowedMaximum
       );
@@ -258,8 +267,9 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
         [...pendingActionIndex].map(([pendingKey, pending]) => [
           pendingKey,
           projectPendingActionAmount({
-            balanceAmount: new BigNumber(pending.balance.amount),
+            balanceAmount: pending.balance.amount,
             current: workflow.pendingActions,
+            decimals: pending.balance.token.decimals,
             key: pendingKey,
             pendingAction: pending.pendingAction,
           }),

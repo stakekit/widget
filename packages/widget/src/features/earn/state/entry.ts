@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
@@ -10,6 +10,7 @@ import {
   getYieldRewardTokens,
   isBittensorStaking,
 } from "../../../domain/earn/yield";
+import { exactDecimal } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import { hasActivePositionForYield } from "../../../domain/portfolio/positions";
@@ -57,7 +58,7 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
   const selectedToken = quote.selectedToken;
   const selectedValidators = get(selectedEarnValidatorsAtom);
   const availableAmount = selectedTokenOption?.amount
-    ? new BigNumber(selectedTokenOption.amount)
+    ? exactDecimal(selectedTokenOption.amount)
     : null;
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;
@@ -124,14 +125,14 @@ export const earnEntryViewAtom = Atom.make((get) => {
     : null;
   const stakeMaxAmount =
     selectedYield && entry.constraints.maximum && !entry.constraints.forceMax
-      ? entry.constraints.allowedMaximum.toNumber()
+      ? entry.constraints.allowedMaximum
       : null;
   const stakeMinAmount =
     selectedYield &&
     entry.constraints.minimum &&
     !entry.constraints.forceMax &&
     entry.constraints.allowedMinimum.isGreaterThan(0)
-      ? entry.constraints.allowedMinimum.toNumber()
+      ? entry.constraints.allowedMinimum
       : null;
 
   return {

@@ -98,7 +98,7 @@ const borrowAction = ({
   });
 
 describe("transaction workflow model", () => {
-  it("captures immutable inputs while retaining structural equality", () => {
+  it("captures distinct top-level inputs while retaining structural equality", () => {
     const classicInput = {
       actionMeta,
       transactions: [classicTransaction("classic-1", "CREATED", 0)],

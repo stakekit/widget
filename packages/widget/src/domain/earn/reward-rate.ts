@@ -1,4 +1,6 @@
+import type BigNumber from "bignumber.js";
 import { Array as EArray, Match } from "effect";
+import { exactZero } from "../finance/exact";
 import type { EarnValidator, EarnYieldWithProvider } from "./models";
 import type { ValidatorKey } from "./validator";
 
@@ -29,7 +31,7 @@ const getSelectedValidators = (
 
 export type RewardRateBreakdownItem = {
   key: RewardRateBreakdownKey;
-  rate: number;
+  rate: BigNumber;
   rewardType: string | undefined;
   isUpTo: boolean;
 };
@@ -87,21 +89,21 @@ const averageRewardRates = (
 
       acc.set(key, {
         component,
-        rate: (prev?.rate ?? 0) + component.rate,
+        rate: (prev?.rate ?? exactZero()).plus(component.rate),
       });
     });
 
     return acc;
-  }, new Map<string, { component: YieldRewardDto; rate: number }>());
+  }, new Map<string, { component: YieldRewardDto; rate: BigNumber }>());
 
   return {
-    total:
-      rewardRates.reduce((acc, rewardRate) => acc + rewardRate.total, 0) /
-      rewardRates.length,
+    total: rewardRates
+      .reduce((acc, rewardRate) => acc.plus(rewardRate.total), exactZero())
+      .dividedBy(rewardRates.length),
     rateType: EArray.headNonEmpty(rewardRates).rateType,
     components: [...componentsByKey.values()].map(({ component, rate }) => ({
       ...component,
-      rate: rate / rewardRates.length,
+      rate: rate.dividedBy(rewardRates.length),
     })),
   };
 };
@@ -122,7 +124,7 @@ export const getRewardRateBreakdown = (
 
     acc.set(key, {
       key,
-      rate: (prev?.rate ?? 0) + component.rate,
+      rate: (prev?.rate ?? exactZero()).plus(component.rate),
       rewardType: prev?.rewardType ?? component.rateType,
       isUpTo: key === "campaign" && !!opts?.showUpToCampaign,
     });
@@ -133,6 +135,6 @@ export const getRewardRateBreakdown = (
   return breakdownOrder.flatMap((key) => {
     const item = buckets.get(key);
 
-    return item && item.rate > 0 ? [item] : [];
+    return item?.rate.isGreaterThan(0) ? [item] : [];
   });
 };

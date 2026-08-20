@@ -130,13 +130,13 @@ describe("borrow market groups", () => {
 
     expect(
       groups.map((group) => ({
-        bestRate: group.bestRate,
+        bestRate: group.bestRate.toString(),
         markets: group.marketItems.length,
         symbol: group.loanToken.symbol,
       }))
     ).toEqual([
-      { bestRate: 0.04, markets: 2, symbol: "USDC" },
-      { bestRate: 0.07, markets: 1, symbol: "USDT" },
+      { bestRate: "0.04", markets: 2, symbol: "USDC" },
+      { bestRate: "0.07", markets: 1, symbol: "USDT" },
     ]);
   });
 

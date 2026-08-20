@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { Cause, Effect, Layer, Option, Schema, SubscriptionRef } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
@@ -816,7 +817,7 @@ describe("Borrow Entry atoms", () => {
     expect(view.projection.existingDebtUsd.toString(10)).toBe("400");
     expect(view.projection.projectedCollateralUsd.toString(10)).toBe("1000");
     expect(view.projection.projectedDebtUsd.toString(10)).toBe("900");
-    expect(view.projection.projectedLtv).toBe(0.9);
+    expect(view.projection.projectedLtv).toEqual(new BigNumber("0.9"));
     expect(view.validation.ltvGreaterThanMax).toBe(true);
   });
 
@@ -887,7 +888,7 @@ describe("Borrow Entry atoms", () => {
     expect(view.projection.existingCollateralUsd.toString(10)).toBe("1000");
     expect(view.projection.existingDebtUsd.toString(10)).toBe("400");
     expect(view.projection.projectedDebtUsd.toString(10)).toBe("600");
-    expect(view.projection.projectedLtv).toBe(0.6);
+    expect(view.projection.projectedLtv).toEqual(new BigNumber("0.6"));
     expect(view.validation.ltvGreaterThanMax).toBe(false);
   });
 
@@ -972,8 +973,8 @@ describe("Borrow Entry atoms", () => {
       tokenBalances: [],
     });
 
-    expect(view.projection.maxLtv).toBe(0.5);
-    expect(view.projection.projectedHealthFactor).toBe(1);
+    expect(view.projection.maxLtv).toEqual(new BigNumber("0.5"));
+    expect(view.projection.projectedHealthFactor).toEqual(new BigNumber(1));
     expect(view.validation.ltvGreaterThanMax).toBe(true);
     expect(view.isActionReady).toBe(false);
   });

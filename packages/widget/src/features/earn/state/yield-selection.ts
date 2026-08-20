@@ -48,7 +48,8 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
       ? [selected, ...availableYields]
       : [...availableYields];
   const all = combined.sort(
-    (left, right) => right.rewardRate.total - left.rewardRate.total
+    (left, right) =>
+      right.rewardRate.total.comparedTo(left.rewardRate.total) ?? 0
   );
   const search = get(earnPageSearchAtom).stake;
   const normalizedSearch = search.toLowerCase();

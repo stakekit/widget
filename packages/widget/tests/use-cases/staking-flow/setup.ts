@@ -347,7 +347,7 @@ export const setup = async (worker: TestWorker) => {
           type: enterAction.type,
           address: body.address,
           amount: body.arguments?.amount ?? null,
-          amountRaw: body.arguments?.amount ?? null,
+          amountRaw: null,
           amountUsd: null,
           transactions: [
             yieldApiTransactionDtoFixture({

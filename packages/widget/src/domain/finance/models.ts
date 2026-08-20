@@ -6,7 +6,7 @@ import { TokenAddress, WalletAddress, YieldId } from "../identity/identifiers";
 import { Network } from "../network/network";
 import { Token } from "../token/token";
 import { AdditionalAddresses } from "../wallet/address";
-import { PrecisionDecimalFromString } from "./scalars";
+import { ExactDecimal } from "./scalars";
 
 export const TokenBalanceScanCommand = Schema.Struct({
   ...LegacyApi.TokenBalanceScanDto.fields,
@@ -20,7 +20,7 @@ export type TokenBalanceScanCommand = typeof TokenBalanceScanCommand.Type;
 
 export const TokenBalance = Schema.Struct({
   ...LegacyApi.TokenBalanceScanResponseDto.fields,
-  amount: PrecisionDecimalFromString,
+  amount: ExactDecimal,
   availableYields: Schema.Array(YieldId),
   token: LegacyApi.TokenDto.pipe(Schema.decodeTo(Token)),
 });

@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 import * as BorrowApi from "../../../generated/api/borrow";
+import { ExactBaseUnitAmount, ExactDecimal } from "../../finance/scalars";
 import {
   ActionId,
   IntegrationId,
@@ -14,20 +15,20 @@ const ActionRawArguments = Schema.Struct({
   marketId: MarketId,
   tokenAddress: Schema.optionalKey(TokenAddress),
   collateralTokenAddress: Schema.optionalKey(TokenAddress),
-  amount: Schema.optionalKey(Schema.FiniteFromString),
-  amountRaw: Schema.optionalKey(Schema.BigIntFromString),
-  collateralAmount: Schema.optionalKey(Schema.FiniteFromString),
-  collateralAmountRaw: Schema.optionalKey(Schema.BigIntFromString),
+  amount: Schema.optionalKey(ExactDecimal),
+  amountRaw: Schema.optionalKey(ExactBaseUnitAmount),
+  collateralAmount: Schema.optionalKey(ExactDecimal),
+  collateralAmountRaw: Schema.optionalKey(ExactBaseUnitAmount),
 });
 
 const ActionMetadata = Schema.Struct({
-  currentHealthFactor: Schema.NullOr(Schema.FiniteFromString),
-  predictedHealthFactor: Schema.NullOr(Schema.FiniteFromString),
-  currentLtv: Schema.FiniteFromString,
-  predictedLtv: Schema.FiniteFromString,
-  liquidationThreshold: Schema.FiniteFromString,
-  predictedTotalSupplyUsd: Schema.FiniteFromString,
-  predictedTotalDebtUsd: Schema.FiniteFromString,
+  currentHealthFactor: Schema.NullOr(ExactDecimal),
+  predictedHealthFactor: Schema.NullOr(ExactDecimal),
+  currentLtv: ExactDecimal,
+  predictedLtv: ExactDecimal,
+  liquidationThreshold: ExactDecimal,
+  predictedTotalSupplyUsd: ExactDecimal,
+  predictedTotalDebtUsd: ExactDecimal,
 });
 
 export const Action = Schema.Struct({

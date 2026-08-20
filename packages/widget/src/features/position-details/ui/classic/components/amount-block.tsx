@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
@@ -43,8 +43,8 @@ type AmountBlockProps = {
       }[];
       canUnstake: boolean;
       unstakeIsGreaterOrLessIntegrationLimitError: boolean;
-      unstakeMaxAmount: string | number | null;
-      unstakeMinAmount: string | number | null;
+      unstakeMaxAmount: BigNumber | null;
+      unstakeMinAmount: BigNumber | null;
       /**
        * When false, the unstake info (withdrawal time, etc.) is not rendered
        * inside the card so it can be placed below the section instead.
@@ -81,13 +81,13 @@ export const AmountBlock = ({
     unstakeProps?.unstakeMinAmount == null
       ? null
       : `${t("shared.min")} ${formatNumber(
-          new BigNumber(unstakeProps.unstakeMinAmount)
+          unstakeProps.unstakeMinAmount
         )} ${unstakeProps.unstakeToken.symbol}`;
   const max =
     unstakeProps?.unstakeMaxAmount == null
       ? null
       : `${t("shared.max")} ${formatNumber(
-          new BigNumber(unstakeProps.unstakeMaxAmount)
+          unstakeProps.unstakeMaxAmount
         )} ${unstakeProps.unstakeToken.symbol}`;
   const hasMinMax =
     !!unstakeProps &&

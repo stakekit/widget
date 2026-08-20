@@ -5,6 +5,7 @@ import type {
   EarnValidator,
   EarnValidatorKey,
 } from "../../../domain/earn/models";
+import { exactZero } from "../../../domain/finance/exact";
 import { widgetConfigAtom } from "../../../features/widget-configuration/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import {
@@ -43,7 +44,9 @@ const resolveValidatorsData = ({
   if (!shouldSort) return [...validators];
   return [...validators].sort(
     (left, right) =>
-      (right.rewardRate?.total ?? 0) - (left.rewardRate?.total ?? 0)
+      (right.rewardRate?.total ?? exactZero()).comparedTo(
+        left.rewardRate?.total ?? exactZero()
+      ) ?? 0
   );
 };
 

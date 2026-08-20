@@ -2,10 +2,10 @@ import type BigNumber from "bignumber.js";
 import { Array as EArray, Option, Result, Schema } from "effect";
 import type { EarnBalance, EarnYieldWithProvider } from "../earn/models";
 import type { ValidatorInput as ValidatorDto } from "../earn/validator";
+import { truncateToTokenDecimals } from "../finance/exact";
 import type { WalletAddress } from "../identity/identifiers";
 import type { YieldBalanceType } from "../portfolio/positions";
-import type { Token } from "../token/token";
-import { tokenString } from "../token/token";
+import { type Token, tokenString } from "../token/token";
 import type { AdditionalAddresses } from "../wallet/address";
 import type { ManageActionCommand, PendingAction } from "./models";
 import {
@@ -102,8 +102,18 @@ export const preparePendingActionCommand = ({
         })
       )
     : null;
+  const executableAmount = truncateToTokenDecimals(
+    stateAmount ?? yieldBalance.amount,
+    yieldBalance.token.decimals
+  );
+  if (
+    isPendingActionAmountRequired(pendingAction) &&
+    !executableAmount.isGreaterThan(0)
+  ) {
+    return Result.fail(new Error("amount below one base unit"));
+  }
   const args = {
-    amount: stateAmount?.toString() ?? yieldBalance.amount.toFixed(),
+    amount: executableAmount.toFixed(),
     ...validatorArgs,
   } satisfies NonNullable<ManageActionCommand["arguments"]>;
 

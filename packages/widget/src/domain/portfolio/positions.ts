@@ -1,7 +1,8 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import type { EarnBalance, EarnPosition, EarnValidator } from "../earn/models";
 import type { YieldRewardRate } from "../earn/reward-rate";
 import type { ValidatorKey } from "../earn/validator";
+import { exactDecimal, exactZero } from "../finance/exact";
 import type { YieldId } from "../identity/identifiers";
 import { equalTokens } from "../token/token";
 
@@ -137,10 +138,10 @@ export const toPositionBalancesByType = (
   balances: ReadonlyArray<EarnBalance>
 ): PositionBalancesByType =>
   balances.reduce((byType, balance) => {
-    const amount = new BigNumber(balance.amount);
+    const amount = exactDecimal(balance.amount);
     if (amount.isZero() || amount.isNaN()) return byType;
 
-    const tokenPriceInUsd = new BigNumber(
+    const tokenPriceInUsd = exactDecimal(
       String(balance.amountUsd ?? 0).replace(/,/g, "")
     );
     const previous = byType.get(balance.type);
@@ -185,7 +186,7 @@ export const getPositionTotalAmount = (
         };
       }
 
-      const balanceAmountUsd = b.amountUsd ?? BigNumber(0);
+      const balanceAmountUsd = b.amountUsd ?? exactZero();
 
       if (baseTokenPriceInUsd && !baseTokenPriceInUsd.isZero()) {
         return {
@@ -201,6 +202,6 @@ export const getPositionTotalAmount = (
         amountUsd: acc.amountUsd.plus(balanceAmountUsd),
       };
     },
-    { amount: new BigNumber(0), amountUsd: new BigNumber(0) }
+    { amount: exactZero(), amountUsd: exactZero() }
   );
 };

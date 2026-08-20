@@ -1,5 +1,6 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import type { Prices } from "../health/models";
+import { exactDecimal } from "./exact";
 
 type PriceLookupToken = {
   readonly symbol: string;
@@ -20,18 +21,18 @@ export const getTokenPriceInUSD = ({
   pricePerShare: string | null;
   prices: Prices;
 }): BigNumber => {
-  const amountBN = BigNumber(amount);
+  const amountBN = exactDecimal(amount);
 
   if (pricePerShare && baseToken) {
-    const baseTokenPrice = new BigNumber(
+    const baseTokenPrice = exactDecimal(
       prices.getByToken(baseToken)?.price ?? 0
     );
-    const pricePerShareBN = BigNumber(pricePerShare);
+    const pricePerShareBN = exactDecimal(pricePerShare);
 
     return amountBN.times(baseTokenPrice).times(pricePerShareBN);
   }
 
-  const tokenPrice = new BigNumber(prices.getByToken(token)?.price ?? 0);
+  const tokenPrice = exactDecimal(prices.getByToken(token)?.price ?? 0);
 
   return amountBN.times(tokenPrice);
 };

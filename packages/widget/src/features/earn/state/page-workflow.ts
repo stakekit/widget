@@ -1,5 +1,5 @@
-import BigNumber from "bignumber.js";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import { exactDecimal } from "../../../domain/finance/exact";
 import { tokenString } from "../../../domain/token/token";
 import { type EarnSelection, earnSelectionViewAtom } from "./earn-selection";
 
@@ -31,6 +31,6 @@ export const earnPageQuoteAtom = Atom.make((context) => {
     selectedStake: view.selection.yield,
     selectedToken: view.selection.token?.token ?? null,
     selectedValidators: view.selection.validators,
-    stakeAmount: new BigNumber(view.form.stakeAmount),
+    stakeAmount: exactDecimal(view.form.stakeAmount),
   };
 }).pipe(Atom.withLabel("earnPageQuoteAtom"));

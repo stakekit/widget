@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import { Trans, useTranslation } from "react-i18next";
 import type { PendingAction } from "../../../../../domain/action/models";
 import type { YieldPendingActionType } from "../../../../../domain/action/pending-action";
@@ -7,6 +7,7 @@ import type {
   EarnYieldWithProvider,
 } from "../../../../../domain/earn/models";
 import { isEthenaUsdeStaking } from "../../../../../domain/earn/yield";
+import { exactDecimal } from "../../../../../domain/finance/exact";
 import { humanizePendingActionType } from "../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
@@ -50,9 +51,7 @@ export const StaticActionBlock = ({
           <Trans
             i18nKey="position_details.available_to"
             values={{
-              amount: defaultFormattedNumber(
-                new BigNumber(yieldBalance.amount)
-              ),
+              amount: defaultFormattedNumber(exactDecimal(yieldBalance.amount)),
               symbol: yieldBalance.token.symbol,
               pendingAction: t(
                 `position_details.pending_action.${

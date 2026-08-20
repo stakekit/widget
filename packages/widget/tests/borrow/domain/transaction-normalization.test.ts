@@ -80,4 +80,25 @@ describe("borrow transaction wallet normalization", () => {
       expect(Exit.isFailure(exit)).toBe(true);
     }
   });
+
+  it("preserves a quoted Base Unit Amount beyond the JavaScript safe integer range", async () => {
+    const serialized = await Effect.runPromise(
+      decodeBorrowTransactionForWallet(
+        transaction(
+          JSON.stringify({
+            data: "0xabcdef",
+            from: address,
+            gasLimit: "21000",
+            to: "0x0000000000000000000000000000000000000002",
+            value: "1000000000000000001",
+          })
+        )
+      )
+    );
+
+    expect(JSON.parse(serialized)).toMatchObject({
+      gasLimit: "21000",
+      value: "1000000000000000001",
+    });
+  });
 });

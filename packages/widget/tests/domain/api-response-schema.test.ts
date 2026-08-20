@@ -5,12 +5,12 @@ import {
   TolerantTopLevelArray,
   TolerantTopLevelRecord,
 } from "../../src/domain/decoding/response-schema";
-import { PrecisionDecimalFromString } from "../../src/domain/finance/scalars";
+import { ExactDecimal } from "../../src/domain/finance/scalars";
 
 const ItemId = Schema.String.pipe(Schema.brand("ResponseSchemaTestItemId"));
 const Item = Schema.Struct({
   id: ItemId,
-  amount: PrecisionDecimalFromString,
+  amount: ExactDecimal,
   nested: Schema.Struct({ enabled: Schema.Boolean }),
 });
 

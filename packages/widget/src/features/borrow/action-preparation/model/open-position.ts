@@ -1,6 +1,9 @@
-import BigNumber from "bignumber.js";
 import { decodeTokenId } from "../../../../domain/borrow/ids";
 import { isDebtBelowMarketMinimum } from "../../../../domain/borrow/risk/minimum-debt";
+import {
+  exactZero,
+  truncateToTokenDecimals,
+} from "../../../../domain/finance/exact";
 import { makeOpenPositionFacts, toBorrowTransactionFlowReview } from "./review";
 import { toBorrowRiskProjection } from "./risk-projection";
 import type {
@@ -26,6 +29,14 @@ export const prepareOpenPositionAction = (
     positions,
     tokenBalances,
   } = input;
+  const executableBorrowAmount = truncateToTokenDecimals(
+    borrowAmount,
+    market.loanToken.decimals
+  );
+  const executableCollateralAmount = truncateToTokenDecimals(
+    collateralAmount,
+    collateralToken.token.decimals
+  );
   const marketPosition =
     positions.items.find((position) => position.id === market.id) ?? null;
   const riskPosition = positions.riskFor(market);
@@ -34,29 +45,34 @@ export const prepareOpenPositionAction = (
     market,
     selectedCollateralTokenId: decodeTokenId(collateralToken.token),
   });
-  const borrowMaxAmount = new BigNumber(market.availableLiquidity);
+  const borrowMaxAmount = market.availableLiquidity;
   const collateralMaxAmount =
-    walletBalances.selectedCollateralToken?.amountValue ?? new BigNumber(0);
-  const borrowUsd = borrowAmount.multipliedBy(market.loanTokenPriceUsd);
-  const collateralFeeAmount = collateralAmount
-    .multipliedBy(market.supplyCollateralFeeBps)
-    .dividedBy(10_000)
-    .decimalPlaces(collateralToken.token.decimals, BigNumber.ROUND_FLOOR);
-  const effectiveCollateralAmount = collateralAmount.minus(collateralFeeAmount);
+    walletBalances.selectedCollateralToken?.amountValue ?? exactZero();
+  const borrowUsd = executableBorrowAmount.multipliedBy(
+    market.loanTokenPriceUsd
+  );
+  const collateralFeeAmount = truncateToTokenDecimals(
+    executableCollateralAmount
+      .multipliedBy(market.supplyCollateralFeeBps)
+      .dividedBy(10_000),
+    collateralToken.token.decimals
+  );
+  const effectiveCollateralAmount =
+    executableCollateralAmount.minus(collateralFeeAmount);
   const collateralUsd = effectiveCollateralAmount.multipliedBy(
     collateralToken.priceUsd
   );
   const changes = [
-    ...(borrowAmount.gt(0)
+    ...(executableBorrowAmount.gt(0)
       ? [
           {
-            amount: borrowAmount,
+            amount: executableBorrowAmount,
             marketId: market.id,
             type: "borrow" as const,
           },
         ]
       : []),
-    ...(collateralAmount.gt(0)
+    ...(executableCollateralAmount.gt(0)
       ? [
           {
             amount: effectiveCollateralAmount,
@@ -71,15 +87,13 @@ export const prepareOpenPositionAction = (
   ];
   const assessment = riskPosition.assess(changes);
   const current = riskPosition.current;
-  const existingCollateralUsd = new BigNumber(current.totalCollateralUsd ?? 0);
-  const existingDebtUsd = new BigNumber(current.totalDebtUsd ?? 0);
-  const projectedCollateralUsd = new BigNumber(
+  const existingCollateralUsd = current.totalCollateralUsd ?? exactZero();
+  const existingDebtUsd = current.totalDebtUsd ?? exactZero();
+  const projectedCollateralUsd =
     assessment.projection.totalCollateralUsd ??
-      existingCollateralUsd.plus(collateralUsd)
-  );
-  const projectedDebtUsd = new BigNumber(
-    assessment.projection.totalDebtUsd ?? existingDebtUsd.plus(borrowUsd)
-  );
+    existingCollateralUsd.plus(collateralUsd);
+  const projectedDebtUsd =
+    assessment.projection.totalDebtUsd ?? existingDebtUsd.plus(borrowUsd);
   const risk = toBorrowRiskProjection({
     current,
     projected: assessment.projection,
@@ -98,32 +112,31 @@ export const prepareOpenPositionAction = (
     },
     risk,
   };
-  const hasBorrow = borrowAmount.gt(0);
-  const hasCollateral = collateralAmount.gt(0);
+  const hasBorrow = executableBorrowAmount.gt(0);
+  const hasCollateral = executableCollateralAmount.gt(0);
 
   if (!hasBorrow && !hasCollateral) {
     return { _tag: "Idle", projection };
   }
 
   const reasons: BorrowActionBlockReason[] = [];
-  if (borrowAmount.gt(borrowMaxAmount)) {
+  if (executableBorrowAmount.gt(borrowMaxAmount)) {
     reasons.push("AmountExceedsAvailableLiquidity");
   }
-  if (collateralAmount.gt(collateralMaxAmount)) {
+  if (executableCollateralAmount.gt(collateralMaxAmount)) {
     reasons.push("AmountExceedsWalletBalance");
   }
   if (assessment.decision === "block") {
     reasons.push("RiskCapacityExceeded");
   }
-  const existingDebtAmount = new BigNumber(
-    marketPosition?.balances.debt?.balance ?? 0
-  );
-  const projectedDebtAmount = existingDebtAmount.plus(borrowAmount);
+  const existingDebtAmount =
+    marketPosition?.balances.debt?.balance ?? exactZero();
+  const projectedDebtAmount = existingDebtAmount.plus(executableBorrowAmount);
   if (
     hasBorrow &&
     isDebtBelowMarketMinimum({
       debt: projectedDebtAmount,
-      minimum: new BigNumber(market.minLoan ?? 0),
+      minimum: market.minLoan ?? exactZero(),
     })
   ) {
     reasons.push("ProjectedDebtBelowMarketMinimum");
@@ -157,8 +170,8 @@ export const prepareOpenPositionAction = (
     risk,
   } satisfies PreparedActionCommonFacts & OpenPositionFinancialFacts;
   const facts = makeOpenPositionFacts({
-    borrowAmount,
-    collateralAmount,
+    borrowAmount: executableBorrowAmount,
+    collateralAmount: executableCollateralAmount,
     collateralFeeAmount,
     collateralToken,
     common: commonFacts,

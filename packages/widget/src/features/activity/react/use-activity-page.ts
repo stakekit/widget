@@ -1,5 +1,5 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import type { ClassicTransactionWorkflowProviderDetail } from "../../../services/transaction-workflow/transaction-workflow-model";
+import type { YieldSummaryProvider } from "../../yield-summary/index";
 import type { ActivityActionItem } from "../model/activity-action";
 import {
   activityPageViewAtom,
@@ -27,7 +27,7 @@ export const useActivityPage = ({
     view,
     onActionSelect: (
       item: ActivityActionItem,
-      providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
+      providersDetails: ReadonlyArray<YieldSummaryProvider>
     ) =>
       startActivityResume({
         item,

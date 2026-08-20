@@ -1,8 +1,9 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { ValidatorInput as ValidatorDto } from "../../../../../domain/earn/validator";
+import { exactDecimal } from "../../../../../domain/finance/exact";
 import type { Token } from "../../../../../domain/token/token";
 import {
   getRewardRateFormatted,
@@ -45,7 +46,7 @@ export const useMetaInfo = ({
   marketCap?: ValidatorSubnet["tvl"];
   tokenSymbol?: ValidatorSubnet["tokenSymbol"];
   stakedBalanceToken: Token | undefined;
-  rewardRate: number | undefined;
+  rewardRate: BigNumber | number | undefined;
   rewardType: string | undefined;
 }) => {
   const { t } = useTranslation();
@@ -64,7 +65,7 @@ export const useMetaInfo = ({
   }>(
     () => ({
       rewardRate:
-        rewardRate && rewardType
+        rewardRate != null && !exactDecimal(rewardRate).isZero() && rewardType
           ? {
               title: getRewardTypeFormatted(rewardType),
               val: getRewardRateFormatted({ rewardRate: rewardRate }),
@@ -75,7 +76,7 @@ export const useMetaInfo = ({
           ? {
               title: t("details.validators_staked_balance"),
               val: formatBigNumber(
-                new BigNumber(stakedBalance),
+                exactDecimal(stakedBalance),
                 (value) =>
                   `${formatNumber(value, 0)} ${stakedBalanceToken.symbol}`
               ),
@@ -85,8 +86,8 @@ export const useMetaInfo = ({
         ? {
             title: t("details.validators_voting_power"),
             val: formatBigNumber(
-              new BigNumber(votingPower),
-              (value) => `${APToPercentage(value.toNumber())}%`
+              exactDecimal(votingPower),
+              (value) => `${APToPercentage(value)}%`
             ),
           }
         : null,
@@ -100,8 +101,8 @@ export const useMetaInfo = ({
         ? {
             title: t("details.validators_comission"),
             val: formatBigNumber(
-              new BigNumber(commission),
-              (value) => `${formatNumber(APToPercentage(value.toNumber()))}%`
+              exactDecimal(commission),
+              (value) => `${APToPercentage(value)}%`
             ),
           }
         : null,

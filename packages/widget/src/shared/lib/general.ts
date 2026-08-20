@@ -1,7 +1,9 @@
+import type BigNumber from "bignumber.js";
+import { exactDecimal } from "../../domain/finance/exact";
 import { formatNumber } from "./number-format";
 
-export const APToPercentage = (ap: number) =>
-  formatNumber((ap * 100).toFixed(2));
+export const APToPercentage = (ap: BigNumber | number | string) =>
+  formatNumber(exactDecimal(ap).times(100).decimalPlaces(2));
 
 // const colorsTuple = ["#6B69D6", "#F1C40F", "#1ABC9C", "#E74C3C"];
 

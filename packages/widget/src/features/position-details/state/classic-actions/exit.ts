@@ -38,7 +38,8 @@ const submitPositionDetailsExitAtom = Atom.family(
         const exitFacts =
           facts.wallet.status === "connected" &&
           facts.integration &&
-          facts.stakedOrLiquidBalances
+          facts.stakedOrLiquidBalances &&
+          facts.token
             ? {
                 additionalAddresses: facts.wallet.additionalAddresses,
                 address: facts.wallet.address,
@@ -46,6 +47,7 @@ const submitPositionDetailsExitAtom = Atom.family(
                 integration: facts.integration,
                 receiveToken: facts.receiveToken,
                 stakedOrLiquidBalances: facts.stakedOrLiquidBalances,
+                token: facts.token,
                 useMaxAmount:
                   facts.workflow.unstakeUseMaxAmount ||
                   facts.workflow.unstakeForceMaxAmount,

@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import type { ClassicTransactionWorkflowProviderDetail } from "../../../../../../services/transaction-workflow/transaction-workflow-model";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
@@ -25,7 +24,9 @@ export const ActionListItem = ({
   action: ActivityActionItem;
   onActionSelect: (
     action: ActivityActionItem,
-    providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
+    providersDetails: NonNullable<
+      NonNullable<ReturnType<typeof useActionListItem>>["providersDetails"]
+    >
   ) => void;
 }) => {
   const { t } = useTranslation();

@@ -106,7 +106,7 @@ export const MarketSelectModal = ({
                       previous === group.key ? null : group.key
                     )
                   }
-                  rate={`${formatNumber(group.bestRate * 100, 2)}%`}
+                  rate={`${formatNumber(group.bestRate.multipliedBy(100), 2)}%`}
                   selected={isExpanded}
                   testId={`borrow-market-select__group_${group.loanToken.symbol.toLowerCase()}`}
                   token={toBorrowEntryToken({
@@ -129,7 +129,7 @@ export const MarketSelectModal = ({
                           selectMarket(market.id);
                           onOpenChange(false);
                         }}
-                        rate={`${formatNumber(market.borrowRate * 100, 2)}%`}
+                        rate={`${formatNumber(market.borrowRate.multipliedBy(100), 2)}%`}
                         selected={market.id === selectedMarketId}
                         testId={`borrow-market-select__item_${market.id}`}
                         token={toBorrowEntryToken({

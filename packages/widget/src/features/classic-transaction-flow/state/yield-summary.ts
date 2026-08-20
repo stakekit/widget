@@ -1,8 +1,9 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { getActionProviderYieldId } from "../../../domain/action/rules";
 import { isBittensorStaking } from "../../../domain/earn/yield";
+import { exactDecimal } from "../../../domain/finance/exact";
 import type { Prices } from "../../../domain/health/models";
 import { getFeesInUSD, getGasFeeInUSD } from "../../../shared/lib/formatters";
 import {
@@ -48,7 +49,7 @@ export const makeClassicFlowStakeReviewViewAtom = (
   intake: ClassicFlowEnterIntake,
   reviewAtom: Atom.Atom<ClassicStakeReviewResourceView>
 ) => {
-  const stakeAmount = new BigNumber(intake.request.arguments?.amount ?? 0);
+  const stakeAmount = exactDecimal(intake.request.arguments?.amount ?? 0);
   const summaryAtom = yieldSummaryAtom(
     new YieldSummaryKey({
       selectedProviderYieldId: getActionProviderYieldId(intake.request),

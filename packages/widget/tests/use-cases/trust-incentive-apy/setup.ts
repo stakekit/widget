@@ -4,8 +4,10 @@ import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
 import type { EarnYield } from "../../../src/domain/earn/models";
 import type { YieldRewardRate } from "../../../src/domain/earn/reward-rate";
+import { exactDecimal } from "../../../src/domain/finance/exact";
 import { Token } from "../../../src/domain/token/token";
 import {
+  encodeYieldRewardRateFixture,
   legacyYieldFixture,
   yieldApiYieldDtoFixture,
   yieldBalanceFixture,
@@ -88,25 +90,25 @@ export const setup = async (
   });
 
   const discoveryRewardRate: YieldRewardRate = yieldRewardRateFixture({
-    total: 0.045507546653006034,
+    total: exactDecimal("0.045507546653006034"),
     rateType: "APY",
     components: [
       {
-        rate: 0.0028386677110199426,
+        rate: exactDecimal("0.0028386677110199426"),
         rateType: "APR",
         token: morphoToken,
         yieldSource: "protocol_incentive",
         description: "MORPHO rewards",
       },
       {
-        rate: 0.002,
+        rate: exactDecimal("0.002"),
         rateType: "APR",
         token: rewardToken,
         yieldSource: "campaign_incentive",
         description: "U rewards",
       },
       {
-        rate: 0.042668878941986094,
+        rate: exactDecimal("0.042668878941986094"),
         rateType: "APY",
         token: rewardToken,
         yieldSource: "vault",
@@ -117,25 +119,25 @@ export const setup = async (
 
   const defaultPersonalizedRewardRate: YieldRewardRate = yieldRewardRateFixture(
     {
-      total: 0.04530754665300604,
+      total: exactDecimal("0.04530754665300604"),
       rateType: "APY",
       components: [
         {
-          rate: 0.0028386677110199426,
+          rate: exactDecimal("0.0028386677110199426"),
           rateType: "APR",
           token: morphoToken,
           yieldSource: "protocol_incentive",
           description: "MORPHO rewards",
         },
         {
-          rate: 0.0018,
+          rate: exactDecimal("0.0018"),
           rateType: "APR",
           token: rewardToken,
           yieldSource: "campaign_incentive",
           description: "U rewards",
         },
         {
-          rate: 0.042668878941986094,
+          rate: exactDecimal("0.042668878941986094"),
           rateType: "APY",
           token: rewardToken,
           yieldSource: "vault",
@@ -147,18 +149,18 @@ export const setup = async (
 
   const personalizedRewardRateWithoutCampaign: YieldRewardRate =
     yieldRewardRateFixture({
-      total: 0.04530754665300604,
+      total: exactDecimal("0.04530754665300604"),
       rateType: "APY",
       components: [
         {
-          rate: 0.0028386677110199426,
+          rate: exactDecimal("0.0028386677110199426"),
           rateType: "APR",
           token: morphoToken,
           yieldSource: "protocol_incentive",
           description: "MORPHO rewards",
         },
         {
-          rate: 0.042668878941986094,
+          rate: exactDecimal("0.042668878941986094"),
           rateType: "APY",
           token: rewardToken,
           yieldSource: "vault",
@@ -184,9 +186,9 @@ export const setup = async (
     id: yieldId,
     token,
     tokens: [token],
-    rewardRate: discoveryRewardRate.total,
+    rewardRate: discoveryRewardRate.total.toNumber(),
     rewardType: "apy",
-    apy: discoveryRewardRate.total,
+    apy: discoveryRewardRate.total.toNumber(),
     validators: [],
     feeConfigurations: [],
     args: {
@@ -242,7 +244,7 @@ export const setup = async (
     network: token.network,
     chainId: `${avalanche.id}`,
     providerId: "trust",
-    rewardRate: discoveryRewardRate,
+    rewardRate: encodeYieldRewardRateFixture(discoveryRewardRate),
     metadata: {
       ...(rawYieldBase.metadata ?? {}),
       name: "Trust USDA Earn",
@@ -352,7 +354,7 @@ export const setup = async (
           {
             yieldId,
             balances: [activeBalance],
-            rewardRate: personalizedRewardRate,
+            rewardRate: encodeYieldRewardRateFixture(personalizedRewardRate),
           },
         ],
         errors: [],

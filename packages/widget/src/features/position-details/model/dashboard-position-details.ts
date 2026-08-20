@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import type { PendingAction } from "../../../domain/action/models";
 import type {
@@ -14,6 +14,7 @@ import {
   getYieldTypeLabels,
   getYieldWarmupPeriod,
 } from "../../../domain/earn/yield";
+import { exactDecimal, exactZero } from "../../../domain/finance/exact";
 import type { RewardsSummary } from "../../../domain/portfolio/models";
 import type {
   PositionBalancesByType,
@@ -103,7 +104,7 @@ type DashboardPositionPendingAction = {
 type ProviderDetail = {
   address?: string;
   name?: string;
-  rewardRate?: number | null;
+  rewardRate?: BigNumber | null;
   status?: string | null;
 };
 
@@ -285,7 +286,7 @@ const getBalanceMetric = ({
 
   const totalUsd = getNonPointsBalances(positionBalancesByType).reduce(
     (acc, balance) => acc.plus(balance.amountUsd ?? 0),
-    new BigNumber(0)
+    exactZero()
   );
 
   if (!totalUsd.isGreaterThan(0)) return null;
@@ -316,7 +317,7 @@ const getRewardsMetric = ({
     .filter(
       (balance) => balance.type === "claimable" && !balance.token.isPoints
     )
-    .find((balance) => BigNumber(balance.amount).isGreaterThan(0));
+    .find((balance) => exactDecimal(balance.amount).isGreaterThan(0));
 
   if (claimableBalance) {
     promotedFactIds.add("rewards");
@@ -333,7 +334,7 @@ const getRewardsMetric = ({
 
   if (
     rewardsSummary &&
-    BigNumber(rewardsSummary.rewards.total).isGreaterThan(0)
+    exactDecimal(rewardsSummary.rewards.total).isGreaterThan(0)
   ) {
     promotedFactIds.add("rewards");
 
@@ -376,7 +377,7 @@ const getApyMetric = ({
 }): DashboardPositionMetricCard | null => {
   const rewardRate =
     personalizedRewardRate?.total ?? integrationData.rewardRate.total;
-  const amount = BigNumber(rewardRate);
+  const amount = exactDecimal(rewardRate);
 
   if (!amount.isFinite() || amount.isZero()) return null;
 
@@ -387,7 +388,7 @@ const getApyMetric = ({
     label: personalizedRewardRate
       ? t("position_details.personalized_apy")
       : formatRewardRateLabel(integrationData, t),
-    value: `${APToPercentage(amount.toNumber())}%`,
+    value: `${APToPercentage(amount)}%`,
   };
 };
 
@@ -646,7 +647,7 @@ const formatUsdSubValue = (
 ) => {
   if (value == null) return undefined;
 
-  const amount = BigNumber(value);
+  const amount = exactDecimal(value);
 
   return amount.isGreaterThan(0) ? formatUsd(amount) : undefined;
 };

@@ -1,10 +1,10 @@
-import BigNumber from "bignumber.js";
 import { Array as EArray, pipe, Schema } from "effect";
 import type { TFunction } from "i18next";
 import {
   DashboardYieldCategory,
   type DashboardYieldCategory as DashboardYieldCategoryType,
 } from "../../public-api/types";
+import { exactDecimal } from "../finance/exact";
 import { YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import { EvmNetworks } from "../network/networks";
@@ -346,7 +346,7 @@ const hasPositivePricePerShare = (yieldDto: EarnYieldWithProvider) => {
 
   if (price === null || price === undefined) return false;
 
-  const amount = BigNumber(price);
+  const amount = exactDecimal(price);
 
   return amount.isFinite() && amount.isGreaterThan(0);
 };
@@ -487,7 +487,7 @@ const isNativeStaking = (yieldDto: EarnYieldWithProvider) => {
   const minimum = getYieldActionArg(yieldDto, "enter", "amount")?.minimum;
 
   return minimum !== null && minimum !== undefined
-    ? BigNumber(minimum).isEqualTo(32)
+    ? exactDecimal(minimum).isEqualTo(32)
     : false;
 };
 
@@ -524,7 +524,7 @@ const zeroRewardRateYieldIdWhitelist = new Set<string>([
 export const isNonZeroRewardRateYield = (
   yieldDto: Pick<EarnYieldWithProvider, "id" | "rewardRate">
 ) =>
-  (yieldDto.rewardRate?.total ?? 0) > 0 ||
+  yieldDto.rewardRate.total.isGreaterThan(0) ||
   zeroRewardRateYieldIdWhitelist.has(yieldDto.id);
 
 export const isERC4626 = (yieldDto: EarnYieldWithProvider) =>

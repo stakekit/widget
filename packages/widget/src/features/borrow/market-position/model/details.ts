@@ -1,4 +1,3 @@
-import BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import { getBorrowMarketPairLabel } from "../../../../domain/borrow/catalog/market";
 import {
@@ -75,9 +74,7 @@ const getBorrowWithdrawTokenOptions = (
     return [
       {
         action,
-        availableAmount: new BigNumber(
-          supplyBalance.balanceRaw.toString()
-        ).shiftedBy(-collateralToken.token.decimals),
+        availableAmount: supplyBalance.balance,
         collateralToken,
         supplyBalance,
       },

@@ -1,0 +1,7 @@
+id: no-tonumber-outside-representation
+valid:
+  - 'const formatted = formatUsd(amount)'
+  - 'const chart = item.tvl.toFixed()'
+invalid:
+  - 'const value = amount.toNumber()'
+  - 'return totals.ltv.toNumber()'

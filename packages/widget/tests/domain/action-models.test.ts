@@ -3,6 +3,7 @@ import { Effect, Logger, References, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import {
   ActionCommand,
+  PendingAction,
   TransactionGasEstimateJson,
   YieldAction,
 } from "../../src/domain/action/models";
@@ -117,5 +118,26 @@ describe("action application schemas", () => {
     expect(() =>
       Schema.decodeUnknownSync(TransactionGasEstimateJson)("not-json")
     ).toThrow();
+  });
+
+  it("keeps Pending Action argument notes from the argument schema", () => {
+    const pendingAction = Schema.decodeUnknownSync(PendingAction)({
+      intent: "manage",
+      passthrough: "claim",
+      type: "CLAIM_REWARDS",
+      arguments: {
+        notes: "Claim before the period ends",
+        fields: [
+          {
+            label: "Amount",
+            name: "amount",
+            required: true,
+            type: "string",
+          },
+        ],
+      },
+    });
+
+    expect(pendingAction.arguments?.notes).toBe("Claim before the period ends");
   });
 });

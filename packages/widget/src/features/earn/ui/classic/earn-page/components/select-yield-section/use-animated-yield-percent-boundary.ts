@@ -2,6 +2,7 @@ import { animate, useMotionValue, useTransform } from "motion/react";
 import { useEffect } from "react";
 import { config } from "../../../../../../../shared/config/widget-defaults";
 import { APToPercentage } from "../../../../../../../shared/lib/general";
+import { toChartNumber } from "../../../../../../../shared/lib/number-format";
 import type { getYieldEstimatedRewards } from "../../../../../../yield-summary/index";
 
 type EstimatedRewards = ReturnType<typeof getYieldEstimatedRewards>;
@@ -20,7 +21,7 @@ const resolvePerReward = (
     return "- %";
   }
 
-  return estimatedRewards.rewardRateAverage.toNumber();
+  return toChartNumber(estimatedRewards.rewardRateAverage);
 };
 
 // Framer Motion owns an imperative animation value, so this adapter is the

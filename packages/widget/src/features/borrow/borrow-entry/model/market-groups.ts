@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
 import {
   getBorrowMarketPairLabel,
@@ -10,7 +11,7 @@ import type { Token } from "../../../../domain/token/token";
 export type BorrowEntryToken = Token & { network: BorrowNetwork };
 
 type BorrowMarketGroup = {
-  readonly bestRate: number;
+  readonly bestRate: BigNumber;
   readonly key: string;
   readonly loanToken: BorrowToken;
   readonly marketItems: readonly Market[];
@@ -50,7 +51,7 @@ const getBorrowMarketGroups = (
     const existing = groups.get(key);
 
     groups.set(key, {
-      bestRate: Math.min(
+      bestRate: BigNumber.min(
         existing?.bestRate ?? market.borrowRate,
         market.borrowRate
       ),

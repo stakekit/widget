@@ -398,9 +398,9 @@ export const setup = async (
           yieldId: data.yieldId,
           type: pendingAction.type,
           address: data.address,
-          amount: pendingAction.amount,
-          amountRaw: pendingAction.amount,
-          amountUsd: pendingAction.amountUsd,
+          amount: pendingAction.amount?.toFixed() ?? null,
+          amountRaw: pendingAction.amountRaw?.toString() ?? null,
+          amountUsd: pendingAction.amountUsd?.toFixed() ?? null,
           transactions: [
             yieldApiTransactionFixture({
               id: EArray.getUnsafe(pendingAction.transactions, 0).id,

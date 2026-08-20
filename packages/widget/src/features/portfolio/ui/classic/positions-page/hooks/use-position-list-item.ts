@@ -1,8 +1,8 @@
 import { useAtomValue } from "@effect/atom-react";
-import BigNumber from "bignumber.js";
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
+import { exactZero } from "../../../../../../domain/finance/exact";
 import { getPositionTotalAmount } from "../../../../../../domain/portfolio/positions";
 import {
   YieldOpportunityKey,
@@ -43,11 +43,10 @@ export const usePositionListItem = (item: PositionItem) => {
         ? getRewardRateFormatted({
             rewardRate: providersDetails
               .reduce(
-                (acc, val) => acc.plus(new BigNumber(val.rewardRate || 0)),
-                new BigNumber(0)
+                (acc, val) => acc.plus(val.rewardRate ?? exactZero()),
+                exactZero()
               )
-              .dividedBy(providersDetails.length)
-              .toNumber(),
+              .dividedBy(providersDetails.length),
           })
         : null,
     [integrationData, providersDetails]

@@ -4,6 +4,7 @@ import {
   YieldHistoryKey,
   yieldTvlHistoryAtom,
 } from "../../../../yield-summary/index";
+import { toTvlHistoryChartPoint } from "./history-chart-points";
 import { useYieldHistory } from "./use-yield-history";
 
 export const useYieldTvlHistory = ({
@@ -16,6 +17,7 @@ export const useYieldTvlHistory = ({
   return useYieldHistory(
     yieldTvlHistoryAtom(
       new YieldHistoryKey({ period, yieldId: yieldId ?? null })
-    )
+    ),
+    toTvlHistoryChartPoint
   );
 };

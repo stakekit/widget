@@ -1,4 +1,3 @@
-import BigNumber from "bignumber.js";
 import type { Market } from "../catalog/market";
 import { decodeTokenId, type TokenId } from "../ids";
 import type {
@@ -32,11 +31,9 @@ export const getDefinitions = (
       });
       const previous = definitions.get(tokenId);
       const definition = {
-        liquidationThreshold: new BigNumber(
-          collateralToken.liquidationThreshold
-        ),
-        maxLtv: new BigNumber(collateralToken.maxLtv),
-        priceUsd: new BigNumber(collateralToken.priceUsd),
+        liquidationThreshold: collateralToken.liquidationThreshold,
+        maxLtv: collateralToken.maxLtv,
+        priceUsd: collateralToken.priceUsd,
         tokenId,
       };
 
@@ -90,16 +87,16 @@ export const getCollateralState = ({
     }
 
     if (
-      supplyBalance.balance > 0 &&
+      supplyBalance.balance.isGreaterThan(0) &&
       (definition.priceUsd.isLessThanOrEqualTo(0) ||
-        supplyBalance.balanceUsd <= 0)
+        supplyBalance.balanceUsd.isLessThanOrEqualTo(0))
     ) {
       return { reason: "missingPrice", status: "unavailable" };
     }
 
     collateral.push({
       ...definition,
-      collateralUsd: new BigNumber(supplyBalance.balanceUsd),
+      collateralUsd: supplyBalance.balanceUsd,
       enabled: supplyBalance.isCollateral,
     });
   }
@@ -126,10 +123,13 @@ export const getIsolatedPositionState = (
     first !== null &&
     positionStates.some(
       (candidate) =>
-        candidate.availableToBorrowUsd !== first.availableToBorrowUsd ||
-        candidate.currentLtv !== first.currentLtv ||
-        candidate.healthFactor !== first.healthFactor ||
-        candidate.liquidationThreshold !== first.liquidationThreshold
+        !candidate.availableToBorrowUsd.isEqualTo(first.availableToBorrowUsd) ||
+        !candidate.currentLtv.isEqualTo(first.currentLtv) ||
+        (candidate.healthFactor == null) !== (first.healthFactor == null) ||
+        (candidate.healthFactor != null &&
+          first.healthFactor != null &&
+          !candidate.healthFactor.isEqualTo(first.healthFactor)) ||
+        !candidate.liquidationThreshold.isEqualTo(first.liquidationThreshold)
     );
 
   return hasConflict

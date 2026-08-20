@@ -11,6 +11,7 @@ import {
   EarnYield,
 } from "../../src/domain/earn/models";
 import type { YieldRewardRate } from "../../src/domain/earn/reward-rate";
+import { exactDecimal } from "../../src/domain/finance/exact";
 import { EvmNetworks } from "../../src/domain/network/networks";
 import type {
   TokenDto as LegacyTokenDto,
@@ -22,14 +23,56 @@ type ValidatorDto = typeof EarnValidator.Encoded;
 type YieldApiProviderDto = typeof EarnProvider.Encoded;
 const apyFaker = () => faker.number.float({ min: 0, max: 0.05 });
 
+type ExactDecimalFixtureInput = Parameters<typeof exactDecimal>[0];
+type YieldRewardComponent = YieldRewardRate["components"][number];
+type YieldRewardComponentFixtureInput = Omit<YieldRewardComponent, "rate"> & {
+  readonly rate: ExactDecimalFixtureInput;
+};
+type YieldRewardRateFixtureInput = Omit<
+  Partial<YieldRewardRate>,
+  "components" | "total"
+> & {
+  readonly components?: ReadonlyArray<YieldRewardComponentFixtureInput>;
+  readonly total?: ExactDecimalFixtureInput;
+};
+
 export const yieldRewardRateFixture = (
-  overrides?: Partial<YieldRewardRate>
-): YieldRewardRate => ({
+  overrides?: YieldRewardRateFixtureInput
+): YieldRewardRate => {
+  const { components = [], total = apyFaker(), ...rest } = overrides ?? {};
+
+  return {
+    rateType: "APY",
+    ...rest,
+    total: exactDecimal(total),
+    components: components.map((component) => ({
+      ...component,
+      rate: exactDecimal(component.rate),
+    })),
+  };
+};
+
+const yieldRewardRateDtoFixture = (): YieldApiYieldDto["rewardRate"] => ({
   total: apyFaker(),
   rateType: "APY",
   components: [],
-  ...overrides,
 });
+
+export const encodeYieldRewardRateFixture = (
+  rewardRate:
+    | YieldRewardRateFixtureInput
+    | NonNullable<YieldApiYieldDto["rewardRate"]>
+    | NonNullable<ValidatorDto["rewardRate"]>
+): NonNullable<ValidatorDto["rewardRate"]> => {
+  return {
+    rateType: rewardRate.rateType ?? "APY",
+    total: exactDecimal(rewardRate.total ?? apyFaker()).toNumber(),
+    components: (rewardRate.components ?? []).map((component) => ({
+      ...component,
+      rate: exactDecimal(component.rate).toNumber(),
+    })),
+  };
+};
 
 const yieldApiTokenFixture = (
   overrides?: Partial<YieldApiYieldDto["token"]>
@@ -88,7 +131,7 @@ export const yieldApiYieldDtoFixture = (
     outputToken: overrides?.outputToken ?? token,
     token,
     tokens,
-    rewardRate: overrides?.rewardRate ?? yieldRewardRateFixture(),
+    rewardRate: overrides?.rewardRate ?? yieldRewardRateDtoFixture(),
     status: { enter: true, exit: true },
     metadata: {
       name: "Ethereum Staking",
@@ -125,22 +168,42 @@ export const yieldApiYieldDtoFixture = (
 };
 
 export const yieldApiYieldFixture = (
-  overrides?: Partial<YieldApiYieldDto>
-): typeof EarnYield.Type =>
-  Schema.decodeUnknownSync(EarnYield)(yieldApiYieldDtoFixture(overrides));
+  overrides?: Omit<Partial<YieldApiYieldDto>, "rewardRate"> & {
+    readonly rewardRate?:
+      | YieldRewardRateFixtureInput
+      | NonNullable<YieldApiYieldDto["rewardRate"]>;
+  }
+): typeof EarnYield.Type => {
+  const { rewardRate, ...rest } = overrides ?? {};
+  const wire = yieldApiYieldDtoFixture(rest);
+
+  return Schema.decodeUnknownSync(EarnYield)(
+    rewardRate
+      ? { ...wire, rewardRate: encodeYieldRewardRateFixture(rewardRate) }
+      : wire
+  );
+};
 
 export const yieldApiValidatorFixture = (
-  overrides?: Partial<ValidatorDto>
-): ValidatorDto => ({
-  address: faker.finance.ethereumAddress(),
-  commission: 0,
-  logoURI: "https://assets.stakek.it/validators/default.png",
-  name: "StakeKit Validator",
-  preferred: false,
-  rewardRate: yieldRewardRateFixture({ rateType: "APR" }),
-  status: "active",
-  ...overrides,
-});
+  overrides?: Omit<Partial<ValidatorDto>, "rewardRate"> & {
+    readonly rewardRate?:
+      | YieldRewardRateFixtureInput
+      | NonNullable<ValidatorDto["rewardRate"]>;
+  }
+): ValidatorDto => {
+  const { rewardRate, ...rest } = overrides ?? {};
+
+  return {
+    address: faker.finance.ethereumAddress(),
+    commission: 0,
+    logoURI: "https://assets.stakek.it/validators/default.png",
+    name: "StakeKit Validator",
+    preferred: false,
+    rewardRate: encodeYieldRewardRateFixture(rewardRate ?? { rateType: "APR" }),
+    status: "active",
+    ...rest,
+  };
+};
 
 export const yieldBalanceFixture = (
   overrides?: Partial<typeof EarnBalance.Encoded>
@@ -306,6 +369,9 @@ type ActionFixtureOverrides = Partial<
   Omit<
     typeof YieldAction.Type,
     | "address"
+    | "amount"
+    | "amountRaw"
+    | "amountUsd"
     | "completedAt"
     | "createdAt"
     | "id"
@@ -315,6 +381,9 @@ type ActionFixtureOverrides = Partial<
   >
 > & {
   readonly address?: string;
+  readonly amount?: typeof YieldAction.Encoded.amount;
+  readonly amountRaw?: typeof YieldAction.Encoded.amountRaw;
+  readonly amountUsd?: typeof YieldAction.Encoded.amountUsd;
   readonly completedAt?: DateTime.Utc | null;
   readonly createdAt?: DateTime.Utc;
   readonly id?: string;

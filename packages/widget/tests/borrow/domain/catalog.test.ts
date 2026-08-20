@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
 import { Market } from "../../../src/domain/borrow/catalog/market";
@@ -60,9 +61,9 @@ describe("borrow domain", () => {
       "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
     );
     expect(risk).toEqual({
-      liquidationPenalty: 0.05,
-      liquidationThreshold: 0.85,
-      maxLtv: 0.8,
+      liquidationPenalty: new BigNumber("0.05"),
+      liquidationThreshold: new BigNumber("0.85"),
+      maxLtv: new BigNumber("0.8"),
     });
     expect(market.supplyCollateralFeeBps).toBe(0);
     expect(() =>

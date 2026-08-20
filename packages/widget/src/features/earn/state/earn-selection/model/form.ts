@@ -1,7 +1,7 @@
-import BigNumber from "bignumber.js";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import { getEnterAmountConstraint } from "../../../../../domain/earn/stake";
 import { getYieldActionArg } from "../../../../../domain/earn/yield";
+import { exactDecimal } from "../../../../../domain/finance/exact";
 import {
   hasActivePositionForYield,
   type PositionsData,
@@ -19,7 +19,7 @@ export const canSubmitEarnForm = ({
   readonly positionsData: PositionsData;
   readonly selectedYield: EarnYieldWithProvider;
 }): boolean => {
-  const amount = new BigNumber(form.stakeAmount);
+  const amount = exactDecimal(form.stakeAmount);
   if (!amount.isFinite() || !amount.isGreaterThan(0)) return false;
 
   const constraint = getEnterAmountConstraint(

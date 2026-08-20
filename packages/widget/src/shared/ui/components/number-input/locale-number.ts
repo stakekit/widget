@@ -1,4 +1,5 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
+import { exactDecimal } from "../../../../domain/finance/exact";
 
 type LocaleNumberSymbols = {
   readonly decimal: string;
@@ -53,7 +54,7 @@ export const parseLocalizedNumberInput = (
   const normalized = value
     .replace(new RegExp(getGroupPattern(group), "gu"), "")
     .replace(decimal, ".");
-  const parsed = new BigNumber(normalized);
+  const parsed = exactDecimal(normalized);
 
   return parsed.isFinite() ? parsed : null;
 };

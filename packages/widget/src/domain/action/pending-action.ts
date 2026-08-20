@@ -1,3 +1,4 @@
+import type BigNumber from "bignumber.js";
 import type { ManageActionCommand, PendingAction } from "./models";
 
 export type YieldPendingActionType =
@@ -11,8 +12,8 @@ type PendingActionArgName =
 
 type PendingActionAmountConfig = {
   required: boolean;
-  minimum: number | null;
-  maximum: number | null;
+  minimum: BigNumber | null;
+  maximum: BigNumber | null;
   forceMax: boolean;
 };
 
@@ -36,14 +37,15 @@ export const getPendingActionAmountConfig = (
     return null;
   }
 
-  const minimum = toNumberOrNull(amountArg.minimum);
-  const maximum = toNumberOrNull(amountArg.maximum);
+  const minimum = amountArg.minimum;
+  const maximum = amountArg.maximum;
 
   return {
     required: !!amountArg.required,
     minimum,
     maximum,
-    forceMax: minimum === -1 && maximum === -1,
+    forceMax:
+      minimum?.isEqualTo(-1) === true && maximum?.isEqualTo(-1) === true,
   };
 };
 
@@ -64,17 +66,4 @@ const getPendingActionArgument = (
   }
 
   return null;
-};
-
-const toNumberOrNull = (value: number | string | null | undefined) => {
-  if (value === null || value === undefined) {
-    return null;
-  }
-
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : null;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
 };

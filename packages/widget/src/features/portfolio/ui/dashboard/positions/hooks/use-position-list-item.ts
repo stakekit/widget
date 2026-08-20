@@ -1,7 +1,7 @@
 import { useAtomValue } from "@effect/atom-react";
-import BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
+import { exactDecimal } from "../../../../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../../../../domain/finance/price";
 import {
   PricesKey,
@@ -41,7 +41,9 @@ export const usePositionListItem = (item: PositionItem) => {
   const rewardsSummary = useMemo(() => {
     const summary = rewardsSummaries?.[item.integrationId];
 
-    return summary && BigNumber(summary.rewards.total).gt(0) ? summary : null;
+    return summary && exactDecimal(summary.rewards.total).gt(0)
+      ? summary
+      : null;
   }, [item.integrationId, rewardsSummaries]);
 
   const prices = AsyncResult.getOrElse(
@@ -64,7 +66,7 @@ export const usePositionListItem = (item: PositionItem) => {
   const rewardsAmountFormatted = useMemo(
     () =>
       rewardsSummary
-        ? defaultFormattedNumber(BigNumber(rewardsSummary.rewards.total))
+        ? defaultFormattedNumber(exactDecimal(rewardsSummary.rewards.total))
         : null,
     [rewardsSummary]
   );

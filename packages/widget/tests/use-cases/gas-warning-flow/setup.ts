@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { vitest } from "vitest";
 import type { ActionCommand } from "../../../src/domain/action/models";
+import { exactDecimal } from "../../../src/domain/finance/exact";
 import {
   legacyYieldFixture,
   yieldApiActionFixture,
@@ -288,8 +289,11 @@ export const setup = (worker: TestWorker) => {
           yieldId: selectedYield.actionDto.yieldId,
           type: selectedYield.actionDto.type,
           address: body.address,
-          amount: body.arguments?.amount ?? null,
-          amountRaw: body.arguments?.amount ?? null,
+          amount:
+            body.arguments?.amount === undefined
+              ? null
+              : exactDecimal(body.arguments.amount).toFixed(),
+          amountRaw: null,
           transactions: selectedYield.actionDto.transactions.map((tx, index) =>
             yieldApiTransactionFixture({
               id: tx.id,

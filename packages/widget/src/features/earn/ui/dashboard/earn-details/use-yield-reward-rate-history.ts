@@ -4,6 +4,7 @@ import {
   YieldHistoryKey,
   yieldRewardRateHistoryAtom,
 } from "../../../../yield-summary/index";
+import { toRewardRateHistoryChartPoint } from "./history-chart-points";
 import { useYieldHistory } from "./use-yield-history";
 
 export const useYieldRewardRateHistory = ({
@@ -16,6 +17,7 @@ export const useYieldRewardRateHistory = ({
   return useYieldHistory(
     yieldRewardRateHistoryAtom(
       new YieldHistoryKey({ period, yieldId: yieldId ?? null })
-    )
+    ),
+    toRewardRateHistoryChartPoint
   );
 };

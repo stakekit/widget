@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import { ActionCommand } from "../../../domain/action/models";
 import type { TronResource } from "../../../domain/action/tron-resource";
@@ -14,6 +14,11 @@ import {
 } from "../../../domain/earn/stake";
 import type { ValidatorKey } from "../../../domain/earn/validator";
 import { getYieldActionArg } from "../../../domain/earn/yield";
+import {
+  exactDecimal,
+  exactZero,
+  truncateToTokenDecimals,
+} from "../../../domain/finance/exact";
 import type {
   WalletAddress,
   YieldId,
@@ -39,7 +44,7 @@ type YieldEntryWallet = Readonly<{
 }>;
 
 type YieldEntryRewardProvider = Readonly<{
-  readonly rewardRate?: number | null;
+  readonly rewardRate?: BigNumber | number | null;
 }>;
 
 export type YieldEntryAmountInitialization =
@@ -120,12 +125,17 @@ const makeYieldEntryActionCommand = ({
   })();
   if (!validatorArguments) return null;
 
+  const executableAmount = truncateToTokenDecimals(
+    entry.amount,
+    entry.token.decimals
+  );
+
   return {
     command: ActionCommand.make({
       address: wallet.address,
       yieldId: selectedYield.id,
       arguments: {
-        amount: entry.amount.toString(10),
+        amount: executableAmount.toFixed(),
         ...(entry.token.address ? { inputToken: entry.token.address } : {}),
         ...(wallet.isLedgerLive ? { ledgerWalletApiCompatible: true } : {}),
         ...(entry.tronResource ? { tronResource: entry.tronResource } : {}),
@@ -226,7 +236,7 @@ const resolveMinimum = (
   if (forceMax) return input.availableAmount;
   if (!input.yield) return null;
 
-  return new BigNumber(
+  return exactDecimal(
     input.type === "enter"
       ? getMinStakeAmount(input.yield, input.selectedYieldHasActivePosition)
       : getMinUnstakeAmount(input.yield, input.pricePerShare)
@@ -251,18 +261,17 @@ export const getYieldAmountConstraints = (
   const forceMax = isForceMaxAmount(amountArgument);
   const minimum = resolveMinimum(input, forceMax);
   const configuredMaximum = amountArgument?.maximum;
-  const candidateMaximum =
-    configuredMaximum == null ? null : new BigNumber(configuredMaximum);
+  const candidateMaximum = configuredMaximum == null ? null : configuredMaximum;
   const maximum = resolveMaximum(input, forceMax, candidateMaximum);
   const allowedMaximum = getMaxAmount({
-    availableAmount: input.availableAmount ?? new BigNumber(0),
-    gasEstimateTotal: new BigNumber(0),
+    availableAmount: input.availableAmount ?? exactZero(),
+    gasEstimateTotal: exactZero(),
     integrationMaxLimit: maximum,
   });
 
   return {
     allowedMaximum,
-    allowedMinimum: minimum ?? new BigNumber(0),
+    allowedMinimum: minimum ?? exactZero(),
     forceMax,
     maximum,
     minimum,
@@ -350,8 +359,11 @@ export const projectYieldEntry = ({
       ? constraints.allowedMinimum
       : input.entry.amount;
   const entry = { ...input.entry, amount };
+  const executableAmount = input.entry.token
+    ? truncateToTokenDecimals(amount, input.entry.token.decimals)
+    : amount;
   const amountValidation = getYieldAmountValidation({
-    amount,
+    amount: executableAmount,
     availableAmount: input.availableAmount,
     maximum: constraints.allowedMaximum,
     minimum: constraints.allowedMinimum,
@@ -365,7 +377,7 @@ export const projectYieldEntry = ({
     validateAmount: input.validateAmount,
   });
   const preparation = makeYieldEntryActionCommand({
-    entry,
+    entry: { ...entry, amount: executableAmount },
     wallet: input.wallet,
   });
 

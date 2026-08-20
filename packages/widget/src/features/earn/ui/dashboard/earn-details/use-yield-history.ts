@@ -9,17 +9,15 @@ export type YieldHistoryResult = AsyncResult.AsyncResult<
   unknown
 >;
 
-export const useYieldHistory = <E>(
+export const useYieldHistory = <Item, E>(
   resource: Atom.Atom<
-    AsyncResult.AsyncResult<
-      { readonly items: ReadonlyArray<HistoryPoint> } | null,
-      E
-    >
-  >
+    AsyncResult.AsyncResult<{ readonly items: ReadonlyArray<Item> } | null, E>
+  >,
+  toChartPoint: (item: Item) => HistoryPoint
 ): YieldHistoryResult =>
   useAtomValue(resource).pipe(
     AsyncResult.map((page) =>
-      [...(page?.items ?? [])].sort(
+      [...(page?.items ?? []).map(toChartPoint)].sort(
         (a, b) =>
           DateTime.toEpochMillis(a.timestamp) -
           DateTime.toEpochMillis(b.timestamp)

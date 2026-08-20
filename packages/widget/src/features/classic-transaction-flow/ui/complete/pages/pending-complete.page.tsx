@@ -1,5 +1,5 @@
-import BigNumber from "bignumber.js";
 import { getExtendedYieldType } from "../../../../../domain/earn/yield";
+import { exactDecimal } from "../../../../../domain/finance/exact";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useTrackPage } from "../../../../tracking/index";
 import { useClassicFlowIntake } from "../../../react/classic-flow-route";
@@ -15,7 +15,7 @@ export const PendingCompletePage = () => {
 
   return (
     <CompletePage
-      amount={rawAmount ? defaultFormattedNumber(new BigNumber(rawAmount)) : ""}
+      amount={rawAmount ? defaultFormattedNumber(exactDecimal(rawAmount)) : ""}
       integrationId={integrationData.id}
       metadata={{
         logoURI: integrationData.metadata.logoURI,

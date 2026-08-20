@@ -1,10 +1,12 @@
 import { Schema } from "effect";
+import { ExactDecimal, NonNegativeExactDecimal } from "../../finance/scalars";
 
-export const RiskRatioFromString = Schema.FiniteFromString.check(
-  Schema.isGreaterThanOrEqualTo(0),
-  Schema.isLessThanOrEqualTo(1)
+export const RiskRatio = ExactDecimal.check(
+  Schema.makeFilter((value) =>
+    value.isGreaterThanOrEqualTo(0) && value.isLessThanOrEqualTo(1)
+      ? true
+      : "expected a ratio between 0 and 1"
+  )
 );
 
-export const NonNegativeFiniteFromString = Schema.FiniteFromString.check(
-  Schema.isGreaterThanOrEqualTo(0)
-);
+export const NonNegativeRiskValue = NonNegativeExactDecimal;

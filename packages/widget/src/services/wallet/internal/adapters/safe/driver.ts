@@ -1,4 +1,4 @@
-import { Data, Effect, Result, Schedule } from "effect";
+import { Data, Effect, Schedule } from "effect";
 import type { Address } from "viem";
 import type { Connector } from "wagmi";
 import {
@@ -45,12 +45,10 @@ export const makeSafeWalletDriver = ({
         );
       }
 
-      const decodedResult = decodeAndPrepareEvmTransaction({ address, tx });
-      const decodedTx = Result.isFailure(decodedResult)
-        ? yield* Effect.fail(
-            new WalletDecodeError({ cause: decodedResult.failure })
-          )
-        : decodedResult.success;
+      const decodedTx = yield* decodeAndPrepareEvmTransaction({
+        address,
+        tx,
+      }).pipe(Effect.mapError((cause) => new WalletDecodeError({ cause })));
       const response = yield* connector
         .sendTransactions({
           txs: [

@@ -245,9 +245,7 @@ describe("Borrow action preparation", () => {
       collateralTokens: [
         {
           ...collateralToken,
-          liquidationThreshold: 0.85,
-          maxLtv: 0.8,
-          priceUsd: 1,
+          priceUsd: new BigNumber(1),
           token: { ...collateralToken.token, decimals: 2 },
         },
       ],
@@ -255,15 +253,15 @@ describe("Borrow action preparation", () => {
     };
     const emptySnapshot = {
       ...accountSnapshot,
-      availableToBorrowUsd: 0,
-      currentLtv: 0,
+      availableToBorrowUsd: new BigNumber(0),
+      currentLtv: new BigNumber(0),
       debtBalances: [],
       healthFactor: null,
-      netWorthUsd: 0,
+      netWorthUsd: new BigNumber(0),
       supplyBalances: [],
-      totalBorrowedUsd: 0,
-      totalCollateralUsd: 0,
-      totalSuppliedUsd: 0,
+      totalBorrowedUsd: new BigNumber(0),
+      totalCollateralUsd: new BigNumber(0),
+      totalSuppliedUsd: new BigNumber(0),
     };
     const feePositions = deriveBorrowPositions({
       integrationAccountSnapshots: [
@@ -346,12 +344,12 @@ describe("Borrow action preparation", () => {
     expect(supply).toMatchObject({
       _tag: "Ready",
       review: {
-        command: { args: { amount: "1.234" } },
+        command: { args: { amount: "1.23" } },
         summary: {
           action: "supply",
-          collateralAmount: "1.234",
+          collateralAmount: "1.23",
           collateralFeeAmount: "0.06",
-          effectiveCollateralAmount: "1.174",
+          effectiveCollateralAmount: "1.17",
         },
       },
     });
@@ -428,30 +426,30 @@ describe("Borrow action preparation", () => {
       collateralTokens: [
         {
           ...collateralToken,
-          liquidationThreshold: 0.1,
-          maxLtv: 0.1,
-          priceUsd: 1,
+          liquidationThreshold: new BigNumber("0.1"),
+          maxLtv: new BigNumber("0.1"),
+          priceUsd: new BigNumber(1),
         },
       ],
     };
     const precisionSnapshot = {
       ...accountSnapshot,
-      availableToBorrowUsd: 0.1,
-      currentLtv: 0,
+      availableToBorrowUsd: new BigNumber("0.1"),
+      currentLtv: new BigNumber(0),
       debtBalances: [],
       healthFactor: null,
       supplyBalances: [
         {
           ...accountSnapshot.supplyBalances[0]!,
-          balance: 1,
+          balance: new BigNumber(1),
           balanceRaw: 1_000_000_000_000_000_000n,
-          balanceUsd: 1,
+          balanceUsd: new BigNumber(1),
           marketId: precisionMarket.id,
         },
       ],
-      totalBorrowedUsd: 0,
-      totalCollateralUsd: 1,
-      totalSuppliedUsd: 1,
+      totalBorrowedUsd: new BigNumber(0),
+      totalCollateralUsd: new BigNumber(1),
+      totalSuppliedUsd: new BigNumber(1),
     };
     const precisionPositions = deriveBorrowPositions({
       integrationAccountSnapshots: [
@@ -463,7 +461,7 @@ describe("Borrow action preparation", () => {
     const result = prepareBorrowAction({
       _tag: "OpenPositionDraft",
       address,
-      borrowAmount: new BigNumber("0.10000000000000001"),
+      borrowAmount: new BigNumber("0.100001"),
       collateralAmount: new BigNumber(0),
       collateralToken: precisionMarket.collateralTokens[0]!,
       integrations: [integration],
@@ -479,7 +477,7 @@ describe("Borrow action preparation", () => {
   });
 
   it("blocks a new debt amount below the market minimum", () => {
-    const minimumMarket = { ...market, minLoan: 10 };
+    const minimumMarket = { ...market, minLoan: new BigNumber(10) };
     const result = prepareBorrowAction({
       _tag: "OpenPositionDraft",
       address,
@@ -503,10 +501,10 @@ describe("Borrow action preparation", () => {
       ...accountSnapshot,
       supplyBalances: accountSnapshot.supplyBalances.map((balance) => ({
         ...balance,
-        balanceUsd: 0,
+        balanceUsd: new BigNumber(0),
       })),
-      totalCollateralUsd: 0,
-      totalSuppliedUsd: 0,
+      totalCollateralUsd: new BigNumber(0),
+      totalSuppliedUsd: new BigNumber(0),
     };
     const unavailablePositions = deriveBorrowPositions({
       integrationAccountSnapshots: [
@@ -605,24 +603,24 @@ describe("Borrow action preparation", () => {
     };
     const multiMarketSnapshot = {
       ...accountSnapshot,
-      availableToBorrowUsd: 0,
-      currentLtv: 1,
+      availableToBorrowUsd: new BigNumber(0),
+      currentLtv: new BigNumber(1),
       debtBalances: [
         ...accountSnapshot.debtBalances,
         {
           ...accountSnapshot.debtBalances[0]!,
-          balance: 600,
+          balance: new BigNumber(600),
           balanceRaw: 600_000_000n,
-          balanceUsd: 600,
+          balanceUsd: new BigNumber(600),
           marketId: daiMarket.id,
           pendingActions: [],
           tokenAddress: daiTokenAddress,
           tokenSymbol: "DAI",
         },
       ],
-      healthFactor: 0.85,
-      netWorthUsd: 0,
-      totalBorrowedUsd: 1000,
+      healthFactor: new BigNumber("0.85"),
+      netWorthUsd: new BigNumber(0),
+      totalBorrowedUsd: new BigNumber(1000),
     };
     const multiMarketPositions = deriveBorrowPositions({
       integrationAccountSnapshots: [
@@ -742,7 +740,7 @@ describe("Borrow action preparation", () => {
   });
 
   it("blocks a repayment that leaves debt below the market minimum", () => {
-    const minimumMarket = { ...market, minLoan: 10 };
+    const minimumMarket = { ...market, minLoan: new BigNumber(10) };
     const minimumPosition = deriveBorrowPositions({
       integrationAccountSnapshots: [{ accountSnapshot, integration }],
       markets: [minimumMarket],
@@ -825,7 +823,7 @@ describe("Borrow action preparation", () => {
     const availableAmount = new BigNumber("0.123456789012345678");
     const preciseSupplyBalance = {
       ...supplyBalance,
-      balance: 0.12345678901234568,
+      balance: availableAmount,
       balanceRaw: 123_456_789_012_345_678n,
     };
     const token = {
@@ -918,13 +916,13 @@ describe("Borrow action preparation", () => {
   it("creates a collateral-toggle review when Risk Position allows it", () => {
     const debtFreeSnapshot = {
       ...accountSnapshot,
-      availableToBorrowUsd: 800,
-      currentLtv: 0,
+      availableToBorrowUsd: new BigNumber(800),
+      currentLtv: new BigNumber(0),
       debtBalances: [],
       healthFactor: null,
-      netApy: 0.02,
-      netWorthUsd: 1000,
-      totalBorrowedUsd: 0,
+      netApy: new BigNumber("0.02"),
+      netWorthUsd: new BigNumber(1000),
+      totalBorrowedUsd: new BigNumber(0),
     };
     const debtFreePosition = deriveBorrowPositions({
       integrationAccountSnapshots: [

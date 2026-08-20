@@ -1,12 +1,13 @@
-import BigNumber from "bignumber.js";
 import { Effect, Option, Schema, SchemaGetter, SchemaParser } from "effect";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { PendingAction } from "../action/models";
 import { TronResource } from "../action/tron-resource";
 import { TolerantTopLevelArray } from "../decoding/response-schema";
+import { exactDecimal } from "../finance/exact";
 import {
-  BigIntFromString,
-  PrecisionDecimalFromString,
+  ExactBaseUnitAmount,
+  ExactDecimal,
+  ExactDecimalInput,
   TolerantOptionalUtcDateTimeFromString,
 } from "../finance/scalars";
 import {
@@ -19,46 +20,53 @@ import { Token } from "../token/token";
 
 const EarnReward = Schema.Struct({
   ...YieldApi.RewardDto.fields,
+  rate: ExactDecimal,
   token: Token,
 });
 
 const EarnRewardRate = Schema.Struct({
   ...YieldApi.RewardRateDto.fields,
   components: Schema.Array(EarnReward),
+  total: ExactDecimal,
 });
 
-type ApiArgumentField = typeof YieldApi.ArgumentFieldDto.Type;
+type ApiArgumentField = typeof ArgumentField.Type;
 type ApiArgumentName = ApiArgumentField["name"];
 type ApiArgumentType = ApiArgumentField["type"];
 
-const NumericArgumentBound = Schema.String.check(Schema.isStringFinite());
+const ArgumentField = Schema.Struct({
+  ...YieldApi.ArgumentFieldDto.fields,
+  maximum: Schema.optionalKey(Schema.NullOr(ExactDecimalInput)),
+  minimum: Schema.optionalKey(Schema.NullOr(ExactDecimalInput)),
+});
 
 const hasCoherentAmountBounds = (
-  minimumValue: string,
-  maximumValue: string | null
+  minimumValue: ExactDecimal,
+  maximumValue: ExactDecimal | null
 ) => {
-  const minimum = new BigNumber(minimumValue);
-  const maximum = maximumValue === null ? null : new BigNumber(maximumValue);
-
-  if (minimum.isEqualTo(-1) || maximum?.isEqualTo(-1)) {
-    return minimum.isEqualTo(-1) && maximum?.isEqualTo(-1) === true;
+  if (minimumValue.isEqualTo(-1) || maximumValue?.isEqualTo(-1)) {
+    return minimumValue.isEqualTo(-1) && maximumValue?.isEqualTo(-1) === true;
   }
 
-  if (minimum.isNegative()) return false;
-  if (maximum === null || maximum.isZero()) return true;
+  if (minimumValue.isNegative()) return false;
+  if (maximumValue === null || maximumValue.isZero()) return true;
 
-  return maximum.isGreaterThanOrEqualTo(minimum);
+  return maximumValue.isGreaterThanOrEqualTo(minimumValue);
 };
 
 const normalizeAmountMaximum = (
-  minimumValue: string,
-  maximumValue: string | null
-) =>
-  maximumValue !== null &&
-  new BigNumber(minimumValue).isGreaterThanOrEqualTo(0) &&
-  new BigNumber(maximumValue).isEqualTo(-1)
+  minimumValue: string | number,
+  maximumValue: string | number | null
+) => {
+  const minimum = exactDecimal(minimumValue);
+  const maximum = maximumValue === null ? null : exactDecimal(maximumValue);
+
+  return maximum !== null &&
+    minimum.isGreaterThanOrEqualTo(0) &&
+    maximum.isEqualTo(-1)
     ? null
     : maximumValue;
+};
 
 const decodeApiArgument = <
   const Name extends ApiArgumentName,
@@ -71,7 +79,7 @@ const decodeApiArgument = <
   domain: Domain,
   decode: SchemaGetter.Getter<Domain["Encoded"], ApiArgumentField, R>
 ) =>
-  YieldApi.ArgumentFieldDto.check(
+  ArgumentField.check(
     Schema.makeFilter((field) =>
       field.name === name && field.type === type
         ? true
@@ -88,8 +96,8 @@ const decodeApiArgument = <
 
 const AmountArgumentDomain = Schema.Struct({
   required: Schema.Boolean,
-  minimum: NumericArgumentBound,
-  maximum: Schema.NullOr(NumericArgumentBound),
+  minimum: ExactDecimal,
+  maximum: Schema.NullOr(ExactDecimal),
 }).check(
   Schema.makeFilter((field) =>
     hasCoherentAmountBounds(field.minimum, field.maximum)
@@ -229,7 +237,7 @@ const EarnYieldArgumentFieldsDomain = Schema.Struct({
   validatorAddresses: Schema.optionalKey(ValidatorAddressesArgument),
 });
 
-const EarnYieldArgumentFields = Schema.Array(YieldApi.ArgumentFieldDto).pipe(
+const EarnYieldArgumentFields = Schema.Array(ArgumentField).pipe(
   Schema.decodeTo(EarnYieldArgumentFieldsDomain, {
     decode: SchemaGetter.transform((fields) =>
       Object.fromEntries(fields.map((field) => [field.name, field]))
@@ -315,9 +323,9 @@ export type EarnYieldWithProvider = typeof EarnYieldWithProvider.Type;
 
 export const EarnBalance = Schema.Struct({
   ...YieldApi.BalanceDto.fields,
-  amount: PrecisionDecimalFromString,
-  amountRaw: BigIntFromString,
-  amountUsd: Schema.optionalKey(Schema.NullOr(PrecisionDecimalFromString)),
+  amount: ExactDecimal,
+  amountRaw: ExactBaseUnitAmount,
+  amountUsd: Schema.optionalKey(Schema.NullOr(ExactDecimal)),
   date: Schema.optionalKey(
     TolerantOptionalUtcDateTimeFromString({
       operation: "yield-balance",

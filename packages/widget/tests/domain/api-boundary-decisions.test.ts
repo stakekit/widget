@@ -2,22 +2,20 @@ import BigNumber from "bignumber.js";
 import { Effect, Logger, References, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import { logDecodeRejection } from "../../src/domain/decoding/decode-diagnostics";
-import { PrecisionDecimalFromString } from "../../src/domain/finance/scalars";
+import { ExactDecimal } from "../../src/domain/finance/scalars";
 
 describe("API boundary foundation decisions", () => {
   it("decodes precision-sensitive decimals to BigNumber without precision loss", () => {
-    const value = Schema.decodeUnknownSync(PrecisionDecimalFromString)(
+    const value = Schema.decodeUnknownSync(ExactDecimal)(
       "12345678901234567890.123456789012345678"
     );
 
     expect(BigNumber.isBigNumber(value)).toBe(true);
     expect(value.toFixed()).toBe("12345678901234567890.123456789012345678");
-    expect(Schema.encodeSync(PrecisionDecimalFromString)(value)).toBe(
+    expect(Schema.encodeSync(ExactDecimal)(value)).toBe(
       "12345678901234567890.123456789012345678"
     );
-    expect(() =>
-      Schema.decodeUnknownSync(PrecisionDecimalFromString)("NaN")
-    ).toThrow();
+    expect(() => Schema.decodeUnknownSync(ExactDecimal)("NaN")).toThrow();
   });
 
   it("emits structured warning diagnostics without the rejected value", async () => {

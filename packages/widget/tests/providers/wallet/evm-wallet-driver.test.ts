@@ -22,6 +22,26 @@ const transaction = (fees: object) =>
   });
 
 describe("EVM wallet driver", () => {
+  it("preserves a quoted Base Unit Amount beyond the JavaScript safe integer range", async () => {
+    const value = "1000000000000000001";
+    const decoded = await Effect.runPromise(
+      decodeEvmTransaction(transaction({ gasPrice: "7", value }))
+    );
+
+    expect(decoded.value).toBe(1000000000000000001n);
+  });
+
+  it("decodes hex-quoted quantities as Base Unit Amounts", async () => {
+    const decoded = await Effect.runPromise(
+      decodeEvmTransaction(
+        transaction({ gasLimit: "0x0193e0", maxFeePerGas: "0xbfa6de" })
+      )
+    );
+
+    expect(decoded.gas).toBe(103_392n);
+    expect(decoded).toMatchObject({ maxFeePerGas: 12_560_094n });
+  });
+
   it("prepares a legacy request and preserves its gas price", async () => {
     await expect(
       Effect.runPromise(decodeEvmTransaction(transaction({ gasPrice: "7" })))

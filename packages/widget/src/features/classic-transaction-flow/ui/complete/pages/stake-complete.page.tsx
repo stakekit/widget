@@ -1,6 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
-import BigNumber from "bignumber.js";
 import { getActionProviderYieldId } from "../../../../../domain/action/rules";
+import { exactDecimal } from "../../../../../domain/finance/exact";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useTrackPage } from "../../../../tracking/index";
 import {
@@ -29,7 +29,7 @@ export const StakeCompletePage = () => {
   return (
     <CompletePage
       amount={defaultFormattedNumber(
-        new BigNumber(enterFlow.request.arguments?.amount ?? 0)
+        exactDecimal(enterFlow.request.arguments?.amount ?? 0)
       )}
       integrationId={selectedStake.id}
       metadata={{

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../../../features/widget-configuration/index";
+import { formatNumber } from "../../../../../../../shared/lib/number-format";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
 import * as AmountToggle from "../../../../../../../shared/ui/components/amount-toggle";
 import {
@@ -72,11 +73,11 @@ export const SelectTokenSection = ({
   const min =
     stakeMinAmount === null
       ? null
-      : `${t("shared.min")} ${stakeMinAmount} ${symbol}`;
+      : `${t("shared.min")} ${formatNumber(stakeMinAmount)} ${symbol}`;
   const max =
     stakeMaxAmount === null
       ? null
-      : `${t("shared.max")} ${stakeMaxAmount} ${symbol}`;
+      : `${t("shared.max")} ${formatNumber(stakeMaxAmount)} ${symbol}`;
   const minStakeAmount =
     min || max ? (
       <Box

@@ -29,7 +29,6 @@ export const ProviderDetails = ({
   logo: string | undefined;
   name: string;
   rewardRateFormatted: string;
-  rewardRate: number | undefined;
   rewardType?: string | undefined;
 }) => {
   const { t } = useTranslation();

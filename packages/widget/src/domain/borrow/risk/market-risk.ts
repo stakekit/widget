@@ -1,9 +1,10 @@
+import BigNumber from "bignumber.js";
 import type { Market } from "../catalog/market";
 
 type MarketRiskLimits = {
-  readonly liquidationPenalty: number | null;
-  readonly liquidationThreshold: number | null;
-  readonly maxLtv: number | null;
+  readonly liquidationPenalty: BigNumber | null;
+  readonly liquidationThreshold: BigNumber | null;
+  readonly maxLtv: BigNumber | null;
 };
 
 export const deriveMarketRiskLimits = (market: Market): MarketRiskLimits => {
@@ -16,12 +17,24 @@ export const deriveMarketRiskLimits = (market: Market): MarketRiskLimits => {
   }
 
   return {
-    liquidationPenalty: Math.max(
-      ...market.collateralTokens.map((token) => token.liquidationPenalty)
+    liquidationPenalty: market.collateralTokens.reduce(
+      (result, token) =>
+        result == null
+          ? token.liquidationPenalty
+          : BigNumber.max(result, token.liquidationPenalty),
+      null as BigNumber | null
     ),
-    liquidationThreshold: Math.min(
-      ...market.collateralTokens.map((token) => token.liquidationThreshold)
+    liquidationThreshold: market.collateralTokens.reduce(
+      (result, token) =>
+        result == null
+          ? token.liquidationThreshold
+          : BigNumber.min(result, token.liquidationThreshold),
+      null as BigNumber | null
     ),
-    maxLtv: Math.min(...market.collateralTokens.map((token) => token.maxLtv)),
+    maxLtv: market.collateralTokens.reduce(
+      (result, token) =>
+        result == null ? token.maxLtv : BigNumber.min(result, token.maxLtv),
+      null as BigNumber | null
+    ),
   };
 };

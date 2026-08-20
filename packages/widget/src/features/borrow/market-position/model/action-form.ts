@@ -1,4 +1,5 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
+import { exactDecimal } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import type { WalletAddress } from "../../../../domain/identity/identifiers";
 import type {
@@ -62,11 +63,11 @@ export type BorrowWithdrawFormAction =
 export type BorrowRepayFormView = {
   readonly amount: BigNumber;
   readonly canSubmit: boolean;
-  readonly currentLtv: number | null;
+  readonly currentLtv: BigNumber | null;
   readonly error: BorrowPositionActionFormError | null;
-  readonly projectedLtv: number | null;
+  readonly projectedLtv: BigNumber | null;
   readonly riskStatus: "available" | "unavailable";
-  readonly remainingDebt: number;
+  readonly remainingDebt: BigNumber;
   readonly repayAll: boolean;
   readonly repayUsd: BigNumber;
   readonly preparation: BorrowActionPreparation<RepayProjection>;
@@ -75,11 +76,11 @@ export type BorrowRepayFormView = {
 export type BorrowWithdrawFormView = {
   readonly amount: BigNumber;
   readonly canSubmit: boolean;
-  readonly currentCollateralUsd: number;
-  readonly currentLtv: number | null;
+  readonly currentCollateralUsd: BigNumber;
+  readonly currentLtv: BigNumber | null;
   readonly error: BorrowPositionActionFormError | null;
-  readonly projectedCollateralUsd: number;
-  readonly projectedLtv: number | null;
+  readonly projectedCollateralUsd: BigNumber;
+  readonly projectedLtv: BigNumber | null;
   readonly riskStatus: "available" | "unavailable";
   readonly preparation: BorrowActionPreparation<WithdrawProjection>;
   readonly selectedToken: BorrowWithdrawTokenOption;
@@ -92,7 +93,7 @@ export type BorrowCollateralToggleFormView = {
 };
 
 const toAmountString = (amount: BigNumber | number | string) =>
-  new BigNumber(amount).toString(10);
+  exactDecimal(amount).toString(10);
 
 export const makeDefaultBorrowRepayFormIntent = (): BorrowRepayFormIntent => ({
   amount: "0",
@@ -150,7 +151,7 @@ export const resolveBorrowRepayFormView = ({
   readonly intent: BorrowRepayFormIntent;
   readonly tokenBalances: ReadonlyArray<TokenBalance> | null;
 }): BorrowRepayFormView => {
-  const amount = new BigNumber(intent.amount || 0);
+  const amount = exactDecimal(intent.amount || 0);
   const preparation = prepareBorrowAction({
     _tag: "RepayDraft",
     address,
@@ -181,7 +182,7 @@ export const resolveBorrowRepayFormView = ({
       projection.risk.status === "available"
         ? projection.risk.projectedLtv
         : null,
-    remainingDebt: projection.remainingDebt.toNumber(),
+    remainingDebt: projection.remainingDebt,
     repayAll: intent.repayAll,
     repayUsd: projection.repayUsd,
     riskStatus: projection.risk.status,
@@ -221,7 +222,7 @@ export const resolveBorrowWithdrawFormView = ({
     return null;
   }
 
-  const amount = new BigNumber(intent.amount || 0);
+  const amount = exactDecimal(intent.amount || 0);
   const preparation = prepareBorrowAction({
     _tag: "WithdrawDraft",
     address,
@@ -243,13 +244,11 @@ export const resolveBorrowWithdrawFormView = ({
   return {
     amount,
     canSubmit: preparation._tag === "Ready",
-    currentCollateralUsd:
-      projection.financials.existingCollateralUsd.toNumber(),
+    currentCollateralUsd: projection.financials.existingCollateralUsd,
     currentLtv: projection.risk.currentLtv,
     error: getError(),
     preparation,
-    projectedCollateralUsd:
-      projection.financials.projectedCollateralUsd.toNumber(),
+    projectedCollateralUsd: projection.financials.projectedCollateralUsd,
     projectedLtv:
       projection.risk.status === "available"
         ? projection.risk.projectedLtv

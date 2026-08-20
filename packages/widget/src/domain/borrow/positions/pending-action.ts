@@ -1,11 +1,12 @@
 import { Schema } from "effect";
+import { ExactBaseUnitAmount } from "../../finance/scalars";
 import { MarketId, TokenAddress } from "../ids";
 
 export const WithdrawPendingAction = Schema.Struct({
   type: Schema.Literal("withdraw"),
   label: Schema.String,
   args: Schema.Struct({
-    amountRaw: Schema.BigIntFromString,
+    amountRaw: ExactBaseUnitAmount,
     tokenAddress: TokenAddress,
     marketId: MarketId,
   }),

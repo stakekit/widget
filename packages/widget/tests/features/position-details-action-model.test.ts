@@ -304,7 +304,7 @@ describe("Position Details action model", () => {
       yieldBalanceFixture({
         pendingActions: [
           {
-            ...pendingAction,
+            amount: "1",
             arguments: {
               fields: [
                 {
@@ -317,9 +317,12 @@ describe("Position Details action model", () => {
                 },
               ],
             },
+            intent: "manage",
+            passthrough: "claim-rewards",
+            type: "CLAIM_REWARDS",
           },
           {
-            ...pendingAction,
+            amount: "1",
             arguments: {
               fields: [
                 {
@@ -332,7 +335,9 @@ describe("Position Details action model", () => {
                 },
               ],
             },
+            intent: "manage",
             passthrough: "claim-rewards-second-tranche",
+            type: "CLAIM_REWARDS",
           },
         ],
         token: selectedYield.token,

@@ -1,12 +1,12 @@
 import { Match } from "effect";
 import { useTranslation } from "react-i18next";
-import type { ClassicTransactionWorkflowProviderDetail } from "../../../../services/transaction-workflow/transaction-workflow-model";
 import { VirtualList } from "../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Button } from "../../../../shared/ui/primitives/button";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { FallbackContent } from "../../../widget-shell/views";
+import type { YieldSummaryProvider } from "../../../yield-summary/index";
 import type { ActivityActionItem } from "../../model/activity-action";
 import type { ActivityFilter } from "../../model/filters";
 import type {
@@ -94,7 +94,7 @@ const ReadyActivityPage = ({
 }: {
   readonly onActionSelect: (
     item: ActivityActionItem,
-    providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
+    providersDetails: ReadonlyArray<YieldSummaryProvider>
   ) => void;
   readonly onFilterSelect: (filter: ActivityFilter) => void;
   readonly onLoadMore: () => void;
@@ -164,7 +164,7 @@ export const ActivityPagePresentation = ({
 }: {
   readonly onActionSelect: (
     item: ActivityActionItem,
-    providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
+    providersDetails: ReadonlyArray<YieldSummaryProvider>
   ) => void;
   readonly onFilterSelect: (filter: ActivityFilter) => void;
   readonly onLoadMore: () => void;

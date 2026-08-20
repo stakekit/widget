@@ -53,7 +53,7 @@ const createDefaultAction = (
     type,
     address: body.address,
     amount: body.arguments?.amount ?? null,
-    amountRaw: body.arguments?.amount ?? null,
+    amountRaw: null,
     transactions: [transaction],
     rawArguments: body.arguments ?? null,
   });

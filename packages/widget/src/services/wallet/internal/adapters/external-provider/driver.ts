@@ -64,14 +64,14 @@ const decodeExternalProviderTransaction = ({
   readonly network: Network;
   readonly tx: string;
 }): Effect.Effect<SKTx, WalletDecodeError> => {
-  const result: Result.Result<SKTx, string> = (() => {
-    if (isEvmChain(network)) {
-      return decodeAndPrepareEvmTransaction({ address, tx }).pipe(
-        Result.mapError((error) => error.message),
-        Result.map((decodedTx) => ({ type: "evm", tx: decodedTx }))
-      );
-    }
+  if (isEvmChain(network)) {
+    return decodeAndPrepareEvmTransaction({ address, tx }).pipe(
+      Effect.map((decodedTx): SKTx => ({ type: "evm", tx: decodedTx })),
+      Effect.mapError((cause) => new WalletDecodeError({ cause }))
+    );
+  }
 
+  const result: Result.Result<SKTx, string> = (() => {
     if (isSolanaChain(network)) {
       return decodeSchema(unsignedSolanaTransactionCodec, tx).pipe(
         Result.map((decodedTx) => ({

@@ -1,8 +1,8 @@
 import { DateTime, Schema } from "effect";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import {
-  BigIntFromString,
-  PrecisionDecimalFromString,
+  ExactBaseUnitAmount,
+  ExactDecimal,
   UtcDateTimeFromString,
 } from "../../src/domain/finance/scalars";
 import {
@@ -16,12 +16,12 @@ import {
 describe("application scalar and identifier schemas", () => {
   it("uses lossless representations for raw units and decimal values", () => {
     expect(
-      Schema.decodeUnknownSync(BigIntFromString)(
+      Schema.decodeUnknownSync(ExactBaseUnitAmount)(
         "900719925474099312345678901234567890"
       )
     ).toBe(900719925474099312345678901234567890n);
     expect(
-      Schema.decodeUnknownSync(PrecisionDecimalFromString)(
+      Schema.decodeUnknownSync(ExactDecimal)(
         "9007199254740993.000000000000000001"
       ).toFixed()
     ).toBe("9007199254740993.000000000000000001");

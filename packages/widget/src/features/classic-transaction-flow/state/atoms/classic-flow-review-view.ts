@@ -1,9 +1,9 @@
-import BigNumber from "bignumber.js";
 import { DateTime, Duration, Option, Schedule, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type { YieldAction } from "../../../../domain/action/models";
 import { getTransactionGasEstimate } from "../../../../domain/action/rules";
+import { exactZero } from "../../../../domain/finance/exact";
 import { checkGasAmount } from "../../../../domain/finance/gas";
 import type { GasBalancesCommand } from "../../../../domain/finance/models";
 import {
@@ -28,7 +28,7 @@ const getGasAmount = (action: YieldAction | null) => {
   const total = action.transactions.reduce((sum, transaction) => {
     const decoded = getTransactionGasEstimate(transaction);
     return sum.plus(decoded?.amount ?? 0);
-  }, new BigNumber(0));
+  }, exactZero());
 
   return total.isZero() ? null : total;
 };

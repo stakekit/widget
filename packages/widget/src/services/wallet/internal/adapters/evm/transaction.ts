@@ -1,28 +1,7 @@
-import { Result, Schema, SchemaTransformation } from "effect";
-import { type Address, type Hex, numberToHex } from "viem";
+import { Effect, Schema, SchemaTransformation } from "effect";
+import { type Address, type Hex, hexToBigInt, isHex, numberToHex } from "viem";
+import { ExactBaseUnitAmount } from "../../../../../domain/finance/scalars";
 
-const BigIntFromNumber = Schema.Number.pipe(
-  Schema.decodeTo(
-    Schema.BigInt,
-    SchemaTransformation.transform({
-      decode: (value) => BigInt(value),
-      encode: (value) => Number(value),
-    })
-  )
-);
-const BigIntFromString = Schema.String.pipe(
-  Schema.decodeTo(
-    Schema.BigInt,
-    SchemaTransformation.transform({
-      decode: (value) => BigInt(value),
-      encode: (value) => value.toString(),
-    })
-  )
-);
-const BigIntFromStringOrNumber = Schema.Union([
-  BigIntFromString,
-  BigIntFromNumber,
-]);
 const HexString = Schema.declare<Hex>(
   (input): input is Hex => typeof input === "string" && input.startsWith("0x"),
   { expected: "a 0x-prefixed hex string" }
@@ -32,21 +11,50 @@ const EvmAddress = Schema.declare<Address>(
     typeof input === "string" && input.startsWith("0x"),
   { expected: "a 0x-prefixed address" }
 );
+
+/**
+ * EVM nodes quote transaction quantities as hex, while the API quotes them as
+ * decimal strings or safe integers.
+ */
+const HexQuantity = Schema.String.check(
+  Schema.makeFilter((value) =>
+    isHex(value) && value.length > 2
+      ? true
+      : "expected a 0x-prefixed hex quantity"
+  )
+).pipe(
+  Schema.decodeTo(
+    Schema.BigInt,
+    SchemaTransformation.transform({
+      decode: (value) => hexToBigInt(value as Hex),
+      encode: (value) => numberToHex(value),
+    })
+  )
+);
+const EvmBaseUnitQuantity = Schema.Union([ExactBaseUnitAmount, HexQuantity]);
+
 const UnsignedEvmTransaction = Schema.Struct({
   data: HexString,
   to: EvmAddress,
-  gasLimit: BigIntFromStringOrNumber,
+  gasLimit: EvmBaseUnitQuantity,
   from: EvmAddress,
-  value: Schema.optionalKey(BigIntFromStringOrNumber),
+  value: Schema.optionalKey(EvmBaseUnitQuantity),
   nonce: Schema.Number,
   type: Schema.Number,
-  gasPrice: Schema.optionalKey(BigIntFromStringOrNumber),
-  maxFeePerGas: Schema.optionalKey(BigIntFromStringOrNumber),
-  maxPriorityFeePerGas: Schema.optionalKey(BigIntFromStringOrNumber),
+  gasPrice: Schema.optionalKey(EvmBaseUnitQuantity),
+  maxFeePerGas: Schema.optionalKey(EvmBaseUnitQuantity),
+  maxPriorityFeePerGas: Schema.optionalKey(EvmBaseUnitQuantity),
   chainId: Schema.Number,
 });
 
 export const unsignedEVMTransactionCodec = UnsignedEvmTransaction;
+
+const UnsignedEvmTransactionFromJson = Schema.fromJsonString(
+  UnsignedEvmTransaction
+);
+
+export const decodeUnsignedEvmTransactionJson = (tx: string) =>
+  Schema.decodeUnknownEffect(UnsignedEvmTransactionFromJson)(tx);
 
 const prepareDecodedEvmTransaction = (
   decodedTx: typeof UnsignedEvmTransaction.Type,
@@ -82,6 +90,6 @@ export const decodeAndPrepareEvmTransaction = ({
   address: Address;
   tx: string;
 }) =>
-  Schema.decodeResult(Schema.fromJsonString(UnsignedEvmTransaction))(tx).pipe(
-    Result.map((decodedTx) => prepareDecodedEvmTransaction(decodedTx, address))
+  decodeUnsignedEvmTransactionJson(tx).pipe(
+    Effect.map((decodedTx) => prepareDecodedEvmTransaction(decodedTx, address))
   );

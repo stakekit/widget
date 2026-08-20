@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import { Data, Option } from "effect";
 import type { AsyncResult as AtomAsyncResult } from "effect/unstable/reactivity/AsyncResult";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
@@ -12,6 +12,7 @@ import {
   emptyBorrowPositions,
 } from "../../../../domain/borrow/positions/borrow-positions";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
+import { exactDecimal, exactZero } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
 import {
@@ -68,11 +69,11 @@ export type BorrowFormProjection = {
   readonly collateralUsd: BigNumber;
   readonly existingCollateralUsd: BigNumber;
   readonly existingDebtUsd: BigNumber;
-  readonly maxLtv: number | null;
+  readonly maxLtv: BigNumber | null;
   readonly projectedCollateralUsd: BigNumber;
   readonly projectedDebtUsd: BigNumber;
-  readonly projectedHealthFactor: number | null;
-  readonly projectedLtv: number;
+  readonly projectedHealthFactor: BigNumber | null;
+  readonly projectedLtv: BigNumber;
   readonly riskStatus: "available" | "unavailable";
 };
 
@@ -148,7 +149,7 @@ export const pinBorrowFormDefaults = ({
 };
 
 const toAmountString = (amount: BigNumber | number | string) =>
-  new BigNumber(amount).toString(10);
+  exactDecimal(amount).toString(10);
 
 export const applyBorrowFormAction = ({
   action,
@@ -317,8 +318,8 @@ export const resolveBorrowEntryView = ({
     : null;
   const selectedCollateralBalance =
     walletBalances?.selectedCollateralToken ?? null;
-  const borrowAmount = new BigNumber(intent.borrowAmount || 0);
-  const collateralAmount = new BigNumber(intent.collateralAmount || 0);
+  const borrowAmount = exactDecimal(intent.borrowAmount || 0);
+  const collateralAmount = exactDecimal(intent.collateralAmount || 0);
   const hasRequiredFacts =
     (!borrowAmount.gt(0) || positions !== null) &&
     (!collateralAmount.gt(0) || tokenBalancesAvailable);
@@ -338,10 +339,10 @@ export const resolveBorrowEntryView = ({
       : null;
   const preparedProjection = preparation?.projection ?? null;
   const financials = preparedProjection?.financials ?? {
-    existingCollateralUsd: new BigNumber(0),
-    existingDebtUsd: new BigNumber(0),
-    projectedCollateralUsd: new BigNumber(0),
-    projectedDebtUsd: new BigNumber(0),
+    existingCollateralUsd: exactZero(),
+    existingDebtUsd: exactZero(),
+    projectedCollateralUsd: exactZero(),
+    projectedDebtUsd: exactZero(),
   };
   const risk = preparedProjection?.risk ?? {
     currentLtv: null,
@@ -365,18 +366,17 @@ export const resolveBorrowEntryView = ({
   const isActionReady =
     preparation?._tag === "Ready" && !AsyncResult.isFailure(marketsResult);
   const projection: BorrowFormProjection = {
-    borrowMaxAmount: preparedProjection?.borrowMaxAmount ?? new BigNumber(0),
-    borrowUsd: preparedProjection?.borrowUsd ?? new BigNumber(0),
-    collateralMaxAmount:
-      preparedProjection?.collateralMaxAmount ?? new BigNumber(0),
-    collateralUsd: preparedProjection?.collateralUsd ?? new BigNumber(0),
+    borrowMaxAmount: preparedProjection?.borrowMaxAmount ?? exactZero(),
+    borrowUsd: preparedProjection?.borrowUsd ?? exactZero(),
+    collateralMaxAmount: preparedProjection?.collateralMaxAmount ?? exactZero(),
+    collateralUsd: preparedProjection?.collateralUsd ?? exactZero(),
     existingCollateralUsd: financials.existingCollateralUsd,
     existingDebtUsd: financials.existingDebtUsd,
     maxLtv: availableRisk?.maxLtv ?? null,
     projectedCollateralUsd: financials.projectedCollateralUsd,
     projectedDebtUsd: financials.projectedDebtUsd,
     projectedHealthFactor: availableRisk?.projectedHealthFactor ?? null,
-    projectedLtv: availableRisk?.projectedLtv ?? 0,
+    projectedLtv: availableRisk?.projectedLtv ?? exactZero(),
     riskStatus: risk.status,
   };
 

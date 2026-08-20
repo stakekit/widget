@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { Effect, Layer, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
@@ -559,7 +560,7 @@ describe("semantic resource invalidation", () => {
 
     await vi.waitFor(() => {
       const value = AsyncResult.getOrThrow(registry.get(detail));
-      expect(value.balances.debt?.balance).toBe(400);
+      expect(value.balances.debt?.balance).toEqual(new BigNumber(400));
       expect(value.balances.debt?.pendingActions).toHaveLength(1);
     });
     updated = true;
@@ -581,7 +582,7 @@ describe("semantic resource invalidation", () => {
     );
     await vi.waitFor(() => {
       const value = AsyncResult.getOrThrow(registry.get(detail));
-      expect(value.balances.debt?.balance).toBe(100);
+      expect(value.balances.debt?.balance).toEqual(new BigNumber(100));
       expect(value.balances.debt?.pendingActions).toHaveLength(0);
     });
     expect(getIntegrations).toHaveBeenCalledOnce();

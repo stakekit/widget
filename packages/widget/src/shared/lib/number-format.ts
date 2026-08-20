@@ -1,23 +1,11 @@
 import BigNumber from "bignumber.js";
-
-BigNumber.config({
-  FORMAT: {
-    prefix: "",
-    decimalSeparator: ".",
-    groupSeparator: ",",
-    groupSize: 3,
-    secondaryGroupSize: 0,
-    fractionGroupSeparator: " ",
-    fractionGroupSize: 0,
-    suffix: "",
-  },
-});
+import { exactDecimal } from "../../domain/finance/exact";
 
 export const formatNumber = (
   number: string | BigNumber | number,
   decimals?: number
 ) => {
-  const value = BigNumber(number);
+  const value = exactDecimal(number);
 
   const formatted = (() => {
     if (typeof decimals !== "number") return value;
@@ -33,3 +21,9 @@ export const formatNumber = (
 
 export const defaultFormattedNumber = (number: string | BigNumber | number) =>
   formatNumber(number, 6);
+
+export const toRepresentationNumber = (
+  value: BigNumber | number | string
+): number => exactDecimal(value).toNumber();
+
+export const toChartNumber = toRepresentationNumber;

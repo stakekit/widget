@@ -14,22 +14,22 @@ export type RiskUnavailableReason =
   | "unknownMarket";
 
 export type AvailableRiskProjection = {
-  readonly borrowCapacityUsd: number;
-  readonly healthFactor: number | null;
-  readonly liquidationCapacityUsd: number;
-  readonly liquidationThreshold: number | null;
-  readonly ltv: number;
-  readonly maxLtv: number | null;
+  readonly borrowCapacityUsd: BigNumber;
+  readonly healthFactor: BigNumber | null;
+  readonly liquidationCapacityUsd: BigNumber;
+  readonly liquidationThreshold: BigNumber | null;
+  readonly ltv: BigNumber;
+  readonly maxLtv: BigNumber | null;
   readonly status: "available";
-  readonly totalCollateralUsd: number;
-  readonly totalDebtUsd: number;
+  readonly totalCollateralUsd: BigNumber;
+  readonly totalDebtUsd: BigNumber;
 };
 
 type UnavailableRiskProjection = {
   readonly reason: RiskUnavailableReason;
   readonly status: "unavailable";
-  readonly totalCollateralUsd: number | null;
-  readonly totalDebtUsd: number | null;
+  readonly totalCollateralUsd: BigNumber | null;
+  readonly totalDebtUsd: BigNumber | null;
 };
 
 export type RiskProjection =
@@ -111,8 +111,8 @@ export const unavailable = ({
   totalDebtUsd,
 }: {
   readonly reason: RiskUnavailableReason;
-  readonly totalCollateralUsd: number | null;
-  readonly totalDebtUsd: number | null;
+  readonly totalCollateralUsd: BigNumber | null;
+  readonly totalDebtUsd: BigNumber | null;
 }): UnavailableRiskProjection => ({
   reason,
   status: "unavailable",

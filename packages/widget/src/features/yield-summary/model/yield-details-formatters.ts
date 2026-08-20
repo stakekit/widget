@@ -1,4 +1,3 @@
-import BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import type { getEffectiveYieldRewardRateDetails } from "../../../domain/earn/reward-rate";
@@ -8,6 +7,7 @@ import {
   hasYieldBearingOutputToken,
   isNonZeroRewardRateYield,
 } from "../../../domain/earn/yield";
+import { exactDecimal } from "../../../domain/finance/exact";
 import {
   formatCompactNumber,
   formatPercent,
@@ -41,13 +41,13 @@ export const formatRewardRate = (
 ) => {
   if (!effectiveRewardRate) return null;
 
-  const amount = BigNumber(effectiveRewardRate.total);
+  const amount = exactDecimal(effectiveRewardRate.total);
 
   if (!amount.isFinite()) return null;
 
   if (amount.isZero() && !isNonZeroRewardRateYield(yieldDto)) return null;
 
-  return `${APToPercentage(amount.toNumber())}%`;
+  return `${APToPercentage(amount)}%`;
 };
 
 export const formatMinStakeLabel = (
@@ -68,7 +68,7 @@ export const formatMinStake = (
 
   if (minimum === null || minimum === undefined) return null;
 
-  const amount = BigNumber(minimum);
+  const amount = exactDecimal(minimum);
 
   if (!amount.isFinite()) return null;
 
@@ -167,7 +167,7 @@ export const formatPricePerShare = (
 
   if (price === null || price === undefined) return null;
 
-  const amount = BigNumber(price);
+  const amount = exactDecimal(price);
 
   if (!amount.isFinite() || amount.isLessThanOrEqualTo(0)) return null;
 
@@ -223,7 +223,7 @@ export const formatMeaningfulCompactNumber = (
 const isPositiveFinite = (value: string | number | null | undefined) => {
   if (value === null || value === undefined || value === "") return false;
 
-  const amount = BigNumber(value);
+  const amount = exactDecimal(value);
 
   return amount.isFinite() && amount.isGreaterThan(0);
 };

@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import type {
   EarnValidator,
@@ -6,11 +6,12 @@ import type {
 } from "../../../domain/earn/models";
 import type { ValidatorKey } from "../../../domain/earn/validator";
 import { isBittensorStaking } from "../../../domain/earn/yield";
+import { exactDecimal, exactZero } from "../../../domain/finance/exact";
 import { getRewardRateFormatted } from "../../../shared/lib/formatters";
 import { formatNumber } from "../../../shared/lib/number-format";
 
 type YieldRewardProvider = Readonly<{
-  readonly rewardRate?: number | null;
+  readonly rewardRate?: BigNumber | number | null;
 }>;
 
 export const getYieldEstimatedRewards = ({
@@ -36,8 +37,8 @@ export const getYieldEstimatedRewards = ({
 
   const rewardRateAverage = providers
     .reduce(
-      (total, provider) => total.plus(new BigNumber(provider.rewardRate ?? 0)),
-      new BigNumber(0)
+      (total, provider) => total.plus(exactDecimal(provider.rewardRate ?? 0)),
+      exactZero()
     )
     .dividedBy(providers.length);
 
@@ -48,7 +49,7 @@ export const getYieldEstimatedRewards = ({
         )
       : "-",
     percentage: getRewardRateFormatted({
-      rewardRate: rewardRateAverage.toNumber(),
+      rewardRate: rewardRateAverage,
     }),
     rewardRateAverage,
     rewardType: selectedYield.rewardRate.rateType?.toLowerCase(),

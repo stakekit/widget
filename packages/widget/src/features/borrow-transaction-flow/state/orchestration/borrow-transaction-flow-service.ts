@@ -59,9 +59,6 @@ type BorrowTransactionFlowServiceApi = Readonly<{
   >;
 }>;
 
-const copyIntake = (intake: BorrowTransactionFlowIntake) =>
-  structuredClone(intake);
-
 const makeBorrowTransactionFlowService = Effect.fn(
   "makeBorrowTransactionFlowService"
 )(function* () {
@@ -124,7 +121,7 @@ const makeBorrowTransactionFlowService = Effect.fn(
     const epoch = yield* Ref.getAndUpdate(nextEpochRef, (next) => next + 1);
     const session: BorrowFlowSession = {
       epoch,
-      intake: copyIntake(intake),
+      intake: { ...intake },
       walletScope: new WalletScopeKey(walletScope),
     };
     yield* SubscriptionRef.set(stateRef, session);

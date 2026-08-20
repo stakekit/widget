@@ -1,4 +1,3 @@
-import BigNumber from "bignumber.js";
 import { Trans, useTranslation } from "react-i18next";
 import type { EarnValidator } from "../../../../../../../domain/earn/models";
 import { getEffectiveYieldRewardRateDetails } from "../../../../../../../domain/earn/reward-rate";
@@ -6,6 +5,7 @@ import {
   getYieldOutputToken,
   getYieldTypeLabels,
 } from "../../../../../../../domain/earn/yield";
+import { exactDecimal } from "../../../../../../../domain/finance/exact";
 import type { Token } from "../../../../../../../domain/token/token";
 import { useWidgetConfig } from "../../../../../../../features/widget-configuration/index";
 import { formatNumber } from "../../../../../../../shared/lib/number-format";
@@ -91,7 +91,7 @@ export const SelectYieldRewardDetails = () => {
                   yieldDto.metadata.name,
               },
             ];
-        const pricePerShare = new BigNumber(
+        const pricePerShare = exactDecimal(
           yieldDto.state?.pricePerShareState?.price ?? 1
         );
         const outputAmount =

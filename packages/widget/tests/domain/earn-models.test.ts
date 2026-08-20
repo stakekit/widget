@@ -129,7 +129,7 @@ describe("Earn application models", () => {
     expect(yieldModel.mechanics.arguments?.enter?.fields).toEqual({
       amount: {
         maximum: null,
-        minimum: "0",
+        minimum: new BigNumber(0),
         required: false,
       },
     });
@@ -159,7 +159,7 @@ describe("Earn application models", () => {
 
     expect(yieldModel.mechanics.arguments?.enter?.fields.amount).toEqual({
       maximum: null,
-      minimum: "5",
+      minimum: new BigNumber(5),
       required: false,
     });
   });
@@ -238,8 +238,8 @@ describe("Earn application models", () => {
 
     expect(yieldModel.mechanics.arguments?.enter?.fields).toEqual({
       amount: {
-        maximum: "100",
-        minimum: "0.000000000000000001",
+        maximum: new BigNumber(100),
+        minimum: new BigNumber("0.000000000000000001"),
         required: true,
       },
       providerId: {
@@ -348,7 +348,7 @@ describe("Earn application models", () => {
         fields: {
           amount: {
             maximum: null,
-            minimum: "0",
+            minimum: new BigNumber(0),
             required: false,
           },
         },

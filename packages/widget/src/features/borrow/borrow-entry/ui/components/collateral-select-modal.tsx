@@ -94,7 +94,10 @@ export const CollateralSelectModal = ({
               }
               label={collateralToken.token.symbol}
               meta={t("dashboard.borrow.form.max_ltv", {
-                value: formatNumber(collateralToken.maxLtv * 100, 2),
+                value: formatNumber(
+                  collateralToken.maxLtv.multipliedBy(100),
+                  2
+                ),
               })}
               onClick={() => {
                 selectCollateralToken(collateralToken);

@@ -1,9 +1,10 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
 import type { Market } from "../../../../domain/borrow/catalog/market";
 import type { BorrowToken } from "../../../../domain/borrow/catalog/token";
 import { decodeTokenId, type TokenId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
+import { exactZero } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import { equalTokens } from "../../../../domain/token/token";
 
@@ -53,7 +54,7 @@ export const deriveBorrowTokenWalletBalance = ({
     balances.find((candidate) =>
       isBorrowTokenBalanceMatch({ balance: candidate, network, token })
     ) ?? null;
-  const amountValue = balance?.amount ?? new BigNumber(0);
+  const amountValue = balance?.amount ?? exactZero();
 
   return {
     amount: amountValue.toFixed(),

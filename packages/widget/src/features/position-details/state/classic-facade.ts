@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import {
@@ -7,6 +7,7 @@ import {
 } from "../../../domain/earn/reward-rate";
 import { isForceMaxAmount } from "../../../domain/earn/stake";
 import { getYieldActionArg } from "../../../domain/earn/yield";
+import { exactDecimal } from "../../../domain/finance/exact";
 import type { Token } from "../../../domain/token/token";
 import { formatUsd } from "../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../shared/lib/number-format";
@@ -62,7 +63,7 @@ export const positionDetailsClassicViewAtom = Atom.family(
       const forceMax = amountArgument
         ? isForceMaxAmount(amountArgument)
         : false;
-      const minimum = workflow.minUnstakeAmount.toNumber();
+      const minimum = workflow.minUnstakeAmount;
       const exitResources = get(
         positionDetailsExitResourcesViewAtom(getExitResourcesKey(workflow))
       );
@@ -102,8 +103,8 @@ export const positionDetailsClassicViewAtom = Atom.family(
                     conversions.set(
                       balance.token.symbol,
                       `1 ${balance.token.symbol} = ${defaultFormattedNumber(
-                        new BigNumber(balance.shareAmount ?? 0).dividedBy(
-                          new BigNumber(balance.amount ?? 0)
+                        exactDecimal(balance.shareAmount ?? 0).dividedBy(
+                          exactDecimal(balance.amount ?? 0)
                         )
                       )} ${balance.shareToken?.symbol}`
                     );
@@ -157,7 +158,7 @@ export const positionDetailsClassicViewAtom = Atom.family(
         unstakeMaxAmount:
           amountArgument && !forceMax ? (amountArgument.maximum ?? null) : null,
         unstakeMinAmount:
-          amountArgument && !forceMax && new BigNumber(minimum).isGreaterThan(0)
+          amountArgument && !forceMax && exactDecimal(minimum).isGreaterThan(0)
             ? minimum
             : null,
         unstakeToken: workflow.unstakeToken,

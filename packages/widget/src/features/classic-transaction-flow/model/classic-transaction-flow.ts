@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import { Match } from "effect";
 import type {
   ActionCommand,
@@ -13,6 +13,7 @@ import type {
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
 import type { ValidatorKey } from "../../../domain/earn/validator";
+import { exactDecimal } from "../../../domain/finance/exact";
 import type { Token } from "../../../domain/token/token";
 import {
   sameWalletScopeOwner,
@@ -29,10 +30,12 @@ import {
   makeClassicTransactionWorkflowInput,
 } from "../../../services/transaction-workflow/transaction-workflow-model";
 
+type ClassicFlowProviderDetail = ClassicTransactionWorkflowProviderDetail;
+
 type EnterClassicTransactionFlowIntake = {
   readonly _tag: "Enter";
   readonly gasFeeToken: EarnYieldWithProvider["token"];
-  readonly providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>;
+  readonly providersDetails: ReadonlyArray<ClassicFlowProviderDetail>;
   readonly request: ActionCommand;
   readonly selectedStake: EarnYieldWithProvider;
   readonly selectedToken: Token;
@@ -44,7 +47,7 @@ type ExitClassicTransactionFlowIntake = {
   readonly _tag: "Exit";
   readonly gasFeeToken: EarnYieldWithProvider["token"];
   readonly integration: EarnYieldWithProvider;
-  readonly providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>;
+  readonly providersDetails: ReadonlyArray<ClassicFlowProviderDetail>;
   readonly receiveToken: ExitReceiveToken | null;
   readonly request: ActionCommand;
   readonly unstakeAmount: BigNumber;
@@ -58,7 +61,7 @@ type ManageClassicTransactionFlowIntake = {
   readonly integration: EarnYieldWithProvider;
   readonly interactedToken: Token;
   readonly pendingActionType: YieldPendingActionType;
-  readonly providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>;
+  readonly providersDetails: ReadonlyArray<ClassicFlowProviderDetail>;
   readonly request: ManageActionCommand;
   readonly walletScope: WalletScopeKey;
 };
@@ -66,7 +69,7 @@ type ManageClassicTransactionFlowIntake = {
 type ActivityResumeClassicTransactionFlowIntake = {
   readonly _tag: "ActivityResume";
   readonly action: YieldAction;
-  readonly providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>;
+  readonly providersDetails: ReadonlyArray<ClassicFlowProviderDetail>;
   readonly selectedValidators: ReadonlyArray<EarnValidator>;
   readonly selectedYield: EarnYieldWithProvider;
   readonly walletScope: WalletScopeKey;
@@ -207,41 +210,11 @@ const copyClassicTransactionFlowIntake = (
   intake: ClassicTransactionFlowIntake,
   walletScope: WalletScopeKey
 ): ClassicTransactionFlowIntake => {
-  switch (intake._tag) {
-    case "Enter": {
-      const { walletScope: _expectedWalletScope, ...facts } = intake;
-      return {
-        ...structuredClone(facts),
-        walletScope: new WalletScopeKey(walletScope),
-      };
-    }
-    case "ActivityResume": {
-      const { walletScope: _expectedWalletScope, ...facts } = intake;
-      return {
-        ...structuredClone(facts),
-        walletScope: new WalletScopeKey(walletScope),
-      };
-    }
-    case "Exit": {
-      const {
-        unstakeAmount,
-        walletScope: _expectedWalletScope,
-        ...facts
-      } = intake;
-      return {
-        ...structuredClone(facts),
-        unstakeAmount: new BigNumber(unstakeAmount),
-        walletScope: new WalletScopeKey(walletScope),
-      };
-    }
-    case "Manage": {
-      const { walletScope: _expectedWalletScope, ...facts } = intake;
-      return {
-        ...structuredClone(facts),
-        walletScope: new WalletScopeKey(walletScope),
-      };
-    }
-  }
+  const { walletScope: _expectedWalletScope, ...facts } = intake;
+  return {
+    ...facts,
+    walletScope: new WalletScopeKey(walletScope),
+  };
 };
 
 export const resolveClassicTransactionFlowStart = (
@@ -322,7 +295,7 @@ export const resolveClassicTransactionFlowStart = (
         : {}),
       destination,
       intake: copyClassicTransactionFlowIntake(command.intake, walletScope),
-      mount: structuredClone(mount),
+      mount,
     },
   };
 };
@@ -428,7 +401,7 @@ export const getClassicTransactionFlowGasWarningInput = (
   intake._tag === "Enter"
     ? {
         gasFeeToken: intake.gasFeeToken,
-        stakeAmount: new BigNumber(intake.request.arguments?.amount ?? 0),
+        stakeAmount: exactDecimal(intake.request.arguments?.amount ?? 0),
         stakeToken: intake.selectedToken,
         walletScope: intake.walletScope,
       }

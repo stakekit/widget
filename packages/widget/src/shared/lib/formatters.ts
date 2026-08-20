@@ -1,5 +1,6 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import type { EarnYieldWithProvider } from "../../domain/earn/models";
+import { exactDecimal } from "../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../domain/finance/price";
 import { Prices } from "../../domain/health/models";
 import type { Token } from "../../domain/token/token";
@@ -17,11 +18,11 @@ export const formatCountryCode = ({
 };
 
 export const getRewardRateFormatted = (opts: {
-  rewardRate: number | undefined;
+  rewardRate: BigNumber | number | undefined;
 }) => {
   const { rewardRate } = opts;
 
-  if (!rewardRate) {
+  if (rewardRate == null || exactDecimal(rewardRate).isZero()) {
     return "- %";
   }
 
@@ -120,7 +121,7 @@ export const formatCompactNumber = (
 ) => {
   if (isMissingNumericInput(value)) return "-";
 
-  const amount = BigNumber(value);
+  const amount = exactDecimal(value);
 
   if (!amount.isFinite()) return "-";
 
@@ -132,7 +133,7 @@ export const formatUsd = (
 ) => {
   if (isMissingNumericInput(value)) return "-";
 
-  const amount = BigNumber(value);
+  const amount = exactDecimal(value);
 
   if (!amount.isFinite()) return "-";
 
@@ -156,7 +157,7 @@ export const formatHealthFactor = (
 ) => {
   if (isMissingNumericInput(value)) return "-";
 
-  const amount = BigNumber(value);
+  const amount = exactDecimal(value);
 
   return amount.isFinite() ? formatNumber(amount, 4) : "-";
 };
@@ -167,7 +168,7 @@ export const formatPercent = (
 ) => {
   if (isMissingNumericInput(value)) return "-";
 
-  const amount = BigNumber(value);
+  const amount = exactDecimal(value);
 
   return amount.isFinite() ? `${formatNumber(amount.times(100), 2)}%` : "-";
 };

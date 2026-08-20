@@ -1,7 +1,8 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
+import { exactZero } from "../../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../../domain/finance/price";
 import type { YieldId } from "../../../../domain/identity/identifiers";
 import { getPositionTotalAmount } from "../../../../domain/portfolio/positions";
@@ -44,7 +45,7 @@ export const getPositionsTotal = (
       getPositionTotalAmount(position.balancesWithAmount, yieldDto.token)
         .amountUsd
     );
-  }, new BigNumber(0));
+  }, exactZero());
 
 export const getPositionsAverageApy = (
   positions: ReadonlyArray<PositionItem>,
@@ -61,21 +62,21 @@ export const getPositionsAverageApy = (
       ).amountUsd;
       const rewardRate = yieldDto.rewardRate.total;
 
-      return rewardRate > 0 && value.gt(0)
+      return rewardRate.isGreaterThan(0) && value.gt(0)
         ? {
             totalValue: summary.totalValue.plus(value),
             weightedApy: summary.weightedApy.plus(
-              value.times(rewardRate * 100)
+              value.times(rewardRate).times(100)
             ),
           }
         : summary;
     },
-    { totalValue: new BigNumber(0), weightedApy: new BigNumber(0) }
+    { totalValue: exactZero(), weightedApy: exactZero() }
   );
 
   return weighted.totalValue.gt(0)
     ? weighted.weightedApy.div(weighted.totalValue)
-    : new BigNumber(0);
+    : exactZero();
 };
 
 export const allPositionsSummaryAtom = Atom.make((get) =>
@@ -143,7 +144,7 @@ export const availableBalanceSummaryAtom = Atom.make((get) => {
                   token: balance.token,
                 })
               ),
-            new BigNumber(0)
+            exactZero()
           )
         : undefined
     )

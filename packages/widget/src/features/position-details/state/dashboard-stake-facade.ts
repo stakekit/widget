@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
@@ -14,6 +14,7 @@ import {
   getYieldProviderYieldIds,
   isYieldValidatorSelectionRequired,
 } from "../../../domain/earn/yield";
+import { exactDecimal, exactZero } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
 import { equalTokens } from "../../../domain/token/token";
 import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
@@ -132,7 +133,7 @@ const positionDetailsStakeFacadeAtom = Atom.family(
             const balance = tokenBalanceValues?.find((item) =>
               equalTokens(item.token, selectedToken)
             );
-            return balance ? new BigNumber(balance.amount) : null;
+            return balance ? exactDecimal(balance.amount) : null;
           })()
         : null;
       const positionsByType = get(positionsByTypeAtom).pipe(
@@ -141,11 +142,9 @@ const positionDetailsStakeFacadeAtom = Atom.family(
       );
       const selectedYieldHasActivePosition =
         (positionsByType?.get("active")?.length ?? 0) > 0;
-      const rawAmount = new BigNumber(intent.stakeAmount);
+      const rawAmount = exactDecimal(intent.stakeAmount);
       const amount =
-        intent.useMaxAmount || !rawAmount.isZero()
-          ? rawAmount
-          : new BigNumber(0);
+        intent.useMaxAmount || !rawAmount.isZero() ? rawAmount : exactZero();
       const validators = get(selectedValidatorsAtom);
       const tronResource =
         intent.tronResource ?? resolveTronResource(selectedYield);
@@ -294,14 +293,14 @@ const positionDetailsStakeFacadeAtom = Atom.family(
           selectedYield &&
           entry.constraints.maximum &&
           !entry.constraints.forceMax
-            ? entry.constraints.allowedMaximum.toNumber()
+            ? entry.constraints.allowedMaximum
             : null,
         stakeMinAmount:
           selectedYield &&
           entry.constraints.minimum &&
           !entry.constraints.forceMax &&
           entry.constraints.allowedMinimum.isGreaterThan(0)
-            ? entry.constraints.allowedMinimum.toNumber()
+            ? entry.constraints.allowedMinimum
             : null,
         symbol,
         tronResource: input.tronResource,

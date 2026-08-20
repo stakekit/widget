@@ -1,5 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import { DateTime, Match } from "effect";
 import { useTranslation } from "react-i18next";
 import type {
@@ -10,6 +10,7 @@ import {
   getExtendedYieldType,
   isDepositYieldType,
 } from "../../../../../domain/earn/yield";
+import { exactDecimal } from "../../../../../domain/finance/exact";
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
 import { getDisplayDurationUntil } from "../../../../../shared/lib/date";
 import { formatUsd } from "../../../../../shared/lib/formatters";
@@ -94,7 +95,7 @@ export const PositionBalances = ({
             overflowWrap="anywhere"
             variant={{ type: "muted", weight: "normal" }}
           >
-            {defaultFormattedNumber(new BigNumber(yieldBalance.amount ?? 0))}{" "}
+            {defaultFormattedNumber(exactDecimal(yieldBalance.amount ?? 0))}{" "}
             {yieldBalance.token.symbol}
             {!yieldBalance.token.isPoints &&
               ` (${formatUsd(yieldBalance.tokenPriceInUsd)})`}

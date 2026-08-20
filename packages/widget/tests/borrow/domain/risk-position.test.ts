@@ -108,8 +108,8 @@ describe("BorrowPositions", () => {
 
     expect(positions.riskFor(nativeMarket).current).toMatchObject({
       status: "available",
-      totalCollateralUsd: 0,
-      totalDebtUsd: 0,
+      totalCollateralUsd: new BigNumber(0),
+      totalDebtUsd: new BigNumber(0),
     });
     expect(decodeTokenId({ symbol: "ETH" })).not.toBe(
       decodeTokenId({
@@ -160,7 +160,7 @@ describe("BorrowPositions", () => {
         totalCollateralUsd: "1000",
         totalSuppliedUsd: "1000",
       }).currentLtv
-    ).toBe(1.2);
+    ).toEqual(new BigNumber("1.2"));
   });
 
   it("shares account risk with a pool market that has no local position", () => {
@@ -225,11 +225,11 @@ describe("BorrowPositions", () => {
     expect(existing?.risk).toBe(newMarketRisk);
     expect(newMarketRisk.scope).toBe("account");
     expect(newMarketRisk.current).toMatchObject({
-      healthFactor: 2.125,
-      ltv: 0.4,
+      healthFactor: new BigNumber("2.125"),
+      ltv: new BigNumber("0.4"),
       status: "available",
-      totalCollateralUsd: 1000,
-      totalDebtUsd: 400,
+      totalCollateralUsd: new BigNumber(1000),
+      totalDebtUsd: new BigNumber(400),
     });
 
     expect(
@@ -243,10 +243,10 @@ describe("BorrowPositions", () => {
     ).toMatchObject({
       decision: "allow",
       projection: {
-        ltv: 0.6,
+        ltv: new BigNumber("0.6"),
         status: "available",
-        totalCollateralUsd: 1000,
-        totalDebtUsd: 600,
+        totalCollateralUsd: new BigNumber(1000),
+        totalDebtUsd: new BigNumber(600),
       },
     });
 
@@ -324,7 +324,7 @@ describe("BorrowPositions", () => {
           integration,
           accountSnapshot: {
             ...snapshot,
-            totalCollateralUsd: 1200,
+            totalCollateralUsd: new BigNumber(1200),
           },
         },
       ],
@@ -341,14 +341,14 @@ describe("BorrowPositions", () => {
           integration,
           accountSnapshot: {
             ...snapshot,
-            availableToBorrowUsd: 0,
-            currentLtv: 1,
+            availableToBorrowUsd: new BigNumber(0),
+            currentLtv: new BigNumber(1),
             healthFactor: null,
             supplyBalances: snapshot.supplyBalances.map((balance) => ({
               ...balance,
               isCollateral: false,
             })),
-            totalCollateralUsd: 0,
+            totalCollateralUsd: new BigNumber(0),
           },
         },
       ],
@@ -368,9 +368,9 @@ describe("BorrowPositions", () => {
     ).toMatchObject({
       decision: "allow",
       projection: {
-        borrowCapacityUsd: 0,
+        borrowCapacityUsd: new BigNumber(0),
         status: "available",
-        totalDebtUsd: 400,
+        totalDebtUsd: new BigNumber(400),
       },
     });
   });
@@ -450,17 +450,17 @@ describe("BorrowPositions", () => {
     expect(usdcRisk).not.toBe(daiRisk);
     expect(usdcRisk.scope).toBe("market");
     expect(usdcRisk.current).toMatchObject({
-      healthFactor: 4.25,
-      ltv: 0.2,
+      healthFactor: new BigNumber("4.25"),
+      ltv: new BigNumber("0.2"),
       status: "available",
-      totalCollateralUsd: 2000,
-      totalDebtUsd: 400,
+      totalCollateralUsd: new BigNumber(2000),
+      totalDebtUsd: new BigNumber(400),
     });
     expect(daiRisk.current).toMatchObject({
-      ltv: 0,
+      ltv: new BigNumber(0),
       status: "available",
-      totalCollateralUsd: 0,
-      totalDebtUsd: 0,
+      totalCollateralUsd: new BigNumber(0),
+      totalDebtUsd: new BigNumber(0),
     });
 
     const conflictingPositions = deriveBorrowPositions({
@@ -473,14 +473,14 @@ describe("BorrowPositions", () => {
               ...snapshot.supplyBalances,
               {
                 ...snapshot.supplyBalances[0]!,
-                balance: 0,
+                balance: new BigNumber(0),
                 balanceRaw: 0n,
-                balanceUsd: 0,
+                balanceUsd: new BigNumber(0),
                 positionState: {
-                  availableToBorrowUsd: 1000,
-                  currentLtv: 0.3,
-                  healthFactor: 3,
-                  liquidationThreshold: 0.85,
+                  availableToBorrowUsd: new BigNumber(1000),
+                  currentLtv: new BigNumber("0.3"),
+                  healthFactor: new BigNumber(3),
+                  liquidationThreshold: new BigNumber("0.85"),
                 },
               },
             ],

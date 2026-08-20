@@ -1,19 +1,17 @@
-import { Effect, Schema } from "effect";
+import { Effect } from "effect";
 import type { Address } from "viem";
 import type { Connector } from "wagmi";
 import { WalletDecodeError } from "../../../wallet-errors";
 import type { WalletEvmTransactionInput } from "../../../wallet-transactions";
 import type { WagmiActions } from "../../runtime/wagmi-actions";
-import { unsignedEVMTransactionCodec } from "./transaction";
+import { decodeUnsignedEvmTransactionJson } from "./transaction";
 
 export const decodeEvmTransaction = (
   tx: string
 ): Effect.Effect<WalletEvmTransactionInput, WalletDecodeError> =>
-  Schema.decodeEffect(Schema.fromJsonString(unsignedEVMTransactionCodec))(
-    tx
-  ).pipe(
+  decodeUnsignedEvmTransactionJson(tx).pipe(
     Effect.mapError((cause) => new WalletDecodeError({ cause })),
-    Effect.map((decodedTx): WalletEvmTransactionInput => {
+    Effect.map((decodedTx) => {
       const transaction = {
         chainId: decodedTx.chainId,
         data: decodedTx.data,
@@ -27,12 +25,12 @@ export const decodeEvmTransaction = (
             ...transaction,
             maxFeePerGas: decodedTx.maxFeePerGas,
             maxPriorityFeePerGas: decodedTx.maxPriorityFeePerGas,
-            type: "eip1559",
+            type: "eip1559" as const,
           }
         : {
             ...transaction,
             gasPrice: decodedTx.gasPrice,
-            type: "legacy",
+            type: "legacy" as const,
           };
     })
   );

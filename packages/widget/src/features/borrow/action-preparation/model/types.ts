@@ -29,14 +29,14 @@ export type BorrowActionBlockReason =
 
 export type BorrowRiskProjection =
   | {
-      readonly currentLtv: number | null;
-      readonly maxLtv: number | null;
-      readonly projectedHealthFactor: number | null;
-      readonly projectedLtv: number;
+      readonly currentLtv: BigNumber | null;
+      readonly maxLtv: BigNumber | null;
+      readonly projectedHealthFactor: BigNumber | null;
+      readonly projectedLtv: BigNumber;
       readonly status: "available";
     }
   | {
-      readonly currentLtv: number | null;
+      readonly currentLtv: BigNumber | null;
       readonly status: "unavailable";
     };
 

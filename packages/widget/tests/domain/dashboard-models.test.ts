@@ -63,12 +63,13 @@ describe("dashboard application schemas", () => {
     );
 
     expect(rewardRate.items).toHaveLength(1);
-    expect(rewardRate.items[0]?.value).toBe(5);
+    expect(rewardRate.items[0]?.rewardRate.toFixed()).toBe("0.05");
     expect(DateTime.isDateTime(rewardRate.from)).toBe(true);
     expect(DateTime.isDateTime(rewardRate.to)).toBe(true);
     expect(DateTime.isDateTime(rewardRate.items[0]?.timestamp)).toBe(true);
     expect(tvl.items).toHaveLength(1);
-    expect(tvl.items[0]?.value).toBe(1000.5);
+    expect(tvl.items[0]?.tvl.toFixed()).toBe("1000.5");
+    expect(tvl.items[0]?.tvlRaw).toBe("1000500000");
     expect(DateTime.isDateTime(tvl.items[0]?.timestamp)).toBe(true);
   });
 

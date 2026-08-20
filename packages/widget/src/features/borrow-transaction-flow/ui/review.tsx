@@ -1,8 +1,8 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import BigNumber from "bignumber.js";
 import { Cause, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
+import { exactDecimal } from "../../../domain/finance/exact";
 import {
   formatBorrowProviderName,
   formatHealthFactor,
@@ -130,7 +130,7 @@ export const BorrowReviewPage = () => {
       : undefined;
   const hasCollateralFee =
     collateralFeeAmount !== undefined &&
-    new BigNumber(collateralFeeAmount).isGreaterThan(0);
+    exactDecimal(collateralFeeAmount).isGreaterThan(0);
   const collateralFee =
     hasCollateralFee && projectedSummary.collateral
       ? `${collateralFeeAmount} ${projectedSummary.collateral.symbol}`

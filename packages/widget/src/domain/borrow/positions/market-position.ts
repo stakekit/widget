@@ -1,5 +1,6 @@
+import type BigNumber from "bignumber.js";
 import { Array as EArray, pipe, Result } from "effect";
-import { sumAll } from "effect/Number";
+import { exactZero, sumExact } from "../../finance/exact";
 import type { Integration } from "../catalog/integration";
 import type { Market } from "../catalog/market";
 import type { MarketId } from "../ids";
@@ -20,12 +21,12 @@ export type MarketPosition = {
   readonly integration: Integration;
   readonly market: Market;
   readonly metrics: {
-    readonly borrowApy: number | null;
-    readonly netApy: number;
-    readonly netWorthUsd: number;
-    readonly totalBorrowedUsd: number;
-    readonly totalCollateralUsd: number;
-    readonly totalSuppliedUsd: number;
+    readonly borrowApy: BigNumber | null;
+    readonly netApy: BigNumber;
+    readonly netWorthUsd: BigNumber;
+    readonly totalBorrowedUsd: BigNumber;
+    readonly totalCollateralUsd: BigNumber;
+    readonly totalSuppliedUsd: BigNumber;
   };
   readonly risk: RiskPosition;
 };
@@ -58,19 +59,17 @@ export const deriveMarketPositionOverview = (position: MarketPosition) => {
 };
 
 const sumSupplyUsd = (balances: ReadonlyArray<SupplyBalance>) =>
-  pipe(
-    balances.map((balance) => balance.balanceUsd),
-    sumAll
-  );
+  sumExact(balances.map((balance) => balance.balanceUsd));
 
 const sumCollateralUsd = (balances: ReadonlyArray<SupplyBalance>) =>
-  pipe(
-    EArray.filterMap(balances, (balance) =>
-      balance.isCollateral
-        ? Result.succeed(balance.balanceUsd)
-        : Result.failVoid
-    ),
-    sumAll
+  sumExact(
+    pipe(
+      EArray.filterMap(balances, (balance) =>
+        balance.isCollateral
+          ? Result.succeed(balance.balanceUsd)
+          : Result.failVoid
+      )
+    )
   );
 
 export const makeMarketPosition = ({
@@ -91,14 +90,16 @@ export const makeMarketPosition = ({
   readonly supplyPendingActions: ReadonlyArray<PendingAction>;
 }): MarketPosition => {
   const totalSuppliedUsd = sumSupplyUsd(supplyBalances);
-  const totalBorrowedUsd = debtBalance?.balanceUsd ?? 0;
-  const netWorthUsd = totalSuppliedUsd - totalBorrowedUsd;
-  const totalSupplyEarnings = pipe(
-    supplyBalances.map((balance) => balance.balanceUsd * balance.apy),
-    sumAll
+  const totalBorrowedUsd = debtBalance?.balanceUsd ?? exactZero();
+  const netWorthUsd = totalSuppliedUsd.minus(totalBorrowedUsd);
+  const totalSupplyEarnings = sumExact(
+    supplyBalances.map((balance) =>
+      balance.balanceUsd.multipliedBy(balance.apy)
+    )
   );
-  const totalBorrowCosts =
-    (debtBalance?.balanceUsd ?? 0) * (debtBalance?.apy ?? 0);
+  const totalBorrowCosts = totalBorrowedUsd.multipliedBy(
+    debtBalance?.apy ?? exactZero()
+  );
 
   return {
     actions: {
@@ -114,10 +115,9 @@ export const makeMarketPosition = ({
     market,
     metrics: {
       borrowApy: debtBalance?.apy ?? null,
-      netApy:
-        netWorthUsd === 0
-          ? 0
-          : (totalSupplyEarnings - totalBorrowCosts) / netWorthUsd,
+      netApy: netWorthUsd.isZero()
+        ? exactZero()
+        : totalSupplyEarnings.minus(totalBorrowCosts).dividedBy(netWorthUsd),
       netWorthUsd,
       totalBorrowedUsd,
       totalCollateralUsd: sumCollateralUsd(supplyBalances),

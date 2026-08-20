@@ -12,6 +12,11 @@ import BigNumber from "bignumber.js";
 import { Effect, Option, Result, Schema } from "effect";
 import { hexToBytes } from "viem";
 import {
+  exactDecimal,
+  exactZero,
+  toSafeIntegerCount,
+} from "../../../../../domain/finance/exact";
+import {
   CosmosNetworks,
   EvmNetworks,
   MiscNetworks,
@@ -47,7 +52,7 @@ const GasEstimate = Schema.NullOr(
 type GasEstimate = typeof GasEstimate.Type;
 
 const GasEstimateFromJson = Schema.fromJsonString(GasEstimate);
-const UnknownFromJson = Schema.fromJsonString(Schema.Unknown);
+const JsonValue = Schema.fromJsonString(Schema.Unknown);
 
 const eip1559FieldsUnsupportedNetworks = new Set<string>([
   EvmNetworks.Polygon,
@@ -102,42 +107,48 @@ export const makePrepareLedgerLiveTransaction: Effect.Effect<PrepareLedgerLiveTr
       })
     );
 
-    return ({ network, tx, txMeta }) => {
-      if (network === SubstrateNetworks.Polkadot) {
-        return txMeta
-          ? preparePolkadotTransaction({ loadPolkadotBuilder, tx, txMeta })
-          : Effect.fail(
-              transactionPreparationError(
-                "Missing classic transaction metadata"
-              )
-            );
-      }
+    return ({ network, tx, txMeta }) =>
+      Schema.decodeUnknownEffect(JsonValue)(tx).pipe(
+        Effect.mapError(() =>
+          transactionPreparationError("Failed to parse tx")
+        ),
+        Effect.flatMap((payload) => {
+          if (network === SubstrateNetworks.Polkadot) {
+            return txMeta
+              ? preparePolkadotTransaction({
+                  loadPolkadotBuilder,
+                  payload,
+                  txMeta,
+                })
+              : Effect.fail(
+                  transactionPreparationError(
+                    "Missing classic transaction metadata"
+                  )
+                );
+          }
 
-      return Effect.fromResult(
-        prepareSynchronousTransaction({ network, tx, txMeta })
-      ).pipe(Effect.mapError(transactionPreparationError));
-    };
+          return Effect.fromResult(
+            prepareSynchronousTransaction({ network, payload, txMeta })
+          ).pipe(Effect.mapError(transactionPreparationError));
+        })
+      );
   });
 
 const preparePolkadotTransaction = ({
   loadPolkadotBuilder,
-  tx,
+  payload,
   txMeta,
 }: {
   loadPolkadotBuilder: Effect.Effect<
     BuildPolkadotLedgerTransaction,
     LedgerTransactionPreparationError
   >;
-  tx: string;
+  payload: unknown;
   txMeta: SKTxMeta;
 }): Effect.Effect<RawTransaction, LedgerTransactionPreparationError> =>
-  Effect.fromResult(
-    parseJson(tx).pipe(
-      Result.flatMap((value) => decodeSchema(substratePayloadCodec, value))
-    )
-  ).pipe(
+  Effect.fromResult(decodeSchema(substratePayloadCodec, payload)).pipe(
     Effect.mapError(transactionPreparationError),
-    Effect.flatMap((payload) =>
+    Effect.flatMap((decodedPayload) =>
       loadPolkadotBuilder.pipe(
         Effect.flatMap((buildPolkadotLedgerTransaction) =>
           Effect.fromResult(
@@ -145,7 +156,7 @@ const preparePolkadotTransaction = ({
               fee: getFeeInBaseUnits(
                 parseGasEstimate(txMeta.gasEstimate)
               ).toString(),
-              payload,
+              payload: decodedPayload,
               txMeta,
             })
           ).pipe(Effect.mapError(transactionPreparationError))
@@ -156,29 +167,20 @@ const preparePolkadotTransaction = ({
 
 const prepareSynchronousTransaction = ({
   network,
-  tx,
+  payload,
   txMeta,
-}: PrepareLedgerLiveTransactionParams): Result.Result<
-  RawTransaction,
-  string
-> => {
-  const parsedTx = parseJson(tx);
-
-  if (Result.isFailure(parsedTx)) {
-    return Result.fail(parsedTx.failure);
-  }
-
+}: {
+  network: string;
+  payload: unknown;
+  txMeta?: SKTxMeta;
+}): Result.Result<RawTransaction, string> => {
   if (isEvmChain(network)) {
-    return parsedTx.pipe(
-      Result.flatMap((value) =>
-        decodeSchema(unsignedEVMTransactionCodec, value).pipe(
-          Result.map((decodedTx) =>
-            buildEthereumLedgerTransaction({
-              network,
-              tx: decodedTx,
-            })
-          )
-        )
+    return decodeSchema(unsignedEVMTransactionCodec, payload).pipe(
+      Result.map((decodedTx) =>
+        buildEthereumLedgerTransaction({
+          network,
+          tx: decodedTx,
+        })
       )
     );
   }
@@ -189,25 +191,17 @@ const prepareSynchronousTransaction = ({
 
   switch (network) {
     case MiscNetworks.Tron:
-      return parsedTx.pipe(
-        Result.flatMap((value) =>
-          decodeSchema(unsignedTronTransactionCodec, value).pipe(
-            Result.flatMap(() => buildTronLedgerTransaction(txMeta))
-          )
-        )
+      return decodeSchema(unsignedTronTransactionCodec, payload).pipe(
+        Result.flatMap(() => buildTronLedgerTransaction(txMeta))
       );
     case MiscNetworks.Near:
       return buildNearLedgerTransaction(txMeta);
     case MiscNetworks.Tezos:
       return buildTezosLedgerTransaction(txMeta);
     case MiscNetworks.Ton:
-      return parsedTx.pipe(
-        Result.flatMap((value) =>
-          decodeSchema(unsignedTonTransactionCodec, value).pipe(
-            Result.flatMap((decodedTx) =>
-              buildTonLedgerTransaction(decodedTx, txMeta)
-            )
-          )
+      return decodeSchema(unsignedTonTransactionCodec, payload).pipe(
+        Result.flatMap((decodedTx) =>
+          buildTonLedgerTransaction(decodedTx, txMeta)
         )
       );
     default:
@@ -215,14 +209,8 @@ const prepareSynchronousTransaction = ({
         return buildCosmosLedgerTransaction(txMeta);
       }
 
-      return parsedTx.pipe(Result.map((value) => value as RawTransaction));
+      return Result.succeed(payload as RawTransaction);
   }
-};
-
-const parseJson = (value: string): Result.Result<unknown, string> => {
-  return Schema.decodeResult(UnknownFromJson)(value).pipe(
-    Result.mapError(() => "Failed to parse tx")
-  );
 };
 
 const buildEthereumLedgerTransaction = ({
@@ -261,8 +249,7 @@ const buildCosmosLedgerTransaction = (
   const validatorAddress = txMeta.rawArguments?.validatorAddress;
   const mode = getCosmosMode(txMeta.txType);
   const actionAmount = getActionAmountInBaseUnits(txMeta);
-  const amount =
-    actionAmount ?? (isCosmosClaimMode(mode) ? new BigNumber(0) : null);
+  const amount = actionAmount ?? (isCosmosClaimMode(mode) ? exactZero() : null);
 
   if (!validatorAddress || amount === null) {
     return Result.fail("Missing Cosmos Ledger arguments");
@@ -480,7 +467,7 @@ const parseGasEstimate = (
 
 const getActionAmountInBaseUnits = (txMeta: SKTxMeta): BigNumber | null => {
   if (txMeta.amountRaw) {
-    return new BigNumber(txMeta.amountRaw);
+    return exactDecimal(txMeta.amountRaw);
   }
 
   const amount = txMeta.rawArguments?.amount ?? txMeta.amount;
@@ -490,16 +477,16 @@ const getActionAmountInBaseUnits = (txMeta: SKTxMeta): BigNumber | null => {
     return null;
   }
 
-  return new BigNumber(amount).multipliedBy(new BigNumber(10).pow(decimals));
+  return exactDecimal(amount).multipliedBy(exactDecimal(10).pow(decimals));
 };
 
 const getFeeInBaseUnits = (gasEstimate: GasEstimate): BigNumber => {
   if (!gasEstimate?.amount || !gasEstimate.token) {
-    return new BigNumber(0);
+    return exactZero();
   }
 
-  return new BigNumber(gasEstimate.amount).multipliedBy(
-    new BigNumber(10).pow(gasEstimate.token.decimals)
+  return exactDecimal(gasEstimate.amount).multipliedBy(
+    exactDecimal(10).pow(gasEstimate.token.decimals)
   );
 };
 
@@ -542,7 +529,7 @@ const getActionAmountInTokenUnits = (txMeta: SKTxMeta): BigNumber | null => {
   const amount = txMeta.rawArguments?.amount ?? txMeta.amount;
 
   if (amount) {
-    return new BigNumber(amount);
+    return exactDecimal(amount);
   }
 
   const decimals = txMeta.inputToken?.decimals;
@@ -551,8 +538,8 @@ const getActionAmountInTokenUnits = (txMeta: SKTxMeta): BigNumber | null => {
     return null;
   }
 
-  return new BigNumber(txMeta.amountRaw).dividedBy(
-    new BigNumber(10).pow(decimals)
+  return exactDecimal(txMeta.amountRaw).dividedBy(
+    exactDecimal(10).pow(decimals)
   );
 };
 
@@ -588,12 +575,25 @@ const getTronVotes = ({
     return Result.fail("Tron vote count exceeds Ledger limits");
   }
 
+  const remainingVoteCount = toSafeIntegerCount(remainingVotes);
+  if (remainingVoteCount == null) {
+    return Result.fail("Invalid Tron vote count");
+  }
+  const votes = validatorAddresses.map((address, index) => {
+    const voteCount = toSafeIntegerCount(
+      equalVoteCount.plus(index < remainingVoteCount ? 1 : 0)
+    );
+
+    return voteCount == null ? null : { address, voteCount };
+  });
+
+  if (votes.some((vote) => vote == null)) {
+    return Result.fail("Invalid Tron vote count");
+  }
+
   return Result.succeed(
-    validatorAddresses.map((address, index) => ({
-      address,
-      voteCount: equalVoteCount
-        .plus(index < remainingVotes.toNumber() ? 1 : 0)
-        .toNumber(),
-    }))
+    votes.filter(
+      (vote): vote is { address: string; voteCount: number } => vote != null
+    )
   );
 };

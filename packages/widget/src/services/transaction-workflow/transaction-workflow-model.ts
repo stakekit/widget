@@ -1,3 +1,4 @@
+import type BigNumber from "bignumber.js";
 import { Data, Match, type Schema } from "effect";
 import type {
   ActionTransaction,
@@ -7,6 +8,7 @@ import type { Action as BorrowAction } from "../../domain/borrow/execution/actio
 import type { Transaction as BorrowTransaction } from "../../domain/borrow/execution/transaction";
 import { WalletScopeKey } from "../../domain/wallet/wallet-scope";
 import type { ActionMeta } from "../../public-api/types";
+import { toRepresentationNumber } from "../../shared/lib/number-format";
 import type {
   WalletBroadcastError,
   WalletCapabilityUnavailableError,
@@ -27,8 +29,8 @@ export class ClassicTransactionWorkflowInput extends Data.TaggedClass(
 )<ClassicTransactionWorkflowInputFields> {
   constructor(input: ClassicTransactionWorkflowInputFields) {
     super({
-      actionMeta: structuredClone(input.actionMeta),
-      transactions: structuredClone(input.transactions),
+      actionMeta: { ...input.actionMeta },
+      transactions: [...input.transactions],
       walletScope: new WalletScopeKey(input.walletScope),
       yieldId: input.yieldId,
     });
@@ -39,7 +41,7 @@ export type ClassicTransactionWorkflowProviderDetail = {
   readonly address?: string;
   readonly logo?: string;
   readonly name: string;
-  readonly rewardRate?: number;
+  readonly rewardRate?: BigNumber | number;
   readonly rewardType?: string;
   readonly website?: string;
 };
@@ -63,8 +65,8 @@ export const makeClassicTransactionWorkflowInput = ({
       actionId: action.id,
       actionType: action.type,
       address: action.address,
-      amount: action.amount,
-      amountRaw: action.amountRaw,
+      amount: action.amount?.toFixed() ?? null,
+      amountRaw: action.amountRaw?.toString() ?? null,
       rawArguments: action.rawArguments,
       yieldId: action.yieldId,
       inputToken,
@@ -72,7 +74,10 @@ export const makeClassicTransactionWorkflowInput = ({
         providersDetails?.map((provider) => ({
           name: provider.name,
           address: provider.address,
-          rewardRate: provider.rewardRate,
+          rewardRate:
+            provider.rewardRate === undefined
+              ? undefined
+              : toRepresentationNumber(provider.rewardRate),
           rewardType: provider.rewardType,
           website: provider.website,
           logo: provider.logo,
@@ -93,7 +98,7 @@ export class BorrowTransactionWorkflowInput extends Data.TaggedClass(
 )<BorrowTransactionWorkflowInputFields> {
   constructor(input: BorrowTransactionWorkflowInputFields) {
     super({
-      action: structuredClone(input.action),
+      action: { ...input.action },
       walletScope: new WalletScopeKey(input.walletScope),
     });
   }

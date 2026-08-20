@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { EarnPosition } from "../../src/domain/earn/models";
 import { getDashboardYieldCategory } from "../../src/domain/earn/yield";
+import type { exactDecimal } from "../../src/domain/finance/exact";
 import { toPositionsData } from "../../src/domain/portfolio/positions";
 import {
   currentGroupedPositionsAtom,
@@ -35,7 +36,7 @@ const makePosition = ({
   yieldId,
 }: {
   readonly amountUsd: string;
-  readonly rewardRate: number;
+  readonly rewardRate: Parameters<typeof exactDecimal>[0];
   readonly yieldId: string;
 }) => {
   const yieldDto = yieldApiYieldFixture({

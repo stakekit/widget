@@ -1,10 +1,10 @@
 import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
-import type { ClassicTransactionWorkflowProviderDetail } from "../../../services/transaction-workflow/transaction-workflow-model";
 import { WalletModal } from "../../../services/wallet/wallet-modal";
 import { startClassicTransactionFlowAtom } from "../../classic-transaction-flow/index";
 import { walletConnectionStateAtom } from "../../wallet/index";
+import type { YieldSummaryProvider } from "../../yield-summary/index";
 import {
   type ActivityActionItem,
   getActivityActionOpenTarget,
@@ -15,7 +15,7 @@ export type ActivityResumePresentation = "Classic" | "Dashboard";
 type StartActivityResume = Readonly<{
   readonly item: ActivityActionItem;
   readonly presentation: ActivityResumePresentation;
-  readonly providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>;
+  readonly providersDetails: ReadonlyArray<YieldSummaryProvider>;
 }>;
 
 type StartActivityResumeOutcome =

@@ -1,5 +1,4 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import BigNumber from "bignumber.js";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,6 +7,7 @@ import {
   getExtendedYieldType,
   isUnstakeYieldType,
 } from "../../../../../domain/earn/yield";
+import { exactDecimal } from "../../../../../domain/finance/exact";
 import { getGasFeeInUSD } from "../../../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import type { PageCta } from "../../../../widget-shell/views";
@@ -36,7 +36,7 @@ export const useUnstakeActionReview = () => {
   const prices = review.prices;
 
   const amount = useMemo(
-    () => new BigNumber(exitFlow.request.arguments?.amount ?? 0),
+    () => exactDecimal(exitFlow.request.arguments?.amount ?? 0),
     [exitFlow.request.arguments?.amount]
   );
 

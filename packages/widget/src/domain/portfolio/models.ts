@@ -1,11 +1,11 @@
-import { Schema, SchemaGetter } from "effect";
+import { Schema } from "effect";
 import * as LegacyApi from "../../generated/api/legacy-schema";
 import * as YieldApi from "../../generated/api/yield-schema";
 import {
   TolerantTopLevelArray,
   TolerantTopLevelRecord,
 } from "../decoding/response-schema";
-import { UtcDateTimeFromString } from "../finance/scalars";
+import { ExactDecimal, UtcDateTimeFromString } from "../finance/scalars";
 import { WalletAddress, YieldId } from "../identity/identifiers";
 import { Token } from "../token/token";
 import { AdditionalAddresses } from "../wallet/address";
@@ -22,50 +22,28 @@ export const HistoryPoint = Schema.Struct({
 });
 export type HistoryPoint = typeof HistoryPoint.Type;
 
-const RewardRatePointWire = Schema.Struct({
+const RewardRateHistoryItem = Schema.Struct({
   ...YieldApi.RewardRateSnapshotDto.fields,
+  rewardRate: ExactDecimal,
   timestamp: UtcDateTimeFromString,
 });
+export type RewardRateHistoryItem = typeof RewardRateHistoryItem.Type;
 
-const RewardRatePoint = RewardRatePointWire.pipe(
-  Schema.decodeTo(HistoryPoint, {
-    decode: SchemaGetter.transform((item) => ({
-      timestamp: item.timestamp,
-      value: Number(item.rewardRate) * 100,
-    })),
-    encode: SchemaGetter.forbidden(
-      () => "Resolved reward rate history points are decode-only"
-    ),
-  })
-);
-
-const TvlPointWire = Schema.Struct({
+const TvlHistoryItem = Schema.Struct({
   timestamp: UtcDateTimeFromString,
-  tvl: Schema.FiniteFromString,
+  tvl: ExactDecimal,
   tvlRaw: Schema.String,
 });
-
-const TvlPoint = TvlPointWire.pipe(
-  Schema.decodeTo(HistoryPoint, {
-    decode: SchemaGetter.transform((item) => ({
-      timestamp: item.timestamp,
-      value: item.tvl,
-    })),
-    encode: SchemaGetter.forbidden(
-      () => "Resolved TVL history points are decode-only"
-    ),
-  })
-);
+export type TvlHistoryItem = typeof TvlHistoryItem.Type;
 
 export const RewardRateHistoryResponse = Schema.Struct({
   ...YieldApi.RewardRateHistoryResponseDto.fields,
   from: UtcDateTimeFromString,
   to: UtcDateTimeFromString,
   yieldId: YieldId,
-  items: TolerantTopLevelArray(
-    RewardRatePoint.pipe(Schema.decodeTo(HistoryPoint)),
-    { operation: "yield-reward-rate-history" }
-  ),
+  items: TolerantTopLevelArray(RewardRateHistoryItem, {
+    operation: "yield-reward-rate-history",
+  }),
 });
 
 export const TvlHistoryResponse = Schema.Struct({
@@ -73,7 +51,7 @@ export const TvlHistoryResponse = Schema.Struct({
   from: UtcDateTimeFromString,
   to: UtcDateTimeFromString,
   yieldId: YieldId,
-  items: TolerantTopLevelArray(TvlPoint.pipe(Schema.decodeTo(HistoryPoint)), {
+  items: TolerantTopLevelArray(TvlHistoryItem, {
     operation: "yield-tvl-history",
   }),
 });

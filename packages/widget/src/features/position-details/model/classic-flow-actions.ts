@@ -1,3 +1,4 @@
+import type BigNumber from "bignumber.js";
 import { Data, Array as EArray, Option, Result } from "effect";
 import {
   getPendingActionStateKey,
@@ -19,6 +20,7 @@ import type {
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
 import { getYieldActionArg } from "../../../domain/earn/yield";
+import { truncateToTokenDecimals } from "../../../domain/finance/exact";
 import type { WalletAddress } from "../../../domain/identity/identifiers";
 import type { Token } from "../../../domain/token/token";
 import type { AdditionalAddresses } from "../../../domain/wallet/address";
@@ -177,10 +179,11 @@ export const pendingActionNeedsValidatorSelection = (
 type PositionDetailsExitFacts = Readonly<{
   readonly additionalAddresses: AdditionalAddresses | null;
   readonly address: WalletAddress;
-  readonly amount: { readonly toString: (radix?: number) => string };
+  readonly amount: BigNumber;
   readonly integration: EarnYieldWithProvider;
   readonly receiveToken: ExitReceiveToken | null;
   readonly stakedOrLiquidBalances: ReadonlyArray<EarnBalance>;
+  readonly token: Token;
   readonly useMaxAmount: boolean;
 }>;
 
@@ -275,7 +278,10 @@ const preparePositionDetailsExitAction = (facts: PositionDetailsExitFacts) => {
     request: ActionCommand.make({
       address: facts.address,
       arguments: {
-        amount: facts.amount.toString(10),
+        amount: truncateToTokenDecimals(
+          facts.amount,
+          facts.token.decimals
+        ).toFixed(),
         ...(outputToken ? { outputToken } : {}),
         ...(facts.useMaxAmount ? { useMaxAmount: true } : {}),
         ...optionArguments,

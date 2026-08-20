@@ -118,7 +118,9 @@ export const routeWalletTransaction = Effect.fn("routeWalletTransaction")(
       return yield* makeTonWalletDriver({ connector }).signTransaction(input);
     }
     if (isSafeConnector(connector)) {
-      return yield* makeSafeWalletDriver({ connector }).signTransaction({
+      return yield* makeSafeWalletDriver({
+        connector,
+      }).signTransaction({
         address: address as Address,
         tx: input.tx,
       });

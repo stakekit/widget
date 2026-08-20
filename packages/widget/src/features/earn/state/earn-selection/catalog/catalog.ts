@@ -1,9 +1,9 @@
-import BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type { EarnValidator } from "../../../../../domain/earn/models";
 import { filterValidators } from "../../../../../domain/earn/yield";
+import { exactDecimal } from "../../../../../domain/finance/exact";
 import type { PositionsData } from "../../../../../domain/portfolio/positions";
 import { toPositionsData } from "../../../../../domain/portfolio/positions";
 import { tokenString } from "../../../../../domain/token/token";
@@ -189,10 +189,10 @@ const enrichTokenOptions = (
     .sort((left, right) => {
       const leftHasBalance =
         left.option.amount !== null &&
-        new BigNumber(left.option.amount).isGreaterThan(0);
+        exactDecimal(left.option.amount).isGreaterThan(0);
       const rightHasBalance =
         right.option.amount !== null &&
-        new BigNumber(right.option.amount).isGreaterThan(0);
+        exactDecimal(right.option.amount).isGreaterThan(0);
       return (
         Number(rightHasBalance) - Number(leftHasBalance) ||
         left.index - right.index

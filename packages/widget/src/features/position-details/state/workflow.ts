@@ -1,8 +1,9 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import { Data } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type { PendingActionStateKey } from "../../../domain/action/action-command";
 import type { YieldPendingActionType } from "../../../domain/action/pending-action";
+import { exactZero } from "../../../domain/finance/exact";
 import type { TokenAddress } from "../../../domain/identity/identifiers";
 import type { YieldBalanceType } from "../../../domain/portfolio/positions";
 import type { Token } from "../../../domain/token/token";
@@ -39,7 +40,7 @@ export type PositionDetailsWorkflowAction =
   | PendingActionAmountChange;
 
 export const makePositionDetailsWorkflowState = (
-  unstakeAmount = new BigNumber(0)
+  unstakeAmount = exactZero()
 ): PositionDetailsWorkflowState => ({
   exitReceiveTokenAddress: null,
   pendingActions: new Map(),

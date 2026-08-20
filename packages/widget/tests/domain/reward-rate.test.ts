@@ -4,6 +4,7 @@ import {
   getRewardRateBreakdown,
   type YieldRewardRate,
 } from "../../src/domain/earn/reward-rate";
+import { exactDecimal } from "../../src/domain/finance/exact";
 import {
   yieldApiValidatorFixture,
   yieldApiYieldFixture,
@@ -16,7 +17,7 @@ const token = yieldApiYieldFixture().token;
 const nativeComponent = (
   rate: number
 ): YieldRewardRate["components"][number] => ({
-  rate,
+  rate: exactDecimal(rate),
   rateType: "APY",
   token,
   yieldSource: "staking",
@@ -57,8 +58,10 @@ describe("getEffectiveYieldRewardRateDetails", () => {
       yieldDto,
     });
 
-    expect(rewardRate?.total).toBe(0.1582);
-    expect(getRewardRateBreakdown(rewardRate)[0]?.rate).toBe(0.1582);
+    expect(rewardRate?.total.isEqualTo("0.1582")).toBe(true);
+    expect(
+      getRewardRateBreakdown(rewardRate)[0]?.rate.isEqualTo("0.1582")
+    ).toBe(true);
   });
 
   it("averages selected validator reward rates", () => {
@@ -92,7 +95,9 @@ describe("getEffectiveYieldRewardRateDetails", () => {
       yieldDto,
     });
 
-    expect(rewardRate?.total).toBeCloseTo(0.17);
-    expect(getRewardRateBreakdown(rewardRate)[0]?.rate).toBeCloseTo(0.17);
+    expect(rewardRate?.total.isEqualTo("0.17")).toBe(true);
+    expect(getRewardRateBreakdown(rewardRate)[0]?.rate.isEqualTo("0.17")).toBe(
+      true
+    );
   });
 });

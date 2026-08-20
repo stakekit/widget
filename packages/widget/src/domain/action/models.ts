@@ -1,7 +1,8 @@
 import { Schema } from "effect";
 import * as YieldApi from "../../generated/api/yield-schema";
 import {
-  PrecisionDecimalFromString,
+  ExactBaseUnitAmount,
+  ExactDecimal,
   TolerantNullableUtcDateTimeFromString,
   UtcDateTimeFromString,
 } from "../finance/scalars";
@@ -13,6 +14,12 @@ import {
   YieldId,
 } from "../identity/identifiers";
 import { Token } from "../token/token";
+
+const PendingActionArgumentField = Schema.Struct({
+  ...YieldApi.ArgumentFieldDto.fields,
+  maximum: Schema.optionalKey(Schema.NullOr(ExactDecimal)),
+  minimum: Schema.optionalKey(Schema.NullOr(ExactDecimal)),
+});
 
 const ActionArguments = Schema.Struct({
   ...YieldApi.ActionArgumentsDto.fields,
@@ -29,7 +36,7 @@ const ManageActionArguments = Schema.Struct({
 });
 
 const TransactionGasEstimate = Schema.Struct({
-  amount: PrecisionDecimalFromString,
+  amount: ExactDecimal,
   gasLimit: Schema.optionalKey(Schema.String),
   token: Token,
 });
@@ -52,6 +59,9 @@ export type ActionTransaction = typeof ActionTransaction.Type;
 export const YieldAction = Schema.Struct({
   ...YieldApi.ActionDto.fields,
   address: WalletAddress,
+  amount: Schema.NullOr(ExactDecimal),
+  amountRaw: Schema.NullOr(ExactBaseUnitAmount),
+  amountUsd: Schema.NullOr(ExactDecimal),
   completedAt: TolerantNullableUtcDateTimeFromString({
     operation: "yield-action",
     field: "completedAt",
@@ -82,6 +92,16 @@ export type ManageActionCommand = typeof ManageActionCommand.Type;
 
 export const PendingAction = Schema.Struct({
   ...YieldApi.PendingActionDto.fields,
+  amount: Schema.optionalKey(Schema.NullOr(ExactDecimal)),
+  arguments: Schema.optionalKey(
+    Schema.Union([
+      Schema.Struct({
+        ...YieldApi.ArgumentSchemaDto.fields,
+        fields: Schema.optionalKey(Schema.Array(PendingActionArgumentField)),
+      }),
+      Schema.Null,
+    ])
+  ),
 });
 export type PendingAction = typeof PendingAction.Type;
 

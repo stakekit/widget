@@ -1,4 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
+import type BigNumber from "bignumber.js";
 import type { YieldAction } from "../../../../../domain/action/models";
 import type { Token } from "../../../../../domain/token/token";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
@@ -27,7 +28,11 @@ type ActivityCompleteView<Action> = Pick<
 };
 
 export const useActivityCompleteView = <
-  Action extends Pick<YieldAction, "amount" | "type" | "yieldId">,
+  Action extends {
+    readonly amount: BigNumber | string | null;
+    readonly type: YieldAction["type"];
+    readonly yieldId: YieldAction["yieldId"];
+  },
 >({
   selectedAction,
   selectedValidators,

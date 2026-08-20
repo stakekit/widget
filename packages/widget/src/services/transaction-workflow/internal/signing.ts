@@ -144,7 +144,7 @@ export const makePrepareAndSign = Effect.gen(function* () {
         marketId: rawArguments.marketId,
         ...(rawArguments.amount == null
           ? {}
-          : { amount: rawArguments.amount.toString() }),
+          : { amount: rawArguments.amount.toFixed() }),
         ...(rawArguments.amountRaw == null
           ? {}
           : { amountRaw: rawArguments.amountRaw.toString() }),
@@ -153,7 +153,7 @@ export const makePrepareAndSign = Effect.gen(function* () {
           : { borrowAmount: rawArguments.borrowAmount }),
         ...(rawArguments.collateralAmount == null
           ? {}
-          : { collateralAmount: rawArguments.collateralAmount.toString() }),
+          : { collateralAmount: rawArguments.collateralAmount.toFixed() }),
         ...(rawArguments.collateralAmountRaw == null
           ? {}
           : {

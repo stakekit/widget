@@ -1,8 +1,9 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import { motion, useAnimation } from "motion/react";
 import type { ChangeEvent } from "react";
 import { memo, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { exactZero } from "../../../../domain/finance/exact";
 import { useRootElement } from "../../../react/root-element";
 import { Box } from "../../primitives/box";
 import { useWidgetPresentation } from "../../widget-presentation";
@@ -56,7 +57,7 @@ export const NumberInput = memo(
 
       setLocalState(val);
 
-      if (!val) return onChange(new BigNumber(0));
+      if (!val) return onChange(exactZero());
 
       const parsed = parseLocalizedNumberInput(val, locale);
 

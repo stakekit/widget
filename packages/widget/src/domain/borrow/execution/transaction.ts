@@ -1,11 +1,13 @@
 import { Effect, Schema } from "effect";
 import * as BorrowApi from "../../../generated/api/borrow";
+import { ExactBaseUnitAmount } from "../../finance/scalars";
 import { TransactionId, WalletAddress } from "../ids";
 import { BorrowNetwork } from "../network";
 
 export const Transaction = Schema.Struct({
   ...BorrowApi.TransactionDto.fields,
   address: WalletAddress,
+  // ast-grep-ignore: no-financial-finite-from-string -- chain IDs stay safe integer numbers
   chainId: Schema.FiniteFromString,
   id: TransactionId,
   network: BorrowNetwork,
@@ -13,17 +15,17 @@ export const Transaction = Schema.Struct({
 export type Transaction = typeof Transaction.Type;
 
 const HexString = Schema.TemplateLiteral([Schema.Literal("0x"), Schema.String]);
-const Numberish = Schema.Union([Schema.String, Schema.Number, Schema.BigInt]);
+const Countish = Schema.Union([Schema.String, Schema.Number, Schema.BigInt]);
 
 const BorrowWalletEvmSignablePayload = Schema.Struct({
-  chainId: Schema.optionalKey(Numberish),
+  chainId: Schema.optionalKey(Countish),
   data: HexString,
   from: HexString,
-  gasLimit: Numberish,
-  nonce: Schema.optionalKey(Numberish),
+  gasLimit: ExactBaseUnitAmount,
+  nonce: Schema.optionalKey(Countish),
   to: HexString,
-  type: Schema.optionalKey(Numberish),
-  value: Schema.optionalKey(Numberish),
+  type: Schema.optionalKey(Countish),
+  value: Schema.optionalKey(ExactBaseUnitAmount),
 });
 
 const BorrowEvmSignablePayloadInput = Schema.Union([
@@ -31,15 +33,14 @@ const BorrowEvmSignablePayloadInput = Schema.Union([
   Schema.fromJsonString(BorrowWalletEvmSignablePayload),
 ]);
 
-const normalizeNumberish = (
+const countishToSafeInteger = (
   value: bigint | number | string | undefined,
-  fallback = "0"
-) => (value == null ? fallback : value.toString());
+  fallback: number
+) => {
+  const count = Number(value == null ? fallback : value);
 
-const numberishToNumber = (
-  value: bigint | number | string | undefined,
-  fallback: bigint | number | string = 0
-) => Number(value == null ? fallback : value);
+  return Number.isSafeInteger(count) ? count : fallback;
+};
 
 export const decodeBorrowTransactionForWallet = (transaction: Transaction) =>
   Schema.decodeUnknownEffect(BorrowEvmSignablePayloadInput)(
@@ -47,14 +48,14 @@ export const decodeBorrowTransactionForWallet = (transaction: Transaction) =>
   ).pipe(
     Effect.map((payload) =>
       JSON.stringify({
-        chainId: numberishToNumber(payload.chainId, transaction.chainId),
+        chainId: countishToSafeInteger(payload.chainId, transaction.chainId),
         data: payload.data,
         from: payload.from,
-        gasLimit: normalizeNumberish(payload.gasLimit),
-        nonce: numberishToNumber(payload.nonce),
+        gasLimit: payload.gasLimit.toString(),
+        nonce: countishToSafeInteger(payload.nonce, 0),
         to: payload.to,
-        type: numberishToNumber(payload.type),
-        value: normalizeNumberish(payload.value),
+        type: countishToSafeInteger(payload.type, 0),
+        value: (payload.value ?? 0n).toString(),
       })
     )
   );

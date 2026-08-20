@@ -1,5 +1,5 @@
-import BigNumber from "bignumber.js";
 import { Option, Schema } from "effect";
+import { exactDecimal } from "../../../../../domain/finance/exact";
 import { YieldId } from "../../../../../domain/identity/identifiers";
 import { tokenString } from "../../../../../domain/token/token";
 import type { EarnEntry, EarnTokenKey, EarnTokenOption } from "../types";
@@ -71,7 +71,7 @@ export const resolveToken = ({
   const positiveBalanceToken = tokenOptions.find((option) =>
     option.amount === null
       ? false
-      : new BigNumber(option.amount).isGreaterThan(0)
+      : exactDecimal(option.amount).isGreaterThan(0)
   );
   if (positiveBalanceToken) {
     return positiveBalanceToken;

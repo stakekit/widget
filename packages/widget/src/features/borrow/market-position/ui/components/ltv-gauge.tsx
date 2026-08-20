@@ -1,5 +1,7 @@
+import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { formatPercent } from "../../../../../shared/lib/formatters";
+import { toChartNumber } from "../../../../../shared/lib/number-format";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import * as styles from "../styles.css";
@@ -8,8 +10,8 @@ export const LtvGauge = ({
   currentLtv,
   liquidationThreshold,
 }: {
-  readonly currentLtv: number | null;
-  readonly liquidationThreshold: number | null;
+  readonly currentLtv: BigNumber | null;
+  readonly liquidationThreshold: BigNumber | null;
 }) => {
   const { t } = useTranslation();
 
@@ -17,11 +19,17 @@ export const LtvGauge = ({
     return null;
   }
 
-  const clampedLtv = Math.max(0, Math.min(100, currentLtv * 100));
+  const clampedLtv = Math.max(
+    0,
+    Math.min(100, toChartNumber(currentLtv.multipliedBy(100)))
+  );
   const clampedThreshold =
     liquidationThreshold == null
       ? null
-      : Math.max(0, Math.min(100, liquidationThreshold * 100));
+      : Math.max(
+          0,
+          Math.min(100, toChartNumber(liquidationThreshold.multipliedBy(100)))
+        );
 
   return (
     <Box className={styles.ltvGauge}>

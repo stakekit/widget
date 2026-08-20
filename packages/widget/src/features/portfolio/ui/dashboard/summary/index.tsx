@@ -1,7 +1,7 @@
-import BigNumber from "bignumber.js";
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
+import { exactZero } from "../../../../../domain/finance/exact";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
@@ -39,57 +39,54 @@ export const Summary = () => {
     borrowPositions.enabled && borrowPositionItems.length > 0;
   const borrowTotalSupplied = borrowPositionItems.reduce(
     (acc, position) => acc.plus(position.metrics.totalSuppliedUsd),
-    new BigNumber(0)
+    exactZero()
   );
   const borrowNetWorth = borrowPositionItems.reduce(
     (acc, position) => acc.plus(position.metrics.netWorthUsd),
-    new BigNumber(0)
+    exactZero()
   );
   const borrowApySummary = borrowPositionItems.reduce(
     (acc, position) => {
       const netWorth = position.metrics.netWorthUsd;
 
-      if (netWorth <= 0) {
+      if (!netWorth.isGreaterThan(0)) {
         return acc;
       }
 
       return {
         totalValue: acc.totalValue.plus(netWorth),
         weightedApy: acc.weightedApy.plus(
-          position.metrics.netApy * 100 * netWorth
+          position.metrics.netApy.multipliedBy(100).multipliedBy(netWorth)
         ),
       };
     },
     {
-      totalValue: new BigNumber(0),
-      weightedApy: new BigNumber(0),
+      totalValue: exactZero(),
+      weightedApy: exactZero(),
     }
   );
   const totalPositionsValue = hasBorrowPositions
-    ? (allPositions?.allPositionsSum ?? new BigNumber(0)).plus(
-        borrowTotalSupplied
-      )
+    ? (allPositions?.allPositionsSum ?? exactZero()).plus(borrowTotalSupplied)
     : allPositions?.allPositionsSum;
   const averageApyValue = (() => {
     if (!hasBorrowPositions) {
       return averageApy;
     }
 
-    const earnPositionsValue =
-      allPositions?.allPositionsSum ?? new BigNumber(0);
+    const earnPositionsValue = allPositions?.allPositionsSum ?? exactZero();
     const totalValue = earnPositionsValue.plus(borrowApySummary.totalValue);
 
     if (!totalValue.gt(0)) {
-      return new BigNumber(0);
+      return exactZero();
     }
 
     const earnWeightedApy =
-      averageApy?.times(earnPositionsValue) ?? new BigNumber(0);
+      averageApy?.times(earnPositionsValue) ?? exactZero();
 
     return earnWeightedApy.plus(borrowApySummary.weightedApy).div(totalValue);
   })();
   const availableOrNetWorthValue = hasBorrowPositions
-    ? (allPositions?.allPositionsSum ?? new BigNumber(0)).plus(borrowNetWorth)
+    ? (allPositions?.allPositionsSum ?? exactZero()).plus(borrowNetWorth)
     : availableBalance;
 
   const { t } = useTranslation();

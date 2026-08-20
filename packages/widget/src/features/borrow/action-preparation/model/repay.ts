@@ -1,6 +1,10 @@
 import BigNumber from "bignumber.js";
 import { getBorrowMarketPairLabel } from "../../../../domain/borrow/catalog/market";
 import { isDebtBelowMarketMinimum } from "../../../../domain/borrow/risk/minimum-debt";
+import {
+  exactZero,
+  truncateToTokenDecimals,
+} from "../../../../domain/finance/exact";
 import { toBorrowTransactionFlowReview } from "./review";
 import { toBorrowRiskProjection } from "./risk-projection";
 import type {
@@ -17,9 +21,10 @@ export const prepareRepayAction = (
 ): BorrowActionPreparation<RepayProjection> => {
   const { address, amount, context, repayAll, tokenBalances } = input;
   const { action, debtBalance, position } = context;
-  const effectiveAmount = repayAll
-    ? new BigNumber(debtBalance.balance)
-    : amount;
+  const requestedAmount = repayAll
+    ? debtBalance.balance
+    : truncateToTokenDecimals(amount, position.market.loanToken.decimals);
+  const effectiveAmount = requestedAmount;
   const walletBalance = deriveBorrowTokenWalletBalance({
     balances: tokenBalances ?? [],
     network: position.market.network,
@@ -29,8 +34,8 @@ export const prepareRepayAction = (
     position.market.loanTokenPriceUsd
   );
   const remainingDebt = BigNumber.maximum(
-    new BigNumber(debtBalance.balance).minus(effectiveAmount),
-    0
+    debtBalance.balance.minus(effectiveAmount),
+    exactZero()
   );
   const assessment = position.risk.assess([
     {
@@ -40,8 +45,8 @@ export const prepareRepayAction = (
     },
   ]);
   const projectedDebtUsd = BigNumber.maximum(
-    new BigNumber(debtBalance.balanceUsd).minus(repayUsd),
-    0
+    debtBalance.balanceUsd.minus(repayUsd),
+    exactZero()
   );
   const risk = toBorrowRiskProjection({
     current: position.risk.current,
@@ -52,7 +57,7 @@ export const prepareRepayAction = (
     amount,
     effectiveAmount,
     financials: {
-      existingDebtUsd: new BigNumber(debtBalance.balanceUsd),
+      existingDebtUsd: debtBalance.balanceUsd,
       projectedDebtUsd,
     },
     remainingDebt,
@@ -75,7 +80,7 @@ export const prepareRepayAction = (
   if (
     isDebtBelowMarketMinimum({
       debt: remainingDebt,
-      minimum: new BigNumber(position.market.minLoan ?? 0),
+      minimum: position.market.minLoan ?? exactZero(),
     })
   ) {
     reasons.push("RemainingDebtBelowMarketMinimum");
@@ -96,7 +101,7 @@ export const prepareRepayAction = (
     _tag: "Repay",
     address,
     amount: effectiveAmount,
-    existingDebtUsd: new BigNumber(debtBalance.balanceUsd),
+    existingDebtUsd: debtBalance.balanceUsd,
     integrationId: position.integration.id,
     loanTokenAddress: action.args.tokenAddress,
     loanTokenSymbol: debtBalance.tokenSymbol,

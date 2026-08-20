@@ -1,6 +1,10 @@
 import BigNumber from "bignumber.js";
 import { getBorrowMarketPairLabel } from "../../../../domain/borrow/catalog/market";
 import { decodeTokenId } from "../../../../domain/borrow/ids";
+import {
+  exactZero,
+  truncateToTokenDecimals,
+} from "../../../../domain/finance/exact";
 import { toBorrowTransactionFlowReview } from "./review";
 import { toBorrowRiskProjection } from "./risk-projection";
 import type {
@@ -15,14 +19,19 @@ export const prepareWithdrawAction = (
 ): BorrowActionPreparation<WithdrawProjection> => {
   const { address, amount, context, token } = input;
   const { position } = context;
-  const withdrawUsd = amount.multipliedBy(token.collateralToken.priceUsd);
-  const currentCollateralUsd = new BigNumber(
-    position.risk.current.totalCollateralUsd ??
-      position.metrics.totalCollateralUsd
+  const executableAmount = truncateToTokenDecimals(
+    amount,
+    token.collateralToken.token.decimals
   );
+  const withdrawUsd = executableAmount.multipliedBy(
+    token.collateralToken.priceUsd
+  );
+  const currentCollateralUsd =
+    position.risk.current.totalCollateralUsd ??
+    position.metrics.totalCollateralUsd;
   const assessment = position.risk.assess([
     {
-      amount,
+      amount: executableAmount,
       tokenId: decodeTokenId({
         address: token.collateralToken.token.address,
         symbol: token.collateralToken.token.symbol,
@@ -30,17 +39,16 @@ export const prepareWithdrawAction = (
       type: "withdraw",
     },
   ]);
-  const projectedCollateralUsd = new BigNumber(
+  const projectedCollateralUsd =
     assessment.projection.totalCollateralUsd ??
-      BigNumber.maximum(currentCollateralUsd.minus(withdrawUsd), 0)
-  );
+    BigNumber.maximum(currentCollateralUsd.minus(withdrawUsd), exactZero());
   const risk = toBorrowRiskProjection({
     current: position.risk.current,
     projected: assessment.projection,
   });
   const projection: WithdrawProjection = {
     _tag: "Withdraw",
-    amount,
+    amount: executableAmount,
     financials: {
       existingCollateralUsd: currentCollateralUsd,
       projectedCollateralUsd,
@@ -49,12 +57,12 @@ export const prepareWithdrawAction = (
     withdrawUsd,
   };
 
-  if (!amount.gt(0)) {
+  if (!executableAmount.gt(0)) {
     return { _tag: "Idle", projection };
   }
 
   const reasons: BorrowActionBlockReason[] = [];
-  if (amount.gt(token.availableAmount)) {
+  if (executableAmount.gt(token.availableAmount)) {
     reasons.push("AmountExceedsPositionBalance");
   }
   if (assessment.decision === "block") {
@@ -78,7 +86,7 @@ export const prepareWithdrawAction = (
     review: toBorrowTransactionFlowReview({
       _tag: "Withdraw",
       address,
-      amount,
+      amount: executableAmount,
       collateralTokenAddress: token.action.args.tokenAddress,
       collateralTokenSymbol: token.supplyBalance.tokenSymbol,
       existingCollateralUsd: currentCollateralUsd,

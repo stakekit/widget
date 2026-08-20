@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import type { Integration } from "../../../../domain/borrow/catalog/integration";
 import {
@@ -6,6 +6,7 @@ import {
   type Market,
 } from "../../../../domain/borrow/catalog/market";
 import { deriveMarketRiskLimits } from "../../../../domain/borrow/risk/market-risk";
+import { exactDecimal, exactZero } from "../../../../domain/finance/exact";
 import {
   formatBorrowProviderName,
   formatHealthFactor,
@@ -43,21 +44,21 @@ const getTokenUsdValue = ({
   price,
 }: {
   readonly amount: BigNumber;
-  readonly price: number;
+  readonly price: BigNumber;
 }) => amount.multipliedBy(price);
 
 const deriveLtv = ({
   collateralUsd,
   debtUsd,
 }: {
-  readonly collateralUsd: number;
-  readonly debtUsd: number;
+  readonly collateralUsd: BigNumber;
+  readonly debtUsd: BigNumber;
 }) => {
-  if (collateralUsd > 0) {
-    return debtUsd / collateralUsd;
+  if (collateralUsd.isGreaterThan(0)) {
+    return debtUsd.dividedBy(collateralUsd);
   }
 
-  return debtUsd > 0 ? 1 : 0;
+  return debtUsd.isGreaterThan(0) ? exactDecimal(1) : exactZero();
 };
 
 export const getBorrowDetailsModel = ({
@@ -84,11 +85,11 @@ export const getBorrowDetailsModel = ({
   });
   const collateralUsd = getTokenUsdValue({
     amount: collateralAmount,
-    price: collateralToken?.priceUsd ?? 0,
+    price: collateralToken?.priceUsd ?? exactZero(),
   });
   const projectedLtv = deriveLtv({
-    collateralUsd: collateralUsd.toNumber(),
-    debtUsd: borrowUsd.toNumber(),
+    collateralUsd,
+    debtUsd: borrowUsd,
   });
   const marketRisk = deriveMarketRiskLimits(market);
   const maxLtv = projection
@@ -97,10 +98,10 @@ export const getBorrowDetailsModel = ({
   const displayedProjectedLtv = projection?.projectedLtv ?? projectedLtv;
   const existingLtv = projection
     ? deriveLtv({
-        collateralUsd: projection.existingCollateralUsd.toNumber(),
-        debtUsd: projection.existingDebtUsd.toNumber(),
+        collateralUsd: projection.existingCollateralUsd,
+        debtUsd: projection.existingDebtUsd,
       })
-    : 0;
+    : exactZero();
   const displayedCollateralUsd =
     projection?.projectedCollateralUsd ?? collateralUsd;
   const displayedDebtUsd = projection?.projectedDebtUsd ?? borrowUsd;
@@ -109,8 +110,8 @@ export const getBorrowDetailsModel = ({
       return projection.projectedHealthFactor;
     }
 
-    return displayedProjectedLtv > 0 && collateralToken
-      ? collateralToken.liquidationThreshold / displayedProjectedLtv
+    return displayedProjectedLtv.isGreaterThan(0) && collateralToken
+      ? collateralToken.liquidationThreshold.dividedBy(displayedProjectedLtv)
       : null;
   };
   const healthFactor = getHealthFactor();
@@ -202,18 +203,14 @@ export const getBorrowDetailsModel = ({
       id: "total-supply",
       label: t("dashboard.borrow.details.total_supply"),
       value: formatUsd(
-        new BigNumber(market.totalSupply)
-          .multipliedBy(market.loanTokenPriceUsd)
-          .toString()
+        market.totalSupply.multipliedBy(market.loanTokenPriceUsd)
       ),
     },
     {
       id: "total-borrow",
       label: t("dashboard.borrow.details.total_borrow"),
       value: formatUsd(
-        new BigNumber(market.totalBorrow)
-          .multipliedBy(market.loanTokenPriceUsd)
-          .toString()
+        market.totalBorrow.multipliedBy(market.loanTokenPriceUsd)
       ),
     },
     {

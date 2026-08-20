@@ -1,3 +1,4 @@
+import type BigNumber from "bignumber.js";
 import { Data, Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type {
@@ -19,7 +20,7 @@ export type YieldSummaryProvider = Readonly<{
   readonly logo: string | undefined;
   readonly name: string;
   readonly preferred?: EarnValidator["preferred"];
-  readonly rewardRate: number | undefined;
+  readonly rewardRate: BigNumber | undefined;
   readonly rewardRateFormatted: string;
   readonly rewardType: string | undefined;
   readonly stakedBalance?: EarnValidator["tvl"];
@@ -79,7 +80,6 @@ const getProvider = ({
         : null;
     const rewardRate =
       selectedProviderYield?.rewardRate.total ?? validator.rewardRate?.total;
-
     return {
       address: validator.address,
       commission: validator.commission,

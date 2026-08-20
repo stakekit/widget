@@ -1,10 +1,10 @@
-import BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
 import type { EarnBalance } from "../../../../domain/earn/models";
 import { getDashboardYieldCategory } from "../../../../domain/earn/yield";
+import { exactDecimal } from "../../../../domain/finance/exact";
 import type { YieldId } from "../../../../domain/identity/identifiers";
 import {
   type PositionData,
@@ -67,7 +67,7 @@ export const toPositionItems = (
     (items, position) => {
       for (const [balanceId, value] of position.balanceData) {
         const balancesWithAmount = value.balances.filter((balance) => {
-          const amount = new BigNumber(balance.amount);
+          const amount = exactDecimal(balance.amount);
           return !amount.isZero() && !amount.isNaN();
         });
 

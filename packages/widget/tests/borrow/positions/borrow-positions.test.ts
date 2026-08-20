@@ -158,11 +158,11 @@ describe("borrow position items", () => {
     });
 
     expect(position?.id).toBe("aave-v3-ethereum-usdc");
-    expect(position?.balances.debt?.balance).toBe(400);
+    expect(position?.balances.debt?.balance).toEqual(new BigNumber(400));
     expect(position?.balances.supply).toHaveLength(1);
     expect(position?.risk.current).toMatchObject({
-      healthFactor: 2.125,
-      ltv: 0.4,
+      healthFactor: new BigNumber("2.125"),
+      ltv: new BigNumber("0.4"),
       status: "available",
     });
   });
@@ -215,7 +215,7 @@ describe("borrow position items", () => {
         ...position.balances,
         supply: position.balances.supply.map((balance) => ({
           ...balance,
-          balance: 0.12345678901234568,
+          balance: new BigNumber("0.123456789012345678"),
           balanceRaw: 123_456_789_012_345_678n,
         })),
       },
@@ -265,9 +265,9 @@ describe("borrow position items", () => {
       `debt-${marketDto.loanToken.address.toLowerCase()}`,
     ]);
     expect(model.detailRows.map((row) => row.id)).toContain("borrow-apy");
-    expect(model.currentLtv).toBe(0.4);
-    expect(model.healthFactor).toBe(2.125);
-    expect(model.liquidationThreshold).toBe(0.85);
+    expect(model.currentLtv).toEqual(new BigNumber("0.4"));
+    expect(model.healthFactor).toEqual(new BigNumber("2.125"));
+    expect(model.liquidationThreshold).toEqual(new BigNumber("0.85"));
     expect(model.collateralItems).toEqual([
       expect.objectContaining({
         isCollateral: true,
@@ -431,15 +431,19 @@ describe("borrow position items", () => {
 
     expect(usdcPosition?.balances.supply).toEqual([
       expect.objectContaining({
-        balanceUsd: 2.54,
+        balanceUsd: new BigNumber("2.54"),
         marketId: usdcMarket.id,
       }),
     ]);
-    expect(usdcPosition?.metrics.totalCollateralUsd).toBe(2.54);
-    expect(usdcPosition?.metrics.totalBorrowedUsd).toBe(0.5);
+    expect(usdcPosition?.metrics.totalCollateralUsd).toEqual(
+      new BigNumber("2.54")
+    );
+    expect(usdcPosition?.metrics.totalBorrowedUsd).toEqual(
+      new BigNumber("0.5")
+    );
     expect(usdcPosition?.risk.current).toMatchObject({
-      healthFactor: 4.3708,
-      ltv: 0.1968,
+      healthFactor: new BigNumber("4.3708"),
+      ltv: new BigNumber("0.1968"),
       status: "available",
     });
     expect(usdcPosition?.metrics.borrowApy).toBeCloseTo(0.0385665);
@@ -450,7 +454,7 @@ describe("borrow position items", () => {
 
     const model = getBorrowPositionDetailsModel({ position: usdcPosition, t });
     expect(model.providerName).toBe("Morpho Blue");
-    expect(model.healthFactor).toBe(4.3708);
+    expect(model.healthFactor).toEqual(new BigNumber("4.3708"));
     expect(model.totalCollateralUsd).toBe("$2.54");
     expect(model.metricCards.find((card) => card.id === "debt")?.value).toBe(
       "$0.50"

@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
+import { exactDecimal, exactZero } from "../finance/exact";
 import type { YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import { Networks } from "../network/networks";
@@ -27,10 +28,10 @@ export const getMaxAmount = ({
 }) =>
   BigNumber.max(
     BigNumber.min(
-      integrationMaxLimit ?? BigNumber(Number.POSITIVE_INFINITY),
+      integrationMaxLimit ?? exactDecimal(Number.POSITIVE_INFINITY),
       availableAmount.minus(gasEstimateTotal)
     ),
-    new BigNumber(0)
+    exactZero()
   );
 
 type InitialSelectionParams = {
@@ -59,8 +60,18 @@ export const getInitSelectedValidators = (args: {
 };
 
 export const isForceMaxAmount = (
-  args: { minimum?: string | null; maximum?: string | null } | null | undefined
-) => args?.minimum === "-1" && args?.maximum === "-1";
+  args:
+    | {
+        readonly minimum?: string | number | BigNumber | null;
+        readonly maximum?: string | number | BigNumber | null;
+      }
+    | null
+    | undefined
+) =>
+  args?.minimum != null &&
+  args?.maximum != null &&
+  exactDecimal(args.minimum).isEqualTo(-1) &&
+  exactDecimal(args.maximum).isEqualTo(-1);
 
 type EnterAmountConstraint =
   | { readonly type: "force-max" }
@@ -80,7 +91,7 @@ export const getEnterAmountConstraint = (
     return { type: "force-max" };
   }
 
-  const maximum = new BigNumber(amountArgument?.maximum ?? 0);
+  const maximum = exactDecimal(amountArgument?.maximum ?? 0);
 
   return {
     maximum: maximum.isGreaterThan(0) ? maximum : null,
@@ -102,13 +113,13 @@ export const getMinStakeAmount = (
   yieldDto: EarnYieldWithProvider,
   selectedYieldHasActivePosition: boolean
 ) => {
-  const integrationMin = new BigNumber(
+  const integrationMin = exactDecimal(
     getYieldActionArg(yieldDto, "enter", "amount")?.minimum ?? 0
   );
 
   if (isYieldWithEnterMinBasedOnPosition(yieldDto)) {
     if (selectedYieldHasActivePosition) {
-      return new BigNumber(0);
+      return exactZero();
     }
 
     return integrationMin;
@@ -121,11 +132,11 @@ export const getMinUnstakeAmount = (
   yieldDto: EarnYieldWithProvider,
   pricePerShare: string | null
 ) => {
-  const integrationMin = new BigNumber(
+  const integrationMin = exactDecimal(
     getYieldActionArg(yieldDto, "exit", "amount")?.minimum ?? 0
   );
 
-  const pricePerShareBN = new BigNumber(pricePerShare ?? 0);
+  const pricePerShareBN = exactDecimal(pricePerShare ?? 0);
 
   if (pricePerShareBN.isZero() || !isBittensorStaking(yieldDto.id)) {
     return integrationMin;

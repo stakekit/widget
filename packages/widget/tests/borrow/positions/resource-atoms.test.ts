@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
@@ -164,7 +165,9 @@ describe("Borrow Positions resource atoms", () => {
     expect(AsyncResult.isSuccess(result)).toBe(true);
     if (AsyncResult.isSuccess(result)) {
       expect(result.value.items[0]?.id).toBe(marketDto.id);
-      expect(result.value.items[0]?.balances.debt?.balance).toBe(400);
+      expect(result.value.items[0]?.balances.debt?.balance).toEqual(
+        new BigNumber(400)
+      );
     }
   });
 

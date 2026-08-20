@@ -228,9 +228,11 @@ describe("Yield Entry", () => {
       });
       expect(view.preparation?.command.arguments?.amount).toBe("1");
       expect(view.validation.hasErrors).toBe(false);
-      expect(view.estimatedRewards?.rewardRateAverage.toNumber()).toBe(
-        input.entry.yield?.rewardRate.total
-      );
+      expect(
+        view.estimatedRewards?.rewardRateAverage.isEqualTo(
+          input.entry.yield?.rewardRate.total ?? 0
+        )
+      ).toBe(true);
     } finally {
       registry.dispose();
     }

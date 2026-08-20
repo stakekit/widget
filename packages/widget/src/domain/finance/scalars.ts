@@ -8,21 +8,60 @@ import {
   SchemaTransformation,
 } from "effect";
 import { logDecodeFieldRejection } from "../decoding/decode-diagnostics";
+import "./config";
 
-export const BigIntFromString = Schema.BigIntFromString;
-export type BigIntFromString = typeof BigIntFromString.Type;
+export const ExactDecimalInput = Schema.Union([
+  Schema.String.check(Schema.isStringFinite()),
+  Schema.Number.check(Schema.isFinite()),
+]);
 
-export const PrecisionDecimalFromString = Schema.String.check(
-  Schema.isStringFinite()
-).pipe(
+export const ExactDecimal = ExactDecimalInput.pipe(
   Schema.decodeTo(
-    Schema.instanceOf(BigNumber),
+    Schema.instanceOf(BigNumber).check(
+      Schema.makeFilter((value) =>
+        value.isFinite() ? true : "expected a finite decimal"
+      )
+    ),
     SchemaTransformation.transform({
       decode: (value) => new BigNumber(value),
       encode: (value) => value.toFixed(),
     })
   )
 );
+export type ExactDecimal = typeof ExactDecimal.Type;
+
+const nonNegativeExactDecimalFilter = Schema.makeFilter((value: BigNumber) =>
+  value.isGreaterThanOrEqualTo(0)
+    ? true
+    : "expected a finite non-negative decimal"
+);
+
+export const NonNegativeExactDecimal = ExactDecimal.check(
+  nonNegativeExactDecimalFilter
+);
+export type NonNegativeExactDecimal = typeof NonNegativeExactDecimal.Type;
+
+const SafeIntegerBaseUnitAmount = Schema.Number.check(
+  Schema.makeFilter((value) =>
+    Number.isSafeInteger(value)
+      ? true
+      : "expected a safe integer Base Unit Amount"
+  )
+).pipe(
+  Schema.decodeTo(
+    Schema.BigInt,
+    SchemaTransformation.transform({
+      decode: (value) => BigInt(value),
+      encode: (value) => Number(value),
+    })
+  )
+);
+
+export const ExactBaseUnitAmount = Schema.Union([
+  Schema.BigIntFromString,
+  SafeIntegerBaseUnitAmount,
+]);
+export type ExactBaseUnitAmount = typeof ExactBaseUnitAmount.Type;
 
 export const UtcDateTimeFromString = Schema.DateTimeUtcFromString;
 export type UtcDateTimeFromString = typeof UtcDateTimeFromString.Type;

@@ -2,6 +2,7 @@ import { Cause, Effect, Layer, Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { exactDecimal } from "../../src/domain/finance/exact";
 import { resolveYieldSummaryView } from "../../src/features/yield-summary/model/yield-summary";
 import { makeYieldSummary } from "../../src/features/yield-summary/state/yield-summary";
 import type { YieldDirectoryRequest } from "../../src/services/api/resource-sources";
@@ -180,7 +181,7 @@ describe("Yield Summary", () => {
 
     try {
       expect(registry.get(summary.viewAtom)).toMatchObject({
-        providers: [{ rewardRate: 0.08 }],
+        providers: [{ rewardRate: exactDecimal("0.08") }],
         status: "ready",
       });
     } finally {

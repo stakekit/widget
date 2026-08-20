@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect";
 import { describe, expect, it } from "vitest";
+import { exactDecimal } from "../../src/domain/finance/exact";
 import {
   HealthStatus,
   PriceRequest,
@@ -50,12 +51,12 @@ describe("health and price application schemas", () => {
     );
 
     expect(prices.value.get("ethereum-")).toEqual({
-      price: 3000,
-      price24H: 2900,
+      price: exactDecimal(3000),
+      price24H: exactDecimal(2900),
     });
     expect(prices.value.has("cosmos-")).toBe(false);
     expect(prices.value.get("solana-")).toEqual({
-      price: 150,
+      price: exactDecimal(150),
       price24H: undefined,
     });
   });
@@ -81,7 +82,7 @@ describe("health and price application schemas", () => {
       symbol: "USDC",
     });
 
-    expect(prices.getByToken(native)?.price).toBe(3000);
-    expect(prices.getByToken(addressed)?.price).toBe(1);
+    expect(prices.getByToken(native)?.price).toEqual(exactDecimal(3000));
+    expect(prices.getByToken(addressed)?.price).toEqual(exactDecimal(1));
   });
 });

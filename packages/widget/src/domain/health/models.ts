@@ -1,8 +1,9 @@
+import type BigNumber from "bignumber.js";
 import { Schema, SchemaTransformation } from "effect";
 import * as LegacyApi from "../../generated/api/legacy-schema";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { TolerantTopLevelRecord } from "../decoding/response-schema";
-import { UtcDateTimeFromString } from "../finance/scalars";
+import { ExactDecimal, UtcDateTimeFromString } from "../finance/scalars";
 import { Token } from "../token/token";
 
 export const HealthStatus = Schema.Struct({
@@ -23,8 +24,8 @@ export const PriceRequest = LegacyApi.PriceRequestDto.pipe(
 export type PriceRequest = typeof PriceRequest.Type;
 
 type Price = {
-  readonly price: number | undefined;
-  readonly price24H: number | undefined;
+  readonly price: BigNumber | undefined;
+  readonly price24H: BigNumber | undefined;
 };
 
 export class Prices {
@@ -51,8 +52,8 @@ export class Prices {
 }
 
 const PriceEntry = Schema.Struct({
-  price: Schema.optionalKey(Schema.Number.check(Schema.isFinite())),
-  price_24_h: Schema.optionalKey(Schema.Number.check(Schema.isFinite())),
+  price: Schema.optionalKey(ExactDecimal),
+  price_24_h: Schema.optionalKey(ExactDecimal),
 });
 
 const PriceEntries = TolerantTopLevelRecord(Schema.NonEmptyString, PriceEntry, {
@@ -80,7 +81,7 @@ export const PriceResponse = PriceEntries.pipe(
       ): Readonly<
         Record<
           string,
-          { readonly price?: number; readonly price_24_h?: number }
+          { readonly price?: BigNumber; readonly price_24_h?: BigNumber }
         >
       > =>
         Object.fromEntries(

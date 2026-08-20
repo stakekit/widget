@@ -4,6 +4,7 @@ import {
   getYieldActionArg,
   getYieldTypeLabels,
 } from "../../../../../domain/earn/yield";
+import { formatNumber } from "../../../../../shared/lib/number-format";
 import * as AmountToggle from "../../../../../shared/ui/components/amount-toggle";
 import { AmountTokenSection } from "../../../../../shared/ui/components/amount-token-section";
 import { Dropdown } from "../../../../../shared/ui/components/dropdown";
@@ -63,11 +64,11 @@ const PositionDetailsStakeTokenSection = ({
   const min =
     stake.stakeMinAmount === null
       ? null
-      : `${t("shared.min")} ${stake.stakeMinAmount} ${stake.symbol}`;
+      : `${t("shared.min")} ${formatNumber(stake.stakeMinAmount)} ${stake.symbol}`;
   const max =
     stake.stakeMaxAmount === null
       ? null
-      : `${t("shared.max")} ${stake.stakeMaxAmount} ${stake.symbol}`;
+      : `${t("shared.max")} ${formatNumber(stake.stakeMaxAmount)} ${stake.symbol}`;
   const minMaxLabel = min && max ? `${min} / ${max}` : (min ?? max);
 
   if (isLoading) {

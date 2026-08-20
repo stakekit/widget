@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js";
+import { exactZero, sumExact } from "../../finance/exact";
 import type { Market } from "../catalog/market";
 import type {
   BorrowAccountSnapshot,
@@ -31,8 +31,8 @@ export const makeAccountRiskPosition = ({
   readonly snapshot: BorrowAccountSnapshot | null;
 }): RiskPosition => {
   const definitionsResult = getDefinitions(markets);
-  const totalCollateralUsd = snapshot?.totalCollateralUsd ?? 0;
-  const totalDebtUsd = snapshot?.totalBorrowedUsd ?? 0;
+  const totalCollateralUsd = snapshot?.totalCollateralUsd ?? exactZero();
+  const totalDebtUsd = snapshot?.totalBorrowedUsd ?? exactZero();
 
   if (definitionsResult.status === "unavailable") {
     return makeRiskPosition({
@@ -44,7 +44,7 @@ export const makeAccountRiskPosition = ({
       definitions: new Map(),
       loanPrices: makeLoanPrices(markets),
       scope: "account",
-      state: { collateral: [], debtUsd: new BigNumber(totalDebtUsd) },
+      state: { collateral: [], debtUsd: totalDebtUsd },
     });
   }
 
@@ -62,13 +62,13 @@ export const makeAccountRiskPosition = ({
       definitions: definitionsResult.definitions,
       loanPrices: makeLoanPrices(markets),
       scope: "account",
-      state: { collateral: [], debtUsd: new BigNumber(totalDebtUsd) },
+      state: { collateral: [], debtUsd: totalDebtUsd },
     });
   }
 
   const state = {
     collateral: collateralResult.collateral,
-    debtUsd: new BigNumber(totalDebtUsd),
+    debtUsd: totalDebtUsd,
   };
   const local = projectState(state);
   if (
@@ -115,10 +115,12 @@ export const makeMarketRiskPosition = ({
   readonly supplyBalances: ReadonlyArray<SupplyBalance>;
 }): RiskPosition => {
   const definitionsResult = getDefinitions([market]);
-  const totalCollateralUsd = supplyBalances
-    .filter((balance) => balance.isCollateral)
-    .reduce((total, balance) => total + balance.balanceUsd, 0);
-  const totalDebtUsd = debtBalance?.balanceUsd ?? 0;
+  const totalCollateralUsd = sumExact(
+    supplyBalances
+      .filter((balance) => balance.isCollateral)
+      .map((balance) => balance.balanceUsd)
+  );
+  const totalDebtUsd = debtBalance?.balanceUsd ?? exactZero();
   const loanPrices = makeLoanPrices([market]);
 
   if (definitionsResult.status === "unavailable") {
@@ -131,7 +133,7 @@ export const makeMarketRiskPosition = ({
       definitions: new Map(),
       loanPrices,
       scope: "market",
-      state: { collateral: [], debtUsd: new BigNumber(totalDebtUsd) },
+      state: { collateral: [], debtUsd: totalDebtUsd },
     });
   }
 
@@ -149,13 +151,13 @@ export const makeMarketRiskPosition = ({
       definitions: definitionsResult.definitions,
       loanPrices,
       scope: "market",
-      state: { collateral: [], debtUsd: new BigNumber(totalDebtUsd) },
+      state: { collateral: [], debtUsd: totalDebtUsd },
     });
   }
 
   const state = {
     collateral: collateralResult.collateral,
-    debtUsd: new BigNumber(totalDebtUsd),
+    debtUsd: totalDebtUsd,
   };
   const local = projectState(state);
   const positionStateResult = getIsolatedPositionState(supplyBalances);
@@ -174,8 +176,10 @@ export const makeMarketRiskPosition = ({
   }
   const { positionState } = positionStateResult;
   const hasExposure =
-    supplyBalances.some((supplyBalance) => supplyBalance.balance > 0) ||
-    (debtBalance?.balance ?? 0) > 0;
+    supplyBalances.some((supplyBalance) =>
+      supplyBalance.balance.isGreaterThan(0)
+    ) ||
+    (debtBalance?.balance.isGreaterThan(0) ?? false);
   const current = (() => {
     if (local.status === "available" && positionState) {
       return makeAuthoritativeMarketCurrent({ local, positionState });

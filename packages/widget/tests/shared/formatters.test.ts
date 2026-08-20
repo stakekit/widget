@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
+import { exactDecimal } from "../../src/domain/finance/exact";
 import {
   formatBorrowProviderName,
   formatHealthFactor,
   formatNetworkName,
   formatPercent,
   formatUsd,
+  getRewardRateFormatted,
   humanizeEnumValue,
 } from "../../src/shared/lib/formatters";
+import { formatNumber } from "../../src/shared/lib/number-format";
 
 describe("shared formatters", () => {
   it.each([
@@ -48,6 +51,23 @@ describe("shared formatters", () => {
     expect(formatNetworkName("arbitrum-one")).toBe("Arbitrum One");
     expect(formatBorrowProviderName("Morpho Blue Borrow")).toBe("Morpho Blue");
     expect(formatBorrowProviderName("Aave V3")).toBe("Aave V3");
+  });
+
+  it("treats a zero BigNumber reward rate as missing", () => {
+    expect(getRewardRateFormatted({ rewardRate: 0 })).toBe("- %");
+    expect(getRewardRateFormatted({ rewardRate: exactDecimal(0) })).toBe("- %");
+    expect(getRewardRateFormatted({ rewardRate: undefined })).toBe("- %");
+    expect(getRewardRateFormatted({ rewardRate: 0.05 })).toBe("5%");
+    expect(getRewardRateFormatted({ rewardRate: exactDecimal("0.05") })).toBe(
+      "5%"
+    );
+  });
+
+  it("formats token and fiat values that cannot pass through JavaScript number", () => {
+    const amount = exactDecimal("9007199254740993.123456789");
+
+    expect(formatNumber(amount, 6)).toBe("9,007,199,254,740,993.123456");
+    expect(formatUsd(amount)).toBe("$9007.2T");
   });
 
   it("humanizes enum-like values", () => {

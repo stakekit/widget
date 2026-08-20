@@ -32,6 +32,7 @@ import {
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
 import { GeoBlockService } from "../../src/services/geoblocking";
 import { config } from "../../src/shared/config/widget-defaults";
+import { yieldApiActionDtoFixture } from "../fixtures";
 import { describe, expect, it } from "../utils/test-extend.dom.ts";
 import { render } from "../utils/test-utils.dom.tsx";
 
@@ -296,6 +297,83 @@ describe("Effect API client", () => {
       Effect.runPromise(client.legacySource.getTokenOptions({ enter: true }))
     ).rejects.toBeTruthy();
     expect(badRequestAttempts).toBe(1);
+  });
+
+  it("lets geoblocking and unexpected-status observers see the same JSON", async ({
+    worker,
+  }) => {
+    const limit = 1001;
+    worker.use(
+      http.get("https://api.example.com/v1/tokens", () =>
+        HttpResponse.text(
+          `{"countryCode":"CA","limit":${limit},"message":"Access denied","regionCode":"CA-ON","tags":["staking"],"type":"GEO_LOCATION"}`,
+          { headers: { "Content-Type": "application/json" }, status: 403 }
+        )
+      ),
+      http.get("https://yield.example.com/health", () =>
+        HttpResponse.text(`{"limit":${limit}}`, {
+          headers: { "Content-Type": "application/json" },
+          status: 418,
+        })
+      )
+    );
+    const { client, geoBlock } = await createTestClient();
+    const unexpected = await Effect.runPromise(
+      client.yieldSource.getHealth().pipe(Effect.flip)
+    );
+
+    await expect(
+      Effect.runPromise(client.legacySource.getTokenOptions({ enter: true }))
+    ).rejects.toBeTruthy();
+    await expect
+      .poll(() =>
+        Effect.runPromise(
+          geoBlock.states.pipe(Stream.runHead, Effect.map(Option.getOrThrow))
+        ).then((value) => (value === false ? undefined : value.countryCode))
+      )
+      .toBe("CA");
+    expect(unexpected._tag).toBe("ApiRequestError");
+    if (unexpected._tag !== "ApiRequestError") {
+      throw unexpected;
+    }
+    expect(
+      String((unexpected.cause as { message?: string }).message)
+    ).toContain(String(limit));
+  });
+
+  it("decodes a quoted Action amount that cannot pass through JavaScript number", async ({
+    worker,
+  }) => {
+    const amount = "1.000000000000000001";
+    const amountRaw = "1000000000000000001";
+    worker.use(
+      http.post("https://yield.example.com/v1/actions/enter", () =>
+        HttpResponse.text(
+          JSON.stringify(
+            yieldApiActionDtoFixture({
+              amount,
+              amountRaw,
+              amountUsd: "1",
+            })
+          ),
+          { headers: { "Content-Type": "application/json" }, status: 201 }
+        )
+      )
+    );
+    const { client } = await createTestClient();
+    const action = await Effect.runPromise(
+      client.yieldOperations.previewAction({
+        command: Schema.decodeUnknownSync(ActionCommand)({
+          address: "0x1234567890123456789012345678901234567890",
+          arguments: { amount },
+          yieldId: "ethereum-eth-native-staking",
+        }),
+        intent: "enter",
+      })
+    );
+
+    expect(action.amount?.toFixed()).toBe(amount);
+    expect(action.amountRaw).toBe(BigInt(amountRaw));
   });
 
   it("resolves API responses while mount presentation remains frozen", async ({

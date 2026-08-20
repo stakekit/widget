@@ -1,28 +1,26 @@
 import { Schema } from "effect";
 import * as BorrowApi from "../../../generated/api/borrow";
+import { ExactBaseUnitAmount, ExactDecimal } from "../../finance/scalars";
 import { IntegrationId, MarketId, TokenAddress, WalletAddress } from "../ids";
 import { BorrowNetwork } from "../network";
-import {
-  NonNegativeFiniteFromString,
-  RiskRatioFromString,
-} from "../risk/risk-values";
+import { NonNegativeRiskValue, RiskRatio } from "../risk/risk-values";
 import { PendingActions } from "./pending-action";
 
 export const IsolatedRiskSnapshot = Schema.Struct({
   ...BorrowApi.PositionStateDto.fields,
-  availableToBorrowUsd: NonNegativeFiniteFromString,
-  currentLtv: NonNegativeFiniteFromString,
-  healthFactor: Schema.NullOr(NonNegativeFiniteFromString),
-  liquidationThreshold: RiskRatioFromString,
+  availableToBorrowUsd: NonNegativeRiskValue,
+  currentLtv: NonNegativeRiskValue,
+  healthFactor: Schema.NullOr(NonNegativeRiskValue),
+  liquidationThreshold: RiskRatio,
 });
 export type IsolatedRiskSnapshot = typeof IsolatedRiskSnapshot.Type;
 
 export const SupplyBalance = Schema.Struct({
   ...BorrowApi.SupplyBalanceDto.fields,
-  apy: Schema.FiniteFromString,
-  balance: NonNegativeFiniteFromString,
-  balanceRaw: Schema.BigIntFromString,
-  balanceUsd: NonNegativeFiniteFromString,
+  apy: ExactDecimal,
+  balance: NonNegativeRiskValue,
+  balanceRaw: ExactBaseUnitAmount,
+  balanceUsd: NonNegativeRiskValue,
   marketId: MarketId,
   pendingActions: PendingActions,
   positionState: Schema.optionalKey(IsolatedRiskSnapshot),
@@ -32,10 +30,10 @@ export type SupplyBalance = typeof SupplyBalance.Type;
 
 export const DebtBalance = Schema.Struct({
   ...BorrowApi.DebtBalanceDto.fields,
-  apy: Schema.FiniteFromString,
-  balance: NonNegativeFiniteFromString,
-  balanceRaw: Schema.BigIntFromString,
-  balanceUsd: NonNegativeFiniteFromString,
+  apy: ExactDecimal,
+  balance: NonNegativeRiskValue,
+  balanceRaw: ExactBaseUnitAmount,
+  balanceUsd: NonNegativeRiskValue,
   marketId: MarketId,
   pendingActions: PendingActions,
   tokenAddress: TokenAddress,
@@ -45,17 +43,17 @@ export type DebtBalance = typeof DebtBalance.Type;
 export const BorrowAccountSnapshot = Schema.Struct({
   ...BorrowApi.PositionDto.fields,
   address: WalletAddress,
-  availableToBorrowUsd: Schema.NullOr(NonNegativeFiniteFromString),
-  currentLtv: NonNegativeFiniteFromString,
+  availableToBorrowUsd: Schema.NullOr(NonNegativeRiskValue),
+  currentLtv: NonNegativeRiskValue,
   debtBalances: Schema.Array(DebtBalance),
-  healthFactor: Schema.NullOr(NonNegativeFiniteFromString),
+  healthFactor: Schema.NullOr(NonNegativeRiskValue),
   integrationId: IntegrationId,
-  netApy: Schema.FiniteFromString,
-  netWorthUsd: Schema.FiniteFromString,
+  netApy: ExactDecimal,
+  netWorthUsd: ExactDecimal,
   network: BorrowNetwork,
   supplyBalances: Schema.Array(SupplyBalance),
-  totalBorrowedUsd: NonNegativeFiniteFromString,
-  totalCollateralUsd: NonNegativeFiniteFromString,
-  totalSuppliedUsd: NonNegativeFiniteFromString,
+  totalBorrowedUsd: NonNegativeRiskValue,
+  totalCollateralUsd: NonNegativeRiskValue,
+  totalSuppliedUsd: NonNegativeRiskValue,
 });
 export type BorrowAccountSnapshot = typeof BorrowAccountSnapshot.Type;

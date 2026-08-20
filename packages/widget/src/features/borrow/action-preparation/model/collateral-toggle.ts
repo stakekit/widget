@@ -1,4 +1,3 @@
-import BigNumber from "bignumber.js";
 import { getBorrowMarketPairLabel } from "../../../../domain/borrow/catalog/market";
 import { decodeTokenId } from "../../../../domain/borrow/ids";
 import { toBorrowTransactionFlowReview } from "./review";
@@ -23,10 +22,9 @@ export const prepareCollateralToggleAction = (
       type: context.type,
     },
   ]);
-  const existingCollateralUsd = new BigNumber(
+  const existingCollateralUsd =
     position.risk.current.totalCollateralUsd ??
-      position.metrics.totalCollateralUsd
-  );
+    position.metrics.totalCollateralUsd;
   const risk = toBorrowRiskProjection({
     current: position.risk.current,
     projected: assessment.projection,
