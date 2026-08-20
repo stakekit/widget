@@ -15,14 +15,14 @@ import {
 import { Token } from "../token/token";
 
 const ActionArguments = Schema.Struct({
-  ...YieldApi.CreateActionDto.fields.arguments.schema.fields,
+  ...YieldApi.ActionArgumentsDto.fields,
   providerId: Schema.optionalKey(YieldId),
   validatorAddress: Schema.optionalKey(ValidatorAddress),
   validatorAddresses: Schema.optionalKey(Schema.Array(ValidatorAddress)),
 });
 
 const ManageActionArguments = Schema.Struct({
-  ...YieldApi.CreateManageActionDto.fields.arguments.schema.fields,
+  ...YieldApi.ActionArgumentsDto.fields,
   providerId: Schema.optionalKey(YieldId),
   validatorAddress: Schema.optionalKey(ValidatorAddress),
   validatorAddresses: Schema.optionalKey(Schema.Array(ValidatorAddress)),

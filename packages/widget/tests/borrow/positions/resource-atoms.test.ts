@@ -92,6 +92,8 @@ const marketDto = {
   isBorrowEnabled: true,
   supplyCollateralFeeBps: "0",
   feeWrapperAddress: null,
+  originationFeeBps: "0",
+  originationFeeWrapperAddress: null,
   minLoan: null,
 } as const;
 

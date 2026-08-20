@@ -7,6 +7,241 @@ import * as HttpClientError from "effect/unstable/http/HttpClientError";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 import * as HttpClientResponse from "effect/unstable/http/HttpClientResponse";
 // non-recursive definitions
+export type IntegrationMetadataDto = {
+  readonly description: string;
+  readonly externalLink: string;
+  readonly logoURI: string;
+};
+export type ArgumentSchemaDto = {
+  readonly type?: {};
+  readonly properties?: {};
+  readonly required?: ReadonlyArray<string>;
+  readonly additionalProperties?: {};
+  readonly items?: {};
+  readonly enum?: ReadonlyArray<string>;
+  readonly default?: {};
+  readonly notes?: string;
+};
+export type TokenDto = {
+  readonly address?: string;
+  readonly symbol: string;
+  readonly name: string;
+  readonly decimals: number;
+  readonly logoURI?: string;
+};
+export type PositionStateDto = {
+  readonly currentLtv: string;
+  readonly liquidationThreshold: string;
+  readonly healthFactor: string | null;
+  readonly availableToBorrowUsd: string;
+};
+export type ArgumentsDto = {
+  readonly amount?: string;
+  readonly amountRaw?: string;
+  readonly repayAll?: boolean;
+  readonly tokenAddress?: string;
+  readonly collateralTokenAddress?: string;
+  readonly collateralAmount?: string;
+  readonly collateralAmountRaw?: string;
+  readonly borrowAmount?: string;
+  readonly targetLtv?: string;
+  readonly marketId: string;
+};
+export type RepaidDebtDto = {
+  readonly tokenAddress: string;
+  readonly tokenSymbol: string;
+  readonly amount: string;
+  readonly amountRaw: string;
+  readonly amountUsd: string | null;
+  readonly shares: string;
+};
+export type SeizedCollateralDto = {
+  readonly tokenAddress: string;
+  readonly tokenSymbol: string;
+  readonly amount: string;
+  readonly amountRaw: string;
+  readonly amountUsd: string | null;
+};
+export type BadDebtDto = {
+  readonly amountRaw: string;
+  readonly amount: string;
+  readonly amountUsd: string | null;
+  readonly shares: string;
+};
+export type TransactionDto = {
+  readonly id: string;
+  readonly network:
+    | "ethereum"
+    | "ethereum-goerli"
+    | "ethereum-holesky"
+    | "ethereum-sepolia"
+    | "ethereum-hoodi"
+    | "arbitrum"
+    | "base"
+    | "base-sepolia"
+    | "gnosis"
+    | "optimism"
+    | "polygon"
+    | "polygon-amoy"
+    | "starknet"
+    | "zksync"
+    | "linea"
+    | "unichain"
+    | "plume"
+    | "monad-testnet"
+    | "monad"
+    | "robinhood"
+    | "robinhood-testnet"
+    | "avalanche-c"
+    | "avalanche-c-atomic"
+    | "avalanche-p"
+    | "binance"
+    | "celo"
+    | "fantom"
+    | "harmony"
+    | "moonriver"
+    | "okc"
+    | "viction"
+    | "core"
+    | "sonic"
+    | "plasma"
+    | "katana"
+    | "hyperevm"
+    | "tempo"
+    | "pharos"
+    | "agoric"
+    | "akash"
+    | "axelar"
+    | "band-protocol"
+    | "bitsong"
+    | "canto"
+    | "chihuahua"
+    | "comdex"
+    | "coreum"
+    | "cosmos"
+    | "crescent"
+    | "cronos"
+    | "cudos"
+    | "desmos"
+    | "dydx"
+    | "evmos"
+    | "fetch-ai"
+    | "gravity-bridge"
+    | "injective"
+    | "irisnet"
+    | "juno"
+    | "kava"
+    | "ki-network"
+    | "mars-protocol"
+    | "nym"
+    | "okex-chain"
+    | "onomy"
+    | "osmosis"
+    | "persistence"
+    | "quicksilver"
+    | "regen"
+    | "secret"
+    | "sentinel"
+    | "sommelier"
+    | "stafi"
+    | "stargaze"
+    | "stride"
+    | "teritori"
+    | "tgrade"
+    | "umee"
+    | "sei"
+    | "mantra"
+    | "celestia"
+    | "saga"
+    | "zetachain"
+    | "dymension"
+    | "humansai"
+    | "neutron"
+    | "polkadot"
+    | "kusama"
+    | "westend"
+    | "bittensor"
+    | "aptos"
+    | "binancebeacon"
+    | "cardano"
+    | "near"
+    | "solana"
+    | "solana-devnet"
+    | "stellar"
+    | "stellar-testnet"
+    | "sui"
+    | "tezos"
+    | "tron"
+    | "ton"
+    | "ton-testnet"
+    | "hyperliquid";
+  readonly chainId: string;
+  readonly type:
+    | "APPROVAL"
+    | "AUTHORIZE"
+    | "DEAUTHORIZE"
+    | "SUPPLY"
+    | "BORROW"
+    | "REPAY"
+    | "WITHDRAW"
+    | "ENABLE_COLLATERAL"
+    | "DISABLE_COLLATERAL";
+  readonly status:
+    | "NOT_FOUND"
+    | "CREATED"
+    | "BLOCKED"
+    | "WAITING_FOR_SIGNATURE"
+    | "SIGNED"
+    | "BROADCASTED"
+    | "PENDING"
+    | "CONFIRMED"
+    | "FAILED"
+    | "SKIPPED";
+  readonly address: string;
+  readonly signingFormat?:
+    | "EVM_TRANSACTION"
+    | "EIP712_TYPED_DATA"
+    | "SOLANA_TRANSACTION"
+    | "COSMOS_TRANSACTION";
+  readonly signablePayload?: string | { readonly [x: string]: unknown };
+};
+export type ActionMetadataDto = {
+  readonly currentHealthFactor: string | null;
+  readonly predictedHealthFactor: string | null;
+  readonly currentLtv: string;
+  readonly predictedLtv: string;
+  readonly liquidationThreshold: string;
+  readonly predictedTotalSupplyUsd: string;
+  readonly predictedTotalDebtUsd: string;
+  readonly originationFeeBps?: number;
+  readonly originationFeeAmount?: string;
+  readonly effectivePrincipalAmount?: string;
+  readonly feeAmount?: string;
+  readonly feeBps?: number;
+  readonly effectiveCollateralAmount?: string;
+};
+export type SubmitTransactionDto = {
+  readonly signedPayload?: string;
+  readonly transactionHash?: string;
+};
+export type SubmitTransactionResponseDto = {
+  readonly transactionHash?: string;
+  readonly link: string;
+  readonly status:
+    | "NOT_FOUND"
+    | "CREATED"
+    | "BLOCKED"
+    | "WAITING_FOR_SIGNATURE"
+    | "SIGNED"
+    | "BROADCASTED"
+    | "PENDING"
+    | "CONFIRMED"
+    | "FAILED"
+    | "SKIPPED";
+  readonly error?: string;
+  readonly details?: {};
+};
+export type HealthStatus = "OK" | "FAIL";
 export type ActionDefinitionDto = {
   readonly id:
     | "supply"
@@ -16,25 +251,10 @@ export type ActionDefinitionDto = {
     | "enableCollateral"
     | "disableCollateral";
   readonly label: string;
-  readonly schema: {
-    readonly type?: {};
-    readonly properties?: {};
-    readonly required?: ReadonlyArray<string>;
-    readonly additionalProperties?: {};
-    readonly items?: {};
-    readonly enum?: ReadonlyArray<string>;
-    readonly default?: {};
-    readonly notes?: string;
-  };
+  readonly schema: ArgumentSchemaDto;
 };
 export type CollateralTokenDto = {
-  readonly token: {
-    readonly address?: string;
-    readonly symbol: string;
-    readonly name: string;
-    readonly decimals: number;
-    readonly logoURI?: string;
-  };
+  readonly token: TokenDto;
   readonly priceUsd: string;
   readonly maxLtv: string;
   readonly liquidationThreshold: string;
@@ -50,18 +270,19 @@ export type BorrowPendingActionDto = {
     | "enableCollateral"
     | "disableCollateral";
   readonly label: string;
-  readonly args: {
-    readonly amount?: string;
-    readonly amountRaw?: string;
-    readonly repayAll?: boolean;
-    readonly tokenAddress?: string;
-    readonly collateralTokenAddress?: string;
-    readonly collateralAmount?: string;
-    readonly collateralAmountRaw?: string;
-    readonly borrowAmount?: string;
-    readonly targetLtv?: string;
-    readonly marketId: string;
-  };
+  readonly args: ArgumentsDto;
+};
+export type ActionRequestDto = {
+  readonly integrationId: string;
+  readonly action:
+    | "supply"
+    | "borrow"
+    | "repay"
+    | "withdraw"
+    | "enableCollateral"
+    | "disableCollateral";
+  readonly address: string;
+  readonly args: ArgumentsDto;
 };
 export type LiquidationDto = {
   readonly id: string;
@@ -83,6 +304,7 @@ export type LiquidationDto = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -179,165 +401,13 @@ export type LiquidationDto = {
   readonly transactionHash: string;
   readonly transactionLink: string;
   readonly liquidator: string;
-  readonly repaidDebt: {
-    readonly tokenAddress: string;
-    readonly tokenSymbol: string;
-    readonly amount: string;
-    readonly amountRaw: string;
-    readonly amountUsd: string | null;
-    readonly shares: string;
-  };
-  readonly seizedCollateral: {
-    readonly tokenAddress: string;
-    readonly tokenSymbol: string;
-    readonly amount: string;
-    readonly amountRaw: string;
-    readonly amountUsd: string | null;
-  };
-  readonly badDebt: {
-    readonly amountRaw: string;
-    readonly amount: string;
-    readonly amountUsd: string | null;
-    readonly shares: string;
-  };
+  readonly repaidDebt: RepaidDebtDto;
+  readonly seizedCollateral: SeizedCollateralDto;
+  readonly badDebt: BadDebtDto;
   readonly lif: string;
 };
-export type TransactionDto = {
+export type ActionDto = {
   readonly id: string;
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly chainId: string;
-  readonly type:
-    | "APPROVAL"
-    | "AUTHORIZE"
-    | "SUPPLY"
-    | "BORROW"
-    | "REPAY"
-    | "WITHDRAW"
-    | "ENABLE_COLLATERAL"
-    | "DISABLE_COLLATERAL";
-  readonly status:
-    | "NOT_FOUND"
-    | "CREATED"
-    | "BLOCKED"
-    | "WAITING_FOR_SIGNATURE"
-    | "SIGNED"
-    | "BROADCASTED"
-    | "PENDING"
-    | "CONFIRMED"
-    | "FAILED"
-    | "SKIPPED";
-  readonly address: string;
-  readonly signingFormat?:
-    | "EVM_TRANSACTION"
-    | "EIP712_TYPED_DATA"
-    | "SOLANA_TRANSACTION"
-    | "COSMOS_TRANSACTION";
-  readonly signablePayload?: string | { readonly [x: string]: unknown };
-};
-export type ActionRequestDto = {
   readonly integrationId: string;
   readonly action:
     | "supply"
@@ -347,42 +417,24 @@ export type ActionRequestDto = {
     | "enableCollateral"
     | "disableCollateral";
   readonly address: string;
-  readonly args: {
-    readonly amount?: string;
-    readonly amountRaw?: string;
-    readonly repayAll?: boolean;
-    readonly tokenAddress?: string;
-    readonly collateralTokenAddress?: string;
-    readonly collateralAmount?: string;
-    readonly collateralAmountRaw?: string;
-    readonly borrowAmount?: string;
-    readonly targetLtv?: string;
-    readonly marketId: string;
-  };
-};
-export type SubmitTransactionDto = {
-  readonly signedPayload?: string;
-  readonly transactionHash?: string;
-};
-export type SubmitTransactionResponseDto = {
-  readonly transactionHash?: string;
-  readonly link: string;
   readonly status:
-    | "NOT_FOUND"
+    | "CANCELED"
     | "CREATED"
-    | "BLOCKED"
-    | "WAITING_FOR_SIGNATURE"
-    | "SIGNED"
-    | "BROADCASTED"
-    | "PENDING"
-    | "CONFIRMED"
+    | "WAITING_FOR_NEXT"
+    | "PROCESSING"
     | "FAILED"
-    | "SKIPPED";
-  readonly error?: string;
-  readonly details?: {};
+    | "SUCCESS"
+    | "STALE";
+  readonly transactions: ReadonlyArray<TransactionDto>;
+  readonly hasNextStep: boolean;
+  readonly currentStep: number;
+  readonly totalSteps: number;
+  readonly rawArguments?: ArgumentsDto;
+  readonly metadata?: ActionMetadataDto;
+  readonly createdAt: string;
 };
 export type HealthStatusDto = {
-  readonly status: "OK" | "FAIL";
+  readonly status: HealthStatus;
   readonly timestamp: string;
 };
 export type IntegrationDto = {
@@ -406,6 +458,7 @@ export type IntegrationDto = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -494,11 +547,7 @@ export type IntegrationDto = {
     | "ton-testnet"
     | "hyperliquid"
   >;
-  readonly metadata: {
-    readonly description: string;
-    readonly externalLink: string;
-    readonly logoURI: string;
-  };
+  readonly metadata: IntegrationMetadataDto;
   readonly actions: ReadonlyArray<ActionDefinitionDto>;
 };
 export type MarketDto = {
@@ -521,6 +570,7 @@ export type MarketDto = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -610,13 +660,7 @@ export type MarketDto = {
     | "hyperliquid";
   readonly type: "pool" | "isolated";
   readonly poolAddress: string;
-  readonly loanToken: {
-    readonly address?: string;
-    readonly symbol: string;
-    readonly name: string;
-    readonly decimals: number;
-    readonly logoURI?: string;
-  };
+  readonly loanToken: TokenDto;
   readonly collateralTokens: ReadonlyArray<CollateralTokenDto>;
   readonly borrowRate: string;
   readonly totalSupply: string;
@@ -630,6 +674,8 @@ export type MarketDto = {
   readonly isBorrowEnabled: boolean;
   readonly supplyCollateralFeeBps: string;
   readonly feeWrapperAddress: string | null;
+  readonly originationFeeBps: string;
+  readonly originationFeeWrapperAddress: string | null;
   readonly minLoan: string | null;
 };
 export type SupplyBalanceDto = {
@@ -641,12 +687,7 @@ export type SupplyBalanceDto = {
   readonly balanceUsd: string;
   readonly apy: string;
   readonly isCollateral: boolean;
-  readonly positionState?: {
-    readonly currentLtv: string;
-    readonly liquidationThreshold: string;
-    readonly healthFactor: string | null;
-    readonly availableToBorrowUsd: string;
-  };
+  readonly positionState?: PositionStateDto;
   readonly pendingActions: ReadonlyArray<BorrowPendingActionDto>;
 };
 export type DebtBalanceDto = {
@@ -658,58 +699,6 @@ export type DebtBalanceDto = {
   readonly balanceUsd: string;
   readonly apy: string;
   readonly pendingActions: ReadonlyArray<BorrowPendingActionDto>;
-};
-export type ActionDto = {
-  readonly id: string;
-  readonly integrationId: string;
-  readonly action:
-    | "supply"
-    | "borrow"
-    | "repay"
-    | "withdraw"
-    | "enableCollateral"
-    | "disableCollateral";
-  readonly address: string;
-  readonly status:
-    | "CANCELED"
-    | "CREATED"
-    | "WAITING_FOR_NEXT"
-    | "PROCESSING"
-    | "FAILED"
-    | "SUCCESS"
-    | "STALE";
-  readonly transactions: ReadonlyArray<TransactionDto>;
-  readonly hasNextStep: boolean;
-  readonly currentStep: number;
-  readonly totalSteps: number;
-  readonly rawArguments?: {
-    readonly amount?: string;
-    readonly amountRaw?: string;
-    readonly repayAll?: boolean;
-    readonly tokenAddress?: string;
-    readonly collateralTokenAddress?: string;
-    readonly collateralAmount?: string;
-    readonly collateralAmountRaw?: string;
-    readonly borrowAmount?: string;
-    readonly targetLtv?: string;
-    readonly marketId: string;
-  };
-  readonly metadata?: {
-    readonly currentHealthFactor: string | null;
-    readonly predictedHealthFactor: string | null;
-    readonly currentLtv: string;
-    readonly predictedLtv: string;
-    readonly liquidationThreshold: string;
-    readonly predictedTotalSupplyUsd: string;
-    readonly predictedTotalDebtUsd: string;
-    readonly originationFeeBps?: number;
-    readonly originationFeeAmount?: string;
-    readonly effectivePrincipalAmount?: string;
-    readonly feeAmount?: string;
-    readonly feeBps?: number;
-    readonly effectiveCollateralAmount?: string;
-  };
-  readonly createdAt: string;
 };
 export type PositionDto = {
   readonly address: string;
@@ -731,6 +720,7 @@ export type PositionDto = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -876,6 +866,7 @@ export type MarketsControllerGetMarketsV1Params = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -1013,6 +1004,7 @@ export type PositionsControllerGetPositionsV1Params = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -1135,6 +1127,7 @@ export type PositionsControllerGetLiquidationsV1Params = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"

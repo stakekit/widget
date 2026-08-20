@@ -9,7 +9,7 @@ import {
 import { PendingActions } from "./pending-action";
 
 export const IsolatedRiskSnapshot = Schema.Struct({
-  ...BorrowApi.SupplyBalanceDto.fields.positionState.schema.fields,
+  ...BorrowApi.PositionStateDto.fields,
   availableToBorrowUsd: NonNegativeFiniteFromString,
   currentLtv: NonNegativeFiniteFromString,
   healthFactor: Schema.NullOr(NonNegativeFiniteFromString),

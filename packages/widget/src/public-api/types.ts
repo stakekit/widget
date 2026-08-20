@@ -156,6 +156,7 @@ type SKNetwork =
   | "zksync"
   | "linea"
   | "unichain"
+  | "plume"
   | "monad-testnet"
   | "monad"
   | "robinhood"
@@ -258,6 +259,7 @@ type SKToken = {
 
 type ActionArguments = {
   readonly amount?: string;
+  readonly amountRaw?: string;
   readonly amounts?: ReadonlyArray<string>;
   readonly shareAmount?: string;
   readonly shareAmountRaw?: string;
@@ -441,6 +443,7 @@ export type SKBorrowTxMeta = {
   readonly txType:
     | "APPROVAL"
     | "AUTHORIZE"
+    | "DEAUTHORIZE"
     | "SUPPLY"
     | "BORROW"
     | "REPAY"

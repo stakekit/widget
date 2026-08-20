@@ -10,7 +10,7 @@ import {
 import { Transaction } from "./transaction";
 
 const ActionRawArguments = Schema.Struct({
-  ...BorrowApi.ActionDto.fields.rawArguments.schema.fields,
+  ...BorrowApi.ArgumentsDto.fields,
   marketId: MarketId,
   tokenAddress: Schema.optionalKey(TokenAddress),
   collateralTokenAddress: Schema.optionalKey(TokenAddress),

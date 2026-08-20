@@ -68,6 +68,8 @@ const makeMarket = ({
     loanTokenPriceUsd: "1",
     minLoan: null,
     network: "ethereum",
+    originationFeeBps: "0",
+    originationFeeWrapperAddress: null,
     poolAddress: "0x0000000000000000000000000000000000000001",
     supplyCollateralFeeBps: "0",
     totalBorrow: "500000",

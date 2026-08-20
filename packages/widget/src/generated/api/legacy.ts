@@ -7,11 +7,6 @@ import * as HttpClientError from "effect/unstable/http/HttpClientError";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 import * as HttpClientResponse from "effect/unstable/http/HttpClientResponse";
 // non-recursive definitions
-export type Role = "owner" | "admin" | "operator" | "member" | "superAdmin";
-export type AuthEmailLoginMfaChallengeResponseDto = {
-  readonly mfaRequired: boolean;
-  readonly challengeToken: string;
-};
 export type AuthRequestLoginCodeDto = { readonly email: string };
 export type AuthRequestLoginCodeResponseDto = {
   readonly success: boolean;
@@ -21,12 +16,14 @@ export type AuthVerifyLoginCodeDto = {
   readonly email: string;
   readonly code: string;
 };
+export type Role = "owner" | "admin" | "operator" | "member" | "superAdmin";
+export type AuthEmailLoginMfaChallengeResponseDto = {
+  readonly mfaRequired: boolean;
+  readonly challengeToken: string;
+};
 export type AuthConfirmEmailDto = { readonly hash: string };
 export type AuthUpdateDto = { readonly name: string; readonly surname: string };
-export type PaginationQueryDto = {
-  readonly offset?: number;
-  readonly limit?: number;
-};
+export type CampaignStatus = "draft" | "active" | "paused" | "ended";
 export type Networks =
   | "ethereum"
   | "ethereum-goerli"
@@ -44,6 +41,7 @@ export type Networks =
   | "zksync"
   | "linea"
   | "unichain"
+  | "plume"
   | "monad-testnet"
   | "monad"
   | "robinhood"
@@ -137,11 +135,10 @@ export type CampaignPayoutFrequency =
   | "daily"
   | "six_hourly"
   | "end_of_campaign";
-export type CampaignQualificationType = "min_token_amount";
 export type CampaignBudgetSpendStrategy =
   | "allow_underspend"
   | "spend_full_budget";
-export type CampaignStatus = "draft" | "active" | "paused" | "ended";
+export type CampaignQualificationType = "min_token_amount";
 export type StakeKitErrorDto = {
   readonly message: string;
   readonly code: number;
@@ -322,15 +319,16 @@ export type CampaignAuditLogType =
   | "acknowledged"
   | "ended"
   | "milestone_unlocked"
+  | "milestone_funded"
   | "budget_top_up";
-export type CampaignConfigurationRequestType =
-  | "create_campaign"
-  | "update_configuration"
-  | "end_campaign";
 export type CampaignConfigurationRequestStatus =
   | "pending"
   | "accepted"
   | "rejected";
+export type CampaignConfigurationRequestType =
+  | "create_campaign"
+  | "update_configuration"
+  | "end_campaign";
 export type AcceptCampaignConfigurationRequestDto = {
   readonly safeAddress?: string;
 };
@@ -356,12 +354,13 @@ export type AcceptCampaignV2ConfigurationRequestDto = {
 export type RejectCampaignV2ConfigurationRequestDto = {
   readonly rejectionReason: string;
 };
+export type CampaignMilestoneStatus = "locked" | "unlocked" | "funded";
 export type CampaignV2MilestoneItemDto = {
   readonly twTvlThreshold: string;
   readonly tvlYearsTarget: string;
   readonly trancheAmount: string;
+  readonly extendedEndTime?: string;
 };
-export type CampaignMilestoneStatus = "locked" | "unlocked";
 export type CampaignV2AlertFlagsDto = {
   readonly lowBudget: boolean;
   readonly noQualifyingUsers: boolean;
@@ -385,6 +384,8 @@ export type BudgetProjectionV2Dto = {
   readonly distributedBudget: string;
   readonly unlockedBudget: string | null;
   readonly lockedBudget: string | null;
+  readonly fundedBudget: string | null;
+  readonly releasedTrancheBudget: string | null;
   readonly totalEarned: string;
   readonly valid: boolean;
   readonly validationErrors: ReadonlyArray<string>;
@@ -471,7 +472,11 @@ export type CampaignV2UserPointsDto = {
   readonly totalPaid: string;
   readonly isPayoutEligible: boolean;
 };
-export type TopUpCampaignV2BudgetDto = { readonly amount: string };
+export type TopUpCampaignV2BudgetDto = {
+  readonly amount: string;
+  readonly targetMilestoneOrder?: number;
+};
+export type UnlockCampaignV2MilestoneDto = { readonly reason: string };
 export type WindowAccrualSummaryDto = {
   readonly windowStart: string;
   readonly windowEnd: string;
@@ -539,12 +544,6 @@ export type MasterBannedRegionDto = {
     "Crypto Ban" | "OFAC" | "OFSI" | "Pending Litigation" | "Staking Ban"
   >;
 };
-export type InfinityPaginatedDto = {
-  readonly data: ReadonlyArray<{}>;
-  readonly hasNextPage: boolean;
-  readonly limit: number;
-  readonly page: number;
-};
 export type DeleteMasterBannedRegionsDto = {
   readonly ids: ReadonlyArray<string>;
 };
@@ -559,25 +558,6 @@ export type BannedRegionDto = {
   readonly updatedAt: string;
 };
 export type DeleteBannedRegionsDto = { readonly ids: ReadonlyArray<string> };
-export type MasterBannedYieldDto = {
-  readonly yieldId: string;
-  readonly country: string;
-  readonly region: string | null;
-  readonly tags: ReadonlyArray<
-    "Crypto Ban" | "OFAC" | "OFSI" | "Pending Litigation" | "Staking Ban"
-  >;
-};
-export type AuditLogDto = {
-  readonly id: string;
-  readonly event: string;
-  readonly actorEmail: string;
-  readonly actorRole: string;
-  readonly targetId: string | null;
-  readonly targetType: string | null;
-  readonly metadata: { readonly [x: string]: unknown } | null;
-  readonly ipAddress: string | null;
-  readonly createdAt: string;
-};
 export type CreateTeamDtoUser = {
   readonly email: string;
   readonly name: string;
@@ -599,14 +579,22 @@ export type Team = {
   readonly isMfaEnforced: boolean;
   readonly isMultiTenant: boolean;
   readonly solanaStakeAccountMergeEnabled: boolean;
+  readonly borrowRevokeAuthorizationEnabled: boolean;
   readonly referredBy: string | null;
   readonly referralCode: string | null;
 };
-export type KeyCategory = "pro" | "standard" | "trial";
-export type CreateProjectDto = {
-  readonly description?: string;
-  readonly name: string;
+export type AuditLogDto = {
+  readonly id: string;
+  readonly event: string;
+  readonly actorEmail: string;
+  readonly actorRole: string;
+  readonly targetId: string | null;
+  readonly targetType: string | null;
+  readonly metadata: { readonly [x: string]: unknown } | null;
+  readonly ipAddress: string | null;
+  readonly createdAt: string;
 };
+export type KeyCategory = "pro" | "standard" | "trial";
 export type Project = {
   readonly id: string;
   readonly createdAt: string;
@@ -618,15 +606,14 @@ export type Project = {
   readonly name: string;
   readonly teamId: string;
 };
+export type CreateProjectDto = {
+  readonly description?: string;
+  readonly name: string;
+};
 export type UpdateProjectDto = {
   readonly autoComplaintBansEnabled?: boolean;
   readonly description?: string;
   readonly name?: string;
-};
-export type CreateKeyDto = {
-  readonly name: string;
-  readonly info?: string;
-  readonly expiresAt?: string;
 };
 export type Key = {
   readonly id: string;
@@ -642,6 +629,11 @@ export type Key = {
   readonly notifiedExpiration7DaysAt: string | null;
   readonly notifiedExpiration1DayAt: string | null;
   readonly projectId: string;
+};
+export type CreateKeyDto = {
+  readonly name: string;
+  readonly info?: string;
+  readonly expiresAt?: string;
 };
 export type UpdateKeyDto = {
   readonly expiresAt?: string;
@@ -702,6 +694,19 @@ export type TrendDataPointDto = {
   readonly tvl_usd: string | null;
   readonly revenue_usd: string | null;
   readonly active_users: string | null;
+};
+export type CosmosAdditionalAddressesDto = { readonly cosmosPubKey: string };
+export type BinanceAdditionalAddressesDto = {
+  readonly binanceBeaconAddress: string;
+};
+export type SolanaAdditionalAddressesDto = {
+  readonly stakeAccounts: ReadonlyArray<string>;
+  readonly lidoStakeAccounts: ReadonlyArray<string>;
+};
+export type TezosAdditionalAddressesDto = { readonly tezosPubKey: string };
+export type AvalancheCAdditionalAddressesDto = {
+  readonly cAddressBech: string;
+  readonly pAddressBech: string;
 };
 export type ActionStatus =
   | "CANCELED"
@@ -802,6 +807,21 @@ export type TransactionType =
   | "INFSTONES_EXIT_REQUEST"
   | "INFSTONES_CLAIM_REQUEST"
   | "BATCH";
+export type StructuredTransactionTronDto = {
+  readonly type: string;
+  readonly owner_address: string;
+  readonly votes?: ReadonlyArray<{
+    readonly vote_address?: string;
+    readonly vote_count?: number;
+  }>;
+  readonly frozen_balance?: number;
+  readonly resource?: string;
+  readonly unfreeze_balance?: number;
+  readonly receiver_address?: string;
+  readonly balance?: number;
+  readonly lock?: boolean;
+  readonly lock_period?: number;
+};
 export type AnnotatedFieldDto = {
   readonly key: string;
   readonly value: string;
@@ -879,8 +899,12 @@ export type YieldProviders =
   | "superstate"
   | "securitize"
   | "nest"
+  | "paxos-labs"
   | "r25"
+  | "infinifi"
   | "rocksolid"
+  | "t9"
+  | "gami-labs"
   | "yuzu"
   | "sentora";
 export type YieldType =
@@ -1012,7 +1036,6 @@ export type GeolocationError = {
   readonly message: string;
   readonly type: "GEO_LOCATION";
 };
-export type Arrays_ = ReadonlyArray<string>;
 export type CosmosGasArgsDto = { readonly gasPrice: string };
 export type EvmEIP1559GasArgsDto = {
   readonly type: 2;
@@ -1032,8 +1055,8 @@ export type SubmitResponseDto = {
 export type SubmitHashRequestDto = { readonly hash: string };
 export type TransactionVerificationMessageDto = { readonly message: string };
 export type PriceResponseDto = {};
-export type EnabledYieldDto = { readonly integrationId: string };
 export type CreateEnabledYieldDto = { readonly integrationId: string };
+export type EnabledYieldDto = { readonly integrationId: string };
 export type DeleteEnabledYieldsDto = {
   readonly integrationIds: ReadonlyArray<string>;
 };
@@ -1049,8 +1072,14 @@ export type DurationArgumentOptionsDto = {
   readonly maximum?: number;
 };
 export type RequiredArgumentDto = { readonly required: boolean };
-export type Arrays_2 = ReadonlyArray<string>;
-export type Arrays_3 = ReadonlyArray<string>;
+export type TronResourceArgumentOptionsDto = {
+  readonly required: boolean;
+  readonly options: ReadonlyArray<string>;
+};
+export type RequiredArgumentWithOptionsDto = {
+  readonly required: boolean;
+  readonly options: ReadonlyArray<string>;
+};
 export type YieldStatusResponseDto = {
   readonly enter: boolean;
   readonly exit: boolean;
@@ -1089,8 +1118,13 @@ export type PendingActionConstraintAmountDto = {
   readonly minimum?: number;
   readonly maximum?: number;
 };
-export type Objects_ = {};
-export type Arrays_5 = ReadonlyArray<string>;
+export type YieldBalanceLabelDto = {
+  readonly type: string;
+  readonly params: {};
+};
+export type ValidatorAddressesDto = {
+  readonly validatorAddresses?: ReadonlyArray<string>;
+};
 export type CustomValidatorAddresses = {
   readonly integrationId: string;
   readonly validatorAddresses: ReadonlyArray<string>;
@@ -1112,6 +1146,7 @@ export type EvmNetworks =
   | "zksync"
   | "linea"
   | "unichain"
+  | "plume"
   | "monad-testnet"
   | "monad"
   | "robinhood"
@@ -1157,12 +1192,11 @@ export type CreateFeeConfigurationDtoV2 = {
   readonly chargeOnFirstDepositOnly?: boolean;
   readonly layerzeroOVaultConfig?: {};
 };
-export type InterestViewDto = { readonly type: string; readonly value: string };
-export type FailureViewDto = {
-  readonly code: number;
-  readonly reason: string;
-  readonly details: {};
+export type WalletViewDto = {
+  readonly network: string;
+  readonly address: string;
 };
+export type InterestViewDto = { readonly type: string; readonly value: string };
 export type EthDeFiDetailsViewDto = {
   readonly contract_address: string;
   readonly type?: string;
@@ -1264,9 +1298,10 @@ export type TezosDetailsViewDto = {
   readonly activated_at?: string;
   readonly updated_at: string;
 };
-export type WalletViewDto = {
-  readonly network: string;
-  readonly address: string;
+export type FailureViewDto = {
+  readonly code: number;
+  readonly reason: string;
+  readonly details: {};
 };
 export type InvalidRequestDto = { readonly msg: string };
 export type UnauthorizedDto = { readonly realm: string };
@@ -1310,25 +1345,6 @@ export type SsoAttributeMappingDto = {
   readonly department?: string;
   readonly role?: string;
 };
-export type MfaDisableWithTotpBodyDto = { readonly code: string };
-export type MfaDisableWithWebauthnBodyDto = {
-  readonly webauthnCredential: { readonly [x: string]: unknown };
-};
-export type MfaWebauthnRpDto = { readonly name: string; readonly id: string };
-export type MfaWebauthnCreationUserDto = {
-  readonly id: string;
-  readonly name: string;
-  readonly displayName: string;
-};
-export type MfaWebauthnPubKeyCredParamDto = {
-  readonly type: "public-key";
-  readonly alg: number;
-};
-export type MfaWebauthnPublicKeyDescriptorDto = {
-  readonly type: "public-key";
-  readonly id: string;
-  readonly transports?: ReadonlyArray<string>;
-};
 export type MfaSetupResponseDto = {
   readonly secret: string;
   readonly otpauthUrl: string;
@@ -1351,6 +1367,25 @@ export type MfaRecoverDto = {
   readonly challengeToken: string;
   readonly recoveryCode: string;
 };
+export type MfaDisableWithTotpBodyDto = { readonly code: string };
+export type MfaDisableWithWebauthnBodyDto = {
+  readonly webauthnCredential: { readonly [x: string]: unknown };
+};
+export type MfaWebauthnRpDto = { readonly name: string; readonly id: string };
+export type MfaWebauthnCreationUserDto = {
+  readonly id: string;
+  readonly name: string;
+  readonly displayName: string;
+};
+export type MfaWebauthnPubKeyCredParamDto = {
+  readonly type: "public-key";
+  readonly alg: number;
+};
+export type MfaWebauthnPublicKeyDescriptorDto = {
+  readonly type: "public-key";
+  readonly id: string;
+  readonly transports?: ReadonlyArray<string>;
+};
 export type MfaWebauthnRegisterVerifyDto = {
   readonly credential: {};
   readonly label?: string;
@@ -1364,9 +1399,6 @@ export type MfaWebauthnLoginVerifyDto = {
   readonly challengeToken: string;
   readonly credential: {};
 };
-export type CreatePerpsFeeConfigurationDto = {
-  readonly hyperliquidBuilderFeeBps: number;
-};
 export type PerpsFeeConfigurationDto = {
   readonly id: string;
   readonly projectId: string;
@@ -1376,18 +1408,31 @@ export type PerpsFeeConfigurationDto = {
   readonly createdAt: string;
   readonly updatedAt: string;
 };
+export type CreatePerpsFeeConfigurationDto = {
+  readonly hyperliquidBuilderFeeBps: number;
+};
 export type UpdatePerpsFeeConfigurationDto = {
   readonly status?: "REQUESTED" | "LIVE" | "DISABLED";
   readonly hyperliquidBuilderAddress?: string;
   readonly hyperliquidBuilderFeeBps?: number;
 };
-export type Objects_1 = {};
 export type CreateValidatorProviderDto = {
   readonly name: string;
   readonly website: string;
   readonly rank: number;
   readonly preferred?: boolean;
   readonly revshare?: {};
+};
+export type ValidatorProviderDto = {
+  readonly id: string;
+  readonly name: string;
+  readonly uniqueId: string;
+  readonly website: string;
+  readonly rank: number;
+  readonly preferred: boolean;
+  readonly revshare?: {};
+  readonly createdAt: string;
+  readonly updatedAt: string;
 };
 export type UpdateValidatorProviderDto = {
   readonly name?: string;
@@ -1396,6 +1441,9 @@ export type UpdateValidatorProviderDto = {
   readonly preferred?: boolean;
   readonly revshare?: {};
   readonly csvFile?: string;
+};
+export type UpdateValidatorHistoricalRevshareChangesDto = {
+  readonly lastDay: string;
 };
 export type ValidatorHistoricalRevshareChangesDto = {
   readonly id: string;
@@ -1406,9 +1454,6 @@ export type ValidatorHistoricalRevshareChangesDto = {
   readonly apr?: {};
   readonly commission?: {};
   readonly mevCommission?: {};
-};
-export type UpdateValidatorHistoricalRevshareChangesDto = {
-  readonly lastDay: string;
 };
 export type CreateValidatorDto = {
   readonly integrationId: string;
@@ -1446,10 +1491,6 @@ export type UpdateValidatorDto = {
   readonly commission?: number;
   readonly mevCommission?: number;
 };
-export type CreateAdminApiKeyDto = {
-  readonly name: string;
-  readonly info?: string;
-};
 export type AdminApiKey = {
   readonly id: string;
   readonly createdAt: string;
@@ -1459,6 +1500,10 @@ export type AdminApiKey = {
   readonly info: string | null;
   readonly name: string;
   readonly lastUsedAt: string | null;
+};
+export type CreateAdminApiKeyDto = {
+  readonly name: string;
+  readonly info?: string;
 };
 export type UpdateAdminApiKeyDto = {
   readonly info?: string;
@@ -1474,6 +1519,19 @@ export type WebhookEndpointDto = {
   readonly updatedAt: string;
   readonly subscriptionCount: number;
 };
+export type CreateWebhookEndpointDto = {
+  readonly url: string;
+  readonly secret: string;
+  readonly description?: string;
+  readonly enabled?: boolean;
+};
+export type UpdateWebhookEndpointDto = {
+  readonly url?: string;
+  readonly secret?: string;
+  readonly description?: string;
+  readonly enabled?: boolean;
+};
+export type ToggleWebhookEndpointDto = { readonly enabled: boolean };
 export type WebhookSubscriptionDto = {
   readonly id: string;
   readonly projectId: string;
@@ -1485,23 +1543,10 @@ export type WebhookSubscriptionDto = {
   readonly createdAt: string;
   readonly updatedAt: string;
 };
-export type CreateWebhookEndpointDto = {
-  readonly url: string;
-  readonly secret: string;
-  readonly description?: string;
-  readonly enabled?: boolean;
-};
 export type CreateWebhookSubscriptionDto = {
   readonly events: ReadonlyArray<string>;
   readonly actions: ReadonlyArray<string>;
   readonly filtersJson?: {};
-  readonly enabled?: boolean;
-};
-export type ToggleWebhookEndpointDto = { readonly enabled: boolean };
-export type UpdateWebhookEndpointDto = {
-  readonly url?: string;
-  readonly secret?: string;
-  readonly description?: string;
   readonly enabled?: boolean;
 };
 export type UpdateWebhookSubscriptionDto = {
@@ -1585,34 +1630,6 @@ export type SetPerpsOverrideDto = {
   readonly state: "down" | "degraded";
   readonly reason: string;
 };
-export type AvalancheCAdditionalAddressesDto = {
-  readonly cAddressBech: string;
-  readonly pAddressBech: string;
-};
-export type BinanceAdditionalAddressesDto = {
-  readonly binanceBeaconAddress: string;
-};
-export type CosmosAdditionalAddressesDto = { readonly cosmosPubKey: string };
-export type SolanaAdditionalAddressesDto = {
-  readonly stakeAccounts: ReadonlyArray<string>;
-  readonly lidoStakeAccounts: ReadonlyArray<string>;
-};
-export type TezosAdditionalAddressesDto = { readonly tezosPubKey: string };
-export type StructuredTransactionTronDto = {
-  readonly type: string;
-  readonly owner_address: string;
-  readonly votes?: ReadonlyArray<{
-    readonly vote_address?: string;
-    readonly vote_count?: number;
-  }>;
-  readonly frozen_balance?: number;
-  readonly resource?: string;
-  readonly unfreeze_balance?: number;
-  readonly receiver_address?: string;
-  readonly balance?: number;
-  readonly lock?: boolean;
-  readonly lock_period?: number;
-};
 export type UserDto = {
   readonly email: string;
   readonly emailVerified: boolean;
@@ -1626,6 +1643,34 @@ export type UserDto = {
   readonly teamId: string;
   readonly isMfaEnabled: boolean;
   readonly isSsoExempt: boolean;
+};
+export type CampaignBalanceTotalsDto = {
+  readonly totalBudget: string;
+  readonly totalDistributed: string;
+  readonly remainingBudget: string;
+  readonly undistributedDueToCeiling: string;
+  readonly qualifyingTvl: string;
+  readonly qualifyingUserCount: number;
+  readonly safeAddress: string;
+  readonly campaignStatus: CampaignStatus;
+  readonly nextPayoutDueAt: string | null;
+  readonly vaultTvl: string;
+  readonly totalInflows: string;
+  readonly totalOutflows: string;
+};
+export type CampaignV2BalanceTotalsDto = {
+  readonly totalBudget: string;
+  readonly totalDistributed: string;
+  readonly remainingBudget: string;
+  readonly undistributedDueToCeiling: string;
+  readonly qualifyingTvl: string;
+  readonly qualifyingUserCount: number;
+  readonly safeAddress: string;
+  readonly campaignStatus: CampaignStatus;
+  readonly nextPayoutDueAt: string | null;
+  readonly vaultTvl: string;
+  readonly totalInflows: string;
+  readonly totalOutflows: string;
 };
 export type TokenDto = {
   readonly name: string;
@@ -1707,34 +1752,6 @@ export type CampaignV2QualificationConfigDto = {
   readonly type: CampaignQualificationType;
   readonly threshold: string;
   readonly maxIncentivizedTvlToken?: string | null;
-};
-export type CampaignBalanceTotalsDto = {
-  readonly totalBudget: string;
-  readonly totalDistributed: string;
-  readonly remainingBudget: string;
-  readonly undistributedDueToCeiling: string;
-  readonly qualifyingTvl: string;
-  readonly qualifyingUserCount: number;
-  readonly safeAddress: string;
-  readonly campaignStatus: CampaignStatus;
-  readonly nextPayoutDueAt: string | null;
-  readonly vaultTvl: string;
-  readonly totalInflows: string;
-  readonly totalOutflows: string;
-};
-export type CampaignV2BalanceTotalsDto = {
-  readonly totalBudget: string;
-  readonly totalDistributed: string;
-  readonly remainingBudget: string;
-  readonly undistributedDueToCeiling: string;
-  readonly qualifyingTvl: string;
-  readonly qualifyingUserCount: number;
-  readonly safeAddress: string;
-  readonly campaignStatus: CampaignStatus;
-  readonly nextPayoutDueAt: string | null;
-  readonly vaultTvl: string;
-  readonly totalInflows: string;
-  readonly totalOutflows: string;
 };
 export type PaginatedCampaignUserBalanceDto = {
   readonly total: number;
@@ -1925,9 +1942,6 @@ export type CampaignV2ConfigurationRequestDto = {
   readonly createdAt: string;
   readonly updatedAt: string;
 };
-export type ReplaceCampaignV2MilestonesDto = {
-  readonly milestones: ReadonlyArray<CampaignV2MilestoneItemDto>;
-};
 export type CampaignV2MilestoneDto = {
   readonly milestoneOrder: number;
   readonly twTvlThreshold: string;
@@ -1935,6 +1949,11 @@ export type CampaignV2MilestoneDto = {
   readonly trancheAmount: string;
   readonly status: CampaignMilestoneStatus;
   readonly unlockedAt: string | null;
+  readonly fundedAt: string | null;
+  readonly extendedEndTime: string | null;
+};
+export type ReplaceCampaignV2MilestonesDto = {
+  readonly milestones: ReadonlyArray<CampaignV2MilestoneItemDto>;
 };
 export type PaginatedCampaignV2UserPayoutEligibilityDto = {
   readonly total: number;
@@ -1996,17 +2015,17 @@ export type PaginatedCampaignV2UserBalanceDto = {
   readonly limit: number;
   readonly items: ReadonlyArray<CampaignV2UserBalanceDto>;
 };
-export type PaginatedAuditLogDto = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly items: ReadonlyArray<AuditLogDto>;
-};
 export type CreateTeamDto = {
   readonly contactDetails: {};
   readonly name: string;
   readonly user: CreateTeamDtoUser;
   readonly referredBy?: string;
+};
+export type PaginatedAuditLogDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<AuditLogDto>;
 };
 export type UpdateTeamDto = {
   readonly activated?: boolean;
@@ -2069,6 +2088,26 @@ export type KpiSummaryResponseDto = {
 export type KpiTrendsResponseDto = {
   readonly data_points: ReadonlyArray<TrendDataPointDto>;
 };
+export type AddressesDto = {
+  readonly address: string;
+  readonly additionalAddresses?:
+    | CosmosAdditionalAddressesDto
+    | BinanceAdditionalAddressesDto
+    | SolanaAdditionalAddressesDto
+    | TezosAdditionalAddressesDto
+    | AvalancheCAdditionalAddressesDto;
+};
+export type AddressWithTokenDto = {
+  readonly address: string;
+  readonly additionalAddresses?:
+    | CosmosAdditionalAddressesDto
+    | BinanceAdditionalAddressesDto
+    | SolanaAdditionalAddressesDto
+    | TezosAdditionalAddressesDto
+    | AvalancheCAdditionalAddressesDto;
+  readonly network: Networks;
+  readonly tokenAddress?: string;
+};
 export type TransactionStatusResponseDto = {
   readonly status: TransactionStatus;
   readonly url: string;
@@ -2104,7 +2143,7 @@ export type ProgrammaticPerpReportingTransactionDto = {
 export type PendingActionArgumentsDto = {
   readonly amount?: string;
   readonly validatorAddress?: string;
-  readonly validatorAddresses?: Arrays_;
+  readonly validatorAddresses?: ReadonlyArray<string>;
   readonly duration?: number;
   readonly nfts?: ApeNativeArgumentsDto;
 };
@@ -2124,20 +2163,10 @@ export type GasModeValueDto = {
     | EvmEIP1559GasArgsDto
     | EvmLegacyGasArgsDto;
 };
-export type Arrays_1 =
-  ReadonlyArray<BinanceAdditionalAddressesStakeArgumentOptionsDto>;
 export type ApeNativeArgumentOptionsDto = {
   readonly baycId?: RequiredArgumentDto;
   readonly maycId?: RequiredArgumentDto;
   readonly bakcId?: RequiredArgumentDto;
-};
-export type TronResourceArgumentOptionsDto = {
-  readonly required: boolean;
-  readonly options: Arrays_2;
-};
-export type RequiredArgumentWithOptionsDto = {
-  readonly required: boolean;
-  readonly options: Arrays_3;
 };
 export type ValidatorDto = {
   readonly address: string;
@@ -2227,6 +2256,7 @@ export type AllocationDto = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -2327,16 +2357,6 @@ export type AllocationDto = {
   readonly maxCapacity: string | null;
   readonly remainingCapacity: string | null;
 };
-export type CreateOAVDto = {
-  readonly network: Networks;
-  readonly inputTokenAddress?: string;
-  readonly name: string;
-  readonly strategies: ReadonlyArray<OAVStrategyDto>;
-  readonly autoRebalancing?: boolean;
-  readonly managementFeeBps?: number;
-  readonly performanceFeeBps?: number;
-  readonly depositFeeBps?: number;
-};
 export type OAVResponseDto = {
   readonly id: string;
   readonly integrationId: string | null;
@@ -2353,6 +2373,16 @@ export type OAVResponseDto = {
   readonly depositFeeBps: number | null;
   readonly isThirdParty: boolean;
 };
+export type CreateOAVDto = {
+  readonly network: Networks;
+  readonly inputTokenAddress?: string;
+  readonly name: string;
+  readonly strategies: ReadonlyArray<OAVStrategyDto>;
+  readonly autoRebalancing?: boolean;
+  readonly managementFeeBps?: number;
+  readonly performanceFeeBps?: number;
+  readonly depositFeeBps?: number;
+};
 export type UpdateOAVDto = {
   readonly name?: string;
   readonly strategies?: ReadonlyArray<OAVStrategyDto>;
@@ -2366,18 +2396,12 @@ export type PendingActionConstraintDto = {
   readonly type: ActionTypes;
   readonly amount?: PendingActionConstraintAmountDto;
 };
-export type YieldBalanceLabelDto = {
-  readonly type: string;
-  readonly params: Objects_;
-};
-export type ValidatorAddressesDto = { readonly validatorAddresses?: Arrays_5 };
 export type PaginatedBalanceTransferEventDto = {
   readonly total: number;
   readonly offset: number;
   readonly limit: number;
   readonly items: ReadonlyArray<BalanceTransferEventDto>;
 };
-export type StakeFailureDto = { readonly error: FailureViewDto };
 export type StakeViewSuccessDto = {
   readonly protocol_name: string;
   readonly currency: string;
@@ -2407,6 +2431,7 @@ export type StakeViewSuccessDto = {
     | StakeKitVaultDetailsViewDto
     | TezosDetailsViewDto;
 };
+export type StakeFailureDto = { readonly error: FailureViewDto };
 export type GrowSuccessDto = {
   readonly network: string;
   readonly deposit_token: string;
@@ -2444,6 +2469,11 @@ export type UpsertSsoConfigDto = {
   readonly syncUserAttributesOnLogin?: boolean;
   readonly ssoLoginDomain?: string | null;
 };
+export type MfaStatusResponseDto = {
+  readonly isMfaEnabled: boolean;
+  readonly hasTotp: boolean;
+  readonly webauthnCredentials: ReadonlyArray<MfaWebauthnCredentialItemDto>;
+};
 export type MfaWebauthnRegistrationOptionsResponseDto = {
   readonly challenge: string;
   readonly rp: MfaWebauthnRpDto;
@@ -2465,19 +2495,34 @@ export type MfaWebauthnAuthenticationOptionsResponseDto = {
   readonly extensions?: { readonly [x: string]: unknown };
   readonly hints?: ReadonlyArray<string>;
 };
-export type MfaStatusResponseDto = {
-  readonly isMfaEnabled: boolean;
-  readonly hasTotp: boolean;
-  readonly webauthnCredentials: ReadonlyArray<MfaWebauthnCredentialItemDto>;
-};
-export type ValidatorProviderDto = {
+export type ValidatorAdminDto = {
   readonly id: string;
-  readonly name: string;
-  readonly uniqueId: string;
-  readonly website: string;
-  readonly rank: number;
-  readonly preferred: boolean;
-  readonly revshare?: Objects_1;
+  readonly integrationId: string;
+  readonly address: string;
+  readonly status: ValidatorStatusTypes;
+  readonly lastFoundAt?: {};
+  readonly provider?: ValidatorProviderDto;
+  readonly providerId?: {};
+  readonly name?: {};
+  readonly nameOverride?: {};
+  readonly website?: {};
+  readonly websiteOverride?: {};
+  readonly image?: {};
+  readonly imageOverride?: {};
+  readonly apr?: {};
+  readonly aprOverride?: {};
+  readonly commission?: {};
+  readonly commissionOverride?: {};
+  readonly mevCommission?: {};
+  readonly mevCommissionOverride?: {};
+  readonly stakedBalance?: {};
+  readonly votingPower?: {};
+  readonly remainingPossibleStake?: {};
+  readonly minimumStake?: {};
+  readonly remainingSlots?: {};
+  readonly endDate?: {};
+  readonly nominatorCount?: {};
+  readonly subnetId?: {};
   readonly createdAt: string;
   readonly updatedAt: string;
 };
@@ -2487,43 +2532,9 @@ export type PaginatedYieldStatusOverrideResponseDto = {
   readonly limit: number;
   readonly items: ReadonlyArray<YieldStatusOverrideResponseDto>;
 };
-export type AddressesDto = {
-  readonly address: string;
-  readonly additionalAddresses?:
-    | CosmosAdditionalAddressesDto
-    | BinanceAdditionalAddressesDto
-    | SolanaAdditionalAddressesDto
-    | TezosAdditionalAddressesDto
-    | AvalancheCAdditionalAddressesDto;
-};
-export type AddressWithTokenDto = {
-  readonly address: string;
-  readonly additionalAddresses?:
-    | CosmosAdditionalAddressesDto
-    | BinanceAdditionalAddressesDto
-    | SolanaAdditionalAddressesDto
-    | TezosAdditionalAddressesDto
-    | AvalancheCAdditionalAddressesDto;
-  readonly network: Networks;
-  readonly tokenAddress?: string;
-};
 export type AuthEmailLoginSessionResponseDto = {
   readonly user?: UserDto;
   readonly mfaSetupRequired?: boolean;
-};
-export type TeamDto = {
-  readonly id: string;
-  readonly activated: boolean;
-  readonly privilegedUsers: ReadonlyArray<UserDto>;
-  readonly adminUsers?: ReadonlyArray<UserDto>;
-  readonly category: string;
-  readonly deletedAt: string | null;
-  readonly createdAt: string;
-  readonly contactDetails: {};
-  readonly name: string;
-  readonly serviceConditionsAcceptedAt: string | null;
-  readonly oavEnabled: boolean;
-  readonly isMultiTenant: boolean;
 };
 export type MfaVerifyResponseDto = { readonly user: UserDto };
 export type MfaRecoverResponseDto = { readonly user: UserDto };
@@ -2545,42 +2556,6 @@ export type GasEstimateDto = {
   readonly amount: string | null;
   readonly token: TokenDto;
   readonly gasLimit?: string;
-};
-export type DailyRevenueDto = {
-  readonly date: string;
-  readonly integrationId: string;
-  readonly validatorAddress: string | null;
-  readonly totalRevenueAmountWei: string;
-  readonly token: TokenDto | null;
-};
-export type DailyPerformanceDto = {
-  readonly date: string;
-  readonly integrationId: string;
-  readonly totalRevenueAmountWei: string;
-  readonly totalEnteredAmountWei: string | null;
-  readonly totalExitedAmountWei: string | null;
-  readonly totalTvlAmountWei: string | null;
-  readonly token: TokenDto | null;
-};
-export type ReportingDailyRevenueDto = {
-  readonly date: string;
-  readonly integrationId: string;
-  readonly validatorAddress: string | null;
-  readonly totalRevenueAmountWei: string;
-  readonly totalRevenueAmountUsd: string;
-  readonly integrationCommission: number | null;
-  readonly revShare: number | null;
-  readonly projectShare: number | null;
-  readonly performanceFee: number | null;
-  readonly token: TokenDto | null;
-};
-export type ReportingDailyPerformanceDto = {
-  readonly date: string;
-  readonly integrationId: string;
-  readonly totalEnteredAmountWei: string;
-  readonly totalExitedAmountWei: string;
-  readonly totalTvlAmountWei: string;
-  readonly token: TokenDto | null;
 };
 export type TransactionGasEstimateDto = {
   readonly amount: string | null;
@@ -2645,20 +2620,9 @@ export type YieldRewardsSummaryResponseDto = {
   readonly rewards: YieldRewardsSummaryDto;
   readonly token: TokenDto;
 };
-export type CreateCampaignWithSafeAddressDto = {
-  readonly yieldId: string;
-  readonly name?: string | null;
-  readonly rewardToken: TokenDto;
-  readonly rewardMode?: CampaignRewardMode;
-  readonly totalBudget: string;
-  readonly apyCeiling?: number | null;
-  readonly startTime: string;
-  readonly endTime: string;
-  readonly payoutFrequency: CampaignPayoutFrequency;
-  readonly qualificationConfig: CampaignQualificationConfigDto;
-  readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
-  readonly status?: CampaignStatus;
-  readonly safeAddress: string;
+export type AddressArgumentsDto = {
+  readonly address?: RequiredArgumentWithNetworkDto;
+  readonly additionalAddresses?: ReadonlyArray<BinanceAdditionalAddressesStakeArgumentOptionsDto>;
 };
 export type CampaignDto = {
   readonly id: string;
@@ -2685,6 +2649,21 @@ export type CampaignDto = {
   readonly pausedAt?: string | null;
   readonly pausedByRole?: string | null;
   readonly acknowledgedAt?: string | null;
+};
+export type CreateCampaignWithSafeAddressDto = {
+  readonly yieldId: string;
+  readonly name?: string | null;
+  readonly rewardToken: TokenDto;
+  readonly rewardMode?: CampaignRewardMode;
+  readonly totalBudget: string;
+  readonly apyCeiling?: number | null;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly payoutFrequency: CampaignPayoutFrequency;
+  readonly qualificationConfig: CampaignQualificationConfigDto;
+  readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
+  readonly status?: CampaignStatus;
+  readonly safeAddress: string;
 };
 export type UpdateCampaignDto = {
   readonly yieldId?: string;
@@ -2775,23 +2754,6 @@ export type UpdateCampaignV2Dto = {
   readonly blacklistBudgetHandling?: CampaignBlacklistBudgetHandling;
   readonly status?: CampaignStatus;
 };
-export type CreateCampaignV2WithSafeAddressDto = {
-  readonly yieldId: string;
-  readonly feeConfigurationId?: string;
-  readonly name?: string | null;
-  readonly rewardToken: TokenDto;
-  readonly rewardMode?: CampaignRewardMode;
-  readonly totalBudget: string;
-  readonly apyCeiling?: number | null;
-  readonly startTime: string;
-  readonly endTime: string;
-  readonly payoutFrequency: CampaignPayoutFrequency;
-  readonly qualificationConfig: CampaignV2QualificationConfigDto;
-  readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
-  readonly blacklistBudgetHandling?: CampaignBlacklistBudgetHandling;
-  readonly status?: CampaignStatus;
-  readonly safeAddress: string;
-};
 export type CampaignV2Dto = {
   readonly id: string;
   readonly name?: string | null;
@@ -2819,6 +2781,23 @@ export type CampaignV2Dto = {
   readonly pausedAt?: string | null;
   readonly pausedByRole?: string | null;
   readonly acknowledgedAt?: string | null;
+};
+export type CreateCampaignV2WithSafeAddressDto = {
+  readonly yieldId: string;
+  readonly feeConfigurationId?: string;
+  readonly name?: string | null;
+  readonly rewardToken: TokenDto;
+  readonly rewardMode?: CampaignRewardMode;
+  readonly totalBudget: string;
+  readonly apyCeiling?: number | null;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly payoutFrequency: CampaignPayoutFrequency;
+  readonly qualificationConfig: CampaignV2QualificationConfigDto;
+  readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
+  readonly blacklistBudgetHandling?: CampaignBlacklistBudgetHandling;
+  readonly status?: CampaignStatus;
+  readonly safeAddress: string;
 };
 export type AdminCampaignV2Dto = {
   readonly id: string;
@@ -2944,127 +2923,6 @@ export type TopIntegrationsDto = {
   readonly by_revenue: ReadonlyArray<TopIntegrationDto>;
   readonly by_tvl: ReadonlyArray<TopIntegrationDto>;
 };
-export type YieldMetadataDto = {
-  readonly name: string;
-  readonly logoURI: string;
-  readonly description: string;
-  readonly documentation: string;
-  readonly provider?: YieldProviderDto;
-  readonly gasFeeToken: TokenDto;
-  readonly rewardTokens?: ReadonlyArray<TokenDto>;
-  readonly token: TokenDto;
-  readonly tokens?: ReadonlyArray<TokenDto>;
-  readonly type: YieldType;
-  readonly rewardSchedule: RewardSchedule;
-  readonly cooldownPeriod?: TimePeriodDto;
-  readonly lockupPeriod?: TimePeriodDto;
-  readonly warmupPeriod: TimePeriodDto;
-  readonly withdrawPeriod?: TimePeriodDto;
-  readonly rewardClaiming: RewardClaiming;
-  readonly minimumStake?: number;
-  readonly supportsMultipleValidators?: boolean;
-  readonly supportsLedgerWalletApi?: boolean;
-  readonly revshare: YieldRevshareDto;
-  readonly fee: YieldFeeDto;
-  readonly isIntegrationAggregator?: boolean;
-  readonly extraTransactionFormatsSupported?: ReadonlyArray<TransactionFormat>;
-  readonly supportedStandards?: ReadonlyArray<ERCStandards>;
-  readonly supportsCampaigns: boolean;
-  readonly commission?: ReadonlyArray<YieldCommissionDto>;
-  readonly tvl?: ReadonlyArray<YieldTvlDto>;
-};
-export type ProgrammaticPerpReportingActionDto = {
-  readonly id: string;
-  readonly type: PerpActionTypes;
-  readonly status: ActionStatus;
-  readonly providerId: string;
-  readonly address: string;
-  readonly args: {};
-  readonly summary: { readonly [x: string]: unknown } | null;
-  readonly createdAt: string;
-  readonly completedAt: string | null;
-  readonly transactions: ReadonlyArray<ProgrammaticPerpReportingTransactionDto>;
-};
-export type PendingActionRequestDto = {
-  readonly type: ActionTypes;
-  readonly integrationId: string;
-  readonly passthrough: string;
-  readonly args?: PendingActionArgumentsDto;
-};
-export type PendingActionGasEstimateRequestDto = {
-  readonly type: ActionTypes;
-  readonly integrationId: string;
-  readonly passthrough: string;
-  readonly args?: PendingActionArgumentsDto;
-  readonly gasArgs?:
-    | CosmosGasArgsDto
-    | EvmEIP1559GasArgsDto
-    | EvmLegacyGasArgsDto;
-};
-export type GasModesDto = {
-  readonly denom: string;
-  readonly values: ReadonlyArray<GasModeValueDto>;
-};
-export type AddressArgumentsDto = {
-  readonly address?: RequiredArgumentWithNetworkDto;
-  readonly additionalAddresses?: Arrays_1;
-};
-export type Arrays_4 = ReadonlyArray<ApeNativeArgumentOptionsDto>;
-export type ValidatorSearchResultDto = {
-  readonly integrationId: string;
-  readonly validators: ReadonlyArray<ValidatorDto>;
-};
-export type PaginatedAdminFeeConfigurationDto = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly items: ReadonlyArray<AdminFeeConfigurationDto>;
-};
-export type StakeResponseDto = {
-  readonly id: WalletViewDto;
-  readonly stake: StakeViewSuccessDto | StakeFailureDto;
-};
-export type ValidatorAdminDto = {
-  readonly id: string;
-  readonly integrationId: string;
-  readonly address: string;
-  readonly status: ValidatorStatusTypes;
-  readonly lastFoundAt?: {};
-  readonly provider?: ValidatorProviderDto;
-  readonly providerId?: {};
-  readonly name?: {};
-  readonly nameOverride?: {};
-  readonly website?: {};
-  readonly websiteOverride?: {};
-  readonly image?: {};
-  readonly imageOverride?: {};
-  readonly apr?: {};
-  readonly aprOverride?: {};
-  readonly commission?: {};
-  readonly commissionOverride?: {};
-  readonly mevCommission?: {};
-  readonly mevCommissionOverride?: {};
-  readonly stakedBalance?: {};
-  readonly votingPower?: {};
-  readonly remainingPossibleStake?: {};
-  readonly minimumStake?: {};
-  readonly remainingSlots?: {};
-  readonly endDate?: {};
-  readonly nominatorCount?: {};
-  readonly subnetId?: {};
-  readonly createdAt: string;
-  readonly updatedAt: string;
-};
-export type YieldRewardDto = {
-  readonly timestamp: string;
-  readonly address: AddressesDto;
-  readonly amountWei: string;
-  readonly amount: string;
-  readonly validatorAddresses?: ReadonlyArray<string>;
-  readonly blockNumber: number;
-  readonly transactionId?: string | null;
-  readonly token: TokenDto;
-};
 export type TransactionVerificationMessageRequestDto = {
   readonly addresses: AddressesDto;
 };
@@ -3096,6 +2954,82 @@ export type YieldRewardsSummaryRequestDto = {
 };
 export type BalancesRequestDto = {
   readonly addresses: ReadonlyArray<AddressWithTokenDto>;
+};
+export type YieldMetadataDto = {
+  readonly name: string;
+  readonly logoURI: string;
+  readonly description: string;
+  readonly documentation: string;
+  readonly provider?: YieldProviderDto;
+  readonly gasFeeToken: TokenDto;
+  readonly rewardTokens?: ReadonlyArray<TokenDto>;
+  readonly token: TokenDto;
+  readonly tokens?: ReadonlyArray<TokenDto>;
+  readonly type: YieldType;
+  readonly rewardSchedule: RewardSchedule;
+  readonly cooldownPeriod?: TimePeriodDto;
+  readonly lockupPeriod?: TimePeriodDto;
+  readonly warmupPeriod: TimePeriodDto;
+  readonly withdrawPeriod?: TimePeriodDto;
+  readonly rewardClaiming: RewardClaiming;
+  readonly minimumStake?: number;
+  readonly supportsMultipleValidators?: boolean;
+  readonly supportsLedgerWalletApi?: boolean;
+  readonly revshare: YieldRevshareDto;
+  readonly fee: YieldFeeDto;
+  readonly isIntegrationAggregator?: boolean;
+  readonly extraTransactionFormatsSupported?: ReadonlyArray<TransactionFormat>;
+  readonly supportedStandards?: ReadonlyArray<ERCStandards>;
+  readonly supportsCampaigns: boolean;
+  readonly commission?: ReadonlyArray<YieldCommissionDto>;
+  readonly tvl?: ReadonlyArray<YieldTvlDto>;
+};
+export type PendingActionRequestDto = {
+  readonly type: ActionTypes;
+  readonly integrationId: string;
+  readonly passthrough: string;
+  readonly args?: PendingActionArgumentsDto;
+};
+export type PendingActionGasEstimateRequestDto = {
+  readonly type: ActionTypes;
+  readonly integrationId: string;
+  readonly passthrough: string;
+  readonly args?: PendingActionArgumentsDto;
+  readonly gasArgs?:
+    | CosmosGasArgsDto
+    | EvmEIP1559GasArgsDto
+    | EvmLegacyGasArgsDto;
+};
+export type GasModesDto = {
+  readonly denom: string;
+  readonly values: ReadonlyArray<GasModeValueDto>;
+};
+export type ArgumentOptionsDto = {
+  readonly amount?: AmountArgumentOptionsDto;
+  readonly duration?: DurationArgumentOptionsDto;
+  readonly validatorAddress?: RequiredArgumentDto;
+  readonly validatorAddresses?: RequiredArgumentDto;
+  readonly nfts?: ReadonlyArray<ApeNativeArgumentOptionsDto>;
+  readonly tronResource?: TronResourceArgumentOptionsDto;
+  readonly signatureVerification?: RequiredArgumentDto;
+  readonly feeConfigurationId?: RequiredArgumentWithOptionsDto;
+  readonly subnetId?: RequiredArgumentDto;
+  readonly providerId?: RequiredArgumentWithOptionsDto;
+  readonly receiverAddress?: RequiredArgumentDto;
+};
+export type ValidatorSearchResultDto = {
+  readonly integrationId: string;
+  readonly validators: ReadonlyArray<ValidatorDto>;
+};
+export type PaginatedAdminFeeConfigurationDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<AdminFeeConfigurationDto>;
+};
+export type StakeResponseDto = {
+  readonly id: WalletViewDto;
+  readonly stake: StakeViewSuccessDto | StakeFailureDto;
 };
 export type TransactionDto = {
   readonly id: string;
@@ -3253,18 +3187,9 @@ export type GasForNetworkResponseDto = {
   readonly customisable: boolean;
   readonly modes: GasModesDto;
 };
-export type ArgumentOptionsDto = {
-  readonly amount?: AmountArgumentOptionsDto;
-  readonly duration?: DurationArgumentOptionsDto;
-  readonly validatorAddress?: RequiredArgumentDto;
-  readonly validatorAddresses?: RequiredArgumentDto;
-  readonly nfts?: Arrays_4;
-  readonly tronResource?: TronResourceArgumentOptionsDto;
-  readonly signatureVerification?: RequiredArgumentDto;
-  readonly feeConfigurationId?: RequiredArgumentWithOptionsDto;
-  readonly subnetId?: RequiredArgumentDto;
-  readonly providerId?: RequiredArgumentWithOptionsDto;
-  readonly receiverAddress?: RequiredArgumentDto;
+export type ActionArgumentOptionsDto = {
+  readonly addresses?: AddressArgumentsDto;
+  readonly args?: ArgumentOptionsDto;
 };
 export type ActionWithLivePriceDto = {
   readonly id: string;
@@ -3304,19 +3229,6 @@ export type ActionDto = {
   readonly addresses: AddressesDto;
   readonly accountAddresses?: ReadonlyArray<string>;
   readonly projectId: string | null;
-};
-export type ActionArgumentOptionsDto = {
-  readonly addresses?: AddressArgumentsDto;
-  readonly args?: ArgumentOptionsDto;
-};
-export type ReportEntryDto = {
-  readonly address: AddressesDto;
-  readonly action: ActionWithLivePriceDto;
-  readonly metadata: YieldMetadataDto;
-};
-export type ReportProjectDto = {
-  readonly address: AddressesDto;
-  readonly action: ActionDto;
 };
 export type ActionArgumentResponseDto = {
   readonly enter: ActionArgumentOptionsDto;
@@ -3789,6 +3701,10 @@ export type CampaignV2AdminControllerGetPointsMetrics200 =
 export type CampaignV2AdminControllerTopUpBudgetRequestJson =
   TopUpCampaignV2BudgetDto;
 export type CampaignV2AdminControllerTopUpBudget200 = CampaignV2Dto;
+export type CampaignV2AdminControllerUnlockMilestoneRequestJson =
+  UnlockCampaignV2MilestoneDto;
+export type CampaignV2AdminControllerUnlockMilestone200 =
+  CampaignV2MilestoneDto;
 export type ProgrammaticCampaignV2ControllerListCampaignsParams = {
   readonly offset?: number;
   readonly limit?: number;
@@ -5379,8 +5295,12 @@ export type YieldV2ControllerYieldsParams = {
     | "superstate"
     | "securitize"
     | "nest"
+    | "paxos-labs"
     | "r25"
+    | "infinifi"
     | "rocksolid"
+    | "t9"
+    | "gami-labs"
     | "yuzu"
     | "sentora";
   readonly inputToken?: string;
@@ -5425,6 +5345,7 @@ export type YieldV2ControllerYieldsParams = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -7280,6 +7201,17 @@ export const make = (
       ),
     CampaignV2AdminControllerTopUpBudget: (campaignId, options) =>
       HttpClientRequest.post(`/v2/admin/campaigns/${campaignId}/top-up`).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"])
+      ),
+    CampaignV2AdminControllerUnlockMilestone: (
+      campaignId,
+      milestoneOrder,
+      options
+    ) =>
+      HttpClientRequest.post(
+        `/v2/admin/campaigns/${campaignId}/milestones/${milestoneOrder}/unlock`
+      ).pipe(
         HttpClientRequest.bodyJsonUnsafe(options.payload),
         onRequest(options.config)(["2xx"])
       ),
@@ -11193,7 +11125,7 @@ export interface LegacyApi {
     HttpClientError.HttpClientError
   >;
   /**
-   * Add budget to a campaign (SuperAdmin). Extends the last milestone tranche when milestone gating is enabled.
+   * Add budget to a campaign (SuperAdmin). With milestone gating, the amount lands in a new unlocked tranche unless targetMilestoneOrder is supplied.
    */
   readonly CampaignV2AdminControllerTopUpBudget: <
     Config extends OperationConfig,
@@ -11205,6 +11137,22 @@ export interface LegacyApi {
     }
   ) => Effect.Effect<
     WithOptionalResponse<CampaignV2AdminControllerTopUpBudget200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Unlock a milestone tranche without its TW-TVL and TVL-years conditions being met (SuperAdmin). Only the lowest-order locked tranche is eligible.
+   */
+  readonly CampaignV2AdminControllerUnlockMilestone: <
+    Config extends OperationConfig,
+  >(
+    campaignId: string,
+    milestoneOrder: string,
+    options: {
+      readonly payload: CampaignV2AdminControllerUnlockMilestoneRequestJson;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignV2AdminControllerUnlockMilestone200, Config>,
     HttpClientError.HttpClientError
   >;
   /**

@@ -23,7 +23,7 @@ const EarnReward = Schema.Struct({
 });
 
 const EarnRewardRate = Schema.Struct({
-  ...YieldApi.YieldDto.fields.rewardRate.fields,
+  ...YieldApi.RewardRateDto.fields,
   components: Schema.Array(EarnReward),
 });
 
@@ -296,7 +296,7 @@ export const EarnYield = Schema.Struct({
   providerId: ProviderId,
   inputTokens: Schema.Array(Token),
   mechanics: Schema.Struct({
-    ...YieldApi.YieldDto.fields.mechanics.fields,
+    ...YieldApi.YieldMechanicsDto.fields,
     arguments: Schema.optionalKey(EarnYieldArguments),
     gasFeeToken: Token,
   }),

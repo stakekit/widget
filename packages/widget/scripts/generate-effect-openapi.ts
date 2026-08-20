@@ -451,7 +451,9 @@ const prepareSpecContents = (spec: SpecConfig, contents: string) => {
 
   return spec.specFileName.endsWith(".json")
     ? `${JSON.stringify(document, null, 2)}\n`
-    : stringify(document);
+    : // openapigen's YAML parser rejects folded plain scalars, so keep every
+      // scalar on a single line instead of wrapping at the default width.
+      stringify(document, { lineWidth: 0 });
 };
 
 const extractSchemaOnlyOutput = (output: string, specName: string) => {

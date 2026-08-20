@@ -47,6 +47,8 @@ const market = Schema.decodeUnknownSync(Market)({
   isBorrowEnabled: true,
   supplyCollateralFeeBps: "0",
   feeWrapperAddress: null,
+  originationFeeBps: "0",
+  originationFeeWrapperAddress: null,
   minLoan: null,
 });
 

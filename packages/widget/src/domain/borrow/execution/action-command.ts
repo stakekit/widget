@@ -7,7 +7,7 @@ export const ActionCommand = Schema.Struct({
   integrationId: IntegrationId,
   address: WalletAddress,
   args: Schema.Struct({
-    ...BorrowApi.ActionRequestDto.fields.args.fields,
+    ...BorrowApi.ArgumentsDto.fields,
     marketId: MarketId,
     tokenAddress: Schema.optionalKey(TokenAddress),
     collateralTokenAddress: Schema.optionalKey(TokenAddress),
