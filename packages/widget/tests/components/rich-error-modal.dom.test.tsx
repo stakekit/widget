@@ -108,6 +108,15 @@ describe("RichErrorModal", () => {
     );
   });
 
+  it("renders a prose message that carries no reason", async () => {
+    richErrorState.error = { message: "KYC required" };
+
+    await renderModal();
+
+    expect(document.body.textContent).toContain("Something went wrong");
+    expect(document.body.textContent).toContain("KYC required");
+  });
+
   it("renders only the generic title when an unknown error has no usable reason", async () => {
     richErrorState.error = {
       message: "FutureApiError",
