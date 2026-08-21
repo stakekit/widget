@@ -189,6 +189,10 @@ const readEnvCandidate = async (path: string, variableName: string) => {
   }
 };
 
+const reportApiKeySource = (source: string) => {
+  console.log(`[smoke] Using StakeKit API key from ${source}`);
+};
+
 const resolveApiKey = async () => {
   const processCandidates = [
     ["VITE_API_KEY", process.env.VITE_API_KEY],
@@ -196,8 +200,10 @@ const resolveApiKey = async () => {
   ] as const;
 
   for (const [source, value] of processCandidates) {
-    if (value?.trim()) {
-      return { source: `environment variable ${source}`, value: value.trim() };
+    const trimmed = value?.trim();
+    if (trimmed) {
+      reportApiKeySource(`environment variable ${source}`);
+      return trimmed;
     }
   }
 
@@ -207,10 +213,10 @@ const resolveApiKey = async () => {
       for (const variableName of ["VITE_API_KEY", "NEXT_PUBLIC_API_KEY"]) {
         const value = await readEnvCandidate(path, variableName);
         if (value) {
-          return {
-            source: `${path.slice(repositoryRoot.length + 1)} (${variableName})`,
-            value,
-          };
+          reportApiKeySource(
+            `${path.slice(repositoryRoot.length + 1)} (${variableName})`
+          );
+          return value;
         }
       }
     }
@@ -519,7 +525,6 @@ const withServer = async ({
 
 const main = async () => {
   const apiKey = await resolveApiKey();
-  console.log(`[smoke] Using StakeKit API key from ${apiKey.source}`);
 
   if (process.argv.includes("--check-key")) {
     return;
@@ -527,8 +532,8 @@ const main = async () => {
 
   const env = {
     ...process.env,
-    VITE_API_KEY: apiKey.value,
-    NEXT_PUBLIC_API_KEY: apiKey.value,
+    VITE_API_KEY: apiKey,
+    NEXT_PUBLIC_API_KEY: apiKey,
   };
 
   await assertBuiltWidgetArtifacts();
