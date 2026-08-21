@@ -3,6 +3,7 @@ import {
   getPositionDetailsHubPath,
   positionDetailsExitHasContent,
   positionDetailsHubHasContent,
+  resolvePositionDetailsActionCapabilities,
   resolvePositionDetailsActionMode,
   resolveSelectedPositionDetailsActionMode,
   shouldShowPositionDetailsActionTabs,
@@ -91,6 +92,31 @@ describe("position details hub model", () => {
         unstakeToken: { symbol: "ETH" },
       } as never)
     ).toBe(true);
+  });
+
+  it("drops the unstake capability when the position has no unstakeable balance", () => {
+    const lockedOnly = {
+      canChangeUnstakeAmount: true,
+      canUnstake: true,
+      integrationData: yieldApiYieldFixture({
+        status: { enter: true, exit: true },
+      }),
+      pendingActions: [{ pendingAction: { type: "UNLOCK" } }],
+      positionBalancesByType: new Map(),
+      reducedStakedOrLiquidBalance: null,
+      unstakeToken: null,
+    } as never;
+
+    const capabilities = resolvePositionDetailsActionCapabilities(lockedOnly);
+
+    expect(capabilities).toEqual({ canStake: true, canUnstake: false });
+    expect(shouldShowPositionDetailsActionTabs(capabilities)).toBe(false);
+    expect(
+      resolveSelectedPositionDetailsActionMode({
+        ...capabilities,
+        selectedMode: null,
+      })
+    ).toBe("stake");
   });
 
   it("treats the hub as actionable when exit is supported even without form readiness", () => {

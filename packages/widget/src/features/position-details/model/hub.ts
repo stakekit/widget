@@ -58,6 +58,23 @@ export const positionDetailsExitHasContent = (val: {
   val.canChangeUnstakeAmount !== null &&
   !!val.unstakeToken;
 
+/**
+ * Tab capabilities are content-based, not flag-based: a Yield can support exit
+ * while the position has no unstakeable balance (everything locked or pending),
+ * and offering an Unstake tab that renders nothing is a dead end.
+ */
+export const resolvePositionDetailsActionCapabilities = (val: {
+  canChangeUnstakeAmount: boolean | null;
+  canUnstake: boolean;
+  integrationData?: { status: { enter: boolean } } | null;
+  positionBalancesByType?: unknown;
+  reducedStakedOrLiquidBalance?: unknown;
+  unstakeToken?: unknown;
+}): PositionDetailsActionCapabilities => ({
+  canStake: positionDetailsStakeHasContent(val),
+  canUnstake: positionDetailsExitHasContent(val),
+});
+
 export const positionDetailsPendingHasContent = (val: {
   pendingActions?: readonly unknown[] | null;
 }) => !!val.pendingActions?.length;

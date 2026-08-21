@@ -7,9 +7,8 @@ import { Spinner } from "../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import {
   type PositionDetailsActionMode,
-  positionDetailsExitHasContent,
   positionDetailsHubHasContent,
-  positionDetailsStakeHasContent,
+  resolvePositionDetailsActionCapabilities,
   resolveSelectedPositionDetailsActionMode,
   shouldShowPositionDetailsActionTabs,
 } from "../../../model/hub";
@@ -115,10 +114,8 @@ export const PositionDetailsHub = () => {
     return null;
   }
 
-  const capabilities = {
-    canStake: positionDetailsStakeHasContent(positionDetails),
-    canUnstake: positionDetails.canUnstake,
-  };
+  const capabilities =
+    resolvePositionDetailsActionCapabilities(positionDetails);
   const mode = resolveSelectedPositionDetailsActionMode({
     ...capabilities,
     selectedMode,
@@ -158,10 +155,7 @@ export const PositionDetailsHub = () => {
 
         <PositionDetailsPendingActions positionDetails={positionDetails} />
 
-        {mode === "unstake" &&
-        positionDetailsExitHasContent(positionDetails) ? (
-          <PositionDetailsUnstakeActions />
-        ) : null}
+        {mode === "unstake" ? <PositionDetailsUnstakeActions /> : null}
         {mode === "stake" ? <PositionDetailsStakeActions /> : null}
       </Box>
 
