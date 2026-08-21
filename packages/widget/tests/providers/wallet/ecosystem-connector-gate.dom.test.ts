@@ -25,6 +25,7 @@ const browser = vi.hoisted(() => ({ isLedgerDappBrowser: false }));
 const evaluated = vi.hoisted(() => ({
   cardanoConnector: 0,
   cosmosWalletManager: 0,
+  failCosmosWalletManager: false,
   substrateConnector: 0,
   tonConnector: 0,
   tronConnector: 0,
@@ -83,10 +84,18 @@ vi.mock(
     evaluated.cosmosWalletManager += 1;
 
     return {
-      getWalletManager: () => ({
-        connector: { groupName: "Cosmos", wallets: [] },
-        walletManager: { onMounted: async () => undefined },
-      }),
+      getWalletManager: () => {
+        if (evaluated.failCosmosWalletManager) {
+          throw new TypeError(
+            "Cannot read properties of undefined (reading 'Init')"
+          );
+        }
+
+        return {
+          connector: { groupName: "Cosmos", wallets: [] },
+          walletManager: { onMounted: async () => undefined },
+        };
+      },
     };
   }
 );
@@ -308,6 +317,24 @@ describe("ecosystem connector gate", () => {
     expect(open.connector).not.toBeNull();
     expect(open.cosmosChainsMap).toEqual(gated.cosmosChainsMap);
     expect(evaluated.cosmosWalletManager).toBe(before + 1);
+  });
+
+  it("keeps cosmos chains when the wallet manager fails to initialize", async () => {
+    evaluated.failCosmosWalletManager = true;
+
+    const result = await Effect.runPromise(
+      getCosmosConfig({
+        buildConnectors: true,
+        enabledNetworks: cosmosNetworks,
+        forceWalletConnectOnly: false,
+        persistPublicKey: async () => undefined,
+      })
+    ).finally(() => {
+      evaluated.failCosmosWalletManager = false;
+    });
+
+    expect(result.connector).toBeNull();
+    expect(Object.keys(result.cosmosChainsMap)).toEqual(["cosmos"]);
   });
 
   it("skips ecosystem connectors in external provider mode", async () => {

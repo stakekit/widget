@@ -1,8 +1,8 @@
+import type { CompleteTheme } from "../../../../public-api/theme";
 import { vars } from "../../theme/contract.css";
 import { connectKitTheme } from "../connect-kit";
-import type { radiiContract } from "./contract";
 
-export const radii: typeof radiiContract = {
+export const radii: CompleteTheme["borderRadius"] = {
   baseContract: {
     none: "0",
     sm: "2px",

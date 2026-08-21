@@ -18,28 +18,18 @@ import {
   addValidatorContainer,
   overflowEllipsis,
   selectorSummaryActive,
-  selectorSummaryBadge,
   selectorSummaryCard,
   selectorSummaryChangeButton,
   selectorSummaryContent,
   selectorSummaryHeader,
-  selectorSummaryMeta,
+  selectorSummaryMetaText,
   selectorSummaryText,
-  selectorSummaryWebsite,
   validatorChip,
   validatorChipAddButton,
   validatorChipName,
   validatorChipRemoveButton,
   validatorChipsContainer,
 } from "../../styles.css";
-
-const getDisplayWebsite = (website: string) => {
-  try {
-    return new URL(website).hostname.replace(/^www\./, "");
-  } catch {
-    return website.replace(/^https?:\/\/(www\.)?/, "");
-  }
-};
 
 const formatCommission = (commission: number | undefined) =>
   typeof commission === "number" ? `${APToPercentage(commission)}%` : null;
@@ -145,157 +135,121 @@ export const SelectValidatorTrigger = ({
   }
 
   return (
-    <>
-      <Box
-        data-rk="select-validator-trigger-container"
-        className={addValidatorContainer}
-      >
-        {!hasSelectedValidators && !multiSelect && (
+    <Box
+      data-rk="select-validator-trigger-container"
+      className={addValidatorContainer}
+    >
+      {!hasSelectedValidators && (
+        <Box data-rk="select-validator-trigger" className={selectorSummaryCard}>
+          <Text variant={{ type: "muted", weight: "normal" }}>
+            {t("details.validator_search_title_one")}
+          </Text>
+
+          <Trigger asChild>
+            <Box
+              as="button"
+              data-rk="select-validator-caret-down"
+              className={selectorSummaryChangeButton}
+              type="button"
+            >
+              <Text variant={{ weight: "bold" }}>{t("shared.change")}</Text>
+              <CaretDownIcon />
+            </Box>
+          </Trigger>
+        </Box>
+      )}
+
+      {selectedValidatorsArr.map((sv) => {
+        const nameOrAddress = sv.name ?? sv.address;
+        const commission = formatCommission(sv.commission);
+        const tvl = formatValidatorTvl(sv, selectedStake);
+        const getStatusLabel = () => {
+          if (sv.status === "jailed") {
+            return t("details.validators_jailed");
+          }
+          if (sv.status && sv.status !== "active") {
+            return t("details.validators_inactive");
+          }
+          return t("position_details.balance_type.active");
+        };
+        const statusLabel = getStatusLabel();
+        const isActive = !sv.status || sv.status === "active";
+        const metaParts = [commission, tvl].filter(
+          (part): part is string => !!part
+        );
+
+        return (
           <Box
+            key={sv.key}
             data-rk="select-validator-trigger"
             className={selectorSummaryCard}
           >
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {t("details.validator_search_title_one")}
-            </Text>
+            <Box className={selectorSummaryContent}>
+              <Image
+                wrapperProps={{ hw: "8", flexShrink: 0 }}
+                imgProps={{ borderRadius: "full" }}
+                src={sv.logoURI}
+                fallbackName={nameOrAddress}
+              />
+
+              <Box className={selectorSummaryText}>
+                <Box className={selectorSummaryHeader}>
+                  <Text
+                    className={overflowEllipsis}
+                    variant={{ weight: "bold" }}
+                  >
+                    {nameOrAddress}
+                  </Text>
+
+                  {sv.preferred && (
+                    <Box
+                      aria-label={t("details.validators_preferred")}
+                      display="flex"
+                      flexShrink={0}
+                    >
+                      <PreferredIcon />
+                    </Box>
+                  )}
+                </Box>
+
+                <Text
+                  className={selectorSummaryMetaText}
+                  variant={{
+                    type: "muted",
+                    weight: "normal",
+                    size: "small",
+                  }}
+                >
+                  {metaParts.map((part) => (
+                    <Box as="span" key={part}>
+                      {part} ·{" "}
+                    </Box>
+                  ))}
+
+                  <Box
+                    as="span"
+                    className={isActive ? selectorSummaryActive : undefined}
+                  >
+                    {statusLabel}
+                  </Box>
+                </Text>
+              </Box>
+            </Box>
 
             <Trigger asChild>
               <Box
                 as="button"
                 data-rk="select-validator-caret-down"
                 className={selectorSummaryChangeButton}
+                type="button"
               >
                 <Text variant={{ weight: "bold" }}>{t("shared.change")}</Text>
                 <CaretDownIcon />
               </Box>
             </Trigger>
           </Box>
-        )}
-
-        {selectedValidatorsArr.map((sv) => {
-          const nameOrAddress = sv.name ?? sv.address;
-          const commission = formatCommission(sv.commission);
-          const tvl = formatValidatorTvl(sv, selectedStake);
-          const getStatusLabel = () => {
-            if (sv.status === "jailed") {
-              return t("details.validators_jailed");
-            }
-            if (sv.status && sv.status !== "active") {
-              return t("details.validators_inactive");
-            }
-            return t("position_details.balance_type.active");
-          };
-          const statusLabel = getStatusLabel();
-
-          return (
-            <Box
-              key={sv.key}
-              data-rk="select-validator-trigger"
-              className={selectorSummaryCard}
-            >
-              <Box className={selectorSummaryContent}>
-                <Image
-                  wrapperProps={{ hw: "8", flexShrink: 0 }}
-                  imgProps={{ borderRadius: "base" }}
-                  src={sv.logoURI}
-                  fallbackName={nameOrAddress}
-                />
-
-                <Box className={selectorSummaryText}>
-                  <Box className={selectorSummaryHeader}>
-                    <Text
-                      className={overflowEllipsis}
-                      variant={{ weight: "bold" }}
-                    >
-                      {nameOrAddress}
-                    </Text>
-
-                    {sv.preferred && (
-                      <Text as="span" className={selectorSummaryBadge}>
-                        {t("details.validators_preferred")}
-                      </Text>
-                    )}
-                  </Box>
-
-                  <Box className={selectorSummaryMeta}>
-                    {commission && (
-                      <Text variant={{ type: "muted", weight: "normal" }}>
-                        {t("details.validators_comission")} {commission}
-                      </Text>
-                    )}
-
-                    {tvl && (
-                      <Text variant={{ type: "muted", weight: "normal" }}>
-                        TVL {tvl}
-                      </Text>
-                    )}
-
-                    <Text
-                      variant={{
-                        type:
-                          sv.status && sv.status !== "active"
-                            ? "muted"
-                            : "base",
-                        weight: "normal",
-                      }}
-                      className={
-                        sv.status && sv.status !== "active"
-                          ? undefined
-                          : selectorSummaryActive
-                      }
-                    >
-                      {statusLabel}
-                    </Text>
-                  </Box>
-
-                  {sv.website && (
-                    <Text
-                      as="a"
-                      href={sv.website}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={selectorSummaryWebsite}
-                      variant={{ type: "muted", weight: "normal" }}
-                    >
-                      {getDisplayWebsite(sv.website)}
-                    </Text>
-                  )}
-                </Box>
-              </Box>
-
-              {multiSelect && selectedValidatorsArr.length > 1 ? (
-                <Box
-                  as="button"
-                  display="flex"
-                  flexShrink={0}
-                  onClick={() => onRemoveValidator(sv)}
-                >
-                  <XIcon hw={12} strokeWidth={4.9} />
-                </Box>
-              ) : (
-                !multiSelect && (
-                  <Trigger asChild>
-                    <Box
-                      as="button"
-                      data-rk="select-validator-caret-down"
-                      className={selectorSummaryChangeButton}
-                    >
-                      <Text variant={{ weight: "bold" }}>
-                        {t("shared.change")}
-                      </Text>
-                      <CaretDownIcon />
-                    </Box>
-                  </Trigger>
-                )
-              )}
-            </Box>
-          );
-        })}
-      </Box>
-
-      <Box marginTop="3">
-        <Divider />
-      </Box>
-    </>
+        );
+      })}
+    </Box>
   );
 };

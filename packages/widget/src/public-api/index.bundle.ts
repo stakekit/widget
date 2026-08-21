@@ -7,6 +7,7 @@ export type {
   SKBorrowExternalProviders,
   SKBorrowTxMeta,
   SKBorrowWallet,
+  SKTheme,
   SKTx,
   SKTxMeta,
   SKWallet,

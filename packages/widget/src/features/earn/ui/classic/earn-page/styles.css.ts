@@ -86,6 +86,11 @@ export const selectorSummaryMeta = style([
   },
 ]);
 
+export const selectorSummaryMetaText = style({
+  minWidth: 0,
+  overflowWrap: "anywhere",
+});
+
 export const selectorSummaryWebsite = style([
   atoms({
     color: "textMuted",
@@ -119,20 +124,6 @@ export const selectorSummaryChangeButton = style([
     padding: "0 14px",
   },
 ]);
-
-export const selectorSummaryBadge = style({
-  alignItems: "center",
-  background: `color-mix(in srgb, ${vars.color.positionsRewardRate} 18%, transparent)`,
-  border: `1px solid color-mix(in srgb, ${vars.color.positionsRewardRate} 38%, transparent)`,
-  borderRadius: vars.borderRadius.baseContract.full,
-  color: vars.color.positionsRewardRate,
-  display: "inline-flex",
-  fontSize: vars.fontSize.sm,
-  fontWeight: vars.fontWeight.bold,
-  lineHeight: 1,
-  padding: "3px 8px",
-  whiteSpace: "nowrap",
-});
 
 export const selectorSummaryActive = style({
   color: "#137333",

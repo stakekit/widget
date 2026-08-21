@@ -1,32 +1,8 @@
 import { createGlobalThemeContract } from "@vanilla-extract/css";
-import { colorsContract } from "../tokens/colors/contract";
-import { fontsContract } from "../tokens/fonts";
-import { radiiContract } from "../tokens/radii/contract";
-import { spacesContract } from "../tokens/space";
-import {
-  fontSizesContract,
-  fontWeightsContract,
-  headingsContract,
-  letterSpacingsContract,
-  lineHeightsContract,
-  textsContract,
-} from "../tokens/typography";
-import { zIndicesContract } from "../tokens/z-indices";
+import { themeContract } from "../../../public-api/theme";
 
 export const vars = createGlobalThemeContract(
-  {
-    color: colorsContract,
-    fontSize: fontSizesContract,
-    letterSpacing: letterSpacingsContract,
-    lineHeight: lineHeightsContract,
-    fontWeight: fontWeightsContract,
-    borderRadius: radiiContract,
-    space: spacesContract,
-    heading: headingsContract,
-    text: textsContract,
-    zIndices: zIndicesContract,
-    font: fontsContract,
-  },
+  themeContract,
   (_value, path) =>
     `sk-${path
       .join("-")

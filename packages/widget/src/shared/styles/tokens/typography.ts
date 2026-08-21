@@ -1,15 +1,6 @@
-import type { Breakpoint } from "./breakpoints";
+import type { CompleteTheme } from "../../../public-api/theme";
 
-export const letterSpacingsContract = {
-  tighter: "",
-  tight: "",
-  normal: "",
-  wide: "",
-  wider: "",
-  widest: "",
-};
-
-export const letterSpacings: typeof letterSpacingsContract = {
+export const letterSpacings: CompleteTheme["letterSpacing"] = {
   tighter: "-0.05em",
   tight: "-0.025em",
   normal: "0",
@@ -18,26 +9,7 @@ export const letterSpacings: typeof letterSpacingsContract = {
   widest: "0.1em",
 };
 
-export const lineHeightsContract = {
-  none: "",
-  shorter: "",
-  short: "",
-  base: "",
-  tall: "",
-  taller: "",
-  xs: "",
-  sm: "",
-  md: "",
-  lg: "",
-  xl: "",
-  "2xl": "",
-  "3xl": "",
-  "4xl": "",
-  "5xl": "",
-  "6xl": "",
-};
-
-export const lineHeights: typeof lineHeightsContract = {
+export const lineHeights: CompleteTheme["lineHeight"] = {
   none: "1",
   shorter: "1.25",
   short: "1.375",
@@ -56,20 +28,7 @@ export const lineHeights: typeof lineHeightsContract = {
   "6xl": "1",
 };
 
-export const fontWeightsContract = {
-  normal: "",
-  medium: "",
-  semibold: "",
-  bold: "",
-  extrabold: "",
-
-  modalHeading: "",
-  tokenSelect: "",
-  primaryButton: "",
-  secondaryButton: "",
-};
-
-export const fontWeights: typeof fontWeightsContract = {
+export const fontWeights: CompleteTheme["fontWeight"] = {
   normal: "400",
   medium: "500",
   semibold: "600",
@@ -82,21 +41,7 @@ export const fontWeights: typeof fontWeightsContract = {
   secondaryButton: "700",
 };
 
-export const fontSizesContract = {
-  xs: "",
-  sm: "",
-  md: "",
-  lg: "",
-  lgx: "",
-  xl: "",
-  "2xl": "",
-  "3xl": "",
-  "4xl": "",
-  "5xl": "",
-  "6xl": "",
-};
-
-export const fontSizes: typeof fontSizesContract = {
+export const fontSizes: CompleteTheme["fontSize"] = {
   xs: "0.615rem",
   sm: "0.717rem",
   md: "0.85rem",
@@ -110,30 +55,9 @@ export const fontSizes: typeof fontSizesContract = {
   "6xl": "3.815rem",
 } as const;
 
-export type Heading = "h1" | "h2" | "h3" | "h4";
+export type Heading = keyof CompleteTheme["heading"];
 
-export const headingsContract: {
-  [H in Heading]: { [K in Breakpoint]: { fontSize: string } };
-} = {
-  h1: {
-    mobile: { fontSize: "" },
-    tablet: { fontSize: "" },
-  },
-  h2: {
-    mobile: { fontSize: "" },
-    tablet: { fontSize: "" },
-  },
-  h3: {
-    mobile: { fontSize: "" },
-    tablet: { fontSize: "" },
-  },
-  h4: {
-    mobile: { fontSize: "" },
-    tablet: { fontSize: "" },
-  },
-};
-
-export const headings: typeof headingsContract = {
+export const headings: CompleteTheme["heading"] = {
   h1: {
     mobile: { fontSize: fontSizes["3xl"] },
     tablet: { fontSize: fontSizes["4xl"] },
@@ -152,26 +76,9 @@ export const headings: typeof headingsContract = {
   },
 };
 
-export type Text = "large" | "medium" | "small";
+export type Text = keyof CompleteTheme["text"];
 
-export const textsContract: {
-  [H in Text]: { [K in Breakpoint]: { fontSize: string } };
-} = {
-  large: {
-    mobile: { fontSize: "" },
-    tablet: { fontSize: "" },
-  },
-  medium: {
-    mobile: { fontSize: "" },
-    tablet: { fontSize: "" },
-  },
-  small: {
-    mobile: { fontSize: "" },
-    tablet: { fontSize: "" },
-  },
-};
-
-export const texts: typeof textsContract = {
+export const texts: CompleteTheme["text"] = {
   large: {
     mobile: { fontSize: fontSizes.lg },
     tablet: { fontSize: fontSizes.lg },

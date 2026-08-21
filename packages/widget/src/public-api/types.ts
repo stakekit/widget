@@ -1,5 +1,8 @@
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import type { ReactNode, RefObject } from "react";
+import type { SKTheme } from "./theme";
+
+export type { SKTheme } from "./theme";
 
 export enum EvmChainIds {
   Ethereum = 1,
@@ -490,24 +493,6 @@ export type VariantProps =
   | { variant: "default" }
   | { variant: "finery" }
   | { variant: "porto" };
-
-type ThemeScale = {
-  readonly [key: string]: string | ThemeScale;
-};
-
-export type SKTheme = {
-  color?: ThemeScale;
-  fontSize?: ThemeScale;
-  letterSpacing?: ThemeScale;
-  lineHeight?: ThemeScale;
-  fontWeight?: ThemeScale;
-  borderRadius?: ThemeScale;
-  space?: ThemeScale;
-  heading?: ThemeScale;
-  text?: ThemeScale;
-  zIndices?: ThemeScale;
-  font?: ThemeScale;
-};
 
 type TranslationTree = Readonly<{
   [key: string]: string | TranslationTree;

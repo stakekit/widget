@@ -1,18 +1,6 @@
-export const zIndicesContract = {
-  hide: "",
-  auto: "",
-  simple: "",
-  base: "",
-  docked: "",
-  dropdown: "",
-  sticky: "",
-  banner: "",
-  overlay: "",
-  modal: "",
-  skipLink: "",
-};
+import type { CompleteTheme } from "../../../public-api/theme";
 
-export const zIndices: typeof zIndicesContract = {
+export const zIndices: CompleteTheme["zIndices"] = {
   hide: "-1",
   auto: "auto",
   simple: "1",

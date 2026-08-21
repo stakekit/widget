@@ -1,34 +1,6 @@
-export const spacesContract = {
-  full: "",
-  unset: "",
-  auto: "",
-  "0": "",
-  "1": "",
-  "2": "",
-  "3": "",
-  "4": "",
-  "5": "",
-  "6": "",
-  "7": "",
-  "8": "",
-  "9": "",
-  "10": "",
-  "12": "",
-  "14": "",
-  "16": "",
-  "20": "",
-  "24": "",
-  "28": "",
-  "32": "",
-  "36": "",
-  "40": "",
-  "44": "",
-  "48": "",
-  px: "",
-  buttonMinHeight: "",
-};
+import type { CompleteTheme } from "../../../public-api/theme";
 
-export const spaces: typeof spacesContract = {
+export const spaces: CompleteTheme["space"] = {
   full: "100%",
   unset: "unset",
   auto: "auto",

@@ -122,6 +122,23 @@ export type BuildWagmiConfigOptions = {
   tonConnectManifestUrl: string | undefined;
 };
 
+const recoverEcosystemAdapter = <A>(
+  ecosystem: "cosmos" | "misc" | "substrate",
+  effect: Effect.Effect<A, WalletIntegrationError>
+) =>
+  effect.pipe(
+    Effect.catch((cause) =>
+      Effect.logError("Ecosystem wallet adapter failed").pipe(
+        Effect.annotateLogs({
+          cause,
+          ecosystem,
+          event: "ecosystem_wallet_adapter_failed",
+        }),
+        Effect.as(null)
+      )
+    )
+  );
+
 export const buildWagmiConfig = (
   opts: BuildWagmiConfigOptions,
   buildActions: Effect.Success<typeof makeWagmiActions>
@@ -147,36 +164,60 @@ export const buildWagmiConfig = (
             institutionalWallets: opts.institutionalWallets,
             variant: opts.variant,
           }),
-          getCosmosConfig({
-            buildConnectors,
-            enabledNetworks: opts.enabledNetworks,
-            forceWalletConnectOnly: opts.forceWalletConnectOnly,
-            persistPublicKey: (input) =>
-              runWalletEffect(opts.persistPublicKey(input)),
-          }),
-          getMiscConfig({
-            buildConnectors,
-            enabledNetworks: opts.enabledNetworks,
-            forceWalletConnectOnly: opts.forceWalletConnectOnly,
-            solanaWallets: opts.solanaWallets,
-            solanaConnection: opts.solanaConnection,
-            variant: opts.variant,
-            tonConnectManifestUrl: opts.tonConnectManifestUrl,
-          }),
-          getSubstrateConfig({
-            buildConnectors,
-            enabledNetworks: opts.enabledNetworks,
-            forceWalletConnectOnly: opts.forceWalletConnectOnly,
-          }),
+          recoverEcosystemAdapter(
+            "cosmos",
+            getCosmosConfig({
+              buildConnectors,
+              enabledNetworks: opts.enabledNetworks,
+              forceWalletConnectOnly: opts.forceWalletConnectOnly,
+              persistPublicKey: (input) =>
+                runWalletEffect(opts.persistPublicKey(input)),
+            })
+          ),
+          recoverEcosystemAdapter(
+            "misc",
+            getMiscConfig({
+              buildConnectors,
+              enabledNetworks: opts.enabledNetworks,
+              forceWalletConnectOnly: opts.forceWalletConnectOnly,
+              solanaWallets: opts.solanaWallets,
+              solanaConnection: opts.solanaConnection,
+              variant: opts.variant,
+              tonConnectManifestUrl: opts.tonConnectManifestUrl,
+            })
+          ),
+          recoverEcosystemAdapter(
+            "substrate",
+            getSubstrateConfig({
+              buildConnectors,
+              enabledNetworks: opts.enabledNetworks,
+              forceWalletConnectOnly: opts.forceWalletConnectOnly,
+            })
+          ),
         ] as const,
         { concurrency: "unbounded" }
       );
+    const cosmos = cosmosConfig ?? {
+      cosmosChainsMap: {},
+      cosmosWagmiChains: [],
+      connector: null,
+    };
+    const misc = miscConfig ?? {
+      miscChainsMap: {},
+      miscChains: [],
+      connectors: [null, null, null, null],
+    };
+    const substrate = substrateConfig ?? {
+      substrateChainsMap: {},
+      substrateChains: [],
+      connector: null,
+    };
     const ledgerLiveConnector = yield* getLedgerLiveConfig({
       enabledChainsMap: {
         evm: evmConfig.evmChainsMap,
-        cosmos: cosmosConfig.cosmosChainsMap,
-        misc: miscConfig.miscChainsMap,
-        substrate: substrateConfig.substrateChainsMap,
+        cosmos: cosmos.cosmosChainsMap,
+        misc: misc.miscChainsMap,
+        substrate: substrate.substrateChainsMap,
       },
       isLedgerDappBrowser: opts.isLedgerLive,
       queryParams: opts.queryParams,
@@ -189,9 +230,9 @@ export const buildWagmiConfig = (
       enabledNetworks: opts.enabledNetworks,
       evmConfig,
       isLedgerLive: opts.isLedgerLive,
-      cosmosConfig,
-      miscConfig,
-      substrateConfig,
+      cosmosConfig: cosmos,
+      miscConfig: misc,
+      substrateConfig: substrate,
       ledgerLiveConnector,
       safeConnector,
       queryParams: opts.queryParams,
@@ -222,17 +263,17 @@ export const buildWagmiConfig = (
 
           return Object.values({
             ...evmConfig.evmChainsMap,
-            ...cosmosConfig.cosmosChainsMap,
-            ...miscConfig.miscChainsMap,
-            ...substrateConfig.substrateChainsMap,
+            ...cosmos.cosmosChainsMap,
+            ...misc.miscChainsMap,
+            ...substrate.substrateChainsMap,
           }).map(mapWagmiChain) as [RainbowkitChain, ...RainbowkitChain[]];
         })()
       : (() => {
           return [
             ...evmConfig.evmChains,
-            ...cosmosConfig.cosmosWagmiChains,
-            ...miscConfig.miscChains,
-            ...substrateConfig.substrateChains,
+            ...cosmos.cosmosWagmiChains,
+            ...misc.miscChains,
+            ...substrate.substrateChains,
           ] as [RainbowkitChain, ...RainbowkitChain[]];
         })();
 
@@ -316,7 +357,7 @@ export const buildWagmiConfig = (
             groupName: "Other",
             wallets: evmConfig.institutionalWallets.otherWallets,
           },
-          ...miscConfig.connectors.filter((value) => value !== null),
+          ...misc.connectors.filter((value) => value !== null),
         ];
       }
 
@@ -340,9 +381,9 @@ export const buildWagmiConfig = (
 
       return [
         evmConfig.connector,
-        cosmosConfig.connector,
-        substrateConfig.connector,
-        ...miscConfig.connectors,
+        cosmos.connector,
+        substrate.connector,
+        ...misc.connectors,
       ]
         .filter((value): value is WalletList[number] => value !== null)
         .filter((value) => value.wallets.length > 0);

@@ -1,3 +1,4 @@
+import type { CompleteTheme } from "../../../public-api/theme";
 import { darkThemeColors, lightThemeColors } from "../tokens/colors/values";
 import { fonts } from "../tokens/fonts";
 import { radii } from "../tokens/radii/values";
@@ -25,12 +26,12 @@ const commonStyles = {
   font: fonts,
 };
 
-export const lightTheme = {
+export const lightTheme: CompleteTheme = {
   ...commonStyles,
   color: lightThemeColors,
 };
 
-export const darkTheme = {
+export const darkTheme: CompleteTheme = {
   ...commonStyles,
   color: darkThemeColors,
 };

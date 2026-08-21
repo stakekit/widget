@@ -16,8 +16,8 @@ const variant: StandaloneVariant =
   import.meta.env.VITE_APP_VARIANT ?? "default";
 
 // TODO: TESTING ONLY!
-const dashboardVariant: SKAppProps["dashboardVariant"] = true;
-const borrowEnabled: SKAppProps["borrowEnabled"] = true;
+// const dashboardVariant: SKAppProps["dashboardVariant"] = true;
+// const borrowEnabled: SKAppProps["borrowEnabled"] = true;
 
 const StandaloneApp = () => {
   const [themeVariant, setThemeVariant] = useState<"dark" | "light">("dark");
@@ -34,8 +34,8 @@ const StandaloneApp = () => {
 
   const props: SKAppProps = {
     variant,
-    borrowEnabled,
-    dashboardVariant,
+    // borrowEnabled,
+    // dashboardVariant,
     theme: themeVariant === "dark" ? darkTheme : lightTheme,
     apiKey: import.meta.env.VITE_API_KEY,
     onMountAnimationComplete: () => console.log("mount animation complete!"),

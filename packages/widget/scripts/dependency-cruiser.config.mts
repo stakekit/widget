@@ -94,7 +94,10 @@ export const architecturePolicy = {
       name: "domain",
       mayImport: ["domain", "generated", "public-api"],
     }),
-    defineLayer({ name: "shared", mayImport: ["shared", "domain"] }),
+    defineLayer({
+      name: "shared",
+      mayImport: ["shared", "domain", "public-api"],
+    }),
     defineLayer({ name: "generated", mayImport: ["generated"] }),
     defineLayer({ name: "public-api", mayImport: ["public-api"] }),
   ],
@@ -445,6 +448,28 @@ const configuration: IConfiguration = {
       to: {},
     },
     ...makeLayerRules(),
+    {
+      name: "shared-public-theme-contract-only",
+      severity: "error",
+      comment:
+        "Only shared theme implementation modules may implement the host-facing theme contract.",
+      from: {
+        path: "^src/shared/",
+        pathNot: "^src/shared/styles/(?:theme|tokens)/",
+      },
+      to: { path: "^src/public-api/" },
+    },
+    {
+      name: "shared-theme-imports-only-theme-contract",
+      severity: "error",
+      comment:
+        "Shared theme implementation may depend only on the exact host-facing theme contract.",
+      from: { path: "^src/shared/styles/(?:theme|tokens)/" },
+      to: {
+        path: "^src/public-api/",
+        pathNot: "^src/public-api/theme\\.ts$",
+      },
+    },
     ...makeGeneratedRuntimeRules(),
     ...architecturePolicy.moduleCollections
       .map(compileCollection)

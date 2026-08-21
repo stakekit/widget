@@ -7,6 +7,95 @@ import type { CosmosChainsMap } from "./chains";
 import { supportedCosmosChains } from "./chains";
 import { getWagmiChain } from "./chains/index";
 
+const logCosmosConnectorFailure = (operation: string, cause: unknown) =>
+  Effect.logError("Cosmos wallet connector failed to load").pipe(
+    Effect.annotateLogs({
+      cause,
+      event: "cosmos_wallet_connector_failed",
+      operation,
+    })
+  );
+
+const loadCosmosConnector = Effect.fn("loadCosmosConnector")(function* ({
+  cosmosChainsMap,
+  forceWalletConnectOnly,
+  persistPublicKey,
+}: {
+  cosmosChainsMap: Partial<CosmosChainsMap>;
+  forceWalletConnectOnly: boolean;
+  persistPublicKey: (input: {
+    readonly address: WalletAddress;
+    readonly publicKey: string;
+  }) => Promise<void>;
+}) {
+  const walletManagerModule = yield* Effect.tryPromise({
+    try: () => import("./wallet-manager"),
+    catch: (cause) =>
+      new WalletIntegrationError({
+        cause,
+        message: "Could not import cosmos wallet manager",
+        operation: "cosmos-wallet-manager-import",
+      }),
+  }).pipe(
+    Effect.catch((error) =>
+      logCosmosConnectorFailure("cosmos-wallet-manager-import", error).pipe(
+        Effect.as(null)
+      )
+    )
+  );
+  if (!walletManagerModule) {
+    return null;
+  }
+
+  const initialized = yield* Effect.try({
+    try: () =>
+      walletManagerModule.getWalletManager({
+        cosmosChainsMap,
+        forceWalletConnectOnly,
+        persistPublicKey,
+      }),
+    catch: (cause) =>
+      new WalletIntegrationError({
+        cause,
+        message: "Could not initialize cosmos wallet manager",
+        operation: "cosmos-wallet-manager-initialize",
+      }),
+  }).pipe(
+    Effect.catch((error) =>
+      logCosmosConnectorFailure("cosmos-wallet-manager-initialize", error).pipe(
+        Effect.as(null)
+      )
+    )
+  );
+  if (!initialized) {
+    return null;
+  }
+
+  const { connector, walletManager } = initialized;
+
+  yield* Effect.matchEffect(
+    Effect.tryPromise({
+      try: () => walletManager.onMounted(),
+      catch: (error) => error,
+    }),
+    {
+      onFailure: () => {
+        const restorableWalletManager = walletManager as unknown as {
+          _restoreAccounts: () => Promise<void>;
+        };
+
+        return Effect.tryPromise({
+          try: () => restorableWalletManager._restoreAccounts(),
+          catch: (error) => error,
+        }).pipe(Effect.ignore);
+      },
+      onSuccess: () => Effect.void,
+    }
+  );
+
+  return connector;
+});
+
 const queryFn = ({
   buildConnectors,
   enabledNetworks,
@@ -81,49 +170,11 @@ const queryFn = ({
       return { cosmosChainsMap, cosmosWagmiChains, connector: null };
     }
 
-    const walletManagerModule = yield* Effect.tryPromise({
-      try: () => import("./wallet-manager"),
-      catch: (cause) =>
-        new WalletIntegrationError({
-          cause,
-          message: "Could not import cosmos wallet manager",
-          operation: "cosmos-wallet-manager-import",
-        }),
+    const connector = yield* loadCosmosConnector({
+      cosmosChainsMap,
+      forceWalletConnectOnly,
+      persistPublicKey,
     });
-    const { connector, walletManager } = yield* Effect.try({
-      try: () =>
-        walletManagerModule.getWalletManager({
-          cosmosChainsMap,
-          forceWalletConnectOnly,
-          persistPublicKey,
-        }),
-      catch: (cause) =>
-        new WalletIntegrationError({
-          cause,
-          message: "Could not initialize cosmos wallet manager",
-          operation: "cosmos-wallet-manager-initialize",
-        }),
-    });
-
-    yield* Effect.matchEffect(
-      Effect.tryPromise({
-        try: () => walletManager.onMounted(),
-        catch: (error) => error,
-      }),
-      {
-        onFailure: () => {
-          const restorableWalletManager = walletManager as unknown as {
-            _restoreAccounts: () => Promise<void>;
-          };
-
-          return Effect.tryPromise({
-            try: () => restorableWalletManager._restoreAccounts(),
-            catch: (error) => error,
-          }).pipe(Effect.ignore);
-        },
-        onSuccess: () => Effect.void,
-      }
-    );
 
     return {
       cosmosChainsMap,

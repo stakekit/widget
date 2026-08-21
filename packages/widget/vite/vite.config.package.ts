@@ -16,10 +16,26 @@ const config = getConfig({
       formats: ["es"],
     },
     rolldownOptions: {
-      output: { banner: '"use client";\n' },
+      output: {
+        banner: '"use client";\n',
+        // Keep @cosmos-kit with its circular helpers in one chunk. Splitting that
+        // graph leaves `State` as an uninitialized live binding after a host
+        // re-bundles dist/package.
+        codeSplitting: {
+          groups: [
+            {
+              name: "cosmos-kit",
+              test: /[/\\]node_modules[/\\]@cosmos-kit[/\\]/,
+            },
+          ],
+        },
+      },
       plugins: [
         esmExternalRequirePlugin({
-          external: [/^react(-dom)?(\/.+)?$/],
+          // Keep React and ReactDOM external for the host. Bundle
+          // `react/compiler-runtime`: it is CommonJS, and hosts that exclude this
+          // package from optimizeDeps otherwise fail to prebundle that subpath.
+          external: [/^react(-dom)?(?!\/compiler-runtime)(\/.+)?$/],
         }),
       ],
     },

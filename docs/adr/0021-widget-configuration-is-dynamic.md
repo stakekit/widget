@@ -20,16 +20,21 @@ current value when they begin, and deliberately live processes observe a
 non-failing stream that starts with the current value and continues with each
 distinct replacement.
 
-The private normalizer returns either Widget Configuration or an
-`InvalidWidgetConfiguration` containing safe semantic issue codes. It does not
-Schema-decode Host Configuration. Initial semantic failure prevents service
-construction; a later failure is logged and ignored while the last valid value
-remains current. API endpoints are fully resolved there, including existing
-endpoint cleanup. External-provider supported chains are canonicalized by
-deduplicating and sorting while preserving the distinction between absent and
-explicitly empty input. Configuration-specific normalization is written in this
-single function rather than delegated to smaller config-aware helpers. Neutral
-collection utilities may be reused.
+The private normalizer returns either Widget Configuration plus safe
+canonicalization warnings, or an `InvalidWidgetConfiguration` containing safe
+semantic issue codes. It does not Schema-decode Host Configuration as a whole.
+Individual structured fields may own a Schema decoder when runtime
+canonicalization is part of their contract. In particular, Theme Configuration
+uses its public Schema to strip unknown tokens and omit invalid token values;
+those recoverable issues never prevent service construction or reject an
+update. Initial semantic failure prevents service construction; a later
+semantic failure is logged and ignored while the last valid value remains
+current. API endpoints are fully resolved there, including existing endpoint
+cleanup. External-provider supported chains are canonicalized by deduplicating
+and sorting while preserving the distinction between absent and explicitly
+empty input. Configuration-specific normalization is coordinated by this single
+function; field-owned decoders may be reused without becoming another
+configuration owner. Neutral collection utilities may also be reused.
 
 The normalized API key and endpoints form Application API Identity, a projection
 of Widget Configuration rather than a fixed generation constraint. Changing them
@@ -67,9 +72,10 @@ casing, or coerce values. It lives beside the service. Consumers may build Sets,
 Maps, or lookup indexes from canonical collections when that does not change
 semantic membership or ordering.
 
-The pure normalizer performs no logging. The service logs safe issue codes,
-crashes construction after an initial failure, and returns `RejectedInvalid`
-for an invalid update.
+The pure normalizer performs no logging. The service logs safe semantic issue
+codes and recoverable field warnings, crashes construction after an initial
+semantic failure, and returns `RejectedInvalid` for a semantically invalid
+update.
 
 Tests acquire Widget Configuration through a real `WidgetConfigService` layer.
 They do not expose another helper named or presented as normalization.

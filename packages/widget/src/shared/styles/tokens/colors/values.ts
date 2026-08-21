@@ -1,6 +1,6 @@
+import type { CompleteTheme } from "../../../../public-api/theme";
 import { vars } from "../../theme/contract.css";
 import { connectKitTheme } from "../connect-kit";
-import type { colorsContract } from "./contract";
 
 const primitiveColors = {
   transparent: "transparent",
@@ -119,7 +119,7 @@ const darkSemanticColors = {
   },
 } as const;
 
-export const lightThemeColors: typeof colorsContract = {
+export const lightThemeColors: CompleteTheme["color"] = {
   white: sharedSemanticColors.base.white,
   transparent: sharedSemanticColors.base.transparent,
   primary: lightSemanticColors.brand.primary,
@@ -197,7 +197,7 @@ export const lightThemeColors: typeof colorsContract = {
   summaryLabelAvailableColor: "#327C5F",
 };
 
-export const darkThemeColors: typeof colorsContract = {
+export const darkThemeColors: CompleteTheme["color"] = {
   white: sharedSemanticColors.base.white,
   transparent: sharedSemanticColors.base.transparent,
   primary: "#171717",

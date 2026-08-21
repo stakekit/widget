@@ -124,6 +124,32 @@ describe("WidgetConfigService", () => {
     expect(current.externalProviders?.supportedChainIds).toEqual([1, 10, 137]);
   });
 
+  it("canonicalizes themes without rejecting Host Configuration", () => {
+    const current = Effect.runSync(
+      WidgetConfigService.use((config) => config.current).pipe(
+        Effect.provide(
+          WidgetConfigService.layer({
+            apiKey: "api-key",
+            theme: {
+              color: {
+                accent: 42,
+                background: "#fff",
+                positionsSectionBackgroundColor: "#eee",
+              },
+            } as unknown as SettingsProps["theme"],
+            variant: "default",
+          })
+        )
+      )
+    );
+
+    expect(current.theme).toEqual({
+      color: {
+        background: "#fff",
+      },
+    });
+  });
+
   it("normalizes validator policy addresses by network identity", () => {
     const current = Effect.runSync(
       WidgetConfigService.use((config) => config.current).pipe(

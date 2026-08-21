@@ -19,6 +19,7 @@ import {
   type ExternalProviderSnapshot,
   hasValidBorrowProviderContract,
 } from "../../public-api/external-provider-contract";
+import { decodeTheme, type ThemeDecodeWarning } from "../../public-api/theme";
 import type {
   DashboardYieldCategory,
   PreferredTokenYieldsPerNetwork,
@@ -167,12 +168,21 @@ type WidgetConfigServiceValue = {
   readonly values: Stream.Stream<WidgetConfig>;
 };
 
+type NormalizedWidgetConfiguration = Readonly<{
+  config: WidgetConfig;
+  warnings: ReadonlyArray<ThemeDecodeWarning>;
+}>;
+
 const normalizeWidgetConfig = (
   hostConfiguration: SKAppProps,
   environment: WidgetConfigEnvironment
-): Result.Result<WidgetConfig, InvalidWidgetConfiguration> => {
+): Result.Result<NormalizedWidgetConfiguration, InvalidWidgetConfiguration> => {
   const borrowEnabled = hostConfiguration.borrowEnabled ?? false;
   const dashboardVariant = hostConfiguration.dashboardVariant ?? false;
+  const theme =
+    hostConfiguration.theme === undefined
+      ? undefined
+      : decodeTheme(hostConfiguration.theme);
   const yieldGrouping =
     hostConfiguration.yieldGrouping ?? (dashboardVariant ? "category" : "flat");
   const issues: InvalidWidgetConfigurationIssue[] = [];
@@ -254,63 +264,76 @@ const normalizeWidgetConfig = (
       }
     : undefined;
   return Result.succeed({
-    apiKey: hostConfiguration.apiKey,
-    baseUrl: hostConfiguration.baseUrl ?? environment.apiUrl,
-    borrowApiUrl: (hostConfiguration.borrowApiUrl ?? environment.borrowApiUrl)
-      .trim()
-      .replace(/\/+$/, ""),
-    borrowEnabled,
-    chainIconMapping: hostConfiguration.chainIconMapping,
-    chainModal:
-      hostConfiguration.variant === "zerion"
-        ? hostConfiguration.chainModal
-        : undefined,
-    customTranslations: hostConfiguration.customTranslations,
-    dashboardVariant,
-    dashboardYieldCategoryOrder,
-    disableAutoScrollToTop: hostConfiguration.disableAutoScrollToTop ?? false,
-    disableInitLayoutAnimation:
-      hostConfiguration.disableInitLayoutAnimation ?? false,
-    disableInjectedProviderDiscovery:
-      hostConfiguration.disableInjectedProviderDiscovery ?? false,
-    disableResizingInputFontSize:
-      hostConfiguration.disableResizingInputFontSize ?? false,
-    externalProviders,
-    hideAccountAndChainSelector:
-      hostConfiguration.hideAccountAndChainSelector ?? false,
-    hideChainSelector: hostConfiguration.hideChainSelector ?? false,
-    hideNetworkLogo: hostConfiguration.hideNetworkLogo ?? false,
-    initialChain: hostConfiguration.initialChain,
-    institutionalWallets: hostConfiguration.institutionalWallets ?? false,
-    isLedgerLive: environment.isLedgerLive,
-    isSafe: hostConfiguration.isSafe ?? false,
-    language: hostConfiguration.language,
-    mapWalletFn: hostConfiguration.mapWalletFn,
-    mapWalletListFn: hostConfiguration.mapWalletListFn,
-    mountAnimationStartsFinished:
-      dashboardVariant ||
-      (hostConfiguration.disableInitLayoutAnimation === undefined &&
-        environment.mountAnimationStartsFinishedByDefault),
-    onMountAnimationComplete: hostConfiguration.onMountAnimationComplete,
-    portalContainer: hostConfiguration.portalContainer,
-    preferredTokenYieldsPerNetwork,
-    theme: hostConfiguration.theme,
-    tokenIconMapping: hostConfiguration.tokenIconMapping,
-    tonConnectManifestUrl: hostConfiguration.tonConnectManifestUrl,
-    tracking: hostConfiguration.tracking,
-    validatorsConfig,
-    variant: hostConfiguration.variant ?? "default",
-    wagmi: {
-      __customConnectors__: environment.allowCustomConnectors
-        ? hostConfiguration.wagmi?.__customConnectors__
-        : undefined,
-      forceWalletConnectOnly:
-        hostConfiguration.wagmi?.forceWalletConnectOnly ?? false,
+    config: {
+      apiKey: hostConfiguration.apiKey,
+      baseUrl: hostConfiguration.baseUrl ?? environment.apiUrl,
+      borrowApiUrl: (hostConfiguration.borrowApiUrl ?? environment.borrowApiUrl)
+        .trim()
+        .replace(/\/+$/, ""),
+      borrowEnabled,
+      chainIconMapping: hostConfiguration.chainIconMapping,
+      chainModal:
+        hostConfiguration.variant === "zerion"
+          ? hostConfiguration.chainModal
+          : undefined,
+      customTranslations: hostConfiguration.customTranslations,
+      dashboardVariant,
+      dashboardYieldCategoryOrder,
+      disableAutoScrollToTop: hostConfiguration.disableAutoScrollToTop ?? false,
+      disableInitLayoutAnimation:
+        hostConfiguration.disableInitLayoutAnimation ?? false,
+      disableInjectedProviderDiscovery:
+        hostConfiguration.disableInjectedProviderDiscovery ?? false,
+      disableResizingInputFontSize:
+        hostConfiguration.disableResizingInputFontSize ?? false,
+      externalProviders,
+      hideAccountAndChainSelector:
+        hostConfiguration.hideAccountAndChainSelector ?? false,
+      hideChainSelector: hostConfiguration.hideChainSelector ?? false,
+      hideNetworkLogo: hostConfiguration.hideNetworkLogo ?? false,
+      initialChain: hostConfiguration.initialChain,
+      institutionalWallets: hostConfiguration.institutionalWallets ?? false,
+      isLedgerLive: environment.isLedgerLive,
+      isSafe: hostConfiguration.isSafe ?? false,
+      language: hostConfiguration.language,
+      mapWalletFn: hostConfiguration.mapWalletFn,
+      mapWalletListFn: hostConfiguration.mapWalletListFn,
+      mountAnimationStartsFinished:
+        dashboardVariant ||
+        (hostConfiguration.disableInitLayoutAnimation === undefined &&
+          environment.mountAnimationStartsFinishedByDefault),
+      onMountAnimationComplete: hostConfiguration.onMountAnimationComplete,
+      portalContainer: hostConfiguration.portalContainer,
+      preferredTokenYieldsPerNetwork,
+      theme: theme?.theme,
+      tokenIconMapping: hostConfiguration.tokenIconMapping,
+      tonConnectManifestUrl: hostConfiguration.tonConnectManifestUrl,
+      tracking: hostConfiguration.tracking,
+      validatorsConfig,
+      variant: hostConfiguration.variant ?? "default",
+      wagmi: {
+        __customConnectors__: environment.allowCustomConnectors
+          ? hostConfiguration.wagmi?.__customConnectors__
+          : undefined,
+        forceWalletConnectOnly:
+          hostConfiguration.wagmi?.forceWalletConnectOnly ?? false,
+      },
+      yieldGrouping,
+      yieldsApiUrl: hostConfiguration.yieldsApiUrl ?? environment.yieldsApiUrl,
     },
-    yieldGrouping,
-    yieldsApiUrl: hostConfiguration.yieldsApiUrl ?? environment.yieldsApiUrl,
+    warnings: theme?.warnings ?? [],
   });
 };
+
+const logThemeWarnings = (warnings: ReadonlyArray<ThemeDecodeWarning>) =>
+  warnings.length === 0
+    ? Effect.void
+    : Effect.logWarning("Invalid Host Configuration theme values ignored").pipe(
+        Effect.annotateLogs({
+          event: "invalid_widget_theme",
+          issues: warnings,
+        })
+      );
 
 export class WidgetConfigService extends Context.Service<
   WidgetConfigService,
@@ -347,7 +370,8 @@ export class WidgetConfigService extends Context.Service<
           return yield* initialResult.failure;
         }
 
-        const initial = initialResult.success;
+        yield* logThemeWarnings(initialResult.success.warnings);
+        const initial = initialResult.success.config;
         const state = yield* SubscriptionRef.make(initial);
         const updatePermit = yield* Semaphore.make(1);
         const current: WidgetConfigServiceValue["current"] =
@@ -378,7 +402,8 @@ export class WidgetConfigService extends Context.Service<
             } as const;
           }
 
-          yield* SubscriptionRef.set(state, nextResult.success);
+          yield* logThemeWarnings(nextResult.success.warnings);
+          yield* SubscriptionRef.set(state, nextResult.success.config);
           return { _tag: "Updated" } as const;
         }, updatePermit.withPermit);
 
