@@ -8,7 +8,7 @@ export const divider = recipe({
   }),
   variants: {
     variant: {
-      default: atoms({ background: "tabBorder" }),
+      default: atoms({ background: "backgroundMuted" }),
       utila: atoms({ background: "tabBorder" }),
     },
   },
@@ -27,7 +27,7 @@ export const verticalDivider = recipe({
     variant: {
       default: [
         atoms({
-          background: "tabBorder",
+          background: "backgroundMuted",
         }),
       ],
       utila: [
