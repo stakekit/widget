@@ -19,6 +19,7 @@
     "lint:ast": "ast-grep scan --error=no-suppress-all --error=unused-suppression packages/widget --color=never && pnpm run test:ast",
     "test:ast": "ast-grep test --skip-snapshot-tests --color=never",
     "test": "turbo run test",
+    "test:smoke": "pnpm --filter @stakekit/widget test:smoke",
     "format": "turbo run format",
     "clean": "turbo run clean",
     "prepare": "husky",

@@ -41,11 +41,18 @@ Root (all workspaces):
 - `pnpm check-hygiene` — architecture enforcement (see below). **Root only.**
 - `pnpm check` — lint + hygiene + test + build. Use before handing off a large change.
 - `pnpm build`, `pnpm test`, `pnpm format`.
+- `pnpm test:smoke` — widget `test:smoke`. Builds package, bundle, and types,
+  then runs `scripts/check-production-host-consumption.ts` against the built
+  `dist` in the Vite examples and Next.js production host. Requires a non-empty
+  `VITE_API_KEY` or `NEXT_PUBLIC_API_KEY`, or the same value in an example env
+  file. CI uses the `STAKEKIT_SMOKE_API_KEY` Actions secret. Separate from
+  `check`, `test`, and `test:changed`.
 
 Widget only (preferred for most tasks) — `pnpm --filter @stakekit/widget <script>`:
 
 - `lint` — Biome + `tsc`. `dev` — standalone dev site.
 - `test:unit` (Node), `test:dom` (jsdom), `test:browser` (Chromium).
+- `test:smoke` — `scripts/check-production-host-consumption.ts` against built `dist`.
 - `test:changed`, `test:changed:all` — affected tests; the latter includes Chromium.
 
 Test project is selected by filename: `*.browser.test.*`, `*.dom.test.*`,

@@ -54,6 +54,7 @@
     "test:changed": "vitest -c vite/vitest.config.ts run --project unit --project dom --changed",
     "test:changed:all": "vitest -c vite/vitest.config.ts run --changed",
     "test:changed:unit": "vitest -c vite/vitest.config.ts run --project unit --changed",
+    "test:smoke": "tsx scripts/check-production-host-consumption.ts --check-key && pnpm run clean && pnpm run build:package && pnpm run build:bundle && pnpm run build:types && tsx scripts/check-production-host-consumption.ts",
     "format": "biome check --write . --unsafe",
     "build:website": "vite -c vite/vite.config.website build",
     "build:package": "vite -c vite/vite.config.package.ts build",
