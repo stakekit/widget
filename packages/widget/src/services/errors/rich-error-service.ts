@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Stream, SubscriptionRef } from "effect";
+import { Context, Effect, Layer, SubscriptionRef } from "effect";
 import type { RichError } from "./rich-error";
 
 export type PresentableApiRequest = {
@@ -23,7 +23,6 @@ export class RichErrorService extends Context.Service<RichErrorService>()(
         });
 
       return {
-        changes: Stream.changes(SubscriptionRef.changes(current)),
         current,
         present,
         reset: SubscriptionRef.set(current, null),

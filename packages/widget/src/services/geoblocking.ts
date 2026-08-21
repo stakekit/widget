@@ -1,5 +1,12 @@
-import { Context, Effect, Layer, Stream, SubscriptionRef } from "effect";
-import type { GeolocationError } from "../generated/api/legacy-schema";
+import {
+  Context,
+  Effect,
+  Layer,
+  Option,
+  Schema,
+  Stream,
+  SubscriptionRef,
+} from "effect";
 
 type GeoBlockState =
   | false
@@ -9,11 +16,15 @@ type GeoBlockState =
       readonly tags: Set<string>;
     };
 
-const isGeoLocationError = (data: unknown): data is GeolocationError =>
-  typeof data === "object" &&
-  data !== null &&
-  "type" in data &&
-  data.type === "GEO_LOCATION";
+const GeoLocationError = Schema.StructWithRest(
+  Schema.Struct({
+    type: Schema.Literal("GEO_LOCATION"),
+    countryCode: Schema.optionalKey(Schema.String),
+    regionCode: Schema.optionalKey(Schema.String),
+    tags: Schema.optionalKey(Schema.Array(Schema.String)),
+  }),
+  [Schema.Record(Schema.String, Schema.Unknown)]
+);
 
 type GeoBlockServiceContract = {
   readonly observeResponse: (input: {
@@ -39,12 +50,15 @@ export class GeoBlockService extends Context.Service<
           readonly data: unknown;
           readonly status?: number;
         }) {
-          if (status !== 403 || !isGeoLocationError(data)) return;
+          const geoLocationError = Schema.decodeUnknownOption(GeoLocationError)(
+            data
+          ).pipe(Option.getOrNull);
+          if (status !== 403 || !geoLocationError) return;
 
           yield* SubscriptionRef.set(state, {
-            countryCode: data.countryCode ?? "",
-            regionCode: data.regionCode ?? "",
-            tags: new Set(data.tags ?? []),
+            countryCode: geoLocationError.countryCode ?? "",
+            regionCode: geoLocationError.regionCode ?? "",
+            tags: new Set(geoLocationError.tags ?? []),
           });
         }
       );

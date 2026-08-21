@@ -17,53 +17,36 @@ type ApiTransport = {
   readonly yield: YieldApi.YieldApi;
 };
 
-const configureClient = ({
-  apiKey,
-  baseUrl,
-  client,
-  geoBlock,
-}: {
-  readonly apiKey: string;
-  readonly baseUrl: string;
-  readonly client: HttpClient.HttpClient;
-  readonly geoBlock: GeoBlockService["Service"];
-}): HttpClient.HttpClient =>
-  client.pipe(
-    HttpClient.mapRequest(
-      flow(
-        HttpClientRequest.prependUrl(baseUrl),
-        HttpClientRequest.setHeader("X-API-KEY", apiKey),
-        HttpClientRequest.setHeader("X-Yield-Widget-Version", widgetVersion),
-        HttpClientRequest.acceptJson
-      )
-    ),
-    HttpClient.retryTransient({ times: 3 }),
-    HttpClient.tap((response) =>
-      Effect.gen(function* () {
-        if (response.status < 400) return;
-
-        const data = yield* Effect.orElseSucceed(
-          response.json,
-          () => undefined
-        );
-
-        yield* geoBlock.observeResponse({ data, status: response.status });
-      })
-    )
-  );
-
 const makeApiTransport = Effect.gen(function* () {
   const widgetConfig = yield* WidgetConfigService;
   const api = yield* widgetConfig.current;
   const httpClient = yield* HttpClient.HttpClient;
   const geoBlock = yield* GeoBlockService;
+
   const makeClient = (baseUrl: string) =>
-    configureClient({
-      apiKey: api.apiKey,
-      baseUrl,
-      client: httpClient,
-      geoBlock,
-    });
+    httpClient.pipe(
+      HttpClient.mapRequest(
+        flow(
+          HttpClientRequest.prependUrl(baseUrl),
+          HttpClientRequest.setHeader("X-API-KEY", api.apiKey),
+          HttpClientRequest.setHeader("X-Yield-Widget-Version", widgetVersion),
+          HttpClientRequest.acceptJson
+        )
+      ),
+      HttpClient.retryTransient({ times: 3 }),
+      HttpClient.tap((response) =>
+        Effect.gen(function* () {
+          if (response.status < 400) return;
+
+          const data = yield* Effect.orElseSucceed(
+            response.json,
+            () => undefined
+          );
+
+          yield* geoBlock.observeResponse({ data, status: response.status });
+        })
+      )
+    );
 
   return {
     borrow: api.borrowApiUrl
