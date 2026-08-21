@@ -2,7 +2,7 @@ import { Effect, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { applicationRouterRuntime } from "../../../app/runtime/application-router-runtime";
-import type { SKAppProps } from "../../../public-api/types";
+import type { SKHostConfiguration } from "../../../public-api/types";
 import {
   selectWidgetBootstrapSnapshot,
   WidgetConfigService,
@@ -37,7 +37,7 @@ export const widgetBootstrapSnapshotAtom = Atom.make((get) => {
 }).pipe(Atom.keepAlive, Atom.withLabel("widgetBootstrapSnapshotAtom"));
 
 export const updateWidgetConfigAtom = applicationRouterRuntime
-  .fn((hostConfiguration: SKAppProps, context) =>
+  .fn((hostConfiguration: SKHostConfiguration, context) =>
     context
       .result(widgetConfigServiceAtom)
       .pipe(Effect.flatMap((service) => service.update(hostConfiguration)))

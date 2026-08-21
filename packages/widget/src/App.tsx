@@ -2,7 +2,7 @@ import "@stakekit/rainbowkit/styles.css";
 import "./shared/styles/theme/global.css";
 import { useAtomValue } from "@effect/atom-react";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { type ComponentProps, useState } from "react";
+import { useState } from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router/dom";
 import { ApplicationRouteContentProvider } from "./app/composition/application-route-content";
@@ -23,7 +23,7 @@ import {
 } from "./features/widget-shell/composition";
 import { useUnderMaintenance } from "./features/widget-shell/index";
 import { UnderMaintenance } from "./features/widget-shell/views";
-import type { SKAppProps } from "./public-api/types";
+import type { SKAppProps, SKHostConfiguration } from "./public-api/types";
 import { isLedgerDappBrowserProvider } from "./services/wallet/browser-environment";
 import { preloadImages } from "./shared/assets/images";
 
@@ -70,32 +70,35 @@ const SKAppRouter = () => {
   );
 };
 
-const SKAppContent = (props: SKAppProps) => {
+const SKAppContent = ({ children, ...hostConfiguration }: SKAppProps) => {
   const [isLedgerDappBrowser] = useState(isLedgerDappBrowserProvider);
 
   return (
     <SKAtomRegistryProvider
-      hostConfiguration={props}
+      hostConfiguration={hostConfiguration}
       isLedgerLive={isLedgerDappBrowser}
       routes={applicationRoutes}
     >
       <SKAppRouter />
+      {children}
     </SKAtomRegistryProvider>
   );
 };
 
-export const SKApp = (props: SKAppProps) => (
+export const SKApp = ({ children, ...hostConfiguration }: SKAppProps) => (
   <WidgetInstanceReactBoundary>
-    <SKAppContent {...props} />
+    <SKAppContent {...hostConfiguration}>{children}</SKAppContent>
   </WidgetInstanceReactBoundary>
 );
 
-const BundledSKWidget = (props: SKAppProps) => <SKAppContent {...props} />;
+const BundledSKWidget = (props: SKHostConfiguration) => (
+  <SKAppContent {...props} />
+);
 
 export const renderSKWidget = ({
   container,
   ...rest
-}: ComponentProps<typeof SKApp> & {
+}: SKHostConfiguration & {
   container: Parameters<typeof ReactDOM.createRoot>[0];
 }) => {
   if (!rest.apiKey) throw new Error("API key is required");
@@ -114,7 +117,7 @@ export const renderSKWidget = ({
     render();
 
     return {
-      rerender: (newProps: SKAppProps) => {
+      rerender: (newProps: SKHostConfiguration) => {
         if (unmounted) return;
         currentProps = newProps;
         render();

@@ -1,4 +1,4 @@
-import type { SKAppProps, SKTheme } from "./types";
+import type { SKHostConfiguration, SKTheme } from "./types";
 
 export type {
   ActionMeta,
@@ -22,9 +22,9 @@ export {
 } from "./types";
 
 export declare const renderSKWidget: (
-  props: SKAppProps & { container: Element | DocumentFragment }
+  props: SKHostConfiguration & { container: Element | DocumentFragment }
 ) => {
-  rerender: (newProps: SKAppProps) => void;
+  rerender: (newProps: SKHostConfiguration) => void;
   unmount: () => void;
 };
 export declare const darkTheme: SKTheme;

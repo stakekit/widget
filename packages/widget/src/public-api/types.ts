@@ -654,10 +654,21 @@ type BorrowProviderSettings =
 
 export type SettingsProps = SettingsPropsBase & BorrowProviderSettings;
 
-export type SKAppProps = SettingsProps &
+/** Host Configuration passed into the Application Runtime (never React children). */
+export type SKHostConfiguration = SettingsProps &
   (VariantProps | { variant?: never; chainModal?: never });
 
-export type BundledSKWidgetProps = SKAppProps & {
+export type SKAppProps = SKHostConfiguration & {
+  /**
+   * Host chrome rendered beside the widget frame under the same Application
+   * Runtime registry and translation service. Outside `AppContainer`, so
+   * layout is not constrained by the widget chrome. `HelpModal` may be placed
+   * here without an extra provider.
+   */
+  children?: ReactNode;
+};
+
+export type BundledSKWidgetProps = SKHostConfiguration & {
   ref?: RefObject<{ rerender: (newProps: BundledSKWidgetProps) => void }>;
 };
 

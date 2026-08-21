@@ -24,7 +24,7 @@ import type {
   DashboardYieldCategory,
   PreferredTokenYieldsPerNetwork,
   SettingsProps,
-  SKAppProps,
+  SKHostConfiguration,
   VariantProps,
 } from "../../public-api/types";
 import { config } from "../../shared/config/widget-defaults";
@@ -163,7 +163,7 @@ type WidgetConfigUpdateOutcome =
 type WidgetConfigServiceValue = {
   readonly current: Effect.Effect<WidgetConfig>;
   readonly update: (
-    hostConfiguration: SKAppProps
+    hostConfiguration: SKHostConfiguration
   ) => Effect.Effect<WidgetConfigUpdateOutcome>;
   readonly values: Stream.Stream<WidgetConfig>;
 };
@@ -174,7 +174,7 @@ type NormalizedWidgetConfiguration = Readonly<{
 }>;
 
 const normalizeWidgetConfig = (
-  hostConfiguration: SKAppProps,
+  hostConfiguration: SKHostConfiguration,
   environment: WidgetConfigEnvironment
 ): Result.Result<NormalizedWidgetConfiguration, InvalidWidgetConfiguration> => {
   const borrowEnabled = hostConfiguration.borrowEnabled ?? false;
@@ -340,7 +340,7 @@ export class WidgetConfigService extends Context.Service<
   WidgetConfigServiceValue
 >()("stakekit/widget/WidgetConfigService") {
   static layer(
-    initialHostConfiguration: SKAppProps,
+    initialHostConfiguration: SKHostConfiguration,
     options: { readonly isLedgerLive?: boolean } = {}
   ) {
     return Layer.effect(
@@ -381,7 +381,7 @@ export class WidgetConfigService extends Context.Service<
             Stream.changesWith((previous, next) => Equal.equals(previous, next))
           );
         const update = Effect.fn("WidgetConfigService.update")(function* (
-          hostConfiguration: SKAppProps
+          hostConfiguration: SKHostConfiguration
         ) {
           const nextResult = normalizeWidgetConfig(
             hostConfiguration,

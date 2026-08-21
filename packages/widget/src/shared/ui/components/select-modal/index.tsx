@@ -25,6 +25,8 @@ import {
 type SelectModalWithoutStateProps = PropsWithChildren<
   {
     title?: string;
+    /** Accessible dialog name when `title` is omitted (VisuallyHidden). */
+    dialogTitle?: string;
     inputPlaceholder?: string;
     trigger?: ReactNode;
     onClose?: () => void;
@@ -74,6 +76,7 @@ const SelectModalWithoutState = ({
   children,
   trigger,
   title,
+  dialogTitle,
   onSearch,
   searchValue,
   inputPlaceholder,
@@ -122,7 +125,7 @@ const SelectModalWithoutState = ({
                       </Title>
                     ) : (
                       <VisuallyHiddenRoot asChild>
-                        <Title>Selection Modal</Title>
+                        <Title>{dialogTitle ?? "Selection Modal"}</Title>
                       </VisuallyHiddenRoot>
                     )}
 

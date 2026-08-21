@@ -2,8 +2,8 @@ import { RegistryProvider } from "@effect/atom-react";
 import { Layer } from "effect";
 import { useTranslation } from "react-i18next";
 import { describe, expect, it } from "vitest";
-import { WidgetTranslationProvider } from "../../src/app/composition/providers/widget-translation";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { WidgetTranslationProvider } from "../../src/features/preferences/composition";
 import {
   composeWidgetTranslationResources,
   createWidgetI18nInstance,

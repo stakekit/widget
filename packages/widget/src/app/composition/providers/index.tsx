@@ -1,5 +1,6 @@
 import type { ComponentProps, PropsWithChildren } from "react";
 import { StrictMode } from "react";
+import { WidgetTranslationProvider } from "../../../features/preferences/composition";
 import { WagmiConfigProvider } from "../../../features/wallet/composition";
 import { CurrentLayoutProvider } from "../../../features/widget-shell/composition";
 import { RootElementProvider } from "../../../shared/react/root-element";
@@ -8,7 +9,6 @@ import { ThirdPartyQueryClientProvider } from "./query-client";
 import { RainbowProvider } from "./rainbow";
 import { ThemeWrapper } from "./theme-wrapper";
 import { WidgetPresentationAdapter } from "./widget-presentation";
-import { WidgetTranslationProvider } from "./widget-translation";
 
 export const Providers = ({
   children,

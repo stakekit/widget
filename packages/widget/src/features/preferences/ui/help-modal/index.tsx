@@ -14,6 +14,7 @@ import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { useTrackEvent } from "../../../tracking/index";
 import type { useGeoBlock } from "../../react/use-geo-block";
+import { WidgetTranslationGate } from "../../react/widget-translation-gate";
 import { container, imageStyle } from "./style.css";
 
 type ModalType =
@@ -31,7 +32,7 @@ type HelpModalProps = {
   customTrigger?: ReactNode;
 };
 
-export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
+const HelpModalContent = ({ modal, customTrigger }: HelpModalProps) => {
   const { t, i18n } = useTranslation();
 
   const getContent = (
@@ -191,7 +192,8 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
     }
   };
 
-  // HelpModal can be used out of default Widget context
+  // HelpModal can be used as SKApp children (outside the widget frame) under the
+  // same Application Runtime registry; tracking uses that tree's config.
   const trackEvent = useTrackEvent();
 
   const { description, image, title, link, button } = getContent(modal);
@@ -208,33 +210,31 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
     reportOpened();
   }, [isGeoBlock]);
 
-  const selectModalProps = useMemo<SelectModalProps>(
-    () =>
-      modal.type === "geoBlock"
-        ? {
-            state: {
-              isOpen: true,
-              setOpen: modal.onClose,
-            },
-          }
-        : {
-            onOpen: () => trackEvent("helpModalOpened", { modal: title }),
-            trigger: (
-              <Trigger asChild={!!customTrigger}>
-                {customTrigger ?? (
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <HelpIcon />
-                  </Box>
-                )}
-              </Trigger>
-            ),
-          },
-    [customTrigger, modal, title, trackEvent]
-  );
+  const selectModalProps = useMemo<SelectModalProps>(() => {
+    if (modal.type === "geoBlock") {
+      return {
+        dialogTitle: title,
+        state: {
+          isOpen: true,
+          setOpen: modal.onClose,
+        },
+      };
+    }
+
+    return {
+      dialogTitle: title,
+      onOpen: () => trackEvent("helpModalOpened", { modal: title }),
+      trigger: (
+        <Trigger asChild={!!customTrigger}>
+          {customTrigger ?? (
+            <Box display="flex" alignItems="center" justifyContent="center">
+              <HelpIcon />
+            </Box>
+          )}
+        </Trigger>
+      ),
+    };
+  }, [customTrigger, modal, title, trackEvent]);
 
   return (
     <SelectModal {...selectModalProps}>
@@ -272,3 +272,9 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
     </SelectModal>
   );
 };
+
+export const HelpModal = (props: HelpModalProps) => (
+  <WidgetTranslationGate>
+    <HelpModalContent {...props} />
+  </WidgetTranslationGate>
+);

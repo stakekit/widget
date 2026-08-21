@@ -10,6 +10,7 @@ import type {
   SKWallet as BundledWallet,
   SKAppProps as PackageSKAppProps,
   SKWallet as PackageWallet,
+  SKHostConfiguration,
 } from "../../src/public-api/types";
 
 const genericWallet: PackageWallet = {
@@ -67,7 +68,7 @@ describe("package and bundled wallet entry contracts", () => {
     expectTypeOf(packageProps).toMatchTypeOf<BundledSKWidgetProps>();
     expectTypeOf(bundledRenderProps).toMatchTypeOf<BundledRenderProps>();
     expectTypeOf<BundledController>().toEqualTypeOf<{
-      rerender: (newProps: PackageSKAppProps) => void;
+      rerender: (newProps: SKHostConfiguration) => void;
       unmount: () => void;
     }>();
   });

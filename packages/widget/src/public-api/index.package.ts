@@ -1,12 +1,7 @@
 import type { ChainGroup, Wallet, WalletList } from "@stakekit/rainbowkit";
-import type { PropsWithChildren, ReactElement } from "react";
+import type { ReactElement } from "react";
 import type { CreateConnectorFn } from "wagmi";
-import type {
-  HelpModalProps,
-  SKAppProps,
-  SKTheme,
-  TrackingConfig,
-} from "./types";
+import type { HelpModalProps, SKAppProps, SKTheme } from "./types";
 
 export type {
   ActionMeta,
@@ -32,12 +27,6 @@ export {
 export declare const SKApp: (props: SKAppProps) => ReactElement;
 export declare const HelpModal: (props: HelpModalProps) => ReactElement;
 export declare const evmChainGroup: ChainGroup;
-export declare const TrackingContextProvider: (
-  props: PropsWithChildren<{
-    tracking: TrackingConfig | undefined;
-    variantTracking?: TrackingConfig;
-  }>
-) => ReactElement;
 export declare const createWallet: (
   params: Pick<
     Wallet,
