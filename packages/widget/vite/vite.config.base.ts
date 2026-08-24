@@ -1,7 +1,6 @@
 import path from "node:path";
-import babel from "@rolldown/plugin-babel";
 import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
-import react, { reactCompilerPreset } from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react";
 import autoprefixer from "autoprefixer";
 import merge from "lodash.merge";
 import macros from "unplugin-macros/vite";
@@ -60,10 +59,10 @@ export const getConfig = (
         ...(options?.plugins ?? []),
         nodePolyfills({ include: ["buffer", "crypto"] }),
         macros(),
-        react(),
-        babel({
-          presets: [reactCompilerPreset()],
-          // Skip large non-React modules; they trip Babel's 500KB styling note and gain nothing from React Compiler.
+        react({
+          compiler: true,
+          // Skip large generated and data-only modules that gain nothing from
+          // React Compiler.
           exclude: [
             /[/\\]node_modules[/\\]|^\0rolldown\/runtime\.js$/,
             /[/\\]src[/\\]generated[/\\]/,
