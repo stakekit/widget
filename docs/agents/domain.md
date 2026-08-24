@@ -1,35 +1,20 @@
-# Domain Docs
+# Domain documentation
 
-How the engineering skills should consume this repo's domain documentation when exploring the codebase.
+Read `CONTEXT.md` before naming or changing domain concepts. Read only the ADRs
+in `docs/adr/` that constrain the area being changed.
 
-## Before exploring, read these
+`CONTEXT.md` is the vocabulary source of truth. Use its terms in code, tests,
+issues, and proposals; update an existing definition when the owned concept
+changes.
 
-- **`CONTEXT.md`** at the repo root.
-- **`docs/adr/`** — read ADRs that touch the area you're about to work in.
+ADRs are a living set of current, durable decisions—not a timeline. Update a
+decision in place when its rationale still matters, or remove it when it no
+longer constrains the code. Git history preserves earlier states.
 
-If these files don't exist, **proceed silently**. Don't flag their absence or suggest creating them upfront. The `/domain-modeling` skill creates them lazily when terms or decisions are resolved.
+A new ADR is appropriate only for a hard-to-reverse, surprising decision with a
+real tradeoff, and requires human approval. Other behavior belongs in code and
+tests. Creating any other durable document or document category also requires
+human approval.
 
-## File structure
-
-This repo uses a single-context layout:
-
-```
-/
-├── CONTEXT.md
-├── docs/adr/
-│   ├── 0001-example-decision.md
-│   └── 0002-another-decision.md
-└── packages/
-```
-
-## Use the glossary's vocabulary
-
-When output names a domain concept—in an issue title, refactor proposal, hypothesis, or test name—use the term defined in `CONTEXT.md`. Don't drift to synonyms the glossary explicitly avoids.
-
-If a needed concept isn't in the glossary, reconsider whether the language belongs to the project or note the genuine gap for `/domain-modeling`.
-
-## Flag ADR conflicts
-
-If output contradicts an existing ADR, surface it explicitly rather than silently overriding:
-
-> _Contradicts ADR-0007 (example decision) — but worth reopening because…_
+If a proposed change conflicts with a current ADR, surface that conflict before
+implementation rather than silently overriding it.

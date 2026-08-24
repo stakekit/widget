@@ -1,793 +1,113 @@
-# Widget
+# StakeKit Widget
 
-Widget is a component that you can embed in your website with few lines of code. It allows your users to stake their crypto assets and earn rewards.
+StakeKit Widget is an embeddable React interface for staking, yield, and
+borrowing journeys. It is published as both a React component and an imperative
+browser renderer.
 
-Widget is mainly built as a React component and can be easily added in your application by importing it. There is also an option to use fully bundled widget component which can be added in any javascript library. If your application is already using React, using it as a React component will reduce bundle size of your application. If not, there is option for fully bundled component.
+## Install
 
-## Development
-
-Create `.env.development.local` file and add variables from `.env.example`. For production builds, add `.env.production.local` file
-
-## Installation
-
-To install Widget:
-
-```bash
-npm install @stakekit/widget
-
-yarn add @stakekit/widget
-
+```sh
 pnpm add @stakekit/widget
 ```
 
-## Usage
+React 18 or newer is required when using the component entrypoint.
 
-To use Widget, first you'll need API key from Yield.xyz.
-
-### Supported widget instances
-
-Only one StakeKit Widget may be mounted in a browser document at a time. Unmounting it and later mounting another is supported; concurrently mounted Widget Instances are not supported.
-
-## React component usage
-
-After you get the API key, you can import styles and widget component:
+## React
 
 ```tsx
-import "@stakekit/widget/package/css";
-import { SKApp, darkTheme } from "@stakekit/widget";
+import "@stakekit/widget/style.css";
+import { darkTheme, SKApp } from "@stakekit/widget";
 
-const App = () => {
-  return <SKApp apiKey="your-api-key" theme={darkTheme} />;
-};
+export function Staking() {
+  return <SKApp apiKey={import.meta.env.VITE_API_KEY} theme={darkTheme} />;
+}
 ```
 
-## Bundled component usage
+In Next.js, render `SKApp` from a client component. See the
+[`with-vite`](packages/examples/with-vite) and
+[`with-nextjs`](packages/examples/with-nextjs) examples for complete hosts.
+
+## Browser renderer
+
+Use the bundled entrypoint when the host does not render React components:
 
 ```ts
-import "@stakekit/widget/bundle/css";
-import { renderSKWidget, lightTheme, darkTheme } from "@stakekit/widget/bundle";
+import "@stakekit/widget/style.css";
+import { darkTheme, renderSKWidget } from "@stakekit/widget/bundle";
 
-const { rerender, unmount } = renderSKWidget({
-  container: document.getElementById("sk_widget_container")!,
-  apiKey: "your-api-key",
-  theme: lightTheme,
-});
-
-rerender({
+const widget = renderSKWidget({
+  container: document.querySelector("#stakekit-widget")!,
   apiKey: "your-api-key",
   theme: darkTheme,
-}) // pass new props here
-
-unmount() // release the document so another Widget Instance may be mounted
-```
-
-### Settings lifecycle
-
-Most settings may be updated through React props or the bundled renderer's
-`rerender` method. The following mount-time settings instead identify one
-Widget generation:
-
-- `apiKey`
-- `baseUrl`
-- `borrowApiUrl`
-- `yieldsApiUrl`
-- `borrowEnabled`
-
-Changing any of them while the Widget remains mounted is rejected as an
-Application Runtime invariant violation. Unmount and remount the Widget to
-apply a different identity and create fresh state, workflows, resources, and
-router history.
-
-Wallet-topology settings are also captured during bootstrap, but they do not
-trigger this reset. Changing them after mount is unsupported and may be rejected
-or ignored.
-
-`borrowEnabled` defaults to `false`. Enabling it requires
-`dashboardVariant: true` and category yield grouping; incompatible settings are
-rejected during configuration normalization.
-
-## Params
-
-To open the widget on a specific yield opportunity you need to pass the parameter yieldId as a prop to the component. Below is are examples that will open the widget on theethereum-eth-lido-staking. All possible yieldIds can be retrieved from the /v1/stake/opportunities endpoint
-
-### React component
-
-```tsx
-import "@stakekit/widget/package/css";
-import { SKApp, darkTheme } from "@stakekit/widget";
-
-const App = () => {
-  return (
-    <SKApp
-      apiKey="your-api-key"
-      theme={darkTheme}
-      yieldId="ethereum-eth-lido-staking"
-    />
-  );
-};
-```
-
-### Options
-
-```tsx
-type SettingsProps = {
-  apiKey: string;
-  baseUrl?: string;
-  borrowApiUrl?: string;
-  yieldsApiUrl?: string;
-  theme?: ThemeWrapperTheme;
-  tracking?: {
-    trackEvent?: (event: TrackEventVal, properties?: Properties) => void;
-    trackPageView?: (page: TrackPageVal, properties?: Properties) => void;
-  };
-  onMountAnimationComplete?: () => void;
-  externalProviders?: SKExternalProviders;
-  hideNetworkLogo?: boolean;
-  disableInitLayoutAnimation?: boolean;
-  disableResizingInputFontSize?: boolean;
-  disableAutoScrollToTop?: boolean;
-  language?: Languages;
-  disableInjectedProviderDiscovery?: boolean;
-  mapWalletFn?: Parameters<BuildWagmiConfig>[0]["mapWalletFn"];
-  mapWalletListFn?: Parameters<BuildWagmiConfig>[0]["mapWalletListFn"];
-  customTranslations?: RecursivePartial<typeof localResources>;
-  tokensForEnabledYieldsOnly?: boolean;
-  validatorsConfig?: {
-    [Key in SupportedSKChains | "*"]?: {
-      allowed?: string[];
-      blocked?: string[];
-      preferred?: string[];
-      mergePreferredWithDefault?: boolean;
-      preferredOnly?: boolean;
-    };
-  };
-  tokenIconMapping?:
-    | Record<TokenDto["symbol"], string>
-    | ((token: TokenDto) => string);
-  chainIconMapping?:
-    | Record<SupportedSKChains, string>
-    | ((chain: SupportedSKChains) => string);
-  borrowEnabled?: boolean;
-  dashboardVariant?: boolean;
-  dashboardYieldCategoryOrder?: DashboardYieldCategory[];
-  hideChainSelector?: boolean;
-  hideAccountAndChainSelector?: boolean;
-  preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork;
-  portalContainer?: HTMLElement;
-};
-```
-
-Validator policy may be configured for a specific network or with `"*"` as a
-fallback. EVM validator addresses are matched case-insensitively; non-EVM
-addresses are matched exactly. `blocked` takes precedence over `allowed` and
-`preferred`, while `preferredOnly` restricts selection to preferred validators.
-Policy changes revalidate the current Earn-page selection before a transaction
-flow starts without changing the validator address received from the API.
-
-### Dashboard category tab order
-
-For the dashboard variant, you can reorder the `RWA`, `DeFi`, and `Stake`
-category tabs. `Manage` and `Activity` stay fixed after those category tabs.
-
-```tsx
-import "@stakekit/widget/package/css";
-import { DashboardYieldCategory, SKApp, darkTheme } from "@stakekit/widget";
-
-const App = () => {
-  return (
-    <SKApp
-      apiKey="your-api-key"
-      dashboardVariant
-      dashboardYieldCategoryOrder={[
-        DashboardYieldCategory.Stake,
-        DashboardYieldCategory.DeFi,
-        DashboardYieldCategory.RWA,
-      ]}
-      theme={darkTheme}
-    />
-  );
-};
-```
-
-### Override Icons
-
-You can override token or chain icons in widget
-
-```tsx
-tokenIconMapping?:
-  | Record<TokenDto["symbol"], string>
-  | ((token: TokenDto) => string);
-chainIconMapping?:
-  | Record<SupportedSKChains, string>
-  | ((chain: SupportedSKChains) => string);
-```
-
-### Wallet connectors mapping
-
-You can customize list of displayed wallet connectors.
-
-```tsx
-import { createWallet } from '@stakekit/widget'
-
-mapWalletListFn: (walletList) => [
-  {
-    groupName: "Primary",
-    wallets: [
-      createWallet({
-        id: "foo-bar",
-        name: "Foo Bar",
-        iconUrl: "https://foo-bar.com/icon.png",
-        iconBackground: "#fff",
-        downloadUrls: {
-          desktop: "https://foo-bar.com/download",
-          mobile: "https://foo-bar.com/download",
-          browserExtension: "https://foo-bar.com/download",
-        },
-        createConnector: fooBarCreateConnector(),
-      }),
-    ],
-  },
-]
-```
-
-After this is done, you can start using the widget.
-
-## Style customization
-
-You can customize look of widget by overriding `darkTheme` or `lightTheme`, or providing your own theme and passing it to Widget. If theme is not provided, widget will use default `lightTheme`.
-
-```tsx
-import "@stakekit/widget/package/css";
-import { SKApp } from "@stakekit/widget";
-
-const App = () => {
-  return (
-    <SKApp
-      apiKey="your-api-key"
-      theme={{
-        font: { body: '"IBM Plex Mono", monospace' },
-        color: {
-          primaryButtonBackground: "#8323fd",
-          primaryButtonActiveOutline: "#8323fd",
-          primaryButtonOutline: "#8323fd",
-        },
-        borderRadius: { primaryButton: "0", widgetBorderRadius: "10px" },
-      }}
-    />
-  );
-};
-```
-
-```tsx
-import "@stakekit/widget/package/css";
-import { SKApp, darkTheme } from "@stakekit/widget";
-
-const App = () => {
-  return (
-    <SKApp
-      apiKey="your-api-key"
-      theme={{
-        ...darkTheme,
-        borderRadius: { ...darkTheme.borderRadius, widgetBorderRadius: "10px" },
-      }}
-    />
-  );
-};
-```
-
-#### Theme properties:
-
-```ts
-{
-  color: {
-      white: string;
-      black: string;
-      transparent: string;
-      primary: string;
-      accent: string;
-      disabled: string;
-      text: string;
-      textMuted: string;
-      textDanger: string;
-      background: string;
-      backgroundMuted: string;
-      tokenSelectBackground: string;
-      tokenSelectHoverBackground: string;
-      tokenSelect: string;
-      skeletonLoaderBase: string;
-      skeletonLoaderHighlight: string;
-      tabBorder: string;
-      stakeSectionBackground: string;
-      dropdownBackground: string;
-      selectValidatorMultiSelectedBackground: string;
-      selectValidatorMultiDefaultBackground: string;
-      warningBoxBackground: string;
-      positionsSectionBackgroundColor: string;
-      positionsSectionBorderColor: string;
-      positionsSectionDividerColor: string;
-      positionsClaimRewardsBackground: string;
-      positionsActionRequiredBackground: string;
-      positionsPendingBackground: string;
-      modalOverlayBackground: string;
-      modalBodyBackground: string;
-      tooltipBackground: string;
-      primaryButtonColor: string;
-      primaryButtonBackground: string;
-      primaryButtonOutline: string;
-      primaryButtonHoverColor: string;
-      primaryButtonHoverBackground: string;
-      primaryButtonHoverOutline: string;
-      primaryButtonActiveColor: string;
-      primaryButtonActiveBackground: string;
-      primaryButtonActiveOutline: string;
-      secondaryButtonColor: string;
-      secondaryButtonBackground: string;
-      secondaryButtonOutline: string;
-      secondaryButtonHoverColor: string;
-      secondaryButtonHoverBackground: string;
-      secondaryButtonHoverOutline: string;
-      secondaryButtonActiveColor: string;
-      secondaryButtonActiveBackground: string;
-      secondaryButtonActiveOutline: string;
-      smallButtonColor: string;
-      smallButtonBackground: string;
-      smallButtonOutline: string;
-      smallButtonHoverColor: string;
-      smallButtonHoverBackground: string;
-      smallButtonHoverOutline: string;
-      smallButtonActiveColor: string;
-      smallButtonActiveBackground: string;
-      smallButtonActiveOutline: string;
-      smallLightButtonColor: string;
-      smallLightButtonBackground: string;
-      smallLightButtonOutline: string;
-      smallLightButtonHoverColor: string;
-      smallLightButtonHoverBackground: string;
-      smallLightButtonHoverOutline: string;
-      smallLightButtonActiveColor: string;
-      smallLightButtonActiveBackground: string;
-      smallLightButtonActiveOutline: string;
-      disabledButtonColor: string;
-      disabledButtonBackground: string;
-      disabledButtonOutline: string;
-      disabledButtonHoverColor: string;
-      disabledButtonHoverBackground: string;
-      disabledButtonHoverOutline: string;
-      disabledButtonActiveColor: string;
-      disabledButtonActiveBackground: string;
-      disabledButtonActiveOutline: string;
-  } & {
-      connectKit: {
-            accentColor: string;
-            accentColorForeground: string;
-            actionButtonBorder: string;
-            actionButtonBorderMobile: string;
-            actionButtonSecondaryBackground: string;
-            closeButton: string;
-            closeButtonBackground: string;
-            connectButtonBackground: string;
-            connectButtonBackgroundError: string;
-            connectButtonInnerBackground: string;
-            connectButtonText: string;
-            connectButtonTextError: string;
-            connectionIndicator: string;
-            downloadBottomCardBackground: string;
-            downloadTopCardBackground: string;
-            error: string;
-            generalBorder: string;
-            generalBorderDim: string;
-            menuItemBackground: string;
-            modalBackdrop: string;
-            modalBackground: string;
-            modalBorder: string;
-            modalText: string;
-            modalTextDim: string;
-            modalTextSecondary: string;
-            profileAction: string;
-            profileActionHover: string;
-            profileForeground: string;
-            selectedOptionBorder: string;
-            standby: string;
-        };
-  };
-  fontSize: {
-      xs: string;
-      sm: string;
-      md: string;
-      lg: string;
-      lgx: string;
-      xl: string;
-      "2xl": string;
-      "3xl": string;
-      "4xl": string;
-      "5xl": string;
-      "6xl": string;
-  };
-  letterSpacing: {
-      tighter: string;
-      tight: string;
-      normal: string;
-      wide: string;
-      wider: string;
-      widest: string;
-  };
-  lineHeight: {
-      none: string;
-      shorter: string;
-      short: string;
-      base: string;
-      tall: string;
-      taller: string;
-      xs: string;
-      sm: string;
-      md: string;
-      lg: string;
-      xl: string;
-      "2xl": string;
-      "3xl": string;
-      "4xl": string;
-      "5xl": string;
-      "6xl": string;
-  };
-  fontWeight: {
-      normal: string;
-      medium: string;
-      semibold: string;
-      bold: string;
-      extrabold: string;
-      modalHeading: string;
-      tokenSelect: string;
-      primaryButton: string;
-      secondaryButton: string;
-  };
-  borderRadius: {
-      baseContract: {
-          none: string;
-          sm: string;
-          base: string;
-          md: string;
-          lg: string;
-          xl: string;
-          "2xl": string;
-          "3xl": string;
-          full: string;
-          half: string;
-          widgetBorderRadius: string;
-          primaryButton: string;
-          secondaryButton: string;
-          smallButton: string;
-      };
-      connectKit: {
-            actionButton: string;
-            connectButton: string;
-            menuButton: string;
-            modal: string;
-            modalMobile: string;
-        };
-  };
-  space: {
-      full: string;
-      unset: string;
-      auto: string;
-      "0": string;
-      "1": string;
-      "2": string;
-      "3": string;
-      "4": string;
-      "5": string;
-      "6": string;
-      "7": string;
-      "8": string;
-      "9": string;
-      "10": string;
-      "12": string;
-      "14": string;
-      "16": string;
-      "20": string;
-      "24": string;
-      "28": string;
-      "32": string;
-      "36": string;
-      "40": string;
-      "44": string;
-      "48": string;
-      px: string;
-      buttonMinHeight: string;
-  };
-  heading: {
-      h1: {
-          mobile: {
-              fontSize: string;
-          };
-          tablet: {
-              fontSize: string;
-          };
-      };
-      h2: {
-          mobile: {
-              fontSize: string;
-          };
-          tablet: {
-              fontSize: string;
-          };
-      };
-      h3: {
-          mobile: {
-              fontSize: string;
-          };
-          tablet: {
-              fontSize: string;
-          };
-      };
-      h4: {
-          mobile: {
-              fontSize: string;
-          };
-          tablet: {
-              fontSize: string;
-          };
-      };
-  };
-  text: {
-      small: {
-          mobile: {
-              fontSize: string;
-          };
-          tablet: {
-              fontSize: string;
-          };
-      };
-      large: {
-          mobile: {
-              fontSize: string;
-          };
-          tablet: {
-              fontSize: string;
-          };
-      };
-      medium: {
-          mobile: {
-              fontSize: string;
-          };
-          tablet: {
-              fontSize: string;
-          };
-      };
-  };
-  zIndices: {
-      hide: string;
-      auto: string;
-      simple: string;
-      base: string;
-      docked: string;
-      dropdown: string;
-      sticky: string;
-      banner: string;
-      overlay: string;
-      modal: string;
-      skipLink: string;
-  };
-  font: {
-      body: string;
-  };
-}
-```
-
-### Custom provider
-
-Optionally, you can pass externalProviders property to the widget which will be used to connect to the wallet.
-
-```ts
- type SKExternalProviders = {
-  currentChain?: SupportedSKChainIds;
-  currentAddress: string;
-  initToken?: `${TokenDto["network"]}-${TokenDto["address"]}`;
-  supportedChainIds?: SupportedSKChainIds[];
-  type: "generic";
-  provider: SKWallet;
-};
-
-type SupportedSKChainIds =
-  | EvmChainIds
-  | SubstrateChainIds
-  | MiscChainIds;
-
-enum EvmChainIds {
-  Ethereum = 1,
-  Polygon = 137,
-  Optimism = 10,
-  Arbitrum = 42_161,
-  AvalancheC = 43_114,
-  Celo = 42_220,
-  Harmony = 1_666_600_000,
-  Viction = 88,
-  Binance = 56,
-  Base = 8453,
-  Linea = 59_144,
-  Core = 1116,
-  Sonic = 146,
-  EthereumHolesky = 17000,
-  EthereumGoerli = 5,
-}
-
-enum SubstrateChainIds {
-  Polkadot = 9999,
-}
-
-enum MiscChainIds {
-  Near = 397,
-  Tezos = 1729,
-  Solana = 501,
-  Tron = 79,
-  Ton = 3412,
-}
-
-type EVMTx = {
-  type: "evm";
-  tx: DecodedEVMTransaction;
-};
-
-type SolanaTx = {
-  type: "solana";
-  tx: DecodedSolanaTransaction;
-};
-
-type TonTx = {
-  type: "ton";
-  tx: DecodedTonTransaction;
-};
-
-type TronTx = {
-  type: "tron";
-  tx: DecodedTronTransaction;
-};
-
-type SKTx = EVMTx | SolanaTx | TonTx | TronTx;
-
-type ActionMeta = {
-  actionId: ActionDto["id"];
-  actionType: ActionDto["type"];
-  amount: ActionDto["amount"];
-  inputToken: ActionDto["inputToken"];
-  providersDetails: {
-    name: string;
-    address: string | undefined;
-    rewardRate: number | undefined;
-    rewardType: RewardTypes;
-    website: string | undefined;
-    logo: string | undefined;
-  }[];
-};
-
-type SKTxMeta = ActionMeta & {
-  txId: TransactionDto["id"];
-  txType: TransactionDto["type"];
-};
-
-type SKWallet = {
-  signMessage: (message: string) => Promise<string>;
-  switchChain: (chainId: number) => Promise<void>;
-  getTransactionReceipt?(txHash: string): Promise<{ transactionHash?: string }>;
-  sendTransaction(
-    tx: SKTx,
-    txMeta: SKTxMeta
-  ): Promise<
-    | string
-    | { type: "success"; txHash: string }
-    | { type: "error"; error: string }
-  >;
-};
-```
-
-### Tracking
-
-Widget component provides `tracking` prop for analytics to track user actions and page views
-
-```tsx
-import "@stakekit/widget/package/css";
-import { SKApp, darkTheme } from "@stakekit/widget";
-
-const App = () => {
-  return (
-    <SKApp
-      apiKey="your-api-key"
-      theme={darkTheme}
-      tracking={{
-        trackEvent: (event, props) => {
-          console.log(event, props);
-        },
-        trackPageView: (event, props) => {
-          console.log(event, props);
-        },
-      }}
-    />
-  );
-};
-```
-
-## React Native wallets usage
-
-To use Widget with your wallets managed provider, you can use utility hook to get prepared props and pass them to `WebView` component from `react-native-webview`. Using widget with injected provider skips connection step.
-
-First, install package:
-
-```bash
-npm install @stakekit/use-inject-provider
-```
-
-or
-
-```bash
-yarn add @stakekit/use-inject-provider
-```
-
-or
-
-```bash
-pnpm add @stakekit/use-inject-provider
-```
-
-After that, pass wallets managed EIP-1193 provider and web-views ref to `useInjectProvider`, and you'll receive `injectedJavaScript` and `onMessage` props that you need to pass to `WebView` component.
-
-Example:
-
-```tsx
-import React, { useRef } from "react";
-import { StyleSheet } from "react-native";
-import WebView from "react-native-webview";
-import { useInjectProvider } from "@stakekit/use-inject-provider";
-
-// Some EIP1193Provider thats managed by wallet
-class Provider {
-  async request(args) {
-    switch (args.method) {
-      case "eth_accounts":
-      case "eth_requestAccounts": {
-        // get accounts from your wallet
-        // ...
-        return ["0xe455036e2f3a26df7014b7dbf6cedbbf81433478"];
-      }
-
-      case "eth_chainId": {
-        // get current chain id
-        return "1";
-      }
-
-      case "eth_sendTransaction": {
-        // send transaction and return transaction hash
-        // ...
-        return "some_transaction_hash";
-      }
-
-      default:
-        throw new Error("unhandled method");
-    }
-  }
-}
-
-const provider = new Provider();
-
-export const WebViewStake = () => {
-  const webViewRef = useRef<WebView>(null);
-
-  const { injectedJavaScript, onMessage } = useInjectProvider({
-    webViewRef,
-    provider,
-  });
-
-  return (
-    <WebView
-      ref={webViewRef}
-      source={{ uri: `${WIDGET_URL}/?api_key=${YOUR_API_KEY}` }}
-      onMessage={onMessage}
-      injectedJavaScript={injectedJavaScript}
-      style={styles.container}
-      cacheEnabled={false}
-    />
-  );
-};
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
 });
+
+widget.rerender({ apiKey: "your-api-key", theme: darkTheme });
+widget.unmount();
 ```
+
+Only one Widget Instance may be mounted in a browser document at a time.
+Unmounting it before mounting another instance is supported.
+
+## Configuration
+
+`SKAppProps` and `BundledSKWidgetProps` are the source of truth for supported
+configuration. Import those types from the same entrypoint as the integration:
+
+```ts
+import type { SKAppProps } from "@stakekit/widget";
+import type { BundledSKWidgetProps } from "@stakekit/widget/bundle";
+```
+
+Common options include:
+
+- API endpoints and the required `apiKey`
+- `lightTheme`, `darkTheme`, or a custom `SKTheme`
+- classic or dashboard layout configuration
+- initial chain and yield preferences
+- translations, icon mappings, and wallet presentation
+- external wallet providers and borrowing support
+- tracking callbacks
+
+Configuration passed after mount is normalized and becomes live where the
+running widget can safely consume it. Wallet topology—connector mode, provider
+presence, connector construction, and related wallet setup—is fixed during
+bootstrap; remount the widget to change it.
+
+The package exports the supported chain constants, dashboard yield categories,
+wallet types, transaction metadata types, themes, and `createWallet`. Prefer
+those exports over copying their shapes into host code.
+
+## Styling
+
+Import `@stakekit/widget/style.css` once. Start with `lightTheme` or `darkTheme`
+and pass a partial custom theme when necessary:
+
+```tsx
+import { darkTheme, type SKTheme, SKApp } from "@stakekit/widget";
+
+const theme: SKTheme = {
+  ...darkTheme,
+  color: {
+    ...darkTheme.color,
+    primaryButtonBackground: "#6d5dfc",
+  },
+};
+
+<SKApp apiKey="your-api-key" theme={theme} />;
+```
+
+Use the exported `SKTheme` type as the current contract rather than maintaining
+a handwritten list of theme tokens.
+
+## Development
+
+This repository uses the pnpm version pinned by mise:
+
+```sh
+mise exec -- pnpm install
+mise exec -- pnpm dev
+```
+
+Useful checks are `mise exec -- pnpm lint`, `mise exec -- pnpm test`, and
+`mise exec -- pnpm check`. Contributor workflow and codebase conventions live
+in [`AGENTS.md`](AGENTS.md).

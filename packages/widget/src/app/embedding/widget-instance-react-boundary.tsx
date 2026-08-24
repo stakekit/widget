@@ -8,8 +8,8 @@ import {
 import { acquireWidgetInstanceClaim } from "./widget-instance-claim";
 
 /**
- * ADR-0004 reviewed React lifecycle boundary. The non-rendering template
- * discovers the actual mounting document before application providers render.
+ * The non-rendering template discovers the actual mounting document before
+ * application providers render.
  */
 export const WidgetInstanceReactBoundary = ({
   children,

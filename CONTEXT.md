@@ -1,318 +1,207 @@
-# StakeKit Widget
+# StakeKit Widget Domain Glossary
 
-StakeKit Widget embeds staking and related wallet workflows into a host application. Its wallet context connects host-provided configuration and providers to the accounts and networks available within one widget instance.
+Use these names in code, tests, issues, and discussions. This file defines
+project vocabulary, not implementation structure.
 
-## Embedding Language
+## Embedding
 
-**Widget Instance**:
-A mounted StakeKit Widget within a browser document. A document may contain at most one Widget Instance at a time; unmounting it and later mounting another is supported.
-_Avoid_: Concurrent widgets, multiple widget instances
+**Widget Instance**: A mounted StakeKit Widget within a browser document. A
+document may contain one Widget Instance at a time; sequential instances are
+supported.
 
-**Application Runtime Generation**:
-One continuous lifetime of widget application state created when a Widget Instance mounts and ended when it unmounts. Its current Widget Configuration may change without beginning a new generation.
-_Avoid_: Widget Runtime, app mount
+**Application Runtime Generation**: The continuous application-state lifetime
+from a Widget Instance's mount through its unmount.
 
-**Application API Identity**:
-The normalized API key and endpoint set selected from Widget Configuration. Consumers may project it for transport construction; it is not a fixed generation lifetime constraint.
-_Avoid_: Runtime Identity, API settings
+**Host Configuration**: The typed values supplied by the embedding host.
 
-**Host Configuration**:
-The typed configuration supplied by the embedding host. It is trusted at the public boundary and becomes usable only after normalization into Widget Configuration.
-_Avoid_: Settings, current configuration
+**Widget Configuration**: The normalized, authoritative current configuration
+derived from Host Configuration.
 
-**Widget Configuration**:
-The authoritative current configuration of a Widget Instance produced by applying all defaults and normalization to Host Configuration exactly once. Its Wallet Bootstrap Snapshot imposes explicit lifetime constraints; other values may change.
-_Avoid_: Host props, runtime identity, settings
+**Application API Identity**: The current normalized API key and endpoint set.
 
-**Widget Domain Event**:
-An immutable fact that a meaningful occurrence completed within an Application Runtime Generation. Its payload carries the domain identity observers need to determine relevance; it never prescribes an observer mutation.
-_Avoid_: Reset signal, Atom instruction, callback
+**Widget Domain Event**: An immutable fact that a meaningful occurrence
+completed. It carries identity for observers but does not prescribe a mutation.
 
-**Widget Maintenance**:
-An application-wide unavailable state in which neither presentation variant permits a new user journey. Health recovery restores the current route.
-_Avoid_: Dashboard maintenance, maintenance popup
+**Widget Maintenance**: The application-wide state in which new user journeys
+are unavailable.
 
-## Wallet Language
+## Wallet
 
-**Wallet Network**:
-A network for which the Widget can construct and operate a wallet connection. Wallet State and Wallet Scope use only Wallet Networks.
-_Avoid_: SupportedSKChains, supported chain
+**Wallet Network**: A network on which the Widget can construct and operate a
+wallet connection.
 
-**Wallet Scope**:
-An immutable snapshot of a connected wallet's network, primary address, and relevant additional addresses for execution inputs. Its owner identity is the network plus primary address (with case-insensitive EVM address comparison); a prepared action can enter execution only when its owner matches the captured Wallet Scope, and disconnecting or changing that owner invalidates Wallet Scope-bound flows while additional-address changes alone do not.
-_Avoid_: Connector scope
+**Wallet Runtime**: Wallet capabilities and state belonging to one Application
+Runtime Generation.
 
-**Wallet Runtime**:
-The wallet capabilities and state belonging to one widget application generation. Each generation has an isolated lifetime.
+**Wallet Bootstrap**: The one-time establishment of Wallet Topology and initial
+Wallet State. The Wallet Runtime is unavailable until it completes.
 
-**Wallet Runtime Invariant**:
-A condition that must remain true for a Wallet Runtime to safely use its fixed Wallet Topology. A violation indicates an invalid host integration rather than an operational wallet failure.
+**Wallet Bootstrap Snapshot**: The immutable inputs captured together when
+Wallet Bootstrap begins.
 
-**Wallet Bootstrap**:
-The one-time establishment of Wallet Topology, initial connection behavior, and first Wallet State for a Wallet Runtime. The Wallet Runtime is unavailable until Wallet Bootstrap completes.
-_Avoid_: Wallet setup, wallet initialization
+**Wallet Topology**: The network set, Connector Mode, and connector-construction
+policy fixed by the Wallet Bootstrap Snapshot.
 
-**Wallet Bootstrap Snapshot**:
-The immutable set of inputs captured together when Wallet Bootstrap begins. It determines Wallet Topology for the lifetime of the Wallet Runtime.
-_Avoid_: Current configuration
+**Connector Mode**: The mutually exclusive source of connectors selected at
+Wallet Bootstrap.
 
-**Wallet Topology**:
-The config-derived chain set, Connector Mode, and connector construction policy of a Wallet Runtime. It is fixed at bootstrap, while environment-discovered connector membership and readiness may change within that policy.
-_Avoid_: Wallet configuration
+**Wallet State**: The authoritative current connection, account, network, and
+connector details owned by the wallet service.
 
-**Connector Mode**:
-The mutually exclusive source of connectors selected during Wallet Bootstrap. A Wallet Runtime remains in its initial Connector Mode for its entire lifetime.
-_Avoid_: Connector scope, wallet scope
+**Wallet Scope**: An immutable execution snapshot of the connected network,
+primary address, and relevant additional addresses.
 
-**Wallet State**:
-The authoritative current connection, account, chain, and connector-specific details of a Wallet Runtime. Consumers receive Wallet State read-only; `WalletService` owns its changes.
+**Wallet Scope Owner**: A Wallet Scope's network and primary address. EVM
+addresses compare case-insensitively; additional addresses are not owner
+identity.
 
-**Wallet Command Context**:
-An immutable wallet-routing snapshot captured when a wallet command begins. A current account, network, or connector change makes the previous context ineligible for new commands, while an already-started command retains its captured context.
-_Avoid_: Current wallet, Wallet Scope
+**Wallet Command Context**: The wallet-routing snapshot captured when a command
+begins. A started command retains it even if current Wallet State changes.
 
-**External Provider Snapshot**:
-The latest host-supplied external wallet identity, supported chains, and wallet operations. It may be replaced during a Wallet Runtime without changing Wallet Topology.
-Its host-facing contract belongs to Public API; Wallet owns the adapter that executes it.
-_Avoid_: External provider configuration
+**External Provider Snapshot**: The latest host-supplied external wallet
+identity, supported networks, and operations.
 
-## Token Language
+## Tokens and amounts
 
-**Token Identity**:
-The identity of a token, consisting of its canonical network, exact case-sensitive symbol, and contract address when present. EVM addresses compare case-insensitively, non-EVM addresses compare exactly, and an addressless native token is identified by its network and symbol.
-_Avoid_: Token string, token metadata
+**Token Identity**: Canonical network, exact symbol, and contract address when
+present. EVM addresses compare case-insensitively; non-EVM addresses compare
+exactly.
 
-**Exact Token Amount**:
-A token quantity expressed in token units without loss and at a precision no finer than the token's decimals. Amount limits, Max actions, action eligibility, and Action Commands use it; rounded display and fiat values do not.
-_Avoid_: Display amount, token balance number, raw amount
+**Exact Token Amount**: A lossless quantity in token units at no finer precision
+than the token's decimals. Eligibility and Action Commands use this value.
 
-**Base Unit Amount**:
-A token quantity expressed as an integer count of the token's smallest indivisible unit. Wallet transactions and raw balance facts use it.
-_Avoid_: Raw number, decimal amount
+**Base Unit Amount**: An integer count of a token's smallest indivisible unit.
+Wallet transactions and raw balances use this value.
 
-## Earn Language
+## Earn
 
-**Earn Catalog**:
-The authoritative project-enabled and enterable categories, tokens, yields, and validators available for an Earn journey under the active network and category filters. Initialization parameters and host preferences may select from the Earn Catalog but never expand it.
-_Avoid_: Token list, init options, preferred catalog
+**Earn Catalog**: The authoritative project-enabled, enterable categories,
+tokens, yields, and validators under the current filters.
 
-**Earn Selection**:
-The category, token, yield, validators, and entry form values currently resolved for starting an Earn journey. It is valid only against the authoritative facts for the active Wallet Scope Owner.
-_Avoid_: Atom state, selected stake data
-
-**Earn Selection Reconciliation**:
-The deterministic comparison of the previous Earn Selection, current Entry Intent, initialization seed, live preferences, and current Earn Catalog. It preserves previously resolved values while they remain valid, may retain the previous selection as ineligible presentation while Wallet State is unresolved, and replaces values invalidated by a confirmed Wallet Scope Owner or authoritative fact without writing derived choices into Entry Intent.
-_Avoid_: State synchronization, intent repair, projection write
-
-**Yield Entry**:
-A user's pre-execution attempt to add tokens to an Earn Selection. An eligible Yield Entry culminates in an Enter Action Command.
-_Avoid_: Enter Action, stake form
+**Earn Selection**: The category, token, yield, validators, and entry values
+currently resolved for an Earn journey.
 
-**Yield Entry Readiness**:
-The closed submission-availability state supplied by an entry surface to Yield Entry: Loading, Empty, Ineligible, Refreshing, or Ready. Yield Entry combines it with its internally owned Wallet, Widget Configuration, KYC, and provider facts; Refreshing retains presentation data but temporarily prevents submission.
-_Avoid_: Loading flags, can submit, page readiness
+**Earn Selection Reconciliation**: The deterministic resolution of the current
+Earn Selection from prior selection, Entry Intent, initialization, preferences,
+Wallet Scope Owner, and Earn Catalog.
 
-**Yield Entry Amount Initialization**:
-The explicit policy for deriving the displayed amount from Entry Intent: Preserve Intent or Default to Minimum. It changes only a zero intent when the selected yield has a positive allowed minimum.
-_Avoid_: Default amount flag, prefilled stake amount
+**Earn Initialization**: The one-time capture of host or deep-link parameters
+for the first Earn Selection after Wallet Bootstrap settles.
 
-**Earn Initialization**:
-The one-time capture of host or deep-link parameters into a seed for the first Earn Selection after Wallet Bootstrap settles. Capture consumes the initialization for that Widget Instance; the seed may wait for the Earn Catalog, but leaving its entry surface, changing its owner, or making an explicit selection abandons it without replay.
-_Avoid_: Permanent default, init fallback
+**Earn Readiness**: The condition in which every authoritative fact required by
+the resolved Earn path has a usable value.
 
-**Unknown Earn Balance**:
-The absence of usable wallet balance data for a canonical Earn token. It is distinct from a zero balance: the token remains available for browsing, while amount-dependent Yield Entry is ineligible.
-_Avoid_: Zero balance, missing token
+**Yield Entry**: A user's pre-execution attempt to add tokens to an Earn
+Selection.
 
-**Earn Readiness**:
-The condition in which each authoritative fact required by the current resolved Earn path has a usable value and submission eligibility can be determined. Initial token selection waits for the Earn Catalog and first balance attempt; later pagination or refresh with a retained usable value does not end Earn Readiness.
-_Avoid_: Page loaded, no spinner
+**Yield Entry Readiness**: The closed availability state Loading, Empty,
+Ineligible, Refreshing, or Ready supplied by an entry surface.
 
-**Blocking Earn Failure**:
-The absence of usable data after an authoritative resource required by the current resolved Earn path fails. Failures in unselected categories and wallet balance enrichment are not blocking while the Earn Catalog remains usable.
-_Avoid_: Failure stage, retry target, catalog operation error
+**Unknown Earn Balance**: Absence of usable balance data for an Earn token. It
+is distinct from a known zero balance.
 
-**Earn Mechanic Arguments**:
-The yield-advertised action inputs whose constraints and options determine additional Earn form and transaction values. Only arguments understood by the Widget participate in Earn Selection.
-_Avoid_: Raw mechanic fields, yield contract
+**Validator Policy**: Host Configuration that constrains eligible or preferred
+validators for a network.
 
-**Validator Address Identity**:
-The network-sensitive identity of a validator address. EVM validator addresses compare case-insensitively while non-EVM validator addresses compare exactly; the original address remains the action and presentation value.
-_Avoid_: Normalized validator address, validator string
+**Eligible Validator**: A validator satisfying the selected yield's
+requirements and current Validator Policy.
 
-**Validator Policy**:
-The network-specific or wildcard Host Configuration that constrains which validators are eligible or preferred for an Earn Selection.
-_Avoid_: Validators config, validator filter
+**Yield Reward Rate**: The current rate advertised for a yield, independent of
+validator choice.
 
-**Eligible Validator**:
-A validator that satisfies the selected yield's requirements and its current Validator Policy.
-_Avoid_: Available validator, visible validator
+**Validator Reward Rate**: The current rate belonging to one Eligible Validator.
 
-**Yield Reward Rate**:
-The current reward rate advertised for a yield, independent of validator choice. APY and APR name its compounding convention, not a separate metric.
-_Avoid_: Average APY, yield APY, APY object
+**Effective Reward Rate**: The rate for the current Earn Selection: the
+unweighted mean of selected validators with rates, otherwise the Yield Reward
+Rate.
 
-**Validator Reward Rate**:
-The current reward rate belonging to one Eligible Validator.
-_Avoid_: Validator APY, validator APR
+**Reward Rate History**: A yield-scoped time series of Yield Reward Rate
+snapshots, not validator or Effective Reward Rates.
 
-**Effective Reward Rate**:
-The reward rate shown for the current Earn Selection: the unweighted mean of Validator Reward Rates on selected validators that have one, or the Yield Reward Rate when none of them have a rate. Selecting validators replaces the Yield Reward Rate entirely, including campaign and protocol components.
-_Avoid_: Displayed APY, selected APY, APY
+## Borrow
 
-**Reward Rate History**:
-A yield-scoped time series of Yield Reward Rate snapshots. It is not a series of Validator Reward Rate or Effective Reward Rate.
-_Avoid_: APY graph, APY chart, validator history
+**Borrow Entry**: The journey for selecting a market, entering borrow and
+collateral amounts, and preparing a new or expanded Market Position.
 
-**Wallet Scope Owner**:
-The owner identity of a Wallet Scope, consisting only of its network and primary address. Additional-address changes do not change the Wallet Scope Owner.
-_Avoid_: Wallet Scope key, connector identity
+**Borrow Account Snapshot**: The decoded provider snapshot of one wallet
+owner's balances and risk facts for an integration and network.
 
-## Borrow Language
+**Market Position**: An existing Borrow position in one market, including its
+balances, pending actions, local metrics, and governing Risk Position.
 
-**Native Borrow Token**:
-A Borrow collateral or loan token representing a chain-native asset without a contract address. It is valid Borrow catalog data rather than a malformed addressed token.
-_Avoid_: Empty-address token
+**Market Debt**: Debt attributed to one Market Position, even when account-wide
+risk governs the pool.
 
-**Borrow Entry**:
-The journey for selecting a Borrow market, entering borrow and collateral
-amounts, and preparing a new or expanded Market Position. Its intent belongs to
-the Wallet Scope Owner and survives additional-address changes while its
-authoritative facts and eligibility are recalculated.
-_Avoid_: Borrow dashboard, borrow form flow
+**Borrow Positions**: The Wallet Scope aggregate of Market Positions and the
+resolver for the Risk Position governing a catalog market.
 
-**Borrow Account Snapshot**:
-The decoded API snapshot of one wallet owner's Borrow balances and provider-reported risk facts for an integration and network. It is an input to derivation, not the application's position model.
-_Avoid_: Position, account position
+**Risk Position**: The solvency view for either a pooled account or isolated
+market, including semantic projections for proposed changes.
 
-**Market Position**:
-One existing Borrow position in a specific market. It owns only that market's balances, pending actions, and local financial metrics, and references the Risk Position that governs those balances.
-_Avoid_: Position, account position
+**Account Risk Position**: A Risk Position shared by pooled Market Positions for
+one integration and network.
 
-**Market Debt**:
-The debt attributed to one Market Position. A repayment Review's Debt transition is Market Debt even when an account-wide Risk Position governs the pooled account.
-_Avoid_: Total account debt
+**Market Risk Position**: A Risk Position owned by one isolated market.
 
-**Borrow Positions**:
-The wallet-scoped aggregate of existing Market Positions and the resolver for the Risk Position governing any catalog market, including a selected market with no existing Market Position.
-_Avoid_: Position items, positions array
+**Risk Unavailable**: A typed absence of consistent inputs for a risk
+projection. It is not a warning, blocker, or substitute metric.
 
-**Risk Position**:
-The domain-owned solvency view for either a pool account or one isolated market. It exposes current risk and assesses semantic compound changes such as borrow, repay, supply, withdraw, and collateral toggles using their effective protocol amounts. When a fee-bearing Action Command carries a gross wallet debit, risk assessment uses the net amount credited as collateral.
-_Avoid_: Risk scope, risk helpers, position projection
+**Borrow Constraint Warning**: A known liquidity, balance, debt-minimum, or
+capacity violation attached to a constructible Action Command for review. The
+provider or blockchain remains authoritative at execution.
 
-**Account Risk Position**:
-A Risk Position shared by pool Market Positions for one integration and network. Its current facts are API-authoritative; projected facts use the Widget's complete known collateral composition.
+## Errors and portfolio
 
-**Market Risk Position**:
-A Risk Position owned by one isolated market. Its current facts use the market's API-authoritative position state.
+**API Request Failure**: A normalized failure of one Effect API request.
 
-**Risk Unavailable**:
-A typed result meaning the Widget lacks consistent inputs for a risk projection. It neither blocks an action nor becomes warning copy or substitute metric values; only an available Risk Position projection is shown.
-_Avoid_: Infinite limit, safe fallback, user-visible warning, projected-risk banner
+**Rich Error**: A schema-validated, presentable API failure detail.
 
-**Borrow Constraint Warning**:
-A known liquidity, balance, debt-minimum, or borrow-capacity violation attached to a constructible Action Command for Review. It does not block confirmation; the provider or blockchain makes the authoritative execution decision.
-_Avoid_: Borrow blocker, validation error
+**Rich Error Identity**: A stable API error name used to find Error Copy; it is
+not user-facing text.
 
-## Error Language
+**Error Copy**: The user-facing title, details, and solution for one Rich Error
+Identity.
 
-**Rich Error**:
-A Schema-validated, presentable detail attached to an API Request Failure. It carries an API message and optional details; a stable API message may serve as its Rich Error Identity.
-_Avoid_: Error message, exception, toast error
+**Remote Error Catalog**: The hosted collection of Error Copy keyed by Rich
+Error Identity.
 
-**API Request Failure**:
-A normalized failure of one Effect API request. It may carry one Rich Error and identifies one presentation occurrence across foreground observers.
-_Avoid_: HTTP error, response error, rich error
+**Local Error Fallback**: Widget-owned Error Copy used when the Remote Error
+Catalog lacks an identity.
 
-**Rich Error Identity**:
-The stable API error name used as the lookup key for Error Copy, conventionally an error class name. It is not user-facing copy; arbitrary or dynamic API messages are not identities.
-_Avoid_: Error message, error code, error type
+**Portfolio Completeness**: Whether every position source active for the current
+Wallet Scope has usable data. An incomplete portfolio may retain positions but
+is neither empty nor fully known.
 
-**Error Copy**:
-The user-facing title, details, and solution for one Rich Error Identity.
-_Avoid_: Error translation, error description, error overlay
+## Transactions
 
-**Remote Error Catalog**:
-The hosted list of Error Copy keyed by Rich Error Identity. The Widget does not own or deploy it.
-_Avoid_: Remote translations, i18n errors, API error list
+**Entry Intent**: User-authored pre-execution values retained for an active entry
+surface and Wallet Scope Owner.
 
-**Local Error Fallback**:
-Widget-owned Error Copy used when the Remote Error Catalog omits that Rich Error Identity. Catalog copy for the same identity replaces it; host custom translations replace both.
-_Avoid_: Local override, remote override, error override
+**Transaction Flow**: A Wallet Scope-bound journey through Review, Steps, and
+Complete. Classic and Borrow flows share lifecycle language, not implementation.
 
-## Portfolio Language
+**Flow Session**: One user attempt to complete a Transaction Flow, with immutable
+intake and Wallet Scope from Review through Complete.
 
-**Portfolio Completeness**:
-Whether every position source active for the current Wallet Scope has usable data. An incomplete portfolio may show retained positions but is neither empty nor fully known.
-_Avoid_: Loaded positions, empty positions
+**Action Argument Contract**: The authoritative required and optional inputs for
+one action.
 
-## Transaction Flow Language
+**Action Command**: A prepared instruction describing the protocol action the
+user intends before the action is created.
 
-**Entry Intent**:
-User-authored pre-execution values retained only while their entry surface is active for the current Wallet Scope Owner. Leaving that surface, changing or disconnecting its owner, or starting any Transaction Workflow for that owner consumes the intent; additional-address-only changes preserve it.
-_Avoid_: Form state, draft Atom
+**Action Preview**: A freshly prepared action candidate inspected during Review.
 
-**Transaction Flow**:
-A Wallet Scope-bound user journey through Review, Steps, and Complete, owned by one fresh Flow Session. Classic and Borrow Transaction Flows share this lifecycle language while retaining distinct intake, action preparation, and execution behavior.
-_Avoid_: Transaction Workflow, shared flow implementation
+**Yield Action**: The created yield action and transactions required to carry
+out an Action Command.
 
-**Classic Transaction Flow**:
-The Wallet Scope-bound journey from action review to execution handoff. It has Enter, Exit, Manage, and Activity Resume variants; a widget instance owns at most one active Flow Session, whose captured intake facts remain immutable for that entire journey.
-_Avoid_: Classic transaction request
+**Execution Attempt**: The Steps-and-Complete portion of a Flow Session for one
+reviewed action.
 
-**Borrow Transaction Flow**:
-The Wallet Scope-bound journey from prepared borrow-action intake through Review, action creation, execution, and Complete. Borrow market and position actions enter through the same flow while retaining their distinct immutable intake facts.
-_Avoid_: Borrow workflow, borrow dashboard flow
+**Transaction Workflow**: One execution of a prepared transaction plan,
+including signing, submission, confirmation, advancement, retry, and completion.
 
-**Flow Session**:
-One user attempt to complete a Transaction Flow. Every explicit Start creates a fresh Flow Session even when its intake facts equal those of another attempt; Review, Steps, and Complete share its immutable intake and Wallet Scope until the entire journey is exited or replaced.
-_Avoid_: Transaction Flow Identity, request object identity
+**Post-Transaction Reconciliation**: A Wallet Scope Owner-bound refresh of
+authoritative balances and positions after a Transaction Workflow ends.
 
-**Action Argument Contract**:
-The authoritative required and optional inputs for one action, supplied by its owning domain source such as Earn mechanics, a pending action, or a Borrow action definition. A Transaction Flow may enter Review only with an Action Command that satisfies it, including present required scalars and non-empty required collections.
-_Avoid_: Best-effort arguments, Earn-only mechanics
-
-**Action Command**:
-The prepared instruction describing the protocol action the user intends to perform before that action is created.
-_Avoid_: Request DTO
-
-**Exit Receive Token**:
-The asset a user elects to receive from an Exit Action. It is independent of the position token and the token originally used to enter the position.
-_Avoid_: Deposit token, position token, output token
-
-**Action Preview**:
-A freshly prepared Yield Action candidate derived from the Flow Session intake and inspected during Review. An executable Action Preview contains no terminal-failure transactions, and terminal-success skipped transactions do not enter execution; continuing promotes the candidate into one Execution attempt, while returning to Review always requires a fresh candidate.
-_Avoid_: Attached action, prepared action
-
-**Yield Action**:
-The created yield action containing the transactions required to carry out an Action Command. A Flow Session hands at most one reviewed Yield Action into its current Execution attempt.
-_Avoid_: Action DTO
-
-**Execution Attempt**:
-The Steps-and-Complete portion of a Flow Session for one reviewed action. It owns one Transaction Workflow and ends permanently when execution is left; a later execution always creates a fresh attempt.
-_Avoid_: Executable phase, attached action
-
-**Transaction Workflow**:
-A single execution of a prepared transaction plan, covering signing, submission, confirmation, multi-step advancement, retry, and completion. It is fresh each time an action enters execution and ends permanently when that execution is left, even when a later execution has equal inputs.
-_Avoid_: Workflow identity, resumable workflow, workflow family
-
-**Transaction Workflow Started**:
-A Widget Domain Event stating that a Transaction Workflow was successfully constructed for a Wallet Scope Owner. It marks all Entry Intent belonging to that owner as consumed, independent of journey type.
-_Avoid_: Form reset signal, journey outcome
-
-**Transaction Workflow Ended**:
-A Widget Domain Event stating that a Transaction Workflow's scoped lifetime ended, whether completed or abandoned. It is emitted once when its Execution Attempt is left.
-_Avoid_: Navigation event, invalidation command
-
-**Post-Transaction Reconciliation**:
-A Wallet Scope Owner-bound effort to reconcile authoritative balances and positions after a Transaction Workflow ends. A newer reconciliation effort replaces the current one, and disconnecting or changing its owner ends it.
-_Avoid_: Refresh workflow, polling workflow
-
-**Classic Transaction Flow Abandonment**:
-The end of an active Flow Session when its journey is exited, its Wallet Scope no longer matches, or a new session begins. Returning from execution to Review ends only the current Execution Attempt and does not abandon the Flow Session.
-_Avoid_: Request cleanup
-
-**Activity Resume**:
-A Classic Transaction Flow started from a Yield Action selected in activity history. Review reconstructs a fresh Action Preview when the historical action contains enough intake, and execution routes remain valid only for the captured action type; unsupported historical actions remain non-executable.
-_Avoid_: Activity selection
+**Activity Resume**: A Classic Transaction Flow started from a Yield Action in
+activity history.

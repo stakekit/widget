@@ -90,7 +90,7 @@ export const PositionDetailsHub = () => {
   const positionDetails = usePositionDetails();
   // Ephemeral tab disclosure: must reset when the hub remounts after a flow
   // (locked design). Not Atom-backed — that would restore the last tab across
-  // remounts. See ADR 0004 presentation-state exception.
+  // remounts.
   const [selectedMode, setSelectedMode] =
     useState<PositionDetailsActionMode | null>(null);
 
