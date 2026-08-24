@@ -1,8 +1,6 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import type { SelectedValidators } from "../../../../../domain/earn/reward-rate";
-import type { HistoryPeriod } from "../../../../../domain/portfolio/models";
 import { formatUsd } from "../../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../../shared/lib/number-format";
 import {
@@ -16,13 +14,12 @@ import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { YieldDetailsHeader } from "../../../../yield-summary/views";
 import {
   useEarnEntry,
+  useEarnRewardRateHistoryChart,
+  useEarnTvlHistoryChart,
   useEarnYieldSelection,
 } from "../../../react/use-earn-facades";
 import { EarnDetailsMetrics } from "./components/earn-details-metrics";
-import {
-  HistoryChartSection,
-  shouldRenderHistoryChart,
-} from "./components/history-chart-section";
+import { HistoryChartSection } from "./components/history-chart-section";
 import { IntegrationDocsLink } from "./components/integration-docs-link";
 import { ProviderSelectionCard } from "./components/provider-selection-card";
 import {
@@ -30,8 +27,6 @@ import {
   getEarnDetailsModel,
 } from "./earn-details-model";
 import * as styles from "./styles.css";
-import { useYieldRewardRateHistory } from "./use-yield-reward-rate-history";
-import { useYieldTvlHistory } from "./use-yield-tvl-history";
 
 export const EarnDetails = () => {
   const { view: entry } = useEarnEntry();
@@ -55,22 +50,15 @@ const EarnDetailsView = ({
   selectedValidators?: SelectedValidators | null;
   yieldDto: EarnYieldWithProvider | null;
 }) => {
-  const [rewardRatePeriod, setRewardRatePeriod] =
-    useState<HistoryPeriod>("90d");
-  const [tvlPeriod, setTvlPeriod] = useState<HistoryPeriod>("90d");
   const { t } = useTranslation();
   const presentsRewardRateHistory = yieldDto
     ? canPresentRewardRateHistory(yieldDto)
     : false;
 
-  const rewardRateHistory = useYieldRewardRateHistory({
-    period: rewardRatePeriod,
-    yieldId: presentsRewardRateHistory ? yieldDto?.id : undefined,
-  });
-  const tvlHistory = useYieldTvlHistory({
-    period: tvlPeriod,
-    yieldId: yieldDto?.id,
-  });
+  const rewardRateChart = useEarnRewardRateHistoryChart(
+    presentsRewardRateHistory ? (yieldDto?.id ?? null) : null
+  );
+  const tvlChart = useEarnTvlHistoryChart(yieldDto?.id ?? null);
 
   if (isLoading) {
     return <ContentLoaderSquare heightPx={430} />;
@@ -123,28 +111,25 @@ const EarnDetailsView = ({
 
       <ProviderSelectionCard />
 
-      {presentsRewardRateHistory &&
-        shouldRenderHistoryChart(rewardRateHistory) && (
-          <HistoryChartSection
-            chartId="reward-rate"
-            history={rewardRateHistory}
-            onPeriodChange={setRewardRatePeriod}
-            period={rewardRatePeriod}
-            tickFormatter={(value) => `${formatNumber(value, 2)}%`}
-            title={t("dashboard.earn_details.reward_rate")}
-            value={rewardRateFormatted}
-          />
-        )}
+      {presentsRewardRateHistory && rewardRateChart.view.canRender && (
+        <HistoryChartSection
+          chartId="reward-rate"
+          onPeriodChange={rewardRateChart.selectPeriod}
+          tickFormatter={(value) => `${formatNumber(value, 2)}%`}
+          title={t("dashboard.earn_details.reward_rate")}
+          value={rewardRateFormatted}
+          view={rewardRateChart.view}
+        />
+      )}
 
-      {!isStakeCategory && shouldRenderHistoryChart(tvlHistory) && (
+      {!isStakeCategory && tvlChart.view.canRender && (
         <HistoryChartSection
           chartId="tvl"
-          history={tvlHistory}
-          onPeriodChange={setTvlPeriod}
-          period={tvlPeriod}
+          onPeriodChange={tvlChart.selectPeriod}
           tickFormatter={formatUsd}
           title={t("dashboard.earn_details.tvl")}
           value={tvlChartValue}
+          view={tvlChart.view}
         />
       )}
 

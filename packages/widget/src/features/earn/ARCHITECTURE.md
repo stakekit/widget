@@ -81,6 +81,15 @@ presentation waits for stable category, token-catalog, and first-balance
 resolution; Yield, position, Validator, and entry views then publish their own
 loading facts.
 
+Reward-rate and TVL history each publish one focused chart view holding the
+selected range, the points to draw, whether the section is loading its first
+range or refreshing an already drawn one, and whether the section can be
+rendered at all. Selecting another range keeps the displayed points until the
+new range resolves, so presentation dims the existing chart instead of
+unmounting it, and a range without enough points keeps the section and its range
+buttons mounted. Refresh chrome is delayed and held by presentation, so the
+published refresh fact stays the truthful one.
+
 A required current-path resource that fails without usable data produces one
 generic Blocking Earn Failure. Successful empty tokens, Yields, or Validators
 are empty catalog states rather than failures. A refresh failure that retains a

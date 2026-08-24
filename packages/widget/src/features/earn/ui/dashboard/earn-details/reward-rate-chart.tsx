@@ -1,7 +1,11 @@
 import { DateTime } from "effect";
 import { useId } from "react";
 import { Area, AreaChart, XAxis, YAxis } from "recharts";
-import type { HistoryPoint } from "../../../../../domain/portfolio/models";
+import type {
+  HistoryPeriod,
+  HistoryPoint,
+} from "../../../../../domain/portfolio/models";
+import { useDelayedBusy } from "../../../../../shared/react/use-delayed-busy";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
@@ -11,14 +15,16 @@ import {
   axisLabel,
   chartContainer,
   chartLoadingOverlay,
+  chartSurface,
   emptyChartContainer,
 } from "./styles.css";
 
 type Props = {
   chartId: string;
-  data: HistoryPoint[];
-  isFetching: boolean;
+  data: ReadonlyArray<HistoryPoint>;
   isLoading: boolean;
+  isRefreshing: boolean;
+  refreshKey: HistoryPeriod;
   tickFormatter: (value: number) => string;
 };
 
@@ -35,11 +41,19 @@ type EndpointDotProps = {
 export const HistoryChart = ({
   chartId,
   data,
-  isFetching,
   isLoading,
+  isRefreshing,
+  refreshKey,
   tickFormatter,
 }: Props) => {
   const gradientId = `${chartId}-gradient-${useId().replaceAll(":", "")}`;
+  const showRefreshChrome = useDelayedBusy(isRefreshing, refreshKey);
+
+  const loadingOverlay = showRefreshChrome ? (
+    <Box className={chartLoadingOverlay}>
+      <Spinner variant={{ size: "small" }} />
+    </Box>
+  ) : null;
 
   if (isLoading && data.length < 2) {
     return <ContentLoaderSquare heightPx={height} />;
@@ -47,8 +61,14 @@ export const HistoryChart = ({
 
   if (data.length < 2) {
     return (
-      <Box className={emptyChartContainer}>
-        <Text variant={{ type: "muted", weight: "normal" }}>No chart data</Text>
+      <Box className={chartContainer}>
+        <Box className={emptyChartContainer}>
+          <Text variant={{ type: "muted", weight: "normal" }}>
+            No chart data
+          </Text>
+        </Box>
+
+        {loadingOverlay}
       </Box>
     );
   }
@@ -85,58 +105,56 @@ export const HistoryChart = ({
 
   return (
     <Box className={chartContainer}>
-      <AreaChart
-        accessibilityLayer={false}
-        data={data}
-        margin={{ top: 8, right: 4, bottom: 4, left: 0 }}
-        responsive
-        style={{ height, width: "100%" }}
-        tabIndex={-1}
-      >
-        <defs>
-          <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor={accentColor} stopOpacity={0.24} />
-            <stop offset="100%" stopColor={accentColor} stopOpacity={0} />
-          </linearGradient>
-        </defs>
+      <Box className={chartSurface({ loading: showRefreshChrome })}>
+        <AreaChart
+          accessibilityLayer={false}
+          data={[...data]}
+          margin={{ top: 8, right: 4, bottom: 4, left: 0 }}
+          responsive
+          style={{ height, width: "100%" }}
+          tabIndex={-1}
+        >
+          <defs>
+            <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={accentColor} stopOpacity={0.24} />
+              <stop offset="100%" stopColor={accentColor} stopOpacity={0} />
+            </linearGradient>
+          </defs>
 
-        <XAxis
-          dataKey={(point: HistoryPoint) =>
-            DateTime.toEpochMillis(point.timestamp)
-          }
-          hide
-        />
+          <XAxis
+            dataKey={(point: HistoryPoint) =>
+              DateTime.toEpochMillis(point.timestamp)
+            }
+            hide
+          />
 
-        <YAxis
-          axisLine={false}
-          domain={[domainMin, domainMax]}
-          orientation="right"
-          tick={{ className: axisLabel }}
-          tickFormatter={tickFormatter}
-          tickLine={false}
-          ticks={ticks}
-          width={46}
-        />
+          <YAxis
+            axisLine={false}
+            domain={[domainMin, domainMax]}
+            orientation="right"
+            tick={{ className: axisLabel }}
+            tickFormatter={tickFormatter}
+            tickLine={false}
+            ticks={ticks}
+            width={46}
+          />
 
-        <Area
-          activeDot={false}
-          dataKey="value"
-          dot={renderEndpointDot}
-          fill={`url(#${gradientId})`}
-          isAnimationActive={false}
-          stroke={accentColor}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          type="monotone"
-        />
-      </AreaChart>
+          <Area
+            activeDot={false}
+            dataKey="value"
+            dot={renderEndpointDot}
+            fill={`url(#${gradientId})`}
+            isAnimationActive={false}
+            stroke={accentColor}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            type="monotone"
+          />
+        </AreaChart>
+      </Box>
 
-      {isFetching && (
-        <Box className={chartLoadingOverlay}>
-          <Spinner />
-        </Box>
-      )}
+      {loadingOverlay}
     </Box>
   );
 };

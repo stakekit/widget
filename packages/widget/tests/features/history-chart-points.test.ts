@@ -7,7 +7,7 @@ import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
 import {
   toRewardRateHistoryChartPoint,
   toTvlHistoryChartPoint,
-} from "../../src/features/earn/ui/dashboard/earn-details/history-chart-points";
+} from "../../src/features/earn/model/history-chart-points";
 
 const timestamp = Schema.decodeSync(UtcDateTimeFromString)(
   "2026-06-01T00:00:00.000Z"

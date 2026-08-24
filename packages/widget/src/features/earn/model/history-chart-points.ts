@@ -2,8 +2,8 @@ import type {
   HistoryPoint,
   RewardRateHistoryItem,
   TvlHistoryItem,
-} from "../../../../../domain/portfolio/models";
-import { toChartNumber } from "../../../../../shared/lib/number-format";
+} from "../../../domain/portfolio/models";
+import { toChartNumber } from "../../../shared/lib/number-format";
 
 export const toRewardRateHistoryChartPoint = (
   item: RewardRateHistoryItem

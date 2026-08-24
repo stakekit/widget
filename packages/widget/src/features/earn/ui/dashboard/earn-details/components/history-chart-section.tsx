@@ -1,14 +1,9 @@
-import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import type {
-  HistoryPeriod,
-  HistoryPoint,
-} from "../../../../../../domain/portfolio/models";
+import type { HistoryPeriod } from "../../../../../../domain/portfolio/models";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
+import type { YieldHistoryChartView } from "../../../../state/yield-history-charts";
 import { HistoryChart } from "../reward-rate-chart";
 import * as styles from "../styles.css";
-import type { YieldHistoryResult } from "../use-yield-history";
 
 const periods = [
   ["30d", "1M"],
@@ -17,32 +12,20 @@ const periods = [
   ["all", "ALL"],
 ] as const satisfies ReadonlyArray<readonly [HistoryPeriod, string]>;
 
-const getHistoryPoints = (history: YieldHistoryResult): Array<HistoryPoint> =>
-  history.pipe(
-    AsyncResult.value,
-    Option.getOrElse(() => [])
-  );
-
-export const shouldRenderHistoryChart = (history: YieldHistoryResult) =>
-  !AsyncResult.isFailure(history) &&
-  (AsyncResult.isInitial(history) || getHistoryPoints(history).length >= 2);
-
 export const HistoryChartSection = ({
   chartId,
-  history,
   onPeriodChange,
-  period,
   tickFormatter,
   title,
   value,
+  view,
 }: {
   chartId: string;
-  history: YieldHistoryResult;
   onPeriodChange: (period: HistoryPeriod) => void;
-  period: HistoryPeriod;
   tickFormatter: (value: number) => string;
   title: string;
   value: string;
+  view: YieldHistoryChartView;
 }) => (
   <Box>
     <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -54,12 +37,14 @@ export const HistoryChartSection = ({
       </Text>
 
       <Box display="flex" gap="1">
-        {periods.map(([value, label]) => (
+        {periods.map(([periodValue, label]) => (
           <Box
             as="button"
-            className={styles.rangeButton({ active: period === value })}
-            key={value}
-            onClick={() => onPeriodChange(value)}
+            className={styles.rangeButton({
+              active: view.period === periodValue,
+            })}
+            key={periodValue}
+            onClick={() => onPeriodChange(periodValue)}
             type="button"
           >
             <Text variant={{ type: "muted", weight: "normal" }}>{label}</Text>
@@ -70,9 +55,10 @@ export const HistoryChartSection = ({
 
     <HistoryChart
       chartId={chartId}
-      data={getHistoryPoints(history)}
-      isFetching={history.waiting}
-      isLoading={AsyncResult.isInitial(history)}
+      data={view.points}
+      isLoading={view.isLoading}
+      isRefreshing={view.isRefreshing}
+      refreshKey={view.period}
       tickFormatter={tickFormatter}
     />
   </Box>

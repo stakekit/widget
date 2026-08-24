@@ -1,4 +1,5 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import type { YieldId } from "../../../domain/identity/identifiers";
 import {
   earnEntryViewAtom,
   refreshEarnKycAtom,
@@ -22,6 +23,10 @@ import {
   selectEarnValidatorAtom,
   setEarnValidatorSearchAtom,
 } from "../state/validator-selection";
+import {
+  earnRewardRateHistoryChart,
+  earnTvlHistoryChart,
+} from "../state/yield-history-charts";
 import {
   earnYieldSelectionViewAtom,
   selectEarnCategoryAtom,
@@ -63,4 +68,14 @@ export const useEarnEntry = () => ({
 
 export const useEarnPageStatus = () => ({
   view: useAtomValue(earnPageStatusViewAtom),
+});
+
+export const useEarnRewardRateHistoryChart = (yieldId: YieldId | null) => ({
+  selectPeriod: useAtomSet(earnRewardRateHistoryChart.selectPeriodAtom),
+  view: useAtomValue(earnRewardRateHistoryChart.viewAtom(yieldId)),
+});
+
+export const useEarnTvlHistoryChart = (yieldId: YieldId | null) => ({
+  selectPeriod: useAtomSet(earnTvlHistoryChart.selectPeriodAtom),
+  view: useAtomValue(earnTvlHistoryChart.viewAtom(yieldId)),
 });

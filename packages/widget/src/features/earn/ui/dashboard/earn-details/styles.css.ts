@@ -240,6 +240,24 @@ const chartOverlayFadeIn = keyframes({
   "100%": { opacity: 1 },
 });
 
+export const chartSurface = recipe({
+  base: {
+    height: "100%",
+    transition: "opacity 200ms ease, filter 200ms ease",
+    width: "100%",
+  },
+  variants: {
+    loading: {
+      true: {
+        filter: "blur(1px) saturate(0.8)",
+        opacity: 0.4,
+        pointerEvents: "none",
+      },
+      false: {},
+    },
+  },
+});
+
 export const chartLoadingOverlay = style([
   atoms({
     alignItems: "center",
@@ -248,9 +266,9 @@ export const chartLoadingOverlay = style([
   }),
   {
     animation: `${chartOverlayFadeIn} 150ms ease`,
-    backdropFilter: "blur(2px)",
-    backgroundColor: `color-mix(in srgb, ${vars.color.background} 72%, transparent)`,
+    backgroundColor: `color-mix(in srgb, ${vars.color.background} 18%, transparent)`,
     inset: 0,
+    pointerEvents: "none",
     position: "absolute",
     willChange: "opacity",
     zIndex: 1,
