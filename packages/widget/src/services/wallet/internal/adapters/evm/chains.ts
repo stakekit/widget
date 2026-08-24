@@ -16,6 +16,8 @@ import {
   optimism,
   plasmaTestnet,
   polygon,
+  robinhood,
+  robinhoodTestnet,
   sepolia,
   sonic,
   unichain,
@@ -228,6 +230,22 @@ export const evmChainsMap: EvmChainsMap = {
           ],
         },
       },
+    },
+  },
+  robinhood: {
+    type: "evm",
+    network: "robinhood",
+    wagmiChain: {
+      ...robinhood,
+      iconUrl: getNetworkLogo("robinhood"),
+    },
+  },
+  "robinhood-testnet": {
+    type: "evm",
+    network: "robinhood-testnet",
+    wagmiChain: {
+      ...robinhoodTestnet,
+      iconUrl: getNetworkLogo("robinhood-testnet"),
     },
   },
   pharos: {

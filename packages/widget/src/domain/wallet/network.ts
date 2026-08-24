@@ -25,6 +25,8 @@ export const walletEvmNetworks = [
   "plasma",
   "monad",
   "monad-testnet",
+  "robinhood",
+  "robinhood-testnet",
   "pharos",
 ] as const satisfies ReadonlyArray<Network>;
 

@@ -39,12 +39,16 @@ describe("Network", () => {
     expect(isWalletNetwork("cosmos")).toBe(true);
     expect(isWalletNetwork("cardano")).toBe(true);
     expect(isWalletNetwork("bittensor")).toBe(true);
+    expect(isWalletNetwork("robinhood")).toBe(true);
+    expect(isWalletNetwork("robinhood-testnet")).toBe(true);
     expect(isWalletNetwork("plume")).toBe(false);
     expect(isWalletNetwork("not-a-network")).toBe(false);
   });
 
   it("classifies wallet ecosystems without admitting non-wallet Networks", () => {
     expect(isEvmWalletNetwork("ethereum")).toBe(true);
+    expect(isEvmWalletNetwork("robinhood")).toBe(true);
+    expect(isEvmWalletNetwork("robinhood-testnet")).toBe(true);
     expect(isEvmWalletNetwork("plume")).toBe(false);
     expect(isCosmosWalletNetwork("cosmos")).toBe(true);
     expect(isCosmosWalletNetwork("evmos")).toBe(false);

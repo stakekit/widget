@@ -113,10 +113,14 @@ describe("wallet Effect Atom boundaries", () => {
     const networks = Schema.decodeUnknownSync(EnabledWalletNetworksResponse)([
       { id: "ethereum" },
       { id: "plume" },
+      { id: "robinhood" },
+      { id: "robinhood-testnet" },
       { id: "ethereum" },
     ]);
 
-    expect(networks).toEqual(new Set(["ethereum"]));
+    expect(networks).toEqual(
+      new Set(["ethereum", "robinhood", "robinhood-testnet"])
+    );
   });
 
   it("accepts projects without Enabled Wallet Networks", () => {
@@ -175,15 +179,18 @@ describe("wallet Effect Atom boundaries", () => {
   it("constructs EVM configuration directly from validated networks", async () => {
     const config = await Effect.runPromise(
       getEvmConfig({
-        enabledNetworks: new Set(["ethereum"]),
+        enabledNetworks: new Set(["robinhood", "robinhood-testnet"]),
         forceWalletConnectOnly: true,
         institutionalWallets: false,
         variant: "default",
       })
     );
 
-    expect(config.evmChains).toHaveLength(1);
-    expect(config.evmChainsMap.ethereum?.network).toBe("ethereum");
+    expect(config.evmChains).toHaveLength(2);
+    expect(Object.keys(config.evmChainsMap)).toEqual([
+      "robinhood",
+      "robinhood-testnet",
+    ]);
   });
 
   it("runs reconnect, mobile fallback, and requested chain switching in order", async () => {

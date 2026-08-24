@@ -28,6 +28,8 @@ export enum EvmChainIds {
   Plasma = 9745,
   Monad = 143,
   MonadTestnet = 10_143,
+  Robinhood = 4663,
+  RobinhoodTestnet = 46_630,
   Pharos = 1672,
 }
 
