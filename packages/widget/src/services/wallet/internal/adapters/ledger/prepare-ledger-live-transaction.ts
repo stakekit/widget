@@ -17,13 +17,10 @@ import {
   toSafeIntegerCount,
 } from "../../../../../domain/finance/exact";
 import {
-  CosmosNetworks,
-  EvmNetworks,
-  MiscNetworks,
-  SubstrateNetworks,
-} from "../../../../../domain/network/networks";
+  isCosmosWalletNetwork,
+  isEvmWalletNetwork,
+} from "../../../../../domain/wallet/network";
 import type { SKTxMeta } from "../../../../../public-api/types";
-import { isEvmChain } from "../../../../../services/wallet/supported-chains";
 import { unsignedEVMTransactionCodec } from "../evm/transaction";
 import { substratePayloadCodec } from "../substrate/transaction";
 import { unsignedTonTransactionCodec } from "../ton/transaction";
@@ -55,11 +52,11 @@ const GasEstimateFromJson = Schema.fromJsonString(GasEstimate);
 const JsonValue = Schema.fromJsonString(Schema.Unknown);
 
 const eip1559FieldsUnsupportedNetworks = new Set<string>([
-  EvmNetworks.Polygon,
-  EvmNetworks.Optimism,
-  EvmNetworks.Arbitrum,
-  EvmNetworks.AvalancheC,
-  EvmNetworks.Core,
+  "polygon",
+  "optimism",
+  "arbitrum",
+  "avalanche-c",
+  "core",
 ]);
 
 const decodeSchema = <S extends Schema.ConstraintDecoder<unknown>>(
@@ -113,7 +110,7 @@ export const makePrepareLedgerLiveTransaction: Effect.Effect<PrepareLedgerLiveTr
           transactionPreparationError("Failed to parse tx")
         ),
         Effect.flatMap((payload) => {
-          if (network === SubstrateNetworks.Polkadot) {
+          if (network === "polkadot") {
             return txMeta
               ? preparePolkadotTransaction({
                   loadPolkadotBuilder,
@@ -174,7 +171,7 @@ const prepareSynchronousTransaction = ({
   payload: unknown;
   txMeta?: SKTxMeta;
 }): Result.Result<RawTransaction, string> => {
-  if (isEvmChain(network)) {
+  if (isEvmWalletNetwork(network)) {
     return decodeSchema(unsignedEVMTransactionCodec, payload).pipe(
       Result.map((decodedTx) =>
         buildEthereumLedgerTransaction({
@@ -190,22 +187,22 @@ const prepareSynchronousTransaction = ({
   }
 
   switch (network) {
-    case MiscNetworks.Tron:
+    case "tron":
       return decodeSchema(unsignedTronTransactionCodec, payload).pipe(
         Result.flatMap(() => buildTronLedgerTransaction(txMeta))
       );
-    case MiscNetworks.Near:
+    case "near":
       return buildNearLedgerTransaction(txMeta);
-    case MiscNetworks.Tezos:
+    case "tezos":
       return buildTezosLedgerTransaction(txMeta);
-    case MiscNetworks.Ton:
+    case "ton":
       return decodeSchema(unsignedTonTransactionCodec, payload).pipe(
         Result.flatMap((decodedTx) =>
           buildTonLedgerTransaction(decodedTx, txMeta)
         )
       );
     default:
-      if (isCosmosNetwork(network)) {
+      if (isCosmosWalletNetwork(network)) {
         return buildCosmosLedgerTransaction(txMeta);
       }
 
@@ -451,9 +448,6 @@ const buildTonLedgerTransaction = (
     return Result.fail("Unsupported Ton Ledger transaction payload");
   }
 };
-
-const isCosmosNetwork = (network: string): network is CosmosNetworks =>
-  Object.values(CosmosNetworks).includes(network as CosmosNetworks);
 
 const parseGasEstimate = (
   gasEstimate: SKTxMeta["gasEstimate"]

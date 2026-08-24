@@ -1,11 +1,6 @@
 import { Effect, Schema } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { ValidatorAddress } from "../../src/domain/identity/identifiers";
-import {
-  CosmosNetworks,
-  MiscNetworks,
-  SubstrateNetworks,
-} from "../../src/domain/network/networks";
 import type { SKTxMeta } from "../../src/public-api/types";
 import { makePrepareLedgerLiveTransaction } from "../../src/services/wallet/internal/adapters/ledger/prepare-ledger-live-transaction";
 
@@ -59,7 +54,7 @@ const createTxMeta = (overrides: Partial<SKTxMeta>): SKTxMeta =>
     inputToken: {
       decimals: 6,
       name: "Cosmos",
-      network: CosmosNetworks.Cosmos,
+      network: "cosmos",
       symbol: "ATOM",
     },
     providersDetails: [],
@@ -107,14 +102,14 @@ const polkadotTx = JSON.stringify({
 });
 
 const polkadotBondParams = {
-  network: SubstrateNetworks.Polkadot,
+  network: "polkadot",
   tx: polkadotTx,
   txMeta: createTxMeta({
     amountRaw: "1000",
     inputToken: {
       decimals: 10,
       name: "Polkadot",
-      network: SubstrateNetworks.Polkadot,
+      network: "polkadot",
       symbol: "DOT",
     },
   }),
@@ -123,14 +118,14 @@ const polkadotBondParams = {
 describe("prepareLedgerLiveTransaction", () => {
   it("builds Tron vote counts in TRX units distributed across validators", async () => {
     const tx = (await prepare({
-      network: MiscNetworks.Tron,
+      network: "tron",
       tx: tronTx,
       txMeta: createTxMeta({
         amount: "1201",
         inputToken: {
           decimals: 6,
           name: "Tron",
-          network: MiscNetworks.Tron,
+          network: "tron",
           symbol: "TRX",
         },
         rawArguments: {
@@ -158,7 +153,7 @@ describe("prepareLedgerLiveTransaction", () => {
 
   it("uses the accrued reward amount for Cosmos claim reward modes", async () => {
     const tx = (await prepare({
-      network: CosmosNetworks.Cosmos,
+      network: "cosmos",
       tx: "{}",
       txMeta: createTxMeta({
         amount: "0.123456",
@@ -183,7 +178,7 @@ describe("prepareLedgerLiveTransaction", () => {
 
   it("falls back to zero for Cosmos claim modes without a known reward amount", async () => {
     const tx = (await prepare({
-      network: CosmosNetworks.Cosmos,
+      network: "cosmos",
       tx: "{}",
       txMeta: createTxMeta({
         amount: null,
@@ -206,7 +201,7 @@ describe("prepareLedgerLiveTransaction", () => {
   it("requires amount for Cosmos non-claim modes", async () => {
     await expect(
       prepareFailure({
-        network: CosmosNetworks.Cosmos,
+        network: "cosmos",
         tx: "{}",
         txMeta: createTxMeta({
           amount: null,
@@ -225,7 +220,7 @@ describe("prepareLedgerLiveTransaction", () => {
   it("requires classic transaction metadata for Polkadot", async () => {
     await expect(
       prepareFailure({
-        network: SubstrateNetworks.Polkadot,
+        network: "polkadot",
         tx: polkadotTx,
       })
     ).resolves.toMatchObject({

@@ -45,7 +45,7 @@ import type {
   RewardsSummaryRecord,
   TvlHistoryResponse,
 } from "../../domain/portfolio/models";
-import type { EnabledNetworks } from "../../domain/wallet/models";
+import type { EnabledWalletNetworks } from "../../domain/wallet/models";
 import { RichError } from "../errors/rich-error";
 
 export type YieldDirectoryRequest = {
@@ -141,10 +141,6 @@ type BorrowResourceSourceService = {
 };
 
 type LegacyResourceSourceService = {
-  readonly getEnabledNetworks: () => Effect.Effect<
-    EnabledNetworks,
-    ApiReadFailure
-  >;
   readonly getGasTokenBalances: (
     command: GasBalancesCommand
   ) => Effect.Effect<typeof GasTokenBalancesResponse.Type, ApiReadFailure>;
@@ -170,6 +166,10 @@ type LegacyResourceSourceService = {
 };
 
 type YieldResourceSourceService = {
+  readonly getEnabledWalletNetworks: () => Effect.Effect<
+    EnabledWalletNetworks,
+    ApiReadFailure
+  >;
   readonly getHealth: () => Effect.Effect<HealthStatus, ApiReadFailure>;
   readonly getKycStatus: (request: {
     readonly address: WalletAddress;

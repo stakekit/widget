@@ -3,7 +3,7 @@ import { Effect, Schema } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector, createConfig } from "wagmi";
 import { AdditionalAddresses } from "../../src/domain/wallet/address";
-import { EnabledNetworksResponse } from "../../src/domain/wallet/models";
+import { EnabledWalletNetworksResponse } from "../../src/domain/wallet/models";
 import { InitParams } from "../../src/services/wallet/init-params";
 import { getConfig as getEvmConfig } from "../../src/services/wallet/internal/adapters/evm/config";
 import {
@@ -109,20 +109,28 @@ describe("wallet Effect Atom boundaries", () => {
     ]);
   });
 
-  it("decodes enabled networks into a validated set and rejects unknown values", () => {
-    const networks = Schema.decodeUnknownSync(EnabledNetworksResponse)([
-      "ethereum",
-      "cosmos",
-      "ethereum",
+  it("decodes Yield network IDs into distinct Enabled Wallet Networks", () => {
+    const networks = Schema.decodeUnknownSync(EnabledWalletNetworksResponse)([
+      { id: "ethereum" },
+      { id: "plume" },
+      { id: "ethereum" },
     ]);
 
-    expect(networks).toEqual(new Set(["ethereum", "cosmos"]));
+    expect(networks).toEqual(new Set(["ethereum"]));
+  });
+
+  it("accepts projects without Enabled Wallet Networks", () => {
+    expect(Schema.decodeUnknownSync(EnabledWalletNetworksResponse)([])).toEqual(
+      new Set()
+    );
+  });
+
+  it("rejects unknown Yield network IDs", () => {
     expect(() =>
-      Schema.decodeUnknownSync(EnabledNetworksResponse)([
-        "ethereum",
-        "not-a-network",
+      Schema.decodeUnknownSync(EnabledWalletNetworksResponse)([
+        { id: "not-a-network" },
       ])
-    ).toThrow(/Expected Networks[\s\S]*at \[1\]/);
+    ).toThrow(/Expected Networks[\s\S]*at \[0\]\["id"\]/);
   });
 
   it("decodes valid initialization parameters and ignores invalid fields", () => {
@@ -175,7 +183,7 @@ describe("wallet Effect Atom boundaries", () => {
     );
 
     expect(config.evmChains).toHaveLength(1);
-    expect(config.evmChainsMap.ethereum?.skChainName).toBe("ethereum");
+    expect(config.evmChainsMap.ethereum?.network).toBe("ethereum");
   });
 
   it("runs reconnect, mobile fallback, and requested chain switching in order", async () => {
@@ -354,6 +362,48 @@ describe("wallet Effect Atom boundaries", () => {
         )
       )
     ).rejects.toThrow(cause.message);
+  });
+
+  it("builds an empty wallet topology when no Wallet Networks are enabled", async () => {
+    const customConnectors = vi.fn(() => {
+      throw new Error("must not build connectors without Wallet Networks");
+    });
+    const controller = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const buildActions = yield* makeWagmiActions;
+          return yield* buildWagmiConfig(
+            {
+              chainIconMapping: undefined,
+              customConnectors,
+              disableInjectedProviderDiscovery: true,
+              enabledNetworks: new Set(),
+              forceWalletConnectOnly: false,
+              institutionalWallets: false,
+              isLedgerLive: false,
+              isSafe: false,
+              mapWalletFn: undefined,
+              mapWalletListFn: undefined,
+              persistPublicKey: () => Effect.void,
+              queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
+              solanaConnection: {} as SolanaConnection,
+              solanaWallets: [],
+              tonConnectManifestUrl: undefined,
+              variant: "default",
+            },
+            buildActions
+          );
+        }).pipe(Effect.provide(WagmiOperations.layer))
+      )
+    );
+
+    expect(controller.enabledNetworks).toEqual(new Set());
+    expect(controller.evmConfig.evmChains).toEqual([]);
+    expect(controller.cosmosConfig.cosmosWagmiChains).toEqual([]);
+    expect(controller.miscConfig.miscChains).toEqual([]);
+    expect(controller.substrateConfig.substrateChains).toEqual([]);
+    expect(controller.wagmiConfig.connectors).toEqual([]);
+    expect(customConnectors).not.toHaveBeenCalled();
   });
 
   it("disposes MIPD ownership and ignores callbacks from the released scope", async () => {

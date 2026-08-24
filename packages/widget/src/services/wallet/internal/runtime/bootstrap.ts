@@ -1,6 +1,6 @@
 import { Duration, Effect, Schedule, Schema } from "effect";
 import type { EarnYield } from "../../../../domain/earn/models";
-import type { EnabledNetworks } from "../../../../domain/wallet/models";
+import type { EnabledWalletNetworks } from "../../../../domain/wallet/models";
 import type { ExternalProviderSnapshot } from "../../../../public-api/external-provider-contract";
 import {
   decodeInitParams,
@@ -49,7 +49,7 @@ type WalletBootstrapSnapshot = {
     readonly isMobileWallet: boolean;
   };
   readonly config: WidgetConfigBootstrapSnapshot;
-  readonly enabledNetworks: EnabledNetworks;
+  readonly enabledNetworks: EnabledWalletNetworks;
   readonly externalProviders: MutableExternalProviderRef | undefined;
   readonly initParams: InitParams;
 };
@@ -122,12 +122,15 @@ export const bootstrapWallet = Effect.gen(function* () {
         current: externalProviderSnapshot,
       } satisfies MutableExternalProviderRef)
     : undefined;
-  const enabledNetworks = yield* bootstrapSource.getEnabledNetworks().pipe(
-    Effect.retry(enabledNetworksRetrySchedule),
-    Effect.mapError(
-      (cause) => new WalletBootstrapError({ cause, stage: "enabled-networks" })
-    )
-  );
+  const enabledNetworks = yield* bootstrapSource
+    .getEnabledWalletNetworks()
+    .pipe(
+      Effect.retry(enabledNetworksRetrySchedule),
+      Effect.mapError(
+        (cause) =>
+          new WalletBootstrapError({ cause, stage: "enabled-networks" })
+      )
+    );
   const queryParams = yield* resolveWalletInitParams(
     initParams,
     bootstrapSource.getOpportunity

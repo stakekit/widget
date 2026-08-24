@@ -70,7 +70,7 @@ const makeController = (
     evmConfig: {
       evmChains: [mainnet],
       evmChainsMap: {
-        ethereum: { skChainName: "ethereum", wagmiChain: mainnet },
+        ethereum: { network: "ethereum", wagmiChain: mainnet },
       },
     },
     queryParamsInitChainId: undefined,
@@ -139,7 +139,8 @@ describe("WalletService authoritative Wallet State", () => {
         Layer.mergeAll(
           configLayer,
           Layer.succeed(WalletBootstrapSource, {
-            getEnabledNetworks: () => Effect.succeed(new Set(["ethereum"])),
+            getEnabledWalletNetworks: () =>
+              Effect.succeed(new Set(["ethereum"])),
             getOpportunity: () => Effect.die("unused"),
           }),
           Layer.succeed(

@@ -1,18 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { EvmNetworks } from "../../src/domain/network/networks";
 import { EvmChainIds } from "../../src/public-api/types";
-import {
-  evmChainsMap,
-  supportedEVMChainsSet,
-} from "../../src/services/wallet/internal/adapters/evm/chains";
+import { evmChainsMap } from "../../src/services/wallet/internal/adapters/evm/chains";
 
 describe("EVM chains", () => {
   it("configures Pharos with PROS as its native gas token", () => {
-    expect(supportedEVMChainsSet.has(EvmNetworks.Pharos)).toBe(true);
     expect(EvmChainIds.Pharos).toBe(1672);
-    expect(evmChainsMap[EvmNetworks.Pharos]).toMatchObject({
+    expect(evmChainsMap.pharos).toMatchObject({
       type: "evm",
-      skChainName: "pharos",
+      network: "pharos",
       wagmiChain: {
         id: 1672,
         name: "Pharos",

@@ -4,7 +4,6 @@ import { wallets as keplrWallets } from "@cosmos-kit/keplr";
 import { wallets as leapWallets } from "@cosmos-kit/leap";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import type { WalletAddress } from "../../../../../domain/identity/identifiers";
-import { CosmosNetworks } from "../../../../../domain/network/networks";
 import { config } from "../../../../../shared/config/widget-defaults";
 import type { CosmosChainsAssets, CosmosChainsMap } from "./chains";
 import {
@@ -58,7 +57,7 @@ export const getWalletManager = ({
 
   chains.sort((a) =>
     // Put cosmos first
-    registryIdsToSKCosmosNetworks[a.chain_id] === CosmosNetworks.Cosmos ? -1 : 1
+    registryIdsToSKCosmosNetworks[a.chain_id] === "cosmos" ? -1 : 1
   );
 
   const connector: WalletList[number] = {

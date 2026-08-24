@@ -12,7 +12,6 @@ import type {
 import { Stream } from "effect";
 import type { Address } from "viem";
 import { createConnector } from "wagmi";
-import { MiscNetworks } from "../../../../../domain/network/networks";
 import type { VariantProps } from "../../../../../public-api/types";
 import portoIcon from "../../../../../shared/assets/images/porto.svg";
 import { getWalletNetworkLogo } from "../../runtime/assets";
@@ -178,7 +177,7 @@ export const getSolanaConnectors = ({
             iconUrl: variant === "porto" ? portoIcon : w.adapter.icon,
             iconBackground: variant === "porto" ? "#000" : "#fff",
             chainGroup: {
-              iconUrl: getWalletNetworkLogo(MiscNetworks.Solana),
+              iconUrl: getWalletNetworkLogo("solana"),
               title: "Solana",
               id: "solana",
             },

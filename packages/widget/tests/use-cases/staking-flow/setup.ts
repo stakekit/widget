@@ -243,9 +243,9 @@ export const setup = async (worker: TestWorker) => {
   } as unknown as TransactionDto;
 
   worker.use(
-    http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await mockDelay();
-      return HttpResponse.json(["avalanche-c"]);
+      return HttpResponse.json([{ id: "avalanche-c" }]);
     }),
 
     http.get(legacyApiRoute("/v1/tokens"), async () => {

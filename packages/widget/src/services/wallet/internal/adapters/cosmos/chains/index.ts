@@ -1,7 +1,6 @@
 import type { Chain } from "@stakekit/rainbowkit";
 import { mainnet } from "viem/chains";
 import type { Network } from "../../../../../../domain/network/network";
-import { CosmosNetworks } from "../../../../../../domain/network/networks";
 import {
   getWalletNetworkLogo,
   getWalletTokenLogo,
@@ -10,7 +9,7 @@ import type { CosmosChainsAssets } from "../chains";
 
 const getChainIconUrl = (chain: CosmosChainsAssets) => {
   if (chain.chain_id === "osmosis-1") {
-    return getWalletNetworkLogo(CosmosNetworks.Osmosis);
+    return getWalletNetworkLogo("osmosis");
   }
   if (chain.chain_id === "mars-1") return getWalletTokenLogo("mars");
   return (

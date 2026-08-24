@@ -134,11 +134,11 @@ describe("Renders initial page", () => {
     });
 
     worker.use(
-      http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+      http.get(yieldApiRoute("/v1/networks"), async () => {
         await mockDelay();
         return HttpResponse.json([
-          etherNativeStaking.token.network,
-          avalancheAvaxNativeStaking.token.network,
+          { id: etherNativeStaking.token.network },
+          { id: avalancheAvaxNativeStaking.token.network },
         ]);
       }),
 

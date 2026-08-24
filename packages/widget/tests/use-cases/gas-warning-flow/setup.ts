@@ -152,9 +152,9 @@ export const setup = (worker: TestWorker) => {
   }) => yieldsTxGasAmountMap.set(yieldId, amount);
 
   worker.use(
-    http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await mockDelay();
-      return HttpResponse.json([avalancheCToken.network]);
+      return HttpResponse.json([{ id: avalancheCToken.network }]);
     }),
 
     http.get(legacyApiRoute("/v1/tokens"), async () => {

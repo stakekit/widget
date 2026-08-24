@@ -2,8 +2,8 @@ import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 import type { Network } from "../../../domain/network/network";
 import type { Token } from "../../../domain/token/token";
+import { isWalletNetwork } from "../../../domain/wallet/network";
 import { useWidgetConfig } from "../../../features/widget-configuration/index";
-import type { SupportedSKChains } from "../../../services/wallet/supported-chains";
 import {
   type WidgetPresentation,
   WidgetPresentationProvider,
@@ -29,10 +29,13 @@ export const WidgetPresentationAdapter = ({ children }: PropsWithChildren) => {
     disableInputAutoResize: !!disableResizingInputFontSize,
     hideNetworkLogo: !!hideNetworkLogo,
     locale: i18n.resolvedLanguage ?? i18n.language,
-    mapNetworkIconUrl: (network: Network) =>
-      typeof chainIconMapping === "function"
-        ? chainIconMapping(network as SupportedSKChains)
-        : chainIconMapping?.[network as SupportedSKChains],
+    mapNetworkIconUrl: (network: Network) => {
+      if (!isWalletNetwork(network)) return undefined;
+
+      return typeof chainIconMapping === "function"
+        ? chainIconMapping(network)
+        : chainIconMapping?.[network];
+    },
     mapTokenIconUrl: (token: Token) => {
       if (!tokenIconMapping) return undefined;
 

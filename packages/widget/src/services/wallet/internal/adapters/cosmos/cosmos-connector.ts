@@ -17,7 +17,6 @@ import {
   WalletAddress,
   type WalletAddress as WalletAddressType,
 } from "../../../../../domain/identity/identifiers";
-import { CosmosNetworks } from "../../../../../domain/network/networks";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { getWalletNetworkLogo } from "../../runtime/assets";
@@ -74,7 +73,7 @@ export const createCosmosConnector = ({
       getUri: (uri) => uri,
     },
     chainGroup: {
-      iconUrl: getWalletNetworkLogo(CosmosNetworks.Cosmos),
+      iconUrl: getWalletNetworkLogo("cosmos"),
       title: "Cosmos",
       id: "cosmos",
     },

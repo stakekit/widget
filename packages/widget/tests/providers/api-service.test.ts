@@ -22,6 +22,7 @@ import {
 } from "../../src/services/api/resource-sources";
 import { makeYieldOperations } from "../../src/services/api/yield-operations";
 import { makeYieldResourceSource } from "../../src/services/api/yield-resource-source";
+import { WalletBootstrapSource } from "../../src/services/wallet/wallet-bootstrap-source";
 import {
   yieldApiActionDtoFixture,
   yieldApiProviderFixture,
@@ -55,17 +56,21 @@ describe("application API services", () => {
     const legacySource = Context.get(context, LegacyResourceSource);
     const yieldOperations = Context.get(context, YieldOperations);
     const yieldSource = Context.get(context, YieldResourceSource);
+    const walletBootstrapSource = Context.get(context, WalletBootstrapSource);
 
-    expect(legacySource.getEnabledNetworks).toBeTypeOf("function");
     expect(legacySource.scanTokenBalances).toBeTypeOf("function");
     expect(legacySource.getPrices).toBeTypeOf("function");
     expect(legacySource.getRewardsSummaries).toBeTypeOf("function");
     expect(yieldOperations.previewAction).toBeTypeOf("function");
     expect(yieldSource.getPositions).toBeTypeOf("function");
+    expect(yieldSource.getEnabledWalletNetworks).toBeTypeOf("function");
     expect(yieldSource.getHealth).toBeTypeOf("function");
     expect(yieldSource.getOpportunity).toBeTypeOf("function");
     expect(yieldSource.getProvider).toBeTypeOf("function");
     expect(yieldSource.listYields).toBeTypeOf("function");
+    expect(walletBootstrapSource.getEnabledWalletNetworks).toBe(
+      yieldSource.getEnabledWalletNetworks
+    );
     expect(borrowOperations.executeAction).toBeTypeOf("function");
     expect(borrowSource.getMarkets).toBeTypeOf("function");
   });
@@ -172,13 +177,15 @@ describe("application API services", () => {
     expect(health).toHaveBeenCalledWith(undefined);
   });
 
-  it("maps enabled networks through the Legacy read capability", async () => {
-    const enabledNetworks = vi.fn(() => Effect.succeed(["ethereum", "solana"]));
-    const source = makeLegacyResourceSource({
-      YieldControllerGetMyNetworks: enabledNetworks,
+  it("maps Enabled Wallet Networks through the Yield read capability", async () => {
+    const enabledNetworks = vi.fn(() =>
+      Effect.succeed([{ id: "ethereum" }, { id: "plume" }, { id: "solana" }])
+    );
+    const source = makeYieldResourceSource({
+      NetworksControllerGetNetworks: enabledNetworks,
     } as never);
 
-    expect(await Effect.runPromise(source.getEnabledNetworks())).toEqual(
+    expect(await Effect.runPromise(source.getEnabledWalletNetworks())).toEqual(
       new Set(["ethereum", "solana"])
     );
     expect(enabledNetworks).toHaveBeenCalledWith(undefined);

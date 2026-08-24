@@ -1,27 +1,13 @@
 import type { Chain } from "@stakekit/rainbowkit";
-import { MiscNetworks } from "../../../../domain/network/networks";
-import type { WalletNetwork } from "../../../../domain/wallet/network";
+import type { WalletMiscNetwork } from "../../../../domain/wallet/network";
 import { MiscChainIds } from "../../../../public-api/types";
 import type { KebabToCamelCase } from "../../../../shared/type-helpers";
 import { getTokenLogo } from "../../network-assets";
 
-const supportedMiscChains = [
-  MiscNetworks.Near,
-  MiscNetworks.Tezos,
-  MiscNetworks.Solana,
-  MiscNetworks.Tron,
-  MiscNetworks.Ton,
-  MiscNetworks.Cardano,
-] as const satisfies ReadonlyArray<WalletNetwork>;
-
-export const supportedMiscChainsSet = new Set(supportedMiscChains);
-
-export type SupportedMiscChains = (typeof supportedMiscChains)[number];
-
 export type MiscChainsMap = {
-  [Key in SupportedMiscChains]: {
+  [Key in WalletMiscNetwork]: {
     type: "misc";
-    skChainName: Key;
+    network: Key;
     wagmiChain: Chain;
   };
 };
@@ -117,39 +103,39 @@ export const cardano = {
 } as const satisfies Chain;
 
 export const miscChainsMap: MiscChainsMap = {
-  [MiscNetworks.Near]: {
+  near: {
     type: "misc",
-    skChainName: MiscNetworks.Near,
+    network: "near",
     wagmiChain: near,
   },
-  [MiscNetworks.Tezos]: {
+  tezos: {
     type: "misc",
-    skChainName: MiscNetworks.Tezos,
+    network: "tezos",
     wagmiChain: tezos,
   },
-  [MiscNetworks.Solana]: {
+  solana: {
     type: "misc",
-    skChainName: MiscNetworks.Solana,
+    network: "solana",
     wagmiChain: solana,
   },
-  [MiscNetworks.Tron]: {
+  tron: {
     type: "misc",
-    skChainName: MiscNetworks.Tron,
+    network: "tron",
     wagmiChain: tron,
   },
-  [MiscNetworks.Ton]: {
+  ton: {
     type: "misc",
-    skChainName: MiscNetworks.Ton,
+    network: "ton",
     wagmiChain: ton,
   },
-  [MiscNetworks.Cardano]: {
+  cardano: {
     type: "misc",
-    skChainName: MiscNetworks.Cardano,
+    network: "cardano",
     wagmiChain: cardano,
   },
 };
 
 MiscChainIds satisfies Record<
-  Capitalize<KebabToCamelCase<SupportedMiscChains>>,
+  Capitalize<KebabToCamelCase<WalletMiscNetwork>>,
   number
 >;

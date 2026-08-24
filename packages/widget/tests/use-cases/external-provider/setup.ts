@@ -123,13 +123,13 @@ export const setup = (worker: TestWorker) => {
   });
 
   worker.use(
-    http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await mockDelay();
       return HttpResponse.json([
-        etherNativeStaking.token.network,
-        avalancheAvaxNativeStaking.token.network,
-        solanaNativeStaking.token.network,
-        tonNativeStaking.token.network,
+        { id: etherNativeStaking.token.network },
+        { id: avalancheAvaxNativeStaking.token.network },
+        { id: solanaNativeStaking.token.network },
+        { id: tonNativeStaking.token.network },
       ]);
     }),
 

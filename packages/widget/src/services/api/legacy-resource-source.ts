@@ -12,7 +12,6 @@ import {
   type RewardsAddresses,
   RewardsSummaryRecord,
 } from "../../domain/portfolio/models";
-import { EnabledNetworksResponse } from "../../domain/wallet/models";
 import type * as LegacyApi from "../../generated/api/legacy";
 import {
   decodeApiResponse,
@@ -23,14 +22,6 @@ import {
 import type { EarnTokenCatalogRequest } from "./resource-sources";
 
 export const makeLegacyResourceSource = (legacyApi: LegacyApi.LegacyApi) => {
-  const getEnabledNetworks = Effect.fn(
-    "LegacyResourceSource.getEnabledNetworks"
-  )(function* () {
-    return yield* legacyApi
-      .YieldControllerGetMyNetworks(undefined)
-      .pipe(decodeApiResponse("enabled-networks", EnabledNetworksResponse));
-  });
-
   const getPrices = Effect.fn("LegacyResourceSource.getPrices")(function* (
     request: PriceRequest
   ) {
@@ -104,7 +95,6 @@ export const makeLegacyResourceSource = (legacyApi: LegacyApi.LegacyApi) => {
   );
 
   return {
-    getEnabledNetworks,
     getGasTokenBalances,
     getPrices,
     getRewardsSummaries,

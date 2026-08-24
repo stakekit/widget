@@ -23,6 +23,7 @@ import {
   RewardRateHistoryResponse,
   TvlHistoryResponse,
 } from "../../domain/portfolio/models";
+import { EnabledWalletNetworksResponse } from "../../domain/wallet/models";
 import type * as YieldApi from "../../generated/api/yield";
 import {
   decodeApiResponse,
@@ -48,6 +49,16 @@ const toYieldDirectoryParams = (request: YieldDirectoryRequest) => ({
 });
 
 export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
+  const getEnabledWalletNetworks = Effect.fn(
+    "YieldResourceSource.getEnabledWalletNetworks"
+  )(function* () {
+    return yield* yieldApi
+      .NetworksControllerGetNetworks(undefined)
+      .pipe(
+        decodeApiResponse("enabled-networks", EnabledWalletNetworksResponse)
+      );
+  });
+
   const getHealth = Effect.fn("YieldResourceSource.getHealth")(function* () {
     return yield* yieldApi
       .HealthControllerHealth(undefined)
@@ -194,6 +205,7 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
   });
 
   return {
+    getEnabledWalletNetworks,
     getHealth,
     getKycStatus,
     getOpportunity,

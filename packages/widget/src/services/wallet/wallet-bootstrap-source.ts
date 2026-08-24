@@ -1,10 +1,13 @@
 import { Context, type Effect } from "effect";
 import type { EarnYield } from "../../domain/earn/models";
 import type { YieldId } from "../../domain/identity/identifiers";
-import type { EnabledNetworks } from "../../domain/wallet/models";
+import type { EnabledWalletNetworks } from "../../domain/wallet/models";
 
 type WalletBootstrapSourceService = {
-  readonly getEnabledNetworks: () => Effect.Effect<EnabledNetworks, unknown>;
+  readonly getEnabledWalletNetworks: () => Effect.Effect<
+    EnabledWalletNetworks,
+    unknown
+  >;
   readonly getOpportunity: (
     yieldId: YieldId
   ) => Effect.Effect<typeof EarnYield.Type, unknown>;

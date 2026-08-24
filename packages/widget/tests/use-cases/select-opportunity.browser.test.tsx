@@ -140,10 +140,10 @@ describe("Select opportunity", () => {
     };
 
     worker.use(
-      http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+      http.get(yieldApiRoute("/v1/networks"), async () => {
         await mockDelay();
 
-        return HttpResponse.json(["ethereum", "polkadot"]);
+        return HttpResponse.json([{ id: "ethereum" }, { id: "polkadot" }]);
       }),
       http.get(legacyApiRoute("/v1/tokens"), async () => {
         await mockDelay();

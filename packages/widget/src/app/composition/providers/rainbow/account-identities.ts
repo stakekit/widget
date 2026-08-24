@@ -1,7 +1,7 @@
 import {
-  isEvmChain,
-  type SupportedSKChains,
-} from "../../../../services/wallet/supported-chains";
+  isEvmWalletNetwork,
+  type WalletNetwork,
+} from "../../../../domain/wallet/network";
 
 type LedgerAccountIdentity = {
   readonly address: string;
@@ -14,9 +14,9 @@ const isSameAccountAddress = ({
 }: {
   readonly candidateAddress: string;
   readonly currentAddress: string;
-  readonly network: SupportedSKChains;
+  readonly network: WalletNetwork;
 }) =>
-  isEvmChain(network)
+  isEvmWalletNetwork(network)
     ? candidateAddress.toLowerCase() === currentAddress.toLowerCase()
     : candidateAddress === currentAddress;
 
@@ -27,7 +27,7 @@ export const getOtherLedgerAccounts = <Account extends LedgerAccountIdentity>({
 }: {
   readonly accounts: ReadonlyArray<Account>;
   readonly currentAddress: string;
-  readonly network: SupportedSKChains;
+  readonly network: WalletNetwork;
 }): ReadonlyArray<Account> =>
   accounts.filter(
     (account) =>

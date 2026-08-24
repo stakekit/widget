@@ -13,8 +13,8 @@ import { Effect, Result, Stream } from "effect";
 import type { Address } from "viem";
 import type { CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
+import type { WalletNetwork } from "../../../../../domain/wallet/network";
 import type { InitParams } from "../../../../../services/wallet/init-params";
-import type { SupportedSKChains } from "../../../../../services/wallet/supported-chains";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { normalizeChainId } from "../../normalize-chain-id";
@@ -184,10 +184,8 @@ const createLedgerLiveConnector = ({
           [] as { account: Account; chainItem: ChainItem }[]
         )
         .sort((a, b) => {
-          const aPriority =
-            ledgerChainPriority.get(a.chainItem.skChainName) || 999;
-          const bPriority =
-            ledgerChainPriority.get(b.chainItem.skChainName) || 999;
+          const aPriority = ledgerChainPriority.get(a.chainItem.network) || 999;
+          const bPriority = ledgerChainPriority.get(b.chainItem.network) || 999;
 
           return aPriority - bPriority;
         });
@@ -237,7 +235,7 @@ const createLedgerLiveConnector = ({
           : undefined) ??
         (queryParams.network
           ? accountsWithChain.find(
-              (value) => value.chainItem.skChainName === queryParams.network
+              (value) => value.chainItem.network === queryParams.network
             )
           : undefined) ??
         accountsWithChain[0];
@@ -471,7 +469,7 @@ export const ledgerLiveConnector = ({
 type ChainItem = {
   currencyId: string;
   family: SupportedLedgerLiveFamilies;
-  skChainName: SupportedSKChains;
+  network: WalletNetwork;
   chain: Chain;
 };
 

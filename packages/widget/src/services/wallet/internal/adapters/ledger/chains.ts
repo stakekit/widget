@@ -1,11 +1,5 @@
 import type { Currency, Families } from "@ledgerhq/wallet-api-client";
-import {
-  CosmosNetworks,
-  EvmNetworks,
-  MiscNetworks,
-  SubstrateNetworks,
-} from "../../../../../domain/network/networks";
-import type { SupportedSKChains } from "../../../supported-chains";
+import type { WalletNetwork } from "../../../../../domain/wallet/network";
 
 export type SupportedLedgerLiveFamilies = Extract<
   Families,
@@ -25,179 +19,179 @@ export const supportedLedgerFamiliesWithCurrency = {
     "*": {
       currencyId: "near",
       family: "near",
-      skChainName: MiscNetworks.Near,
+      network: "near",
     },
   },
   tezos: {
     "*": {
       currencyId: "tezos",
       family: "tezos",
-      skChainName: MiscNetworks.Tezos,
+      network: "tezos",
     },
   },
   solana: {
     "*": {
       currencyId: "solana",
       family: "solana",
-      skChainName: MiscNetworks.Solana,
+      network: "solana",
     },
   },
   tron: {
     "*": {
       currencyId: "tron",
       family: "tron",
-      skChainName: MiscNetworks.Tron,
+      network: "tron",
     },
   },
   ton: {
     "*": {
       currencyId: "ton",
       family: "ton",
-      skChainName: MiscNetworks.Ton,
+      network: "ton",
     },
   },
   polkadot: {
     "*": {
       currencyId: "assethub_polkadot",
       family: "polkadot",
-      skChainName: SubstrateNetworks.Polkadot,
+      network: "polkadot",
     },
   },
   celo: {
     "*": {
       currencyId: "celo",
       family: "celo",
-      skChainName: EvmNetworks.Celo,
+      network: "celo",
     },
   },
   ethereum: {
     ethereum: {
       currencyId: "ethereum",
       family: "ethereum",
-      skChainName: EvmNetworks.Ethereum,
+      network: "ethereum",
     },
     polygon: {
       currencyId: "polygon",
       family: "ethereum",
-      skChainName: EvmNetworks.Polygon,
+      network: "polygon",
     },
     arbitrum: {
       currencyId: "arbitrum",
       family: "ethereum",
-      skChainName: EvmNetworks.Arbitrum,
+      network: "arbitrum",
     },
     optimism: {
       currencyId: "optimism",
       family: "ethereum",
-      skChainName: EvmNetworks.Optimism,
+      network: "optimism",
     },
     avalanche_c_chain: {
       currencyId: "avalanche_c_chain",
       family: "ethereum",
-      skChainName: EvmNetworks.AvalancheC,
+      network: "avalanche-c",
     },
     ethereum_hoodi: {
       currencyId: "ethereum_hoodi",
       family: "ethereum",
-      skChainName: EvmNetworks.EthereumHoodi,
+      network: "ethereum-hoodi",
     },
     bsc: {
       currencyId: "bsc",
       family: "ethereum",
-      skChainName: EvmNetworks.Binance,
+      network: "binance",
     },
   },
   cosmos: {
     cosmos: {
       currencyId: "cosmos",
       family: "cosmos",
-      skChainName: CosmosNetworks.Cosmos,
+      network: "cosmos",
     },
     crypto_org: {
       currencyId: "crypto_org",
       family: "cosmos",
-      skChainName: CosmosNetworks.Cronos,
+      network: "cronos",
     },
     osmo: {
       currencyId: "osmo",
       family: "cosmos",
-      skChainName: CosmosNetworks.Osmosis,
+      network: "osmosis",
     },
     coreum: {
       currencyId: "coreum",
       family: "cosmos",
-      skChainName: CosmosNetworks.Coreum,
+      network: "coreum",
     },
     axelar: {
       currencyId: "axelar",
       family: "cosmos",
-      skChainName: CosmosNetworks.Axelar,
+      network: "axelar",
     },
     stargaze: {
       currencyId: "stargaze",
       family: "cosmos",
-      skChainName: CosmosNetworks.Stargaze,
+      network: "stargaze",
     },
     secret_network: {
       currencyId: "secret_network",
       family: "cosmos",
-      skChainName: CosmosNetworks.Secret,
+      network: "secret",
     },
     umee: {
       currencyId: "umee",
       family: "cosmos",
-      skChainName: CosmosNetworks.Umee,
+      network: "umee",
     },
     desmos: {
       currencyId: "desmos",
       family: "cosmos",
-      skChainName: CosmosNetworks.Desmos,
+      network: "desmos",
     },
     onomy: {
       currencyId: "onomy",
       family: "cosmos",
-      skChainName: CosmosNetworks.Onomy,
+      network: "onomy",
     },
     quicksilver: {
       currencyId: "quicksilver",
       family: "cosmos",
-      skChainName: CosmosNetworks.Quicksilver,
+      network: "quicksilver",
     },
     persistence: {
       currencyId: "persistence",
       family: "cosmos",
-      skChainName: CosmosNetworks.Persistence,
+      network: "persistence",
     },
     dydx: {
       currencyId: "dydx",
       family: "cosmos",
-      skChainName: CosmosNetworks.Dydx,
+      network: "dydx",
     },
     injective: {
       currencyId: "injective",
       family: "cosmos",
-      skChainName: CosmosNetworks.Injective,
+      network: "injective",
     },
     sei: {
       currencyId: "sei",
       family: "cosmos",
-      skChainName: CosmosNetworks.Sei,
+      network: "sei",
     },
     mantra: {
       currencyId: "mantra",
       family: "cosmos",
-      skChainName: CosmosNetworks.Mantra,
+      network: "mantra",
     },
   },
 } as const satisfies SupportedLedgerFamiliesWithCurrency;
 
-export const ledgerChainPriority = new Map<SupportedSKChains, number>([
-  [SubstrateNetworks.Polkadot, 1],
-  [EvmNetworks.AvalancheC, 2],
-  [MiscNetworks.Tron, 3],
-  [EvmNetworks.Binance, 4],
-  [CosmosNetworks.Cronos, 5],
-  [EvmNetworks.Polygon, 6],
+export const ledgerChainPriority = new Map<WalletNetwork, number>([
+  ["polkadot", 1],
+  ["avalanche-c", 2],
+  ["tron", 3],
+  ["binance", 4],
+  ["cronos", 5],
+  ["polygon", 6],
 ]);
 
 export type SupportedLedgerFamiliesWithCurrency = Record<
@@ -207,7 +201,7 @@ export type SupportedLedgerFamiliesWithCurrency = Record<
     {
       family: SupportedLedgerLiveFamilies;
       currencyId: Currency["id"];
-      skChainName: SupportedSKChains;
+      network: WalletNetwork;
     }
   >
 >;

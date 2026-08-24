@@ -10,14 +10,14 @@ import uniqwith from "lodash.uniqwith";
 import { createStore, type Store as MipdStore } from "mipd";
 import { createClient } from "viem";
 import { type Connector, createConfig, http } from "wagmi";
-import type { Chain } from "wagmi/chains";
+import { type Chain, mainnet } from "wagmi/chains";
 import type { WalletAddress } from "../../../../domain/identity/identifiers";
 import type { Network } from "../../../../domain/network/network";
-import type { EnabledNetworks } from "../../../../domain/wallet/models";
+import type { EnabledWalletNetworks } from "../../../../domain/wallet/models";
 import type { ExternalProviderSnapshot } from "../../../../public-api/external-provider-contract";
 import type { SettingsProps, VariantProps } from "../../../../public-api/types";
+import { evmChainGroup } from "../../../../services/wallet/evm-chain-group";
 import type { InitParams } from "../../../../services/wallet/init-params";
-import { evmChainGroup } from "../../../../services/wallet/supported-chains";
 import { config } from "../../../../shared/config/widget-defaults";
 import { omitEnsUniversalResolver } from "../../default-wagmi-config";
 import type { CurrentRef } from "../../external-provider";
@@ -103,7 +103,7 @@ export type BuildWagmiConfigOptions = {
     iconBackground: string;
   };
   externalProviders?: CurrentRef<ExternalProviderSnapshot>;
-  enabledNetworks: EnabledNetworks;
+  enabledNetworks: EnabledWalletNetworks;
   forceWalletConnectOnly: boolean;
   customConnectors?: (chains: Chain[]) => WalletList;
   isLedgerLive: boolean;
@@ -243,10 +243,10 @@ export const buildWagmiConfig = (
           const chainIconMapping = opts.chainIconMapping;
           const mapWagmiChain = (val: {
             wagmiChain: RainbowkitChain;
-            skChainName: Network;
+            network: Network;
           }) => {
             const res = getVariantNetworkUrl({
-              network: val.skChainName,
+              network: val.network,
               chainIconMapping,
             });
 
@@ -280,6 +280,12 @@ export const buildWagmiConfig = (
     const chainsWithoutEnsProfileLookups = chains.map(
       omitEnsUniversalResolver
     ) as [RainbowkitChain, ...RainbowkitChain[]];
+    const hasConfiguredWalletNetworks =
+      chainsWithoutEnsProfileLookups.length > 0;
+    const wagmiChains: [RainbowkitChain, ...RainbowkitChain[]] =
+      hasConfiguredWalletNetworks
+        ? chainsWithoutEnsProfileLookups
+        : [omitEnsUniversalResolver(mainnet)];
 
     const multiInjectedProviderDiscovery =
       !opts.disableInjectedProviderDiscovery &&
@@ -347,6 +353,8 @@ export const buildWagmiConfig = (
     } as const;
 
     const rawWalletList: WalletList = (() => {
+      if (!hasConfiguredWalletNetworks) return [];
+
       if (evmConfig.institutionalWallets) {
         return [
           {
@@ -389,6 +397,10 @@ export const buildWagmiConfig = (
         .filter((value) => value.wallets.length > 0);
     })();
     const walletList = customizeWalletList(rawWalletList);
+    const connectors =
+      walletList.length > 0
+        ? connectorsForWallets(walletList, connectorOptions)
+        : [];
 
     const queryNetwork = val.queryParams.network;
     const queryParamsInitChainId = queryNetwork
@@ -405,14 +417,17 @@ export const buildWagmiConfig = (
       : undefined;
 
     const wagmiConfig = createConfig({
-      chains: chainsWithoutEnsProfileLookups,
+      // Wagmi requires one transport chain even when the project has no Wallet
+      // Networks. The fallback is absent from every adapter map and connector,
+      // so the exposed wallet topology remains empty.
+      chains: wagmiChains,
       client: ({ chain }) => createClient({ chain, transport: http() }),
       multiInjectedProviderDiscovery: false,
       // The host owns external-provider connection state. Hydrating Wagmi's
       // persisted connector can restore a connector from another topology
       // before the external provider synchronizer establishes its connection.
       storage: opts.externalProviders ? null : undefined,
-      connectors: connectorsForWallets(walletList, connectorOptions),
+      connectors,
     });
 
     if (multiInjectedProviderDiscovery && evmConfig.evmChains.length > 0) {

@@ -7,7 +7,6 @@ import {
 import { exactDecimal } from "../finance/exact";
 import { YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
-import { EvmNetworks } from "../network/networks";
 import { equalTokens, tokenString } from "../token/token";
 import type { EarnProvider, EarnYieldWithProvider } from "./models";
 import {
@@ -473,7 +472,7 @@ export const getYieldTypesSortRank = (yieldDto: EarnYieldWithProvider) =>
 
 const isEthereumStaking = (yieldDto: EarnYieldWithProvider) =>
   yieldDto.mechanics.type === "staking" &&
-  yieldDto.token.network === EvmNetworks.Ethereum &&
+  yieldDto.token.network === "ethereum" &&
   yieldDto.token.symbol === "ETH";
 
 const isNativeStaking = (yieldDto: EarnYieldWithProvider) => {

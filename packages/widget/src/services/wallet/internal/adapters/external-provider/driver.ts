@@ -2,6 +2,7 @@ import { Effect, Result, Schema } from "effect";
 import type { Address } from "viem";
 import type { Connector } from "wagmi";
 import type { Network } from "../../../../../domain/network/network";
+import { isEvmWalletNetwork } from "../../../../../domain/wallet/network";
 import type {
   BittensorTx,
   SKBorrowTxMeta,
@@ -9,13 +10,6 @@ import type {
   SKTxMeta,
   TronTx,
 } from "../../../../../public-api/types";
-import {
-  isBittensorChain,
-  isEvmChain,
-  isSolanaChain,
-  isTonChain,
-  isTronChain,
-} from "../../../../../services/wallet/supported-chains";
 import {
   WalletBroadcastError,
   WalletCapabilityUnavailableError,
@@ -64,7 +58,7 @@ const decodeExternalProviderTransaction = ({
   readonly network: Network;
   readonly tx: string;
 }): Effect.Effect<SKTx, WalletDecodeError> => {
-  if (isEvmChain(network)) {
+  if (isEvmWalletNetwork(network)) {
     return decodeAndPrepareEvmTransaction({ address, tx }).pipe(
       Effect.map((decodedTx): SKTx => ({ type: "evm", tx: decodedTx })),
       Effect.mapError((cause) => new WalletDecodeError({ cause }))
@@ -72,7 +66,7 @@ const decodeExternalProviderTransaction = ({
   }
 
   const result: Result.Result<SKTx, string> = (() => {
-    if (isSolanaChain(network)) {
+    if (network === "solana") {
       return decodeSchema(unsignedSolanaTransactionCodec, tx).pipe(
         Result.map((decodedTx) => ({
           type: "solana",
@@ -81,7 +75,7 @@ const decodeExternalProviderTransaction = ({
       );
     }
 
-    if (isTonChain(network)) {
+    if (network === "ton") {
       return decodeSchema(
         Schema.fromJsonString(unsignedTonTransactionCodec),
         tx
@@ -96,7 +90,7 @@ const decodeExternalProviderTransaction = ({
       );
     }
 
-    if (isTronChain(network)) {
+    if (network === "tron") {
       return decodeSchema(
         Schema.fromJsonString(unsignedTronTransactionCodec),
         tx
@@ -105,7 +99,7 @@ const decodeExternalProviderTransaction = ({
       );
     }
 
-    if (isBittensorChain(network)) {
+    if (network === "bittensor") {
       return decodeSchema(
         Schema.fromJsonString(substratePayloadCodec),
         tx

@@ -4,7 +4,7 @@ import type { Connector } from "wagmi";
 import type { WalletAddress } from "../../domain/identity/identifiers";
 import type { AdditionalAddresses } from "../../domain/wallet/address";
 
-import type { SupportedSKChains } from "../../services/wallet/supported-chains";
+import type { WalletNetwork } from "../../domain/wallet/network";
 
 export type SKWallet = {
   additionalAddresses: AdditionalAddresses | null;
@@ -13,7 +13,7 @@ export type SKWallet = {
   connectorChains: Chain[];
 } & (
   | {
-      network: SupportedSKChains;
+      network: WalletNetwork;
       address: WalletAddress;
       chain: Chain;
       isConnected: true;

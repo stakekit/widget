@@ -50,7 +50,7 @@ const wagmiNetworkToSKNetwork = ({
       ...cosmosChainsMap,
       ...miscChainsMap,
       ...substrateChainsMap,
-    }).find((c) => c.wagmiChain.id === chain.id)?.skChainName ?? null
+    }).find((c) => c.wagmiChain.id === chain.id)?.network ?? null
   );
 };
 

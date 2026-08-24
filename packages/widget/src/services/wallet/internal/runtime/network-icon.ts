@@ -1,6 +1,6 @@
 import type { Network } from "../../../../domain/network/network";
+import { isWalletNetwork } from "../../../../domain/wallet/network";
 import type { SettingsProps } from "../../../../public-api/types";
-import type { SupportedSKChains } from "../../../../services/wallet/supported-chains";
 import { getWalletNetworkLogo } from "./assets";
 
 export const getVariantNetworkUrl = ({
@@ -10,10 +10,14 @@ export const getVariantNetworkUrl = ({
   readonly chainIconMapping: SettingsProps["chainIconMapping"];
   readonly network: Network;
 }) => {
-  const mappedNetwork =
-    typeof chainIconMapping === "function"
-      ? chainIconMapping(network as SupportedSKChains)
-      : chainIconMapping?.[network as SupportedSKChains];
+  const getMappedNetwork = () => {
+    if (!isWalletNetwork(network)) return undefined;
+    if (typeof chainIconMapping === "function") {
+      return chainIconMapping(network);
+    }
 
-  return mappedNetwork || getWalletNetworkLogo(network);
+    return chainIconMapping?.[network];
+  };
+
+  return getMappedNetwork() || getWalletNetworkLogo(network);
 };

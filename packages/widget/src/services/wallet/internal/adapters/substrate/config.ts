@@ -9,7 +9,7 @@ import { type SubstrateChainsMap, substrateChainsMap } from "./chains";
 const enabledSubstrateChains = (enabledNetworks: ReadonlySet<Network>) => {
   const filteredSubstrateChainsMap: Partial<SubstrateChainsMap> = Record.filter(
     substrateChainsMap,
-    (v) => enabledNetworks.has(v.skChainName)
+    (v) => enabledNetworks.has(v.network)
   );
 
   const substrateChains = Object.values(filteredSubstrateChainsMap).map(
@@ -26,7 +26,7 @@ const enabledSubstrateChains = (enabledNetworks: ReadonlySet<Network>) => {
       chainIconUrl:
         typeof val.wagmiChain.iconUrl === "string"
           ? val.wagmiChain.iconUrl
-          : getWalletNetworkLogo(val.skChainName),
+          : getWalletNetworkLogo(val.network),
       genesisHash: val.genesisHash as `0x${string}`,
       ss58Format: val.ss58Format,
     })

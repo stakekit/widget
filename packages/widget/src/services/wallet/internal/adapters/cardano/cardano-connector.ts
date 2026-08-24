@@ -3,7 +3,6 @@ import type { WalletDetailsParams, WalletList } from "@stakekit/rainbowkit";
 import { Effect, Stream } from "effect";
 import type { Address, Chain } from "viem";
 import { createConnector } from "wagmi";
-import { MiscNetworks } from "../../../../../domain/network/networks";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { getWalletNetworkLogo } from "../../runtime/assets";
 import { cardano } from "../configured-chains";
@@ -132,7 +131,7 @@ export const getCardanoConnectors = (): WalletList[number] => ({
     chainGroup: {
       id: "cardano",
       title: "Cardano",
-      iconUrl: getWalletNetworkLogo(MiscNetworks.Cardano),
+      iconUrl: getWalletNetworkLogo("cardano"),
     },
     createConnector: (walletDetailsParams) =>
       createCardanoConnector({ wallet, walletDetailsParams }),

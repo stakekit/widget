@@ -142,7 +142,7 @@ export type BittensorTx = {
 
 export type SKTx = EVMTx | SolanaTx | TonTx | TronTx | BittensorTx;
 
-type SKNetwork =
+export type SKNetwork =
   | "ethereum"
   | "ethereum-goerli"
   | "ethereum-holesky"

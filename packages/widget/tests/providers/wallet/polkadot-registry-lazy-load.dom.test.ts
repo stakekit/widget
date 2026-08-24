@@ -2,7 +2,6 @@ import type { RawTransaction } from "@ledgerhq/wallet-api-core";
 import { Effect, Result } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import type { Network } from "../../../src/domain/network/network";
-import { SubstrateNetworks } from "../../../src/domain/network/networks";
 import type { SKTxMeta } from "../../../src/public-api/types";
 import { makePrepareLedgerLiveTransaction } from "../../../src/services/wallet/internal/adapters/ledger/prepare-ledger-live-transaction";
 import { getConfig as getSubstrateConfig } from "../../../src/services/wallet/internal/adapters/substrate/config";
@@ -152,7 +151,7 @@ const txMeta = {
   inputToken: {
     decimals: 10,
     name: "Polkadot",
-    network: SubstrateNetworks.Polkadot,
+    network: "polkadot",
     symbol: "DOT",
   },
   providersDetails: [],
@@ -228,7 +227,7 @@ describe("Polkadot registry lazy load", () => {
 
     await Effect.runPromise(
       prepareTransaction({
-        network: SubstrateNetworks.Polkadot,
+        network: "polkadot",
         tx: polkadotLedgerTx,
         txMeta,
       })
@@ -239,7 +238,7 @@ describe("Polkadot registry lazy load", () => {
 
     await Effect.runPromise(
       prepareTransaction({
-        network: SubstrateNetworks.Polkadot,
+        network: "polkadot",
         tx: polkadotLedgerTx,
         txMeta,
       })

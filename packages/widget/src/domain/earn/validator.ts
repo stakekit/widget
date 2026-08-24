@@ -1,4 +1,4 @@
-import { isEvmNetwork } from "../network/networks";
+import { isEvmNetwork } from "../network/network";
 import type { EarnValidator } from "./models";
 
 export type ValidatorKey = string;

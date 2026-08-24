@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { TokenAddress } from "../identity/identifiers";
-import { isEvmNetwork } from "../network/networks";
+import { isEvmNetwork } from "../network/network";
 
 export const Token = Schema.Struct({
   ...YieldApi.TokenDto.fields,

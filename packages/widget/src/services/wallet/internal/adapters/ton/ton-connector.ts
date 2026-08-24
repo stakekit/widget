@@ -12,7 +12,6 @@ import {
 import { Clock, Duration, Effect, Schema, Stream } from "effect";
 import type { Address, Chain } from "viem";
 import { createConnector } from "wagmi";
-import { MiscNetworks } from "../../../../../domain/network/networks";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { getWalletNetworkLogo } from "../../runtime/assets";
 import { ton } from "../configured-chains";
@@ -211,12 +210,12 @@ export const getTonConnectors = ({
     () => ({
       id: "tonconnect",
       name: "TonConnect",
-      iconUrl: getWalletNetworkLogo(MiscNetworks.Ton),
+      iconUrl: getWalletNetworkLogo("ton"),
       iconBackground: "transparent",
       chainGroup: {
         id: "ton",
         title: "Ton",
-        iconUrl: getWalletNetworkLogo(MiscNetworks.Ton),
+        iconUrl: getWalletNetworkLogo("ton"),
       },
       createConnector: (walletDetailsParams) =>
         createTonConnector(walletDetailsParams, tonConnectManifestUrl),

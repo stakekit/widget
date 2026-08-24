@@ -33,7 +33,6 @@ import { optimism } from "wagmi/chains";
 import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { EvmNetworks } from "../../src/domain/network/networks";
 import { WagmiConfigProvider } from "../../src/features/wallet/composition";
 import {
   useWalletConfig,
@@ -48,7 +47,7 @@ import type {
   SolanaWalletSnapshot,
 } from "../../src/services/wallet/internal/runtime/solana-runtime";
 import { WalletService } from "../../src/services/wallet/wallet-service";
-import { legacyApiRoute } from "../mocks/api-routes";
+import { yieldApiRoute } from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { rkMockWallet } from "../utils/mock-connector";
@@ -350,9 +349,9 @@ describe("WagmiConfigProvider", () => {
     worker,
   }) => {
     worker.use(
-      http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+      http.get(yieldApiRoute("/v1/networks"), async () => {
         await mockDelay();
-        return HttpResponse.json([EvmNetworks.Ethereum]);
+        return HttpResponse.json([{ id: "ethereum" }]);
       })
     );
 
@@ -406,8 +405,8 @@ describe("WagmiConfigProvider", () => {
     worker,
   }) => {
     worker.use(
-      http.get(legacyApiRoute("/v1/yields/enabled/networks"), () =>
-        HttpResponse.json([EvmNetworks.Ethereum])
+      http.get(yieldApiRoute("/v1/networks"), () =>
+        HttpResponse.json([{ id: "ethereum" }])
       )
     );
     const onConfig = vi.fn<(config: Config) => void>();
@@ -434,8 +433,8 @@ describe("WagmiConfigProvider", () => {
     worker,
   }) => {
     worker.use(
-      http.get(legacyApiRoute("/v1/yields/enabled/networks"), () =>
-        HttpResponse.json([EvmNetworks.Ethereum, EvmNetworks.Optimism])
+      http.get(yieldApiRoute("/v1/networks"), () =>
+        HttpResponse.json([{ id: "ethereum" }, { id: "optimism" }])
       )
     );
     const account = "0x0000000000000000000000000000000000000001";

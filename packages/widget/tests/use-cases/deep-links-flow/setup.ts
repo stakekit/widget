@@ -266,9 +266,9 @@ export const setup = async (
         { token: ether, availableYields: ["ethereum-eth-etherfi-staking"] },
       ]);
     }),
-    http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await mockDelay();
-      return HttpResponse.json([token.network, ether.network]);
+      return HttpResponse.json([{ id: token.network }, { id: ether.network }]);
     }),
 
     http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {

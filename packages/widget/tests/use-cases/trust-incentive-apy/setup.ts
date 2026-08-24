@@ -278,9 +278,9 @@ export const setup = async (
   });
 
   worker.use(
-    http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await mockDelay();
-      return HttpResponse.json([token.network]);
+      return HttpResponse.json([{ id: token.network }]);
     }),
     http.get(legacyApiRoute("/v1/tokens"), async () => {
       await mockDelay();

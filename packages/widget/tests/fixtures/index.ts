@@ -12,7 +12,6 @@ import {
 } from "../../src/domain/earn/models";
 import type { YieldRewardRate } from "../../src/domain/earn/reward-rate";
 import { exactDecimal } from "../../src/domain/finance/exact";
-import { EvmNetworks } from "../../src/domain/network/networks";
 import type {
   TokenDto as LegacyTokenDto,
   YieldDto as LegacyYieldDto,
@@ -229,7 +228,7 @@ export const legacyYieldFixture = (
     name: "Ethereum",
     symbol: "ETH",
     decimals: 18,
-    network: EvmNetworks.Ethereum,
+    network: "ethereum",
     coinGeckoId: "ethereum",
     logoURI: "https://assets.stakek.it/tokens/eth.svg",
   };

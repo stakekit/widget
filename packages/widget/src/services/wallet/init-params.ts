@@ -1,7 +1,10 @@
 import { Effect, Option, Schema, SchemaGetter } from "effect";
 import { YieldId } from "../../domain/identity/identifiers";
 import { Network } from "../../domain/network/network";
-import { isSupportedChain, type SupportedSKChains } from "./supported-chains";
+import {
+  isWalletNetwork,
+  type WalletNetwork,
+} from "../../domain/wallet/network";
 
 const invalidAsNull = <S extends Schema.Constraint>(schema: S) =>
   Schema.NullOr(schema).pipe(
@@ -25,9 +28,9 @@ const SafeYieldId = SafeQueryParam.check(
 
 const SupportedNetwork = Network.pipe(
   Schema.decodeTo(
-    Schema.declare<SupportedSKChains>(
-      (value): value is SupportedSKChains =>
-        typeof value === "string" && isSupportedChain(value),
+    Schema.declare<WalletNetwork>(
+      (value): value is WalletNetwork =>
+        typeof value === "string" && isWalletNetwork(value),
       { expected: "a widget-supported network" }
     )
   )

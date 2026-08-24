@@ -1,12 +1,10 @@
 import { assets, chains as RegistryChains } from "chain-registry";
 import { Array as EArray, Option } from "effect";
-import { CosmosNetworks } from "../../../../../../domain/network/networks.ts";
 import {
-  type CosmosChain,
-  type SupportedCosmosChains,
-  supportedCosmosChains,
-  type WithWagmiName,
-} from "../chains.ts";
+  type WalletCosmosNetwork,
+  walletCosmosNetworks,
+} from "../../../../../../domain/wallet/network.ts";
+import type { CosmosChain, WithWagmiName } from "../chains.ts";
 
 type AssetList = (typeof assets)[number];
 type Asset = AssetList["assets"][number];
@@ -125,51 +123,48 @@ const chains: CosmosChain[] = [...RegistryChains, mantra];
 
 // CosmosNetworks -> chain_id from registry
 const skCosmosNetworksToRegistryIds: {
-  [Key in SupportedCosmosChains]: CosmosChain["chain_id"];
+  [Key in WalletCosmosNetwork]: CosmosChain["chain_id"];
 } = {
-  [CosmosNetworks.Cosmos]: "cosmoshub-4",
-  [CosmosNetworks.Akash]: "akashnet-2",
-  [CosmosNetworks.Osmosis]: "osmosis-1",
-  [CosmosNetworks.Juno]: "juno-1",
-  [CosmosNetworks.Kava]: "kava_2222-10",
-  [CosmosNetworks.Stargaze]: "stargaze-1",
-  [CosmosNetworks.Agoric]: "agoric-3",
-  [CosmosNetworks.Regen]: "regen-1",
-  [CosmosNetworks.Axelar]: "axelar-dojo-1",
-  [CosmosNetworks.BandProtocol]: "laozi-mainnet",
-  [CosmosNetworks.Chihuahua]: "chihuahua-1",
-  [CosmosNetworks.Comdex]: "comdex-1",
-  [CosmosNetworks.Crescent]: "crescent-1",
-  [CosmosNetworks.Cronos]: "crypto-org-chain-mainnet-1",
-  [CosmosNetworks.Cudos]: "cudos-1",
-  [CosmosNetworks.FetchAi]: "fetchhub-4",
-  [CosmosNetworks.GravityBridge]: "gravity-bridge-3",
-  [CosmosNetworks.IRISnet]: "irishub-1",
-  [CosmosNetworks.KiNetwork]: "kichain-2",
-  [CosmosNetworks.MarsProtocol]: "mars-1",
-  [CosmosNetworks.Onomy]: "onomy-mainnet-1",
-  [CosmosNetworks.Quicksilver]: "quicksilver-2",
-  [CosmosNetworks.Secret]: "secret-4",
-  [CosmosNetworks.Sentinel]: "sentinelhub-2",
-  [CosmosNetworks.Sommelier]: "sommelier-3",
-  [CosmosNetworks.Teritori]: "teritori-1",
-  [CosmosNetworks.Umee]: "umee-1",
-  [CosmosNetworks.Persistence]: "core-1",
-  [CosmosNetworks.Bitsong]: "bitsong-2b",
-  [CosmosNetworks.Coreum]: "coreum-mainnet-1",
-  [CosmosNetworks.Desmos]: "desmos-mainnet",
-  [CosmosNetworks.Dydx]: "dydx-mainnet-1",
-  [CosmosNetworks.Injective]: "injective-1",
-  [CosmosNetworks.Sei]: "pacific-1",
-  [CosmosNetworks.Mantra]: "mantra-1",
+  cosmos: "cosmoshub-4",
+  akash: "akashnet-2",
+  osmosis: "osmosis-1",
+  juno: "juno-1",
+  kava: "kava_2222-10",
+  stargaze: "stargaze-1",
+  agoric: "agoric-3",
+  regen: "regen-1",
+  axelar: "axelar-dojo-1",
+  "band-protocol": "laozi-mainnet",
+  chihuahua: "chihuahua-1",
+  comdex: "comdex-1",
+  crescent: "crescent-1",
+  cronos: "crypto-org-chain-mainnet-1",
+  cudos: "cudos-1",
+  "fetch-ai": "fetchhub-4",
+  "gravity-bridge": "gravity-bridge-3",
+  irisnet: "irishub-1",
+  "ki-network": "kichain-2",
+  "mars-protocol": "mars-1",
+  onomy: "onomy-mainnet-1",
+  quicksilver: "quicksilver-2",
+  secret: "secret-4",
+  sentinel: "sentinelhub-2",
+  sommelier: "sommelier-3",
+  teritori: "teritori-1",
+  umee: "umee-1",
+  persistence: "core-1",
+  bitsong: "bitsong-2b",
+  coreum: "coreum-mainnet-1",
+  desmos: "desmos-mainnet",
+  dydx: "dydx-mainnet-1",
+  injective: "injective-1",
+  sei: "pacific-1",
+  mantra: "mantra-1",
 };
 
-const registryIdsToSKCosmosNetworks: Record<string, SupportedCosmosChains> =
+const registryIdsToSKCosmosNetworks: Record<string, WalletCosmosNetwork> =
   Object.fromEntries(
-    supportedCosmosChains.map((key) => [
-      skCosmosNetworksToRegistryIds[key],
-      key,
-    ])
+    walletCosmosNetworks.map((key) => [skCosmosNetworksToRegistryIds[key], key])
   );
 
 const registryIdsSet = new Set(Object.values(skCosmosNetworksToRegistryIds));

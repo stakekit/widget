@@ -63,6 +63,12 @@ const isoAt = (milliseconds: number) =>
   DateTime.formatIso(DateTime.makeUnsafe(milliseconds));
 
 export const getYieldApiMock = () => [
+  http.get(yieldApiRoute("/v1/networks"), async () => {
+    await mockDelay();
+
+    return HttpResponse.json([{ id: defaultToken.network }]);
+  }),
+
   http.get(yieldApiRoute("/health"), async () => {
     await mockDelay();
 

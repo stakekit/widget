@@ -21,172 +21,140 @@ import {
   unichain,
   viction,
 } from "viem/chains";
-import { EvmNetworks } from "../../../../../domain/network/networks";
-import type { WalletNetwork } from "../../../../../domain/wallet/network";
+import type { WalletEvmNetwork } from "../../../../../domain/wallet/network";
 import { EvmChainIds } from "../../../../../public-api/types";
 import type { KebabToCamelCase } from "../../../../../shared/type-helpers";
 import { getNetworkLogo } from "../../../network-assets";
 
-const supportedEVMChains = [
-  EvmNetworks.AvalancheC,
-  EvmNetworks.Arbitrum,
-  EvmNetworks.Binance,
-  EvmNetworks.Celo,
-  EvmNetworks.Ethereum,
-  EvmNetworks.EthereumGoerli,
-  EvmNetworks.Harmony,
-  EvmNetworks.Optimism,
-  EvmNetworks.Polygon,
-  EvmNetworks.Viction,
-  EvmNetworks.EthereumHoodi,
-  EvmNetworks.Base,
-  EvmNetworks.Linea,
-  EvmNetworks.Core,
-  EvmNetworks.Sonic,
-  EvmNetworks.EthereumSepolia,
-  EvmNetworks.Unichain,
-  EvmNetworks.Katana,
-  EvmNetworks.Gnosis,
-  EvmNetworks.HyperEVM,
-  EvmNetworks.Plasma,
-  EvmNetworks.Monad,
-  EvmNetworks.MonadTestnet,
-  EvmNetworks.Pharos,
-] as const satisfies ReadonlyArray<WalletNetwork>;
-
-export const supportedEVMChainsSet = new Set(supportedEVMChains);
-
-export type SupportedEvmChain = (typeof supportedEVMChains)[number];
-
 export type EvmChainsMap = {
-  [Key in SupportedEvmChain]: {
+  [Key in WalletEvmNetwork]: {
     type: "evm";
-    skChainName: Key;
+    network: Key;
     wagmiChain: Chain;
   };
 };
 
 export const evmChainsMap: EvmChainsMap = {
-  [EvmNetworks.Ethereum]: {
+  ethereum: {
     type: "evm",
-    skChainName: EvmNetworks.Ethereum,
+    network: "ethereum",
     wagmiChain: mainnet,
   },
-  [EvmNetworks.Polygon]: {
+  polygon: {
     type: "evm",
-    skChainName: EvmNetworks.Polygon,
+    network: "polygon",
     wagmiChain: polygon,
   },
-  [EvmNetworks.Optimism]: {
+  optimism: {
     type: "evm",
-    skChainName: EvmNetworks.Optimism,
+    network: "optimism",
     wagmiChain: optimism,
   },
-  [EvmNetworks.Arbitrum]: {
+  arbitrum: {
     type: "evm",
-    skChainName: EvmNetworks.Arbitrum,
+    network: "arbitrum",
     wagmiChain: arbitrum,
   },
-  [EvmNetworks.AvalancheC]: {
+  "avalanche-c": {
     type: "evm",
-    skChainName: EvmNetworks.AvalancheC,
+    network: "avalanche-c",
     wagmiChain: avalanche,
   },
-  [EvmNetworks.Celo]: {
+  celo: {
     type: "evm",
-    skChainName: EvmNetworks.Celo,
+    network: "celo",
     wagmiChain: {
       ...celo,
-      iconUrl: getNetworkLogo(EvmNetworks.Celo),
+      iconUrl: getNetworkLogo("celo"),
     },
   },
-  [EvmNetworks.Harmony]: {
+  harmony: {
     type: "evm",
-    skChainName: EvmNetworks.Harmony,
+    network: "harmony",
     wagmiChain: {
       ...harmonyOne,
-      iconUrl: getNetworkLogo(EvmNetworks.Harmony),
+      iconUrl: getNetworkLogo("harmony"),
     },
   },
-  [EvmNetworks.Viction]: {
+  viction: {
     type: "evm",
-    skChainName: EvmNetworks.Viction,
+    network: "viction",
     wagmiChain: {
       ...viction,
-      iconUrl: getNetworkLogo(EvmNetworks.Viction),
+      iconUrl: getNetworkLogo("viction"),
     },
   },
-  [EvmNetworks.Binance]: {
+  binance: {
     type: "evm",
-    skChainName: EvmNetworks.Binance,
+    network: "binance",
     wagmiChain: { ...bsc, name: "BNB Chain" },
   },
-  [EvmNetworks.Base]: {
+  base: {
     type: "evm",
-    skChainName: EvmNetworks.Base,
+    network: "base",
     wagmiChain: base,
   },
-  [EvmNetworks.Linea]: {
+  linea: {
     type: "evm",
-    skChainName: EvmNetworks.Linea,
+    network: "linea",
     wagmiChain: {
       ...linea,
-      iconUrl: getNetworkLogo(EvmNetworks.Linea),
+      iconUrl: getNetworkLogo("linea"),
     },
   },
-  [EvmNetworks.Core]: {
+  core: {
     type: "evm",
-    skChainName: EvmNetworks.Core,
+    network: "core",
     wagmiChain: {
       ...coreDao,
       name: "Core",
-      iconUrl: getNetworkLogo(EvmNetworks.Core),
+      iconUrl: getNetworkLogo("core"),
     },
   },
-  [EvmNetworks.Sonic]: {
+  sonic: {
     type: "evm",
-    skChainName: EvmNetworks.Sonic,
+    network: "sonic",
     wagmiChain: {
       ...sonic,
       name: "Sonic",
-      iconUrl: getNetworkLogo(EvmNetworks.Sonic),
+      iconUrl: getNetworkLogo("sonic"),
     },
   },
-  [EvmNetworks.EthereumHoodi]: {
+  "ethereum-hoodi": {
     type: "evm",
-    skChainName: EvmNetworks.EthereumHoodi,
+    network: "ethereum-hoodi",
     wagmiChain: {
       ...hoodi,
-      iconUrl: getNetworkLogo(EvmNetworks.EthereumHoodi),
+      iconUrl: getNetworkLogo("ethereum-hoodi"),
     },
   },
-  [EvmNetworks.EthereumGoerli]: {
+  "ethereum-goerli": {
     type: "evm",
-    skChainName: EvmNetworks.EthereumGoerli,
+    network: "ethereum-goerli",
     wagmiChain: goerli,
   },
-  [EvmNetworks.EthereumSepolia]: {
+  "ethereum-sepolia": {
     type: "evm",
-    skChainName: EvmNetworks.EthereumSepolia,
+    network: "ethereum-sepolia",
     wagmiChain: sepolia,
   },
-  [EvmNetworks.Unichain]: {
+  unichain: {
     type: "evm",
-    skChainName: EvmNetworks.Unichain,
+    network: "unichain",
     wagmiChain: unichain,
   },
-  [EvmNetworks.Gnosis]: {
+  gnosis: {
     type: "evm",
-    skChainName: EvmNetworks.Gnosis,
+    network: "gnosis",
     wagmiChain: gnosis,
   },
-  [EvmNetworks.Plasma]: {
+  plasma: {
     type: "evm",
-    skChainName: EvmNetworks.Plasma,
+    network: "plasma",
     wagmiChain: {
       id: 9745,
       name: "Plasma",
-      iconUrl: getNetworkLogo(EvmNetworks.Plasma),
+      iconUrl: getNetworkLogo("plasma"),
       nativeCurrency: plasmaTestnet.nativeCurrency,
       rpcUrls: {
         default: {
@@ -195,13 +163,13 @@ export const evmChainsMap: EvmChainsMap = {
       },
     },
   },
-  [EvmNetworks.Katana]: {
+  katana: {
     type: "evm",
-    skChainName: EvmNetworks.Katana,
+    network: "katana",
     wagmiChain: {
       id: 747474,
       name: "Katana",
-      iconUrl: getNetworkLogo(EvmNetworks.Katana),
+      iconUrl: getNetworkLogo("katana"),
       nativeCurrency: {
         name: "Ethereum",
         symbol: "ETH",
@@ -214,13 +182,13 @@ export const evmChainsMap: EvmChainsMap = {
       },
     },
   },
-  [EvmNetworks.HyperEVM]: {
+  hyperevm: {
     type: "evm",
-    skChainName: EvmNetworks.HyperEVM,
+    network: "hyperevm",
     wagmiChain: {
       id: 999,
       name: "HyperEVM",
-      iconUrl: getNetworkLogo(EvmNetworks.HyperEVM),
+      iconUrl: getNetworkLogo("hyperevm"),
       nativeCurrency: {
         name: "Ethereum",
         symbol: "ETH",
@@ -233,21 +201,21 @@ export const evmChainsMap: EvmChainsMap = {
       },
     },
   },
-  [EvmNetworks.MonadTestnet]: {
+  "monad-testnet": {
     type: "evm",
-    skChainName: EvmNetworks.MonadTestnet,
+    network: "monad-testnet",
     wagmiChain: {
       ...monadTestnet,
-      iconUrl: getNetworkLogo(EvmNetworks.MonadTestnet),
+      iconUrl: getNetworkLogo("monad-testnet"),
     },
   },
-  [EvmNetworks.Monad]: {
+  monad: {
     type: "evm",
-    skChainName: EvmNetworks.Monad,
+    network: "monad",
     wagmiChain: {
       id: 143,
       name: "Monad",
-      iconUrl: getNetworkLogo(EvmNetworks.Monad),
+      iconUrl: getNetworkLogo("monad"),
       nativeCurrency: {
         name: "Monad",
         symbol: "MON",
@@ -262,13 +230,13 @@ export const evmChainsMap: EvmChainsMap = {
       },
     },
   },
-  [EvmNetworks.Pharos]: {
+  pharos: {
     type: "evm",
-    skChainName: EvmNetworks.Pharos,
+    network: "pharos",
     wagmiChain: {
       id: 1672,
       name: "Pharos",
-      iconUrl: getNetworkLogo(EvmNetworks.Pharos),
+      iconUrl: getNetworkLogo("pharos"),
       nativeCurrency: {
         name: "PROS",
         symbol: "PROS",
@@ -290,6 +258,6 @@ export const evmChainsMap: EvmChainsMap = {
 };
 
 EvmChainIds satisfies Record<
-  Capitalize<KebabToCamelCase<SupportedEvmChain>>,
+  Capitalize<KebabToCamelCase<WalletEvmNetwork>>,
   number
 >;

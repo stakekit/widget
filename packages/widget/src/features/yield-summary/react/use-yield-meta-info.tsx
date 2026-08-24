@@ -12,7 +12,6 @@ import {
   hasYieldFeeConfigurationEnabled,
   isEthenaUsdeStaking,
 } from "../../../domain/earn/yield";
-import { MiscNetworks } from "../../../domain/network/networks";
 import type { Token } from "../../../domain/token/token";
 import { SKAnchor } from "../../../shared/ui/primitives/anchor";
 
@@ -119,10 +118,7 @@ export const useYieldMetaInfo = ({
             count: lockupPeriodDays,
           })
         : null,
-      extra:
-        y.token.network === MiscNetworks.Tezos
-          ? t("details.extra_tezos")
-          : undefined,
+      extra: y.token.network === "tezos" ? t("details.extra_tezos") : undefined,
     };
 
     const getVaultDescriptionContext = () => {

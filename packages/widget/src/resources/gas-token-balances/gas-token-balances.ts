@@ -2,6 +2,7 @@ import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import type { GasBalancesCommand } from "../../domain/finance/models";
+import { isWalletNetwork } from "../../domain/wallet/network";
 import { WalletScopeKey } from "../../domain/wallet/wallet-scope";
 import type {
   ApiRequestError,
@@ -9,7 +10,6 @@ import type {
 } from "../../services/api/resource-sources";
 import { LegacyResourceSource } from "../../services/api/resource-sources";
 import { resourceInvalidationKeys } from "../../services/resource-invalidation";
-import { isSupportedChain } from "../../services/wallet/supported-chains";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 
@@ -42,7 +42,7 @@ const gasTokenBalancesCanonicalAtom = Atom.family((key: GasTokenBalancesKey) =>
     .pipe(
       Atom.withReactivity(
         key.command.addresses.flatMap((address) =>
-          isSupportedChain(address.network)
+          isWalletNetwork(address.network)
             ? resourceInvalidationKeys.walletBalances(
                 new WalletScopeKey({
                   additionalAddresses: address.additionalAddresses,

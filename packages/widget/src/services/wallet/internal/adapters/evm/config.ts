@@ -9,7 +9,7 @@ import {
 import { Effect, Record } from "effect";
 import type { Network } from "../../../../../domain/network/network";
 import type { VariantProps } from "../../../../../public-api/types";
-import { evmChainGroup } from "../../../../../services/wallet/supported-chains";
+import { evmChainGroup } from "../../../../../services/wallet/evm-chain-group";
 import portoIcon from "../../../../../shared/assets/images/porto.svg";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { type EvmChainsMap, evmChainsMap } from "./chains";
@@ -34,7 +34,7 @@ const queryFn = async ({
 }> => {
   const filteredEvmChainsMap: Partial<EvmChainsMap> = Record.filter(
     evmChainsMap,
-    (v) => enabledNetworks.has(v.skChainName)
+    (v) => enabledNetworks.has(v.network)
   );
 
   const evmChains = Object.values(filteredEvmChainsMap).map(

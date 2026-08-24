@@ -7,7 +7,7 @@ import type {
 } from "@ledgerhq/wallet-api-client";
 import type { Chain } from "@stakekit/rainbowkit";
 import { Effect, Record } from "effect";
-import type { SupportedSKChains } from "../../../../../services/wallet/supported-chains";
+import type { WalletNetwork } from "../../../../../domain/wallet/network";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import type { MiscChainsMap } from "../configured-chains";
 import type { CosmosChainsMap } from "../cosmos/chains";
@@ -51,22 +51,24 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
   const v = Record.toEntries(supportedLedgerFamiliesWithCurrency).reduce(
     (acc, [k, v]) => {
       const filtered = Object.keys(v).reduce((acc, key) => {
-        const item = v[key as keyof typeof v] as {
-          [K in keyof SupportedLedgerFamiliesWithCurrency]: SupportedLedgerFamiliesWithCurrency[K];
-        }[keyof SupportedLedgerFamiliesWithCurrency];
+        const item = v[key as keyof typeof v] as
+          | SupportedLedgerCurrency
+          | undefined;
+
+        if (!item) return acc;
 
         const chain =
           enabledChainsMap.evm[
-            item.skChainName as unknown as EvmChainsMap[keyof EvmChainsMap]["skChainName"]
+            item.network as unknown as EvmChainsMap[keyof EvmChainsMap]["network"]
           ]?.wagmiChain ||
           enabledChainsMap.cosmos[
-            item.skChainName as unknown as CosmosChainsMap[keyof CosmosChainsMap]["skChainName"]
+            item.network as unknown as CosmosChainsMap[keyof CosmosChainsMap]["network"]
           ]?.wagmiChain ||
           enabledChainsMap.misc[
-            item.skChainName as unknown as MiscChainsMap[keyof MiscChainsMap]["skChainName"]
+            item.network as unknown as MiscChainsMap[keyof MiscChainsMap]["network"]
           ]?.wagmiChain ||
           enabledChainsMap.substrate[
-            item.skChainName as unknown as SubstrateChainsMap[keyof SubstrateChainsMap]["skChainName"]
+            item.network as unknown as SubstrateChainsMap[keyof SubstrateChainsMap]["network"]
           ]?.wagmiChain;
 
         if (!chain) return acc;
@@ -79,11 +81,7 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
           return { ...acc, [key]: { ...item, chain, enabled: true } };
         }
 
-        if (
-          ledgerChainPriority.has(
-            item.skChainName as unknown as SupportedSKChains
-          )
-        ) {
+        if (ledgerChainPriority.has(item.network)) {
           // biome-ignore lint: false
           return { ...acc, [key]: { ...item, chain, enabled: false } };
         }
@@ -125,7 +123,7 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
         {
           currencyId: string;
           family: SupportedLedgerLiveFamilies;
-          skChainName: SupportedSKChains;
+          network: WalletNetwork;
           chain: Chain;
           enabled: boolean;
         }
@@ -133,6 +131,9 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
     >()
   );
 };
+
+type SupportedLedgerCurrency =
+  SupportedLedgerFamiliesWithCurrency[keyof SupportedLedgerFamiliesWithCurrency][string];
 
 type MappedSupportedLedgerFamiliesWithCurrency = {
   [Key in keyof SupportedLedgerFamiliesWithCurrency]: {

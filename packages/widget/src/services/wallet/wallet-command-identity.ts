@@ -1,4 +1,4 @@
-import { isEvmChain } from "./supported-chains";
+import { isEvmWalletNetwork } from "../../domain/wallet/network";
 import type { NormalizedWalletState } from "./wallet-state";
 
 export type WalletCommandIdentity = Readonly<{
@@ -13,7 +13,7 @@ export const walletCommandIdentity = (
   state: NormalizedWalletState
 ): WalletCommandIdentity => ({
   address:
-    state.status === "connected" && isEvmChain(state.network)
+    state.status === "connected" && isEvmWalletNetwork(state.network)
       ? state.address.toLowerCase()
       : state.address,
   chainId: state.chain?.id ?? null,

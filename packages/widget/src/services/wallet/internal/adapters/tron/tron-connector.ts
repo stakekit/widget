@@ -12,7 +12,6 @@ import { WalletConnectAdapter } from "@tronweb3/tronwallet-adapter-walletconnect
 import { Stream } from "effect";
 import type { Address } from "viem";
 import { createConnector } from "wagmi";
-import { MiscNetworks } from "../../../../../domain/network/networks";
 import { config } from "../../../../../shared/config/widget-defaults";
 import {
   getWalletNetworkLogo,
@@ -121,7 +120,7 @@ export const getTronConnectors = ({
   });
 
   const tronChainGroup = {
-    iconUrl: getWalletNetworkLogo(MiscNetworks.Tron),
+    iconUrl: getWalletNetworkLogo("tron"),
     title: "Tron",
     id: "tron",
   } satisfies ChainGroup;

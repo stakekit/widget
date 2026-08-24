@@ -5,7 +5,7 @@ import type { Connector } from "wagmi";
 import type { getConnection } from "wagmi/actions";
 import type { WalletAddress } from "../../domain/identity/identifiers";
 import type { AdditionalAddresses } from "../../domain/wallet/address";
-import type { SupportedSKChains } from "../../services/wallet/supported-chains";
+import type { WalletNetwork } from "../../domain/wallet/network";
 
 export type LedgerConnectorState = {
   readonly accounts: Account[];
@@ -43,7 +43,7 @@ export type NormalizedWalletState = WalletStateCommon &
         readonly connector: Connector;
         readonly isLedgerLiveAccountPlaceholder: boolean;
         readonly ledgerAccounts: Account[];
-        readonly network: SupportedSKChains;
+        readonly network: WalletNetwork;
         readonly status: "connected";
       }
     | {

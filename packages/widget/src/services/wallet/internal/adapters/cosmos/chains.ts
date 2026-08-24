@@ -1,58 +1,15 @@
 import type { Chain } from "@stakekit/rainbowkit";
 import type { chains } from "chain-registry";
-import { CosmosNetworks } from "../../../../../domain/network/networks.ts";
-import type { WalletNetwork } from "../../../../../domain/wallet/network";
+import type { WalletCosmosNetwork } from "../../../../../domain/wallet/network";
 
 export type CosmosChain = (typeof chains)[number];
 export type WithWagmiName<T> = T & { readonly wagmiName: string };
 export type CosmosChainsAssets = WithWagmiName<CosmosChain>;
 
-export const supportedCosmosChains = [
-  CosmosNetworks.Akash,
-  CosmosNetworks.Cosmos,
-  CosmosNetworks.Juno,
-  CosmosNetworks.Kava,
-  CosmosNetworks.Osmosis,
-  CosmosNetworks.Stargaze,
-  CosmosNetworks.Onomy,
-  CosmosNetworks.Persistence,
-  CosmosNetworks.Axelar,
-  CosmosNetworks.Quicksilver,
-  CosmosNetworks.Agoric,
-  CosmosNetworks.BandProtocol,
-  CosmosNetworks.Bitsong,
-  CosmosNetworks.Chihuahua,
-  CosmosNetworks.Comdex,
-  CosmosNetworks.Crescent,
-  CosmosNetworks.Cronos,
-  CosmosNetworks.Cudos,
-  CosmosNetworks.FetchAi,
-  CosmosNetworks.GravityBridge,
-  CosmosNetworks.IRISnet,
-  CosmosNetworks.KiNetwork,
-  CosmosNetworks.MarsProtocol,
-  CosmosNetworks.Regen,
-  CosmosNetworks.Secret,
-  CosmosNetworks.Sentinel,
-  CosmosNetworks.Sommelier,
-  CosmosNetworks.Teritori,
-  CosmosNetworks.Umee,
-  CosmosNetworks.Coreum,
-  CosmosNetworks.Desmos,
-  CosmosNetworks.Dydx,
-  CosmosNetworks.Injective,
-  CosmosNetworks.Sei,
-  CosmosNetworks.Mantra,
-] as const satisfies ReadonlyArray<WalletNetwork>;
-
-export const supportedCosmosChainsSet = new Set(supportedCosmosChains);
-
-export type SupportedCosmosChains = (typeof supportedCosmosChains)[number];
-
 export type CosmosChainsMap = {
-  [Key in SupportedCosmosChains]: {
+  [Key in WalletCosmosNetwork]: {
     type: "cosmos";
-    skChainName: Key;
+    network: Key;
     wagmiChain: Chain;
     chain: CosmosChainsAssets;
   };

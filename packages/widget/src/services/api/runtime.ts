@@ -76,11 +76,10 @@ const yieldResourceSourceLayer = Layer.effect(
 const walletBootstrapSourceLayer = Layer.effect(
   WalletBootstrapSource,
   Effect.gen(function* () {
-    const legacySource = yield* LegacyResourceSource;
     const yieldSource = yield* YieldResourceSource;
 
     return WalletBootstrapSource.of({
-      getEnabledNetworks: legacySource.getEnabledNetworks,
+      getEnabledWalletNetworks: yieldSource.getEnabledWalletNetworks,
       getOpportunity: yieldSource.getOpportunity,
     });
   })

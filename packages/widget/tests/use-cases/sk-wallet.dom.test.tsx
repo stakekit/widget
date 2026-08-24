@@ -11,7 +11,6 @@ import { HttpResponse, http } from "msw";
 import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { ActionId, TransactionId } from "../../src/domain/identity/identifiers";
-import { MiscNetworks } from "../../src/domain/network/networks";
 import { WagmiConfigProvider } from "../../src/features/wallet/composition";
 import { useSKWallet } from "../../src/features/wallet/index";
 import type { SKExternalProviders, SKTxMeta } from "../../src/public-api/types";
@@ -21,7 +20,7 @@ import {
 } from "../../src/services/wallet/internal/adapters/configured-chains";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import type { WalletSignTransactionInput } from "../../src/services/wallet/wallet-transactions";
-import { legacyApiRoute } from "../mocks/api-routes";
+import { yieldApiRoute } from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { describe, expect, it, vi } from "../utils/test-extend.dom.ts";
@@ -151,9 +150,9 @@ describe("SK Wallet", () => {
     const sendTransactionSpy = vi.fn(async () => "hash");
 
     worker.use(
-      http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+      http.get(yieldApiRoute("/v1/networks"), async () => {
         await mockDelay();
-        return HttpResponse.json([MiscNetworks.Solana]);
+        return HttpResponse.json([{ id: "solana" }]);
       })
     );
 
@@ -199,9 +198,9 @@ describe("SK Wallet", () => {
     const sendTransactionSpy = vi.fn(async () => "hash");
 
     worker.use(
-      http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+      http.get(yieldApiRoute("/v1/networks"), async () => {
         await mockDelay();
-        return HttpResponse.json([MiscNetworks.Solana]);
+        return HttpResponse.json([{ id: "solana" }]);
       })
     );
 
@@ -251,9 +250,9 @@ describe("SK Wallet", () => {
     }));
 
     worker.use(
-      http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+      http.get(yieldApiRoute("/v1/networks"), async () => {
         await mockDelay();
-        return HttpResponse.json([MiscNetworks.Solana]);
+        return HttpResponse.json([{ id: "solana" }]);
       })
     );
 
@@ -305,9 +304,9 @@ describe("SK Wallet", () => {
     const sendTransactionSpy = vi.fn(async (_: unknown) => "hash");
 
     worker.use(
-      http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+      http.get(yieldApiRoute("/v1/networks"), async () => {
         await mockDelay();
-        return HttpResponse.json([MiscNetworks.Ton]);
+        return HttpResponse.json([{ id: "ton" }]);
       })
     );
 
@@ -360,9 +359,9 @@ describe("SK Wallet", () => {
     ];
 
     worker.use(
-      http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+      http.get(yieldApiRoute("/v1/networks"), async () => {
         await mockDelay();
-        return HttpResponse.json([MiscNetworks.Ton]);
+        return HttpResponse.json([{ id: "ton" }]);
       })
     );
 

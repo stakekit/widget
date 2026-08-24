@@ -3,10 +3,7 @@ import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import { isNonZeroRewardRateYield } from "../../../../../domain/earn/yield";
 import { YieldId } from "../../../../../domain/identity/identifiers";
 import { tokenString } from "../../../../../domain/token/token";
-import {
-  isSupportedChain,
-  type SupportedSKChains,
-} from "../../../../../services/wallet/supported-chains";
+import { isWalletNetwork } from "../../../../../domain/wallet/network";
 import type { EarnEntry, EarnTokenOption } from "../types";
 
 export const resolveYieldOptions = ({
@@ -29,7 +26,7 @@ export const resolveYieldOptions = ({
 };
 
 const canShowYieldOption = (yieldOption: EarnYieldWithProvider) =>
-  yieldOption.status.enter && isSupportedChain(yieldOption.token.network);
+  yieldOption.status.enter && isWalletNetwork(yieldOption.token.network);
 
 export const resolveYield = ({
   entry,
@@ -114,10 +111,11 @@ const getPreferredYieldId = ({
   selectedToken: EarnTokenOption;
 }) => {
   const tokenKey = tokenString(selectedToken.token);
-  const networkPreferred =
-    preferredTokenYieldsPerNetwork?.[
-      selectedToken.token.network as SupportedSKChains
-    ];
+  const network = selectedToken.token.network;
+
+  if (!isWalletNetwork(network)) return null;
+
+  const networkPreferred = preferredTokenYieldsPerNetwork?.[network];
 
   return networkPreferred?.[tokenKey] ?? null;
 };

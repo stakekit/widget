@@ -3,7 +3,6 @@ import { Array as EArray, Option } from "effect";
 import { exactDecimal, exactZero } from "../finance/exact";
 import type { YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
-import { Networks } from "../network/networks";
 import { equalTokens, type Token } from "../token/token";
 import type { EarnValidator, EarnYieldWithProvider } from "./models";
 import type { ValidatorKey } from "./validator";
@@ -101,7 +100,7 @@ export const getEnterAmountConstraint = (
 };
 
 const yieldsWithEnterMinBasedOnPosition = new Map<Network, Set<string>>([
-  [Networks.Polkadot, new Set(["polkadot-dot-validator-staking"])],
+  ["polkadot", new Set(["polkadot-dot-validator-staking"])],
 ]);
 
 const isYieldWithEnterMinBasedOnPosition = (yieldDto: EarnYieldWithProvider) =>

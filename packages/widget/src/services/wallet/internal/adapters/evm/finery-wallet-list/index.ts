@@ -10,7 +10,7 @@ import {
 import { createStore } from "mipd";
 import type { EIP1193Provider } from "viem";
 import { injected } from "wagmi";
-import { evmChainGroup } from "../../../../../../services/wallet/supported-chains";
+import { evmChainGroup } from "../../../../../../services/wallet/evm-chain-group";
 import { passCorrectChainsToWallet } from "../utils";
 import bitGoIcon from "./custom-wallet-icons/bitgo.svg";
 import { cactusIcon } from "./custom-wallet-icons/cactus-icon";

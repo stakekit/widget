@@ -61,7 +61,7 @@ const makeLogoutLayer = ({
     evmConfig: {
       evmChains: [mainnet],
       evmChainsMap: {
-        ethereum: { skChainName: "ethereum", wagmiChain: mainnet },
+        ethereum: { network: "ethereum", wagmiChain: mainnet },
       },
     },
     queryParamsInitChainId: undefined,
@@ -79,7 +79,7 @@ const makeLogoutLayer = ({
       Layer.mergeAll(
         configLayer,
         Layer.succeed(WalletBootstrapSource, {
-          getEnabledNetworks: () => Effect.succeed(new Set(["ethereum"])),
+          getEnabledWalletNetworks: () => Effect.succeed(new Set(["ethereum"])),
           getOpportunity: () => Effect.die("unused"),
         }),
         Layer.succeed(WalletEnvironment, {

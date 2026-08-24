@@ -27,8 +27,17 @@ are unavailable.
 
 ## Wallet
 
-**Wallet Network**: A network on which the Widget can construct and operate a
+**Network**: A canonical blockchain or protocol network identity supported
+across the Widget's shared product data.
+
+**Enabled Wallet Networks**: The active project Networks reported by Yield and
+narrowed to Wallet Networks when Wallet Bootstrap begins.
+
+**Wallet Network**: A Network on which the Widget can construct and operate a
 wallet connection.
+
+**Chain ID**: A numeric identifier used by wallet integrations to route a
+Wallet Network.
 
 **Wallet Runtime**: Wallet capabilities and state belonging to one Application
 Runtime Generation.
@@ -119,6 +128,9 @@ Rate.
 snapshots, not validator or Effective Reward Rates.
 
 ## Borrow
+
+**Borrow Network**: A Wallet Network on which the Widget offers Borrow markets
+and can prepare Borrow actions.
 
 **Borrow Entry**: The journey for selecting a market, entering borrow and
 collateral amounts, and preparing a new or expanded Market Position.

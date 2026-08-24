@@ -52,7 +52,7 @@ const solanaLayer = Layer.succeed(
 const apiLayer = Layer.succeed(
   WalletBootstrapSource,
   WalletBootstrapSource.of({
-    getEnabledNetworks: () => Effect.succeed(new Set(["ethereum"])),
+    getEnabledWalletNetworks: () => Effect.succeed(new Set(["ethereum"])),
     getOpportunity: () => Effect.die("unused"),
   })
 );
@@ -223,7 +223,7 @@ describe("WalletService acquisition", () => {
     const failingApiLayer = Layer.succeed(
       WalletBootstrapSource,
       WalletBootstrapSource.of({
-        getEnabledNetworks: () => Effect.fail(cause),
+        getEnabledWalletNetworks: () => Effect.fail(cause),
         getOpportunity: () => Effect.die("unused"),
       })
     );

@@ -2,11 +2,11 @@ import { Data } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type { YieldId } from "../../../domain/identity/identifiers";
+import { isWalletNetwork } from "../../../domain/wallet/network";
 import {
   enrichedYieldDirectoryResourceAtom,
   YieldDirectoryKey,
 } from "../../../resources/yield-directory/index";
-import { isSupportedChain } from "../../../services/wallet/supported-chains";
 import { walletConnectedNetworkAtom } from "../../wallet/index";
 
 export class MultiYieldsKey extends Data.Class<{
@@ -37,7 +37,7 @@ export const visibleMultiYieldsAtom = Atom.family((key: MultiYieldsKey) =>
           yields?.filter((yieldModel) => {
             const visible =
               yieldModel.status.enter &&
-              isSupportedChain(yieldModel.token.network);
+              isWalletNetwork(yieldModel.token.network);
 
             return (
               visible &&

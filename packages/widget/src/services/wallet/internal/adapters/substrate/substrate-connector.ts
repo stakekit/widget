@@ -12,7 +12,6 @@ import { Array as EArray, Effect, Option, Stream } from "effect";
 import type { Address } from "viem";
 import { createConnector } from "wagmi";
 import type { Chain } from "wagmi/chains";
-import { SubstrateNetworks } from "../../../../../domain/network/networks";
 import { config } from "../../../../../shared/config/widget-defaults";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { getWalletNetworkLogo } from "../../runtime/assets";
@@ -237,7 +236,7 @@ const buildSubstrateWalletGroup = ({
   });
 
   const chainGroup = {
-    iconUrl: getWalletNetworkLogo(SubstrateNetworks.Polkadot),
+    iconUrl: getWalletNetworkLogo("polkadot"),
     title: "Substrate",
     id: "substrate",
   };

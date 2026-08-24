@@ -2,9 +2,9 @@ import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import { Effect, Record } from "effect";
 import type { WalletAddress } from "../../../../../domain/identity/identifiers";
 import type { Network } from "../../../../../domain/network/network";
+import { walletCosmosNetworks } from "../../../../../domain/wallet/network";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import type { CosmosChainsMap } from "./chains";
-import { supportedCosmosChains } from "./chains";
 import { getWagmiChain } from "./chains/index";
 
 const logCosmosConnectorFailure = (operation: string, cause: unknown) =>
@@ -112,7 +112,7 @@ const queryFn = ({
 }) =>
   Effect.gen(function* () {
     const networks = enabledNetworks;
-    const chainsToUse = supportedCosmosChains.filter((chain) =>
+    const chainsToUse = walletCosmosNetworks.filter((chain) =>
       networks.has(chain)
     );
 
@@ -141,25 +141,24 @@ const queryFn = ({
 
     const cosmosChainsMap: Partial<CosmosChainsMap> = Record.filter(
       registry.cosmosRegistryChains.reduce((acc, next) => {
-        const skChainName =
-          registry.registryIdsToSKCosmosNetworks[next.chain_id];
+        const network = registry.registryIdsToSKCosmosNetworks[next.chain_id];
 
-        if (!skChainName || !chainsToUseSet.has(skChainName)) {
+        if (!network || !chainsToUseSet.has(network)) {
           return acc;
         }
 
         return {
           // biome-ignore lint: false
           ...acc,
-          [skChainName]: {
+          [network]: {
             type: "cosmos",
-            skChainName,
+            network,
             chain: next,
             wagmiChain: getWagmiChain(next),
           },
         };
       }, {} as CosmosChainsMap),
-      (v) => networks.has(v.skChainName)
+      (v) => networks.has(v.network)
     );
 
     const cosmosWagmiChains = Object.values(cosmosChainsMap).map(

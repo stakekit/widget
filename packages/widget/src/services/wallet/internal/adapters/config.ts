@@ -34,7 +34,7 @@ const queryFn = async ({
 }> => {
   const filteredMiscChainsMap: Partial<MiscChainsMap> = Record.filter(
     miscChainsMap,
-    (v) => enabledNetworks.has(v.skChainName)
+    (v) => enabledNetworks.has(v.network)
   );
 
   const miscChains = Object.values(filteredMiscChainsMap).map(
