@@ -8,10 +8,6 @@ frontend:
         - export PATH="$HOME/.local/share/mise/shims:$PATH"
         - mise install
         - pnpm install --frozen-lockfile
-        - echo "VITE_YIELDS_API_URL=$VITE_YIELDS_API_URL" >> packages/widget/.env
-        - echo "VITE_API_URL=$VITE_API_URL" >> packages/widget/.env
-        - echo "VITE_API_KEY=$VITE_API_KEY" >> packages/widget/.env
-        - echo "VITE_FORCE_BORROW=$VITE_FORCE_BORROW" >> packages/widget/.env
 
     build:
       commands:
