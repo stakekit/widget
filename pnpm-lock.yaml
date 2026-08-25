@@ -236,17 +236,17 @@ catalogs:
       specifier: 2.15.1
       version: 2.15.1
     '@effect/atom-react':
-      specifier: 4.0.0-rc.109
-      version: 4.0.0-rc.109
+      specifier: 4.0.0-rc.112
+      version: 4.0.0-rc.112
     '@effect/openapi-generator':
-      specifier: 4.0.0-rc.109
-      version: 4.0.0-rc.109
+      specifier: 4.0.0-rc.112
+      version: 4.0.0-rc.112
     '@effect/platform-browser':
-      specifier: 4.0.0-rc.109
-      version: 4.0.0-rc.109
+      specifier: 4.0.0-rc.112
+      version: 4.0.0-rc.112
     '@effect/platform-node':
-      specifier: 4.0.0-rc.109
-      version: 4.0.0-rc.109
+      specifier: 4.0.0-rc.112
+      version: 4.0.0-rc.112
     '@faker-js/faker':
       specifier: ^10.6.0
       version: 10.6.0
@@ -395,8 +395,8 @@ catalogs:
       specifier: ^18.1.0
       version: 18.2.0
     effect:
-      specifier: 4.0.0-rc.109
-      version: 4.0.0-rc.109
+      specifier: 4.0.0-rc.112
+      version: 4.0.0-rc.112
     eventemitter3:
       specifier: ^5.0.4
       version: 5.0.4
@@ -631,16 +631,16 @@ importers:
         version: 2.15.1(@cosmjs/amino@0.36.2)(@cosmjs/proto-signing@0.36.2)(@react-native-async-storage/async-storage@1.24.0(react-native@0.81.1(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.18)(bufferutil@4.0.9)(react@19.2.8)(supports-color@8.1.1)(utf-8-validate@5.0.10)))(@typescript/typescript6@6.0.2)(@walletconnect/types@2.11.0(@react-native-async-storage/async-storage@1.24.0(react-native@0.81.1(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.18)(bufferutil@4.0.9)(react@19.2.8)(supports-color@8.1.1)(utf-8-validate@5.0.10)))(ioredis@5.10.1(supports-color@8.1.1)))(bufferutil@4.0.9)(encoding@0.1.13)(ioredis@5.10.1(supports-color@8.1.1))(supports-color@8.1.1)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@effect/atom-react':
         specifier: 'catalog:'
-        version: 4.0.0-rc.109(effect@4.0.0-rc.109)(react@19.2.8)(scheduler@0.27.0)
+        version: 4.0.0-rc.112(effect@4.0.0-rc.112)(react@19.2.8)(scheduler@0.27.0)
       '@effect/openapi-generator':
         specifier: 'catalog:'
-        version: 4.0.0-rc.109(@effect/platform-node@4.0.0-rc.109(bufferutil@4.0.9)(effect@4.0.0-rc.109)(redis@6.2.1)(utf-8-validate@5.0.10))(effect@4.0.0-rc.109)(encoding@0.1.13)
+        version: 4.0.0-rc.112(@effect/platform-node@4.0.0-rc.112(bufferutil@4.0.9)(effect@4.0.0-rc.112)(redis@6.2.1)(utf-8-validate@5.0.10))(effect@4.0.0-rc.112)(encoding@0.1.13)
       '@effect/platform-browser':
         specifier: 'catalog:'
-        version: 4.0.0-rc.109(effect@4.0.0-rc.109)
+        version: 4.0.0-rc.112(effect@4.0.0-rc.112)
       '@effect/platform-node':
         specifier: 'catalog:'
-        version: 4.0.0-rc.109(bufferutil@4.0.9)(effect@4.0.0-rc.109)(redis@6.2.1)(utf-8-validate@5.0.10)
+        version: 4.0.0-rc.112(bufferutil@4.0.9)(effect@4.0.0-rc.112)(redis@6.2.1)(utf-8-validate@5.0.10)
       '@faker-js/faker':
         specifier: 'catalog:'
         version: 10.6.0
@@ -787,7 +787,7 @@ importers:
         version: 18.2.0
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-rc.109
+        version: 4.0.0-rc.112
       eventemitter3:
         specifier: 'catalog:'
         version: 5.0.4
@@ -1578,36 +1578,36 @@ packages:
     resolution: {integrity: sha512-WXTuFvL3G+74SchFAtz3FgIYVOe196ycvGsMgvSH/8Goptb1qpIQtIuM4SOK9G9lhMWYpHxnXyy544ZhluFOew==}
     engines: {node: '>=6'}
 
-  '@effect/atom-react@4.0.0-rc.109':
-    resolution: {integrity: sha512-pMx01t0DnS9rPAR3aFOIoPUmuJjxflxw081ofTzXBlG81+hIaenJTdVJ+X+miRCGbcf00XEn15dHGoM3UjpIZQ==}
+  '@effect/atom-react@4.0.0-rc.112':
+    resolution: {integrity: sha512-Ksf90KQa6D4UDnMj4M84arlVKNIuwxxF2GvgXBzuaYi2LsgririsUhKQ5SYaK1euf8oIYeamEuthoZSbUQmIhw==}
     peerDependencies:
-      effect: ^4.0.0-rc.109
-      react: '>=19.2.7 <20.0.0'
-      scheduler: '>=0.27.0 <0.28.0'
+      effect: ^4.0.0-rc.112
+      react: '>=19.0.0 <20.0.0'
+      scheduler: '>=0.25.0 <0.28.0'
 
-  '@effect/openapi-generator@4.0.0-rc.109':
-    resolution: {integrity: sha512-CCnzH1uubdg7UCl9EFxfKxLH6eX/bzTdBtmVJSGqcShgkomXTxl36IqNMo5TK6FErFJQi+6nvBZA2YES07Uk/g==}
+  '@effect/openapi-generator@4.0.0-rc.112':
+    resolution: {integrity: sha512-ZgAkEP2/8qPZKgnI5AqmBgqhrZsdMDKZXJoKn29xgElZUWCvHhdE6eSUfFtkQBRE5kQcATXOZajHl+S/Pg+8Dw==}
     hasBin: true
     peerDependencies:
-      '@effect/platform-node': ^4.0.0-rc.109
-      effect: ^4.0.0-rc.109
+      '@effect/platform-node': ^4.0.0-rc.112
+      effect: ^4.0.0-rc.112
 
-  '@effect/platform-browser@4.0.0-rc.109':
-    resolution: {integrity: sha512-63/hM2dCh0HQb7sRkAhAoZjO4swjRD2vT/eUrs8nXA0LzJMz52ChPsxdnL1D0yg+ZeXtMHQM0MFJxITJXjv+EA==}
+  '@effect/platform-browser@4.0.0-rc.112':
+    resolution: {integrity: sha512-GSlqNDnjILz2EqOFPhVdMEHxlPq6SGb8+KOpNnLfRvVJjXRTMawEO+v1PCuwt2CHAqESbJAa2Nk+qcQvTrv4MQ==}
     peerDependencies:
-      effect: ^4.0.0-rc.109
+      effect: ^4.0.0-rc.112
 
-  '@effect/platform-node-shared@4.0.0-rc.109':
-    resolution: {integrity: sha512-jhZJnf81N7Z5+Z41Qr0cKT75WzGu6M1W05xrSdu/V8PK0kSFtU5hJMBxSGDWNlgWhBwK0WRZtnMHY8HLdONg1w==}
+  '@effect/platform-node-shared@4.0.0-rc.112':
+    resolution: {integrity: sha512-ttjz0xKamFN7vL8pNDYVwddJLjZvqKePc05djlz2VcdaKbLsnYbtMnL1rbOfHgEnIUSHGh7FkjaN4DM1Ov81sQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      effect: ^4.0.0-rc.109
+      effect: ^4.0.0-rc.112
 
-  '@effect/platform-node@4.0.0-rc.109':
-    resolution: {integrity: sha512-LE/GTh6MCZ0uzbEFH9WmxQkC9snjWuFyh8vW04AAgbKKxSHXsepHSK9RcE/2oYKr6RhrOTD0C2wC0i+J9qoe2g==}
+  '@effect/platform-node@4.0.0-rc.112':
+    resolution: {integrity: sha512-/BMAcdNGQQskLmI0Zoa95KfTZkr9HV9N4NSxaSrusG6GeW6Ulp9KvZ+Rlaiw8lnOt43CXjFLdfll5/k5rxL4hQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      effect: ^4.0.0-rc.109
+      effect: ^4.0.0-rc.112
       redis: '>=5.0.0 <7.0.0'
 
   '@emnapi/core@1.11.2':
@@ -7603,8 +7603,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  effect@4.0.0-rc.109:
-    resolution: {integrity: sha512-6ubcOCtfdbmFO5+vgcT2HsTw5s+n3aMUj4eAIbVpUxP7+VYCwXxxcBHgiWgizOrGO1eGmuOBFek3mM0dFcwaWA==}
+  effect@4.0.0-rc.112:
+    resolution: {integrity: sha512-wXxwuh1Ywnv4cPRM3Wfa0vDwuOHnZ1TsTgHJkG9XgzND6inhBH9n1vBxhg3iIXOia/OrpmvVmd3lrD4vq6bF3A==}
 
   electron-to-chromium@1.5.396:
     resolution: {integrity: sha512-yHiw2Y3C3H9U6TMbOfoWK/BPreiOPXRfTWPBwQBoZG6/8TB6eOPnsy5oaRYuatR7Fw2SJ4kKforgufeo7fq0EQ==}
@@ -10669,6 +10669,10 @@ packages:
   undici-types@8.8.0:
     resolution: {integrity: sha512-nNSnIK0VcEoNWrYwxCz9DFT1W7ASyBRWX7Hju/p9RAfVDcHoH07hkMg/na9U/2S04fhkPc4pDUK5NblZoaCvwg==}
 
+  undici@8.10.0:
+    resolution: {integrity: sha512-HvltHd7avK13QIw/oLe4qoOLyoVSoafqJ2jYOrtMRBkbYT31eiBQ8O0ehRKZiEZCMEyLFQNIADpgCWC5fALvYQ==}
+    engines: {node: '>=22.19.0'}
+
   undici@8.9.0:
     resolution: {integrity: sha512-aWZpUj7XoGonMClx4gdDRfgBjqeA+F473aDmROQQbM9n6PRfK/u1q/a0X4wMTgcHfT8H6fpbt98PFuDUwFg2YA==}
     engines: {node: '>=22.19.0'}
@@ -11273,18 +11277,6 @@ packages:
 
   ws@8.21.0:
     resolution: {integrity: sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: '>=5.0.2'
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
-
-  ws@8.21.1:
-    resolution: {integrity: sha512-+0NTnW77fFN/DjQi6k/Sq/Yvk4Sgajw7urW8V+asjXnRgDs9gyGkdb7EzgfhA4goXsRIZKE28fzIXBHEzhuiWw==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -12712,40 +12704,40 @@ snapshots:
       '@leichtgewicht/ip-codec': 2.0.5
       utf8-codec: 1.0.0
 
-  '@effect/atom-react@4.0.0-rc.109(effect@4.0.0-rc.109)(react@19.2.8)(scheduler@0.27.0)':
+  '@effect/atom-react@4.0.0-rc.112(effect@4.0.0-rc.112)(react@19.2.8)(scheduler@0.27.0)':
     dependencies:
-      effect: 4.0.0-rc.109
+      effect: 4.0.0-rc.112
       react: 19.2.8
       scheduler: 0.27.0
 
-  '@effect/openapi-generator@4.0.0-rc.109(@effect/platform-node@4.0.0-rc.109(bufferutil@4.0.9)(effect@4.0.0-rc.109)(redis@6.2.1)(utf-8-validate@5.0.10))(effect@4.0.0-rc.109)(encoding@0.1.13)':
+  '@effect/openapi-generator@4.0.0-rc.112(@effect/platform-node@4.0.0-rc.112(bufferutil@4.0.9)(effect@4.0.0-rc.112)(redis@6.2.1)(utf-8-validate@5.0.10))(effect@4.0.0-rc.112)(encoding@0.1.13)':
     dependencies:
-      '@effect/platform-node': 4.0.0-rc.109(bufferutil@4.0.9)(effect@4.0.0-rc.109)(redis@6.2.1)(utf-8-validate@5.0.10)
-      effect: 4.0.0-rc.109
+      '@effect/platform-node': 4.0.0-rc.112(bufferutil@4.0.9)(effect@4.0.0-rc.112)(redis@6.2.1)(utf-8-validate@5.0.10)
+      effect: 4.0.0-rc.112
       swagger2openapi: 7.0.8(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
-  '@effect/platform-browser@4.0.0-rc.109(effect@4.0.0-rc.109)':
+  '@effect/platform-browser@4.0.0-rc.112(effect@4.0.0-rc.112)':
     dependencies:
-      effect: 4.0.0-rc.109
+      effect: 4.0.0-rc.112
 
-  '@effect/platform-node-shared@4.0.0-rc.109(bufferutil@4.0.9)(effect@4.0.0-rc.109)(utf-8-validate@5.0.10)':
+  '@effect/platform-node-shared@4.0.0-rc.112(bufferutil@4.0.9)(effect@4.0.0-rc.112)(utf-8-validate@5.0.10)':
     dependencies:
       '@types/ws': 8.18.1
-      effect: 4.0.0-rc.109
-      ws: 8.21.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      effect: 4.0.0-rc.112
+      ws: 8.21.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@effect/platform-node@4.0.0-rc.109(bufferutil@4.0.9)(effect@4.0.0-rc.109)(redis@6.2.1)(utf-8-validate@5.0.10)':
+  '@effect/platform-node@4.0.0-rc.112(bufferutil@4.0.9)(effect@4.0.0-rc.112)(redis@6.2.1)(utf-8-validate@5.0.10)':
     dependencies:
-      '@effect/platform-node-shared': 4.0.0-rc.109(bufferutil@4.0.9)(effect@4.0.0-rc.109)(utf-8-validate@5.0.10)
-      effect: 4.0.0-rc.109
+      '@effect/platform-node-shared': 4.0.0-rc.112(bufferutil@4.0.9)(effect@4.0.0-rc.112)(utf-8-validate@5.0.10)
+      effect: 4.0.0-rc.112
       mime: 4.1.0
       redis: 6.2.1
-      undici: 8.9.0
+      undici: 8.10.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -16738,7 +16730,7 @@ snapshots:
       '@solana/functional': 5.5.1(@typescript/typescript6@6.0.2)
       '@solana/rpc-subscriptions-spec': 5.5.1(@typescript/typescript6@6.0.2)
       '@solana/subscribable': 5.5.1(@typescript/typescript6@6.0.2)
-      ws: 8.21.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      ws: 8.21.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     optionalDependencies:
       typescript: '@typescript/typescript6@6.0.2'
     transitivePeerDependencies:
@@ -16752,7 +16744,7 @@ snapshots:
       '@solana/functional': 6.10.0(@typescript/typescript6@6.0.2)
       '@solana/rpc-subscriptions-spec': 6.10.0(@typescript/typescript6@6.0.2)
       '@solana/subscribable': 6.10.0(@typescript/typescript6@6.0.2)
-      ws: 8.21.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      ws: 8.21.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     optionalDependencies:
       typescript: '@typescript/typescript6@6.0.2'
     transitivePeerDependencies:
@@ -18189,7 +18181,7 @@ snapshots:
     dependencies:
       '@trezor/utils': 9.5.0(tslib@2.8.1)
       tslib: 2.8.1
-      ws: 8.21.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      ws: 8.21.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -18498,7 +18490,7 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
 
   '@types/yargs-parser@21.0.3': {}
 
@@ -20475,7 +20467,7 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.8.0
       eventemitter3: 5.0.1
-      ws: 8.21.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      ws: 8.21.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -21699,9 +21691,8 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  effect@4.0.0-rc.109:
+  effect@4.0.0-rc.112:
     dependencies:
-      '@standard-schema/spec': 1.1.0
       fast-check: 4.9.0
       msgpackr: 2.0.5
 
@@ -24021,7 +24012,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.1
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
       long: 5.2.5
 
   protobufjs@7.5.5:
@@ -24036,7 +24027,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.1
-      '@types/node': 26.1.2
+      '@types/node': 26.2.0
       long: 5.2.5
 
   proxy-compare@2.5.1: {}
@@ -25328,6 +25319,8 @@ snapshots:
 
   undici-types@8.8.0: {}
 
+  undici@8.10.0: {}
+
   undici@8.9.0: {}
 
   unidragger@3.0.1:
@@ -25878,11 +25871,6 @@ snapshots:
       utf-8-validate: 5.0.10
 
   ws@8.21.0(bufferutil@4.0.9)(utf-8-validate@5.0.10):
-    optionalDependencies:
-      bufferutil: 4.0.9
-      utf-8-validate: 5.0.10
-
-  ws@8.21.1(bufferutil@4.0.9)(utf-8-validate@5.0.10):
     optionalDependencies:
       bufferutil: 4.0.9
       utf-8-validate: 5.0.10
