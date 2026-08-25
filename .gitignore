@@ -30,9 +30,6 @@ logs/
 *-debug.log*
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
-# Local vendored reference repositories
-.repos/
-
 # Editors and operating systems
 .DS_Store
 .idea/
