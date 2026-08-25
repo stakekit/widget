@@ -1,9 +1,10 @@
+import { useAtomValue } from "@effect/atom-react";
 import clsx from "clsx";
 import { type ReactNode, useState } from "react";
 import { VerticalDivider } from "../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../../../shared/ui/primitives/icons/caret-left";
-import { useSplitCollapsed } from "../use-split-collapsed";
+import { appContainerSplitCollapsedAtom } from "../../../state/app-container";
 import * as styles from "./styles.css";
 
 type Side = "primary" | "secondary";
@@ -35,7 +36,7 @@ export const SplitView = ({
   primaryBarLabel,
   secondaryBarLabel,
 }: SplitViewProps) => {
-  const isCollapsed = useSplitCollapsed();
+  const isCollapsed = useAtomValue(appContainerSplitCollapsedAtom);
   const [activeSide, setActiveSide] = useState<Side>("primary");
 
   if (!primary || !secondary) {

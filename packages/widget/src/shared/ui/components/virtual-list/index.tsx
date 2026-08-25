@@ -54,10 +54,13 @@ export const VirtualList = <ItemData,>({
   isFetchingNextPage,
   fetchNextPage,
 }: VirtualListProps<ItemData>) => {
+  "use no memo";
   const innerRef = useRef<HTMLDivElement>(null);
 
   const isTabletOrBigger = useIsTabletOrBigger();
 
+  // Biome does not recognize the React Compiler's "use no memo" directive.
+  // biome-ignore lint/nursery/useReactCompiler: TanStack Virtual is not compiler-safe.
   const rowVirtualizer = useVirtualizer({
     count: data.length,
     getScrollElement: () => innerRef.current,
@@ -137,10 +140,13 @@ export const GroupedVirtualList = ({
   fetchNextPage,
   ...rest
 }: VirtualGroupListProps & BoxDataAttributes) => {
+  "use no memo";
   const innerRef = useRef<HTMLDivElement>(null);
 
   const isTabletOrBigger = useIsTabletOrBigger();
 
+  // Biome does not recognize the React Compiler's "use no memo" directive.
+  // biome-ignore lint/nursery/useReactCompiler: TanStack Virtual is not compiler-safe.
   const rowVirtualizer = useVirtualizer({
     count: groupCounts.reduce(
       (acc, numChildren) => acc + numChildren,

@@ -64,6 +64,9 @@
       "complexity": {
         "noForEach": "off",
         "useIndexOf": "off"
+      },
+      "nursery": {
+        "useReactCompiler": "error"
       }
     },
     "domains": {

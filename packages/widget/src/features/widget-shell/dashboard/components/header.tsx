@@ -15,7 +15,7 @@ export const Header = () => {
     isConnected,
     isConnecting,
     showDisconnect,
-    containerRef,
+    headerRef,
     hideAccountAndChainSelector,
   } = useHeader();
 
@@ -24,7 +24,7 @@ export const Header = () => {
   }
 
   return (
-    <Box ref={containerRef} data-rk="header" className={headerContainer}>
+    <Box ref={headerRef} data-rk="header" className={headerContainer}>
       <ConnectButton.Custom>
         {({ account, chain, mounted }) => {
           return (

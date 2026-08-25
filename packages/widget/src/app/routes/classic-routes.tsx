@@ -57,11 +57,7 @@ export const ClassicRoutes = () => {
           <motion.div layout="position" className={container}>
             <AnimatePresence>
               <Routes location={location} key={key}>
-                <Route
-                  element={
-                    <ClassicLayout currentPathname={location.pathname} />
-                  }
-                >
+                <Route element={<ClassicLayout />}>
                   {/* Home + Tabs */}
                   <Route element={<ClassicDetails />}>
                     <Route index element={<AnimatedEarnPage />} />

@@ -27,9 +27,11 @@ export const numberInput = style([
 export const spanStyle = style([
   fontStyles,
   {
+    pointerEvents: "none",
     position: "absolute",
-    visibility: "hidden",
     right: "100%",
+    visibility: "hidden",
+    whiteSpace: "pre",
   },
 ]);
 
@@ -37,4 +39,5 @@ export const container = style({
   display: "flex",
   minWidth: 0,
   flex: 1,
+  position: "relative",
 });

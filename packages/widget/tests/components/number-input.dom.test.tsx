@@ -1,7 +1,6 @@
 import BigNumber from "bignumber.js";
 import { act, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { RootElementProvider } from "../../src/shared/react/root-element";
 import { NumberInput } from "../../src/shared/ui/components/number-input";
 import {
   type WidgetPresentation,
@@ -38,21 +37,20 @@ describe("NumberInput locale integration", () => {
 
       return (
         <WidgetPresentationProvider value={presentation("fr")}>
-          <RootElementProvider>
-            <NumberInput
-              value={value}
-              onChange={(next) => {
-                onChange(next);
-                setValue(next);
-              }}
-            />
-          </RootElementProvider>
+          <NumberInput
+            value={value}
+            onChange={(next) => {
+              onChange(next);
+              setValue(next);
+            }}
+          />
         </WidgetPresentationProvider>
       );
     };
     const app = await render(<Harness />);
     const input = app.container.querySelector<HTMLInputElement>("input");
     if (!input) throw new Error("Expected number input");
+    expect(input.parentElement?.querySelector("span")).not.toBeNull();
 
     await act(async () => input.focus());
     await act(async () => setNativeInputValue(input, "1234,5"));

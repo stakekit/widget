@@ -2,8 +2,6 @@ import type { ComponentProps, PropsWithChildren } from "react";
 import { StrictMode } from "react";
 import { WidgetTranslationProvider } from "../../../features/preferences/composition";
 import { WagmiConfigProvider } from "../../../features/wallet/composition";
-import { CurrentLayoutProvider } from "../../../features/widget-shell/composition";
-import { RootElementProvider } from "../../../shared/react/root-element";
 import { MountAnimationEffects } from "./mount-animation";
 import { ThirdPartyQueryClientProvider } from "./query-client";
 import { RainbowProvider } from "./rainbow";
@@ -16,18 +14,14 @@ export const Providers = ({
   <StrictMode>
     <WidgetTranslationProvider>
       <WidgetPresentationAdapter>
-        <RootElementProvider>
-          <ThirdPartyQueryClientProvider>
-            <MountAnimationEffects />
-            <WagmiConfigProvider>
-              <RainbowProvider>
-                <ThemeWrapper>
-                  <CurrentLayoutProvider>{children}</CurrentLayoutProvider>
-                </ThemeWrapper>
-              </RainbowProvider>
-            </WagmiConfigProvider>
-          </ThirdPartyQueryClientProvider>
-        </RootElementProvider>
+        <ThirdPartyQueryClientProvider>
+          <MountAnimationEffects />
+          <WagmiConfigProvider>
+            <RainbowProvider>
+              <ThemeWrapper>{children}</ThemeWrapper>
+            </RainbowProvider>
+          </WagmiConfigProvider>
+        </ThirdPartyQueryClientProvider>
       </WidgetPresentationAdapter>
     </WidgetTranslationProvider>
   </StrictMode>

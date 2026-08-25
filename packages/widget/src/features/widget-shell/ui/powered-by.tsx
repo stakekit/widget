@@ -1,23 +1,15 @@
-import { useAtom } from "@effect/atom-react";
-import * as Atom from "effect/unstable/reactivity/Atom";
 import { motion } from "motion/react";
 import { Trans, useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../features/widget-configuration/index";
-import { useSyncElementHeight } from "../../../shared/react/use-sync-element-height";
 import { Box } from "../../../shared/ui/primitives/box";
 import { SKLogo } from "../../../shared/ui/primitives/icons/sk-logo";
 import { Text } from "../../../shared/ui/primitives/typography/text";
 import { useMountAnimation } from "../../mount-animation/index";
-
-const poweredByHeightAtom = Atom.make(0);
-
-export const usePoweredByHeight = () => useAtom(poweredByHeightAtom);
-
-const useSyncPoweredByHeight = () =>
-  useSyncElementHeight(usePoweredByHeight()[1]);
+import { useElementAtomRef } from "../react/use-element-atom-ref";
+import { poweredByElementAtom } from "../state/layout-height";
 
 export const PoweredBy = ({ opacity }: { opacity?: number }) => {
-  const { containerRef } = useSyncPoweredByHeight();
+  const poweredByRef = useElementAtomRef(poweredByElementAtom);
 
   const { t } = useTranslation();
 
@@ -27,7 +19,7 @@ export const PoweredBy = ({ opacity }: { opacity?: number }) => {
   return (
     <motion.div
       data-rk="powered-by"
-      ref={containerRef}
+      ref={poweredByRef}
       initial={{ opacity: 0 }}
       animate={{
         opacity: opacity || state.layout ? 1 : 0,

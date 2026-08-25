@@ -1,3 +1,4 @@
+import { useAtomValue } from "@effect/atom-react";
 import type { MotionProps, TargetAndTransition } from "motion/react";
 import { motion } from "motion/react";
 import type { PropsWithChildren } from "react";
@@ -7,26 +8,17 @@ import {
   useMountAnimation,
   useMountRevealReady,
 } from "../../mount-animation/index";
-import { useHeaderHeight } from "../header/use-sync-header-height";
-import { useCurrentLayout } from "./current-layout";
+import { animationLayoutHeightAtom } from "../state/layout-height";
 import { animationContainer } from "./layout.css";
-import { usePoweredByHeight } from "./powered-by";
 
 export const AnimationLayout = ({ children }: PropsWithChildren) => {
-  const currentLayout = useCurrentLayout();
-  const [headerHeight] = useHeaderHeight();
-  const [poweredByHeight] = usePoweredByHeight();
+  const containerHeight = useAtomValue(animationLayoutHeightAtom);
 
   const { state, dispatch } = useMountAnimation();
 
   const disableInitLayoutAnimation = useWidgetConfig(
     "disableInitLayoutAnimation"
   );
-
-  const containerHeight =
-    currentLayout.state?.height && headerHeight
-      ? currentLayout.state.height + headerHeight + poweredByHeight
-      : 0;
 
   const [disableTransitionDuration] = useDisableTransitionDuration();
   const revealReady = useMountRevealReady();

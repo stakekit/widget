@@ -112,7 +112,7 @@ catalog:
   swagger2openapi: ^7.0.8
   tsx: ^4.23.12
   turbo: ^2.10.11
-  typescript: npm:@typescript/typescript6@^6.0.2
+  typescript: ^6.0.3
   unplugin-macros: ^0.23.2
   viem: ^2.55.16
   vite: ^8.2.2

@@ -18,7 +18,7 @@ import { applicationRouterAtom } from "./app/runtime/application-router-runtime"
 import { walletEnabledNetworksResultAtom } from "./features/wallet/index";
 import { useWidgetConfig } from "./features/widget-configuration/index";
 import {
-  AppContainerProvider,
+  AppContainer,
   NoEnabledYields,
 } from "./features/widget-shell/composition";
 import { useUnderMaintenance } from "./features/widget-shell/index";
@@ -63,9 +63,9 @@ const SKAppRouter = () => {
 
   return (
     <ApplicationRouteContentProvider value={<Root />}>
-      <AppContainerProvider variant={dashboardVariant ? "dashboard" : "widget"}>
+      <AppContainer variant={dashboardVariant ? "dashboard" : "widget"}>
         <RouterProvider router={router} />
-      </AppContainerProvider>
+      </AppContainer>
     </ApplicationRouteContentProvider>
   );
 };

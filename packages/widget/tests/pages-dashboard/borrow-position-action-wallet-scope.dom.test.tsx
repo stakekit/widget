@@ -21,7 +21,6 @@ import { BorrowPositionActionPage } from "../../src/features/borrow/market-posit
 import { currentBorrowPositionsAtom } from "../../src/features/borrow/positions/state/positions";
 import { walletScopeAtom } from "../../src/features/wallet/index";
 import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
-import { RootElementProvider } from "../../src/shared/react/root-element";
 import { render } from "../utils/test-utils.dom.tsx";
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
@@ -213,27 +212,25 @@ const renderAction = ({
       ]}
       key={owner}
     >
-      <RootElementProvider>
-        <I18nextProvider i18n={i18nInstance}>
-          <MemoryRouter
-            initialEntries={[
-              `/positions/borrow/${market.id}/action/${action.id}`,
-            ]}
-          >
-            <Routes>
+      <I18nextProvider i18n={i18nInstance}>
+        <MemoryRouter
+          initialEntries={[
+            `/positions/borrow/${market.id}/action/${action.id}`,
+          ]}
+        >
+          <Routes>
+            <Route
+              element={<PositionOutlet action={action} position={position} />}
+              path="positions/borrow/:marketId"
+            >
               <Route
-                element={<PositionOutlet action={action} position={position} />}
-                path="positions/borrow/:marketId"
-              >
-                <Route
-                  element={<BorrowPositionActionPage />}
-                  path="action/:actionId"
-                />
-              </Route>
-            </Routes>
-          </MemoryRouter>
-        </I18nextProvider>
-      </RootElementProvider>
+                element={<BorrowPositionActionPage />}
+                path="action/:actionId"
+              />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </I18nextProvider>
     </RegistryProvider>
   );
 };

@@ -19,22 +19,6 @@ declare module "vite" {
   }
 }
 
-// @vanilla-extract/vite-plugin 5.2.4 declines virtual CSS modules whose
-// source file only composes existing classes and therefore emits no new CSS.
-// Preserve the plugin's pre-5.2.4 empty-module behavior as a post hook.
-const vanillaExtractEmptyCssFallback: Plugin = {
-  name: "stakekit:vanilla-extract-empty-css-fallback",
-  enforce: "post",
-  resolveId(source) {
-    const [id] = source.split("?");
-    if (id?.endsWith(".vanilla.css")) return source;
-  },
-  load(source) {
-    const [id] = source.split("?");
-    if (id?.endsWith(".vanilla.css")) return "";
-  },
-};
-
 export const getConfig = (
   overides?: Partial<UserConfig>,
   options?: { plugins?: Plugin[] }
@@ -71,7 +55,6 @@ export const getConfig = (
           ],
         }),
         vanillaExtractPlugin(),
-        vanillaExtractEmptyCssFallback,
       ],
       css: {
         postcss: {

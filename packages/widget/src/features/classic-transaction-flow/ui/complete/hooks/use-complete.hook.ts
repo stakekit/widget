@@ -28,7 +28,7 @@ export const useComplete = () => {
 
   const onClick = () => {
     if (isLedgerLive && !isMobile()) {
-      window.location.href = "ledgerlive://earn";
+      window.location.assign("ledgerlive://earn");
 
       return;
     }

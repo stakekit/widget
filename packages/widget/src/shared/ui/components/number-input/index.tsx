@@ -2,9 +2,7 @@ import type BigNumber from "bignumber.js";
 import { motion, useAnimation } from "motion/react";
 import type { ChangeEvent } from "react";
 import { memo, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { exactZero } from "../../../../domain/finance/exact";
-import { useRootElement } from "../../../react/root-element";
 import { Box } from "../../primitives/box";
 import { useWidgetPresentation } from "../../widget-presentation";
 import {
@@ -77,8 +75,6 @@ export const NumberInput = memo(
       inputVal: localState,
     });
 
-    const rootElement = useRootElement();
-
     const animate = useAnimation();
 
     useEffect(() => {
@@ -133,13 +129,9 @@ export const NumberInput = memo(
             );
           }}
         />
-        {rootElement &&
-          createPortal(
-            <span ref={spanRef} className={spanStyle}>
-              {localState}
-            </span>,
-            rootElement
-          )}
+        <span ref={spanRef} className={spanStyle}>
+          {localState}
+        </span>
       </motion.div>
     );
   }

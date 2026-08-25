@@ -2,7 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type * as Atom from "effect/unstable/reactivity/Atom";
-import { createContext, useContext, useRef } from "react";
+import { createContext, useContext, useState } from "react";
 import { Navigate, Outlet } from "react-router";
 import {
   sameWalletScopeOwner,
@@ -27,10 +27,11 @@ export const WalletScopeRoute = ({
     Option.getOrNull
   );
   const walletScope = walletState ? walletScopeFromState(walletState) : null;
-  const initialWalletScope = useRef<WalletScopeKey | null>(null);
+  const [initialWalletScope, setInitialWalletScope] =
+    useState<WalletScopeKey | null>(null);
 
-  if (walletScope && initialWalletScope.current === null) {
-    initialWalletScope.current = walletScope;
+  if (walletScope !== null && initialWalletScope === null) {
+    setInitialWalletScope(walletScope);
   }
 
   if (walletStateResult.waiting && !walletScope) {
@@ -39,8 +40,8 @@ export const WalletScopeRoute = ({
 
   if (
     !walletScope ||
-    (initialWalletScope.current &&
-      !sameWalletScopeOwner(initialWalletScope.current, walletScope))
+    (initialWalletScope !== null &&
+      !sameWalletScopeOwner(initialWalletScope, walletScope))
   ) {
     return <Navigate to={fallbackPath} replace />;
   }

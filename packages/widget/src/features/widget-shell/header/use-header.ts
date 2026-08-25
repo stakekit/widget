@@ -8,13 +8,14 @@ import { shouldShowDisconnect } from "../../../services/wallet/wallet-connectors
 import { useTrackEvent } from "../../tracking/index";
 import { useSKWallet, useWalletConfig } from "../../wallet/index";
 import { useDetailsMatch } from "../react/use-details-match";
+import { useElementAtomRef } from "../react/use-element-atom-ref";
 import { disconnectWidgetAtom } from "../state/disconnect-widget";
-import { useSyncHeaderHeight } from "./use-sync-header-height";
+import { headerElementAtom } from "../state/layout-height";
 
 export const useHeader = () => {
   const navigate = useNavigate();
 
-  const { containerRef } = useSyncHeaderHeight();
+  const headerRef = useElementAtomRef(headerElementAtom);
 
   const variant = useWidgetConfig("variant");
   const hideChainSelector = useWidgetConfig("hideChainSelector");
@@ -53,7 +54,7 @@ export const useHeader = () => {
   return {
     onLeftIconPress,
     onXPress,
-    containerRef,
+    headerRef,
     walletConfigReady,
     variant,
     hideChainSelector,

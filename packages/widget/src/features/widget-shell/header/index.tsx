@@ -10,7 +10,7 @@ import { useHeader } from "./use-header";
 
 export const Header = () => {
   const {
-    containerRef,
+    headerRef,
     walletConfigReady,
     variant,
     hideChainSelector,
@@ -23,7 +23,7 @@ export const Header = () => {
   } = useHeader();
 
   return (
-    <Box ref={containerRef} data-rk="header">
+    <Box ref={headerRef} data-rk="header">
       <Box paddingTop="4" paddingBottom="1">
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box

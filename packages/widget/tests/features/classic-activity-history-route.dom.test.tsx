@@ -1,7 +1,7 @@
 import { RegistryProvider, useAtomSet } from "@effect/atom-react";
 import { Effect, Layer, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { act } from "react";
+import { act, useEffect } from "react";
 import {
   MemoryRouter,
   type NavigateFunction,
@@ -127,7 +127,14 @@ const StartPage = ({
 }) => {
   const start = useAtomSet(startClassicTransactionFlowAtom);
   const navigate = useNavigate();
-  navigationBridge.navigate = navigate;
+
+  useEffect(() => {
+    navigationBridge.navigate = navigate;
+
+    return () => {
+      navigationBridge.navigate = null;
+    };
+  }, [navigate]);
 
   return (
     <button

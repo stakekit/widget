@@ -1,30 +1,16 @@
 import { motion } from "motion/react";
 import { Outlet } from "react-router";
-import { useSyncElementHeight } from "../../../shared/react/use-sync-element-height";
-import { useCurrentLayout } from "../ui/current-layout";
+import { useElementAtomRef } from "../react/use-element-atom-ref";
+import { classicLayoutElementAtom } from "../state/layout-height";
 import { absoluteContainer } from "./styles.css";
 
-export const ClassicLayout = ({
-  currentPathname,
-}: {
-  currentPathname: string;
-}) => {
-  const { setState } = useCurrentLayout();
-
-  const { containerRef } = useSyncElementHeight((height) => {
-    /**
-     * This can happen if checks return <Navigate to="/some/path" />
-     * Use last height to prevent layout jump
-     */
-    if (height === 0) return;
-
-    setState({ pathname: currentPathname, height });
-  });
+export const ClassicLayout = () => {
+  const classicLayoutRef = useElementAtomRef(classicLayoutElementAtom);
 
   return (
     <motion.div
       layout="position"
-      ref={containerRef}
+      ref={classicLayoutRef}
       className={absoluteContainer}
     >
       <Outlet />

@@ -149,6 +149,7 @@ const TestNavigationBridge = ({
 }) => {
   const navigate = useNavigate();
   useEffect(() => {
+    // biome-ignore lint/nursery/useReactCompiler: Test bridge intentionally publishes navigation outside React.
     channel.navigate = navigate;
     return () => {
       channel.navigate = null;
