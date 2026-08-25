@@ -5,7 +5,7 @@ import { SelectModal } from "../../../../shared/ui/components/select-modal";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { unknownErrorDetail } from "../../model/unknown-error-detail";
+import { richErrorDetail } from "../../model/rich-error-detail";
 import { useRichErrors } from "../../react/use-rich-errors";
 import { imageStyle } from "./style.css";
 
@@ -18,8 +18,16 @@ export const RichErrorModal = () => {
         i18n.exists(`errors.${message}.${field}`)
       )
     : false;
-  const unknownDetails =
-    error && !hasKnownMessage ? unknownErrorDetail(error) : undefined;
+  const errorDetail = error
+    ? richErrorDetail({
+        error,
+        language: i18n.resolvedLanguage ?? i18n.language,
+        errorCopyDetails:
+          message && hasKnownMessage
+            ? t(`errors.${message}.details`, details)
+            : undefined,
+      })
+    : undefined;
 
   useEffect(() => resetError, [resetError]);
 
@@ -56,7 +64,7 @@ export const RichErrorModal = () => {
                 textAlign="center"
                 marginTop="2"
               >
-                {t(`errors.${message}.details`, details)}
+                {errorDetail}
               </Text>
             </Box>
 
@@ -85,13 +93,13 @@ export const RichErrorModal = () => {
             <Heading variant={{ level: "h4" }}>
               {t("shared.something_went_wrong")}
             </Heading>
-            {unknownDetails && (
+            {errorDetail && (
               <Text
                 variant={{ type: "muted", weight: "normal" }}
                 textAlign="center"
                 marginTop="2"
               >
-                {unknownDetails}
+                {errorDetail}
               </Text>
             )}
           </Box>

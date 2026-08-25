@@ -44,10 +44,13 @@ describe("RichErrorModal", () => {
     richErrorState.resetError.mockClear();
   });
 
-  it("renders local fallback copy for a missing remote identity", async () => {
+  it("renders the English API reason in place of the Error Copy details", async () => {
     richErrorState.error = {
       message: "KaminoLendingInsufficientSolForRentError",
-      details: { reason: "Technical API reason" },
+      details: {
+        reason:
+          "Insufficient SOL for transaction. Required: ~0.005 SOL, Current: 0.004 SOL",
+      },
     };
 
     await renderModal();
@@ -56,12 +59,96 @@ describe("RichErrorModal", () => {
       "Insufficient SOL for Account Rent"
     );
     expect(document.body.textContent).toContain(
+      "Insufficient SOL for transaction. Required: ~0.005 SOL, Current: 0.004 SOL"
+    );
+    expect(document.body.textContent).toContain("Potential solution:");
+    expect(document.body.textContent).toContain(
+      "Add SOL to the account and try again"
+    );
+    expect(document.body.textContent).not.toContain(
       "There is not enough SOL to fund the account rent required by Kamino Lending"
     );
-    expect(document.body.textContent).not.toContain("Technical API reason");
     expect(document.body.textContent).not.toContain(
       "KaminoLendingInsufficientSolForRentError"
     );
+  });
+
+  it("keeps French Error Copy details instead of the English API reason", async () => {
+    const i18n = createWidgetI18nInstance();
+    await i18n.changeLanguage("fr");
+    richErrorState.error = {
+      message: "KaminoLendingInsufficientSolForRentError",
+      details: {
+        reason:
+          "Insufficient SOL for transaction. Required: ~0.005 SOL, Current: 0.004 SOL",
+      },
+    };
+
+    await render(
+      <I18nextProvider i18n={i18n}>
+        <RichErrorModal />
+      </I18nextProvider>
+    );
+
+    expect(document.body.textContent).toContain(
+      "SOL insuffisant pour le loyer du compte"
+    );
+    expect(document.body.textContent).toContain(
+      "Le solde SOL est insuffisant pour financer le loyer de compte requis par Kamino Lending"
+    );
+    expect(document.body.textContent).not.toContain(
+      "Insufficient SOL for transaction"
+    );
+  });
+
+  it("replaces host Error Copy details with the English API reason", async () => {
+    const i18n = createWidgetI18nInstance();
+    i18n.addResourceBundle(
+      "en",
+      "translation",
+      {
+        errors: {
+          KaminoLendingInsufficientSolForRentError: { details: "HOST DETAILS" },
+        },
+      },
+      true,
+      true
+    );
+    richErrorState.error = {
+      message: "KaminoLendingInsufficientSolForRentError",
+      details: { reason: "Insufficient SOL for transaction." },
+    };
+
+    await render(
+      <I18nextProvider i18n={i18n}>
+        <RichErrorModal />
+      </I18nextProvider>
+    );
+
+    expect(document.body.textContent).toContain(
+      "Insufficient SOL for transaction."
+    );
+    expect(document.body.textContent).not.toContain("HOST DETAILS");
+    expect(document.body.textContent).toContain(
+      "Add SOL to the account and try again"
+    );
+  });
+
+  it("renders only the generic French title for an unknown identity", async () => {
+    const i18n = createWidgetI18nInstance();
+    await i18n.changeLanguage("fr");
+    richErrorState.error = {
+      message: "FutureApiError",
+      details: { reason: "The operation is temporarily unavailable." },
+    };
+
+    await render(
+      <I18nextProvider i18n={i18n}>
+        <RichErrorModal />
+      </I18nextProvider>
+    );
+
+    expect(document.body.textContent?.trim()).toBe("Une erreur s'est produite");
   });
 
   it("renders the API reason instead of an unknown identity", async () => {

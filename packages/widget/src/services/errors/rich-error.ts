@@ -2,14 +2,14 @@ import { Schema } from "effect";
 
 const RichErrorDetails = Schema.StructWithRest(
   Schema.Struct({
-    reason: Schema.optionalKey(Schema.String),
+    reason: Schema.optionalKey(Schema.Trim),
   }),
   [Schema.Record(Schema.String, Schema.Unknown)]
 );
 
 export const RichError = Schema.StructWithRest(
   Schema.Struct({
-    message: Schema.String,
+    message: Schema.Trim,
     details: Schema.optionalKey(RichErrorDetails),
   }),
   [Schema.Record(Schema.String, Schema.Unknown)]

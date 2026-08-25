@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import { RichError } from "../../src/services/errors/rich-error";
 
 describe("RichError", () => {
-  it("decodes a reason while preserving interpolation details", () => {
+  it("trims the message and reason while preserving interpolation details", () => {
     expect(
       Schema.decodeUnknownSync(RichError)({
-        message: "KaminoLendingInsufficientSolForRentError",
+        message: "  KaminoLendingInsufficientSolForRentError  ",
         details: {
           amount: "0.01 SOL",
           reason: "  Insufficient SOL for transaction.  ",
@@ -16,7 +16,7 @@ describe("RichError", () => {
       message: "KaminoLendingInsufficientSolForRentError",
       details: {
         amount: "0.01 SOL",
-        reason: "  Insufficient SOL for transaction.  ",
+        reason: "Insufficient SOL for transaction.",
       },
     });
   });
@@ -33,17 +33,17 @@ describe("RichError", () => {
     }
   );
 
-  it.each([{ reason: "" }, { reason: "   " }])(
-    "accepts any string reason",
-    (details) => {
+  it.each(["", "   "])(
+    "decodes a blank reason as an empty string",
+    (reason) => {
       expect(
         Schema.decodeUnknownSync(RichError)({
           message: "KaminoLendingInsufficientSolForRentError",
-          details,
+          details: { reason },
         })
       ).toEqual({
         message: "KaminoLendingInsufficientSolForRentError",
-        details,
+        details: { reason: "" },
       });
     }
   );
