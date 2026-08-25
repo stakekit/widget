@@ -80,7 +80,7 @@ catalog:
   "@wallet-standard/base": ^1.1.1
   autoprefixer: ^10.5.4
   bignumber.js: ^11.1.5
-  chain-registry: 1.69.221
+  chain-registry: 1.69.674
   clsx: ^2.1.1
   cosmjs-types: ^0.10.1
   dependency-cruiser: ^18.1.0

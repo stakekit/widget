@@ -383,8 +383,8 @@ catalogs:
       specifier: ^11.1.5
       version: 11.1.5
     chain-registry:
-      specifier: 1.69.221
-      version: 1.69.221
+      specifier: 1.69.674
+      version: 1.69.674
     clsx:
       specifier: ^2.1.1
       version: 2.1.1
@@ -772,7 +772,7 @@ importers:
         version: 11.1.5
       chain-registry:
         specifier: 'catalog:'
-        version: 1.69.221
+        version: 1.69.674
       clsx:
         specifier: 'catalog:'
         version: 2.1.1
@@ -1271,6 +1271,9 @@ packages:
 
   '@chain-registry/types@0.50.355':
     resolution: {integrity: sha512-TjR/Bt3jVyywvfDw0T5708M90Xd/pBj+pH2sWsm4rUXJmtt5UkLmdBFK53rq7IeCWURUd2RdSvOE/e9QcCdSrw==}
+
+  '@chain-registry/types@0.50.410':
+    resolution: {integrity: sha512-U4+VFyCRIoB/HMYEaTMnBjA4zcl7+7oMlbWWQ/w0fPJb2KsLsOhKLBPDYRVf2G2KcTif+54I7ty66ObZBtlXRA==}
 
   '@chain-registry/utils@1.51.355':
     resolution: {integrity: sha512-/64JhrX7nyCuchSlmqlZqUdsCHPlo/ynxC1fWFeagjQ1i8oe5GAMUiBxu8x0Xpv66eMNAXzcUbIAzXj2HrCHAQ==}
@@ -7094,8 +7097,8 @@ packages:
     resolution: {integrity: sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==}
     engines: {node: '>=18'}
 
-  chain-registry@1.69.221:
-    resolution: {integrity: sha512-xneaE5akRnMJvRU2zNHylA6hMhd9GwjQtMsfHlt2b6fswsnu7ybdYyrrd5aQy3DXd4bqar17MvjHZ9VPZKznUQ==}
+  chain-registry@1.69.674:
+    resolution: {integrity: sha512-/HvpxZsOn+1WyV6ITGAV1ggAyvhBiW0yCs0hV+Ki/rYAIP4THP15juv5RNl6OS/7OSh05NuAB2iwKhuuXtJpZw==}
 
   chalk-template@0.4.0:
     resolution: {integrity: sha512-/ghrgmhfY8RaSdeo43hNXxpoHAtxdbskUHjPpfqUWGttFgycUhYPGx3YZBCnUCvOa7Doivn1IZec3DEGFoMgLg==}
@@ -11918,6 +11921,8 @@ snapshots:
   '@chain-registry/types@0.46.15': {}
 
   '@chain-registry/types@0.50.355': {}
+
+  '@chain-registry/types@0.50.410': {}
 
   '@chain-registry/utils@1.51.355':
     dependencies:
@@ -21151,9 +21156,9 @@ snapshots:
 
   chai@6.2.2: {}
 
-  chain-registry@1.69.221:
+  chain-registry@1.69.674:
     dependencies:
-      '@chain-registry/types': 0.50.355
+      '@chain-registry/types': 0.50.410
 
   chalk-template@0.4.0:
     dependencies:
