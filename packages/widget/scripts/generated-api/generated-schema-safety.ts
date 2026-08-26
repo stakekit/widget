@@ -1,3 +1,7 @@
+/**
+ * OpenAPI and generated-source checks shared by `gen:api` and the schema
+ * safety script.
+ */
 import ts from "typescript";
 
 type JsonObject = Record<string, unknown>;

@@ -1,3 +1,8 @@
+/**
+ * Maps `src` files to owned Modules and reports cycles against the baseline.
+ *
+ * Used by `check-architecture.ts`.
+ */
 import type { ICruiseResult } from "dependency-cruiser";
 import type {
   ModuleCollectionDeclaration,

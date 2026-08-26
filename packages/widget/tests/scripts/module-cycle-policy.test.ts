@@ -4,7 +4,7 @@ import {
   checkOwnedModuleCycles,
   type ModuleCyclePolicy,
   resolveOwnedModule,
-} from "./module-cycle-policy";
+} from "../../scripts/architecture/module-cycle-policy";
 
 const policy: ModuleCyclePolicy = {
   moduleCollections: [

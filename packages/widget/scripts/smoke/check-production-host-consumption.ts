@@ -21,14 +21,10 @@ import { once } from "node:events";
 import { access, readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { createServer } from "node:net";
-import { dirname, join, relative, sep } from "node:path";
+import { join, relative, sep } from "node:path";
 import type { Readable } from "node:stream";
-import { fileURLToPath } from "node:url";
 import { type Browser, chromium } from "playwright";
-
-const scriptDirectory = dirname(fileURLToPath(import.meta.url));
-const widgetRoot = join(scriptDirectory, "..");
-const repositoryRoot = join(widgetRoot, "../..");
+import { repositoryRoot, widgetRoot } from "../paths";
 
 type Host = {
   readonly label: string;

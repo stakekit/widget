@@ -3,7 +3,7 @@ import {
   findUnsafeGeneratedSchemaUnions,
   normalizeGeneratedTypeOnlySource,
   normalizeOpenApiUnionObjects,
-} from "./generated-schema-safety";
+} from "../../scripts/generated-api/generated-schema-safety";
 
 describe("generated schema safety", () => {
   it("opens unbounded object members in OpenAPI unions", () => {

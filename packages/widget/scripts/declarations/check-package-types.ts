@@ -1,9 +1,10 @@
 /**
  * Type-checks the packed Widget from isolated consumer projects.
  *
- * Source checks can resolve unpublished files and undeclared dependencies from
- * the workspace. These consumers install only the tarball and their declared
- * peer setup, so resolution follows the package manifest and packed contents.
+ * Run via `pnpm check:package-types` after `build:types`. Source checks can
+ * resolve unpublished files and undeclared dependencies from the workspace.
+ * These consumers install only the tarball and their declared peer setup, so
+ * resolution follows the package manifest and packed contents.
  */
 
 import { spawn } from "node:child_process";
@@ -22,14 +23,12 @@ import {
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { widgetRoot } from "../paths";
 import {
   declarationSpecifiers,
   resolveDeclarationImport,
 } from "./declaration-graph.ts";
 
-const scriptDirectory = dirname(fileURLToPath(import.meta.url));
-const widgetRoot = join(scriptDirectory, "..");
 const fixtureRoot = join(widgetRoot, "tests/package-types");
 const requireFromWidget = createRequire(import.meta.url);
 const typescriptCli = requireFromWidget.resolve("typescript/lib/tsc.js");

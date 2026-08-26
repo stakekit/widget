@@ -1,4 +1,12 @@
+/**
+ * Architecture check for owned Modules and layer imports.
+ *
+ * Run via `pnpm check-hygiene:architecture`. Cruises `src` with the
+ * dependency-cruiser config, then fails on owned-Module cycles that are not
+ * listed in the baseline.
+ */
 import { cruise, format } from "dependency-cruiser";
+import { widgetRoot } from "../paths";
 import architectureConfiguration, {
   architecturePolicy,
 } from "./dependency-cruiser.config.mts";
@@ -12,6 +20,7 @@ const { options: configuredOptions = {}, ...ruleSet } =
   architectureConfiguration;
 const cruiseOutput = await cruise(["src"], {
   ...configuredOptions,
+  baseDir: widgetRoot,
   outputType: undefined,
   ruleSet,
   validate: true,

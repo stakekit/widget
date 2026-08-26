@@ -1,11 +1,15 @@
+/**
+ * Rewrites relative declaration imports to explicit ESM specifiers.
+ *
+ * Run after `tsc` in `pnpm build:types`.
+ */
 import { readFile, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import ts from "typescript";
+import { widgetRoot } from "../paths";
 import { resolveDeclarationImport } from "./declaration-graph.ts";
 
-const scriptDirectory = dirname(fileURLToPath(import.meta.url));
-const declarationRoot = join(scriptDirectory, "../dist/types");
+const declarationRoot = join(widgetRoot, "dist/types");
 
 const finalizedSpecifier = async (fromPath: string, specifier: string) => {
   if (!specifier.startsWith(".") || specifier.endsWith(".json")) {

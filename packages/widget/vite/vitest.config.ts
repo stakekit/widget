@@ -5,10 +5,7 @@ import { getConfig } from "./vite.config.base.ts";
 
 const browserTestPattern = "tests/**/*.browser.test.{ts,tsx}";
 const domTestPattern = "tests/**/*.dom.test.{ts,tsx}";
-const unitTestPatterns = [
-  "tests/**/*.test.{ts,tsx}",
-  "scripts/**/*.test.ts",
-] as const;
+const unitTestPatterns = ["tests/**/*.test.{ts,tsx}"] as const;
 const inlineTestDependencies = [
   /@ledgerhq/,
   /@luno-kit/,

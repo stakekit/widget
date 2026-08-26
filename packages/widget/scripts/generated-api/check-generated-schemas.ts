@@ -1,10 +1,13 @@
+/**
+ * Fails lint when generated `Schema.Union` members include unsafe empty objects.
+ *
+ * Run from `pnpm lint`, `pnpm check:generated-schemas`, and `pnpm gen:api`.
+ */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { widgetRoot } from "../paths";
 import { findUnsafeGeneratedSchemaUnions } from "./generated-schema-safety";
 
-const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-const widgetRoot = path.resolve(scriptDir, "..");
 const generatedSchemaFiles = [
   "src/generated/api/borrow.ts",
   "src/generated/api/legacy-schema.ts",

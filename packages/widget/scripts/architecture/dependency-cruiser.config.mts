@@ -1,3 +1,6 @@
+/**
+ * Layer and owned-Module import rules used by `check-architecture.ts`.
+ */
 import type { IConfiguration, IForbiddenRuleType } from "dependency-cruiser";
 
 const layerNames = [
