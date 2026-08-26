@@ -1,17 +1,10 @@
 import type { ValidatorsConfig } from "../../domain/earn/yield";
 import type { ExternalProviderSnapshot } from "../../public-api/external-provider-contract";
+import type { VariantProps } from "../../public-api/react-types";
 import type {
   PreferredTokenYieldsPerNetwork,
   SettingsProps,
-  VariantProps,
 } from "../../public-api/types";
-
-type NormalizedWagmiConfig = {
-  readonly __customConnectors__?: NonNullable<
-    SettingsProps["wagmi"]
-  >["__customConnectors__"];
-  readonly forceWalletConnectOnly: boolean;
-};
 
 type ZerionChainModal = Extract<
   VariantProps,
@@ -35,6 +28,7 @@ export type WidgetConfig = {
   readonly disableInjectedProviderDiscovery: boolean;
   readonly disableResizingInputFontSize: boolean;
   readonly externalProviders?: ExternalProviderSnapshot;
+  readonly forceWalletConnectOnly: boolean;
   readonly hideAccountAndChainSelector: boolean;
   readonly hideChainSelector: boolean;
   readonly hideNetworkLogo: boolean;
@@ -44,7 +38,6 @@ export type WidgetConfig = {
   readonly isSafe: boolean;
   readonly language?: SettingsProps["language"];
   readonly mapWalletFn?: SettingsProps["mapWalletFn"];
-  readonly mapWalletListFn?: SettingsProps["mapWalletListFn"];
   readonly mountAnimationStartsFinished: boolean;
   readonly onMountAnimationComplete?: SettingsProps["onMountAnimationComplete"];
   readonly portalContainer?: SettingsProps["portalContainer"];
@@ -55,7 +48,7 @@ export type WidgetConfig = {
   readonly tracking?: SettingsProps["tracking"];
   readonly validatorsConfig: ValidatorsConfig;
   readonly variant: VariantProps["variant"];
-  readonly wagmi: NormalizedWagmiConfig;
+  readonly walletPolicy?: SettingsProps["walletPolicy"];
   readonly yieldGrouping: NonNullable<SettingsProps["yieldGrouping"]>;
   readonly yieldsApiUrl: string;
 };

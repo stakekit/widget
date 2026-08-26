@@ -1,7 +1,9 @@
 import type { Chain } from "@stakekit/rainbowkit";
-import type { WalletSubstrateNetwork } from "../../../../../domain/wallet/network";
-import { SubstrateChainIds } from "../../../../../public-api/types";
-import type { KebabToCamelCase } from "../../../../../shared/type-helpers";
+import {
+  getProtocolChainIdentity,
+  getWalletRoutingId,
+  type WalletSubstrateNetwork,
+} from "../../../../../domain/wallet/network";
 import { getNetworkLogo } from "../../../network-assets";
 
 export type SubstrateChainsMap = {
@@ -15,7 +17,7 @@ export type SubstrateChainsMap = {
 };
 
 const polkadot = {
-  id: 9999,
+  id: getWalletRoutingId("polkadot"),
   name: "Polkadot",
   iconUrl: getNetworkLogo("polkadot"),
   nativeCurrency: {
@@ -42,7 +44,7 @@ const polkadot = {
 } as const satisfies Chain;
 
 const bittensor = {
-  id: 558,
+  id: getWalletRoutingId("bittensor"),
   name: "Bittensor",
   iconUrl: getNetworkLogo("bittensor"),
   nativeCurrency: {
@@ -63,21 +65,14 @@ export const substrateChainsMap: SubstrateChainsMap = {
     type: "substrate",
     network: "polkadot",
     wagmiChain: polkadot,
-    genesisHash:
-      "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
+    genesisHash: getProtocolChainIdentity("polkadot").genesisHash,
     ss58Format: 0,
   },
   bittensor: {
     type: "substrate",
     network: "bittensor",
     wagmiChain: bittensor,
-    genesisHash:
-      "0x2f0555cc76fc2840a25a6ea3b9637146806f1f44b090c175ffde2a7e5ab36c03",
+    genesisHash: getProtocolChainIdentity("bittensor").genesisHash,
     ss58Format: 0,
   },
 };
-
-SubstrateChainIds satisfies Record<
-  Capitalize<KebabToCamelCase<WalletSubstrateNetwork>>,
-  number
->;

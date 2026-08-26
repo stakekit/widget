@@ -2,7 +2,7 @@ import "@stakekit/rainbowkit/styles.css";
 import "./shared/styles/theme/global.css";
 import { useAtomValue } from "@effect/atom-react";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { useState } from "react";
+import { type PropsWithChildren, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router/dom";
 import { ApplicationRouteContentProvider } from "./app/composition/application-route-content";
@@ -14,7 +14,7 @@ import { ApplicationRouteEffects } from "./app/routes/application-route-effects"
 import { applicationRoutes } from "./app/routes/application-routes";
 import { ClassicRoutes } from "./app/routes/classic-routes";
 import { DashboardRoutes } from "./app/routes/dashboard-routes";
-import { applicationRouterAtom } from "./app/runtime/application-router-runtime";
+import { applicationRouterAtom } from "./app/runtime/application-router";
 import { walletEnabledNetworksResultAtom } from "./features/wallet/index";
 import { useWidgetConfig } from "./features/widget-configuration/index";
 import {
@@ -23,7 +23,8 @@ import {
 } from "./features/widget-shell/composition";
 import { useUnderMaintenance } from "./features/widget-shell/index";
 import { UnderMaintenance } from "./features/widget-shell/views";
-import type { SKAppProps, SKHostConfiguration } from "./public-api/types";
+import type { SKAppProps } from "./public-api/react-types";
+import type { BundledSKWidgetProps } from "./public-api/types";
 import { isLedgerDappBrowserProvider } from "./services/wallet/browser-environment";
 import { preloadImages } from "./shared/assets/images";
 
@@ -70,7 +71,17 @@ const SKAppRouter = () => {
   );
 };
 
-const SKAppContent = ({ children, ...hostConfiguration }: SKAppProps) => {
+export const SKAppRegistryContent = ({ children }: PropsWithChildren) => (
+  <>
+    <SKAppRouter />
+    {children}
+  </>
+);
+
+const SKAppProductionContent = ({
+  children,
+  ...hostConfiguration
+}: SKAppProps) => {
   const [isLedgerDappBrowser] = useState(isLedgerDappBrowserProvider);
 
   return (
@@ -79,26 +90,27 @@ const SKAppContent = ({ children, ...hostConfiguration }: SKAppProps) => {
       isLedgerLive={isLedgerDappBrowser}
       routes={applicationRoutes}
     >
-      <SKAppRouter />
-      {children}
+      <SKAppRegistryContent>{children}</SKAppRegistryContent>
     </SKAtomRegistryProvider>
   );
 };
 
 export const SKApp = ({ children, ...hostConfiguration }: SKAppProps) => (
   <WidgetInstanceReactBoundary>
-    <SKAppContent {...hostConfiguration}>{children}</SKAppContent>
+    <SKAppProductionContent {...hostConfiguration}>
+      {children}
+    </SKAppProductionContent>
   </WidgetInstanceReactBoundary>
 );
 
-const BundledSKWidget = (props: SKHostConfiguration) => (
-  <SKAppContent {...props} />
+const BundledSKWidget = (props: BundledSKWidgetProps) => (
+  <SKAppProductionContent {...props} />
 );
 
 export const renderSKWidget = ({
   container,
   ...rest
-}: SKHostConfiguration & {
+}: BundledSKWidgetProps & {
   container: Parameters<typeof ReactDOM.createRoot>[0];
 }) => {
   const releaseClaim = acquireWidgetInstanceClaim(
@@ -115,7 +127,7 @@ export const renderSKWidget = ({
     render();
 
     return {
-      rerender: (newProps: SKHostConfiguration) => {
+      rerender: (newProps: BundledSKWidgetProps) => {
         if (unmounted) return;
         currentProps = newProps;
         render();

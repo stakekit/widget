@@ -8,10 +8,13 @@ import {
 import type {
   BundledSKWidgetProps,
   SKWallet as BundledWallet,
+  SKWalletPolicy as BundledWalletPolicy,
+} from "../../src/public-api/index.bundle";
+import type {
   SKAppProps as PackageSKAppProps,
   SKWallet as PackageWallet,
-  SKHostConfiguration,
-} from "../../src/public-api/types";
+  SKWalletPolicy as PackageWalletPolicy,
+} from "../../src/public-api/index.package";
 
 const genericWallet: PackageWallet = {
   signMessage: vi.fn(async () => "signed-message"),
@@ -57,7 +60,7 @@ describe("package and bundled wallet entry contracts", () => {
     expectTypeOf(packageProps).toMatchTypeOf<PackageSKAppProps>();
   });
 
-  it("keeps bundled lifecycle controls aligned with package SKApp props", () => {
+  it("keeps bundled lifecycle controls on the non-React configuration", () => {
     type BundledRenderProps = Parameters<typeof bundledRenderSKWidget>[0];
     type BundledController = ReturnType<typeof bundledRenderSKWidget>;
     const bundledRenderProps = {
@@ -68,8 +71,12 @@ describe("package and bundled wallet entry contracts", () => {
     expectTypeOf(packageProps).toMatchTypeOf<BundledSKWidgetProps>();
     expectTypeOf(bundledRenderProps).toMatchTypeOf<BundledRenderProps>();
     expectTypeOf<BundledController>().toEqualTypeOf<{
-      rerender: (newProps: SKHostConfiguration) => void;
+      rerender: (newProps: BundledSKWidgetProps) => void;
       unmount: () => void;
     }>();
+    expectTypeOf<
+      Extract<BundledSKWidgetProps, { variant: "zerion" }>
+    >().toEqualTypeOf<never>();
+    expectTypeOf<BundledWalletPolicy>().toEqualTypeOf<PackageWalletPolicy>();
   });
 });

@@ -4,7 +4,7 @@
   "compilerOptions": {
     "declaration": true,
     "emitDeclarationOnly": true,
-    "rootDir": "src/public-api",
+    "rootDir": "src",
     "outDir": "dist/types",
     "noEmit": false,
     "tsBuildInfoFile": "dist/.tsbuildinfo/tsconfig.build.tsbuildinfo"

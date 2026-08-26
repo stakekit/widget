@@ -1,13 +1,13 @@
 import { Array as EArray, pipe, Schema } from "effect";
 import type { TFunction } from "i18next";
-import {
-  DashboardYieldCategory,
-  type DashboardYieldCategory as DashboardYieldCategoryType,
-} from "../../public-api/types";
 import { exactDecimal } from "../finance/exact";
 import { YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import { equalTokens, tokenString } from "../token/token";
+import {
+  DashboardYieldCategory,
+  type DashboardYieldCategory as DashboardYieldCategoryType,
+} from "./contract";
 import type { EarnProvider, EarnYieldWithProvider } from "./models";
 import {
   validatorAddressIdentities,

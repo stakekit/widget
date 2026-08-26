@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useWidgetConfig } from "../../../../features/widget-configuration/index";
-import type { VariantProps } from "../../../../public-api/types";
+import type { VariantProps } from "../../../../public-api/react-types";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { useSKWallet } from "../../react/use-wallet";
 

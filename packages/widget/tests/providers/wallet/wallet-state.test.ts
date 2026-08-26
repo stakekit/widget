@@ -26,6 +26,7 @@ import { makeWalletStateRuntime } from "../../../src/services/wallet/internal/ru
 import type { WalletController } from "../../../src/services/wallet/internal/runtime/wagmi-config";
 import { WalletStorageCleanup } from "../../../src/services/wallet/internal/runtime/wallet-storage-cleanup";
 import { WalletBootstrapSource } from "../../../src/services/wallet/wallet-bootstrap-source";
+import { WalletConnectorSource } from "../../../src/services/wallet/wallet-connector-source";
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
 import type { WalletCoreState } from "../../../src/services/wallet/wallet-state";
@@ -138,6 +139,7 @@ describe("WalletService authoritative Wallet State", () => {
       Layer.provide(
         Layer.mergeAll(
           configLayer,
+          WalletConnectorSource.defaultLayer,
           Layer.succeed(WalletBootstrapSource, {
             getEnabledWalletNetworks: () =>
               Effect.succeed(new Set(["ethereum"])),

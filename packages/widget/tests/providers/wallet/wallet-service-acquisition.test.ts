@@ -1,6 +1,6 @@
 import { Deferred, Effect, Fiber, Layer, Option, Stream } from "effect";
 import { TestClock } from "effect/testing";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { Config } from "wagmi";
 import { getConnection, getConnectors } from "wagmi/actions";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
@@ -19,6 +19,10 @@ import { WalletEnvironment } from "../../../src/services/wallet/internal/platfor
 import { WalletBootstrapError } from "../../../src/services/wallet/internal/runtime/bootstrap";
 import { WalletStorageCleanup } from "../../../src/services/wallet/internal/runtime/wallet-storage-cleanup";
 import { WalletBootstrapSource } from "../../../src/services/wallet/wallet-bootstrap-source";
+import {
+  WalletConnectorSource,
+  type WalletListFactory,
+} from "../../../src/services/wallet/wallet-connector-source";
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
 import { makeWalletTestController } from "./wallet-test-controller";
@@ -62,7 +66,9 @@ const makeConfigLayer = () => WidgetConfigService.layer(settings);
 const makeWalletLayer = (
   wagmi: WagmiPlatformService,
   configLayer = makeConfigLayer(),
-  walletApiLayer = apiLayer
+  walletApiLayer = apiLayer,
+  connectorSourceLayer = WalletConnectorSource.defaultLayer,
+  walletSolanaLayer = solanaLayer
 ) => {
   const trackingLayer = TrackingService.layer.pipe(Layer.provide(configLayer));
   const walletLayer = WalletService.layer.pipe(
@@ -71,7 +77,8 @@ const makeWalletLayer = (
         walletApiLayer,
         configLayer,
         environmentLayer,
-        solanaLayer,
+        walletSolanaLayer,
+        connectorSourceLayer,
         Layer.succeed(WagmiPlatform, WagmiPlatform.of(wagmi)),
         trackingLayer,
         WalletModal.layer,
@@ -201,6 +208,70 @@ describe("WalletService acquisition", () => {
     expect(initializations).toEqual([expect.objectContaining({ wagmiConfig })]);
   });
 
+  it("captures an injected Wallet List as fixed wallet topology", async () => {
+    const walletListFactory: WalletListFactory = vi.fn(() => []);
+    const buildInputs: Array<
+      Parameters<WagmiPlatformService["buildConfig"]>[0]
+    > = [];
+    const solanaRuntimeInputs: Array<{
+      readonly includeWalletAdapters: boolean;
+    }> = [];
+    const customApiLayer = Layer.succeed(
+      WalletBootstrapSource,
+      WalletBootstrapSource.of({
+        getEnabledWalletNetworks: () =>
+          Effect.succeed(new Set(["ethereum", "solana"])),
+        getOpportunity: () => Effect.die("unused"),
+      })
+    );
+    const customSolanaLayer = Layer.succeed(
+      SolanaPlatform,
+      SolanaPlatform.of({
+        makeRuntime: (input) => {
+          solanaRuntimeInputs.push(input);
+          return Effect.succeed({
+            connection: {} as SolanaRuntime["connection"],
+            current: Effect.succeed({ wallets: [] }),
+            states: Stream.concat(
+              Stream.succeed({ wallets: [] }),
+              Stream.never
+            ),
+          });
+        },
+      })
+    );
+    const wagmiConfig = makeDefaultConfig();
+    const controller = makeWalletTestController({
+      actions: {},
+      queryParamsInitChainId: undefined,
+      wagmiConfig,
+    });
+    const layer = makeWalletLayer(
+      {
+        buildConfig: (input) =>
+          Effect.sync(() => {
+            buildInputs.push(input);
+            return controller;
+          }),
+        initialize: () => Effect.void,
+        observeCore: () => Effect.succeed(makeObservation(wagmiConfig)),
+      },
+      makeConfigLayer(),
+      customApiLayer,
+      WalletConnectorSource.layer(walletListFactory),
+      customSolanaLayer
+    );
+
+    await Effect.runPromise(
+      Effect.scoped(WalletService.pipe(Effect.provide(layer)))
+    );
+
+    expect(solanaRuntimeInputs).toEqual([{ includeWalletAdapters: false }]);
+    expect(buildInputs).toEqual([
+      expect.objectContaining({ walletListFactory }),
+    ]);
+  });
+
   it("fails acquisition with the bootstrap stage and never exposes a service", async () => {
     const cause = new Error("configuration failed");
     const layer = makeWalletLayer({
@@ -279,8 +350,8 @@ describe("WalletService acquisition", () => {
           const config = yield* WidgetConfigService;
           yield* config.update({
             apiKey: "api-key",
+            forceWalletConnectOnly: true,
             variant: "default",
-            wagmi: { forceWalletConnectOnly: true },
           });
           yield* Effect.yieldNow;
           const state = yield* wallet.state;

@@ -32,6 +32,8 @@ import { watchConnectors } from "wagmi/actions";
 import { optimism } from "wagmi/chains";
 import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { applicationBaseRuntime } from "../../src/app/runtime/application-base-runtime";
+import { walletConnectorSourceRuntime } from "../../src/app/runtime/wallet-connector-source-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WagmiConfigProvider } from "../../src/features/wallet/composition";
 import {
@@ -46,6 +48,7 @@ import type {
   SolanaWalletDescriptor,
   SolanaWalletSnapshot,
 } from "../../src/services/wallet/internal/runtime/solana-runtime";
+import { WalletConnectorSource } from "../../src/services/wallet/wallet-connector-source";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import { yieldApiRoute } from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";
@@ -54,6 +57,44 @@ import { rkMockWallet } from "../utils/mock-connector";
 import { describe, expect, it, vi } from "../utils/test-extend";
 import { render, renderHook } from "../utils/test-utils";
 import { getTestWidgetConfig } from "../utils/widget-config";
+
+const baseConnectorSourceProbeAtom = applicationBaseRuntime.atom(
+  WalletConnectorSource.use((source) => Effect.succeed(source))
+);
+const appConnectorSourceProbeAtom = appRuntime.atom(
+  WalletConnectorSource.use((source) => Effect.succeed(source))
+);
+const walletConnectorSourceProbeAtom = walletRuntime.atom(
+  WalletConnectorSource.use((source) => Effect.succeed(source))
+);
+
+const RuntimeConnectorSourceObserver = ({
+  onSources,
+}: {
+  readonly onSources: (
+    sources: readonly [
+      WalletConnectorSource["Service"],
+      WalletConnectorSource["Service"],
+      WalletConnectorSource["Service"],
+    ]
+  ) => void;
+}) => {
+  const baseSource = useAtomValue(baseConnectorSourceProbeAtom);
+  const appSource = useAtomValue(appConnectorSourceProbeAtom);
+  const walletSource = useAtomValue(walletConnectorSourceProbeAtom);
+
+  useEffect(() => {
+    if (
+      AsyncResult.isSuccess(baseSource) &&
+      AsyncResult.isSuccess(appSource) &&
+      AsyncResult.isSuccess(walletSource)
+    ) {
+      onSources([baseSource.value, appSource.value, walletSource.value]);
+    }
+  }, [appSource, baseSource, onSources, walletSource]);
+
+  return null;
+};
 
 class RuntimeErrorBoundary extends Component<
   PropsWithChildren<{ readonly onError: (error: unknown) => void }>,
@@ -193,8 +234,8 @@ const ControllerHarness = ({
         settings={getTestWidgetConfig({
           apiKey: import.meta.env.VITE_API_KEY,
           disableInjectedProviderDiscovery: true,
+          forceWalletConnectOnly,
           variant: "default",
-          wagmi: { forceWalletConnectOnly },
         })}
       >
         <WagmiConfigProvider>
@@ -206,6 +247,64 @@ const ControllerHarness = ({
 );
 
 describe("WagmiConfigProvider", () => {
+  it("shares and finalizes the Connector Source across every runtime", async ({
+    worker,
+  }) => {
+    worker.use(
+      http.get(yieldApiRoute("/v1/networks"), () =>
+        HttpResponse.json([{ id: "ethereum" }])
+      )
+    );
+    let initialized = 0;
+    let disposed = 0;
+    const walletListFactory = rkMockWallet({
+      accounts: ["0x0000000000000000000000000000000000000001"],
+    });
+    const connectorSourceLayer = Layer.effect(
+      WalletConnectorSource,
+      Effect.acquireRelease(
+        Effect.sync(() => {
+          initialized += 1;
+          return WalletConnectorSource.of({ walletListFactory });
+        }),
+        () =>
+          Effect.sync(() => {
+            disposed += 1;
+          })
+      )
+    );
+    const onSources = vi.fn();
+    const app = await render(
+      <ThirdPartyQueryClientProvider>
+        <TestAtomRuntimeProvider
+          initialValues={[
+            [walletConnectorSourceRuntime.layer, connectorSourceLayer],
+          ]}
+          settings={getTestWidgetConfig({
+            apiKey: import.meta.env.VITE_API_KEY,
+            disableInjectedProviderDiscovery: true,
+            variant: "default",
+          })}
+        >
+          <WagmiConfigProvider>
+            <RuntimeConnectorSourceObserver onSources={onSources} />
+          </WagmiConfigProvider>
+        </TestAtomRuntimeProvider>
+      </ThirdPartyQueryClientProvider>
+    );
+
+    await vi.waitFor(() => expect(onSources).toHaveBeenCalled());
+    const sources = onSources.mock.lastCall?.[0];
+    if (!sources) throw new Error("Expected runtime Connector Sources");
+
+    expect(sources[1]).toBe(sources[0]);
+    expect(sources[2]).toBe(sources[0]);
+    expect(initialized).toBe(1);
+
+    await app.unmount();
+    await expect.poll(() => disposed).toBe(1);
+  });
+
   it("publishes dynamic Solana membership and same-uid readiness through useConnectors", async () => {
     const fallbackAdapter = makeSolanaAdapter("Phantom");
     const standardAdapter = makeSolanaAdapter("Phantom");
@@ -442,13 +541,18 @@ describe("WagmiConfigProvider", () => {
       wrapper: ({ children }) => (
         <ThirdPartyQueryClientProvider>
           <TestAtomRuntimeProvider
+            initialValues={[
+              [
+                walletConnectorSourceRuntime.layer,
+                WalletConnectorSource.layer(
+                  rkMockWallet({ accounts: [account] })
+                ),
+              ],
+            ]}
             settings={getTestWidgetConfig({
               apiKey: import.meta.env.VITE_API_KEY,
               disableInjectedProviderDiscovery: true,
               variant: "default",
-              wagmi: {
-                __customConnectors__: rkMockWallet({ accounts: [account] }),
-              },
             })}
           >
             <WagmiConfigProvider>{children}</WagmiConfigProvider>

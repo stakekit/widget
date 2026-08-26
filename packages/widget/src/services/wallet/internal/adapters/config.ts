@@ -2,7 +2,7 @@ import type { Connection } from "@solana/web3.js";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import { Effect, Record } from "effect";
 import type { Network } from "../../../../domain/network/network";
-import type { VariantProps } from "../../../../public-api/types";
+import type { VariantProps } from "../../../../public-api/react-types";
 import { config } from "../../../../shared/config/widget-defaults";
 import { WalletIntegrationError } from "../../wallet-errors";
 import type { SolanaWalletDescriptor } from "../runtime/solana-runtime";

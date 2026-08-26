@@ -1,65 +1,28 @@
-import type { Chain, WalletList } from "@stakekit/rainbowkit";
-import type { ReactNode, RefObject } from "react";
+import {
+  type DashboardYieldCategory,
+  DashboardYieldCategory as DomainDashboardYieldCategory,
+} from "../domain/earn/contract";
+import type { Network } from "../domain/network/contract";
+import {
+  EvmChainIds,
+  MiscChainIds,
+  type WalletPolicy as SKWalletPolicy,
+  SubstrateChainIds,
+  type SupportedSKChainIds,
+} from "../domain/wallet/contract";
 import type { SKTheme } from "./theme";
 
+export type {
+  SupportedSKChainIds,
+  WalletPolicy as SKWalletPolicy,
+} from "../domain/wallet/contract";
 export type { SKTheme } from "./theme";
-
-export enum EvmChainIds {
-  Ethereum = 1,
-  Polygon = 137,
-  Optimism = 10,
-  Arbitrum = 42_161,
-  AvalancheC = 43_114,
-  Celo = 42_220,
-  Harmony = 1_666_600_000,
-  Viction = 88,
-  Binance = 56,
-  Base = 8453,
-  Linea = 59_144,
-  Core = 1116,
-  Sonic = 146,
-  EthereumHoodi = 560_048,
-  EthereumGoerli = 5,
-  EthereumSepolia = 11_155_111,
-  Unichain = 130,
-  Katana = 747_474,
-  Gnosis = 100,
-  Hyperevm = 999,
-  Plasma = 9745,
-  Monad = 143,
-  MonadTestnet = 10_143,
-  Robinhood = 4663,
-  RobinhoodTestnet = 46_630,
-  Pharos = 1672,
-}
-
-export enum SubstrateChainIds {
-  Polkadot = 9999,
-  Bittensor = 558,
-}
-
-export enum MiscChainIds {
-  Near = 397,
-  Tezos = 1729,
-  Solana = 501,
-  Tron = 79,
-  Ton = 3412,
-  Cardano = 2000,
-}
-
-export type SupportedSKChainIds =
-  | EvmChainIds
-  | SubstrateChainIds
-  | MiscChainIds;
-
-export const DashboardYieldCategory = {
-  RWA: "rwa",
-  DeFi: "defi",
-  Stake: "stake",
-} as const;
-
-export type DashboardYieldCategory =
-  (typeof DashboardYieldCategory)[keyof typeof DashboardYieldCategory];
+export {
+  DomainDashboardYieldCategory as DashboardYieldCategory,
+  EvmChainIds,
+  MiscChainIds,
+  SubstrateChainIds,
+};
 
 type Hex = `0x${string}`;
 
@@ -144,111 +107,7 @@ export type BittensorTx = {
 
 export type SKTx = EVMTx | SolanaTx | TonTx | TronTx | BittensorTx;
 
-export type SKNetwork =
-  | "ethereum"
-  | "ethereum-goerli"
-  | "ethereum-holesky"
-  | "ethereum-sepolia"
-  | "ethereum-hoodi"
-  | "arbitrum"
-  | "base"
-  | "base-sepolia"
-  | "gnosis"
-  | "optimism"
-  | "polygon"
-  | "polygon-amoy"
-  | "starknet"
-  | "zksync"
-  | "linea"
-  | "unichain"
-  | "plume"
-  | "monad-testnet"
-  | "monad"
-  | "robinhood"
-  | "robinhood-testnet"
-  | "avalanche-c"
-  | "avalanche-c-atomic"
-  | "avalanche-p"
-  | "binance"
-  | "celo"
-  | "fantom"
-  | "harmony"
-  | "moonriver"
-  | "okc"
-  | "viction"
-  | "core"
-  | "sonic"
-  | "plasma"
-  | "katana"
-  | "hyperevm"
-  | "tempo"
-  | "pharos"
-  | "agoric"
-  | "akash"
-  | "axelar"
-  | "band-protocol"
-  | "bitsong"
-  | "canto"
-  | "chihuahua"
-  | "comdex"
-  | "coreum"
-  | "cosmos"
-  | "crescent"
-  | "cronos"
-  | "cudos"
-  | "desmos"
-  | "dydx"
-  | "evmos"
-  | "fetch-ai"
-  | "gravity-bridge"
-  | "injective"
-  | "irisnet"
-  | "juno"
-  | "kava"
-  | "ki-network"
-  | "mars-protocol"
-  | "nym"
-  | "okex-chain"
-  | "onomy"
-  | "osmosis"
-  | "persistence"
-  | "quicksilver"
-  | "regen"
-  | "secret"
-  | "sentinel"
-  | "sommelier"
-  | "stafi"
-  | "stargaze"
-  | "stride"
-  | "teritori"
-  | "tgrade"
-  | "umee"
-  | "sei"
-  | "mantra"
-  | "celestia"
-  | "saga"
-  | "zetachain"
-  | "dymension"
-  | "humansai"
-  | "neutron"
-  | "polkadot"
-  | "kusama"
-  | "westend"
-  | "bittensor"
-  | "aptos"
-  | "binancebeacon"
-  | "cardano"
-  | "near"
-  | "solana"
-  | "solana-devnet"
-  | "stellar"
-  | "stellar-testnet"
-  | "sui"
-  | "tezos"
-  | "tron"
-  | "ton"
-  | "ton-testnet"
-  | "hyperliquid";
+export type SKNetwork = Network;
 
 type SKToken = {
   readonly symbol: string;
@@ -482,19 +341,7 @@ export type SKBorrowExternalProviders = Omit<
   readonly provider: SKBorrowWallet;
 };
 
-export type VariantProps =
-  | {
-      variant: "zerion";
-      chainModal: (args: {
-        selectedChainId: number;
-        chainIds: number[];
-        onSwitchChain: (chainId: number) => void;
-      }) => ReactNode;
-    }
-  | { variant: "utila" }
-  | { variant: "default" }
-  | { variant: "finery" }
-  | { variant: "porto" };
+export type HostVariant = "zerion" | "utila" | "default" | "finery" | "porto";
 
 type TranslationTree = Readonly<{
   [key: string]: string | TranslationTree;
@@ -589,10 +436,7 @@ type SettingsPropsBase = {
   theme?: SKTheme;
   tracking?: TrackingConfig;
   onMountAnimationComplete?: () => void;
-  wagmi?: {
-    forceWalletConnectOnly?: boolean;
-    __customConnectors__?: (chains: Chain[]) => WalletList;
-  };
+  forceWalletConnectOnly?: boolean;
   hideNetworkLogo?: boolean;
   disableInitLayoutAnimation?: boolean;
   disableResizingInputFontSize?: boolean;
@@ -610,7 +454,7 @@ type SettingsPropsBase = {
     name: string;
     iconBackground: string;
   };
-  mapWalletListFn?: (value: WalletList) => WalletList;
+  walletPolicy?: SKWalletPolicy;
   customTranslations?: Partial<
     Record<Languages, { translation: TranslationTree }>
   >;
@@ -656,35 +500,9 @@ type BorrowProviderSettings =
 
 export type SettingsProps = SettingsPropsBase & BorrowProviderSettings;
 
-/** Host Configuration passed into the Application Runtime (never React children). */
-export type SKHostConfiguration = SettingsProps &
-  (VariantProps | { variant?: never; chainModal?: never });
+type SKBundleVariantProps = {
+  [Variant in Exclude<HostVariant, "zerion">]: { readonly variant: Variant };
+}[Exclude<HostVariant, "zerion">];
 
-export type SKAppProps = SKHostConfiguration & {
-  /**
-   * Host chrome rendered beside the widget frame under the same Application
-   * Runtime registry and translation service. Outside `AppContainer`, so
-   * layout is not constrained by the widget chrome. `HelpModal` may be placed
-   * here without an extra provider.
-   */
-  children?: ReactNode;
-};
-
-export type BundledSKWidgetProps = SKHostConfiguration & {
-  ref?: RefObject<{ rerender: (newProps: BundledSKWidgetProps) => void }>;
-};
-
-export type HelpModalProps = {
-  modal:
-    | {
-        type: "geoBlock";
-        onClose: () => void;
-        tags: Set<string>;
-        countryCode: string;
-        regionCode?: string;
-        regionCodeName: string | undefined;
-      }
-    | { type: "getInTouch" }
-    | { type: "whatIsStakeKit" };
-  customTrigger?: ReactNode;
-};
+export type BundledSKWidgetProps = SettingsProps &
+  (SKBundleVariantProps | { readonly variant?: never });

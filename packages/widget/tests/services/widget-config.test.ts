@@ -1,9 +1,7 @@
 import { Effect, Fiber, Result, Stream } from "effect";
 import { describe, expect, it } from "vitest";
-import type {
-  SettingsProps,
-  SKHostConfiguration,
-} from "../../src/public-api/types";
+import type { SKHostConfiguration } from "../../src/public-api/react-types";
+import type { SettingsProps } from "../../src/public-api/types";
 import {
   diffWidgetWalletConfig,
   selectWidgetBootstrapSnapshot,
@@ -11,7 +9,7 @@ import {
 } from "../../src/services/config/widget-config";
 import { InvalidHostConfiguration } from "../../src/services/config/widget-config-boundary";
 
-const walletTopology = (overrides: Partial<SettingsProps> = {}) => {
+const walletTopology = (overrides: Partial<SKHostConfiguration> = {}) => {
   return Effect.runSync(
     Effect.gen(function* () {
       const config = yield* WidgetConfigService;
@@ -339,22 +337,20 @@ describe("wallet topology difference", () => {
     const difference = diffWidgetWalletConfig(
       walletTopology({
         chainIconMapping: () => "eth.svg",
-        mapWalletFn: (wallet) => wallet,
-        mapWalletListFn: (wallets) => wallets,
+        mapWalletFn: (
+          wallet: Parameters<NonNullable<SettingsProps["mapWalletFn"]>>[0]
+        ) => wallet,
       }),
       walletTopology({
         chainIconMapping: () => "eth.svg",
-        mapWalletFn: (wallet) => wallet,
-        mapWalletListFn: (wallets) => wallets,
+        mapWalletFn: (
+          wallet: Parameters<NonNullable<SettingsProps["mapWalletFn"]>>[0]
+        ) => wallet,
       })
     );
 
     expect(difference.material).toEqual([]);
-    expect(difference.opaque).toEqual([
-      "chainIconMapping",
-      "mapWalletFn",
-      "mapWalletListFn",
-    ]);
+    expect(difference.opaque).toEqual(["chainIconMapping", "mapWalletFn"]);
   });
 
   it("separates a material change from a simultaneous function change", () => {

@@ -56,7 +56,9 @@ export const externalProviderConnector = (
           const filteredChains = makeCurrentValueStream(
             variant.current.supportedChainIds
               ? connectorConfig.chains.filter((chain) =>
-                  new Set(variant.current.supportedChainIds).has(chain.id)
+                  new Set<number>(variant.current.supportedChainIds).has(
+                    chain.id
+                  )
                 )
               : (connectorConfig.chains as [Chain, ...Chain[]])
           );

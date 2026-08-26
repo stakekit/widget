@@ -6,7 +6,7 @@ import {
   applicationRuntimeInitAtom,
 } from "../../src/app/runtime/application-runtime-init";
 import { widgetConfigAtom } from "../../src/features/widget-configuration/index";
-import type { SKAppProps } from "../../src/public-api/types";
+import type { SKAppProps } from "../../src/public-api/react-types";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import type { WidgetConfig } from "../../src/services/config/widget-config-model";
 

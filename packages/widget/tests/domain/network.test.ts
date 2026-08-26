@@ -1,5 +1,6 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import type { BorrowNetwork } from "../../src/domain/borrow/network";
+import type { Network as NetworkContract } from "../../src/domain/network/contract";
 import { intersectNetworkLiterals } from "../../src/domain/network/intersection";
 import { isEvmNetwork, type Network } from "../../src/domain/network/network";
 import type { WalletNetwork } from "../../src/domain/wallet/network";
@@ -27,6 +28,7 @@ describe("Network", () => {
   });
 
   it("matches the private public transaction Network contract", () => {
+    expectTypeOf<Network>().toEqualTypeOf<NetworkContract>();
     expectTypeOf<Network>().toEqualTypeOf<SKNetwork>();
   });
 

@@ -139,8 +139,8 @@ const assertBuiltWidgetArtifacts = async () => {
     "dist/package/index.package.js",
     "dist/package/index.package.css",
     "dist/bundle/index.bundle.js",
-    "dist/types/index.package.d.ts",
-    "dist/types/index.bundle.d.ts",
+    "dist/types/public-api/index.package.d.ts",
+    "dist/types/public-api/index.bundle.d.ts",
   ] as const;
 
   await Promise.all(

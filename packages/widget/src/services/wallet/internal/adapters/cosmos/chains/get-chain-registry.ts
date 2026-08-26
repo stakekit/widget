@@ -1,6 +1,7 @@
 import { assets, chains as RegistryChains } from "chain-registry";
 import { Array as EArray, Option } from "effect";
 import {
+  getProtocolChainIdentity,
   type WalletCosmosNetwork,
   walletCosmosNetworks,
 } from "../../../../../../domain/wallet/network.ts";
@@ -16,7 +17,7 @@ const mantra: CosmosChain = {
   network_type: "mainnet",
   pretty_name: "MANTRA",
   chain_type: "cosmos",
-  chain_id: "mantra-1",
+  chain_id: getProtocolChainIdentity("mantra").chainId,
   bech32_prefix: "mantra",
   daemon_name: "mantrachaind",
   node_home: "$HOME/.mantrachain",
@@ -121,53 +122,15 @@ const mantra: CosmosChain = {
 
 const chains: CosmosChain[] = [...RegistryChains, mantra];
 
-// CosmosNetworks -> chain_id from registry
-const skCosmosNetworksToRegistryIds: {
-  [Key in WalletCosmosNetwork]: CosmosChain["chain_id"];
-} = {
-  cosmos: "cosmoshub-4",
-  akash: "akashnet-2",
-  osmosis: "osmosis-1",
-  juno: "juno-1",
-  kava: "kava_2222-10",
-  stargaze: "stargaze-1",
-  agoric: "agoric-3",
-  regen: "regen-1",
-  axelar: "axelar-dojo-1",
-  "band-protocol": "laozi-mainnet",
-  chihuahua: "chihuahua-1",
-  comdex: "comdex-1",
-  crescent: "crescent-1",
-  cronos: "crypto-org-chain-mainnet-1",
-  cudos: "cudos-1",
-  "fetch-ai": "fetchhub-4",
-  "gravity-bridge": "gravity-bridge-3",
-  irisnet: "irishub-1",
-  "ki-network": "kichain-2",
-  "mars-protocol": "mars-1",
-  onomy: "onomy-mainnet-1",
-  quicksilver: "quicksilver-2",
-  secret: "secret-4",
-  sentinel: "sentinelhub-2",
-  sommelier: "sommelier-3",
-  teritori: "teritori-1",
-  umee: "umee-1",
-  persistence: "core-1",
-  bitsong: "bitsong-2b",
-  coreum: "coreum-mainnet-1",
-  desmos: "desmos-mainnet",
-  dydx: "dydx-mainnet-1",
-  injective: "injective-1",
-  sei: "pacific-1",
-  mantra: "mantra-1",
-};
-
 const registryIdsToSKCosmosNetworks: Record<string, WalletCosmosNetwork> =
   Object.fromEntries(
-    walletCosmosNetworks.map((key) => [skCosmosNetworksToRegistryIds[key], key])
+    walletCosmosNetworks.map((network) => [
+      getProtocolChainIdentity(network).chainId,
+      network,
+    ])
   );
 
-const registryIdsSet = new Set(Object.values(skCosmosNetworksToRegistryIds));
+const registryIdsSet = new Set(Object.keys(registryIdsToSKCosmosNetworks));
 
 const chainMapper = <T extends AssetList | CosmosChain>(
   val: T

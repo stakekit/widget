@@ -1,7 +1,7 @@
 import { Deferred, Effect, Layer, Ref } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/unstable/http";
 import { describe, expect, it } from "vitest";
-import type { SKAppProps } from "../../src/public-api/types";
+import type { SKAppProps } from "../../src/public-api/react-types";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import type { WidgetConfig } from "../../src/services/config/widget-config-model";
 import translationEN from "../../src/services/translation/English/translations.json";

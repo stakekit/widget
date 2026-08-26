@@ -1,6 +1,6 @@
 import ReactDOM from "react-dom/client";
 import { SKApp } from "./App";
-import type { SKAppProps, VariantProps } from "./public-api/types";
+import type { SKAppProps, VariantProps } from "./public-api/react-types";
 import {
   rootClassName,
   toggleThemeButtonClassName,
@@ -43,9 +43,7 @@ const StandaloneApp = () => {
       tracking: { trackEvent: console.log, trackPageView: console.log },
     }),
     ...(import.meta.env.VITE_FORCE_WALLET_CONNECT_ONLY === "true" && {
-      wagmi: {
-        forceWalletConnectOnly: true,
-      },
+      forceWalletConnectOnly: true,
     }),
   };
 

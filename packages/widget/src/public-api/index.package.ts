@@ -1,12 +1,11 @@
-import type { ChainGroup, Wallet, WalletList } from "@stakekit/rainbowkit";
 import type { ReactElement } from "react";
-import type { CreateConnectorFn } from "wagmi";
-import type { HelpModalProps, SKAppProps, SKTheme } from "./types";
+import type { HelpModalProps, SKAppProps } from "./react-types";
+import type { SKTheme } from "./types";
 
+export type { SKAppProps } from "./react-types";
 export type {
   ActionMeta,
   BittensorTx,
-  SKAppProps,
   SKBorrowExternalProviders,
   SKBorrowTxMeta,
   SKBorrowWallet,
@@ -14,6 +13,7 @@ export type {
   SKTx,
   SKTxMeta,
   SKWallet,
+  SKWalletPolicy,
   SupportedSKChainIds,
   TronTx,
 } from "./types";
@@ -26,26 +26,5 @@ export {
 
 export declare const SKApp: (props: SKAppProps) => ReactElement;
 export declare const HelpModal: (props: HelpModalProps) => ReactElement;
-export declare const evmChainGroup: ChainGroup;
-export declare const createWallet: (
-  params: Pick<
-    Wallet,
-    | "id"
-    | "name"
-    | "iconUrl"
-    | "iconBackground"
-    | "downloadUrls"
-    | "mobile"
-    | "qrCode"
-  > &
-    (
-      | { isWalletConnect: true; projectId: string }
-      | {
-          createConnector: CreateConnectorFn;
-          isWalletConnect?: never;
-          projectId?: never;
-        }
-    )
-) => WalletList[number]["wallets"][number];
 export declare const darkTheme: SKTheme;
 export declare const lightTheme: SKTheme;

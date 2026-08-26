@@ -15,13 +15,6 @@ import { ApiTransportService } from "./transport";
 import { makeYieldOperations } from "./yield-operations";
 import { makeYieldResourceSource } from "./yield-resource-source";
 
-export type ApiServices =
-  | BorrowOperations
-  | BorrowResourceSource
-  | LegacyResourceSource
-  | YieldOperations
-  | YieldResourceSource;
-
 const borrowOperationsLayer = Layer.effect(
   BorrowOperations,
   Effect.gen(function* () {

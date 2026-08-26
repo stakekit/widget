@@ -14,6 +14,7 @@ import {
 } from "../../../config/widget-config";
 import { WidgetPersistence } from "../../../persistence/widget-persistence";
 import { WalletBootstrapSource } from "../../wallet-bootstrap-source";
+import { WalletConnectorSource } from "../../wallet-connector-source";
 import { SolanaPlatform } from "../platform/solana-platform";
 import {
   type WagmiCoreObservation,
@@ -98,6 +99,7 @@ export const bootstrapWallet = Effect.gen(function* () {
   const config = yield* WidgetConfigService;
   const environment = yield* WalletEnvironment;
   const bootstrapSource = yield* WalletBootstrapSource;
+  const connectorSource = yield* WalletConnectorSource;
   const persistence = yield* WidgetPersistence;
   const solana = yield* SolanaPlatform;
   const wagmi = yield* WagmiPlatform;
@@ -159,7 +161,7 @@ export const bootstrapWallet = Effect.gen(function* () {
     !walletConfig.forceWalletConnectOnly &&
     !walletConfig.isLedgerLive &&
     !walletConfig.isSafe &&
-    !walletConfig.customConnectors;
+    !connectorSource.walletListFactory;
   const solanaRuntime = yield* solana
     .makeRuntime({ includeWalletAdapters: includeSolanaWalletAdapters })
     .pipe(
@@ -177,6 +179,7 @@ export const bootstrapWallet = Effect.gen(function* () {
       queryParams: snapshot.initParams,
       solanaConnection: solanaRuntime.connection,
       solanaWallets: solanaSnapshot.wallets,
+      walletListFactory: connectorSource.walletListFactory,
     })
     .pipe(
       Effect.mapError(

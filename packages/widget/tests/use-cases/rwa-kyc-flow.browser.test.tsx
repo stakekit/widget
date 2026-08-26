@@ -5,7 +5,7 @@ import { userEvent } from "vitest/browser";
 import { createConfig, createConnector, http as wagmiHttp } from "wagmi";
 import { connect, reconnect } from "wagmi/actions";
 import { KycGateCard } from "../../src/features/yield-summary/ui/components/kyc-gate-card";
-import type { SKAppProps } from "../../src/public-api/types";
+import type { SKAppProps } from "../../src/public-api/react-types";
 import { formatAddress } from "../../src/shared/lib/general";
 import { yieldApiYieldDtoFixture } from "../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../mocks/api-routes";
@@ -442,10 +442,7 @@ describe("RWA KYC flow", () => {
     );
 
     const app = await renderApp({
-      wagmi: {
-        __customConnectors__: customConnectors,
-        forceWalletConnectOnly: false,
-      },
+      walletListFactory: customConnectors,
     });
 
     await expect
@@ -504,9 +501,7 @@ describe("RWA KYC flow", () => {
     );
 
     const app = await renderApp({
-      wagmi: {
-        __customConnectors__: customConnectors,
-      },
+      walletListFactory: customConnectors,
     });
 
     await expect.element(app.getByText("Trust USDA Earn")).toBeInTheDocument();

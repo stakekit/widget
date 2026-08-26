@@ -1,9 +1,7 @@
 import { Result } from "effect";
 import { describe, expect, it } from "vitest";
-import type {
-  SettingsProps,
-  SKHostConfiguration,
-} from "../../src/public-api/types";
+import type { SKHostConfiguration } from "../../src/public-api/react-types";
+import type { SettingsProps } from "../../src/public-api/types";
 import {
   decodeHostConfiguration,
   InvalidHostConfiguration,

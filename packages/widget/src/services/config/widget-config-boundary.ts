@@ -1,5 +1,9 @@
 import { Data, Result, Schema, SchemaIssue } from "effect";
 import type { ExternalProviderSnapshot } from "../../public-api/external-provider-contract";
+import type {
+  SKHostConfiguration,
+  VariantProps,
+} from "../../public-api/react-types";
 import {
   decodeTheme,
   type SKTheme,
@@ -10,10 +14,9 @@ import {
   EvmChainIds,
   MiscChainIds,
   type SettingsProps,
-  type SKHostConfiguration,
+  type SKWalletPolicy,
   SubstrateChainIds,
   type SupportedSKChainIds,
-  type VariantProps,
 } from "../../public-api/types";
 
 const optional = <S extends Schema.Constraint>(schema: S) =>
@@ -151,18 +154,18 @@ const externalProviderValueFields = {
 
 const ExternalProviderValues = Schema.Struct(externalProviderValueFields);
 
-type WagmiSettings = NonNullable<SettingsProps["wagmi"]>;
-type WagmiValueKey = Exclude<keyof WagmiSettings, "__customConnectors__">;
+const walletPolicyFields = {
+  allow: optional(Schema.Array(Schema.String)),
+  deny: optional(Schema.Array(Schema.String)),
+  groupOrder: optional(Schema.Array(Schema.String)),
+  groups: optional(Schema.Record(Schema.String, Schema.String)),
+  order: optional(Schema.Array(Schema.String)),
+} satisfies Record<keyof SKWalletPolicy, Schema.Constraint>;
 
-const wagmiValueFields = {
-  forceWalletConnectOnly: optional(Schema.Boolean),
-} satisfies Record<WagmiValueKey, Schema.Constraint>;
-
-const WagmiValues = Schema.Struct(wagmiValueFields);
+const WalletPolicy = Schema.Struct(walletPolicyFields);
 
 type OpaqueHostConfigurationKey =
   | "mapWalletFn"
-  | "mapWalletListFn"
   | "onMountAnimationComplete"
   | "portalContainer"
   | "tracking";
@@ -187,6 +190,7 @@ const hostConfigurationValueFields = {
   disableInjectedProviderDiscovery: optional(Schema.Boolean),
   disableResizingInputFontSize: optional(Schema.Boolean),
   externalProviders: optional(ExternalProviderValues),
+  forceWalletConnectOnly: optional(Schema.Boolean),
   hideAccountAndChainSelector: optional(Schema.Boolean),
   hideChainSelector: optional(Schema.Boolean),
   hideNetworkLogo: optional(Schema.Boolean),
@@ -201,7 +205,7 @@ const hostConfigurationValueFields = {
   tonConnectManifestUrl: optional(Schema.String),
   validatorsConfig: optional(Schema.Record(Schema.String, ValidatorPolicy)),
   variant: optional(Schema.Literals(hostVariantValues)),
-  wagmi: optional(WagmiValues),
+  walletPolicy: optional(WalletPolicy),
   yieldGrouping: optional(Schema.Literals(hostYieldGroupingValues)),
   yieldsApiUrl: optional(Schema.String),
 } satisfies Record<HostConfigurationValueKey, Schema.Constraint>;
@@ -227,14 +231,10 @@ type HostCapabilities = Readonly<{
   chainModal: ChainModal | undefined;
   externalProviders: SKHostConfiguration["externalProviders"];
   mapWalletFn: SettingsProps["mapWalletFn"];
-  mapWalletListFn: SettingsProps["mapWalletListFn"];
   onMountAnimationComplete: SettingsProps["onMountAnimationComplete"];
   portalContainer: SettingsProps["portalContainer"];
   tokenIconMapper: TokenIconMapper | undefined;
   tracking: SettingsProps["tracking"];
-  wagmiCustomConnectors: NonNullable<
-    SettingsProps["wagmi"]
-  >["__customConnectors__"];
 }>;
 
 export type DecodedHostConfiguration = Omit<
@@ -244,27 +244,17 @@ export type DecodedHostConfiguration = Omit<
   | "tokenIconMapping"
   | "chainIconMapping"
   | "theme"
-  | "wagmi"
 > &
   Readonly<{
     chainIconMapping: SettingsProps["chainIconMapping"];
     chainModal: ChainModal | undefined;
     externalProviders: ExternalProviderSnapshot | undefined;
     mapWalletFn: SettingsProps["mapWalletFn"];
-    mapWalletListFn: SettingsProps["mapWalletListFn"];
     onMountAnimationComplete: SettingsProps["onMountAnimationComplete"];
     portalContainer: SettingsProps["portalContainer"];
     theme: SKTheme | undefined;
     tokenIconMapping: SettingsProps["tokenIconMapping"];
     tracking: SettingsProps["tracking"];
-    wagmi:
-      | Readonly<{
-          __customConnectors__: NonNullable<
-            SettingsProps["wagmi"]
-          >["__customConnectors__"];
-          forceWalletConnectOnly: boolean | undefined;
-        }>
-      | undefined;
   }>;
 
 export type InvalidHostConfigurationIssue =
@@ -313,7 +303,6 @@ const makeCapabilities = (
       : undefined,
   externalProviders: hostConfiguration.externalProviders,
   mapWalletFn: hostConfiguration.mapWalletFn,
-  mapWalletListFn: hostConfiguration.mapWalletListFn,
   onMountAnimationComplete: hostConfiguration.onMountAnimationComplete,
   portalContainer: hostConfiguration.portalContainer,
   tokenIconMapper:
@@ -321,7 +310,6 @@ const makeCapabilities = (
       ? hostConfiguration.tokenIconMapping
       : undefined,
   tracking: hostConfiguration.tracking,
-  wagmiCustomConnectors: hostConfiguration.wagmi?.__customConnectors__,
 });
 
 const projectValues = (hostConfiguration: SKHostConfiguration): unknown => {
@@ -474,19 +462,12 @@ export const decodeHostConfiguration = (
     chainModal: capabilities.chainModal,
     externalProviders: externalProviders.success,
     mapWalletFn: capabilities.mapWalletFn,
-    mapWalletListFn: capabilities.mapWalletListFn,
     onMountAnimationComplete: capabilities.onMountAnimationComplete,
     portalContainer: capabilities.portalContainer,
     theme: theme.theme,
     tokenIconMapping:
       capabilities.tokenIconMapper ?? decoded.success.tokenIconMapping,
     tracking: capabilities.tracking,
-    wagmi: decoded.success.wagmi
-      ? {
-          __customConnectors__: capabilities.wagmiCustomConnectors,
-          forceWalletConnectOnly: decoded.success.wagmi.forceWalletConnectOnly,
-        }
-      : undefined,
   };
   const issues = semanticIssues(configuration);
   if (issues.length > 0) {

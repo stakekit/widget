@@ -36,8 +36,16 @@ narrowed to Wallet Networks when Wallet Bootstrap begins.
 **Wallet Network**: A Network on which the Widget can construct and operate a
 wallet connection.
 
-**Chain ID**: A numeric identifier used by wallet integrations to route a
-Wallet Network.
+**Protocol Chain Identity**: A Network's native identity within its protocol,
+such as an EVM numeric chain ID, Cosmos string chain ID, or Substrate genesis
+hash.
+
+**Wallet Routing ID**: The identifier wallet integrations use to select a
+Wallet Network. It may be protocol-native or assigned by the Widget.
+
+**External Provider Chain ID**: A numeric Wallet Routing ID accepted by an
+External Provider. It exists only for the External Provider's supported Wallet
+Networks.
 
 **Wallet Runtime**: Wallet capabilities and state belonging to one Application
 Runtime Generation.
@@ -50,6 +58,9 @@ Wallet Bootstrap begins.
 
 **Wallet Topology**: The network set, Connector Mode, and connector-construction
 policy fixed by the Wallet Bootstrap Snapshot.
+
+**Wallet Policy**: Host Configuration that filters, orders, and groups the
+wallets available within the fixed Wallet Topology.
 
 **Connector Mode**: The mutually exclusive source of connectors selected at
 Wallet Bootstrap.

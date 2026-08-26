@@ -19,10 +19,7 @@ describe("Staking flow", () => {
     } = await setup(worker);
 
     const app = await renderApp({
-      wagmi: {
-        __customConnectors__: customConnectors,
-        forceWalletConnectOnly: false,
-      },
+      walletListFactory: customConnectors,
     });
 
     await expect

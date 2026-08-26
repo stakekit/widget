@@ -607,6 +607,10 @@ importers:
         version: 8.2.2(@types/node@26.1.2)(esbuild@0.28.2)(jiti@2.7.0)(less@4.2.2)(sass@1.85.0)(terser@5.48.0)(tsx@4.23.12)(yaml@2.9.0)
 
   packages/widget:
+    dependencies:
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-rc.112
     devDependencies:
       '@cosmjs/amino':
         specifier: 'catalog:'
@@ -782,9 +786,6 @@ importers:
       dependency-cruiser:
         specifier: 'catalog:'
         version: 18.2.0
-      effect:
-        specifier: 'catalog:'
-        version: 4.0.0-rc.112
       eventemitter3:
         specifier: 'catalog:'
         version: 5.0.4

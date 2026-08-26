@@ -14,6 +14,7 @@ import {
   WalletStorageCleanupError,
 } from "../../../src/services/wallet/internal/runtime/wallet-storage-cleanup";
 import { WalletBootstrapSource } from "../../../src/services/wallet/wallet-bootstrap-source";
+import { WalletConnectorSource } from "../../../src/services/wallet/wallet-connector-source";
 import { WalletConnectionError } from "../../../src/services/wallet/wallet-errors";
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
@@ -78,6 +79,7 @@ const makeLogoutLayer = ({
     Layer.provide(
       Layer.mergeAll(
         configLayer,
+        WalletConnectorSource.defaultLayer,
         Layer.succeed(WalletBootstrapSource, {
           getEnabledWalletNetworks: () => Effect.succeed(new Set(["ethereum"])),
           getOpportunity: () => Effect.die("unused"),

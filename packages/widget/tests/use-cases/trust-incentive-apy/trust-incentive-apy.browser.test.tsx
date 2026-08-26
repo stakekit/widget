@@ -13,9 +13,7 @@ describe("Trust incentive APY", () => {
     });
 
     const app = await renderApp({
-      wagmi: {
-        __customConnectors__: customConnectors,
-      },
+      walletListFactory: customConnectors,
     });
 
     await expect
@@ -71,9 +69,7 @@ describe("Trust incentive APY", () => {
     });
 
     const app = await renderApp({
-      wagmi: {
-        __customConnectors__: customConnectors,
-      },
+      walletListFactory: customConnectors,
     });
 
     await expect.element(app.getByText("Personalized APY")).toBeInTheDocument();
@@ -122,9 +118,7 @@ describe("Trust incentive APY", () => {
     });
 
     const app = await renderApp({
-      wagmi: {
-        __customConnectors__: customConnectors,
-      },
+      walletListFactory: customConnectors,
     });
 
     await expect.poll(() => app.getByText("Personalized APY").length).toBe(0);

@@ -109,6 +109,29 @@ describe("wallet Effect Atom boundaries", () => {
     ]);
   });
 
+  it("applies Wallet Policy to newly discovered injected providers", () => {
+    const provider = (rdns: string) => ({ info: { rdns } });
+
+    const discovered = getUnseenMipdProviders({
+      connectors: [],
+      providers: [
+        provider("wallet.alpha"),
+        provider("wallet.beta"),
+        provider("wallet.gamma"),
+      ] as never,
+      walletPolicy: {
+        allow: ["wallet.alpha", "wallet.beta", "wallet.gamma"],
+        deny: ["wallet.beta"],
+        order: ["wallet.gamma"],
+      },
+    });
+
+    expect(discovered.map((details) => details.info.rdns)).toEqual([
+      "wallet.gamma",
+      "wallet.alpha",
+    ]);
+  });
+
   it("decodes Yield network IDs into distinct Enabled Wallet Networks", () => {
     const networks = Schema.decodeUnknownSync(EnabledWalletNetworksResponse)([
       { id: "ethereum" },
@@ -345,7 +368,7 @@ describe("wallet Effect Atom boundaries", () => {
             return yield* buildWagmiConfig(
               {
                 chainIconMapping: undefined,
-                customConnectors: () => {
+                walletListFactory: () => {
                   throw cause;
                 },
                 disableInjectedProviderDiscovery: true,
@@ -355,7 +378,7 @@ describe("wallet Effect Atom boundaries", () => {
                 isLedgerLive: false,
                 isSafe: false,
                 mapWalletFn: undefined,
-                mapWalletListFn: undefined,
+                walletPolicy: undefined,
                 persistPublicKey: () => Effect.void,
                 queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
                 solanaConnection: {} as SolanaConnection,
@@ -372,7 +395,7 @@ describe("wallet Effect Atom boundaries", () => {
   });
 
   it("builds an empty wallet topology when no Wallet Networks are enabled", async () => {
-    const customConnectors = vi.fn(() => {
+    const walletListFactory = vi.fn(() => {
       throw new Error("must not build connectors without Wallet Networks");
     });
     const controller = await Effect.runPromise(
@@ -382,7 +405,7 @@ describe("wallet Effect Atom boundaries", () => {
           return yield* buildWagmiConfig(
             {
               chainIconMapping: undefined,
-              customConnectors,
+              walletListFactory,
               disableInjectedProviderDiscovery: true,
               enabledNetworks: new Set(),
               forceWalletConnectOnly: false,
@@ -390,7 +413,7 @@ describe("wallet Effect Atom boundaries", () => {
               isLedgerLive: false,
               isSafe: false,
               mapWalletFn: undefined,
-              mapWalletListFn: undefined,
+              walletPolicy: undefined,
               persistPublicKey: () => Effect.void,
               queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
               solanaConnection: {} as SolanaConnection,
@@ -410,7 +433,7 @@ describe("wallet Effect Atom boundaries", () => {
     expect(controller.miscConfig.miscChains).toEqual([]);
     expect(controller.substrateConfig.substrateChains).toEqual([]);
     expect(controller.wagmiConfig.connectors).toEqual([]);
-    expect(customConnectors).not.toHaveBeenCalled();
+    expect(walletListFactory).not.toHaveBeenCalled();
   });
 
   it("disposes MIPD ownership and ignores callbacks from the released scope", async () => {

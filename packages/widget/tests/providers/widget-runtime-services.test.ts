@@ -1,14 +1,17 @@
-import { Cause, Deferred, Effect, Fiber, Option, Stream } from "effect";
+import { Cause, Deferred, Effect, Fiber, Layer, Option, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { applicationBaseRuntime } from "../../src/app/runtime/application-base-runtime";
 import { applicationRuntimeInitAtom } from "../../src/app/runtime/application-runtime-init";
-import type { SKAppProps } from "../../src/public-api/types";
+import { walletConnectorSourceRuntime } from "../../src/app/runtime/wallet-connector-source-runtime";
+import type { SKAppProps } from "../../src/public-api/react-types";
 import { BorrowResourceSource } from "../../src/services/api/resource-sources";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
+import { WalletConnectorSource } from "../../src/services/wallet/wallet-connector-source";
 
 const firstTrackingProbeAtom = appRuntime.atom(
   TrackingService.use((tracking) => Effect.succeed(tracking))
@@ -21,6 +24,12 @@ const borrowIntegrationsProbeAtom = appRuntime.atom(
 );
 const widgetConfigProbeAtom = appRuntime.atom(
   WidgetConfigService.use((config) => Effect.succeed(config))
+);
+const walletConnectorSourceProbeAtom = appRuntime.atom(
+  WalletConnectorSource.use((source) => Effect.succeed(source))
+);
+const baseWalletConnectorSourceProbeAtom = applicationBaseRuntime.atom(
+  WalletConnectorSource.use((source) => Effect.succeed(source))
 );
 
 const makeConfig = (
@@ -44,6 +53,88 @@ const runtimeInitialValues = (hostConfiguration: SKAppProps) =>
   ] as const;
 
 describe("widget runtime service graph", () => {
+  it("uses a registry-scoped Wallet Connector Source layer override", () => {
+    const walletListFactory = vi.fn(() => []);
+    const defaultRegistry = AtomRegistry.make({
+      initialValues: runtimeInitialValues(makeConfig(vi.fn())),
+    });
+    const customRegistry = AtomRegistry.make({
+      initialValues: [
+        ...runtimeInitialValues(makeConfig(vi.fn())),
+        [
+          walletConnectorSourceRuntime.layer,
+          WalletConnectorSource.layer(walletListFactory),
+        ],
+      ],
+    });
+
+    try {
+      expect(
+        AsyncResult.getOrThrow(
+          defaultRegistry.get(walletConnectorSourceProbeAtom)
+        ).walletListFactory
+      ).toBeUndefined();
+      expect(
+        AsyncResult.getOrThrow(
+          customRegistry.get(walletConnectorSourceProbeAtom)
+        ).walletListFactory
+      ).toBe(walletListFactory);
+    } finally {
+      defaultRegistry.dispose();
+      customRegistry.dispose();
+    }
+  });
+
+  it("shares and finalizes runtime Layers once per registry generation", async () => {
+    let initialized = 0;
+    let disposed = 0;
+    const walletListFactory = vi.fn(() => []);
+    const connectorSourceLayer = Layer.effect(
+      WalletConnectorSource,
+      Effect.acquireRelease(
+        Effect.sync(() => {
+          initialized += 1;
+          return WalletConnectorSource.of({ walletListFactory });
+        }),
+        () =>
+          Effect.sync(() => {
+            disposed += 1;
+          })
+      )
+    );
+    const makeRegistry = () =>
+      AtomRegistry.make({
+        initialValues: [
+          ...runtimeInitialValues(makeConfig(vi.fn())),
+          [walletConnectorSourceRuntime.layer, connectorSourceLayer],
+        ],
+      });
+    const firstRegistry = makeRegistry();
+    const baseSource = AsyncResult.getOrThrow(
+      firstRegistry.get(baseWalletConnectorSourceProbeAtom)
+    );
+    const appSource = AsyncResult.getOrThrow(
+      firstRegistry.get(walletConnectorSourceProbeAtom)
+    );
+
+    expect(appSource).toBe(baseSource);
+    expect(initialized).toBe(1);
+
+    firstRegistry.dispose();
+    await vi.waitFor(() => expect(disposed).toBe(1));
+
+    const secondRegistry = makeRegistry();
+    const remountedSource = AsyncResult.getOrThrow(
+      secondRegistry.get(walletConnectorSourceProbeAtom)
+    );
+
+    expect(remountedSource).not.toBe(baseSource);
+    expect(initialized).toBe(2);
+
+    secondRegistry.dispose();
+    await vi.waitFor(() => expect(disposed).toBe(2));
+  });
+
   it("exposes the current widget config and registry-scoped changes", async () => {
     const firstTrack = vi.fn();
     const replacementTrack = vi.fn();

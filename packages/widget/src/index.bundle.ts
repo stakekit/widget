@@ -10,6 +10,7 @@ export type {
   SKTx,
   SKTxMeta,
   SKWallet,
+  SKWalletPolicy,
   SupportedSKChainIds,
   TronTx,
 } from "./public-api/types";

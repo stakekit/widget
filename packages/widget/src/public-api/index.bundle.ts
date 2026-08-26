@@ -1,4 +1,4 @@
-import type { SKHostConfiguration, SKTheme } from "./types";
+import type { BundledSKWidgetProps, SKTheme } from "./types";
 
 export type {
   ActionMeta,
@@ -11,6 +11,7 @@ export type {
   SKTx,
   SKTxMeta,
   SKWallet,
+  SKWalletPolicy,
   SupportedSKChainIds,
   TronTx,
 } from "./types";
@@ -22,9 +23,9 @@ export {
 } from "./types";
 
 export declare const renderSKWidget: (
-  props: SKHostConfiguration & { container: Element | DocumentFragment }
+  props: BundledSKWidgetProps & { container: Element | DocumentFragment }
 ) => {
-  rerender: (newProps: SKHostConfiguration) => void;
+  rerender: (newProps: BundledSKWidgetProps) => void;
   unmount: () => void;
 };
 export declare const darkTheme: SKTheme;

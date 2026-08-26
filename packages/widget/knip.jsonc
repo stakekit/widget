@@ -7,6 +7,7 @@
     "src/public-api/index.bundle.ts!",
     "vite/*.ts!",
     "scripts/*.test.ts",
+    "tests/package-types/*.ts",
     "tests/utils/setup.browser.ts",
     "tests/utils/setup.dom.ts",
     "tests/**/*.test.ts",

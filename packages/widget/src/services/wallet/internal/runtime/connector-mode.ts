@@ -1,16 +1,16 @@
 import { Match } from "effect";
-import type { VariantProps } from "../../../../public-api/types";
+import type { VariantProps } from "../../../../public-api/react-types";
 
 type ConnectorMode =
   | "institutional"
   | "external-provider"
   | "safe"
   | "ledger-live"
-  | "custom"
+  | "custom-wallet-list"
   | "ecosystem";
 
 type ConnectorModeInput = {
-  readonly hasCustomConnectors: boolean;
+  readonly hasCustomWalletList: boolean;
   readonly hasExternalProviders: boolean;
   readonly institutionalWallets: boolean;
   readonly isLedgerDappBrowser: boolean;
@@ -28,7 +28,10 @@ const resolveConnectorMode = (input: ConnectorModeInput): ConnectorMode =>
     ),
     Match.when({ isSafe: true }, () => "safe" as const),
     Match.when({ isLedgerDappBrowser: true }, () => "ledger-live" as const),
-    Match.when({ hasCustomConnectors: true }, () => "custom" as const),
+    Match.when(
+      { hasCustomWalletList: true },
+      () => "custom-wallet-list" as const
+    ),
     Match.orElse(() => "ecosystem" as const)
   );
 

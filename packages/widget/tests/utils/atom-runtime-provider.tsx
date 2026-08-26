@@ -3,7 +3,7 @@ import type { ComponentProps, PropsWithChildren } from "react";
 import { WidgetConfigBoundaryAdapter } from "../../src/app/composition/providers/widget-config-binding";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { applicationRuntimeInitAtom } from "../../src/app/runtime/application-runtime-init";
-import type { SKAppProps } from "../../src/public-api/types";
+import type { SKAppProps } from "../../src/public-api/react-types";
 import type { WidgetConfig } from "../../src/services/config/widget-config-model";
 
 export const TestAtomRuntimeProvider = ({
@@ -15,24 +15,26 @@ export const TestAtomRuntimeProvider = ({
     typeof RegistryProvider
   >["initialValues"];
   readonly settings: WidgetConfig;
-}>) => (
-  <RegistryProvider
-    initialValues={[
-      ...(initialValues ?? []),
-      [
-        applicationRuntimeInitAtom,
-        {
-          hostConfiguration: settings as unknown as SKAppProps,
-          isLedgerLive: settings.isLedgerLive,
-          routes: applicationRoutes,
-        },
-      ],
-    ]}
-  >
-    <WidgetConfigBoundaryAdapter
-      hostConfiguration={settings as unknown as SKAppProps}
+}>) => {
+  const hostConfiguration = settings as unknown as SKAppProps;
+
+  return (
+    <RegistryProvider
+      initialValues={[
+        ...(initialValues ?? []),
+        [
+          applicationRuntimeInitAtom,
+          {
+            hostConfiguration,
+            isLedgerLive: settings.isLedgerLive,
+            routes: applicationRoutes,
+          },
+        ],
+      ]}
     >
-      {children}
-    </WidgetConfigBoundaryAdapter>
-  </RegistryProvider>
-);
+      <WidgetConfigBoundaryAdapter hostConfiguration={hostConfiguration}>
+        {children}
+      </WidgetConfigBoundaryAdapter>
+    </RegistryProvider>
+  );
+};

@@ -12,7 +12,7 @@ import type {
 import { Stream } from "effect";
 import type { Address } from "viem";
 import { createConnector } from "wagmi";
-import type { VariantProps } from "../../../../../public-api/types";
+import type { VariantProps } from "../../../../../public-api/react-types";
 import portoIcon from "../../../../../shared/assets/images/porto.svg";
 import { getWalletNetworkLogo } from "../../runtime/assets";
 import type { SolanaWalletDescriptor } from "../../runtime/solana-runtime";

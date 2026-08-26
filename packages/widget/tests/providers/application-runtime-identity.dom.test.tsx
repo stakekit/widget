@@ -13,7 +13,7 @@ import { describe, expect, it, vi } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { applicationRouterAtom } from "../../src/app/runtime/application-router-runtime";
+import { applicationRouterAtom } from "../../src/app/runtime/application-router";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
@@ -259,7 +259,6 @@ const settings = (trackEvent: (event: string) => void, apiKey = "api-key") => ({
 describe("dynamic Widget Configuration", () => {
   it("does not publish value-equal widget config across rerenders", async () => {
     const track = vi.fn();
-    const customConnectors = vi.fn();
     const projectionRead = vi.fn();
     const projection = Atom.make((get) => {
       projectionRead();
@@ -274,7 +273,6 @@ describe("dynamic Widget Configuration", () => {
       },
       tracking: { trackEvent: track },
       variant: "default" as const,
-      wagmi: { __customConnectors__: customConnectors },
     });
     const firstSettings = makeInlineSettings();
     const equalInlineSettings = makeInlineSettings();
@@ -293,7 +291,6 @@ describe("dynamic Widget Configuration", () => {
     expect(equalInlineSettings.preferredTokenYieldsPerNetwork).not.toBe(
       firstSettings.preferredTokenYieldsPerNetwork
     );
-    expect(equalInlineSettings.wagmi).not.toBe(firstSettings.wagmi);
     expect(Equal.equals(equalInlineSettings, firstSettings)).toBe(true);
 
     const app = await render(renderProvider(firstSettings));

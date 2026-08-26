@@ -183,9 +183,7 @@ describe("Borrow position details", () => {
     );
 
     const app = await renderApp({
-      wagmi: {
-        __customConnectors__: rkMockWallet({ accounts: [account] }),
-      },
+      walletListFactory: rkMockWallet({ accounts: [account] }),
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
         borrowEnabled: true,
@@ -269,9 +267,7 @@ describe("Borrow position details", () => {
     );
 
     const app = await renderApp({
-      wagmi: {
-        __customConnectors__: rkMockWallet({ accounts: [account] }),
-      },
+      walletListFactory: rkMockWallet({ accounts: [account] }),
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
         borrowEnabled: true,
@@ -326,9 +322,7 @@ describe("Borrow position details", () => {
     );
 
     const app = await renderApp({
-      wagmi: {
-        __customConnectors__: rkMockWallet({ accounts: [account] }),
-      },
+      walletListFactory: rkMockWallet({ accounts: [account] }),
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
         borrowEnabled: true,
@@ -475,9 +469,7 @@ describe("Borrow position details", () => {
     );
 
     const app = await renderApp({
-      wagmi: {
-        __customConnectors__: rkMockWallet({ accounts: [account] }),
-      },
+      walletListFactory: rkMockWallet({ accounts: [account] }),
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
         borrowEnabled: true,

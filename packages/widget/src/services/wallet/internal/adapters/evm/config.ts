@@ -8,7 +8,7 @@ import {
 } from "@stakekit/rainbowkit/wallets";
 import { Effect, Record } from "effect";
 import type { Network } from "../../../../../domain/network/network";
-import type { VariantProps } from "../../../../../public-api/types";
+import type { VariantProps } from "../../../../../public-api/react-types";
 import { evmChainGroup } from "../../../../../services/wallet/evm-chain-group";
 import portoIcon from "../../../../../shared/assets/images/porto.svg";
 import { WalletIntegrationError } from "../../../wallet-errors";

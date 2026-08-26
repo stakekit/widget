@@ -92,14 +92,17 @@ export const architecturePolicy = {
     }),
     defineLayer({
       name: "domain",
-      mayImport: ["domain", "generated", "public-api"],
+      mayImport: ["domain", "generated"],
     }),
     defineLayer({
       name: "shared",
       mayImport: ["shared", "domain", "public-api"],
     }),
     defineLayer({ name: "generated", mayImport: ["generated"] }),
-    defineLayer({ name: "public-api", mayImport: ["public-api"] }),
+    defineLayer({
+      name: "public-api",
+      mayImport: ["domain", "public-api"],
+    }),
   ],
   moduleCollections: [
     moduleCollection({
@@ -448,6 +451,17 @@ const configuration: IConfiguration = {
       to: {},
     },
     ...makeLayerRules(),
+    {
+      name: "public-api-domain-contracts-only",
+      severity: "error",
+      comment:
+        "Host declarations may import Domain only through explicit contract.ts files.",
+      from: { path: "^src/public-api/" },
+      to: {
+        path: "^src/domain/",
+        pathNot: "^src/domain/.+/contract\\.ts$",
+      },
+    },
     {
       name: "shared-public-theme-contract-only",
       severity: "error",

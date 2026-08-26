@@ -3,17 +3,17 @@
   "version": "0.0.282",
   "type": "module",
   "main": "./dist/package/index.package.js",
-  "types": "./dist/types/index.package.d.ts",
+  "types": "./dist/types/public-api/index.package.d.ts",
   "workspaces": [
     "packages/*"
   ],
   "exports": {
     ".": {
-      "types": "./dist/types/index.package.d.ts",
+      "types": "./dist/types/public-api/index.package.d.ts",
       "default": "./dist/package/index.package.js"
     },
     "./bundle": {
-      "types": "./dist/types/index.bundle.d.ts",
+      "types": "./dist/types/public-api/index.bundle.d.ts",
       "default": "./dist/bundle/index.bundle.js"
     },
     "./style.css": {
@@ -43,7 +43,7 @@
   "scripts": {
     "dev": "vite -c vite/vite.config.dev.ts",
     "start": "pnpm dev",
-    "build": "pnpm clean && pnpm build:package && pnpm build:bundle && pnpm build:website && pnpm build:types",
+    "build": "pnpm clean && pnpm build:package && pnpm build:bundle && pnpm build:website && pnpm build:types && pnpm check:package-types",
     "lint": "biome check . && tsc && tsx scripts/check-generated-schemas.ts",
     "test": "pnpm test:unit && pnpm test:dom && pnpm test:browser",
     "test:unit": "vitest -c vite/vitest.config.ts --project unit run",
@@ -60,7 +60,8 @@
     "build:package": "vite -c vite/vite.config.package.ts build",
     "build:package:watch": "vite -w -c vite/vite.config.package.ts build",
     "build:bundle": "vite -c vite/vite.config.bundle.ts build",
-    "build:types": "tsc --project tsconfig.build.json",
+    "build:types": "tsc --project tsconfig.build.json && node scripts/finalize-declarations.ts",
+    "check:package-types": "tsx scripts/check-package-types.ts",
     "clean": "rm -rf dist",
     "preview": "vite -c vite/vite.config.dev.ts preview --outDir dist/website",
     "gen:api": "tsx scripts/generate-effect-openapi.ts && tsx scripts/check-generated-schemas.ts",
@@ -81,6 +82,9 @@
     "react-dom": {
       "optional": true
     }
+  },
+  "dependencies": {
+    "effect": "catalog:"
   },
   "devDependencies": {
     "@cosmjs/amino": "catalog:",
@@ -141,7 +145,6 @@
     "clsx": "catalog:",
     "cosmjs-types": "catalog:",
     "dependency-cruiser": "catalog:",
-    "effect": "catalog:",
     "eventemitter3": "catalog:",
     "i18next": "catalog:",
     "i18next-browser-languagedetector": "catalog:",

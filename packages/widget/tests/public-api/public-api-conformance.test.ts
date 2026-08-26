@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import ts from "typescript";
 import { describe, expect, expectTypeOf, it } from "vitest";
@@ -22,17 +22,17 @@ import { describe, expect, expectTypeOf, it } from "vitest";
  * - `describe.each(entryPairs)` reads the entry files as source, because a
  *   type-only export is invisible to `keyof` and to assignability. It is the
  *   only thing here that can see a `SKTxMeta` that exists on one side only.
- * - `describe("contract is import-closed")` protects the reason the contract has
- *   to stay `declare`-only: `tsconfig.build.json` sets `rootDir` to
- *   `src/public-api`, so a single import reaching outside that directory breaks
- *   `build:types`.
+ * - `describe("public API dependencies")` keeps host declarations on the
+ *   deliberate Domain contract paths and rejects Domain implementation imports.
  */
 
 type PackageContract = typeof import("../../src/public-api/index.package.ts");
 type PackageRuntime = typeof import("../../src/index.package.ts");
 type BundleContract = typeof import("../../src/public-api/index.bundle.ts");
 type BundleRuntime = typeof import("../../src/index.bundle.ts");
-type PublicSKAppProps = import("../../src/public-api/types").SKAppProps;
+type PublicSKAppProps = import("../../src/public-api/react-types").SKAppProps;
+type PublicBundledSKWidgetProps =
+  import("../../src/public-api/types").BundledSKWidgetProps;
 
 type ClassicExternalProviderProps = {
   readonly apiKey: string;
@@ -107,6 +107,19 @@ describe("public external-provider props", () => {
   });
 });
 
+describe("removed public surface", () => {
+  it("does not expose implementation-shaped Host Configuration", () => {
+    type RemovedConfigurationKey = "mapWalletListFn" | "wagmi";
+
+    expectTypeOf<
+      Extract<keyof PublicSKAppProps, RemovedConfigurationKey>
+    >().toEqualTypeOf<never>();
+    expectTypeOf<
+      Extract<keyof PublicBundledSKWidgetProps, RemovedConfigurationKey>
+    >().toEqualTypeOf<never>();
+  });
+});
+
 const widgetRoot = path.resolve(import.meta.dirname, "..", "..");
 
 type ExportedSymbol = {
@@ -131,6 +144,12 @@ const entryPairs = [
     contract: "src/public-api/index.bundle.ts",
     runtime: "src/index.bundle.ts",
   },
+] as const;
+
+const removedEntryExports = [
+  "SKBundleConfiguration",
+  "createWallet",
+  "evmChainGroup",
 ] as const;
 
 const parse = (relativePath: string) =>
@@ -301,13 +320,26 @@ describe.each(entryPairs)("$label", ({ contract, runtime }) => {
       typeOrigins(contractExports)
     );
   });
+
+  it("does not restore removed implementation-shaped exports", () => {
+    const restoredExports = (exports: ReadonlyMap<string, ExportedSymbol>) =>
+      sortedNames(exports).filter((name) =>
+        removedEntryExports.some((removed) => removed === name)
+      );
+
+    expect(restoredExports(contractExports)).toStrictEqual([]);
+    expect(restoredExports(runtimeExports)).toStrictEqual([]);
+  });
 });
 
-describe("contract is import-closed", () => {
-  it.each(entryPairs.map(({ contract }) => contract))(
-    "%s reaches nothing outside src/public-api",
-    (contract) => {
-      const escaping = parse(contract)
+describe("public API dependencies", () => {
+  it("imports Domain only through contract.ts files", () => {
+    const publicApiFiles = readdirSync(path.join(widgetRoot, "src/public-api"))
+      .filter((file) => file.endsWith(".ts"))
+      .map((file) => path.join("src/public-api", file));
+
+    const disallowed = publicApiFiles.flatMap((publicApiFile) =>
+      parse(publicApiFile)
         .statements.flatMap((statement) =>
           (ts.isImportDeclaration(statement) ||
             ts.isExportDeclaration(statement)) &&
@@ -317,14 +349,14 @@ describe("contract is import-closed", () => {
             : []
         )
         .filter((specifier) => specifier.startsWith("."))
+        .map((specifier) => resolveModuleSpecifier(publicApiFile, specifier))
+        .filter((resolved) => !resolved.startsWith("src/public-api/"))
         .filter(
-          (specifier) =>
-            !resolveModuleSpecifier(contract, specifier).startsWith(
-              path.join("src", "public-api")
-            )
-        );
+          (resolved) => !/^src\/domain\/.+\/contract\.ts$/u.test(resolved)
+        )
+        .map((resolved) => `${publicApiFile} -> ${resolved}`)
+    );
 
-      expect(escaping).toStrictEqual([]);
-    }
-  );
+    expect(disallowed).toStrictEqual([]);
+  });
 });

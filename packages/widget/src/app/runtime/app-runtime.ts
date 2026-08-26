@@ -1,4 +1,4 @@
-import { Effect, Layer } from "effect";
+import { Layer } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigAtom } from "../../features/widget-configuration/index";
 import { apiLayer } from "../../services/api/runtime";
@@ -10,15 +10,10 @@ import { WidgetPersistence } from "../../services/persistence/widget-persistence
 import { TrackingService } from "../../services/tracking/tracking-service";
 import { WidgetTranslation } from "../../services/translation/widget-translation";
 import { WalletModal } from "../../services/wallet/wallet-modal";
-import { applicationRouterContextResultAtom } from "./application-router-runtime";
+import { applicationBaseRuntime } from "./application-base-runtime";
 
 const makeAppLayer = (get: Atom.AtomContext) => {
-  const baseLayer = Layer.unwrap(
-    get
-      .result(applicationRouterContextResultAtom)
-      .pipe(Effect.orDie)
-      .pipe(Effect.map((services) => Layer.succeedContext(services)))
-  );
+  const baseLayer = get(applicationBaseRuntime.layer);
   const richErrorLayer = RichErrorService.layer.pipe(Layer.provide(baseLayer));
   const geoBlockLayer = GeoBlockService.layer;
   const applicationApiLayer = apiLayer.pipe(
@@ -45,7 +40,7 @@ const makeAppLayer = (get: Atom.AtomContext) => {
     navigationLayer,
     WidgetDomainEvents.layer,
     WalletModal.layer
-  ).pipe(Layer.fresh);
+  );
 };
 
 export const appRuntime = Atom.runtime((get) => makeAppLayer(get));

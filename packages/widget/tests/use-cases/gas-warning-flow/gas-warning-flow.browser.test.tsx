@@ -19,10 +19,7 @@ describe("Gas warning flow", () => {
     withWarning: boolean;
   } & Pick<ReturnType<typeof setup>, "account" | "customConnectors">) => {
     const app = await renderApp({
-      wagmi: {
-        __customConnectors__: customConnectors,
-        forceWalletConnectOnly: false,
-      },
+      walletListFactory: customConnectors,
     });
 
     await expect

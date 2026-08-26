@@ -64,7 +64,8 @@ Common options include:
 - `lightTheme`, `darkTheme`, or a custom `SKTheme`
 - classic or dashboard layout configuration
 - initial chain and yield preferences
-- translations, icon mappings, and wallet presentation
+- translations, icon mappings, and declarative wallet filtering, grouping, and
+  ordering through `walletPolicy`
 - external wallet providers and borrowing support
 - tracking callbacks
 
@@ -74,7 +75,7 @@ presence, connector construction, and related wallet setup—is fixed during
 bootstrap; remount the widget to change it.
 
 The package exports the supported chain constants, dashboard yield categories,
-wallet types, transaction metadata types, themes, and `createWallet`. Prefer
+wallet types, Wallet Policy, transaction metadata types, and themes. Prefer
 those exports over copying their shapes into host code.
 
 ## Styling

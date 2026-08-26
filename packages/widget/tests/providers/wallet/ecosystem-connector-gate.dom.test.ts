@@ -109,7 +109,7 @@ type ConnectorModeInput = Parameters<typeof buildsEcosystemConnectors>[0];
 const gateInput = (
   overrides: Partial<ConnectorModeInput> = {}
 ): ConnectorModeInput => ({
-  hasCustomConnectors: false,
+  hasCustomWalletList: false,
   hasExternalProviders: false,
   institutionalWallets: false,
   isLedgerDappBrowser: false,
@@ -151,7 +151,7 @@ const buildControllerEffect = (
     return yield* buildWagmiConfig(
       {
         chainIconMapping: undefined,
-        customConnectors: undefined,
+        walletListFactory: undefined,
         disableInjectedProviderDiscovery: true,
         enabledNetworks: new Set(["ethereum", "cosmos", "polkadot", "tron"]),
         forceWalletConnectOnly: false,
@@ -159,7 +159,7 @@ const buildControllerEffect = (
         isLedgerLive: false,
         isSafe: false,
         mapWalletFn: undefined,
-        mapWalletListFn: undefined,
+        walletPolicy: undefined,
         persistPublicKey: () => Effect.void,
         queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
         solanaConnection: {} as SolanaConnection,
@@ -208,7 +208,7 @@ describe("ecosystem connector gate", () => {
       buildsEcosystemConnectors(gateInput({ isLedgerDappBrowser: true }))
     ).toBe(false);
     expect(
-      buildsEcosystemConnectors(gateInput({ hasCustomConnectors: true }))
+      buildsEcosystemConnectors(gateInput({ hasCustomWalletList: true }))
     ).toBe(false);
   });
 
@@ -216,7 +216,7 @@ describe("ecosystem connector gate", () => {
     expect(
       buildsEcosystemConnectors(
         gateInput({
-          hasCustomConnectors: true,
+          hasCustomWalletList: true,
           hasExternalProviders: true,
           institutionalWallets: true,
           isLedgerDappBrowser: true,
@@ -359,10 +359,10 @@ describe("ecosystem connector gate", () => {
     expectEcosystemConnectorsSkipped(controller);
   });
 
-  it("skips ecosystem connectors when the host supplies custom connectors", async () => {
+  it("skips ecosystem connectors for a custom Wallet List", async () => {
     expectEcosystemConnectorsSkipped(
       await buildController({
-        customConnectors: () => [
+        walletListFactory: () => [
           {
             groupName: "Custom",
             wallets: [

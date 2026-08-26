@@ -18,7 +18,7 @@ describe("Deep links flow", () => {
     setUrl({ accountId: account, yieldId: avaxLiquidStaking.id });
 
     const withAvaxLiquidStakingApp = await renderApp({
-      wagmi: { __customConnectors__: customConnectors },
+      walletListFactory: customConnectors,
     });
 
     await expect
@@ -45,7 +45,7 @@ describe("Deep links flow", () => {
     setUrl({ accountId: account, yieldId: avaxNativeStaking.id });
 
     const withAvaxNativeStakingApp = await renderApp({
-      wagmi: { __customConnectors__: customConnectors },
+      walletListFactory: customConnectors,
     });
 
     await expect
@@ -84,7 +84,7 @@ describe("Deep links flow", () => {
     });
 
     const app = await renderApp({
-      wagmi: { __customConnectors__: customConnectors },
+      walletListFactory: customConnectors,
     });
 
     await expect
@@ -145,7 +145,7 @@ describe("Deep links flow", () => {
     });
 
     const app = await renderApp({
-      wagmi: { __customConnectors__: customConnectors },
+      walletListFactory: customConnectors,
     });
 
     await expect
@@ -217,7 +217,7 @@ describe("Deep links flow", () => {
     setUrl({ network: "ethereum" });
 
     const app = await renderApp({
-      wagmi: { __customConnectors__: customConnectors },
+      walletListFactory: customConnectors,
     });
 
     await expect.element(app.getByText("Ethereum")).toBeInTheDocument();

@@ -1,8 +1,8 @@
 import { Effect, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { applicationRouterRuntime } from "../../../app/runtime/application-router-runtime";
-import type { SKHostConfiguration } from "../../../public-api/types";
+import { applicationBaseRuntime } from "../../../app/runtime/application-base-runtime";
+import type { SKHostConfiguration } from "../../../public-api/react-types";
 import {
   selectWidgetBootstrapSnapshot,
   WidgetConfigService,
@@ -10,11 +10,11 @@ import {
 import type { WidgetConfig } from "../../../services/config/widget-config-model";
 import { selectAtom } from "../../../shared/effect/select-atom";
 
-const widgetConfigServiceAtom = applicationRouterRuntime
+const widgetConfigServiceAtom = applicationBaseRuntime
   .atom(Effect.service(WidgetConfigService))
   .pipe(Atom.keepAlive, Atom.withLabel("widgetConfigServiceAtom"));
 
-const widgetConfigResultAtom = applicationRouterRuntime
+const widgetConfigResultAtom = applicationBaseRuntime
   .atom(
     WidgetConfigService.use((config) => Effect.succeed(config.values)).pipe(
       Stream.unwrap
@@ -36,7 +36,7 @@ export const widgetBootstrapSnapshotAtom = Atom.make((get) => {
   return selectWidgetBootstrapSnapshot(settings);
 }).pipe(Atom.keepAlive, Atom.withLabel("widgetBootstrapSnapshotAtom"));
 
-export const updateWidgetConfigAtom = applicationRouterRuntime
+export const updateWidgetConfigAtom = applicationBaseRuntime
   .fn((hostConfiguration: SKHostConfiguration, context) =>
     context
       .result(widgetConfigServiceAtom)

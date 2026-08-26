@@ -1,19 +1,25 @@
 import type { Chain } from "@stakekit/rainbowkit";
-import type { WalletMiscNetwork } from "../../../../domain/wallet/network";
-import { MiscChainIds } from "../../../../public-api/types";
-import type { KebabToCamelCase } from "../../../../shared/type-helpers";
+import {
+  getWalletProtocolFamily,
+  getWalletRoutingId,
+  type WalletMiscNetwork,
+  type WalletProtocolFamily,
+} from "../../../../domain/wallet/network";
 import { getTokenLogo } from "../../network-assets";
 
 export type MiscChainsMap = {
   [Key in WalletMiscNetwork]: {
-    type: "misc";
     network: Key;
+    protocolFamily: Exclude<
+      WalletProtocolFamily,
+      "evm" | "cosmos" | "substrate"
+    >;
     wagmiChain: Chain;
   };
 };
 
 const near = {
-  id: 397,
+  id: getWalletRoutingId("near"),
   name: "NEAR Protocol",
   iconUrl: getTokenLogo("near"),
   nativeCurrency: {
@@ -28,7 +34,7 @@ const near = {
 } as const satisfies Chain;
 
 const tezos = {
-  id: 1729,
+  id: getWalletRoutingId("tezos"),
   name: "Tezos",
   iconUrl: getTokenLogo("xtz"),
   nativeCurrency: {
@@ -43,7 +49,7 @@ const tezos = {
 } as const satisfies Chain;
 
 export const solana = {
-  id: 501,
+  id: getWalletRoutingId("solana"),
   name: "Solana",
   iconUrl: getTokenLogo("sol"),
   nativeCurrency: {
@@ -58,7 +64,7 @@ export const solana = {
 } as const satisfies Chain;
 
 export const tron = {
-  id: 79,
+  id: getWalletRoutingId("tron"),
   name: "Tron",
   iconUrl: getTokenLogo("trx"),
   nativeCurrency: {
@@ -73,7 +79,7 @@ export const tron = {
 } as const satisfies Chain;
 
 export const ton = {
-  id: 3412,
+  id: getWalletRoutingId("ton"),
   name: "Ton",
   iconUrl: getTokenLogo("ton"),
   nativeCurrency: {
@@ -88,7 +94,7 @@ export const ton = {
 } as const satisfies Chain;
 
 export const cardano = {
-  id: 2000,
+  id: getWalletRoutingId("cardano"),
   name: "Cardano",
   iconUrl: getTokenLogo("ada"),
   nativeCurrency: {
@@ -104,38 +110,33 @@ export const cardano = {
 
 export const miscChainsMap: MiscChainsMap = {
   near: {
-    type: "misc",
     network: "near",
+    protocolFamily: getWalletProtocolFamily("near"),
     wagmiChain: near,
   },
   tezos: {
-    type: "misc",
     network: "tezos",
+    protocolFamily: getWalletProtocolFamily("tezos"),
     wagmiChain: tezos,
   },
   solana: {
-    type: "misc",
     network: "solana",
+    protocolFamily: getWalletProtocolFamily("solana"),
     wagmiChain: solana,
   },
   tron: {
-    type: "misc",
     network: "tron",
+    protocolFamily: getWalletProtocolFamily("tron"),
     wagmiChain: tron,
   },
   ton: {
-    type: "misc",
     network: "ton",
+    protocolFamily: getWalletProtocolFamily("ton"),
     wagmiChain: ton,
   },
   cardano: {
-    type: "misc",
     network: "cardano",
+    protocolFamily: getWalletProtocolFamily("cardano"),
     wagmiChain: cardano,
   },
 };
-
-MiscChainIds satisfies Record<
-  Capitalize<KebabToCamelCase<WalletMiscNetwork>>,
-  number
->;

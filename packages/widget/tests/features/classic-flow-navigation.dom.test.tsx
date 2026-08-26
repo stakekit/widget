@@ -15,7 +15,7 @@ import {
 } from "react-router";
 import { ApplicationRouteContentProvider } from "../../src/app/composition/application-route-content";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
-import { applicationRouterRuntime } from "../../src/app/runtime/application-router-runtime";
+import { applicationBaseRuntime } from "../../src/app/runtime/application-base-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { ActionCommand } from "../../src/domain/action/models";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
@@ -379,7 +379,7 @@ const FlowTestApp = ({
       initialValues={[
         [walletScopeAtom, walletScope],
         [walletRuntime.layer, classicWalletLayer as never],
-        [applicationRouterRuntime.layer, applicationRouterLayer],
+        [applicationBaseRuntime.layer, applicationRouterLayer],
       ]}
     >
       <WalletStateBridge walletState={walletState} />

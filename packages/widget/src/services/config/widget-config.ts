@@ -16,11 +16,13 @@ import {
 import type { Network } from "../../domain/network/network";
 import type { ExternalProviderSnapshot } from "../../public-api/external-provider-contract";
 import type {
+  SKHostConfiguration,
+  VariantProps,
+} from "../../public-api/react-types";
+import type {
   DashboardYieldCategory,
   PreferredTokenYieldsPerNetwork,
   SettingsProps,
-  SKHostConfiguration,
-  VariantProps,
 } from "../../public-api/types";
 import { config } from "../../shared/config/widget-defaults";
 import {
@@ -31,9 +33,7 @@ import {
 } from "./widget-config-boundary";
 import type { WidgetConfig } from "./widget-config-model";
 
-type WagmiSettings = NonNullable<SettingsProps["wagmi"]>;
 type WidgetConfigEnvironment = Readonly<{
-  allowCustomConnectors: boolean;
   apiUrl: string;
   borrowApiUrl: string;
   isLedgerLive: boolean;
@@ -55,7 +55,6 @@ type WidgetTrackingSnapshot = {
 
 type WidgetWalletSnapshot = {
   readonly chainIconMapping: SettingsProps["chainIconMapping"];
-  readonly customConnectors: WagmiSettings["__customConnectors__"];
   readonly disableInjectedProviderDiscovery: boolean;
   readonly externalProviderInitToken: ExternalProviderSnapshot["initToken"];
   readonly hasExternalProvider: boolean;
@@ -64,9 +63,9 @@ type WidgetWalletSnapshot = {
   readonly isLedgerLive: boolean;
   readonly isSafe: boolean;
   readonly mapWalletFn: SettingsProps["mapWalletFn"];
-  readonly mapWalletListFn: SettingsProps["mapWalletListFn"];
   readonly tonConnectManifestUrl: string | undefined;
   readonly variant: VariantProps["variant"];
+  readonly walletPolicy: SettingsProps["walletPolicy"];
 };
 
 export type WidgetBootstrapSnapshot = {
@@ -90,24 +89,22 @@ export const selectWidgetBootstrapSnapshot = (
   },
   wallet: {
     chainIconMapping: settings.chainIconMapping,
-    customConnectors: settings.wagmi.__customConnectors__,
     disableInjectedProviderDiscovery: settings.disableInjectedProviderDiscovery,
     externalProviderInitToken: settings.externalProviders?.initToken,
-    forceWalletConnectOnly: settings.wagmi.forceWalletConnectOnly,
+    forceWalletConnectOnly: settings.forceWalletConnectOnly,
     hasExternalProvider: settings.externalProviders !== undefined,
     institutionalWallets: settings.institutionalWallets,
     isLedgerLive: settings.isLedgerLive,
     isSafe: settings.isSafe,
     mapWalletFn: settings.mapWalletFn,
-    mapWalletListFn: settings.mapWalletListFn,
     tonConnectManifestUrl: settings.tonConnectManifestUrl,
     variant: settings.variant,
+    walletPolicy: settings.walletPolicy,
   },
 });
 
 const walletSnapshotKeys = [
   "chainIconMapping",
-  "customConnectors",
   "disableInjectedProviderDiscovery",
   "externalProviderInitToken",
   "forceWalletConnectOnly",
@@ -116,9 +113,9 @@ const walletSnapshotKeys = [
   "isLedgerLive",
   "isSafe",
   "mapWalletFn",
-  "mapWalletListFn",
   "tonConnectManifestUrl",
   "variant",
+  "walletPolicy",
 ] as const satisfies ReadonlyArray<keyof WidgetWalletSnapshot>;
 
 type WalletConfigDifference = {
@@ -250,6 +247,7 @@ const normalizeWidgetConfig = (
     disableResizingInputFontSize:
       hostConfiguration.disableResizingInputFontSize ?? false,
     externalProviders,
+    forceWalletConnectOnly: hostConfiguration.forceWalletConnectOnly ?? false,
     hideAccountAndChainSelector:
       hostConfiguration.hideAccountAndChainSelector ?? false,
     hideChainSelector: hostConfiguration.hideChainSelector ?? false,
@@ -260,7 +258,6 @@ const normalizeWidgetConfig = (
     isSafe: hostConfiguration.isSafe ?? false,
     language: hostConfiguration.language,
     mapWalletFn: hostConfiguration.mapWalletFn,
-    mapWalletListFn: hostConfiguration.mapWalletListFn,
     mountAnimationStartsFinished:
       dashboardVariant ||
       (hostConfiguration.disableInitLayoutAnimation === undefined &&
@@ -274,13 +271,7 @@ const normalizeWidgetConfig = (
     tracking: hostConfiguration.tracking,
     validatorsConfig,
     variant: hostConfiguration.variant ?? "default",
-    wagmi: {
-      __customConnectors__: environment.allowCustomConnectors
-        ? hostConfiguration.wagmi?.__customConnectors__
-        : undefined,
-      forceWalletConnectOnly:
-        hostConfiguration.wagmi?.forceWalletConnectOnly ?? false,
-    },
+    walletPolicy: hostConfiguration.walletPolicy,
     yieldGrouping,
     yieldsApiUrl: hostConfiguration.yieldsApiUrl ?? environment.yieldsApiUrl,
   };
@@ -323,7 +314,6 @@ export class WidgetConfigService extends Context.Service<
       WidgetConfigService,
       Effect.gen(function* () {
         const environment = {
-          allowCustomConnectors: config.env.isTestMode,
           apiUrl: config.env.apiUrl,
           borrowApiUrl: config.env.borrowApiUrl,
           isLedgerLive: options.isLedgerLive ?? false,

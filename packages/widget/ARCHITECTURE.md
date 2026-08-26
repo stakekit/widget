@@ -43,6 +43,11 @@ Imports within an owner may target its implementation. Imports across owners
 use that owner's declared interface. Generated API clients and transport details
 remain private to `services/api`.
 
+`public-api` may import Domain only through `domain/**/contract.ts`. Domain never
+imports `public-api`. A Domain contract may publish selected stable types and
+runtime values, while schemas, decoders, catalogues, and other implementation
+files stay private.
+
 `src/index.package.ts` and `src/index.bundle.ts` are outbound-only package
 entries. Nothing under `src` imports them.
 
@@ -139,6 +144,14 @@ One Application Runtime Generation is created per Widget Instance. The current
 Widget Configuration remains live within it, while Wallet Topology is captured
 at Wallet Bootstrap and remains fixed. See
 [ADR 0004](../../docs/adr/0004-widget-configuration-is-live-wallet-topology-is-fixed.md).
+
+React composition seeds application initialization values, not Effect Layers.
+Application-owned Atom runtimes compose through their `layer` Atoms. Production
+runtimes install their default adapters, and tests replace the narrowest runtime
+Layer relevant to the behavior through Atom registry initial values. Runtime
+composition preserves registry-scoped Layer memoization; do not reconstruct
+Layers from built Effect contexts or use `Layer.fresh` without an explicit need
+for separate service instances.
 
 At most one Widget Instance may be mounted per browser document. Unmounting and
 later mounting a new instance creates a fresh generation. See

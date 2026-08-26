@@ -23,9 +23,10 @@ import {
   unichain,
   viction,
 } from "viem/chains";
-import type { WalletEvmNetwork } from "../../../../../domain/wallet/network";
-import { EvmChainIds } from "../../../../../public-api/types";
-import type { KebabToCamelCase } from "../../../../../shared/type-helpers";
+import {
+  getWalletRoutingId,
+  type WalletEvmNetwork,
+} from "../../../../../domain/wallet/network";
 import { getNetworkLogo } from "../../../network-assets";
 
 export type EvmChainsMap = {
@@ -36,7 +37,7 @@ export type EvmChainsMap = {
   };
 };
 
-export const evmChainsMap: EvmChainsMap = {
+const evmChainConfiguration: EvmChainsMap = {
   ethereum: {
     type: "evm",
     network: "ethereum",
@@ -154,7 +155,7 @@ export const evmChainsMap: EvmChainsMap = {
     type: "evm",
     network: "plasma",
     wagmiChain: {
-      id: 9745,
+      id: getWalletRoutingId("plasma"),
       name: "Plasma",
       iconUrl: getNetworkLogo("plasma"),
       nativeCurrency: plasmaTestnet.nativeCurrency,
@@ -169,7 +170,7 @@ export const evmChainsMap: EvmChainsMap = {
     type: "evm",
     network: "katana",
     wagmiChain: {
-      id: 747474,
+      id: getWalletRoutingId("katana"),
       name: "Katana",
       iconUrl: getNetworkLogo("katana"),
       nativeCurrency: {
@@ -188,7 +189,7 @@ export const evmChainsMap: EvmChainsMap = {
     type: "evm",
     network: "hyperevm",
     wagmiChain: {
-      id: 999,
+      id: getWalletRoutingId("hyperevm"),
       name: "HyperEVM",
       iconUrl: getNetworkLogo("hyperevm"),
       nativeCurrency: {
@@ -215,7 +216,7 @@ export const evmChainsMap: EvmChainsMap = {
     type: "evm",
     network: "monad",
     wagmiChain: {
-      id: 143,
+      id: getWalletRoutingId("monad"),
       name: "Monad",
       iconUrl: getNetworkLogo("monad"),
       nativeCurrency: {
@@ -252,7 +253,7 @@ export const evmChainsMap: EvmChainsMap = {
     type: "evm",
     network: "pharos",
     wagmiChain: {
-      id: 1672,
+      id: getWalletRoutingId("pharos"),
       name: "Pharos",
       iconUrl: getNetworkLogo("pharos"),
       nativeCurrency: {
@@ -275,7 +276,15 @@ export const evmChainsMap: EvmChainsMap = {
   },
 };
 
-EvmChainIds satisfies Record<
-  Capitalize<KebabToCamelCase<WalletEvmNetwork>>,
-  number
->;
+export const evmChainsMap = Object.fromEntries(
+  Object.entries(evmChainConfiguration).map(([network, configuration]) => [
+    network,
+    {
+      ...configuration,
+      wagmiChain: {
+        ...configuration.wagmiChain,
+        id: getWalletRoutingId(network as WalletEvmNetwork),
+      },
+    },
+  ])
+) as EvmChainsMap;

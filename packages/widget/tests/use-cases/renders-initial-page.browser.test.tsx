@@ -560,11 +560,9 @@ describe("Renders initial page", () => {
     );
 
     const app = await renderApp({
-      wagmi: {
-        __customConnectors__: rkMockWallet({
-          accounts: ["0x0000000000000000000000000000000000000001"],
-        }),
-      },
+      walletListFactory: rkMockWallet({
+        accounts: ["0x0000000000000000000000000000000000000001"],
+      }),
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
         borrowEnabled: true,
@@ -719,9 +717,7 @@ describe("Renders initial page", () => {
     );
 
     const app = await renderApp({
-      wagmi: {
-        __customConnectors__: rkMockWallet({ accounts: [account] }),
-      },
+      walletListFactory: rkMockWallet({ accounts: [account] }),
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
         borrowEnabled: true,
