@@ -1,9 +1,9 @@
 import { assignInlineVars } from "@vanilla-extract/dynamic";
-import merge from "lodash.merge";
 import type { PropsWithChildren } from "react";
 import { useMemo } from "react";
 import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import type { WidgetConfig } from "../../../services/config/widget-config-model";
+import { mergeDeep } from "../../../shared/effect/merge-deep";
 import { vars } from "../../../shared/styles/theme/contract.css";
 import { rootSelector } from "../../../shared/styles/theme/ids";
 import { lightTheme } from "../../../shared/styles/theme/themes";
@@ -39,13 +39,13 @@ export const ThemeWrapper = ({ children }: PropsWithChildren) => {
   const variant = useWidgetConfig("variant");
 
   const finalTheme = useMemo(() => {
-    const baseTheme = merge(structuredClone(lightTheme), theme);
+    const baseTheme = mergeDeep(lightTheme, theme);
     const overrides = getThemeOverrides({
       baseTheme,
       variant,
     });
 
-    return merge(structuredClone(lightTheme), theme, overrides);
+    return mergeDeep(lightTheme, theme, overrides);
   }, [theme, variant]);
 
   return (

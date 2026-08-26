@@ -5,8 +5,7 @@ import type {
   WalletList,
 } from "@stakekit/rainbowkit";
 import { connectorsForWallets } from "@stakekit/rainbowkit";
-import { Effect, FiberSet } from "effect";
-import uniqwith from "lodash.uniqwith";
+import { Array as EArray, Effect, FiberSet } from "effect";
 import { createStore, type Store as MipdStore } from "mipd";
 import { createClient } from "viem";
 import { type Connector, createConfig, http } from "wagmi";
@@ -57,7 +56,7 @@ export const getUnseenMipdProviders = ({
 }) => {
   const existingIds = new Set(connectors.map((connector) => connector.id));
 
-  const unseen = uniqwith(
+  const unseen = EArray.dedupeWith(
     providers,
     (first, second) => first.info.rdns === second.info.rdns
   ).filter((provider) => !existingIds.has(provider.info.rdns));

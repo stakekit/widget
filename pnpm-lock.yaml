@@ -331,12 +331,6 @@ catalogs:
     '@tronweb3/tronwallet-adapter-walletconnect':
       specifier: ^3.0.5
       version: 3.0.5
-    '@types/lodash.merge':
-      specifier: ^4.6.9
-      version: 4.6.9
-    '@types/lodash.uniqwith':
-      specifier: ^4.5.9
-      version: 4.5.9
     '@types/node':
       specifier: ^26.2.0
       version: 26.2.0
@@ -397,9 +391,6 @@ catalogs:
     effect:
       specifier: 4.0.0-rc.112
       version: 4.0.0-rc.112
-    eventemitter3:
-      specifier: ^5.0.4
-      version: 5.0.4
     husky:
       specifier: ^9.1.7
       version: 9.1.7
@@ -415,12 +406,6 @@ catalogs:
     knip:
       specifier: ^6.32.2
       version: 6.32.2
-    lodash.merge:
-      specifier: ^4.6.2
-      version: 4.6.2
-    lodash.uniqwith:
-      specifier: ^4.5.0
-      version: 4.5.0
     mipd:
       specifier: ^0.0.7
       version: 0.0.7
@@ -466,9 +451,6 @@ catalogs:
     serve:
       specifier: ^14.2.6
       version: 14.2.6
-    swagger2openapi:
-      specifier: ^7.0.8
-      version: 7.0.8
     tsx:
       specifier: ^4.23.12
       version: 4.23.12
@@ -726,12 +708,6 @@ importers:
       '@tronweb3/tronwallet-adapter-walletconnect':
         specifier: 'catalog:'
         version: 3.0.5(@react-native-async-storage/async-storage@1.24.0(react-native@0.81.1(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.18)(bufferutil@4.0.9)(react@19.2.8)(supports-color@8.1.1)(utf-8-validate@5.0.10)))(@types/react@19.2.18)(bufferutil@4.0.9)(debug@4.4.3(supports-color@8.1.1))(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(immer@11.1.15)(ioredis@5.10.1(supports-color@8.1.1))(react@19.2.8)(typescript@6.0.3)(use-sync-external-store@1.4.0(react@19.2.8))(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@types/lodash.merge':
-        specifier: 'catalog:'
-        version: 4.6.9
-      '@types/lodash.uniqwith':
-        specifier: 'catalog:'
-        version: 4.5.9
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.18
@@ -786,9 +762,6 @@ importers:
       dependency-cruiser:
         specifier: 'catalog:'
         version: 18.2.0
-      eventemitter3:
-        specifier: 'catalog:'
-        version: 5.0.4
       i18next:
         specifier: 'catalog:'
         version: 26.4.0(typescript@6.0.3)
@@ -801,12 +774,6 @@ importers:
       knip:
         specifier: 'catalog:'
         version: 6.32.2
-      lodash.merge:
-        specifier: 'catalog:'
-        version: 4.6.2
-      lodash.uniqwith:
-        specifier: 'catalog:'
-        version: 4.5.0
       mipd:
         specifier: 'catalog:'
         version: 0.0.7(typescript@6.0.3)
@@ -846,9 +813,6 @@ importers:
       recharts:
         specifier: 'catalog:'
         version: 3.10.1(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react-is@19.2.8)(react@19.2.8)(redux@5.0.1)
-      swagger2openapi:
-        specifier: 'catalog:'
-        version: 7.0.8(encoding@0.1.13)
       tsx:
         specifier: 'catalog:'
         version: 4.23.12
@@ -5812,15 +5776,6 @@ packages:
   '@types/json-logic-js@2.0.5':
     resolution: {integrity: sha512-hu/FTi0zwCjQEFfbPur275cNoZj6NsuOBhhYNzqoSdfmMhuxFr58OZ957lyIOWc9+kO+2tFlBthRjcxuytD4HA==}
 
-  '@types/lodash.merge@4.6.9':
-    resolution: {integrity: sha512-23sHDPmzd59kUgWyKGiOMO2Qb9YtqRO/x4IhkgNUiPQ1+5MUVqi6bCZeq9nBJ17msjIMbEIO5u+XW4Kz6aGUhQ==}
-
-  '@types/lodash.uniqwith@4.5.9':
-    resolution: {integrity: sha512-r/L/U1bAHuZF/bKVanxZtPTCr0J47L8Ftpg4BeV1Knv5ZOl9f6bwqVxP5fvvqniHatgcYpp7vwccxbvVGMV8Xw==}
-
-  '@types/lodash@4.17.16':
-    resolution: {integrity: sha512-HX7Em5NYQAXKW+1T+FiuG27NGwzJfCX3s1GjOa7ujxZa52kjJLOr4FUxT+giF6Tgxv1e+/czV/iTtBw27WTU9g==}
-
   '@types/long@4.0.2':
     resolution: {integrity: sha512-MqTGEo5bj5t157U6fA/BiDynNkn0YknVdh48CMPkTSpFTVmvao5UQmm7uEF6xBEo7qIMAlY/JSleYaE6VOdpaA==}
 
@@ -8753,9 +8708,6 @@ packages:
 
   lodash.throttle@4.1.1:
     resolution: {integrity: sha512-wIkUCfVKpVsWo3JSZlc+8MB5it+2AN5W8J7YVMST30UrvcQNZ1Okbj+rbVniijTWE6FGYy4XJq/rHkas8qJMLQ==}
-
-  lodash.uniqwith@4.5.0:
-    resolution: {integrity: sha512-7lYL8bLopMoy4CTICbxygAUq6CdRJ36vFc80DucPueUee+d5NBRxz3FdT9Pes/HEx5mPoT9jwnsEJWz1N7uq7Q==}
 
   lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
@@ -18421,16 +18373,6 @@ snapshots:
 
   '@types/json-logic-js@2.0.5': {}
 
-  '@types/lodash.merge@4.6.9':
-    dependencies:
-      '@types/lodash': 4.17.16
-
-  '@types/lodash.uniqwith@4.5.9':
-    dependencies:
-      '@types/lodash': 4.17.16
-
-  '@types/lodash@4.17.16': {}
-
   '@types/long@4.0.2': {}
 
   '@types/node@10.12.18': {}
@@ -22923,8 +22865,6 @@ snapshots:
   lodash.merge@4.6.2: {}
 
   lodash.throttle@4.1.1: {}
-
-  lodash.uniqwith@4.5.0: {}
 
   lodash@4.17.21: {}
 

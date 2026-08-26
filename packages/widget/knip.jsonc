@@ -24,7 +24,6 @@
   },
   "ignoreDependencies": [
     "@effect/openapi-generator",
-    "@effect/platform-node",
-    "swagger2openapi"
+    "@effect/platform-node"
   ]
 }

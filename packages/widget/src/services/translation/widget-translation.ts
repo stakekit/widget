@@ -16,8 +16,8 @@ import {
 } from "effect/unstable/http";
 import { createInstance } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
-import merge from "lodash.merge";
 import { initReactI18next } from "react-i18next";
+import { mergeDeep } from "../../shared/effect/merge-deep";
 import { WidgetConfigService } from "../config/widget-config";
 import type { WidgetConfig } from "../config/widget-config-model";
 import translationEN from "./English/translations.json";
@@ -90,15 +90,11 @@ export const composeWidgetTranslationResources = ({
   readonly language: SupportedLanguage;
   readonly variant: string;
 }) =>
-  merge(
-    structuredClone(localResources),
-    variant === "utila"
-      ? { en: { translation: structuredClone(utilaTranslations) } }
-      : {},
-    apiErrors
-      ? { [language]: { translation: { errors: structuredClone(apiErrors) } } }
-      : {},
-    structuredClone(customTranslations ?? {})
+  mergeDeep(
+    localResources,
+    variant === "utila" ? { en: { translation: utilaTranslations } } : {},
+    apiErrors ? { [language]: { translation: { errors: apiErrors } } } : {},
+    customTranslations ?? {}
   );
 
 export const createWidgetI18nInstance = () => {

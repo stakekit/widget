@@ -2,10 +2,10 @@ import path from "node:path";
 import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
 import react from "@vitejs/plugin-react";
 import autoprefixer from "autoprefixer";
-import merge from "lodash.merge";
 import macros from "unplugin-macros/vite";
 import {
   defineConfig,
+  mergeConfig,
   type Plugin,
   type UserConfig,
   type UserConfigFnObject,
@@ -27,7 +27,7 @@ export const getConfig = (
     const isBuild = command === "build";
     const shouldMinifyOutput = isBuild && overides?.build?.minify !== false;
 
-    return merge(overides, {
+    return mergeConfig(overides ?? {}, {
       root: path.resolve(import.meta.dirname, ".."),
       optimizeDeps: {
         include: [

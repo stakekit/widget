@@ -9,7 +9,6 @@ import type { WCClient } from "@cosmos-kit/walletconnect";
 import type { Wallet } from "@stakekit/rainbowkit";
 import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { Array as EArray, Effect, Option, Schema, Stream } from "effect";
-import EventEmitter from "eventemitter3";
 import type { Address, Chain } from "viem";
 import type { CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
@@ -26,6 +25,20 @@ import { configMeta } from "./cosmos-connector-meta";
 
 const waitForWalletDelay = (milliseconds: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
+
+const createDisplayUriProvider = () => {
+  let listener: ((uri: string) => void) | undefined;
+
+  return {
+    once(_event: "display_uri", next: (uri: string) => void) {
+      listener = next;
+    },
+    emit(_event: "display_uri", uri: string) {
+      listener?.(uri);
+      listener = undefined;
+    },
+  };
+};
 
 const getCosmosWalletInstalled = (
   wallet: MainWalletBase
@@ -80,7 +93,7 @@ export const createCosmosConnector = ({
     installed: getCosmosWalletInstalled(wallet),
     createConnector: (walletDetailsParams) =>
       createConnector<unknown, ExtraProps>((config) => {
-        const provider = new EventEmitter();
+        const provider = createDisplayUriProvider();
         const initialChainName =
           cosmosChainsMap.cosmos?.chain.chain_name ??
           EArray.head(Object.values(cosmosChainsMap)).pipe(
