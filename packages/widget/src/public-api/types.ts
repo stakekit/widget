@@ -501,8 +501,8 @@ type BorrowProviderSettings =
 export type SettingsProps = SettingsPropsBase & BorrowProviderSettings;
 
 type SKBundleVariantProps = {
-  [Variant in Exclude<HostVariant, "zerion">]: { readonly variant: Variant };
-}[Exclude<HostVariant, "zerion">];
+  readonly variant: Exclude<HostVariant, "zerion">;
+};
 
 export type BundledSKWidgetProps = SettingsProps &
   (SKBundleVariantProps | { readonly variant?: never });

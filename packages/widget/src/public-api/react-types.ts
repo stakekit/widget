@@ -3,6 +3,11 @@ import type { HostVariant, SettingsProps } from "./types.js";
 
 type NonZerionVariant = Exclude<HostVariant, "zerion">;
 
+/**
+ * One constituent per shape rather than per variant. Expanding the non-zerion
+ * variants makes a widened `variant` match several constituents at once, which
+ * defeats discrimination and drops editor property completions.
+ */
 export type VariantProps =
   | Readonly<{
       variant: "zerion";
@@ -12,9 +17,7 @@ export type VariantProps =
         onSwitchChain: (chainId: number) => void;
       }) => ReactNode;
     }>
-  | {
-      [Variant in NonZerionVariant]: Readonly<{ variant: Variant }>;
-    }[NonZerionVariant];
+  | Readonly<{ variant: NonZerionVariant }>;
 
 /** Host Configuration passed into the Application Runtime (never React children). */
 export type SKHostConfiguration = SettingsProps &

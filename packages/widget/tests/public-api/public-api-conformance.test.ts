@@ -164,9 +164,10 @@ const resolveModuleSpecifier = (
   fromRelativePath: string,
   specifier: string
 ): string => {
+  // Declaration-reachable files carry the runtime `.js` specifier they publish.
   const base = path.join(
     path.dirname(path.join(widgetRoot, fromRelativePath)),
-    specifier
+    specifier.replace(/\.js$/u, "")
   );
   const resolved = [
     `${base}.ts`,
