@@ -27,5 +27,5 @@ export const spaces: CompleteTheme["space"] = {
   "44": "176px",
   "48": "192px",
   px: "1px",
-  buttonMinHeight: "64px",
+  buttonMinHeight: "58px",
 };
