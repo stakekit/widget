@@ -39,7 +39,7 @@ export const shouldShowPositionDetailsActionTabs = ({
   canUnstake,
 }: PositionDetailsActionCapabilities) => canStake && canUnstake;
 
-export const positionDetailsStakeHasContent = (val: {
+const positionDetailsStakeHasContent = (val: {
   integrationData?: { status: { enter: boolean } } | null;
 }) => val.integrationData?.status.enter ?? false;
 

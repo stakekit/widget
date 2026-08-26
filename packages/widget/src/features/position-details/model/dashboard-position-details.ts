@@ -40,7 +40,7 @@ import {
 
 type DashboardPositionStatusTone = "action" | "claim" | "default";
 
-export type DashboardPositionMetricCard = {
+type DashboardPositionMetricCard = {
   id: string;
   label: string;
   subValue?: string;

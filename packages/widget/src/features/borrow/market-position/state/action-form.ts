@@ -333,7 +333,7 @@ export const borrowWithdrawFormAtom = Atom.family(
     ).pipe(Atom.withLabel("borrowWithdrawFormAtom"))
 );
 
-export const borrowCollateralToggleFormAtom = Atom.family(
+const borrowCollateralToggleFormAtom = Atom.family(
   (key: BorrowPositionActionRouteKey) =>
     Atom.make<BorrowCollateralToggleFormView | null>((get) => {
       const current = getCurrentPositionAction(get, key);

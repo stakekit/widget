@@ -390,7 +390,7 @@ const renderExecution = async (
     Layer.succeed(BorrowOperations, borrow as never),
     Layer.succeed(TrackingService, tracking),
     WidgetConfigService.layer({
-      apiKey: "",
+      apiKey: "test-api-key",
       borrowEnabled: true,
       dashboardVariant: true,
       variant: "default",
@@ -415,7 +415,7 @@ const renderExecution = async (
       <RegistryProvider
         initialValues={[
           applicationRuntimeInitInitialValue({
-            apiKey: "",
+            apiKey: "test-api-key",
             borrowEnabled: true,
             dashboardVariant: true,
             variant: "default",
@@ -427,7 +427,7 @@ const renderExecution = async (
               Layer.succeed(TrackingService, tracking),
               Layer.succeed(WidgetNavigation, navigationService),
               WidgetConfigService.layer({
-                apiKey: "",
+                apiKey: "test-api-key",
                 borrowEnabled: true,
                 dashboardVariant: true,
                 variant: "default",
@@ -513,6 +513,32 @@ const renderExecution = async (
 };
 
 describe("borrow execution flow component", () => {
+  it("shows localized confirmation feedback without internal error details", async () => {
+    const app = await renderExecution(makeBorrowApi({}), {
+      action: decodedAction({ status: "FAILED" }),
+      autoStart: false,
+      reviewElement: <BorrowReviewPage />,
+    });
+
+    await userEvent.click(app.getByRole("button", { name: "Confirm" }));
+
+    await expect
+      .element(app.getByText("Borrow transaction failed"))
+      .toBeInTheDocument();
+    await expect
+      .element(
+        app.getByText(
+          "We couldn't prepare your borrow transaction. Please try again."
+        )
+      )
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByText("Borrow action ended with FAILED status."))
+      .not.toBeInTheDocument();
+
+    await app.unmount();
+  });
+
   it("labels a repayment amount on Review", async () => {
     const repaySession = {
       ...session,

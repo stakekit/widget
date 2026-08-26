@@ -68,7 +68,7 @@
     "check-hygiene": "pnpm check-hygiene:architecture && pnpm check-hygiene:unused && pnpm check-hygiene:production",
     "check-hygiene:architecture": "tsx scripts/check-architecture.ts",
     "check-hygiene:unused": "knip --include files,dependencies,unlisted,exports,nsExports,types,nsTypes --no-progress --treat-config-hints-as-errors",
-    "check-hygiene:production": "knip --production --include files,dependencies,unlisted,exports,nsExports,types,nsTypes --no-progress --treat-config-hints-as-errors"
+    "check-hygiene:production": "knip --production --include files,dependencies,unlisted --no-progress --treat-config-hints-as-errors"
   },
   "peerDependencies": {
     "react": ">=18",

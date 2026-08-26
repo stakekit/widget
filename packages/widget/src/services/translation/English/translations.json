@@ -633,6 +633,7 @@
         "projected_health_factor": "Projected health factor",
         "estimated_fee": "Estimated fee",
         "estimated_fee_pending": "Shown in wallet",
+        "confirmation_error_description": "We couldn't prepare your borrow transaction. Please try again.",
         "warning_title": "Review warning",
         "warnings": {
           "AmountExceedsAvailableLiquidity": "The amount exceeds the currently available market liquidity. The provider or blockchain may reject this action.",

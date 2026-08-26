@@ -29,6 +29,10 @@ import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowReview,
 } from "../react/borrow-flow-route";
+import {
+  borrowReviewConfirmationErrorCopy,
+  presentBorrowReviewConfirmationError,
+} from "./borrow-review-confirmation-error";
 import * as styles from "./styles.css";
 
 const formatOptionalSummary = (value: string | undefined) => {
@@ -77,7 +81,7 @@ export const BorrowReviewPage = () => {
 
   const { command, summary } = reviewState;
   const projectedSummary = projectBorrowTransactionFlowSummary(summary);
-  const createActionErrorMessage = (() => {
+  const createActionErrorCopy = (() => {
     if (
       !AsyncResult.isFailure(createActionResult) ||
       AsyncResult.isWaiting(createActionResult)
@@ -87,17 +91,10 @@ export const BorrowReviewPage = () => {
 
     const error = Cause.findErrorOption(createActionResult.cause);
 
-    if (
-      Option.isSome(error) &&
-      error.value &&
-      typeof error.value === "object" &&
-      "message" in error.value &&
-      typeof error.value.message === "string"
-    ) {
-      return error.value.message;
-    }
-
-    return t("dashboard.borrow.error_description");
+    return Option.match(error, {
+      onNone: () => borrowReviewConfirmationErrorCopy,
+      onSome: presentBorrowReviewConfirmationError,
+    });
   })();
   const projectedLtv = formatTransition({
     current: null,
@@ -272,13 +269,13 @@ export const BorrowReviewPage = () => {
             {t("dashboard.borrow.review_page.execution_pending")}
           </Text>
 
-          {createActionErrorMessage ? (
+          {createActionErrorCopy ? (
             <Box className={styles.executionError}>
               <Text variant={{ type: "danger" }}>
-                {t("dashboard.borrow.execution_page.error_title")}
+                {t(createActionErrorCopy.titleKey)}
               </Text>
               <Text variant={{ type: "muted", weight: "normal" }}>
-                {createActionErrorMessage}
+                {t(createActionErrorCopy.descriptionKey)}
               </Text>
             </Box>
           ) : null}

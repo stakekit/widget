@@ -20,7 +20,7 @@ type ConcreteModuleEdge = OwnedModuleEdge &
     resolved: string;
   }>;
 
-export type OwnedModuleCycle = Readonly<{
+type OwnedModuleCycle = Readonly<{
   edges: ReadonlyArray<ConcreteModuleEdge>;
   modules: ReadonlyArray<string>;
   path: ReadonlyArray<string>;

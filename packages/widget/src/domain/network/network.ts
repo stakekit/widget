@@ -11,9 +11,8 @@ export const Network = Schema.Literals(
 ).annotate({ identifier: "Networks" });
 export type Network = typeof Network.Type;
 
-export const EvmNetwork = Schema.Literals(
+const EvmNetwork = Schema.Literals(
   intersectNetworkLiterals(Network.literals, LegacyApi.EvmNetworks.literals)
 );
-export type EvmNetwork = typeof EvmNetwork.Type;
 
 export const isEvmNetwork = Schema.is(EvmNetwork);

@@ -1,12 +1,15 @@
 import { Effect, Fiber, Result, Stream } from "effect";
 import { describe, expect, it } from "vitest";
-import type { SettingsProps } from "../../src/public-api/types";
+import type {
+  SettingsProps,
+  SKHostConfiguration,
+} from "../../src/public-api/types";
 import {
   diffWidgetWalletConfig,
-  InvalidWidgetConfiguration,
   selectWidgetBootstrapSnapshot,
   WidgetConfigService,
 } from "../../src/services/config/widget-config";
+import { InvalidHostConfiguration } from "../../src/services/config/widget-config-boundary";
 
 const walletTopology = (overrides: Partial<SettingsProps> = {}) => {
   return Effect.runSync(
@@ -89,15 +92,17 @@ describe("WidgetConfigService", () => {
 
     expect(Result.isFailure(result)).toBe(true);
     if (Result.isFailure(result)) {
-      expect(result.failure).toBeInstanceOf(InvalidWidgetConfiguration);
-      expect(result.failure.issues).toEqual([
-        "borrow-requires-dashboard",
-        "borrow-requires-category-grouping",
-      ]);
+      expect(result.failure).toBeInstanceOf(InvalidHostConfiguration);
+      expect(result.failure.issues).toEqual(["borrow-requires-dashboard"]);
     }
   });
 
   it("canonicalizes external-provider chains and resolved Borrow API URLs", () => {
+    const provider = {
+      sendTransaction: async () => "hash",
+      signMessage: async () => "0xSignature",
+      switchChain: async () => {},
+    };
     const current = Effect.runSync(
       WidgetConfigService.use((config) => config.current).pipe(
         Effect.provide(
@@ -106,11 +111,7 @@ describe("WidgetConfigService", () => {
             borrowApiUrl: "  https://borrow.example.com///  ",
             externalProviders: {
               currentAddress: "0xWallet",
-              provider: {
-                sendTransaction: async () => "hash",
-                signMessage: async () => "0xSignature",
-                switchChain: async () => {},
-              },
+              provider,
               supportedChainIds: [137, 1, 137, 10],
               type: "generic",
             },
@@ -122,32 +123,7 @@ describe("WidgetConfigService", () => {
 
     expect(current.borrowApiUrl).toBe("https://borrow.example.com");
     expect(current.externalProviders?.supportedChainIds).toEqual([1, 10, 137]);
-  });
-
-  it("canonicalizes themes without rejecting Host Configuration", () => {
-    const current = Effect.runSync(
-      WidgetConfigService.use((config) => config.current).pipe(
-        Effect.provide(
-          WidgetConfigService.layer({
-            apiKey: "api-key",
-            theme: {
-              color: {
-                accent: 42,
-                background: "#fff",
-                positionsSectionBackgroundColor: "#eee",
-              },
-            } as unknown as SettingsProps["theme"],
-            variant: "default",
-          })
-        )
-      )
-    );
-
-    expect(current.theme).toEqual({
-      color: {
-        background: "#fff",
-      },
-    });
+    expect(current.externalProviders?.provider).toBe(provider);
   });
 
   it("normalizes validator policy addresses by network identity", () => {
@@ -247,16 +223,49 @@ describe("WidgetConfigService", () => {
     expect(result.current.apiKey).toBe("api-key");
   });
 
+  it("rejects structurally invalid updates and retains the last valid value", async () => {
+    const result = await Effect.runPromise(
+      Effect.gen(function* () {
+        const config = yield* WidgetConfigService;
+        const outcome = yield* config.update({
+          apiKey: "api-key",
+          hideNetworkLogo: "yes",
+          variant: "default",
+        } as unknown as SKHostConfiguration);
+        const current = yield* config.current;
+
+        return { current, outcome };
+      }).pipe(
+        Effect.provide(
+          WidgetConfigService.layer({ apiKey: "api-key", variant: "default" })
+        )
+      )
+    );
+
+    expect(result.outcome).toMatchObject({
+      _tag: "RejectedInvalid",
+      error: {
+        issuePaths: ["hideNetworkLogo"],
+        issues: ["host-configuration-decode-failed"],
+      },
+    });
+    expect(result.current.hideNetworkLogo).toBe(false);
+  });
+
   it("treats a changed host function identity as an update", async () => {
     const first: NonNullable<SettingsProps["mapWalletFn"]> = (wallet) => wallet;
     const second: NonNullable<SettingsProps["mapWalletFn"]> = (wallet) =>
       wallet;
-    const outcome = await Effect.runPromise(
+    const result = await Effect.runPromise(
       WidgetConfigService.use((config) =>
-        config.update({
-          apiKey: "api-key",
-          mapWalletFn: second,
-          variant: "default",
+        Effect.gen(function* () {
+          const outcome = yield* config.update({
+            apiKey: "api-key",
+            mapWalletFn: second,
+            variant: "default",
+          });
+          const current = yield* config.current;
+          return { current, outcome };
         })
       ).pipe(
         Effect.provide(
@@ -269,7 +278,8 @@ describe("WidgetConfigService", () => {
       )
     );
 
-    expect(outcome).toEqual({ _tag: "Updated" });
+    expect(result.outcome).toEqual({ _tag: "Updated" });
+    expect(result.current.mapWalletFn).toBe(second);
   });
 
   it("applies a changed API key as an ordinary update", async () => {

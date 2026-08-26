@@ -27,7 +27,7 @@ describe("tracking service", () => {
     const secondTrackEvent = vi.fn();
     const trackPageView = vi.fn();
     const input = {
-      apiKey: "",
+      apiKey: "test-api-key",
       tracking: { trackEvent: firstTrackEvent, trackPageView },
       variant: "default" as const,
     };
@@ -43,7 +43,7 @@ describe("tracking service", () => {
           const config = yield* WidgetConfigService;
           yield* tracking.trackEvent("txSigned", { txId: "first" });
           yield* config.update({
-            apiKey: "",
+            apiKey: "test-api-key",
             tracking: { trackEvent: secondTrackEvent, trackPageView },
             variant: "default",
           });
@@ -66,7 +66,7 @@ describe("tracking service", () => {
 
   it("initializes variant tracking once during layer construction", async () => {
     const input = {
-      apiKey: "",
+      apiKey: "test-api-key",
       chainModal: () => null,
       variant: "zerion" as const,
     };

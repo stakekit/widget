@@ -41,46 +41,17 @@ Test project selection is filename-based: `*.browser.test.*` uses Chromium,
 
 - Treat architecture-check failures as design feedback. Do not add blanket or
   unused suppressions.
-- Keep application logic out of React. Event handlers normalize input and
-  dispatch commands; `useEffect` is reserved for React, DOM, or third-party
-  lifecycle boundaries.
-- Put multi-step orchestration, retry, rollback, concurrency, and workflow
-  lifetimes in Atom-independent Effect modules. Use existing application or
-  wallet runtimes and injected services; never construct an ad hoc runtime.
-- Use Effect Atom for reactive composition, Resource binding, feature-local
-  state, and adapters. A command Atom performs one local transition, one scoped
-  handle operation, or one cross-feature tail delegation.
-- Cacheable remote reads belong to authoritative Resources, including their
-  identity, freshness, retry, invalidation, and stale-result policy.
-- Keep deterministic constructors, transitions, invariants, and projections in
-  plain TypeScript. Application-logic modules do not import React.
-- Use Effect `DateTime`, `Duration`, and `Clock` for application time. Do not use
-  native `Date` or `date-fns` in application logic.
 - React Compiler is enabled. Do not add `useMemo`, `useCallback`, or `React.memo`
   for render performance.
 - Avoid nested ternaries and mutable bindings used to select values.
 - Update English and French translation files together for user-facing copy.
-- Support one Widget Instance per browser document. Sequential unmount and
-  remount is supported; concurrent instances are not.
-- Keep `src/index.package.ts` and `src/index.bundle.ts` compatible. Host-facing
-  types belong in `src/public-api/`, and internal modules never import an
-  outbound entrypoint.
 - Treat `.repos/` as read-only reference material and never import from it.
 
 ## Documentation
 
-- Update an existing durable document when the fact it owns changes.
-- `CONTEXT.md` owns domain vocabulary; `docs/adr/` owns only current, durable
-  decisions and their rationale. Git history owns the decision timeline.
-- Ask for human approval before creating a new durable document or document
-  category. A new ADR also needs a hard-to-reverse, surprising decision with a
-  real tradeoff.
-- `.scratch/` is the active local specification and issue tracker. Its content
-  is working state rather than durable product documentation; retention and
-  removal after an effort are human-owned.
-- Do not add feature-local `ARCHITECTURE.md` files. Stable package-wide
-  boundaries belong in `packages/widget/ARCHITECTURE.md`; behavior belongs in
-  code and tests.
+- Before changing domain vocabulary or ADRs, follow `docs/agents/domain.md`.
+- Before creating or updating local specifications, issues, or triage state,
+  follow `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md`.
 
 ## Before finishing
 

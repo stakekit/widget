@@ -1,6 +1,5 @@
 import {
   Context,
-  Data,
   Effect,
   Equal,
   Layer,
@@ -15,11 +14,7 @@ import {
   type ValidatorsConfig,
 } from "../../domain/earn/yield";
 import type { Network } from "../../domain/network/network";
-import {
-  type ExternalProviderSnapshot,
-  hasValidBorrowProviderContract,
-} from "../../public-api/external-provider-contract";
-import { decodeTheme, type ThemeDecodeWarning } from "../../public-api/theme";
+import type { ExternalProviderSnapshot } from "../../public-api/external-provider-contract";
 import type {
   DashboardYieldCategory,
   PreferredTokenYieldsPerNetwork,
@@ -28,15 +23,15 @@ import type {
   VariantProps,
 } from "../../public-api/types";
 import { config } from "../../shared/config/widget-defaults";
+import {
+  type DecodedHostConfiguration,
+  decodeHostConfiguration,
+  type HostConfigurationWarning,
+  type InvalidHostConfiguration,
+} from "./widget-config-boundary";
 import type { WidgetConfig } from "./widget-config-model";
 
 type WagmiSettings = NonNullable<SettingsProps["wagmi"]>;
-type InvalidWidgetConfigurationIssue =
-  | "borrow-provider-capability-missing"
-  | "borrow-requires-category-grouping"
-  | "borrow-requires-dashboard"
-  | "zerion-chain-modal-missing";
-
 type WidgetConfigEnvironment = Readonly<{
   allowCustomConnectors: boolean;
   apiUrl: string;
@@ -45,12 +40,6 @@ type WidgetConfigEnvironment = Readonly<{
   mountAnimationStartsFinishedByDefault: boolean;
   yieldsApiUrl: string;
 }>;
-
-export class InvalidWidgetConfiguration extends Data.TaggedError(
-  "InvalidWidgetConfiguration"
-)<{
-  readonly issues: ReadonlyArray<InvalidWidgetConfigurationIssue>;
-}> {}
 
 export type ApplicationApiIdentity = {
   readonly apiKey: string;
@@ -156,7 +145,7 @@ export const diffWidgetWalletConfig = (
 type WidgetConfigUpdateOutcome =
   | Readonly<{
       readonly _tag: "RejectedInvalid";
-      readonly error: InvalidWidgetConfiguration;
+      readonly error: InvalidHostConfiguration;
     }>
   | Readonly<{ readonly _tag: "Updated" }>;
 
@@ -170,42 +159,17 @@ type WidgetConfigServiceValue = {
 
 type NormalizedWidgetConfiguration = Readonly<{
   config: WidgetConfig;
-  warnings: ReadonlyArray<ThemeDecodeWarning>;
+  warnings: ReadonlyArray<HostConfigurationWarning>;
 }>;
 
 const normalizeWidgetConfig = (
-  hostConfiguration: SKHostConfiguration,
+  hostConfiguration: DecodedHostConfiguration,
   environment: WidgetConfigEnvironment
-): Result.Result<NormalizedWidgetConfiguration, InvalidWidgetConfiguration> => {
+): WidgetConfig => {
   const borrowEnabled = hostConfiguration.borrowEnabled ?? false;
   const dashboardVariant = hostConfiguration.dashboardVariant ?? false;
-  const theme =
-    hostConfiguration.theme === undefined
-      ? undefined
-      : decodeTheme(hostConfiguration.theme);
   const yieldGrouping =
     hostConfiguration.yieldGrouping ?? (dashboardVariant ? "category" : "flat");
-  const issues: InvalidWidgetConfigurationIssue[] = [];
-
-  if (borrowEnabled && !dashboardVariant) {
-    issues.push("borrow-requires-dashboard");
-  }
-  if (borrowEnabled && yieldGrouping !== "category") {
-    issues.push("borrow-requires-category-grouping");
-  }
-  if (
-    borrowEnabled &&
-    hostConfiguration.externalProviders &&
-    !hasValidBorrowProviderContract(hostConfiguration.externalProviders)
-  ) {
-    issues.push("borrow-provider-capability-missing");
-  }
-  if (hostConfiguration.variant === "zerion" && !hostConfiguration.chainModal) {
-    issues.push("zerion-chain-modal-missing");
-  }
-  if (issues.length > 0) {
-    return Result.fail(new InvalidWidgetConfiguration({ issues }));
-  }
 
   const dashboardYieldCategoryOrder = [
     ...new Set([
@@ -263,75 +227,87 @@ const normalizeWidgetConfig = (
           : undefined,
       }
     : undefined;
-  return Result.succeed({
-    config: {
-      apiKey: hostConfiguration.apiKey,
-      baseUrl: hostConfiguration.baseUrl ?? environment.apiUrl,
-      borrowApiUrl: (hostConfiguration.borrowApiUrl ?? environment.borrowApiUrl)
-        .trim()
-        .replace(/\/+$/, ""),
-      borrowEnabled,
-      chainIconMapping: hostConfiguration.chainIconMapping,
-      chainModal:
-        hostConfiguration.variant === "zerion"
-          ? hostConfiguration.chainModal
-          : undefined,
-      customTranslations: hostConfiguration.customTranslations,
-      dashboardVariant,
-      dashboardYieldCategoryOrder,
-      disableAutoScrollToTop: hostConfiguration.disableAutoScrollToTop ?? false,
-      disableInitLayoutAnimation:
-        hostConfiguration.disableInitLayoutAnimation ?? false,
-      disableInjectedProviderDiscovery:
-        hostConfiguration.disableInjectedProviderDiscovery ?? false,
-      disableResizingInputFontSize:
-        hostConfiguration.disableResizingInputFontSize ?? false,
-      externalProviders,
-      hideAccountAndChainSelector:
-        hostConfiguration.hideAccountAndChainSelector ?? false,
-      hideChainSelector: hostConfiguration.hideChainSelector ?? false,
-      hideNetworkLogo: hostConfiguration.hideNetworkLogo ?? false,
-      initialChain: hostConfiguration.initialChain,
-      institutionalWallets: hostConfiguration.institutionalWallets ?? false,
-      isLedgerLive: environment.isLedgerLive,
-      isSafe: hostConfiguration.isSafe ?? false,
-      language: hostConfiguration.language,
-      mapWalletFn: hostConfiguration.mapWalletFn,
-      mapWalletListFn: hostConfiguration.mapWalletListFn,
-      mountAnimationStartsFinished:
-        dashboardVariant ||
-        (hostConfiguration.disableInitLayoutAnimation === undefined &&
-          environment.mountAnimationStartsFinishedByDefault),
-      onMountAnimationComplete: hostConfiguration.onMountAnimationComplete,
-      portalContainer: hostConfiguration.portalContainer,
-      preferredTokenYieldsPerNetwork,
-      theme: theme?.theme,
-      tokenIconMapping: hostConfiguration.tokenIconMapping,
-      tonConnectManifestUrl: hostConfiguration.tonConnectManifestUrl,
-      tracking: hostConfiguration.tracking,
-      validatorsConfig,
-      variant: hostConfiguration.variant ?? "default",
-      wagmi: {
-        __customConnectors__: environment.allowCustomConnectors
-          ? hostConfiguration.wagmi?.__customConnectors__
-          : undefined,
-        forceWalletConnectOnly:
-          hostConfiguration.wagmi?.forceWalletConnectOnly ?? false,
-      },
-      yieldGrouping,
-      yieldsApiUrl: hostConfiguration.yieldsApiUrl ?? environment.yieldsApiUrl,
+  return {
+    apiKey: hostConfiguration.apiKey,
+    baseUrl: hostConfiguration.baseUrl ?? environment.apiUrl,
+    borrowApiUrl: (hostConfiguration.borrowApiUrl ?? environment.borrowApiUrl)
+      .trim()
+      .replace(/\/+$/, ""),
+    borrowEnabled,
+    chainIconMapping: hostConfiguration.chainIconMapping,
+    chainModal:
+      hostConfiguration.variant === "zerion"
+        ? hostConfiguration.chainModal
+        : undefined,
+    customTranslations: hostConfiguration.customTranslations,
+    dashboardVariant,
+    dashboardYieldCategoryOrder,
+    disableAutoScrollToTop: hostConfiguration.disableAutoScrollToTop ?? false,
+    disableInitLayoutAnimation:
+      hostConfiguration.disableInitLayoutAnimation ?? false,
+    disableInjectedProviderDiscovery:
+      hostConfiguration.disableInjectedProviderDiscovery ?? false,
+    disableResizingInputFontSize:
+      hostConfiguration.disableResizingInputFontSize ?? false,
+    externalProviders,
+    hideAccountAndChainSelector:
+      hostConfiguration.hideAccountAndChainSelector ?? false,
+    hideChainSelector: hostConfiguration.hideChainSelector ?? false,
+    hideNetworkLogo: hostConfiguration.hideNetworkLogo ?? false,
+    initialChain: hostConfiguration.initialChain,
+    institutionalWallets: hostConfiguration.institutionalWallets ?? false,
+    isLedgerLive: environment.isLedgerLive,
+    isSafe: hostConfiguration.isSafe ?? false,
+    language: hostConfiguration.language,
+    mapWalletFn: hostConfiguration.mapWalletFn,
+    mapWalletListFn: hostConfiguration.mapWalletListFn,
+    mountAnimationStartsFinished:
+      dashboardVariant ||
+      (hostConfiguration.disableInitLayoutAnimation === undefined &&
+        environment.mountAnimationStartsFinishedByDefault),
+    onMountAnimationComplete: hostConfiguration.onMountAnimationComplete,
+    portalContainer: hostConfiguration.portalContainer,
+    preferredTokenYieldsPerNetwork,
+    theme: hostConfiguration.theme,
+    tokenIconMapping: hostConfiguration.tokenIconMapping,
+    tonConnectManifestUrl: hostConfiguration.tonConnectManifestUrl,
+    tracking: hostConfiguration.tracking,
+    validatorsConfig,
+    variant: hostConfiguration.variant ?? "default",
+    wagmi: {
+      __customConnectors__: environment.allowCustomConnectors
+        ? hostConfiguration.wagmi?.__customConnectors__
+        : undefined,
+      forceWalletConnectOnly:
+        hostConfiguration.wagmi?.forceWalletConnectOnly ?? false,
     },
-    warnings: theme?.warnings ?? [],
+    yieldGrouping,
+    yieldsApiUrl: hostConfiguration.yieldsApiUrl ?? environment.yieldsApiUrl,
+  };
+};
+
+const prepareWidgetConfig = (
+  hostConfiguration: SKHostConfiguration,
+  environment: WidgetConfigEnvironment
+): Result.Result<NormalizedWidgetConfiguration, InvalidHostConfiguration> => {
+  const decoded = decodeHostConfiguration(hostConfiguration);
+  if (Result.isFailure(decoded)) return Result.fail(decoded.failure);
+
+  return Result.succeed({
+    config: normalizeWidgetConfig(decoded.success.configuration, environment),
+    warnings: decoded.success.warnings,
   });
 };
 
-const logThemeWarnings = (warnings: ReadonlyArray<ThemeDecodeWarning>) =>
+const logHostConfigurationWarnings = (
+  warnings: ReadonlyArray<HostConfigurationWarning>
+) =>
   warnings.length === 0
     ? Effect.void
-    : Effect.logWarning("Invalid Host Configuration theme values ignored").pipe(
+    : Effect.logWarning("Invalid Host Configuration values ignored").pipe(
         Effect.annotateLogs({
-          event: "invalid_widget_theme",
-          issues: warnings,
+          event: "invalid_widget_configuration_warning",
+          warnings,
         })
       );
 
@@ -354,7 +330,7 @@ export class WidgetConfigService extends Context.Service<
           mountAnimationStartsFinishedByDefault: config.env.isTestMode,
           yieldsApiUrl: config.env.yieldsApiUrl,
         } satisfies WidgetConfigEnvironment;
-        const initialResult = normalizeWidgetConfig(
+        const initialResult = prepareWidgetConfig(
           initialHostConfiguration,
           environment
         );
@@ -363,6 +339,7 @@ export class WidgetConfigService extends Context.Service<
             "Initial Widget Configuration is invalid"
           ).pipe(
             Effect.annotateLogs({
+              issuePaths: initialResult.failure.issuePaths,
               event: "invalid_initial_widget_configuration",
               issues: initialResult.failure.issues,
             })
@@ -370,7 +347,7 @@ export class WidgetConfigService extends Context.Service<
           return yield* initialResult.failure;
         }
 
-        yield* logThemeWarnings(initialResult.success.warnings);
+        yield* logHostConfigurationWarnings(initialResult.success.warnings);
         const initial = initialResult.success.config;
         const state = yield* SubscriptionRef.make(initial);
         const updatePermit = yield* Semaphore.make(1);
@@ -383,7 +360,7 @@ export class WidgetConfigService extends Context.Service<
         const update = Effect.fn("WidgetConfigService.update")(function* (
           hostConfiguration: SKHostConfiguration
         ) {
-          const nextResult = normalizeWidgetConfig(
+          const nextResult = prepareWidgetConfig(
             hostConfiguration,
             environment
           );
@@ -392,6 +369,7 @@ export class WidgetConfigService extends Context.Service<
               "Widget Configuration update rejected"
             ).pipe(
               Effect.annotateLogs({
+                issuePaths: nextResult.failure.issuePaths,
                 event: "invalid_widget_configuration_update",
                 issues: nextResult.failure.issues,
               })
@@ -402,7 +380,7 @@ export class WidgetConfigService extends Context.Service<
             } as const;
           }
 
-          yield* logThemeWarnings(nextResult.success.warnings);
+          yield* logHostConfigurationWarnings(nextResult.success.warnings);
           yield* SubscriptionRef.set(state, nextResult.success.config);
           return { _tag: "Updated" } as const;
         }, updatePermit.withPermit);

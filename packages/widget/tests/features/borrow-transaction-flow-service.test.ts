@@ -138,7 +138,7 @@ const makeServiceLayer = (
   });
   const dependencies = Layer.mergeAll(
     WidgetConfigService.layer({
-      apiKey: "",
+      apiKey: "test-api-key",
       borrowEnabled: overrides.borrowEnabled ?? true,
       dashboardVariant: true,
       variant: "default",

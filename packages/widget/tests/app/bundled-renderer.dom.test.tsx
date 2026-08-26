@@ -17,13 +17,6 @@ describe("bundled widget renderer", () => {
     vi.clearAllMocks();
   });
 
-  it("validates required public configuration before creating a React root", () => {
-    expect(() =>
-      renderSKWidget({ apiKey: "", container: document.createElement("div") })
-    ).toThrow("API key is required");
-    expect(createRoot).not.toHaveBeenCalled();
-  });
-
   it("initializes the bundled component and exposes its lifecycle API", () => {
     const container = document.createElement("div");
     const widget = renderSKWidget({ apiKey: "api-key", container });

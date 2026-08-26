@@ -1100,6 +1100,7 @@
         "projected_health_factor": "Facteur de santé projeté",
         "estimated_fee": "Frais estimés",
         "estimated_fee_pending": "Affichés dans le portefeuille",
+        "confirmation_error_description": "Nous n'avons pas pu préparer votre transaction d'emprunt. Veuillez réessayer.",
         "warning_title": "Avertissement avant confirmation",
         "warnings": {
           "AmountExceedsAvailableLiquidity": "Le montant dépasse la liquidité actuellement disponible sur le marché. Le fournisseur ou la blockchain peut rejeter cette action.",

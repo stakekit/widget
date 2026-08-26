@@ -20,7 +20,7 @@ const makeRegistry = (baseUrl: string) =>
         RichErrorService.layer.pipe(
           Layer.provide(
             WidgetConfigService.layer({
-              apiKey: "",
+              apiKey: "test-api-key",
               baseUrl,
               variant: "default",
             })

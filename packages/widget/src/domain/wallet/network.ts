@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 import type { Network } from "../network/network";
 
-export const walletEvmNetworks = [
+const walletEvmNetworks = [
   "avalanche-c",
   "arbitrum",
   "binance",
@@ -72,7 +72,7 @@ export const walletCosmosNetworks = [
 
 export type WalletCosmosNetwork = (typeof walletCosmosNetworks)[number];
 
-export const walletMiscNetworks = [
+const walletMiscNetworks = [
   "near",
   "tezos",
   "solana",
@@ -83,14 +83,14 @@ export const walletMiscNetworks = [
 
 export type WalletMiscNetwork = (typeof walletMiscNetworks)[number];
 
-export const walletSubstrateNetworks = [
+const walletSubstrateNetworks = [
   "polkadot",
   "bittensor",
 ] as const satisfies ReadonlyArray<Network>;
 
 export type WalletSubstrateNetwork = (typeof walletSubstrateNetworks)[number];
 
-export const walletNetworks = [
+const walletNetworks = [
   ...walletEvmNetworks,
   ...walletCosmosNetworks,
   ...walletMiscNetworks,

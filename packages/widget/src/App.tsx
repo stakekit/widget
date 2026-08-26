@@ -101,8 +101,6 @@ export const renderSKWidget = ({
 }: SKHostConfiguration & {
   container: Parameters<typeof ReactDOM.createRoot>[0];
 }) => {
-  if (!rest.apiKey) throw new Error("API key is required");
-
   const releaseClaim = acquireWidgetInstanceClaim(
     container.ownerDocument ?? document
   );

@@ -1,7 +1,7 @@
 import { Context, Effect, Layer, SubscriptionRef } from "effect";
 import type { RichError } from "./rich-error";
 
-export type PresentableApiRequest = {
+type PresentableApiRequest = {
   readonly richError: RichError | null;
 };
 

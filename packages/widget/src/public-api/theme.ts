@@ -312,7 +312,7 @@ const makeResilientThemeSchema = (
   >;
 };
 
-export const Theme = makeThemeSchema(themeContract) as unknown as Schema.Codec<
+const Theme = makeThemeSchema(themeContract) as unknown as Schema.Codec<
   SKTheme,
   unknown,
   never,
@@ -330,7 +330,7 @@ export type ThemeDecodeResult = Readonly<{
   warnings: ReadonlyArray<ThemeDecodeWarning>;
 }>;
 
-export const decodeTheme = (input: SKTheme): ThemeDecodeResult => {
+export const decodeTheme = (input: unknown): ThemeDecodeResult => {
   const strict = Schema.decodeUnknownOption(Theme)(input);
   if (Option.isSome(strict)) {
     return { theme: strict.value, warnings: [] };

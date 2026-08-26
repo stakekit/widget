@@ -48,7 +48,8 @@ entries. Nothing under `src` imports them.
 
 ## Module interfaces
 
-An Owned Module publishes only the finite interfaces its actual consumers need.
+An Owned Module publishes only the finite interfaces its actual consumers need,
+as recorded in [ADR 0007](../../docs/adr/0007-owned-modules-expose-finite-interfaces.md).
 Files not named below are private even when they sit at a Module root.
 
 A Feature Module may publish:
@@ -87,7 +88,8 @@ Plain TypeScript owns deterministic domain state, transitions, invariants, and
 projections. Effect services own asynchronous orchestration, side effects,
 concurrency, retry, rollback, and scoped lifetimes. Effect Atom owns reactive
 composition and the adapter between services and rendering. React renders
-published state and dispatches semantic commands.
+published state and dispatches semantic commands. See
+[ADR 0002](../../docs/adr/0002-effect-and-effect-atom-own-application-logic.md).
 
 An orchestration-heavy Feature exposes one feature-owned Effect service. The
 application or wallet runtime composes it once and resolves static dependencies
@@ -104,7 +106,8 @@ owning Effect service.
 Each canonical remote fact has one authoritative Resource. The Resource owns
 request identity, caching, freshness, pagination, retry, invalidation, loading,
 typed failure, and stale-result suppression. Features consume and project that
-state rather than creating parallel caches.
+state rather than creating parallel caches. See
+[ADR 0003](../../docs/adr/0003-authoritative-resources-own-shared-remote-reads.md).
 
 Each workflow fact has one authoritative writer. Atom may project Effect-owned
 state but does not maintain a second writable copy or invent a lifecycle state
@@ -115,15 +118,31 @@ Resource and workflow retention is an explicit ownership decision. Use the
 shared application-runtime lifecycle adapter for scoped handles rather than
 rebuilding mount graphs in Features.
 
+## Trust boundaries
+
+The Module that owns a value-shaped input boundary owns its Effect Schema and
+decoder. Unknown values, serialized data, persisted data, URL data, and callback
+results are decoded before their fields affect application state or behavior.
+The boundary contract decides whether to reject, recover from, or discard an
+invalid input.
+
+Opaque capabilities such as functions, DOM nodes, and SDK instances cross
+through explicit typed adapters rather than shape inspection. Property probes,
+casts, and handwritten type predicates do not promote untrusted values into
+domain types. Ordinary narrowing of an already-decoded or internal
+discriminated union remains allowed. See
+[ADR 0009](../../docs/adr/0009-effect-schema-owns-value-shaped-boundary-decoding.md).
+
 ## Runtime and lifecycle
 
 One Application Runtime Generation is created per Widget Instance. The current
 Widget Configuration remains live within it, while Wallet Topology is captured
-at Wallet Bootstrap and remains fixed. See the current decisions in
-`docs/adr/` for the rationale.
+at Wallet Bootstrap and remains fixed. See
+[ADR 0004](../../docs/adr/0004-widget-configuration-is-live-wallet-topology-is-fixed.md).
 
 At most one Widget Instance may be mounted per browser document. Unmounting and
-later mounting a new instance creates a fresh generation.
+later mounting a new instance creates a fresh generation. See
+[ADR 0001](../../docs/adr/0001-one-widget-instance-per-browser-document.md).
 
 React Context is limited to real render-tree concerns and third-party provider
 boundaries. Application services and cross-feature state use the Effect runtime
