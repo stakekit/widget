@@ -60,7 +60,7 @@
     "build:package": "vite -c vite/vite.config.package.ts build",
     "build:package:watch": "vite -w -c vite/vite.config.package.ts build",
     "build:bundle": "vite -c vite/vite.config.bundle.ts build",
-    "build:types": "tsc --project tsconfig.build.json && node scripts/declarations/finalize-declarations.ts",
+    "build:types": "tsc --project tsconfig.build.json",
     "check:package-types": "tsx scripts/declarations/check-package-types.ts",
     "clean": "rm -rf dist",
     "preview": "vite -c vite/vite.config.dev.ts preview --outDir dist/website",

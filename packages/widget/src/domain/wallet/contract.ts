@@ -3,6 +3,6 @@ export {
   MiscChainIds,
   SubstrateChainIds,
   type SupportedSKChainIds,
-} from "./chain-ids";
-export type { WalletNetwork } from "./network";
-export type { WalletPolicy } from "./wallet-policy";
+} from "./chain-ids.js";
+export type { WalletNetwork } from "./network.js";
+export type { WalletPolicy } from "./wallet-policy.js";

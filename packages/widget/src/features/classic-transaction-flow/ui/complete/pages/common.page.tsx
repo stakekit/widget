@@ -19,7 +19,7 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../../../widget-shell/views";
-import { useComplete } from "../hooks/use-complete.hook.ts";
+import { useComplete } from "../hooks/use-complete.hook";
 
 type CompletePageModel = ReturnType<typeof useComplete>;
 

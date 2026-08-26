@@ -11,7 +11,7 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../../../widget-shell/views";
-import { useActionReview } from "../hooks/use-action-review.hook.ts";
+import { useActionReview } from "../hooks/use-action-review.hook";
 import ReviewTopSection from "./common-page/components/review-top-section";
 import { pointerStyles } from "./style.css";
 

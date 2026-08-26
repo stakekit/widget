@@ -1,8 +1,7 @@
 /**
  * Walks `.d.ts` specifiers and resolves relative declaration imports.
  *
- * Used by `finalize-declarations.ts` (`build:types`) and
- * `check-package-types.ts`.
+ * Used by `check-package-types.ts`.
  */
 import { access } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";

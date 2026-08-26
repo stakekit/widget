@@ -1,4 +1,4 @@
-import type { BundledSKWidgetProps, SKTheme } from "./types";
+import type { BundledSKWidgetProps, SKTheme } from "./types.js";
 
 export type {
   ActionMeta,
@@ -14,13 +14,13 @@ export type {
   SKWalletPolicy,
   SupportedSKChainIds,
   TronTx,
-} from "./types";
+} from "./types.js";
 export {
   DashboardYieldCategory,
   EvmChainIds,
   MiscChainIds,
   SubstrateChainIds,
-} from "./types";
+} from "./types.js";
 
 export declare const renderSKWidget: (
   props: BundledSKWidgetProps & { container: Element | DocumentFragment }

@@ -1,6 +1,6 @@
 import { useTrackPage } from "../../../../tracking/index";
 import { KycGateCard } from "../../../../yield-summary/views";
-import { useUnstakeActionReview } from "../hooks/use-unstake-review.hook.ts";
+import { useUnstakeActionReview } from "../hooks/use-unstake-review.hook";
 import { ReviewPage } from "./common-page/common.page.tsx";
 import { UnstakeSignPopup } from "./unstake-sign-popup";
 

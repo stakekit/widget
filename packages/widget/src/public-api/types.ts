@@ -1,22 +1,22 @@
 import {
   type DashboardYieldCategory,
   DashboardYieldCategory as DomainDashboardYieldCategory,
-} from "../domain/earn/contract";
-import type { Network } from "../domain/network/contract";
+} from "../domain/earn/contract.js";
+import type { Network } from "../domain/network/contract.js";
 import {
   EvmChainIds,
   MiscChainIds,
   type WalletPolicy as SKWalletPolicy,
   SubstrateChainIds,
   type SupportedSKChainIds,
-} from "../domain/wallet/contract";
-import type { SKTheme } from "./theme";
+} from "../domain/wallet/contract.js";
+import type { SKTheme } from "./theme.js";
 
 export type {
   SupportedSKChainIds,
   WalletPolicy as SKWalletPolicy,
-} from "../domain/wallet/contract";
-export type { SKTheme } from "./theme";
+} from "../domain/wallet/contract.js";
+export type { SKTheme } from "./theme.js";
 export {
   DomainDashboardYieldCategory as DashboardYieldCategory,
   EvmChainIds,

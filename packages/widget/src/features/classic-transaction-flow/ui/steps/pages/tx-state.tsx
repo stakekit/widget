@@ -15,7 +15,7 @@ import { XIcon } from "../../../../../shared/ui/primitives/icons/x-icon";
 import { Spinner } from "../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { ClassicTransactionStepState } from "../../../model/classic-transaction-workflow";
-import type { useSteps } from "../hooks/use-steps.hook.ts";
+import type { useSteps } from "../hooks/use-steps.hook";
 import {
   halfOpacityAfter,
   stepsAfter,

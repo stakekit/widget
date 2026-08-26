@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { HostVariant, SettingsProps } from "./types";
+import type { HostVariant, SettingsProps } from "./types.js";
 
 type NonZerionVariant = Exclude<HostVariant, "zerion">;
 

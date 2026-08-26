@@ -1,8 +1,8 @@
 import type { ReactElement } from "react";
-import type { HelpModalProps, SKAppProps } from "./react-types";
-import type { SKTheme } from "./types";
+import type { HelpModalProps, SKAppProps } from "./react-types.js";
+import type { SKTheme } from "./types.js";
 
-export type { SKAppProps } from "./react-types";
+export type { SKAppProps } from "./react-types.js";
 export type {
   ActionMeta,
   BittensorTx,
@@ -16,13 +16,13 @@ export type {
   SKWalletPolicy,
   SupportedSKChainIds,
   TronTx,
-} from "./types";
+} from "./types.js";
 export {
   DashboardYieldCategory,
   EvmChainIds,
   MiscChainIds,
   SubstrateChainIds,
-} from "./types";
+} from "./types.js";
 
 export declare const SKApp: (props: SKAppProps) => ReactElement;
 export declare const HelpModal: (props: HelpModalProps) => ReactElement;
