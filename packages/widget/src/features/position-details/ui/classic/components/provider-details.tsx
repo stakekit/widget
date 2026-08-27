@@ -1,20 +1,12 @@
-import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
-import {
-  CollapsibleArrow,
-  CollapsibleContent,
-  CollapsibleRoot,
-  CollapsibleTrigger,
-} from "../../../../../shared/ui/components/collapsible";
-import { Divider } from "../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { PreferredIcon } from "../../../../../shared/ui/primitives/icons/preferred";
-import { Image } from "../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useMetaInfo } from "../../../../yield-entry/views";
 import type { YieldSummaryProvider as ProviderDetailsModel } from "../../../../yield-summary/index";
 import { inactiveContainer, noWrap } from "../styles.css";
+import { PositionSourceDetails } from "./position-source-details";
 
 export const ProviderDetails = ({
   stakeType,
@@ -34,97 +26,64 @@ export const ProviderDetails = ({
   const { t } = useTranslation();
 
   const nameOrAddress = providerDetails.name ?? providerDetails ?? "";
-
-  return (
-    <CollapsibleRoot>
-      <Box display="flex" flexDirection="column">
-        {isFirst && <Divider />}
-
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          my="2"
-        >
-          <Box display="flex" justifyContent="flex-start" alignItems="center">
-            <Box marginRight="2">
-              <Image
-                wrapperProps={{ hw: "8" }}
-                imgProps={{ borderRadius: "full" }}
-                src={logo}
-                fallbackName={nameOrAddress}
-              />
-            </Box>
-
-            <Text>
-              {t("position_details.via", {
-                stakeType,
-                providerName: nameOrAddress,
-              })}
-            </Text>
-
-            {providerDetails.preferred && (
-              <Box marginLeft="1" display="flex">
-                <PreferredIcon />
-              </Box>
-            )}
-
-            {providerDetails.status && providerDetails.status !== "active" && (
-              <Box marginLeft="1" className={inactiveContainer}>
-                <Text
-                  variant={{
-                    type: "white",
-                    weight: "medium",
-                    size: "small",
-                  }}
-                  className={noWrap}
-                >
-                  {t(
-                    providerDetails.status === "jailed"
-                      ? "details.validators_jailed"
-                      : "details.validators_inactive"
-                  )}
-                </Text>
-              </Box>
-            )}
-          </Box>
-
-          <CollapsibleTrigger flex={1} justifyContent="flex-end">
-            <CollapsibleArrow />
-          </CollapsibleTrigger>
-        </Box>
-
-        <CollapsibleContent>
-          <ValidatorMeta
-            address={providerDetails.address}
-            commission={providerDetails.commission}
-            rewardRate={providerDetails.rewardRate}
-            stakedBalance={providerDetails.stakedBalance}
-            votingPower={providerDetails.votingPower}
-            rewardType={providerDetails.rewardType}
-            website={providerDetails.website}
-            stakedBalanceToken={integrationData.token}
-          />
-        </CollapsibleContent>
-
-        <Divider />
-      </Box>
-    </CollapsibleRoot>
+  const metaInfo = useMetaInfo({
+    address: providerDetails.address,
+    commission: providerDetails.commission,
+    rewardRate: providerDetails.rewardRate,
+    rewardType: providerDetails.rewardType,
+    stakedBalance: providerDetails.stakedBalance,
+    stakedBalanceToken: integrationData.token,
+    votingPower: providerDetails.votingPower,
+    website: providerDetails.website,
+  });
+  const metaEntries = Object.entries(metaInfo).filter(
+    (
+      entry
+    ): entry is [
+      keyof typeof metaInfo,
+      NonNullable<(typeof metaInfo)[keyof typeof metaInfo]>,
+    ] => !!entry[1]
   );
-};
-
-const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
-  const metaInfo = useMetaInfo(props);
 
   return (
-    <Box marginTop="1">
-      {Object.entries(metaInfo)
-        .filter(
-          (val): val is [keyof typeof metaInfo, NonNullable<(typeof val)[1]>] =>
-            !!val[1]
-        )
-        .map(([key, val]) => {
-          return (
+    <PositionSourceDetails
+      hasDetails={metaEntries.length > 0}
+      headerAccessory={
+        <>
+          {providerDetails.preferred ? (
+            <Box marginLeft="1" display="flex">
+              <PreferredIcon />
+            </Box>
+          ) : null}
+
+          {providerDetails.status && providerDetails.status !== "active" ? (
+            <Box marginLeft="1" className={inactiveContainer}>
+              <Text
+                variant={{
+                  type: "white",
+                  weight: "medium",
+                  size: "small",
+                }}
+                className={noWrap}
+              >
+                {t(
+                  providerDetails.status === "jailed"
+                    ? "details.validators_jailed"
+                    : "details.validators_inactive"
+                )}
+              </Text>
+            </Box>
+          ) : null}
+        </>
+      }
+      isFirst={isFirst}
+      logo={logo}
+      name={nameOrAddress}
+      stakeType={stakeType}
+    >
+      {metaEntries.length > 0 ? (
+        <Box marginTop="1">
+          {metaEntries.map(([key, val]) => (
             <Box
               key={key}
               marginTop="1"
@@ -135,7 +94,7 @@ const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
             >
               <Text variant={{ weight: "normal" }}>{val.title}</Text>
 
-              {key === "address" && props.address ? (
+              {key === "address" && providerDetails.address ? (
                 val.val
               ) : (
                 <Text variant={{ type: "muted", weight: "normal" }}>
@@ -143,8 +102,9 @@ const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
                 </Text>
               )}
             </Box>
-          );
-        })}
-    </Box>
+          ))}
+        </Box>
+      ) : null}
+    </PositionSourceDetails>
   );
-});
+};

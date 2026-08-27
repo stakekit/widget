@@ -254,14 +254,14 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
       const unstakeIsLessThanMin = unstakeAmount.isLessThan(
         amountConstraints.allowedMinimum
       );
+      const unstakeIsLessThanMinForDisplay =
+        !unstakeAmount.isZero() && unstakeIsLessThanMin;
       const unstakeIsGreaterOrLessIntegrationLimitError =
         (amountConstraints.maximum
           ? unstakeAmount.isGreaterThan(amountConstraints.maximum)
-          : false) || unstakeIsLessThanMin;
+          : false) || unstakeIsLessThanMinForDisplay;
       const unstakeAmountError =
-        (!unstakeAmount.isZero() && unstakeIsLessThanMin) ||
-        unstakeIsGreaterThanMax ||
-        unstakeIsGreaterOrLessIntegrationLimitError;
+        unstakeIsLessThanMinForDisplay || unstakeIsGreaterThanMax;
       const pendingActionIndex = getPendingActionIndex(positionBalancesByType);
       const pendingActionProjections = new Map(
         [...pendingActionIndex].map(([pendingKey, pending]) => [

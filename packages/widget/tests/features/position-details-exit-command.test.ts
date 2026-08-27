@@ -248,6 +248,85 @@ const makeRegistry = ({
 };
 
 describe("Position Details exit command", () => {
+  it("keeps an untouched exit amount neutral until submission", async () => {
+    const yieldDto = yieldApiYieldDtoFixture();
+    const constrainedYield = yieldApiYieldFixture({
+      ...skySavingsRateFields,
+      id: selectedYield.id,
+      mechanics: {
+        ...yieldDto.mechanics,
+        arguments: {
+          ...yieldDto.mechanics.arguments,
+          exit: {
+            fields: [
+              {
+                label: "Amount",
+                maximum: "10",
+                minimum: "1",
+                name: "amount",
+                required: true,
+                type: "string",
+              },
+            ],
+          },
+        },
+      },
+    });
+    const registry = makeRegistry({
+      push: vi.fn(),
+      trackEvent: () => Effect.void,
+      yieldOpportunity: constrainedYield,
+    });
+    const commandAtom = submitPositionDetailsExitAtom(workflowKey);
+    const viewAtom = positionDetailsClassicViewAtom(workflowKey);
+    const unmountView = registry.mount(viewAtom);
+
+    try {
+      expect(registry.get(viewAtom)).toMatchObject({
+        unstakeAmountError: false,
+        unstakeIsGreaterOrLessIntegrationLimitError: false,
+      });
+
+      registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        exitReceiveTokenAddress: null,
+        pendingActions: new Map(),
+        unstakeAmount: new BigNumber("0.5"),
+        unstakeUseMaxAmount: false,
+      });
+      expect(registry.get(viewAtom)).toMatchObject({
+        unstakeAmountError: true,
+        unstakeIsGreaterOrLessIntegrationLimitError: true,
+      });
+
+      registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        exitReceiveTokenAddress: null,
+        pendingActions: new Map(),
+        unstakeAmount: new BigNumber(0),
+        unstakeUseMaxAmount: false,
+      });
+      expect(registry.get(viewAtom)).toMatchObject({
+        unstakeAmountError: false,
+        unstakeIsGreaterOrLessIntegrationLimitError: false,
+      });
+
+      registry.set(commandAtom, undefined);
+
+      await vi.waitFor(() =>
+        expect(AsyncResult.isSuccess(registry.get(commandAtom))).toBe(true)
+      );
+      expect(AsyncResult.getOrThrow(registry.get(commandAtom))).toEqual({
+        _tag: "Invalid",
+      });
+      expect(registry.get(viewAtom)).toMatchObject({
+        unstakeAmountError: true,
+        unstakeIsGreaterOrLessIntegrationLimitError: true,
+      });
+    } finally {
+      unmountView();
+      registry.dispose();
+    }
+  });
+
   it.each([
     {
       expectedAddress: usdsAddress,

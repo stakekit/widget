@@ -116,6 +116,9 @@ export const positionDetailsClassicViewAtom = Atom.family(
           : null;
       const canUnstake = Boolean(integration?.status.exit);
       const action = get(positionDetailsExitActions.view(key));
+      const submittedBelowMinimum =
+        action.submissionError &&
+        workflow.unstakeAmount.isLessThan(workflow.minUnstakeAmount);
 
       return {
         apyCompositionRewardRate: personalizedRewardRate ?? fallbackRewardRate,
@@ -125,6 +128,10 @@ export const positionDetailsClassicViewAtom = Atom.family(
         canUnstake,
         exitReceiveTokenSelection: workflow.exitReceiveTokenSelection,
         hasMoreValidators: exitResources.hasMoreValidators,
+        positionSource:
+          workflow.positionBalances?.type === "validators"
+            ? ("validator" as const)
+            : ("yield" as const),
         integrationData: integration,
         isLoading:
           AsyncResult.isInitial(workflow.positionBalancesResult) ||
@@ -154,7 +161,8 @@ export const positionDetailsClassicViewAtom = Atom.family(
             })
           : "",
         unstakeIsGreaterOrLessIntegrationLimitError:
-          workflow.unstakeIsGreaterOrLessIntegrationLimitError,
+          workflow.unstakeIsGreaterOrLessIntegrationLimitError ||
+          submittedBelowMinimum,
         unstakeMaxAmount:
           amountArgument && !forceMax ? (amountArgument.maximum ?? null) : null,
         unstakeMinAmount:

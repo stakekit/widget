@@ -16,6 +16,7 @@ import { PositionDetailsUnstakeActions } from "./components/position-details-uns
 import { PositionDetailsValidatorModal } from "./components/position-details-validator-modal";
 import { ProviderDetails } from "./components/provider-details";
 import { StaticActionBlock } from "./components/static-action-block";
+import { YieldDetails } from "./components/yield-details";
 import { usePositionDetails } from "./hooks/use-position-details";
 import { container } from "./styles.css";
 
@@ -28,6 +29,7 @@ const PositionDetails = () => {
     onPendingActionClick,
     pendingActions: pendingActionsValue,
     providersDetails,
+    positionSource,
     shareToAmountConversions: shareToAmountConversionsValue,
     unstakeToken: unstakeTokenValue,
     personalizedRewardRate,
@@ -139,19 +141,32 @@ const PositionDetails = () => {
             ) : null}
 
             <Box marginTop="4">
-              {providersDetails?.map((p, idx) => (
-                <ProviderDetails
-                  {...p}
-                  key={p.address ?? idx}
-                  isFirst={idx === 0}
-                  rewardRate={personalizedRewardRate ? undefined : p.rewardRate}
-                  rewardType={personalizedRewardRate ? undefined : p.rewardType}
-                  stakeType={t(
-                    `position_details.stake_type.${getExtendedYieldType(integrationDataValue)}`
-                  )}
+              {positionSource === "validator" ? (
+                providersDetails?.map((p, idx) => (
+                  <ProviderDetails
+                    {...p}
+                    key={p.address ?? idx}
+                    isFirst={idx === 0}
+                    rewardRate={
+                      personalizedRewardRate ? undefined : p.rewardRate
+                    }
+                    rewardType={
+                      personalizedRewardRate ? undefined : p.rewardType
+                    }
+                    stakeType={t(
+                      `position_details.stake_type.${getExtendedYieldType(integrationDataValue)}`
+                    )}
+                    integrationData={integrationDataValue}
+                  />
+                ))
+              ) : (
+                <YieldDetails
                   integrationData={integrationDataValue}
+                  showRewardRate={
+                    !personalizedRewardRate && !apyCompositionRewardRate
+                  }
                 />
-              ))}
+              )}
             </Box>
 
             <Box py="3" gap="2" display="flex" flexDirection="column">
