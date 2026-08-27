@@ -24,7 +24,7 @@ export const RainbowProvider = ({ children }: PropsWithChildren) => {
   });
 
   const otherAccounts =
-    wallet.isConnected && wallet.ledgerAccounts
+    wallet?.status === "connected" && wallet.ledgerAccounts
       ? getOtherLedgerAccounts({
           accounts: wallet.ledgerAccounts,
           currentAddress: wallet.address,
@@ -45,7 +45,7 @@ export const RainbowProvider = ({ children }: PropsWithChildren) => {
             selectedAddress
           );
 
-          if (account && wallet.isConnected) {
+          if (account && wallet?.status === "connected") {
             void switchAccount({
               account,
               connector: wallet.connector,

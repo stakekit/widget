@@ -34,28 +34,37 @@ type WalletStateCommon = {
   readonly isLedgerLive: boolean;
 };
 
+type WalletScopeOwnerState = {
+  readonly additionalAddresses: AdditionalAddresses | null;
+  readonly address: typeof WalletAddress.Type;
+  readonly chain: Chain;
+  readonly connector: Connector;
+  readonly isLedgerLiveAccountPlaceholder: boolean;
+  readonly ledgerAccounts: Account[];
+  readonly network: WalletNetwork;
+};
+
+type WalletWithoutScopeOwnerState = {
+  readonly additionalAddresses: null;
+  readonly address: null;
+  readonly chain: null;
+  readonly connector: null;
+  readonly isLedgerLiveAccountPlaceholder: false;
+  readonly ledgerAccounts: null;
+  readonly network: null;
+};
+
 export type NormalizedWalletState = WalletStateCommon &
   (
-    | {
-        readonly additionalAddresses: AdditionalAddresses | null;
-        readonly address: typeof WalletAddress.Type;
-        readonly chain: Chain;
-        readonly connector: Connector;
-        readonly isLedgerLiveAccountPlaceholder: boolean;
-        readonly ledgerAccounts: Account[];
-        readonly network: WalletNetwork;
+    | (WalletScopeOwnerState & {
         readonly status: "connected";
-      }
-    | {
-        readonly additionalAddresses: null;
-        readonly address: null;
-        readonly chain: null;
-        readonly connector: null;
-        readonly isLedgerLiveAccountPlaceholder: false;
-        readonly ledgerAccounts: null;
-        readonly network: null;
-        readonly status: "connecting" | "disconnected";
-      }
+      })
+    | ((WalletScopeOwnerState | WalletWithoutScopeOwnerState) & {
+        readonly status: "connecting";
+      })
+    | (WalletWithoutScopeOwnerState & {
+        readonly status: "disconnected";
+      })
     | {
         readonly additionalAddresses: null;
         readonly address: typeof WalletAddress.Type | null;

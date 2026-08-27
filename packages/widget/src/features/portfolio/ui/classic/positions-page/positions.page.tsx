@@ -20,7 +20,9 @@ const PositionsPage = () => {
   const { positions, positionsResult, listData, showPositions } =
     usePositions();
 
-  const { isConnected, isConnecting } = useSKWallet();
+  const wallet = useSKWallet();
+  const isConnected = wallet?.status === "connected";
+  const isConnecting = wallet === null || wallet.status === "connecting";
 
   const { t } = useTranslation();
 

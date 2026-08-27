@@ -9,7 +9,6 @@ import {
   Scope,
   Stream,
 } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
 import {
@@ -461,7 +460,7 @@ const renderExecution = async (
               element={
                 <WalletScopeRoute
                   fallbackPath="/borrow"
-                  walletStateResult={AsyncResult.success(connectedWalletState)}
+                  walletState={connectedWalletState}
                 />
               }
             >

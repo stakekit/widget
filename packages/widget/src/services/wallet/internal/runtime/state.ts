@@ -1,7 +1,7 @@
 import {
   Effect,
-  Exit,
   Option,
+  Result,
   Schema,
   type Scope,
   Stream,
@@ -12,14 +12,16 @@ import type { WidgetPersistence } from "../../../persistence/widget-persistence"
 import type { WalletRuntimeInvariantError } from "../../wallet-errors";
 import {
   disconnectedLedgerConnectorState,
-  disconnectedNormalizedWalletState,
   type NormalizedWalletState,
   type WalletCoreState,
   type WalletState,
 } from "../../wallet-state";
 import type { WagmiCoreObservation } from "../platform/wagmi-platform";
 import type { WalletRoutingContext } from "./router";
-import { makeCompleteWalletStateStream } from "./state-projection";
+import {
+  makeCompleteWalletStateStream,
+  transitionalWalletState,
+} from "./state-projection";
 import type { WalletController } from "./wagmi-config";
 
 class WalletStateInitializationError extends Schema.TaggedError<WalletStateInitializationError>()(
@@ -50,14 +52,17 @@ export type WalletStateRuntime = {
 const makeContextStream = ({
   controller,
   core,
+  previous,
   readStoredPublicKeys,
 }: {
   readonly controller: WalletController;
   readonly core: WalletCoreState;
+  readonly previous?: WalletState["connection"];
   readonly readStoredPublicKeys: WidgetPersistence["Service"]["readStoredPublicKeys"];
 }) =>
   makeCompleteWalletStateStream({
     controller,
+    previous,
     projection: core,
     readStoredPublicKeys,
   }).pipe(
@@ -72,18 +77,22 @@ const makeContextStream = ({
 
 const makeTransitionContext = ({
   controller,
+  current,
   core,
 }: {
   readonly controller: WalletController;
+  readonly current: WalletStateContext;
   readonly core: WalletCoreState;
 }): WalletStateContext => {
-  const connection: NormalizedWalletState = {
-    ...disconnectedNormalizedWalletState,
+  const connection = transitionalWalletState({
+    additionalAddresses: null,
+    connection: core.connection,
     connectorChains: controller.evmConfig.evmChains,
-    isLedgerLive: controller.isLedgerLive,
-    status:
-      core.connection.status === "disconnected" ? "disconnected" : "connecting",
-  };
+    controller,
+    forceAddress: undefined,
+    ledgerState: disconnectedLedgerConnectorState,
+    previous: current.state.connection,
+  });
 
   return {
     core,
@@ -154,37 +163,53 @@ export const makeWalletStateRuntime = Effect.fn("makeWalletStateRuntime")(
     }
 
     const current = yield* SubscriptionRef.make<
-      Exit.Exit<WalletStateContext, WalletRuntimeInvariantError>
-    >(Exit.succeed(initialOption.value));
+      Result.Result<WalletStateContext, WalletRuntimeInvariantError>
+    >(Result.succeed(initialOption.value));
     const contexts = SubscriptionRef.changes(current).pipe(
-      Stream.mapEffect((result) => result)
+      Stream.mapEffect(Effect.fromResult)
     );
 
     yield* core.states.pipe(
       Stream.mapEffect((next) =>
-        SubscriptionRef.update(current, (result) => {
-          if (Exit.isFailure(result)) return result;
-          if (hasSameCommandIdentity(result.value, next)) {
-            return Exit.succeed({ ...result.value, core: next });
+        SubscriptionRef.modify(
+          current,
+          (
+            result
+          ): readonly [
+            {
+              readonly next: WalletCoreState;
+              readonly previous: NormalizedWalletState | undefined;
+            },
+            Result.Result<WalletStateContext, WalletRuntimeInvariantError>,
+          ] => {
+            if (Result.isFailure(result)) {
+              return [{ next, previous: undefined }, result];
+            }
+            const context = hasSameCommandIdentity(result.success, next)
+              ? { ...result.success, core: next }
+              : makeTransitionContext({
+                  controller,
+                  core: next,
+                  current: result.success,
+                });
+            return [
+              { next, previous: context.state.connection },
+              Result.succeed(context),
+            ];
           }
-          return Exit.succeed(
-            makeTransitionContext({
-              controller,
-              core: next,
-            })
-          );
-        }).pipe(Effect.as(next))
+        )
       ),
-      Stream.switchMap((next) =>
+      Stream.switchMap(({ next, previous }) =>
         makeContextStream({
           controller,
           core: next,
+          previous,
           readStoredPublicKeys,
         })
       ),
       Stream.runForEach((context) =>
         SubscriptionRef.update(current, (result) =>
-          Exit.isFailure(result) ? result : Exit.succeed(context)
+          Result.isFailure(result) ? result : Result.succeed(context)
         )
       ),
       Effect.forkScoped({ startImmediately: true })
@@ -193,12 +218,14 @@ export const makeWalletStateRuntime = Effect.fn("makeWalletStateRuntime")(
       error: WalletRuntimeInvariantError
     ) {
       yield* SubscriptionRef.update(current, (result) =>
-        Exit.isFailure(result) ? result : Exit.fail(error)
+        Result.isFailure(result) ? result : Result.fail(error)
       );
     });
 
     return {
-      context: SubscriptionRef.get(current).pipe(Effect.flatten),
+      context: SubscriptionRef.get(current).pipe(
+        Effect.flatMap(Effect.fromResult)
+      ),
       contexts,
       failInvariant,
     };

@@ -33,7 +33,7 @@ const connectedWalletState = ({
 }: Pick<
   Extract<NormalizedWalletState, { readonly status: "connected" }>,
   "additionalAddresses" | "address"
->): NormalizedWalletState => ({
+>): Extract<NormalizedWalletState, { readonly status: "connected" }> => ({
   additionalAddresses,
   address,
   chain: {} as Chain,
@@ -191,24 +191,25 @@ describe("atom family key identity", () => {
     );
   });
 
-  it("derives connected wallet scope and represents disconnection as null", () => {
+  it("derives Wallet Scope from an available owner and represents disconnection as null", () => {
     const connected = connectedWalletState({
       additionalAddresses: null,
       address: firstAddress,
     });
+    const connecting: NormalizedWalletState = {
+      ...connected,
+      status: "connecting",
+    };
     const disconnected: NormalizedWalletState =
       disconnectedNormalizedWalletState;
 
-    expect(
-      Equal.equals(
-        walletScopeFromState(connected),
-        new WalletScopeKey({
-          additionalAddresses: null,
-          address: firstAddress,
-          network: "ethereum",
-        })
-      )
-    ).toBe(true);
+    const expected = new WalletScopeKey({
+      additionalAddresses: null,
+      address: firstAddress,
+      network: "ethereum",
+    });
+    expect(Equal.equals(walletScopeFromState(connected), expected)).toBe(true);
+    expect(Equal.equals(walletScopeFromState(connecting), expected)).toBe(true);
     expect(walletScopeFromState(disconnected)).toBeNull();
   });
 

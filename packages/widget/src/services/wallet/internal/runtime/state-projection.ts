@@ -7,9 +7,10 @@ import {
   type WalletAddress as WalletAddressType,
 } from "../../../../domain/identity/identifiers";
 import { AdditionalAddresses } from "../../../../domain/wallet/address";
+import type { WalletNetwork } from "../../../../domain/wallet/network";
+import { sameWalletScopeOwner } from "../../../../domain/wallet/wallet-scope";
 import { config } from "../../../../shared/config/widget-defaults";
 import type { StoredPublicKeys } from "../../../persistence/widget-persistence";
-import type { SKWallet } from "../../wallet-connection";
 import { isConnectorWithFilteredChains } from "../../wallet-connectors";
 import {
   disconnectedLedgerConnectorState,
@@ -43,7 +44,7 @@ const wagmiNetworkToSKNetwork = ({
   cosmosChainsMap: Partial<CosmosChainsMap>;
   miscChainsMap: Partial<MiscChainsMap>;
   substrateChainsMap: Partial<SubstrateChainsMap>;
-}): SKWallet["network"] => {
+}): WalletNetwork | null => {
   return (
     Object.values({
       ...evmChainsMap,
@@ -66,41 +67,29 @@ export type WalletStateController = {
   };
 };
 
-export const normalizeWalletState = ({
-  additionalAddresses,
-  connection,
-  connectorChains,
-  controller,
-  forceAddress,
-  ledgerState,
-}: {
+type WalletProjectionInput = {
   readonly additionalAddresses: typeof AdditionalAddresses.Type | null;
   readonly connection: WalletCoreState["connection"];
   readonly connectorChains: Chain[];
   readonly controller: WalletStateController;
   readonly forceAddress: string | undefined;
   readonly ledgerState: LedgerConnectorState;
-}): NormalizedWalletState => {
+  readonly previous?: NormalizedWalletState;
+};
+
+const decodeProjectionFacts = ({
+  additionalAddresses,
+  connection,
+  connectorChains,
+  controller,
+  forceAddress,
+  ledgerState,
+  previous,
+}: WalletProjectionInput) => {
   const isLedgerLive =
     controller.isLedgerLive ||
     !!(connection.connector && isLedgerLiveConnector(connection.connector));
   const common = { connectorChains, isLedgerLive };
-
-  if (
-    connection.status === "connecting" ||
-    connection.status === "reconnecting"
-  ) {
-    return {
-      ...disconnectedNormalizedWalletState,
-      ...common,
-      status: "connecting",
-    };
-  }
-
-  if (connection.status !== "connected") {
-    return { ...disconnectedNormalizedWalletState, ...common };
-  }
-
   const rawAddress = forceAddress || connection.address || null;
   const address = rawAddress
     ? Schema.decodeSync(WalletAddress)(rawAddress)
@@ -116,6 +105,133 @@ export const normalizeWalletState = ({
         substrateChainsMap: controller.substrateConfig.substrateChainsMap,
       })
     : null;
+
+  return {
+    additionalAddresses,
+    address,
+    chain,
+    common,
+    connector,
+    ledgerState,
+    network,
+    previous,
+  };
+};
+
+const connectingWalletState = (
+  facts: ReturnType<typeof decodeProjectionFacts>
+): NormalizedWalletState => {
+  const {
+    additionalAddresses,
+    address,
+    chain,
+    common,
+    connector,
+    ledgerState,
+    network,
+    previous,
+  } = facts;
+
+  if (chain && !network) {
+    return {
+      ...common,
+      additionalAddresses: null,
+      address,
+      chain,
+      connector,
+      isLedgerLiveAccountPlaceholder: false,
+      ledgerAccounts: null,
+      network: null,
+      status: "unsupported",
+    };
+  }
+
+  const connectingConnector = connector ?? previous?.connector ?? null;
+  if (address && chain && connectingConnector && network) {
+    const samePreviousOwner =
+      previous?.address &&
+      previous.network &&
+      sameWalletScopeOwner(previous, {
+        address,
+        network,
+      });
+    const samePreviousConnector =
+      samePreviousOwner && previous.connector?.uid === connectingConnector.uid;
+
+    return {
+      ...common,
+      additionalAddresses: samePreviousOwner
+        ? previous.additionalAddresses
+        : additionalAddresses,
+      address,
+      chain,
+      connector: connectingConnector,
+      isLedgerLiveAccountPlaceholder:
+        isLedgerLiveConnector(connectingConnector) &&
+        address === connectingConnector.noAccountPlaceholder,
+      ledgerAccounts: samePreviousConnector
+        ? (previous.ledgerAccounts ?? ledgerState.accounts)
+        : ledgerState.accounts,
+      network,
+      status: "connecting",
+    };
+  }
+
+  if (
+    previous?.address &&
+    previous.network &&
+    previous.chain &&
+    previous.connector &&
+    previous.ledgerAccounts
+  ) {
+    return {
+      ...previous,
+      ...common,
+      status: "connecting",
+    };
+  }
+
+  return {
+    ...disconnectedNormalizedWalletState,
+    ...common,
+    status: "connecting",
+  };
+};
+
+export const normalizeWalletState = (
+  input: WalletProjectionInput
+): NormalizedWalletState => {
+  const { connection } = input;
+  const isLedgerLive =
+    input.controller.isLedgerLive ||
+    !!(connection.connector && isLedgerLiveConnector(connection.connector));
+  const common = { connectorChains: input.connectorChains, isLedgerLive };
+
+  if (
+    connection.status !== "connected" &&
+    connection.status !== "connecting" &&
+    connection.status !== "reconnecting"
+  ) {
+    return { ...disconnectedNormalizedWalletState, ...common };
+  }
+
+  const facts = decodeProjectionFacts(input);
+
+  if (
+    connection.status === "connecting" ||
+    connection.status === "reconnecting"
+  ) {
+    return connectingWalletState(facts);
+  }
+
+  const {
+    additionalAddresses,
+    address,
+    chain,
+    connector,
+    ledgerState,
+    network,
+  } = facts;
 
   if (!network) {
     return {
@@ -152,6 +268,16 @@ export const normalizeWalletState = ({
     network,
     status: "connected",
   };
+};
+
+export const transitionalWalletState = (
+  input: WalletProjectionInput
+): NormalizedWalletState => {
+  if (input.connection.status === "disconnected") {
+    return normalizeWalletState(input);
+  }
+
+  return connectingWalletState(decodeProjectionFacts(input));
 };
 
 const makeConnectorChainsStream = ({
@@ -284,10 +410,12 @@ const recoverWalletStateSlice = <A>(slice: string, fallback: A) =>
 
 export const makeCompleteWalletStateStream = ({
   controller,
+  previous,
   projection,
   readStoredPublicKeys,
 }: {
   readonly controller: WalletController;
+  readonly previous?: NormalizedWalletState;
   readonly projection: WalletCoreState;
   readonly readStoredPublicKeys: Effect.Effect<StoredPublicKeys, unknown>;
 }): Stream.Stream<CompleteWalletState> => {
@@ -325,6 +453,7 @@ export const makeCompleteWalletStateStream = ({
               controller,
               forceAddress: config.env.forceAddress,
               ledgerState: ledger,
+              previous,
             });
 
             return {

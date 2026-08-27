@@ -36,7 +36,7 @@ const useTestWallet = () => {
   const wallet = useSKWallet();
   const signTransaction = useAtomSet(signTransactionAtom, { mode: "promise" });
 
-  return { ...wallet, signTransaction };
+  return { signTransaction, wallet };
 };
 
 const renderHookWithExternalProvider = (
@@ -73,11 +73,7 @@ const waitForWalletConnection = (
 ) =>
   wallet.act(async () => {
     await expect
-      .poll(
-        () =>
-          !wallet.result.current.isConnecting &&
-          wallet.result.current.isConnected
-      )
+      .poll(() => wallet.result.current.wallet?.status === "connected")
       .toBe(true);
   });
 

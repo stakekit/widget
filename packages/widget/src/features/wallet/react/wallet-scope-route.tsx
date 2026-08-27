@@ -1,7 +1,4 @@
 import { useAtomValue } from "@effect/atom-react";
-import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import type * as Atom from "effect/unstable/reactivity/Atom";
 import { createContext, useContext, useState } from "react";
 import { Navigate, Outlet } from "react-router";
 import {
@@ -9,33 +6,24 @@ import {
   type WalletScopeKey,
 } from "../../../domain/wallet/wallet-scope";
 import { walletScopeFromState } from "../../../services/wallet/wallet-scope-adapter";
-import { currentWalletStateResultAtom } from "../state/root-atom";
+import type { NormalizedWalletState } from "../../../services/wallet/wallet-state";
+import { currentWalletStateAtom } from "../state/selectors";
 
 const WalletScopeRouteContext = createContext<WalletScopeKey | null>(null);
 
-type WalletStateResult = Atom.Type<typeof currentWalletStateResultAtom>;
-
 export const WalletScopeRoute = ({
   fallbackPath,
-  walletStateResult,
+  walletState,
 }: {
   readonly fallbackPath: string;
-  readonly walletStateResult: WalletStateResult;
+  readonly walletState: NormalizedWalletState;
 }) => {
-  const walletState = walletStateResult.pipe(
-    AsyncResult.value,
-    Option.getOrNull
-  );
-  const walletScope = walletState ? walletScopeFromState(walletState) : null;
+  const walletScope = walletScopeFromState(walletState);
   const [initialWalletScope, setInitialWalletScope] =
     useState<WalletScopeKey | null>(null);
 
   if (walletScope !== null && initialWalletScope === null) {
     setInitialWalletScope(walletScope);
-  }
-
-  if (walletStateResult.waiting && !walletScope) {
-    return null;
   }
 
   if (
@@ -58,13 +46,10 @@ export const WalletScopeRouteGuard = ({
 }: {
   readonly fallbackPath: string;
 }) => {
-  const walletStateResult = useAtomValue(currentWalletStateResultAtom);
+  const walletState = useAtomValue(currentWalletStateAtom);
 
   return (
-    <WalletScopeRoute
-      fallbackPath={fallbackPath}
-      walletStateResult={walletStateResult}
-    />
+    <WalletScopeRoute fallbackPath={fallbackPath} walletState={walletState} />
   );
 };
 

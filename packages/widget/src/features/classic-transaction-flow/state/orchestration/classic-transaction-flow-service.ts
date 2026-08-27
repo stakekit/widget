@@ -122,19 +122,22 @@ const makeClassicTransactionFlowService = Effect.fn(
       input,
       currentWalletScope
     );
-    const epoch = yield* Ref.getAndUpdate(nextEpochRef, (next) => next + 1);
-    const session: ClassicFlowSession = { ...resolved.session, epoch };
-    yield* SubscriptionRef.set(stateRef, session);
+    return yield* Effect.uninterruptible(
+      Effect.gen(function* () {
+        const epoch = yield* Ref.getAndUpdate(nextEpochRef, (next) => next + 1);
+        const session: ClassicFlowSession = { ...resolved.session, epoch };
+        yield* SubscriptionRef.set(stateRef, session);
 
-    if (resolved.navigation) {
-      const rollback = clearCurrent(session).pipe(Effect.asVoid);
-      yield* navigation.execute(resolved.navigation).pipe(
-        Effect.tapError(() => rollback),
-        Effect.onInterrupt(() => rollback)
-      );
-    }
+        if (resolved.navigation) {
+          const rollback = clearCurrent(session).pipe(Effect.asVoid);
+          yield* navigation
+            .execute(resolved.navigation)
+            .pipe(Effect.tapError(() => rollback));
+        }
 
-    return { _tag: "Started", session } as const;
+        return { _tag: "Started", session } as const;
+      })
+    );
   });
 
   const abandonActivityResumeOpen = Effect.fn(

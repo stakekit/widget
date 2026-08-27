@@ -48,19 +48,31 @@ const address = Schema.decodeSync(WalletAddress)(
 );
 const walletScope = new WalletScopeKey({ address, network: "ethereum" });
 
+const connectedWalletConnection = (
+  scope: WalletScopeKey
+): Extract<NormalizedWalletState, { readonly status: "connected" }> => ({
+  additionalAddresses: scope.additionalAddresses,
+  address: scope.address,
+  chain: {} as never,
+  connector: {} as never,
+  connectorChains: [],
+  isLedgerLive: false,
+  isLedgerLiveAccountPlaceholder: false,
+  ledgerAccounts: [],
+  network: scope.network,
+  status: "connected",
+});
+
 const connectedWalletState = (scope: WalletScopeKey): WalletState => ({
+  connection: connectedWalletConnection(scope),
+  ledger: disconnectedLedgerConnectorState,
+});
+
+const connectingWalletState = (scope: WalletScopeKey): WalletState => ({
   connection: {
-    additionalAddresses: scope.additionalAddresses,
-    address: scope.address,
-    chain: {} as never,
-    connector: {} as never,
-    connectorChains: [],
-    isLedgerLive: false,
-    isLedgerLiveAccountPlaceholder: false,
-    ledgerAccounts: [],
-    network: scope.network,
-    status: "connected",
-  } satisfies NormalizedWalletState,
+    ...connectedWalletConnection(scope),
+    status: "connecting",
+  },
   ledger: disconnectedLedgerConnectorState,
 });
 
@@ -279,10 +291,61 @@ describe("ClassicTransactionFlowService", () => {
     ]);
   });
 
+  it("finishes a committed Start when its caller is interrupted during navigation", async () => {
+    const navigationStarted = await Effect.runPromise(Deferred.make<void>());
+    const navigationRelease = await Effect.runPromise(Deferred.make<void>());
+    const walletState = await Effect.runPromise(
+      SubscriptionRef.make(connectedWalletState(walletScope))
+    );
+
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const service = yield* ClassicTransactionFlowService;
+          const start = yield* startEnter(service).pipe(
+            Effect.forkChild({ startImmediately: true })
+          );
+          yield* Deferred.await(navigationStarted);
+          const interrupt = yield* Fiber.interrupt(start).pipe(
+            Effect.forkChild({ startImmediately: true })
+          );
+          yield* Effect.yieldNow;
+          const duringInterrupt = yield* service.currentSession.pipe(
+            Stream.runHead
+          );
+          yield* Deferred.succeed(navigationRelease, undefined);
+          yield* Fiber.join(interrupt);
+          const afterNavigation = yield* service.currentSession.pipe(
+            Stream.runHead
+          );
+          return { afterNavigation, duringInterrupt };
+        })
+      ).pipe(
+        Effect.provide(
+          makeServiceLayer(walletState, {
+            execute: () =>
+              Deferred.succeed(navigationStarted, undefined).pipe(
+                Effect.andThen(Deferred.await(navigationRelease))
+              ),
+          })
+        )
+      )
+    );
+
+    expect(result.duringInterrupt).toMatchObject({
+      _tag: "Some",
+      value: { epoch: 1 },
+    });
+    expect(result.afterNavigation).toMatchObject({
+      _tag: "Some",
+      value: { epoch: 1 },
+    });
+  });
+
   it("creates a fresh Session for every explicit Start with equal intake", async () => {
     const commands: Array<WidgetNavigationCommand> = [];
     const walletState = await Effect.runPromise(
-      SubscriptionRef.make(connectedWalletState(walletScope))
+      SubscriptionRef.make<WalletState>(connectingWalletState(walletScope))
     );
     const input = {
       intake: makeEnterIntake(),
@@ -350,6 +413,11 @@ describe("ClassicTransactionFlowService", () => {
           if (started._tag !== "Started") {
             return yield* Effect.die("Expected a started Session");
           }
+          yield* SubscriptionRef.set(
+            walletState,
+            connectingWalletState(walletScope)
+          );
+          const retained = yield* service.currentSession.pipe(Stream.runHead);
           const invalidated = yield* service.currentSession.pipe(
             Stream.filter((session) => session === null),
             Stream.runHead,
@@ -359,14 +427,22 @@ describe("ClassicTransactionFlowService", () => {
             walletState,
             connectedWalletState(otherScope)
           );
-          return { invalidated: yield* Fiber.join(invalidated), rejected };
+          return {
+            invalidated: yield* Fiber.join(invalidated),
+            rejected,
+            retained,
+          };
         })
       ).pipe(Effect.provide(makeServiceLayer(walletState, { execute })))
     );
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       invalidated: Option.some(null),
       rejected: { _tag: "RejectedOwner" },
+      retained: {
+        _tag: "Some",
+        value: { epoch: 1 },
+      },
     });
     expect(execute).toHaveBeenCalledOnce();
   });
@@ -1272,7 +1348,7 @@ describe("ClassicTransactionFlowService", () => {
     });
   });
 
-  it("interrupts an in-flight Review operation and rolls back its reservation when the Review Scope closes", async () => {
+  it("keeps a committed execution reservation when the Review Scope closes during navigation", async () => {
     const navigationStarted = await Effect.runPromise(Deferred.make<void>());
     const navigationRelease = await Effect.runPromise(Deferred.make<void>());
     const walletState = await Effect.runPromise(
@@ -1294,11 +1370,14 @@ describe("ClassicTransactionFlowService", () => {
           );
           const confirmation = yield* review.confirm().pipe(Effect.forkChild);
           yield* Deferred.await(navigationStarted);
-          yield* Scope.close(reviewScope, Exit.void);
-          const confirmationExit = yield* Fiber.await(confirmation);
-          const execution = yield* acquired.session.acquireExecution();
+          const close = yield* Scope.close(reviewScope, Exit.void).pipe(
+            Effect.forkChild({ startImmediately: true })
+          );
+          yield* Effect.yieldNow;
           yield* Deferred.succeed(navigationRelease, undefined);
-          return { confirmationExit, execution };
+          yield* Fiber.join(close);
+          yield* Fiber.await(confirmation);
+          return yield* acquired.session.acquireExecution();
         })
       ).pipe(
         Effect.provide(
@@ -1314,8 +1393,7 @@ describe("ClassicTransactionFlowService", () => {
       )
     );
 
-    expect(Exit.hasInterrupts(result.confirmationExit)).toBe(true);
-    expect(result.execution).toEqual({ _tag: "RejectedNoReservation" });
+    expect(result._tag).toBe("Acquired");
   });
 
   it("navigates an already-complete Activity execution with its transaction summary", async () => {

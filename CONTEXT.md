@@ -68,8 +68,9 @@ Wallet Bootstrap.
 **Wallet State**: The authoritative current connection, account, network, and
 connector details owned by the wallet service.
 
-**Wallet Scope**: An immutable execution snapshot of the connected network,
-primary address, and relevant additional addresses.
+**Wallet Scope**: An immutable execution snapshot of a Wallet Scope Owner and
+relevant additional addresses. It can remain available while Wallet State is
+connecting.
 
 **Wallet Scope Owner**: A Wallet Scope's network and primary address. EVM
 addresses compare case-insensitively; additional addresses are not owner

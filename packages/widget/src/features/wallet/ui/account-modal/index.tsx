@@ -17,7 +17,8 @@ import { avatarContainer, container, titleStyle } from "./styles.css";
 export const AccountModal = () => {
   const trackEvent = useTrackEvent();
 
-  const { address } = useSKWallet();
+  const wallet = useSKWallet();
+  const address = wallet?.network ? wallet.address : null;
 
   const variant = useWidgetConfig("variant");
 

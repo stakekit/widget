@@ -33,6 +33,7 @@ import type { WalletCoreState } from "../../../src/services/wallet/wallet-state"
 import { makeWalletTestController } from "./wallet-test-controller";
 
 const address = "0x0000000000000000000000000000000000000001";
+const nextAddress = "0x0000000000000000000000000000000000000002";
 
 const disconnectedConnection = {
   address: undefined,
@@ -61,6 +62,13 @@ const connectedConnection = (
   isReconnecting: false,
   status: "connected",
 });
+
+const reconnectingConnection = {
+  ...disconnectedConnection,
+  isDisconnected: false,
+  isReconnecting: true,
+  status: "reconnecting",
+} as const satisfies WalletCoreState["connection"];
 
 const makeController = (
   wagmiConfig: ReturnType<typeof makeDefaultConfig>,
@@ -295,10 +303,128 @@ describe("WalletService authoritative Wallet State", () => {
       )
     );
 
-    expect(result.whileEnriching.state.connection.status).toBe("connecting");
+    expect(result.whileEnriching.state.connection).toMatchObject({
+      address,
+      chain: mainnet,
+      connector,
+      network: "ethereum",
+      status: "connecting",
+    });
     expect(result.connected.state.connection).toMatchObject({
       connectorChains: [optimism],
       status: "connected",
+    });
+  });
+
+  it("keeps the last Wallet Scope Owner through a reconnect gap", async () => {
+    const connector = {
+      id: "stable",
+      name: "Stable",
+      type: "injected",
+      uid: "stable-uid",
+    } as unknown as Connector;
+    const controller = makeController(makeDefaultConfig());
+    const core = await Effect.runPromise(
+      SubscriptionRef.make<WalletCoreState>({
+        connection: connectedConnection(connector),
+        connectors: [connector],
+      })
+    );
+
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const state = yield* makeWalletStateRuntime({
+            controller: controller as WalletController,
+            core: {
+              current: SubscriptionRef.get(core),
+              states: SubscriptionRef.changes(core),
+            },
+            readStoredPublicKeys: Effect.succeed({}),
+          });
+          const connecting = yield* state.contexts.pipe(
+            Stream.filter(
+              (context) => context.state.connection.status === "connecting"
+            ),
+            Stream.runHead,
+            Effect.map(Option.getOrThrow),
+            Effect.forkChild({ startImmediately: true })
+          );
+          yield* SubscriptionRef.set(core, {
+            connection: reconnectingConnection,
+            connectors: [connector],
+          });
+          return yield* Fiber.join(connecting);
+        })
+      )
+    );
+
+    expect(result.state.connection).toMatchObject({
+      address,
+      chain: mainnet,
+      connector,
+      network: "ethereum",
+      status: "connecting",
+    });
+  });
+
+  it("publishes a new Wallet Scope Owner before connector enrichment completes", async () => {
+    const connector = {
+      id: "stable",
+      name: "Stable",
+      type: "injected",
+      uid: "stable-uid",
+    } as unknown as Connector;
+    const controller = makeController(makeDefaultConfig());
+    const core = await Effect.runPromise(
+      SubscriptionRef.make<WalletCoreState>({
+        connection: connectedConnection(connector),
+        connectors: [connector],
+      })
+    );
+
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const state = yield* makeWalletStateRuntime({
+            controller: controller as WalletController,
+            core: {
+              current: SubscriptionRef.get(core),
+              states: SubscriptionRef.changes(core),
+            },
+            readStoredPublicKeys: Effect.succeed({}),
+          });
+          const changed = yield* state.contexts.pipe(
+            Stream.filter(
+              (context) =>
+                context.state.connection.status === "connecting" &&
+                context.state.connection.address === nextAddress
+            ),
+            Stream.runHead,
+            Effect.map(Option.getOrThrow),
+            Effect.forkChild({ startImmediately: true })
+          );
+          yield* SubscriptionRef.set(core, {
+            connection: {
+              ...reconnectingConnection,
+              address: nextAddress,
+              addresses: [nextAddress],
+              chain: mainnet,
+              chainId: mainnet.id,
+            },
+            connectors: [connector],
+          });
+          return yield* Fiber.join(changed);
+        })
+      )
+    );
+
+    expect(result.state.connection).toMatchObject({
+      address: nextAddress,
+      chain: mainnet,
+      connector,
+      network: "ethereum",
+      status: "connecting",
     });
   });
 

@@ -14,7 +14,8 @@ export const ChainModal = () => {
 
   const { t } = useTranslation();
 
-  const { chain: skChain } = useSKWallet();
+  const wallet = useSKWallet();
+  const skChain = wallet?.network ? wallet.chain : null;
 
   const variant = useWidgetConfig("variant");
 

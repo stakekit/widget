@@ -1,6 +1,5 @@
 import { RegistryProvider, useAtomSet } from "@effect/atom-react";
 import { Effect, Layer, Schema, Stream } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { act, useEffect } from "react";
 import {
   MemoryRouter,
@@ -186,7 +185,7 @@ const TestApp = ({
           element={
             <WalletScopeRoute
               fallbackPath="/"
-              walletStateResult={AsyncResult.success(connectedWalletState)}
+              walletState={connectedWalletState}
             />
           }
         >

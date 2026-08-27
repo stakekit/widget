@@ -17,7 +17,7 @@ export const useComplete = () => {
   const session = useClassicFlowSession();
   const finish = useAtomSet(execution.finishAtom);
 
-  const { isLedgerLive } = useSKWallet();
+  const isLedgerLive = useSKWallet()?.isLedgerLive ?? false;
 
   const urls: {
     type: TransactionType;

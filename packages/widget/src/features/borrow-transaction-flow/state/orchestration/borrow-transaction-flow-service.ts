@@ -118,23 +118,26 @@ const makeBorrowTransactionFlowService = Effect.fn(
       return { _tag: "RejectedOwner" } as const;
     }
 
-    const epoch = yield* Ref.getAndUpdate(nextEpochRef, (next) => next + 1);
-    const session: BorrowFlowSession = {
-      epoch,
-      intake: { ...intake },
-      walletScope: new WalletScopeKey(walletScope),
-    };
-    yield* SubscriptionRef.set(stateRef, session);
-    const rollback = clearCurrent(session).pipe(Effect.asVoid);
-    yield* navigation
-      .execute({
-        _tag: "Push",
-        path: getBorrowTransactionFlowRoutes(session.intake.entry).reviewPath,
+    const session = yield* Effect.uninterruptible(
+      Effect.gen(function* () {
+        const epoch = yield* Ref.getAndUpdate(nextEpochRef, (next) => next + 1);
+        const session: BorrowFlowSession = {
+          epoch,
+          intake: { ...intake },
+          walletScope: new WalletScopeKey(walletScope),
+        };
+        yield* SubscriptionRef.set(stateRef, session);
+        const rollback = clearCurrent(session).pipe(Effect.asVoid);
+        yield* navigation
+          .execute({
+            _tag: "Push",
+            path: getBorrowTransactionFlowRoutes(session.intake.entry)
+              .reviewPath,
+          })
+          .pipe(Effect.tapError(() => rollback));
+        return session;
       })
-      .pipe(
-        Effect.tapError(() => rollback),
-        Effect.onInterrupt(() => rollback)
-      );
+    );
     const trackingProperties = getBorrowReviewTrackingProperties(
       session.intake
     );

@@ -4,7 +4,7 @@ import type { NormalizedWalletState } from "./wallet-state";
 export const walletScopeFromState = (
   state: NormalizedWalletState
 ): WalletScopeKey | null =>
-  state.status === "connected"
+  state.address && state.network
     ? new WalletScopeKey({
         additionalAddresses: state.additionalAddresses,
         address: state.address,

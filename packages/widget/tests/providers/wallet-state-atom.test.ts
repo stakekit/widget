@@ -5,6 +5,7 @@ import type { Connector } from "wagmi";
 import { evmChainsMap } from "../../src/services/wallet/internal/adapters/evm/chains";
 import {
   normalizeWalletState,
+  transitionalWalletState,
   type WalletStateController,
 } from "../../src/services/wallet/internal/runtime/state-projection";
 import type { WalletCoreState } from "../../src/services/wallet/wallet-state";
@@ -148,5 +149,25 @@ describe("normalized wallet state atom", () => {
       isLedgerLiveAccountPlaceholder: true,
       status: "connected",
     });
+  });
+
+  it("projects command-identity overlays as connecting without treating Wagmi connected as settled", () => {
+    const overlay = transitionalWalletState({
+      additionalAddresses: null,
+      connection: connected,
+      connectorChains: [mainnet],
+      controller,
+      forceAddress: undefined,
+      ledgerState: disconnectedLedgerConnectorState,
+    });
+
+    expect(overlay).toMatchObject({
+      address,
+      chain: mainnet,
+      connector,
+      network: "ethereum",
+      status: "connecting",
+    });
+    expect(normalize(connected).status).toBe("connected");
   });
 });

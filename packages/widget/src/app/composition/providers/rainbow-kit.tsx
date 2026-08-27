@@ -32,7 +32,9 @@ const finalTheme: ConnectKitTheme = {
 export const RainbowKitProviderWithTheme = ({
   children,
 }: PropsWithChildren) => {
-  const { connector, connectorChains } = useSKWallet();
+  const wallet = useSKWallet();
+  const connector = wallet?.network ? wallet.connector : null;
+  const connectorChains = wallet?.connectorChains ?? [];
 
   const portalContainer = useWidgetConfig("portalContainer");
 

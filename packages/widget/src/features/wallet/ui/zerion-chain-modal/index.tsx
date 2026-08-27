@@ -8,7 +8,10 @@ export const ZerionChainModal = () => {
   const variant = useWidgetConfig("variant");
   const chainModal = useWidgetConfig("chainModal");
 
-  const { connectorChains, connector, chain } = useSKWallet();
+  const wallet = useSKWallet();
+  const connectorChains = wallet?.connectorChains ?? [];
+  const connector = wallet?.connector;
+  const chain = wallet?.chain;
 
   const chainIds = useMemo(
     () => connectorChains.map((c) => c.id),
@@ -23,7 +26,14 @@ export const ZerionChainModal = () => {
     >[0]["onSwitchChain"]
   >((chainId) => switchChain?.({ chainId }), [switchChain]);
 
-  if (variant !== "zerion" || !chainModal || !switchChain || !connector) {
+  if (
+    variant !== "zerion" ||
+    !chainModal ||
+    !switchChain ||
+    !connector ||
+    !chain ||
+    !wallet?.network
+  ) {
     return null;
   }
 

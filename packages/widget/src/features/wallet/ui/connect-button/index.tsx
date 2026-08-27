@@ -10,7 +10,10 @@ import { addLedgerAccountAtom } from "../../state/workflows";
 export const ConnectButton = (props: ComponentProps<typeof Button>) => {
   const { t } = useTranslation();
 
-  const { isLedgerLiveAccountPlaceholder, chain } = useSKWallet();
+  const wallet = useSKWallet();
+  const isLedgerLiveAccountPlaceholder =
+    wallet?.isLedgerLiveAccountPlaceholder ?? false;
+  const chain = wallet?.chain;
   const addLedgerAccount = useAtomSet(addLedgerAccountAtom);
 
   const { openConnectModal } = useConnectModal();

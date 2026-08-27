@@ -12,7 +12,7 @@ export const usePositions = () => {
     positionsResult,
     (): PositionItem[] => []
   );
-  const { isConnected } = useSKWallet();
+  const isConnected = useSKWallet()?.status === "connected";
   const showPositions =
     isConnected &&
     (positions.length > 0 ||

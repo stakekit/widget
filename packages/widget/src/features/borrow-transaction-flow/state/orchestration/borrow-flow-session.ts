@@ -101,16 +101,19 @@ export const makeBorrowFlowSessionFactory = Effect.fn(
             }
 
             const action = yield* createAction;
-            yield* Ref.set(executionActionRef, action);
-            const rollback = Ref.modify(executionActionRef, (reserved) =>
-              reserved === action ? [undefined, null] : [undefined, reserved]
-            );
-            yield* commitTransition({
-              _tag: "Push",
-              path: paths.stepsPath,
-            }).pipe(
-              Effect.tapError(() => rollback),
-              Effect.onInterrupt(() => rollback)
+            yield* Effect.uninterruptible(
+              Effect.gen(function* () {
+                yield* Ref.set(executionActionRef, action);
+                const rollback = Ref.modify(executionActionRef, (reserved) =>
+                  reserved === action
+                    ? [undefined, null]
+                    : [undefined, reserved]
+                );
+                yield* commitTransition({
+                  _tag: "Push",
+                  path: paths.stepsPath,
+                }).pipe(Effect.tapError(() => rollback));
+              })
             );
             return { _tag: "Confirmed" } as const;
           })

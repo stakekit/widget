@@ -123,22 +123,23 @@ export const makeClassicFlowSessionFactory = Effect.fn(
             return { _tag: "RejectedAlreadyReserved" } as const;
           }
 
-          yield* Ref.set(executionActionRef, action);
-          const rollback = Ref.modify(executionActionRef, (reserved) =>
-            reserved === action ? [undefined, null] : [undefined, reserved]
-          );
-          yield* Effect.all(
-            [
-              navigation.execute({
-                _tag: "Push",
-                path: session.destination.stepsPath,
-              }),
-              Effect.uninterruptible(afterReservation),
-            ],
-            { concurrency: "unbounded", discard: true }
-          ).pipe(
-            Effect.tapError(() => rollback),
-            Effect.onInterrupt(() => rollback)
+          yield* Effect.uninterruptible(
+            Effect.gen(function* () {
+              yield* Ref.set(executionActionRef, action);
+              const rollback = Ref.modify(executionActionRef, (reserved) =>
+                reserved === action ? [undefined, null] : [undefined, reserved]
+              );
+              yield* Effect.all(
+                [
+                  navigation.execute({
+                    _tag: "Push",
+                    path: session.destination.stepsPath,
+                  }),
+                  afterReservation,
+                ],
+                { concurrency: "unbounded", discard: true }
+              ).pipe(Effect.tapError(() => rollback));
+            })
           );
           return { _tag: "Promoted" } as const;
         })

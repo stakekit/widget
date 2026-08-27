@@ -23,7 +23,10 @@ export const useHeader = () => {
     "hideAccountAndChainSelector"
   );
 
-  const { isConnected, isConnecting, connector } = useSKWallet();
+  const wallet = useSKWallet();
+  const isConnected = wallet?.status === "connected";
+  const isConnecting = wallet?.status === "connecting";
+  const connector = wallet?.network ? wallet.connector : null;
 
   const showDisconnect = useMemo(
     () => (connector ? shouldShowDisconnect(connector) : false),

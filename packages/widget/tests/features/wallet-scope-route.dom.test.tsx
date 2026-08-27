@@ -1,5 +1,4 @@
 import { Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { act, createContext, useContext, useState } from "react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import type { Chain } from "viem";
@@ -23,7 +22,7 @@ const connectedWalletState = ({
     { readonly status: "connected" }
   >["additionalAddresses"];
   readonly address?: typeof WalletAddress.Type;
-} = {}): NormalizedWalletState => ({
+} = {}): Extract<NormalizedWalletState, { readonly status: "connected" }> => ({
   additionalAddresses,
   address,
   chain: {} as Chain,
@@ -65,25 +64,23 @@ const WalletScopeReplacement = ({
 };
 
 const TestRouter = ({
-  initialResult,
+  initialState,
   replacement,
 }: {
-  readonly initialResult: AsyncResult.AsyncResult<NormalizedWalletState, never>;
+  readonly initialState: NormalizedWalletState;
   readonly replacement?: NormalizedWalletState;
 }) => {
-  const [result, setResult] = useState(initialResult);
+  const [walletState, setWalletState] = useState(initialState);
 
   return (
-    <ReplaceWalletContext.Provider
-      value={(state) => setResult(AsyncResult.success(state))}
-    >
+    <ReplaceWalletContext.Provider value={setWalletState}>
       <MemoryRouter initialEntries={["/protected"]}>
         <Routes>
           <Route
             element={
               <WalletScopeRoute
                 fallbackPath="/safe"
-                walletStateResult={result}
+                walletState={walletState}
               />
             }
           >
@@ -107,13 +104,13 @@ const TestRouter = ({
 };
 
 const renderRoute = (
-  result: AsyncResult.AsyncResult<NormalizedWalletState, never>,
+  state: NormalizedWalletState,
   replacement?: NormalizedWalletState
-) => render(<TestRouter initialResult={result} replacement={replacement} />);
+) => render(<TestRouter initialState={state} replacement={replacement} />);
 
 describe("wallet scope route", () => {
   it("provides a concrete wallet scope to protected content", async () => {
-    const app = await renderRoute(AsyncResult.success(connectedWalletState()));
+    const app = await renderRoute(connectedWalletState());
 
     expect(
       app.container.querySelector('[data-testid="scope"]')?.textContent
@@ -121,9 +118,7 @@ describe("wallet scope route", () => {
   });
 
   it("redirects a disconnected wallet to the route fallback", async () => {
-    const app = await renderRoute(
-      AsyncResult.success(disconnectedNormalizedWalletState)
-    );
+    const app = await renderRoute(disconnectedNormalizedWalletState);
 
     await vi.waitFor(() => {
       expect(
@@ -132,19 +127,9 @@ describe("wallet scope route", () => {
     });
   });
 
-  it("waits while the wallet scope is resolving", async () => {
-    const app = await renderRoute(
-      AsyncResult.waiting(
-        AsyncResult.success(disconnectedNormalizedWalletState)
-      )
-    );
-
-    expect(app.container.textContent).toBe("");
-  });
-
   it("redirects when the wallet owner changes", async () => {
     const app = await renderRoute(
-      AsyncResult.success(connectedWalletState()),
+      connectedWalletState(),
       connectedWalletState({ address: secondAddress })
     );
 
@@ -160,9 +145,28 @@ describe("wallet scope route", () => {
     });
   });
 
+  it("keeps the route mounted while the same Wallet Scope Owner is connecting", async () => {
+    const connected = connectedWalletState();
+    const app = await renderRoute(connected, {
+      ...connected,
+      status: "connecting",
+    });
+
+    await act(async () => {
+      app.container
+        .querySelector<HTMLButtonElement>('[data-testid="replace-wallet"]')
+        ?.click();
+    });
+
+    expect(
+      app.container.querySelector('[data-testid="scope"]')?.textContent
+    ).toBe(firstAddress);
+    expect(app.container.querySelector('[data-testid="safe"]')).toBeNull();
+  });
+
   it("keeps the route mounted when additional addresses refresh", async () => {
     const app = await renderRoute(
-      AsyncResult.success(connectedWalletState()),
+      connectedWalletState(),
       connectedWalletState({
         additionalAddresses: { binanceBeaconAddress: "bnb-refreshed" },
       })

@@ -1,6 +1,5 @@
 import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Effect, Layer, Schema, Stream, SubscriptionRef } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { HttpResponse, http } from "msw";
 import { act, useEffect, useState } from "react";
 import {
@@ -293,10 +292,7 @@ const FlowRoutes = ({
         <Route path="/" element={<StartPage />} />
         <Route
           element={
-            <WalletScopeRoute
-              fallbackPath="/"
-              walletStateResult={AsyncResult.success(walletState)}
-            />
+            <WalletScopeRoute fallbackPath="/" walletState={walletState} />
           }
         >
           <Route element={<ClassicFlowRoute expected="Enter" />}>

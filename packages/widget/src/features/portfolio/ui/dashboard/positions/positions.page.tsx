@@ -24,7 +24,9 @@ export const PositionsPage = () => {
   const { positions, positionsResult, showPositions } = usePositions();
   const variant = useWidgetConfig("variant");
   const borrowPositions = usePortfolioBorrowPositions();
-  const { isConnected, isConnecting } = useSKWallet();
+  const wallet = useSKWallet();
+  const isConnected = wallet?.status === "connected";
+  const isConnecting = wallet === null || wallet.status === "connecting";
   const manageState = getUnifiedManagePositionsState({
     borrowPositionsResult: borrowPositions.positionsResult,
     borrowWalletIsConnected:
