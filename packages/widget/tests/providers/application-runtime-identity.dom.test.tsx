@@ -143,11 +143,11 @@ const RuntimeHarness = ({
 
 const activityIntake = (): Extract<
   ClassicTransactionFlowIntake,
-  { readonly _tag: "ActivityResume" }
+  { readonly _tag: "YieldActionContinuation" }
 > => {
   const selectedYield = yieldApiYieldFixture();
   return {
-    _tag: "ActivityResume",
+    _tag: "YieldActionContinuation",
     action: yieldApiActionFixture(),
     providersDetails: [],
     selectedValidators: [],
@@ -195,7 +195,7 @@ const ClassicFlowRuntimeHarness = () => {
     ],
   ]);
   const sessionPresent = useAtomValue(
-    isActiveClassicTransactionFlowPathAtom("/activity/review")
+    isActiveClassicTransactionFlowPathAtom(`/activity/${intake.action.id}`)
   );
   const start = useAtomSet(startClassicTransactionFlowAtom);
 
@@ -210,9 +210,7 @@ const ClassicFlowRuntimeHarness = () => {
           start({
             intake,
             mount: {
-              _tag: "ActivityResume",
-              presentation: "Classic",
-              target: "FreshReview",
+              _tag: "YieldActionContinuation",
             },
           })
         }

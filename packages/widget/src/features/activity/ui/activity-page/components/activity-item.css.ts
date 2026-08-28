@@ -1,19 +1,36 @@
 import { style } from "@vanilla-extract/css";
 import { atoms } from "../../../../../shared/styles/theme/atoms.css";
-import { widgetContainerName } from "../../../../../shared/styles/tokens/containers.css";
+import { vars } from "../../../../../shared/styles/theme/contract.css";
+import {
+  activityFeedContainerName,
+  widgetContainerName,
+} from "../../../../../shared/styles/tokens/containers.css";
 
-export const failedBadge = style([
+export const statusBadge = style([
   atoms({
     background: "positionsActionRequiredBackground",
     borderRadius: "base",
   }),
-  { padding: "2px 4px" },
+  { flexShrink: 0, padding: "2px 4px" },
+]);
+
+export const completedStatusBadge = style([
+  atoms({ borderRadius: "base" }),
+  {
+    background: "color-mix(in srgb, currentColor 12%, transparent)",
+    flexShrink: 0,
+    padding: "2px 4px",
+  },
 ]);
 
 export const listItem = style([
   atoms({ gap: "1" }),
   { flexDirection: "column" },
 ]);
+
+export const listItemSelected = style({
+  background: vars.color.tokenSelectHoverBackground,
+});
 
 export const iconCircle = style([
   atoms({ background: "background" }),
@@ -34,22 +51,40 @@ export const infoColumn = style({
   flexDirection: "column",
   justifyContent: "center",
   alignItems: "flex-start",
+  gap: "2px",
   minWidth: 0,
+});
+
+export const metaRow = style({
+  alignItems: "center",
+  display: "flex",
+  gap: "8px",
+  minWidth: 0,
+  width: "100%",
 });
 
 export const titleText = style([
   atoms({ fontWeight: "medium" }),
-  { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  {
+    maxWidth: "100%",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
 ]);
 
 export const viaText = style({
-  textOverflow: "ellipsis",
+  minWidth: 0,
   overflow: "hidden",
+  textOverflow: "ellipsis",
   whiteSpace: "nowrap",
 });
 
-const hideInWidget = style({
+const hideWhenNarrow = style({
   "@container": {
+    [`${activityFeedContainerName} (max-width: 400px)`]: {
+      display: "none",
+    },
     [`${widgetContainerName} (max-width: 400px)`]: {
       display: "none",
     },
@@ -57,13 +92,13 @@ const hideInWidget = style({
 });
 
 export const amountPositive = style([
-  hideInWidget,
+  hideWhenNarrow,
   atoms({ color: "positionsRewardRate", fontWeight: "medium" }),
   { whiteSpace: "nowrap" },
 ]);
 
 export const amountNeutral = style([
-  hideInWidget,
+  hideWhenNarrow,
   atoms({ color: "text", fontWeight: "medium" }),
   { whiteSpace: "nowrap" },
 ]);

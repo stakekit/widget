@@ -5,8 +5,10 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { ActivityActionsPage } from "../../src/domain/activity/models";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
-import { activityActionsPullAtom } from "../../src/features/activity/state/read-models/activity-feed";
-import { ActivityActionsKey } from "../../src/features/activity/state/read-models/activity-request";
+import {
+  ActivityActionsKey,
+  activityActionsPullAtom,
+} from "../../src/features/activity/state/page-resources";
 import { YieldResourceSource } from "../../src/services/api/resource-sources";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import {
@@ -149,6 +151,9 @@ describe("activity action atom boundary", () => {
     );
     expect(AsyncResult.getOrThrow(registry.get(resource)).done).toBe(false);
     expect(listActivity).toHaveBeenCalledOnce();
+    expect(listActivity.mock.calls[0]?.[0]).toMatchObject({
+      statuses: ["FAILED", "SUCCESS", "WAITING_FOR_NEXT"],
+    });
 
     registry.set(resource, undefined);
 

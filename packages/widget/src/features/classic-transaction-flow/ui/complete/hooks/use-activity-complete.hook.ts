@@ -3,20 +3,16 @@ import type BigNumber from "bignumber.js";
 import type { YieldAction } from "../../../../../domain/action/models";
 import type { Token } from "../../../../../domain/token/token";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
-import { useTrackPage } from "../../../../tracking/index";
 import {
   YieldSummaryKey,
   yieldSummaryAtom,
 } from "../../../../yield-summary/index";
 import type { ClassicTransactionFlowIntake } from "../../../model/classic-transaction-flow";
-import {
-  useClassicFlowExecution,
-  useClassicFlowSession,
-} from "../../../react/classic-flow-route";
+import { useClassicFlowExecution } from "../../../react/classic-flow-route";
 
 type ActivityIntake = Extract<
   ClassicTransactionFlowIntake,
-  { readonly _tag: "ActivityResume" }
+  { readonly _tag: "YieldActionContinuation" }
 >;
 
 type ActivityCompleteView<Action> = Pick<
@@ -30,6 +26,7 @@ type ActivityCompleteView<Action> = Pick<
 export const useActivityCompleteView = <
   Action extends {
     readonly amount: BigNumber | string | null;
+    readonly intent: YieldAction["intent"];
     readonly type: YieldAction["type"];
     readonly yieldId: YieldAction["yieldId"];
   },
@@ -39,7 +36,6 @@ export const useActivityCompleteView = <
   selectedYield,
   inputToken,
 }: ActivityCompleteView<Action>) => {
-  useTrackPage("activityComplete");
   const yieldSummary = useAtomValue(
     yieldSummaryAtom(
       new YieldSummaryKey({
@@ -70,10 +66,4 @@ export const useActivityCompleteView = <
 export const useActivityComplete = () => {
   const execution = useClassicFlowExecution();
   return useAtomValue(execution.activityCompleteViewAtom);
-};
-
-export const useActivityHistoryComplete = () => {
-  const session = useClassicFlowSession();
-  const view = useAtomValue(session.activityHistoryViewAtom);
-  return useActivityCompleteView(view);
 };

@@ -1,5 +1,8 @@
 import { Navigate, Route, Routes, useLocation } from "react-router";
-import { ActivityTabPage } from "../../features/activity/composition";
+import {
+  ActivityTabPage,
+  createActivityActionRoutes,
+} from "../../features/activity/composition";
 import {
   createBorrowEntryRoutes,
   createBorrowMarketPositionRoutes,
@@ -105,12 +108,9 @@ export const DashboardRoutes = () => {
           </Route>
 
           <Route path="activity" element={<ActivityTabPage />}>
-            <Route element={<WalletScopeRouteGuard fallbackPath="/activity" />}>
-              {createClassicFlowRoutes({
-                journey: "ActivityResume",
-                presentation: "Dashboard",
-              })}
-            </Route>
+            {createActivityActionRoutes("Dashboard", {
+              ActionScopeGuard: WalletScopeRouteGuard,
+            })}
           </Route>
         </Route>
       </Routes>

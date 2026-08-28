@@ -4,20 +4,28 @@ import {
   type ActionType,
   getActionInputToken,
 } from "../../../domain/action/rules";
+import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
 import {
   getActivityDayKind,
   getActivityRelativeTime,
 } from "../../../shared/lib/date";
 import { capitalizeFirstLetters } from "../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../shared/lib/number-format";
-import {
-  type ActivityActionItem,
-  getActivityActionOpenTarget,
-} from "./activity-action";
+import type { ActivityActionItem } from "./activity-action";
 
-export type ActivityDirection = "deposit" | "withdraw" | "rewards" | "other";
+export type ActivityDirection = "deposit" | "withdraw" | "rewards" | "neutral";
 
-type ActivityActionTitle =
+export type ActivityStatusLabel =
+  | "action-required"
+  | "canceled"
+  | "completed"
+  | "created"
+  | "expired"
+  | "failed"
+  | "processing"
+  | "stale";
+
+export type ActivityActionTitle =
   | { readonly _tag: "deposited"; readonly tokenSymbol: string | null }
   | { readonly _tag: "withdrew"; readonly tokenSymbol: string | null }
   | { readonly _tag: "rewards" }
@@ -27,7 +35,7 @@ type ActivityActionTitle =
       readonly tokenSymbol: string | null;
     };
 
-type ActivityPresentationTime = {
+export type ActivityPresentationTime = {
   readonly now: DateTime.Utc;
   readonly timeZone: DateTime.TimeZone;
 };
@@ -45,40 +53,66 @@ type ActivityActionListItemProjection = {
   readonly canOpenDetails: boolean;
   readonly direction: ActivityDirection;
   readonly isPositive: boolean;
-  readonly showFailedBadge: boolean;
-  readonly showUnavailableYieldDetails: boolean;
+  readonly statusLabel: ActivityStatusLabel | null;
   readonly timestamp: ActivityActionTimestamp | null;
   readonly title: ActivityActionTitle;
   readonly tokenSymbol: string | null;
 };
 
-const DEPOSIT_ACTIONS = new Set<ActionType>([
-  "STAKE",
-  "STAKE_LOCKED",
-  "RESTAKE",
-  "REBOND",
-]);
-
-const WITHDRAW_ACTIONS = new Set<ActionType>([
-  "UNSTAKE",
-  "WITHDRAW",
-  "WITHDRAW_ALL",
-  "CLAIM_UNSTAKED",
-  "UNLOCK_LOCKED",
-]);
-
-const REWARD_ACTIONS = new Set<ActionType>([
-  "CLAIM_REWARDS",
-  "RESTAKE_REWARDS",
-  "AUTO_SWEEP_UNSTAKE_REWARDS",
-  "AUTO_SWEEP_WITHDRAW_REWARDS",
-]);
-
 const getActivityDirection = (type: ActionType): ActivityDirection => {
-  if (DEPOSIT_ACTIONS.has(type)) return "deposit";
-  if (WITHDRAW_ACTIONS.has(type)) return "withdraw";
-  if (REWARD_ACTIONS.has(type)) return "rewards";
-  return "other";
+  switch (type) {
+    case "STAKE":
+    case "STAKE_LOCKED":
+    case "RESTAKE":
+    case "REBOND":
+      return "deposit";
+    case "UNSTAKE":
+    case "WITHDRAW_REQUEST":
+    case "INSTANT_WITHDRAW":
+    case "WITHDRAW":
+    case "WITHDRAW_ALL":
+    case "CLAIM_UNSTAKED":
+    case "UNLOCK_LOCKED":
+      return "withdraw";
+    case "CLAIM_REWARDS":
+    case "RESTAKE_REWARDS":
+    case "AUTO_SWEEP_UNSTAKE_REWARDS":
+    case "AUTO_SWEEP_WITHDRAW_REWARDS":
+      return "rewards";
+    case "VOTE":
+    case "REVOKE":
+    case "VOTE_LOCKED":
+    case "REVOTE":
+    case "MIGRATE":
+    case "VERIFY_WITHDRAW_CREDENTIALS":
+    case "DELEGATE":
+      return "neutral";
+  }
+};
+
+export const projectActivityStatusLabel = (
+  action: ActivityActionItem["actionData"],
+  presentationTime: ActivityPresentationTime | null
+): ActivityStatusLabel => {
+  switch (action.status) {
+    case ActionStatus.SUCCESS:
+      return "completed";
+    case ActionStatus.FAILED:
+      return "failed";
+    case ActionStatus.WAITING_FOR_NEXT:
+      return presentationTime &&
+        !isContinuableYieldAction(action, presentationTime.now)
+        ? "expired"
+        : "action-required";
+    case ActionStatus.CANCELED:
+      return "canceled";
+    case ActionStatus.CREATED:
+      return "created";
+    case ActionStatus.PROCESSING:
+      return "processing";
+    case ActionStatus.STALE:
+      return "stale";
+  }
 };
 
 const ADDRESS_LIKE_TOKEN = /^0x[0-9a-fA-F]{40}$/i;
@@ -111,7 +145,7 @@ const resolveTokenSymbol = ({
   if (!yieldData) {
     const { inputToken, outputToken } = action.actionData.rawArguments ?? {};
     const preferredToken =
-      direction === "withdraw" || direction === "other"
+      direction === "withdraw" || direction === "neutral"
         ? (outputToken ?? inputToken)
         : (inputToken ?? outputToken);
 
@@ -119,7 +153,7 @@ const resolveTokenSymbol = ({
   }
 
   const yieldTokenSymbol = getReadableRawTokenSymbol(yieldData.token.symbol);
-  if (direction === "withdraw" || direction === "other") {
+  if (direction === "withdraw" || direction === "neutral") {
     return yieldTokenSymbol;
   }
 
@@ -227,13 +261,13 @@ export const projectActivityActionListItem = ({
   return {
     amount,
     amountSign: resolveAmountSign({ amount, direction }),
-    canOpenDetails:
-      action.yieldData !== null &&
-      getActivityActionOpenTarget(action.actionData.status) !== null,
+    canOpenDetails: true,
     direction,
     isPositive: direction === "deposit" || direction === "rewards",
-    showFailedBadge: action.actionData.status === ActionStatus.FAILED,
-    showUnavailableYieldDetails: action.yieldData === null,
+    statusLabel: projectActivityStatusLabel(
+      action.actionData,
+      presentationTime
+    ),
     timestamp: resolveTimestamp({ action, locale, presentationTime }),
     title: resolveTitle({ action, direction, tokenSymbol }),
     tokenSymbol,

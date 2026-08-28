@@ -227,5 +227,11 @@ including signing, submission, confirmation, advancement, retry, and completion.
 **Post-Transaction Reconciliation**: A Wallet Scope Owner-bound refresh of
 authoritative balances and positions after a Transaction Workflow ends.
 
-**Activity Resume**: A Classic Transaction Flow started from a Yield Action in
-activity history.
+**Continuable Yield Action**: A Yield Action with `WAITING_FOR_NEXT` status that
+was created less than 168 hours ago.
+
+**Yield Action Continuation**: A Classic Transaction Flow confirmed from the
+Activity details Review for a Continuable Yield Action. It executes the existing
+Yield Action without creating an Action Preview or another Yield Action. Activity
+owns the feed, action lookup, details, and variant layouts. Completed and failed
+details never create a Flow Session.

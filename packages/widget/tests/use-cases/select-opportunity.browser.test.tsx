@@ -207,9 +207,23 @@ describe("Select opportunity", () => {
       (item.elements()[0] as HTMLElement).click();
     };
 
-    await app.getByTestId("select-opportunity").click();
+    await app.getByTestId("select-token").click();
 
     let selectContainer = app.getByTestId("select-modal__container");
+    let searchInput = selectContainer.getByTestId("select-modal__search-input");
+
+    await expect.element(searchInput).toBeInTheDocument();
+    await userEvent.fill(
+      EArray.getUnsafe(searchInput.elements(), 0),
+      "missing token"
+    );
+    await expect.element(app.getByText("No tokens found")).toBeInTheDocument();
+
+    await userEvent.keyboard("[Escape]");
+
+    await app.getByTestId("select-opportunity").click();
+
+    selectContainer = app.getByTestId("select-modal__container");
 
     await expect
       .element(selectContainer.getByTestId("select-modal__search-input"))
@@ -217,6 +231,14 @@ describe("Select opportunity", () => {
     await expect
       .element(selectContainer.getByTestId("select-modal__title"))
       .toBeInTheDocument();
+
+    searchInput = selectContainer.getByTestId("select-modal__search-input");
+    await userEvent.fill(
+      EArray.getUnsafe(searchInput.elements(), 0),
+      "missing yield"
+    );
+    await expect.element(app.getByText("No yields found")).toBeInTheDocument();
+    await userEvent.clear(EArray.getUnsafe(searchInput.elements(), 0));
 
     selectContainer = app.getByTestId("select-modal__container");
 

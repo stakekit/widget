@@ -13,7 +13,10 @@ import type {
   ManageActionCommand,
   YieldAction,
 } from "../../../../domain/action/models";
-import { getValidStakeSessionTx } from "../../../../domain/action/rules";
+import {
+  ActionStatus,
+  getValidStakeSessionTx,
+} from "../../../../domain/action/rules";
 import {
   type InputValidationError,
   YieldOperations,
@@ -47,18 +50,10 @@ class ClassicFlowInvalidPreviewRequestError extends Data.TaggedError(
   readonly retryable: false;
 }> {}
 
-class ClassicFlowUnsupportedActivityPreviewError extends Data.TaggedError(
-  "ClassicFlowUnsupportedActivityPreviewError"
-)<{
-  readonly message: string;
-  readonly retryable: false;
-}> {}
-
 type ClassicFlowReviewError =
   | ClassicFlowInvalidPreviewError
   | ClassicFlowInvalidPreviewRequestError
-  | ClassicFlowPreviewError
-  | ClassicFlowUnsupportedActivityPreviewError;
+  | ClassicFlowPreviewError;
 
 export type ClassicFlowReviewEligibility = Readonly<{
   readonly activityExpired: boolean;
@@ -122,8 +117,11 @@ type ActionPreviewRequest =
     }>;
 
 const getPreviewRequest = (
-  intake: ClassicTransactionFlowIntake
-): ActionPreviewRequest | null => {
+  intake: Exclude<
+    ClassicTransactionFlowIntake,
+    { readonly _tag: "YieldActionContinuation" }
+  >
+): ActionPreviewRequest => {
   switch (intake._tag) {
     case "Enter":
       return { command: intake.request, intent: "enter" };
@@ -131,27 +129,17 @@ const getPreviewRequest = (
       return { command: intake.request, intent: "exit" };
     case "Manage":
       return { command: intake.request, intent: "manage" };
-    case "ActivityResume": {
-      if (intake.action.intent === "manage") return null;
-      return {
-        command: {
-          address: intake.action.address,
-          ...(intake.action.rawArguments
-            ? { arguments: intake.action.rawArguments }
-            : {}),
-          yieldId: intake.action.yieldId,
-        },
-        intent: intake.action.intent,
-      };
-    }
   }
 };
 
-const unsupportedPreview = new ClassicFlowUnsupportedActivityPreviewError({
-  message:
-    "This Activity action cannot be recreated as a fresh Action preview.",
-  retryable: false,
-});
+const getInitialReviewPreview = (
+  intake: ClassicTransactionFlowIntake
+): ClassicFlowReviewPreview => {
+  if (intake._tag === "YieldActionContinuation") {
+    return { _tag: "Success", action: intake.action };
+  }
+  return { _tag: "Initial" };
+};
 
 export const makeClassicFlowReviewFactory = Effect.fn(
   "makeClassicFlowReviewFactory"
@@ -174,34 +162,33 @@ export const makeClassicFlowReviewFactory = Effect.fn(
       activityExpired: true,
       kycBlocking: true,
     });
-    const previewRequest = getPreviewRequest(intake);
     const stateRef = yield* SubscriptionRef.make<ClassicFlowReviewState>({
-      preview: previewRequest
-        ? { _tag: "Initial" }
-        : { _tag: "Failure", error: unsupportedPreview },
+      preview: getInitialReviewPreview(intake),
     });
     yield* Effect.addFinalizer(() => PubSub.shutdown(stateRef.pubsub));
     const operations = yield* makeScopedSerialOperations();
 
     const loadPreviewOpen = Effect.gen(function* () {
-      if (!previewRequest) return yield* unsupportedPreview;
+      if (intake._tag === "YieldActionContinuation") return intake.action;
       yield* SubscriptionRef.set(stateRef, { preview: { _tag: "Loading" } });
-      const action = yield* yieldOperations.previewAction(previewRequest).pipe(
-        Effect.mapError((cause) =>
-          cause._tag === "InputValidationError"
-            ? new ClassicFlowInvalidPreviewRequestError({
-                cause,
-                message:
-                  "Classic Transaction Flow Action preview request is invalid.",
-                retryable: false,
-              })
-            : new ClassicFlowPreviewError({
-                cause,
-                message: "Classic Transaction Flow Action preview failed.",
-                retryable: true,
-              })
-        )
-      );
+      const action = yield* yieldOperations
+        .previewAction(getPreviewRequest(intake))
+        .pipe(
+          Effect.mapError((cause) =>
+            cause._tag === "InputValidationError"
+              ? new ClassicFlowInvalidPreviewRequestError({
+                  cause,
+                  message:
+                    "Classic Transaction Flow Action preview request is invalid.",
+                  retryable: false,
+                })
+              : new ClassicFlowPreviewError({
+                  cause,
+                  message: "Classic Transaction Flow Action preview failed.",
+                  retryable: true,
+                })
+          )
+        );
       const validation = getValidStakeSessionTx(action);
       if (Result.isFailure(validation)) {
         return yield* new ClassicFlowInvalidPreviewError({
@@ -273,6 +260,12 @@ export const makeClassicFlowReviewFactory = Effect.fn(
         return { _tag: "RejectedNotReady" } as const;
       }
       if (state.preview._tag === "Failure" || !state.preview.action) {
+        return { _tag: "RejectedPreview" } as const;
+      }
+      if (
+        intake._tag === "YieldActionContinuation" &&
+        state.preview.action.status !== ActionStatus.WAITING_FOR_NEXT
+      ) {
         return { _tag: "RejectedPreview" } as const;
       }
 

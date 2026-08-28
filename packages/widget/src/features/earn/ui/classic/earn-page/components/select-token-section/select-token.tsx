@@ -83,20 +83,28 @@ export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
         </Trigger>
       }
     >
-      <VirtualList
-        className={validatorVirtuosoContainer}
-        data={data.tokenBalances}
-        estimateSize={() => 60}
-        itemContent={(_index, item) => {
-          return (
-            <SelectTokenListItem
-              item={item}
-              isSelected={equalTokens(item.token, data.st)}
-              onTokenBalanceSelect={select}
-            />
-          );
-        }}
-      />
+      {data.tokenBalances.length === 0 && view.search.trim().length > 0 ? (
+        <Box display="flex" justifyContent="center" px="4" py="4">
+          <Text variant={{ type: "muted" }}>
+            {t("select_token.no_results")}
+          </Text>
+        </Box>
+      ) : (
+        <VirtualList
+          className={validatorVirtuosoContainer}
+          data={data.tokenBalances}
+          estimateSize={() => 60}
+          itemContent={(_index, item) => {
+            return (
+              <SelectTokenListItem
+                item={item}
+                isSelected={equalTokens(item.token, data.st)}
+                onTokenBalanceSelect={select}
+              />
+            );
+          }}
+        />
+      )}
     </SelectModal>
   );
 };

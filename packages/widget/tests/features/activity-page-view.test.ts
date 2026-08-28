@@ -7,6 +7,7 @@ import {
   projectActivityPageView,
   resolveActivityPageFilter,
   resolveActivityPageWalletStatus,
+  shouldShowActivityDashboardSplit,
 } from "../../src/features/activity/state/page";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 
@@ -228,6 +229,7 @@ describe("Activity page projection", () => {
     ).toMatchObject({
       actions: [first, second],
       pagination: { status: "idle" },
+      refreshStatus: "fresh",
       showingCount: 2,
       status: "ready",
       total: 3,
@@ -278,6 +280,7 @@ describe("Activity page projection", () => {
     ).toMatchObject({
       actions: [action],
       pagination: { status: "loading-more" },
+      refreshStatus: "refreshing",
       status: "ready",
     });
     expect(
@@ -290,6 +293,34 @@ describe("Activity page projection", () => {
     ).toMatchObject({
       actions: [action],
       pagination: { status: "load-more-failed" },
+      refreshStatus: "failed",
+      status: "ready",
+    });
+  });
+
+  it("preserves failed refresh identity with a completed previous page", () => {
+    const action = makeActionItem("stale");
+    const previous = makeActionsResult({
+      actions: [action],
+      done: true,
+      total: 1,
+    });
+    const failedRefresh = AsyncResult.failureWithPrevious(
+      Cause.fail(undefined as never),
+      { previous: Option.some(previous) }
+    );
+
+    expect(
+      projectActivityPageView({
+        actionsResult: failedRefresh,
+        filterOptionsResult: filterOptions,
+        selectedFilter: "all",
+        walletStatus: "connected",
+      })
+    ).toMatchObject({
+      actions: [action],
+      pagination: { status: "complete" },
+      refreshStatus: "failed",
       status: "ready",
     });
   });
@@ -365,5 +396,36 @@ describe("Activity page inputs", () => {
         connectionStatus: "connected",
       })
     ).toBe("connected");
+  });
+});
+
+describe("Activity dashboard split", () => {
+  it("only splits when the feed has actions to inspect", () => {
+    expect(shouldShowActivityDashboardSplit({ status: "empty" })).toBe(false);
+    expect(shouldShowActivityDashboardSplit({ status: "loading" })).toBe(false);
+    expect(
+      shouldShowActivityDashboardSplit({
+        actions: [],
+        filterOptions: [{ count: 0, filter: "all" }],
+        pagination: { status: "complete" },
+        refreshStatus: "fresh",
+        selectedFilter: "all",
+        showingCount: 0,
+        status: "ready",
+        total: 0,
+      })
+    ).toBe(false);
+    expect(
+      shouldShowActivityDashboardSplit({
+        actions: [makeActionItem("a1")],
+        filterOptions: [{ count: 1, filter: "all" }],
+        pagination: { status: "complete" },
+        refreshStatus: "fresh",
+        selectedFilter: "all",
+        showingCount: 1,
+        status: "ready",
+        total: 1,
+      })
+    ).toBe(true);
   });
 });

@@ -16,7 +16,7 @@ export const AnimatedActivityPage = () => {
       }}
     >
       <PageContainer>
-        <ActivityPageContent resumePresentation="Classic" />
+        <ActivityPageContent />
       </PageContainer>
     </motion.div>
   );

@@ -127,7 +127,9 @@ export const makeClassicFlowExecutionFactory = Effect.fn(
           runOperation(() =>
             navigation.execute({
               _tag: "Push",
-              path: toWidgetPath("/"),
+              path: toWidgetPath(
+                intake._tag === "YieldActionContinuation" ? "/activity" : "/"
+              ),
             })
           )
         ),

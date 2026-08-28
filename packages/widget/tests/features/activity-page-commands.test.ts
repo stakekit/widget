@@ -6,7 +6,6 @@ import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import type { ActivityFilterOption } from "../../src/features/activity/model/filters";
-import { activityFilterAtom } from "../../src/features/activity/state/filter";
 import {
   activityPageViewAtom,
   loadMoreActivityAtom,
@@ -14,12 +13,13 @@ import {
   setActivityPageFilterAtom,
 } from "../../src/features/activity/state/page";
 import {
+  ActivityActionsKey,
   ActivityFilterOptionsKey,
   activityActionsPullAtom,
+  activityFilterAtom,
   activityFilterOptionsAtom,
   loadMoreActivityActionsAtom,
-} from "../../src/features/activity/state/read-models/activity-feed";
-import { ActivityActionsKey } from "../../src/features/activity/state/read-models/activity-request";
+} from "../../src/features/activity/state/page-resources";
 import {
   walletConfigResultAtom,
   walletConnectionStateAtom,

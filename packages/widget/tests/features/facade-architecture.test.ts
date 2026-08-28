@@ -125,7 +125,6 @@ describe("feature facade architecture", () => {
     );
     expect(positionDetails).not.toContain("useState");
     expect(positionDetails).not.toContain("useStartClassicTransactionFlow");
-    expect(activityPage).not.toContain("useNavigate");
     expect(activityPage).not.toContain("useStartClassicTransactionFlow");
     expect(pendingActionRoute).not.toContain("classic-transaction-flow/state/");
   });
@@ -140,7 +139,7 @@ describe("feature facade architecture", () => {
       "utf8"
     );
     const activity = readFileSync(
-      join(sourceRoot, "features/activity/state/read-models/activity-feed.ts"),
+      join(sourceRoot, "features/activity/state/page-resources.ts"),
       "utf8"
     );
     const resourceFiles = sourceFiles(join(sourceRoot, "resources")).filter(

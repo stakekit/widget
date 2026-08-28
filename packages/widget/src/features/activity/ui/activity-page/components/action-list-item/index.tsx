@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
@@ -8,10 +9,13 @@ import { ActivityIcon } from "../activity-icon";
 import {
   amountNeutral,
   amountPositive,
-  failedBadge,
+  completedStatusBadge,
   infoColumn,
   listItem,
+  listItemSelected,
+  metaRow,
   noWrap,
+  statusBadge,
   timeColumn,
   titleText,
   viaText,
@@ -19,15 +23,12 @@ import {
 
 export const ActionListItem = ({
   action,
+  isSelected = false,
   onActionSelect,
 }: {
   action: ActivityActionItem;
-  onActionSelect: (
-    action: ActivityActionItem,
-    providersDetails: NonNullable<
-      NonNullable<ReturnType<typeof useActionListItem>>["providersDetails"]
-    >
-  ) => void;
+  readonly isSelected?: boolean;
+  onActionSelect: (action: ActivityActionItem) => void;
 }) => {
   const { t } = useTranslation();
   const listItemView = useActionListItem(action);
@@ -45,8 +46,8 @@ export const ActionListItem = ({
     isPositive,
     timestampAbsolute,
     timestampRelative,
-    showFailedBadge,
     badgeLabel,
+    statusLabel,
   } = listItemView;
 
   const firstProvider = providersDetails?.[0];
@@ -61,13 +62,14 @@ export const ActionListItem = ({
   return (
     <Box py="1" width="full">
       <ListItem
-        onClick={
-          canOpenDetails
-            ? () => onActionSelect(action, providersDetails ?? [])
-            : undefined
+        onClick={canOpenDetails ? () => onActionSelect(action) : undefined}
+        className={clsx(listItem, isSelected && listItemSelected)}
+        data-rk={
+          isSelected ? "activity-list-item-selected" : "activity-list-item"
         }
-        className={listItem}
-        variant={{ hover: canOpenDetails ? "enabled" : "disabled" }}
+        variant={{
+          hover: canOpenDetails ? "enabled" : "disabled",
+        }}
       >
         <Box
           display="flex"
@@ -81,33 +83,45 @@ export const ActionListItem = ({
             justifyContent="flex-start"
             alignItems="center"
             gap="2"
+            flex={1}
             minWidth="0"
           >
             <ActivityIcon type={iconType} />
 
             <Box className={infoColumn}>
-              <Box display="flex" alignItems="center" gap="2">
-                <Text className={titleText}>{title}</Text>
+              <Text className={titleText}>{title}</Text>
 
-                {showFailedBadge && (
-                  <Box className={failedBadge}>
-                    <Text
-                      variant={{ type: "white", size: "small" }}
-                      className={noWrap}
+              {badgeLabel || viaLabel ? (
+                <Box className={metaRow}>
+                  {badgeLabel && statusLabel ? (
+                    <Box
+                      className={
+                        statusLabel === "completed"
+                          ? completedStatusBadge
+                          : statusBadge
+                      }
                     >
-                      {badgeLabel}
-                    </Text>
-                  </Box>
-                )}
-              </Box>
+                      <Text
+                        variant={{
+                          type: statusLabel === "completed" ? "muted" : "white",
+                          size: "small",
+                        }}
+                        className={noWrap}
+                      >
+                        {badgeLabel}
+                      </Text>
+                    </Box>
+                  ) : null}
 
-              {viaLabel ? (
-                <Text
-                  className={viaText}
-                  variant={{ type: "muted", weight: "normal" }}
-                >
-                  {viaLabel}
-                </Text>
+                  {viaLabel ? (
+                    <Text
+                      className={viaText}
+                      variant={{ type: "muted", weight: "normal" }}
+                    >
+                      {viaLabel}
+                    </Text>
+                  ) : null}
+                </Box>
               ) : null}
             </Box>
           </Box>

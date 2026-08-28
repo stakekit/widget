@@ -329,6 +329,22 @@ describe("application API services", () => {
     expect(activity).toHaveBeenCalledWith({ params: request });
   });
 
+  it("maps an Activity action through the owner-scoped read capability", async () => {
+    const action = yieldApiActionDtoFixture();
+    const expected = Schema.decodeUnknownSync(YieldAction)(action);
+    const getAction = vi.fn(() => Effect.succeed(action));
+    const source = makeYieldResourceSource({
+      ActionsControllerGetAction: getAction,
+    } as never);
+
+    const result = await Effect.runPromise(
+      source.getActivityAction(expected.id)
+    );
+
+    expect(Option.getOrNull(result)).toEqual(expected);
+    expect(getAction).toHaveBeenCalledWith(expected.id, undefined);
+  });
+
   it("maps single-Yield and gas balances through narrow read capabilities", async () => {
     const singleBalances = vi.fn(() =>
       Effect.succeed({ balances: [], yieldId: firstYieldId })

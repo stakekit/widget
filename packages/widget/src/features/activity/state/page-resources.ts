@@ -1,36 +1,66 @@
 import { type Cause, Data, Array as EArray, Effect, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../../app/runtime/app-runtime";
-import { getActionValidatorAddresses } from "../../../../domain/action/rules";
+import { appRuntime } from "../../../app/runtime/app-runtime";
+import {
+  ActionStatus,
+  getActionValidatorAddresses,
+} from "../../../domain/action/rules";
+import { getActivityActionCapabilities } from "../../../domain/activity/action-capabilities";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
-} from "../../../../domain/earn/models";
+} from "../../../domain/earn/models";
 import type {
   ValidatorAddress,
   YieldId,
-} from "../../../../domain/identity/identifiers";
-import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
+} from "../../../domain/identity/identifiers";
+import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 import {
   type ActivityHistoryBatch,
   type ActivityHistoryError,
+  ActivityHistoryKey,
   activityCountResourceAtom,
   activityHistoryPullAtom,
-} from "../../../../resources/activity-history/index";
+} from "../../../resources/activity-history/index";
 import {
   ValidatorByAddressKey,
   validatorByAddressAtom,
-} from "../../../../resources/validator-directory/index";
-import { enrichedYieldOpportunityResourceAtom } from "../../../../resources/yield-opportunity/index";
-import { mapAsyncResultError } from "../../../../shared/effect/async-result";
-import { withPullPageDone } from "../../../../shared/effect/pagination";
-import type { ActivityActionItem } from "../../model/activity-action";
+} from "../../../resources/validator-directory/index";
+import { enrichedYieldOpportunityResourceAtom } from "../../../resources/yield-opportunity/index";
+import { mapAsyncResultError } from "../../../shared/effect/async-result";
+import { withPullPageDone } from "../../../shared/effect/pagination";
+import type { ActivityActionItem } from "../model/activity-action";
 import {
   type ActivityFilter,
   activityFilterCategories,
-} from "../../model/filters";
-import { ActivityActionsKey, getActivityHistoryKey } from "./activity-request";
+  getActivityFilterYieldTypes,
+} from "../model/filters";
+
+const ACTIVITY_ACTION_STATUSES = Object.values(ActionStatus).filter(
+  (status) => getActivityActionCapabilities(status).visibleInFeed
+);
+
+export class ActivityActionsKey extends Data.Class<{
+  readonly filter: ActivityFilter;
+  readonly scope: WalletScopeKey | null;
+}> {}
+
+export const getActivityHistoryKey = (
+  key: ActivityActionsKey
+): ActivityHistoryKey | null => {
+  if (!key.scope) return null;
+
+  return new ActivityHistoryKey({
+    scope: key.scope,
+    statuses: ACTIVITY_ACTION_STATUSES,
+    yieldTypes: getActivityFilterYieldTypes(key.filter),
+  });
+};
+
+export const activityFilterAtom = Atom.make<ActivityFilter>("all").pipe(
+  Atom.withLabel("activityFilterAtom")
+);
 
 type ActivityAction = ActivityHistoryBatch["actions"][number];
 

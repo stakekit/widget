@@ -1,4 +1,4 @@
-import { DateTime, Duration, Option, Schedule, Stream } from "effect";
+import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type { YieldAction } from "../../../../domain/action/models";
@@ -54,43 +54,16 @@ const getGasBalancesCommand = (
   };
 };
 
-export const makeClassicFlowActivityActionExpiredAtom = (
-  intakeAtom: Atom.Atom<ClassicTransactionFlowIntake>
-) => {
-  const activityActionExpiredResourceAtom = Atom.make((get) => {
-    const intake = get(intakeAtom);
-    if (intake._tag !== "ActivityResume") {
-      throw new Error("Expected Classic Flow ActivityResume intake.");
-    }
-
-    return Stream.fromEffectSchedule(
-      DateTime.now,
-      Schedule.spaced("1 minute")
-    ).pipe(
-      Stream.map((now) =>
-        Duration.isGreaterThanOrEqualTo(
-          DateTime.distance(intake.action.createdAt, now),
-          Duration.days(7)
-        )
-      )
-    );
-  }).pipe(Atom.withLabel("classicFlowActivityActionExpiredResourceAtom"));
-
-  return Atom.make((get) =>
-    AsyncResult.getOrElse(get(activityActionExpiredResourceAtom), () => true)
-  ).pipe(Atom.withLabel("classicFlowActivityActionExpiredAtom"));
-};
-
 export const makeClassicFlowSessionReviewResources = ({
   actionPreviewAtom,
-  activityActionExpiredAtom,
+  activityExpiredAtom,
   intakeAtom,
   kycGateAtom,
 }: {
   readonly actionPreviewAtom: Atom.Atom<
     AsyncResult.AsyncResult<YieldAction | null, { readonly retryable: boolean }>
   >;
-  readonly activityActionExpiredAtom: Atom.Atom<boolean>;
+  readonly activityExpiredAtom: Atom.Atom<boolean>;
   readonly intakeAtom: Atom.Atom<ClassicTransactionFlowIntake>;
   readonly kycGateAtom: Atom.Atom<CurrentYieldKycGate>;
 }) => {
@@ -172,23 +145,18 @@ export const makeClassicFlowSessionReviewResources = ({
 
   const activityReviewViewAtom = Atom.make((get) => {
     const intake = get(intakeAtom);
-    if (intake._tag !== "ActivityResume") {
-      throw new Error("Expected Classic Flow ActivityResume intake.");
+    if (intake._tag !== "YieldActionContinuation") {
+      throw new Error("Expected Yield Action Continuation intake.");
     }
 
     const view = get(reviewViewAtom);
-    const actionExpired = get(activityActionExpiredAtom);
     return {
-      ...view,
-      action: view.action ?? intake.action,
-      actionExpired,
-      confirmDisabled: view.confirmDisabled || actionExpired,
-      selectedYield: intake.selectedYield,
+      confirmDisabled: view.confirmDisabled || get(activityExpiredAtom),
+      confirmLoading: view.confirmLoading,
     } as const;
   }).pipe(Atom.withLabel("classicFlowSessionActivityReviewViewAtom"));
 
   return {
-    activityActionExpiredAtom,
     activityReviewViewAtom,
     reviewViewAtom,
   } as const;

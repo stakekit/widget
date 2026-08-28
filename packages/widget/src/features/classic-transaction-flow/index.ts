@@ -1,7 +1,8 @@
 export type { ClassicTransactionFlowEnterMount } from "./model/classic-transaction-flow";
-export { useAbandonActivityResume } from "./react/use-abandon-activity-resume";
+export { useYieldActionContinuationReview } from "./react/use-yield-action-continuation-review";
 export {
-  activityResumeDashboardViewAtom,
+  currentYieldActionContinuationIdAtom,
   isActiveClassicTransactionFlowPathAtom,
   startClassicTransactionFlowAtom,
+  startYieldActionContinuationAtom,
 } from "./state/atoms/classic-flow";

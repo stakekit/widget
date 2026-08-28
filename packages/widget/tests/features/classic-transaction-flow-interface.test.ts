@@ -105,24 +105,24 @@ const makeManageIntake = (): Intake<"Manage"> => {
   };
 };
 
-const makeActivityResumeIntake = (
-  status: "CREATED" | "SUCCESS"
-): Intake<"ActivityResume"> => {
-  const selectedYield = yieldApiYieldFixture();
+const makeYieldActionContinuationIntake =
+  (): Intake<"YieldActionContinuation"> => {
+    const selectedYield = yieldApiYieldFixture();
 
-  return {
-    _tag: "ActivityResume",
-    action: yieldApiActionFixture({
-      status,
-      type: "STAKE",
-      yieldId: selectedYield.id,
-    }),
-    providersDetails: [],
-    selectedValidators: [],
-    selectedYield,
-    walletScope,
+    return {
+      _tag: "YieldActionContinuation",
+      action: yieldApiActionFixture({
+        id: "action-1",
+        status: "WAITING_FOR_NEXT",
+        type: "STAKE",
+        yieldId: selectedYield.id,
+      }),
+      providersDetails: [],
+      selectedValidators: [],
+      selectedYield,
+      walletScope,
+    };
   };
-};
 
 const makeRegistry = (
   push: (path: WidgetPath, options?: WidgetNavigationOptions) => void,
@@ -333,115 +333,53 @@ describe("Classic Transaction Flow interface", () => {
     }
   });
 
-  it("starts Classic Activity Resume review at its canonical route mount", async () => {
+  it("starts Yield Action Continuation at the existing Activity details route", async () => {
     const push = vi.fn();
     const registry = makeRegistry(push);
 
     try {
       registry.set(startClassicTransactionFlowAtom, {
-        intake: makeActivityResumeIntake("CREATED"),
+        intake: makeYieldActionContinuationIntake(),
         mount: {
-          _tag: "ActivityResume",
-          presentation: "Classic",
-          target: "FreshReview",
+          _tag: "YieldActionContinuation",
         },
       });
 
-      await waitForActivePath(registry, "/activity/review");
-      expect(push).toHaveBeenCalledWith("/activity/review", {
-        _tag: "Push",
-        path: "/activity/review",
-      });
-      expect(
-        registry.get(
-          isActiveClassicTransactionFlowPathAtom("/activity/stake/steps")
-        )
-      ).toBe(true);
-    } finally {
-      registry.dispose();
-    }
-  });
-
-  it("ends Activity Resume route lifetime at another action type's path", async () => {
-    const push = vi.fn();
-    const registry = makeRegistry(push);
-
-    try {
-      registry.set(startClassicTransactionFlowAtom, {
-        intake: makeActivityResumeIntake("CREATED"),
-        mount: {
-          _tag: "ActivityResume",
-          presentation: "Classic",
-          target: "FreshReview",
-        },
-      });
-
-      await waitForActivePath(registry, "/activity/stake/steps");
-      expect(
-        registry.get(
-          isActiveClassicTransactionFlowPathAtom("/activity/unstake/steps")
-        )
-      ).toBe(false);
-      expect(
-        registry.get(
-          isActiveClassicTransactionFlowPathAtom("/activity/unstake/complete")
-        )
-      ).toBe(false);
-    } finally {
-      registry.dispose();
-    }
-  });
-
-  it("starts Classic historical Activity details at its canonical route", async () => {
-    const push = vi.fn();
-    const registry = makeRegistry(push);
-
-    try {
-      registry.set(startClassicTransactionFlowAtom, {
-        intake: makeActivityResumeIntake("SUCCESS"),
-        mount: {
-          _tag: "ActivityResume",
-          presentation: "Classic",
-          target: "HistoricalDetails",
-        },
-      });
-
-      await waitForActivePath(registry, "/activity/stake-review/complete");
-      expect(push).toHaveBeenCalledWith(
-        "/activity/stake-review/complete",
-        expect.objectContaining({
-          _tag: "Push",
-          path: "/activity/stake-review/complete",
-        })
-      );
-      expect(
-        registry.get(
-          isActiveClassicTransactionFlowPathAtom(
-            "/activity/stake-review/complete"
-          )
-        )
-      ).toBe(true);
-    } finally {
-      registry.dispose();
-    }
-  });
-
-  it("starts Dashboard Activity details without changing the current route", async () => {
-    const push = vi.fn();
-    const registry = makeRegistry(push);
-
-    try {
-      registry.set(startClassicTransactionFlowAtom, {
-        intake: makeActivityResumeIntake("SUCCESS"),
-        mount: {
-          _tag: "ActivityResume",
-          presentation: "Dashboard",
-          target: "HistoricalDetails",
-        },
-      });
-
-      await waitForActivePath(registry, "/activity/stake-review/complete");
+      await waitForActivePath(registry, "/activity/action-1");
       expect(push).not.toHaveBeenCalled();
+      expect(
+        registry.get(
+          isActiveClassicTransactionFlowPathAtom("/activity/action-1/steps")
+        )
+      ).toBe(true);
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("does not own another action's Activity route", async () => {
+    const push = vi.fn();
+    const registry = makeRegistry(push);
+
+    try {
+      registry.set(startClassicTransactionFlowAtom, {
+        intake: makeYieldActionContinuationIntake(),
+        mount: {
+          _tag: "YieldActionContinuation",
+        },
+      });
+
+      await waitForActivePath(registry, "/activity/action-1/steps");
+      expect(
+        registry.get(
+          isActiveClassicTransactionFlowPathAtom("/activity/action-2/steps")
+        )
+      ).toBe(false);
+      expect(
+        registry.get(
+          isActiveClassicTransactionFlowPathAtom("/activity/action-2/complete")
+        )
+      ).toBe(false);
     } finally {
       registry.dispose();
     }

@@ -5,8 +5,10 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
+  ActivityActionKey,
   ActivityHistoryError,
   ActivityHistoryKey,
+  activityActionResourceAtom,
   activityCountResourceAtom,
   activityHistoryPullAtom,
 } from "../../src/resources/activity-history/activity-history";
@@ -43,6 +45,67 @@ const makeRegistry = (listActivity: ReturnType<typeof vi.fn>) =>
   });
 
 describe("Activity History resource", () => {
+  it("loads an owned Activity action by id", () => {
+    const action = yieldApiActionFixture({
+      address: scope.address,
+      id: "action-a",
+      yieldId,
+    });
+    const getActivityAction = vi.fn(() => Effect.succeed(Option.some(action)));
+    const registry = AtomRegistry.make({
+      initialValues: [
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.succeed(
+            YieldResourceSource,
+            YieldResourceSource.of({ getActivityAction } as never)
+          )
+        ),
+      ],
+    });
+
+    expect(
+      AsyncResult.getOrThrow(
+        registry.get(
+          activityActionResourceAtom(
+            new ActivityActionKey({ actionId: action.id, scope })
+          )
+        )
+      )
+    ).toMatchObject({ id: "action-a" });
+    expect(getActivityAction).toHaveBeenCalledWith(action.id);
+  });
+
+  it("does not expose an Activity action owned by another wallet", () => {
+    const action = yieldApiActionFixture({
+      address: "0x0000000000000000000000000000000000000002",
+      id: "action-a",
+      yieldId,
+    });
+    const getActivityAction = vi.fn(() => Effect.succeed(Option.some(action)));
+    const registry = AtomRegistry.make({
+      initialValues: [
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.succeed(
+            YieldResourceSource,
+            YieldResourceSource.of({ getActivityAction } as never)
+          )
+        ),
+      ],
+    });
+
+    expect(
+      AsyncResult.getOrThrow(
+        registry.get(
+          activityActionResourceAtom(
+            new ActivityActionKey({ actionId: action.id, scope })
+          )
+        )
+      )
+    ).toBeNull();
+  });
+
   it("shares normalized requests and loads one semantic batch per Pull", async () => {
     const listActivity = vi.fn((request: { readonly offset: number }) =>
       Effect.succeed({

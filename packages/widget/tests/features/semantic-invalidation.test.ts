@@ -21,13 +21,11 @@ import {
   walletScopeOwnerKey,
 } from "../../src/domain/wallet/wallet-scope";
 import {
+  ActivityActionsKey,
   ActivityFilterOptionsKey,
   activityFilterOptionsAtom,
-} from "../../src/features/activity/state/read-models/activity-feed";
-import {
-  ActivityActionsKey,
   getActivityHistoryKey,
-} from "../../src/features/activity/state/read-models/activity-request";
+} from "../../src/features/activity/state/page-resources";
 import {
   BorrowPositionKey,
   borrowPositionAtom,

@@ -1,4 +1,5 @@
 import { Context, Data, type Effect, type Option, Schema } from "effect";
+import type { YieldAction } from "../../domain/action/models";
 import type { ActivityActionsPage } from "../../domain/activity/models";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
 import type { BorrowFeatureDisabled } from "../../domain/borrow/availability";
@@ -32,6 +33,7 @@ import type {
   PriceResponse,
 } from "../../domain/health/models";
 import type {
+  ActionId,
   ProviderId,
   WalletAddress,
   YieldId,
@@ -166,6 +168,9 @@ type LegacyResourceSourceService = {
 };
 
 type YieldResourceSourceService = {
+  readonly getActivityAction: (
+    actionId: ActionId
+  ) => Effect.Effect<Option.Option<YieldAction>, ApiReadFailure>;
   readonly getEnabledWalletNetworks: () => Effect.Effect<
     EnabledWalletNetworks,
     ApiReadFailure

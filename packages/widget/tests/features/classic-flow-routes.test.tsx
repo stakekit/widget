@@ -1,9 +1,5 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
-import {
-  createRoutesFromElements,
-  matchRoutes,
-  type RouteObject,
-} from "react-router";
+import { createRoutesFromElements, type RouteObject } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { createClassicFlowRoutes } from "../../src/features/classic-transaction-flow/composition";
 
@@ -17,22 +13,6 @@ vi.mock(
       return null;
     },
     ClassicFlowRoute: function ClassicFlowRoute() {
-      return null;
-    },
-  })
-);
-vi.mock(
-  "../../src/features/classic-transaction-flow/ui/activity-details.page",
-  () => ({
-    ActivityDetailsPage: function ActivityDetailsPage() {
-      return null;
-    },
-  })
-);
-vi.mock(
-  "../../src/features/classic-transaction-flow/ui/complete/pages/activity-complete.page",
-  () => ({
-    ActivityCompletePage: function ActivityCompletePage() {
       return null;
     },
   })
@@ -62,14 +42,6 @@ vi.mock(
   })
 );
 vi.mock(
-  "../../src/features/classic-transaction-flow/ui/review/pages/action-review.page",
-  () => ({
-    ActionReviewPage: function ActionReviewPage() {
-      return null;
-    },
-  })
-);
-vi.mock(
   "../../src/features/classic-transaction-flow/ui/review/pages/pending-review.page",
   () => ({
     PendingReviewPage: function PendingReviewPage() {
@@ -89,14 +61,6 @@ vi.mock(
   "../../src/features/classic-transaction-flow/ui/review/pages/unstake-review.page",
   () => ({
     UnstakeReviewPage: function UnstakeReviewPage() {
-      return null;
-    },
-  })
-);
-vi.mock(
-  "../../src/features/classic-transaction-flow/ui/steps/pages/activity-steps.page",
-  () => ({
-    ActivityStepsPage: function ActivityStepsPage() {
       return null;
     },
   })
@@ -241,112 +205,5 @@ describe("Classic Transaction Flow routes", () => {
     expect(getRouteContract(createClassicFlowRoutes({ journey }))).toEqual(
       standardRouteContract({ journey, ...pages })
     );
-  });
-
-  it("publishes the Classic Activity Resume presentation", () => {
-    expect(
-      getRouteContract(
-        createClassicFlowRoutes({
-          journey: "ActivityResume",
-          presentation: "Classic",
-        })
-      )
-    ).toEqual([
-      {
-        children: [
-          {
-            children: [],
-            element: "ClassicFlowReviewScope>ActionReviewPage",
-            index: false,
-            path: "review",
-          },
-          {
-            children: [],
-            element: "ActivityDetailsPage",
-            index: false,
-            path: "stake-review/complete",
-          },
-          {
-            children: [],
-            element: "ActivityDetailsPage",
-            index: false,
-            path: "unstake-review/complete",
-          },
-          {
-            children: [],
-            element: "ActivityDetailsPage",
-            index: false,
-            path: "pending-review/complete",
-          },
-          {
-            children: [
-              {
-                children: [],
-                element: "ActivityStepsPage",
-                index: false,
-                path: ":pendingActionType/steps",
-              },
-              {
-                children: [],
-                element: "ActivityCompletePage",
-                index: false,
-                path: ":pendingActionType/complete",
-              },
-            ],
-            element: "ClassicFlowExecutionScope",
-            index: false,
-            path: null,
-          },
-        ],
-        element: "ClassicFlowRoute(ActivityResume)",
-        index: false,
-        path: null,
-      },
-    ]);
-  });
-
-  it("publishes the Dashboard Activity Resume completion route", () => {
-    const routes = createRoutesFromElements(
-      createClassicFlowRoutes({
-        journey: "ActivityResume",
-        presentation: "Dashboard",
-      })
-    );
-
-    expect(routes.map(describeRoute)).toEqual([
-      {
-        children: [
-          {
-            children: [],
-            element: "ActivityDetailsPage",
-            index: true,
-            path: null,
-          },
-          {
-            children: [
-              {
-                children: [],
-                element: "ActivityStepsPage",
-                index: false,
-                path: ":pendingActionType/steps",
-              },
-              {
-                children: [],
-                element: "ActivityCompletePage",
-                index: false,
-                path: ":pendingActionType/complete",
-              },
-            ],
-            element: "ClassicFlowExecutionScope",
-            index: false,
-            path: null,
-          },
-        ],
-        element: "ClassicFlowRoute(ActivityResume)",
-        index: false,
-        path: null,
-      },
-    ]);
-    expect(matchRoutes(routes, "/stake/complete")).not.toBeNull();
   });
 });

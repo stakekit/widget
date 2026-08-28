@@ -36,7 +36,7 @@ const getIntakeYieldId = (session: ClassicFlowSession) => {
     case "Exit":
     case "Manage":
       return session.intake.request.yieldId;
-    case "ActivityResume":
+    case "YieldActionContinuation":
       return session.intake.action.yieldId;
   }
 };
@@ -128,7 +128,7 @@ export const makeClassicFlowExecutionScopeAtom = <E>({
         if (state?.context.domain._tag !== "Classic") return null;
         const activity = getClassicTransactionFlowIntakeVariant(
           session.intake,
-          "ActivityResume"
+          "YieldActionContinuation"
         );
         if (!activity) return null;
         const actionMeta = state.context.domain.actionMeta;
@@ -140,6 +140,7 @@ export const makeClassicFlowExecutionScopeAtom = <E>({
             }) ?? null,
           selectedAction: {
             amount: actionMeta.amount,
+            intent: activity.action.intent,
             type: actionMeta.actionType,
             yieldId: activity.action.yieldId,
           },

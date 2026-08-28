@@ -66,8 +66,8 @@ type ManageClassicTransactionFlowIntake = {
   readonly walletScope: WalletScopeKey;
 };
 
-type ActivityResumeClassicTransactionFlowIntake = {
-  readonly _tag: "ActivityResume";
+type YieldActionContinuationIntake = {
+  readonly _tag: "YieldActionContinuation";
   readonly action: YieldAction;
   readonly providersDetails: ReadonlyArray<ClassicFlowProviderDetail>;
   readonly selectedValidators: ReadonlyArray<EarnValidator>;
@@ -79,7 +79,7 @@ export type ClassicTransactionFlowIntake =
   | EnterClassicTransactionFlowIntake
   | ExitClassicTransactionFlowIntake
   | ManageClassicTransactionFlowIntake
-  | ActivityResumeClassicTransactionFlowIntake;
+  | YieldActionContinuationIntake;
 
 type ClassicTransactionFlowDestination = Readonly<{
   readonly completePath: WidgetPath;
@@ -89,9 +89,7 @@ type ClassicTransactionFlowDestination = Readonly<{
 
 type ClassicTransactionFlowMount =
   | Readonly<{
-      readonly _tag: "ActivityResume";
-      readonly presentation: "Classic" | "Dashboard";
-      readonly target: "FreshReview" | "HistoricalDetails";
+      readonly _tag: "YieldActionContinuation";
     }>
   | Readonly<{ readonly _tag: "Earn" }>
   | Readonly<{
@@ -146,16 +144,15 @@ export type StartClassicTransactionFlow =
   | Readonly<{
       readonly intake: Extract<
         ClassicTransactionFlowIntake,
-        { readonly _tag: "ActivityResume" }
+        { readonly _tag: "YieldActionContinuation" }
       >;
       readonly mount: Extract<
         ClassicTransactionFlowMount,
-        { readonly _tag: "ActivityResume" }
+        { readonly _tag: "YieldActionContinuation" }
       >;
     }>;
 
 export type ClassicFlowSession = Readonly<{
-  readonly activityPresentation?: "Classic" | "Dashboard";
   readonly destination: ClassicTransactionFlowDestination;
   readonly epoch: number;
   readonly intake: ClassicTransactionFlowIntake;
@@ -167,44 +164,19 @@ type ClassicFlowSessionDraft = Omit<ClassicFlowSession, "epoch">;
 type ClassicTransactionFlowStartNavigation = Readonly<{
   readonly _tag: "Push";
   readonly path: WidgetPath;
-  readonly state?: unknown;
 }>;
 
-/**
- * Route prefix the flow pages hang off. The widget-root flow lives directly
- * under `/review`, `/steps` and `/complete`, so an empty base is valid.
- */
 type ClassicTransactionFlowRouteBase = "" | WidgetPathInput;
 
 const makeClassicTransactionFlowDestination = ({
-  completePath,
   routeBase,
-  stepsPath,
 }: {
-  readonly completePath?: WidgetPathInput;
   readonly routeBase: ClassicTransactionFlowRouteBase;
-  readonly stepsPath?: WidgetPathInput;
 }): ClassicTransactionFlowDestination => ({
-  completePath: toWidgetPath(completePath ?? `${routeBase}/complete`),
+  completePath: toWidgetPath(`${routeBase}/complete`),
   reviewPath: toWidgetPath(`${routeBase}/review`),
-  stepsPath: toWidgetPath(stepsPath ?? `${routeBase}/steps`),
+  stepsPath: toWidgetPath(`${routeBase}/steps`),
 });
-
-const getActivityFlowPathSegment = (
-  type: Extract<
-    ClassicTransactionFlowIntake,
-    { readonly _tag: "ActivityResume" }
-  >["action"]["type"]
-): "pending" | "stake" | "unstake" => {
-  switch (type) {
-    case "STAKE":
-      return "stake";
-    case "UNSTAKE":
-      return "unstake";
-    default:
-      return "pending";
-  }
-};
 
 const copyClassicTransactionFlowIntake = (
   intake: ClassicTransactionFlowIntake,
@@ -214,7 +186,7 @@ const copyClassicTransactionFlowIntake = (
   return {
     ...facts,
     walletScope: new WalletScopeKey(walletScope),
-  };
+  } as ClassicTransactionFlowIntake;
 };
 
 export const resolveClassicTransactionFlowStart = (
@@ -224,78 +196,47 @@ export const resolveClassicTransactionFlowStart = (
   readonly navigation: ClassicTransactionFlowStartNavigation | null;
   readonly session: ClassicFlowSessionDraft;
 }> => {
-  const { mount } = command;
-  const activityResumeIntake =
-    command.intake._tag === "ActivityResume" ? command.intake : null;
   const destination = (() => {
-    switch (mount._tag) {
-      case "ActivityResume": {
-        if (!activityResumeIntake) {
-          throw new Error("Expected Activity Resume intake.");
+    switch (command.mount._tag) {
+      case "YieldActionContinuation": {
+        if (command.intake._tag !== "YieldActionContinuation") {
+          throw new Error("Expected Yield Action Continuation intake.");
         }
-        const segment = getActivityFlowPathSegment(
-          activityResumeIntake.action.type
-        );
-        return makeClassicTransactionFlowDestination({
-          completePath: `/activity/${segment}/complete`,
-          routeBase: "/activity",
-          stepsPath: `/activity/${segment}/steps`,
-        });
+        const routeBase = `/activity/${encodeURIComponent(
+          command.intake.action.id
+        )}` as WidgetPathInput;
+        return {
+          completePath: toWidgetPath(`${routeBase}/complete`),
+          reviewPath: toWidgetPath(routeBase),
+          stepsPath: toWidgetPath(`${routeBase}/steps`),
+        };
       }
       case "Earn":
         return makeClassicTransactionFlowDestination({ routeBase: "" });
       case "PositionStake":
         return makeClassicTransactionFlowDestination({
-          routeBase: `/positions/${mount.integrationId}/${mount.balanceId}/stake`,
+          routeBase: `/positions/${command.mount.integrationId}/${command.mount.balanceId}/stake`,
         });
       case "PositionExit":
         return makeClassicTransactionFlowDestination({
-          routeBase: `/positions/${mount.integrationId}/${mount.balanceId}/unstake`,
+          routeBase: `/positions/${command.mount.integrationId}/${command.mount.balanceId}/unstake`,
         });
       case "PositionManage":
         return makeClassicTransactionFlowDestination({
-          routeBase: `/positions/${mount.integrationId}/${mount.balanceId}/pending-action`,
+          routeBase: `/positions/${command.mount.integrationId}/${command.mount.balanceId}/pending-action`,
         });
     }
   })();
 
-  const navigation = (() => {
-    if (mount._tag !== "ActivityResume") {
-      return { _tag: "Push", path: destination.reviewPath } as const;
-    }
-    if (mount.presentation === "Dashboard") return null;
-    if (mount.target === "FreshReview") {
-      return { _tag: "Push", path: destination.reviewPath } as const;
-    }
-    if (!activityResumeIntake) {
-      throw new Error("Expected Activity Resume intake.");
-    }
-
-    const segment = getActivityFlowPathSegment(
-      activityResumeIntake.action.type
-    );
-    return {
-      _tag: "Push",
-      path: toWidgetPath(`/activity/${segment}-review/complete`),
-      state: {
-        urls: activityResumeIntake.action.transactions.flatMap((transaction) =>
-          transaction.explorerUrl
-            ? [{ type: transaction.type, url: transaction.explorerUrl }]
-            : []
-        ),
-      },
-    } as const;
-  })();
-
   return {
-    navigation,
+    navigation:
+      command.mount._tag === "YieldActionContinuation"
+        ? null
+        : { _tag: "Push", path: destination.reviewPath },
     session: {
-      ...(mount._tag === "ActivityResume"
-        ? { activityPresentation: mount.presentation }
-        : {}),
       destination,
       intake: copyClassicTransactionFlowIntake(command.intake, walletScope),
-      mount,
+      mount: command.mount,
     },
   };
 };
@@ -305,45 +246,11 @@ const removeOptionalTrailingSlash = (pathname: string): string =>
     ? pathname.slice(0, -1)
     : pathname;
 
-const getPathSegments = (pathname: string): ReadonlyArray<string> =>
-  removeOptionalTrailingSlash(pathname).split("/").filter(Boolean);
-
-const isActivityResumeSessionPath = (
-  session: ClassicFlowSession,
-  pathname: string
-): boolean => {
-  const pathnameSegments = getPathSegments(pathname);
-  const reviewPathSegments = getPathSegments(session.destination.reviewPath);
-  const routeBaseSegments = reviewPathSegments.slice(0, -1);
-  const completePathSegments = getPathSegments(
-    session.destination.completePath
-  );
-  const actionSegment = completePathSegments.at(-2);
-  const historicalCompletePathSegments = actionSegment
-    ? [...routeBaseSegments, `${actionSegment}-review`, "complete"]
-    : [];
-
-  return (
-    Object.values(session.destination).some(
-      (destination) => destination === pathname
-    ) ||
-    (pathnameSegments.length === historicalCompletePathSegments.length &&
-      pathnameSegments.every(
-        (segment, index) => segment === historicalCompletePathSegments[index]
-      ))
-  );
-};
-
 export const isClassicFlowSessionPath = (
   session: ClassicFlowSession,
   pathname: string
 ): boolean => {
   const normalizedPathname = removeOptionalTrailingSlash(pathname);
-
-  if (session.intake._tag === "ActivityResume") {
-    return isActivityResumeSessionPath(session, normalizedPathname);
-  }
-
   return Object.values(session.destination).some(
     (destination) => destination === normalizedPathname
   );
@@ -364,7 +271,7 @@ export const getClassicTransactionFlowReviewPricingInput = (
       return { token: intake.unstakeToken, yield: intake.integration };
     case "Manage":
       return { token: intake.interactedToken, yield: intake.integration };
-    case "ActivityResume": {
+    case "YieldActionContinuation": {
       const token = getActionInputToken({
         actionDto: intake.action,
         yieldDto: intake.selectedYield,
@@ -383,7 +290,7 @@ export const getClassicTransactionFlowKycYield = (
     case "Exit":
       return intake.integration;
     case "Manage":
-    case "ActivityResume":
+    case "YieldActionContinuation":
       return null;
   }
 };
@@ -407,7 +314,7 @@ export const getClassicTransactionFlowGasWarningInput = (
       }
     : {
         gasFeeToken:
-          intake._tag === "ActivityResume"
+          intake._tag === "YieldActionContinuation"
             ? intake.selectedYield.mechanics.gasFeeToken
             : intake.gasFeeToken,
         stakeAmount: null,
@@ -443,11 +350,8 @@ export const getClassicTransactionWorkflowInput = (
     Match.tag("Enter", ({ selectedToken }) => selectedToken),
     Match.tag("Exit", ({ unstakeToken }) => unstakeToken),
     Match.tag("Manage", ({ interactedToken }) => interactedToken),
-    Match.tag("ActivityResume", ({ selectedYield }) =>
-      getActionInputToken({
-        actionDto: action,
-        yieldDto: selectedYield,
-      })
+    Match.tag("YieldActionContinuation", ({ selectedYield }) =>
+      getActionInputToken({ actionDto: action, yieldDto: selectedYield })
     ),
     Match.exhaustive
   );

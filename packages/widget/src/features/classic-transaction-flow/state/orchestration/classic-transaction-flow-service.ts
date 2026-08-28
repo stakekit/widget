@@ -9,7 +9,6 @@ import {
   SubscriptionRef,
 } from "effect";
 import {
-  toWidgetPath,
   WidgetNavigation,
   type WidgetNavigationError,
 } from "../../../../services/navigation/widget-navigation";
@@ -36,10 +35,6 @@ type StartClassicTransactionFlowOutcome =
     }>
   | Readonly<{ readonly _tag: "RejectedOwner" }>;
 
-type AbandonClassicActivityResumeOutcome =
-  | Readonly<{ readonly _tag: "Abandoned" }>
-  | Readonly<{ readonly _tag: "RejectedStale" }>;
-
 export type AcquireClassicFlowSessionOutcome =
   | Readonly<{
       readonly _tag: "Acquired";
@@ -48,12 +43,6 @@ export type AcquireClassicFlowSessionOutcome =
   | Readonly<{ readonly _tag: "RejectedStale" }>;
 
 type ClassicTransactionFlowServiceApi = Readonly<{
-  readonly abandonActivityResume: (
-    session: ClassicFlowSession
-  ) => Effect.Effect<
-    AbandonClassicActivityResumeOutcome,
-    WidgetNavigationError
-  >;
   readonly acquireSession: (
     session: ClassicFlowSession
   ) => Effect.Effect<AcquireClassicFlowSessionOutcome, never, Scope.Scope>;
@@ -118,6 +107,16 @@ const makeClassicTransactionFlowService = Effect.fn(
       return { _tag: "RejectedOwner" } as const;
     }
 
+    if (input.intake._tag === "YieldActionContinuation") {
+      const current = yield* SubscriptionRef.get(stateRef);
+      if (
+        current?.intake._tag === "YieldActionContinuation" &&
+        current.intake.action.id === input.intake.action.id
+      ) {
+        return { _tag: "Started", session: current } as const;
+      }
+    }
+
     const resolved = resolveClassicTransactionFlowStart(
       input,
       currentWalletScope
@@ -138,31 +137,6 @@ const makeClassicTransactionFlowService = Effect.fn(
         return { _tag: "Started", session } as const;
       })
     );
-  });
-
-  const abandonActivityResumeOpen = Effect.fn(
-    "ClassicTransactionFlowService.abandonActivityResume"
-  )(function* (
-    session: ClassicFlowSession
-  ): Effect.fn.Return<
-    AbandonClassicActivityResumeOutcome,
-    WidgetNavigationError
-  > {
-    const current = yield* SubscriptionRef.get(stateRef);
-    if (
-      current?.epoch !== session.epoch ||
-      current.activityPresentation !== "Dashboard" ||
-      current.intake._tag !== "ActivityResume"
-    ) {
-      return { _tag: "RejectedStale" } as const;
-    }
-
-    yield* navigation.execute({
-      _tag: "Push",
-      path: toWidgetPath("/activity"),
-    });
-    yield* clearCurrent(session);
-    return { _tag: "Abandoned" } as const;
   });
 
   const acquireSessionOpen = Effect.fn(
@@ -205,8 +179,6 @@ const makeClassicTransactionFlowService = Effect.fn(
   );
 
   return {
-    abandonActivityResume: (session) =>
-      operations.run(abandonActivityResumeOpen(session)),
     acquireSession: (session) => operations.run(acquireSessionOpen(session)),
     currentSession: SubscriptionRef.changes(stateRef),
     start: (input) => operations.run(startOpen(input)),

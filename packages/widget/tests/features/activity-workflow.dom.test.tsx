@@ -62,6 +62,9 @@ describe("activity and completion workflows", () => {
       app.container.querySelector('[data-rk="activity-connect-wallet"]')
         ?.textContent
     ).toContain("Connect");
+    expect(
+      app.container.querySelector('[data-rk="activity-connect-wallet"] button')
+    ).toBeNull();
 
     await app.rerender(wrap(activityPage({ status: "connecting" })));
     expect(
@@ -81,7 +84,9 @@ describe("activity and completion workflows", () => {
     expect(onRetry).toHaveBeenCalledOnce();
 
     await app.rerender(wrap(activityPage({ status: "empty" })));
-    expect(app.container.textContent).toContain("No previous activity");
+    expect(
+      app.container.querySelector('[data-rk="activity-empty"]')?.textContent
+    ).toContain("No previous activity");
 
     await app.rerender(
       wrap(
@@ -92,6 +97,7 @@ describe("activity and completion workflows", () => {
             { count: 0, filter: "defi" },
           ],
           pagination: { status: "complete" },
+          refreshStatus: "fresh",
           selectedFilter: "defi",
           showingCount: 0,
           status: "ready",
@@ -123,6 +129,7 @@ describe("activity and completion workflows", () => {
           actions: [item],
           filterOptions: [],
           pagination: { status: "load-more-failed" },
+          refreshStatus: "failed",
           selectedFilter: "all",
           showingCount: 1,
           status: "ready",

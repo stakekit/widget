@@ -1,5 +1,6 @@
 import { Effect, Option, Schema } from "effect";
 import * as HttpClientError from "effect/unstable/http/HttpClientError";
+import { YieldAction } from "../../domain/action/models";
 import { ActivityActionsPage } from "../../domain/activity/models";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
 import {
@@ -13,6 +14,7 @@ import {
 import type { YieldBalancesCommand } from "../../domain/finance/models";
 import { HealthStatus } from "../../domain/health/models";
 import type {
+  ActionId,
   ProviderId,
   WalletAddress,
   YieldId,
@@ -49,6 +51,33 @@ const toYieldDirectoryParams = (request: YieldDirectoryRequest) => ({
 });
 
 export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
+  const getActivityAction = Effect.fn("YieldResourceSource.getActivityAction")(
+    function* (actionId: ActionId) {
+      const response = yield* yieldApi
+        .ActionsControllerGetAction(actionId, undefined)
+        .pipe(
+          Effect.map(Option.some),
+          Effect.catchIf(isNotFoundHttpClientError, () =>
+            Effect.succeed(
+              Option.none<YieldApi.ActionsControllerGetAction200>()
+            )
+          ),
+          withApiRequestError("activity-action")
+        );
+
+      return yield* response.pipe(
+        Option.match({
+          onNone: () => Effect.succeed(Option.none<typeof YieldAction.Type>()),
+          onSome: (value) =>
+            Schema.decodeUnknownEffect(YieldAction)(value).pipe(
+              withResponseDecodeError("activity-action"),
+              Effect.map(Option.some)
+            ),
+        })
+      );
+    }
+  );
+
   const getEnabledWalletNetworks = Effect.fn(
     "YieldResourceSource.getEnabledWalletNetworks"
   )(function* () {
@@ -205,6 +234,7 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
   });
 
   return {
+    getActivityAction,
     getEnabledWalletNetworks,
     getHealth,
     getKycStatus,

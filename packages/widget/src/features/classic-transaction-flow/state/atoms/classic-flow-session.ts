@@ -2,8 +2,6 @@ import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { makeScopedEffectAtom } from "../../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
-import type { YieldAction } from "../../../../domain/action/models";
-import { getActionInputToken } from "../../../../domain/action/rules";
 import {
   type ClassicFlowSession,
   type ClassicTransactionFlowIntake,
@@ -36,27 +34,7 @@ const makeClassicFlowSessionModule = (session: ClassicFlowSession) =>
         return intake;
       };
 
-      const makeActivityCompleteView = (selectedAction: YieldAction) => {
-        const activity = getIntake("ActivityResume");
-        return {
-          inputToken:
-            getActionInputToken({
-              actionDto: selectedAction,
-              yieldDto: activity.selectedYield,
-            }) ?? null,
-          selectedAction,
-          selectedValidators: activity.selectedValidators,
-          selectedYield: activity.selectedYield,
-        } as const;
-      };
-
-      const activityHistoryViewAtom = Atom.make(() => {
-        const activity = getIntake("ActivityResume");
-        return makeActivityCompleteView(activity.action);
-      }).pipe(Atom.withLabel("classicFlowSessionActivityHistoryView"));
-
       const facade = {
-        activityHistoryViewAtom,
         getIntake,
         intake: session.intake,
         mount: session.mount,

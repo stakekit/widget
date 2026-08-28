@@ -92,51 +92,59 @@ export const SelectOpportunity = () => {
         </Trigger>
       }
     >
-      <GroupedVirtualList
-        estimateSize={() => 60}
-        groupCounts={data.groupCounts}
-        groupContent={(index) => {
-          return (
-            <Box py="3" px="4" background="modalBodyBackground">
-              <Text
-                className={selectModalGroupLabel}
-                variant={{ type: "muted", weight: "bold", size: "small" }}
-              >
-                {data.groups[index]}
-              </Text>
-            </Box>
-          );
-        }}
-        itemContent={(index) => {
-          const itemOption = EArray.get(data.all, index);
+      {data.all.length === 0 && view.search.trim().length > 0 ? (
+        <Box display="flex" justifyContent="center" px="4" py="4">
+          <Text variant={{ type: "muted" }}>
+            {t("details.opportunities_no_results")}
+          </Text>
+        </Box>
+      ) : (
+        <GroupedVirtualList
+          estimateSize={() => 60}
+          groupCounts={data.groupCounts}
+          groupContent={(index) => {
+            return (
+              <Box py="3" px="4" background="modalBodyBackground">
+                <Text
+                  className={selectModalGroupLabel}
+                  variant={{ type: "muted", weight: "bold", size: "small" }}
+                >
+                  {data.groups[index]}
+                </Text>
+              </Box>
+            );
+          }}
+          itemContent={(index) => {
+            const itemOption = EArray.get(data.all, index);
 
-          if (Option.isNone(itemOption)) return null;
+            if (Option.isNone(itemOption)) return null;
 
-          const item = itemOption.value;
+            const item = itemOption.value;
 
-          return (
-            <SelectModalItemContainer>
-              {typeof item === "string" ? (
-                <Box py="3">
-                  <Text
-                    className={selectModalGroupLabel}
-                    variant={{ type: "muted", weight: "bold", size: "small" }}
-                  >
-                    {item}
-                  </Text>
-                </Box>
-              ) : (
-                <SelectOpportunityListItem
-                  item={item}
-                  selected={item.id === data.ss.id}
-                  onYieldSelect={(yieldDto) => select(yieldDto.id)}
-                  testId={`select-opportunity__item_${item.id}-${index}`}
-                />
-              )}
-            </SelectModalItemContainer>
-          );
-        }}
-      />
+            return (
+              <SelectModalItemContainer>
+                {typeof item === "string" ? (
+                  <Box py="3">
+                    <Text
+                      className={selectModalGroupLabel}
+                      variant={{ type: "muted", weight: "bold", size: "small" }}
+                    >
+                      {item}
+                    </Text>
+                  </Box>
+                ) : (
+                  <SelectOpportunityListItem
+                    item={item}
+                    selected={item.id === data.ss.id}
+                    onYieldSelect={(yieldDto) => select(yieldDto.id)}
+                    testId={`select-opportunity__item_${item.id}-${index}`}
+                  />
+                )}
+              </SelectModalItemContainer>
+            );
+          }}
+        />
+      )}
     </SelectModal>
   );
 };

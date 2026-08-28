@@ -1,56 +1,55 @@
 import { useAtomValue } from "@effect/atom-react";
-import { Outlet } from "react-router";
-import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
-import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
+import { Outlet, useMatch } from "react-router";
 import { Box } from "../../../../../shared/ui/primitives/box";
-import { CaretLeftIcon } from "../../../../../shared/ui/primitives/icons/caret-left";
+import { useSKWallet } from "../../../../wallet/index";
 import {
-  activityResumeDashboardViewAtom,
-  useAbandonActivityResume,
-} from "../../../../classic-transaction-flow/index";
-import { AnimationPage } from "../../../../widget-shell/views";
-import { ActivityPage } from "./activity.page.tsx";
-import { activityDetailsContainer } from "./styles.css";
+  AnimationPage,
+  BackButtonProvider,
+} from "../../../../widget-shell/views";
+import {
+  activityPageViewAtom,
+  shouldShowActivityDashboardSplit,
+} from "../../../state/page";
+import { ActivityPageContent } from "../../activity-page/activity-page-content";
+import * as styles from "./styles.css";
 
 export const ActivityTabPage = () => {
-  const variant = useWidgetConfig("variant");
-  const activityResume = useAtomValue(activityResumeDashboardViewAtom);
-  const abandonActivityResume = useAbandonActivityResume();
-  const showDetails = activityResume._tag === "Open";
+  const wallet = useSKWallet();
+  const view = useAtomValue(activityPageViewAtom);
+  const stepsMatch = useMatch("/activity/:actionId/steps");
+  const completeMatch = useMatch("/activity/:actionId/complete");
+  const isExecution = stepsMatch !== null || completeMatch !== null;
+  const showSplit =
+    wallet?.status === "connected" && shouldShowActivityDashboardSplit(view);
 
-  const onBack = () => {
-    abandonActivityResume(undefined);
-  };
+  if (!showSplit) {
+    return (
+      <AnimationPage>
+        <ActivityPageContent allowDefaultSelection />
+      </AnimationPage>
+    );
+  }
 
   return (
     <AnimationPage>
-      <Box display="flex" flexDirection="column" gap="4">
-        {showDetails ? (
-          <>
-            <Box
-              as="button"
-              onClick={onBack}
-              display="flex"
-              alignItems="center"
-              justifyContent="flex-start"
-            >
-              <CaretLeftIcon />
-            </Box>
-
-            <Box
-              className={combineRecipeWithVariant({
-                rec: activityDetailsContainer,
-                variant,
-              })}
-            >
+      <Box className={styles.split}>
+        <Box className={styles.feed}>
+          <ActivityPageContent allowDefaultSelection />
+        </Box>
+        <Box
+          className={isExecution ? styles.execution : styles.details}
+          data-rk={
+            isExecution ? "activity-execution-panel" : "activity-details-panel"
+          }
+        >
+          {isExecution ? (
+            <BackButtonProvider>
               <Outlet />
-            </Box>
-          </>
-        ) : (
-          <Box display="flex" flex={1} flexDirection="column" width="full">
-            <ActivityPage />
-          </Box>
-        )}
+            </BackButtonProvider>
+          ) : (
+            <Outlet />
+          )}
+        </Box>
       </Box>
     </AnimationPage>
   );

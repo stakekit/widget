@@ -7,6 +7,8 @@ import {
 } from "../../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
 import type { YieldAction } from "../../../../domain/action/models";
+import { isContinuableYieldAction } from "../../../../domain/activity/action-capabilities";
+import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
 import {
   CurrentYieldKycGateKey,
   currentYieldKycGateAtom,
@@ -19,10 +21,7 @@ import {
 import type { ClassicFlowReviewHandle } from "../orchestration/classic-flow-review";
 import type { AcquireClassicFlowSessionOutcome } from "../orchestration/classic-transaction-flow-service";
 import { makeClassicFlowStakeReviewViewAtom } from "../yield-summary";
-import {
-  makeClassicFlowActivityActionExpiredAtom,
-  makeClassicFlowSessionReviewResources,
-} from "./classic-flow-review-view";
+import { makeClassicFlowSessionReviewResources } from "./classic-flow-review-view";
 
 class ClassicFlowScopeUnavailableError extends Data.TaggedError(
   "ClassicFlowScopeUnavailableError"
@@ -73,14 +72,22 @@ export const makeClassicFlowReviewScopeAtom = <E>({
     },
     { initialValue: undefined }
   ).pipe(Atom.withLabel("refreshClassicFlowSessionKycAtom"));
-  const activityActionExpiredAtom =
-    session.intake._tag === "ActivityResume"
-      ? makeClassicFlowActivityActionExpiredAtom(intakeAtom)
-      : Atom.make(false);
-  const eligibilityAtom = Atom.make((get) => ({
-    activityExpired: get(activityActionExpiredAtom),
-    kycBlocking: get(kycGateAtom).isBlocking,
-  })).pipe(Atom.withLabel("classicFlowReviewEligibility"));
+  const eligibilityAtom = Atom.make((get) => {
+    const presentationTime = get(presentationClockAtom);
+    return {
+      activityExpired:
+        session.intake._tag === "YieldActionContinuation" &&
+        (presentationTime === null ||
+          !isContinuableYieldAction(
+            session.intake.action,
+            presentationTime.now
+          )),
+      kycBlocking: get(kycGateAtom).isBlocking,
+    };
+  }).pipe(Atom.withLabel("classicFlowReviewEligibility"));
+  const activityExpiredAtom = Atom.make(
+    (get) => get(eligibilityAtom).activityExpired
+  ).pipe(Atom.withLabel("classicFlowReviewActivityExpired"));
 
   return makeScopedEffectStateAtom({
     acquire: (context) =>
@@ -146,7 +153,7 @@ export const makeClassicFlowReviewScopeAtom = <E>({
 
       const reviewResources = makeClassicFlowSessionReviewResources({
         actionPreviewAtom,
-        activityActionExpiredAtom,
+        activityExpiredAtom,
         intakeAtom,
         kycGateAtom,
       });

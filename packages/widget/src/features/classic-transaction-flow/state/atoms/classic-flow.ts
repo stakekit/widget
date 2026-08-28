@@ -2,8 +2,14 @@ import { Effect, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
+import type { YieldAction } from "../../../../domain/action/models";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../../../domain/earn/models";
+import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
+import type { ClassicTransactionWorkflowProviderDetail } from "../../../../services/transaction-workflow/transaction-workflow-model";
 import {
-  type ClassicFlowSession,
   isClassicFlowSessionPath,
   type StartClassicTransactionFlow,
 } from "../../model/classic-transaction-flow";
@@ -27,6 +33,13 @@ export const currentClassicFlowSessionAtom = Atom.make((get) =>
   AsyncResult.getOrElse(get(currentClassicFlowSessionResultAtom), () => null)
 ).pipe(Atom.withLabel("currentClassicFlowSessionAtom"));
 
+export const currentYieldActionContinuationIdAtom = Atom.make((get) => {
+  const session = get(currentClassicFlowSessionAtom);
+  return session?.intake._tag === "YieldActionContinuation"
+    ? session.intake.action.id
+    : null;
+}).pipe(Atom.withLabel("currentYieldActionContinuationIdAtom"));
+
 export const startClassicTransactionFlowAtom = walletRuntime
   .fn((input: StartClassicTransactionFlow, context) =>
     context
@@ -35,6 +48,36 @@ export const startClassicTransactionFlowAtom = walletRuntime
   )
   .pipe(Atom.withLabel("startClassicTransactionFlowAtom"));
 
+export type StartYieldActionContinuation = Readonly<{
+  readonly action: YieldAction;
+  readonly providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>;
+  readonly selectedValidators: ReadonlyArray<EarnValidator>;
+  readonly selectedYield: EarnYieldWithProvider;
+  readonly walletScope: WalletScopeKey;
+}>;
+
+export const startYieldActionContinuationAtom = walletRuntime
+  .fn((input: StartYieldActionContinuation, context) =>
+    context.result(classicTransactionFlowServiceAtom).pipe(
+      Effect.flatMap((service) =>
+        service.start({
+          intake: {
+            _tag: "YieldActionContinuation",
+            action: input.action,
+            providersDetails: input.providersDetails,
+            selectedValidators: input.selectedValidators,
+            selectedYield: input.selectedYield,
+            walletScope: input.walletScope,
+          },
+          mount: {
+            _tag: "YieldActionContinuation",
+          },
+        })
+      )
+    )
+  )
+  .pipe(Atom.withLabel("startYieldActionContinuationAtom"));
+
 export const isActiveClassicTransactionFlowPathAtom = Atom.family(
   (pathname: string) =>
     Atom.make((get) => {
@@ -42,42 +85,3 @@ export const isActiveClassicTransactionFlowPathAtom = Atom.family(
       return session ? isClassicFlowSessionPath(session, pathname) : false;
     }).pipe(Atom.withLabel("isActiveClassicTransactionFlowPath"))
 );
-
-const abandonActivityResumeAtomFamily = Atom.family(
-  (session: ClassicFlowSession | null) =>
-    walletRuntime
-      .fn((_input: undefined, context) =>
-        session
-          ? context
-              .result(classicTransactionFlowServiceAtom)
-              .pipe(
-                Effect.flatMap((service) =>
-                  service.abandonActivityResume(session)
-                )
-              )
-          : Effect.succeed({ _tag: "RejectedStale" } as const)
-      )
-      .pipe(Atom.withLabel("abandonActivityResume"))
-);
-
-export const activityResumeDashboardCommandAtom = Atom.make((get) => {
-  const session = get(currentClassicFlowSessionAtom);
-  const boundSession =
-    session?.activityPresentation === "Dashboard" &&
-    session.intake._tag === "ActivityResume"
-      ? session
-      : null;
-  return abandonActivityResumeAtomFamily(boundSession);
-}).pipe(Atom.withLabel("activityResumeDashboardCommand"));
-
-export const activityResumeDashboardViewAtom = Atom.make((get) => {
-  const session = get(currentClassicFlowSessionAtom);
-  if (
-    session?.activityPresentation !== "Dashboard" ||
-    session.intake._tag !== "ActivityResume"
-  ) {
-    return { _tag: "Closed" } as const;
-  }
-
-  return { _tag: "Open" } as const;
-}).pipe(Atom.withLabel("activityResumeDashboardView"));

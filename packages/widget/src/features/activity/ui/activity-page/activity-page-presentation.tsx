@@ -6,7 +6,6 @@ import { Button } from "../../../../shared/ui/primitives/button";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { FallbackContent } from "../../../widget-shell/views";
-import type { YieldSummaryProvider } from "../../../yield-summary/index";
 import type { ActivityActionItem } from "../../model/activity-action";
 import type { ActivityFilter } from "../../model/filters";
 import type {
@@ -90,14 +89,13 @@ const ReadyActivityPage = ({
   onActionSelect,
   onFilterSelect,
   onLoadMore,
+  selectedActionId,
   view,
 }: {
-  readonly onActionSelect: (
-    item: ActivityActionItem,
-    providersDetails: ReadonlyArray<YieldSummaryProvider>
-  ) => void;
+  readonly onActionSelect: (item: ActivityActionItem) => void;
   readonly onFilterSelect: (filter: ActivityFilter) => void;
   readonly onLoadMore: () => void;
+  readonly selectedActionId: string | null;
   readonly view: ActivityPageReadyView;
 }) => {
   const { t } = useTranslation();
@@ -135,7 +133,11 @@ const ReadyActivityPage = ({
             fetchNextPage={onLoadMore}
             estimateSize={() => 80}
             itemContent={(_index, item) => (
-              <ActionListItem onActionSelect={onActionSelect} action={item} />
+              <ActionListItem
+                action={item}
+                isSelected={item.actionData.id === selectedActionId}
+                onActionSelect={onActionSelect}
+              />
             )}
           />
 
@@ -160,15 +162,14 @@ export const ActivityPagePresentation = ({
   onFilterSelect,
   onLoadMore,
   onRetry,
+  selectedActionId = null,
   view,
 }: {
-  readonly onActionSelect: (
-    item: ActivityActionItem,
-    providersDetails: ReadonlyArray<YieldSummaryProvider>
-  ) => void;
+  readonly onActionSelect: (item: ActivityActionItem) => void;
   readonly onFilterSelect: (filter: ActivityFilter) => void;
   readonly onLoadMore: () => void;
   readonly onRetry: () => void;
+  readonly selectedActionId?: string | null;
   readonly view: ActivityPageView;
 }) => {
   const { t } = useTranslation();
@@ -193,8 +194,16 @@ export const ActivityPagePresentation = ({
       <ActivityPageError dataRk="activity-page-error" onRetry={onRetry} />
     )),
     Match.when({ status: "empty" }, () => (
-      <Box my="4">
-        <FallbackContent type="no_previous_activity" />
+      <Box
+        alignItems="center"
+        data-rk="activity-empty"
+        display="flex"
+        flex={1}
+        justifyContent="center"
+      >
+        <Text variant={{ weight: "medium", size: "large" }} textAlign="center">
+          {t("activity.no_previous_activity")}
+        </Text>
       </Box>
     )),
     Match.when({ status: "ready" }, (readyView) => (
@@ -202,6 +211,7 @@ export const ActivityPagePresentation = ({
         onActionSelect={onActionSelect}
         onFilterSelect={onFilterSelect}
         onLoadMore={onLoadMore}
+        selectedActionId={selectedActionId}
         view={readyView}
       />
     )),

@@ -9,8 +9,10 @@ import {
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
+import { isActivityActionOwnedByScope } from "../../domain/activity/action-capabilities";
 import type { ActivityActionsPage } from "../../domain/activity/models";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
+import type { ActionId } from "../../domain/identity/identifiers";
 import {
   type WalletScopeKey,
   type WalletScopeOwnerKey,
@@ -29,6 +31,21 @@ import { makePresentableResourceFamily } from "../resource-failure-presentation"
 const PAGE_SIZE = 50;
 const COUNT_PAGE_SIZE = 1;
 type ActivityAction = NonNullable<ActivityActionsPage["items"]>[number];
+
+export class ActivityActionKey extends Data.TaggedClass("ActivityActionKey")<{
+  readonly actionId: ActionId;
+  readonly scope: WalletScopeOwnerKey;
+}> {
+  constructor(input: {
+    readonly actionId: ActionId;
+    readonly scope: WalletScopeKey;
+  }) {
+    super({
+      actionId: input.actionId,
+      scope: walletScopeOwnerKey(input.scope),
+    });
+  }
+}
 
 export type ActivityHistoryBatch = {
   readonly actions: ReadonlyArray<ActivityAction>;
@@ -81,6 +98,36 @@ export class ActivityHistoryError extends Data.TaggedError(
 const activityPolicy = withApiResourcePolicy({
   staleTime: Duration.minutes(1),
 });
+
+const activityActionCanonicalAtom = Atom.family((key: ActivityActionKey) =>
+  appRuntime
+    .atom(() =>
+      YieldResourceSource.use((source) =>
+        source.getActivityAction(key.actionId).pipe(
+          Effect.map(
+            Option.filter((action) =>
+              isActivityActionOwnedByScope({
+                action,
+                scope: key.scope,
+                yieldData: null,
+              })
+            )
+          ),
+          Effect.map(Option.getOrNull),
+          Effect.mapError((cause) => new ActivityHistoryError({ cause }))
+        )
+      )
+    )
+    .pipe(
+      Atom.withReactivity(resourceInvalidationKeys.activity(key.scope)),
+      activityPolicy,
+      Atom.withLabel("activityActionResourceAtom")
+    )
+);
+
+export const activityActionResourceAtom = makePresentableResourceFamily(
+  activityActionCanonicalAtom
+);
 
 const activityRequest = (
   key: ActivityHistoryKey,

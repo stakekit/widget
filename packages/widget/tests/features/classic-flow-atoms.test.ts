@@ -11,7 +11,6 @@ import type {
   StartClassicTransactionFlow,
 } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import {
-  activityResumeDashboardCommandAtom,
   currentClassicFlowSessionAtom,
   isActiveClassicTransactionFlowPathAtom,
   startClassicTransactionFlowAtom,
@@ -20,7 +19,7 @@ import { currentClassicFlowSessionRootAtom } from "../../src/features/classic-tr
 import type { ClassicFlowSessionHandle } from "../../src/features/classic-transaction-flow/state/orchestration/classic-flow-session";
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import { toWidgetPath } from "../../src/services/navigation/widget-navigation";
-import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
+import { yieldApiYieldFixture } from "../fixtures";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
@@ -48,22 +47,9 @@ const makeEnterIntake = (): Extract<
   };
 };
 
-const makeActivityIntake = (): Extract<
-  ClassicTransactionFlowIntake,
-  { readonly _tag: "ActivityResume" }
-> => ({
-  _tag: "ActivityResume",
-  action: yieldApiActionFixture(),
-  providersDetails: [],
-  selectedValidators: [],
-  selectedYield: yieldApiYieldFixture(),
-  walletScope,
-});
-
 const makeSession = (
   intake: ClassicTransactionFlowIntake,
-  epoch: number,
-  activityPresentation?: "Classic" | "Dashboard"
+  epoch: number
 ): ClassicFlowSession => {
   const mount = (() => {
     switch (intake._tag) {
@@ -81,17 +67,14 @@ const makeSession = (
           balanceId: "balance",
           integrationId: intake.integration.id,
         } as const;
-      case "ActivityResume":
+      case "YieldActionContinuation":
         return {
-          _tag: "ActivityResume",
-          presentation: activityPresentation ?? "Classic",
-          target: "FreshReview",
+          _tag: "YieldActionContinuation",
         } as const;
     }
   })();
 
   return {
-    ...(activityPresentation ? { activityPresentation } : {}),
     destination: {
       completePath: toWidgetPath("/complete"),
       reviewPath: toWidgetPath("/review"),
@@ -120,8 +103,6 @@ describe("Classic Flow Atom bridge", () => {
     const probes = { acquired: 0, released: 0 };
     const startInputs: Array<StartClassicTransactionFlow> = [];
     const service = ClassicTransactionFlowService.of({
-      abandonActivityResume: () =>
-        Effect.succeed({ _tag: "RejectedStale" } as const),
       acquireSession: (session) =>
         Effect.acquireRelease(
           Effect.sync(() => {
@@ -175,37 +156,5 @@ describe("Classic Flow Atom bridge", () => {
     await vi.waitFor(() =>
       expect(registry.get(currentClassicFlowSessionAtom)).toBeNull()
     );
-  });
-
-  it("forwards the Dashboard abandon command with the captured Session", async () => {
-    const session = makeSession(makeActivityIntake(), 7, "Dashboard");
-    const current = await Effect.runPromise(
-      SubscriptionRef.make<ClassicFlowSession | null>(session)
-    );
-    const captured: Array<ClassicFlowSession> = [];
-    const service = ClassicTransactionFlowService.of({
-      abandonActivityResume: (candidate) =>
-        Effect.sync(() => {
-          captured.push(candidate);
-          return { _tag: "Abandoned" } as const;
-        }),
-      acquireSession: () => Effect.succeed({ _tag: "RejectedStale" } as const),
-      currentSession: SubscriptionRef.changes(current),
-      start: () => Effect.succeed({ _tag: "RejectedOwner" } as const),
-    });
-    const registry = AtomRegistry.make({
-      initialValues: [
-        Atom.initialValue(
-          walletRuntime.layer,
-          Layer.succeed(ClassicTransactionFlowService, service) as never
-        ),
-      ],
-    });
-
-    await vi.waitFor(() =>
-      expect(registry.get(currentClassicFlowSessionAtom)?.epoch).toBe(7)
-    );
-    registry.set(registry.get(activityResumeDashboardCommandAtom), undefined);
-    await vi.waitFor(() => expect(captured).toEqual([session]));
   });
 });

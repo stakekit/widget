@@ -36,23 +36,26 @@ export const useComplete = () => {
   };
 
   const activityAction =
-    session.intake._tag === "ActivityResume" ? session.intake.action : null;
+    session.intake._tag === "YieldActionContinuation"
+      ? session.intake.action
+      : null;
   const unstake =
-    session.mount._tag === "PositionExit" || activityAction?.type === "UNSTAKE";
+    session.mount._tag === "PositionExit" || activityAction?.intent === "exit";
   const pendingAction =
     session.mount._tag === "PositionManage" ||
-    (activityAction !== null &&
-      activityAction.type !== "STAKE" &&
-      activityAction.type !== "UNSTAKE");
+    activityAction?.intent === "manage";
 
   const { t } = useTranslation();
 
   const resolveCta = (): PageCta => ({
     disabled: false,
     isLoading: false,
-    label: t("complete.continue", {
-      context: isLedgerLive ? "ledger" : undefined,
-    }),
+    label:
+      activityAction === null
+        ? t("complete.continue", {
+            context: isLedgerLive ? "ledger" : undefined,
+          })
+        : t("activity.complete.continue"),
     onClick,
     hide: false,
   });

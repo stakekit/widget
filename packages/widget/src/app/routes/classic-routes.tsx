@@ -1,7 +1,10 @@
 import { useAtomValue } from "@effect/atom-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
-import { AnimatedActivityPage } from "../../features/activity/composition";
+import {
+  AnimatedActivityPage,
+  createActivityActionRoutes,
+} from "../../features/activity/composition";
 import { createClassicFlowRoutes } from "../../features/classic-transaction-flow/composition";
 import { isActiveClassicTransactionFlowPathAtom } from "../../features/classic-transaction-flow/index";
 import { AnimatedEarnPage } from "../../features/earn/composition";
@@ -65,18 +68,19 @@ export const ClassicRoutes = () => {
                       path="positions"
                       element={<AnimatedPositionsPage />}
                     />
-                    <Route path="activity" element={<AnimatedActivityPage />} />
+                    <Route path="activity">
+                      <Route index element={<AnimatedActivityPage />} />
+                      <Route
+                        element={
+                          <WalletScopeRouteGuard fallbackPath="/activity" />
+                        }
+                      >
+                        {createActivityActionRoutes("Classic")}
+                      </Route>
+                    </Route>
                   </Route>
 
                   <Route element={<WalletScopeRouteGuard fallbackPath="/" />}>
-                    {/* Activity flow */}
-                    <Route path="activity">
-                      {createClassicFlowRoutes({
-                        journey: "ActivityResume",
-                        presentation: "Classic",
-                      })}
-                    </Route>
-
                     {/* Stake flow */}
                     {createClassicFlowRoutes({ journey: "Enter" })}
 

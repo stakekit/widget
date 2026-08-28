@@ -58,6 +58,15 @@ const expectEventually = <T>(read: () => T, expected: T) =>
   Effect.promise(() => expect.poll(read).toBe(expected));
 
 describe("WidgetTranslation", () => {
+  it("describes vault withdrawal timing with valid pluralized copy", () => {
+    expect(translationEN.details.vault.withdrawn_time_one).toBe(
+      "After withdrawing, your assets will be available in {{count}} day"
+    );
+    expect(translationEN.details.vault.withdrawn_time_other).toBe(
+      "After withdrawing, your assets will be available in {{count}} days"
+    );
+  });
+
   it("exposes initialized local resources while enrichment is pending", async () => {
     const initial = makeSettings({
       customTranslations: {

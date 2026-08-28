@@ -4,5 +4,3 @@ export type FeesBps = {
   explanation: string;
   label: string;
 };
-
-export type LabelKey = "retry" | "continue";

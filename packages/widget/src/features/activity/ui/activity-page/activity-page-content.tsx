@@ -1,16 +1,15 @@
 import { useTrackPage } from "../../../tracking/index";
 import { useActivityPage } from "../../react/use-activity-page";
-import type { ActivityResumePresentation } from "../../state/start-activity-resume";
 import { ActivityPagePresentation } from "./activity-page-presentation";
 
 export const ActivityPageContent = ({
-  resumePresentation,
+  allowDefaultSelection = false,
 }: {
-  readonly resumePresentation: ActivityResumePresentation;
-}) => {
+  readonly allowDefaultSelection?: boolean;
+} = {}) => {
   useTrackPage("activity");
 
-  const page = useActivityPage({ resumePresentation });
+  const page = useActivityPage({ allowDefaultSelection });
 
   return <ActivityPagePresentation {...page} />;
 };

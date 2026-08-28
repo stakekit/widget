@@ -15,9 +15,9 @@ import type { ActivityIconType } from "../components/activity-icon";
 
 const ICON_TYPE_MAP: Record<ActivityDirection, ActivityIconType> = {
   deposit: "in",
+  neutral: "neutral",
   rewards: "rewards",
   withdraw: "out",
-  other: "in",
 };
 
 export const useActionListItem = (action: ActivityActionItem) => {
@@ -98,6 +98,8 @@ export const useActionListItem = (action: ActivityActionItem) => {
     title,
     timestampAbsolute,
     timestampRelative,
-    badgeLabel: t("activity.failed"),
+    badgeLabel: projection.statusLabel
+      ? t(`activity.status.${projection.statusLabel}`)
+      : null,
   };
 };

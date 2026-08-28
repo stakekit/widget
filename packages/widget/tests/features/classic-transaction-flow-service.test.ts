@@ -98,12 +98,14 @@ const makeEnterIntake = (): Extract<
   };
 };
 
-const makeActivityIntake = (): Extract<
+const makeContinuationIntake = (
+  action = yieldApiActionFixture()
+): Extract<
   ClassicTransactionFlowIntake,
-  { readonly _tag: "ActivityResume" }
+  { readonly _tag: "YieldActionContinuation" }
 > => ({
-  _tag: "ActivityResume",
-  action: yieldApiActionFixture(),
+  _tag: "YieldActionContinuation",
+  action,
   providersDetails: [],
   selectedValidators: [],
   selectedYield: yieldApiYieldFixture(),
@@ -485,107 +487,6 @@ describe("ClassicTransactionFlowService", () => {
     });
   });
 
-  it("abandons only the captured Dashboard Activity Session", async () => {
-    const commands: Array<WidgetNavigationCommand> = [];
-    const walletState = await Effect.runPromise(
-      SubscriptionRef.make(connectedWalletState(walletScope))
-    );
-
-    const result = await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const service = yield* ClassicTransactionFlowService;
-          const started = yield* service.start({
-            intake: makeActivityIntake(),
-            mount: {
-              _tag: "ActivityResume",
-              presentation: "Dashboard",
-              target: "HistoricalDetails",
-            },
-          });
-          if (started._tag !== "Started") {
-            return yield* Effect.die("Expected a Dashboard Activity Session");
-          }
-          const first = yield* service.abandonActivityResume(started.session);
-          const duplicate = yield* service.abandonActivityResume(
-            started.session
-          );
-          return { duplicate, first };
-        })
-      ).pipe(
-        Effect.provide(
-          makeServiceLayer(walletState, {
-            execute: (command) =>
-              Effect.sync(() => {
-                commands.push(command);
-              }),
-          })
-        )
-      )
-    );
-
-    expect(result).toEqual({
-      duplicate: { _tag: "RejectedStale" },
-      first: { _tag: "Abandoned" },
-    });
-    expect(commands).toEqual([
-      { _tag: "Push", path: toWidgetPath("/activity") },
-    ]);
-  });
-
-  it("keeps a Dashboard Activity Session when abandonment navigation fails", async () => {
-    let attempts = 0;
-    const walletState = await Effect.runPromise(
-      SubscriptionRef.make(connectedWalletState(walletScope))
-    );
-
-    const result = await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const service = yield* ClassicTransactionFlowService;
-          const started = yield* service.start({
-            intake: makeActivityIntake(),
-            mount: {
-              _tag: "ActivityResume",
-              presentation: "Dashboard",
-              target: "HistoricalDetails",
-            },
-          });
-          if (started._tag !== "Started") {
-            return yield* Effect.die("Expected a Dashboard Activity Session");
-          }
-
-          const first = yield* Effect.exit(
-            service.abandonActivityResume(started.session)
-          );
-          const retained = yield* service.currentSession.pipe(Stream.runHead);
-          const retry = yield* service.abandonActivityResume(started.session);
-          const cleared = yield* service.currentSession.pipe(Stream.runHead);
-
-          return { cleared, first, retained, retry, session: started.session };
-        })
-      ).pipe(
-        Effect.provide(
-          makeServiceLayer(walletState, {
-            execute: () =>
-              Effect.suspend(() => {
-                attempts += 1;
-                return attempts === 1
-                  ? Effect.fail(new WidgetNavigationError({ cause: "blocked" }))
-                  : Effect.void;
-              }),
-          })
-        )
-      )
-    );
-
-    expect(Exit.isFailure(result.first)).toBe(true);
-    expect(result.retained).toEqual(Option.some(result.session));
-    expect(result.retry).toEqual({ _tag: "Abandoned" });
-    expect(result.cleared).toEqual(Option.some(null));
-    expect(attempts).toBe(2);
-  });
-
   it("keeps an invalid Exit preview in Review", async () => {
     const invalidAction = yieldApiActionFixture({
       transactions: [
@@ -710,30 +611,7 @@ describe("ClassicTransactionFlowService", () => {
     });
   });
 
-  it.each([
-    {
-      label: "Manage",
-      startInput: {
-        intake: makeManageIntake(),
-        mount: {
-          _tag: "PositionManage" as const,
-          balanceId: "balance",
-          integrationId: "integration",
-        },
-      },
-    },
-    {
-      label: "Activity Resume",
-      startInput: {
-        intake: makeActivityIntake(),
-        mount: {
-          _tag: "ActivityResume" as const,
-          presentation: "Classic" as const,
-          target: "FreshReview" as const,
-        },
-      },
-    },
-  ])("keeps an invalid $label preview in Review", async ({ startInput }) => {
+  it("keeps an invalid Manage preview in Review", async () => {
     const invalidAction = yieldApiActionFixture({
       transactions: [
         yieldApiTransactionFixture({
@@ -750,7 +628,14 @@ describe("ClassicTransactionFlowService", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const service = yield* ClassicTransactionFlowService;
-          const started = yield* service.start(startInput);
+          const started = yield* service.start({
+            intake: makeManageIntake(),
+            mount: {
+              _tag: "PositionManage",
+              balanceId: "balance",
+              integrationId: "integration",
+            },
+          });
           if (started._tag !== "Started") {
             return yield* Effect.die("Expected a Classic Flow Session");
           }
@@ -788,6 +673,167 @@ describe("ClassicTransactionFlowService", () => {
         },
       },
     });
+  });
+
+  it("reuses an already-active Yield Action Continuation Session", async () => {
+    const walletState = await Effect.runPromise(
+      SubscriptionRef.make(connectedWalletState(walletScope))
+    );
+    const input = {
+      intake: makeContinuationIntake(
+        yieldApiActionFixture({ status: "WAITING_FOR_NEXT" })
+      ),
+      mount: { _tag: "YieldActionContinuation" as const },
+    };
+
+    const result = await Effect.runPromise(
+      Effect.gen(function* () {
+        const service = yield* ClassicTransactionFlowService;
+        const first = yield* service.start(input);
+        const second = yield* service.start(input);
+        return { first, second };
+      }).pipe(Effect.provide(makeServiceLayer(walletState)))
+    );
+
+    expect(result.first._tag).toBe("Started");
+    expect(result.second).toEqual(result.first);
+  });
+
+  it("allows a continuation to start again after its Session is released", async () => {
+    const walletState = await Effect.runPromise(
+      SubscriptionRef.make(connectedWalletState(walletScope))
+    );
+    const input = {
+      intake: makeContinuationIntake(
+        yieldApiActionFixture({ status: "WAITING_FOR_NEXT" })
+      ),
+      mount: { _tag: "YieldActionContinuation" as const },
+    };
+
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const service = yield* ClassicTransactionFlowService;
+          const first = yield* service.start(input);
+          if (first._tag !== "Started") {
+            return yield* Effect.die("Expected a Classic Flow Session");
+          }
+
+          yield* Effect.scoped(
+            Effect.gen(function* () {
+              const acquired = yield* service.acquireSession(first.session);
+              if (acquired._tag !== "Acquired") {
+                return yield* Effect.die("Expected an acquired Session");
+              }
+            })
+          );
+
+          return yield* service.start(input);
+        })
+      ).pipe(Effect.provide(makeServiceLayer(walletState)))
+    );
+
+    expect(result._tag).toBe("Started");
+  });
+
+  it("continues the existing waiting Activity action without previewing another action", async () => {
+    const action = yieldApiActionFixture({
+      id: "waiting-manage-action",
+      intent: "manage",
+      status: "WAITING_FOR_NEXT",
+      transactions: [
+        yieldApiTransactionFixture({
+          id: "waiting-transaction",
+          status: "WAITING_FOR_SIGNATURE",
+        }),
+      ],
+      type: "CLAIM_REWARDS",
+    });
+    const commands: Array<WidgetNavigationCommand> = [];
+    const inputs: Array<TransactionWorkflowInput> = [];
+    const previewAction = vi.fn(() => Effect.die("unexpected preview"));
+    const walletState = await Effect.runPromise(
+      SubscriptionRef.make(connectedWalletState(walletScope))
+    );
+
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const service = yield* ClassicTransactionFlowService;
+          const started = yield* service.start({
+            intake: makeContinuationIntake(action),
+            mount: {
+              _tag: "YieldActionContinuation",
+            },
+          });
+          if (started._tag !== "Started") {
+            return yield* Effect.die("Expected an Activity Session");
+          }
+          const acquired = yield* service.acquireSession(started.session);
+          if (acquired._tag !== "Acquired") {
+            return yield* Effect.die("Expected an acquired Activity Session");
+          }
+          const review =
+            yield* acquired.session.acquireReview(readyEligibility);
+          const state = yield* review.states.pipe(
+            Stream.filter((current) => current.preview._tag === "Success"),
+            Stream.runHead
+          );
+          const confirmation = yield* review.confirm();
+          const execution = yield* acquired.session.acquireExecution();
+          if (execution._tag !== "Acquired") {
+            return yield* Effect.die("Expected an Activity Execution");
+          }
+          const finish = yield* execution.execution.finish();
+
+          return { confirmation, execution, finish, state };
+        })
+      ).pipe(
+        Effect.provide(
+          makeServiceLayer(walletState, {
+            execute: (command) =>
+              Effect.sync(() => {
+                commands.push(command);
+              }),
+            makeWorkflow: (input) =>
+              Effect.sync(() => {
+                inputs.push(input);
+                return {
+                  dispatch: () => Effect.void,
+                  states: Stream.never,
+                };
+              }),
+            previewAction,
+          })
+        )
+      )
+    );
+
+    expect(result.state).toMatchObject({
+      _tag: "Some",
+      value: { preview: { _tag: "Success", action: { id: action.id } } },
+    });
+    expect(result.confirmation).toEqual({ _tag: "Confirmed" });
+    expect(result.execution._tag).toBe("Acquired");
+    expect(result.finish).toEqual({ _tag: "Accepted" });
+    expect(previewAction).not.toHaveBeenCalled();
+    expect(inputs).toMatchObject([
+      {
+        _tag: "Classic",
+        actionMeta: { actionId: action.id },
+        transactions: [{ id: "waiting-transaction" }],
+      },
+    ]);
+    expect(commands).toEqual([
+      {
+        _tag: "Push",
+        path: toWidgetPath(`/activity/${action.id}/steps`),
+      },
+      {
+        _tag: "Push",
+        path: toWidgetPath("/activity"),
+      },
+    ]);
   });
 
   it("removes skipped transactions and preserves pending transactions", async () => {
@@ -924,11 +970,11 @@ describe("ClassicTransactionFlowService", () => {
         Effect.gen(function* () {
           const service = yield* ClassicTransactionFlowService;
           const started = yield* service.start({
-            intake: makeActivityIntake(),
+            intake: makeContinuationIntake(
+              yieldApiActionFixture({ status: "WAITING_FOR_NEXT" })
+            ),
             mount: {
-              _tag: "ActivityResume",
-              presentation: "Classic",
-              target: "FreshReview",
+              _tag: "YieldActionContinuation",
             },
           });
           if (started._tag !== "Started") {
@@ -1400,11 +1446,7 @@ describe("ClassicTransactionFlowService", () => {
     const selectedYield = yieldApiYieldFixture();
     const historicalAction = yieldApiActionFixture({
       amount: "1",
-      type: "STAKE",
-      yieldId: selectedYield.id,
-    });
-    const completedAction = yieldApiActionFixture({
-      amount: "2",
+      status: "WAITING_FOR_NEXT",
       transactions: [
         yieldApiTransactionFixture({
           explorerUrl: "https://explorer.test/activity",
@@ -1428,7 +1470,7 @@ describe("ClassicTransactionFlowService", () => {
           const service = yield* ClassicTransactionFlowService;
           const started = yield* service.start({
             intake: {
-              _tag: "ActivityResume",
+              _tag: "YieldActionContinuation",
               action: historicalAction,
               providersDetails: [],
               selectedValidators: [],
@@ -1436,9 +1478,7 @@ describe("ClassicTransactionFlowService", () => {
               walletScope,
             },
             mount: {
-              _tag: "ActivityResume",
-              presentation: "Classic",
-              target: "FreshReview",
+              _tag: "YieldActionContinuation",
             },
           });
           if (started._tag !== "Started") {
@@ -1469,7 +1509,7 @@ describe("ClassicTransactionFlowService", () => {
             execute: (navigationCommand) =>
               navigationCommand._tag === "Replace" &&
               navigationCommand.path ===
-                toWidgetPath("/activity/stake/complete")
+                toWidgetPath(`/activity/${historicalAction.id}/complete`)
                 ? Deferred.succeed(completionNavigation, navigationCommand)
                 : Effect.void,
             makeWorkflow: (input: TransactionWorkflowInput) =>
@@ -1477,7 +1517,6 @@ describe("ClassicTransactionFlowService", () => {
                 dispatch: () => Effect.void,
                 states: Stream.succeed(initializeTransactionWorkflow(input)),
               }),
-            previewAction: () => Effect.succeed(completedAction),
           })
         )
       )
@@ -1485,7 +1524,7 @@ describe("ClassicTransactionFlowService", () => {
 
     expect(command).toEqual({
       _tag: "Replace",
-      path: toWidgetPath("/activity/stake/complete"),
+      path: toWidgetPath(`/activity/${historicalAction.id}/complete`),
       state: {
         urls: [
           {

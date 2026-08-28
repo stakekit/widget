@@ -10,14 +10,14 @@ import {
 } from "../../wallet/index";
 import type { ActivityActionItem } from "../model/activity-action";
 import type { ActivityFilter, ActivityFilterOption } from "../model/filters";
-import { activityFilterAtom } from "./filter";
 import {
+  ActivityActionsKey,
   ActivityFilterOptionsKey,
   activityActionsPullAtom,
+  activityFilterAtom,
   activityFilterOptionsAtom,
   loadMoreActivityActionsAtom,
-} from "./read-models/activity-feed";
-import { ActivityActionsKey } from "./read-models/activity-request";
+} from "./page-resources";
 
 type ActivityPageWalletStatus = "connect-wallet" | "connected" | "connecting";
 
@@ -31,6 +31,7 @@ type ActivityPageReadyView = {
   readonly actions: Array<ActivityActionItem>;
   readonly filterOptions: Array<ActivityFilterOption>;
   readonly pagination: ActivityPagePagination;
+  readonly refreshStatus: "failed" | "fresh" | "refreshing";
   readonly selectedFilter: ActivityFilter;
   readonly showingCount: number;
   readonly status: "ready";
@@ -44,6 +45,10 @@ export type ActivityPageView =
   | { readonly status: "failed" }
   | { readonly status: "loading" }
   | ActivityPageReadyView;
+
+export const shouldShowActivityDashboardSplit = (
+  view: ActivityPageView
+): boolean => view.status === "ready" && view.actions.length > 0;
 
 type ActivityActionsResult = Atom.Type<
   ReturnType<typeof activityActionsPullAtom>
@@ -125,6 +130,14 @@ const projectPagination = ({
   return hasNextPage ? { status: "idle" } : { status: "complete" };
 };
 
+const projectRefreshStatus = (
+  result: ActivityActionsResult
+): ActivityPageReadyView["refreshStatus"] => {
+  if (result.waiting) return "refreshing";
+  if (AsyncResult.isFailure(result)) return "failed";
+  return "fresh";
+};
+
 export const projectActivityPageView = ({
   actionsResult,
   filterOptionsResult,
@@ -195,6 +208,7 @@ export const projectActivityPageView = ({
       hasActions: actions.length > 0,
       hasNextPage,
     }),
+    refreshStatus: projectRefreshStatus(actionsResult),
     selectedFilter,
     showingCount: actions.length,
     status: "ready",
