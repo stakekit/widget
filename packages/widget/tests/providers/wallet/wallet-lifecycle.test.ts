@@ -23,7 +23,7 @@ const connector = {
 
 const connected = (
   address: typeof WalletAddress.Type = firstAddress
-): NormalizedWalletState => ({
+): Extract<NormalizedWalletState, { readonly status: "connected" }> => ({
   additionalAddresses: null,
   address,
   chain: mainnet,
@@ -114,6 +114,38 @@ describe("Wallet lifecycle policy", () => {
 
     expect(trackEvent).toHaveBeenCalledTimes(1);
     expect(disconnect).not.toHaveBeenCalled();
+  });
+
+  it("tracks Stellar wallet connections with address and network", async () => {
+    const trackEvent = vi.fn(() => Effect.void);
+    const stellarAddress = Schema.decodeSync(WalletAddress)(
+      `G${"A".repeat(55)}`
+    );
+    const stellarConnector = {
+      id: "freighter",
+      name: "Freighter",
+      type: "stellar-wallet",
+      uid: "freighter-uid",
+    } as unknown as Connector;
+
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const policy = yield* makePolicy(trackEvent as never);
+        yield* policy.transition({
+          actions: { disconnect: () => Effect.void },
+          state: {
+            ...connected(stellarAddress),
+            connector: stellarConnector,
+            network: "stellar",
+          },
+        });
+      })
+    );
+
+    expect(trackEvent).toHaveBeenCalledWith("connectedWallet", {
+      address: stellarAddress,
+      network: "stellar",
+    });
   });
 
   it("disconnects an unsupported identity once until state resets", async () => {

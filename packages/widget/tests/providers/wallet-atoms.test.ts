@@ -6,6 +6,7 @@ import { AdditionalAddresses } from "../../src/domain/wallet/address";
 import { EnabledWalletNetworksResponse } from "../../src/domain/wallet/models";
 import { InitParams } from "../../src/services/wallet/init-params";
 import { getConfig as getEvmConfig } from "../../src/services/wallet/internal/adapters/evm/config";
+import { StellarWalletsKitPlatform } from "../../src/services/wallet/internal/platform/stellar-wallets-kit-platform";
 import {
   WagmiOperations,
   WagmiOperationsError,
@@ -33,6 +34,10 @@ const emptyInitParams = {
   validator: null,
   yieldId: null,
 } as const;
+
+const unusedStellarWalletsKitPlatform = StellarWalletsKitPlatform.of({
+  load: Effect.succeed([]),
+});
 
 type InitialConnectionOperations = Pick<
   WagmiOperationsService,
@@ -376,6 +381,7 @@ describe("wallet Effect Atom boundaries", () => {
                 forceWalletConnectOnly: false,
                 institutionalWallets: false,
                 isLedgerLive: false,
+                isMobileWallet: false,
                 isSafe: false,
                 mapWalletFn: undefined,
                 walletPolicy: undefined,
@@ -386,7 +392,8 @@ describe("wallet Effect Atom boundaries", () => {
                 tonConnectManifestUrl: undefined,
                 variant: "default",
               },
-              buildActions
+              buildActions,
+              unusedStellarWalletsKitPlatform
             );
           }).pipe(Effect.provide(WagmiOperations.layer))
         )
@@ -411,6 +418,7 @@ describe("wallet Effect Atom boundaries", () => {
               forceWalletConnectOnly: false,
               institutionalWallets: false,
               isLedgerLive: false,
+              isMobileWallet: false,
               isSafe: false,
               mapWalletFn: undefined,
               walletPolicy: undefined,
@@ -421,7 +429,8 @@ describe("wallet Effect Atom boundaries", () => {
               tonConnectManifestUrl: undefined,
               variant: "default",
             },
-            buildActions
+            buildActions,
+            unusedStellarWalletsKitPlatform
           );
         }).pipe(Effect.provide(WagmiOperations.layer))
       )

@@ -108,6 +108,21 @@ export const cardano = {
   },
 } as const satisfies Chain;
 
+export const stellar = {
+  id: getWalletRoutingId("stellar"),
+  name: "Stellar",
+  iconUrl: getTokenLogo("xlm"),
+  nativeCurrency: {
+    decimals: 7,
+    name: "Stellar Lumens",
+    symbol: "XLM",
+  },
+  rpcUrls: {
+    public: { http: ["https://horizon.stellar.org"] },
+    default: { http: ["https://horizon.stellar.org"] },
+  },
+} as const satisfies Chain;
+
 export const miscChainsMap: MiscChainsMap = {
   near: {
     network: "near",
@@ -138,5 +153,10 @@ export const miscChainsMap: MiscChainsMap = {
     network: "cardano",
     protocolFamily: getWalletProtocolFamily("cardano"),
     wagmiChain: cardano,
+  },
+  stellar: {
+    network: "stellar",
+    protocolFamily: getWalletProtocolFamily("stellar"),
+    wagmiChain: stellar,
   },
 };

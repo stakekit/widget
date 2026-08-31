@@ -11,12 +11,14 @@ export type WalletProtocolFamily =
   | "solana"
   | "tron"
   | "ton"
-  | "cardano";
+  | "cardano"
+  | "stellar";
 
 type ProtocolChainIdentity =
   | { readonly type: "evm"; readonly chainId: number }
   | { readonly type: "cosmos"; readonly chainId: string }
   | { readonly type: "substrate"; readonly genesisHash: `0x${string}` }
+  | { readonly type: "stellar"; readonly networkPassphrase: string }
   | { readonly type: "unmodelled" };
 
 type WalletNetworkMetadata = Readonly<{
@@ -42,7 +44,7 @@ const cosmos = <const ChainId extends string>(chainId: ChainId) =>
 const unmodelled = <
   const Family extends Exclude<
     WalletProtocolFamily,
-    "evm" | "cosmos" | "substrate"
+    "evm" | "cosmos" | "stellar" | "substrate"
   >,
   const RoutingId extends MiscChainIds,
 >(
@@ -52,6 +54,19 @@ const unmodelled = <
   ({
     protocolFamily,
     protocolChainIdentity: { type: "unmodelled" },
+    walletRoutingId,
+  }) as const;
+
+const stellar = <
+  const NetworkPassphrase extends string,
+  const RoutingId extends number,
+>(
+  networkPassphrase: NetworkPassphrase,
+  walletRoutingId: RoutingId
+) =>
+  ({
+    protocolFamily: "stellar",
+    protocolChainIdentity: { type: "stellar", networkPassphrase },
     walletRoutingId,
   }) as const;
 
@@ -123,6 +138,7 @@ const walletNetworkCatalog = {
   tron: unmodelled("tron", MiscChainIds.Tron),
   ton: unmodelled("ton", MiscChainIds.Ton),
   cardano: unmodelled("cardano", MiscChainIds.Cardano),
+  stellar: stellar("Public Global Stellar Network ; September 2015", 148),
   polkadot: {
     protocolFamily: "substrate",
     protocolChainIdentity: {

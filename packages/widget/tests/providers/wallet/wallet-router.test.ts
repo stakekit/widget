@@ -7,6 +7,7 @@ import type { Network } from "../../../src/domain/network/network";
 import {
   routeWalletAccountSwitch,
   routeWalletLedgerAccountRequest,
+  routeWalletMessage,
   routeWalletTransaction,
   type WalletRoutingContext,
 } from "../../../src/services/wallet/internal/runtime/router";
@@ -133,6 +134,68 @@ describe("wallet router", () => {
     expect(walletActions.sendEvmTransaction).toHaveBeenCalledWith(
       expect.objectContaining({ connector })
     );
+  });
+
+  it("routes Stellar transactions through the generic connector", async () => {
+    const stellarAddress = `G${"A".repeat(55)}`;
+    const signTransaction = vi.fn(() =>
+      Effect.succeed({
+        signedTxXdr: "signed-xdr",
+      })
+    );
+    const connector = {
+      id: "freighter",
+      signTransaction,
+      type: "stellar-wallet",
+      uid: "freighter",
+    } as unknown as Connector;
+    const walletActions = actions();
+    const state = {
+      ...connectedState(connector),
+      address: Schema.decodeSync(WalletAddress)(stellarAddress),
+      network: "stellar" as const,
+    };
+
+    await expect(
+      Effect.runPromise(
+        routeWalletTransaction(routingContext(state, walletActions), {
+          ...transactionInput,
+          network: "stellar" as Network,
+          tx: "AAAA",
+        })
+      )
+    ).resolves.toEqual({ broadcasted: false, signedTx: "signed-xdr" });
+    expect(signTransaction).toHaveBeenCalledWith({
+      address: stellarAddress,
+      networkPassphrase: "Public Global Stellar Network ; September 2015",
+      transactionXdr: "AAAA",
+    });
+    expect(walletActions.sendEvmTransaction).not.toHaveBeenCalled();
+  });
+
+  it("rejects Stellar message signing before the Wagmi fallback", async () => {
+    const connector = {
+      id: "freighter",
+      type: "stellar-wallet",
+      uid: "freighter",
+    } as unknown as Connector;
+    const walletActions = actions();
+
+    const failure = await Effect.runPromise(
+      Effect.flip(
+        routeWalletMessage(
+          routingContext(connectedState(connector), walletActions),
+          { message: "hello" }
+        )
+      )
+    );
+
+    expect(failure).toMatchObject({
+      _tag: "WalletCapabilityUnavailableError",
+      capability: "message",
+      connectorId: "freighter",
+    });
+    expect(walletActions.signMessage).not.toHaveBeenCalled();
   });
 
   it("rejects a stale Ledger account-switch command after wallet replacement", async () => {

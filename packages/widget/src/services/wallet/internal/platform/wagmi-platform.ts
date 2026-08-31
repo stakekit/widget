@@ -22,6 +22,7 @@ import {
   buildWagmiConfig,
   type WalletController,
 } from "../runtime/wagmi-config";
+import { StellarWalletsKitPlatform } from "./stellar-wallets-kit-platform";
 import { WagmiOperations } from "./wagmi-operations";
 
 class WagmiPlatformError extends Schema.TaggedError<WagmiPlatformError>()(
@@ -149,10 +150,15 @@ export class WagmiPlatform extends Context.Service<
     Effect.gen(function* () {
       const initialize = yield* makeInitializeWallet;
       const buildActions = yield* makeWagmiActions;
+      const stellarWalletsKitPlatform = yield* StellarWalletsKitPlatform;
       const buildConfig = Effect.fn("buildConfig")(function* (
         options: WagmiBuildConfigOptions
       ) {
-        return yield* buildWagmiConfig(options, buildActions).pipe(
+        return yield* buildWagmiConfig(
+          options,
+          buildActions,
+          stellarWalletsKitPlatform
+        ).pipe(
           Effect.mapError(
             (cause) =>
               new WagmiPlatformError({ cause, operation: "build-config" })
@@ -168,6 +174,8 @@ export class WagmiPlatform extends Context.Service<
   );
 
   static readonly defaultLayer = WagmiPlatform.layer.pipe(
-    Layer.provide(WagmiOperations.layer)
+    Layer.provide(
+      Layer.merge(WagmiOperations.layer, StellarWalletsKitPlatform.layer)
+    )
   );
 }

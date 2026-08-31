@@ -432,7 +432,6 @@ export const makeCompleteWalletStateStream = ({
   const cosmosChainWallet = makeCosmosChainWalletStream(connector).pipe(
     recoverWalletStateSlice("cosmos-chain-wallet", null)
   );
-
   return Stream.zipLatestAll(
     connectorChains,
     ledgerState,

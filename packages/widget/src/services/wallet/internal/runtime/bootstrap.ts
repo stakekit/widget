@@ -175,6 +175,7 @@ export const bootstrapWallet = Effect.gen(function* () {
       ...walletConfig,
       enabledNetworks: snapshot.enabledNetworks,
       externalProviders: snapshot.externalProviders,
+      isMobileWallet: snapshot.browser.isMobileWallet,
       persistPublicKey: persistence.upsertStoredPublicKey,
       queryParams: snapshot.initParams,
       solanaConnection: solanaRuntime.connection,

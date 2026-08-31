@@ -93,6 +93,7 @@
     "@cosmos-kit/keplr": "catalog:",
     "@cosmos-kit/leap": "catalog:",
     "@cosmos-kit/walletconnect": "catalog:",
+    "@creit-tech/stellar-wallets-kit": "catalog:",
     "@effect/atom-react": "catalog:",
     "@effect/openapi-generator": "catalog:",
     "@effect/platform-browser": "catalog:",

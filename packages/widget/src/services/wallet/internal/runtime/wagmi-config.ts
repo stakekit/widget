@@ -37,6 +37,7 @@ import { getConfig as getLedgerLiveConfig } from "../adapters/ledger/config";
 import { getConfig as getSafeConnector } from "../adapters/safe/config";
 import type { SubstrateChainsMap } from "../adapters/substrate/chains";
 import { getConfig as getSubstrateConfig } from "../adapters/substrate/config";
+import type { StellarWalletsKitPlatformService } from "../platform/stellar-wallets-kit-platform";
 import { buildsEcosystemConnectors } from "./connector-mode";
 import type { RunWalletEffect } from "./effect-runner";
 import { getVariantNetworkUrl } from "./network-icon";
@@ -126,6 +127,7 @@ export type BuildWagmiConfigOptions = {
   isSafe: boolean;
   chainIconMapping: SettingsProps["chainIconMapping"];
   institutionalWallets: boolean;
+  isMobileWallet: boolean;
   variant: VariantProps["variant"];
   solanaWallets: ReadonlyArray<SolanaWalletDescriptor>;
   solanaConnection: Connection;
@@ -138,9 +140,9 @@ export type BuildWagmiConfigOptions = {
   tonConnectManifestUrl: string | undefined;
 };
 
-const recoverEcosystemAdapter = <A>(
+const recoverEcosystemAdapter = <A, R>(
   ecosystem: "cosmos" | "misc" | "substrate",
-  effect: Effect.Effect<A, WalletIntegrationError>
+  effect: Effect.Effect<A, WalletIntegrationError, R>
 ) =>
   effect.pipe(
     Effect.catch((cause) =>
@@ -157,7 +159,8 @@ const recoverEcosystemAdapter = <A>(
 
 export const buildWagmiConfig = (
   opts: BuildWagmiConfigOptions,
-  buildActions: Effect.Success<typeof makeWagmiActions>
+  buildActions: Effect.Success<typeof makeWagmiActions>,
+  stellarWalletsKitPlatform: StellarWalletsKitPlatformService
 ) =>
   Effect.gen(function* () {
     const runWalletEffect: RunWalletEffect =
@@ -196,6 +199,9 @@ export const buildWagmiConfig = (
               buildConnectors,
               enabledNetworks: opts.enabledNetworks,
               forceWalletConnectOnly: opts.forceWalletConnectOnly,
+              stellarWalletsKitPlatform,
+              isMobileWallet: opts.isMobileWallet,
+              runWalletEffect,
               solanaWallets: opts.solanaWallets,
               solanaConnection: opts.solanaConnection,
               variant: opts.variant,
@@ -221,7 +227,7 @@ export const buildWagmiConfig = (
     const misc = miscConfig ?? {
       miscChainsMap: {},
       miscChains: [],
-      connectors: [null, null, null, null],
+      connectors: [null, null, null, null, null],
     };
     const substrate = substrateConfig ?? {
       substrateChainsMap: {},

@@ -10,6 +10,7 @@ import {
   getProtocolChainIdentity,
   getWalletProtocolFamily,
   getWalletRoutingId,
+  isWalletNetwork,
   WalletNetwork,
   walletCosmosNetworks,
 } from "../../src/domain/wallet/network";
@@ -55,6 +56,8 @@ describe("Wallet Network chain IDs", () => {
       String(SubstrateChainIds.Polkadot)
     );
     expect(MiscChainIds).not.toHaveProperty(String(MiscChainIds.Solana));
+    expect(MiscChainIds).not.toHaveProperty("Stellar");
+    expect(MiscChainIds).not.toHaveProperty("StellarTestnet");
     expectTypeOf<
       Extract<keyof typeof EvmChainIds, number>
     >().toEqualTypeOf<never>();
@@ -73,7 +76,9 @@ describe("Wallet Network chain IDs", () => {
     expectTypeOf<
       typeof WalletNetwork.Type
     >().toEqualTypeOf<WalletNetworkContract>();
-    expect(WalletNetwork.literals).toHaveLength(69);
+    expect(WalletNetwork.literals).toHaveLength(70);
+    expect(WalletNetwork.literals).not.toContain("stellar-testnet");
+    expect(isWalletNetwork("stellar-testnet")).toBe(false);
     expect(getWalletRoutingId("arbitrum")).toBe(42_161);
     expect(getProtocolChainIdentity("arbitrum")).toEqual({
       type: "evm",
@@ -95,6 +100,12 @@ describe("Wallet Network chain IDs", () => {
       type: "unmodelled",
     });
     expect(getWalletProtocolFamily("solana")).toBe("solana");
+    expect(getWalletRoutingId("stellar")).toBe(148);
+    expect(getProtocolChainIdentity("stellar")).toEqual({
+      type: "stellar",
+      networkPassphrase: "Public Global Stellar Network ; September 2015",
+    });
+    expect(getWalletProtocolFamily("stellar")).toBe("stellar");
 
     expect(
       WalletNetwork.literals.map((network) => getWalletProtocolFamily(network))
@@ -115,9 +126,14 @@ describe("Wallet Network chain IDs", () => {
   });
 
   it("keeps miscellaneous public IDs aligned with adapter metadata", () => {
-    expect(adapterChainIds(miscChainsMap)).toEqual(
-      declaredChainIds(MiscChainIds)
-    );
+    const publicIds = declaredChainIds(MiscChainIds);
+    const adapterIds = adapterChainIds(miscChainsMap);
+
+    expect(
+      Object.fromEntries(
+        Object.entries(adapterIds).filter(([name]) => name in publicIds)
+      )
+    ).toEqual(publicIds);
   });
 
   it("uses Wallet Routing IDs in adapter chain metadata", () => {

@@ -44,3 +44,12 @@ External Provider transaction support remains an adapter-owned capability set.
 The compatibility-preserving migration does not narrow the existing public
 `SupportedSKChainIds` properties; doing so is a separate breaking-interface
 decision.
+
+Stellar mainnet is the only Wallet Network in the `stellar` protocol family.
+Its Stellar Network Passphrase is its Protocol Chain Identity. Backend schemas
+may still enumerate Stellar testnet, but Wallet Bootstrap narrows it out because
+the wallet-domain catalogue does not declare it. The Widget-assigned numeric
+routing ID remains a private adapter detail rather than an addition to
+`MiscChainIds`, `SupportedSKChainIds`, `initialChain`, or External Provider
+contracts. Built-in Stellar wallet support does not imply Stellar support for
+host-supplied External Providers.

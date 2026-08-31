@@ -25,6 +25,8 @@ import { makeSafeWalletDriver } from "../adapters/safe/driver";
 import { isSafeConnector } from "../adapters/safe/safe-connector-meta";
 import { makeSolanaWalletDriver } from "../adapters/solana/driver";
 import { isSolanaConnector } from "../adapters/solana/solana-connector-meta";
+import { makeStellarWalletDriver } from "../adapters/stellar/driver";
+import { isStellarConnector } from "../adapters/stellar/stellar-connector-meta";
 import { makeSubstrateWalletDriver } from "../adapters/substrate/driver";
 import { isSubstrateConnector } from "../adapters/substrate/substrate-connector-meta";
 import { makeTonWalletDriver } from "../adapters/ton/driver";
@@ -58,6 +60,10 @@ export const routeWalletMessage = Effect.fn("routeWalletMessage")(function* (
     return yield* unavailable("message", state);
   }
 
+  if (isStellarConnector(state.connector)) {
+    return yield* unavailable("message", state);
+  }
+
   return yield* isExternalProviderConnector(state.connector)
     ? makeExternalProviderWalletDriver({
         connector: state.connector,
@@ -76,6 +82,12 @@ export const routeWalletTransaction = Effect.fn("routeWalletTransaction")(
     }
 
     const { address, connector } = state;
+    if (isStellarConnector(connector)) {
+      return yield* makeStellarWalletDriver({ connector }).signTransaction({
+        address,
+        ...input,
+      });
+    }
     if (isLedgerLiveConnector(connector)) {
       return yield* makeLedgerWalletDriver({
         connector,
