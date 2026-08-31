@@ -44,7 +44,7 @@ describe("RichErrorModal", () => {
     richErrorState.resetError.mockClear();
   });
 
-  it("renders the English API reason in place of the Error Copy details", async () => {
+  it("renders English Error Copy details instead of the API reason", async () => {
     richErrorState.error = {
       message: "KaminoLendingInsufficientSolForRentError",
       details: {
@@ -59,14 +59,14 @@ describe("RichErrorModal", () => {
       "Insufficient SOL for Account Rent"
     );
     expect(document.body.textContent).toContain(
-      "Insufficient SOL for transaction. Required: ~0.005 SOL, Current: 0.004 SOL"
+      "There is not enough SOL to fund the account rent required by Kamino Lending"
     );
     expect(document.body.textContent).toContain("Potential solution:");
     expect(document.body.textContent).toContain(
       "Add SOL to the account and try again"
     );
     expect(document.body.textContent).not.toContain(
-      "There is not enough SOL to fund the account rent required by Kamino Lending"
+      "Insufficient SOL for transaction. Required: ~0.005 SOL, Current: 0.004 SOL"
     );
     expect(document.body.textContent).not.toContain(
       "KaminoLendingInsufficientSolForRentError"
@@ -101,7 +101,7 @@ describe("RichErrorModal", () => {
     );
   });
 
-  it("replaces host Error Copy details with the English API reason", async () => {
+  it("renders host Error Copy details instead of the API reason", async () => {
     const i18n = createWidgetI18nInstance();
     i18n.addResourceBundle(
       "en",
@@ -125,12 +125,80 @@ describe("RichErrorModal", () => {
       </I18nextProvider>
     );
 
-    expect(document.body.textContent).toContain(
+    expect(document.body.textContent).toContain("HOST DETAILS");
+    expect(document.body.textContent).not.toContain(
       "Insufficient SOL for transaction."
     );
-    expect(document.body.textContent).not.toContain("HOST DETAILS");
     expect(document.body.textContent).toContain(
       "Add SOL to the account and try again"
+    );
+  });
+
+  it("interpolates values explicitly referenced by host Error Copy", async () => {
+    const i18n = createWidgetI18nInstance();
+    i18n.addResourceBundle(
+      "en",
+      "translation",
+      {
+        errors: {
+          KaminoLendingInsufficientSolForRentError: {
+            details: "The account needs {{amount}} for rent",
+          },
+        },
+      },
+      true,
+      true
+    );
+    richErrorState.error = {
+      message: "KaminoLendingInsufficientSolForRentError",
+      details: {
+        amount: "0.005 SOL",
+        reason: "Internal provider payload",
+      },
+    };
+
+    await render(
+      <I18nextProvider i18n={i18n}>
+        <RichErrorModal />
+      </I18nextProvider>
+    );
+
+    expect(document.body.textContent).toContain(
+      "The account needs 0.005 SOL for rent"
+    );
+    expect(document.body.textContent).not.toContain(
+      "Internal provider payload"
+    );
+  });
+
+  it("does not interpolate reason when host Error Copy references it", async () => {
+    const i18n = createWidgetI18nInstance();
+    i18n.addResourceBundle(
+      "en",
+      "translation",
+      {
+        errors: {
+          KaminoLendingInsufficientSolForRentError: {
+            details: "Provider reason: {{reason}}",
+          },
+        },
+      },
+      true,
+      true
+    );
+    richErrorState.error = {
+      message: "KaminoLendingInsufficientSolForRentError",
+      details: { reason: "Internal provider payload" },
+    };
+
+    await render(
+      <I18nextProvider i18n={i18n}>
+        <RichErrorModal />
+      </I18nextProvider>
+    );
+
+    expect(document.body.textContent).not.toContain(
+      "Internal provider payload"
     );
   });
 
@@ -151,15 +219,15 @@ describe("RichErrorModal", () => {
     expect(document.body.textContent?.trim()).toBe("Une erreur s'est produite");
   });
 
-  it("renders the API reason instead of an unknown identity", async () => {
+  it("renders only the generic title for an unknown English identity", async () => {
     richErrorState.error = {
       message: "FutureApiError",
       details: { reason: "The operation is temporarily unavailable." },
     };
     await renderModal();
 
-    expect(document.body.textContent).toContain("Something went wrong");
-    expect(document.body.textContent).toContain(
+    expect(document.body.textContent?.trim()).toBe("Something went wrong");
+    expect(document.body.textContent).not.toContain(
       "The operation is temporarily unavailable."
     );
     expect(document.body.textContent).not.toContain("FutureApiError");
@@ -185,7 +253,7 @@ describe("RichErrorModal", () => {
     );
 
     expect(document.body.textContent).toContain("Something went wrong");
-    expect(document.body.textContent).toContain(
+    expect(document.body.textContent).not.toContain(
       "The operation is temporarily unavailable."
     );
     expect(document.body.textContent).not.toContain("FutureApiError");
@@ -195,13 +263,14 @@ describe("RichErrorModal", () => {
     );
   });
 
-  it("renders a prose message that carries no reason", async () => {
+  it("treats a prose-shaped message as an unknown identity", async () => {
     richErrorState.error = { message: "KYC required" };
 
     await renderModal();
 
     expect(document.body.textContent).toContain("Something went wrong");
-    expect(document.body.textContent).toContain("KYC required");
+    expect(document.body.textContent).not.toContain("KYC required");
+    expect(document.body.textContent?.trim()).toBe("Something went wrong");
   });
 
   it("renders only the generic title when an unknown error has no usable reason", async () => {

@@ -460,7 +460,9 @@ describe("RWA KYC flow", () => {
     await userEvent.keyboard("0.1");
     await userEvent.click(app.getByText("Stake").last());
 
-    await expect.element(app.getByText("KYC required")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Something went wrong"))
+      .toBeInTheDocument();
     await expect
       .poll(() => app.getByTestId("kyc-gate-card-start_kyc").elements().length)
       .toBe(0);
@@ -513,7 +515,9 @@ describe("RWA KYC flow", () => {
     await expect.element(withdrawButton).toBeEnabled();
     await userEvent.click(withdrawButton);
 
-    await expect.element(app.getByText("KYC required")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Something went wrong"))
+      .toBeInTheDocument();
     await expect
       .poll(() => app.getByTestId("kyc-gate-card-start_kyc").elements().length)
       .toBe(0);

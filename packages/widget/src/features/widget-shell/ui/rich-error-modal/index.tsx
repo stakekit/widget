@@ -5,7 +5,7 @@ import { SelectModal } from "../../../../shared/ui/components/select-modal";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Heading } from "../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { richErrorDetail } from "../../model/rich-error-detail";
+import { richErrorInterpolationValues } from "../../model/rich-error-interpolation-values";
 import { useRichErrors } from "../../react/use-rich-errors";
 import { imageStyle } from "./style.css";
 
@@ -13,22 +13,11 @@ export const RichErrorModal = () => {
   const { i18n, t } = useTranslation();
   const { error, resetError } = useRichErrors();
   const { message, details } = error ?? {};
-  const hasKnownMessage = message
+  const hasKnownErrorCopy = message
     ? (["title", "details", "solution"] as const).every((field) =>
         i18n.exists(`errors.${message}.${field}`)
       )
     : false;
-  const errorDetail = error
-    ? richErrorDetail({
-        error,
-        language: i18n.resolvedLanguage ?? i18n.language,
-        errorCopyDetails:
-          message && hasKnownMessage
-            ? t(`errors.${message}.details`, details)
-            : undefined,
-      })
-    : undefined;
-
   useEffect(() => resetError, [resetError]);
 
   return (
@@ -45,15 +34,7 @@ export const RichErrorModal = () => {
         lineHeight="sm"
       >
         <Box as="img" src={images.whatIsLiquidStaking} className={imageStyle} />
-        {!message && (
-          <Box marginBottom="6">
-            <Heading variant={{ level: "h4" }}>
-              {t("shared.something_went_wrong")}
-            </Heading>
-          </Box>
-        )}
-
-        {message && hasKnownMessage && (
+        {message && hasKnownErrorCopy && (
           <>
             <Box textAlign="center">
               <Heading variant={{ level: "h4" }}>
@@ -64,7 +45,10 @@ export const RichErrorModal = () => {
                 textAlign="center"
                 marginTop="2"
               >
-                {errorDetail}
+                {t(
+                  `errors.${message}.details`,
+                  richErrorInterpolationValues(details)
+                )}
               </Text>
             </Box>
 
@@ -88,20 +72,11 @@ export const RichErrorModal = () => {
           </>
         )}
 
-        {message && !hasKnownMessage && (
+        {!hasKnownErrorCopy && (
           <Box textAlign="center">
             <Heading variant={{ level: "h4" }}>
               {t("shared.something_went_wrong")}
             </Heading>
-            {errorDetail && (
-              <Text
-                variant={{ type: "muted", weight: "normal" }}
-                textAlign="center"
-                marginTop="2"
-              >
-                {errorDetail}
-              </Text>
-            )}
           </Box>
         )}
       </Box>
