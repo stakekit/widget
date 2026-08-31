@@ -1,9 +1,7 @@
 import { Content, Overlay, Portal, Root, Title } from "@radix-ui/react-dialog";
 import { Root as VisuallyHiddenRoot } from "@radix-ui/react-visually-hidden";
-import clsx from "clsx";
 import type { ChangeEvent, PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useMemo, useState } from "react";
-import { combineRecipeWithVariant } from "../../../styles/recipe-variant";
 import { id } from "../../../styles/theme/ids";
 import { Box } from "../../primitives/box";
 import { SearchIcon } from "../../primitives/icons/search";
@@ -18,7 +16,6 @@ import {
   content,
   noOutline,
   overlay,
-  selectedListItem,
   selectModalItemContainer,
 } from "./styles.css";
 
@@ -250,24 +247,19 @@ export const SelectModalItem = ({
   selected?: boolean;
 }>) => {
   const { setOpen } = useSelectModalContext();
-  const { variant: themeVariant } = useWidgetPresentation();
-
   const onClick = () => onItemClick?.({ closeModal: () => setOpen(false) });
 
   return (
     <ListItem
-      variant={{ appearance: "plain", ...variant }}
+      variant={{
+        appearance: "plain",
+        ...variant,
+        active: selected ? "active" : variant?.active,
+      }}
       onClick={onClick}
       testId={testId}
       data-selected={selected || undefined}
-      className={clsx(
-        selected &&
-          combineRecipeWithVariant({
-            rec: selectedListItem,
-            variant: themeVariant,
-          }),
-        className
-      )}
+      className={className}
     >
       {children}
     </ListItem>

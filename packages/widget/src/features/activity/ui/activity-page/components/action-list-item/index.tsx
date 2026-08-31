@@ -1,4 +1,3 @@
-import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
@@ -12,7 +11,6 @@ import {
   completedStatusBadge,
   infoColumn,
   listItem,
-  listItemSelected,
   metaRow,
   noWrap,
   statusBadge,
@@ -63,11 +61,12 @@ export const ActionListItem = ({
     <Box py="1" width="full">
       <ListItem
         onClick={canOpenDetails ? () => onActionSelect(action) : undefined}
-        className={clsx(listItem, isSelected && listItemSelected)}
+        className={listItem}
         data-rk={
           isSelected ? "activity-list-item-selected" : "activity-list-item"
         }
         variant={{
+          active: isSelected ? "active" : "inactive",
           hover: canOpenDetails ? "enabled" : "disabled",
         }}
       >

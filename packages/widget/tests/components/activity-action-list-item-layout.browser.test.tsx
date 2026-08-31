@@ -108,7 +108,16 @@ it("marks the selected feed item", async () => {
     <ActionListItem action={{} as never} isSelected onActionSelect={vi.fn()} />
   );
 
-  expect(
-    app.container.querySelector('[data-rk="activity-list-item-selected"]')
-  ).not.toBeNull();
+  app.container.style.setProperty("--sk-color-accent", "#4a60ff");
+  app.container.style.setProperty(
+    "--sk-color-token-select-background",
+    "#f5f5f6"
+  );
+
+  const selectedItem = app.container.querySelector<HTMLElement>(
+    '[data-rk="activity-list-item-selected"]'
+  );
+
+  expect(selectedItem).not.toBeNull();
+  expect(getComputedStyle(selectedItem!).boxShadow).not.toBe("none");
 });

@@ -1,6 +1,5 @@
 import { style } from "@vanilla-extract/css";
 import { atoms } from "../../../../../shared/styles/theme/atoms.css";
-import { vars } from "../../../../../shared/styles/theme/contract.css";
 import {
   activityFeedContainerName,
   widgetContainerName,
@@ -27,10 +26,6 @@ export const listItem = style([
   atoms({ gap: "1" }),
   { flexDirection: "column" },
 ]);
-
-export const listItemSelected = style({
-  background: vars.color.tokenSelectHoverBackground,
-});
 
 export const iconCircle = style([
   atoms({ background: "background" }),

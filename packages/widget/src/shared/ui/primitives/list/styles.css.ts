@@ -23,6 +23,18 @@ export const itemContainer = recipe({
         { border: "1px solid transparent", boxSizing: "border-box" },
       ],
     },
+    active: {
+      inactive: {},
+      active: {
+        background: `color-mix(in srgb, ${vars.color.accent} 12%, ${vars.color.tokenSelectBackground})`,
+        boxShadow: `inset 0 0 0 1px ${vars.color.accent}`,
+        selectors: {
+          "&:hover": {
+            background: `color-mix(in srgb, ${vars.color.accent} 12%, ${vars.color.tokenSelectBackground})`,
+          },
+        },
+      },
+    },
     hover: {
       disabled: {},
       enabled: {
@@ -38,6 +50,7 @@ export const itemContainer = recipe({
     },
   },
   defaultVariants: {
+    active: "inactive",
     appearance: "card",
     hover: "enabled",
     type: "enabled",

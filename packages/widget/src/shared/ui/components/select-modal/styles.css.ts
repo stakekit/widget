@@ -1,5 +1,4 @@
 import { keyframes, style } from "@vanilla-extract/css";
-import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
 import { breakpoints, minMediaQuery } from "../../../styles/tokens/breakpoints";
@@ -83,27 +82,4 @@ export const selectModalItemContainer = style({
 export const selectModalGroupLabel = style({
   textTransform: "uppercase",
   letterSpacing: "0.06em",
-});
-
-export const selectedListItem = recipe({
-  base: [
-    {
-      background: `color-mix(in srgb, ${vars.color.accent} 8%, transparent)`,
-      border: `1px solid ${vars.color.accent}`,
-      selectors: {
-        "&:hover": {
-          background: `color-mix(in srgb, ${vars.color.accent} 8%, transparent)`,
-        },
-      },
-    },
-  ],
-  variants: {
-    variant: {
-      default: {},
-      utila: {},
-    },
-  },
-  defaultVariants: {
-    variant: "default",
-  },
 });
