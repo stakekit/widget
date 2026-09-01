@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import {
-  Deferred,
+  type Duration,
   Effect,
   Layer,
   Schema,
@@ -25,13 +25,13 @@ import {
   WalletBalancesInvalidationKey,
   YieldPositionsInvalidationKey,
 } from "../../src/services/resource-invalidation";
-import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
   type WalletState,
 } from "../../src/services/wallet/wallet-state";
+import { makeTestWallet } from "../utils/services/wallet-service";
 
 const owner = walletScopeOwnerKey(
   new WalletScopeKey({
@@ -63,391 +63,249 @@ const disconnectedWalletState: WalletState = {
   ledger: disconnectedLedgerConnectorState,
 };
 
-const makeWallet = (
-  state: Effect.Effect<WalletState>,
-  states: Stream.Stream<WalletState> = Stream.never
-) =>
-  WalletService.of({
-    state,
-    states,
-  } as never);
+type WorkflowKind = Extract<
+  WidgetDomainEvent,
+  { readonly _tag: "TransactionWorkflowEnded" }
+>["workflowKind"];
+
+const makeProjectionHarness = Effect.fn("makeProjectionHarness")(function* (
+  initialWalletState: WalletState
+) {
+  const eventRef = yield* SubscriptionRef.make<WidgetDomainEvent>({
+    _tag: "TransactionWorkflowStarted",
+    owner,
+  });
+  const invalidationRef = yield* SubscriptionRef.make<
+    ReadonlyArray<ReadonlyArray<unknown>>
+  >([]);
+  const wallet = yield* makeTestWallet({ initialState: initialWalletState });
+  const reactivity = yield* Reactivity.make;
+  const recordingReactivity = Reactivity.Reactivity.of({
+    ...reactivity,
+    invalidate: (keys) => {
+      if (!Array.isArray(keys)) {
+        return Effect.die(
+          "makeProjectionHarness: expected array invalidation keys"
+        );
+      }
+      return SubscriptionRef.update(invalidationRef, (current) => [
+        ...current,
+        keys,
+      ]);
+    },
+  });
+  const events = WidgetDomainEvents.of({
+    events: SubscriptionRef.changes(eventRef),
+    publish: () =>
+      Effect.die("makeProjectionHarness: unexpected domain event publish"),
+  });
+  const dependencies = Layer.mergeAll(
+    wallet.layer,
+    Layer.succeed(WidgetDomainEvents, events),
+    Layer.succeed(Reactivity.Reactivity, recordingReactivity)
+  );
+
+  yield* transactionWorkflowResourceEventProjection.pipe(
+    Stream.runDrain,
+    Effect.provide(dependencies),
+    Effect.forkScoped({ startImmediately: true })
+  );
+
+  const awaitInvalidationCount = Effect.fn(
+    "makeProjectionHarness.awaitInvalidationCount"
+  )(function* (count: number) {
+    const current = yield* SubscriptionRef.get(invalidationRef);
+    if (current.length >= count) {
+      return;
+    }
+    yield* SubscriptionRef.changes(invalidationRef).pipe(
+      Stream.filter((invalidations) => invalidations.length >= count),
+      Stream.take(1),
+      Stream.runDrain
+    );
+  });
+
+  return {
+    advanceTime: (duration: Duration.Input) =>
+      TestClock.adjust(duration).pipe(Effect.andThen(Effect.yieldNow)),
+    awaitInvalidationCount,
+    endWorkflow: (workflowKind: WorkflowKind) =>
+      SubscriptionRef.set(eventRef, {
+        _tag: "TransactionWorkflowEnded",
+        owner,
+        workflowKind,
+      }),
+    invalidations: SubscriptionRef.get(invalidationRef),
+    setWalletState: (state: WalletState) =>
+      wallet.setState(state).pipe(Effect.andThen(Effect.yieldNow)),
+  } as const;
+});
 
 describe("Transaction Workflow resource event projection", () => {
   it.effect("immediately invalidates Classic resources for a stale owner", () =>
-    Effect.gen(function* () {
-      const eventRef = yield* SubscriptionRef.make<WidgetDomainEvent>({
-        _tag: "TransactionWorkflowStarted",
-        owner,
-      });
-      const invalidated = yield* Deferred.make<ReadonlyArray<unknown>>();
-      const reactivity = Reactivity.Reactivity.of({
-        invalidate: (keys: ReadonlyArray<unknown>) =>
-          Deferred.succeed(invalidated, keys).pipe(Effect.asVoid),
-        withBatch: <A, E, R>(effect: Effect.Effect<A, E, R>) => effect,
-      } as never);
-      const events = WidgetDomainEvents.of({
-        events: SubscriptionRef.changes(eventRef),
-        publish: () => Effect.void,
-      });
+    Effect.scoped(
+      Effect.gen(function* () {
+        const projection = yield* makeProjectionHarness(
+          disconnectedWalletState
+        );
 
-      const keys = yield* Effect.scoped(
-        Effect.gen(function* () {
-          yield* transactionWorkflowResourceEventProjection.pipe(
-            Stream.runDrain,
-            Effect.forkScoped({ startImmediately: true })
-          );
-          yield* SubscriptionRef.set(eventRef, {
-            _tag: "TransactionWorkflowEnded",
-            owner,
-            workflowKind: "Classic",
-          });
-          return yield* Deferred.await(invalidated);
-        })
-      ).pipe(
-        Effect.provide(
-          Layer.mergeAll(
-            Layer.succeed(WidgetDomainEvents, events),
-            Layer.succeed(Reactivity.Reactivity, reactivity),
-            Layer.succeed(
-              WalletService,
-              makeWallet(Effect.succeed(disconnectedWalletState))
-            )
-          )
-        )
-      );
+        yield* projection.endWorkflow("Classic");
+        yield* projection.awaitInvalidationCount(1);
 
-      expect(keys).toEqual([
-        new WalletBalancesInvalidationKey({ scope: owner }),
-        new YieldPositionsInvalidationKey({ scope: owner }),
-        new SingleYieldBalancesInvalidationKey({ address: owner.address }),
-        new ActivityInvalidationKey({ scope: owner }),
-      ]);
-    })
+        expect(yield* projection.invalidations).toEqual([
+          [
+            new WalletBalancesInvalidationKey({ scope: owner }),
+            new YieldPositionsInvalidationKey({ scope: owner }),
+            new SingleYieldBalancesInvalidationKey({ address: owner.address }),
+            new ActivityInvalidationKey({ scope: owner }),
+          ],
+        ]);
+      })
+    )
   );
 
   it.effect(
     "reconciles Classic balances and positions four more times at ten-second intervals",
     () =>
-      Effect.gen(function* () {
-        const eventRef = yield* SubscriptionRef.make<WidgetDomainEvent>({
-          _tag: "TransactionWorkflowStarted",
-          owner,
-        });
-        const firstInvalidation = yield* Deferred.make<void>();
-        const invalidations: Array<ReadonlyArray<unknown>> = [];
-        const reactivity = Reactivity.Reactivity.of({
-          invalidate: (keys: ReadonlyArray<unknown>) =>
-            Effect.gen(function* () {
-              invalidations.push(keys);
-              yield* Deferred.succeed(firstInvalidation, undefined);
-            }),
-          withBatch: <A, E, R>(effect: Effect.Effect<A, E, R>) => effect,
-        } as never);
-        const events = WidgetDomainEvents.of({
-          events: SubscriptionRef.changes(eventRef),
-          publish: () => Effect.void,
-        });
-        yield* Effect.scoped(
-          Effect.gen(function* () {
-            yield* transactionWorkflowResourceEventProjection.pipe(
-              Stream.runDrain,
-              Effect.forkScoped({ startImmediately: true })
-            );
-            yield* SubscriptionRef.set(eventRef, {
-              _tag: "TransactionWorkflowEnded",
-              owner,
-              workflowKind: "Classic",
-            });
-            yield* Deferred.await(firstInvalidation);
+      Effect.scoped(
+        Effect.gen(function* () {
+          const projection = yield* makeProjectionHarness(connectedWalletState);
 
-            expect(invalidations).toEqual([
-              [
-                new WalletBalancesInvalidationKey({ scope: owner }),
-                new YieldPositionsInvalidationKey({ scope: owner }),
-                new SingleYieldBalancesInvalidationKey({
-                  address: owner.address,
-                }),
-                new ActivityInvalidationKey({ scope: owner }),
-              ],
-            ]);
+          yield* projection.endWorkflow("Classic");
+          yield* projection.awaitInvalidationCount(1);
 
-            yield* TestClock.adjust("9999 millis");
-            expect(invalidations).toHaveLength(1);
+          expect(yield* projection.invalidations).toEqual([
+            [
+              new WalletBalancesInvalidationKey({ scope: owner }),
+              new YieldPositionsInvalidationKey({ scope: owner }),
+              new SingleYieldBalancesInvalidationKey({
+                address: owner.address,
+              }),
+              new ActivityInvalidationKey({ scope: owner }),
+            ],
+          ]);
 
-            yield* TestClock.adjust("1 millis");
-            yield* Effect.yieldNow;
-            expect(invalidations).toHaveLength(2);
+          yield* projection.advanceTime("9999 millis");
+          expect(yield* projection.invalidations).toHaveLength(1);
 
-            yield* Effect.forEach(
-              [1, 2, 3],
-              () =>
-                TestClock.adjust("10 seconds").pipe(
-                  Effect.andThen(Effect.yieldNow)
-                ),
-              { discard: true }
-            );
-            expect(invalidations).toEqual([
-              [
-                new WalletBalancesInvalidationKey({ scope: owner }),
-                new YieldPositionsInvalidationKey({ scope: owner }),
-                new SingleYieldBalancesInvalidationKey({
-                  address: owner.address,
-                }),
-                new ActivityInvalidationKey({ scope: owner }),
-              ],
-              ...Array.from({ length: 4 }, () => [
-                new WalletBalancesInvalidationKey({ scope: owner }),
-                new YieldPositionsInvalidationKey({ scope: owner }),
-                new SingleYieldBalancesInvalidationKey({
-                  address: owner.address,
-                }),
-              ]),
-            ]);
-          })
-        ).pipe(
-          Effect.provide(
-            Layer.mergeAll(
-              TestClock.layer(),
-              Layer.succeed(WidgetDomainEvents, events),
-              Layer.succeed(Reactivity.Reactivity, reactivity),
-              Layer.succeed(
-                WalletService,
-                makeWallet(Effect.succeed(connectedWalletState))
-              )
-            )
-          )
-        );
-      })
+          yield* projection.advanceTime("1 millis");
+          yield* projection.awaitInvalidationCount(2);
+
+          yield* Effect.forEach(
+            [3, 4, 5],
+            (count) =>
+              projection
+                .advanceTime("10 seconds")
+                .pipe(Effect.andThen(projection.awaitInvalidationCount(count))),
+            { discard: true }
+          );
+          expect(yield* projection.invalidations).toEqual([
+            [
+              new WalletBalancesInvalidationKey({ scope: owner }),
+              new YieldPositionsInvalidationKey({ scope: owner }),
+              new SingleYieldBalancesInvalidationKey({
+                address: owner.address,
+              }),
+              new ActivityInvalidationKey({ scope: owner }),
+            ],
+            ...Array.from({ length: 4 }, () => [
+              new WalletBalancesInvalidationKey({ scope: owner }),
+              new YieldPositionsInvalidationKey({ scope: owner }),
+              new SingleYieldBalancesInvalidationKey({
+                address: owner.address,
+              }),
+            ]),
+          ]);
+        })
+      )
   );
 
   it.effect(
     "replaces the active reconciliation when another eligible workflow ends",
     () =>
-      Effect.gen(function* () {
-        const eventRef = yield* SubscriptionRef.make<WidgetDomainEvent>({
-          _tag: "TransactionWorkflowStarted",
-          owner,
-        });
-        const firstInvalidation = yield* Deferred.make<void>();
-        const secondInvalidation = yield* Deferred.make<void>();
-        const invalidations: Array<ReadonlyArray<unknown>> = [];
-        const reactivity = Reactivity.Reactivity.of({
-          invalidate: (keys: ReadonlyArray<unknown>) =>
-            Effect.gen(function* () {
-              invalidations.push(keys);
-              if (invalidations.length === 1) {
-                yield* Deferred.succeed(firstInvalidation, undefined);
-              }
-              if (invalidations.length === 2) {
-                yield* Deferred.succeed(secondInvalidation, undefined);
-              }
-            }),
-          withBatch: <A, E, R>(effect: Effect.Effect<A, E, R>) => effect,
-        } as never);
-        const events = WidgetDomainEvents.of({
-          events: SubscriptionRef.changes(eventRef),
-          publish: () => Effect.void,
-        });
+      Effect.scoped(
+        Effect.gen(function* () {
+          const projection = yield* makeProjectionHarness(connectedWalletState);
 
-        yield* Effect.scoped(
-          Effect.gen(function* () {
-            yield* transactionWorkflowResourceEventProjection.pipe(
-              Stream.runDrain,
-              Effect.forkScoped({ startImmediately: true })
-            );
-            yield* SubscriptionRef.set(eventRef, {
-              _tag: "TransactionWorkflowEnded",
-              owner,
-              workflowKind: "Classic",
-            });
-            yield* Deferred.await(firstInvalidation);
+          yield* projection.endWorkflow("Classic");
+          yield* projection.awaitInvalidationCount(1);
 
-            yield* TestClock.adjust("5 seconds");
-            yield* SubscriptionRef.set(eventRef, {
-              _tag: "TransactionWorkflowEnded",
-              owner,
-              workflowKind: "Classic",
-            });
-            yield* Deferred.await(secondInvalidation);
+          yield* projection.advanceTime("5 seconds");
+          yield* projection.endWorkflow("Classic");
+          yield* projection.awaitInvalidationCount(2);
 
-            yield* TestClock.adjust("5 seconds");
-            yield* Effect.yieldNow;
-            expect(invalidations).toHaveLength(2);
+          yield* projection.advanceTime("5 seconds");
+          expect(yield* projection.invalidations).toHaveLength(2);
 
-            yield* TestClock.adjust("5 seconds");
-            yield* Effect.yieldNow;
-            expect(invalidations).toHaveLength(3);
+          yield* projection.advanceTime("5 seconds");
+          yield* projection.awaitInvalidationCount(3);
 
-            yield* Effect.forEach(
-              [1, 2, 3],
-              () =>
-                TestClock.adjust("10 seconds").pipe(
-                  Effect.andThen(Effect.yieldNow)
-                ),
-              { discard: true }
-            );
-            expect(invalidations).toHaveLength(6);
-          })
-        ).pipe(
-          Effect.provide(
-            Layer.mergeAll(
-              TestClock.layer(),
-              Layer.succeed(WidgetDomainEvents, events),
-              Layer.succeed(Reactivity.Reactivity, reactivity),
-              Layer.succeed(
-                WalletService,
-                makeWallet(Effect.succeed(connectedWalletState))
-              )
-            )
-          )
-        );
-      })
+          yield* Effect.forEach(
+            [4, 5, 6],
+            (count) =>
+              projection
+                .advanceTime("10 seconds")
+                .pipe(Effect.andThen(projection.awaitInvalidationCount(count))),
+            { discard: true }
+          );
+          expect(yield* projection.invalidations).toHaveLength(6);
+        })
+      )
   );
 
   it.effect(
     "cancels reconciliation when the Wallet Scope Owner disconnects",
     () =>
-      Effect.gen(function* () {
-        const eventRef = yield* SubscriptionRef.make<WidgetDomainEvent>({
-          _tag: "TransactionWorkflowStarted",
-          owner,
-        });
-        const walletStateRef =
-          yield* SubscriptionRef.make<WalletState>(connectedWalletState);
-        const firstInvalidation = yield* Deferred.make<void>();
-        const invalidations: Array<ReadonlyArray<unknown>> = [];
-        const reactivity = Reactivity.Reactivity.of({
-          invalidate: (keys: ReadonlyArray<unknown>) =>
-            Effect.gen(function* () {
-              invalidations.push(keys);
-              yield* Deferred.succeed(firstInvalidation, undefined);
-            }),
-          withBatch: <A, E, R>(effect: Effect.Effect<A, E, R>) => effect,
-        } as never);
-        const events = WidgetDomainEvents.of({
-          events: SubscriptionRef.changes(eventRef),
-          publish: () => Effect.void,
-        });
+      Effect.scoped(
+        Effect.gen(function* () {
+          const projection = yield* makeProjectionHarness(connectedWalletState);
 
-        yield* Effect.scoped(
-          Effect.gen(function* () {
-            yield* transactionWorkflowResourceEventProjection.pipe(
-              Stream.runDrain,
-              Effect.forkScoped({ startImmediately: true })
-            );
-            yield* SubscriptionRef.set(eventRef, {
-              _tag: "TransactionWorkflowEnded",
-              owner,
-              workflowKind: "Classic",
-            });
-            yield* Deferred.await(firstInvalidation);
+          yield* projection.endWorkflow("Classic");
+          yield* projection.awaitInvalidationCount(1);
 
-            yield* TestClock.adjust("5 seconds");
-            yield* SubscriptionRef.set(walletStateRef, disconnectedWalletState);
-            yield* Effect.yieldNow;
-            yield* Effect.forEach(
-              [1, 2, 3, 4],
-              () =>
-                TestClock.adjust("10 seconds").pipe(
-                  Effect.andThen(Effect.yieldNow)
-                ),
-              { discard: true }
-            );
+          yield* projection.advanceTime("5 seconds");
+          yield* projection.setWalletState(disconnectedWalletState);
+          yield* projection.advanceTime("40 seconds");
 
-            expect(invalidations).toHaveLength(1);
-          })
-        ).pipe(
-          Effect.provide(
-            Layer.mergeAll(
-              TestClock.layer(),
-              Layer.succeed(WidgetDomainEvents, events),
-              Layer.succeed(Reactivity.Reactivity, reactivity),
-              Layer.succeed(
-                WalletService,
-                makeWallet(
-                  SubscriptionRef.get(walletStateRef),
-                  SubscriptionRef.changes(walletStateRef)
-                )
-              )
-            )
-          )
-        );
-      })
+          expect(yield* projection.invalidations).toHaveLength(1);
+        })
+      )
   );
 
   it.effect(
     "reconciles Borrow balances and positions without repeating Borrow markets",
     () =>
-      Effect.gen(function* () {
-        const eventRef = yield* SubscriptionRef.make<WidgetDomainEvent>({
-          _tag: "TransactionWorkflowStarted",
-          owner,
-        });
-        const firstInvalidation = yield* Deferred.make<void>();
-        const invalidations: Array<ReadonlyArray<unknown>> = [];
-        const reactivity = Reactivity.Reactivity.of({
-          invalidate: (keys: ReadonlyArray<unknown>) =>
-            Effect.gen(function* () {
-              invalidations.push(keys);
-              yield* Deferred.succeed(firstInvalidation, undefined);
-            }),
-          withBatch: <A, E, R>(effect: Effect.Effect<A, E, R>) => effect,
-        } as never);
-        const events = WidgetDomainEvents.of({
-          events: SubscriptionRef.changes(eventRef),
-          publish: () => Effect.void,
-        });
+      Effect.scoped(
+        Effect.gen(function* () {
+          const projection = yield* makeProjectionHarness(connectedWalletState);
 
-        yield* Effect.scoped(
-          Effect.gen(function* () {
-            yield* transactionWorkflowResourceEventProjection.pipe(
-              Stream.runDrain,
-              Effect.forkScoped({ startImmediately: true })
-            );
-            yield* SubscriptionRef.set(eventRef, {
-              _tag: "TransactionWorkflowEnded",
-              owner,
-              workflowKind: "Borrow",
-            });
-            yield* Deferred.await(firstInvalidation);
-            yield* Effect.forEach(
-              [1, 2, 3, 4],
-              () =>
-                TestClock.adjust("10 seconds").pipe(
-                  Effect.andThen(Effect.yieldNow)
-                ),
-              { discard: true }
-            );
+          yield* projection.endWorkflow("Borrow");
+          yield* projection.awaitInvalidationCount(1);
+          yield* Effect.forEach(
+            [2, 3, 4, 5],
+            (count) =>
+              projection
+                .advanceTime("10 seconds")
+                .pipe(Effect.andThen(projection.awaitInvalidationCount(count))),
+            { discard: true }
+          );
 
-            expect(
-              invalidations.map((keys) =>
-                keys.map((key) => (key as { readonly _tag: string })._tag)
-              )
-            ).toEqual([
-              [
-                "WalletBalancesInvalidationKey",
-                "BorrowPositionsInvalidationKey",
-                "BorrowMarketsInvalidationKey",
-              ],
-              ...Array.from({ length: 4 }, () => [
-                "WalletBalancesInvalidationKey",
-                "BorrowPositionsInvalidationKey",
-              ]),
-            ]);
-          })
-        ).pipe(
-          Effect.provide(
-            Layer.mergeAll(
-              TestClock.layer(),
-              Layer.succeed(WidgetDomainEvents, events),
-              Layer.succeed(Reactivity.Reactivity, reactivity),
-              Layer.succeed(
-                WalletService,
-                makeWallet(Effect.succeed(connectedWalletState))
-              )
+          expect(
+            (yield* projection.invalidations).map((keys) =>
+              keys.map((key) => (key as { readonly _tag: string })._tag)
             )
-          )
-        );
-      })
+          ).toEqual([
+            [
+              "WalletBalancesInvalidationKey",
+              "BorrowPositionsInvalidationKey",
+              "BorrowMarketsInvalidationKey",
+            ],
+            ...Array.from({ length: 4 }, () => [
+              "WalletBalancesInvalidationKey",
+              "BorrowPositionsInvalidationKey",
+            ]),
+          ]);
+        })
+      )
   );
 });

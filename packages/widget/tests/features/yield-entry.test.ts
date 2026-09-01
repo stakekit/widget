@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Effect, Layer, Option, Schema, Stream } from "effect";
+import { Effect, Layer, Option, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
@@ -20,14 +20,15 @@ import {
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { WalletModal } from "../../src/services/wallet/wallet-modal";
-import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
   type WalletState,
 } from "../../src/services/wallet/wallet-state";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
-import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
+import { makeClassicFlowTestLayer } from "../utils/classic-flow-layer";
+import { makeTestWallet } from "../utils/services/wallet-service";
+import { makeTestNavigation } from "../utils/services/widget-navigation";
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -52,20 +53,11 @@ const walletState = {
   },
   ledger: disconnectedLedgerConnectorState,
 } satisfies WalletState;
-const makeWalletService = (state: WalletState) =>
-  WalletService.of({
-    addLedgerAccount: () => Effect.succeed({ _tag: "Added" } as const),
-    state: Effect.succeed(state),
-    states: Stream.succeed(state),
-    wagmiConfig: {},
-  } as never);
-
-const walletService = makeWalletService(walletState);
-const disconnectedWalletService = makeWalletService({
+const disconnectedWalletState: WalletState = {
   connection: disconnectedNormalizedWalletState,
   ledger: disconnectedLedgerConnectorState,
-});
-const ledgerPlaceholderWalletService = makeWalletService({
+};
+const ledgerPlaceholderWalletState: WalletState = {
   ...walletState,
   connection: {
     ...walletState.connection,
@@ -73,7 +65,7 @@ const ledgerPlaceholderWalletService = makeWalletService({
     isLedgerLive: true,
     isLedgerLiveAccountPlaceholder: true,
   },
-});
+};
 const makeFacadeInput = (
   override: Partial<YieldEntryFacadeInput> = {}
 ): YieldEntryFacadeInput => {
@@ -143,21 +135,33 @@ const makeObservablePorts = () => {
 
 const makeObservableRegistry = (
   ports: ReturnType<typeof makeObservablePorts>,
-  wallet: WalletService["Service"] = walletService,
+  serviceWalletState: WalletState = walletState,
   scope: WalletScopeKey | null = walletScope
 ) => {
-  const flowLayer = makeClassicFlowTestWalletLayer({
-    navigation: ports.navigation,
-    wallet,
-  });
-  const yieldEntryDependencies = Layer.mergeAll(
-    ports.layer,
-    Layer.succeed(WalletService, wallet)
-  );
-  const runtimeLayer = Layer.merge(
-    flowLayer,
-    YieldEntrySubmissionService.layer.pipe(
-      Layer.provide(yieldEntryDependencies)
+  const runtimeLayer = Layer.unwrap(
+    Effect.all({
+      navigation: makeTestNavigation({ execute: ports.navigation.execute }),
+      wallet: makeTestWallet({
+        addLedgerAccount: () => Effect.succeed({ _tag: "Added" }),
+        initialState: serviceWalletState,
+      }),
+    }).pipe(
+      Effect.map(({ navigation, wallet }) => {
+        const flowLayer = makeClassicFlowTestLayer({
+          navigation: Effect.succeed(navigation),
+          wallet: Effect.succeed(wallet),
+        });
+        const yieldEntryDependencies = Layer.mergeAll(
+          ports.layer,
+          wallet.layer
+        );
+        return Layer.merge(
+          flowLayer,
+          YieldEntrySubmissionService.layer.pipe(
+            Layer.provide(yieldEntryDependencies)
+          )
+        );
+      })
     )
   );
 
@@ -474,9 +478,9 @@ describe("Yield Entry", () => {
         [appRuntime.layer, navigationLayer as never],
         [
           walletRuntime.layer,
-          makeClassicFlowTestWalletLayer({
-            navigation,
-            wallet: walletService,
+          makeClassicFlowTestLayer({
+            navigation: makeTestNavigation({ execute: navigation.execute }),
+            wallet: makeTestWallet({ initialState: walletState }),
           }) as never,
         ],
       ],
@@ -504,7 +508,7 @@ describe("Yield Entry", () => {
     const facade = makeYieldEntry(inputAtom);
     const registry = makeObservableRegistry(
       ports,
-      disconnectedWalletService,
+      disconnectedWalletState,
       null
     );
 
@@ -528,7 +532,7 @@ describe("Yield Entry", () => {
   it("opens Connect Wallet for a connected entry whose scope is unavailable", async () => {
     const ports = makeObservablePorts();
     const facade = makeYieldEntry(Atom.make(makeFacadeInput()));
-    const registry = makeObservableRegistry(ports, walletService, null);
+    const registry = makeObservableRegistry(ports, walletState, null);
 
     try {
       registry.set(facade.submitAtom, undefined);
@@ -547,7 +551,7 @@ describe("Yield Entry", () => {
     const facade = makeYieldEntry(inputAtom);
     const registry = makeObservableRegistry(
       ports,
-      ledgerPlaceholderWalletService
+      ledgerPlaceholderWalletState
     );
 
     try {

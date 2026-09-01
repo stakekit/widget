@@ -1,17 +1,27 @@
-import { describe, expect, it, vi } from "@effect/vitest";
-import { Cause, Deferred, Effect, Exit, Fiber, Layer, Stream } from "effect";
+import { describe, expect, it } from "@effect/vitest";
+import {
+  Cause,
+  Context,
+  Deferred,
+  Effect,
+  Exit,
+  Fiber,
+  Layer,
+  Ref,
+} from "effect";
 import { YieldEntrySubmissionService } from "../../src/features/yield-entry/state/orchestration/yield-entry-submission-service";
-import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { walletCommandIdentity } from "../../src/services/wallet/wallet-command-identity";
 import { WalletIntegrationError } from "../../src/services/wallet/wallet-errors";
 import { WalletModal } from "../../src/services/wallet/wallet-modal";
-import { WalletService } from "../../src/services/wallet/wallet-service";
+import type { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
   type WalletState,
 } from "../../src/services/wallet/wallet-state";
+import { makeTestTracking } from "../utils/services/tracking-service";
+import { makeTestWallet } from "../utils/services/wallet-service";
 
 const disconnectedWalletState: WalletState = {
   connection: disconnectedNormalizedWalletState,
@@ -45,470 +55,290 @@ const ledgerPlaceholderWalletState: WalletState = {
   },
 };
 
-type SubmissionDependencies = TrackingService | WalletModal | WalletService;
+type AddLedgerAccount = WalletService["Service"]["addLedgerAccount"];
+type AddLedgerAccountInput = Parameters<AddLedgerAccount>[0];
 
-const makeSubmissionLayer = (
-  dependencies: Layer.Layer<SubmissionDependencies>
-) => YieldEntrySubmissionService.layer.pipe(Layer.provide(dependencies));
+type SubmissionHarnessOptions = Readonly<{
+  readonly addLedgerAccount?: AddLedgerAccount;
+  readonly initialWalletState: WalletState;
+  readonly openConnect?: (
+    setWalletState: (state: WalletState) => Effect.Effect<void>
+  ) => Effect.Effect<void>;
+}>;
+
+const makeSubmissionHarness = Effect.fn("makeSubmissionHarness")(function* (
+  options: SubmissionHarnessOptions
+) {
+  const tracking = yield* makeTestTracking();
+  const ledgerRequests = yield* Ref.make<ReadonlyArray<AddLedgerAccountInput>>(
+    []
+  );
+  const openConnectCount = yield* Ref.make(0);
+  const closeChainCount = yield* Ref.make(0);
+  const addLedgerAccount = options.addLedgerAccount;
+  const wallet = yield* makeTestWallet({
+    addLedgerAccount: addLedgerAccount
+      ? (input) =>
+          Ref.update(ledgerRequests, (current) => [...current, input]).pipe(
+            Effect.andThen(addLedgerAccount(input))
+          )
+      : undefined,
+    initialState: options.initialWalletState,
+  });
+  const modal = WalletModal.of({
+    closeChain: Ref.update(closeChainCount, (count) => count + 1),
+    install: () => Effect.void,
+    openConnect: Ref.update(openConnectCount, (count) => count + 1).pipe(
+      Effect.andThen(options.openConnect?.(wallet.setState) ?? Effect.void)
+    ),
+    uninstall: () => Effect.void,
+  });
+  const dependencies = Layer.mergeAll(
+    tracking.layer,
+    wallet.layer,
+    Layer.succeed(WalletModal, modal)
+  );
+  const context = yield* Layer.build(
+    YieldEntrySubmissionService.layer.pipe(Layer.provide(dependencies))
+  );
+  const service = Context.get(context, YieldEntrySubmissionService);
+
+  return {
+    addLedgerAccount: service.addLedgerAccount,
+    closeChainCount: Ref.get(closeChainCount),
+    connectWallet: service.connectWallet,
+    ledgerRequests: Ref.get(ledgerRequests),
+    openConnectCount: Ref.get(openConnectCount),
+    setWalletState: wallet.setState,
+    trackedEvents: tracking.trackedEvents.pipe(
+      Effect.map((events) => events.map(({ event }) => event))
+    ),
+  } as const;
+});
 
 describe("YieldEntrySubmissionService", () => {
   it.effect("tracks a connection intent and opens the wallet modal", () =>
-    Effect.gen(function* () {
-      const events: string[] = [];
-      let opened = 0;
-      const dependencies = Layer.mergeAll(
-        Layer.succeed(
-          TrackingService,
-          TrackingService.of({
-            trackEvent: (event) =>
-              Effect.sync(() => {
-                events.push(event);
-              }),
-            trackPageView: () => Effect.void,
-          })
-        ),
-        Layer.succeed(
-          WalletModal,
-          WalletModal.of({
-            closeChain: Effect.void,
-            install: () => Effect.void,
-            openConnect: Effect.sync(() => {
-              opened += 1;
-            }),
-            uninstall: () => Effect.void,
-          })
-        ),
-        Layer.succeed(
-          WalletService,
-          WalletService.of({
-            addLedgerAccount: vi.fn(() => Effect.die("unexpected")),
-            state: Effect.succeed(disconnectedWalletState),
-            states: Stream.succeed(disconnectedWalletState),
-            wagmiConfig: {},
-          } as never)
-        )
-      );
+    Effect.scoped(
+      Effect.gen(function* () {
+        const submission = yield* makeSubmissionHarness({
+          initialWalletState: disconnectedWalletState,
+        });
 
-      const outcome = yield* Effect.scoped(
-        YieldEntrySubmissionService.use((service) =>
-          service.connectWallet(
-            walletCommandIdentity(disconnectedWalletState.connection)
-          )
-        )
-      ).pipe(Effect.provide(makeSubmissionLayer(dependencies)));
+        const outcome = yield* submission.connectWallet(
+          walletCommandIdentity(disconnectedWalletState.connection)
+        );
 
-      expect(outcome).toEqual({ _tag: "Accepted" });
-      expect(events).toEqual(["connectWalletClicked"]);
-      expect(opened).toBe(1);
-    })
+        expect(outcome).toEqual({ _tag: "Accepted" });
+        expect(yield* submission.trackedEvents).toEqual([
+          "connectWalletClicked",
+        ]);
+        expect(yield* submission.openConnectCount).toBe(1);
+      })
+    )
   );
 
   it.effect(
     "tracks a connection intent but rejects a stale connected wallet",
     () =>
-      Effect.gen(function* () {
-        const events: string[] = [];
-        let opened = 0;
-        const dependencies = Layer.mergeAll(
-          Layer.succeed(
-            TrackingService,
-            TrackingService.of({
-              trackEvent: (event) =>
-                Effect.sync(() => {
-                  events.push(event);
-                }),
-              trackPageView: () => Effect.void,
-            })
-          ),
-          Layer.succeed(
-            WalletModal,
-            WalletModal.of({
-              closeChain: Effect.void,
-              install: () => Effect.void,
-              openConnect: Effect.sync(() => {
-                opened += 1;
-              }),
-              uninstall: () => Effect.void,
-            })
-          ),
-          Layer.succeed(
-            WalletService,
-            WalletService.of({
-              addLedgerAccount: vi.fn(() => Effect.die("unexpected")),
-              state: Effect.succeed(connectedWalletState),
-              states: Stream.succeed(connectedWalletState),
-              wagmiConfig: {},
-            } as never)
-          )
-        );
+      Effect.scoped(
+        Effect.gen(function* () {
+          const submission = yield* makeSubmissionHarness({
+            initialWalletState: connectedWalletState,
+          });
 
-        const outcome = yield* Effect.scoped(
-          YieldEntrySubmissionService.use((service) =>
-            service.connectWallet(
-              walletCommandIdentity(disconnectedWalletState.connection)
-            )
-          )
-        ).pipe(Effect.provide(makeSubmissionLayer(dependencies)));
+          const outcome = yield* submission.connectWallet(
+            walletCommandIdentity(disconnectedWalletState.connection)
+          );
 
-        expect(outcome).toEqual({ _tag: "RejectedStale" });
-        expect(events).toEqual(["connectWalletClicked"]);
-        expect(opened).toBe(0);
-      })
+          expect(outcome).toEqual({ _tag: "RejectedStale" });
+          expect(yield* submission.trackedEvents).toEqual([
+            "connectWalletClicked",
+          ]);
+          expect(yield* submission.openConnectCount).toBe(0);
+        })
+      )
   );
 
   it.effect(
     "rejects a connection completion when the wallet changes in flight",
     () =>
-      Effect.gen(function* () {
-        let current = disconnectedWalletState;
-        let opened = 0;
-        const dependencies = Layer.mergeAll(
-          Layer.succeed(
-            TrackingService,
-            TrackingService.of({
-              trackEvent: () => Effect.void,
-              trackPageView: () => Effect.void,
-            })
-          ),
-          Layer.succeed(
-            WalletModal,
-            WalletModal.of({
-              closeChain: Effect.void,
-              install: () => Effect.void,
-              openConnect: Effect.sync(() => {
-                opened += 1;
-                current = connectedWalletState;
-              }),
-              uninstall: () => Effect.void,
-            })
-          ),
-          Layer.succeed(
-            WalletService,
-            WalletService.of({
-              addLedgerAccount: () => Effect.die("unexpected"),
-              state: Effect.sync(() => current),
-              states: Stream.fromEffect(Effect.sync(() => current)),
-              wagmiConfig: {},
-            } as never)
-          )
-        );
+      Effect.scoped(
+        Effect.gen(function* () {
+          const submission = yield* makeSubmissionHarness({
+            initialWalletState: disconnectedWalletState,
+            openConnect: (setWalletState) =>
+              setWalletState(connectedWalletState),
+          });
 
-        const outcome = yield* Effect.scoped(
-          YieldEntrySubmissionService.use((service) =>
-            service.connectWallet(
-              walletCommandIdentity(disconnectedWalletState.connection)
-            )
-          )
-        ).pipe(Effect.provide(makeSubmissionLayer(dependencies)));
+          const outcome = yield* submission.connectWallet(
+            walletCommandIdentity(disconnectedWalletState.connection)
+          );
 
-        expect(outcome).toEqual({ _tag: "RejectedStale" });
-        expect(opened).toBe(1);
-      })
+          expect(outcome).toEqual({ _tag: "RejectedStale" });
+          expect(yield* submission.openConnectCount).toBe(1);
+        })
+      )
   );
 
   it.effect("tracks and delegates an eligible Ledger account request", () =>
-    Effect.gen(function* () {
-      const events: string[] = [];
-      const addLedgerAccount = vi.fn(() =>
-        Effect.succeed({ _tag: "Added" } as const)
-      );
-      const dependencies = Layer.mergeAll(
-        Layer.succeed(
-          TrackingService,
-          TrackingService.of({
-            trackEvent: (event) =>
-              Effect.sync(() => {
-                events.push(event);
-              }),
-            trackPageView: () => Effect.void,
-          })
-        ),
-        Layer.succeed(
-          WalletModal,
-          WalletModal.of({
-            closeChain: Effect.void,
-            install: () => Effect.void,
-            openConnect: Effect.void,
-            uninstall: () => Effect.void,
-          })
-        ),
-        Layer.succeed(
-          WalletService,
-          WalletService.of({
-            addLedgerAccount,
-            state: Effect.succeed(ledgerPlaceholderWalletState),
-            states: Stream.succeed(ledgerPlaceholderWalletState),
-            wagmiConfig: {},
-          } as never)
-        )
-      );
+    Effect.scoped(
+      Effect.gen(function* () {
+        const submission = yield* makeSubmissionHarness({
+          addLedgerAccount: () => Effect.succeed({ _tag: "Added" }),
+          initialWalletState: ledgerPlaceholderWalletState,
+        });
 
-      const outcome = yield* Effect.scoped(
-        YieldEntrySubmissionService.use((service) =>
-          service.addLedgerAccount(
-            walletCommandIdentity(ledgerPlaceholderWalletState.connection)
-          )
-        )
-      ).pipe(Effect.provide(makeSubmissionLayer(dependencies)));
+        const outcome = yield* submission.addLedgerAccount(
+          walletCommandIdentity(ledgerPlaceholderWalletState.connection)
+        );
 
-      expect(outcome).toEqual({ _tag: "Accepted" });
-      expect(events).toEqual(["addLedgerAccountClicked"]);
-      expect(addLedgerAccount).toHaveBeenCalledOnce();
-    })
+        expect(outcome).toEqual({ _tag: "Accepted" });
+        expect(yield* submission.trackedEvents).toEqual([
+          "addLedgerAccountClicked",
+        ]);
+        expect(yield* submission.ledgerRequests).toHaveLength(1);
+      })
+    )
   );
 
   it.effect(
     "tracks but rejects Ledger setup when the canonical wallet is stale",
     () =>
-      Effect.gen(function* () {
-        const events: string[] = [];
-        const addLedgerAccount = vi.fn(() =>
-          Effect.succeed({ _tag: "Added" } as const)
-        );
-        let closed = 0;
-        const dependencies = Layer.mergeAll(
-          Layer.succeed(
-            TrackingService,
-            TrackingService.of({
-              trackEvent: (event) =>
-                Effect.sync(() => {
-                  events.push(event);
-                }),
-              trackPageView: () => Effect.void,
-            })
-          ),
-          Layer.succeed(
-            WalletModal,
-            WalletModal.of({
-              closeChain: Effect.sync(() => {
-                closed += 1;
-              }),
-              install: () => Effect.void,
-              openConnect: Effect.void,
-              uninstall: () => Effect.void,
-            })
-          ),
-          Layer.succeed(
-            WalletService,
-            WalletService.of({
-              addLedgerAccount,
-              state: Effect.succeed(connectedWalletState),
-              states: Stream.succeed(connectedWalletState),
-              wagmiConfig: {},
-            } as never)
-          )
-        );
+      Effect.scoped(
+        Effect.gen(function* () {
+          const submission = yield* makeSubmissionHarness({
+            addLedgerAccount: () => Effect.succeed({ _tag: "Added" }),
+            initialWalletState: connectedWalletState,
+          });
 
-        const outcome = yield* Effect.scoped(
-          YieldEntrySubmissionService.use((service) =>
-            service.addLedgerAccount(
-              walletCommandIdentity(ledgerPlaceholderWalletState.connection)
-            )
-          )
-        ).pipe(Effect.provide(makeSubmissionLayer(dependencies)));
+          const outcome = yield* submission.addLedgerAccount(
+            walletCommandIdentity(ledgerPlaceholderWalletState.connection)
+          );
 
-        expect(outcome).toEqual({ _tag: "RejectedStale" });
-        expect(events).toEqual(["addLedgerAccountClicked"]);
-        expect(addLedgerAccount).not.toHaveBeenCalled();
-        expect(closed).toBe(0);
-      })
+          expect(outcome).toEqual({ _tag: "RejectedStale" });
+          expect(yield* submission.trackedEvents).toEqual([
+            "addLedgerAccountClicked",
+          ]);
+          expect(yield* submission.ledgerRequests).toEqual([]);
+          expect(yield* submission.closeChainCount).toBe(0);
+        })
+      )
   );
 
   it.effect(
     "retains a typed Ledger integration failure without closing the modal",
     () =>
-      Effect.gen(function* () {
-        const failure = new WalletIntegrationError({
-          message: "request failed",
-          operation: "ledger-request-account",
-        });
-        let closed = 0;
-        const dependencies = Layer.mergeAll(
-          Layer.succeed(
-            TrackingService,
-            TrackingService.of({
-              trackEvent: () => Effect.void,
-              trackPageView: () => Effect.void,
-            })
-          ),
-          Layer.succeed(
-            WalletModal,
-            WalletModal.of({
-              closeChain: Effect.sync(() => {
-                closed += 1;
-              }),
-              install: () => Effect.void,
-              openConnect: Effect.void,
-              uninstall: () => Effect.void,
-            })
-          ),
-          Layer.succeed(
-            WalletService,
-            WalletService.of({
-              addLedgerAccount: () => Effect.fail(failure),
-              state: Effect.succeed(ledgerPlaceholderWalletState),
-              states: Stream.succeed(ledgerPlaceholderWalletState),
-              wagmiConfig: {},
-            } as never)
-          )
-        );
+      Effect.scoped(
+        Effect.gen(function* () {
+          const failure = new WalletIntegrationError({
+            message: "request failed",
+            operation: "ledger-request-account",
+          });
+          const submission = yield* makeSubmissionHarness({
+            addLedgerAccount: () => Effect.fail(failure),
+            initialWalletState: ledgerPlaceholderWalletState,
+          });
 
-        const exit = yield* Effect.exit(
-          Effect.scoped(
-            YieldEntrySubmissionService.use((service) =>
-              service.addLedgerAccount(
-                walletCommandIdentity(ledgerPlaceholderWalletState.connection)
-              )
+          const exit = yield* Effect.exit(
+            submission.addLedgerAccount(
+              walletCommandIdentity(ledgerPlaceholderWalletState.connection)
             )
-          ).pipe(Effect.provide(makeSubmissionLayer(dependencies)))
-        );
+          );
 
-        expect(Exit.isFailure(exit)).toBe(true);
-        expect(
-          Exit.isFailure(exit) ? Cause.findErrorOption(exit.cause) : null
-        ).toMatchObject({ value: failure });
-        expect(closed).toBe(0);
-      })
+          expect(Exit.isFailure(exit)).toBe(true);
+          expect(
+            Exit.isFailure(exit) ? Cause.findErrorOption(exit.cause) : null
+          ).toMatchObject({ value: failure });
+          expect(yield* submission.closeChainCount).toBe(0);
+        })
+      )
   );
 
   it.effect("serializes duplicate connection operations", () =>
-    Effect.gen(function* () {
-      const order: string[] = [];
-      const program = Effect.gen(function* () {
+    Effect.scoped(
+      Effect.gen(function* () {
         const firstOpened = yield* Deferred.make<void>();
         const releaseFirst = yield* Deferred.make<void>();
-        let invocation = 0;
-        const dependencies = Layer.mergeAll(
-          Layer.succeed(
-            TrackingService,
-            TrackingService.of({
-              trackEvent: () => Effect.void,
-              trackPageView: () => Effect.void,
-            })
-          ),
-          Layer.succeed(
-            WalletModal,
-            WalletModal.of({
-              closeChain: Effect.void,
-              install: () => Effect.void,
-              openConnect: Effect.gen(function* () {
-                invocation += 1;
-                order.push(`start:${invocation}`);
-                if (invocation === 1) {
-                  yield* Deferred.succeed(firstOpened, undefined);
-                  yield* Deferred.await(releaseFirst);
-                }
-                order.push(`end:${invocation}`);
-              }),
-              uninstall: () => Effect.void,
-            })
-          ),
-          Layer.succeed(
-            WalletService,
-            WalletService.of({
-              addLedgerAccount: () => Effect.die("unexpected"),
-              state: Effect.succeed(disconnectedWalletState),
-              states: Stream.succeed(disconnectedWalletState),
-              wagmiConfig: {},
-            } as never)
+        const invocation = yield* Ref.make(0);
+        const order = yield* Ref.make<ReadonlyArray<string>>([]);
+        const submission = yield* makeSubmissionHarness({
+          initialWalletState: disconnectedWalletState,
+          openConnect: Effect.fn("test.openSerializedConnection")(function* () {
+            const current = yield* Ref.updateAndGet(
+              invocation,
+              (count) => count + 1
+            );
+            yield* Ref.update(order, (entries) => [
+              ...entries,
+              `start:${current}`,
+            ]);
+            if (current === 1) {
+              yield* Deferred.succeed(firstOpened, undefined);
+              yield* Deferred.await(releaseFirst);
+            }
+            yield* Ref.update(order, (entries) => [
+              ...entries,
+              `end:${current}`,
+            ]);
+          }),
+        });
+        const first = yield* submission
+          .connectWallet(
+            walletCommandIdentity(disconnectedWalletState.connection)
           )
-        );
-        const layer = makeSubmissionLayer(dependencies);
+          .pipe(Effect.forkScoped({ startImmediately: true }));
+        yield* Deferred.await(firstOpened);
+        const second = yield* submission
+          .connectWallet(
+            walletCommandIdentity(disconnectedWalletState.connection)
+          )
+          .pipe(Effect.forkScoped({ startImmediately: true }));
+        yield* Effect.yieldNow;
+        yield* Ref.update(order, (entries) => [...entries, "release"]);
+        yield* Deferred.succeed(releaseFirst, undefined);
+        yield* Fiber.join(first);
+        yield* Fiber.join(second);
 
-        return yield* Effect.scoped(
-          Effect.gen(function* () {
-            const service = yield* YieldEntrySubmissionService;
-            const first = yield* service
-              .connectWallet(
-                walletCommandIdentity(disconnectedWalletState.connection)
-              )
-              .pipe(Effect.forkScoped({ startImmediately: true }));
-            yield* Deferred.await(firstOpened);
-            const second = yield* service
-              .connectWallet(
-                walletCommandIdentity(disconnectedWalletState.connection)
-              )
-              .pipe(Effect.forkScoped({ startImmediately: true }));
-            yield* Effect.yieldNow;
-            order.push("release");
-            yield* Deferred.succeed(releaseFirst, undefined);
-            yield* Fiber.join(first);
-            yield* Fiber.join(second);
-          })
-        ).pipe(Effect.provide(layer));
-      });
-
-      yield* program;
-
-      expect(order).toEqual([
-        "start:1",
-        "release",
-        "end:1",
-        "start:2",
-        "end:2",
-      ]);
-    })
+        expect(yield* Ref.get(order)).toEqual([
+          "start:1",
+          "release",
+          "end:1",
+          "start:2",
+          "end:2",
+        ]);
+      })
+    )
   );
 
   it.effect(
     "interrupts an owned wallet operation when its caller is interrupted",
     () =>
-      Effect.gen(function* () {
-        const interrupted = yield* Effect.gen(function* () {
+      Effect.scoped(
+        Effect.gen(function* () {
           const opened = yield* Deferred.make<void>();
           const operationInterrupted = yield* Deferred.make<void>();
-          const dependencies = Layer.mergeAll(
-            Layer.succeed(
-              TrackingService,
-              TrackingService.of({
-                trackEvent: () => Effect.void,
-                trackPageView: () => Effect.void,
-              })
-            ),
-            Layer.succeed(
-              WalletModal,
-              WalletModal.of({
-                closeChain: Effect.void,
-                install: () => Effect.void,
-                openConnect: Deferred.succeed(opened, undefined).pipe(
-                  Effect.andThen(Effect.never),
-                  Effect.onInterrupt(() =>
-                    Deferred.succeed(operationInterrupted, undefined).pipe(
-                      Effect.asVoid
-                    )
+          const submission = yield* makeSubmissionHarness({
+            initialWalletState: disconnectedWalletState,
+            openConnect: () =>
+              Deferred.succeed(opened, undefined).pipe(
+                Effect.andThen(Effect.never),
+                Effect.onInterrupt(() =>
+                  Deferred.succeed(operationInterrupted, undefined).pipe(
+                    Effect.asVoid
                   )
-                ),
-                uninstall: () => Effect.void,
-              })
-            ),
-            Layer.succeed(
-              WalletService,
-              WalletService.of({
-                addLedgerAccount: () => Effect.die("unexpected"),
-                state: Effect.succeed(disconnectedWalletState),
-                states: Stream.succeed(disconnectedWalletState),
-                wagmiConfig: {},
-              } as never)
-            )
-          );
-          const layer = makeSubmissionLayer(dependencies);
-
-          return yield* Effect.scoped(
-            Effect.gen(function* () {
-              const service = yield* YieldEntrySubmissionService;
-              const caller = yield* service
-                .connectWallet(
-                  walletCommandIdentity(disconnectedWalletState.connection)
                 )
-                .pipe(Effect.forkScoped({ startImmediately: true }));
-              yield* Deferred.await(opened);
-              yield* Fiber.interrupt(caller);
-              return yield* Deferred.isDone(operationInterrupted);
-            })
-          ).pipe(Effect.provide(layer));
-        });
+              ),
+          });
+          const caller = yield* submission
+            .connectWallet(
+              walletCommandIdentity(disconnectedWalletState.connection)
+            )
+            .pipe(Effect.forkScoped({ startImmediately: true }));
+          yield* Deferred.await(opened);
+          yield* Fiber.interrupt(caller);
 
-        expect(interrupted).toBe(true);
-      })
+          expect(yield* Deferred.isDone(operationInterrupted)).toBe(true);
+        })
+      )
   );
 });

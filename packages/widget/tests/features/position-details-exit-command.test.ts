@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import BigNumber from "bignumber.js";
-import { Deferred, Effect, Layer, Schema, Stream } from "effect";
+import { Deferred, Effect, Layer, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
@@ -38,7 +38,6 @@ import {
   type WidgetPath,
 } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
-import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   type NormalizedWalletState,
@@ -49,7 +48,9 @@ import {
   yieldApiYieldFixture,
   yieldBalanceFixture,
 } from "../fixtures";
-import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
+import { makeClassicFlowTestLayer } from "../utils/classic-flow-layer";
+import { makeTestWallet } from "../utils/services/wallet-service";
+import { makeTestNavigation } from "../utils/services/widget-navigation";
 
 const {
   setMaxAmount: setPositionDetailsExitMaxAmountAtom,
@@ -208,13 +209,9 @@ const makeRegistry = ({
       ),
       Atom.initialValue(
         walletRuntime.layer,
-        makeClassicFlowTestWalletLayer({
-          navigation,
-          wallet: WalletService.of({
-            state: Effect.succeed(walletState),
-            states: Stream.succeed(walletState),
-            wagmiConfig: {},
-          } as never),
+        makeClassicFlowTestLayer({
+          navigation: makeTestNavigation({ execute: navigation.execute }),
+          wallet: makeTestWallet({ initialState: walletState }),
         }) as never
       ),
       Atom.initialValue(walletConnectionStateAtom, wallet),

@@ -5,7 +5,7 @@ import {
   useAtomValue,
 } from "@effect/atom-react";
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Deferred, Effect, Equal, Schema, Stream } from "effect";
+import { Deferred, Effect, Equal, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { act } from "react";
@@ -23,12 +23,12 @@ import {
 } from "../../src/features/classic-transaction-flow/index";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { walletScopeAtom } from "../../src/features/wallet/index";
-import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
-import { WalletService } from "../../src/services/wallet/wallet-service";
 import { disconnectedLedgerConnectorState } from "../../src/services/wallet/wallet-state";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
-import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
+import { makeClassicFlowTestLayer } from "../utils/classic-flow-layer";
+import { makeTestWallet } from "../utils/services/wallet-service";
+import { makeTestNavigation } from "../utils/services/widget-navigation";
 import { render } from "../utils/test-utils.dom.tsx";
 import { widgetConfigAtom } from "../utils/widget-config";
 
@@ -181,17 +181,9 @@ const ClassicFlowRuntimeHarness = () => {
     [walletScopeAtom, intake.walletScope],
     [
       walletRuntime.layer,
-      makeClassicFlowTestWalletLayer({
-        navigation: makeWidgetNavigation({
-          back: () => Effect.void,
-          push: () => Effect.void,
-          replace: () => Effect.void,
-        }),
-        wallet: WalletService.of({
-          state: Effect.succeed(walletState),
-          states: Stream.succeed(walletState),
-          wagmiConfig: {},
-        } as never),
+      makeClassicFlowTestLayer({
+        navigation: makeTestNavigation(),
+        wallet: makeTestWallet({ initialState: walletState }),
       }) as never,
     ],
   ]);

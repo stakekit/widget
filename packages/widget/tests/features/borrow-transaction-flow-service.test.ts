@@ -23,13 +23,11 @@ import { BorrowTransactionFlowService } from "../../src/features/borrow-transact
 import { BorrowOperations } from "../../src/services/api/operations";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import {
-  makeWidgetNavigation,
   toWidgetPath,
-  WidgetNavigation,
+  type WidgetNavigation,
   type WidgetNavigationCommand,
   WidgetNavigationError,
 } from "../../src/services/navigation/widget-navigation";
-import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { initializeTransactionWorkflow } from "../../src/services/transaction-workflow/internal/model";
 import {
   BorrowTransactionWorkflowInput,
@@ -37,12 +35,14 @@ import {
   type TransactionWorkflowState,
 } from "../../src/services/transaction-workflow/transaction-workflow-model";
 import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
-import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   type NormalizedWalletState,
   type WalletState,
 } from "../../src/services/wallet/wallet-state";
+import { makeTestTracking } from "../utils/services/tracking-service";
+import { makeTestWallet } from "../utils/services/wallet-service";
+import { makeTestNavigation } from "../utils/services/widget-navigation";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -138,16 +138,15 @@ type ServiceOverrides = Readonly<{
   readonly makeWorkflow?: TransactionWorkflowService["Service"]["make"];
 }>;
 
-const makeServiceLayer = (
-  walletState: SubscriptionRef.SubscriptionRef<WalletState>,
+const makeBorrowFlowTestLayer = Effect.fn("makeBorrowFlowTestLayer")(function* (
+  initialWalletState: WalletState,
   overrides: ServiceOverrides = {}
-) => {
-  const execute = overrides.execute ?? (() => Effect.void);
-  const navigation = makeWidgetNavigation({
-    back: (options) => execute({ ...options, _tag: "Back" }),
-    push: (path, options) => execute({ ...options, _tag: "Push", path }),
-    replace: (path, options) => execute({ ...options, _tag: "Replace", path }),
-  });
+) {
+  const navigation = yield* makeTestNavigation(
+    overrides.execute ? { execute: overrides.execute } : {}
+  );
+  const tracking = yield* makeTestTracking();
+  const wallet = yield* makeTestWallet({ initialState: initialWalletState });
   const dependencies = Layer.mergeAll(
     WidgetConfigService.layer({
       apiKey: "test-api-key",
@@ -155,15 +154,8 @@ const makeServiceLayer = (
       dashboardVariant: true,
       variant: "default",
     }),
-    Layer.succeed(WidgetNavigation, navigation),
-    Layer.succeed(
-      WalletService,
-      WalletService.of({
-        state: SubscriptionRef.get(walletState),
-        states: SubscriptionRef.changes(walletState),
-        wagmiConfig: {},
-      } as never)
-    ),
+    navigation.layer,
+    wallet.layer,
     Layer.succeed(
       BorrowOperations,
       BorrowOperations.of({
@@ -171,13 +163,7 @@ const makeServiceLayer = (
           overrides.executeAction ?? (() => Effect.succeed(action())),
       } as never)
     ),
-    Layer.succeed(
-      TrackingService,
-      TrackingService.of({
-        trackEvent: () => Effect.void,
-        trackPageView: () => Effect.void,
-      })
-    ),
+    tracking.layer,
     Layer.succeed(
       TransactionWorkflowService,
       TransactionWorkflowService.of({
@@ -191,8 +177,11 @@ const makeServiceLayer = (
       })
     )
   );
-  return BorrowTransactionFlowService.layer.pipe(Layer.provide(dependencies));
-};
+  return {
+    layer: BorrowTransactionFlowService.layer.pipe(Layer.provide(dependencies)),
+    setWalletState: wallet.setState,
+  } as const;
+});
 
 const acquireStartedSession = Effect.fn("test.acquireStartedBorrowSession")(
   function* (service: BorrowTransactionFlowService["Service"]) {
@@ -214,8 +203,14 @@ describe("BorrowTransactionFlowService", () => {
     () =>
       Effect.gen(function* () {
         const commands: Array<WidgetNavigationCommand> = [];
-        const walletState = yield* SubscriptionRef.make<WalletState>(
-          connectingWalletState(walletScope)
+        const flow = yield* makeBorrowFlowTestLayer(
+          connectingWalletState(walletScope),
+          {
+            execute: (command) =>
+              Effect.sync(() => {
+                commands.push(command);
+              }),
+          }
         );
         const result = yield* Effect.scoped(
           Effect.gen(function* () {
@@ -224,16 +219,7 @@ describe("BorrowTransactionFlowService", () => {
             const second = yield* service.start(intake);
             return { first, second };
           })
-        ).pipe(
-          Effect.provide(
-            makeServiceLayer(walletState, {
-              execute: (command) =>
-                Effect.sync(() => {
-                  commands.push(command);
-                }),
-            })
-          )
-        );
+        ).pipe(Effect.provide(flow.layer));
 
         expect(result.first).toMatchObject({
           _tag: "Started",
@@ -257,8 +243,12 @@ describe("BorrowTransactionFlowService", () => {
     "abandons the replacement Session when its derived Review navigation fails",
     () =>
       Effect.gen(function* () {
-        const walletState = yield* SubscriptionRef.make(
-          connectedWalletState(walletScope)
+        const flow = yield* makeBorrowFlowTestLayer(
+          connectedWalletState(walletScope),
+          {
+            execute: () =>
+              Effect.fail(new WidgetNavigationError({ cause: "blocked" })),
+          }
         );
         const result = yield* Effect.scoped(
           Effect.gen(function* () {
@@ -267,14 +257,7 @@ describe("BorrowTransactionFlowService", () => {
             const current = yield* service.currentSession.pipe(Stream.runHead);
             return { current, failed };
           })
-        ).pipe(
-          Effect.provide(
-            makeServiceLayer(walletState, {
-              execute: () =>
-                Effect.fail(new WidgetNavigationError({ cause: "blocked" })),
-            })
-          )
-        );
+        ).pipe(Effect.provide(flow.layer));
 
         expect(result.failed._tag).toBe("Failure");
         expect(result.current).toEqual(Option.some(null));
@@ -287,8 +270,14 @@ describe("BorrowTransactionFlowService", () => {
       Effect.gen(function* () {
         const navigationStarted = yield* Deferred.make<void>();
         const navigationRelease = yield* Deferred.make<void>();
-        const walletState = yield* SubscriptionRef.make(
-          connectedWalletState(walletScope)
+        const flow = yield* makeBorrowFlowTestLayer(
+          connectedWalletState(walletScope),
+          {
+            execute: () =>
+              Deferred.succeed(navigationStarted, undefined).pipe(
+                Effect.andThen(Deferred.await(navigationRelease))
+              ),
+          }
         );
         const result = yield* Effect.scoped(
           Effect.gen(function* () {
@@ -311,16 +300,7 @@ describe("BorrowTransactionFlowService", () => {
             );
             return { afterNavigation, duringInterrupt };
           })
-        ).pipe(
-          Effect.provide(
-            makeServiceLayer(walletState, {
-              execute: () =>
-                Deferred.succeed(navigationStarted, undefined).pipe(
-                  Effect.andThen(Deferred.await(navigationRelease))
-                ),
-            })
-          )
-        );
+        ).pipe(Effect.provide(flow.layer));
 
         expect(result.duringInterrupt).toMatchObject({
           _tag: "Some",
@@ -337,31 +317,27 @@ describe("BorrowTransactionFlowService", () => {
     "rejects disabled or non-owning Starts and clears an owner-invalidated Session",
     () =>
       Effect.gen(function* () {
-        const walletState = yield* SubscriptionRef.make(
+        const disabledFlow = yield* makeBorrowFlowTestLayer(
+          connectedWalletState(walletScope),
+          { borrowEnabled: false }
+        );
+        const flow = yield* makeBorrowFlowTestLayer(
           connectedWalletState(walletScope)
         );
         const disabled = yield* Effect.scoped(
           Effect.gen(function* () {
             return yield* (yield* BorrowTransactionFlowService).start(intake);
           })
-        ).pipe(
-          Effect.provide(
-            makeServiceLayer(walletState, { borrowEnabled: false })
-          )
-        );
+        ).pipe(Effect.provide(disabledFlow.layer));
         expect(disabled).toEqual({ _tag: "RejectedDisabled" });
 
         const result = yield* Effect.scoped(
           Effect.gen(function* () {
             const service = yield* BorrowTransactionFlowService;
             const started = yield* service.start(intake);
-            yield* SubscriptionRef.set(
-              walletState,
-              connectingWalletState(walletScope)
-            );
+            yield* flow.setWalletState(connectingWalletState(walletScope));
             const retained = yield* service.currentSession.pipe(Stream.runHead);
-            yield* SubscriptionRef.set(
-              walletState,
+            yield* flow.setWalletState(
               connectedWalletState(
                 new WalletScopeKey({ address: otherAddress, network: "base" })
               )
@@ -373,7 +349,7 @@ describe("BorrowTransactionFlowService", () => {
             const rejected = yield* service.start(intake);
             return { cleared, rejected, retained, started };
           })
-        ).pipe(Effect.provide(makeServiceLayer(walletState)));
+        ).pipe(Effect.provide(flow.layer));
         expect(result.started._tag).toBe("Started");
         expect(result.retained).toMatchObject({
           _tag: "Some",
@@ -391,8 +367,26 @@ describe("BorrowTransactionFlowService", () => {
         const commands: Array<WidgetNavigationCommand> = [];
         let failSteps = true;
         const executeAction = vi.fn(() => Effect.succeed(action()));
-        const walletState = yield* SubscriptionRef.make(
-          connectedWalletState(walletScope)
+        const flow = yield* makeBorrowFlowTestLayer(
+          connectedWalletState(walletScope),
+          {
+            execute: (command) =>
+              Effect.suspend(() => {
+                commands.push(command);
+                if (
+                  command._tag === "Push" &&
+                  command.path.endsWith("/steps") &&
+                  failSteps
+                ) {
+                  failSteps = false;
+                  return Effect.fail(
+                    new WidgetNavigationError({ cause: "blocked" })
+                  );
+                }
+                return Effect.void;
+              }),
+            executeAction,
+          }
         );
 
         const result = yield* Effect.scoped(
@@ -405,28 +399,7 @@ describe("BorrowTransactionFlowService", () => {
             const duplicate = yield* review.confirm();
             return { duplicate, failed, retried };
           })
-        ).pipe(
-          Effect.provide(
-            makeServiceLayer(walletState, {
-              execute: (command) =>
-                Effect.suspend(() => {
-                  commands.push(command);
-                  if (
-                    command._tag === "Push" &&
-                    command.path.endsWith("/steps") &&
-                    failSteps
-                  ) {
-                    failSteps = false;
-                    return Effect.fail(
-                      new WidgetNavigationError({ cause: "blocked" })
-                    );
-                  }
-                  return Effect.void;
-                }),
-              executeAction,
-            })
-          )
-        );
+        ).pipe(Effect.provide(flow.layer));
 
         expect(result.failed._tag).toBe("Failure");
         expect(result.retried).toEqual({ _tag: "Confirmed" });
@@ -444,8 +417,11 @@ describe("BorrowTransactionFlowService", () => {
     "rejects immediately terminal %s actions as typed creation failures",
     (status) =>
       Effect.gen(function* () {
-        const walletState = yield* SubscriptionRef.make(
-          connectedWalletState(walletScope)
+        const flow = yield* makeBorrowFlowTestLayer(
+          connectedWalletState(walletScope),
+          {
+            executeAction: () => Effect.succeed(action(status)),
+          }
         );
         const error = yield* Effect.scoped(
           Effect.gen(function* () {
@@ -454,20 +430,14 @@ describe("BorrowTransactionFlowService", () => {
             const review = yield* session.acquireReview();
             return yield* Effect.flip(review.confirm());
           })
-        ).pipe(
-          Effect.provide(
-            makeServiceLayer(walletState, {
-              executeAction: () => Effect.succeed(action(status)),
-            })
-          )
-        );
+        ).pipe(Effect.provide(flow.layer));
         expect(error).toBeInstanceOf(BorrowActionCreationError);
       })
   );
 
   it.effect("clears the reserved action when Review is acquired again", () =>
     Effect.gen(function* () {
-      const walletState = yield* SubscriptionRef.make(
+      const flow = yield* makeBorrowFlowTestLayer(
         connectedWalletState(walletScope)
       );
       const result = yield* Effect.scoped(
@@ -480,7 +450,7 @@ describe("BorrowTransactionFlowService", () => {
           const execution = yield* session.acquireExecution();
           return { confirmed, execution };
         })
-      ).pipe(Effect.provide(makeServiceLayer(walletState)));
+      ).pipe(Effect.provide(flow.layer));
 
       expect(result).toEqual({
         confirmed: { _tag: "Confirmed" },
@@ -495,8 +465,17 @@ describe("BorrowTransactionFlowService", () => {
       Effect.gen(function* () {
         const navigationStarted = yield* Deferred.make<void>();
         const navigationRelease = yield* Deferred.make<void>();
-        const walletState = yield* SubscriptionRef.make(
-          connectedWalletState(walletScope)
+        const flow = yield* makeBorrowFlowTestLayer(
+          connectedWalletState(walletScope),
+          {
+            execute: (command) =>
+              command._tag === "Push" &&
+              command.path === toWidgetPath("/borrow/steps")
+                ? Deferred.succeed(navigationStarted, undefined).pipe(
+                    Effect.andThen(Deferred.await(navigationRelease))
+                  )
+                : Effect.void,
+          }
         );
         const result = yield* Effect.scoped(
           Effect.gen(function* () {
@@ -517,19 +496,7 @@ describe("BorrowTransactionFlowService", () => {
             yield* Fiber.await(confirmation);
             return yield* session.acquireExecution();
           })
-        ).pipe(
-          Effect.provide(
-            makeServiceLayer(walletState, {
-              execute: (command) =>
-                command._tag === "Push" &&
-                command.path === toWidgetPath("/borrow/steps")
-                  ? Deferred.succeed(navigationStarted, undefined).pipe(
-                      Effect.andThen(Deferred.await(navigationRelease))
-                    )
-                  : Effect.void,
-            })
-          )
-        );
+        ).pipe(Effect.provide(flow.layer));
 
         expect(result._tag).toBe("Acquired");
       })
@@ -547,8 +514,19 @@ describe("BorrowTransactionFlowService", () => {
             })
           )
         );
-      const walletState = yield* SubscriptionRef.make(
-        connectedWalletState(walletScope)
+      const flow = yield* makeBorrowFlowTestLayer(
+        connectedWalletState(walletScope),
+        {
+          execute: (command) =>
+            Effect.sync(() => {
+              commands.push(command);
+            }),
+          makeWorkflow: (_input: TransactionWorkflowInput) =>
+            Effect.succeed({
+              dispatch: () => Effect.void,
+              states: SubscriptionRef.changes(workflowState),
+            }),
+        }
       );
       const result = yield* Effect.scoped(
         Effect.gen(function* () {
@@ -570,21 +548,7 @@ describe("BorrowTransactionFlowService", () => {
           const accepted = yield* acquired.execution.finish();
           return { accepted, early };
         })
-      ).pipe(
-        Effect.provide(
-          makeServiceLayer(walletState, {
-            execute: (command) =>
-              Effect.sync(() => {
-                commands.push(command);
-              }),
-            makeWorkflow: (_input: TransactionWorkflowInput) =>
-              Effect.succeed({
-                dispatch: () => Effect.void,
-                states: SubscriptionRef.changes(workflowState),
-              }),
-          })
-        )
-      );
+      ).pipe(Effect.provide(flow.layer));
 
       expect(result.early).toEqual({ _tag: "RejectedNotCompleted" });
       expect(result.accepted).toEqual({ _tag: "Accepted" });
@@ -597,7 +561,7 @@ describe("BorrowTransactionFlowService", () => {
 
   it.effect("does not let a released stale Session clear its replacement", () =>
     Effect.gen(function* () {
-      const walletState = yield* SubscriptionRef.make(
+      const flow = yield* makeBorrowFlowTestLayer(
         connectedWalletState(walletScope)
       );
       const result = yield* Effect.scoped(
@@ -615,7 +579,7 @@ describe("BorrowTransactionFlowService", () => {
           const current = yield* service.currentSession.pipe(Stream.runHead);
           return { current, second };
         })
-      ).pipe(Effect.provide(makeServiceLayer(walletState)));
+      ).pipe(Effect.provide(flow.layer));
       expect(result.current).toMatchObject({
         _tag: "Some",
         value: { epoch: result.second.session.epoch },
@@ -628,8 +592,30 @@ describe("BorrowTransactionFlowService", () => {
     () =>
       Effect.gen(function* () {
         let completionAttempts = 0;
-        const walletState = yield* SubscriptionRef.make(
-          connectedWalletState(walletScope)
+        const flow = yield* makeBorrowFlowTestLayer(
+          connectedWalletState(walletScope),
+          {
+            execute: (command) => {
+              if (
+                command._tag !== "Replace" ||
+                command.path !== toWidgetPath("/borrow/complete")
+              ) {
+                return Effect.void;
+              }
+              completionAttempts += 1;
+              return completionAttempts < 3
+                ? Effect.fail(new WidgetNavigationError({ cause: "blocked" }))
+                : Effect.void;
+            },
+            makeWorkflow: (input) =>
+              Effect.succeed({
+                dispatch: () => Effect.void,
+                states: Stream.succeed({
+                  ...initializeTransactionWorkflow(input),
+                  _tag: "Completed" as const,
+                }),
+              }),
+          }
         );
         const attempts = yield* Effect.scoped(
           Effect.gen(function* () {
@@ -655,37 +641,7 @@ describe("BorrowTransactionFlowService", () => {
               success: completionAttempts,
             };
           })
-        ).pipe(
-          Effect.provide(
-            Layer.mergeAll(
-              TestClock.layer(),
-              makeServiceLayer(walletState, {
-                execute: (command) => {
-                  if (
-                    command._tag !== "Replace" ||
-                    command.path !== toWidgetPath("/borrow/complete")
-                  ) {
-                    return Effect.void;
-                  }
-                  completionAttempts += 1;
-                  return completionAttempts < 3
-                    ? Effect.fail(
-                        new WidgetNavigationError({ cause: "blocked" })
-                      )
-                    : Effect.void;
-                },
-                makeWorkflow: (input) =>
-                  Effect.succeed({
-                    dispatch: () => Effect.void,
-                    states: Stream.succeed({
-                      ...initializeTransactionWorkflow(input),
-                      _tag: "Completed" as const,
-                    }),
-                  }),
-              })
-            )
-          )
-        );
+        ).pipe(Effect.provide(Layer.mergeAll(TestClock.layer(), flow.layer)));
 
         expect(attempts).toEqual({
           beforeBoundary: 1,

@@ -1,6 +1,6 @@
 import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Context, Deferred, Effect, Layer, Schema, Stream } from "effect";
+import { Context, Deferred, Effect, Layer, Schema } from "effect";
 import type { ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
 import {
@@ -45,17 +45,16 @@ import {
   YieldOperations,
 } from "../../src/services/api/operations";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
-import {
-  makeWidgetNavigation,
-  WidgetNavigation,
-} from "../../src/services/navigation/widget-navigation";
-import { TrackingService } from "../../src/services/tracking/tracking-service";
+import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
 } from "../../src/services/wallet/wallet-state";
+import { makeTestTracking } from "../utils/services/tracking-service";
+import { makeTestWallet } from "../utils/services/wallet-service";
+import { makeTestNavigation } from "../utils/services/widget-navigation";
 import { render } from "../utils/test-utils";
 import { makeTransactionWorkflowTestLayer } from "../utils/transaction-workflow-layer";
 import type { WalletOperations } from "../utils/wallet-operations";
@@ -333,6 +332,10 @@ const renderExecution = (
           });
         }),
     });
+    const testNavigation = yield* makeTestNavigation({
+      execute: navigationService.execute,
+    });
+    const tracking = yield* makeTestTracking();
     const activeWallet = options.wallet ?? wallet;
     const workflowAction = options.action ?? decodedAction();
     borrow.executeAction.mockImplementation(() =>
@@ -342,13 +345,9 @@ const renderExecution = (
       WalletService,
       activeWallet as WalletService["Service"]
     );
-    const tracking = TrackingService.of({
-      trackEvent: () => Effect.void,
-      trackPageView: () => Effect.void,
-    });
     const workflowLayer = makeTransactionWorkflowTestLayer({
       borrow: borrow as unknown as BorrowOperations["Service"],
-      tracking,
+      tracking: tracking.service,
       wallet: activeWallet as WalletService["Service"],
       yieldOperations: YieldOperations.of({
         getTransactionStatus: () => Effect.die("unexpected classic status"),
@@ -359,36 +358,34 @@ const renderExecution = (
           Effect.die("unexpected classic hash submission"),
       }),
     });
-    const flowWallet = WalletService.of({
-      ...activeWallet,
-      state: Effect.succeed({
+    const flowWallet = yield* makeTestWallet({
+      addLedgerAccount: activeWallet.addLedgerAccount,
+      enabledNetworks: activeWallet.enabledNetworks,
+      initialState: {
         connection: connectedWalletState,
         ledger: {
           accounts: [],
           currentAccountId: undefined,
           disabledChains: [],
         },
-      }),
-      states: Stream.succeed({
-        connection: connectedWalletState,
-        ledger: {
-          accounts: [],
-          currentAccountId: undefined,
-          disabledChains: [],
-        },
-      }),
-    } as never);
+      },
+      logout: activeWallet.logout,
+      signMessage: activeWallet.signMessage,
+      signTransaction: activeWallet.signTransaction,
+      switchAccount: activeWallet.switchAccount,
+      wagmiConfig: activeWallet.wagmiConfig,
+    });
     const flowDependencies = Layer.mergeAll(
       Layer.succeed(BorrowOperations, borrow as never),
-      Layer.succeed(TrackingService, tracking),
+      tracking.layer,
       WidgetConfigService.layer({
         apiKey: "test-api-key",
         borrowEnabled: true,
         dashboardVariant: true,
         variant: "default",
       }),
-      Layer.succeed(WidgetNavigation, navigationService),
-      Layer.succeed(WalletService, flowWallet),
+      testNavigation.layer,
+      flowWallet.layer,
       workflowLayer
     );
     const flowContext = yield* Layer.build(
@@ -413,8 +410,8 @@ const renderExecution = (
                   appRuntime.layer,
                   Layer.mergeAll(
                     Layer.succeed(BorrowOperations, borrow as never),
-                    Layer.succeed(TrackingService, tracking),
-                    Layer.succeed(WidgetNavigation, navigationService),
+                    tracking.layer,
+                    testNavigation.layer,
                     WidgetConfigService.layer({
                       apiKey: "test-api-key",
                       borrowEnabled: true,

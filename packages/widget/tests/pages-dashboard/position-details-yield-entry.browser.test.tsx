@@ -1,6 +1,6 @@
 import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
-import { Effect, Layer, Schema, Stream } from "effect";
+import { Effect, Layer, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router";
@@ -39,13 +39,14 @@ import {
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
 import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
-import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   type NormalizedWalletState,
 } from "../../src/services/wallet/wallet-state";
 import { yieldApiYieldFixture } from "../fixtures";
-import { makeClassicFlowTestWalletLayer } from "../utils/classic-flow-wallet-layer";
+import { makeClassicFlowTestLayer } from "../utils/classic-flow-layer";
+import { makeTestWallet } from "../utils/services/wallet-service";
+import { makeTestNavigation } from "../utils/services/widget-navigation";
 import { render } from "../utils/test-utils";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -77,11 +78,6 @@ const walletState = {
   connection: connectedWalletState,
   ledger: disconnectedLedgerConnectorState,
 };
-const wallet = WalletService.of({
-  state: Effect.succeed(walletState),
-  states: Stream.succeed(walletState),
-  wagmiConfig: {},
-} as never);
 const navigationChannel: {
   navigate: ReturnType<typeof useNavigate> | null;
 } = { navigate: null };
@@ -94,9 +90,9 @@ const navigation = makeWidgetNavigation({
       navigationChannel.navigate?.(path, { ...options, replace: true })
     ),
 });
-const classicWalletLayer = makeClassicFlowTestWalletLayer({
-  navigation,
-  wallet,
+const classicFlowLayer = makeClassicFlowTestLayer({
+  navigation: makeTestNavigation({ execute: navigation.execute }),
+  wallet: makeTestWallet({ initialState: walletState }),
 });
 
 const NavigationBridge = () => {
@@ -201,7 +197,7 @@ const TestApp = () => {
             })
           ).pipe(Layer.fresh),
         ],
-        [walletRuntime.layer, classicWalletLayer],
+        [walletRuntime.layer, classicFlowLayer],
         [walletConnectionStateAtom, connectedWalletState],
         [walletScopeAtom, walletScope],
         [
