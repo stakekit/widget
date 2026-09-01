@@ -16,7 +16,6 @@ import type { ClassicTransactionFlowIntake } from "../../src/features/classic-tr
 import { walletScopeAtom } from "../../src/features/wallet/index";
 import {
   makeWidgetNavigation,
-  WidgetNavigation,
   type WidgetNavigationOptions,
   type WidgetPath,
 } from "../../src/services/navigation/widget-navigation";
@@ -25,8 +24,7 @@ import {
   disconnectedNormalizedWalletState,
 } from "../../src/services/wallet/wallet-state";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
-import { makeClassicFlowTestLayer } from "../utils/classic-flow-layer";
-import { makeTestWallet } from "../utils/services/wallet-service";
+import { makeClassicFlowTestKit } from "../utils/classic-flow-test-kit";
 import { makeTestNavigation } from "../utils/services/widget-navigation";
 
 const walletScope = new WalletScopeKey({
@@ -154,14 +152,20 @@ const makeRegistry = (
     initialValues: [
       Atom.initialValue(
         appRuntime.layer,
-        Layer.succeed(WidgetNavigation, navigation)
+        Layer.unwrap(
+          makeTestNavigation({ execute: navigation.execute }).pipe(
+            Effect.map((testNavigation) => testNavigation.layer)
+          )
+        )
       ),
       Atom.initialValue(
         walletRuntime.layer,
-        makeClassicFlowTestLayer({
-          navigation: makeTestNavigation({ execute: navigation.execute }),
-          wallet: makeTestWallet({ initialState: walletState }),
-        }) as never
+        Layer.unwrap(
+          makeClassicFlowTestKit({
+            initialWalletState: walletState,
+            navigation: { execute: navigation.execute },
+          }).pipe(Effect.map((kit) => kit.layer))
+        ) as never
       ),
       Atom.initialValue(walletScopeAtom, currentWalletScope),
     ],

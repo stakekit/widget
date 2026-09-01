@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@effect/vitest";
-import { Cause, Effect, Exit, Fiber, Stream } from "effect";
+import { Cause, Effect, Exit, Fiber, Stream, SubscriptionRef } from "effect";
 import { walletCommandIdentity } from "../../../src/services/wallet/wallet-command-identity";
 import {
   disconnectedLedgerConnectorState,
@@ -53,6 +53,17 @@ describe("makeTestWallet", () => {
       });
 
       expect(outcome).toEqual({ _tag: "Added" });
+    })
+  );
+
+  it.effect("uses an existing Wallet State reference", () =>
+    Effect.gen(function* () {
+      const state = yield* SubscriptionRef.make(disconnectedState);
+      const wallet = yield* makeTestWallet({ state });
+
+      yield* SubscriptionRef.set(state, connectingState);
+
+      expect(yield* wallet.walletState).toEqual(connectingState);
     })
   );
 

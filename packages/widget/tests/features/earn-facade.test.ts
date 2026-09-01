@@ -26,17 +26,18 @@ import {
   earnYieldSelectionViewAtom,
   setEarnYieldSearchAtom,
 } from "../../src/features/earn/state/yield-selection";
-import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
+import { makeTestTracking } from "../utils/services/tracking-service";
 import { decodeValidator } from "../utils/validators";
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const trackingLayer = (trackEvent: () => Effect.Effect<void>) =>
   Atom.initialValue(
     appRuntime.layer,
-    Layer.succeed(
-      TrackingService,
-      TrackingService.of({ trackEvent, trackPageView: () => Effect.void })
+    Layer.unwrap(
+      makeTestTracking({ trackEvent }).pipe(
+        Effect.map((tracking) => tracking.layer)
+      )
     ) as never
   );
 

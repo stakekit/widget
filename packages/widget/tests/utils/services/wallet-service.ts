@@ -4,10 +4,9 @@ import type { WalletState } from "../../../src/services/wallet/wallet-state";
 
 type TestWalletService = WalletService["Service"];
 
-export type TestWalletOptions = Readonly<{
+export type TestWalletBehaviorOptions = Readonly<{
   readonly addLedgerAccount?: TestWalletService["addLedgerAccount"];
   readonly enabledNetworks?: TestWalletService["enabledNetworks"];
-  readonly initialState: WalletState;
   readonly logout?: TestWalletService["logout"];
   readonly signMessage?: TestWalletService["signMessage"];
   readonly signTransaction?: TestWalletService["signTransaction"];
@@ -15,13 +14,27 @@ export type TestWalletOptions = Readonly<{
   readonly wagmiConfig?: TestWalletService["wagmiConfig"];
 }>;
 
+export type TestWalletOptions = TestWalletBehaviorOptions &
+  (
+    | Readonly<{
+        readonly initialState: WalletState;
+        readonly state?: never;
+      }>
+    | Readonly<{
+        readonly initialState?: never;
+        readonly state: SubscriptionRef.SubscriptionRef<WalletState>;
+      }>
+  );
+
 const unexpectedWalletCommand = <A>(method: string): Effect.Effect<A> =>
   Effect.die(`makeTestWallet: unexpected call to ${method}`);
 
 export const makeTestWallet = Effect.fn("makeTestWallet")(function* (
   options: TestWalletOptions
 ) {
-  const state = yield* SubscriptionRef.make(options.initialState);
+  const state = options.state
+    ? options.state
+    : yield* SubscriptionRef.make(options.initialState);
   const service = WalletService.of({
     addLedgerAccount:
       options.addLedgerAccount ??

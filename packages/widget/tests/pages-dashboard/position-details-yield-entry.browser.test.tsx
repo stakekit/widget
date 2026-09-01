@@ -39,14 +39,10 @@ import {
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
 import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
-import {
-  disconnectedLedgerConnectorState,
-  type NormalizedWalletState,
-} from "../../src/services/wallet/wallet-state";
+import type { NormalizedWalletState } from "../../src/services/wallet/wallet-state";
 import { yieldApiYieldFixture } from "../fixtures";
-import { makeClassicFlowTestLayer } from "../utils/classic-flow-layer";
-import { makeTestWallet } from "../utils/services/wallet-service";
-import { makeTestNavigation } from "../utils/services/widget-navigation";
+import { makeConnectedWalletState } from "../fixtures/wallet-state";
+import { makeClassicFlowTestKit } from "../utils/classic-flow-test-kit";
 import { render } from "../utils/test-utils";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -74,10 +70,7 @@ const connectedWalletState = {
   network: "ethereum",
   status: "connected",
 } satisfies NormalizedWalletState;
-const walletState = {
-  connection: connectedWalletState,
-  ledger: disconnectedLedgerConnectorState,
-};
+const walletState = makeConnectedWalletState(walletScope);
 const navigationChannel: {
   navigate: ReturnType<typeof useNavigate> | null;
 } = { navigate: null };
@@ -90,10 +83,13 @@ const navigation = makeWidgetNavigation({
       navigationChannel.navigate?.(path, { ...options, replace: true })
     ),
 });
-const classicFlowLayer = makeClassicFlowTestLayer({
-  navigation: makeTestNavigation({ execute: navigation.execute }),
-  wallet: makeTestWallet({ initialState: walletState }),
-});
+const makeClassicFlowLayer = () =>
+  Layer.unwrap(
+    makeClassicFlowTestKit({
+      initialWalletState: walletState,
+      navigation: { execute: navigation.execute },
+    }).pipe(Effect.map((kit) => kit.layer))
+  );
 
 const NavigationBridge = () => {
   const navigate = useNavigate();
@@ -197,7 +193,7 @@ const TestApp = () => {
             })
           ).pipe(Layer.fresh),
         ],
-        [walletRuntime.layer, classicFlowLayer],
+        [walletRuntime.layer, makeClassicFlowLayer()],
         [walletConnectionStateAtom, connectedWalletState],
         [walletScopeAtom, walletScope],
         [

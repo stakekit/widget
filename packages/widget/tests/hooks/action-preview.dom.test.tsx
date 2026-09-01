@@ -1,5 +1,5 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Effect, Layer, Schema, Stream } from "effect";
+import { Effect, Layer, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { HttpResponse, http } from "msw";
@@ -19,20 +19,17 @@ import {
   walletScopeAtom,
   walletStateResultAtom,
 } from "../../src/features/wallet/index";
-import {
-  makeWidgetNavigation,
-  WidgetNavigation,
-} from "../../src/services/navigation/widget-navigation";
-import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
-import { WalletService } from "../../src/services/wallet/wallet-service";
-import { disconnectedLedgerConnectorState } from "../../src/services/wallet/wallet-state";
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,
   yieldApiYieldFixture,
 } from "../fixtures";
+import { makeConnectedWalletState } from "../fixtures/wallet-state";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
+import { makeTestTracking } from "../utils/services/tracking-service";
+import { makeTestWallet } from "../utils/services/wallet-service";
+import { makeTestNavigation } from "../utils/services/widget-navigation";
 import { makeTestStakeKitApiLayer } from "../utils/stakekit-api-layer";
 import { describe, expect, it } from "../utils/test-extend.dom.ts";
 import { renderHook } from "../utils/test-utils.dom.tsx";
@@ -48,32 +45,21 @@ const walletScope = new WalletScopeKey({
   address: command.address,
   network: "ethereum",
 });
-const walletState = {
-  connection: {
-    additionalAddresses: null,
-    address: walletScope.address,
-    chain: {} as never,
-    connector: {} as never,
-    connectorChains: [],
-    isLedgerLive: false,
-    isLedgerLiveAccountPlaceholder: false,
-    ledgerAccounts: [],
-    network: walletScope.network,
-    status: "connected" as const,
-  },
-  ledger: disconnectedLedgerConnectorState,
-};
-const walletLayer = Layer.succeed(
-  WalletService,
-  WalletService.of({
-    state: Effect.succeed(walletState),
-    states: Stream.succeed(walletState),
-    wagmiConfig: {},
-  } as never)
+const walletState = makeConnectedWalletState(walletScope);
+const testDependencies = Layer.unwrap(
+  Effect.all({
+    navigation: makeTestNavigation(),
+    tracking: makeTestTracking(),
+    wallet: makeTestWallet({ initialState: walletState }),
+  }).pipe(
+    Effect.map(({ navigation, tracking, wallet }) =>
+      Layer.mergeAll(navigation.layer, tracking.layer, wallet.layer)
+    )
+  )
 );
 
 const classicDependencies = Layer.mergeAll(
-  walletLayer,
+  testDependencies,
   makeTestStakeKitApiLayer({
     apiKey: "test-key",
     baseUrl: "https://api.example.com",
@@ -81,28 +67,12 @@ const classicDependencies = Layer.mergeAll(
     yieldsApiUrl: yieldApiUrl,
   }),
   Layer.succeed(
-    WidgetNavigation,
-    makeWidgetNavigation({
-      back: () => Effect.void,
-      push: () => Effect.void,
-      replace: () => Effect.void,
-    })
-  ),
-  Layer.succeed(
-    TrackingService,
-    TrackingService.of({
-      trackEvent: () => Effect.void,
-      trackPageView: () => Effect.void,
-    })
-  ),
-  Layer.succeed(
     TransactionWorkflowService,
     TransactionWorkflowService.of({
       make: () =>
-        Effect.succeed({
-          dispatch: () => Effect.void,
-          states: Stream.never,
-        }),
+        Effect.die(
+          "action-preview test: unexpected TransactionWorkflowService.make"
+        ),
     })
   )
 );

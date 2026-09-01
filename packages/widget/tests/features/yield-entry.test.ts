@@ -14,11 +14,7 @@ import { makeYieldEntry } from "../../src/features/yield-entry/index";
 import { getYieldEntryCta } from "../../src/features/yield-entry/model/yield-entry";
 import type { YieldEntryFacadeInput } from "../../src/features/yield-entry/state/atoms/yield-entry";
 import { YieldEntrySubmissionService } from "../../src/features/yield-entry/state/orchestration/yield-entry-submission-service";
-import {
-  makeWidgetNavigation,
-  WidgetNavigation,
-} from "../../src/services/navigation/widget-navigation";
-import { TrackingService } from "../../src/services/tracking/tracking-service";
+import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { WalletModal } from "../../src/services/wallet/wallet-modal";
 import {
   disconnectedLedgerConnectorState,
@@ -26,8 +22,8 @@ import {
   type WalletState,
 } from "../../src/services/wallet/wallet-state";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
-import { makeClassicFlowTestLayer } from "../utils/classic-flow-layer";
-import { makeTestWallet } from "../utils/services/wallet-service";
+import { makeClassicFlowTestKit } from "../utils/classic-flow-test-kit";
+import { makeTestTracking } from "../utils/services/tracking-service";
 import { makeTestNavigation } from "../utils/services/widget-navigation";
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
@@ -109,20 +105,26 @@ const makeObservablePorts = () => {
 
   return {
     closeChain,
-    layer: Layer.mergeAll(
-      Layer.succeed(
-        WalletModal,
-        WalletModal.of({
-          closeChain: Effect.sync(closeChain),
-          install: () => Effect.void,
-          openConnect: Effect.sync(openConnect),
-          uninstall: () => Effect.void,
-        })
-      ),
-      Layer.succeed(WidgetNavigation, navigation),
-      Layer.succeed(
-        TrackingService,
-        TrackingService.of({ trackEvent, trackPageView: () => Effect.void })
+    layer: Layer.unwrap(
+      Effect.all({
+        navigation: makeTestNavigation({ execute: navigation.execute }),
+        tracking: makeTestTracking({ trackEvent }),
+      }).pipe(
+        Effect.map(({ navigation: testNavigation, tracking }) =>
+          Layer.mergeAll(
+            Layer.succeed(
+              WalletModal,
+              WalletModal.of({
+                closeChain: Effect.sync(closeChain),
+                install: () => Effect.void,
+                openConnect: Effect.sync(openConnect),
+                uninstall: () => Effect.void,
+              })
+            ),
+            testNavigation.layer,
+            tracking.layer
+          )
+        )
       )
     ) as never,
     openConnect,
@@ -139,24 +141,20 @@ const makeObservableRegistry = (
   scope: WalletScopeKey | null = walletScope
 ) => {
   const runtimeLayer = Layer.unwrap(
-    Effect.all({
-      navigation: makeTestNavigation({ execute: ports.navigation.execute }),
-      wallet: makeTestWallet({
+    makeClassicFlowTestKit({
+      initialWalletState: serviceWalletState,
+      navigation: { execute: ports.navigation.execute },
+      wallet: {
         addLedgerAccount: () => Effect.succeed({ _tag: "Added" }),
-        initialState: serviceWalletState,
-      }),
+      },
     }).pipe(
-      Effect.map(({ navigation, wallet }) => {
-        const flowLayer = makeClassicFlowTestLayer({
-          navigation: Effect.succeed(navigation),
-          wallet: Effect.succeed(wallet),
-        });
+      Effect.map((kit) => {
         const yieldEntryDependencies = Layer.mergeAll(
           ports.layer,
-          wallet.layer
+          kit.wallet.layer
         );
         return Layer.merge(
-          flowLayer,
+          kit.layer,
           YieldEntrySubmissionService.layer.pipe(
             Layer.provide(yieldEntryDependencies)
           )
@@ -467,7 +465,11 @@ describe("Yield Entry", () => {
       push: () => Effect.fail(navigationFailure),
       replace: () => Effect.void,
     });
-    const navigationLayer = Layer.succeed(WidgetNavigation, navigation);
+    const navigationLayer = Layer.unwrap(
+      makeTestNavigation({ execute: navigation.execute }).pipe(
+        Effect.map((testNavigation) => testNavigation.layer)
+      )
+    );
     const registry = AtomRegistry.make({
       initialValues: [
         applicationRuntimeInitInitialValue({
@@ -478,10 +480,12 @@ describe("Yield Entry", () => {
         [appRuntime.layer, navigationLayer as never],
         [
           walletRuntime.layer,
-          makeClassicFlowTestLayer({
-            navigation: makeTestNavigation({ execute: navigation.execute }),
-            wallet: makeTestWallet({ initialState: walletState }),
-          }) as never,
+          Layer.unwrap(
+            makeClassicFlowTestKit({
+              initialWalletState: walletState,
+              navigation: { execute: navigation.execute },
+            }).pipe(Effect.map((kit) => kit.layer))
+          ) as never,
         ],
       ],
     });

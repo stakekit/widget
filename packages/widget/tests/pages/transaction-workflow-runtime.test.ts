@@ -19,15 +19,11 @@ import {
   walletScopeOwnerKey,
 } from "../../src/domain/wallet/wallet-scope";
 import type { ActionMeta } from "../../src/public-api/types";
-import {
+import type {
   BorrowOperations,
   YieldOperations,
 } from "../../src/services/api/operations";
-import {
-  type WidgetDomainEvent,
-  WidgetDomainEvents,
-} from "../../src/services/events/widget-domain-events";
-import { TrackingService } from "../../src/services/tracking/tracking-service";
+import { ApiRequestError } from "../../src/services/api/resource-sources";
 import {
   BorrowTransactionWorkflowInput,
   ClassicTransactionWorkflowInput,
@@ -38,12 +34,14 @@ import {
   TransactionWorkflowService,
 } from "../../src/services/transaction-workflow/transaction-workflow-service";
 import { WalletSigningError } from "../../src/services/wallet/wallet-errors";
-import { WalletService } from "../../src/services/wallet/wallet-service";
+import type { WalletState } from "../../src/services/wallet/wallet-state";
 import { yieldApiTransactionFixture } from "../fixtures";
+import { makeConnectedWalletState } from "../fixtures/wallet-state";
+import type { TestWalletBehaviorOptions } from "../utils/services/wallet-service";
 import {
-  makeTransactionWorkflowTestLayer,
-  type TransactionWorkflowTestCapabilities,
-} from "../utils/transaction-workflow-layer";
+  makeTransactionWorkflowTestKit,
+  type TransactionWorkflowTestKitOptions,
+} from "../utils/transaction-workflow-test-kit";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -70,18 +68,11 @@ const actionMeta = {
   yieldId,
 } as unknown as ActionMeta;
 
-type WorkflowTestCapabilities = Omit<
-  TransactionWorkflowTestCapabilities,
-  "events"
->;
-
-type CapabilityOverrides<Service> = Partial<Record<keyof Service, unknown>>;
-
 type WorkflowTestCapabilityOverrides = {
-  readonly borrow?: CapabilityOverrides<BorrowOperations["Service"]>;
-  readonly tracking?: CapabilityOverrides<TrackingService["Service"]>;
-  readonly wallet?: CapabilityOverrides<WalletService["Service"]>;
-  readonly yieldOperations?: CapabilityOverrides<YieldOperations["Service"]>;
+  readonly borrow?: Partial<BorrowOperations["Service"]>;
+  readonly initialWalletState?: WalletState;
+  readonly wallet?: TestWalletBehaviorOptions;
+  readonly yieldOperations?: Partial<YieldOperations["Service"]>;
 };
 
 const classicTransaction = (
@@ -154,31 +145,11 @@ const borrowAction = ({
     ),
   });
 
-const walletState = (
-  network: "base" | "ethereum",
-  walletAddress = address
-) => ({
-  address: walletAddress,
-  network,
-  status: "connected",
-});
-
-const walletServiceState = (connection: ReturnType<typeof walletState>) => ({
-  connection,
-  ledger: {
-    accounts: [],
-    currentAccountId: undefined,
-    disabledChains: [],
-  },
-});
-
 const makeCapabilities = (
   overrides: WorkflowTestCapabilityOverrides = {}
-): WorkflowTestCapabilities => ({
-  borrow: BorrowOperations.of({
-    executeAction: () => Effect.die("unexpected borrow execution"),
+): TransactionWorkflowTestKitOptions => ({
+  borrow: {
     getAction: () => Effect.succeed(null),
-    stepAction: () => Effect.die("unexpected borrow step"),
     submitTransaction: () =>
       Effect.succeed({
         link: "https://explorer.test/borrow",
@@ -186,20 +157,17 @@ const makeCapabilities = (
         transactionHash,
       }),
     ...overrides.borrow,
-  } as never),
-  tracking: TrackingService.of({
-    trackEvent: () => Effect.void,
-    trackPageView: () => Effect.void,
-    ...overrides.tracking,
-  } as never),
-  wallet: WalletService.of({
-    state: Effect.succeed(walletServiceState(walletState("ethereum"))),
+  },
+  initialWalletState:
+    overrides.initialWalletState ??
+    makeConnectedWalletState(classicWalletScope),
+  wallet: {
     signMessage: () => Effect.succeed(signedPayload),
     signTransaction: () =>
       Effect.succeed({ broadcasted: false, signedTx: signedPayload }),
     ...overrides.wallet,
-  } as never),
-  yieldOperations: YieldOperations.of({
+  },
+  yieldOperations: {
     getTransactionStatus: () =>
       Effect.succeed({
         explorerUrl: "https://explorer.test/tx",
@@ -219,23 +187,23 @@ const makeCapabilities = (
         status: "BROADCASTED",
       } as never),
     ...overrides.yieldOperations,
-  } as never),
+  },
 });
 
 const makeWorkflowFromService = ({
-  events,
   key,
   capabilities,
 }: {
-  readonly capabilities: WorkflowTestCapabilities;
-  readonly events?: WidgetDomainEvents["Service"];
+  readonly capabilities: TransactionWorkflowTestKitOptions;
   readonly key:
     | ClassicTransactionWorkflowInput
     | BorrowTransactionWorkflowInput;
 }) =>
-  TransactionWorkflowService.use(({ make }) => make(key)).pipe(
-    Effect.provide(
-      makeTransactionWorkflowTestLayer({ ...capabilities, events })
+  makeTransactionWorkflowTestKit(capabilities).pipe(
+    Effect.flatMap((kit) =>
+      TransactionWorkflowService.use(({ make }) => make(key)).pipe(
+        Effect.provide(kit.layer)
+      )
     )
   );
 
@@ -251,7 +219,7 @@ const waitForState = (
 
 const runToCompletion = (
   key: ClassicTransactionWorkflowInput | BorrowTransactionWorkflowInput,
-  capabilities: WorkflowTestCapabilities
+  capabilities: TransactionWorkflowTestKitOptions
 ) =>
   Effect.scoped(
     Effect.gen(function* () {
@@ -270,31 +238,23 @@ describe("transaction workflow runtime", () => {
     "publishes owner-scoped lifecycle facts around a successful workflow",
     () =>
       Effect.gen(function* () {
-        const published: Array<WidgetDomainEvent> = [];
-        const events = WidgetDomainEvents.of({
-          events: Stream.never,
-          publish: (event) =>
-            Effect.sync(() => {
-              published.push(event);
-            }),
-        });
         const key = new ClassicTransactionWorkflowInput({
           actionMeta,
           transactions: [classicTransaction("lifecycle-events")],
           walletScope: classicWalletScope,
           yieldId,
         });
+        const kit = yield* makeTransactionWorkflowTestKit(makeCapabilities());
 
         yield* Effect.scoped(
           Effect.gen(function* () {
             const workflowScope = yield* Scope.make();
-            yield* makeWorkflowFromService({
-              capabilities: makeCapabilities(),
-              events,
-              key,
-            }).pipe(Effect.provideService(Scope.Scope, workflowScope));
+            yield* TransactionWorkflowService.use(({ make }) => make(key)).pipe(
+              Effect.provide(kit.layer),
+              Effect.provideService(Scope.Scope, workflowScope)
+            );
 
-            expect(published).toEqual([
+            expect(yield* kit.events.publishedEvents).toEqual([
               {
                 _tag: "TransactionWorkflowStarted",
                 owner: walletScopeOwnerKey(classicWalletScope),
@@ -306,7 +266,7 @@ describe("transaction workflow runtime", () => {
           })
         );
 
-        expect(published).toEqual([
+        expect(yield* kit.events.publishedEvents).toEqual([
           {
             _tag: "TransactionWorkflowStarted",
             owner: walletScopeOwnerKey(classicWalletScope),
@@ -440,7 +400,12 @@ describe("transaction workflow runtime", () => {
               Effect.suspend(() => {
                 submitAttempts += 1;
                 return submitAttempts === 1
-                  ? Effect.fail(new Error("submit failed"))
+                  ? Effect.fail(
+                      new ApiRequestError({
+                        cause: new Error("submit failed"),
+                        operation: "submitSignedTransaction",
+                      })
+                    )
                   : Effect.succeed({
                       explorerUrl: null,
                       hash: null,
@@ -508,11 +473,12 @@ describe("transaction workflow runtime", () => {
           Effect.gen(function* () {
             const machine = yield* makeWorkflowFromService({
               capabilities: makeCapabilities({
-                wallet: {
-                  state: Effect.succeed(
-                    walletServiceState(walletState("base", otherAddress))
-                  ),
-                },
+                initialWalletState: makeConnectedWalletState(
+                  new WalletScopeKey({
+                    address: otherAddress,
+                    network: "base",
+                  })
+                ),
               }),
               key,
             });
@@ -542,11 +508,7 @@ describe("transaction workflow runtime", () => {
           Effect.gen(function* () {
             const machine = yield* makeWorkflowFromService({
               capabilities: makeCapabilities({
-                wallet: {
-                  state: Effect.succeed(
-                    walletServiceState(walletState("base"))
-                  ),
-                },
+                initialWalletState: makeConnectedWalletState(borrowWalletScope),
               }),
               key: new BorrowTransactionWorkflowInput({
                 action: invalidAction,
@@ -608,9 +570,9 @@ describe("transaction workflow runtime", () => {
               getAction: () => Effect.succeed(confirmed(action)),
               submitTransaction: submit,
             },
+            initialWalletState: makeConnectedWalletState(borrowWalletScope),
             wallet: {
               signTransaction,
-              state: Effect.succeed(walletServiceState(walletState("base"))),
             },
           })
         );
@@ -801,9 +763,7 @@ describe("transaction workflow runtime", () => {
               return Effect.succeed(checks === 1 ? firstConfirmed : completed);
             },
           },
-          wallet: {
-            state: Effect.succeed(walletServiceState(walletState("base"))),
-          },
+          initialWalletState: makeConnectedWalletState(borrowWalletScope),
         })
       );
 
@@ -864,9 +824,7 @@ describe("transaction workflow runtime", () => {
               },
               stepAction: () => Effect.succeed(second),
             },
-            wallet: {
-              state: Effect.succeed(walletServiceState(walletState("base"))),
-            },
+            initialWalletState: makeConnectedWalletState(borrowWalletScope),
           })
         );
 
@@ -898,7 +856,14 @@ describe("transaction workflow runtime", () => {
           transactions: [],
         });
         let statusChecks = 0;
-        const step = vi.fn(() => Effect.fail(new Error("response lost")));
+        const step = vi.fn(() =>
+          Effect.fail(
+            new ApiRequestError({
+              cause: new Error("response lost"),
+              operation: "stepAction",
+            })
+          )
+        );
 
         yield* Effect.scoped(
           Effect.gen(function* () {
@@ -913,11 +878,7 @@ describe("transaction workflow runtime", () => {
                   },
                   stepAction: step,
                 },
-                wallet: {
-                  state: Effect.succeed(
-                    walletServiceState(walletState("base"))
-                  ),
-                },
+                initialWalletState: makeConnectedWalletState(borrowWalletScope),
               }),
               key: new BorrowTransactionWorkflowInput({
                 action: first,
@@ -970,7 +931,14 @@ describe("transaction workflow runtime", () => {
           ],
         });
         let statusChecks = 0;
-        const step = vi.fn(() => Effect.fail(new Error("response lost")));
+        const step = vi.fn(() =>
+          Effect.fail(
+            new ApiRequestError({
+              cause: new Error("response lost"),
+              operation: "stepAction",
+            })
+          )
+        );
 
         const result = yield* Effect.scoped(
           Effect.gen(function* () {
@@ -986,11 +954,7 @@ describe("transaction workflow runtime", () => {
                   },
                   stepAction: step,
                 },
-                wallet: {
-                  state: Effect.succeed(
-                    walletServiceState(walletState("base"))
-                  ),
-                },
+                initialWalletState: makeConnectedWalletState(borrowWalletScope),
               }),
               key: new BorrowTransactionWorkflowInput({
                 action: first,

@@ -40,10 +40,7 @@ import { BorrowReviewPage } from "../../src/features/borrow-transaction-flow/ui/
 import { BorrowStepsPage } from "../../src/features/borrow-transaction-flow/ui/steps";
 import { useBorrowExecution } from "../../src/features/borrow-transaction-flow/ui/use-borrow-execution";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
-import {
-  BorrowOperations,
-  YieldOperations,
-} from "../../src/services/api/operations";
+import { BorrowOperations } from "../../src/services/api/operations";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
@@ -56,7 +53,7 @@ import { makeTestTracking } from "../utils/services/tracking-service";
 import { makeTestWallet } from "../utils/services/wallet-service";
 import { makeTestNavigation } from "../utils/services/widget-navigation";
 import { render } from "../utils/test-utils";
-import { makeTransactionWorkflowTestLayer } from "../utils/transaction-workflow-layer";
+import { makeTransactionWorkflowTestKit } from "../utils/transaction-workflow-test-kit";
 import type { WalletOperations } from "../utils/wallet-operations";
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
@@ -194,16 +191,20 @@ const makeBorrowApi = ({
 
   return {
     executeAction: vi.fn(() =>
-      executeAction.pipe(Effect.flatMap(Schema.decodeEffect(BorrowAction)))
+      executeAction.pipe(Effect.map(Schema.decodeUnknownSync(BorrowAction)))
     ),
     getAction: vi.fn(() =>
-      Schema.decodeEffect(BorrowAction)(
-        queuedGetActions.shift() ?? getActions.at(-1) ?? action()
+      Effect.sync(() =>
+        Schema.decodeUnknownSync(BorrowAction)(
+          queuedGetActions.shift() ?? getActions.at(-1) ?? action()
+        )
       )
     ),
     stepAction: vi.fn(() =>
-      Schema.decodeEffect(BorrowAction)(
-        queuedStepActions.shift() ?? stepActions.at(-1) ?? action()
+      Effect.sync(() =>
+        Schema.decodeUnknownSync(BorrowAction)(
+          queuedStepActions.shift() ?? stepActions.at(-1) ?? action()
+        )
       )
     ),
     submitTransaction: vi.fn(
@@ -345,19 +346,6 @@ const renderExecution = (
       WalletService,
       activeWallet as WalletService["Service"]
     );
-    const workflowLayer = makeTransactionWorkflowTestLayer({
-      borrow: borrow as unknown as BorrowOperations["Service"],
-      tracking: tracking.service,
-      wallet: activeWallet as WalletService["Service"],
-      yieldOperations: YieldOperations.of({
-        getTransactionStatus: () => Effect.die("unexpected classic status"),
-        previewAction: () => Effect.die("unexpected action preview"),
-        submitSignedTransaction: () =>
-          Effect.die("unexpected classic signed submission"),
-        submitTransactionHash: () =>
-          Effect.die("unexpected classic hash submission"),
-      }),
-    });
     const flowWallet = yield* makeTestWallet({
       addLedgerAccount: activeWallet.addLedgerAccount,
       enabledNetworks: activeWallet.enabledNetworks,
@@ -375,6 +363,11 @@ const renderExecution = (
       switchAccount: activeWallet.switchAccount,
       wagmiConfig: activeWallet.wagmiConfig,
     });
+    const workflow = yield* makeTransactionWorkflowTestKit({
+      borrow,
+      walletService: activeWallet as WalletService["Service"],
+    });
+    const workflowLayer = workflow.layer;
     const flowDependencies = Layer.mergeAll(
       Layer.succeed(BorrowOperations, borrow as never),
       tracking.layer,
@@ -385,8 +378,8 @@ const renderExecution = (
         variant: "default",
       }),
       testNavigation.layer,
-      flowWallet.layer,
-      workflowLayer
+      workflowLayer,
+      flowWallet.layer
     );
     const flowContext = yield* Layer.build(
       BorrowTransactionFlowService.layer.pipe(Layer.provide(flowDependencies))

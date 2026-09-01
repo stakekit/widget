@@ -35,11 +35,11 @@ import {
   type TransactionWorkflowState,
 } from "../../src/services/transaction-workflow/transaction-workflow-model";
 import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
+import type { WalletState } from "../../src/services/wallet/wallet-state";
 import {
-  disconnectedLedgerConnectorState,
-  type NormalizedWalletState,
-  type WalletState,
-} from "../../src/services/wallet/wallet-state";
+  makeConnectedWalletState,
+  makeConnectingWalletState,
+} from "../fixtures/wallet-state";
 import { makeTestTracking } from "../utils/services/tracking-service";
 import { makeTestWallet } from "../utils/services/wallet-service";
 import { makeTestNavigation } from "../utils/services/widget-navigation";
@@ -50,6 +50,12 @@ const address = Schema.decodeSync(WalletAddress)(
 const otherAddress = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000002"
 );
+
+const connectedWalletState = (scope: WalletScopeKey): WalletState =>
+  makeConnectedWalletState(scope);
+
+const connectingWalletState = (scope: WalletScopeKey): WalletState =>
+  makeConnectingWalletState(scope);
 const walletScope = new WalletScopeKey({ address, network: "base" });
 
 const intake: BorrowTransactionFlowIntake = {
@@ -102,34 +108,6 @@ const action = (status = "CREATED") =>
     totalSteps: 1,
     transactions: [Schema.encodeSync(Transaction)(transaction())],
   });
-
-const connectedWalletConnection = (
-  scope: WalletScopeKey
-): Extract<NormalizedWalletState, { readonly status: "connected" }> => ({
-  additionalAddresses: scope.additionalAddresses,
-  address: scope.address,
-  chain: {} as never,
-  connector: {} as never,
-  connectorChains: [],
-  isLedgerLive: false,
-  isLedgerLiveAccountPlaceholder: false,
-  ledgerAccounts: [],
-  network: scope.network,
-  status: "connected",
-});
-
-const connectedWalletState = (scope: WalletScopeKey): WalletState => ({
-  connection: connectedWalletConnection(scope),
-  ledger: disconnectedLedgerConnectorState,
-});
-
-const connectingWalletState = (scope: WalletScopeKey): WalletState => ({
-  connection: {
-    ...connectedWalletConnection(scope),
-    status: "connecting",
-  },
-  ledger: disconnectedLedgerConnectorState,
-});
 
 type ServiceOverrides = Readonly<{
   readonly borrowEnabled?: boolean;

@@ -17,64 +17,43 @@ import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
-import type { ActionPreviewRequest } from "../../src/services/api/operations";
-import { YieldOperations } from "../../src/services/api/operations";
-import { InputValidationError } from "../../src/services/api/resource-sources";
+import type { YieldOperations } from "../../src/services/api/operations";
 import {
-  makeWidgetNavigation,
+  ApiRequestError,
+  InputValidationError,
+} from "../../src/services/api/resource-sources";
+import {
   toWidgetPath,
-  WidgetNavigation,
+  type WidgetNavigation,
   type WidgetNavigationCommand,
   WidgetNavigationError,
 } from "../../src/services/navigation/widget-navigation";
-import { TrackingService } from "../../src/services/tracking/tracking-service";
+import type { TrackingService } from "../../src/services/tracking/tracking-service";
 import { initializeTransactionWorkflow } from "../../src/services/transaction-workflow/internal/model";
 import type { TransactionWorkflowInput } from "../../src/services/transaction-workflow/transaction-workflow-model";
-import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
-import { WalletService } from "../../src/services/wallet/wallet-service";
-import {
-  disconnectedLedgerConnectorState,
-  type NormalizedWalletState,
-  type WalletState,
-} from "../../src/services/wallet/wallet-state";
+import type { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
+import type { WalletState } from "../../src/services/wallet/wallet-state";
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,
   yieldApiYieldFixture,
 } from "../fixtures";
+import {
+  makeConnectedWalletState,
+  makeConnectingWalletState,
+} from "../fixtures/wallet-state";
+import { makeClassicFlowTestKit } from "../utils/classic-flow-test-kit";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
 );
 const walletScope = new WalletScopeKey({ address, network: "ethereum" });
 
-const connectedWalletConnection = (
-  scope: WalletScopeKey
-): Extract<NormalizedWalletState, { readonly status: "connected" }> => ({
-  additionalAddresses: scope.additionalAddresses,
-  address: scope.address,
-  chain: {} as never,
-  connector: {} as never,
-  connectorChains: [],
-  isLedgerLive: false,
-  isLedgerLiveAccountPlaceholder: false,
-  ledgerAccounts: [],
-  network: scope.network,
-  status: "connected",
-});
+const connectedWalletState = (scope: WalletScopeKey): WalletState =>
+  makeConnectedWalletState(scope);
 
-const connectedWalletState = (scope: WalletScopeKey): WalletState => ({
-  connection: connectedWalletConnection(scope),
-  ledger: disconnectedLedgerConnectorState,
-});
-
-const connectingWalletState = (scope: WalletScopeKey): WalletState => ({
-  connection: {
-    ...connectedWalletConnection(scope),
-    status: "connecting",
-  },
-  ledger: disconnectedLedgerConnectorState,
-});
+const connectingWalletState = (scope: WalletScopeKey): WalletState =>
+  makeConnectingWalletState(scope);
 
 const makeEnterIntake = (): Extract<
   ClassicTransactionFlowIntake,
@@ -160,63 +139,33 @@ const makeManageIntake = (): Extract<
 type ServiceOverrides = Readonly<{
   readonly execute?: WidgetNavigation["Service"]["execute"];
   readonly makeWorkflow?: TransactionWorkflowService["Service"]["make"];
-  readonly previewAction?: (
-    request: ActionPreviewRequest
-  ) => Effect.Effect<ReturnType<typeof yieldApiActionFixture>, unknown>;
+  readonly previewAction?: YieldOperations["Service"]["previewAction"];
   readonly trackEvent?: TrackingService["Service"]["trackEvent"];
 }>;
 
 const makeServiceLayer = (
   walletState: SubscriptionRef.SubscriptionRef<WalletState>,
   overrides: ServiceOverrides = {}
-) => {
-  const execute = overrides.execute ?? (() => Effect.void);
-  const navigation = makeWidgetNavigation({
-    back: (options) => execute({ ...options, _tag: "Back" }),
-    push: (path, options) => execute({ ...options, _tag: "Push", path }),
-    replace: (path, options) => execute({ ...options, _tag: "Replace", path }),
-  });
-  const externalLayer = Layer.mergeAll(
-    Layer.succeed(
-      WalletService,
-      WalletService.of({
-        state: SubscriptionRef.get(walletState),
-        states: SubscriptionRef.changes(walletState),
-        wagmiConfig: {},
-      } as never)
-    ),
-    Layer.succeed(WidgetNavigation, navigation),
-    Layer.succeed(
-      YieldOperations,
-      YieldOperations.of({
-        previewAction:
-          overrides.previewAction ??
-          (() => Effect.succeed(yieldApiActionFixture())),
-      } as never)
-    ),
-    Layer.succeed(
-      TrackingService,
-      TrackingService.of({
-        trackEvent: overrides.trackEvent ?? (() => Effect.void),
-        trackPageView: () => Effect.void,
-      })
-    ),
-    Layer.succeed(
-      TransactionWorkflowService,
-      TransactionWorkflowService.of({
-        make:
-          overrides.makeWorkflow ??
-          (() =>
-            Effect.succeed({
-              dispatch: () => Effect.void,
-              states: Stream.never,
-            })),
-      })
-    )
+) =>
+  Layer.unwrap(
+    makeClassicFlowTestKit({
+      makeWorkflow:
+        overrides.makeWorkflow ??
+        (() =>
+          Effect.succeed({
+            dispatch: () => Effect.void,
+            states: Stream.never,
+          })),
+      navigation: overrides.execute ? { execute: overrides.execute } : {},
+      previewAction:
+        overrides.previewAction ??
+        (() => Effect.succeed(yieldApiActionFixture())),
+      tracking: overrides.trackEvent
+        ? { trackEvent: overrides.trackEvent }
+        : {},
+      walletState,
+    }).pipe(Effect.map((kit) => kit.layer))
   );
-
-  return ClassicTransactionFlowService.layer.pipe(Layer.provide(externalLayer));
-};
 
 const startEnter = (service: ClassicTransactionFlowService["Service"]) =>
   service.start({ intake: makeEnterIntake(), mount: { _tag: "Earn" } });
@@ -1079,7 +1028,12 @@ describe("ClassicTransactionFlowService", () => {
               previewAction: () => {
                 previewAttempts += 1;
                 return previewAttempts === 1
-                  ? Effect.fail("temporarily unavailable")
+                  ? Effect.fail(
+                      new ApiRequestError({
+                        cause: new Error("temporarily unavailable"),
+                        operation: "previewAction",
+                      })
+                    )
                   : Effect.succeed(action);
               },
             })
@@ -1207,7 +1161,12 @@ describe("ClassicTransactionFlowService", () => {
             previewAction: () => {
               previewAttempts += 1;
               return previewAttempts === 1
-                ? Effect.fail("temporarily unavailable")
+                ? Effect.fail(
+                    new ApiRequestError({
+                      cause: new Error("temporarily unavailable"),
+                      operation: "previewAction",
+                    })
+                  )
                 : Deferred.succeed(retryStarted, undefined).pipe(
                     Effect.andThen(Deferred.await(retryRelease)),
                     Effect.as(yieldApiActionFixture())

@@ -5,7 +5,7 @@ import {
   useAtomValue,
 } from "@effect/atom-react";
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Deferred, Effect, Equal, Schema } from "effect";
+import { Deferred, Effect, Equal, Layer, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { act } from "react";
@@ -24,11 +24,9 @@ import {
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { walletScopeAtom } from "../../src/features/wallet/index";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
-import { disconnectedLedgerConnectorState } from "../../src/services/wallet/wallet-state";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
-import { makeClassicFlowTestLayer } from "../utils/classic-flow-layer";
-import { makeTestWallet } from "../utils/services/wallet-service";
-import { makeTestNavigation } from "../utils/services/widget-navigation";
+import { makeConnectedWalletState } from "../fixtures/wallet-state";
+import { makeClassicFlowTestKit } from "../utils/classic-flow-test-kit";
 import { render } from "../utils/test-utils.dom.tsx";
 import { widgetConfigAtom } from "../utils/widget-config";
 
@@ -162,29 +160,16 @@ const activityIntake = (): Extract<
 
 const ClassicFlowRuntimeHarness = () => {
   const intake = activityIntake();
-  const walletState = {
-    connection: {
-      additionalAddresses: null,
-      address: intake.walletScope.address,
-      chain: {} as never,
-      connector: {} as never,
-      connectorChains: [],
-      isLedgerLive: false,
-      isLedgerLiveAccountPlaceholder: false,
-      ledgerAccounts: [],
-      network: intake.walletScope.network,
-      status: "connected" as const,
-    },
-    ledger: disconnectedLedgerConnectorState,
-  };
+  const walletState = makeConnectedWalletState(intake.walletScope);
   useAtomInitialValues([
     [walletScopeAtom, intake.walletScope],
     [
       walletRuntime.layer,
-      makeClassicFlowTestLayer({
-        navigation: makeTestNavigation(),
-        wallet: makeTestWallet({ initialState: walletState }),
-      }) as never,
+      Layer.unwrap(
+        makeClassicFlowTestKit({
+          initialWalletState: walletState,
+        }).pipe(Effect.map((kit) => kit.layer))
+      ) as never,
     ],
   ]);
   const sessionPresent = useAtomValue(

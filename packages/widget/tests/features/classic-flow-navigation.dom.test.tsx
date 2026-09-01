@@ -1,5 +1,6 @@
 import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Effect, Layer, Schema, Stream, SubscriptionRef } from "effect";
+import * as Atom from "effect/unstable/reactivity/Atom";
 import { HttpResponse, http } from "msw";
 import { act, useEffect, useState } from "react";
 import {
@@ -36,11 +37,7 @@ import { walletScopeAtom } from "../../src/features/wallet/index";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
-import {
-  makeWidgetNavigation,
-  WidgetNavigation,
-} from "../../src/services/navigation/widget-navigation";
-import { TrackingService } from "../../src/services/tracking/tracking-service";
+import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
 import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
 import { WalletService } from "../../src/services/wallet/wallet-service";
 import {
@@ -50,6 +47,10 @@ import {
   type WalletState,
 } from "../../src/services/wallet/wallet-state";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
+import { makeConnectedWalletState } from "../fixtures/wallet-state";
+import { makeTestTracking } from "../utils/services/tracking-service";
+import { makeTestWallet } from "../utils/services/wallet-service";
+import { makeTestNavigation } from "../utils/services/widget-navigation";
 import { makeTestStakeKitApiLayer } from "../utils/stakekit-api-layer";
 import { describe, expect, it, vi } from "../utils/test-extend.dom.ts";
 import { render } from "../utils/test-utils.dom.tsx";
@@ -77,21 +78,24 @@ const connectedWalletState: NormalizedWalletState = {
   network: "ethereum",
   status: "connected",
 };
-// ast-grep-ignore: no-run-effect-in-test -- module fixture setup requires the synchronous ref value
-const walletStateRef = Effect.runSync(
-  SubscriptionRef.make<WalletState>({
-    connection: connectedWalletState,
-    ledger: disconnectedLedgerConnectorState,
-  })
-);
-const walletLayer = Layer.mergeAll(
-  Layer.succeed(
-    WalletService,
-    WalletService.of({
-      state: SubscriptionRef.get(walletStateRef),
-      states: SubscriptionRef.changes(walletStateRef),
-      wagmiConfig: {},
-    } as never)
+const disconnectTestWalletAtom = walletRuntime
+  .fn(() => WalletService.use((wallet) => wallet.logout))
+  .pipe(Atom.withLabel("disconnectTestWalletAtom"));
+const walletLayer = Layer.merge(
+  Layer.unwrap(
+    Effect.gen(function* () {
+      const state = yield* SubscriptionRef.make<WalletState>(
+        makeConnectedWalletState(walletScope)
+      );
+      const wallet = yield* makeTestWallet({
+        logout: SubscriptionRef.set(state, {
+          connection: disconnectedNormalizedWalletState,
+          ledger: disconnectedLedgerConnectorState,
+        }),
+        state,
+      });
+      return wallet.layer;
+    })
   ),
   Layer.succeed(
     TransactionWorkflowService,
@@ -110,12 +114,8 @@ const apiLayer = makeTestStakeKitApiLayer({
   borrowApiUrl: "https://borrow.example.com",
   yieldsApiUrl: yieldApiUrl,
 });
-const trackingLayer = Layer.succeed(
-  TrackingService,
-  TrackingService.of({
-    trackEvent: () => Effect.void,
-    trackPageView: () => Effect.void,
-  })
+const trackingLayer = Layer.unwrap(
+  makeTestTracking().pipe(Effect.map((tracking) => tracking.layer))
 );
 
 const intake: ClassicTransactionFlowIntake = {
@@ -341,28 +341,30 @@ const FlowTestApp = ({
     ),
     WidgetConfigService.layer(hostConfiguration)
   );
-  const navigationLayer = Layer.succeed(
-    WidgetNavigation,
-    makeWidgetNavigation({
-      back: () =>
-        Effect.sync(() => {
-          testNavigationChannel.navigate?.(-1);
-        }),
-      push: (path, options) =>
-        Effect.sync(() => {
-          if (!testNavigationChannel.navigate) {
-            throw new Error("Test navigation bridge is unavailable");
-          }
-          testNavigationChannel.navigate(path, { state: options?.state });
-        }),
-      replace: (path, options) =>
-        Effect.sync(() => {
-          testNavigationChannel.navigate?.(path, {
-            replace: true,
-            state: options?.state,
-          });
-        }),
-    })
+  const navigation = makeWidgetNavigation({
+    back: () =>
+      Effect.sync(() => {
+        testNavigationChannel.navigate?.(-1);
+      }),
+    push: (path, options) =>
+      Effect.sync(() => {
+        if (!testNavigationChannel.navigate) {
+          throw new Error("Test navigation bridge is unavailable");
+        }
+        testNavigationChannel.navigate(path, { state: options?.state });
+      }),
+    replace: (path, options) =>
+      Effect.sync(() => {
+        testNavigationChannel.navigate?.(path, {
+          replace: true,
+          state: options?.state,
+        });
+      }),
+  });
+  const navigationLayer = Layer.unwrap(
+    makeTestNavigation({ execute: navigation.execute }).pipe(
+      Effect.map((testNavigation) => testNavigation.layer)
+    )
   );
   const classicDependencies = Layer.mergeAll(
     apiLayer,
@@ -382,7 +384,7 @@ const FlowTestApp = ({
         [applicationBaseRuntime.layer, applicationRouterLayer],
       ]}
     >
-      <WalletStateBridge walletState={walletState} />
+      <WalletStateBridge />
       <FlowRouter
         navigationChannel={testNavigationChannel}
         router={router}
@@ -392,21 +394,18 @@ const FlowTestApp = ({
   );
 };
 
-const WalletStateBridge = ({
-  walletState,
-}: {
-  readonly walletState: NormalizedWalletState;
-}) => {
-  useEffect(() => {
-    // ast-grep-ignore: no-run-effect-in-test -- React effects are synchronous non-Effect boundaries
-    Effect.runSync(
-      SubscriptionRef.set(walletStateRef, {
-        connection: walletState,
-        ledger: disconnectedLedgerConnectorState,
-      })
-    );
-  }, [walletState]);
-  return null;
+const WalletStateBridge = () => {
+  const disconnectWallet = useAtomSet(disconnectTestWalletAtom);
+  return (
+    <form
+      data-testid="apply-wallet-state"
+      hidden
+      onSubmit={(event) => {
+        event.preventDefault();
+        disconnectWallet();
+      }}
+    />
+  );
 };
 
 const FlowRouter = ({
@@ -677,6 +676,11 @@ describe("Classic Transaction Flow navigation", () => {
     await app.rerender(
       <FlowTestApp walletState={disconnectedNormalizedWalletState} />
     );
+    await act(async () => {
+      app.container
+        .querySelector<HTMLFormElement>('[data-testid="apply-wallet-state"]')
+        ?.requestSubmit();
+    });
     await vi.waitFor(() =>
       expect(
         app.container.querySelector('[data-testid="review-session"]')

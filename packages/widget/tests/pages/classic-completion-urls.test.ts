@@ -5,16 +5,12 @@ import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { getClassicTransactionCompletionUrls } from "../../src/features/classic-transaction-flow/model/classic-transaction-workflow";
 import type { ActionMeta } from "../../src/public-api/types";
-import {
-  BorrowOperations,
-  YieldOperations,
-} from "../../src/services/api/operations";
-import { TrackingService } from "../../src/services/tracking/tracking-service";
+import type { YieldOperations } from "../../src/services/api/operations";
 import { ClassicTransactionWorkflowInput } from "../../src/services/transaction-workflow/transaction-workflow-model";
 import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
-import { WalletService } from "../../src/services/wallet/wallet-service";
 import { yieldApiTransactionFixture } from "../fixtures";
-import { makeTransactionWorkflowTestLayer } from "../utils/transaction-workflow-layer";
+import { makeConnectedWalletState } from "../fixtures/wallet-state";
+import { makeTransactionWorkflowTestKit } from "../utils/transaction-workflow-test-kit";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -40,6 +36,34 @@ const runClassicToCompletion = (
 ) =>
   Effect.scoped(
     Effect.gen(function* () {
+      const kit = yield* makeTransactionWorkflowTestKit({
+        initialWalletState: makeConnectedWalletState(classicWalletScope),
+        wallet: {
+          signMessage: () => Effect.succeed("0xsigned"),
+          signTransaction: () =>
+            Effect.succeed({ broadcasted: false, signedTx: "0xsigned" }),
+        },
+        yieldOperations: {
+          getTransactionStatus: () =>
+            Effect.succeed({
+              explorerUrl: null,
+              status: "CONFIRMED",
+            } as never),
+          submitSignedTransaction: () =>
+            Effect.succeed({
+              explorerUrl: null,
+              hash: null,
+              status: "BROADCASTED",
+            } as never),
+          submitTransactionHash: () =>
+            Effect.succeed({
+              explorerUrl: null,
+              hash: null,
+              status: "BROADCASTED",
+            } as never),
+          ...yieldOperations,
+        },
+      });
       const workflow = yield* TransactionWorkflowService.use(({ make }) =>
         make(
           new ClassicTransactionWorkflowInput({
@@ -57,7 +81,7 @@ const runClassicToCompletion = (
             yieldId,
           })
         )
-      );
+      ).pipe(Effect.provide(kit.layer));
       const completed = yield* workflow.states.pipe(
         Stream.filter((state) => state._tag === "Completed"),
         Stream.runHead,
@@ -65,54 +89,6 @@ const runClassicToCompletion = (
       );
       return Option.getOrThrow(yield* Fiber.join(completed));
     })
-  ).pipe(
-    Effect.provide(
-      makeTransactionWorkflowTestLayer({
-        borrow: BorrowOperations.of({
-          getAction: () => Effect.succeed(null),
-          stepAction: () => Effect.die("unexpected"),
-          submitTransaction: () => Effect.die("unexpected"),
-        } as never),
-        tracking: TrackingService.of({
-          trackEvent: () => Effect.void,
-          trackPageView: () => Effect.void,
-        } as never),
-        wallet: WalletService.of({
-          state: Effect.succeed({
-            connection: {
-              address,
-              network: "ethereum",
-              status: "connected",
-            },
-            ledger: { accounts: [], appName: null },
-          } as never),
-          signMessage: () => Effect.succeed("0xsigned"),
-          signTransaction: () =>
-            Effect.succeed({ broadcasted: false, signedTx: "0xsigned" }),
-        } as never),
-        yieldOperations: YieldOperations.of({
-          getTransactionStatus: () =>
-            Effect.succeed({
-              explorerUrl: null,
-              status: "CONFIRMED",
-            } as never),
-          previewAction: () => Effect.die("unexpected"),
-          submitSignedTransaction: () =>
-            Effect.succeed({
-              explorerUrl: null,
-              hash: null,
-              status: "BROADCASTED",
-            } as never),
-          submitTransactionHash: () =>
-            Effect.succeed({
-              explorerUrl: null,
-              hash: null,
-              status: "BROADCASTED",
-            } as never),
-          ...yieldOperations,
-        } as never),
-      })
-    )
   );
 
 describe("classic completion urls", () => {

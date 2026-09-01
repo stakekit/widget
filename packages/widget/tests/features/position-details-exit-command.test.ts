@@ -34,10 +34,9 @@ import {
 } from "../../src/resources/yield-positions/yield-positions";
 import {
   makeWidgetNavigation,
-  WidgetNavigation,
   type WidgetPath,
 } from "../../src/services/navigation/widget-navigation";
-import { TrackingService } from "../../src/services/tracking/tracking-service";
+import type { TrackingService } from "../../src/services/tracking/tracking-service";
 import {
   disconnectedLedgerConnectorState,
   type NormalizedWalletState,
@@ -48,8 +47,8 @@ import {
   yieldApiYieldFixture,
   yieldBalanceFixture,
 } from "../fixtures";
-import { makeClassicFlowTestLayer } from "../utils/classic-flow-layer";
-import { makeTestWallet } from "../utils/services/wallet-service";
+import { makeClassicFlowTestKit } from "../utils/classic-flow-test-kit";
+import { makeTestTracking } from "../utils/services/tracking-service";
 import { makeTestNavigation } from "../utils/services/widget-navigation";
 
 const {
@@ -196,23 +195,25 @@ const makeRegistry = ({
     initialValues: [
       Atom.initialValue(
         appRuntime.layer,
-        Layer.mergeAll(
-          Layer.succeed(WidgetNavigation, navigation),
-          Layer.succeed(
-            TrackingService,
-            TrackingService.of({
-              trackEvent,
-              trackPageView: () => Effect.void,
-            })
+        Layer.unwrap(
+          Effect.all({
+            navigation: makeTestNavigation({ execute: navigation.execute }),
+            tracking: makeTestTracking({ trackEvent }),
+          }).pipe(
+            Effect.map(({ navigation: testNavigation, tracking }) =>
+              Layer.merge(testNavigation.layer, tracking.layer)
+            )
           )
         ) as never
       ),
       Atom.initialValue(
         walletRuntime.layer,
-        makeClassicFlowTestLayer({
-          navigation: makeTestNavigation({ execute: navigation.execute }),
-          wallet: makeTestWallet({ initialState: walletState }),
-        }) as never
+        Layer.unwrap(
+          makeClassicFlowTestKit({
+            initialWalletState: walletState,
+            navigation: { execute: navigation.execute },
+          }).pipe(Effect.map((kit) => kit.layer))
+        ) as never
       ),
       Atom.initialValue(walletConnectionStateAtom, wallet),
       Atom.initialValue(

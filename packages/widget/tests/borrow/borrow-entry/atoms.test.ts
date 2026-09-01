@@ -27,13 +27,13 @@ import {
   borrowMarketsResourceAtom as borrowMarketsAtom,
 } from "../../../src/resources/borrow-markets/borrow-markets";
 import { BorrowResourceSource } from "../../../src/services/api/resource-sources";
-import { WalletService } from "../../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
   type WalletState,
 } from "../../../src/services/wallet/wallet-state";
+import { makeTestWallet } from "../../utils/services/wallet-service";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -578,6 +578,7 @@ describe("Borrow Entry atoms", () => {
         } satisfies WalletState;
         const walletState =
           yield* SubscriptionRef.make<WalletState>(initialState);
+        const wallet = yield* makeTestWallet({ state: walletState });
         const registry = AtomRegistry.make({
           initialValues: [
             Atom.initialValue(
@@ -594,14 +595,7 @@ describe("Borrow Entry atoms", () => {
                 getPositionData: () => Effect.succeed([]),
               } as never)
             ),
-            Atom.initialValue(
-              walletRuntime.layer,
-              Layer.succeed(WalletService, {
-                state: SubscriptionRef.get(walletState),
-                states: SubscriptionRef.changes(walletState),
-                wagmiConfig: {},
-              } as never) as never
-            ),
+            Atom.initialValue(walletRuntime.layer, wallet.layer as never),
             applicationRuntimeInitInitialValue({
               apiKey: "api-key",
               borrowEnabled: true,

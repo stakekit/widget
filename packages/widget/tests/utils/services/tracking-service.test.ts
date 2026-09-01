@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@effect/vitest";
-import { Effect } from "effect";
+import { Effect, Ref } from "effect";
 import { makeTestTracking } from "./tracking-service";
 
 describe("makeTestTracking", () => {
@@ -21,6 +21,22 @@ describe("makeTestTracking", () => {
 
       expect(yield* tracking.trackedEvents).toEqual([]);
       expect(yield* tracking.trackedPageViews).toEqual([]);
+    })
+  );
+
+  it.effect("records events before delegating configured behavior", () =>
+    Effect.gen(function* () {
+      const delegatedCount = yield* Ref.make(0);
+      const tracking = yield* makeTestTracking({
+        trackEvent: () => Ref.update(delegatedCount, (count) => count + 1),
+      });
+
+      yield* tracking.service.trackEvent("tabClicked", { tab: "earn" });
+
+      expect(yield* Ref.get(delegatedCount)).toBe(1);
+      expect(yield* tracking.trackedEvents).toEqual([
+        { event: "tabClicked", properties: { tab: "earn" } },
+      ]);
     })
   );
 });

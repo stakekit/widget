@@ -30,12 +30,12 @@ import {
   type WidgetDomainEvent,
   WidgetDomainEvents,
 } from "../../../src/services/events/widget-domain-events";
-import { WalletService } from "../../../src/services/wallet/wallet-service";
 import {
   disconnectedLedgerConnectorState,
   type NormalizedWalletState,
   type WalletState,
 } from "../../../src/services/wallet/wallet-state";
+import { makeTestWallet } from "../../utils/services/wallet-service";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -198,10 +198,11 @@ describe("Market Position action preparation atoms", () => {
           network: scope.network,
           status: "connected",
         });
-        const walletState = yield* SubscriptionRef.make({
+        const walletState = yield* SubscriptionRef.make<WalletState>({
           connection: connection(walletScope),
           ledger: disconnectedLedgerConnectorState,
-        } satisfies WalletState);
+        });
+        const wallet = yield* makeTestWallet({ state: walletState });
         let currentAccountSnapshot = accountSnapshot;
         const registry = AtomRegistry.make({
           initialValues: [
@@ -225,14 +226,7 @@ describe("Market Position action preparation atoms", () => {
                 Layer.succeed(WidgetDomainEvents, domainEvents)
               ) as never
             ),
-            Atom.initialValue(
-              walletRuntime.layer,
-              Layer.succeed(WalletService, {
-                state: SubscriptionRef.get(walletState),
-                states: SubscriptionRef.changes(walletState),
-                wagmiConfig: {},
-              } as never) as never
-            ),
+            Atom.initialValue(walletRuntime.layer, wallet.layer as never),
             applicationRuntimeInitInitialValue({
               apiKey: "api-key",
               borrowEnabled: true,
