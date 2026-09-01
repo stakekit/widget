@@ -29,7 +29,7 @@ export const addressBox = style([
     px: "3",
     py: "2",
   }),
-  { minWidth: 0 },
+  { alignItems: "center", minWidth: 0 },
 ]);
 
 export const addressValue = style([

@@ -73,11 +73,21 @@ export const DetailRow = ({ label, value }: DetailRowProps) => (
 
 export const AddressRow = ({ address, label }: AddressRowProps) => (
   <Box className={styles.addressBox}>
-    <Text variant={{ type: "muted", weight: "normal" }}>{label}</Text>
+    <Text
+      as="span"
+      className={styles.detailRowLabel}
+      variant={{ type: "muted", weight: "normal" }}
+    >
+      {label}
+    </Text>
     <CopyText.Provider text={address}>
       <CopyText.Root>
         <Box className={styles.addressValue}>
-          <Text className={styles.valueText} variant={{ weight: "normal" }}>
+          <Text
+            as="span"
+            className={styles.valueText}
+            variant={{ weight: "normal" }}
+          >
             {formatAddress(address)}
           </Text>
           <CopyText.AnimatedContent>
