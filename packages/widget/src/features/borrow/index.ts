@@ -2,9 +2,13 @@ import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import { projectTransactionWorkflowStarted } from "../../services/events/widget-domain-events";
-import { resetBorrowEntryIntentForOwnerAtom } from "./borrow-entry/index";
+import {
+  borrowLandingPrimaryReadyAtom,
+  resetBorrowEntryIntentForOwnerAtom,
+} from "./borrow-entry/index";
 import { resetBorrowMarketPositionIntentForOwnerAtom } from "./market-position/index";
 
+export { borrowLandingPrimaryReadyAtom };
 export const borrowEntryIntentEventProjectionAtom = appRuntime
   .atom((context) =>
     projectTransactionWorkflowStarted(

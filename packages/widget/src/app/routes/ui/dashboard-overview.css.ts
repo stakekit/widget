@@ -1,5 +1,5 @@
 import { style } from "@vanilla-extract/css";
-import { splitExpandedContainerQuery } from "../../shared/styles/tokens/breakpoints";
+import { splitExpandedContainerQuery } from "../../../shared/styles/tokens/breakpoints";
 
 export const overviewPageContainer = style({
   "@container": {

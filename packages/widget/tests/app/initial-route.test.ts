@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveInitialRoutePath } from "../../src/app/routes/initial-route";
+import { resolveInitialRoutePath } from "../../src/app/routes/model/initial-route";
 
 const resolve = ({
   borrowAvailable = false,

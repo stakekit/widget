@@ -1,13 +1,13 @@
 import { Match } from "effect";
 import { startsWith } from "effect/String";
 import { useLocation, useNavigate } from "react-router";
-import { useEarnYieldSelection } from "../../../features/earn/index";
-import { useTrackEvent } from "../../../features/tracking/index";
-import { useWidgetConfig } from "../../../features/widget-configuration/index";
-import type { DashboardYieldCategory } from "../../../public-api/types";
-import { combineRecipeWithVariant } from "../../../shared/styles/recipe-variant";
-import { Divider } from "../../../shared/ui/components/divider";
-import { Box } from "../../../shared/ui/primitives/box";
+import { useEarnYieldSelection } from "../../../../features/earn/index";
+import { useTrackEvent } from "../../../../features/tracking/index";
+import { useWidgetConfig } from "../../../../features/widget-configuration/index";
+import type { DashboardYieldCategory } from "../../../../public-api/types";
+import { combineRecipeWithVariant } from "../../../../shared/styles/recipe-variant";
+import { Divider } from "../../../../shared/ui/components/divider";
+import { Box } from "../../../../shared/ui/primitives/box";
 import {
   divider,
   tabsContainer,

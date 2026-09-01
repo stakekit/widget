@@ -1,5 +1,5 @@
 import { Match } from "effect";
-import type { InitTab } from "../../services/wallet/init-params";
+import type { InitTab } from "../../../services/wallet/init-params";
 
 /**
  * Resolves a decoded route-level tab into the first memory-router entry. Both

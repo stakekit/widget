@@ -2,22 +2,22 @@ import { Navigate, Route, Routes, useLocation } from "react-router";
 import {
   ActivityTabPage,
   createActivityActionRoutes,
-} from "../../features/activity/composition";
+} from "../../../features/activity/composition";
 import {
   createBorrowEntryRoutes,
   createBorrowMarketPositionRoutes,
-} from "../../features/borrow/composition";
-import { createBorrowTransactionFlowRoutes } from "../../features/borrow-transaction-flow/composition";
-// import { RewardsTabPage } from "../../domain/portfolio/rewards";
-import { createClassicFlowRoutes } from "../../features/classic-transaction-flow/composition";
-import { EarnPageContent } from "../../features/earn/composition";
-import { ManagePage } from "../../features/portfolio/composition";
+} from "../../../features/borrow/composition";
+import { createBorrowTransactionFlowRoutes } from "../../../features/borrow-transaction-flow/composition";
+// import { RewardsTabPage } from "../../../domain/portfolio/rewards";
+import { createClassicFlowRoutes } from "../../../features/classic-transaction-flow/composition";
+import { EarnPageContent } from "../../../features/earn/composition";
+import { ManagePage } from "../../../features/portfolio/composition";
 import {
   DashboardPositionDetailsPage,
   PositionDetailsHub,
-} from "../../features/position-details/composition";
-import { WalletScopeRouteGuard } from "../../features/wallet/composition";
-import { GlobalModals } from "../../features/widget-shell/composition";
+} from "../../../features/position-details/composition";
+import { WalletScopeRouteGuard } from "../../../features/wallet/composition";
+import { GlobalModals } from "../../../features/widget-shell/composition";
 import { BorrowFeatureRoute } from "./borrow-feature-route";
 import { DashboardOverview } from "./dashboard-overview";
 import { DashboardShell } from "./dashboard-shell";

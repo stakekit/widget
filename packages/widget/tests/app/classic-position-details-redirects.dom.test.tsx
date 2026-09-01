@@ -10,7 +10,7 @@ import { render } from "../utils/test-utils.dom.tsx";
 
 /**
  * Redirect contract for classic position-details mounts.
- * Keep in sync with `src/app/routes/classic-routes.tsx`.
+ * Keep in sync with `src/app/routes/ui/classic-routes.tsx`.
  */
 const ClassicPositionDetailsRedirectRoutes = () => (
   <Routes>

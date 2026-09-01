@@ -84,6 +84,19 @@ export const earnSelectionTokenOptionsViewAtom = Atom.make((get) => {
   } as const;
 }).pipe(Atom.withLabel("earnSelectionTokenOptionsViewAtom"));
 
+/** True once the Earn token catalog has settled successfully (not mid-category). */
+export const earnLandingPrimaryReadyAtom = Atom.make((get) => {
+  const status = get(earnSelectionStatusViewAtom);
+  const tokens = get(earnSelectionTokenOptionsViewAtom);
+
+  return (
+    !status.loading.wallet &&
+    !status.loading.categories &&
+    !status.loading.tokens &&
+    (status.empty.tokens || tokens.items.length > 0)
+  );
+}).pipe(Atom.withLabel("earnLandingPrimaryReadyAtom"));
+
 export const earnSelectionYieldOptionsViewAtom = Atom.make((get) => {
   const view = get(internalEarnSelectionViewAtom);
   return {

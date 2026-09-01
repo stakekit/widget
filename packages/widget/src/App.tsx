@@ -10,10 +10,10 @@ import { Providers } from "./app/composition/providers";
 import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";
 import { acquireWidgetInstanceClaim } from "./app/embedding/widget-instance-claim";
 import { WidgetInstanceReactBoundary } from "./app/embedding/widget-instance-react-boundary";
-import { ApplicationRouteEffects } from "./app/routes/application-route-effects";
 import { applicationRoutes } from "./app/routes/application-routes";
-import { ClassicRoutes } from "./app/routes/classic-routes";
-import { DashboardRoutes } from "./app/routes/dashboard-routes";
+import { useApplicationRouteEffects } from "./app/routes/react/use-application-route-effects";
+import { ClassicRoutes } from "./app/routes/ui/classic-routes";
+import { DashboardRoutes } from "./app/routes/ui/dashboard-routes";
 import { applicationRouterAtom } from "./app/runtime/application-router";
 import { walletEnabledNetworksResultAtom } from "./features/wallet/index";
 import { useWidgetConfig } from "./features/widget-configuration/index";
@@ -37,6 +37,8 @@ const App = () => {
   const noEnabledYields =
     AsyncResult.isSuccess(enabledNetworks) && enabledNetworks.value.size === 0;
 
+  useApplicationRouteEffects();
+
   if (noEnabledYields && !underMaintenance) return <NoEnabledYields />;
 
   const routeContent = (() => {
@@ -44,12 +46,7 @@ const App = () => {
     return dashboardVariant ? <DashboardRoutes /> : <ClassicRoutes />;
   })();
 
-  return (
-    <>
-      <ApplicationRouteEffects />
-      {routeContent}
-    </>
-  );
+  return routeContent;
 };
 
 const Root = () => (

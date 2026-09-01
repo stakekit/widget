@@ -39,11 +39,11 @@ vi.mock("../../src/app/composition/providers", async () => {
   };
 });
 
-vi.mock("../../src/app/routes/classic-routes", () => ({
+vi.mock("../../src/app/routes/ui/classic-routes", () => ({
   ClassicRoutes: () => <div>active widget</div>,
 }));
 
-vi.mock("../../src/app/routes/dashboard-routes", () => ({
+vi.mock("../../src/app/routes/ui/dashboard-routes", () => ({
   DashboardRoutes: () => <div>active dashboard</div>,
 }));
 

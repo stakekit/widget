@@ -17,4 +17,5 @@ export const earnEntryIntentEventProjectionAtom = appRuntime
   .pipe(Atom.withLabel("earnEntryIntentEventProjectionAtom"));
 
 export { useEarnYieldSelection } from "./react/use-earn-facades";
+export { earnLandingPrimaryReadyAtom } from "./state/earn-selection";
 export { pendingActionDeepLinkViewAtom } from "./state/pending-action-deep-link";

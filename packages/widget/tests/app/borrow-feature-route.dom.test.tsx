@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { describe, expect, it, vi } from "vitest";
-import { BorrowFeatureRoute } from "../../src/app/routes/borrow-feature-route";
+import { BorrowFeatureRoute } from "../../src/app/routes/ui/borrow-feature-route";
 import { render } from "../utils/test-utils.dom.tsx";
 import { TestWidgetConfigProvider } from "../utils/widget-config-provider";
 

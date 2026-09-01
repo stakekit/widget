@@ -4,14 +4,14 @@ import { Navigate, Route, Routes, useLocation } from "react-router";
 import {
   AnimatedActivityPage,
   createActivityActionRoutes,
-} from "../../features/activity/composition";
-import { createClassicFlowRoutes } from "../../features/classic-transaction-flow/composition";
-import { isActiveClassicTransactionFlowPathAtom } from "../../features/classic-transaction-flow/index";
-import { AnimatedEarnPage } from "../../features/earn/composition";
-import { AnimatedPositionsPage } from "../../features/portfolio/composition";
-import { usePortfolioPendingActionsCount } from "../../features/portfolio/index";
-import { ClassicPositionDetailsPage } from "../../features/position-details/composition";
-import { WalletScopeRouteGuard } from "../../features/wallet/composition";
+} from "../../../features/activity/composition";
+import { createClassicFlowRoutes } from "../../../features/classic-transaction-flow/composition";
+import { isActiveClassicTransactionFlowPathAtom } from "../../../features/classic-transaction-flow/index";
+import { AnimatedEarnPage } from "../../../features/earn/composition";
+import { AnimatedPositionsPage } from "../../../features/portfolio/composition";
+import { usePortfolioPendingActionsCount } from "../../../features/portfolio/index";
+import { ClassicPositionDetailsPage } from "../../../features/position-details/composition";
+import { WalletScopeRouteGuard } from "../../../features/wallet/composition";
 import {
   AnimationLayout,
   ClassicLayout,
@@ -19,9 +19,12 @@ import {
   GlobalModals,
   Header,
   PoweredBy,
-} from "../../features/widget-shell/composition";
-import { useDetailsMatch } from "../../features/widget-shell/index";
-import { container, headerContainer } from "../../features/widget-shell/views";
+} from "../../../features/widget-shell/composition";
+import { useDetailsMatch } from "../../../features/widget-shell/index";
+import {
+  container,
+  headerContainer,
+} from "../../../features/widget-shell/views";
 
 const ClassicDetails = () => {
   const pendingActionsCount = usePortfolioPendingActionsCount();

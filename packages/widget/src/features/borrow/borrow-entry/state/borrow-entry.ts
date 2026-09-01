@@ -213,6 +213,22 @@ export const currentBorrowEntryAtom = Atom.writable<
   }
 ).pipe(Atom.withLabel("currentBorrowEntryAtom"));
 
+/** True once borrow markets for the current scope have succeeded (or borrow N/A). */
+export const borrowLandingPrimaryReadyAtom = Atom.make((get) => {
+  if (!get(widgetConfigAtom).borrowEnabled) return true;
+
+  const scope = get(walletScopeAtom);
+  if (!scope || !isBorrowNetwork(scope.network)) return true;
+
+  const marketsResult = get(
+    borrowMarketsResourceAtom.foreground(
+      new BorrowMarketsKey({ network: scope.network })
+    )
+  );
+
+  return AsyncResult.isSuccess(marketsResult) && !marketsResult.waiting;
+}).pipe(Atom.withLabel("borrowLandingPrimaryReadyAtom"));
+
 export const setBorrowAmountAtom = Atom.fnSync((amount: BigNumber, context) =>
   context.set(currentBorrowEntryAtom, {
     amount,

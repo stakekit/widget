@@ -8,7 +8,7 @@ import { ApplicationRouter } from "../../services/navigation/application-router"
 import { decodeInitParams } from "../../services/wallet/init-params";
 import type { WalletConnectorSource } from "../../services/wallet/wallet-connector-source";
 import { getLocationHref } from "../../shared/lib/location";
-import { resolveInitialRoutePath } from "../routes/initial-route";
+import { resolveInitialRoutePath } from "../routes/model/initial-route";
 import { applicationRuntimeInitAtom } from "./application-runtime-init";
 import { walletConnectorSourceRuntime } from "./wallet-connector-source-runtime";
 
