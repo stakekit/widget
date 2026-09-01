@@ -113,14 +113,14 @@ const selectedYield = yieldApiYieldFixture({
     supportedStandards: ["ERC4626"],
   },
 });
-const balance = Schema.decodeUnknownSync(EarnBalance)(
+const balance = Schema.decodeSync(EarnBalance)(
   yieldBalanceFixture({
     address,
     amount: "1",
     token: selectedYield.token,
   })
 );
-const manageBalance = Schema.decodeUnknownSync(EarnBalance)(
+const manageBalance = Schema.decodeSync(EarnBalance)(
   yieldBalanceFixture({
     address,
     amount: "1",
@@ -179,7 +179,7 @@ const makeRegistry = ({
   readonly serviceWallet?: NormalizedWalletState;
   readonly trackEvent: TrackingService["Service"]["trackEvent"];
   readonly wallet?: NormalizedWalletState;
-  readonly yieldBalance?: typeof EarnBalance.Type;
+  readonly yieldBalance?: EarnBalance;
   readonly yieldOpportunity?: typeof selectedYield;
 }) => {
   const navigation = makeWidgetNavigation({
@@ -507,7 +507,7 @@ describe("Position Details exit command", () => {
 
   it("rejects a Pending Action amount invalidated by current constraints", async () => {
     const push = vi.fn<(path: WidgetPath) => void>();
-    const constrainedBalance = Schema.decodeUnknownSync(EarnBalance)(
+    const constrainedBalance = Schema.decodeSync(EarnBalance)(
       yieldBalanceFixture({
         address,
         amount: "10",
@@ -854,7 +854,7 @@ describe("Position Details exit command", () => {
         },
       },
     });
-    const validatorBalance = Schema.decodeUnknownSync(EarnBalance)(
+    const validatorBalance = Schema.decodeSync(EarnBalance)(
       yieldBalanceFixture({
         address,
         amount: "1",
@@ -907,7 +907,7 @@ describe("Position Details exit command", () => {
       const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
         () => Effect.void
       );
-      const requiredManageBalance = Schema.decodeUnknownSync(EarnBalance)(
+      const requiredManageBalance = Schema.decodeSync(EarnBalance)(
         yieldBalanceFixture({
           address,
           amount: "1",
@@ -968,7 +968,7 @@ describe("Position Details exit command", () => {
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
       () => Effect.void
     );
-    const validatorBalance = Schema.decodeUnknownSync(EarnBalance)(
+    const validatorBalance = Schema.decodeSync(EarnBalance)(
       yieldBalanceFixture({
         address,
         amount: "1",
@@ -1056,7 +1056,7 @@ describe("Position Details exit command", () => {
   });
 
   it("keeps semantic Exit Max bound to the latest live maximum", async () => {
-    const refreshedBalance = Schema.decodeUnknownSync(EarnBalance)(
+    const refreshedBalance = Schema.decodeSync(EarnBalance)(
       yieldBalanceFixture({
         address,
         amount: "0.75",
@@ -1115,7 +1115,7 @@ describe("Position Details exit command", () => {
         },
       },
     });
-    const partialBalance = Schema.decodeUnknownSync(EarnBalance)(
+    const partialBalance = Schema.decodeSync(EarnBalance)(
       yieldBalanceFixture({
         amount: "2",
         amountUsd: "10",

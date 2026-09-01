@@ -6,7 +6,7 @@ import { isEvmNetwork } from "../network/network";
 export const Token = Schema.Struct({
   ...YieldApi.TokenDto.fields,
   address: Schema.optionalKey(TokenAddress),
-  decimals: Schema.Number.check(Schema.isInt()),
+  decimals: Schema.Finite.check(Schema.isInt()),
 });
 export type Token = typeof Token.Type;
 

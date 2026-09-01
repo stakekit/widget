@@ -171,6 +171,7 @@ const buildControllerEffect = (
 ) =>
   Effect.gen(function* () {
     const buildActions = yield* makeWagmiActions;
+    const queryParams = yield* Schema.decodeEffect(InitParams)(emptyInitParams);
     return yield* buildWagmiConfig(
       {
         chainIconMapping: undefined,
@@ -185,7 +186,7 @@ const buildControllerEffect = (
         mapWalletFn: undefined,
         walletPolicy: undefined,
         persistPublicKey: () => Effect.void,
-        queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
+        queryParams,
         solanaConnection: {} as SolanaConnection,
         solanaWallets: [],
         tonConnectManifestUrl: undefined,

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { equalTokens, Token, tokenString } from "../../src/domain/token/token";
 
 const token = (overrides: Partial<typeof Token.Encoded> = {}) =>
-  Schema.decodeUnknownSync(Token)({
+  Schema.decodeSync(Token)({
     name: "USD Coin",
     symbol: "USDC",
     decimals: 6,

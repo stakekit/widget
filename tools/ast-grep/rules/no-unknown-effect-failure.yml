@@ -1,0 +1,26 @@
+id: no-unknown-effect-failure
+language: Tsx
+severity: error
+message: Use a tagged domain error in the Effect failure channel instead of unknown.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+rule:
+  any:
+    - pattern:
+        context: "type T = Effect.Effect<$A, $E>"
+        selector: generic_type
+    - pattern:
+        context: "type T = Effect.Effect<$A, $E, $R>"
+        selector: generic_type
+    - pattern:
+        context: "type T = Effect.fn.Return<$A, $E>"
+        selector: generic_type
+    - pattern:
+        context: "type T = Effect.fn.Return<$A, $E, $R>"
+        selector: generic_type
+constraints:
+  E:
+    regex: ^unknown$

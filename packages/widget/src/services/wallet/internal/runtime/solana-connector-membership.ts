@@ -27,7 +27,7 @@ type SolanaConnectorMembershipOptions = {
   readonly core: WagmiCoreObservation;
   readonly createConnector: (
     wallet: SolanaWalletDescriptor
-  ) => Effect.Effect<CreateConnectorFn, unknown>;
+  ) => Effect.Effect<CreateConnectorFn, WalletIntegrationError>;
   readonly runtime: SolanaRuntime;
 };
 
@@ -87,12 +87,10 @@ export const installSolanaConnectorMembership = Effect.fn(
       config._internal.connectors.setup(factory)
     );
     if (!isRainbowKitSolanaConnector(connector)) {
-      return yield* Effect.fail(
-        new WalletIntegrationError({
-          message: "Expected a Solana connector from membership factory",
-          operation: "solana-connector-membership",
-        })
-      );
+      return yield* new WalletIntegrationError({
+        message: "Expected a Solana connector from membership factory",
+        operation: "solana-connector-membership",
+      });
     }
     yield* Ref.update(connectorCache, (cache) => {
       const next = new Map(cache);

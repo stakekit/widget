@@ -70,7 +70,7 @@ const marketDto = {
   utilizationRate: "0.5",
 } as const;
 
-const integration = Schema.decodeUnknownSync(Integration)({
+const integration = Schema.decodeSync(Integration)({
   actions: [],
   id: marketDto.integrationId,
   metadata: {
@@ -82,7 +82,7 @@ const integration = Schema.decodeUnknownSync(Integration)({
   networks: ["ethereum"],
   providerId: "aave",
 });
-const market = Schema.decodeUnknownSync(Market)(marketDto);
+const market = Schema.decodeSync(Market)(marketDto);
 const address = (suffix: string) =>
   Schema.decodeSync(WalletAddress)(`0x${suffix.padStart(40, "0")}`);
 const t = ((key: string) => key) as TFunction;

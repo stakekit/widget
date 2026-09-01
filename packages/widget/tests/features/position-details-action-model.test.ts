@@ -44,7 +44,7 @@ import {
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const selectedYield = yieldApiYieldFixture();
-const balance = Schema.decodeUnknownSync(EarnBalance)(
+const balance = Schema.decodeSync(EarnBalance)(
   yieldBalanceFixture({
     pendingActions: [
       {
@@ -300,7 +300,7 @@ describe("Position Details action model", () => {
   });
 
   it("keeps colliding server actions in independent amount slots", () => {
-    const collisionBalance = Schema.decodeUnknownSync(EarnBalance)(
+    const collisionBalance = Schema.decodeSync(EarnBalance)(
       yieldBalanceFixture({
         pendingActions: [
           {

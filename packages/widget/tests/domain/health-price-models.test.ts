@@ -10,7 +10,7 @@ import { Token } from "../../src/domain/token/token";
 
 describe("health and price application schemas", () => {
   it("strictly decodes health responses", () => {
-    const health = Schema.decodeUnknownSync(HealthStatus)({
+    const health = Schema.decodeSync(HealthStatus)({
       status: "OK",
       timestamp: "2026-07-10T12:00:00.000Z",
     });
@@ -25,7 +25,7 @@ describe("health and price application schemas", () => {
   });
 
   it("decodes application price commands from the generated wire shape", () => {
-    const request = Schema.decodeUnknownSync(PriceRequest)({
+    const request = Schema.decodeSync(PriceRequest)({
       currency: "USD",
       tokenList: [
         {
@@ -45,7 +45,7 @@ describe("health and price application schemas", () => {
     "omits malformed top-level price entries while retaining valid siblings",
     () =>
       Effect.gen(function* () {
-        const prices = yield* Schema.decodeUnknownEffect(PriceResponse)({
+        const prices = yield* Schema.decodeEffect(PriceResponse)({
           "ethereum-": { price: 3000, price_24_h: 2900 },
           "cosmos-": { price: "invalid", price_24_h: 5 },
           "solana-": { price: 150 },
@@ -67,17 +67,17 @@ describe("health and price application schemas", () => {
     "looks up legacy price keys without conflating them with Token identity",
     () =>
       Effect.gen(function* () {
-        const prices = yield* Schema.decodeUnknownEffect(PriceResponse)({
+        const prices = yield* Schema.decodeEffect(PriceResponse)({
           "ethereum-": { price: 3000 },
           "ethereum-0xabcd": { price: 1 },
         });
-        const native = Schema.decodeUnknownSync(Token)({
+        const native = yield* Schema.decodeEffect(Token)({
           decimals: 18,
           name: "Ether",
           network: "ethereum",
           symbol: "ETH",
         });
-        const addressed = Schema.decodeUnknownSync(Token)({
+        const addressed = yield* Schema.decodeEffect(Token)({
           address: "0xAbCd",
           decimals: 6,
           name: "USD Coin",

@@ -5,7 +5,15 @@ import {
   WalletReadyState,
 } from "@solana/wallet-adapter-base";
 import type { Connection } from "@solana/web3.js";
-import { Array as EArray, Effect, Layer, Option, Queue, Stream } from "effect";
+import {
+  Cause,
+  Array as EArray,
+  Effect,
+  Layer,
+  Option,
+  Queue,
+  Stream,
+} from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { HttpResponse, http } from "msw";
 import {
@@ -640,7 +648,9 @@ describe("WagmiConfigProvider", () => {
             walletRuntime.layer,
             Layer.effect(
               WalletService,
-              Effect.fail(new Error("geo-blocked wallet bootstrap"))
+              Effect.fail(
+                new Cause.UnknownError("geo-blocked wallet bootstrap")
+              )
             ) as never,
           ],
         ]}

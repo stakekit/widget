@@ -35,12 +35,12 @@ const action = yieldApiActionDtoFixture({
 
 describe("action application schemas", () => {
   it("brands command and response identifiers at the application boundary", () => {
-    const command = Schema.decodeUnknownSync(ActionCommand)({
+    const command = Schema.decodeSync(ActionCommand)({
       address: "0xWallet",
       arguments: { amount: "1" },
       yieldId: "ethereum-eth-native-staking",
     });
-    const model = Schema.decodeUnknownSync(YieldAction)(action);
+    const model = Schema.decodeSync(YieldAction)(action);
 
     expect(command.yieldId).toBe("ethereum-eth-native-staking");
     expect(model.id).toBe("action-1");
@@ -49,7 +49,7 @@ describe("action application schemas", () => {
 
   it("strictly rejects a malformed nested transaction", () => {
     expect(() =>
-      Schema.decodeUnknownSync(YieldAction)({
+      Schema.decodeSync(YieldAction)({
         ...action,
         transactions: [{ ...transaction, id: "" }],
       })
@@ -59,7 +59,7 @@ describe("action application schemas", () => {
   it.effect("rejects invalid required timestamps", () =>
     Effect.gen(function* () {
       const failure = yield* Effect.flip(
-        Schema.decodeUnknownEffect(YieldAction)({
+        Schema.decodeEffect(YieldAction)({
           ...action,
           createdAt: "invalid",
         })
@@ -81,7 +81,7 @@ describe("action application schemas", () => {
             ...options.fiber.getRef(References.CurrentLogAnnotations),
           });
         });
-        const decoded = yield* Schema.decodeUnknownEffect(YieldAction)({
+        const decoded = yield* Schema.decodeEffect(YieldAction)({
           ...action,
           completedAt: "invalid-completion",
           transactions: [
@@ -122,12 +122,12 @@ describe("action application schemas", () => {
     expect(gas.amount).toBeInstanceOf(BigNumber);
     expect(gas.amount.toFixed()).toBe("0.01");
     expect(() =>
-      Schema.decodeUnknownSync(TransactionGasEstimateJson)("not-json")
+      Schema.decodeSync(TransactionGasEstimateJson)("not-json")
     ).toThrow();
   });
 
   it("keeps Pending Action argument notes from the argument schema", () => {
-    const pendingAction = Schema.decodeUnknownSync(PendingAction)({
+    const pendingAction = Schema.decodeSync(PendingAction)({
       intent: "manage",
       passthrough: "claim",
       type: "CLAIM_REWARDS",

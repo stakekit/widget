@@ -20,7 +20,7 @@ const secondTrackingProbeAtom = appRuntime.atom(
   TrackingService.use((tracking) => Effect.succeed(tracking))
 );
 const borrowIntegrationsProbeAtom = appRuntime.atom(
-  BorrowResourceSource.use((borrow) => borrow.getIntegrations())
+  BorrowResourceSource.use((borrow) => borrow.getIntegrations)
 );
 const widgetConfigProbeAtom = appRuntime.atom(
   WidgetConfigService.use((config) => Effect.succeed(config))

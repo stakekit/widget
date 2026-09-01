@@ -2,9 +2,13 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { describe, expect, it } from "vitest";
 import type { MarketPosition } from "../../src/domain/borrow/positions/market-position";
 import { getUnifiedManagePositionsState } from "../../src/features/portfolio/ui/dashboard/positions/model";
+import { BorrowResourceError } from "../../src/resources/borrow-resource-error";
+import { ApiRequestError } from "../../src/services/api/resource-sources";
 
 const borrowPositionsResult = (positions: ReadonlyArray<MarketPosition> = []) =>
-  AsyncResult.success<ReadonlyArray<MarketPosition>, unknown>(positions);
+  AsyncResult.success<ReadonlyArray<MarketPosition>, BorrowResourceError>(
+    positions
+  );
 
 const getState = (
   overrides: Partial<Parameters<typeof getUnifiedManagePositionsState>[0]> = {}
@@ -68,10 +72,15 @@ describe("unified Manage positions state", () => {
   it("surfaces partial errors while preserving available positions", () => {
     expect(
       getState({
-        borrowPositionsResult: AsyncResult.fail<
-          unknown,
-          ReadonlyArray<MarketPosition>
-        >("borrow failed"),
+        borrowPositionsResult: AsyncResult.fail(
+          new BorrowResourceError({
+            cause: new ApiRequestError({
+              cause: new Error("borrow failed"),
+              operation: "borrow-positions",
+            }),
+            operation: "borrow-positions",
+          })
+        ),
         earnPositionsCount: 1,
       })
     ).toMatchObject({
@@ -115,7 +124,7 @@ describe("unified Manage positions state", () => {
       getState({
         borrowPositionsResult: AsyncResult.initial<
           ReadonlyArray<MarketPosition>,
-          unknown
+          BorrowResourceError
         >(true),
       })
     ).toMatchObject({
@@ -144,7 +153,7 @@ describe("unified Manage positions state", () => {
       getState({
         borrowPositionsResult: AsyncResult.success<
           ReadonlyArray<MarketPosition>,
-          unknown
+          BorrowResourceError
         >([{} as MarketPosition], { waiting: true }),
         earnPositionsCount: 1,
       })

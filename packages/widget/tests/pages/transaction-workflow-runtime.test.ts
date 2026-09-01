@@ -92,7 +92,7 @@ const borrowTransaction = (
   id: string,
   overrides: Record<string, unknown> = {}
 ) =>
-  Schema.decodeUnknownSync(Transaction)({
+  Schema.decodeSync(Transaction)({
     address,
     chainId: "8453",
     id,

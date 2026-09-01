@@ -12,6 +12,7 @@ import {
 import type { Chain } from "viem";
 import { mainnet, optimism } from "viem/chains";
 import type { Connector } from "wagmi";
+import type { WalletNetwork } from "../../../src/domain/wallet/network";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
@@ -147,8 +148,9 @@ describe("WalletService authoritative Wallet State", () => {
             configLayer,
             WalletConnectorSource.defaultLayer,
             Layer.succeed(WalletBootstrapSource, {
-              getEnabledWalletNetworks: () =>
-                Effect.succeed(new Set(["ethereum"])),
+              getEnabledWalletNetworks: Effect.succeed(
+                new Set<WalletNetwork>(["ethereum"])
+              ),
               getOpportunity: () => Effect.die("unused"),
             }),
             Layer.succeed(

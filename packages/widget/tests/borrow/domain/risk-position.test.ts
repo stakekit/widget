@@ -50,7 +50,7 @@ const makeMarket = ({
   readonly loanTokenSymbol: string;
   readonly type?: "isolated" | "pool";
 }) =>
-  Schema.decodeUnknownSync(Market)({
+  Schema.decodeSync(Market)({
     availableLiquidity: "500000",
     availableLiquidityRaw: "500000000000",
     borrowRate: "0.06",
@@ -174,7 +174,7 @@ describe("BorrowPositions", () => {
       loanTokenAddress: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
       loanTokenSymbol: "DAI",
     });
-    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const integration = Schema.decodeSync(Integration)(integrationDto);
     const snapshot = Schema.decodeUnknownSync(BorrowAccountSnapshot)({
       address,
       availableToBorrowUsd: "400",
@@ -390,7 +390,7 @@ describe("BorrowPositions", () => {
       loanTokenSymbol: "DAI",
       type: "isolated",
     });
-    const integration = Schema.decodeUnknownSync(Integration)({
+    const integration = Schema.decodeSync(Integration)({
       ...integrationDto,
       id: "morpho-blue-borrow",
       name: "Morpho Blue",

@@ -42,12 +42,10 @@ export const makeLedgerWalletDriver = ({
     Effect.gen(function* () {
       const ledgerConnector = yield* requireLedgerConnector(connector);
       if (!currentAccountId) {
-        return yield* Effect.fail(
-          new WalletCapabilityUnavailableError({
-            capability: "transaction",
-            connectorId: connector.id,
-          })
-        );
+        return yield* new WalletCapabilityUnavailableError({
+          capability: "transaction",
+          connectorId: connector.id,
+        });
       }
 
       const prepared = yield* ledgerConnector

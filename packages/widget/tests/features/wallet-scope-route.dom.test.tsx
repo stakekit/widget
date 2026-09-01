@@ -21,7 +21,7 @@ const connectedWalletState = ({
     NormalizedWalletState,
     { readonly status: "connected" }
   >["additionalAddresses"];
-  readonly address?: typeof WalletAddress.Type;
+  readonly address?: WalletAddress;
 } = {}): Extract<NormalizedWalletState, { readonly status: "connected" }> => ({
   additionalAddresses,
   address,

@@ -21,5 +21,9 @@
   "ignoreIssues": {
     "src/generated/**": ["exports", "types"]
   },
-  "ignoreDependencies": ["@effect/openapi-generator", "@effect/platform-node"]
+  "ignoreDependencies": [
+    "@effect/language-service",
+    "@effect/openapi-generator",
+    "@effect/platform-node"
+  ]
 }

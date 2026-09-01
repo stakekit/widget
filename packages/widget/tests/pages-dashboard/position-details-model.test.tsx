@@ -21,7 +21,7 @@ type DashboardPositionPendingAction = Parameters<
 >[0]["pendingActions"][number];
 
 const makeBalance = (overrides?: Parameters<typeof yieldBalanceFixture>[0]) =>
-  Schema.decodeUnknownSync(EarnBalance)(yieldBalanceFixture(overrides));
+  Schema.decodeSync(EarnBalance)(yieldBalanceFixture(overrides));
 
 const t = (key: string, options?: Record<string, unknown>): string => {
   const translations: Record<string, string> = {
@@ -355,7 +355,7 @@ describe("getDashboardPositionDetailsModel", () => {
       positionBalancesByType: makePositionBalances(),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
       reducedStakedOrLiquidBalance: null,
-      rewardsSummary: Schema.decodeUnknownSync(RewardsSummary)({
+      rewardsSummary: Schema.decodeSync(RewardsSummary)({
         rewards: {
           last24H: "0",
           last30D: "0",

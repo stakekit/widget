@@ -54,7 +54,7 @@ const marketDto = {
 
 describe("borrow domain", () => {
   it("decodes markets and derives risk values", () => {
-    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const market = Schema.decodeSync(Market)(marketDto);
     const risk = deriveMarketRiskLimits(market);
 
     expect(market.loanToken.address).toBe(
@@ -67,22 +67,22 @@ describe("borrow domain", () => {
     });
     expect(market.supplyCollateralFeeBps).toBe(0);
     expect(() =>
-      Schema.decodeUnknownSync(Market)({
+      Schema.decodeSync(Market)({
         ...marketDto,
         supplyCollateralFeeBps: "501",
       })
     ).toThrow();
     expect(() =>
-      Schema.decodeUnknownSync(Market)({
+      Schema.decodeSync(Market)({
         ...marketDto,
         supplyCollateralFeeBps: "0.5",
       })
     ).toThrow();
     expect(() =>
-      Schema.decodeUnknownSync(Market)({ ...marketDto, minLoan: "-1" })
+      Schema.decodeSync(Market)({ ...marketDto, minLoan: "-1" })
     ).toThrow();
     expect(() =>
-      Schema.decodeUnknownSync(Market)({ ...marketDto, minLoan: "Infinity" })
+      Schema.decodeSync(Market)({ ...marketDto, minLoan: "Infinity" })
     ).toThrow();
   });
 

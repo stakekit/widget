@@ -18,12 +18,14 @@ type ActivityActionsResult = ActivityPageProjectionInput["actionsResult"];
 type ActivityFilterOptionsResult =
   ActivityPageProjectionInput["filterOptionsResult"];
 type AsyncValue<Result> =
-  Result extends AsyncResult.AsyncResult<infer Value, unknown> ? Value : never;
+  Result extends AsyncResult.AsyncResult<infer Value, infer _Error>
+    ? Value
+    : never;
 type ActivityActionsValue = AsyncValue<ActivityActionsResult>;
 type ActivityFilterOptionsValue = AsyncValue<ActivityFilterOptionsResult>;
 
 const walletScope = new WalletScopeKey({
-  address: Schema.decodeUnknownSync(
+  address: Schema.decodeSync(
     Schema.NonEmptyString.pipe(Schema.brand("WalletAddress"))
   )("0x0000000000000000000000000000000000000001"),
   network: "ethereum",

@@ -16,13 +16,13 @@ const entry: EarnEntry = {
 
 describe("Earn validator reconciliation", () => {
   it("refreshes EVM validator snapshots by address identity", () => {
-    const selected = Schema.decodeUnknownSync(EarnValidator)(
+    const selected = Schema.decodeSync(EarnValidator)(
       yieldApiValidatorFixture({
         address: "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
         name: "Stale validator",
       })
     );
-    const current = Schema.decodeUnknownSync(EarnValidator)(
+    const current = Schema.decodeSync(EarnValidator)(
       yieldApiValidatorFixture({
         address: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         name: "Current validator",
@@ -41,7 +41,7 @@ describe("Earn validator reconciliation", () => {
   });
 
   it("removes a missing validator only after a complete observation", () => {
-    const selected = Schema.decodeUnknownSync(EarnValidator)(
+    const selected = Schema.decodeSync(EarnValidator)(
       yieldApiValidatorFixture()
     );
 

@@ -13,7 +13,10 @@ import {
   WidgetConfigService,
 } from "../../../config/widget-config";
 import { WidgetPersistence } from "../../../persistence/widget-persistence";
-import { WalletBootstrapSource } from "../../wallet-bootstrap-source";
+import {
+  WalletBootstrapSource,
+  type WalletBootstrapSourceReadError,
+} from "../../wallet-bootstrap-source";
 import { WalletConnectorSource } from "../../wallet-connector-source";
 import { SolanaPlatform } from "../platform/solana-platform";
 import {
@@ -75,12 +78,12 @@ const resolveWalletInitParams = Effect.fn("resolveWalletInitParams")(function* (
   initParams: InitParams,
   getInitialYield: (
     yieldId: NonNullable<InitParams["yieldId"]>
-  ) => Effect.Effect<typeof EarnYield.Type, unknown>
+  ) => Effect.Effect<EarnYield, WalletBootstrapSourceReadError>
 ) {
   if (!initParams.yieldId) return initParams;
 
   const yieldData = yield* getInitialYield(initParams.yieldId).pipe(
-    Effect.catch(() => Effect.succeed(null))
+    Effect.orElseSucceed(() => null)
   );
   if (!yieldData) return initParams;
 
@@ -124,15 +127,12 @@ export const bootstrapWallet = Effect.gen(function* () {
         current: externalProviderSnapshot,
       } satisfies MutableExternalProviderRef)
     : undefined;
-  const enabledNetworks = yield* bootstrapSource
-    .getEnabledWalletNetworks()
-    .pipe(
-      Effect.retry(enabledNetworksRetrySchedule),
-      Effect.mapError(
-        (cause) =>
-          new WalletBootstrapError({ cause, stage: "enabled-networks" })
-      )
-    );
+  const enabledNetworks = yield* bootstrapSource.getEnabledWalletNetworks.pipe(
+    Effect.retry(enabledNetworksRetrySchedule),
+    Effect.mapError(
+      (cause) => new WalletBootstrapError({ cause, stage: "enabled-networks" })
+    )
+  );
   const queryParams = yield* resolveWalletInitParams(
     initParams,
     bootstrapSource.getOpportunity

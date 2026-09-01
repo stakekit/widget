@@ -9,7 +9,7 @@ export const ChainId = Schema.String.pipe(Schema.brand("BorrowChainId"));
 export type ChainId = typeof ChainId.Type;
 
 export const decodeChainId = Schema.decodeSync(
-  Schema.Union([Schema.String, Schema.Number]).pipe(
+  Schema.Union([Schema.String, Schema.Finite]).pipe(
     Schema.decodeTo(
       ChainId,
       SchemaTransformation.transform({
@@ -23,7 +23,7 @@ export const decodeChainId = Schema.decodeSync(
 export const WalletAddress = Schema.String.check(Schema.isPattern(/^0x/)).pipe(
   Schema.decodeTo(CanonicalWalletAddress)
 );
-export type WalletAddress = typeof CanonicalWalletAddress.Type;
+export type WalletAddress = CanonicalWalletAddress;
 
 export const ActionId = Schema.String.pipe(Schema.brand("BorrowActionId"));
 export type ActionId = typeof ActionId.Type;
@@ -40,7 +40,7 @@ export const TokenAddress = Schema.String.pipe(
   Schema.decode(SchemaTransformation.toLowerCase()),
   Schema.decodeTo(CanonicalTokenAddress)
 );
-export type TokenAddress = typeof CanonicalTokenAddress.Type;
+export type TokenAddress = CanonicalTokenAddress;
 
 export const TransactionId = Schema.String.pipe(
   Schema.brand("BorrowTransactionId")

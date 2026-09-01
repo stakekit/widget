@@ -49,7 +49,7 @@ export class TrackingService extends Context.Service<TrackingService>()(
             catch: () => undefined,
           });
         },
-        Effect.catch(() => Effect.void)
+        (effect) => Effect.ignore(effect)
       );
 
       const trackPageView = Effect.fn("TrackingService.trackPageView")(
@@ -76,7 +76,7 @@ export class TrackingService extends Context.Service<TrackingService>()(
             catch: () => undefined,
           });
         },
-        Effect.catch(() => Effect.void)
+        (effect) => Effect.ignore(effect)
       );
 
       return { trackEvent, trackPageView } as const;

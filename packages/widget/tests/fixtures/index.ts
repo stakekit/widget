@@ -88,7 +88,7 @@ const yieldApiTokenFixture = (
 export const yieldApiProviderFixture = (
   overrides?: Partial<YieldApiProviderDto>
 ): EarnProvider =>
-  Schema.decodeUnknownSync(EarnProviderSchema)({
+  Schema.decodeSync(EarnProviderSchema)({
     id: "stakekit",
     name: "StakeKit",
     description: "",
@@ -172,11 +172,11 @@ export const yieldApiYieldFixture = (
       | YieldRewardRateFixtureInput
       | NonNullable<YieldApiYieldDto["rewardRate"]>;
   }
-): typeof EarnYield.Type => {
+): EarnYield => {
   const { rewardRate, ...rest } = overrides ?? {};
   const wire = yieldApiYieldDtoFixture(rest);
 
-  return Schema.decodeUnknownSync(EarnYield)(
+  return Schema.decodeSync(EarnYield)(
     rewardRate
       ? { ...wire, rewardRate: encodeYieldRewardRateFixture(rewardRate) }
       : wire
@@ -316,23 +316,21 @@ export const yieldApiTransactionDtoFixture = (
   ...overrides,
 });
 
-type TransactionFixtureOverrides = Partial<
-  Omit<typeof ActionTransaction.Type, "id">
-> & {
+type TransactionFixtureOverrides = Partial<Omit<ActionTransaction, "id">> & {
   readonly id?: string;
 };
 
 export const yieldApiTransactionFixture = (
   overrides?: TransactionFixtureOverrides
-): typeof ActionTransaction.Type => {
-  const transaction = Schema.decodeUnknownSync(ActionTransaction)(
+): ActionTransaction => {
+  const transaction = Schema.decodeSync(ActionTransaction)(
     yieldApiTransactionDtoFixture()
   );
 
   return {
     ...transaction,
     ...overrides,
-  } as typeof ActionTransaction.Type;
+  } as ActionTransaction;
 };
 
 export const yieldApiActionDtoFixture = (
@@ -352,7 +350,7 @@ export const yieldApiActionDtoFixture = (
     amountUsd: null,
     transactions: [
       yieldApiTransactionDtoFixture({
-        type: type as (typeof ActionTransaction.Type)["type"],
+        type: type as ActionTransaction["type"],
       }),
     ],
     executionPattern: "synchronous",
@@ -366,7 +364,7 @@ export const yieldApiActionDtoFixture = (
 
 type ActionFixtureOverrides = Partial<
   Omit<
-    typeof YieldAction.Type,
+    YieldAction,
     | "address"
     | "amount"
     | "amountRaw"
@@ -387,18 +385,18 @@ type ActionFixtureOverrides = Partial<
   readonly createdAt?: DateTime.Utc;
   readonly id?: string;
   readonly rawArguments?: typeof YieldAction.Encoded.rawArguments;
-  readonly transactions?: ReadonlyArray<typeof ActionTransaction.Type>;
+  readonly transactions?: ReadonlyArray<ActionTransaction>;
   readonly yieldId?: string;
 };
 
 export const yieldApiActionFixture = (
   overrides?: ActionFixtureOverrides
-): typeof YieldAction.Type => {
+): YieldAction => {
   const type = overrides?.type ?? "STAKE";
   const intent = overrides?.intent ?? getYieldActionIntent(type);
   const { completedAt, createdAt, transactions, ...rest } = overrides ?? {};
 
-  return Schema.decodeUnknownSync(YieldAction)({
+  return Schema.decodeSync(YieldAction)({
     ...yieldApiActionDtoFixture(),
     ...rest,
     ...(completedAt === undefined
@@ -422,7 +420,7 @@ export const yieldApiActionFixture = (
   });
 };
 
-const getYieldActionIntent = (type: (typeof YieldAction.Type)["type"]) => {
+const getYieldActionIntent = (type: YieldAction["type"]) => {
   if (type === "STAKE") return "enter" as const;
   if (type === "UNSTAKE") return "exit" as const;
   return "manage" as const;

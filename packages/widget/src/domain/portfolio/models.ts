@@ -18,7 +18,7 @@ export type HistoryPeriod = typeof HistoryPeriod.Type;
 
 export const HistoryPoint = Schema.Struct({
   timestamp: Schema.DateTimeUtc,
-  value: Schema.Number.check(Schema.isFinite()),
+  value: Schema.Finite,
 });
 export type HistoryPoint = typeof HistoryPoint.Type;
 

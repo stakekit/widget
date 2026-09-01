@@ -1,0 +1,6 @@
+id: no-unknown-async-result-failure
+valid:
+  - 'const x: AsyncResult.AsyncResult<string, ApiReadFailure> = null as never'
+  - 'const x: AsyncResult.AsyncResult<string, never> = null as never'
+invalid:
+  - 'const x: AsyncResult.AsyncResult<string, unknown> = null as never'

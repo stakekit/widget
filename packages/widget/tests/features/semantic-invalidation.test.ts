@@ -90,7 +90,7 @@ const sameAddressOtherNetworkScope = new WalletScopeKey({
 });
 const yieldDto = yieldApiYieldFixture();
 const yieldId = Schema.decodeSync(YieldId)(yieldDto.id);
-const borrowIntegration = Schema.decodeUnknownSync(Integration)({
+const borrowIntegration = Schema.decodeSync(Integration)({
   actions: [],
   id: "aave-borrow",
   metadata: {
@@ -102,7 +102,7 @@ const borrowIntegration = Schema.decodeUnknownSync(Integration)({
   networks: ["ethereum"],
   providerId: "aave",
 });
-const borrowMarket = Schema.decodeUnknownSync(Market)({
+const borrowMarket = Schema.decodeSync(Market)({
   availableLiquidity: "500000",
   availableLiquidityRaw: "500000000000",
   borrowRate: "0.06",
@@ -183,11 +183,7 @@ const borrowAccountPosition = (updated: boolean) =>
     totalCollateralUsd: "0",
     totalSuppliedUsd: "0",
   });
-const reactivityAtom = appRuntime.atom(
-  Effect.gen(function* () {
-    return yield* Reactivity.Reactivity;
-  })
-);
+const reactivityAtom = appRuntime.atom(Reactivity.Reactivity);
 
 const workflowInvalidationKeys = (scope: WalletScopeKey) => {
   const owner = walletScopeOwnerKey(scope);
@@ -212,7 +208,7 @@ describe("semantic resource invalidation", () => {
         const positionCalls = new Map<string, number>();
         const getLegacyTokenOptions = vi.fn(() =>
           Effect.succeed(
-            Schema.decodeUnknownSync(EarnLegacyTokenOptionsResponse)([
+            Schema.decodeSync(EarnLegacyTokenOptionsResponse)([
               { availableYields: [yieldId], token: yieldDto.token },
             ])
           )
@@ -228,7 +224,7 @@ describe("semantic resource invalidation", () => {
               (balanceCalls.get(walletAddress) ?? 0) + 1
             );
             return Effect.succeed(
-              Schema.decodeUnknownSync(TokenBalancesResponse)([
+              Schema.decodeSync(TokenBalancesResponse)([
                 {
                   amount: versions.get(walletAddress.toLowerCase()) ?? "0",
                   availableYields: [yieldId],
@@ -568,7 +564,7 @@ describe("semantic resource invalidation", () => {
               Layer.mergeAll(
                 Reactivity.layer,
                 Layer.succeed(BorrowResourceSource, {
-                  getIntegrations,
+                  getIntegrations: Effect.suspend(getIntegrations),
                   getMarkets,
                   getPositionData,
                 } as never)

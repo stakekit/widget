@@ -27,7 +27,7 @@ const yieldId = yieldApiYieldFixture().id;
 const VALIDATOR_SEARCH_DEBOUNCE_MS = 300;
 const SLOW_SEARCH_RESPONSE_MS = 1000;
 
-const validatorSelectionYield = (): typeof EarnYield.Type => {
+const validatorSelectionYield = (): EarnYield => {
   const base = yieldApiYieldFixture();
 
   return {

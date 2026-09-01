@@ -71,7 +71,7 @@ export const setup = async (
     logoURI: "https://assets.stakek.it/tokens/usda.svg",
   };
 
-  const rewardToken = Schema.decodeUnknownSync(Token)({
+  const rewardToken = Schema.decodeSync(Token)({
     name: "United Stables",
     symbol: "U",
     decimals: 18,
@@ -80,7 +80,7 @@ export const setup = async (
     logoURI: "https://assets.stakek.it/tokens/usda.svg",
   });
 
-  const morphoToken = Schema.decodeUnknownSync(Token)({
+  const morphoToken = Schema.decodeSync(Token)({
     name: "Morpho Token",
     symbol: "MORPHO",
     decimals: 18,

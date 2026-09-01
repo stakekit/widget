@@ -26,7 +26,7 @@ const refreshedScopeA = new WalletScopeKey({
   network: scopeA.network,
 });
 const yieldDto = yieldApiYieldFixture();
-const yieldBalance = Schema.decodeUnknownSync(EarnBalance)(
+const yieldBalance = Schema.decodeSync(EarnBalance)(
   yieldBalanceFixture({
     address: scopeA.address,
     pendingActions: [

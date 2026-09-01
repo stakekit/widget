@@ -28,9 +28,10 @@ const makeRegistry = (getHealth: YieldResourceSource["Service"]["getHealth"]) =>
 describe("Widget Health resource", () => {
   it("projects healthy and maintenance states", () => {
     let status: "FAIL" | "OK" = "OK";
-    const getHealth = vi.fn(() =>
-      Effect.succeed({ status, timestamp: DateTime.makeUnsafe(0) })
-    );
+    const getHealth = Effect.sync(() => ({
+      status,
+      timestamp: DateTime.makeUnsafe(0),
+    }));
     const registry = makeRegistry(getHealth);
 
     expect(registry.get(underMaintenanceAtom)).toBe(false);
@@ -45,7 +46,7 @@ describe("Widget Health resource", () => {
       cause: new Error("offline"),
       operation: "yield-api-health",
     });
-    const getHealth = vi.fn(() =>
+    const getHealth = Effect.suspend(() =>
       offline
         ? Effect.fail(requestError)
         : Effect.succeed({
@@ -71,13 +72,11 @@ describe("Widget Health resource", () => {
   it("polls while mounted and stops after Widget Instance disposal", async () => {
     vi.useFakeTimers();
     try {
-      const getHealth = vi.fn(() =>
-        Effect.succeed({
-          status: "OK" as const,
-          timestamp: DateTime.makeUnsafe(0),
-        })
-      );
-      const registry = makeRegistry(getHealth);
+      const getHealth = vi.fn(() => ({
+        status: "OK" as const,
+        timestamp: DateTime.makeUnsafe(0),
+      }));
+      const registry = makeRegistry(Effect.sync(getHealth));
       const unmount = registry.mount(widgetHealthResourceAtom);
 
       expect(getHealth).toHaveBeenCalledOnce();

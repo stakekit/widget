@@ -16,30 +16,30 @@ import {
 describe("application scalar and identifier schemas", () => {
   it("uses lossless representations for raw units and decimal values", () => {
     expect(
-      Schema.decodeUnknownSync(ExactBaseUnitAmount)(
+      Schema.decodeSync(ExactBaseUnitAmount)(
         "900719925474099312345678901234567890"
       )
     ).toBe(900719925474099312345678901234567890n);
     expect(
-      Schema.decodeUnknownSync(ExactDecimal)(
+      Schema.decodeSync(ExactDecimal)(
         "9007199254740993.000000000000000001"
       ).toFixed()
     ).toBe("9007199254740993.000000000000000001");
   });
 
   it("rejects invalid dates and normalizes valid date-times to UTC", () => {
-    const dateTime = Schema.decodeUnknownSync(UtcDateTimeFromString)(
+    const dateTime = Schema.decodeSync(UtcDateTimeFromString)(
       "2026-07-10T14:00:00+02:00"
     );
 
     expect(DateTime.formatIso(dateTime)).toBe("2026-07-10T12:00:00.000Z");
     expect(() =>
-      Schema.decodeUnknownSync(UtcDateTimeFromString)("not-a-date")
+      Schema.decodeSync(UtcDateTimeFromString)("not-a-date")
     ).toThrow();
   });
 
   it("keeps token addresses opaque", () => {
-    expect(Schema.decodeUnknownSync(TokenAddress)("CaseSensitiveAddress")).toBe(
+    expect(Schema.decodeSync(TokenAddress)("CaseSensitiveAddress")).toBe(
       "CaseSensitiveAddress"
     );
   });

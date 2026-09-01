@@ -140,13 +140,11 @@ const makeRegistry = (borrow: Record<string, unknown>) =>
 
 describe("Borrow Positions resource atoms", () => {
   it("fetches, decodes, and derives borrow positions through atom resources", () => {
-    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
-    const market = Schema.decodeUnknownSync(Market)(marketDto);
-    const position = Schema.decodeUnknownSync(BorrowAccountSnapshot)(
-      positionDto
-    );
+    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const market = Schema.decodeSync(Market)(marketDto);
+    const position = Schema.decodeSync(BorrowAccountSnapshot)(positionDto);
     const registry = makeRegistry({
-      getIntegrations: () => Effect.succeed([integration]),
+      getIntegrations: Effect.succeed([integration]),
       getMarkets: () =>
         Effect.succeed({
           items: [market],
@@ -175,18 +173,16 @@ describe("Borrow Positions resource atoms", () => {
   });
 
   it("resolves current borrow positions from wallet scope inside the atom runtime", () => {
-    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
-    const market = Schema.decodeUnknownSync(Market)(marketDto);
-    const position = Schema.decodeUnknownSync(BorrowAccountSnapshot)(
-      positionDto
-    );
+    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const market = Schema.decodeSync(Market)(marketDto);
+    const position = Schema.decodeSync(BorrowAccountSnapshot)(positionDto);
     const registry = AtomRegistry.make({
       initialValues: [
         Atom.initialValue(
           appRuntime.layer,
           Layer.mergeAll(
             Layer.succeed(BorrowResourceSource, {
-              getIntegrations: () => Effect.succeed([integration]),
+              getIntegrations: Effect.succeed([integration]),
               getMarkets: () =>
                 Effect.succeed({
                   items: [market],
@@ -251,11 +247,9 @@ describe("Borrow Positions resource atoms", () => {
   });
 
   it("shares one positions request between list and detail consumers", () => {
-    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
-    const market = Schema.decodeUnknownSync(Market)(marketDto);
-    const position = Schema.decodeUnknownSync(BorrowAccountSnapshot)(
-      positionDto
-    );
+    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const market = Schema.decodeSync(Market)(marketDto);
+    const position = Schema.decodeSync(BorrowAccountSnapshot)(positionDto);
     const getIntegrations = vi.fn(() => Effect.succeed([integration]));
     const getMarkets = vi.fn(() =>
       Effect.succeed({
@@ -269,7 +263,7 @@ describe("Borrow Positions resource atoms", () => {
       Effect.succeed([{ integration, position }])
     );
     const registry = makeRegistry({
-      getIntegrations,
+      getIntegrations: Effect.suspend(getIntegrations),
       getMarkets,
       getPositionData,
     });
@@ -301,16 +295,14 @@ describe("Borrow Positions resource atoms", () => {
   });
 
   it("shares positions when only unused additional addresses differ", () => {
-    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
-    const market = Schema.decodeUnknownSync(Market)(marketDto);
-    const position = Schema.decodeUnknownSync(BorrowAccountSnapshot)(
-      positionDto
-    );
+    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const market = Schema.decodeSync(Market)(marketDto);
+    const position = Schema.decodeSync(BorrowAccountSnapshot)(positionDto);
     const getPositionData = vi.fn(() =>
       Effect.succeed([{ integration, position }])
     );
     const registry = makeRegistry({
-      getIntegrations: () => Effect.succeed([integration]),
+      getIntegrations: Effect.succeed([integration]),
       getMarkets: () =>
         Effect.succeed({
           items: [market],
@@ -339,8 +331,8 @@ describe("Borrow Positions resource atoms", () => {
   });
 
   it("loads complete market pages and keeps network identities separate", () => {
-    const ethereumMarket = Schema.decodeUnknownSync(Market)(marketDto);
-    const baseMarket = Schema.decodeUnknownSync(Market)({
+    const ethereumMarket = Schema.decodeSync(Market)(marketDto);
+    const baseMarket = Schema.decodeSync(Market)({
       ...marketDto,
       id: "aave-v3-base-usdc",
       network: "base",
@@ -357,7 +349,7 @@ describe("Borrow Positions resource atoms", () => {
           if (network === "base") return [baseMarket];
           if (offset !== 0) {
             return [
-              Schema.decodeUnknownSync(Market)({
+              Schema.decodeSync(Market)({
                 ...marketDto,
                 id: "aave-v3-ethereum-usdt",
               }),
@@ -397,9 +389,9 @@ describe("Borrow Positions resource atoms", () => {
   });
 
   it("preserves base previous values and errors while typing absent details", () => {
-    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
-    const market = Schema.decodeUnknownSync(Market)(marketDto);
-    const accountPosition = Schema.decodeUnknownSync(BorrowAccountSnapshot)(
+    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const market = Schema.decodeSync(Market)(marketDto);
+    const accountPosition = Schema.decodeSync(BorrowAccountSnapshot)(
       positionDto
     );
     const positions = deriveBorrowPositions({
@@ -463,7 +455,9 @@ describe("Borrow Positions resource atoms", () => {
 
   it("wraps borrow API failures in AsyncResult failure state", () => {
     const registry = makeRegistry({
-      getIntegrations: () => Effect.fail(new Error("borrow unavailable")),
+      getIntegrations: Effect.fail(
+        new Cause.UnknownError("borrow unavailable")
+      ),
     });
     const result = registry.get(borrowIntegrationsAtom);
 

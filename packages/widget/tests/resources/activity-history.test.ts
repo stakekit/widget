@@ -51,7 +51,7 @@ describe("Activity History resource", () => {
       id: "action-a",
       yieldId,
     });
-    const getActivityAction = vi.fn(() => Effect.succeed(Option.some(action)));
+    const getActivityAction = vi.fn(() => Effect.succeedSome(action));
     const registry = AtomRegistry.make({
       initialValues: [
         Atom.initialValue(
@@ -82,7 +82,7 @@ describe("Activity History resource", () => {
       id: "action-a",
       yieldId,
     });
-    const getActivityAction = vi.fn(() => Effect.succeed(Option.some(action)));
+    const getActivityAction = vi.fn(() => Effect.succeedSome(action));
     const registry = AtomRegistry.make({
       initialValues: [
         Atom.initialValue(

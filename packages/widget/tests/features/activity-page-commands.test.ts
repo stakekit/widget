@@ -1,4 +1,4 @@
-import { Effect, Layer, Option, Schema } from "effect";
+import { Effect, Layer, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
@@ -28,7 +28,7 @@ import {
 import { YieldResourceSource } from "../../src/services/api/resource-sources";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 
-const address = Schema.decodeUnknownSync(
+const address = Schema.decodeSync(
   Schema.NonEmptyString.pipe(Schema.brand("WalletAddress"))
 )("0x0000000000000000000000000000000000000001");
 const walletScope = new WalletScopeKey({
@@ -65,7 +65,7 @@ const makeRegistry = (
           YieldResourceSource,
           YieldResourceSource.of({
             getOpportunity: () => Effect.succeed(yieldApiYieldFixture()),
-            getProvider: () => Effect.succeed(Option.none()),
+            getProvider: () => Effect.succeedNone,
             listActivity,
           } as never)
         )

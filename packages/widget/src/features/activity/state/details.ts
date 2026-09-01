@@ -179,7 +179,7 @@ export const parseActivityRouteIntent = ({
       : { status: "missing" };
   }
 
-  const actionId = Schema.decodeUnknownOption(ActionId)(actionIdParam).pipe(
+  const actionId = Schema.decodeOption(ActionId)(actionIdParam).pipe(
     Option.getOrNull
   );
   if (!actionId) return { status: "invalid" };

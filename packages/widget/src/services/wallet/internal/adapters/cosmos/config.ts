@@ -74,20 +74,16 @@ const loadCosmosConnector = Effect.fn("loadCosmosConnector")(function* ({
   const { connector, walletManager } = initialized;
 
   yield* Effect.matchEffect(
-    Effect.tryPromise({
-      try: () => walletManager.onMounted(),
-      catch: (error) => error,
-    }),
+    Effect.tryPromise(() => walletManager.onMounted()),
     {
       onFailure: () => {
         const restorableWalletManager = walletManager as unknown as {
           _restoreAccounts: () => Promise<void>;
         };
 
-        return Effect.tryPromise({
-          try: () => restorableWalletManager._restoreAccounts(),
-          catch: (error) => error,
-        }).pipe(Effect.ignore);
+        return Effect.tryPromise(() =>
+          restorableWalletManager._restoreAccounts()
+        ).pipe(Effect.ignore);
       },
       onSuccess: () => Effect.void,
     }

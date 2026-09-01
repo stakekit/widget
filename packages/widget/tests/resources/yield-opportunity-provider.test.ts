@@ -27,12 +27,10 @@ const yieldId = Schema.decodeSync(YieldId)(yieldModel.id);
 const makeSource = () => {
   const getOpportunity = vi.fn(() => Effect.succeed(yieldModel));
   const getProvider = vi.fn(() =>
-    Effect.succeed(
-      Option.some({
-        id: yieldModel.providerId,
-        name: "Provider",
-      } as never)
-    )
+    Effect.succeedSome({
+      id: yieldModel.providerId,
+      name: "Provider",
+    } as never)
   );
 
   return {

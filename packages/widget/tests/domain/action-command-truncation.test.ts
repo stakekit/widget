@@ -23,14 +23,14 @@ const address = Schema.decodeSync(WalletAddress)(
 
 describe("executable token amount truncation", () => {
   it("decodes Yield Action amounts from number and string wire forms", () => {
-    const fromNumber = Schema.decodeUnknownSync(YieldAction)(
+    const fromNumber = Schema.decodeSync(YieldAction)(
       yieldApiActionDtoFixture({
         amount: 1.5,
         amountRaw: 1_500_000,
         amountUsd: 3,
       })
     );
-    const fromString = Schema.decodeUnknownSync(YieldAction)(
+    const fromString = Schema.decodeSync(YieldAction)(
       yieldApiActionDtoFixture({
         amount: "1.5",
         amountRaw: "1500000",
@@ -233,7 +233,7 @@ describe("executable token amount truncation", () => {
         ],
       },
     };
-    const yieldBalance = Schema.decodeUnknownSync(EarnBalance)(
+    const yieldBalance = Schema.decodeSync(EarnBalance)(
       yieldBalanceFixture({
         address,
         amount: preciseAmount,
@@ -272,7 +272,7 @@ describe("executable token amount truncation", () => {
   it("Review and Complete represent the truncated Action Command amount", () => {
     const integration = yieldApiYieldFixture();
     const token = { ...integration.token, decimals: 6 };
-    const yieldBalance = Schema.decodeUnknownSync(EarnBalance)(
+    const yieldBalance = Schema.decodeSync(EarnBalance)(
       yieldBalanceFixture({
         address,
         amount: "2",
@@ -328,7 +328,7 @@ describe("executable token amount truncation", () => {
   it("rejects a Manage amount that truncates below one base unit", () => {
     const integration = yieldApiYieldFixture();
     const token = { ...integration.token, decimals: 6 };
-    const yieldBalance = Schema.decodeUnknownSync(EarnBalance)(
+    const yieldBalance = Schema.decodeSync(EarnBalance)(
       yieldBalanceFixture({
         address,
         amount: "1",

@@ -83,7 +83,7 @@ const intake: BorrowTransactionFlowIntake = {
 };
 
 const transaction = (id = "tx-1"): Transaction =>
-  Schema.decodeUnknownSync(Transaction)({
+  Schema.decodeSync(Transaction)({
     address,
     chainId: "8453",
     id,

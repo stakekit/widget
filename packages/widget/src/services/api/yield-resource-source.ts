@@ -56,7 +56,7 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
       const response = yield* yieldApi
         .ActionsControllerGetAction(actionId, undefined)
         .pipe(
-          Effect.map(Option.some),
+          Effect.asSome,
           Effect.catchIf(isNotFoundHttpClientError, () =>
             Effect.succeed(
               Option.none<YieldApi.ActionsControllerGetAction200>()
@@ -67,32 +67,34 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
 
       return yield* response.pipe(
         Option.match({
-          onNone: () => Effect.succeed(Option.none<typeof YieldAction.Type>()),
+          onNone: () => Effect.succeed(Option.none<YieldAction>()),
           onSome: (value) =>
             Schema.decodeUnknownEffect(YieldAction)(value).pipe(
               withResponseDecodeError("activity-action"),
-              Effect.map(Option.some)
+              Effect.asSome
             ),
         })
       );
     }
   );
 
-  const getEnabledWalletNetworks = Effect.fn(
-    "YieldResourceSource.getEnabledWalletNetworks"
-  )(function* () {
-    return yield* yieldApi
+  const getEnabledWalletNetworks = Effect.suspend(() =>
+    yieldApi
       .NetworksControllerGetNetworks(undefined)
       .pipe(
-        decodeApiResponse("enabled-networks", EnabledWalletNetworksResponse)
-      );
-  });
+        decodeApiResponse("enabled-networks", EnabledWalletNetworksResponse),
+        Effect.withSpan("YieldResourceSource.getEnabledWalletNetworks")
+      )
+  );
 
-  const getHealth = Effect.fn("YieldResourceSource.getHealth")(function* () {
-    return yield* yieldApi
+  const getHealth = Effect.suspend(() =>
+    yieldApi
       .HealthControllerHealth(undefined)
-      .pipe(decodeApiResponse("yield-api-health", HealthStatus));
-  });
+      .pipe(
+        decodeApiResponse("yield-api-health", HealthStatus),
+        Effect.withSpan("YieldResourceSource.getHealth")
+      )
+  );
 
   const getKycStatus = Effect.fn("YieldResourceSource.getKycStatus")(
     function* (request: {
@@ -212,7 +214,7 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
     const response = yield* yieldApi
       .ProvidersControllerGetProvider(providerId, undefined)
       .pipe(
-        Effect.map(Option.some),
+        Effect.asSome,
         Effect.catchIf(isNotFoundHttpClientError, () =>
           Effect.succeed(
             Option.none<YieldApi.ProvidersControllerGetProvider200>()
@@ -223,11 +225,11 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
 
     return yield* response.pipe(
       Option.match({
-        onNone: () => Effect.succeed(Option.none<typeof EarnProvider.Type>()),
+        onNone: () => Effect.succeed(Option.none<EarnProvider>()),
         onSome: (value) =>
-          Schema.decodeUnknownEffect(EarnProvider)(value).pipe(
+          Schema.decodeEffect(EarnProvider)(value).pipe(
             withResponseDecodeError("yield-provider"),
-            Effect.map(Option.some)
+            Effect.asSome
           ),
       })
     );

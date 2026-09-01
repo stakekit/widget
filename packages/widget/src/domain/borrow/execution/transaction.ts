@@ -15,7 +15,7 @@ export const Transaction = Schema.Struct({
 export type Transaction = typeof Transaction.Type;
 
 const HexString = Schema.TemplateLiteral([Schema.Literal("0x"), Schema.String]);
-const Countish = Schema.Union([Schema.String, Schema.Number, Schema.BigInt]);
+const Countish = Schema.Union([Schema.String, Schema.Finite, Schema.BigInt]);
 
 const BorrowWalletEvmSignablePayload = Schema.Struct({
   chainId: Schema.optionalKey(Countish),

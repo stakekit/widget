@@ -18,7 +18,7 @@ import {
 } from "../../src/services/api/resource-sources";
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
-const address = Schema.decodeUnknownSync(
+const address = Schema.decodeSync(
   Schema.NonEmptyString.pipe(Schema.brand("WalletAddress"))
 )("0x0000000000000000000000000000000000000001");
 const walletScope = new WalletScopeKey({

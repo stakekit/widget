@@ -18,7 +18,10 @@ import {
 import { WalletEnvironment } from "../../../src/services/wallet/internal/platform/wallet-environment";
 import { WalletBootstrapError } from "../../../src/services/wallet/internal/runtime/bootstrap";
 import { WalletStorageCleanup } from "../../../src/services/wallet/internal/runtime/wallet-storage-cleanup";
-import { WalletBootstrapSource } from "../../../src/services/wallet/wallet-bootstrap-source";
+import {
+  WalletBootstrapSource,
+  WalletBootstrapSourceReadError,
+} from "../../../src/services/wallet/wallet-bootstrap-source";
 import {
   WalletConnectorSource,
   type WalletListFactory,
@@ -56,7 +59,7 @@ const solanaLayer = Layer.succeed(
 const apiLayer = Layer.succeed(
   WalletBootstrapSource,
   WalletBootstrapSource.of({
-    getEnabledWalletNetworks: () => Effect.succeed(new Set(["ethereum"])),
+    getEnabledWalletNetworks: Effect.succeed(new Set(["ethereum"])),
     getOpportunity: () => Effect.die("unused"),
   })
 );
@@ -222,8 +225,9 @@ describe("WalletService acquisition", () => {
       const customApiLayer = Layer.succeed(
         WalletBootstrapSource,
         WalletBootstrapSource.of({
-          getEnabledWalletNetworks: () =>
-            Effect.succeed(new Set(["ethereum", "solana"])),
+          getEnabledWalletNetworks: Effect.succeed(
+            new Set(["ethereum", "solana"])
+          ),
           getOpportunity: () => Effect.die("unused"),
         })
       );
@@ -301,7 +305,9 @@ describe("WalletService acquisition", () => {
       const failingApiLayer = Layer.succeed(
         WalletBootstrapSource,
         WalletBootstrapSource.of({
-          getEnabledWalletNetworks: () => Effect.fail(cause),
+          getEnabledWalletNetworks: Effect.fail(
+            new WalletBootstrapSourceReadError({ cause })
+          ),
           getOpportunity: () => Effect.die("unused"),
         })
       );
@@ -326,9 +332,11 @@ describe("WalletService acquisition", () => {
 
       expect(failure).toMatchObject({
         _tag: "WalletBootstrapError",
-        cause,
         stage: "enabled-networks",
       });
+      expect((failure as WalletBootstrapError).cause).toEqual(
+        new WalletBootstrapSourceReadError({ cause })
+      );
     })
   );
 

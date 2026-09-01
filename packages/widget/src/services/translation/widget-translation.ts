@@ -227,7 +227,7 @@ const makeWidgetTranslation = Effect.fn("makeWidgetTranslation")(
         });
         yield* reconcile(settings, apiErrors);
       },
-      Effect.catch(() => Effect.void)
+      (effect) => Effect.ignore(effect)
     );
 
     const applyConfig = Effect.fn("WidgetTranslation.applyConfig")(function* (

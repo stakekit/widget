@@ -352,10 +352,11 @@ describe("ClassicTransactionFlowService", () => {
     "rejects a stale Wallet owner and autonomously clears ownership changes",
     () =>
       Effect.gen(function* () {
+        const otherAddress = yield* Schema.decodeEffect(WalletAddress)(
+          "0x2234567890123456789012345678901234567890"
+        );
         const otherScope = new WalletScopeKey({
-          address: Schema.decodeSync(WalletAddress)(
-            "0x2234567890123456789012345678901234567890"
-          ),
+          address: otherAddress,
           network: "ethereum",
         });
         const execute = vi.fn<WidgetNavigation["Service"]["execute"]>(

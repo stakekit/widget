@@ -12,7 +12,7 @@ import "./config";
 
 export const ExactDecimalInput = Schema.Union([
   Schema.String.check(Schema.isStringFinite()),
-  Schema.Number.check(Schema.isFinite()),
+  Schema.Finite,
 ]);
 
 export const ExactDecimal = ExactDecimalInput.pipe(
@@ -41,7 +41,7 @@ export const NonNegativeExactDecimal = ExactDecimal.check(
 );
 export type NonNegativeExactDecimal = typeof NonNegativeExactDecimal.Type;
 
-const SafeIntegerBaseUnitAmount = Schema.Number.check(
+const SafeIntegerBaseUnitAmount = Schema.Finite.check(
   Schema.makeFilter((value) =>
     Number.isSafeInteger(value)
       ? true
@@ -92,11 +92,15 @@ export const TolerantOptionalUtcDateTimeFromString = (
 ) =>
   Schema.Unknown.pipe(
     Schema.decodeTo(Schema.UndefinedOr(Schema.DateTimeUtc), {
-      decode: SchemaGetter.transformOrFail((input) =>
-        input === undefined
-          ? Effect.succeed(undefined)
-          : decodeOptionalUtcDateTime(input, options)
-      ),
+      decode: SchemaGetter.transformOrFail((input) => {
+        if (input === undefined) {
+          // Effect.void widens the success type to void, which is incompatible
+          // with the schema's precise DateTime.Utc | undefined output.
+          // @effect-diagnostics-next-line effectSucceedWithVoid:off
+          return Effect.succeed(undefined);
+        }
+        return decodeOptionalUtcDateTime(input, options);
+      }),
       encode: SchemaGetter.transform((value) =>
         value === undefined ? undefined : DateTime.formatIso(value)
       ),

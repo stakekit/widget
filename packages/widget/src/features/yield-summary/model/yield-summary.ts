@@ -12,6 +12,8 @@ import {
   isYieldWithProviderOptions,
 } from "../../../domain/earn/yield";
 import type { YieldId } from "../../../domain/identity/identifiers";
+import type { YieldDirectoryError } from "../../../resources/yield-directory/index";
+import type { YieldProviderError } from "../../../resources/yield-provider/index";
 import { getRewardRateFormatted } from "../../../shared/lib/formatters";
 
 export type YieldSummaryProvider = Readonly<{
@@ -54,7 +56,7 @@ class YieldSummaryResourceError extends Data.TaggedError(
 
 type ProviderYieldsResult = AsyncResult.AsyncResult<
   ReadonlyArray<EarnYieldWithProvider> | null,
-  unknown
+  YieldDirectoryError | YieldProviderError
 >;
 
 const getProvider = ({

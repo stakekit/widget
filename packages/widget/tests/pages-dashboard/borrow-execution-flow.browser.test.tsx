@@ -40,6 +40,7 @@ import { BorrowReviewPage } from "../../src/features/borrow-transaction-flow/ui/
 import { BorrowStepsPage } from "../../src/features/borrow-transaction-flow/ui/steps";
 import { useBorrowExecution } from "../../src/features/borrow-transaction-flow/ui/use-borrow-execution";
 import { WalletScopeRoute } from "../../src/features/wallet/react/wallet-scope-route";
+import { withResponseDecodeError } from "../../src/services/api/api-operation";
 import { BorrowOperations } from "../../src/services/api/operations";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
@@ -69,7 +70,7 @@ type ActionDto = typeof BorrowAction.Encoded;
 type TransactionDto = typeof BorrowTransaction.Encoded;
 type SubmitTransactionDto = typeof SubmitTransactionCommand.Encoded;
 
-const command = Schema.decodeUnknownSync(ActionCommand)({
+const command = Schema.decodeSync(ActionCommand)({
   action: "borrow",
   address,
   args: {
@@ -146,7 +147,7 @@ const action = (overrides: Partial<ActionDto> = {}): ActionDto => ({
 });
 
 const decodedAction = (overrides: Partial<ActionDto> = {}) =>
-  Schema.decodeUnknownSync(BorrowAction)(action(overrides));
+  Schema.decodeSync(BorrowAction)(action(overrides));
 
 const connectedWalletState = {
   additionalAddresses: null,
@@ -191,20 +192,26 @@ const makeBorrowApi = ({
 
   return {
     executeAction: vi.fn(() =>
-      executeAction.pipe(Effect.map(Schema.decodeUnknownSync(BorrowAction)))
-    ),
-    getAction: vi.fn(() =>
-      Effect.sync(() =>
-        Schema.decodeUnknownSync(BorrowAction)(
-          queuedGetActions.shift() ?? getActions.at(-1) ?? action()
+      executeAction.pipe(
+        Effect.flatMap((value) =>
+          Schema.decodeEffect(BorrowAction)(value).pipe(
+            withResponseDecodeError("borrow-action-create")
+          )
         )
       )
     ),
+    getAction: vi.fn(() =>
+      Effect.suspend(() =>
+        Schema.decodeEffect(BorrowAction)(
+          queuedGetActions.shift() ?? getActions.at(-1) ?? action()
+        ).pipe(withResponseDecodeError("borrow-action-status"))
+      )
+    ),
     stepAction: vi.fn(() =>
-      Effect.sync(() =>
-        Schema.decodeUnknownSync(BorrowAction)(
+      Effect.suspend(() =>
+        Schema.decodeEffect(BorrowAction)(
           queuedStepActions.shift() ?? stepActions.at(-1) ?? action()
-        )
+        ).pipe(withResponseDecodeError("borrow-action-step"))
       )
     ),
     submitTransaction: vi.fn(
@@ -666,11 +673,12 @@ describe("borrow execution flow component", () => {
 
   it.live("returns to Borrow when Transaction Workflow setup fails", () =>
     Effect.gen(function* () {
+      const otherAddress = yield* Schema.decodeEffect(WalletAddress)(
+        "0x0000000000000000000000000000000000000002"
+      );
       const app = yield* renderExecution(makeBorrowApi({}), {
         action: decodedAction({
-          address: Schema.decodeSync(WalletAddress)(
-            "0x0000000000000000000000000000000000000002"
-          ),
+          address: otherAddress,
         }),
       });
 

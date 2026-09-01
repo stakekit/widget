@@ -10,7 +10,7 @@ describe("token USD prices", () => {
       network: "ethereum",
       symbol: "ETH",
     };
-    const prices = Schema.decodeUnknownSync(PriceResponse)({
+    const prices = Schema.decodeSync(PriceResponse)({
       "ethereum-undefined": { price: 1619.22, price_24_h: 0 },
     });
 

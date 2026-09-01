@@ -25,12 +25,19 @@ import {
 type EncodeSignedExtrinsic =
   typeof import("./extrinsic-encoding").encodeSignedExtrinsic;
 
+const substrateSigningError = (cause: unknown) =>
+  new WalletIntegrationError({
+    cause,
+    message: "Failed to sign transaction",
+    operation: "substrate-sign",
+  });
+
 const loadExtrinsicEncoder = Effect.tryPromise({
   try: (): Promise<EncodeSignedExtrinsic> =>
     import("./extrinsic-encoding").then(
       (module) => module.encodeSignedExtrinsic
     ),
-  catch: (error) => error,
+  catch: substrateSigningError,
 });
 
 const createSubstrateConnector = ({
@@ -47,7 +54,10 @@ const createSubstrateConnector = ({
   name: string;
   type: string;
   baseConnector: BaseConnector;
-  encodeSignedExtrinsic: Effect.Effect<EncodeSignedExtrinsic, unknown>;
+  encodeSignedExtrinsic: Effect.Effect<
+    EncodeSignedExtrinsic,
+    WalletIntegrationError
+  >;
   walletDetailsParams: WalletDetailsParams;
   chains: ReadonlyArray<Chain>;
   lunoKitChains: LunoKitChain[];
@@ -71,7 +81,7 @@ const createSubstrateConnector = ({
       }) =>
         Effect.tryPromise({
           try: () => baseConnector.getSigner(),
-          catch: (error) => error,
+          catch: substrateSigningError,
         }).pipe(
           Effect.flatMap((signer) => {
             const signPayload = signer?.signPayload?.bind(signer);
@@ -91,7 +101,7 @@ const createSubstrateConnector = ({
                   ...payload.tx,
                   withSignedTransaction: true,
                 }),
-              catch: (error) => error,
+              catch: substrateSigningError,
             });
           }),
           Effect.flatMap((res) => {
@@ -112,19 +122,11 @@ const createSubstrateConnector = ({
                       signature: res.signature,
                       tx: payload.tx,
                     }),
-                  catch: (error) => error,
+                  catch: substrateSigningError,
                 })
               )
             );
-          }),
-          Effect.mapError(
-            (cause) =>
-              new WalletIntegrationError({
-                cause,
-                message: "Failed to sign transaction",
-                operation: "substrate-sign",
-              })
-          )
+          })
         ),
       connect: async (args) => {
         config.emitter.emit("message", { type: "connecting" });
@@ -225,7 +227,10 @@ const buildSubstrateWalletGroup = ({
   lunoKitChains,
 }: {
   chains: ReadonlyArray<Chain>;
-  encodeSignedExtrinsic: Effect.Effect<EncodeSignedExtrinsic, unknown>;
+  encodeSignedExtrinsic: Effect.Effect<
+    EncodeSignedExtrinsic,
+    WalletIntegrationError
+  >;
   forceWalletConnectOnly: boolean;
   lunoKitChains: LunoKitChain[];
 }): WalletList[number] => {

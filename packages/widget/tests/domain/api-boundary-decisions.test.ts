@@ -6,7 +6,7 @@ import { ExactDecimal } from "../../src/domain/finance/scalars";
 
 describe("API boundary foundation decisions", () => {
   it("decodes precision-sensitive decimals to BigNumber without precision loss", () => {
-    const value = Schema.decodeUnknownSync(ExactDecimal)(
+    const value = Schema.decodeSync(ExactDecimal)(
       "12345678901234567890.123456789012345678"
     );
 
@@ -15,7 +15,7 @@ describe("API boundary foundation decisions", () => {
     expect(Schema.encodeSync(ExactDecimal)(value)).toBe(
       "12345678901234567890.123456789012345678"
     );
-    expect(() => Schema.decodeUnknownSync(ExactDecimal)("NaN")).toThrow();
+    expect(() => Schema.decodeSync(ExactDecimal)("NaN")).toThrow();
   });
 
   it.effect(

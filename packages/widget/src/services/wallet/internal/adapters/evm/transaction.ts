@@ -39,12 +39,12 @@ const UnsignedEvmTransaction = Schema.Struct({
   gasLimit: EvmBaseUnitQuantity,
   from: EvmAddress,
   value: Schema.optionalKey(EvmBaseUnitQuantity),
-  nonce: Schema.Number,
-  type: Schema.Number,
+  nonce: Schema.Finite,
+  type: Schema.Finite,
   gasPrice: Schema.optionalKey(EvmBaseUnitQuantity),
   maxFeePerGas: Schema.optionalKey(EvmBaseUnitQuantity),
   maxPriorityFeePerGas: Schema.optionalKey(EvmBaseUnitQuantity),
-  chainId: Schema.Number,
+  chainId: Schema.Finite,
 });
 
 export const unsignedEVMTransactionCodec = UnsignedEvmTransaction;
@@ -54,7 +54,7 @@ const UnsignedEvmTransactionFromJson = Schema.fromJsonString(
 );
 
 export const decodeUnsignedEvmTransactionJson = (tx: string) =>
-  Schema.decodeUnknownEffect(UnsignedEvmTransactionFromJson)(tx);
+  Schema.decodeEffect(UnsignedEvmTransactionFromJson)(tx);
 
 const prepareDecodedEvmTransaction = (
   decodedTx: typeof UnsignedEvmTransaction.Type,

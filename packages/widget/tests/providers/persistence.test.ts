@@ -63,9 +63,9 @@ describe("Effect browser persistence", () => {
       skPubKeys: "sk-widget@1//skPubKeys",
       tosAccepted: "sk-widget@1//tosAccepted",
     });
-    expect(Schema.decodeUnknownSync(TosAcknowledged)(true)).toBe(true);
+    expect(Schema.decodeSync(TosAcknowledged)(true)).toBe(true);
     expect(
-      Schema.decodeUnknownSync(StoredPublicKeys)({ cosmos: "public-key" })
+      Schema.decodeSync(StoredPublicKeys)({ cosmos: "public-key" })
     ).toEqual({ cosmos: "public-key" });
     expect(() => Schema.decodeUnknownSync(TosAcknowledged)("true")).toThrow();
     expect(() =>

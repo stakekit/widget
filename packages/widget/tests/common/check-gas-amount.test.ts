@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { checkGasAmount } from "../../src/domain/finance/gas";
 import { TokenBalance } from "../../src/domain/finance/models";
 
-const gasTokenBalance = Schema.decodeUnknownSync(TokenBalance)({
+const gasTokenBalance = Schema.decodeSync(TokenBalance)({
   amount: "1",
   availableYields: [],
   token: {

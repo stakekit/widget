@@ -2,7 +2,7 @@ import { describe, expect, it } from "@effect/vitest";
 import { Cause, Deferred, Effect, Exit, Fiber, Scope } from "effect";
 import { makeScopedSerialOperations } from "../../src/shared/effect/scoped-serial-operations";
 
-const isInterrupted = (exit: Exit.Exit<unknown, unknown>) =>
+const isInterrupted = <A, E>(exit: Exit.Exit<A, E>) =>
   Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause);
 
 describe("makeScopedSerialOperations", () => {

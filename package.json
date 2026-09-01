@@ -22,7 +22,7 @@
     "test:smoke": "pnpm --filter @stakekit/widget test:smoke",
     "format": "turbo run format",
     "clean": "turbo run clean",
-    "prepare": "husky",
+    "prepare": "husky && pnpm --filter @stakekit/widget exec effect-tsgo patch --typescript --no-oxlint --typescript-package @typescript/native",
     "check-hygiene": "turbo run check-hygiene --filter=@stakekit/widget",
     "check": "turbo run lint //#lint:ast && pnpm run check-hygiene && turbo run test && turbo run build"
   },
@@ -31,6 +31,7 @@
     "@biomejs/biome": "catalog:",
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
+    "@effect/tsgo": "catalog:",
     "husky": "catalog:",
     "turbo": "catalog:"
   }

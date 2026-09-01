@@ -16,7 +16,7 @@ describe("yield summary atom boundary", () => {
           ...yieldApiYieldDtoFixture({ id: "yield-invalid", prime: false }),
           token: { ...valid.token, decimals: "invalid" },
         };
-        const page = yield* Schema.decodeUnknownEffect(EarnYieldPage)({
+        const page = yield* Schema.decodeEffect(EarnYieldPage)({
           items: [valid, invalid],
           limit: 2,
           offset: 0,

@@ -10,7 +10,7 @@ import { AdditionalAddresses } from "../../../../domain/wallet/address";
 import type { WalletNetwork } from "../../../../domain/wallet/network";
 import { sameWalletScopeOwner } from "../../../../domain/wallet/wallet-scope";
 import { config } from "../../../../shared/config/widget-defaults";
-import type { StoredPublicKeys } from "../../../persistence/widget-persistence";
+import type { WidgetPersistence } from "../../../persistence/widget-persistence";
 import { isConnectorWithFilteredChains } from "../../wallet-connectors";
 import {
   disconnectedLedgerConnectorState,
@@ -68,7 +68,7 @@ export type WalletStateController = {
 };
 
 type WalletProjectionInput = {
-  readonly additionalAddresses: typeof AdditionalAddresses.Type | null;
+  readonly additionalAddresses: AdditionalAddresses | null;
   readonly connection: WalletCoreState["connection"];
   readonly connectorChains: Chain[];
   readonly controller: WalletStateController;
@@ -338,19 +338,17 @@ const getCosmosAdditionalAddresses = Effect.fn("getCosmosAdditionalAddresses")(
     readonly address: WalletAddressType;
     readonly chainWallet: ChainWalletBase;
     readonly connector: CosmosConnector;
-    readonly readStoredPublicKeys: Effect.Effect<StoredPublicKeys, unknown>;
+    readonly readStoredPublicKeys: WidgetPersistence["Service"]["readStoredPublicKeys"];
   }) {
     const storedPublicKeys = yield* readStoredPublicKeys;
     const storedPublicKey = storedPublicKeys[address];
     const cosmosPubKey = storedPublicKey
       ? storedPublicKey
-      : yield* Effect.tryPromise({
-          try: () =>
-            chainWallet.client.getAccount!(chainWallet.chainId).then(
-              (account) => connector.toBase64(account.pubkey)
-            ),
-          catch: (cause) => cause,
-        });
+      : yield* Effect.tryPromise(() =>
+          chainWallet.client.getAccount!(chainWallet.chainId).then((account) =>
+            connector.toBase64(account.pubkey)
+          )
+        );
 
     return yield* Schema.decodeEffect(AdditionalAddresses)({ cosmosPubKey });
   }
@@ -364,7 +362,7 @@ const makeAdditionalAddresses = Effect.fn("makeAdditionalAddresses")(
   }: {
     readonly chainWallet: ChainWalletBase | null;
     readonly connection: WalletCoreState["connection"];
-    readonly readStoredPublicKeys: Effect.Effect<StoredPublicKeys, unknown>;
+    readonly readStoredPublicKeys: WidgetPersistence["Service"]["readStoredPublicKeys"];
   }) {
     const connector = connection.connector;
     if (
@@ -377,12 +375,15 @@ const makeAdditionalAddresses = Effect.fn("makeAdditionalAddresses")(
       return null;
     }
 
-    return yield* getCosmosAdditionalAddresses({
-      address: Schema.decodeSync(WalletAddress)(connection.address),
-      chainWallet,
-      connector,
-      readStoredPublicKeys,
-    }).pipe(
+    return yield* Schema.decodeEffect(WalletAddress)(connection.address).pipe(
+      Effect.flatMap((address) =>
+        getCosmosAdditionalAddresses({
+          address,
+          chainWallet,
+          connector,
+          readStoredPublicKeys,
+        })
+      ),
       Effect.catchCause((cause) =>
         Effect.logWarning("Wallet state enrichment degraded").pipe(
           Effect.annotateLogs({ cause, slice: "cosmos-additional-addresses" }),
@@ -417,7 +418,7 @@ export const makeCompleteWalletStateStream = ({
   readonly controller: WalletController;
   readonly previous?: NormalizedWalletState;
   readonly projection: WalletCoreState;
-  readonly readStoredPublicKeys: Effect.Effect<StoredPublicKeys, unknown>;
+  readonly readStoredPublicKeys: WidgetPersistence["Service"]["readStoredPublicKeys"];
 }): Stream.Stream<CompleteWalletState> => {
   const connector = projection.connection.connector;
   const connectorChains = makeConnectorChainsStream({

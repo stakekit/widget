@@ -26,7 +26,7 @@ import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 const makePosition = () => {
   const yieldDto = yieldApiYieldFixture();
 
-  return Schema.decodeUnknownSync(EarnPosition)({
+  return Schema.decodeSync(EarnPosition)({
     balances: [
       yieldBalanceFixture({
         amount: "2",
@@ -83,7 +83,7 @@ describe("position derivations", () => {
 
   it("does not flag points-only claimable balances as actions", () => {
     const yieldDto = yieldApiYieldFixture();
-    const position = Schema.decodeUnknownSync(EarnPosition)({
+    const position = Schema.decodeSync(EarnPosition)({
       balances: [
         yieldBalanceFixture({
           amount: "2",

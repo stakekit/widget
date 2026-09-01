@@ -23,7 +23,7 @@ import { yieldProviderResourceAtom } from "../yield-provider/index";
 
 const CONCURRENCY = 5;
 
-type YieldType = (typeof EarnYield.Type)["mechanics"]["type"];
+type YieldType = EarnYield["mechanics"]["type"];
 
 export class YieldDirectoryKey extends Data.TaggedClass("YieldDirectoryKey")<{
   readonly network: Network | null;

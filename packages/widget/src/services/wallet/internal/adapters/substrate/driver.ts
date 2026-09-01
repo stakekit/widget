@@ -16,12 +16,10 @@ export const makeSubstrateWalletDriver = ({
   signTransaction: ({ tx }: { readonly tx: string }) =>
     Effect.gen(function* () {
       if (!isSubstrateConnector(connector)) {
-        return yield* Effect.fail(
-          new WalletCapabilityUnavailableError({
-            capability: "transaction",
-            connectorId: connector.id,
-          })
-        );
+        return yield* new WalletCapabilityUnavailableError({
+          capability: "transaction",
+          connectorId: connector.id,
+        });
       }
 
       const payload = yield* Schema.decodeEffect(

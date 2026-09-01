@@ -26,9 +26,9 @@ const EncodedRequestFailure = Schema.Struct({
 });
 
 const decodeDescription = (description: string): RichError | null =>
-  Schema.decodeUnknownOption(Schema.fromJsonString(RichError))(
-    description
-  ).pipe(Option.getOrNull);
+  Schema.decodeOption(Schema.fromJsonString(RichError))(description).pipe(
+    Option.getOrNull
+  );
 
 const richErrorFrom = (cause: unknown): RichError | null => {
   const direct = Schema.decodeUnknownOption(DirectApiFailure)(cause).pipe(

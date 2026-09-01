@@ -39,7 +39,7 @@ type YieldEntryInput = Readonly<{
 
 type YieldEntryWallet = Readonly<{
   readonly additionalAddresses: AdditionalAddresses | null;
-  readonly address: typeof WalletAddress.Type | null;
+  readonly address: WalletAddress | null;
   readonly isLedgerLive: boolean;
 }>;
 

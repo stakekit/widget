@@ -103,8 +103,6 @@ describe("rich error service", () => {
             operation: "yield-directory",
             richError: { message: "First failure" },
           });
-          service.present(firstFailure);
-
           yield* Effect.all([
             service.present(firstFailure),
             service.present(firstFailure),

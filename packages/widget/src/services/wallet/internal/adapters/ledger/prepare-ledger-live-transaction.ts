@@ -40,7 +40,7 @@ const GasEstimate = Schema.NullOr(
     token: Schema.optional(
       Schema.NullOr(
         Schema.Struct({
-          decimals: Schema.Number,
+          decimals: Schema.Finite,
         })
       )
     ),
@@ -105,7 +105,7 @@ export const makePrepareLedgerLiveTransaction: Effect.Effect<PrepareLedgerLiveTr
     );
 
     return ({ network, tx, txMeta }) =>
-      Schema.decodeUnknownEffect(JsonValue)(tx).pipe(
+      Schema.decodeEffect(JsonValue)(tx).pipe(
         Effect.mapError(() =>
           transactionPreparationError("Failed to parse tx")
         ),

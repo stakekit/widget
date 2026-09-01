@@ -62,7 +62,7 @@ describe("generated Yield API", () => {
 
   it("decodes concrete nullable DTO fields without empty-object placeholders", () => {
     expect(
-      Schema.decodeUnknownSync(YieldSchema.YieldFeeConfigurationDto)({
+      Schema.decodeSync(YieldSchema.YieldFeeConfigurationDto)({
         id: "66f299cd-aaaa-4bbb-8ccc-d1f26e3a02db",
         default: true,
         managementFeeBps: 100,
@@ -82,7 +82,7 @@ describe("generated Yield API", () => {
     });
 
     expect(
-      Schema.decodeUnknownSync(YieldSchema.ProviderDto)({
+      Schema.decodeSync(YieldSchema.ProviderDto)({
         name: "StakeKit",
         id: "stakekit",
         logoURI: "https://stakek.it/logo.svg",
@@ -94,7 +94,7 @@ describe("generated Yield API", () => {
     ).toBe("10200000");
 
     expect(
-      Schema.decodeUnknownSync(YieldSchema.ValidatorDto)({
+      Schema.decodeSync(YieldSchema.ValidatorDto)({
         address: "validator-address",
         provider: {
           name: "StakeKit",
@@ -111,7 +111,7 @@ describe("generated Yield API", () => {
     ).toBe("10200000");
 
     expect(
-      Schema.decodeUnknownSync(YieldSchema.YieldDto)({
+      Schema.decodeSync(YieldSchema.YieldDto)({
         ...yieldApiYieldDtoFixture(),
         curator: {
           name: "Curator",
@@ -128,7 +128,7 @@ describe("generated Yield API", () => {
 
   it("decodes concrete risk metrics and validates balance price ranges", () => {
     expect(
-      Schema.decodeUnknownSync(YieldSchema.YieldRiskCredoraDto)({
+      Schema.decodeSync(YieldSchema.YieldRiskCredoraDto)({
         rating: "A",
         score: 4.5,
         psl: 0.01,
@@ -144,7 +144,7 @@ describe("generated Yield API", () => {
     });
 
     expect(
-      Schema.decodeUnknownSync(YieldSchema.YieldRiskStakingRewardsDto)({
+      Schema.decodeSync(YieldSchema.YieldRiskStakingRewardsDto)({
         rating: "A",
         score: 4,
         potentialRating: "A+",

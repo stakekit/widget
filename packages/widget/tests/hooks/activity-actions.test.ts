@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Effect, Layer, Option, Schema } from "effect";
+import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { Atom, AtomRegistry } from "effect/unstable/reactivity";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
@@ -18,7 +18,7 @@ import {
   yieldApiYieldFixture,
 } from "../fixtures";
 
-const address = Schema.decodeUnknownSync(
+const address = Schema.decodeSync(
   Schema.NonEmptyString.pipe(Schema.brand("WalletAddress"))
 )("0x0000000000000000000000000000000000000001");
 const network = "ethereum" as const;
@@ -51,7 +51,7 @@ describe("activity action atom boundary", () => {
           },
         ],
       };
-      const page = yield* Schema.decodeUnknownEffect(ActivityActionsPage)({
+      const page = yield* Schema.decodeEffect(ActivityActionsPage)({
         items: [valid, malformed],
         limit: 50,
         offset: 0,
@@ -78,7 +78,7 @@ describe("activity action atom boundary", () => {
           maxPriorityFeePerGas: "0x054e0840",
           chainId: 1,
         });
-        const page = yield* Schema.decodeUnknownEffect(ActivityActionsPage)({
+        const page = yield* Schema.decodeEffect(ActivityActionsPage)({
           items: [
             yieldApiActionDtoFixture({
               id: "json-serialized-unsigned-transaction",
@@ -136,7 +136,7 @@ describe("activity action atom boundary", () => {
             YieldResourceSource,
             YieldResourceSource.of({
               getOpportunity,
-              getProvider: () => Effect.succeed(Option.none()),
+              getProvider: () => Effect.succeedNone,
               listActivity,
             } as never)
           )
@@ -289,7 +289,8 @@ describe("activity action atom boundary", () => {
           Layer.succeed(
             YieldResourceSource,
             YieldResourceSource.of({
-              getOpportunity: () => Effect.fail(new Error("unavailable")),
+              getOpportunity: () =>
+                Effect.fail(new Cause.UnknownError("unavailable")),
               listActivity,
             } as never)
           )
@@ -338,7 +339,7 @@ describe("activity action atom boundary", () => {
           Layer.succeed(
             YieldResourceSource,
             YieldResourceSource.of({
-              getProvider: () => Effect.succeed(Option.none()),
+              getProvider: () => Effect.succeedNone,
               listActivity,
               listYields: (request: { readonly limit: number }) =>
                 Effect.succeed({

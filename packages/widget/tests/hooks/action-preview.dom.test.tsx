@@ -36,7 +36,7 @@ import { renderHook } from "../utils/test-utils.dom.tsx";
 import { getTestWidgetConfig } from "../utils/widget-config";
 
 const yieldApiUrl = "https://yield.example.com";
-const command = Schema.decodeUnknownSync(ActionCommand)({
+const command = Schema.decodeSync(ActionCommand)({
   address: "0xWallet",
   yieldId: "ethereum-eth-native-staking",
 });

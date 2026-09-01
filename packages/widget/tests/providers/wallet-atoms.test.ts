@@ -135,7 +135,7 @@ describe("wallet Effect Atom boundaries", () => {
   });
 
   it("decodes Yield network IDs into distinct Enabled Wallet Networks", () => {
-    const networks = Schema.decodeUnknownSync(EnabledWalletNetworksResponse)([
+    const networks = Schema.decodeSync(EnabledWalletNetworksResponse)([
       { id: "ethereum" },
       { id: "plume" },
       { id: "robinhood" },
@@ -149,7 +149,7 @@ describe("wallet Effect Atom boundaries", () => {
   });
 
   it("accepts projects without Enabled Wallet Networks", () => {
-    expect(Schema.decodeUnknownSync(EnabledWalletNetworksResponse)([])).toEqual(
+    expect(Schema.decodeSync(EnabledWalletNetworksResponse)([])).toEqual(
       new Set()
     );
   });
@@ -164,7 +164,7 @@ describe("wallet Effect Atom boundaries", () => {
 
   it("decodes valid initialization parameters and ignores invalid fields", () => {
     expect(
-      Schema.decodeUnknownSync(InitParams)({
+      Schema.decodeSync(InitParams)({
         ...emptyInitParams,
         network: "ethereum",
         pendingaction: "UNSTAKE",
@@ -177,13 +177,13 @@ describe("wallet Effect Atom boundaries", () => {
     });
 
     expect(
-      Schema.decodeUnknownSync(InitParams)({
+      Schema.decodeSync(InitParams)({
         ...emptyInitParams,
         network: "ethereum-holesky",
       })
     ).toMatchObject({ network: null });
     expect(
-      Schema.decodeUnknownSync(InitParams)({
+      Schema.decodeSync(InitParams)({
         ...emptyInitParams,
         pendingaction: "unstake",
       })
@@ -193,11 +193,11 @@ describe("wallet Effect Atom boundaries", () => {
   it("validates wallet-provided additional address data with Schema", () => {
     const cosmosPubKey = "A".repeat(44);
 
-    expect(
-      Schema.decodeUnknownSync(AdditionalAddresses)({ cosmosPubKey })
-    ).toEqual({ cosmosPubKey });
+    expect(Schema.decodeSync(AdditionalAddresses)({ cosmosPubKey })).toEqual({
+      cosmosPubKey,
+    });
     expect(() =>
-      Schema.decodeUnknownSync(AdditionalAddresses)({ cosmosPubKey: "short" })
+      Schema.decodeSync(AdditionalAddresses)({ cosmosPubKey: "short" })
     ).toThrow();
   });
 
@@ -379,6 +379,8 @@ describe("wallet Effect Atom boundaries", () => {
   it.effect("keeps wallet configuration construction failures fatal", () =>
     Effect.gen(function* () {
       const cause = new Error("connector construction failed");
+      const queryParams =
+        yield* Schema.decodeEffect(InitParams)(emptyInitParams);
       const exit = yield* Effect.exit(
         Effect.scoped(
           Effect.gen(function* () {
@@ -399,7 +401,7 @@ describe("wallet Effect Atom boundaries", () => {
                 mapWalletFn: undefined,
                 walletPolicy: undefined,
                 persistPublicKey: () => Effect.void,
-                queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
+                queryParams,
                 solanaConnection: {} as SolanaConnection,
                 solanaWallets: [],
                 tonConnectManifestUrl: undefined,
@@ -428,6 +430,8 @@ describe("wallet Effect Atom boundaries", () => {
         const walletListFactory = vi.fn(() => {
           throw new Error("must not build connectors without Wallet Networks");
         });
+        const queryParams =
+          yield* Schema.decodeEffect(InitParams)(emptyInitParams);
         const controller = yield* Effect.scoped(
           Effect.gen(function* () {
             const buildActions = yield* makeWagmiActions;
@@ -445,7 +449,7 @@ describe("wallet Effect Atom boundaries", () => {
                 mapWalletFn: undefined,
                 walletPolicy: undefined,
                 persistPublicKey: () => Effect.void,
-                queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
+                queryParams,
                 solanaConnection: {} as SolanaConnection,
                 solanaWallets: [],
                 tonConnectManifestUrl: undefined,

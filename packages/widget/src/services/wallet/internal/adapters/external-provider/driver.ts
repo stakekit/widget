@@ -148,12 +148,10 @@ export const makeExternalProviderWalletDriver = ({
   > =>
     Effect.gen(function* () {
       if (!isExternalProviderConnector(connector)) {
-        return yield* Effect.fail(
-          new WalletCapabilityUnavailableError({
-            capability: "message",
-            connectorId: connector.id,
-          })
-        );
+        return yield* new WalletCapabilityUnavailableError({
+          capability: "message",
+          connectorId: connector.id,
+        });
       }
 
       return yield* connector
@@ -172,12 +170,10 @@ export const makeExternalProviderWalletDriver = ({
   > =>
     Effect.gen(function* () {
       if (!isExternalProviderConnector(connector)) {
-        return yield* Effect.fail(
-          new WalletCapabilityUnavailableError({
-            capability: "transaction",
-            connectorId: connector.id,
-          })
-        );
+        return yield* new WalletCapabilityUnavailableError({
+          capability: "transaction",
+          connectorId: connector.id,
+        });
       }
 
       const decodedTx = yield* decodeExternalProviderTransaction({

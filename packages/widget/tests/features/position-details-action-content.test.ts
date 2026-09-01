@@ -10,7 +10,7 @@ import {
 import { positionDetailsPageShouldShowActionsPane } from "../../src/features/position-details/ui/dashboard";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 
-const balance = Schema.decodeUnknownSync(EarnBalance)(
+const balance = Schema.decodeSync(EarnBalance)(
   yieldBalanceFixture({ amount: "2", amountUsd: "5" })
 );
 

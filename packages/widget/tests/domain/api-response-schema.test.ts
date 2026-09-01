@@ -28,8 +28,8 @@ const Items = TolerantTopLevelArray(Item, {
 
 const Envelope = Schema.Struct({
   items: Items,
-  total: Schema.Number,
-  offset: Schema.Number,
+  total: Schema.Finite,
+  offset: Schema.Finite,
 });
 
 const validItem = (id: string, amount = "1.25") => ({
@@ -55,9 +55,7 @@ const captureDiagnostics = <A, E>(effect: Effect.Effect<A, E>) => {
 describe("API response schemas", () => {
   it.effect("strictly decodes a valid single domain model", () =>
     Effect.gen(function* () {
-      const result = yield* Schema.decodeUnknownEffect(Item)(
-        validItem("item-1")
-      );
+      const result = yield* Schema.decodeEffect(Item)(validItem("item-1"));
 
       expect(result.id).toBe("item-1");
       expect(BigNumber.isBigNumber(result.amount)).toBe(true);
@@ -101,7 +99,7 @@ describe("API response schemas", () => {
     () =>
       Effect.gen(function* () {
         const decoded = captureDiagnostics(
-          Schema.decodeUnknownEffect(Envelope)({
+          Schema.decodeEffect(Envelope)({
             items: [
               validItem("item-1"),
               {
@@ -151,7 +149,7 @@ describe("API response schemas", () => {
     "returns an empty collection when every top-level item is rejected",
     () =>
       Effect.gen(function* () {
-        const result = yield* Schema.decodeUnknownEffect(Items)([
+        const result = yield* Schema.decodeEffect(Items)([
           validItem("item-1", "NaN"),
           { id: "item-2", amount: "2", nested: { enabled: "yes" } },
         ]);
@@ -170,7 +168,7 @@ describe("API response schemas", () => {
         identifier: ItemIdentifier,
       });
       const decoded = captureDiagnostics(
-        Schema.decodeUnknownEffect(RecordResponse)({
+        Schema.decodeEffect(RecordResponse)({
           "item-a": validItem("item-a"),
           invalid: validItem("item-invalid-key"),
           "item-b": validItem("item-b", "NaN"),

@@ -1,5 +1,5 @@
 import type BigNumber from "bignumber.js";
-import { Array as EArray, pipe, Result } from "effect";
+import { Array as EArray, Result } from "effect";
 import { exactZero, sumExact } from "../../finance/exact";
 import type { Integration } from "../catalog/integration";
 import type { Market } from "../catalog/market";
@@ -63,12 +63,10 @@ const sumSupplyUsd = (balances: ReadonlyArray<SupplyBalance>) =>
 
 const sumCollateralUsd = (balances: ReadonlyArray<SupplyBalance>) =>
   sumExact(
-    pipe(
-      EArray.filterMap(balances, (balance) =>
-        balance.isCollateral
-          ? Result.succeed(balance.balanceUsd)
-          : Result.failVoid
-      )
+    EArray.filterMap(balances, (balance) =>
+      balance.isCollateral
+        ? Result.succeed(balance.balanceUsd)
+        : Result.failVoid
     )
   );
 

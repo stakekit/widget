@@ -4,6 +4,7 @@ import {
   deriveMarketPositionOverview,
   type MarketPosition,
 } from "../../../../../domain/borrow/positions/market-position";
+import type { BorrowResourceError } from "../../../../../resources/borrow-resource-error";
 import { borrowTokenToAppToken } from "../../../../../shared/lib/borrow-token";
 import {
   formatBorrowProviderName,
@@ -15,7 +16,7 @@ import { formatNumber } from "../../../../../shared/lib/number-format";
 type UnifiedManagePositionsStateInput = {
   readonly borrowPositionsResult: AsyncResult.AsyncResult<
     ReadonlyArray<MarketPosition>,
-    unknown
+    BorrowResourceError
   >;
   readonly borrowWalletIsConnected: boolean;
   readonly earnIsError: boolean;

@@ -64,7 +64,7 @@ const makeMarket = ({
   readonly isBorrowEnabled?: boolean;
   readonly loanToken: typeof usdc | typeof usdt;
 }) =>
-  Schema.decodeUnknownSync(Market)({
+  Schema.decodeSync(Market)({
     id,
     integrationId,
     network: "ethereum",

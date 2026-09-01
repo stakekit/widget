@@ -5,8 +5,12 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { exactDecimal } from "../../src/domain/finance/exact";
 import { resolveYieldSummaryView } from "../../src/features/yield-summary/model/yield-summary";
 import { makeYieldSummary } from "../../src/features/yield-summary/state/yield-summary";
+import { YieldDirectoryError } from "../../src/resources/yield-directory/index";
 import type { YieldDirectoryRequest } from "../../src/services/api/resource-sources";
-import { YieldResourceSource } from "../../src/services/api/resource-sources";
+import {
+  ApiRequestError,
+  YieldResourceSource,
+} from "../../src/services/api/resource-sources";
 import {
   yieldApiProviderFixture,
   yieldApiValidatorFixture,
@@ -58,7 +62,12 @@ describe("Yield Summary", () => {
   });
 
   it("normalizes an unavailable provider-yield resource", () => {
-    const failure = new Error("provider yields unavailable");
+    const failure = new YieldDirectoryError({
+      cause: new ApiRequestError({
+        cause: new Error("provider yields unavailable"),
+        operation: "yield-directory",
+      }),
+    });
     const view = resolveYieldSummaryView({
       input: {
         selectedProviderYieldId: null,
@@ -99,7 +108,12 @@ describe("Yield Summary", () => {
       status: "refreshing",
     });
 
-    const failure = new Error("refresh failed");
+    const failure = new YieldDirectoryError({
+      cause: new ApiRequestError({
+        cause: new Error("refresh failed"),
+        operation: "yield-directory",
+      }),
+    });
     expect(
       resolveYieldSummaryView({
         input,
@@ -144,7 +158,7 @@ describe("Yield Summary", () => {
       },
     });
     const source = YieldResourceSource.of({
-      getProvider: () => Effect.succeed(Option.some(yieldApiProviderFixture())),
+      getProvider: () => Effect.succeedSome(yieldApiProviderFixture()),
       listYields: (request: YieldDirectoryRequest) =>
         Effect.succeed({
           items: [providerYield],

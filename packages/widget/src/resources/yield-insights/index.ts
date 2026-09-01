@@ -1,5 +1,6 @@
 export {
   YieldHistoryResourceKey,
+  YieldInsightError,
   YieldKycStatusKey,
   yieldKycStatusResourceAtom,
   yieldRewardRateHistoryResourceAtom,

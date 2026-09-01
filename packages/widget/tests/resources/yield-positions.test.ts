@@ -36,7 +36,7 @@ const makeScope = () =>
 const makePosition = (amount = "2") => {
   const yieldDto = yieldApiYieldFixture();
 
-  return Schema.decodeUnknownSync(EarnPosition)({
+  return Schema.decodeSync(EarnPosition)({
     balances: [
       yieldBalanceFixture({
         amount,
@@ -60,11 +60,7 @@ const makeRegistry = (source: YieldResourceSource["Service"]) =>
     ],
   });
 
-const reactivityAtom = appRuntime.atom(
-  Effect.gen(function* () {
-    return yield* Reactivity.Reactivity;
-  })
-);
+const reactivityAtom = appRuntime.atom(Reactivity.Reactivity);
 
 describe("Yield Positions resource", () => {
   it("shares one acquisition for equivalent Wallet Scope requests", () => {

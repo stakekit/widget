@@ -22,7 +22,7 @@ const connector = {
 } as unknown as Connector;
 
 const connected = (
-  address: typeof WalletAddress.Type = firstAddress
+  address: WalletAddress = firstAddress
 ): Extract<NormalizedWalletState, { readonly status: "connected" }> => ({
   additionalAddresses: null,
   address,
@@ -121,7 +121,7 @@ describe("Wallet lifecycle policy", () => {
   it.effect("tracks Stellar wallet connections with address and network", () =>
     Effect.gen(function* () {
       const trackEvent = vi.fn(() => Effect.void);
-      const stellarAddress = Schema.decodeSync(WalletAddress)(
+      const stellarAddress = yield* Schema.decodeEffect(WalletAddress)(
         `G${"A".repeat(55)}`
       );
       const stellarConnector = {

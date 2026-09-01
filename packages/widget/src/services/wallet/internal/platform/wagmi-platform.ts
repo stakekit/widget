@@ -14,6 +14,7 @@ import {
   watchConnection,
   watchConnectors,
 } from "wagmi/actions";
+import type { WidgetPersistence } from "../../../persistence/widget-persistence";
 import type { WalletCoreState } from "../../wallet-state";
 import { makeInitializeWallet } from "../runtime/initial-connection";
 import { makeWagmiActions } from "../runtime/wagmi-actions";
@@ -42,9 +43,7 @@ type WagmiBuildConfigOptions = Omit<
   BuildWagmiConfigOptions,
   "persistPublicKey"
 > & {
-  readonly persistPublicKey: (
-    input: Parameters<BuildWagmiConfigOptions["persistPublicKey"]>[0]
-  ) => Effect.Effect<void, unknown>;
+  readonly persistPublicKey: WidgetPersistence["Service"]["upsertStoredPublicKey"];
 };
 
 export type WagmiPlatformService = {

@@ -19,7 +19,7 @@ const address = Schema.decodeSync(WalletAddress)(
 const loanTokenAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 const collateralTokenAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 
-const integration = Schema.decodeUnknownSync(Integration)({
+const integration = Schema.decodeSync(Integration)({
   actions: [],
   id: "aave-borrow",
   metadata: {
@@ -32,7 +32,7 @@ const integration = Schema.decodeUnknownSync(Integration)({
   providerId: "aave",
 });
 
-const market = Schema.decodeUnknownSync(Market)({
+const market = Schema.decodeSync(Market)({
   availableLiquidity: "500000",
   availableLiquidityRaw: "500000000000",
   borrowRate: "0.06",
@@ -76,7 +76,7 @@ const market = Schema.decodeUnknownSync(Market)({
   utilizationRate: "0.5",
 });
 
-const accountSnapshot = Schema.decodeUnknownSync(BorrowAccountSnapshot)({
+const accountSnapshot = Schema.decodeSync(BorrowAccountSnapshot)({
   address,
   availableToBorrowUsd: "450",
   currentLtv: "0.4",
@@ -144,7 +144,7 @@ const positions = deriveBorrowPositions({
   markets: [market],
 });
 
-const tokenBalances = Schema.decodeUnknownSync(TokenBalancesResponse)([
+const tokenBalances = Schema.decodeSync(TokenBalancesResponse)([
   {
     amount: "2",
     availableYields: [],
@@ -269,7 +269,7 @@ describe("Borrow action preparation", () => {
       ],
       markets: [feeMarket],
     });
-    const feeTokenBalances = Schema.decodeUnknownSync(TokenBalancesResponse)([
+    const feeTokenBalances = Schema.decodeSync(TokenBalancesResponse)([
       {
         amount: "100",
         availableYields: [],
@@ -547,7 +547,7 @@ describe("Borrow action preparation", () => {
         type: "repay",
       },
       repayAll: false,
-      tokenBalances: Schema.decodeUnknownSync(TokenBalancesResponse)([
+      tokenBalances: Schema.decodeSync(TokenBalancesResponse)([
         {
           amount: "150",
           availableYields: [],
@@ -717,7 +717,7 @@ describe("Borrow action preparation", () => {
       amount: new BigNumber(200),
       context,
       repayAll: false,
-      tokenBalances: Schema.decodeUnknownSync(TokenBalancesResponse)([
+      tokenBalances: Schema.decodeSync(TokenBalancesResponse)([
         {
           amount: "150",
           availableYields: [],

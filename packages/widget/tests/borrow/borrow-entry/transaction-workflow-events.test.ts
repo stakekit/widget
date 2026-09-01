@@ -46,7 +46,7 @@ describe("Borrow Entry transaction-workflow events", () => {
             appRuntime.layer,
             Layer.merge(
               Layer.succeed(BorrowResourceSource, {
-                getIntegrations: () => Effect.succeed([]),
+                getIntegrations: Effect.succeed([]),
                 getMarkets: () =>
                   Effect.succeed({
                     items: [],

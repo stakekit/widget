@@ -49,7 +49,7 @@ export class ValidatorsError extends Data.TaggedError("ValidatorsError")<{
 }> {}
 
 type ValidatorPage = {
-  readonly items: ReadonlyArray<typeof EarnValidator.Type>;
+  readonly items: ReadonlyArray<EarnValidator>;
   readonly limit: number;
   readonly offset: number;
   readonly total: number;
@@ -228,7 +228,7 @@ const validatorByAddressCanonicalAtom = Atom.family(
 
                 return validator
                   ? Effect.succeed(validator)
-                  : Schema.decodeUnknownEffect(EarnValidator)({
+                  : Schema.decodeEffect(EarnValidator)({
                       address: key.address,
                     }).pipe(
                       Effect.mapError(

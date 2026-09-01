@@ -207,12 +207,16 @@ describe("DeepLinkCoordinator", () => {
 
   it.effect("claims case-distinct non-EVM wallet owners separately", () =>
     Effect.gen(function* () {
+      const firstAddress =
+        yield* Schema.decodeEffect(WalletAddress)("CaseSensitiveOwner");
+      const secondAddress =
+        yield* Schema.decodeEffect(WalletAddress)("casesensitiveowner");
       const firstScope = new WalletScopeKey({
-        address: Schema.decodeSync(WalletAddress)("CaseSensitiveOwner"),
+        address: firstAddress,
         network: "solana",
       });
       const secondScope = new WalletScopeKey({
-        address: Schema.decodeSync(WalletAddress)("casesensitiveowner"),
+        address: secondAddress,
         network: "solana",
       });
       const start = vi.fn(startFlow);

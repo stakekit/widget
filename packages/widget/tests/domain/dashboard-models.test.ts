@@ -26,9 +26,9 @@ const token = {
 
 describe("dashboard application schemas", () => {
   it("strictly validates KYC singles", () => {
-    expect(
-      Schema.decodeUnknownSync(KycStatus)({ kycStatus: "approved" })
-    ).toEqual({ kycStatus: "approved" });
+    expect(Schema.decodeSync(KycStatus)({ kycStatus: "approved" })).toEqual({
+      kycStatus: "approved",
+    });
     expect(() =>
       Schema.decodeUnknownSync(KycStatus)({ kycStatus: "unknown" })
     ).toThrow();
@@ -36,16 +36,14 @@ describe("dashboard application schemas", () => {
 
   it.effect("omits malformed reward-rate and TVL points independently", () =>
     Effect.gen(function* () {
-      const rewardRate = yield* Schema.decodeUnknownEffect(
-        RewardRateHistoryResponse
-      )({
+      const rewardRate = yield* Schema.decodeEffect(RewardRateHistoryResponse)({
         ...envelope,
         items: [
           { timestamp: "2026-06-01T00:00:00.000Z", rewardRate: "0.05" },
           { timestamp: "invalid", rewardRate: "0.07" },
         ],
       });
-      const tvl = yield* Schema.decodeUnknownEffect(TvlHistoryResponse)({
+      const tvl = yield* Schema.decodeEffect(TvlHistoryResponse)({
         ...envelope,
         items: [
           {
@@ -84,15 +82,13 @@ describe("dashboard application schemas", () => {
           lastYear: "12",
           total: "20",
         };
-        const decoded = yield* Schema.decodeUnknownEffect(RewardsSummaryRecord)(
-          {
-            "ethereum-eth-native-staking": { rewards, token },
-            "cosmos-atom-native-staking": {
-              rewards,
-              token: { ...token, decimals: "invalid" },
-            },
-          }
-        );
+        const decoded = yield* Schema.decodeEffect(RewardsSummaryRecord)({
+          "ethereum-eth-native-staking": { rewards, token },
+          "cosmos-atom-native-staking": {
+            rewards,
+            token: { ...token, decimals: "invalid" },
+          },
+        });
 
         expect(Object.keys(decoded)).toEqual(["ethereum-eth-native-staking"]);
       })

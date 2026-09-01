@@ -17,12 +17,10 @@ export const makeCosmosWalletDriver = ({
   signTransaction: ({ tx }: { readonly tx: string }) =>
     Effect.gen(function* () {
       if (!isCosmosConnector(connector) || !chainWallet) {
-        return yield* Effect.fail(
-          new WalletCapabilityUnavailableError({
-            capability: "transaction",
-            connectorId: connector.id,
-          })
-        );
+        return yield* new WalletCapabilityUnavailableError({
+          capability: "transaction",
+          connectorId: connector.id,
+        });
       }
 
       const signedTx = yield* connector

@@ -16,7 +16,7 @@ export class WidgetHealthError extends Data.TaggedError("WidgetHealthError")<{
 
 const healthRequestAtom = appRuntime
   .atom(() =>
-    YieldResourceSource.use((source) => source.getHealth()).pipe(
+    YieldResourceSource.use((source) => source.getHealth).pipe(
       Effect.mapError((cause) => new WidgetHealthError({ cause }))
     )
   )

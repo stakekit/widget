@@ -10,7 +10,6 @@ import { createStore, type Store as MipdStore } from "mipd";
 import { createClient } from "viem";
 import { type Connector, createConfig, http } from "wagmi";
 import { type Chain, mainnet } from "wagmi/chains";
-import type { WalletAddress } from "../../../../domain/identity/identifiers";
 import type { Network } from "../../../../domain/network/network";
 import type { EnabledWalletNetworks } from "../../../../domain/wallet/models";
 import {
@@ -23,6 +22,7 @@ import type { SettingsProps } from "../../../../public-api/types";
 import { evmChainGroup } from "../../../../services/wallet/evm-chain-group";
 import type { InitParams } from "../../../../services/wallet/init-params";
 import { config } from "../../../../shared/config/widget-defaults";
+import type { WidgetPersistence } from "../../../persistence/widget-persistence";
 import { omitEnsUniversalResolver } from "../../default-wagmi-config";
 import type { CurrentRef } from "../../external-provider";
 import { WalletIntegrationError } from "../../wallet-errors";
@@ -132,10 +132,7 @@ export type BuildWagmiConfigOptions = {
   solanaWallets: ReadonlyArray<SolanaWalletDescriptor>;
   solanaConnection: Connection;
   walletPolicy?: SettingsProps["walletPolicy"];
-  persistPublicKey: (input: {
-    readonly address: WalletAddress;
-    readonly publicKey: string;
-  }) => Effect.Effect<void, unknown>;
+  persistPublicKey: WidgetPersistence["Service"]["upsertStoredPublicKey"];
   queryParams: InitParams;
   tonConnectManifestUrl: string | undefined;
 };
@@ -246,7 +243,7 @@ export const buildWagmiConfig = (
       runWalletEffect,
     });
     const safeConnector = yield* opts.isSafe
-      ? getSafeConnector()
+      ? getSafeConnector
       : Effect.succeed(null);
     const val = {
       enabledNetworks: opts.enabledNetworks,
@@ -508,12 +505,10 @@ export const buildWagmiConfig = (
         connectorOptions
       )[0];
       if (!connector) {
-        return yield* Effect.fail(
-          new WalletIntegrationError({
-            message: `Solana wallet ${wallet.adapter.name} was filtered`,
-            operation: "create-solana-connector",
-          })
-        );
+        return yield* new WalletIntegrationError({
+          message: `Solana wallet ${wallet.adapter.name} was filtered`,
+          operation: "create-solana-connector",
+        });
       }
       return connector;
     });

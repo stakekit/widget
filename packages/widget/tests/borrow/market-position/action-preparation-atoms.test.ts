@@ -136,28 +136,28 @@ describe("Market Position action preparation atoms", () => {
     () =>
       Effect.gen(function* () {
         const integration =
-          Schema.decodeUnknownSync(Integration)(integrationDto);
-        const market = Schema.decodeUnknownSync(Market)(marketDto);
-        const accountSnapshot = Schema.decodeUnknownSync(BorrowAccountSnapshot)(
-          {
-            ...positionDto,
-            debtBalances: [
-              {
-                ...positionDto.debtBalances[0],
-                pendingActions: [
-                  {
-                    args: {
-                      marketId: market.id,
-                      tokenAddress: market.loanToken.address,
-                    },
-                    label: "Repay",
-                    type: "repay",
+          yield* Schema.decodeEffect(Integration)(integrationDto);
+        const market = yield* Schema.decodeEffect(Market)(marketDto);
+        const accountSnapshot = yield* Schema.decodeUnknownEffect(
+          BorrowAccountSnapshot
+        )({
+          ...positionDto,
+          debtBalances: [
+            {
+              ...positionDto.debtBalances[0],
+              pendingActions: [
+                {
+                  args: {
+                    marketId: market.id,
+                    tokenAddress: market.loanToken.address,
                   },
-                ],
-              },
-            ],
-          }
-        );
+                  label: "Repay",
+                  type: "repay",
+                },
+              ],
+            },
+          ],
+        });
         const position = deriveBorrowPositions({
           integrationAccountSnapshots: [{ accountSnapshot, integration }],
           markets: [market],
@@ -204,13 +204,28 @@ describe("Market Position action preparation atoms", () => {
         });
         const wallet = yield* makeTestWallet({ state: walletState });
         let currentAccountSnapshot = accountSnapshot;
+        const tokenBalances = yield* Schema.decodeEffect(TokenBalancesResponse)(
+          [
+            {
+              amount: "1000",
+              availableYields: [],
+              token: {
+                address: market.loanToken.address,
+                decimals: market.loanToken.decimals,
+                name: market.loanToken.name,
+                network: market.network,
+                symbol: market.loanToken.symbol,
+              },
+            },
+          ]
+        );
         const registry = AtomRegistry.make({
           initialValues: [
             Atom.initialValue(
               appRuntime.layer,
               Layer.merge(
                 Layer.succeed(BorrowResourceSource, {
-                  getIntegrations: () => Effect.succeed([integration]),
+                  getIntegrations: Effect.succeed([integration]),
                   getMarkets: () =>
                     Effect.succeed({
                       items: [market],
@@ -235,21 +250,7 @@ describe("Market Position action preparation atoms", () => {
             }),
             Atom.initialValue(tokenBalancesScanAtom, {
               enabled: true,
-              result: AsyncResult.success(
-                Schema.decodeUnknownSync(TokenBalancesResponse)([
-                  {
-                    amount: "1000",
-                    availableYields: [],
-                    token: {
-                      address: market.loanToken.address,
-                      decimals: market.loanToken.decimals,
-                      name: market.loanToken.name,
-                      network: market.network,
-                      symbol: market.loanToken.symbol,
-                    },
-                  },
-                ])
-              ),
+              result: AsyncResult.success(tokenBalances),
             }),
           ],
         });
@@ -298,10 +299,11 @@ describe("Market Position action preparation atoms", () => {
           type: "amount/set",
         });
 
+        const otherAddress = yield* Schema.decodeEffect(WalletAddress)(
+          "0x0000000000000000000000000000000000000002"
+        );
         const otherWalletScope = new WalletScopeKey({
-          address: Schema.decodeSync(WalletAddress)(
-            "0x0000000000000000000000000000000000000002"
-          ),
+          address: otherAddress,
           network: walletScope.network,
         });
         yield* SubscriptionRef.set(walletState, {
@@ -329,7 +331,7 @@ describe("Market Position action preparation atoms", () => {
           type: "amount/set",
         });
 
-        const refreshedAccountSnapshot = Schema.decodeUnknownSync(
+        const refreshedAccountSnapshot = yield* Schema.decodeUnknownEffect(
           BorrowAccountSnapshot
         )({
           ...positionDto,

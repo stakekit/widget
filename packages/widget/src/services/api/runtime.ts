@@ -1,7 +1,10 @@
 import { Effect, Layer } from "effect";
 import { WidgetConfigService } from "../config/widget-config";
 import { RichErrorService } from "../errors/rich-error-service";
-import { WalletBootstrapSource } from "../wallet/wallet-bootstrap-source";
+import {
+  WalletBootstrapSource,
+  WalletBootstrapSourceReadError,
+} from "../wallet/wallet-bootstrap-source";
 import { makeBorrowOperations } from "./borrow-operations";
 import { makeBorrowResourceSource } from "./borrow-resource-source";
 import { makeLegacyResourceSource } from "./legacy-resource-source";
@@ -71,9 +74,21 @@ const walletBootstrapSourceLayer = Layer.effect(
   Effect.gen(function* () {
     const yieldSource = yield* YieldResourceSource;
 
+    const mapBootstrapReadError = <A, E>(
+      effect: Effect.Effect<A, E>
+    ): Effect.Effect<A, WalletBootstrapSourceReadError> =>
+      effect.pipe(
+        Effect.mapError(
+          (cause) => new WalletBootstrapSourceReadError({ cause })
+        )
+      );
+
     return WalletBootstrapSource.of({
-      getEnabledWalletNetworks: yieldSource.getEnabledWalletNetworks,
-      getOpportunity: yieldSource.getOpportunity,
+      getEnabledWalletNetworks: mapBootstrapReadError(
+        yieldSource.getEnabledWalletNetworks
+      ),
+      getOpportunity: (yieldId) =>
+        mapBootstrapReadError(yieldSource.getOpportunity(yieldId)),
     });
   })
 );

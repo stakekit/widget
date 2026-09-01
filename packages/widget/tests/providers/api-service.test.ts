@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Context, Effect, Layer, Option, Schema } from "effect";
+import { Cause, Context, Effect, Layer, Option, Schema } from "effect";
 import * as HttpClientError from "effect/unstable/http/HttpClientError";
 import { YieldAction } from "../../src/domain/action/models";
 import { BorrowFeatureDisabled } from "../../src/domain/borrow/availability";
@@ -38,13 +38,9 @@ const config = {
   yieldsApiUrl: "https://yield.example.com",
 };
 
-const address = Schema.decodeUnknownSync(WalletAddress)("0xWallet");
-const firstYieldId = Schema.decodeUnknownSync(YieldId)(
-  "ethereum-eth-native-staking"
-);
-const secondYieldId = Schema.decodeUnknownSync(YieldId)(
-  "cosmos-atom-native-staking"
-);
+const address = Schema.decodeSync(WalletAddress)("0xWallet");
+const firstYieldId = Schema.decodeSync(YieldId)("ethereum-eth-native-staking");
+const secondYieldId = Schema.decodeSync(YieldId)("cosmos-atom-native-staking");
 
 describe("application API services", () => {
   it.effect(
@@ -69,14 +65,16 @@ describe("application API services", () => {
         expect(legacySource.getRewardsSummaries).toBeTypeOf("function");
         expect(yieldOperations.previewAction).toBeTypeOf("function");
         expect(yieldSource.getPositions).toBeTypeOf("function");
-        expect(yieldSource.getEnabledWalletNetworks).toBeTypeOf("function");
-        expect(yieldSource.getHealth).toBeTypeOf("function");
+        expect(Effect.isEffect(yieldSource.getEnabledWalletNetworks)).toBe(
+          true
+        );
+        expect(Effect.isEffect(yieldSource.getHealth)).toBe(true);
         expect(yieldSource.getOpportunity).toBeTypeOf("function");
         expect(yieldSource.getProvider).toBeTypeOf("function");
         expect(yieldSource.listYields).toBeTypeOf("function");
-        expect(walletBootstrapSource.getEnabledWalletNetworks).toBe(
-          yieldSource.getEnabledWalletNetworks
-        );
+        expect(
+          Effect.isEffect(walletBootstrapSource.getEnabledWalletNetworks)
+        ).toBe(true);
         expect(borrowOperations.executeAction).toBeTypeOf("function");
         expect(borrowSource.getMarkets).toBeTypeOf("function");
       })
@@ -92,7 +90,7 @@ describe("application API services", () => {
         const operations = Context.get(context, BorrowOperations);
         const source = Context.get(context, BorrowResourceSource);
 
-        expect(yield* Effect.flip(source.getIntegrations())).toBeInstanceOf(
+        expect(yield* Effect.flip(source.getIntegrations)).toBeInstanceOf(
           MissingBorrowApiConfig
         );
         expect(
@@ -197,7 +195,7 @@ describe("application API services", () => {
         HealthControllerHealth: health,
       } as never);
 
-      expect((yield* source.getHealth()).status).toBe("OK");
+      expect((yield* source.getHealth).status).toBe("OK");
       expect(health).toHaveBeenCalledWith(undefined);
     })
   );
@@ -217,7 +215,7 @@ describe("application API services", () => {
           NetworksControllerGetNetworks: enabledNetworks,
         } as never);
 
-        expect(yield* source.getEnabledWalletNetworks()).toEqual(
+        expect(yield* source.getEnabledWalletNetworks).toEqual(
           new Set(["ethereum", "solana"])
         );
         expect(enabledNetworks).toHaveBeenCalledWith(undefined);
@@ -229,7 +227,7 @@ describe("application API services", () => {
     () =>
       Effect.gen(function* () {
         const action = yieldApiActionDtoFixture();
-        const expected = Schema.decodeUnknownSync(YieldAction)(action);
+        const expected = yield* Schema.decodeEffect(YieldAction)(action);
         const enter = vi.fn(() => Effect.succeed(action));
         const operations = makeYieldOperations(
           {
@@ -387,7 +385,7 @@ describe("application API services", () => {
     () =>
       Effect.gen(function* () {
         const action = yieldApiActionDtoFixture();
-        const expected = Schema.decodeUnknownSync(YieldAction)(action);
+        const expected = yield* Schema.decodeEffect(YieldAction)(action);
         const getAction = vi.fn(() => Effect.succeed(action));
         const source = makeYieldResourceSource({
           ActionsControllerGetAction: getAction,
@@ -580,7 +578,8 @@ describe("application API services", () => {
     () =>
       Effect.gen(function* () {
         const transportFailureSource = makeYieldResourceSource({
-          KycControllerGetStatus: () => Effect.fail(new Error("offline")),
+          KycControllerGetStatus: () =>
+            Effect.fail(new Cause.UnknownError("offline")),
         } as never);
         const malformedResponseSource = makeYieldResourceSource({
           KycControllerGetStatus: () =>
@@ -626,7 +625,7 @@ describe("application API services", () => {
                 : { rewards, token: { ...token, decimals: "invalid" } }
             ),
         } as never);
-        const addresses = Schema.decodeUnknownSync(RewardsAddresses)({
+        const addresses = yield* Schema.decodeEffect(RewardsAddresses)({
           address,
         });
 

@@ -45,7 +45,7 @@ const makePosition = ({
     id: yieldId,
     rewardRate: { components: [], rateType: "APY", total: rewardRate },
   });
-  const position = Schema.decodeUnknownSync(EarnPosition)({
+  const position = Schema.decodeSync(EarnPosition)({
     balances: [
       yieldBalanceFixture({
         amount,
@@ -135,8 +135,7 @@ describe("summary atom derivations", () => {
         Atom.initialValue(
           appRuntime.layer,
           Layer.succeed(YieldResourceSource, {
-            getProvider: () =>
-              Effect.succeed(Option.some(yieldApiProviderFixture())),
+            getProvider: () => Effect.succeedSome(yieldApiProviderFixture()),
             listYields: () =>
               Effect.succeed({
                 items: [historicalYield],

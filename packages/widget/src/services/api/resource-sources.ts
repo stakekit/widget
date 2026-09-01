@@ -1,4 +1,4 @@
-import { Context, Data, type Effect, type Option, Schema } from "effect";
+import { Context, Data, Effect, type Option, Schema } from "effect";
 import type { YieldAction } from "../../domain/action/models";
 import type { ActivityActionsPage } from "../../domain/activity/models";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
@@ -85,17 +85,11 @@ export class ApiRequestError extends Schema.TaggedError<ApiRequestError>()(
   {
     operation: Schema.String,
     cause: Schema.Defect(),
-    richError: Schema.NullOr(RichError),
+    richError: Schema.NullOr(RichError).pipe(
+      Schema.withConstructorDefault(Effect.succeed(null))
+    ),
   }
-) {
-  constructor(input: {
-    readonly operation: string;
-    readonly cause: unknown;
-    readonly richError?: RichError | null;
-  }) {
-    super({ ...input, richError: input.richError ?? null });
-  }
-}
+) {}
 
 export class ResponseDecodeError extends Schema.TaggedError<ResponseDecodeError>()(
   "ResponseDecodeError",
@@ -122,7 +116,7 @@ type BorrowReadFailure =
   | MissingBorrowApiConfig;
 
 type BorrowResourceSourceService = {
-  readonly getIntegrations: () => Effect.Effect<
+  readonly getIntegrations: Effect.Effect<
     typeof BorrowIntegrationsResponse.Type,
     BorrowReadFailure
   >;
@@ -171,11 +165,11 @@ type YieldResourceSourceService = {
   readonly getActivityAction: (
     actionId: ActionId
   ) => Effect.Effect<Option.Option<YieldAction>, ApiReadFailure>;
-  readonly getEnabledWalletNetworks: () => Effect.Effect<
+  readonly getEnabledWalletNetworks: Effect.Effect<
     EnabledWalletNetworks,
     ApiReadFailure
   >;
-  readonly getHealth: () => Effect.Effect<HealthStatus, ApiReadFailure>;
+  readonly getHealth: Effect.Effect<HealthStatus, ApiReadFailure>;
   readonly getKycStatus: (request: {
     readonly address: WalletAddress;
     readonly yieldId: YieldId;

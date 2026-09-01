@@ -21,8 +21,8 @@ const token = {
 
 describe("Earn application models", () => {
   it("brands token/provider identifiers without changing case-sensitive addresses", () => {
-    const decodedToken = Schema.decodeUnknownSync(Token)(token);
-    const provider = Schema.decodeUnknownSync(EarnProvider)({
+    const decodedToken = Schema.decodeSync(Token)(token);
+    const provider = Schema.decodeSync(EarnProvider)({
       id: "stakekit",
       name: "StakeKit",
       description: "",
@@ -38,7 +38,7 @@ describe("Earn application models", () => {
   });
 
   it("derives stable validator keys through Schema", () => {
-    const validator = Schema.decodeUnknownSync(EarnValidator)({
+    const validator = Schema.decodeSync(EarnValidator)({
       address: "validator-1",
       subnet: { id: 7, name: "Subnet 7" },
     });
@@ -47,7 +47,7 @@ describe("Earn application models", () => {
   });
 
   it("uses lossless balance amount and raw-unit representations", () => {
-    const balance = Schema.decodeUnknownSync(EarnBalance)({
+    const balance = Schema.decodeSync(EarnBalance)({
       address: "wallet-1",
       type: "active",
       amount: "9007199254740993.000000000000000001",
@@ -68,7 +68,7 @@ describe("Earn application models", () => {
 
   it.effect("safely omits an invalid optional balance timestamp", () =>
     Effect.gen(function* () {
-      const balance = yield* Schema.decodeUnknownEffect(EarnBalance)({
+      const balance = yield* Schema.decodeEffect(EarnBalance)({
         address: "wallet-1",
         type: "active",
         amount: "1",
@@ -85,7 +85,7 @@ describe("Earn application models", () => {
 
   it("decodes complete yield and position models with branded yield IDs", () => {
     const yieldModel = yieldApiYieldFixture({ prime: false });
-    const position = Schema.decodeUnknownSync(EarnPosition)({
+    const position = Schema.decodeSync(EarnPosition)({
       yieldId: yieldModel.id,
       balances: [
         {

@@ -5,7 +5,7 @@ import {
 } from "@ton/core";
 import { Schema, SchemaTransformation } from "effect";
 
-const BigIntFromNumber = Schema.Number.pipe(
+const BigIntFromNumber = Schema.Finite.pipe(
   Schema.decodeTo(
     Schema.BigInt,
     SchemaTransformation.transform({

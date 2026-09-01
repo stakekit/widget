@@ -319,12 +319,10 @@ const createLedgerLiveConnector = ({
         );
 
         if (!currencyId) {
-          return yield* Effect.fail(
-            new WalletIntegrationError({
-              message: "Chain not found",
-              operation: "ledger-request-account",
-            })
-          );
+          return yield* new WalletIntegrationError({
+            message: "Chain not found",
+            operation: "ledger-request-account",
+          });
         }
 
         const account = yield* Effect.tryPromise({

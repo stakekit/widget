@@ -104,7 +104,7 @@ const makeRegistry = ({
 
 describe("Earn Selection", () => {
   it("waits for the first balance attempt before choosing the initial token", async () => {
-    const balanceResult = Schema.decodeUnknownSync(TokenBalancesResponse)([
+    const balanceResult = Schema.decodeSync(TokenBalancesResponse)([
       {
         amount: "5",
         availableYields: [secondYield.id],
@@ -173,7 +173,7 @@ describe("Earn Selection", () => {
     const { registry } = makeRegistry({
       scanTokenBalances: () =>
         Effect.succeed(
-          Schema.decodeUnknownSync(TokenBalancesResponse)([
+          Schema.decodeSync(TokenBalancesResponse)([
             {
               amount: "2",
               availableYields: [firstYield.id],
@@ -232,7 +232,7 @@ describe("Earn Selection", () => {
       },
       scanTokenBalances: () =>
         Effect.succeed(
-          Schema.decodeUnknownSync(TokenBalancesResponse)([
+          Schema.decodeSync(TokenBalancesResponse)([
             {
               amount: "2",
               availableYields: [firstYield.id],
@@ -286,7 +286,7 @@ describe("Earn Selection", () => {
       },
       scanTokenBalances: () =>
         Effect.succeed(
-          Schema.decodeUnknownSync(TokenBalancesResponse)([
+          Schema.decodeSync(TokenBalancesResponse)([
             {
               amount: "2",
               availableYields: [firstYield.id],
@@ -359,7 +359,7 @@ describe("Earn Selection", () => {
         ),
       scanTokenBalances: () =>
         Effect.succeed(
-          Schema.decodeUnknownSync(TokenBalancesResponse)([
+          Schema.decodeSync(TokenBalancesResponse)([
             {
               amount: "1",
               availableYields: [firstYield.id, seededYield.id],
@@ -418,7 +418,7 @@ describe("Earn Selection", () => {
         ),
       scanTokenBalances: () =>
         Effect.succeed(
-          Schema.decodeUnknownSync(TokenBalancesResponse)([
+          Schema.decodeSync(TokenBalancesResponse)([
             {
               amount: "1",
               availableYields: [firstYield.id, seededYield.id],
@@ -489,7 +489,7 @@ describe("Earn Selection", () => {
         }),
       scanTokenBalances: () =>
         Effect.succeed(
-          Schema.decodeUnknownSync(TokenBalancesResponse)([
+          Schema.decodeSync(TokenBalancesResponse)([
             {
               amount: "10",
               availableYields: [forceMaxYield.id],

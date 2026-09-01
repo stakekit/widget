@@ -1,4 +1,4 @@
-import { Effect, Option, Schema, SchemaGetter } from "effect";
+import { Effect, Schema, SchemaGetter } from "effect";
 import { YieldId } from "../../domain/identity/identifiers";
 import { Network } from "../../domain/network/network";
 import {
@@ -8,7 +8,7 @@ import {
 
 const invalidAsNull = <S extends Schema.Constraint>(schema: S) =>
   Schema.NullOr(schema).pipe(
-    Schema.catchDecoding(() => Effect.succeed(Option.some(null)))
+    Schema.catchDecoding(() => Effect.succeedSome(null))
   );
 
 const SafeQueryParam = Schema.String.check(

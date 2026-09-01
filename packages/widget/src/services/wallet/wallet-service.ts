@@ -166,9 +166,7 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
 export class WalletService extends Context.Service<WalletService>()(
   "stakekit/widget/WalletService",
   {
-    make: Effect.gen(function* () {
-      return yield* makeWalletService();
-    }),
+    make: makeWalletService(),
   }
 ) {
   static readonly layer = Layer.effect(WalletService, WalletService.make);

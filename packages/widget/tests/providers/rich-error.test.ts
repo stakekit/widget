@@ -5,7 +5,7 @@ import { RichError } from "../../src/services/errors/rich-error";
 describe("RichError", () => {
   it("trims the message and reason while preserving interpolation details", () => {
     expect(
-      Schema.decodeUnknownSync(RichError)({
+      Schema.decodeSync(RichError)({
         message: "  KaminoLendingInsufficientSolForRentError  ",
         details: {
           amount: "0.01 SOL",
@@ -37,7 +37,7 @@ describe("RichError", () => {
     "decodes a blank reason as an empty string",
     (reason) => {
       expect(
-        Schema.decodeUnknownSync(RichError)({
+        Schema.decodeSync(RichError)({
           message: "KaminoLendingInsufficientSolForRentError",
           details: { reason },
         })
@@ -50,7 +50,7 @@ describe("RichError", () => {
 
   it("rejects geolocation errors", () => {
     expect(
-      Schema.decodeUnknownOption(RichError)({
+      Schema.decodeOption(RichError)({
         message: "Access denied",
         type: "GEO_LOCATION",
       }).pipe(Option.isNone)

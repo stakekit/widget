@@ -60,7 +60,7 @@ const makeSession = (epoch: number): BorrowFlowSession => ({
   walletScope,
 });
 
-const transaction = Schema.decodeUnknownSync(Transaction)({
+const transaction = Schema.decodeSync(Transaction)({
   address,
   chainId: "8453",
   id: "transaction-1",
@@ -71,7 +71,7 @@ const transaction = Schema.decodeUnknownSync(Transaction)({
   type: "BORROW",
 });
 
-const action = Schema.decodeUnknownSync(Action)({
+const action = Schema.decodeSync(Action)({
   action: "borrow",
   address,
   createdAt: "2026-01-01T00:00:00.000Z",

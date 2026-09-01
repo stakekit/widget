@@ -42,8 +42,10 @@ export const makeBorrowFlowReviewScopeAtom = <E>(
               .pipe(Effect.flatMap((review) => review.confirm())),
           { concurrent: false, initialValue: undefined }
         )
-        .pipe(Atom.map(normalizeBorrowReviewConfirmationResult))
-        .pipe(Atom.withLabel("confirmBorrowFlowReview"));
+        .pipe(
+          Atom.map(normalizeBorrowReviewConfirmationResult),
+          Atom.withLabel("confirmBorrowFlowReview")
+        );
       const backAtom = walletRuntime
         .fn(
           (_input: undefined, context) =>

@@ -138,7 +138,7 @@ describe("Borrow Entry atoms", () => {
         symbol: "ETH",
       },
     };
-    const market = Schema.decodeUnknownSync(Market)({
+    const market = Schema.decodeSync(Market)({
       ...marketDto,
       collateralTokens: [marketDto.collateralTokens[0], nativeCollateral],
     });
@@ -164,7 +164,7 @@ describe("Borrow Entry atoms", () => {
         scope: walletScope,
       }),
       marketsResult: AsyncResult.success([market]),
-      tokenBalances: Schema.decodeUnknownSync(TokenBalancesResponse)([
+      tokenBalances: Schema.decodeSync(TokenBalancesResponse)([
         {
           amount: "3",
           availableYields: [],
@@ -200,8 +200,8 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("reduces form intent and prepares borrow review state in the atom view", () => {
-    const market = Schema.decodeUnknownSync(Market)(marketDto);
-    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const market = Schema.decodeSync(Market)(marketDto);
+    const integration = Schema.decodeSync(Integration)(integrationDto);
     const selectedIntent = applyBorrowFormAction({
       action: {
         marketId: market.id,
@@ -237,7 +237,7 @@ describe("Borrow Entry atoms", () => {
         scope: walletScope,
       }),
       marketsResult: AsyncResult.success([market]),
-      tokenBalances: Schema.decodeUnknownSync(TokenBalancesResponse)([
+      tokenBalances: Schema.decodeSync(TokenBalancesResponse)([
         {
           amount: "2",
           availableYields: [],
@@ -270,7 +270,7 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("blocks borrow review when authoritative positions are unavailable", () => {
-    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const market = Schema.decodeSync(Market)(marketDto);
     const view = resolveBorrowEntryView({
       integrationsResult: AsyncResult.success([]),
       intent: {
@@ -292,7 +292,7 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("blocks collateral review when wallet balances are unavailable", () => {
-    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const market = Schema.decodeSync(Market)(marketDto);
     const view = resolveBorrowEntryView({
       integrationsResult: AsyncResult.success([]),
       intent: {
@@ -314,7 +314,7 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("keeps retained markets visible but blocks review after refresh failure", () => {
-    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const market = Schema.decodeSync(Market)(marketDto);
     const previousMarkets = AsyncResult.success([market]);
     const view = resolveBorrowEntryView({
       integrationsResult: AsyncResult.success([]),
@@ -330,7 +330,7 @@ describe("Borrow Entry atoms", () => {
       marketsResult: AsyncResult.failure(Cause.fail(undefined as never), {
         previousSuccess: Option.some(previousMarkets),
       }),
-      tokenBalances: Schema.decodeUnknownSync(TokenBalancesResponse)([
+      tokenBalances: Schema.decodeSync(TokenBalancesResponse)([
         {
           amount: "2",
           availableYields: [],
@@ -351,12 +351,12 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("defaults the form to the first market where borrowing is enabled", () => {
-    const disabledMarket = Schema.decodeUnknownSync(Market)({
+    const disabledMarket = Schema.decodeSync(Market)({
       ...marketDto,
       id: "disabled-market",
       isBorrowEnabled: false,
     });
-    const enabledMarket = Schema.decodeUnknownSync(Market)({
+    const enabledMarket = Schema.decodeSync(Market)({
       ...marketDto,
       id: "enabled-market",
     });
@@ -390,7 +390,7 @@ describe("Borrow Entry atoms", () => {
   ])(
     "warns on the projected debt floor for minLoan=$minLoan and borrowAmount=$borrowAmount",
     ({ borrowAmount, expectedWarning, minLoan }) => {
-      const market = Schema.decodeUnknownSync(Market)({
+      const market = Schema.decodeSync(Market)({
         ...marketDto,
         minLoan,
       });
@@ -409,7 +409,7 @@ describe("Borrow Entry atoms", () => {
           scope: walletScope,
         }),
         marketsResult: AsyncResult.success([market]),
-        tokenBalances: Schema.decodeUnknownSync(TokenBalancesResponse)([
+        tokenBalances: Schema.decodeSync(TokenBalancesResponse)([
           {
             amount: "2",
             availableYields: [],
@@ -431,19 +431,19 @@ describe("Borrow Entry atoms", () => {
   );
 
   it("resets persisted form intent when a successful refresh removes the selected market", () => {
-    const selectedMarket = Schema.decodeUnknownSync(Market)(marketDto);
-    const replacementMarket = Schema.decodeUnknownSync(Market)({
+    const selectedMarket = Schema.decodeSync(Market)(marketDto);
+    const replacementMarket = Schema.decodeSync(Market)({
       ...marketDto,
       id: "replacement-market",
     });
-    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const integration = Schema.decodeSync(Integration)(integrationDto);
     let catalog = [selectedMarket];
     const registry = AtomRegistry.make({
       initialValues: [
         Atom.initialValue(
           appRuntime.layer,
           Layer.succeed(BorrowResourceSource, {
-            getIntegrations: () => Effect.succeed([integration]),
+            getIntegrations: Effect.succeed([integration]),
             getMarkets: () =>
               Effect.succeed({
                 items: catalog,
@@ -501,7 +501,7 @@ describe("Borrow Entry atoms", () => {
         Atom.initialValue(
           appRuntime.layer,
           Layer.succeed(BorrowResourceSource, {
-            getIntegrations: () => Effect.succeed([]),
+            getIntegrations: Effect.succeed([]),
             getMarkets: () =>
               Effect.succeed({
                 items: [],
@@ -552,9 +552,9 @@ describe("Borrow Entry atoms", () => {
     "preserves form intent when Wallet Scope enrichment keeps the same owner",
     () =>
       Effect.gen(function* () {
-        const selectedMarket = Schema.decodeUnknownSync(Market)(marketDto);
+        const selectedMarket = yield* Schema.decodeEffect(Market)(marketDto);
         const integration =
-          Schema.decodeUnknownSync(Integration)(integrationDto);
+          yield* Schema.decodeEffect(Integration)(integrationDto);
         const connection = (
           scope: WalletScopeKey
         ): Extract<
@@ -584,7 +584,7 @@ describe("Borrow Entry atoms", () => {
             Atom.initialValue(
               appRuntime.layer,
               Layer.succeed(BorrowResourceSource, {
-                getIntegrations: () => Effect.succeed([integration]),
+                getIntegrations: Effect.succeed([integration]),
                 getMarkets: () =>
                   Effect.succeed({
                     items: [selectedMarket],
@@ -626,9 +626,12 @@ describe("Borrow Entry atoms", () => {
           type: "collateralAmount/set",
         });
 
+        const enrichedAddress = yield* Schema.decodeEffect(WalletAddress)(
+          address.toUpperCase()
+        );
         const enrichedScope = new WalletScopeKey({
           additionalAddresses: { cosmosPubKey: "cosmos-public-key" },
-          address: Schema.decodeSync(WalletAddress)(address.toUpperCase()),
+          address: enrichedAddress,
           network: walletScope.network,
         });
         yield* SubscriptionRef.set(walletState, {
@@ -648,10 +651,11 @@ describe("Borrow Entry atoms", () => {
           registry.get(currentBorrowEntryAtom)?.collateralAmount.toString(10)
         ).toBe("1");
 
+        const otherAddress = yield* Schema.decodeEffect(WalletAddress)(
+          "0x0000000000000000000000000000000000000002"
+        );
         const otherScope = new WalletScopeKey({
-          address: Schema.decodeSync(WalletAddress)(
-            "0x0000000000000000000000000000000000000002"
-          ),
+          address: otherAddress,
           network: walletScope.network,
         });
         yield* SubscriptionRef.set(walletState, {
@@ -709,8 +713,8 @@ describe("Borrow Entry atoms", () => {
   );
 
   it("uses stable catalog identities when deciding whether to reset the form", () => {
-    const selectedMarket = Schema.decodeUnknownSync(Market)(marketDto);
-    const otherMarket = Schema.decodeUnknownSync(Market)({
+    const selectedMarket = Schema.decodeSync(Market)(marketDto);
+    const otherMarket = Schema.decodeSync(Market)({
       ...marketDto,
       id: "other-market",
     });
@@ -726,10 +730,7 @@ describe("Borrow Entry atoms", () => {
     expect(
       shouldResetBorrowFormForCatalog({
         intent,
-        markets: [
-          otherMarket,
-          Schema.decodeUnknownSync(Market)({ ...marketDto }),
-        ],
+        markets: [otherMarket, Schema.decodeSync(Market)({ ...marketDto })],
       })
     ).toBe(false);
     expect(
@@ -742,7 +743,7 @@ describe("Borrow Entry atoms", () => {
       shouldResetBorrowFormForCatalog({
         intent,
         markets: [
-          Schema.decodeUnknownSync(Market)({
+          Schema.decodeSync(Market)({
             ...marketDto,
             isBorrowEnabled: false,
           }),
@@ -753,7 +754,7 @@ describe("Borrow Entry atoms", () => {
       shouldResetBorrowFormForCatalog({
         intent,
         markets: [
-          Schema.decodeUnknownSync(Market)({
+          Schema.decodeSync(Market)({
             ...marketDto,
             collateralTokens: [],
           }),
@@ -763,13 +764,13 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("projects borrow form risk from existing selected-market positions", () => {
-    const market = Schema.decodeUnknownSync(Market)(marketDto);
-    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const market = Schema.decodeSync(Market)(marketDto);
+    const integration = Schema.decodeSync(Integration)(integrationDto);
     const positions = deriveBorrowPositions({
       integrationAccountSnapshots: [
         {
           integration,
-          accountSnapshot: Schema.decodeUnknownSync(BorrowAccountSnapshot)({
+          accountSnapshot: Schema.decodeSync(BorrowAccountSnapshot)({
             ...positionDto,
             supplyBalances: [
               {
@@ -825,8 +826,8 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("projects a new pool market against same-integration account risk", () => {
-    const existingMarket = Schema.decodeUnknownSync(Market)(marketDto);
-    const selectedMarket = Schema.decodeUnknownSync(Market)({
+    const existingMarket = Schema.decodeSync(Market)(marketDto);
+    const selectedMarket = Schema.decodeSync(Market)({
       ...marketDto,
       id: "aave-v3-ethereum-dai",
       loanToken: {
@@ -836,12 +837,12 @@ describe("Borrow Entry atoms", () => {
         symbol: "DAI",
       },
     });
-    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const integration = Schema.decodeSync(Integration)(integrationDto);
     const positions = deriveBorrowPositions({
       integrationAccountSnapshots: [
         {
           integration,
-          accountSnapshot: Schema.decodeUnknownSync(BorrowAccountSnapshot)({
+          accountSnapshot: Schema.decodeSync(BorrowAccountSnapshot)({
             ...positionDto,
             supplyBalances: [
               {
@@ -912,16 +913,16 @@ describe("Borrow Entry atoms", () => {
         symbol: "WBTC",
       },
     };
-    const market = Schema.decodeUnknownSync(Market)({
+    const market = Schema.decodeSync(Market)({
       ...marketDto,
       collateralTokens: [defaultToken, strictToken],
     });
-    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const integration = Schema.decodeSync(Integration)(integrationDto);
     const positions = deriveBorrowPositions({
       integrationAccountSnapshots: [
         {
           integration,
-          accountSnapshot: Schema.decodeUnknownSync(BorrowAccountSnapshot)({
+          accountSnapshot: Schema.decodeSync(BorrowAccountSnapshot)({
             ...positionDto,
             debtBalances: [
               {
@@ -983,7 +984,7 @@ describe("Borrow Entry atoms", () => {
   });
 
   it("allows review without presenting unavailable projected risk", () => {
-    const market = Schema.decodeUnknownSync(Market)({
+    const market = Schema.decodeSync(Market)({
       ...marketDto,
       collateralTokens: [
         {
@@ -1007,7 +1008,7 @@ describe("Borrow Entry atoms", () => {
         scope: walletScope,
       }),
       marketsResult: AsyncResult.success([market]),
-      tokenBalances: Schema.decodeUnknownSync(TokenBalancesResponse)([
+      tokenBalances: Schema.decodeSync(TokenBalancesResponse)([
         {
           amount: "2",
           availableYields: [],

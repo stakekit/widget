@@ -27,7 +27,7 @@ const SignedTransactionResult = Schema.Struct({
   signerAddress: Schema.optionalKey(Schema.String),
 });
 const WalletConnectSession = Schema.Struct({
-  expiry: Schema.Number,
+  expiry: Schema.Finite,
   namespaces: Schema.Struct({
     stellar: Schema.Struct({
       accounts: Schema.Array(Schema.String),
@@ -370,7 +370,7 @@ const load = Effect.gen(function* () {
     yield* initializeKit;
   const installed = yield* Effect.all(
     directModules.map(({ module }) =>
-      moduleAvailability(module).pipe(Effect.catch(() => Effect.succeed(false)))
+      moduleAvailability(module).pipe(Effect.orElseSucceed(() => false))
     ),
     { concurrency: "unbounded" }
   );

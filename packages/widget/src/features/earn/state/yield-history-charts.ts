@@ -6,6 +6,7 @@ import type {
   HistoryPeriod,
   HistoryPoint,
 } from "../../../domain/portfolio/models";
+import type { YieldInsightError } from "../../../resources/yield-insights/index";
 import {
   YieldHistoryKey,
   yieldRewardRateHistoryAtom,
@@ -41,7 +42,7 @@ const makeHistoryChart = <Item>({
 }: {
   readonly historyAtom: (
     key: YieldHistoryKey
-  ) => Atom.Atom<AsyncResult.AsyncResult<HistoryPage<Item>, unknown>>;
+  ) => Atom.Atom<AsyncResult.AsyncResult<HistoryPage<Item>, YieldInsightError>>;
   readonly label: string;
   readonly toPoint: (item: Item) => HistoryPoint;
 }) => {

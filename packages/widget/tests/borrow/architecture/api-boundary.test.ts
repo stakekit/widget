@@ -161,7 +161,7 @@ describe("Borrow API boundary policies", () => {
   it.effect("omits an invalid complete position entry", () =>
     Effect.gen(function* () {
       const decodedIntegration =
-        Schema.decodeUnknownSync(Integration)(integration);
+        yield* Schema.decodeEffect(Integration)(integration);
       const result = yield* decode(BorrowIntegrationPositionsResponse, [
         { integration: decodedIntegration, position: accountPosition },
         {
@@ -179,7 +179,7 @@ describe("Borrow API boundary policies", () => {
     () =>
       Effect.gen(function* () {
         const decodedIntegration =
-          Schema.decodeUnknownSync(Integration)(integration);
+          yield* Schema.decodeEffect(Integration)(integration);
         const result = yield* decode(BorrowIntegrationPositionsResponse, [
           {
             integration: decodedIntegration,

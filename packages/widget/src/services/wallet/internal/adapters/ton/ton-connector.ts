@@ -60,12 +60,10 @@ const createTonConnector = (
       signTransaction: (tx: string) =>
         Effect.gen(function* () {
           if (!connectedWallet) {
-            return yield* Effect.fail(
-              new WalletIntegrationError({
-                message: "No wallet connected",
-                operation: "ton-send-transaction",
-              })
-            );
+            return yield* new WalletIntegrationError({
+              message: "No wallet connected",
+              operation: "ton-send-transaction",
+            });
           }
 
           const { message } = yield* Schema.decodeEffect(

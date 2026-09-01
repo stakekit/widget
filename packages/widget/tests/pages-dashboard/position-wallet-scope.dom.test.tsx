@@ -37,7 +37,7 @@ const scopeB = new WalletScopeKey({
   network: "ethereum",
 });
 const yieldDto = yieldApiYieldFixture();
-const position = Schema.decodeUnknownSync(EarnPosition)({
+const position = Schema.decodeSync(EarnPosition)({
   balances: [
     yieldBalanceFixture({
       address: scopeA.address,

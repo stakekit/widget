@@ -36,16 +36,14 @@ export const makeBorrowResourceSource = (
     }
   );
 
-  const getIntegrations = Effect.fn("BorrowResourceSource.getIntegrations")(
-    function* () {
-      const client = yield* requireTransport();
-      return yield* client
-        .IntegrationsControllerGetIntegrationsV1(undefined)
-        .pipe(
-          decodeApiResponse("borrow-integrations", BorrowIntegrationsResponse)
-        );
-    }
-  );
+  const getIntegrations = Effect.gen(function* () {
+    const client = yield* requireTransport();
+    return yield* client
+      .IntegrationsControllerGetIntegrationsV1(undefined)
+      .pipe(
+        decodeApiResponse("borrow-integrations", BorrowIntegrationsResponse)
+      );
+  }).pipe(Effect.withSpan("BorrowResourceSource.getIntegrations"));
 
   const getMarkets = Effect.fn("BorrowResourceSource.getMarkets")(
     function* (request: {

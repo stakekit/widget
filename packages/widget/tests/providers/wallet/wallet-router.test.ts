@@ -158,9 +158,11 @@ describe("wallet router", () => {
         uid: "freighter",
       } as unknown as Connector;
       const walletActions = actions();
+      const decodedAddress =
+        yield* Schema.decodeEffect(WalletAddress)(stellarAddress);
       const state = {
         ...connectedState(connector),
-        address: Schema.decodeSync(WalletAddress)(stellarAddress),
+        address: decodedAddress,
         network: "stellar" as const,
       };
 

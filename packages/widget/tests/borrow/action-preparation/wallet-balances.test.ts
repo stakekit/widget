@@ -8,7 +8,7 @@ import {
   deriveBorrowTokenWalletBalance,
 } from "../../../src/features/borrow/action-preparation/model/wallet-balances";
 
-const market = Schema.decodeUnknownSync(Market)({
+const market = Schema.decodeSync(Market)({
   id: "aave-v3-ethereum-usdc",
   integrationId: "aave-borrow",
   network: "ethereum",
@@ -52,7 +52,7 @@ const market = Schema.decodeUnknownSync(Market)({
   minLoan: null,
 });
 
-const balances = Schema.decodeUnknownSync(TokenBalancesResponse)([
+const balances = Schema.decodeSync(TokenBalancesResponse)([
   {
     token: {
       network: "ethereum",
@@ -138,7 +138,7 @@ describe("borrow balance adapter", () => {
   });
 
   it("does not fold native token symbol casing", () => {
-    const nativeBalances = Schema.decodeUnknownSync(TokenBalancesResponse)([
+    const nativeBalances = Schema.decodeSync(TokenBalancesResponse)([
       {
         amount: "2",
         availableYields: [],

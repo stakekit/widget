@@ -144,7 +144,7 @@ const currentPendingActionDeepLinkAtom = Atom.make((get) => {
 type PendingActionDeepLinkValue = NonNullable<
   Atom.Type<
     typeof currentPendingActionDeepLinkAtom
-  > extends AsyncResult.AsyncResult<infer Value, unknown>
+  > extends AsyncResult.AsyncResult<infer Value, PendingActionDeepLinkError>
     ? Value
     : never
 >;

@@ -138,7 +138,7 @@ describe("Yield Directory resource", () => {
       })
     );
     const getProvider = vi.fn(() =>
-      Effect.succeed(Option.some(yieldApiProviderFixture()))
+      Effect.succeedSome(yieldApiProviderFixture())
     );
     const registry = makeRegistry(
       YieldResourceSource.of({ getProvider, listYields } as never)

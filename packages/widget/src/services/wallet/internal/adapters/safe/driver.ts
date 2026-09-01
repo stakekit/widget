@@ -37,12 +37,10 @@ export const makeSafeWalletDriver = ({
   > =>
     Effect.gen(function* () {
       if (!isSafeConnector(connector)) {
-        return yield* Effect.fail(
-          new WalletCapabilityUnavailableError({
-            capability: "transaction",
-            connectorId: connector.id,
-          })
-        );
+        return yield* new WalletCapabilityUnavailableError({
+          capability: "transaction",
+          connectorId: connector.id,
+        });
       }
 
       const decodedTx = yield* decodeAndPrepareEvmTransaction({
@@ -82,16 +80,15 @@ export const makeSafeWalletDriver = ({
           status.txStatus === connector.txStatus.FAILED ||
           status.txStatus === connector.txStatus.CANCELLED
         ) {
-          return yield* Effect.fail(
-            new WalletBroadcastError({ cause: status, customMessage: null })
-          );
+          return yield* new WalletBroadcastError({
+            cause: status,
+            customMessage: null,
+          });
         }
 
-        return yield* Effect.fail(
-          new SafeConfirmationPendingError({
-            safeTxHash: response.safeTxHash,
-          })
-        );
+        return yield* new SafeConfirmationPendingError({
+          safeTxHash: response.safeTxHash,
+        });
       }).pipe(
         Effect.retry({
           schedule: confirmationSchedule,

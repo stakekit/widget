@@ -90,7 +90,7 @@ export const transactionWorkflowResourceEventProjection = Stream.unwrap(
     const reactivity = yield* Reactivity.Reactivity;
     const wallet = yield* WalletService;
 
-    const reportCause = (cause: Cause.Cause<unknown>) =>
+    const reportCause = <E>(cause: Cause.Cause<E>) =>
       Cause.hasInterruptsOnly(cause)
         ? Effect.failCause(cause)
         : Effect.logError(

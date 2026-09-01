@@ -48,7 +48,7 @@ export const TolerantTopLevelArray = <
                 identifier: decodeIdentifier(options.identifier, input),
                 issue: failure.message,
               }).pipe(Effect.as(Option.none<Item["Type"]>())),
-            onSuccess: (value) => Effect.succeed(Option.some(value)),
+            onSuccess: Effect.succeedSome,
           });
         }).pipe(Effect.map(EArray.getSomes))
       ),
@@ -76,13 +76,14 @@ export const TolerantTopLevelRecord = <
     Schema.decodeTo(target, {
       decode: SchemaGetter.transformOrFail((input) =>
         Effect.forEach(Object.entries(input), ([rawKey, rawValue]) => {
-          const decodedKey = Schema.decodeUnknownResult(key)(rawKey);
+          const decodedKey = Schema.decodeResult(key)(rawKey);
           const decodedValue = Schema.decodeUnknownResult(value)(rawValue);
 
           if (Result.isSuccess(decodedKey) && Result.isSuccess(decodedValue)) {
-            return Effect.succeed(
-              Option.some([decodedKey.success, decodedValue.success] as const)
-            );
+            return Effect.succeedSome([
+              decodedKey.success,
+              decodedValue.success,
+            ] as const);
           }
 
           const getIssue = () => {

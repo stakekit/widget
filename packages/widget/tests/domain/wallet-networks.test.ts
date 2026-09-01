@@ -73,9 +73,7 @@ describe("Wallet Network chain IDs", () => {
   });
 
   it("projects routing and native identity facts from every Wallet Network", () => {
-    expectTypeOf<
-      typeof WalletNetwork.Type
-    >().toEqualTypeOf<WalletNetworkContract>();
+    expectTypeOf<WalletNetwork>().toEqualTypeOf<WalletNetworkContract>();
     expect(WalletNetwork.literals).toHaveLength(70);
     expect(WalletNetwork.literals).not.toContain("stellar-testnet");
     expect(isWalletNetwork("stellar-testnet")).toBe(false);

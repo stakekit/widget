@@ -442,7 +442,7 @@ export const setup = async (worker: TestWorker) => {
 
   return {
     customConnectors,
-    yieldOp: Schema.decodeUnknownSync(EarnYieldWithProvider)(mergedYieldOp),
+    yieldOp: Schema.decodeSync(EarnYieldWithProvider)(mergedYieldOp),
     enterAction,
     transactionConstruct,
     account,

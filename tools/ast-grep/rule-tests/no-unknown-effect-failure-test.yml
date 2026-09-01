@@ -1,0 +1,11 @@
+id: no-unknown-effect-failure
+valid:
+  - 'const x: Effect.Effect<string, ApiReadFailure> = null as never'
+  - 'const x: Effect.Effect<string, ApiReadFailure, Scope.Scope> = null as never'
+  - 'function f(): Effect.fn.Return<void, WidgetNavigationError, never> { return undefined as never }'
+  - 'const x: Effect.Effect<string> = null as never'
+invalid:
+  - 'const x: Effect.Effect<string, unknown> = null as never'
+  - 'const x: Effect.Effect<string, unknown, never> = null as never'
+  - 'function f(): Effect.fn.Return<void, unknown, never> { return undefined as never }'
+  - 'const claimAfter = (operation: () => Effect.Effect<boolean, unknown, never>) => operation'

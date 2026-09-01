@@ -9,7 +9,9 @@ import { getPositionDetailsHubPath } from "../../features/position-details/index
 import {
   toWidgetPath,
   WidgetNavigation,
+  type WidgetNavigationError,
 } from "../../services/navigation/widget-navigation";
+import type { WalletRuntimeInvariantError } from "../../services/wallet/wallet-errors";
 import { walletScopeFromState } from "../../services/wallet/wallet-scope-adapter";
 import { WalletService } from "../../services/wallet/wallet-service";
 import { makeScopedSerialOperations } from "../../shared/effect/scoped-serial-operations";
@@ -49,6 +51,10 @@ export type DeepLinkRouteObservation = Readonly<{
   } | null;
   readonly ready: boolean;
 }>;
+
+type DeepLinkOperationError =
+  | WalletRuntimeInvariantError
+  | WidgetNavigationError;
 
 type DeepLinkCoordinatorService = Readonly<{
   readonly observe: (
@@ -104,7 +110,7 @@ export class DeepLinkCoordinator extends Context.Service<
 
       const claimAfter = Effect.fn("DeepLinkCoordinator.claimAfter")(function* (
         key: string,
-        operation: () => Effect.Effect<boolean, unknown, never>
+        operation: () => Effect.Effect<boolean, DeepLinkOperationError, never>
       ) {
         const reserved = yield* Ref.modify(claims, (current) => {
           if (current.claimed.has(key) || current.reserved.has(key)) {
@@ -173,7 +179,7 @@ export class DeepLinkCoordinator extends Context.Service<
 
       const consider = Effect.fn("DeepLinkCoordinator.consider")(function* (
         observation: DeepLinkRouteObservation
-      ): Effect.fn.Return<void, unknown, never> {
+      ): Effect.fn.Return<void, DeepLinkOperationError, never> {
         if (observation.maintenance || !observation.ready) return;
 
         if (observation.position) {

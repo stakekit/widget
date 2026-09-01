@@ -1,5 +1,6 @@
 import { RegistryProvider } from "@effect/atom-react";
 import {
+  Cause,
   Context,
   Effect,
   Layer,
@@ -42,10 +43,9 @@ const waitForEffectValue = <A, E, R>(
   predicate: (value: A) => boolean
 ) =>
   self.pipe(
-    Effect.flatMap((value) =>
-      predicate(value)
-        ? Effect.succeed(value)
-        : Effect.fail(new Error("Effect value is not ready"))
+    Effect.filterOrFail(
+      predicate,
+      () => new Cause.UnknownError("Effect value is not ready")
     ),
     Effect.retry({ schedule: Schedule.spaced("10 millis"), times: 100 })
   );
@@ -128,8 +128,8 @@ describe("Effect API client", () => {
       const { client } = yield* createTestClient();
 
       yield* client.legacySource.getTokenOptions({ enter: true });
-      yield* client.yieldSource.getHealth();
-      yield* client.borrowSource.getIntegrations();
+      yield* client.yieldSource.getHealth;
+      yield* client.borrowSource.getIntegrations;
 
       expect(calls.map((call) => call.url)).toEqual([
         "https://api.example.com/v1/tokens?enter=true",
@@ -153,7 +153,7 @@ describe("Effect API client", () => {
       Effect.gen(function* () {
         const { client } = yield* createTestClient({ borrowApiUrl: " " });
         expect(
-          yield* Effect.flip(client.borrowSource.getIntegrations())
+          yield* Effect.flip(client.borrowSource.getIntegrations)
         ).toBeTruthy();
       })
   );
@@ -207,21 +207,20 @@ describe("Effect API client", () => {
             throw resourceError;
           }
           expect(resourceError.richError?.message).toBe("Rich failure");
+          expect(yield* Effect.flip(client.yieldSource.getHealth)).toBeTruthy();
           expect(
-            yield* Effect.flip(client.yieldSource.getHealth())
-          ).toBeTruthy();
-          expect(
-            yield* Effect.flip(client.borrowSource.getIntegrations())
+            yield* Effect.flip(client.borrowSource.getIntegrations)
           ).toBeTruthy();
           expect(yield* SubscriptionRef.get(richErrors.current)).toBeNull();
 
+          const command = yield* Schema.decodeEffect(ActionCommand)({
+            address: "0xWallet",
+            yieldId: "ethereum-eth-native-staking",
+          });
           expect(
             yield* Effect.flip(
               client.yieldOperations.previewAction({
-                command: Schema.decodeUnknownSync(ActionCommand)({
-                  address: "0xWallet",
-                  yieldId: "ethereum-eth-native-staking",
-                }),
+                command,
                 intent: "enter",
               })
             )
@@ -291,8 +290,8 @@ describe("Effect API client", () => {
       const { client } = yield* createTestClient();
 
       yield* client.legacySource.getTokenOptions({ enter: true });
-      yield* client.yieldSource.getHealth();
-      yield* client.borrowSource.getIntegrations();
+      yield* client.yieldSource.getHealth;
+      yield* client.borrowSource.getIntegrations;
       expect(transientAttempts).toEqual({ borrow: 3, legacy: 3, yield: 3 });
 
       worker.use(
@@ -331,9 +330,9 @@ describe("Effect API client", () => {
           )
         );
         const { client, geoBlock } = yield* createTestClient();
-        const unexpected = yield* client.yieldSource
-          .getHealth()
-          .pipe(Effect.flip);
+        const unexpected = yield* client.yieldSource.getHealth.pipe(
+          Effect.flip
+        );
 
         expect(
           yield* Effect.flip(
@@ -375,12 +374,13 @@ describe("Effect API client", () => {
           )
         );
         const { client } = yield* createTestClient();
+        const command = yield* Schema.decodeEffect(ActionCommand)({
+          address: "0x1234567890123456789012345678901234567890",
+          arguments: { amount },
+          yieldId: "ethereum-eth-native-staking",
+        });
         const action = yield* client.yieldOperations.previewAction({
-          command: Schema.decodeUnknownSync(ActionCommand)({
-            address: "0x1234567890123456789012345678901234567890",
-            arguments: { amount },
-            yieldId: "ethereum-eth-native-staking",
-          }),
+          command,
           intent: "enter",
         });
 

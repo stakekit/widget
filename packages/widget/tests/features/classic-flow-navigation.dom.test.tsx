@@ -57,7 +57,7 @@ import { render } from "../utils/test-utils.dom.tsx";
 
 const yieldApiUrl = "https://yield.example.com";
 const legacyApiUrl = "https://api.example.com";
-const command = Schema.decodeUnknownSync(ActionCommand)({
+const command = Schema.decodeSync(ActionCommand)({
   address: "0xWallet",
   yieldId: "ethereum-eth-native-staking",
 });

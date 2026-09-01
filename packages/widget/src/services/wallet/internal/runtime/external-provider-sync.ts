@@ -28,10 +28,7 @@ const initialMemory: SynchronizationMemory = {
 
 const runConnectorNotification = Effect.fn("runConnectorNotification")(
   function* (notify: () => void) {
-    yield* Effect.try({
-      try: notify,
-      catch: (cause) => cause,
-    }).pipe(
+    yield* Effect.try(notify).pipe(
       Effect.catch((cause) =>
         Effect.logWarning("External provider notification failed").pipe(
           Effect.annotateLogs({ cause })

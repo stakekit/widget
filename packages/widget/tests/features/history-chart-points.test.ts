@@ -26,7 +26,7 @@ describe("history chart adapters", () => {
       timestamp,
       rewardRate,
     });
-    const command = Schema.decodeUnknownSync(ActionCommand)({
+    const command = Schema.decodeSync(ActionCommand)({
       address: Schema.decodeSync(WalletAddress)(
         "0x1234567890123456789012345678901234567890"
       ),

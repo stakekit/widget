@@ -36,7 +36,7 @@ type WalletStateCommon = {
 
 type WalletScopeOwnerState = {
   readonly additionalAddresses: AdditionalAddresses | null;
-  readonly address: typeof WalletAddress.Type;
+  readonly address: WalletAddress;
   readonly chain: Chain;
   readonly connector: Connector;
   readonly isLedgerLiveAccountPlaceholder: boolean;
@@ -67,7 +67,7 @@ export type NormalizedWalletState = WalletStateCommon &
       })
     | {
         readonly additionalAddresses: null;
-        readonly address: typeof WalletAddress.Type | null;
+        readonly address: WalletAddress | null;
         readonly chain: Chain | null;
         readonly connector: Connector | null;
         readonly isLedgerLiveAccountPlaceholder: false;

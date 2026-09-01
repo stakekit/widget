@@ -116,7 +116,7 @@ describe("activity and completion workflows", () => {
       }),
       validatorsData: [],
       walletScope: new WalletScopeKey({
-        address: Schema.decodeUnknownSync(
+        address: Schema.decodeSync(
           Schema.NonEmptyString.pipe(Schema.brand("WalletAddress"))
         )("0x0000000000000000000000000000000000000001"),
         network: "ethereum",

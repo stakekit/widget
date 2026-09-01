@@ -12,7 +12,7 @@ const borrowCatalogPolicy = withApiResourcePolicy({
 const borrowIntegrationsCanonicalAtom = appRuntime
   .atom(
     BorrowResourceSource.use((source) =>
-      source.getIntegrations().pipe(
+      source.getIntegrations.pipe(
         Effect.catchTag("BorrowFeatureDisabled", () => Effect.succeed([])),
         withBorrowResourceError("borrow-integrations")
       )

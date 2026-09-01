@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Cause, Effect } from "effect";
 import { HttpResponse, http } from "msw";
 import { expectTypeOf } from "vitest";
 import { expect, it } from "./test-extend.dom.ts";
@@ -45,7 +45,9 @@ it.effect.fails(
       worker.use(
         http.get(fixtureUrl, () => HttpResponse.text("expected failure"))
       );
-    }).pipe(Effect.andThen(Effect.fail(new Error("expected failure"))))
+    }).pipe(
+      Effect.andThen(Effect.fail(new Cause.UnknownError("expected failure")))
+    )
 );
 
 it.effect("resets MSW handlers after each Effect test", () =>

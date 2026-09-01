@@ -74,7 +74,7 @@ const integrationDto = {
   actions: [],
 } as const;
 
-const positionDto = Schema.decodeUnknownSync(BorrowAccountSnapshot)({
+const positionDto = Schema.decodeSync(BorrowAccountSnapshot)({
   address,
   availableToBorrowUsd: "450",
   currentLtv: "0.4",
@@ -150,11 +150,11 @@ describe("borrow position items", () => {
     const [position] = deriveItems({
       integrationAccountSnapshots: [
         {
-          integration: Schema.decodeUnknownSync(Integration)(integrationDto),
+          integration: Schema.decodeSync(Integration)(integrationDto),
           accountSnapshot: positionDto,
         },
       ],
-      markets: [Schema.decodeUnknownSync(Market)(marketDto)],
+      markets: [Schema.decodeSync(Market)(marketDto)],
     });
 
     expect(position?.id).toBe("aave-v3-ethereum-usdc");
@@ -171,11 +171,11 @@ describe("borrow position items", () => {
     const [position] = deriveItems({
       integrationAccountSnapshots: [
         {
-          integration: Schema.decodeUnknownSync(Integration)(integrationDto),
+          integration: Schema.decodeSync(Integration)(integrationDto),
           accountSnapshot: positionDto,
         },
       ],
-      markets: [Schema.decodeUnknownSync(Market)(marketDto)],
+      markets: [Schema.decodeSync(Market)(marketDto)],
     });
 
     if (!position) {
@@ -198,11 +198,11 @@ describe("borrow position items", () => {
     const [position] = deriveItems({
       integrationAccountSnapshots: [
         {
-          integration: Schema.decodeUnknownSync(Integration)(integrationDto),
+          integration: Schema.decodeSync(Integration)(integrationDto),
           accountSnapshot: positionDto,
         },
       ],
-      markets: [Schema.decodeUnknownSync(Market)(marketDto)],
+      markets: [Schema.decodeSync(Market)(marketDto)],
     });
 
     if (!position) {
@@ -239,11 +239,11 @@ describe("borrow position items", () => {
     const [position] = deriveItems({
       integrationAccountSnapshots: [
         {
-          integration: Schema.decodeUnknownSync(Integration)(integrationDto),
+          integration: Schema.decodeSync(Integration)(integrationDto),
           accountSnapshot: positionDto,
         },
       ],
-      markets: [Schema.decodeUnknownSync(Market)(marketDto)],
+      markets: [Schema.decodeSync(Market)(marketDto)],
     });
 
     if (!position) {
@@ -277,8 +277,8 @@ describe("borrow position items", () => {
   });
 
   it("shows only borrowing metrics on the entry details screen", () => {
-    const market = Schema.decodeUnknownSync(Market)(marketDto);
-    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const market = Schema.decodeSync(Market)(marketDto);
+    const integration = Schema.decodeSync(Integration)(integrationDto);
     const model = getBorrowDetailsModel({
       balances: null,
       borrowAmount: new BigNumber(0),
@@ -301,12 +301,12 @@ describe("borrow position items", () => {
   });
 
   it("omits unavailable entry risk facts without placeholder values", () => {
-    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const market = Schema.decodeSync(Market)(marketDto);
     const model = getBorrowDetailsModel({
       balances: null,
       borrowAmount: new BigNumber(1),
       collateralAmount: new BigNumber(1),
-      integration: Schema.decodeUnknownSync(Integration)(integrationDto),
+      integration: Schema.decodeSync(Integration)(integrationDto),
       market,
       projection: {
         borrowMaxAmount: new BigNumber(10),
@@ -336,7 +336,7 @@ describe("borrow position items", () => {
     const collateralAddress = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
     const usdcMarketId = "morpho-blue-borrow-ethereum-cbbtc-usdc";
     const usdtMarketId = "morpho-blue-borrow-ethereum-cbbtc-usdt";
-    const morphoIntegration = Schema.decodeUnknownSync(Integration)({
+    const morphoIntegration = Schema.decodeSync(Integration)({
       ...integrationDto,
       id: "morpho-blue-borrow",
       name: "Morpho Blue Borrow",
@@ -351,7 +351,7 @@ describe("borrow position items", () => {
       readonly loanTokenAddress: string;
       readonly loanTokenSymbol: string;
     }) =>
-      Schema.decodeUnknownSync(Market)({
+      Schema.decodeSync(Market)({
         ...marketDto,
         borrowRate: "0.03856649526282294",
         collateralTokens: [
@@ -388,7 +388,7 @@ describe("borrow position items", () => {
       loanTokenAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
       loanTokenSymbol: "USDT",
     });
-    const accountPosition = Schema.decodeUnknownSync(BorrowAccountSnapshot)({
+    const accountPosition = Schema.decodeSync(BorrowAccountSnapshot)({
       ...positionDto,
       availableToBorrowUsd: null,
       currentLtv: "0.1462",
