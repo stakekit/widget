@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ActivityDefaultIntent,
   ActivityExplicitIntent,
+  findActivityActionInFeed,
   parseActivityRouteIntent,
   resolveActivityHighlightActionId,
   resolveActivitySelection,
@@ -11,24 +12,25 @@ import {
 import type { ActivityPageView } from "../../src/features/activity/state/page";
 import { yieldApiActionFixture } from "../fixtures";
 
+const feedItem = (id: string) => ({
+  actionData: yieldApiActionFixture({ id }),
+  validatorsData: [],
+  walletScope: {} as never,
+  yieldData: null,
+});
+
 const readyView = (
-  refreshStatus: "failed" | "fresh" | "refreshing"
+  refreshStatus: "failed" | "fresh" | "refreshing",
+  actions = [feedItem("newest-action")]
 ): ActivityPageView => ({
-  actions: [
-    {
-      actionData: yieldApiActionFixture({ id: "newest-action" }),
-      validatorsData: [],
-      walletScope: {} as never,
-      yieldData: null,
-    },
-  ],
+  actions,
   filterOptions: [],
   pagination: { status: "complete" },
   refreshStatus,
   selectedFilter: "all",
-  showingCount: 1,
+  showingCount: actions.length,
   status: "ready",
-  total: 1,
+  total: actions.length,
 });
 
 describe("Activity default selection", () => {
@@ -91,6 +93,37 @@ describe("Activity selection from intent", () => {
         readyView("fresh")
       )
     ).toBe("newest-action");
+  });
+});
+
+describe("Activity feed lookup for details", () => {
+  it("returns the enriched feed row when the id is present", () => {
+    const item = feedItem("picked-action");
+    expect(
+      findActivityActionInFeed(
+        "picked-action" as never,
+        readyView("fresh", [feedItem("other"), item])
+      )
+    ).toBe(item);
+  });
+
+  it("returns null when the feed is not ready or the id is missing", () => {
+    expect(
+      findActivityActionInFeed("picked-action" as never, { status: "loading" })
+    ).toBe(null);
+    expect(
+      findActivityActionInFeed("missing-action" as never, readyView("fresh"))
+    ).toBe(null);
+  });
+
+  it("still finds a row while the feed is refreshing", () => {
+    const item = feedItem("picked-action");
+    expect(
+      findActivityActionInFeed(
+        "picked-action" as never,
+        readyView("refreshing", [item])
+      )
+    ).toBe(item);
   });
 });
 

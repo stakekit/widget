@@ -29,7 +29,7 @@ import {
   yieldSummaryAtom,
 } from "../../yield-summary/index";
 import type { ActivityActionItem } from "../model/activity-action";
-import { activityPageViewAtom } from "./page";
+import { type ActivityPageView, activityPageViewAtom } from "./page";
 
 class ActivityDetailsKey extends Data.Class<{
   readonly actionId: ActionId;
@@ -224,6 +224,15 @@ const projectDetailsResult = (
   return { item: result.value, status: "ready" };
 };
 
+/** Prefer the enriched feed row so selection does not wait on GET-by-id. */
+export const findActivityActionInFeed = (
+  actionId: ActionId,
+  view: ActivityPageView
+): ActivityActionItem | null => {
+  if (view.status !== "ready") return null;
+  return view.actions.find((item) => item.actionData.id === actionId) ?? null;
+};
+
 const resolveSelectedActionId = (
   key: ActivitySelectionKey,
   get: <A>(atom: Atom.Atom<A>) => A
@@ -232,10 +241,16 @@ const resolveSelectedActionId = (
 
 const activitySelectedActionAtom = Atom.family((key: ActivitySelectionKey) =>
   Atom.make((context): ActivitySelectedActionView => {
-    const actionId = resolveSelectedActionId(key, context);
+    const view = context(activityPageViewAtom);
+    const actionId = resolveActivitySelection(key.intent, view);
 
     if (actionId === "loading") return { status: "loading" };
     if (actionId === null) return { status: "unavailable" };
+
+    const fromFeed = findActivityActionInFeed(actionId, view);
+    if (fromFeed) {
+      return { item: fromFeed, status: "ready" };
+    }
 
     return projectDetailsResult(
       context(
