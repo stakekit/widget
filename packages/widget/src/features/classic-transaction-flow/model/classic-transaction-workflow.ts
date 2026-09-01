@@ -1,6 +1,8 @@
 import type { YieldAction } from "../../../domain/action/models";
+import type { TransactionType } from "../../../domain/action/rules";
 import type {
   ClassicTransactionWorkflowInput,
+  TransactionWorkflowContext,
   TransactionWorkflowState,
   TransactionWorkflowTransactionMeta,
 } from "../../../services/transaction-workflow/transaction-workflow-model";
@@ -9,6 +11,22 @@ import {
   getCurrentTransactionWorkflowTransaction,
   getTransactionSignCustomMessage,
 } from "../../../services/transaction-workflow/transaction-workflow-model";
+
+export type ClassicTransactionCompletionUrl = {
+  readonly type: TransactionType;
+  readonly url: string;
+};
+
+export const getClassicTransactionCompletionUrls = (
+  context: TransactionWorkflowContext
+): ReadonlyArray<ClassicTransactionCompletionUrl> =>
+  flattenTransactionWorkflowTransactions(context)
+    .filter((transaction) => transaction.source._tag === "Classic")
+    .map((transaction) => ({
+      type: transaction.source.transaction.type,
+      url: transaction.meta.url,
+    }))
+    .filter((value): value is ClassicTransactionCompletionUrl => !!value.url);
 
 export enum ClassicTransactionStepState {
   SIGN_IDLE = 0,

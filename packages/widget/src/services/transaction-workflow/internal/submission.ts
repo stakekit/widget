@@ -60,15 +60,18 @@ export const makeSubmitCurrent = Effect.gen(function* () {
               cause
             )
           ),
-          Effect.as({
-            batchId: batch.id,
-            hash: broadcasted ? signedTx : null,
-            link: null,
-            signedPayload: broadcasted ? null : signedTx,
-            source,
-            status: null,
-            transactionId: source.transaction.id,
-          } satisfies TransactionWorkflowSubmission)
+          Effect.map(
+            (response) =>
+              ({
+                batchId: batch.id,
+                hash: broadcasted ? signedTx : (response.hash ?? null),
+                link: response.explorerUrl ?? null,
+                signedPayload: broadcasted ? null : signedTx,
+                source,
+                status: response.status ?? null,
+                transactionId: source.transaction.id,
+              }) satisfies TransactionWorkflowSubmission
+          )
         );
       }),
       Match.tag("Borrow", ({ transaction }) => {

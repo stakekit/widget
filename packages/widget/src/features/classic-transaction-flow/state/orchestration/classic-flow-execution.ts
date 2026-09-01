@@ -1,17 +1,15 @@
 import { Duration, Effect, Schedule, type Scope, Stream } from "effect";
 import type { YieldAction } from "../../../../domain/action/models";
-import type { TransactionType } from "../../../../domain/action/rules";
 import {
   toWidgetPath,
   WidgetNavigation,
   type WidgetNavigationError,
   type WidgetPath,
 } from "../../../../services/navigation/widget-navigation";
-import {
-  flattenTransactionWorkflowTransactions,
-  type TransactionWorkflowCommand,
-  type TransactionWorkflowInputError,
-  type TransactionWorkflowState,
+import type {
+  TransactionWorkflowCommand,
+  TransactionWorkflowInputError,
+  TransactionWorkflowState,
 } from "../../../../services/transaction-workflow/transaction-workflow-model";
 import { TransactionWorkflowService } from "../../../../services/transaction-workflow/transaction-workflow-service";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
@@ -38,18 +36,6 @@ export type ClassicFlowExecutionHandle = Readonly<{
   ) => Effect.Effect<ClassicFlowExecutionOutcome>;
   readonly states: Stream.Stream<TransactionWorkflowState>;
 }>;
-
-const getCompletionNavigationState = (state: TransactionWorkflowState) => ({
-  urls: flattenTransactionWorkflowTransactions(state.context)
-    .filter((transaction) => transaction.source._tag === "Classic")
-    .map((transaction) => ({
-      type: transaction.source.transaction.type,
-      url: transaction.meta.url,
-    }))
-    .filter(
-      (value): value is { type: TransactionType; url: string } => !!value.url
-    ),
-});
 
 export const makeClassicFlowExecutionFactory = Effect.fn(
   "makeClassicFlowExecutionFactory"
@@ -92,14 +78,13 @@ export const makeClassicFlowExecutionFactory = Effect.fn(
         > => state._tag === "Completed" || state._tag === "Disabled"
       ),
       Stream.take(1),
-      Stream.runForEach((state) =>
+      Stream.runForEach(() =>
         operations
           .run(
             runOperation(() =>
               navigation.execute({
                 _tag: "Replace",
                 path: paths.completePath,
-                state: getCompletionNavigationState(state),
               })
             )
           )

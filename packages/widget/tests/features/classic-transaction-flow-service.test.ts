@@ -1525,14 +1525,6 @@ describe("ClassicTransactionFlowService", () => {
     expect(command).toEqual({
       _tag: "Replace",
       path: toWidgetPath(`/activity/${historicalAction.id}/complete`),
-      state: {
-        urls: [
-          {
-            type: "STAKE",
-            url: "https://explorer.test/activity",
-          },
-        ],
-      },
     });
   });
 

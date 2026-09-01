@@ -1,10 +1,9 @@
-import { useAtomSet } from "@effect/atom-react";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router";
-import type { TransactionType } from "../../../../../domain/action/rules";
 import { isMobile } from "../../../../../shared/lib/general";
 import { useSKWallet } from "../../../../wallet/index";
 import type { PageCta } from "../../../../widget-shell/views";
+import { getClassicTransactionCompletionUrls } from "../../../model/classic-transaction-workflow";
 import {
   useClassicFlowExecution,
   useClassicFlowSession,
@@ -12,17 +11,16 @@ import {
 import { useViewTransaction } from "../../use-view-transaction";
 
 export const useComplete = () => {
-  const location = useLocation();
   const execution = useClassicFlowExecution();
   const session = useClassicFlowSession();
   const finish = useAtomSet(execution.finishAtom);
+  const workflowView = useAtomValue(execution.workflow.viewAtom);
 
   const isLedgerLive = useSKWallet()?.isLedgerLive ?? false;
 
-  const urls: {
-    type: TransactionType;
-    url: string;
-  }[] = location.state?.urls ?? [];
+  const urls = workflowView.state
+    ? getClassicTransactionCompletionUrls(workflowView.state.context)
+    : [];
 
   const onViewTransactionClick = useViewTransaction();
 

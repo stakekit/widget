@@ -206,8 +206,18 @@ const makeCapabilities = (
         status: "CONFIRMED",
       } as never),
     previewAction: () => Effect.die("unexpected action preview"),
-    submitSignedTransaction: () => Effect.void,
-    submitTransactionHash: () => Effect.void,
+    submitSignedTransaction: () =>
+      Effect.succeed({
+        explorerUrl: null,
+        hash: null,
+        status: "BROADCASTED",
+      } as never),
+    submitTransactionHash: () =>
+      Effect.succeed({
+        explorerUrl: null,
+        hash: transactionHash,
+        status: "BROADCASTED",
+      } as never),
     ...overrides.yieldOperations,
   } as never),
 });
@@ -341,7 +351,13 @@ describe("transaction workflow runtime", () => {
   });
 
   it("auto-starts classic signed-payload and broadcast submission paths", async () => {
-    const submitSigned = vi.fn(() => Effect.void);
+    const submitSigned = vi.fn(() =>
+      Effect.succeed({
+        explorerUrl: null,
+        hash: null,
+        status: "BROADCASTED",
+      } as never)
+    );
     await runToCompletion(
       new ClassicTransactionWorkflowInput({
         actionMeta,
@@ -359,7 +375,13 @@ describe("transaction workflow runtime", () => {
       transactionId: "classic-signed",
     });
 
-    const submitHash = vi.fn(() => Effect.void);
+    const submitHash = vi.fn(() =>
+      Effect.succeed({
+        explorerUrl: null,
+        hash: transactionHash,
+        status: "BROADCASTED",
+      } as never)
+    );
     await runToCompletion(
       new ClassicTransactionWorkflowInput({
         actionMeta,
@@ -409,7 +431,11 @@ describe("transaction workflow runtime", () => {
             submitAttempts += 1;
             return submitAttempts === 1
               ? Effect.fail(new Error("submit failed"))
-              : Effect.void;
+              : Effect.succeed({
+                  explorerUrl: null,
+                  hash: null,
+                  status: "BROADCASTED",
+                } as never);
           }),
       },
     });
