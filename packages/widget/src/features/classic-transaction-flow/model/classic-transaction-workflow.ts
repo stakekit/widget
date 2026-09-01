@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { YieldAction } from "../../../domain/action/models";
 import type { TransactionType } from "../../../domain/action/rules";
 import type {
@@ -16,6 +17,16 @@ export type ClassicTransactionCompletionUrl = {
   readonly type: TransactionType;
   readonly url: string;
 };
+
+export const formatTransactionTypeLabel = (
+  type: TransactionType,
+  t: TFunction,
+  options?: { readonly context?: "ETHENA_USDE" }
+) =>
+  t(`steps.tx_type.${type}`, {
+    context: options?.context,
+    defaultValue: type.replaceAll("_", " "),
+  });
 
 export const getClassicTransactionCompletionUrls = (
   context: TransactionWorkflowContext

@@ -19,6 +19,7 @@ import {
   walletImages,
 } from "../../runtime/assets";
 import { tron } from "../configured-chains";
+import { wagmiConnectResult } from "../wagmi-connect-result";
 import type { ExtraProps, StorageItem } from "./tron-connector-meta";
 import { configMeta } from "./tron-connector-meta";
 
@@ -44,12 +45,11 @@ const createTronConnector = ({
 
       config.storage?.removeItem("tron.disconnected");
 
-      return {
-        accounts: args?.withCapabilities
-          ? [{ address: adapter.address as Address, capabilities: {} }]
-          : ([adapter.address as Address] as readonly Address[]),
-        chainId: tron.id,
-      } as never;
+      return wagmiConnectResult(
+        args?.withCapabilities,
+        [adapter.address as Address],
+        tron.id
+      );
     },
     disconnect: () => {
       config.storage?.setItem("tron.disconnected", true);

@@ -7,6 +7,7 @@ import { type Connector, createConnector, ProviderNotFoundError } from "wagmi";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import { isWalletIframe } from "../../../browser-environment";
 import { WalletIntegrationError } from "../../../wallet-errors";
+import { wagmiConnectResult } from "../wagmi-connect-result";
 import { configMeta, type ExtraProps } from "./safe-connector-meta";
 
 function safe(parameters: { shimDisconnect?: boolean } = {}) {
@@ -61,12 +62,7 @@ function safe(parameters: { shimDisconnect?: boolean } = {}) {
         if (shimDisconnect)
           await config.storage?.removeItem("safe.disconnected");
 
-        return {
-          accounts: args?.withCapabilities
-            ? accounts.map((acc) => ({ address: acc, capabilities: {} }))
-            : accounts,
-          chainId,
-        } as never;
+        return wagmiConnectResult(args?.withCapabilities, accounts, chainId);
       },
       async disconnect() {
         const provider = await getProvider();

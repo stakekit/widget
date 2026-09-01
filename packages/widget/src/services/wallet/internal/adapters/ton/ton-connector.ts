@@ -15,6 +15,7 @@ import { createConnector } from "wagmi";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { getWalletNetworkLogo } from "../../runtime/assets";
 import { ton } from "../configured-chains";
+import { wagmiConnectResult } from "../wagmi-connect-result";
 import {
   configMeta,
   type ExtraProps,
@@ -142,17 +143,11 @@ const createTonConnector = (
           wallet.account.address
         );
 
-        return {
-          accounts: args?.withCapabilities
-            ? [
-                {
-                  address: userFriendlyAddress as Address,
-                  capabilities: {},
-                },
-              ]
-            : [userFriendlyAddress as Address],
-          chainId: ton.id,
-        } as never;
+        return wagmiConnectResult(
+          args?.withCapabilities,
+          [userFriendlyAddress as Address],
+          ton.id
+        );
       },
       disconnect: async () => {
         config.storage?.setItem("ton.disconnected", true);

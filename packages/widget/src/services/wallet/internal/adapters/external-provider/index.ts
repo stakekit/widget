@@ -11,6 +11,7 @@ import { type CurrentRef, ExternalProvider } from "../../../external-provider";
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
 import { normalizeChainId } from "../../normalize-chain-id";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
+import { wagmiConnectResult } from "../wagmi-connect-result";
 
 const configMeta = {
   id: "externalProviderConnector",
@@ -92,12 +93,11 @@ export const externalProviderConnector = (
               getChainId(),
             ]);
 
-            return {
-              accounts: args?.withCapabilities
-                ? [{ address: accounts[0] as Address, capabilities: {} }]
-                : (accounts as Address[]),
-              chainId,
-            } as never;
+            return wagmiConnectResult(
+              args?.withCapabilities,
+              accounts as Address[],
+              chainId
+            );
           };
 
           const switchChain: ReturnType<CreateConnectorFn>["switchChain"] =

@@ -7,6 +7,7 @@ import type { StellarWalletClient } from "../../platform/stellar-wallets-kit-pla
 import { getWalletNetworkLogo } from "../../runtime/assets";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import { stellar } from "../configured-chains";
+import { wagmiConnectResult } from "../wagmi-connect-result";
 import {
   type ExtraProps,
   stellarConnectorType,
@@ -94,12 +95,11 @@ const createStellarConnector = ({
           throw error;
         }
 
-        return {
-          accounts: input?.withCapabilities
-            ? [{ address: currentAddress, capabilities: {} }]
-            : [currentAddress],
-          chainId: stellar.id,
-        } as never;
+        return wagmiConnectResult(
+          input?.withCapabilities,
+          [currentAddress],
+          stellar.id
+        );
       },
       disconnect: async () => {
         await runWalletEffect(client.disconnect).catch(() => undefined);

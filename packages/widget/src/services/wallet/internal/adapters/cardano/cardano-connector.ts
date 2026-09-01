@@ -6,6 +6,7 @@ import { createConnector } from "wagmi";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { getWalletNetworkLogo } from "../../runtime/assets";
 import { cardano } from "../configured-chains";
+import { wagmiConnectResult } from "../wagmi-connect-result";
 import {
   configMeta,
   type ExtraProps,
@@ -65,12 +66,11 @@ const createCardanoConnector = ({
           id: wallet.id,
         });
 
-        return {
-          accounts: args?.withCapabilities
-            ? [{ address: address as Address, capabilities: {} }]
-            : [address as Address],
-          chainId: cardano.id,
-        } as never;
+        return wagmiConnectResult(
+          args?.withCapabilities,
+          [address as Address],
+          cardano.id
+        );
       },
       disconnect: async () => {
         config.storage?.setItem("cardano.disconnected", true);

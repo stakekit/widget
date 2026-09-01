@@ -19,6 +19,7 @@ import {
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { getWalletNetworkLogo } from "../../runtime/assets";
+import { wagmiConnectResult } from "../wagmi-connect-result";
 import type { CosmosChainsMap } from "./chains";
 import type { ExtraProps } from "./cosmos-connector-meta";
 import { configMeta } from "./cosmos-connector-meta";
@@ -145,17 +146,11 @@ export const createCosmosConnector = ({
               );
             }
 
-            return {
-              accounts: args?.withCapabilities
-                ? [
-                    {
-                      address: chainWallet.address as Address,
-                      capabilities: {},
-                    },
-                  ]
-                : [chainWallet.address as Address],
-              chainId: chainWallet.chainId as unknown as number,
-            } as never;
+            return wagmiConnectResult(
+              args?.withCapabilities,
+              [chainWallet.address as Address],
+              chainWallet.chainId as unknown as number
+            );
           };
 
           if (cw.address && cw.chainId) {

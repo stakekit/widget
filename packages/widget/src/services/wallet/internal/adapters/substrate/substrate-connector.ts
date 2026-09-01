@@ -15,6 +15,7 @@ import type { Chain } from "wagmi/chains";
 import { config } from "../../../../../shared/config/widget-defaults";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { getWalletNetworkLogo } from "../../runtime/assets";
+import { wagmiConnectResult } from "../wagmi-connect-result";
 import {
   configMeta,
   type ExtraProps,
@@ -141,12 +142,11 @@ const createSubstrateConnector = ({
         config.storage?.removeItem("substrate.disconnected");
         config.storage?.setItem("substrate.lastConnectedId", baseConnector.id);
 
-        return {
-          accounts: args?.withCapabilities
-            ? accounts.map((a) => ({ address: a.address, capabilities: {} }))
-            : (accounts.map((a) => a.address) as Address[]),
-          chainId: getFirstFilteredChain().id,
-        } as never;
+        return wagmiConnectResult(
+          args?.withCapabilities,
+          accounts.map((a) => a.address as Address),
+          getFirstFilteredChain().id
+        );
       },
       disconnect: () => {
         config.storage?.setItem("substrate.disconnected", true);

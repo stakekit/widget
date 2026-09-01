@@ -17,6 +17,7 @@ import portoIcon from "../../../../../shared/assets/images/porto.svg";
 import { getWalletNetworkLogo } from "../../runtime/assets";
 import type { SolanaWalletDescriptor } from "../../runtime/solana-runtime";
 import { solana } from "../configured-chains";
+import { wagmiConnectResult } from "../wagmi-connect-result";
 import {
   type ExtraProps,
   getConfigMeta,
@@ -85,17 +86,11 @@ const createSolanaConnector = ({
 
       await solanaWallet.adapter.connect();
 
-      return {
-        accounts: args?.withCapabilities
-          ? [
-              {
-                address: solanaWallet.adapter.publicKey?.toBase58() as Address,
-                capabilities: {},
-              },
-            ]
-          : [solanaWallet.adapter.publicKey?.toBase58() as Address],
-        chainId: solana.id,
-      } as never;
+      return wagmiConnectResult(
+        args?.withCapabilities,
+        [solanaWallet.adapter.publicKey?.toBase58() as Address],
+        solana.id
+      );
     },
     disconnect: () => {
       config.storage?.setItem("solana.disconnected", true);

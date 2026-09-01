@@ -20,6 +20,7 @@ import { WalletIntegrationError } from "../../../wallet-errors";
 import { normalizeChainId } from "../../normalize-chain-id";
 import { walletImages } from "../../runtime/assets";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
+import { wagmiConnectResult } from "../wagmi-connect-result";
 import {
   ledgerChainPriority,
   type SupportedLedgerLiveFamilies,
@@ -203,12 +204,11 @@ const createLedgerLiveConnector = ({
         onAccountsChanged([noAccountPlaceholder as Address]);
         onChainChanged(defaultChain.chain.id.toString());
 
-        return {
-          accounts: args?.withCapabilities
-            ? [{ address: noAccountPlaceholder as Address, capabilities: {} }]
-            : [noAccountPlaceholder as Address],
-          chainId: defaultChain.chain.id,
-        } as never;
+        return wagmiConnectResult(
+          args?.withCapabilities,
+          [noAccountPlaceholder as Address],
+          defaultChain.chain.id
+        );
       }
 
       const getPreferredAccount = () => {
@@ -251,17 +251,11 @@ const createLedgerLiveConnector = ({
       onAccountsChanged([accountWithChain.account.address as Address]);
       onChainChanged(currentChain.chain.id.toString());
 
-      return {
-        accounts: args?.withCapabilities
-          ? [
-              {
-                address: accountWithChain.account.address as Address,
-                capabilities: {},
-              },
-            ]
-          : [accountWithChain.account.address as Address],
-        chainId: currentChain.chain.id,
-      } as never;
+      return wagmiConnectResult(
+        args?.withCapabilities,
+        [accountWithChain.account.address as Address],
+        currentChain.chain.id
+      );
     };
 
     const getAccountsOnCurrentChain = () =>

@@ -19,6 +19,7 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../../../widget-shell/views";
+import { formatTransactionTypeLabel } from "../../../model/classic-transaction-workflow";
 import { useComplete } from "../hooks/use-complete.hook";
 
 type CompletePageModel = ReturnType<typeof useComplete>;
@@ -195,14 +196,11 @@ export const CompletePageComponent = ({
                   {t("complete.view_transaction", {
                     type: capitalize(
                       toLowerCase(
-                        t(
-                          `steps.tx_type.${val.type}` as never,
-                          {
-                            context: isEthenaUsdeStaking(integrationId)
-                              ? "ETHENA_USDE"
-                              : undefined,
-                          } as never
-                        ) as unknown as string
+                        formatTransactionTypeLabel(val.type, t, {
+                          context: isEthenaUsdeStaking(integrationId)
+                            ? "ETHENA_USDE"
+                            : undefined,
+                        })
                       )
                     ),
                   })}

@@ -14,7 +14,10 @@ import { CheckSteps } from "../../../../../shared/ui/primitives/icons/check-step
 import { XIcon } from "../../../../../shared/ui/primitives/icons/x-icon";
 import { Spinner } from "../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { ClassicTransactionStepState } from "../../../model/classic-transaction-workflow";
+import {
+  ClassicTransactionStepState,
+  formatTransactionTypeLabel,
+} from "../../../model/classic-transaction-workflow";
 import type { useSteps } from "../hooks/use-steps.hook";
 import {
   halfOpacityAfter,
@@ -94,14 +97,11 @@ const TxStateContent = ({
             {t("steps.tx_of", {
               count: count.total,
               current: count.current,
-              type: t(
-                `steps.tx_type.${txState.tx.type}` as never,
-                {
-                  context: isEthenaUsdeStaking(yieldId)
-                    ? "ETHENA_USDE"
-                    : undefined,
-                } as never
-              ),
+              type: formatTransactionTypeLabel(txState.tx.type, t, {
+                context: isEthenaUsdeStaking(yieldId)
+                  ? "ETHENA_USDE"
+                  : undefined,
+              }),
             })}
           </Text>
 
