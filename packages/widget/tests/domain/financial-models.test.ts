@@ -1,6 +1,6 @@
+import { describe, expect, it } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import { Effect, Logger, Schema } from "effect";
-import { describe, expect, it } from "vitest";
 import {
   GasBalancesCommand,
   TokenBalanceScanCommand,
@@ -20,10 +20,8 @@ const decode = <S extends Schema.ConstraintDecoder<unknown>>(
   schema: S,
   input: unknown
 ) =>
-  Effect.runPromise(
-    Schema.decodeUnknownEffect(schema)(input).pipe(
-      Effect.provide(Logger.layer([]))
-    )
+  Schema.decodeUnknownEffect(schema)(input).pipe(
+    Effect.provide(Logger.layer([]))
   );
 
 describe("financial API boundary schemas", () => {
@@ -58,39 +56,47 @@ describe("financial API boundary schemas", () => {
     );
   });
 
-  it("omits a complete malformed token balance and retains valid siblings", async () => {
-    const balances = await decode(TokenBalancesResponse, [
-      {
-        amount: "1.5",
-        availableYields: ["ethereum-eth-native-staking"],
-        token,
-      },
-      {
-        amount: "NaN",
-        availableYields: ["ethereum-eth-native-staking"],
-        token,
-      },
-      {
-        amount: "2",
-        availableYields: ["ethereum-eth-native-staking"],
-        token: { ...token, decimals: "18" },
-      },
-    ]);
+  it.effect(
+    "omits a complete malformed token balance and retains valid siblings",
+    () =>
+      Effect.gen(function* () {
+        const balances = yield* decode(TokenBalancesResponse, [
+          {
+            amount: "1.5",
+            availableYields: ["ethereum-eth-native-staking"],
+            token,
+          },
+          {
+            amount: "NaN",
+            availableYields: ["ethereum-eth-native-staking"],
+            token,
+          },
+          {
+            amount: "2",
+            availableYields: ["ethereum-eth-native-staking"],
+            token: { ...token, decimals: "18" },
+          },
+        ]);
 
-    expect(balances).toHaveLength(1);
-    expect(balances[0]?.amount).toBeInstanceOf(BigNumber);
-    expect(balances[0]?.amount.toFixed()).toBe("1.5");
-  });
+        expect(balances).toHaveLength(1);
+        expect(balances[0]?.amount).toBeInstanceOf(BigNumber);
+        expect(balances[0]?.amount.toFixed()).toBe("1.5");
+      })
+  );
 
-  it("returns an empty balance list when every top-level entry is malformed", async () => {
-    const balances = await decode(TokenBalancesResponse, [
-      {
-        amount: "not-a-decimal",
-        availableYields: [],
-        token,
-      },
-    ]);
+  it.effect(
+    "returns an empty balance list when every top-level entry is malformed",
+    () =>
+      Effect.gen(function* () {
+        const balances = yield* decode(TokenBalancesResponse, [
+          {
+            amount: "not-a-decimal",
+            availableYields: [],
+            token,
+          },
+        ]);
 
-    expect(balances).toEqual([]);
-  });
+        expect(balances).toEqual([]);
+      })
+  );
 });

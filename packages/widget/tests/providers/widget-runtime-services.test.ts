@@ -1,7 +1,7 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Deferred, Effect, Fiber, Layer, Option, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
-import { describe, expect, it, vi } from "vitest";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { applicationBaseRuntime } from "../../src/app/runtime/application-base-runtime";
@@ -135,109 +135,111 @@ describe("widget runtime service graph", () => {
     await vi.waitFor(() => expect(disposed).toBe(2));
   });
 
-  it("exposes the current widget config and registry-scoped changes", async () => {
-    const firstTrack = vi.fn();
-    const replacementTrack = vi.fn();
-    const initialConfig = makeConfig(firstTrack);
-    const replacementConfig = makeConfig(replacementTrack);
-    const registry = AtomRegistry.make({
-      initialValues: runtimeInitialValues(initialConfig),
-    });
+  it.effect(
+    "exposes the current widget config and registry-scoped changes",
+    () =>
+      Effect.gen(function* () {
+        const firstTrack = vi.fn();
+        const replacementTrack = vi.fn();
+        const initialConfig = makeConfig(firstTrack);
+        const replacementConfig = makeConfig(replacementTrack);
+        const registry = AtomRegistry.make({
+          initialValues: runtimeInitialValues(initialConfig),
+        });
 
-    try {
-      const config = AsyncResult.getOrThrow(
-        registry.get(widgetConfigProbeAtom)
-      );
-      const ready = await Effect.runPromise(Deferred.make<void>());
-      const changesFiber = Effect.runFork(
-        config.values.pipe(
-          Stream.tap(() => Deferred.succeed(ready, undefined)),
-          Stream.take(2),
-          Stream.runCollect
-        )
-      );
+        try {
+          const config = AsyncResult.getOrThrow(
+            registry.get(widgetConfigProbeAtom)
+          );
+          const ready = yield* Deferred.make<void>();
+          const changesFiber = yield* Effect.forkChild(
+            config.values.pipe(
+              Stream.tap(() => Deferred.succeed(ready, undefined)),
+              Stream.take(2),
+              Stream.runCollect
+            )
+          );
 
-      await Effect.runPromise(Deferred.await(ready));
-      expect(
-        (await Effect.runPromise(config.current)).tracking?.trackEvent
-      ).toBe(firstTrack);
+          yield* Deferred.await(ready);
+          expect((yield* config.current).tracking?.trackEvent).toBe(firstTrack);
 
-      await Effect.runPromise(config.update(replacementConfig));
+          yield* config.update(replacementConfig);
 
-      const changes = Array.from(
-        await Effect.runPromise(Fiber.join(changesFiber))
-      );
-      expect(changes.map((value) => value.tracking?.trackEvent)).toEqual([
-        firstTrack,
-        replacementTrack,
-      ]);
-      expect(
-        (await Effect.runPromise(config.current)).tracking?.trackEvent
-      ).toBe(replacementTrack);
-    } finally {
-      registry.dispose();
-    }
-  });
+          const changes = Array.from(yield* Fiber.join(changesFiber));
+          expect(changes.map((value) => value.tracking?.trackEvent)).toEqual([
+            firstTrack,
+            replacementTrack,
+          ]);
+          expect((yield* config.current).tracking?.trackEvent).toBe(
+            replacementTrack
+          );
+        } finally {
+          registry.dispose();
+        }
+      })
+  );
 
-  it("shares static service layers within a registry and isolates registries", async () => {
-    const firstTrack = vi.fn();
-    const secondTrack = vi.fn();
-    const firstRegistry = AtomRegistry.make({
-      initialValues: runtimeInitialValues(makeConfig(firstTrack)),
-    });
-    const secondRegistry = AtomRegistry.make({
-      initialValues: runtimeInitialValues(makeConfig(secondTrack)),
-    });
+  it.effect(
+    "shares static service layers within a registry and isolates registries",
+    () =>
+      Effect.gen(function* () {
+        const firstTrack = vi.fn();
+        const secondTrack = vi.fn();
+        const firstRegistry = AtomRegistry.make({
+          initialValues: runtimeInitialValues(makeConfig(firstTrack)),
+        });
+        const secondRegistry = AtomRegistry.make({
+          initialValues: runtimeInitialValues(makeConfig(secondTrack)),
+        });
 
-    try {
-      const firstService = AsyncResult.getOrThrow(
-        firstRegistry.get(firstTrackingProbeAtom)
-      );
-      const sameRegistryService = AsyncResult.getOrThrow(
-        firstRegistry.get(secondTrackingProbeAtom)
-      );
-      const secondService = AsyncResult.getOrThrow(
-        secondRegistry.get(firstTrackingProbeAtom)
-      );
+        try {
+          const firstService = AsyncResult.getOrThrow(
+            firstRegistry.get(firstTrackingProbeAtom)
+          );
+          const sameRegistryService = AsyncResult.getOrThrow(
+            firstRegistry.get(secondTrackingProbeAtom)
+          );
+          const secondService = AsyncResult.getOrThrow(
+            secondRegistry.get(firstTrackingProbeAtom)
+          );
 
-      expect(sameRegistryService).toBe(firstService);
-      expect(secondService).not.toBe(firstService);
+          expect(sameRegistryService).toBe(firstService);
+          expect(secondService).not.toBe(firstService);
 
-      await Effect.runPromise(
-        Effect.all([
-          firstService.trackEvent("txSigned", { registry: "first" }),
-          secondService.trackEvent("txSigned", { registry: "second" }),
-        ])
-      );
+          yield* Effect.all([
+            firstService.trackEvent("txSigned", { registry: "first" }),
+            secondService.trackEvent("txSigned", { registry: "second" }),
+          ]);
 
-      expect(firstTrack).toHaveBeenCalledOnce();
-      expect(firstTrack).toHaveBeenCalledWith("Transaction signed", {
-        registry: "first",
-      });
-      expect(secondTrack).toHaveBeenCalledOnce();
-      expect(secondTrack).toHaveBeenCalledWith("Transaction signed", {
-        registry: "second",
-      });
+          expect(firstTrack).toHaveBeenCalledOnce();
+          expect(firstTrack).toHaveBeenCalledWith("Transaction signed", {
+            registry: "first",
+          });
+          expect(secondTrack).toHaveBeenCalledOnce();
+          expect(secondTrack).toHaveBeenCalledWith("Transaction signed", {
+            registry: "second",
+          });
 
-      const replacementTrack = vi.fn();
-      const firstConfig = AsyncResult.getOrThrow(
-        firstRegistry.get(widgetConfigProbeAtom)
-      );
-      await Effect.runPromise(firstConfig.update(makeConfig(replacementTrack)));
-      await Effect.runPromise(
-        firstService.trackEvent("txSigned", { registry: "first-updated" })
-      );
+          const replacementTrack = vi.fn();
+          const firstConfig = AsyncResult.getOrThrow(
+            firstRegistry.get(widgetConfigProbeAtom)
+          );
+          yield* firstConfig.update(makeConfig(replacementTrack));
+          yield* firstService.trackEvent("txSigned", {
+            registry: "first-updated",
+          });
 
-      expect(firstTrack).toHaveBeenCalledOnce();
-      expect(replacementTrack).toHaveBeenCalledWith("Transaction signed", {
-        registry: "first-updated",
-      });
-      expect(secondTrack).toHaveBeenCalledOnce();
-    } finally {
-      firstRegistry.dispose();
-      secondRegistry.dispose();
-    }
-  });
+          expect(firstTrack).toHaveBeenCalledOnce();
+          expect(replacementTrack).toHaveBeenCalledWith("Transaction signed", {
+            registry: "first-updated",
+          });
+          expect(secondTrack).toHaveBeenCalledOnce();
+        } finally {
+          firstRegistry.dispose();
+          secondRegistry.dispose();
+        }
+      })
+  );
 
   it("creates fresh lifecycle-sensitive services after a registry remount", () => {
     const config = makeConfig(vi.fn());

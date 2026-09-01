@@ -1,9 +1,9 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import { Deferred, Effect, Layer, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
-import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { getPendingActionStateKey } from "../../src/domain/action/action-command";
@@ -569,35 +569,43 @@ describe("Position Details exit command", () => {
     }
   });
 
-  it("does not order Pending Action start behind telemetry", async () => {
-    const push = vi.fn<(path: WidgetPath) => void>();
-    const trackingRelease = await Effect.runPromise(Deferred.make<void>());
-    const registry = makeRegistry({
-      push,
-      trackEvent: () => Deferred.await(trackingRelease),
-      yieldBalance: manageBalance,
-    });
-    const commandAtom = runPositionPendingActionAtom(workflowKey);
-
-    try {
-      registry.set(commandAtom, {
-        _tag: "Select",
-        pendingAction: manageAction,
+  it.effect("does not order Pending Action start behind telemetry", () =>
+    Effect.gen(function* () {
+      const push = vi.fn<(path: WidgetPath) => void>();
+      const trackingRelease = yield* Deferred.make<void>();
+      const registry = makeRegistry({
+        push,
+        trackEvent: () => Deferred.await(trackingRelease),
         yieldBalance: manageBalance,
       });
+      const commandAtom = runPositionPendingActionAtom(workflowKey);
 
-      await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
-      await vi.waitFor(() =>
-        expect(AsyncResult.isSuccess(registry.get(commandAtom))).toBe(true)
-      );
-      expect(AsyncResult.getOrThrow(registry.get(commandAtom))).toMatchObject({
-        _tag: "Started",
-      });
-      await Effect.runPromise(Deferred.succeed(trackingRelease, undefined));
-    } finally {
-      registry.dispose();
-    }
-  });
+      try {
+        registry.set(commandAtom, {
+          _tag: "Select",
+          pendingAction: manageAction,
+          yieldBalance: manageBalance,
+        });
+
+        yield* Effect.promise(() =>
+          vi.waitFor(() => expect(push).toHaveBeenCalledOnce())
+        );
+        yield* Effect.promise(() =>
+          vi.waitFor(() =>
+            expect(AsyncResult.isSuccess(registry.get(commandAtom))).toBe(true)
+          )
+        );
+        expect(AsyncResult.getOrThrow(registry.get(commandAtom))).toMatchObject(
+          {
+            _tag: "Started",
+          }
+        );
+        yield* Deferred.succeed(trackingRelease, undefined);
+      } finally {
+        registry.dispose();
+      }
+    })
+  );
 
   it.each([
     { name: "validatorAddress", type: "string" },

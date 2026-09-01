@@ -1,5 +1,5 @@
+import { describe, expect, it } from "@effect/vitest";
 import { Effect, Option, Stream } from "effect";
-import { describe, expect, it } from "vitest";
 import { GeoBlockService } from "../../src/services/geoblocking";
 
 const readGeneration = (response?: {
@@ -20,41 +20,41 @@ const readGeneration = (response?: {
   }).pipe(Effect.provide(GeoBlockService.layer));
 
 describe("GeoBlockService", () => {
-  it("is sticky within one service generation and fresh in the next", async () => {
-    const blocked = await Effect.runPromise(
-      readGeneration({
-        data: {
+  it.effect(
+    "is sticky within one service generation and fresh in the next",
+    () =>
+      Effect.gen(function* () {
+        const blocked = yield* readGeneration({
+          data: {
+            countryCode: "CA",
+            regionCode: "CA-ON",
+            tags: ["staking"],
+            type: "GEO_LOCATION",
+          },
+          status: 403,
+        });
+        const fresh = yield* readGeneration();
+
+        expect(blocked).toEqual({
           countryCode: "CA",
           regionCode: "CA-ON",
-          tags: ["staking"],
-          type: "GEO_LOCATION",
-        },
-        status: 403,
+          tags: new Set(["staking"]),
+        });
+        expect(fresh).toBe(false);
       })
-    );
-    const fresh = await Effect.runPromise(readGeneration());
+  );
 
-    expect(blocked).toEqual({
-      countryCode: "CA",
-      regionCode: "CA-ON",
-      tags: new Set(["staking"]),
-    });
-    expect(fresh).toBe(false);
-  });
-
-  it("ignores successful and unrelated failure responses", async () => {
-    await expect(
-      Effect.runPromise(
-        readGeneration({
+  it.effect("ignores successful and unrelated failure responses", () =>
+    Effect.gen(function* () {
+      expect(
+        yield* readGeneration({
           data: { type: "GEO_LOCATION" },
           status: 200,
         })
-      )
-    ).resolves.toBe(false);
-    await expect(
-      Effect.runPromise(
-        readGeneration({ data: { type: "OTHER" }, status: 403 })
-      )
-    ).resolves.toBe(false);
-  });
+      ).toBe(false);
+      expect(
+        yield* readGeneration({ data: { type: "OTHER" }, status: 403 })
+      ).toBe(false);
+    })
+  );
 });

@@ -1,6 +1,6 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Duration, Effect, Layer } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
-import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import type { EarnYield } from "../../src/domain/earn/models";
 import { yieldValidatorsAtom } from "../../src/features/earn/state/earn-selection/catalog/catalog";
@@ -99,78 +99,82 @@ describe("Earn validator search", () => {
     }
   });
 
-  it("searches name and address independently and merges the results", async () => {
-    const search = "needle";
-    const byName = {
-      ...yieldApiValidatorFixture({ address: "name-match" }),
-      key: "name-match" as never,
-    };
-    const byAddress = {
-      ...yieldApiValidatorFixture({ address: "address-match" }),
-      key: "address-match" as never,
-    };
-    const listValidators = vi.fn((request: ValidatorDirectoryRequest) => {
-      const getItems = (): Array<typeof byName> => {
-        if (request.name === search && request.address === undefined) {
-          return [byName];
-        }
-        if (request.address === search && request.name === undefined) {
-          return [byAddress];
-        }
-        return [];
-      };
-      const items = getItems();
+  it.effect(
+    "searches name and address independently and merges the results",
+    () =>
+      Effect.gen(function* () {
+        const search = "needle";
+        const byName = {
+          ...yieldApiValidatorFixture({ address: "name-match" }),
+          key: "name-match" as never,
+        };
+        const byAddress = {
+          ...yieldApiValidatorFixture({ address: "address-match" }),
+          key: "address-match" as never,
+        };
+        const listValidators = vi.fn((request: ValidatorDirectoryRequest) => {
+          const getItems = (): Array<typeof byName> => {
+            if (request.name === search && request.address === undefined) {
+              return [byName];
+            }
+            if (request.address === search && request.name === undefined) {
+              return [byAddress];
+            }
+            return [];
+          };
+          const items = getItems();
 
-      return Effect.succeed({
-        items,
-        limit: request.limit,
-        offset: request.offset,
-        total: items.length,
-      });
-    });
-    const registry = AtomRegistry.make({
-      initialValues: [
-        applicationRuntimeInitInitialValue(),
-        Atom.initialValue(
-          appRuntime.layer,
-          Layer.succeed(
-            YieldResourceSource,
-            YieldResourceSource.of({ listValidators } as never)
-          )
-        ),
-      ],
-    });
-    const validators = yieldValidatorsAtom(
-      new YieldValidatorsKey({ selectedYieldId: yieldId })
-    );
-    const pull = validators.validatorsPullAtom(
-      new YieldValidatorsPullKey({ search })
-    );
-    const unmount = registry.mount(pull);
+          return Effect.succeed({
+            items,
+            limit: request.limit,
+            offset: request.offset,
+            total: items.length,
+          });
+        });
+        const registry = AtomRegistry.make({
+          initialValues: [
+            applicationRuntimeInitInitialValue(),
+            Atom.initialValue(
+              appRuntime.layer,
+              Layer.succeed(
+                YieldResourceSource,
+                YieldResourceSource.of({ listValidators } as never)
+              )
+            ),
+          ],
+        });
+        const validators = yieldValidatorsAtom(
+          new YieldValidatorsKey({ selectedYieldId: yieldId })
+        );
+        const pull = validators.validatorsPullAtom(
+          new YieldValidatorsPullKey({ search })
+        );
+        const unmount = registry.mount(pull);
 
-    await Effect.runPromise(Effect.yieldNow);
-    await expect
-      .poll(() => listValidators.mock.calls.length)
-      .toBeGreaterThan(0);
-    const searchRequests = listValidators.mock.calls
-      .map(([request]) => request)
-      .filter((request) => request.name || request.address);
+        yield* Effect.yieldNow;
+        yield* Effect.promise(() =>
+          expect.poll(() => listValidators.mock.calls.length).toBeGreaterThan(0)
+        );
+        const searchRequests = listValidators.mock.calls
+          .map(([request]) => request)
+          .filter((request) => request.name || request.address);
 
-    expect(
-      searchRequests.map(({ address, name }) => ({ address, name }))
-    ).toEqual([
-      { address: undefined, name: search },
-      { address: search, name: undefined },
-    ]);
+        expect(
+          searchRequests.map(({ address, name }) => ({ address, name }))
+        ).toEqual([
+          { address: undefined, name: search },
+          { address: search, name: undefined },
+        ]);
 
-    expect(
-      getPullResultItems(registry.get(pull))
-        .flatMap((page) => page.items)
-        .map((validator) => validator.address)
-    ).toEqual(["name-match", "address-match"]);
+        expect(
+          getPullResultItems(registry.get(pull))
+            .flatMap((page) => page.items)
+            .map((validator) => validator.address)
+        ).toEqual(["name-match", "address-match"]);
 
-    unmount();
-  });
+        unmount();
+      })
+  );
 
   it("debounces the normalized query, rekeys the request, and drops stale results", async () => {
     vi.useFakeTimers();

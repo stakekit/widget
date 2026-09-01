@@ -1,5 +1,5 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer, Schema, Stream } from "effect";
-import { describe, expect, it, vi } from "vitest";
 import {
   DeepLinkCoordinator,
   type DeepLinkRouteObservation,
@@ -132,138 +132,154 @@ const runObservations = (
   observations: ReadonlyArray<DeepLinkRouteObservation>,
   layer: ReturnType<typeof makeLayer>
 ) =>
-  Effect.runPromise(
-    Effect.scoped(
-      DeepLinkCoordinator.use((coordinator) =>
-        coordinator.observe(Stream.fromIterable(observations))
-      ).pipe(Effect.provide(layer))
-    )
+  Effect.scoped(
+    DeepLinkCoordinator.use((coordinator) =>
+      coordinator.observe(Stream.fromIterable(observations))
+    ).pipe(Effect.provide(layer))
   );
 
 describe("DeepLinkCoordinator", () => {
-  it("waits for readiness and starts a pending-action Flow once", async () => {
-    const start = vi.fn(() =>
-      Effect.succeed({ _tag: "Started", session: {} } as const)
-    );
-    const pending = pendingObservation();
+  it.effect("waits for readiness and starts a pending-action Flow once", () =>
+    Effect.gen(function* () {
+      const start = vi.fn(() =>
+        Effect.succeed({ _tag: "Started", session: {} } as const)
+      );
+      const pending = pendingObservation();
 
-    await runObservations(
-      [
-        { ...pending, ready: false },
-        pending,
-        { ...pending, ready: false },
-        pending,
-      ],
-      makeLayer({ start })
-    );
+      yield* runObservations(
+        [
+          { ...pending, ready: false },
+          pending,
+          { ...pending, ready: false },
+          pending,
+        ],
+        makeLayer({ start })
+      );
 
-    expect(start).toHaveBeenCalledOnce();
-    expect(pending.pendingAction?._tag).toBe("StartClassicFlow");
-    if (pending.pendingAction?._tag === "StartClassicFlow") {
-      expect(start).toHaveBeenCalledWith(pending.pendingAction.input);
-    }
-  });
+      expect(start).toHaveBeenCalledOnce();
+      expect(pending.pendingAction?._tag).toBe("StartClassicFlow");
+      if (pending.pendingAction?._tag === "StartClassicFlow") {
+        expect(start).toHaveBeenCalledWith(pending.pendingAction.input);
+      }
+    })
+  );
 
-  it("does not start a pending-action Flow during maintenance", async () => {
-    const start = vi.fn(() =>
-      Effect.succeed({ _tag: "Started", session: {} } as const)
-    );
+  it.effect("does not start a pending-action Flow during maintenance", () =>
+    Effect.gen(function* () {
+      const start = vi.fn(() =>
+        Effect.succeed({ _tag: "Started", session: {} } as const)
+      );
 
-    await runObservations(
-      [{ ...pendingObservation(), maintenance: true }],
-      makeLayer({ start })
-    );
+      yield* runObservations(
+        [{ ...pendingObservation(), maintenance: true }],
+        makeLayer({ start })
+      );
 
-    expect(start).not.toHaveBeenCalled();
-  });
+      expect(start).not.toHaveBeenCalled();
+    })
+  );
 
-  it("rejects a pending-action intent after its wallet owner changes", async () => {
-    const start = vi.fn(() =>
-      Effect.succeed({ _tag: "Started", session: {} } as const)
-    );
+  it.effect(
+    "rejects a pending-action intent after its wallet owner changes",
+    () =>
+      Effect.gen(function* () {
+        const start = vi.fn(() =>
+          Effect.succeed({ _tag: "Started", session: {} } as const)
+        );
 
-    await runObservations(
-      [pendingObservation()],
-      makeLayer({ owner: otherAddress, start })
-    );
+        yield* runObservations(
+          [pendingObservation()],
+          makeLayer({ owner: otherAddress, start })
+        );
 
-    expect(start).not.toHaveBeenCalled();
-  });
+        expect(start).not.toHaveBeenCalled();
+      })
+  );
 
-  it("claims case-distinct non-EVM wallet owners separately", async () => {
-    const firstScope = new WalletScopeKey({
-      address: Schema.decodeSync(WalletAddress)("CaseSensitiveOwner"),
-      network: "solana",
-    });
-    const secondScope = new WalletScopeKey({
-      address: Schema.decodeSync(WalletAddress)("casesensitiveowner"),
-      network: "solana",
-    });
-    const start = vi.fn(() =>
-      Effect.succeed({ _tag: "Started", session: {} } as const)
-    );
+  it.effect("claims case-distinct non-EVM wallet owners separately", () =>
+    Effect.gen(function* () {
+      const firstScope = new WalletScopeKey({
+        address: Schema.decodeSync(WalletAddress)("CaseSensitiveOwner"),
+        network: "solana",
+      });
+      const secondScope = new WalletScopeKey({
+        address: Schema.decodeSync(WalletAddress)("casesensitiveowner"),
+        network: "solana",
+      });
+      const start = vi.fn(() =>
+        Effect.succeed({ _tag: "Started", session: {} } as const)
+      );
 
-    await runObservations(
-      [pendingObservation(firstScope), pendingObservation(secondScope)],
-      makeLayer({ ownerScopes: [firstScope, secondScope], start })
-    );
+      yield* runObservations(
+        [pendingObservation(firstScope), pendingObservation(secondScope)],
+        makeLayer({ ownerScopes: [firstScope, secondScope], start })
+      );
 
-    expect(start).toHaveBeenCalledTimes(2);
-  });
+      expect(start).toHaveBeenCalledTimes(2);
+    })
+  );
 
-  it("retries an unclaimed position intent on the next meaningful observation", async () => {
-    const start = vi.fn();
-    const navigate = vi
-      .fn<(path: WidgetPath) => Effect.Effect<void, WidgetNavigationError>>()
-      .mockReturnValueOnce(
-        Effect.fail(
-          new WidgetNavigationError({
-            cause: new Error("navigation failed"),
-          })
-        )
-      )
-      .mockReturnValue(Effect.void);
-    const position = {
-      maintenance: false,
-      pendingAction: null,
-      position: { balanceId: "balance-1", yieldId: "yield-1" },
-      ready: true,
-    } satisfies DeepLinkRouteObservation;
-
-    await runObservations(
-      [
-        position,
-        { ...position, ready: false },
-        position,
-        { ...position, ready: false },
-        position,
-      ],
-      makeLayer({ navigate, start })
-    );
-
-    expect(navigate).toHaveBeenCalledTimes(2);
-    expect(navigate).toHaveBeenCalledWith(
-      "/positions/yield-1/balance-1",
-      expect.anything()
-    );
-  });
-
-  it("revalidates the current wallet before position navigation", async () => {
-    const navigate = vi.fn(() => Effect.void);
-    const start = vi.fn();
-
-    await runObservations(
-      [
-        {
+  it.effect(
+    "retries an unclaimed position intent on the next meaningful observation",
+    () =>
+      Effect.gen(function* () {
+        const start = vi.fn();
+        const navigate = vi
+          .fn<
+            (path: WidgetPath) => Effect.Effect<void, WidgetNavigationError>
+          >()
+          .mockReturnValueOnce(
+            Effect.fail(
+              new WidgetNavigationError({
+                cause: new Error("navigation failed"),
+              })
+            )
+          )
+          .mockReturnValue(Effect.void);
+        const position = {
           maintenance: false,
           pendingAction: null,
           position: { balanceId: "balance-1", yieldId: "yield-1" },
           ready: true,
-        },
-      ],
-      makeLayer({ connected: false, navigate, start })
-    );
+        } satisfies DeepLinkRouteObservation;
 
-    expect(navigate).not.toHaveBeenCalled();
-  });
+        yield* runObservations(
+          [
+            position,
+            { ...position, ready: false },
+            position,
+            { ...position, ready: false },
+            position,
+          ],
+          makeLayer({ navigate, start })
+        );
+
+        expect(navigate).toHaveBeenCalledTimes(2);
+        expect(navigate).toHaveBeenCalledWith(
+          "/positions/yield-1/balance-1",
+          expect.anything()
+        );
+      })
+  );
+
+  it.effect("revalidates the current wallet before position navigation", () =>
+    Effect.gen(function* () {
+      const navigate = vi.fn(() => Effect.void);
+      const start = vi.fn();
+
+      yield* runObservations(
+        [
+          {
+            maintenance: false,
+            pendingAction: null,
+            position: { balanceId: "balance-1", yieldId: "yield-1" },
+            ready: true,
+          },
+        ],
+        makeLayer({ connected: false, navigate, start })
+      );
+
+      expect(navigate).not.toHaveBeenCalled();
+    })
+  );
 });

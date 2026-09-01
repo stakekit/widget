@@ -1,6 +1,6 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Schema } from "effect";
 import type { RefObject } from "react";
-import { describe, expect, it, vi } from "vitest";
 import { ActionId, TransactionId } from "../../src/domain/identity/identifiers";
 import type { ExternalProviderSnapshot } from "../../src/public-api/external-provider-contract";
 import type {
@@ -71,108 +71,122 @@ const makeBorrowProviderRef = (
 });
 
 describe("generic external provider callback contract", () => {
-  it("passes message, chain, transaction, and metadata through Promise callbacks", async () => {
-    const signMessage = vi.fn(async () => "signed-message");
-    const switchChain = vi.fn(async () => undefined);
-    const sendTransaction = vi.fn(async () => ({
-      type: "success" as const,
-      txHash: "broadcast-hash",
-    }));
-    const provider = new ExternalProvider(
-      makeProviderRef({ signMessage, switchChain, sendTransaction })
-    );
+  it.effect(
+    "passes message, chain, transaction, and metadata through Promise callbacks",
+    () =>
+      Effect.gen(function* () {
+        const signMessage = vi.fn(async () => "signed-message");
+        const switchChain = vi.fn(async () => undefined);
+        const sendTransaction = vi.fn(async () => ({
+          type: "success" as const,
+          txHash: "broadcast-hash",
+        }));
+        const provider = new ExternalProvider(
+          makeProviderRef({ signMessage, switchChain, sendTransaction })
+        );
 
-    await expect(
-      Effect.runPromise(provider.signMessage("message-hash"))
-    ).resolves.toBe("signed-message");
-    await expect(
-      Effect.runPromise(provider.switchChain({ chainId: 501 }))
-    ).resolves.toBeUndefined();
-    await expect(
-      Effect.runPromise(provider.sendTransaction(transaction, transactionMeta))
-    ).resolves.toBe("broadcast-hash");
+        expect(yield* provider.signMessage("message-hash")).toBe(
+          "signed-message"
+        );
+        expect(yield* provider.switchChain({ chainId: 501 })).toBeUndefined();
+        expect(
+          yield* provider.sendTransaction(transaction, transactionMeta)
+        ).toBe("broadcast-hash");
 
-    expect(signMessage).toHaveBeenCalledWith("message-hash");
-    expect(switchChain).toHaveBeenCalledWith(501);
-    expect(sendTransaction).toHaveBeenCalledWith(transaction, transactionMeta);
-  });
-
-  it("accepts legacy string hashes and preserves host error messages", async () => {
-    const stringProvider = new ExternalProvider(
-      makeProviderRef({
-        signMessage: async () => "signed-message",
-        switchChain: async () => undefined,
-        sendTransaction: async () => "legacy-broadcast-hash",
+        expect(signMessage).toHaveBeenCalledWith("message-hash");
+        expect(switchChain).toHaveBeenCalledWith(501);
+        expect(sendTransaction).toHaveBeenCalledWith(
+          transaction,
+          transactionMeta
+        );
       })
-    );
-    const errorProvider = new ExternalProvider(
-      makeProviderRef({
-        signMessage: async () => "signed-message",
-        switchChain: async () => undefined,
-        sendTransaction: async () => ({
-          type: "error",
-          error: "Transaction blocked by host policy",
-        }),
+  );
+
+  it.effect(
+    "accepts legacy string hashes and preserves host error messages",
+    () =>
+      Effect.gen(function* () {
+        const stringProvider = new ExternalProvider(
+          makeProviderRef({
+            signMessage: async () => "signed-message",
+            switchChain: async () => undefined,
+            sendTransaction: async () => "legacy-broadcast-hash",
+          })
+        );
+        const errorProvider = new ExternalProvider(
+          makeProviderRef({
+            signMessage: async () => "signed-message",
+            switchChain: async () => undefined,
+            sendTransaction: async () => ({
+              type: "error",
+              error: "Transaction blocked by host policy",
+            }),
+          })
+        );
+
+        expect(
+          yield* stringProvider.sendTransaction(transaction, transactionMeta)
+        ).toBe("legacy-broadcast-hash");
+
+        const error = yield* Effect.flip(
+          errorProvider.sendTransaction(transaction, transactionMeta)
+        );
+        expect(error).toBeInstanceOf(ExternalProviderError);
+        expect((error as ExternalProviderError).customMessage).toBe(
+          "Transaction blocked by host policy"
+        );
       })
-    );
+  );
 
-    await expect(
-      Effect.runPromise(
-        stringProvider.sendTransaction(transaction, transactionMeta)
-      )
-    ).resolves.toBe("legacy-broadcast-hash");
+  it.effect(
+    "sends Borrow transactions through the Borrow host capability",
+    () =>
+      Effect.gen(function* () {
+        const sendTransaction = vi.fn(async () => "classic-hash");
+        const sendBorrowTransaction = vi.fn(async () => "borrow-hash");
+        const wallet = {
+          signMessage: async () => "signed-message",
+          switchChain: async () => undefined,
+          sendBorrowTransaction,
+          sendTransaction,
+        } satisfies SKBorrowWallet;
+        const provider = new ExternalProvider(makeBorrowProviderRef(wallet));
 
-    const error = await Effect.runPromise(
-      Effect.flip(errorProvider.sendTransaction(transaction, transactionMeta))
-    );
-    expect(error).toBeInstanceOf(ExternalProviderError);
-    expect((error as ExternalProviderError).customMessage).toBe(
-      "Transaction blocked by host policy"
-    );
-  });
+        expect(
+          yield* provider.sendBorrowTransaction(
+            transaction,
+            borrowTransactionMeta
+          )
+        ).toBe("borrow-hash");
 
-  it("sends Borrow transactions through the Borrow host capability", async () => {
-    const sendTransaction = vi.fn(async () => "classic-hash");
-    const sendBorrowTransaction = vi.fn(async () => "borrow-hash");
-    const wallet = {
-      signMessage: async () => "signed-message",
-      switchChain: async () => undefined,
-      sendBorrowTransaction,
-      sendTransaction,
-    } satisfies SKBorrowWallet;
-    const provider = new ExternalProvider(makeBorrowProviderRef(wallet));
-
-    await expect(
-      Effect.runPromise(
-        provider.sendBorrowTransaction(transaction, borrowTransactionMeta)
-      )
-    ).resolves.toBe("borrow-hash");
-
-    expect(sendBorrowTransaction).toHaveBeenCalledWith(
-      transaction,
-      borrowTransactionMeta
-    );
-    expect(sendTransaction).not.toHaveBeenCalled();
-  });
-
-  it("rejects Borrow invocation when the live provider loses its Borrow capability", async () => {
-    const provider = new ExternalProvider(
-      makeProviderRef({
-        signMessage: async () => "signed-message",
-        switchChain: async () => undefined,
-        sendTransaction: async () => "classic-hash",
+        expect(sendBorrowTransaction).toHaveBeenCalledWith(
+          transaction,
+          borrowTransactionMeta
+        );
+        expect(sendTransaction).not.toHaveBeenCalled();
       })
-    );
+  );
 
-    const error = await Effect.runPromise(
-      Effect.flip(
-        provider.sendBorrowTransaction(transaction, borrowTransactionMeta)
-      )
-    );
+  it.effect(
+    "rejects Borrow invocation when the live provider loses its Borrow capability",
+    () =>
+      Effect.gen(function* () {
+        const provider = new ExternalProvider(
+          makeProviderRef({
+            signMessage: async () => "signed-message",
+            switchChain: async () => undefined,
+            sendTransaction: async () => "classic-hash",
+          })
+        );
 
-    expect(error).toBeInstanceOf(ExternalProviderError);
-    expect((error as ExternalProviderError).message).toBe(
-      "Borrow transaction capability is unavailable"
-    );
-  });
+        const error = yield* Effect.flip(
+          provider.sendBorrowTransaction(transaction, borrowTransactionMeta)
+        );
+
+        expect(error).toBeInstanceOf(ExternalProviderError);
+        expect((error as ExternalProviderError).message).toBe(
+          "Borrow transaction capability is unavailable"
+        );
+      })
+  );
 });

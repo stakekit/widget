@@ -1,7 +1,7 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer, Schema, SubscriptionRef } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
-import { describe, expect, it, vi } from "vitest";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
@@ -96,65 +96,78 @@ const makeSessionHandle = (
 });
 
 describe("Classic Flow Atom bridge", () => {
-  it("looks up the service once, projects current state, and binds Session acquisition to the root Atom lifetime", async () => {
-    const current = await Effect.runPromise(
-      SubscriptionRef.make<ClassicFlowSession | null>(null)
-    );
-    const probes = { acquired: 0, released: 0 };
-    const startInputs: Array<StartClassicTransactionFlow> = [];
-    const service = ClassicTransactionFlowService.of({
-      acquireSession: (session) =>
-        Effect.acquireRelease(
-          Effect.sync(() => {
-            probes.acquired += 1;
-            return {
-              _tag: "Acquired",
-              session: makeSessionHandle(session),
-            } as const;
-          }),
-          () =>
-            Effect.sync(() => {
-              probes.released += 1;
-            }).pipe(Effect.andThen(SubscriptionRef.set(current, null)))
-        ),
-      currentSession: SubscriptionRef.changes(current),
-      start: (input) =>
-        Effect.gen(function* () {
-          startInputs.push(input);
-          const session = makeSession(input.intake, 1);
-          yield* SubscriptionRef.set(current, session);
-          return { _tag: "Started", session } as const;
-        }),
-    });
-    const registry = AtomRegistry.make({
-      initialValues: [
-        Atom.initialValue(
-          walletRuntime.layer,
-          Layer.succeed(ClassicTransactionFlowService, service) as never
-        ),
-      ],
-    });
-    const intake = makeEnterIntake();
-    const command = { intake, mount: { _tag: "Earn" } } as const;
+  it.effect(
+    "looks up the service once, projects current state, and binds Session acquisition to the root Atom lifetime",
+    () =>
+      Effect.gen(function* () {
+        const current = yield* SubscriptionRef.make<ClassicFlowSession | null>(
+          null
+        );
+        const probes = { acquired: 0, released: 0 };
+        const startInputs: Array<StartClassicTransactionFlow> = [];
+        const service = ClassicTransactionFlowService.of({
+          acquireSession: (session) =>
+            Effect.acquireRelease(
+              Effect.sync(() => {
+                probes.acquired += 1;
+                return {
+                  _tag: "Acquired",
+                  session: makeSessionHandle(session),
+                } as const;
+              }),
+              () =>
+                Effect.sync(() => {
+                  probes.released += 1;
+                }).pipe(Effect.andThen(SubscriptionRef.set(current, null)))
+            ),
+          currentSession: SubscriptionRef.changes(current),
+          start: (input) =>
+            Effect.gen(function* () {
+              startInputs.push(input);
+              const session = makeSession(input.intake, 1);
+              yield* SubscriptionRef.set(current, session);
+              return { _tag: "Started", session } as const;
+            }),
+        });
+        const registry = AtomRegistry.make({
+          initialValues: [
+            Atom.initialValue(
+              walletRuntime.layer,
+              Layer.succeed(ClassicTransactionFlowService, service) as never
+            ),
+          ],
+        });
+        const intake = makeEnterIntake();
+        const command = { intake, mount: { _tag: "Earn" } } as const;
 
-    registry.set(startClassicTransactionFlowAtom, command);
-    await vi.waitFor(() =>
-      expect(registry.get(currentClassicFlowSessionAtom)?.epoch).toBe(1)
-    );
-    expect(startInputs).toEqual([command]);
-    expect(
-      registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
-    ).toBe(true);
+        registry.set(startClassicTransactionFlowAtom, command);
+        yield* Effect.promise(() =>
+          vi.waitFor(() =>
+            expect(registry.get(currentClassicFlowSessionAtom)?.epoch).toBe(1)
+          )
+        );
+        expect(startInputs).toEqual([command]);
+        expect(
+          registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
+        ).toBe(true);
 
-    const rootAtom = registry.get(currentClassicFlowSessionRootAtom);
-    if (!rootAtom) throw new Error("Expected a Classic Flow Session root Atom");
-    const releaseRoot = registry.mount(rootAtom);
-    await vi.waitFor(() => expect(probes.acquired).toBe(1));
+        const rootAtom = registry.get(currentClassicFlowSessionRootAtom);
+        if (!rootAtom)
+          throw new Error("Expected a Classic Flow Session root Atom");
+        const releaseRoot = registry.mount(rootAtom);
+        yield* Effect.promise(() =>
+          vi.waitFor(() => expect(probes.acquired).toBe(1))
+        );
 
-    releaseRoot();
-    await vi.waitFor(() => expect(probes.released).toBe(1));
-    await vi.waitFor(() =>
-      expect(registry.get(currentClassicFlowSessionAtom)).toBeNull()
-    );
-  });
+        releaseRoot();
+        yield* Effect.promise(() =>
+          vi.waitFor(() => expect(probes.released).toBe(1))
+        );
+        yield* Effect.promise(() =>
+          vi.waitFor(() =>
+            expect(registry.get(currentClassicFlowSessionAtom)).toBeNull()
+          )
+        );
+      })
+  );
 });

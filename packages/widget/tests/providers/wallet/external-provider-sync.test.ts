@@ -1,6 +1,6 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Deferred, Effect, Stream } from "effect";
 import { mainnet } from "viem/chains";
-import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 import type {
   SettingsProps,
@@ -85,7 +85,7 @@ const makeContext = (
   },
 });
 
-const makeHarness = async ({
+const makeHarness = ({
   connect = () => Effect.void,
   connector,
   connected,
@@ -100,216 +100,227 @@ const makeHarness = async ({
       "externalProviders"
     >
   >;
-}) => {
-  const initial = getTestWidgetConfig({
-    ...settings,
-    apiKey: "api-key",
-    borrowEnabled: false,
-    externalProviders: externalProviders(),
-    variant: "default",
-  });
-  const invariant = await Effect.runPromise(Deferred.make<unknown>());
-  const context = makeContext(connector, connected);
-  const state = {
-    context: Effect.succeed(context),
-    contexts: Stream.concat(Stream.succeed(context), Stream.never),
-    failInvariant: (error) =>
-      Deferred.succeed(invariant, error).pipe(Effect.asVoid),
-  } satisfies WalletStateRuntime;
-  const wagmiConfig = makeDefaultConfig();
-  const controller = makeWalletTestController({
-    actions: { connect },
-    queryParamsInitChainId: undefined,
-    wagmiConfig,
-  });
-  const snapshot = initial.externalProviders!;
-  const bootstrap = {
-    controller,
-    core: {
-      current: Effect.succeed(context.core),
-      states: Stream.never,
-    },
-    externalProviders: { current: snapshot },
-    snapshot: {
-      browser: {
-        href: "https://widget.test/",
-        isLedgerDappBrowser: false,
-        isMobileWallet: false,
+}) =>
+  Effect.gen(function* () {
+    const initial = getTestWidgetConfig({
+      ...settings,
+      apiKey: "api-key",
+      borrowEnabled: false,
+      externalProviders: externalProviders(),
+      variant: "default",
+    });
+    const invariant = yield* Deferred.make<unknown>();
+    const context = makeContext(connector, connected);
+    const state = {
+      context: Effect.succeed(context),
+      contexts: Stream.concat(Stream.succeed(context), Stream.never),
+      failInvariant: (error) =>
+        Deferred.succeed(invariant, error).pipe(Effect.asVoid),
+    } satisfies WalletStateRuntime;
+    const wagmiConfig = makeDefaultConfig();
+    const controller = makeWalletTestController({
+      actions: { connect },
+      queryParamsInitChainId: undefined,
+      wagmiConfig,
+    });
+    const snapshot = initial.externalProviders!;
+    const bootstrap = {
+      controller,
+      core: {
+        current: Effect.succeed(context.core),
+        states: Stream.never,
       },
-      config: selectWidgetBootstrapSnapshot(initial),
-      enabledNetworks: new Set(["ethereum"]),
       externalProviders: { current: snapshot },
-      initParams: {} as never,
-    },
-  } satisfies WalletBootstrapResult;
-  const configLayer = WidgetConfigService.layer({
-    ...settings,
-    apiKey: "api-key",
-    borrowEnabled: false,
-    externalProviders: externalProviders(),
-    variant: "default",
+      snapshot: {
+        browser: {
+          href: "https://widget.test/",
+          isLedgerDappBrowser: false,
+          isMobileWallet: false,
+        },
+        config: selectWidgetBootstrapSnapshot(initial),
+        enabledNetworks: new Set(["ethereum"]),
+        externalProviders: { current: snapshot },
+        initParams: {} as never,
+      },
+    } satisfies WalletBootstrapResult;
+    const configLayer = WidgetConfigService.layer({
+      ...settings,
+      apiKey: "api-key",
+      borrowEnabled: false,
+      externalProviders: externalProviders(),
+      variant: "default",
+    });
+    return { bootstrap, configLayer, invariant, state };
   });
-  return { bootstrap, configLayer, invariant, state };
-};
 
 describe("external-provider synchronization", () => {
-  it("updates live provider values and sends connector notifications", async () => {
-    const accountsChanged = vi.fn();
-    const chainChanged = vi.fn();
-    const supportedChanged = vi.fn();
-    const notified = await Effect.runPromise(Deferred.make<void>());
-    const connector = {
-      id: "externalProviderConnector",
-      name: "External",
-      onAccountsChanged: (accounts: readonly string[]) => {
-        accountsChanged(accounts);
-        void Effect.runPromise(Deferred.succeed(notified, undefined));
-      },
-      onChainChanged: chainChanged,
-      onSupportedChainsChanged: supportedChanged,
-      type: "externalProvider",
-      uid: "external-uid",
-    } as unknown as Connector;
-    const harness = await makeHarness({ connector, connected: true });
-    const nextProviders = externalProviders({
-      currentAddress: secondAddress,
-      currentChain: 10,
-      supportedChainIds: [1, 10],
-    });
+  it.effect(
+    "updates live provider values and sends connector notifications",
+    () =>
+      Effect.gen(function* () {
+        const accountsChanged = vi.fn();
+        const chainChanged = vi.fn();
+        const supportedChanged = vi.fn();
+        const notified = Promise.withResolvers<void>();
+        const connector = {
+          id: "externalProviderConnector",
+          name: "External",
+          onAccountsChanged: (accounts: readonly string[]) => {
+            accountsChanged(accounts);
+            notified.resolve();
+          },
+          onChainChanged: chainChanged,
+          onSupportedChainsChanged: supportedChanged,
+          type: "externalProvider",
+          uid: "external-uid",
+        } as unknown as Connector;
+        const harness = yield* makeHarness({ connector, connected: true });
+        const nextProviders = externalProviders({
+          currentAddress: secondAddress,
+          currentChain: 10,
+          supportedChainIds: [1, 10],
+        });
 
-    await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          yield* installExternalProviderSynchronization(harness);
-          const config = yield* WidgetConfigService;
-          yield* config.update({
+        yield* Effect.scoped(
+          Effect.gen(function* () {
+            yield* installExternalProviderSynchronization(harness);
+            const config = yield* WidgetConfigService;
+            yield* config.update({
+              apiKey: "api-key",
+              externalProviders: nextProviders,
+              variant: "default",
+            });
+            yield* Effect.promise(() => notified.promise);
+            yield* Effect.yieldNow;
+          }).pipe(Effect.provide(harness.configLayer))
+        );
+
+        expect(harness.bootstrap.externalProviders?.current).toEqual(
+          getTestWidgetConfig({
             apiKey: "api-key",
             externalProviders: nextProviders,
             variant: "default",
-          });
-          yield* Deferred.await(notified);
-          yield* Effect.yieldNow;
-        }).pipe(Effect.provide(harness.configLayer))
-      )
-    );
-
-    expect(harness.bootstrap.externalProviders?.current).toEqual(
-      getTestWidgetConfig({
-        apiKey: "api-key",
-        externalProviders: nextProviders,
-        variant: "default",
-      }).externalProviders
-    );
-    expect(accountsChanged).toHaveBeenCalledWith([secondAddress]);
-    expect(chainChanged).toHaveBeenCalledWith("10");
-    expect(supportedChanged).toHaveBeenCalledWith({
-      currentChainId: 10,
-      supportedChainIds: [1, 10],
-    });
-  });
-
-  it("does not start a duplicate automatic connection while one is pending", async () => {
-    const started = await Effect.runPromise(Deferred.make<void>());
-    const release = await Effect.runPromise(Deferred.make<void>());
-    const connect = vi.fn(() =>
-      Effect.gen(function* () {
-        yield* Deferred.succeed(started, undefined);
-        yield* Deferred.await(release);
+          }).externalProviders
+        );
+        expect(accountsChanged).toHaveBeenCalledWith([secondAddress]);
+        expect(chainChanged).toHaveBeenCalledWith("10");
+        expect(supportedChanged).toHaveBeenCalledWith({
+          currentChainId: 10,
+          supportedChainIds: [1, 10],
+        });
       })
-    );
-    const connector = {
-      id: "externalProviderConnector",
-      name: "External",
-      onAccountsChanged: () => undefined,
-      onChainChanged: () => undefined,
-      onSupportedChainsChanged: () => undefined,
-      type: "externalProvider",
-      uid: "external-uid",
-    } as unknown as Connector;
-    const harness = await makeHarness({ connect, connector, connected: false });
+  );
 
-    await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          yield* installExternalProviderSynchronization(harness);
-          yield* Deferred.await(started);
-          const config = yield* WidgetConfigService;
-          yield* config.update({
-            apiKey: "api-key",
-            externalProviders: externalProviders({ currentChain: 10 }),
-            variant: "default",
-          });
-          yield* Effect.yieldNow;
-          expect(connect).toHaveBeenCalledOnce();
-          yield* Deferred.succeed(release, undefined);
-        }).pipe(Effect.provide(harness.configLayer))
-      )
-    );
-  });
+  it.effect(
+    "does not start a duplicate automatic connection while one is pending",
+    () =>
+      Effect.gen(function* () {
+        const started = yield* Deferred.make<void>();
+        const release = yield* Deferred.make<void>();
+        const connect = vi.fn(() =>
+          Effect.gen(function* () {
+            yield* Deferred.succeed(started, undefined);
+            yield* Deferred.await(release);
+          })
+        );
+        const connector = {
+          id: "externalProviderConnector",
+          name: "External",
+          onAccountsChanged: () => undefined,
+          onChainChanged: () => undefined,
+          onSupportedChainsChanged: () => undefined,
+          type: "externalProvider",
+          uid: "external-uid",
+        } as unknown as Connector;
+        const harness = yield* makeHarness({
+          connect,
+          connector,
+          connected: false,
+        });
 
-  it("keeps synchronizing when only host functions change identity", async () => {
-    const notified = await Effect.runPromise(Deferred.make<void>());
-    const connector = {
-      id: "externalProviderConnector",
-      name: "External",
-      onAccountsChanged: () => {
-        void Effect.runPromise(Deferred.succeed(notified, undefined));
-      },
-      onChainChanged: () => undefined,
-      onSupportedChainsChanged: () => undefined,
-      type: "externalProvider",
-      uid: "external-uid",
-    } as unknown as Connector;
-    const harness = await makeHarness({
-      connected: true,
-      connector,
-      settings: { mapWalletFn: (wallet) => wallet },
-    });
+        yield* Effect.scoped(
+          Effect.gen(function* () {
+            yield* installExternalProviderSynchronization(harness);
+            yield* Deferred.await(started);
+            const config = yield* WidgetConfigService;
+            yield* config.update({
+              apiKey: "api-key",
+              externalProviders: externalProviders({ currentChain: 10 }),
+              variant: "default",
+            });
+            yield* Effect.yieldNow;
+            expect(connect).toHaveBeenCalledOnce();
+            yield* Deferred.succeed(release, undefined);
+          }).pipe(Effect.provide(harness.configLayer))
+        );
+      })
+  );
 
-    const failed = await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          yield* installExternalProviderSynchronization(harness);
-          const config = yield* WidgetConfigService;
-          yield* config.update({
-            apiKey: "api-key",
-            externalProviders: externalProviders({
-              currentAddress: secondAddress,
-            }),
-            mapWalletFn: (wallet) => wallet,
-            variant: "default",
-          });
-          yield* Deferred.await(notified);
-          yield* Effect.yieldNow;
+  it.effect(
+    "keeps synchronizing when only host functions change identity",
+    () =>
+      Effect.gen(function* () {
+        const notified = Promise.withResolvers<void>();
+        const connector = {
+          id: "externalProviderConnector",
+          name: "External",
+          onAccountsChanged: () => {
+            notified.resolve();
+          },
+          onChainChanged: () => undefined,
+          onSupportedChainsChanged: () => undefined,
+          type: "externalProvider",
+          uid: "external-uid",
+        } as unknown as Connector;
+        const harness = yield* makeHarness({
+          connected: true,
+          connector,
+          settings: { mapWalletFn: (wallet) => wallet },
+        });
 
-          return yield* Deferred.isDone(harness.invariant);
-        }).pipe(Effect.provide(harness.configLayer))
-      )
-    );
+        const failed = yield* Effect.scoped(
+          Effect.gen(function* () {
+            yield* installExternalProviderSynchronization(harness);
+            const config = yield* WidgetConfigService;
+            yield* config.update({
+              apiKey: "api-key",
+              externalProviders: externalProviders({
+                currentAddress: secondAddress,
+              }),
+              mapWalletFn: (wallet) => wallet,
+              variant: "default",
+            });
+            yield* Effect.promise(() => notified.promise);
+            yield* Effect.yieldNow;
 
-    expect(failed).toBe(false);
-    expect(harness.bootstrap.externalProviders?.current.currentAddress).toBe(
-      secondAddress
-    );
-  });
+            return yield* Deferred.isDone(harness.invariant);
+          }).pipe(Effect.provide(harness.configLayer))
+        );
 
-  it("keeps synchronizing when a comparable wallet field changes", async () => {
-    const notified = await Effect.runPromise(Deferred.make<void>());
-    const connector = {
-      id: "externalProviderConnector",
-      name: "External",
-      onAccountsChanged: () => {
-        void Effect.runPromise(Deferred.succeed(notified, undefined));
-      },
-      onChainChanged: () => undefined,
-      onSupportedChainsChanged: () => undefined,
-      type: "externalProvider",
-      uid: "external-uid",
-    } as unknown as Connector;
-    const harness = await makeHarness({ connected: true, connector });
+        expect(failed).toBe(false);
+        expect(
+          harness.bootstrap.externalProviders?.current.currentAddress
+        ).toBe(secondAddress);
+      })
+  );
 
-    const failed = await Effect.runPromise(
-      Effect.scoped(
+  it.effect("keeps synchronizing when a comparable wallet field changes", () =>
+    Effect.gen(function* () {
+      const notified = Promise.withResolvers<void>();
+      const connector = {
+        id: "externalProviderConnector",
+        name: "External",
+        onAccountsChanged: () => {
+          notified.resolve();
+        },
+        onChainChanged: () => undefined,
+        onSupportedChainsChanged: () => undefined,
+        type: "externalProvider",
+        uid: "external-uid",
+      } as unknown as Connector;
+      const harness = yield* makeHarness({ connected: true, connector });
+
+      const failed = yield* Effect.scoped(
         Effect.gen(function* () {
           yield* installExternalProviderSynchronization(harness);
           const config = yield* WidgetConfigService;
@@ -321,38 +332,40 @@ describe("external-provider synchronization", () => {
             isSafe: true,
             variant: "default",
           });
-          yield* Deferred.await(notified);
+          yield* Effect.promise(() => notified.promise);
           yield* Effect.yieldNow;
 
           return yield* Deferred.isDone(harness.invariant);
         }).pipe(Effect.provide(harness.configLayer))
-      )
-    );
+      );
 
-    expect(failed).toBe(false);
-    expect(harness.bootstrap.externalProviders?.current.currentAddress).toBe(
-      secondAddress
-    );
-  });
+      expect(failed).toBe(false);
+      expect(harness.bootstrap.externalProviders?.current.currentAddress).toBe(
+        secondAddress
+      );
+    })
+  );
 
-  it("fails the runtime when the fixed external connector is missing", async () => {
-    const harness = await makeHarness({
-      connector: undefined,
-      connected: false,
-    });
+  it.effect(
+    "fails the runtime when the fixed external connector is missing",
+    () =>
+      Effect.gen(function* () {
+        const harness = yield* makeHarness({
+          connector: undefined,
+          connected: false,
+        });
 
-    const failure = await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          yield* installExternalProviderSynchronization(harness);
-          return yield* Deferred.await(harness.invariant);
-        }).pipe(Effect.provide(harness.configLayer))
-      )
-    );
+        const failure = yield* Effect.scoped(
+          Effect.gen(function* () {
+            yield* installExternalProviderSynchronization(harness);
+            return yield* Deferred.await(harness.invariant);
+          }).pipe(Effect.provide(harness.configLayer))
+        );
 
-    expect(failure).toMatchObject({
-      _tag: "WalletRuntimeInvariantError",
-      reason: "external-provider-connector-missing",
-    });
-  });
+        expect(failure).toMatchObject({
+          _tag: "WalletRuntimeInvariantError",
+          reason: "external-provider-connector-missing",
+        });
+      })
+  );
 });

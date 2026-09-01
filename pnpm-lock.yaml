@@ -250,6 +250,9 @@ catalogs:
     '@effect/platform-node':
       specifier: 4.0.0-rc.112
       version: 4.0.0-rc.112
+    '@effect/vitest':
+      specifier: 4.0.0-rc.112
+      version: 4.0.0-rc.112
     '@faker-js/faker':
       specifier: ^10.6.0
       version: 10.6.0
@@ -630,6 +633,9 @@ importers:
       '@effect/platform-node':
         specifier: 'catalog:'
         version: 4.0.0-rc.112(bufferutil@4.0.9)(effect@4.0.0-rc.112)(redis@6.2.1)(utf-8-validate@5.0.10)
+      '@effect/vitest':
+        specifier: 'catalog:'
+        version: 4.0.0-rc.112(effect@4.0.0-rc.112)(vitest@4.1.11)
       '@faker-js/faker':
         specifier: 'catalog:'
         version: 10.6.0
@@ -1590,6 +1596,12 @@ packages:
     peerDependencies:
       effect: ^4.0.0-rc.112
       redis: '>=5.0.0 <7.0.0'
+
+  '@effect/vitest@4.0.0-rc.112':
+    resolution: {integrity: sha512-mEKh/FI64mt8JK1/v9mpOrJYdnp+UFZdRUBMEdZMiKz7klg6NPqVgg/oeAGH6wOOQc2iAPcfc2H9BbAv1KyzMQ==}
+    peerDependencies:
+      effect: ^4.0.0-rc.112
+      vitest: '>=4.1.0 <5.0.0'
 
   '@emnapi/core@1.11.2':
     resolution: {integrity: sha512-TC8MkTuZUtcTSiFeuC0ksCh9QIJ5+F21MvZ4Wn4ORfYaFJ/0dsiudv5tVkejgwZlwQ39jL9WWDe2lz8x0WglOA==}
@@ -13051,6 +13063,11 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+
+  '@effect/vitest@4.0.0-rc.112(effect@4.0.0-rc.112)(vitest@4.1.11)':
+    dependencies:
+      effect: 4.0.0-rc.112
+      vitest: 4.1.11(@types/node@26.2.0)(@vitest/browser-playwright@4.1.11)(jsdom@30.0.1(@noble/hashes@2.2.0))(msw@2.15.0(@types/node@26.1.2)(typescript@6.0.3))(vite@8.2.2(@types/node@26.1.2)(esbuild@0.28.2)(jiti@2.7.0)(less@4.2.2)(sass@1.85.0)(terser@5.48.0)(tsx@4.23.12)(yaml@2.9.0))
 
   '@emnapi/core@1.11.2':
     dependencies:

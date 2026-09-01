@@ -1,6 +1,6 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Deferred, Effect, Layer, Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
-import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import {
   enrichedYieldDirectoryResourceAtom,
@@ -264,53 +264,59 @@ describe("Yield Directory resource", () => {
     expect(listYields).toHaveBeenCalledTimes(attemptsBeforeRetry + 1);
   });
 
-  it("does not publish an interrupted stale response after refresh", async () => {
-    const first = await Effect.runPromise(
-      Deferred.make<ReturnType<typeof makeYield>[]>()
-    );
-    const second = await Effect.runPromise(
-      Deferred.make<ReturnType<typeof makeYield>[]>()
-    );
-    let request = 0;
-    const listYields = vi.fn((input: YieldDirectoryRequest) => {
-      request += 1;
-      return Deferred.await(request === 1 ? first : second).pipe(
-        Effect.map((items) => ({
-          items,
-          limit: input.limit,
-          offset: input.offset,
-          total: items.length,
-        }))
-      );
-    });
-    const registry = makeRegistry(
-      YieldResourceSource.of({ listYields } as never)
-    );
-    const freshYield = makeYield("fresh");
-    const staleYield = makeYield("stale");
-    const key = new YieldDirectoryKey({
-      network: "ethereum",
-      yieldIds: [freshYield.id, staleYield.id],
-    });
-    const resource = yieldDirectoryResourceAtom(key);
-    const unmount = registry.mount(resource);
+  it.effect(
+    "does not publish an interrupted stale response after refresh",
+    () =>
+      Effect.gen(function* () {
+        const first = yield* Deferred.make<ReturnType<typeof makeYield>[]>();
+        const second = yield* Deferred.make<ReturnType<typeof makeYield>[]>();
+        let request = 0;
+        const listYields = vi.fn((input: YieldDirectoryRequest) => {
+          request += 1;
+          return Deferred.await(request === 1 ? first : second).pipe(
+            Effect.map((items) => ({
+              items,
+              limit: input.limit,
+              offset: input.offset,
+              total: items.length,
+            }))
+          );
+        });
+        const registry = makeRegistry(
+          YieldResourceSource.of({ listYields } as never)
+        );
+        const freshYield = makeYield("fresh");
+        const staleYield = makeYield("stale");
+        const key = new YieldDirectoryKey({
+          network: "ethereum",
+          yieldIds: [freshYield.id, staleYield.id],
+        });
+        const resource = yieldDirectoryResourceAtom(key);
+        const unmount = registry.mount(resource);
 
-    await vi.waitFor(() => expect(listYields).toHaveBeenCalledOnce());
-    registry.refresh(resource);
-    await vi.waitFor(() => expect(listYields).toHaveBeenCalledTimes(2));
+        yield* Effect.promise(() =>
+          vi.waitFor(() => expect(listYields).toHaveBeenCalledOnce())
+        );
+        registry.refresh(resource);
+        yield* Effect.promise(() =>
+          vi.waitFor(() => expect(listYields).toHaveBeenCalledTimes(2))
+        );
 
-    await Effect.runPromise(Deferred.succeed(second, [freshYield]));
-    await vi.waitFor(() =>
-      expect(AsyncResult.getOrThrow(registry.get(resource)).items[0]?.id).toBe(
-        "fresh"
-      )
-    );
-    await Effect.runPromise(Deferred.succeed(first, [staleYield]));
-    expect(AsyncResult.getOrThrow(registry.get(resource)).items[0]?.id).toBe(
-      "fresh"
-    );
+        yield* Deferred.succeed(second, [freshYield]);
+        yield* Effect.promise(() =>
+          vi.waitFor(() =>
+            expect(
+              AsyncResult.getOrThrow(registry.get(resource)).items[0]?.id
+            ).toBe("fresh")
+          )
+        );
+        yield* Deferred.succeed(first, [staleYield]);
+        expect(
+          AsyncResult.getOrThrow(registry.get(resource)).items[0]?.id
+        ).toBe("fresh");
 
-    unmount();
-    registry.dispose();
-  });
+        unmount();
+        registry.dispose();
+      })
+  );
 });

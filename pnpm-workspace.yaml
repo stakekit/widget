@@ -36,6 +36,7 @@ catalog:
   "@effect/openapi-generator": 4.0.0-rc.112
   "@effect/platform-browser": 4.0.0-rc.112
   "@effect/platform-node": 4.0.0-rc.112
+  "@effect/vitest": 4.0.0-rc.112
   "@faker-js/faker": ^10.6.0
   "@ledgerhq/wallet-api-client": ^1.15.3
   "@ledgerhq/wallet-api-core": ^1.35.0

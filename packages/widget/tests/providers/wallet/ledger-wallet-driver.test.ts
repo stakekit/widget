@@ -1,7 +1,7 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import type { Account } from "@ledgerhq/wallet-api-client";
 import type { RawTransaction } from "@ledgerhq/wallet-api-core";
 import { Effect } from "effect";
-import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 import { makeLedgerWalletDriver } from "../../../src/services/wallet/internal/adapters/ledger/driver";
 
@@ -45,87 +45,85 @@ const makeConnector = () => {
 };
 
 describe("Ledger wallet driver", () => {
-  it("prepares, deserializes, selects the account, and broadcasts", async () => {
-    const ledger = makeConnector();
-    const driver = makeLedgerWalletDriver({
-      connector: ledger.connector,
-      currentAccountId: account.id,
-    });
+  it.effect("prepares, deserializes, selects the account, and broadcasts", () =>
+    Effect.gen(function* () {
+      const ledger = makeConnector();
+      const driver = makeLedgerWalletDriver({
+        connector: ledger.connector,
+        currentAccountId: account.id,
+      });
 
-    await expect(
-      Effect.runPromise(driver.signTransaction(transactionInput))
-    ).resolves.toEqual({
-      broadcasted: true,
-      signedTx: "0xledger-hash",
-    });
-    expect(ledger.prepareTransaction).toHaveBeenCalledWith({
-      network: "ethereum",
-      tx: "{}",
-      txMeta: transactionInput.txMeta,
-    });
-    expect(ledger.deserializeTransaction).toHaveBeenCalledTimes(1);
-    expect(ledger.signAndBroadcast).toHaveBeenCalledWith(
-      account.id,
-      expect.anything(),
-      { hwAppId: "ethereum" }
-    );
-  });
+      expect(yield* driver.signTransaction(transactionInput)).toEqual({
+        broadcasted: true,
+        signedTx: "0xledger-hash",
+      });
+      expect(ledger.prepareTransaction).toHaveBeenCalledWith({
+        network: "ethereum",
+        tx: "{}",
+        txMeta: transactionInput.txMeta,
+      });
+      expect(ledger.deserializeTransaction).toHaveBeenCalledTimes(1);
+      expect(ledger.signAndBroadcast).toHaveBeenCalledWith(
+        account.id,
+        expect.anything(),
+        { hwAppId: "ethereum" }
+      );
+    })
+  );
 
-  it("requires a selected account before preparing", async () => {
-    const ledger = makeConnector();
-    const failure = await Effect.runPromise(
-      Effect.flip(
+  it.effect("requires a selected account before preparing", () =>
+    Effect.gen(function* () {
+      const ledger = makeConnector();
+      const failure = yield* Effect.flip(
         makeLedgerWalletDriver({
           connector: ledger.connector,
           currentAccountId: undefined,
         }).signTransaction(transactionInput)
-      )
-    );
+      );
 
-    expect(failure._tag).toBe("WalletCapabilityUnavailableError");
-    expect(ledger.prepareTransaction).not.toHaveBeenCalled();
-  });
+      expect(failure._tag).toBe("WalletCapabilityUnavailableError");
+      expect(ledger.prepareTransaction).not.toHaveBeenCalled();
+    })
+  );
 
-  it("maps preparation and broadcast failures to distinct errors", async () => {
-    const ledger = makeConnector();
-    ledger.prepareTransaction.mockReturnValue(Effect.fail("invalid tx"));
-    const decodeFailure = await Effect.runPromise(
-      Effect.flip(
+  it.effect("maps preparation and broadcast failures to distinct errors", () =>
+    Effect.gen(function* () {
+      const ledger = makeConnector();
+      ledger.prepareTransaction.mockReturnValue(Effect.fail("invalid tx"));
+      const decodeFailure = yield* Effect.flip(
         makeLedgerWalletDriver({
           connector: ledger.connector,
           currentAccountId: account.id,
         }).signTransaction(transactionInput)
-      )
-    );
+      );
 
-    ledger.prepareTransaction.mockReturnValue(
-      Effect.succeed({} as RawTransaction)
-    );
-    ledger.signAndBroadcast.mockRejectedValue(new Error("rejected"));
-    const broadcastFailure = await Effect.runPromise(
-      Effect.flip(
+      ledger.prepareTransaction.mockReturnValue(
+        Effect.succeed({} as RawTransaction)
+      );
+      ledger.signAndBroadcast.mockRejectedValue(new Error("rejected"));
+      const broadcastFailure = yield* Effect.flip(
         makeLedgerWalletDriver({
           connector: ledger.connector,
           currentAccountId: account.id,
         }).signTransaction(transactionInput)
-      )
-    );
+      );
 
-    expect(decodeFailure._tag).toBe("WalletDecodeError");
-    expect(broadcastFailure._tag).toBe("WalletBroadcastError");
-  });
+      expect(decodeFailure._tag).toBe("WalletDecodeError");
+      expect(broadcastFailure._tag).toBe("WalletBroadcastError");
+    })
+  );
 
-  it("switches the Ledger account through the driver", async () => {
-    const ledger = makeConnector();
-    const driver = makeLedgerWalletDriver({
-      connector: ledger.connector,
-      currentAccountId: account.id,
-    });
+  it.effect("switches the Ledger account through the driver", () =>
+    Effect.gen(function* () {
+      const ledger = makeConnector();
+      const driver = makeLedgerWalletDriver({
+        connector: ledger.connector,
+        currentAccountId: account.id,
+      });
 
-    await Effect.runPromise(
-      driver.switchAccount({ account, connector: ledger.connector })
-    );
+      yield* driver.switchAccount({ account, connector: ledger.connector });
 
-    expect(ledger.switchAccount).toHaveBeenCalledWith(account);
-  });
+      expect(ledger.switchAccount).toHaveBeenCalledWith(account);
+    })
+  );
 });

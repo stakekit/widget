@@ -1,5 +1,5 @@
+import { describe, expect, it } from "@effect/vitest";
 import { Effect, Exit, Schema } from "effect";
-import { describe, expect, it } from "vitest";
 import {
   decodeBorrowTransactionForWallet,
   Transaction,
@@ -23,82 +23,88 @@ const transaction = (signablePayload: unknown) =>
   });
 
 describe("borrow transaction wallet normalization", () => {
-  it("strictly decodes and serializes an EVM payload for the wallet", async () => {
-    const serialized = await Effect.runPromise(
-      decodeBorrowTransactionForWallet(
-        transaction(
-          JSON.stringify({
-            data: "0xabcdef",
-            from: address,
-            gasLimit: "21000",
-            to: "0x0000000000000000000000000000000000000002",
-            value: "0",
-          })
-        )
-      )
-    );
+  it.effect(
+    "strictly decodes and serializes an EVM payload for the wallet",
+    () =>
+      Effect.gen(function* () {
+        const serialized = yield* decodeBorrowTransactionForWallet(
+          transaction(
+            JSON.stringify({
+              data: "0xabcdef",
+              from: address,
+              gasLimit: "21000",
+              to: "0x0000000000000000000000000000000000000002",
+              value: "0",
+            })
+          )
+        );
 
-    expect(JSON.parse(serialized)).toEqual({
-      chainId: 8453,
-      data: "0xabcdef",
-      from: address,
-      gasLimit: "21000",
-      nonce: 0,
-      to: "0x0000000000000000000000000000000000000002",
-      type: 0,
-      value: "0",
-    });
-  });
-
-  it("rejects missing, malformed, and non-hex payload fields", async () => {
-    const valid = transaction(
-      JSON.stringify({
-        data: "0xabcdef",
-        from: address,
-        gasLimit: "21000",
-        to: address,
+        expect(JSON.parse(serialized)).toEqual({
+          chainId: 8453,
+          data: "0xabcdef",
+          from: address,
+          gasLimit: "21000",
+          nonce: 0,
+          to: "0x0000000000000000000000000000000000000002",
+          type: 0,
+          value: "0",
+        });
       })
-    );
+  );
 
-    for (const payload of [
-      undefined,
-      "not-json",
-      JSON.stringify({
-        data: "invalid",
-        from: address,
-        gasLimit: "21000",
-        to: address,
-      }),
-    ]) {
-      const exit = await Effect.runPromiseExit(
-        decodeBorrowTransactionForWallet({
-          ...valid,
-          signablePayload: payload,
-        } as Transaction)
+  it.effect("rejects missing, malformed, and non-hex payload fields", () =>
+    Effect.gen(function* () {
+      const valid = transaction(
+        JSON.stringify({
+          data: "0xabcdef",
+          from: address,
+          gasLimit: "21000",
+          to: address,
+        })
       );
 
-      expect(Exit.isFailure(exit)).toBe(true);
-    }
-  });
+      for (const payload of [
+        undefined,
+        "not-json",
+        JSON.stringify({
+          data: "invalid",
+          from: address,
+          gasLimit: "21000",
+          to: address,
+        }),
+      ]) {
+        const exit = yield* Effect.exit(
+          decodeBorrowTransactionForWallet({
+            ...valid,
+            signablePayload: payload,
+          } as Transaction)
+        );
 
-  it("preserves a quoted Base Unit Amount beyond the JavaScript safe integer range", async () => {
-    const serialized = await Effect.runPromise(
-      decodeBorrowTransactionForWallet(
-        transaction(
-          JSON.stringify({
-            data: "0xabcdef",
-            from: address,
-            gasLimit: "21000",
-            to: "0x0000000000000000000000000000000000000002",
-            value: "1000000000000000001",
-          })
-        )
-      )
-    );
+        expect(Exit.isFailure(exit)).toBe(true);
+      }
+    })
+  );
 
-    expect(JSON.parse(serialized)).toMatchObject({
-      gasLimit: "21000",
-      value: "1000000000000000001",
-    });
-  });
+  it.effect(
+    "preserves a quoted Base Unit Amount beyond the JavaScript safe integer range",
+    () =>
+      Effect.gen(function* () {
+        const serialized = yield* decodeBorrowTransactionForWallet(
+          transaction(
+            JSON.stringify({
+              data: "0xabcdef",
+              from: address,
+              gasLimit: "21000",
+              to: "0x0000000000000000000000000000000000000002",
+              value: "1000000000000000001",
+            })
+          )
+        );
+
+        expect(JSON.parse(serialized)).toMatchObject({
+          gasLimit: "21000",
+          value: "1000000000000000001",
+        });
+      })
+  );
 });

@@ -1,6 +1,6 @@
+import { describe, expect, it } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import { Effect, Logger, Schema } from "effect";
-import { describe, expect, it } from "vitest";
 import {
   EarnBalance,
   EarnPosition,
@@ -66,9 +66,9 @@ describe("Earn application models", () => {
     expect(balance.amountUsd?.toFixed()).toBe("12345678901234567890.12");
   });
 
-  it("safely omits an invalid optional balance timestamp", async () => {
-    const balance = await Effect.runPromise(
-      Schema.decodeUnknownEffect(EarnBalance)({
+  it.effect("safely omits an invalid optional balance timestamp", () =>
+    Effect.gen(function* () {
+      const balance = yield* Schema.decodeUnknownEffect(EarnBalance)({
         address: "wallet-1",
         type: "active",
         amount: "1",
@@ -77,11 +77,11 @@ describe("Earn application models", () => {
         pendingActions: [],
         token,
         isEarning: true,
-      }).pipe(Effect.provide(Logger.layer([])))
-    );
+      }).pipe(Effect.provide(Logger.layer([])));
 
-    expect(balance.date).toBeUndefined();
-  });
+      expect(balance.date).toBeUndefined();
+    })
+  );
 
   it("decodes complete yield and position models with branded yield IDs", () => {
     const yieldModel = yieldApiYieldFixture({ prime: false });

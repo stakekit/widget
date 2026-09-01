@@ -1,6 +1,7 @@
+import { describe, expect, it } from "@effect/vitest";
 import type { Connection as SolanaConnection } from "@solana/web3.js";
 import { Effect, Schema } from "effect";
-import { describe, expect, it, vi } from "vitest";
+import { vi } from "vitest";
 import type { Network } from "../../../src/domain/network/network";
 import type { SKExternalProviders } from "../../../src/public-api/types";
 import type { CurrentRef } from "../../../src/services/wallet/external-provider";
@@ -20,6 +21,7 @@ import {
   buildWagmiConfig,
 } from "../../../src/services/wallet/internal/runtime/wagmi-config";
 import { WalletIntegrationError } from "../../../src/services/wallet/wallet-errors";
+import { runWalletEffect } from "../../utils/run-wallet-effect";
 
 const browser = vi.hoisted(() => ({ isLedgerDappBrowser: false }));
 
@@ -196,10 +198,10 @@ const buildControllerEffect = (
   }).pipe(Effect.provide(WagmiOperations.layer));
 
 const buildController = (overrides: Partial<BuildWagmiConfigOptions> = {}) =>
-  Effect.runPromise(Effect.scoped(buildControllerEffect(overrides)));
+  Effect.scoped(buildControllerEffect(overrides));
 
 const expectEcosystemConnectorsSkipped = (
-  controller: Awaited<ReturnType<typeof buildController>>
+  controller: Effect.Success<ReturnType<typeof buildController>>
 ) => {
   expect(controller.cosmosConfig.connector).toBeNull();
   expect(controller.substrateConfig.connector).toBeNull();
@@ -255,265 +257,289 @@ describe("ecosystem connector gate", () => {
     ).toBe(true);
   });
 
-  it("leaves the Substrate connector chunk unloaded while keeping its chain map", async () => {
-    const before = evaluated.substrateConnector;
-    const gated = await Effect.runPromise(
-      getSubstrateConfig({
-        buildConnectors: false,
-        enabledNetworks: substrateNetworks,
-        forceWalletConnectOnly: false,
-      })
-    );
-
-    expect(gated.connector).toBeNull();
-    expect(Object.keys(gated.substrateChainsMap)).toEqual(["polkadot"]);
-    expect(gated.substrateChains).toHaveLength(1);
-    expect(evaluated.substrateConnector).toBe(before);
-
-    const open = await Effect.runPromise(
-      getSubstrateConfig({
-        buildConnectors: true,
-        enabledNetworks: substrateNetworks,
-        forceWalletConnectOnly: false,
-      })
-    );
-
-    expect(open.connector).not.toBeNull();
-    expect(open.substrateChainsMap).toEqual(gated.substrateChainsMap);
-    expect(evaluated.substrateConnector).toBe(before + 1);
-  });
-
-  it("leaves the misc connector chunks unloaded while keeping its chain map", async () => {
-    const before = {
-      cardano: evaluated.cardanoConnector,
-      ton: evaluated.tonConnector,
-      tron: evaluated.tronConnector,
-    };
-    const miscOptions = {
-      enabledNetworks: miscNetworks,
-      forceWalletConnectOnly: false,
-      runWalletEffect: Effect.runPromise,
-      solanaConnection: {} as SolanaConnection,
-      solanaWallets: [],
-      tonConnectManifestUrl: undefined,
-      variant: "default",
-    } as const;
-    const stellarWalletsKitPlatform = StellarWalletsKitPlatform.of({
-      load: Effect.succeed([]),
-    });
-    const gated = await Effect.runPromise(
-      Effect.scoped(
-        getMiscConfig({
-          ...miscOptions,
+  it.live(
+    "leaves the Substrate connector chunk unloaded while keeping its chain map",
+    () =>
+      Effect.gen(function* () {
+        const before = evaluated.substrateConnector;
+        const gated = yield* getSubstrateConfig({
           buildConnectors: false,
-          stellarWalletsKitPlatform,
-        })
-      )
-    );
-
-    expect(gated.connectors).toEqual([null, null, null, null, null]);
-    expect(Object.keys(gated.miscChainsMap).sort()).toEqual([
-      "cardano",
-      "ton",
-      "tron",
-    ]);
-    expect(gated.miscChains).toHaveLength(3);
-    expect(evaluated.cardanoConnector).toBe(before.cardano);
-    expect(evaluated.tonConnector).toBe(before.ton);
-    expect(evaluated.tronConnector).toBe(before.tron);
-
-    const open = await Effect.runPromise(
-      Effect.scoped(
-        getMiscConfig({
-          ...miscOptions,
-          buildConnectors: true,
-          stellarWalletsKitPlatform,
-        })
-      )
-    );
-
-    expect(open.connectors.filter((value) => value !== null)).toHaveLength(3);
-    expect(open.miscChainsMap).toEqual(gated.miscChainsMap);
-    expect(evaluated.cardanoConnector).toBe(before.cardano + 1);
-    expect(evaluated.tonConnector).toBe(before.ton + 1);
-    expect(evaluated.tronConnector).toBe(before.tron + 1);
-  });
-
-  it("leaves the Cosmos wallet manager unloaded while keeping its chain map", async () => {
-    const before = evaluated.cosmosWalletManager;
-    const cosmosOptions = {
-      enabledNetworks: cosmosNetworks,
-      forceWalletConnectOnly: false,
-      persistPublicKey: async () => undefined,
-    } as const;
-    const gated = await Effect.runPromise(
-      getCosmosConfig({ ...cosmosOptions, buildConnectors: false })
-    );
-
-    expect(gated.connector).toBeNull();
-    expect(Object.keys(gated.cosmosChainsMap)).toEqual(["cosmos"]);
-    expect(gated.cosmosWagmiChains).toHaveLength(1);
-    expect(evaluated.cosmosWalletManager).toBe(before);
-
-    const open = await Effect.runPromise(
-      getCosmosConfig({ ...cosmosOptions, buildConnectors: true })
-    );
-
-    expect(open.connector).not.toBeNull();
-    expect(open.cosmosChainsMap).toEqual(gated.cosmosChainsMap);
-    expect(evaluated.cosmosWalletManager).toBe(before + 1);
-  });
-
-  it("loads Stellar Wallets Kit only for enabled mainnet topology", async () => {
-    const before = evaluated.stellarConnectorCalls;
-    const stellarWalletsKitPlatform = StellarWalletsKitPlatform.of({
-      load: Effect.succeed([]),
-    });
-    const miscOptions = {
-      enabledNetworks: new Set<Network>(["stellar"]),
-      forceWalletConnectOnly: false,
-      runWalletEffect: Effect.runPromise,
-      solanaConnection: {} as SolanaConnection,
-      solanaWallets: [],
-      tonConnectManifestUrl: undefined,
-      variant: "default",
-    } as const;
-
-    const gated = await Effect.runPromise(
-      Effect.scoped(
-        getMiscConfig({
-          ...miscOptions,
-          buildConnectors: false,
-          stellarWalletsKitPlatform,
-        })
-      )
-    );
-    expect(gated.connectors).toEqual([null, null, null, null, null]);
-    expect(evaluated.stellarConnectorCalls).toBe(before);
-
-    const open = await Effect.runPromise(
-      Effect.scoped(
-        getMiscConfig({
-          ...miscOptions,
-          buildConnectors: true,
-          stellarWalletsKitPlatform,
-        })
-      )
-    );
-    expect(open.connectors[4]).not.toBeNull();
-    expect(evaluated.stellarConnectorCalls).toBe(before + 1);
-  });
-
-  it("keeps other misc adapters when Stellar Wallets Kit initialization fails", async () => {
-    const stellarWalletsKitPlatform = StellarWalletsKitPlatform.of({
-      load: Effect.fail(
-        new WalletIntegrationError({
-          message: "Stellar Wallets Kit unavailable",
-          operation: "stellar-wallets-kit-load",
-        })
-      ),
-    } satisfies StellarWalletsKitPlatformService);
-
-    const result = await Effect.runPromise(
-      Effect.scoped(
-        getMiscConfig({
-          buildConnectors: true,
-          enabledNetworks: new Set<Network>(["stellar", "tron"]),
+          enabledNetworks: substrateNetworks,
           forceWalletConnectOnly: false,
-          stellarWalletsKitPlatform,
-          runWalletEffect: Effect.runPromise,
+        });
+
+        expect(gated.connector).toBeNull();
+        expect(Object.keys(gated.substrateChainsMap)).toEqual(["polkadot"]);
+        expect(gated.substrateChains).toHaveLength(1);
+        expect(evaluated.substrateConnector).toBe(before);
+
+        const open = yield* getSubstrateConfig({
+          buildConnectors: true,
+          enabledNetworks: substrateNetworks,
+          forceWalletConnectOnly: false,
+        });
+
+        expect(open.connector).not.toBeNull();
+        expect(open.substrateChainsMap).toEqual(gated.substrateChainsMap);
+        expect(evaluated.substrateConnector).toBe(before + 1);
+      })
+  );
+
+  it.live(
+    "leaves the misc connector chunks unloaded while keeping its chain map",
+    () =>
+      Effect.gen(function* () {
+        const before = {
+          cardano: evaluated.cardanoConnector,
+          ton: evaluated.tonConnector,
+          tron: evaluated.tronConnector,
+        };
+        const miscOptions = {
+          enabledNetworks: miscNetworks,
+          forceWalletConnectOnly: false,
+          runWalletEffect,
           solanaConnection: {} as SolanaConnection,
           solanaWallets: [],
           tonConnectManifestUrl: undefined,
           variant: "default",
-        })
-      )
-    );
+        } as const;
+        const stellarWalletsKitPlatform = StellarWalletsKitPlatform.of({
+          load: Effect.succeed([]),
+        });
+        const gated = yield* Effect.scoped(
+          getMiscConfig({
+            ...miscOptions,
+            buildConnectors: false,
+            stellarWalletsKitPlatform,
+          })
+        );
 
-    expect(result.connectors[0]).not.toBeNull();
-    expect(result.connectors[4]).toBeNull();
-    expect(Object.keys(result.miscChainsMap).sort()).toEqual([
-      "stellar",
-      "tron",
-    ]);
-  });
+        expect(gated.connectors).toEqual([null, null, null, null, null]);
+        expect(Object.keys(gated.miscChainsMap).sort()).toEqual([
+          "cardano",
+          "ton",
+          "tron",
+        ]);
+        expect(gated.miscChains).toHaveLength(3);
+        expect(evaluated.cardanoConnector).toBe(before.cardano);
+        expect(evaluated.tonConnector).toBe(before.ton);
+        expect(evaluated.tronConnector).toBe(before.tron);
 
-  it("loads the generic Stellar connector in mobile environments", async () => {
-    const before = evaluated.stellarConnectorCalls;
-    const controller = await buildController({
-      enabledNetworks: new Set(["ethereum", "stellar"]),
-      isMobileWallet: true,
-    });
+        const open = yield* Effect.scoped(
+          getMiscConfig({
+            ...miscOptions,
+            buildConnectors: true,
+            stellarWalletsKitPlatform,
+          })
+        );
 
-    expect(controller.miscConfig.miscChainsMap).toHaveProperty("stellar");
-    expect(evaluated.stellarConnectorCalls).toBe(before + 1);
-  });
+        expect(open.connectors.filter((value) => value !== null)).toHaveLength(
+          3
+        );
+        expect(open.miscChainsMap).toEqual(gated.miscChainsMap);
+        expect(evaluated.cardanoConnector).toBe(before.cardano + 1);
+        expect(evaluated.tonConnector).toBe(before.ton + 1);
+        expect(evaluated.tronConnector).toBe(before.tron + 1);
+      })
+  );
 
-  it("keeps cosmos chains when the wallet manager fails to initialize", async () => {
-    evaluated.failCosmosWalletManager = true;
+  it.live(
+    "leaves the Cosmos wallet manager unloaded while keeping its chain map",
+    () =>
+      Effect.gen(function* () {
+        const before = evaluated.cosmosWalletManager;
+        const cosmosOptions = {
+          enabledNetworks: cosmosNetworks,
+          forceWalletConnectOnly: false,
+          persistPublicKey: async () => undefined,
+        } as const;
+        const gated = yield* getCosmosConfig({
+          ...cosmosOptions,
+          buildConnectors: false,
+        });
 
-    const result = await Effect.runPromise(
-      getCosmosConfig({
-        buildConnectors: true,
-        enabledNetworks: cosmosNetworks,
+        expect(gated.connector).toBeNull();
+        expect(Object.keys(gated.cosmosChainsMap)).toEqual(["cosmos"]);
+        expect(gated.cosmosWagmiChains).toHaveLength(1);
+        expect(evaluated.cosmosWalletManager).toBe(before);
+
+        const open = yield* getCosmosConfig({
+          ...cosmosOptions,
+          buildConnectors: true,
+        });
+
+        expect(open.connector).not.toBeNull();
+        expect(open.cosmosChainsMap).toEqual(gated.cosmosChainsMap);
+        expect(evaluated.cosmosWalletManager).toBe(before + 1);
+      })
+  );
+
+  it.live("loads Stellar Wallets Kit only for enabled mainnet topology", () =>
+    Effect.gen(function* () {
+      const before = evaluated.stellarConnectorCalls;
+      const stellarWalletsKitPlatform = StellarWalletsKitPlatform.of({
+        load: Effect.succeed([]),
+      });
+      const miscOptions = {
+        enabledNetworks: new Set<Network>(["stellar"]),
         forceWalletConnectOnly: false,
-        persistPublicKey: async () => undefined,
+        runWalletEffect,
+        solanaConnection: {} as SolanaConnection,
+        solanaWallets: [],
+        tonConnectManifestUrl: undefined,
+        variant: "default",
+      } as const;
+
+      const gated = yield* Effect.scoped(
+        getMiscConfig({
+          ...miscOptions,
+          buildConnectors: false,
+          stellarWalletsKitPlatform,
+        })
+      );
+      expect(gated.connectors).toEqual([null, null, null, null, null]);
+      expect(evaluated.stellarConnectorCalls).toBe(before);
+
+      const open = yield* Effect.scoped(
+        getMiscConfig({
+          ...miscOptions,
+          buildConnectors: true,
+          stellarWalletsKitPlatform,
+        })
+      );
+      expect(open.connectors[4]).not.toBeNull();
+      expect(evaluated.stellarConnectorCalls).toBe(before + 1);
+    })
+  );
+
+  it.live(
+    "keeps other misc adapters when Stellar Wallets Kit initialization fails",
+    () =>
+      Effect.gen(function* () {
+        const stellarWalletsKitPlatform = StellarWalletsKitPlatform.of({
+          load: Effect.fail(
+            new WalletIntegrationError({
+              message: "Stellar Wallets Kit unavailable",
+              operation: "stellar-wallets-kit-load",
+            })
+          ),
+        } satisfies StellarWalletsKitPlatformService);
+
+        const result = yield* Effect.scoped(
+          getMiscConfig({
+            buildConnectors: true,
+            enabledNetworks: new Set<Network>(["stellar", "tron"]),
+            forceWalletConnectOnly: false,
+            stellarWalletsKitPlatform,
+            runWalletEffect,
+            solanaConnection: {} as SolanaConnection,
+            solanaWallets: [],
+            tonConnectManifestUrl: undefined,
+            variant: "default",
+          })
+        );
+
+        expect(result.connectors[0]).not.toBeNull();
+        expect(result.connectors[4]).toBeNull();
+        expect(Object.keys(result.miscChainsMap).sort()).toEqual([
+          "stellar",
+          "tron",
+        ]);
       })
-    ).finally(() => {
-      evaluated.failCosmosWalletManager = false;
-    });
+  );
 
-    expect(result.connector).toBeNull();
-    expect(Object.keys(result.cosmosChainsMap)).toEqual(["cosmos"]);
-  });
+  it.effect("loads the generic Stellar connector in mobile environments", () =>
+    Effect.gen(function* () {
+      const before = evaluated.stellarConnectorCalls;
+      const controller = yield* buildController({
+        enabledNetworks: new Set(["ethereum", "stellar"]),
+        isMobileWallet: true,
+      });
 
-  it("skips ecosystem connectors in external provider mode", async () => {
-    expectEcosystemConnectorsSkipped(
-      await buildController({
-        externalProviders,
+      expect(controller.miscConfig.miscChainsMap).toHaveProperty("stellar");
+      expect(evaluated.stellarConnectorCalls).toBe(before + 1);
+    })
+  );
+
+  it.live(
+    "keeps cosmos chains when the wallet manager fails to initialize",
+    () =>
+      Effect.gen(function* () {
+        evaluated.failCosmosWalletManager = true;
+
+        const result = yield* getCosmosConfig({
+          buildConnectors: true,
+          enabledNetworks: cosmosNetworks,
+          forceWalletConnectOnly: false,
+          persistPublicKey: async () => undefined,
+        }).pipe(
+          Effect.ensuring(
+            Effect.sync(() => {
+              evaluated.failCosmosWalletManager = false;
+            })
+          )
+        );
+
+        expect(result.connector).toBeNull();
+        expect(Object.keys(result.cosmosChainsMap)).toEqual(["cosmos"]);
       })
-    );
-  });
+  );
 
-  it("skips ecosystem connectors in Safe mode", async () => {
-    const controller = await buildController({ isSafe: true });
+  it.effect("skips ecosystem connectors in external provider mode", () =>
+    Effect.gen(function* () {
+      expectEcosystemConnectorsSkipped(
+        yield* buildController({
+          externalProviders,
+        })
+      );
+    })
+  );
 
-    expect(controller.safeConnector).not.toBeNull();
-    expectEcosystemConnectorsSkipped(controller);
-  });
+  it.effect("skips ecosystem connectors in Safe mode", () =>
+    Effect.gen(function* () {
+      const controller = yield* buildController({ isSafe: true });
 
-  it("skips ecosystem connectors for a captured Ledger generation", async () => {
-    const controller = await buildController({ isLedgerLive: true });
+      expect(controller.safeConnector).not.toBeNull();
+      expectEcosystemConnectorsSkipped(controller);
+    })
+  );
 
-    expect(controller.ledgerLiveConnector).not.toBeNull();
-    expectEcosystemConnectorsSkipped(controller);
-  });
+  it.effect("skips ecosystem connectors for a captured Ledger generation", () =>
+    Effect.gen(function* () {
+      const controller = yield* buildController({ isLedgerLive: true });
 
-  it("skips ecosystem connectors for a custom Wallet List", async () => {
-    expectEcosystemConnectorsSkipped(
-      await buildController({
-        walletListFactory: () => [
-          {
-            groupName: "Custom",
-            wallets: [
-              () => ({
-                chainGroup: { iconUrl: "", id: "custom", title: "Custom" },
-                createConnector: (() => () => ({})) as never,
-                iconBackground: "#fff",
-                iconUrl: "",
-                id: "custom",
-                name: "Custom",
-              }),
-            ],
-          },
-        ],
-      })
-    );
-  });
+      expect(controller.ledgerLiveConnector).not.toBeNull();
+      expectEcosystemConnectorsSkipped(controller);
+    })
+  );
 
-  it("adds each provider once from cumulative MIPD announcements", async () => {
-    const connectorIds = await Effect.runPromise(
-      Effect.scoped(
+  it.effect("skips ecosystem connectors for a custom Wallet List", () =>
+    Effect.gen(function* () {
+      expectEcosystemConnectorsSkipped(
+        yield* buildController({
+          walletListFactory: () => [
+            {
+              groupName: "Custom",
+              wallets: [
+                () => ({
+                  chainGroup: { iconUrl: "", id: "custom", title: "Custom" },
+                  createConnector: (() => () => ({})) as never,
+                  iconBackground: "#fff",
+                  iconUrl: "",
+                  id: "custom",
+                  name: "Custom",
+                }),
+              ],
+            },
+          ],
+        })
+      );
+    })
+  );
+
+  it.live("adds each provider once from cumulative MIPD announcements", () =>
+    Effect.gen(function* () {
+      const connectorIds = yield* Effect.scoped(
         Effect.gen(function* () {
           const controller = yield* buildControllerEffect({
             disableInjectedProviderDiscovery: false,
@@ -540,20 +566,22 @@ describe("ecosystem connector gate", () => {
             (connector) => connector.id
           );
         })
-      )
-    );
+      );
 
-    expect(connectorIds.filter((id) => id === "wallet.a")).toHaveLength(1);
-    expect(connectorIds.filter((id) => id === "wallet.b")).toHaveLength(1);
-  });
+      expect(connectorIds.filter((id) => id === "wallet.a")).toHaveLength(1);
+      expect(connectorIds.filter((id) => id === "wallet.b")).toHaveLength(1);
+    })
+  );
 
-  it("still builds ecosystem connectors for a default host", async () => {
-    const controller = await buildController();
+  it.effect("still builds ecosystem connectors for a default host", () =>
+    Effect.gen(function* () {
+      const controller = yield* buildController();
 
-    expect(controller.cosmosConfig.connector).not.toBeNull();
-    expect(controller.substrateConfig.connector).not.toBeNull();
-    expect(
-      controller.miscConfig.connectors.filter((value) => value !== null)
-    ).toHaveLength(1);
-  });
+      expect(controller.cosmosConfig.connector).not.toBeNull();
+      expect(controller.substrateConfig.connector).not.toBeNull();
+      expect(
+        controller.miscConfig.connectors.filter((value) => value !== null)
+      ).toHaveLength(1);
+    })
+  );
 });

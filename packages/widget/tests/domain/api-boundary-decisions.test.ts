@@ -1,6 +1,6 @@
+import { describe, expect, it } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import { Effect, Logger, References, Schema } from "effect";
-import { describe, expect, it } from "vitest";
 import { logDecodeRejection } from "../../src/domain/decoding/decode-diagnostics";
 import { ExactDecimal } from "../../src/domain/finance/scalars";
 
@@ -18,31 +18,33 @@ describe("API boundary foundation decisions", () => {
     expect(() => Schema.decodeUnknownSync(ExactDecimal)("NaN")).toThrow();
   });
 
-  it("emits structured warning diagnostics without the rejected value", async () => {
-    const annotations: Array<Record<string, unknown>> = [];
-    const logger = Logger.make<unknown, void>((options) => {
-      annotations.push({
-        ...options.fiber.getRef(References.CurrentLogAnnotations),
-      });
-    });
+  it.effect(
+    "emits structured warning diagnostics without the rejected value",
+    () =>
+      Effect.gen(function* () {
+        const annotations: Array<Record<string, unknown>> = [];
+        const logger = Logger.make<unknown, void>((options) => {
+          annotations.push({
+            ...options.fiber.getRef(References.CurrentLogAnnotations),
+          });
+        });
 
-    await Effect.runPromise(
-      logDecodeRejection({
-        operation: "yield-catalog",
-        location: 2,
-        identifier: "yield-id",
-        issue: "id is missing",
-      }).pipe(Effect.provide(Logger.layer([logger])))
-    );
+        yield* logDecodeRejection({
+          operation: "yield-catalog",
+          location: 2,
+          identifier: "yield-id",
+          issue: "id is missing",
+        }).pipe(Effect.provide(Logger.layer([logger])));
 
-    expect(annotations).toEqual([
-      {
-        event: "api_decode_rejection",
-        operation: "yield-catalog",
-        location: "2",
-        identifier: "yield-id",
-        issue: "id is missing",
-      },
-    ]);
-  });
+        expect(annotations).toEqual([
+          {
+            event: "api_decode_rejection",
+            operation: "yield-catalog",
+            location: "2",
+            identifier: "yield-id",
+            issue: "id is missing",
+          },
+        ]);
+      })
+  );
 });

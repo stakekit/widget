@@ -16,6 +16,7 @@ export const getTestWidgetConfig = (
   hostConfiguration: SKAppProps,
   options: { readonly isLedgerLive?: boolean } = {}
 ): WidgetConfig =>
+  // ast-grep-ignore: no-run-effect-in-test -- synchronous fixture factory for non-Effect UI tests
   Effect.runSync(
     WidgetConfigService.use((config) => config.current).pipe(
       Effect.provide(WidgetConfigService.layer(hostConfiguration, options))

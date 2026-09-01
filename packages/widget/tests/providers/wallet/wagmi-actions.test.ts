@@ -1,6 +1,6 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Fiber } from "effect";
 import { type Hash, type Hex, zeroAddress } from "viem";
-import { describe, expect, it, vi } from "vitest";
 import { createConfig, http } from "wagmi";
 import { mainnet } from "wagmi/chains";
 import {
@@ -45,159 +45,158 @@ const makeCommands = (
   config: ReturnType<typeof makeConfig>,
   operations: WagmiOperationsService
 ) =>
-  Effect.runPromise(
-    makeWagmiActions.pipe(
-      Effect.map((build) => build({ config })),
-      Effect.provideService(WagmiOperations, WagmiOperations.of(operations))
-    )
+  makeWagmiActions.pipe(
+    Effect.map((build) => build({ config })),
+    Effect.provideService(WagmiOperations, WagmiOperations.of(operations))
   );
 
 describe("Wagmi actions", () => {
-  it("uses the exact controller config for every core action", async () => {
-    const config = makeConfig();
-    const operations = makeOperations();
-    const commands = await makeCommands(config, operations);
+  it.effect("uses the exact controller config for every core action", () =>
+    Effect.gen(function* () {
+      const config = makeConfig();
+      const operations = makeOperations();
+      const commands = yield* makeCommands(config, operations);
 
-    await Effect.runPromise(commands.connect({ connector }));
-    await Effect.runPromise(commands.disconnect({ connector }));
-    await Effect.runPromise(commands.reconnect({ connectors: [connector] }));
-    await Effect.runPromise(commands.switchChain({ chainId: mainnet.id }));
-    await Effect.runPromise(commands.signMessage({ message: "hello" }));
-    await Effect.runPromise(
-      commands.sendEvmTransaction({
+      yield* commands.connect({ connector });
+      yield* commands.disconnect({ connector });
+      yield* commands.reconnect({ connectors: [connector] });
+      yield* commands.switchChain({ chainId: mainnet.id });
+      yield* commands.signMessage({ message: "hello" });
+      yield* commands.sendEvmTransaction({
         data: "0x",
         gasPrice: 1n,
         to: zeroAddress,
         type: "legacy",
-      })
-    );
+      });
 
-    for (const operation of Object.values(operations)) {
-      expect(operation).toHaveBeenCalledWith(config, expect.anything());
-    }
-  });
+      for (const operation of Object.values(operations)) {
+        expect(operation).toHaveBeenCalledWith(config, expect.anything());
+      }
+    })
+  );
 
-  it("preserves action results and normalizes broadcast results", async () => {
-    const commands = await makeCommands(makeConfig(), makeOperations());
+  it.effect("preserves action results and normalizes broadcast results", () =>
+    Effect.gen(function* () {
+      const commands = yield* makeCommands(makeConfig(), makeOperations());
 
-    await expect(
-      Effect.runPromise(commands.connect({ connector }))
-    ).resolves.toEqual({
-      accounts: [zeroAddress],
-      chainId: mainnet.id,
-    });
-    await expect(
-      Effect.runPromise(
-        commands.sendEvmTransaction({
+      expect(yield* commands.connect({ connector })).toEqual({
+        accounts: [zeroAddress],
+        chainId: mainnet.id,
+      });
+      expect(
+        yield* commands.sendEvmTransaction({
           maxFeePerGas: 2n,
           maxPriorityFeePerGas: 1n,
           to: zeroAddress,
           type: "eip1559",
         })
-      )
-    ).resolves.toEqual({
-      broadcasted: true,
-      signedTx: `0x${"1".repeat(64)}`,
-    });
-  });
+      ).toEqual({
+        broadcasted: true,
+        signedTx: `0x${"1".repeat(64)}`,
+      });
+    })
+  );
 
-  it("uses the current Wagmi connection for EVM wallet actions", async () => {
-    const operations = makeOperations();
-    const commands = await makeCommands(makeConfig(), operations);
+  it.effect("uses the current Wagmi connection for EVM wallet actions", () =>
+    Effect.gen(function* () {
+      const operations = makeOperations();
+      const commands = yield* makeCommands(makeConfig(), operations);
 
-    await Effect.runPromise(
-      commands.sendEvmTransaction({
+      yield* commands.sendEvmTransaction({
         connector,
         gasPrice: 1n,
         to: zeroAddress,
         type: "legacy",
-      })
-    );
-    await Effect.runPromise(
-      commands.signMessage({ connector, message: "hello" })
-    );
+      });
+      yield* commands.signMessage({ connector, message: "hello" });
 
-    expect(operations.sendTransaction).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ connector: undefined })
-    );
-    expect(operations.signMessage).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ connector: undefined })
-    );
-  });
+      expect(operations.sendTransaction).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ connector: undefined })
+      );
+      expect(operations.signMessage).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ connector: undefined })
+      );
+    })
+  );
 
-  it("maps platform failures by operation", async () => {
-    const cause = new Error("rejected");
-    const operations = makeOperations();
-    vi.mocked(operations.connect).mockReturnValue(
-      Effect.fail(operationFailure(cause))
-    );
-    vi.mocked(operations.switchChain).mockReturnValue(
-      Effect.fail(operationFailure(cause))
-    );
-    vi.mocked(operations.signMessage).mockReturnValue(
-      Effect.fail(operationFailure(cause))
-    );
-    vi.mocked(operations.sendTransaction).mockReturnValue(
-      Effect.fail(operationFailure(cause))
-    );
-    const commands = await makeCommands(makeConfig(), operations);
+  it.effect("maps platform failures by operation", () =>
+    Effect.gen(function* () {
+      const cause = new Error("rejected");
+      const operations = makeOperations();
+      vi.mocked(operations.connect).mockReturnValue(
+        Effect.fail(operationFailure(cause))
+      );
+      vi.mocked(operations.switchChain).mockReturnValue(
+        Effect.fail(operationFailure(cause))
+      );
+      vi.mocked(operations.signMessage).mockReturnValue(
+        Effect.fail(operationFailure(cause))
+      );
+      vi.mocked(operations.sendTransaction).mockReturnValue(
+        Effect.fail(operationFailure(cause))
+      );
+      const commands = yield* makeCommands(makeConfig(), operations);
 
-    const failures = await Promise.all([
-      Effect.runPromise(Effect.flip(commands.connect({ connector }))),
-      Effect.runPromise(
-        Effect.flip(commands.switchChain({ chainId: mainnet.id }))
-      ),
-      Effect.runPromise(
-        Effect.flip(commands.signMessage({ message: "hello" }))
-      ),
-      Effect.runPromise(
-        Effect.flip(
-          commands.sendEvmTransaction({
-            gasPrice: 1n,
-            to: zeroAddress,
-            type: "legacy",
+      const failures = yield* Effect.all(
+        [
+          Effect.flip(commands.connect({ connector })),
+          Effect.flip(commands.switchChain({ chainId: mainnet.id })),
+          Effect.flip(commands.signMessage({ message: "hello" })),
+          Effect.flip(
+            commands.sendEvmTransaction({
+              gasPrice: 1n,
+              to: zeroAddress,
+              type: "legacy",
+            })
+          ),
+        ],
+        { concurrency: "unbounded" }
+      );
+
+      expect(failures.map((failure) => failure._tag)).toEqual([
+        "WalletConnectionError",
+        "WalletSwitchError",
+        "WalletSigningError",
+        "WalletBroadcastError",
+      ]);
+      expect(failures.every((failure) => failure.cause === cause)).toBe(true);
+    })
+  );
+
+  it.effect(
+    "does not publish a late result from an interrupted wallet operation",
+    () =>
+      Effect.gen(function* () {
+        let resolve!: (value: Hex) => void;
+        let published = false;
+        const operations = makeOperations();
+        vi.mocked(operations.signMessage).mockImplementation(() =>
+          Effect.callback<Hex, WagmiOperationsError>((resume) => {
+            resolve = (value) => resume(Effect.succeed(value));
           })
-        )
-      ),
-    ]);
+        );
+        const commands = yield* makeCommands(makeConfig(), operations);
+        const fiber = yield* Effect.forkChild(
+          commands.signMessage({ message: "hello" }).pipe(
+            Effect.tap(() =>
+              Effect.sync(() => {
+                published = true;
+              })
+            )
+          )
+        );
 
-    expect(failures.map((failure) => failure._tag)).toEqual([
-      "WalletConnectionError",
-      "WalletSwitchError",
-      "WalletSigningError",
-      "WalletBroadcastError",
-    ]);
-    expect(failures.every((failure) => failure.cause === cause)).toBe(true);
-  });
+        yield* Effect.promise(() =>
+          vi.waitFor(() => expect(operations.signMessage).toHaveBeenCalled())
+        );
+        yield* Fiber.interrupt(fiber);
+        resolve("0xlate" as Hex);
+        yield* Effect.promise(() => Promise.resolve());
+        yield* Effect.promise(() => Promise.resolve());
 
-  it("does not publish a late result from an interrupted wallet operation", async () => {
-    let resolve!: (value: Hex) => void;
-    let published = false;
-    const operations = makeOperations();
-    vi.mocked(operations.signMessage).mockImplementation(() =>
-      Effect.callback<Hex, WagmiOperationsError>((resume) => {
-        resolve = (value) => resume(Effect.succeed(value));
+        expect(published).toBe(false);
       })
-    );
-    const commands = await makeCommands(makeConfig(), operations);
-    const fiber = Effect.runFork(
-      commands.signMessage({ message: "hello" }).pipe(
-        Effect.tap(() =>
-          Effect.sync(() => {
-            published = true;
-          })
-        )
-      )
-    );
-
-    await vi.waitFor(() => expect(operations.signMessage).toHaveBeenCalled());
-    await Effect.runPromise(Fiber.interrupt(fiber));
-    resolve("0xlate" as Hex);
-    await Promise.resolve();
-    await Promise.resolve();
-
-    expect(published).toBe(false);
-  });
+  );
 });

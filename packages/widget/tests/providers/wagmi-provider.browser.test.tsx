@@ -305,120 +305,122 @@ describe("WagmiConfigProvider", () => {
     await expect.poll(() => disposed).toBe(1);
   });
 
-  it("publishes dynamic Solana membership and same-uid readiness through useConnectors", async () => {
-    const fallbackAdapter = makeSolanaAdapter("Phantom");
-    const standardAdapter = makeSolanaAdapter("Phantom");
-    const fallback = makeSolanaDescriptor(
-      fallbackAdapter,
-      "fallback",
-      WalletReadyState.NotDetected
-    );
-    const standard = makeSolanaDescriptor(
-      standardAdapter,
-      "standard",
-      WalletReadyState.NotDetected
-    );
-    const readyStandard = makeSolanaDescriptor(
-      standardAdapter,
-      "standard",
-      WalletReadyState.Loadable
-    );
-    const runtime = makeSolanaRuntime({ wallets: [fallback] });
-    const config = createConfig({
-      chains: [solana],
-      connectors: [makeSolanaConnectorFactory(fallback)],
-      transports: { [solana.id]: wagmiHttp() },
-    });
-    const coreSnapshots: ReadonlyArray<unknown>[] = [];
-    const unsubscribeCore = watchConnectors(config, {
-      onChange: (connectors) => coreSnapshots.push(connectors),
-    });
+  it.live(
+    "publishes dynamic Solana membership and same-uid readiness through useConnectors",
+    () =>
+      Effect.gen(function* () {
+        const fallbackAdapter = makeSolanaAdapter("Phantom");
+        const standardAdapter = makeSolanaAdapter("Phantom");
+        const fallback = makeSolanaDescriptor(
+          fallbackAdapter,
+          "fallback",
+          WalletReadyState.NotDetected
+        );
+        const standard = makeSolanaDescriptor(
+          standardAdapter,
+          "standard",
+          WalletReadyState.NotDetected
+        );
+        const readyStandard = makeSolanaDescriptor(
+          standardAdapter,
+          "standard",
+          WalletReadyState.Loadable
+        );
+        const runtime = makeSolanaRuntime({ wallets: [fallback] });
+        const config = createConfig({
+          chains: [solana],
+          connectors: [makeSolanaConnectorFactory(fallback)],
+          transports: { [solana.id]: wagmiHttp() },
+        });
+        const coreSnapshots: ReadonlyArray<unknown>[] = [];
+        const unsubscribeCore = watchConnectors(config, {
+          onChange: (connectors) => coreSnapshots.push(connectors),
+        });
 
-    await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          yield* installSolanaConnectorMembership({
-            actions: { disconnect: () => Effect.void },
-            config,
-            core: {
-              current: Effect.succeed({
-                connection: {} as never,
-                connectors: config.connectors,
-              }),
-              states: Stream.concat(
-                Stream.succeed({
+        yield* Effect.scoped(
+          Effect.gen(function* () {
+            yield* installSolanaConnectorMembership({
+              actions: { disconnect: () => Effect.void },
+              config,
+              core: {
+                current: Effect.succeed({
                   connection: {} as never,
                   connectors: config.connectors,
                 }),
-                Stream.never
-              ),
-            },
-            createConnector: (wallet) =>
-              Effect.succeed(makeSolanaConnectorFactory(wallet)),
-            runtime: runtime.runtime,
-          });
-          yield* Effect.promise(() =>
-            expect.poll(() => runtime.listenerCount()).toBe(1)
-          );
-          const configIdentity = config;
-          const hook = yield* Effect.promise(() =>
-            renderHook(() => useConnectors(), {
-              wrapper: ({ children }) => (
-                <WagmiContext.Provider value={config}>
-                  {children}
-                </WagmiContext.Provider>
-              ),
-            })
-          );
-
-          yield* Effect.promise(() =>
-            hook.act(() => runtime.emit({ wallets: [standard] }))
-          );
-          yield* Effect.promise(() =>
-            expect
-              .poll(() => hook.result.current[0]?.solanaAdapterSource)
-              .toBe("standard")
-          );
-          const standardConnector = hook.result.current[0]!;
-          expect(standardConnector).toMatchObject({
-            rkDetails: { installed: false },
-            solanaAdapter: standardAdapter,
-          });
-
-          yield* Effect.promise(() =>
-            hook.act(() => runtime.emit({ wallets: [readyStandard] }))
-          );
-          yield* Effect.promise(() =>
-            expect
-              .poll(() => {
-                const connector = hook.result.current[0];
-                return connector && "rkDetails" in connector
-                  ? (connector.rkDetails as { readonly installed: boolean })
-                      .installed
-                  : false;
+                states: Stream.concat(
+                  Stream.succeed({
+                    connection: {} as never,
+                    connectors: config.connectors,
+                  }),
+                  Stream.never
+                ),
+              },
+              createConnector: (wallet) =>
+                Effect.succeed(makeSolanaConnectorFactory(wallet)),
+              runtime: runtime.runtime,
+            });
+            yield* Effect.promise(() =>
+              expect.poll(() => runtime.listenerCount()).toBe(1)
+            );
+            const configIdentity = config;
+            const hook = yield* Effect.promise(() =>
+              renderHook(() => useConnectors(), {
+                wrapper: ({ children }) => (
+                  <WagmiContext.Provider value={config}>
+                    {children}
+                  </WagmiContext.Provider>
+                ),
               })
-              .toBe(true)
-          );
-          const readyConnector = hook.result.current[0]!;
-          expect(readyConnector).not.toBe(standardConnector);
-          expect(readyConnector.uid).toBe(standardConnector.uid);
-          expect(readyConnector.emitter).toBe(standardConnector.emitter);
-          expect(readyConnector).toMatchObject({
-            rkDetails: { installed: true },
-            solanaAdapter: standardAdapter,
-          });
-          expect(config).toBe(configIdentity);
-        })
-      )
-    );
+            );
 
-    unsubscribeCore();
-    expect(coreSnapshots).toHaveLength(2);
-    expect(coreSnapshots.at(-1)?.[0]).toMatchObject({
-      rkDetails: { installed: true },
-      uid: config.connectors[0]?.uid,
-    });
-  });
+            yield* Effect.promise(() =>
+              hook.act(() => runtime.emit({ wallets: [standard] }))
+            );
+            yield* Effect.promise(() =>
+              expect
+                .poll(() => hook.result.current[0]?.solanaAdapterSource)
+                .toBe("standard")
+            );
+            const standardConnector = hook.result.current[0]!;
+            expect(standardConnector).toMatchObject({
+              rkDetails: { installed: false },
+              solanaAdapter: standardAdapter,
+            });
+
+            yield* Effect.promise(() =>
+              hook.act(() => runtime.emit({ wallets: [readyStandard] }))
+            );
+            yield* Effect.promise(() =>
+              expect
+                .poll(() => {
+                  const connector = hook.result.current[0];
+                  return connector && "rkDetails" in connector
+                    ? (connector.rkDetails as { readonly installed: boolean })
+                        .installed
+                    : false;
+                })
+                .toBe(true)
+            );
+            const readyConnector = hook.result.current[0]!;
+            expect(readyConnector).not.toBe(standardConnector);
+            expect(readyConnector.uid).toBe(standardConnector.uid);
+            expect(readyConnector.emitter).toBe(standardConnector.emitter);
+            expect(readyConnector).toMatchObject({
+              rkDetails: { installed: true },
+              solanaAdapter: standardAdapter,
+            });
+            expect(config).toBe(configIdentity);
+          })
+        );
+
+        unsubscribeCore();
+        expect(coreSnapshots).toHaveLength(2);
+        expect(coreSnapshots.at(-1)?.[0]).toMatchObject({
+          rkDetails: { installed: true },
+          uid: config.connectors[0]?.uid,
+        });
+      })
+  );
 
   it("stops providing the fallback when wallet bootstrap fails", async () => {
     const cause = new Error("wallet bootstrap failed");

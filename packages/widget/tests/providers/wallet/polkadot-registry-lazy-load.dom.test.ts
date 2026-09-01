@@ -1,6 +1,7 @@
+import { describe, expect, it } from "@effect/vitest";
 import type { RawTransaction } from "@ledgerhq/wallet-api-core";
 import { Effect, Result } from "effect";
-import { describe, expect, it, vi } from "vitest";
+import { vi } from "vitest";
 import type { Network } from "../../../src/domain/network/network";
 import type { SKTxMeta } from "../../../src/public-api/types";
 import { makePrepareLedgerLiveTransaction } from "../../../src/services/wallet/internal/adapters/ledger/prepare-ledger-live-transaction";
@@ -93,45 +94,42 @@ const signerPayload = {
   version: 4,
 };
 
-const makeSubstrateConnector = async () => {
-  const { connector: group, substrateChains } = await Effect.runPromise(
-    getSubstrateConfig({
+const makeSubstrateConnector = () =>
+  Effect.gen(function* () {
+    const { connector: group, substrateChains } = yield* getSubstrateConfig({
       buildConnectors: true,
       enabledNetworks: substrateNetworks,
       forceWalletConnectOnly: false,
-    })
-  );
+    });
 
-  if (!group) throw new Error("Substrate connector group was not built");
+    if (!group) throw new Error("Substrate connector group was not built");
 
-  const wallet = group.wallets[1]?.({} as never);
+    const wallet = group.wallets[1]?.({} as never);
 
-  if (!wallet) throw new Error("Substrate wallet was not built");
+    if (!wallet) throw new Error("Substrate wallet was not built");
 
-  return wallet.createConnector({} as never)({
-    chains: substrateChains as never,
-    emitter: { emit: () => undefined } as never,
-    providers: [],
-    storage: null,
-  }) as unknown as {
-    signTransaction: (payload: {
-      metadataRpc: string;
-      rawTx: string;
-      tx: typeof signerPayload;
-    }) => Effect.Effect<string, Error>;
-  };
-};
+    return wallet.createConnector({} as never)({
+      chains: substrateChains as never,
+      emitter: { emit: () => undefined } as never,
+      providers: [],
+      storage: null,
+    }) as unknown as {
+      signTransaction: (payload: {
+        metadataRpc: string;
+        rawTx: string;
+        tx: typeof signerPayload;
+      }) => Effect.Effect<string, Error>;
+    };
+  });
 
-const signWithSubstrateConnector = async (
-  connector: Awaited<ReturnType<typeof makeSubstrateConnector>>
+const signWithSubstrateConnector = (
+  connector: Effect.Success<ReturnType<typeof makeSubstrateConnector>>
 ) =>
-  Effect.runPromise(
-    connector.signTransaction({
-      metadataRpc: "0x00",
-      rawTx: "{}",
-      tx: signerPayload,
-    })
-  );
+  connector.signTransaction({
+    metadataRpc: "0x00",
+    rawTx: "{}",
+    tx: signerPayload,
+  });
 
 const polkadotLedgerTx = JSON.stringify({
   metadataRpc: "0x00",
@@ -162,89 +160,95 @@ const txMeta = {
 } as unknown as SKTxMeta;
 
 describe("Polkadot registry lazy load", () => {
-  it("builds Substrate wallets and signs pre-encoded transactions without the registry", async () => {
-    const connector = await makeSubstrateConnector();
+  it.live(
+    "builds Substrate wallets and signs pre-encoded transactions without the registry",
+    () =>
+      Effect.gen(function* () {
+        const connector = yield* makeSubstrateConnector();
 
-    expect(evaluated.extrinsicEncoding).toBe(0);
+        expect(evaluated.extrinsicEncoding).toBe(0);
 
-    signPayload.mockResolvedValueOnce({
-      id: 1,
-      signature: "0xsignature",
-      signedTransaction: "0xpre-encoded",
-    });
+        signPayload.mockResolvedValueOnce({
+          id: 1,
+          signature: "0xsignature",
+          signedTransaction: "0xpre-encoded",
+        });
 
-    await expect(signWithSubstrateConnector(connector)).resolves.toBe(
-      "0xpre-encoded"
-    );
-    expect(evaluated.extrinsicEncoding).toBe(0);
-    expect(encodeSignedExtrinsic).not.toHaveBeenCalled();
-  });
-
-  it("loads the extrinsic encoder once, on the first signature that needs it", async () => {
-    const connector = await makeSubstrateConnector();
-
-    await expect(signWithSubstrateConnector(connector)).resolves.toBe(
-      "0xencoded-extrinsic"
-    );
-    expect(evaluated.extrinsicEncoding).toBe(1);
-    expect(encodeSignedExtrinsic).toHaveBeenCalledWith({
-      metadataRpc: "0x00",
-      signature: "0xsignature",
-      tx: signerPayload,
-    });
-
-    await expect(signWithSubstrateConnector(connector)).resolves.toBe(
-      "0xencoded-extrinsic"
-    );
-    expect(evaluated.extrinsicEncoding).toBe(1);
-  });
-
-  it("prepares non-Polkadot Ledger transactions without the Polkadot builder", async () => {
-    const prepareTransaction = await Effect.runPromise(
-      makePrepareLedgerLiveTransaction
-    );
-
-    expect(evaluated.polkadotLedgerTransaction).toBe(0);
-
-    await Effect.runPromise(
-      prepareTransaction({
-        network: "cosmos",
-        tx: "{}",
-        txMeta: {
-          ...txMeta,
-          rawArguments: { validatorAddress: "cosmosvaloper1validator" },
-        } as SKTxMeta,
+        expect(yield* signWithSubstrateConnector(connector)).toBe(
+          "0xpre-encoded"
+        );
+        expect(evaluated.extrinsicEncoding).toBe(0);
+        expect(encodeSignedExtrinsic).not.toHaveBeenCalled();
       })
-    );
+  );
 
-    expect(evaluated.polkadotLedgerTransaction).toBe(0);
-  });
+  it.live(
+    "loads the extrinsic encoder once, on the first signature that needs it",
+    () =>
+      Effect.gen(function* () {
+        const connector = yield* makeSubstrateConnector();
 
-  it("loads the Polkadot Ledger builder once, on the first Polkadot transaction", async () => {
-    const prepareTransaction = await Effect.runPromise(
-      makePrepareLedgerLiveTransaction
-    );
+        expect(yield* signWithSubstrateConnector(connector)).toBe(
+          "0xencoded-extrinsic"
+        );
+        expect(evaluated.extrinsicEncoding).toBe(1);
+        expect(encodeSignedExtrinsic).toHaveBeenCalledWith({
+          metadataRpc: "0x00",
+          signature: "0xsignature",
+          tx: signerPayload,
+        });
 
-    await Effect.runPromise(
-      prepareTransaction({
-        network: "polkadot",
-        tx: polkadotLedgerTx,
-        txMeta,
+        expect(yield* signWithSubstrateConnector(connector)).toBe(
+          "0xencoded-extrinsic"
+        );
+        expect(evaluated.extrinsicEncoding).toBe(1);
       })
-    );
+  );
 
-    expect(evaluated.polkadotLedgerTransaction).toBe(1);
-    expect(buildPolkadotLedgerTransaction).toHaveBeenCalledTimes(1);
+  it.live(
+    "prepares non-Polkadot Ledger transactions without the Polkadot builder",
+    () =>
+      Effect.gen(function* () {
+        const prepareTransaction = yield* makePrepareLedgerLiveTransaction;
 
-    await Effect.runPromise(
-      prepareTransaction({
-        network: "polkadot",
-        tx: polkadotLedgerTx,
-        txMeta,
+        expect(evaluated.polkadotLedgerTransaction).toBe(0);
+
+        yield* prepareTransaction({
+          network: "cosmos",
+          tx: "{}",
+          txMeta: {
+            ...txMeta,
+            rawArguments: { validatorAddress: "cosmosvaloper1validator" },
+          } as SKTxMeta,
+        });
+
+        expect(evaluated.polkadotLedgerTransaction).toBe(0);
       })
-    );
+  );
 
-    expect(evaluated.polkadotLedgerTransaction).toBe(1);
-    expect(buildPolkadotLedgerTransaction).toHaveBeenCalledTimes(2);
-  });
+  it.live(
+    "loads the Polkadot Ledger builder once, on the first Polkadot transaction",
+    () =>
+      Effect.gen(function* () {
+        const prepareTransaction = yield* makePrepareLedgerLiveTransaction;
+
+        yield* prepareTransaction({
+          network: "polkadot",
+          tx: polkadotLedgerTx,
+          txMeta,
+        });
+
+        expect(evaluated.polkadotLedgerTransaction).toBe(1);
+        expect(buildPolkadotLedgerTransaction).toHaveBeenCalledTimes(1);
+
+        yield* prepareTransaction({
+          network: "polkadot",
+          tx: polkadotLedgerTx,
+          txMeta,
+        });
+
+        expect(evaluated.polkadotLedgerTransaction).toBe(1);
+        expect(buildPolkadotLedgerTransaction).toHaveBeenCalledTimes(2);
+      })
+  );
 });

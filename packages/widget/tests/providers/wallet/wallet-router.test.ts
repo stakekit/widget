@@ -1,6 +1,6 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Schema } from "effect";
 import { type Chain, type Hash, type Hex, zeroAddress } from "viem";
-import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import type { Network } from "../../../src/domain/network/network";
@@ -81,135 +81,144 @@ const routingContext = (
 });
 
 describe("wallet router", () => {
-  it("requests a Ledger account on the requested chain", async () => {
-    const targetChain = { id: 10 } as Chain;
-    const requestAndSwitchAccount = vi.fn(() => Effect.succeed(targetChain));
-    const connector = {
-      id: "ledgerLive",
-      requestAndSwitchAccount,
-      uid: "ledger",
-    } as never;
-    const state = {
-      ...connectedState(connector),
-      isLedgerLive: true,
-      isLedgerLiveAccountPlaceholder: true,
-    };
+  it.effect("requests a Ledger account on the requested chain", () =>
+    Effect.gen(function* () {
+      const targetChain = { id: 10 } as Chain;
+      const requestAndSwitchAccount = vi.fn(() => Effect.succeed(targetChain));
+      const connector = {
+        id: "ledgerLive",
+        requestAndSwitchAccount,
+        uid: "ledger",
+      } as never;
+      const state = {
+        ...connectedState(connector),
+        isLedgerLive: true,
+        isLedgerLiveAccountPlaceholder: true,
+      };
 
-    const outcome = await Effect.runPromise(
-      routeWalletLedgerAccountRequest(routingContext(state), targetChain)
-    );
+      const outcome = yield* routeWalletLedgerAccountRequest(
+        routingContext(state),
+        targetChain
+      );
 
-    expect(outcome).toEqual({ _tag: "Added" });
-    expect(requestAndSwitchAccount).toHaveBeenCalledWith(targetChain);
-  });
+      expect(outcome).toEqual({ _tag: "Added" });
+      expect(requestAndSwitchAccount).toHaveBeenCalledWith(targetChain);
+    })
+  );
 
-  it("fails commands with a typed capability error while disconnected", async () => {
-    const failure = await Effect.runPromise(
-      Effect.flip(
-        routeWalletTransaction(
-          routingContext(disconnectedNormalizedWalletState),
-          transactionInput
-        )
-      )
-    );
+  it.effect(
+    "fails commands with a typed capability error while disconnected",
+    () =>
+      Effect.gen(function* () {
+        const failure = yield* Effect.flip(
+          routeWalletTransaction(
+            routingContext(disconnectedNormalizedWalletState),
+            transactionInput
+          )
+        );
 
-    expect(failure).toMatchObject({
-      _tag: "WalletCapabilityUnavailableError",
-      capability: "transaction",
-      connectorId: null,
-    });
-  });
-
-  it("routes a generic EVM transaction through the bound Wagmi actions", async () => {
-    const connector = makeConnector("evm");
-    const walletActions = actions();
-
-    await Effect.runPromise(
-      routeWalletTransaction(
-        routingContext(connectedState(connector), walletActions),
-        transactionInput
-      )
-    );
-
-    expect(walletActions.sendEvmTransaction).toHaveBeenCalledWith(
-      expect.objectContaining({ connector })
-    );
-  });
-
-  it("routes Stellar transactions through the generic connector", async () => {
-    const stellarAddress = `G${"A".repeat(55)}`;
-    const signTransaction = vi.fn(() =>
-      Effect.succeed({
-        signedTxXdr: "signed-xdr",
+        expect(failure).toMatchObject({
+          _tag: "WalletCapabilityUnavailableError",
+          capability: "transaction",
+          connectorId: null,
+        });
       })
-    );
-    const connector = {
-      id: "freighter",
-      signTransaction,
-      type: "stellar-wallet",
-      uid: "freighter",
-    } as unknown as Connector;
-    const walletActions = actions();
-    const state = {
-      ...connectedState(connector),
-      address: Schema.decodeSync(WalletAddress)(stellarAddress),
-      network: "stellar" as const,
-    };
+  );
 
-    await expect(
-      Effect.runPromise(
-        routeWalletTransaction(routingContext(state, walletActions), {
+  it.effect(
+    "routes a generic EVM transaction through the bound Wagmi actions",
+    () =>
+      Effect.gen(function* () {
+        const connector = makeConnector("evm");
+        const walletActions = actions();
+
+        yield* routeWalletTransaction(
+          routingContext(connectedState(connector), walletActions),
+          transactionInput
+        );
+
+        expect(walletActions.sendEvmTransaction).toHaveBeenCalledWith(
+          expect.objectContaining({ connector })
+        );
+      })
+  );
+
+  it.effect("routes Stellar transactions through the generic connector", () =>
+    Effect.gen(function* () {
+      const stellarAddress = `G${"A".repeat(55)}`;
+      const signTransaction = vi.fn(() =>
+        Effect.succeed({
+          signedTxXdr: "signed-xdr",
+        })
+      );
+      const connector = {
+        id: "freighter",
+        signTransaction,
+        type: "stellar-wallet",
+        uid: "freighter",
+      } as unknown as Connector;
+      const walletActions = actions();
+      const state = {
+        ...connectedState(connector),
+        address: Schema.decodeSync(WalletAddress)(stellarAddress),
+        network: "stellar" as const,
+      };
+
+      expect(
+        yield* routeWalletTransaction(routingContext(state, walletActions), {
           ...transactionInput,
           network: "stellar" as Network,
           tx: "AAAA",
         })
-      )
-    ).resolves.toEqual({ broadcasted: false, signedTx: "signed-xdr" });
-    expect(signTransaction).toHaveBeenCalledWith({
-      address: stellarAddress,
-      networkPassphrase: "Public Global Stellar Network ; September 2015",
-      transactionXdr: "AAAA",
-    });
-    expect(walletActions.sendEvmTransaction).not.toHaveBeenCalled();
-  });
+      ).toEqual({ broadcasted: false, signedTx: "signed-xdr" });
+      expect(signTransaction).toHaveBeenCalledWith({
+        address: stellarAddress,
+        networkPassphrase: "Public Global Stellar Network ; September 2015",
+        transactionXdr: "AAAA",
+      });
+      expect(walletActions.sendEvmTransaction).not.toHaveBeenCalled();
+    })
+  );
 
-  it("rejects Stellar message signing before the Wagmi fallback", async () => {
-    const connector = {
-      id: "freighter",
-      type: "stellar-wallet",
-      uid: "freighter",
-    } as unknown as Connector;
-    const walletActions = actions();
+  it.effect("rejects Stellar message signing before the Wagmi fallback", () =>
+    Effect.gen(function* () {
+      const connector = {
+        id: "freighter",
+        type: "stellar-wallet",
+        uid: "freighter",
+      } as unknown as Connector;
+      const walletActions = actions();
 
-    const failure = await Effect.runPromise(
-      Effect.flip(
+      const failure = yield* Effect.flip(
         routeWalletMessage(
           routingContext(connectedState(connector), walletActions),
           { message: "hello" }
         )
-      )
-    );
+      );
 
-    expect(failure).toMatchObject({
-      _tag: "WalletCapabilityUnavailableError",
-      capability: "message",
-      connectorId: "freighter",
-    });
-    expect(walletActions.signMessage).not.toHaveBeenCalled();
-  });
+      expect(failure).toMatchObject({
+        _tag: "WalletCapabilityUnavailableError",
+        capability: "message",
+        connectorId: "freighter",
+      });
+      expect(walletActions.signMessage).not.toHaveBeenCalled();
+    })
+  );
 
-  it("rejects a stale Ledger account-switch command after wallet replacement", async () => {
-    const first = makeConnector("first");
-    const second = makeConnector("second");
-    const failure = await Effect.runPromise(
-      Effect.flip(
-        routeWalletAccountSwitch(routingContext(connectedState(second)), {
-          account: { id: "account" } as never,
-          connector: first,
-        })
-      )
-    );
+  it.effect(
+    "rejects a stale Ledger account-switch command after wallet replacement",
+    () =>
+      Effect.gen(function* () {
+        const first = makeConnector("first");
+        const second = makeConnector("second");
+        const failure = yield* Effect.flip(
+          routeWalletAccountSwitch(routingContext(connectedState(second)), {
+            account: { id: "account" } as never,
+            connector: first,
+          })
+        );
 
-    expect(failure._tag).toBe("WalletCapabilityUnavailableError");
-  });
+        expect(failure._tag).toBe("WalletCapabilityUnavailableError");
+      })
+  );
 });

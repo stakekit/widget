@@ -1,14 +1,6 @@
 import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
-import {
-  Context,
-  Deferred,
-  Effect,
-  Exit,
-  Layer,
-  Schema,
-  Scope,
-  Stream,
-} from "effect";
+import { describe, expect, it, vi } from "@effect/vitest";
+import { Context, Deferred, Effect, Layer, Schema, Stream } from "effect";
 import type { ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
 import {
@@ -19,7 +11,6 @@ import {
   useNavigate,
 } from "react-router";
 import { base } from "viem/chains";
-import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { Connector } from "wagmi";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
@@ -306,7 +297,7 @@ const HistoryControls = () => {
   );
 };
 
-const renderExecution = async (
+const renderExecution = (
   borrow: ReturnType<typeof makeBorrowApi>,
   options: {
     readonly action?: BorrowAction;
@@ -320,568 +311,643 @@ const renderExecution = async (
     readonly stepsElement?: ReactNode;
     readonly wallet?: WalletOperations;
   } = {}
-) => {
-  const navigation: {
-    current: ReturnType<typeof useNavigate> | null;
-  } = { current: null };
-  const navigationService = makeWidgetNavigation({
-    back: () =>
-      Effect.sync(() => {
-        navigation.current?.(-1);
-      }),
-    push: (path, options) =>
-      Effect.sync(() => {
-        navigation.current?.(path, { state: options?.state });
-      }),
-    replace: (path, options) =>
-      Effect.sync(() => {
-        navigation.current?.(path, {
-          replace: true,
-          state: options?.state,
-        });
-      }),
-  });
-  const activeWallet = options.wallet ?? wallet;
-  const workflowAction = options.action ?? decodedAction();
-  borrow.executeAction.mockImplementation(() => Effect.succeed(workflowAction));
-  const walletLayer = Layer.succeed(
-    WalletService,
-    activeWallet as WalletService["Service"]
-  );
-  const tracking = TrackingService.of({
-    trackEvent: () => Effect.void,
-    trackPageView: () => Effect.void,
-  });
-  const workflowLayer = makeTransactionWorkflowTestLayer({
-    borrow: borrow as unknown as BorrowOperations["Service"],
-    tracking,
-    wallet: activeWallet as WalletService["Service"],
-    yieldOperations: YieldOperations.of({
-      getTransactionStatus: () => Effect.die("unexpected classic status"),
-      previewAction: () => Effect.die("unexpected action preview"),
-      submitSignedTransaction: () =>
-        Effect.die("unexpected classic signed submission"),
-      submitTransactionHash: () =>
-        Effect.die("unexpected classic hash submission"),
-    }),
-  });
-  const flowWallet = WalletService.of({
-    ...activeWallet,
-    state: Effect.succeed({
-      connection: connectedWalletState,
-      ledger: {
-        accounts: [],
-        currentAccountId: undefined,
-        disabledChains: [],
-      },
-    }),
-    states: Stream.succeed({
-      connection: connectedWalletState,
-      ledger: {
-        accounts: [],
-        currentAccountId: undefined,
-        disabledChains: [],
-      },
-    }),
-  } as never);
-  const flowScope = await Effect.runPromise(Scope.make());
-  const flowDependencies = Layer.mergeAll(
-    Layer.succeed(BorrowOperations, borrow as never),
-    Layer.succeed(TrackingService, tracking),
-    WidgetConfigService.layer({
-      apiKey: "test-api-key",
-      borrowEnabled: true,
-      dashboardVariant: true,
-      variant: "default",
-    }),
-    Layer.succeed(WidgetNavigation, navigationService),
-    Layer.succeed(WalletService, flowWallet),
-    workflowLayer
-  );
-  const flowContext = await Effect.runPromise(
-    Layer.buildWithScope(
-      BorrowTransactionFlowService.layer.pipe(Layer.provide(flowDependencies)),
-      flowScope
-    )
-  );
-  const flowService = Context.get(flowContext, BorrowTransactionFlowService);
-  await Effect.runPromise(
-    flowService.start((options.session ?? session).intake)
-  );
-
-  const app = await render(
-    <I18nextProvider i18n={i18nInstance}>
-      <RegistryProvider
-        initialValues={[
-          applicationRuntimeInitInitialValue({
-            apiKey: "test-api-key",
-            borrowEnabled: true,
-            dashboardVariant: true,
-            variant: "default",
-          }),
-          [
-            appRuntime.layer,
-            Layer.mergeAll(
-              Layer.succeed(BorrowOperations, borrow as never),
-              Layer.succeed(TrackingService, tracking),
-              Layer.succeed(WidgetNavigation, navigationService),
-              WidgetConfigService.layer({
-                apiKey: "test-api-key",
-                borrowEnabled: true,
-                dashboardVariant: true,
-                variant: "default",
-              })
-            ).pipe(Layer.fresh),
-          ],
-          [
-            walletRuntime.layer,
-            Layer.mergeAll(
-              workflowLayer,
-              walletLayer,
-              Layer.succeed(BorrowTransactionFlowService, flowService)
-            ).pipe(Layer.fresh),
-          ],
-        ]}
-      >
-        <MemoryRouter
-          initialEntries={
-            options.initialEntries
-              ? [...options.initialEntries]
-              : [options.initialPath ?? "/borrow/review"]
-          }
-          initialIndex={options.initialIndex}
-        >
-          <NavigationCapture
-            capture={(navigate) => (navigation.current = navigate)}
-          />
-          {options.historyControls ? <HistoryControls /> : null}
-          <Routes>
-            <Route
-              element={
-                <WalletScopeRoute
-                  fallbackPath="/borrow"
-                  walletState={connectedWalletState}
-                />
-              }
-            >
-              <Route path="/borrow" element={<div>Borrow home</div>} />
-              <Route
-                element={<BorrowTransactionFlowRoute expected="BorrowEntry" />}
-              >
-                <Route element={<BorrowTransactionFlowReviewRoute />}>
-                  <Route
-                    path="/borrow/review"
-                    element={options.reviewElement ?? <StartExecutionProbe />}
-                  />
-                </Route>
-                <Route element={<BorrowTransactionFlowExecutionScope />}>
-                  <Route
-                    path="/borrow/steps"
-                    element={options.stepsElement ?? <ExecutionProbe />}
-                  />
-                  <Route element={<BorrowTransactionFlowCompletionGuard />}>
-                    <Route
-                      path="/borrow/complete"
-                      element={<CompleteProbe />}
-                    />
-                  </Route>
-                </Route>
-              </Route>
-            </Route>
-          </Routes>
-        </MemoryRouter>
-      </RegistryProvider>
-    </I18nextProvider>
-  );
-
-  if (
-    options.autoStart !== false &&
-    options.initialPath !== "/borrow/complete"
-  ) {
-    await userEvent.click(app.getByTestId("start-execution"));
-  }
-
-  const unmount = app.unmount;
-  return {
-    ...app,
-    unmount: async () => {
-      await unmount();
-      await Effect.runPromise(Scope.close(flowScope, Exit.void));
-    },
-  };
-};
-
-describe("borrow execution flow component", () => {
-  it("shows localized confirmation feedback without internal error details", async () => {
-    const app = await renderExecution(makeBorrowApi({}), {
-      action: decodedAction({ status: "FAILED" }),
-      autoStart: false,
-      reviewElement: <BorrowReviewPage />,
+) =>
+  Effect.gen(function* () {
+    const navigation: {
+      current: ReturnType<typeof useNavigate> | null;
+    } = { current: null };
+    const navigationService = makeWidgetNavigation({
+      back: () =>
+        Effect.sync(() => {
+          navigation.current?.(-1);
+        }),
+      push: (path, options) =>
+        Effect.sync(() => {
+          navigation.current?.(path, { state: options?.state });
+        }),
+      replace: (path, options) =>
+        Effect.sync(() => {
+          navigation.current?.(path, {
+            replace: true,
+            state: options?.state,
+          });
+        }),
     });
-
-    await userEvent.click(app.getByRole("button", { name: "Confirm" }));
-
-    await expect
-      .element(app.getByText("Borrow transaction failed"))
-      .toBeInTheDocument();
-    await expect
-      .element(
-        app.getByText(
-          "We couldn't prepare your borrow transaction. Please try again."
-        )
-      )
-      .toBeInTheDocument();
-    await expect
-      .element(app.getByText("Borrow action ended with FAILED status."))
-      .not.toBeInTheDocument();
-
-    await app.unmount();
-  });
-
-  it("labels a repayment amount on Review", async () => {
-    const repaySession = {
-      ...session,
-      intake: {
-        ...session.intake,
-        command: {
-          ...session.intake.command,
-          action: "repay",
-          args: {
-            amount: "25",
-            marketId: command.args.marketId,
-            tokenAddress: command.args.tokenAddress,
-          },
-        },
-        summary: {
-          action: "repay",
-          borrowAmount: "25",
-          existingDebtUsd: "400",
-          loanTokenSymbol: "USDC",
-          marketLabel: "cbBTC / USDC",
-          network: "base",
-          projectedDebtUsd: "375",
-          providerName: "Morpho Blue",
-          riskStatus: "available",
-          projectedLtv: "0.25",
-          warnings: [],
-        },
-      },
-    } as BorrowFlowSession;
-    const app = await renderExecution(makeBorrowApi({}), {
-      autoStart: false,
-      reviewElement: <BorrowReviewPage />,
-      session: repaySession,
-    });
-
-    await expect.element(app.getByText("Repay amount")).toBeInTheDocument();
-    await expect
-      .element(app.getByText("Borrow amount"))
-      .not.toBeInTheDocument();
-
-    await app.unmount();
-  });
-
-  it("omits projected metrics when risk is unavailable", async () => {
-    const unavailableSession: BorrowFlowSession = {
-      ...session,
-      intake: {
-        ...session.intake,
-        summary: {
-          ...session.intake.summary,
-          riskStatus: "unavailable",
-        },
-      },
-    };
-    const app = await renderExecution(makeBorrowApi({}), {
-      autoStart: false,
-      reviewElement: <BorrowReviewPage />,
-      session: unavailableSession,
-    });
-
-    await expect
-      .element(app.getByText("Projected risk unavailable"))
-      .not.toBeInTheDocument();
-    await expect.element(app.getByText("0.025 cbBTC")).toBeInTheDocument();
-    await expect.element(app.getByText("0.475 cbBTC")).toBeInTheDocument();
-    await expect
-      .element(app.getByRole("button", { name: "Confirm" }))
-      .toBeEnabled();
-
-    await app.unmount();
-  });
-
-  it("shows known constraint warnings without blocking Confirm", async () => {
-    const warnedSession: BorrowFlowSession = {
-      ...session,
-      intake: {
-        ...session.intake,
-        summary: {
-          ...session.intake.summary,
-          warnings: ["RiskCapacityExceeded"],
-        },
-      },
-    };
-    const app = await renderExecution(makeBorrowApi({}), {
-      autoStart: false,
-      reviewElement: <BorrowReviewPage />,
-      session: warnedSession,
-    });
-
-    await expect.element(app.getByText("Review warning")).toBeInTheDocument();
-    await expect
-      .element(app.getByText(/exceeds the currently known borrow capacity/))
-      .toBeInTheDocument();
-    await expect
-      .element(app.getByRole("button", { name: "Confirm" }))
-      .toBeEnabled();
-
-    await app.unmount();
-  });
-
-  it("routes an incomplete direct completion page back to Borrow", async () => {
-    const app = await renderExecution(makeBorrowApi({}), {
-      initialPath: "/borrow/complete",
-      wallet: {
-        ...wallet,
-        signTransaction: () => Effect.never,
-      },
-    });
-
-    await expect.element(app.getByText("Borrow home")).toBeInTheDocument();
-
-    await app.unmount();
-  });
-
-  it("returns to Borrow when Transaction Workflow setup fails", async () => {
-    const app = await renderExecution(makeBorrowApi({}), {
-      action: decodedAction({
-        address: Schema.decodeSync(WalletAddress)(
-          "0x0000000000000000000000000000000000000002"
-        ),
-      }),
-    });
-
-    await expect.element(app.getByText("Borrow home")).toBeInTheDocument();
-
-    await app.unmount();
-  });
-
-  it("renders running state while execution waits for wallet signing", async () => {
-    const app = await renderExecution(makeBorrowApi({}), {
-      wallet: {
-        ...wallet,
-        signTransaction: () => Effect.never,
-      },
-    });
-
-    await expect.element(app.getByTestId("phase")).toHaveTextContent("signing");
-    await expect.element(app.getByTestId("running")).toHaveTextContent("true");
-
-    await app.unmount();
-  });
-
-  it("routes to success when execution completes", async () => {
-    const app = await renderExecution(
-      makeBorrowApi({
-        getActions: [
-          action({
-            status: "SUCCESS",
-            transactions: [transaction({ status: "CONFIRMED" })],
-          }),
-        ],
-      })
+    const activeWallet = options.wallet ?? wallet;
+    const workflowAction = options.action ?? decodedAction();
+    borrow.executeAction.mockImplementation(() =>
+      Effect.succeed(workflowAction)
     );
-
-    await expect
-      .element(app.getByTestId("complete"))
-      .toHaveTextContent("/borrow/complete action-1");
-
-    await app.unmount();
-  });
-
-  it("renders retryable failure and routes after retry succeeds", async () => {
-    const app = await renderExecution(
-      makeBorrowApi({
-        getActions: [
-          action({
-            status: "PROCESSING",
-            transactions: [transaction({ status: "FAILED" })],
-          }),
-          action({
-            status: "SUCCESS",
-            transactions: [transaction({ status: "CONFIRMED" })],
-          }),
-        ],
-      })
+    const walletLayer = Layer.succeed(
+      WalletService,
+      activeWallet as WalletService["Service"]
     );
-
-    await expect.element(app.getByTestId("retry")).toBeInTheDocument();
-
-    await userEvent.click(app.getByTestId("retry"));
-
-    await expect
-      .element(app.getByTestId("complete"))
-      .toHaveTextContent("/borrow/complete action-1");
-
-    await app.unmount();
-  });
-
-  it("retries after reconnecting without signing twice", async () => {
-    let state: NormalizedWalletState = disconnectedNormalizedWalletState;
-    const signTransaction = vi.fn(() =>
-      Effect.succeed({
-        broadcasted: true as const,
-        signedTx: transactionHash,
-      })
-    );
-    const reconnectingWallet = {
-      ...wallet,
-      state: Effect.sync(() => ({
-        connection: state,
+    const tracking = TrackingService.of({
+      trackEvent: () => Effect.void,
+      trackPageView: () => Effect.void,
+    });
+    const workflowLayer = makeTransactionWorkflowTestLayer({
+      borrow: borrow as unknown as BorrowOperations["Service"],
+      tracking,
+      wallet: activeWallet as WalletService["Service"],
+      yieldOperations: YieldOperations.of({
+        getTransactionStatus: () => Effect.die("unexpected classic status"),
+        previewAction: () => Effect.die("unexpected action preview"),
+        submitSignedTransaction: () =>
+          Effect.die("unexpected classic signed submission"),
+        submitTransactionHash: () =>
+          Effect.die("unexpected classic hash submission"),
+      }),
+    });
+    const flowWallet = WalletService.of({
+      ...activeWallet,
+      state: Effect.succeed({
+        connection: connectedWalletState,
         ledger: {
           accounts: [],
           currentAccountId: undefined,
           disabledChains: [],
         },
-      })),
-      signTransaction,
-    };
-    const app = await renderExecution(
-      makeBorrowApi({
-        getActions: [
-          action({
-            status: "SUCCESS",
-            transactions: [transaction({ status: "CONFIRMED" })],
-          }),
-        ],
       }),
-      { wallet: reconnectingWallet }
-    );
-
-    await expect.element(app.getByTestId("retry")).toBeInTheDocument();
-    expect(signTransaction).not.toHaveBeenCalled();
-
-    state = connectedWalletState;
-    await userEvent.click(app.getByTestId("retry"));
-
-    await expect
-      .element(app.getByTestId("complete"))
-      .toHaveTextContent("/borrow/complete action-1");
-    expect(signTransaction).toHaveBeenCalledOnce();
-
-    await app.unmount();
-  });
-
-  it("shows the next action step while retaining prior transaction batches", async () => {
-    let signCalls = 0;
-    const multiStepWallet = {
-      ...wallet,
-      signTransaction: () => {
-        signCalls += 1;
-        return signCalls === 1
-          ? Effect.succeed({
-              broadcasted: true as const,
-              signedTx: transactionHash,
-            })
-          : Effect.never;
-      },
-    };
-    const first = decodedAction({
-      hasNextStep: true,
-      totalSteps: 2,
-    });
-    const app = await renderExecution(
-      makeBorrowApi({
-        getActions: [
-          action({
-            hasNextStep: true,
-            totalSteps: 2,
-            transactions: [transaction({ status: "CONFIRMED" })],
-          }),
-        ],
-        stepActions: [
-          action({
-            currentStep: 2,
-            id: first.id,
-            totalSteps: 2,
-            transactions: [transaction({ id: "tx-2" })],
-          }),
-        ],
+      states: Stream.succeed({
+        connection: connectedWalletState,
+        ledger: {
+          accounts: [],
+          currentAccountId: undefined,
+          disabledChains: [],
+        },
       }),
-      { action: first, wallet: multiStepWallet }
+    } as never);
+    const flowDependencies = Layer.mergeAll(
+      Layer.succeed(BorrowOperations, borrow as never),
+      Layer.succeed(TrackingService, tracking),
+      WidgetConfigService.layer({
+        apiKey: "test-api-key",
+        borrowEnabled: true,
+        dashboardVariant: true,
+        variant: "default",
+      }),
+      Layer.succeed(WidgetNavigation, navigationService),
+      Layer.succeed(WalletService, flowWallet),
+      workflowLayer
     );
-
-    await expect
-      .element(app.getByTestId("action-step"))
-      .toHaveTextContent("2/2");
-    await expect.element(app.getByTestId("batch-count")).toHaveTextContent("2");
-    await expect
-      .element(app.getByTestId("current-transaction"))
-      .toHaveTextContent("tx-2");
-    await expect.element(app.getByTestId("phase")).toHaveTextContent("signing");
-
-    await app.unmount();
-  });
-
-  it("does not restart an abandoned submitted workflow from browser history", async () => {
-    const confirmationInterrupted = await Effect.runPromise(
-      Deferred.make<void>()
+    const flowContext = yield* Layer.build(
+      BorrowTransactionFlowService.layer.pipe(Layer.provide(flowDependencies))
     );
-    const signTransaction = vi.fn(() =>
-      Effect.succeed({
-        broadcasted: true as const,
-        signedTx: transactionHash,
-      })
-    );
-    const borrow = makeBorrowApi({});
-    borrow.getAction.mockImplementation(() =>
-      Effect.never.pipe(
-        Effect.onInterrupt(() =>
-          Deferred.succeed(confirmationInterrupted, undefined)
+    const flowService = Context.get(flowContext, BorrowTransactionFlowService);
+    yield* flowService.start((options.session ?? session).intake);
+
+    const app = yield* Effect.acquireRelease(
+      Effect.promise(() =>
+        render(
+          <I18nextProvider i18n={i18nInstance}>
+            <RegistryProvider
+              initialValues={[
+                applicationRuntimeInitInitialValue({
+                  apiKey: "test-api-key",
+                  borrowEnabled: true,
+                  dashboardVariant: true,
+                  variant: "default",
+                }),
+                [
+                  appRuntime.layer,
+                  Layer.mergeAll(
+                    Layer.succeed(BorrowOperations, borrow as never),
+                    Layer.succeed(TrackingService, tracking),
+                    Layer.succeed(WidgetNavigation, navigationService),
+                    WidgetConfigService.layer({
+                      apiKey: "test-api-key",
+                      borrowEnabled: true,
+                      dashboardVariant: true,
+                      variant: "default",
+                    })
+                  ).pipe(Layer.fresh),
+                ],
+                [
+                  walletRuntime.layer,
+                  Layer.mergeAll(
+                    workflowLayer,
+                    walletLayer,
+                    Layer.succeed(BorrowTransactionFlowService, flowService)
+                  ).pipe(Layer.fresh),
+                ],
+              ]}
+            >
+              <MemoryRouter
+                initialEntries={
+                  options.initialEntries
+                    ? [...options.initialEntries]
+                    : [options.initialPath ?? "/borrow/review"]
+                }
+                initialIndex={options.initialIndex}
+              >
+                <NavigationCapture
+                  capture={(navigate) => (navigation.current = navigate)}
+                />
+                {options.historyControls ? <HistoryControls /> : null}
+                <Routes>
+                  <Route
+                    element={
+                      <WalletScopeRoute
+                        fallbackPath="/borrow"
+                        walletState={connectedWalletState}
+                      />
+                    }
+                  >
+                    <Route path="/borrow" element={<div>Borrow home</div>} />
+                    <Route
+                      element={
+                        <BorrowTransactionFlowRoute expected="BorrowEntry" />
+                      }
+                    >
+                      <Route element={<BorrowTransactionFlowReviewRoute />}>
+                        <Route
+                          path="/borrow/review"
+                          element={
+                            options.reviewElement ?? <StartExecutionProbe />
+                          }
+                        />
+                      </Route>
+                      <Route element={<BorrowTransactionFlowExecutionScope />}>
+                        <Route
+                          path="/borrow/steps"
+                          element={options.stepsElement ?? <ExecutionProbe />}
+                        />
+                        <Route
+                          element={<BorrowTransactionFlowCompletionGuard />}
+                        >
+                          <Route
+                            path="/borrow/complete"
+                            element={<CompleteProbe />}
+                          />
+                        </Route>
+                      </Route>
+                    </Route>
+                  </Route>
+                </Routes>
+              </MemoryRouter>
+            </RegistryProvider>
+          </I18nextProvider>
         )
-      )
+      ),
+      (app) => Effect.promise(() => app.unmount())
     );
-    const activeWallet = { ...wallet, signTransaction };
-    const app = await renderExecution(borrow, {
-      action: decodedAction(),
-      historyControls: true,
-      initialEntries: ["/borrow", "/borrow/review"],
-      initialIndex: 1,
-      stepsElement: <BorrowStepsPage />,
-      wallet: activeWallet,
-    });
 
-    await expect
-      .element(app.getByTestId("history-path"))
-      .toHaveTextContent("/borrow/steps");
+    if (
+      options.autoStart !== false &&
+      options.initialPath !== "/borrow/complete"
+    ) {
+      yield* Effect.promise(() =>
+        userEvent.click(app.getByTestId("start-execution"))
+      );
+    }
 
-    await vi.waitFor(() => {
-      expect(signTransaction).toHaveBeenCalledOnce();
-      expect(borrow.submitTransaction).toHaveBeenCalledOnce();
-      expect(borrow.getAction).toHaveBeenCalledOnce();
-    });
-
-    await userEvent.click(app.getByRole("button", { name: "Back" }));
-    await expect
-      .element(app.getByTestId("history-path"))
-      .toHaveTextContent("/borrow/review");
-    await Effect.runPromise(Deferred.await(confirmationInterrupted));
-
-    await userEvent.click(app.getByRole("button", { name: "Back" }));
-    await expect
-      .element(app.getByTestId("history-path"))
-      .toHaveTextContent("/borrow");
-    await userEvent.click(app.getByRole("button", { name: "Forward" }));
-    await expect
-      .element(app.getByTestId("history-path"))
-      .toHaveTextContent("/borrow");
-
-    expect(
-      app.container.querySelector('[data-rk="borrow-steps-page"]')
-    ).not.toBeInTheDocument();
-    expect(signTransaction).toHaveBeenCalledOnce();
-    expect(borrow.submitTransaction).toHaveBeenCalledOnce();
-
-    await app.unmount();
+    return app;
   });
+
+describe("borrow execution flow component", () => {
+  it.live(
+    "shows localized confirmation feedback without internal error details",
+    () =>
+      Effect.gen(function* () {
+        const app = yield* renderExecution(makeBorrowApi({}), {
+          action: decodedAction({ status: "FAILED" }),
+          autoStart: false,
+          reviewElement: <BorrowReviewPage />,
+        });
+
+        yield* Effect.promise(() =>
+          userEvent.click(app.getByRole("button", { name: "Confirm" }))
+        );
+
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByText("Borrow transaction failed"))
+            .toBeInTheDocument()
+        );
+        yield* Effect.promise(() =>
+          expect
+            .element(
+              app.getByText(
+                "We couldn't prepare your borrow transaction. Please try again."
+              )
+            )
+            .toBeInTheDocument()
+        );
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByText("Borrow action ended with FAILED status."))
+            .not.toBeInTheDocument()
+        );
+      })
+  );
+
+  it.live("labels a repayment amount on Review", () =>
+    Effect.gen(function* () {
+      const repaySession = {
+        ...session,
+        intake: {
+          ...session.intake,
+          command: {
+            ...session.intake.command,
+            action: "repay",
+            args: {
+              amount: "25",
+              marketId: command.args.marketId,
+              tokenAddress: command.args.tokenAddress,
+            },
+          },
+          summary: {
+            action: "repay",
+            borrowAmount: "25",
+            existingDebtUsd: "400",
+            loanTokenSymbol: "USDC",
+            marketLabel: "cbBTC / USDC",
+            network: "base",
+            projectedDebtUsd: "375",
+            providerName: "Morpho Blue",
+            riskStatus: "available",
+            projectedLtv: "0.25",
+            warnings: [],
+          },
+        },
+      } as BorrowFlowSession;
+      const app = yield* renderExecution(makeBorrowApi({}), {
+        autoStart: false,
+        reviewElement: <BorrowReviewPage />,
+        session: repaySession,
+      });
+
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("Repay amount")).toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("Borrow amount")).not.toBeInTheDocument()
+      );
+    })
+  );
+
+  it.live("omits projected metrics when risk is unavailable", () =>
+    Effect.gen(function* () {
+      const unavailableSession: BorrowFlowSession = {
+        ...session,
+        intake: {
+          ...session.intake,
+          summary: {
+            ...session.intake.summary,
+            riskStatus: "unavailable",
+          },
+        },
+      };
+      const app = yield* renderExecution(makeBorrowApi({}), {
+        autoStart: false,
+        reviewElement: <BorrowReviewPage />,
+        session: unavailableSession,
+      });
+
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByText("Projected risk unavailable"))
+          .not.toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("0.025 cbBTC")).toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("0.475 cbBTC")).toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByRole("button", { name: "Confirm" }))
+          .toBeEnabled()
+      );
+    })
+  );
+
+  it.live("shows known constraint warnings without blocking Confirm", () =>
+    Effect.gen(function* () {
+      const warnedSession: BorrowFlowSession = {
+        ...session,
+        intake: {
+          ...session.intake,
+          summary: {
+            ...session.intake.summary,
+            warnings: ["RiskCapacityExceeded"],
+          },
+        },
+      };
+      const app = yield* renderExecution(makeBorrowApi({}), {
+        autoStart: false,
+        reviewElement: <BorrowReviewPage />,
+        session: warnedSession,
+      });
+
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("Review warning")).toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByText(/exceeds the currently known borrow capacity/))
+          .toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByRole("button", { name: "Confirm" }))
+          .toBeEnabled()
+      );
+    })
+  );
+
+  it.live("routes an incomplete direct completion page back to Borrow", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(makeBorrowApi({}), {
+        initialPath: "/borrow/complete",
+        wallet: {
+          ...wallet,
+          signTransaction: () => Effect.never,
+        },
+      });
+
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("Borrow home")).toBeInTheDocument()
+      );
+    })
+  );
+
+  it.live("returns to Borrow when Transaction Workflow setup fails", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(makeBorrowApi({}), {
+        action: decodedAction({
+          address: Schema.decodeSync(WalletAddress)(
+            "0x0000000000000000000000000000000000000002"
+          ),
+        }),
+      });
+
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("Borrow home")).toBeInTheDocument()
+      );
+    })
+  );
+
+  it.live(
+    "renders running state while execution waits for wallet signing",
+    () =>
+      Effect.gen(function* () {
+        const app = yield* renderExecution(makeBorrowApi({}), {
+          wallet: {
+            ...wallet,
+            signTransaction: () => Effect.never,
+          },
+        });
+
+        yield* Effect.promise(() =>
+          expect.element(app.getByTestId("phase")).toHaveTextContent("signing")
+        );
+        yield* Effect.promise(() =>
+          expect.element(app.getByTestId("running")).toHaveTextContent("true")
+        );
+      })
+  );
+
+  it.live("routes to success when execution completes", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(
+        makeBorrowApi({
+          getActions: [
+            action({
+              status: "SUCCESS",
+              transactions: [transaction({ status: "CONFIRMED" })],
+            }),
+          ],
+        })
+      );
+
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByTestId("complete"))
+          .toHaveTextContent("/borrow/complete action-1")
+      );
+    })
+  );
+
+  it.live("renders retryable failure and routes after retry succeeds", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(
+        makeBorrowApi({
+          getActions: [
+            action({
+              status: "PROCESSING",
+              transactions: [transaction({ status: "FAILED" })],
+            }),
+            action({
+              status: "SUCCESS",
+              transactions: [transaction({ status: "CONFIRMED" })],
+            }),
+          ],
+        })
+      );
+
+      yield* Effect.promise(() =>
+        expect.element(app.getByTestId("retry")).toBeInTheDocument()
+      );
+
+      yield* Effect.promise(() => userEvent.click(app.getByTestId("retry")));
+
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByTestId("complete"))
+          .toHaveTextContent("/borrow/complete action-1")
+      );
+    })
+  );
+
+  it.live("retries after reconnecting without signing twice", () =>
+    Effect.gen(function* () {
+      let state: NormalizedWalletState = disconnectedNormalizedWalletState;
+      const signTransaction = vi.fn(() =>
+        Effect.succeed({
+          broadcasted: true as const,
+          signedTx: transactionHash,
+        })
+      );
+      const reconnectingWallet = {
+        ...wallet,
+        state: Effect.sync(() => ({
+          connection: state,
+          ledger: {
+            accounts: [],
+            currentAccountId: undefined,
+            disabledChains: [],
+          },
+        })),
+        signTransaction,
+      };
+      const app = yield* renderExecution(
+        makeBorrowApi({
+          getActions: [
+            action({
+              status: "SUCCESS",
+              transactions: [transaction({ status: "CONFIRMED" })],
+            }),
+          ],
+        }),
+        { wallet: reconnectingWallet }
+      );
+
+      yield* Effect.promise(() =>
+        expect.element(app.getByTestId("retry")).toBeInTheDocument()
+      );
+      expect(signTransaction).not.toHaveBeenCalled();
+
+      state = connectedWalletState;
+      yield* Effect.promise(() => userEvent.click(app.getByTestId("retry")));
+
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByTestId("complete"))
+          .toHaveTextContent("/borrow/complete action-1")
+      );
+      expect(signTransaction).toHaveBeenCalledOnce();
+    })
+  );
+
+  it.live(
+    "shows the next action step while retaining prior transaction batches",
+    () =>
+      Effect.gen(function* () {
+        let signCalls = 0;
+        const multiStepWallet = {
+          ...wallet,
+          signTransaction: () => {
+            signCalls += 1;
+            return signCalls === 1
+              ? Effect.succeed({
+                  broadcasted: true as const,
+                  signedTx: transactionHash,
+                })
+              : Effect.never;
+          },
+        };
+        const first = decodedAction({
+          hasNextStep: true,
+          totalSteps: 2,
+        });
+        const app = yield* renderExecution(
+          makeBorrowApi({
+            getActions: [
+              action({
+                hasNextStep: true,
+                totalSteps: 2,
+                transactions: [transaction({ status: "CONFIRMED" })],
+              }),
+            ],
+            stepActions: [
+              action({
+                currentStep: 2,
+                id: first.id,
+                totalSteps: 2,
+                transactions: [transaction({ id: "tx-2" })],
+              }),
+            ],
+          }),
+          { action: first, wallet: multiStepWallet }
+        );
+
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByTestId("action-step"))
+            .toHaveTextContent("2/2")
+        );
+        yield* Effect.promise(() =>
+          expect.element(app.getByTestId("batch-count")).toHaveTextContent("2")
+        );
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByTestId("current-transaction"))
+            .toHaveTextContent("tx-2")
+        );
+        yield* Effect.promise(() =>
+          expect.element(app.getByTestId("phase")).toHaveTextContent("signing")
+        );
+      })
+  );
+
+  it.live(
+    "does not restart an abandoned submitted workflow from browser history",
+    () =>
+      Effect.gen(function* () {
+        const confirmationInterrupted = yield* Deferred.make<void>();
+        const signTransaction = vi.fn(() =>
+          Effect.succeed({
+            broadcasted: true as const,
+            signedTx: transactionHash,
+          })
+        );
+        const borrow = makeBorrowApi({});
+        borrow.getAction.mockImplementation(() =>
+          Effect.never.pipe(
+            Effect.onInterrupt(() =>
+              Deferred.succeed(confirmationInterrupted, undefined)
+            )
+          )
+        );
+        const activeWallet = { ...wallet, signTransaction };
+        const app = yield* renderExecution(borrow, {
+          action: decodedAction(),
+          historyControls: true,
+          initialEntries: ["/borrow", "/borrow/review"],
+          initialIndex: 1,
+          stepsElement: <BorrowStepsPage />,
+          wallet: activeWallet,
+        });
+
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByTestId("history-path"))
+            .toHaveTextContent("/borrow/steps")
+        );
+
+        yield* Effect.promise(() =>
+          vi.waitFor(() => {
+            expect(signTransaction).toHaveBeenCalledOnce();
+            expect(borrow.submitTransaction).toHaveBeenCalledOnce();
+            expect(borrow.getAction).toHaveBeenCalledOnce();
+          })
+        );
+
+        yield* Effect.promise(() =>
+          userEvent.click(app.getByRole("button", { name: "Back" }))
+        );
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByTestId("history-path"))
+            .toHaveTextContent("/borrow/review")
+        );
+        yield* Deferred.await(confirmationInterrupted);
+
+        yield* Effect.promise(() =>
+          userEvent.click(app.getByRole("button", { name: "Back" }))
+        );
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByTestId("history-path"))
+            .toHaveTextContent("/borrow")
+        );
+        yield* Effect.promise(() =>
+          userEvent.click(app.getByRole("button", { name: "Forward" }))
+        );
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByTestId("history-path"))
+            .toHaveTextContent("/borrow")
+        );
+
+        expect(
+          app.container.querySelector('[data-rk="borrow-steps-page"]')
+        ).not.toBeInTheDocument();
+        expect(signTransaction).toHaveBeenCalledOnce();
+        expect(borrow.submitTransaction).toHaveBeenCalledOnce();
+      })
+  );
 });

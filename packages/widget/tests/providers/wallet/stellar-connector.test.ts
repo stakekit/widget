@@ -1,8 +1,9 @@
-import { Effect } from "effect";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "@effect/vitest";
+import { Cause, Effect, Exit } from "effect";
 import type { Connector } from "wagmi";
 import { getStellarConnectors } from "../../../src/services/wallet/internal/adapters/stellar/stellar-connector";
 import type { StellarWalletClient } from "../../../src/services/wallet/internal/platform/stellar-wallets-kit-platform";
+import { runWalletEffect } from "../../utils/run-wallet-effect";
 
 const address = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 
@@ -40,7 +41,7 @@ const createConnectorForTest = ({
     clients: [client],
     forceWalletConnectOnly: false,
     isMobileWallet: false,
-    runWalletEffect: Effect.runPromise,
+    runWalletEffect,
   });
   const wallet = group.wallets[0];
   if (!wallet) throw new Error("Stellar wallet missing");
@@ -73,7 +74,7 @@ describe("Stellar connector", () => {
       clients,
       forceWalletConnectOnly: false,
       isMobileWallet: false,
-      runWalletEffect: Effect.runPromise,
+      runWalletEffect,
     });
 
     expect(group.groupName).toBe("Stellar");
@@ -130,36 +131,46 @@ describe("Stellar connector", () => {
     expect(storage.removeItem).toHaveBeenCalledWith("stellar.reconnect");
   });
 
-  it("invalidates a cached connection when signing fails", async () => {
-    const client = {
-      ...clients[0],
-      signTransaction: () =>
-        Effect.fail(new Error("wallet operation failed") as never),
-    };
-    const { connector, emitter, storage } = createConnectorForTest({ client });
-    await connector.connect();
+  it.effect("invalidates a cached connection when signing fails", () =>
+    Effect.gen(function* () {
+      const client = {
+        ...clients[0],
+        signTransaction: () =>
+          Effect.fail(new Error("wallet operation failed") as never),
+      };
+      const { connector, emitter, storage } = createConnectorForTest({
+        client,
+      });
+      yield* Effect.promise(() => connector.connect());
 
-    await expect(
-      Effect.runPromise(
+      const exit = yield* Effect.exit(
         connector.signTransaction({
           address,
           networkPassphrase: "Public Global Stellar Network ; September 2015",
           transactionXdr: "unsigned-xdr",
         })
-      )
-    ).rejects.toThrow("wallet operation failed");
+      );
+      if (Exit.isSuccess(exit)) {
+        throw new Error("Expected Stellar signing to fail");
+      }
+      expect(() => {
+        throw Cause.squash(exit.cause);
+      }).toThrow("wallet operation failed");
 
-    await expect(connector.getAccounts()).resolves.toEqual([]);
-    expect(storage.removeItem).toHaveBeenCalledWith("stellar.reconnect");
-    expect(emitter.emit).toHaveBeenCalledWith("disconnect");
-  });
+      yield* Effect.promise(() =>
+        expect(connector.getAccounts()).resolves.toEqual([])
+      );
+      expect(storage.removeItem).toHaveBeenCalledWith("stellar.reconnect");
+      expect(emitter.emit).toHaveBeenCalledWith("disconnect");
+    })
+  );
 
   it("keeps only WalletConnect in WalletConnect-only mode", () => {
     const group = getStellarConnectors({
       clients,
       forceWalletConnectOnly: true,
       isMobileWallet: false,
-      runWalletEffect: Effect.runPromise,
+      runWalletEffect,
     });
 
     expect(
@@ -172,7 +183,7 @@ describe("Stellar connector", () => {
       clients: [makeClient("freighter", false), ...clients.slice(1)],
       forceWalletConnectOnly: false,
       isMobileWallet: true,
-      runWalletEffect: Effect.runPromise,
+      runWalletEffect,
     });
 
     expect(

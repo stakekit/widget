@@ -1,5 +1,6 @@
-import { afterAll, test as base, describe, expect, vi } from "vitest";
+import { afterAll, test as base, describe, expect, vi } from "@effect/vitest";
 import { server } from "../mocks/server";
+import { makeFixtureMethods } from "./effect-test";
 
 let isServerStarted = false;
 
@@ -29,6 +30,6 @@ afterAll(() => {
   }
 });
 
-export const it = test;
+export const it = makeFixtureMethods(test);
 
 export { describe, expect, vi };

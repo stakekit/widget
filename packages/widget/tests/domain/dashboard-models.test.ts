@@ -1,5 +1,5 @@
+import { describe, expect, it } from "@effect/vitest";
 import { DateTime, Effect, Schema } from "effect";
-import { describe, expect, it } from "vitest";
 import {
   KycStatus,
   RewardRateHistoryResponse,
@@ -34,18 +34,18 @@ describe("dashboard application schemas", () => {
     ).toThrow();
   });
 
-  it("omits malformed reward-rate and TVL points independently", async () => {
-    const rewardRate = await Effect.runPromise(
-      Schema.decodeUnknownEffect(RewardRateHistoryResponse)({
+  it.effect("omits malformed reward-rate and TVL points independently", () =>
+    Effect.gen(function* () {
+      const rewardRate = yield* Schema.decodeUnknownEffect(
+        RewardRateHistoryResponse
+      )({
         ...envelope,
         items: [
           { timestamp: "2026-06-01T00:00:00.000Z", rewardRate: "0.05" },
           { timestamp: "invalid", rewardRate: "0.07" },
         ],
-      })
-    );
-    const tvl = await Effect.runPromise(
-      Schema.decodeUnknownEffect(TvlHistoryResponse)({
+      });
+      const tvl = yield* Schema.decodeUnknownEffect(TvlHistoryResponse)({
         ...envelope,
         items: [
           {
@@ -59,38 +59,42 @@ describe("dashboard application schemas", () => {
             tvlRaw: "0",
           },
         ],
+      });
+
+      expect(rewardRate.items).toHaveLength(1);
+      expect(rewardRate.items[0]?.rewardRate.toFixed()).toBe("0.05");
+      expect(DateTime.isDateTime(rewardRate.from)).toBe(true);
+      expect(DateTime.isDateTime(rewardRate.to)).toBe(true);
+      expect(DateTime.isDateTime(rewardRate.items[0]?.timestamp)).toBe(true);
+      expect(tvl.items).toHaveLength(1);
+      expect(tvl.items[0]?.tvl.toFixed()).toBe("1000.5");
+      expect(tvl.items[0]?.tvlRaw).toBe("1000500000");
+      expect(DateTime.isDateTime(tvl.items[0]?.timestamp)).toBe(true);
+    })
+  );
+
+  it.effect(
+    "omits a malformed reward summary while retaining valid siblings",
+    () =>
+      Effect.gen(function* () {
+        const rewards = {
+          last24H: "0",
+          last30D: "3",
+          last7D: "1",
+          lastYear: "12",
+          total: "20",
+        };
+        const decoded = yield* Schema.decodeUnknownEffect(RewardsSummaryRecord)(
+          {
+            "ethereum-eth-native-staking": { rewards, token },
+            "cosmos-atom-native-staking": {
+              rewards,
+              token: { ...token, decimals: "invalid" },
+            },
+          }
+        );
+
+        expect(Object.keys(decoded)).toEqual(["ethereum-eth-native-staking"]);
       })
-    );
-
-    expect(rewardRate.items).toHaveLength(1);
-    expect(rewardRate.items[0]?.rewardRate.toFixed()).toBe("0.05");
-    expect(DateTime.isDateTime(rewardRate.from)).toBe(true);
-    expect(DateTime.isDateTime(rewardRate.to)).toBe(true);
-    expect(DateTime.isDateTime(rewardRate.items[0]?.timestamp)).toBe(true);
-    expect(tvl.items).toHaveLength(1);
-    expect(tvl.items[0]?.tvl.toFixed()).toBe("1000.5");
-    expect(tvl.items[0]?.tvlRaw).toBe("1000500000");
-    expect(DateTime.isDateTime(tvl.items[0]?.timestamp)).toBe(true);
-  });
-
-  it("omits a malformed reward summary while retaining valid siblings", async () => {
-    const rewards = {
-      last24H: "0",
-      last30D: "3",
-      last7D: "1",
-      lastYear: "12",
-      total: "20",
-    };
-    const decoded = await Effect.runPromise(
-      Schema.decodeUnknownEffect(RewardsSummaryRecord)({
-        "ethereum-eth-native-staking": { rewards, token },
-        "cosmos-atom-native-staking": {
-          rewards,
-          token: { ...token, decimals: "invalid" },
-        },
-      })
-    );
-
-    expect(Object.keys(decoded)).toEqual(["ethereum-eth-native-staking"]);
-  });
+  );
 });

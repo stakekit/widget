@@ -4,12 +4,12 @@ import {
   useAtomSet,
   useAtomValue,
 } from "@effect/atom-react";
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Deferred, Effect, Equal, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { act } from "react";
 import type { DataRouter } from "react-router";
-import { describe, expect, it, vi } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
@@ -131,6 +131,7 @@ const RuntimeHarness = ({
         disabled={!AsyncResult.isSuccess(tracking)}
         onClick={() => {
           if (AsyncResult.isSuccess(tracking)) {
+            // ast-grep-ignore: no-run-effect-in-test -- React event handlers are non-Effect boundaries
             Effect.runFork(tracking.value.trackEvent("txSigned"));
           }
         }}
@@ -300,67 +301,93 @@ describe("dynamic Widget Configuration", () => {
     expect(projectionRead).toHaveBeenCalledOnce();
   });
 
-  it("preserves router history for live settings including a changed API key", async () => {
-    const firstTrack = vi.fn();
-    const secondTrack = vi.fn();
-    const routers: DataRouter[] = [];
-    const lifecycleProbe: LifecycleProbe = { disposed: 0, initialized: 0 };
-    const workflowProbe: WorkflowProbe = {
-      deferredSigning: await Effect.runPromise(Deferred.make<void>()),
-      finalized: 0,
-      machine: null,
-      starts: 0,
-      states: [],
-      submissions: 0,
-      walletPrompts: 0,
-    };
-    const renderProvider = (currentSettings: ReturnType<typeof settings>) => (
-      <SKAtomRegistryProvider
-        routes={applicationRoutes}
-        hostConfiguration={currentSettings}
-      >
-        <ApplicationRouterHarness capture={(router) => routers.push(router)} />
-        <RuntimeHarness probe={lifecycleProbe} workflowProbe={workflowProbe} />
-      </SKAtomRegistryProvider>
-    );
-    const app = await render(renderProvider(settings(firstTrack)));
-    const capture = () =>
-      app.container
-        .querySelector<HTMLButtonElement>('[data-testid="capture-router"]')
-        ?.click();
+  it.live(
+    "preserves router history for live settings including a changed API key",
+    () =>
+      Effect.gen(function* () {
+        const firstTrack = vi.fn();
+        const secondTrack = vi.fn();
+        const routers: DataRouter[] = [];
+        const lifecycleProbe: LifecycleProbe = { disposed: 0, initialized: 0 };
+        const workflowProbe: WorkflowProbe = {
+          deferredSigning: yield* Deferred.make<void>(),
+          finalized: 0,
+          machine: null,
+          starts: 0,
+          states: [],
+          submissions: 0,
+          walletPrompts: 0,
+        };
+        const renderProvider = (
+          currentSettings: ReturnType<typeof settings>
+        ) => (
+          <SKAtomRegistryProvider
+            routes={applicationRoutes}
+            hostConfiguration={currentSettings}
+          >
+            <ApplicationRouterHarness
+              capture={(router) => routers.push(router)}
+            />
+            <RuntimeHarness
+              probe={lifecycleProbe}
+              workflowProbe={workflowProbe}
+            />
+          </SKAtomRegistryProvider>
+        );
+        const app = yield* Effect.promise(() =>
+          render(renderProvider(settings(firstTrack)))
+        );
+        const capture = () =>
+          app.container
+            .querySelector<HTMLButtonElement>('[data-testid="capture-router"]')
+            ?.click();
 
-    await vi.waitFor(() => expect(lifecycleProbe.initialized).toBe(1));
-    await act(async () =>
-      [...app.container.querySelectorAll<HTMLButtonElement>("button")]
-        .find((button) => button.textContent === "Stage workflow")
-        ?.click()
-    );
-    await vi.waitFor(() => expect(workflowProbe.starts).toBe(1));
+        yield* Effect.promise(() =>
+          vi.waitFor(() => expect(lifecycleProbe.initialized).toBe(1))
+        );
+        yield* Effect.promise(() =>
+          act(async () =>
+            [...app.container.querySelectorAll<HTMLButtonElement>("button")]
+              .find((button) => button.textContent === "Stage workflow")
+              ?.click()
+          )
+        );
+        yield* Effect.promise(() =>
+          vi.waitFor(() => expect(workflowProbe.starts).toBe(1))
+        );
 
-    await act(async () => capture());
-    const firstRouter = routers[0];
-    if (!firstRouter) throw new Error("Expected the first application router");
+        yield* Effect.promise(() => act(async () => capture()));
+        const firstRouter = routers[0];
+        if (!firstRouter)
+          throw new Error("Expected the first application router");
 
-    await act(async () => {
-      await firstRouter.navigate("/review");
-    });
+        yield* Effect.promise(() =>
+          act(async () => {
+            await firstRouter.navigate("/review");
+          })
+        );
 
-    await app.rerender(renderProvider(settings(secondTrack)));
-    await act(async () => capture());
+        yield* Effect.promise(() =>
+          app.rerender(renderProvider(settings(secondTrack)))
+        );
+        yield* Effect.promise(() => act(async () => capture()));
 
-    expect(routers[1]).toBe(firstRouter);
-    expect(routers[1]?.state.location.pathname).toBe("/review");
+        expect(routers[1]).toBe(firstRouter);
+        expect(routers[1]?.state.location.pathname).toBe("/review");
 
-    await app.rerender(
-      renderProvider(settings(secondTrack, "replacement-api-key"))
-    );
-    await act(async () => capture());
+        yield* Effect.promise(() =>
+          app.rerender(
+            renderProvider(settings(secondTrack, "replacement-api-key"))
+          )
+        );
+        yield* Effect.promise(() => act(async () => capture()));
 
-    expect(routers[2]).toBe(firstRouter);
-    expect(routers[2]?.state.location.pathname).toBe("/review");
-    expect(lifecycleProbe.disposed).toBe(0);
-    expect(workflowProbe.finalized).toBe(0);
-  });
+        expect(routers[2]).toBe(firstRouter);
+        expect(routers[2]?.state.location.pathname).toBe("/review");
+        expect(lifecycleProbe.disposed).toBe(0);
+        expect(workflowProbe.finalized).toBe(0);
+      })
+  );
 
   it("retains intake while live settings change", async () => {
     const firstTrack = vi.fn();
@@ -401,80 +428,102 @@ describe("dynamic Widget Configuration", () => {
     ).toBe(sessionKey);
   });
 
-  it("keeps the runtime and staged state while resolving new live callbacks", async () => {
-    const firstTrack = vi.fn();
-    const secondTrack = vi.fn();
-    const probe: LifecycleProbe = { disposed: 0, initialized: 0 };
-    const workflowProbe: WorkflowProbe = {
-      deferredSigning: await Effect.runPromise(Deferred.make<void>()),
-      finalized: 0,
-      machine: null,
-      starts: 0,
-      states: [],
-      submissions: 0,
-      walletPrompts: 0,
-    };
-    const app = await render(
-      <SKAtomRegistryProvider
-        routes={applicationRoutes}
-        hostConfiguration={settings(firstTrack)}
-      >
-        <RuntimeHarness probe={probe} workflowProbe={workflowProbe} />
-      </SKAtomRegistryProvider>
-    );
+  it.live(
+    "keeps the runtime and staged state while resolving new live callbacks",
+    () =>
+      Effect.gen(function* () {
+        const firstTrack = vi.fn();
+        const secondTrack = vi.fn();
+        const probe: LifecycleProbe = { disposed: 0, initialized: 0 };
+        const workflowProbe: WorkflowProbe = {
+          deferredSigning: yield* Deferred.make<void>(),
+          finalized: 0,
+          machine: null,
+          starts: 0,
+          states: [],
+          submissions: 0,
+          walletPrompts: 0,
+        };
+        const app = yield* Effect.promise(() =>
+          render(
+            <SKAtomRegistryProvider
+              routes={applicationRoutes}
+              hostConfiguration={settings(firstTrack)}
+            >
+              <RuntimeHarness probe={probe} workflowProbe={workflowProbe} />
+            </SKAtomRegistryProvider>
+          )
+        );
 
-    await vi.waitFor(() => expect(probe.initialized).toBe(1));
-    await act(async () =>
-      app.container.querySelector<HTMLButtonElement>("button")?.click()
-    );
-    await vi.waitFor(() => expect(workflowProbe.starts).toBe(1));
-    const machine = workflowProbe.machine;
-    await act(async () =>
-      [
-        ...app.container.querySelectorAll<HTMLButtonElement>("button"),
-      ][1]?.click()
-    );
-    await vi.waitFor(() => expect(firstTrack).toHaveBeenCalledOnce());
+        yield* Effect.promise(() =>
+          vi.waitFor(() => expect(probe.initialized).toBe(1))
+        );
+        yield* Effect.promise(() =>
+          act(async () =>
+            app.container.querySelector<HTMLButtonElement>("button")?.click()
+          )
+        );
+        yield* Effect.promise(() =>
+          vi.waitFor(() => expect(workflowProbe.starts).toBe(1))
+        );
+        const machine = workflowProbe.machine;
+        yield* Effect.promise(() =>
+          act(async () =>
+            [
+              ...app.container.querySelectorAll<HTMLButtonElement>("button"),
+            ][1]?.click()
+          )
+        );
+        yield* Effect.promise(() =>
+          vi.waitFor(() => expect(firstTrack).toHaveBeenCalledOnce())
+        );
 
-    await app.rerender(
-      <SKAtomRegistryProvider
-        routes={applicationRoutes}
-        hostConfiguration={settings(secondTrack)}
-      >
-        <RuntimeHarness probe={probe} workflowProbe={workflowProbe} />
-      </SKAtomRegistryProvider>
-    );
-    await act(async () =>
-      [
-        ...app.container.querySelectorAll<HTMLButtonElement>("button"),
-      ][1]?.click()
-    );
+        yield* Effect.promise(() =>
+          app.rerender(
+            <SKAtomRegistryProvider
+              routes={applicationRoutes}
+              hostConfiguration={settings(secondTrack)}
+            >
+              <RuntimeHarness probe={probe} workflowProbe={workflowProbe} />
+            </SKAtomRegistryProvider>
+          )
+        );
+        yield* Effect.promise(() =>
+          act(async () =>
+            [
+              ...app.container.querySelectorAll<HTMLButtonElement>("button"),
+            ][1]?.click()
+          )
+        );
 
-    await vi.waitFor(() => expect(secondTrack).toHaveBeenCalledOnce());
-    expect(firstTrack).toHaveBeenCalledOnce();
-    expect(probe).toEqual({ disposed: 0, initialized: 1 });
-    expect(workflowProbe).toMatchObject({
-      finalized: 0,
-      machine,
-      starts: 1,
-      states: ["Signing"],
-      submissions: 0,
-      walletPrompts: 1,
-    });
-    expect(
-      app.container.querySelector('[data-testid="staged"]')?.textContent
-    ).toBe("active-workflow");
+        yield* Effect.promise(() =>
+          vi.waitFor(() => expect(secondTrack).toHaveBeenCalledOnce())
+        );
+        expect(firstTrack).toHaveBeenCalledOnce();
+        expect(probe).toEqual({ disposed: 0, initialized: 1 });
+        expect(workflowProbe).toMatchObject({
+          finalized: 0,
+          machine,
+          starts: 1,
+          states: ["Signing"],
+          submissions: 0,
+          walletPrompts: 1,
+        });
+        expect(
+          app.container.querySelector('[data-testid="staged"]')?.textContent
+        ).toBe("active-workflow");
 
-    await Effect.runPromise(
-      Deferred.succeed(workflowProbe.deferredSigning, undefined)
-    );
-    await vi.waitFor(() => expect(workflowProbe.submissions).toBe(1));
-    expect(workflowProbe).toMatchObject({
-      machine,
-      starts: 1,
-      states: ["Signing", "Completed"],
-      submissions: 1,
-      walletPrompts: 1,
-    });
-  });
+        yield* Deferred.succeed(workflowProbe.deferredSigning, undefined);
+        yield* Effect.promise(() =>
+          vi.waitFor(() => expect(workflowProbe.submissions).toBe(1))
+        );
+        expect(workflowProbe).toMatchObject({
+          machine,
+          starts: 1,
+          states: ["Signing", "Completed"],
+          submissions: 1,
+          walletPrompts: 1,
+        });
+      })
+  );
 });

@@ -98,6 +98,7 @@
     "@effect/openapi-generator": "catalog:",
     "@effect/platform-browser": "catalog:",
     "@effect/platform-node": "catalog:",
+    "@effect/vitest": "catalog:",
     "@faker-js/faker": "catalog:",
     "@ledgerhq/wallet-api-client": "catalog:",
     "@ledgerhq/wallet-api-core": "catalog:",

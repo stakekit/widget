@@ -1,7 +1,7 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import * as Reactivity from "effect/unstable/reactivity/Reactivity";
-import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { EarnPosition } from "../../src/domain/earn/models";
 import type { YieldBalancesCommand } from "../../src/domain/finance/models";
@@ -252,59 +252,63 @@ describe("Yield Positions resource", () => {
     secondRegistry.dispose();
   });
 
-  it("refreshes the matching resource after semantic invalidation", async () => {
-    let amount = "2";
-    const getPositions = vi.fn(() =>
-      Effect.succeed({ errors: [], items: [makePosition(amount)] })
-    );
-    const registry = AtomRegistry.make({
-      initialValues: [
-        Atom.initialValue(
-          appRuntime.layer,
-          Layer.mergeAll(
-            Reactivity.layer,
-            Layer.succeed(
-              YieldResourceSource,
-              YieldResourceSource.of({ getPositions } as never)
-            )
-          ) as never
-        ),
-      ],
-    });
-    const scope = makeScope();
-    const resource = yieldPositionsResourceAtom(scope);
-    const unmountResource = registry.mount(resource);
-    const unmountReactivity = registry.mount(reactivityAtom);
+  it.effect("refreshes the matching resource after semantic invalidation", () =>
+    Effect.gen(function* () {
+      let amount = "2";
+      const getPositions = vi.fn(() =>
+        Effect.succeed({ errors: [], items: [makePosition(amount)] })
+      );
+      const registry = AtomRegistry.make({
+        initialValues: [
+          Atom.initialValue(
+            appRuntime.layer,
+            Layer.mergeAll(
+              Reactivity.layer,
+              Layer.succeed(
+                YieldResourceSource,
+                YieldResourceSource.of({ getPositions } as never)
+              )
+            ) as never
+          ),
+        ],
+      });
+      const scope = makeScope();
+      const resource = yieldPositionsResourceAtom(scope);
+      const unmountResource = registry.mount(resource);
+      const unmountReactivity = registry.mount(reactivityAtom);
 
-    await vi.waitFor(() =>
-      expect(
-        AsyncResult.getOrThrow(
-          registry.get(resource)
-        ).items[0]?.balances[0]?.amount.toFixed()
-      ).toBe("2")
-    );
+      yield* Effect.promise(() =>
+        vi.waitFor(() =>
+          expect(
+            AsyncResult.getOrThrow(
+              registry.get(resource)
+            ).items[0]?.balances[0]?.amount.toFixed()
+          ).toBe("2")
+        )
+      );
 
-    amount = "7";
-    const reactivity = AsyncResult.getOrThrow(registry.get(reactivityAtom));
-    await Effect.runPromise(
-      reactivity.withBatch(
+      amount = "7";
+      const reactivity = AsyncResult.getOrThrow(registry.get(reactivityAtom));
+      yield* reactivity.withBatch(
         reactivity.invalidate(resourceInvalidationKeys.yieldPositions(scope))
-      )
-    );
+      );
 
-    await vi.waitFor(() =>
-      expect(
-        AsyncResult.getOrThrow(
-          registry.get(resource)
-        ).items[0]?.balances[0]?.amount.toFixed()
-      ).toBe("7")
-    );
-    expect(getPositions).toHaveBeenCalledTimes(2);
+      yield* Effect.promise(() =>
+        vi.waitFor(() =>
+          expect(
+            AsyncResult.getOrThrow(
+              registry.get(resource)
+            ).items[0]?.balances[0]?.amount.toFixed()
+          ).toBe("7")
+        )
+      );
+      expect(getPositions).toHaveBeenCalledTimes(2);
 
-    unmountResource();
-    unmountReactivity();
-    registry.dispose();
-  });
+      unmountResource();
+      unmountReactivity();
+      registry.dispose();
+    })
+  );
 
   it("polls while mounted and stops polling after unmount", async () => {
     vi.useFakeTimers();

@@ -77,6 +77,7 @@ const connectedWalletState: NormalizedWalletState = {
   network: "ethereum",
   status: "connected",
 };
+// ast-grep-ignore: no-run-effect-in-test -- module fixture setup requires the synchronous ref value
 const walletStateRef = Effect.runSync(
   SubscriptionRef.make<WalletState>({
     connection: connectedWalletState,
@@ -397,6 +398,7 @@ const WalletStateBridge = ({
   readonly walletState: NormalizedWalletState;
 }) => {
   useEffect(() => {
+    // ast-grep-ignore: no-run-effect-in-test -- React effects are synchronous non-Effect boundaries
     Effect.runSync(
       SubscriptionRef.set(walletStateRef, {
         connection: walletState,

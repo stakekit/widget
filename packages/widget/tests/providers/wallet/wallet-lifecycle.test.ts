@@ -1,6 +1,6 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
 import { mainnet } from "viem/chains";
-import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
@@ -56,12 +56,12 @@ const makePolicy = (trackEvent: TrackingService["Service"]["trackEvent"]) =>
   );
 
 describe("Wallet lifecycle policy", () => {
-  it("tracks each connected wallet identity once", async () => {
-    const trackEvent = vi.fn(() => Effect.void);
-    const disconnect = vi.fn(() => Effect.void);
+  it.effect("tracks each connected wallet identity once", () =>
+    Effect.gen(function* () {
+      const trackEvent = vi.fn(() => Effect.void);
+      const disconnect = vi.fn(() => Effect.void);
 
-    await Effect.runPromise(
-      Effect.gen(function* () {
+      yield* Effect.gen(function* () {
         const policy = yield* makePolicy(trackEvent as never);
         yield* policy.transition({
           actions: { disconnect },
@@ -75,61 +75,63 @@ describe("Wallet lifecycle policy", () => {
           actions: { disconnect },
           state: connected(secondAddress),
         });
-      })
-    );
+      });
 
-    expect(trackEvent).toHaveBeenCalledTimes(2);
-    expect(trackEvent).toHaveBeenLastCalledWith("connectedWallet", {
-      address: secondAddress,
-      network: "ethereum",
-    });
-    expect(disconnect).not.toHaveBeenCalled();
-  });
+      expect(trackEvent).toHaveBeenCalledTimes(2);
+      expect(trackEvent).toHaveBeenLastCalledWith("connectedWallet", {
+        address: secondAddress,
+        network: "ethereum",
+      });
+      expect(disconnect).not.toHaveBeenCalled();
+    })
+  );
 
-  it("preserves the tracked identity through a connecting transition", async () => {
-    const trackEvent = vi.fn(() => Effect.void);
-    const disconnect = vi.fn(() => Effect.void);
-
-    await Effect.runPromise(
+  it.effect(
+    "preserves the tracked identity through a connecting transition",
+    () =>
       Effect.gen(function* () {
-        const policy = yield* makePolicy(trackEvent as never);
-        yield* policy.transition({
-          actions: { disconnect },
-          state: connected(),
+        const trackEvent = vi.fn(() => Effect.void);
+        const disconnect = vi.fn(() => Effect.void);
+
+        yield* Effect.gen(function* () {
+          const policy = yield* makePolicy(trackEvent as never);
+          yield* policy.transition({
+            actions: { disconnect },
+            state: connected(),
+          });
+          yield* policy.transition({
+            actions: { disconnect },
+            state: {
+              ...disconnectedNormalizedWalletState,
+              connectorChains: [mainnet],
+              status: "connecting",
+            },
+          });
+          yield* policy.transition({
+            actions: { disconnect },
+            state: connected(),
+          });
         });
-        yield* policy.transition({
-          actions: { disconnect },
-          state: {
-            ...disconnectedNormalizedWalletState,
-            connectorChains: [mainnet],
-            status: "connecting",
-          },
-        });
-        yield* policy.transition({
-          actions: { disconnect },
-          state: connected(),
-        });
+
+        expect(trackEvent).toHaveBeenCalledTimes(1);
+        expect(disconnect).not.toHaveBeenCalled();
       })
-    );
+  );
 
-    expect(trackEvent).toHaveBeenCalledTimes(1);
-    expect(disconnect).not.toHaveBeenCalled();
-  });
+  it.effect("tracks Stellar wallet connections with address and network", () =>
+    Effect.gen(function* () {
+      const trackEvent = vi.fn(() => Effect.void);
+      const stellarAddress = Schema.decodeSync(WalletAddress)(
+        `G${"A".repeat(55)}`
+      );
+      const stellarConnector = {
+        id: "freighter",
+        name: "Freighter",
+        type: "stellar-wallet",
+        uid: "freighter-uid",
+      } as unknown as Connector;
 
-  it("tracks Stellar wallet connections with address and network", async () => {
-    const trackEvent = vi.fn(() => Effect.void);
-    const stellarAddress = Schema.decodeSync(WalletAddress)(
-      `G${"A".repeat(55)}`
-    );
-    const stellarConnector = {
-      id: "freighter",
-      name: "Freighter",
-      type: "stellar-wallet",
-      uid: "freighter-uid",
-    } as unknown as Connector;
-
-    await Effect.runPromise(
-      Effect.gen(function* () {
+      yield* Effect.gen(function* () {
         const policy = yield* makePolicy(trackEvent as never);
         yield* policy.transition({
           actions: { disconnect: () => Effect.void },
@@ -139,20 +141,20 @@ describe("Wallet lifecycle policy", () => {
             network: "stellar",
           },
         });
-      })
-    );
+      });
 
-    expect(trackEvent).toHaveBeenCalledWith("connectedWallet", {
-      address: stellarAddress,
-      network: "stellar",
-    });
-  });
+      expect(trackEvent).toHaveBeenCalledWith("connectedWallet", {
+        address: stellarAddress,
+        network: "stellar",
+      });
+    })
+  );
 
-  it("disconnects an unsupported identity once until state resets", async () => {
-    const disconnect = vi.fn(() => Effect.void);
+  it.effect("disconnects an unsupported identity once until state resets", () =>
+    Effect.gen(function* () {
+      const disconnect = vi.fn(() => Effect.void);
 
-    await Effect.runPromise(
-      Effect.gen(function* () {
+      yield* Effect.gen(function* () {
         const policy = yield* makePolicy(() => Effect.void);
         yield* policy.transition({
           actions: { disconnect },
@@ -170,17 +172,17 @@ describe("Wallet lifecycle policy", () => {
           actions: { disconnect },
           state: unsupported,
         });
-      })
-    );
+      });
 
-    expect(disconnect).toHaveBeenCalledTimes(2);
-    expect(disconnect).toHaveBeenCalledWith({ connector });
-  });
+      expect(disconnect).toHaveBeenCalledTimes(2);
+      expect(disconnect).toHaveBeenCalledWith({ connector });
+    })
+  );
 
-  it("localizes tracking and disconnect failures", async () => {
-    await expect(
-      Effect.runPromise(
-        Effect.gen(function* () {
+  it.effect("localizes tracking and disconnect failures", () =>
+    Effect.gen(function* () {
+      expect(
+        yield* Effect.gen(function* () {
           const policy = yield* makePolicy(() => Effect.die("tracking failed"));
           yield* policy.transition({
             actions: { disconnect: () => Effect.die("disconnect failed") },
@@ -191,7 +193,7 @@ describe("Wallet lifecycle policy", () => {
             state: unsupported,
           });
         })
-      )
-    ).resolves.toBeUndefined();
-  });
+      ).toBeUndefined();
+    })
+  );
 });

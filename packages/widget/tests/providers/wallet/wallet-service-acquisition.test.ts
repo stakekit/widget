@@ -1,6 +1,6 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Layer, Option, Stream } from "effect";
 import { TestClock } from "effect/testing";
-import { describe, expect, it, vi } from "vitest";
 import type { Config } from "wagmi";
 import { getConnection, getConnectors } from "wagmi/actions";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
@@ -102,304 +102,312 @@ const makeObservation = (wagmiConfig: Config) => {
 };
 
 describe("WalletService acquisition", () => {
-  it("blocks until bootstrap and initial connection finish", async () => {
-    const buildStarted = await Effect.runPromise(Deferred.make<void>());
-    const buildRelease = await Effect.runPromise(Deferred.make<void>());
-    const initializeStarted = await Effect.runPromise(Deferred.make<void>());
-    const initializeRelease = await Effect.runPromise(Deferred.make<void>());
-    const acquired = await Effect.runPromise(
-      Deferred.make<WalletService["Service"]>()
-    );
-    const releaseScope = await Effect.runPromise(Deferred.make<void>());
-    const wagmiConfig = makeDefaultConfig();
-    const controller = makeWalletTestController({
-      actions: {},
-      queryParamsInitChainId: undefined,
-      wagmiConfig,
-    });
-    const layer = makeWalletLayer({
-      buildConfig: () =>
-        Effect.gen(function* () {
-          yield* Deferred.succeed(buildStarted, undefined);
-          yield* Deferred.await(buildRelease);
-          return controller;
-        }),
-      initialize: () =>
-        Effect.gen(function* () {
-          yield* Deferred.succeed(initializeStarted, undefined);
-          yield* Deferred.await(initializeRelease);
-        }),
-      observeCore: () => Effect.succeed(makeObservation(wagmiConfig)),
-    });
-
-    const fiber = Effect.runFork(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const wallet = yield* WalletService;
-          yield* Deferred.succeed(acquired, wallet);
-          yield* Deferred.await(releaseScope);
-        }).pipe(Effect.provide(layer))
-      )
-    );
-
-    await Effect.runPromise(Deferred.await(buildStarted));
-    expect(
-      Option.isNone(await Effect.runPromise(Deferred.poll(acquired)))
-    ).toBe(true);
-    await Effect.runPromise(Deferred.succeed(buildRelease, undefined));
-    await Effect.runPromise(Deferred.await(initializeStarted));
-    expect(
-      Option.isNone(await Effect.runPromise(Deferred.poll(acquired)))
-    ).toBe(true);
-    await Effect.runPromise(Deferred.succeed(initializeRelease, undefined));
-
-    const wallet = await Effect.runPromise(Deferred.await(acquired));
-    const state = await Effect.runPromise(wallet.state);
-    expect(wallet.wagmiConfig).toBe(wagmiConfig);
-    expect(state.connection.status).toBe("disconnected");
-    expect(state.ledger).toEqual({
-      accounts: [],
-      currentAccountId: undefined,
-      disabledChains: [],
-    });
-
-    await Effect.runPromise(Deferred.succeed(releaseScope, undefined));
-    await Effect.runPromise(Fiber.join(fiber));
-  });
-
-  it("uses capability Layers and keeps one bootstrap config identity", async () => {
-    const wagmiConfig = makeDefaultConfig();
-    const controller = makeWalletTestController({
-      actions: {},
-      queryParamsInitChainId: undefined,
-      wagmiConfig,
-    });
-    const builds: unknown[] = [];
-    const initializations: unknown[] = [];
-    const layer = makeWalletLayer({
-      buildConfig: (input) =>
-        Effect.sync(() => {
-          builds.push(input);
-          return controller;
-        }),
-      initialize: (input) =>
-        Effect.sync(() => {
-          initializations.push(input);
-        }),
-      observeCore: () => Effect.succeed(makeObservation(wagmiConfig)),
-    });
-
-    await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const wallet = yield* WalletService;
-          expect(wallet.wagmiConfig).toBe(wagmiConfig);
-          expect((yield* wallet.state).connection.status).toBe("disconnected");
-        }).pipe(Effect.provide(layer))
-      )
-    );
-
-    expect(builds).toHaveLength(1);
-    expect(builds[0]).toMatchObject({
-      disableInjectedProviderDiscovery: true,
-      enabledNetworks: new Set(["ethereum"]),
-      queryParams: { network: "ethereum" },
-    });
-    expect(initializations).toEqual([expect.objectContaining({ wagmiConfig })]);
-  });
-
-  it("captures an injected Wallet List as fixed wallet topology", async () => {
-    const walletListFactory: WalletListFactory = vi.fn(() => []);
-    const buildInputs: Array<
-      Parameters<WagmiPlatformService["buildConfig"]>[0]
-    > = [];
-    const solanaRuntimeInputs: Array<{
-      readonly includeWalletAdapters: boolean;
-    }> = [];
-    const customApiLayer = Layer.succeed(
-      WalletBootstrapSource,
-      WalletBootstrapSource.of({
-        getEnabledWalletNetworks: () =>
-          Effect.succeed(new Set(["ethereum", "solana"])),
-        getOpportunity: () => Effect.die("unused"),
-      })
-    );
-    const customSolanaLayer = Layer.succeed(
-      SolanaPlatform,
-      SolanaPlatform.of({
-        makeRuntime: (input) => {
-          solanaRuntimeInputs.push(input);
-          return Effect.succeed({
-            connection: {} as SolanaRuntime["connection"],
-            current: Effect.succeed({ wallets: [] }),
-            states: Stream.concat(
-              Stream.succeed({ wallets: [] }),
-              Stream.never
-            ),
-          });
-        },
-      })
-    );
-    const wagmiConfig = makeDefaultConfig();
-    const controller = makeWalletTestController({
-      actions: {},
-      queryParamsInitChainId: undefined,
-      wagmiConfig,
-    });
-    const layer = makeWalletLayer(
-      {
-        buildConfig: (input) =>
-          Effect.sync(() => {
-            buildInputs.push(input);
+  it.effect("blocks until bootstrap and initial connection finish", () =>
+    Effect.gen(function* () {
+      const buildStarted = yield* Deferred.make<void>();
+      const buildRelease = yield* Deferred.make<void>();
+      const initializeStarted = yield* Deferred.make<void>();
+      const initializeRelease = yield* Deferred.make<void>();
+      const acquired = yield* Deferred.make<WalletService["Service"]>();
+      const releaseScope = yield* Deferred.make<void>();
+      const wagmiConfig = makeDefaultConfig();
+      const controller = makeWalletTestController({
+        actions: {},
+        queryParamsInitChainId: undefined,
+        wagmiConfig,
+      });
+      const layer = makeWalletLayer({
+        buildConfig: () =>
+          Effect.gen(function* () {
+            yield* Deferred.succeed(buildStarted, undefined);
+            yield* Deferred.await(buildRelease);
             return controller;
           }),
-        initialize: () => Effect.void,
+        initialize: () =>
+          Effect.gen(function* () {
+            yield* Deferred.succeed(initializeStarted, undefined);
+            yield* Deferred.await(initializeRelease);
+          }),
         observeCore: () => Effect.succeed(makeObservation(wagmiConfig)),
-      },
-      makeConfigLayer(),
-      customApiLayer,
-      WalletConnectorSource.layer(walletListFactory),
-      customSolanaLayer
-    );
+      });
 
-    await Effect.runPromise(
-      Effect.scoped(WalletService.pipe(Effect.provide(layer)))
-    );
+      const fiber = yield* Effect.forkChild(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const wallet = yield* WalletService;
+            yield* Deferred.succeed(acquired, wallet);
+            yield* Deferred.await(releaseScope);
+          }).pipe(Effect.provide(layer))
+        )
+      );
 
-    expect(solanaRuntimeInputs).toEqual([{ includeWalletAdapters: false }]);
-    expect(buildInputs).toEqual([
-      expect.objectContaining({ walletListFactory }),
-    ]);
-  });
+      yield* Deferred.await(buildStarted);
+      expect(Option.isNone(yield* Deferred.poll(acquired))).toBe(true);
+      yield* Deferred.succeed(buildRelease, undefined);
+      yield* Deferred.await(initializeStarted);
+      expect(Option.isNone(yield* Deferred.poll(acquired))).toBe(true);
+      yield* Deferred.succeed(initializeRelease, undefined);
 
-  it("fails acquisition with the bootstrap stage and never exposes a service", async () => {
-    const cause = new Error("configuration failed");
-    const layer = makeWalletLayer({
-      buildConfig: () => Effect.fail({ cause } as never),
-      initialize: () => Effect.void,
-      observeCore: () => Effect.die("must not observe"),
-    });
+      const wallet = yield* Deferred.await(acquired);
+      const state = yield* wallet.state;
+      expect(wallet.wagmiConfig).toBe(wagmiConfig);
+      expect(state.connection.status).toBe("disconnected");
+      expect(state.ledger).toEqual({
+        accounts: [],
+        currentAccountId: undefined,
+        disabledChains: [],
+      });
 
-    const failure = await Effect.runPromise(
-      Effect.scoped(WalletService.pipe(Effect.provide(layer), Effect.flip))
-    );
+      yield* Deferred.succeed(releaseScope, undefined);
+      yield* Fiber.join(fiber);
+    })
+  );
 
-    expect(failure).toBeInstanceOf(WalletBootstrapError);
-    expect(failure).toMatchObject({ stage: "wagmi-config" });
-    expect((failure as WalletBootstrapError).cause).toEqual({ cause });
-  });
-
-  it("fails acquisition after bounded enabled-network retries", async () => {
-    const cause = new Error("enabled networks unavailable");
-    const failingApiLayer = Layer.succeed(
-      WalletBootstrapSource,
-      WalletBootstrapSource.of({
-        getEnabledWalletNetworks: () => Effect.fail(cause),
-        getOpportunity: () => Effect.die("unused"),
-      })
-    );
-    const layer = makeWalletLayer(
-      {
-        buildConfig: () => Effect.die("must not build"),
-        initialize: () => Effect.void,
-        observeCore: () => Effect.die("must not observe"),
-      },
-      makeConfigLayer(),
-      failingApiLayer
-    );
-
-    const failure = await Effect.runPromise(
+  it.effect(
+    "uses capability Layers and keeps one bootstrap config identity",
+    () =>
       Effect.gen(function* () {
+        const wagmiConfig = makeDefaultConfig();
+        const controller = makeWalletTestController({
+          actions: {},
+          queryParamsInitChainId: undefined,
+          wagmiConfig,
+        });
+        const builds: unknown[] = [];
+        const initializations: unknown[] = [];
+        const layer = makeWalletLayer({
+          buildConfig: (input) =>
+            Effect.sync(() => {
+              builds.push(input);
+              return controller;
+            }),
+          initialize: (input) =>
+            Effect.sync(() => {
+              initializations.push(input);
+            }),
+          observeCore: () => Effect.succeed(makeObservation(wagmiConfig)),
+        });
+
+        yield* Effect.scoped(
+          Effect.gen(function* () {
+            const wallet = yield* WalletService;
+            expect(wallet.wagmiConfig).toBe(wagmiConfig);
+            expect((yield* wallet.state).connection.status).toBe(
+              "disconnected"
+            );
+          }).pipe(Effect.provide(layer))
+        );
+
+        expect(builds).toHaveLength(1);
+        expect(builds[0]).toMatchObject({
+          disableInjectedProviderDiscovery: true,
+          enabledNetworks: new Set(["ethereum"]),
+          queryParams: { network: "ethereum" },
+        });
+        expect(initializations).toEqual([
+          expect.objectContaining({ wagmiConfig }),
+        ]);
+      })
+  );
+
+  it.effect("captures an injected Wallet List as fixed wallet topology", () =>
+    Effect.gen(function* () {
+      const walletListFactory: WalletListFactory = vi.fn(() => []);
+      const buildInputs: Array<
+        Parameters<WagmiPlatformService["buildConfig"]>[0]
+      > = [];
+      const solanaRuntimeInputs: Array<{
+        readonly includeWalletAdapters: boolean;
+      }> = [];
+      const customApiLayer = Layer.succeed(
+        WalletBootstrapSource,
+        WalletBootstrapSource.of({
+          getEnabledWalletNetworks: () =>
+            Effect.succeed(new Set(["ethereum", "solana"])),
+          getOpportunity: () => Effect.die("unused"),
+        })
+      );
+      const customSolanaLayer = Layer.succeed(
+        SolanaPlatform,
+        SolanaPlatform.of({
+          makeRuntime: (input) => {
+            solanaRuntimeInputs.push(input);
+            return Effect.succeed({
+              connection: {} as SolanaRuntime["connection"],
+              current: Effect.succeed({ wallets: [] }),
+              states: Stream.concat(
+                Stream.succeed({ wallets: [] }),
+                Stream.never
+              ),
+            });
+          },
+        })
+      );
+      const wagmiConfig = makeDefaultConfig();
+      const controller = makeWalletTestController({
+        actions: {},
+        queryParamsInitChainId: undefined,
+        wagmiConfig,
+      });
+      const layer = makeWalletLayer(
+        {
+          buildConfig: (input) =>
+            Effect.sync(() => {
+              buildInputs.push(input);
+              return controller;
+            }),
+          initialize: () => Effect.void,
+          observeCore: () => Effect.succeed(makeObservation(wagmiConfig)),
+        },
+        makeConfigLayer(),
+        customApiLayer,
+        WalletConnectorSource.layer(walletListFactory),
+        customSolanaLayer
+      );
+
+      yield* Effect.scoped(WalletService.pipe(Effect.provide(layer)));
+
+      expect(solanaRuntimeInputs).toEqual([{ includeWalletAdapters: false }]);
+      expect(buildInputs).toEqual([
+        expect.objectContaining({ walletListFactory }),
+      ]);
+    })
+  );
+
+  it.effect(
+    "fails acquisition with the bootstrap stage and never exposes a service",
+    () =>
+      Effect.gen(function* () {
+        const cause = new Error("configuration failed");
+        const layer = makeWalletLayer({
+          buildConfig: () => Effect.fail({ cause } as never),
+          initialize: () => Effect.void,
+          observeCore: () => Effect.die("must not observe"),
+        });
+
+        const failure = yield* Effect.scoped(
+          WalletService.pipe(Effect.provide(layer), Effect.flip)
+        );
+
+        expect(failure).toBeInstanceOf(WalletBootstrapError);
+        expect(failure).toMatchObject({ stage: "wagmi-config" });
+        expect((failure as WalletBootstrapError).cause).toEqual({ cause });
+      })
+  );
+
+  it.effect("fails acquisition after bounded enabled-network retries", () =>
+    Effect.gen(function* () {
+      const cause = new Error("enabled networks unavailable");
+      const failingApiLayer = Layer.succeed(
+        WalletBootstrapSource,
+        WalletBootstrapSource.of({
+          getEnabledWalletNetworks: () => Effect.fail(cause),
+          getOpportunity: () => Effect.die("unused"),
+        })
+      );
+      const layer = makeWalletLayer(
+        {
+          buildConfig: () => Effect.die("must not build"),
+          initialize: () => Effect.void,
+          observeCore: () => Effect.die("must not observe"),
+        },
+        makeConfigLayer(),
+        failingApiLayer
+      );
+
+      const failure = yield* Effect.gen(function* () {
         const fiber = yield* Effect.scoped(
           WalletService.pipe(Effect.provide(layer), Effect.flip)
         ).pipe(Effect.forkChild({ startImmediately: true }));
         yield* Effect.yieldNow;
         yield* TestClock.adjust("4 seconds");
         return yield* Fiber.join(fiber);
-      }).pipe(Effect.provide(TestClock.layer()))
-    );
+      }).pipe(Effect.provide(TestClock.layer()));
 
-    expect(failure).toMatchObject({
-      _tag: "WalletBootstrapError",
-      cause,
-      stage: "enabled-networks",
-    });
-  });
+      expect(failure).toMatchObject({
+        _tag: "WalletBootstrapError",
+        cause,
+        stage: "enabled-networks",
+      });
+    })
+  );
 
-  it("keeps state and commands available when wallet topology changes", async () => {
-    const configLayer = makeConfigLayer();
-    const wagmiConfig = makeDefaultConfig();
-    const controller = makeWalletTestController({
-      actions: {},
-      queryParamsInitChainId: undefined,
-      wagmiConfig,
-    });
-    const layer = makeWalletLayer(
-      {
-        buildConfig: () => Effect.succeed(controller),
-        initialize: () => Effect.void,
-        observeCore: () => Effect.succeed(makeObservation(wagmiConfig)),
-      },
-      configLayer
-    );
+  it.effect(
+    "keeps state and commands available when wallet topology changes",
+    () =>
+      Effect.gen(function* () {
+        const configLayer = makeConfigLayer();
+        const wagmiConfig = makeDefaultConfig();
+        const controller = makeWalletTestController({
+          actions: {},
+          queryParamsInitChainId: undefined,
+          wagmiConfig,
+        });
+        const layer = makeWalletLayer(
+          {
+            buildConfig: () => Effect.succeed(controller),
+            initialize: () => Effect.void,
+            observeCore: () => Effect.succeed(makeObservation(wagmiConfig)),
+          },
+          configLayer
+        );
 
-    const result = await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const wallet = yield* WalletService;
-          const config = yield* WidgetConfigService;
-          yield* config.update({
-            apiKey: "api-key",
-            forceWalletConnectOnly: true,
-            variant: "default",
-          });
-          yield* Effect.yieldNow;
-          const state = yield* wallet.state;
-          return { config: wallet.wagmiConfig, state };
-        }).pipe(Effect.provide(layer))
-      )
-    );
+        const result = yield* Effect.scoped(
+          Effect.gen(function* () {
+            const wallet = yield* WalletService;
+            const config = yield* WidgetConfigService;
+            yield* config.update({
+              apiKey: "api-key",
+              forceWalletConnectOnly: true,
+              variant: "default",
+            });
+            yield* Effect.yieldNow;
+            const state = yield* wallet.state;
+            return { config: wallet.wagmiConfig, state };
+          }).pipe(Effect.provide(layer))
+        );
 
-    expect(result.config).toBe(wagmiConfig);
-    expect(result.state).toBeDefined();
-  });
+        expect(result.config).toBe(wagmiConfig);
+        expect(result.state).toBeDefined();
+      })
+  );
 
-  it("constructs fresh scoped services after remount", async () => {
-    let builds = 0;
-    let initializations = 0;
-    const layer = makeWalletLayer({
-      buildConfig: () =>
-        Effect.sync(() => {
-          builds += 1;
-          return makeWalletTestController({
-            actions: {},
-            queryParamsInitChainId: undefined,
-            wagmiConfig: makeDefaultConfig(),
-          });
-        }),
-      initialize: () =>
-        Effect.sync(() => {
-          initializations += 1;
-        }),
-      observeCore: (controller) =>
-        Effect.succeed(makeObservation(controller.wagmiConfig)),
-    });
-    const mount = () =>
-      Effect.runPromise(
+  it.effect("constructs fresh scoped services after remount", () =>
+    Effect.gen(function* () {
+      let builds = 0;
+      let initializations = 0;
+      const layer = makeWalletLayer({
+        buildConfig: () =>
+          Effect.sync(() => {
+            builds += 1;
+            return makeWalletTestController({
+              actions: {},
+              queryParamsInitChainId: undefined,
+              wagmiConfig: makeDefaultConfig(),
+            });
+          }),
+        initialize: () =>
+          Effect.sync(() => {
+            initializations += 1;
+          }),
+        observeCore: (controller) =>
+          Effect.succeed(makeObservation(controller.wagmiConfig)),
+      });
+      const mount = () =>
         Effect.scoped(
           Effect.gen(function* () {
             const wallet = yield* WalletService;
             return { config: wallet.wagmiConfig, wallet };
           }).pipe(Effect.provide(layer))
-        )
-      );
+        );
 
-    const first = await mount();
-    const second = await mount();
+      const first = yield* mount();
+      const second = yield* mount();
 
-    expect(builds).toBe(2);
-    expect(initializations).toBe(2);
-    expect(second.wallet).not.toBe(first.wallet);
-    expect(second.config).not.toBe(first.config);
-  });
+      expect(builds).toBe(2);
+      expect(initializations).toBe(2);
+      expect(second.wallet).not.toBe(first.wallet);
+      expect(second.config).not.toBe(first.config);
+    })
+  );
 });

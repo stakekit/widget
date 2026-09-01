@@ -1,5 +1,5 @@
+import { describe, expect, it } from "@effect/vitest";
 import { Effect } from "effect";
-import { describe, expect, it } from "vitest";
 import { withApiRequestError } from "../../src/services/api/api-operation";
 import {
   ApiRequestError,
@@ -21,47 +21,47 @@ const classify = (error: ApiBoundaryError) =>
   );
 
 describe("API boundary errors", () => {
-  it("distinguishes API, decode, and absence failures by tag", async () => {
-    const requestError = new ApiRequestError({
-      operation: "yield-list",
-      cause: new Error("network"),
-    });
-    expect(requestError.richError).toBeNull();
+  it.effect("distinguishes API, decode, and absence failures by tag", () =>
+    Effect.gen(function* () {
+      const requestError = new ApiRequestError({
+        operation: "yield-list",
+        cause: new Error("network"),
+      });
+      expect(requestError.richError).toBeNull();
 
-    await expect(Effect.runPromise(classify(requestError))).resolves.toBe(
-      "api"
-    );
-    await expect(
-      Effect.runPromise(
-        classify(
+      expect(yield* classify(requestError)).toBe("api");
+      expect(
+        yield* classify(
           new ResponseDecodeError({
             operation: "yield-list",
             issue: "missing id",
             cause: new Error("schema"),
           })
         )
-      )
-    ).resolves.toBe("decode");
-  });
+      ).toBe("decode");
+    })
+  );
 
-  it("retains a validated rich error on normalized API request failures", async () => {
-    const error = await Effect.runPromise(
-      Effect.fail({
-        cause: {
+  it.effect(
+    "retains a validated rich error on normalized API request failures",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.fail({
+          cause: {
+            details: { code: "TEST" },
+            message: "Rich failure",
+          },
+          request: { url: "https://api.example.com/v1/tokens" },
+        }).pipe(withApiRequestError("token-options"), Effect.flip);
+
+        expect(error.richError).toEqual({
           details: { code: "TEST" },
           message: "Rich failure",
-        },
-        request: { url: "https://api.example.com/v1/tokens" },
-      }).pipe(withApiRequestError("token-options"), Effect.flip)
-    );
+        });
+      })
+  );
 
-    expect(error.richError).toEqual({
-      details: { code: "TEST" },
-      message: "Rich failure",
-    });
-  });
-
-  it.each([
+  it.effect.each([
     {
       cause: new Error("network unavailable"),
       label: "plain network error",
@@ -101,14 +101,14 @@ describe("API boundary errors", () => {
       },
       label: "gas-estimate response",
     },
-  ])("does not retain rich error data for $label", async ({ cause }) => {
-    const error = await Effect.runPromise(
-      Effect.fail(cause).pipe(
+  ])("does not retain rich error data for $label", ({ cause }) =>
+    Effect.gen(function* () {
+      const error = yield* Effect.fail(cause).pipe(
         withApiRequestError("excluded-operation"),
         Effect.flip
-      )
-    );
+      );
 
-    expect(error.richError).toBeNull();
-  });
+      expect(error.richError).toBeNull();
+    })
+  );
 });

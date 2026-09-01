@@ -1,5 +1,5 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Layer, Stream } from "effect";
-import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 import { mainnet } from "wagmi/chains";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
@@ -117,70 +117,76 @@ const makeLogoutLayer = ({
 };
 
 const runLogout = (layer: ReturnType<typeof makeLogoutLayer>) =>
-  Effect.runPromise(
-    Effect.scoped(
-      WalletService.use((wallet) => wallet.logout).pipe(Effect.provide(layer))
-    )
+  Effect.scoped(
+    WalletService.use((wallet) => wallet.logout).pipe(Effect.provide(layer))
   );
 
 describe("WalletService logout", () => {
-  it("disconnects, awaits owned cleanup, then closes the modal", async () => {
-    const events: string[] = [];
-    await runLogout(
-      makeLogoutLayer({
-        cleanup: Effect.sync(() => events.push("cleanup")).pipe(Effect.asVoid),
-        close: Effect.sync(() => events.push("close")).pipe(Effect.asVoid),
-        disconnect: Effect.sync(() => events.push("disconnect")).pipe(
-          Effect.asVoid
-        ),
-      })
-    );
-
-    expect(events).toEqual(["disconnect", "cleanup", "close"]);
-  });
-
-  it("does not clean or close when disconnect fails", async () => {
-    const cleanup = vi.fn();
-    const close = vi.fn();
-    await expect(
-      runLogout(
+  it.effect("disconnects, awaits owned cleanup, then closes the modal", () =>
+    Effect.gen(function* () {
+      const events: string[] = [];
+      yield* runLogout(
         makeLogoutLayer({
-          cleanup: Effect.sync(cleanup),
-          close: Effect.sync(close),
-          disconnect: Effect.fail(
-            new WalletConnectionError({
-              cause: new Error("rejected"),
-              operation: "disconnect",
-            })
+          cleanup: Effect.sync(() => events.push("cleanup")).pipe(
+            Effect.asVoid
+          ),
+          close: Effect.sync(() => events.push("close")).pipe(Effect.asVoid),
+          disconnect: Effect.sync(() => events.push("disconnect")).pipe(
+            Effect.asVoid
           ),
         })
-      )
-    ).rejects.toMatchObject({ _tag: "WalletConnectionError" });
+      );
 
-    expect(cleanup).not.toHaveBeenCalled();
-    expect(close).not.toHaveBeenCalled();
-  });
+      expect(events).toEqual(["disconnect", "cleanup", "close"]);
+    })
+  );
 
-  it("shares concurrent calls and permits a later retry", async () => {
-    const started = await Effect.runPromise(Deferred.make<void>());
-    const release = await Effect.runPromise(Deferred.make<void>());
-    const disconnect = vi.fn(() =>
-      Deferred.succeed(started, undefined).pipe(
-        Effect.andThen(Deferred.await(release))
-      )
-    );
-    const close = vi.fn();
-    const cleanupError = new WalletStorageCleanupError({
-      cause: new Error("blocked"),
-    });
-    const layer = makeLogoutLayer({
-      cleanup: Effect.fail(cleanupError),
-      close: Effect.sync(close),
-      disconnect: Effect.suspend(disconnect),
-    });
+  it.effect("does not clean or close when disconnect fails", () =>
+    Effect.gen(function* () {
+      const cleanup = vi.fn();
+      const close = vi.fn();
+      expect(
+        yield* Effect.flip(
+          runLogout(
+            makeLogoutLayer({
+              cleanup: Effect.sync(cleanup),
+              close: Effect.sync(close),
+              disconnect: Effect.fail(
+                new WalletConnectionError({
+                  cause: new Error("rejected"),
+                  operation: "disconnect",
+                })
+              ),
+            })
+          )
+        )
+      ).toMatchObject({ _tag: "WalletConnectionError" });
 
-    const failures = await Effect.runPromise(
-      Effect.scoped(
+      expect(cleanup).not.toHaveBeenCalled();
+      expect(close).not.toHaveBeenCalled();
+    })
+  );
+
+  it.effect("shares concurrent calls and permits a later retry", () =>
+    Effect.gen(function* () {
+      const started = yield* Deferred.make<void>();
+      const release = yield* Deferred.make<void>();
+      const disconnect = vi.fn(() =>
+        Deferred.succeed(started, undefined).pipe(
+          Effect.andThen(Deferred.await(release))
+        )
+      );
+      const close = vi.fn();
+      const cleanupError = new WalletStorageCleanupError({
+        cause: new Error("blocked"),
+      });
+      const layer = makeLogoutLayer({
+        cleanup: Effect.fail(cleanupError),
+        close: Effect.sync(close),
+        disconnect: Effect.suspend(disconnect),
+      });
+
+      const failures = yield* Effect.scoped(
         Effect.gen(function* () {
           const wallet = yield* WalletService;
           const first = yield* wallet.logout.pipe(
@@ -200,11 +206,11 @@ describe("WalletService logout", () => {
           const retry = yield* wallet.logout.pipe(Effect.flip);
           return [...concurrent, retry];
         }).pipe(Effect.provide(layer))
-      )
-    );
+      );
 
-    expect(disconnect).toHaveBeenCalledTimes(2);
-    expect(close).toHaveBeenCalledTimes(2);
-    expect(failures).toEqual([cleanupError, cleanupError, cleanupError]);
-  });
+      expect(disconnect).toHaveBeenCalledTimes(2);
+      expect(close).toHaveBeenCalledTimes(2);
+      expect(failures).toEqual([cleanupError, cleanupError, cleanupError]);
+    })
+  );
 });

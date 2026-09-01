@@ -1,5 +1,5 @@
+import { describe, expect, it } from "@effect/vitest";
 import { Effect, Logger, Schema } from "effect";
-import { describe, expect, it } from "vitest";
 import { Integration } from "../../../src/domain/borrow/catalog/integration";
 import { Action } from "../../../src/domain/borrow/execution/action";
 import {
@@ -121,86 +121,106 @@ const decode = <S extends Schema.ConstraintDecoder<unknown>>(
   schema: S,
   input: unknown
 ) =>
-  Effect.runPromise(
-    Schema.decodeUnknownEffect(schema)(input).pipe(
-      Effect.provide(Logger.layer([]))
-    )
+  Schema.decodeUnknownEffect(schema)(input).pipe(
+    Effect.provide(Logger.layer([]))
   );
 
 describe("Borrow API boundary policies", () => {
-  it("omits an invalid integration while retaining valid siblings", async () => {
-    const result = await decode(BorrowIntegrationsResponse, [
-      integration,
-      { ...integration, id: "invalid-integration", name: 1 },
-    ]);
+  it.effect("omits an invalid integration while retaining valid siblings", () =>
+    Effect.gen(function* () {
+      const result = yield* decode(BorrowIntegrationsResponse, [
+        integration,
+        { ...integration, id: "invalid-integration", name: 1 },
+      ]);
 
-    expect(result.map((item) => item.id)).toEqual([integration.id]);
-  });
+      expect(result.map((item) => item.id)).toEqual([integration.id]);
+    })
+  );
 
-  it("omits a complete market when a nested token fails", async () => {
-    const result = await decode(BorrowMarketsResponse, {
-      items: [
-        market,
+  it.effect("omits a complete market when a nested token fails", () =>
+    Effect.gen(function* () {
+      const result = yield* decode(BorrowMarketsResponse, {
+        items: [
+          market,
+          {
+            ...market,
+            id: "invalid-market",
+            loanToken: { ...market.loanToken, decimals: "6" },
+          },
+        ],
+        limit: 100,
+        offset: 0,
+        total: 2,
+      });
+
+      expect(result.items?.map((item) => item.id)).toEqual([market.id]);
+      expect(result.total).toBe(2);
+    })
+  );
+
+  it.effect("omits an invalid complete position entry", () =>
+    Effect.gen(function* () {
+      const decodedIntegration =
+        Schema.decodeUnknownSync(Integration)(integration);
+      const result = yield* decode(BorrowIntegrationPositionsResponse, [
+        { integration: decodedIntegration, position: accountPosition },
         {
-          ...market,
-          id: "invalid-market",
-          loanToken: { ...market.loanToken, decimals: "6" },
+          integration: decodedIntegration,
+          position: { ...accountPosition, address: "invalid-address" },
         },
-      ],
-      limit: 100,
-      offset: 0,
-      total: 2,
-    });
+      ]);
 
-    expect(result.items?.map((item) => item.id)).toEqual([market.id]);
-    expect(result.total).toBe(2);
-  });
+      expect(result).toHaveLength(1);
+    })
+  );
 
-  it("omits an invalid complete position entry", async () => {
-    const decodedIntegration =
-      Schema.decodeUnknownSync(Integration)(integration);
-    const result = await decode(BorrowIntegrationPositionsResponse, [
-      { integration: decodedIntegration, position: accountPosition },
-      {
-        integration: decodedIntegration,
-        position: { ...accountPosition, address: "invalid-address" },
-      },
-    ]);
+  it.effect(
+    "rejects the complete position instead of salvaging valid balance siblings",
+    () =>
+      Effect.gen(function* () {
+        const decodedIntegration =
+          Schema.decodeUnknownSync(Integration)(integration);
+        const result = yield* decode(BorrowIntegrationPositionsResponse, [
+          {
+            integration: decodedIntegration,
+            position: {
+              ...accountPosition,
+              supplyBalances: [
+                supplyBalance,
+                { ...supplyBalance, tokenSymbol: "INVALID", balance: "NaN" },
+              ],
+            },
+          },
+        ]);
 
-    expect(result).toHaveLength(1);
-  });
-
-  it("rejects the complete position instead of salvaging valid balance siblings", async () => {
-    const decodedIntegration =
-      Schema.decodeUnknownSync(Integration)(integration);
-    const result = await decode(BorrowIntegrationPositionsResponse, [
-      {
-        integration: decodedIntegration,
-        position: {
-          ...accountPosition,
-          supplyBalances: [
-            supplyBalance,
-            { ...supplyBalance, tokenSymbol: "INVALID", balance: "NaN" },
-          ],
-        },
-      },
-    ]);
-
-    expect(result).toEqual([]);
-  });
-
-  it("strictly rejects malformed single actions", async () => {
-    await expect(
-      decode(Action, { ...action, currentStep: "1" })
-    ).rejects.toThrow(/Expected number/);
-  });
-
-  it("strictly rejects an action containing a malformed transaction", async () => {
-    await expect(
-      decode(Action, {
-        ...action,
-        transactions: [{ ...transaction, chainId: "not-a-number" }],
+        expect(result).toEqual([]);
       })
-    ).rejects.toThrow();
-  });
+  );
+
+  it.effect("strictly rejects malformed single actions", () =>
+    Effect.gen(function* () {
+      const failure = yield* Effect.flip(
+        decode(Action, { ...action, currentStep: "1" })
+      );
+      expect(() => {
+        throw failure;
+      }).toThrow(/Expected number/);
+    })
+  );
+
+  it.effect(
+    "strictly rejects an action containing a malformed transaction",
+    () =>
+      Effect.gen(function* () {
+        const failure = yield* Effect.flip(
+          decode(Action, {
+            ...action,
+            transactions: [{ ...transaction, chainId: "not-a-number" }],
+          })
+        );
+        expect(() => {
+          throw failure;
+        }).toThrow();
+      })
+  );
 });

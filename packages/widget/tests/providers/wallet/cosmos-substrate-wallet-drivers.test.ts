@@ -1,6 +1,6 @@
 import type { ChainWalletBase } from "@cosmos-kit/core";
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect } from "effect";
-import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 import { makeCosmosWalletDriver } from "../../../src/services/wallet/internal/adapters/cosmos/driver";
 import { makeSubstrateWalletDriver } from "../../../src/services/wallet/internal/adapters/substrate/driver";
@@ -27,89 +27,96 @@ const substrateTx = JSON.stringify({
 });
 
 describe("Cosmos and Substrate wallet drivers", () => {
-  it("signs Cosmos transactions as non-broadcast payloads", async () => {
-    const signTransaction = vi.fn(() => Effect.succeed("cosmos-signed"));
-    const connector = {
-      id: "cosmos",
-      type: "cosmosProvider",
-      signTransaction,
-    } as unknown as Connector;
-    const chainWallet = { chainId: "cosmoshub-4" } as ChainWalletBase;
+  it.effect("signs Cosmos transactions as non-broadcast payloads", () =>
+    Effect.gen(function* () {
+      const signTransaction = vi.fn(() => Effect.succeed("cosmos-signed"));
+      const connector = {
+        id: "cosmos",
+        type: "cosmosProvider",
+        signTransaction,
+      } as unknown as Connector;
+      const chainWallet = { chainId: "cosmoshub-4" } as ChainWalletBase;
 
-    await expect(
-      Effect.runPromise(
-        makeCosmosWalletDriver({ chainWallet, connector }).signTransaction({
+      expect(
+        yield* makeCosmosWalletDriver({
+          chainWallet,
+          connector,
+        }).signTransaction({
           tx: "abcd",
         })
-      )
-    ).resolves.toEqual({ broadcasted: false, signedTx: "cosmos-signed" });
-    expect(signTransaction).toHaveBeenCalledWith({
-      cw: chainWallet,
-      tx: "abcd",
-    });
-  });
+      ).toEqual({ broadcasted: false, signedTx: "cosmos-signed" });
+      expect(signTransaction).toHaveBeenCalledWith({
+        cw: chainWallet,
+        tx: "abcd",
+      });
+    })
+  );
 
-  it("requires the Cosmos chain wallet capability", async () => {
-    const connector = {
-      id: "cosmos",
-      type: "cosmosProvider",
-      signTransaction: vi.fn(),
-    } as unknown as Connector;
-    const failure = await Effect.runPromise(
-      Effect.flip(
+  it.effect("requires the Cosmos chain wallet capability", () =>
+    Effect.gen(function* () {
+      const connector = {
+        id: "cosmos",
+        type: "cosmosProvider",
+        signTransaction: vi.fn(),
+      } as unknown as Connector;
+      const failure = yield* Effect.flip(
         makeCosmosWalletDriver({
           chainWallet: null,
           connector,
         }).signTransaction({ tx: "abcd" })
-      )
-    );
+      );
 
-    expect(failure._tag).toBe("WalletCapabilityUnavailableError");
-  });
+      expect(failure._tag).toBe("WalletCapabilityUnavailableError");
+    })
+  );
 
-  it("decodes and signs Substrate transactions without broadcasting", async () => {
-    const signTransaction = vi.fn(() => Effect.succeed("substrate-signed"));
-    const connector = {
-      id: "substrate",
-      type: "substrateProvider",
-      signTransaction,
-    } as unknown as Connector;
+  it.effect(
+    "decodes and signs Substrate transactions without broadcasting",
+    () =>
+      Effect.gen(function* () {
+        const signTransaction = vi.fn(() => Effect.succeed("substrate-signed"));
+        const connector = {
+          id: "substrate",
+          type: "substrateProvider",
+          signTransaction,
+        } as unknown as Connector;
 
-    await expect(
-      Effect.runPromise(
-        makeSubstrateWalletDriver({ connector }).signTransaction({
-          tx: substrateTx,
-        })
-      )
-    ).resolves.toEqual({
-      broadcasted: false,
-      signedTx: "substrate-signed",
-    });
-    expect(signTransaction).toHaveBeenCalledWith(
-      expect.objectContaining({
-        rawTx: substrateTx,
-        tx: expect.objectContaining({ signedExtensions: ["CheckNonce"] }),
+        expect(
+          yield* makeSubstrateWalletDriver({ connector }).signTransaction({
+            tx: substrateTx,
+          })
+        ).toEqual({
+          broadcasted: false,
+          signedTx: "substrate-signed",
+        });
+        expect(signTransaction).toHaveBeenCalledWith(
+          expect.objectContaining({
+            rawTx: substrateTx,
+            tx: expect.objectContaining({ signedExtensions: ["CheckNonce"] }),
+          })
+        );
       })
-    );
-  });
+  );
 
-  it("keeps Substrate decoding and signing failures distinct", async () => {
-    const cause = new Error("rejected");
-    const connector = {
-      id: "substrate",
-      type: "substrateProvider",
-      signTransaction: () => Effect.fail(cause),
-    } as unknown as Connector;
-    const driver = makeSubstrateWalletDriver({ connector });
+  it.effect("keeps Substrate decoding and signing failures distinct", () =>
+    Effect.gen(function* () {
+      const cause = new Error("rejected");
+      const connector = {
+        id: "substrate",
+        type: "substrateProvider",
+        signTransaction: () => Effect.fail(cause),
+      } as unknown as Connector;
+      const driver = makeSubstrateWalletDriver({ connector });
 
-    const decodeFailure = await Effect.runPromise(
-      Effect.flip(driver.signTransaction({ tx: "{}" }))
-    );
-    const signingFailure = await Effect.runPromise(
-      Effect.flip(driver.signTransaction({ tx: substrateTx }))
-    );
+      const decodeFailure = yield* Effect.flip(
+        driver.signTransaction({ tx: "{}" })
+      );
+      const signingFailure = yield* Effect.flip(
+        driver.signTransaction({ tx: substrateTx })
+      );
 
-    expect(decodeFailure._tag).toBe("WalletDecodeError");
-    expect(signingFailure._tag).toBe("WalletSigningError");
-  });
+      expect(decodeFailure._tag).toBe("WalletDecodeError");
+      expect(signingFailure._tag).toBe("WalletSigningError");
+    })
+  );
 });

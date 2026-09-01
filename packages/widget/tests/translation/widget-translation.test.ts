@@ -1,6 +1,6 @@
+import { describe, expect, it } from "@effect/vitest";
 import { Deferred, Effect, Layer, Ref } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/unstable/http";
-import { describe, expect, it } from "vitest";
 import type { SKAppProps } from "../../src/public-api/react-types";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import type { WidgetConfig } from "../../src/services/config/widget-config-model";
@@ -67,56 +67,58 @@ describe("WidgetTranslation", () => {
     );
   });
 
-  it("exposes initialized local resources while enrichment is pending", async () => {
-    const initial = makeSettings({
-      customTranslations: {
-        en: {
-          translation: {
-            details: { rewards: { receive_output: "INITIALIZED" } },
+  it.effect(
+    "exposes initialized local resources while enrichment is pending",
+    () =>
+      Effect.gen(function* () {
+        const initial = makeSettings({
+          customTranslations: {
+            en: {
+              translation: {
+                details: { rewards: { receive_output: "INITIALIZED" } },
+              },
+            },
           },
-        },
-      },
-    });
-    const loadStarted = await Effect.runPromise(Deferred.make<void>());
+        });
+        const loadStarted = yield* Deferred.make<void>();
 
-    await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const translation = yield* WidgetTranslation;
+        yield* Effect.scoped(
+          Effect.gen(function* () {
+            const translation = yield* WidgetTranslation;
 
-          expect(translation.i18n.t("details.rewards.receive_output")).toBe(
-            "INITIALIZED"
-          );
-          yield* Deferred.await(loadStarted);
-        })
-      ).pipe(
-        Effect.provide(
-          makeTranslationLayer(initial, () =>
-            Deferred.succeed(loadStarted, undefined).pipe(
-              Effect.andThen(Effect.never)
+            expect(translation.i18n.t("details.rewards.receive_output")).toBe(
+              "INITIALIZED"
+            );
+            yield* Deferred.await(loadStarted);
+          })
+        ).pipe(
+          Effect.provide(
+            makeTranslationLayer(initial, () =>
+              Deferred.succeed(loadStarted, undefined).pipe(
+                Effect.andThen(Effect.never)
+              )
             )
           )
-        )
-      )
-    );
-  });
+        );
+      })
+  );
 
-  it("owns exact live reconciliation and API/host precedence", async () => {
-    const initial = makeSettings({
-      customTranslations: {
-        en: {
-          translation: {
-            details: { rewards: { receive_output: "CUSTOM" } },
-            errors: { shared: "HOST" },
+  it.effect("owns exact live reconciliation and API/host precedence", () =>
+    Effect.gen(function* () {
+      const initial = makeSettings({
+        customTranslations: {
+          en: {
+            translation: {
+              details: { rewards: { receive_output: "CUSTOM" } },
+              errors: { shared: "HOST" },
+            },
           },
         },
-      },
-      variant: "utila",
-    });
-    const loaded = await Effect.runPromise(Deferred.make<void>());
+        variant: "utila",
+      });
+      const loaded = yield* Deferred.make<void>();
 
-    await Effect.runPromise(
-      Effect.scoped(
+      yield* Effect.scoped(
         Effect.gen(function* () {
           const translation = yield* WidgetTranslation;
           const config = yield* WidgetConfigService;
@@ -150,64 +152,66 @@ describe("WidgetTranslation", () => {
             )
           )
         )
-      )
-    );
-  });
+      );
+    })
+  );
 
-  it("does not apply a stale language response after config changes", async () => {
-    const initial = makeSettings({ language: "en" });
-    const englishStarted = await Effect.runPromise(Deferred.make<void>());
-    const releaseEnglish = await Effect.runPromise(Deferred.make<void>());
-    const frenchStarted = await Effect.runPromise(Deferred.make<void>());
+  it.effect(
+    "does not apply a stale language response after config changes",
+    () =>
+      Effect.gen(function* () {
+        const initial = makeSettings({ language: "en" });
+        const englishStarted = yield* Deferred.make<void>();
+        const releaseEnglish = yield* Deferred.make<void>();
+        const frenchStarted = yield* Deferred.make<void>();
 
-    await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const translation = yield* WidgetTranslation;
-          const config = yield* WidgetConfigService;
-          yield* Deferred.await(englishStarted);
+        yield* Effect.scoped(
+          Effect.gen(function* () {
+            const translation = yield* WidgetTranslation;
+            const config = yield* WidgetConfigService;
+            yield* Deferred.await(englishStarted);
 
-          yield* config.update(
-            asHostConfiguration(makeSettings({ language: "fr" }))
-          );
-          yield* Deferred.await(frenchStarted);
-          yield* expectEventually(
-            () => translation.i18n.t("errors.shared"),
-            "FR_CURRENT"
-          );
-
-          yield* Deferred.succeed(releaseEnglish, undefined);
-          yield* Effect.yieldNow;
-          expect(translation.i18n.language).toBe("fr");
-          expect(translation.i18n.t("errors.shared")).toBe("FR_CURRENT");
-        })
-      ).pipe(
-        Effect.provide(
-          makeTranslationLayer(initial, (language) => {
-            if (language === "fr") {
-              return Deferred.succeed(frenchStarted, undefined).pipe(
-                Effect.as({ shared: "FR_CURRENT" })
-              );
-            }
-
-            return Deferred.succeed(englishStarted, undefined).pipe(
-              Effect.andThen(Deferred.await(releaseEnglish)),
-              Effect.as({ shared: "EN_STALE" })
+            yield* config.update(
+              asHostConfiguration(makeSettings({ language: "fr" }))
             );
+            yield* Deferred.await(frenchStarted);
+            yield* expectEventually(
+              () => translation.i18n.t("errors.shared"),
+              "FR_CURRENT"
+            );
+
+            yield* Deferred.succeed(releaseEnglish, undefined);
+            yield* Effect.yieldNow;
+            expect(translation.i18n.language).toBe("fr");
+            expect(translation.i18n.t("errors.shared")).toBe("FR_CURRENT");
           })
-        )
-      )
-    );
-  });
+        ).pipe(
+          Effect.provide(
+            makeTranslationLayer(initial, (language) => {
+              if (language === "fr") {
+                return Deferred.succeed(frenchStarted, undefined).pipe(
+                  Effect.as({ shared: "FR_CURRENT" })
+                );
+              }
 
-  it("ignores unrelated config changes while enrichment is pending", async () => {
-    const initial = makeSettings({ language: "en" });
-    const loadCount = await Effect.runPromise(Ref.make(0));
-    const loadStarted = await Effect.runPromise(Deferred.make<void>());
-    const releaseLoad = await Effect.runPromise(Deferred.make<void>());
+              return Deferred.succeed(englishStarted, undefined).pipe(
+                Effect.andThen(Deferred.await(releaseEnglish)),
+                Effect.as({ shared: "EN_STALE" })
+              );
+            })
+          )
+        );
+      })
+  );
 
-    await Effect.runPromise(
-      Effect.scoped(
+  it.live("ignores unrelated config changes while enrichment is pending", () =>
+    Effect.gen(function* () {
+      const initial = makeSettings({ language: "en" });
+      const loadCount = yield* Ref.make(0);
+      const loadStarted = yield* Deferred.make<void>();
+      const releaseLoad = yield* Deferred.make<void>();
+
+      yield* Effect.scoped(
         Effect.gen(function* () {
           const translation = yield* WidgetTranslation;
           const config = yield* WidgetConfigService;
@@ -240,106 +244,107 @@ describe("WidgetTranslation", () => {
             )
           )
         )
-      )
-    );
-  });
+      );
+    })
+  );
 
-  it("does not cache an older same-language response that resolves last", async () => {
-    const initial = makeSettings({ language: "en" });
-    const loadCount = await Effect.runPromise(Ref.make(0));
-    const firstStarted = await Effect.runPromise(Deferred.make<void>());
-    const releaseFirst = await Effect.runPromise(Deferred.make<void>());
-    const secondStarted = await Effect.runPromise(Deferred.make<void>());
+  it.effect(
+    "does not cache an older same-language response that resolves last",
+    () =>
+      Effect.gen(function* () {
+        const initial = makeSettings({ language: "en" });
+        const loadCount = yield* Ref.make(0);
+        const firstStarted = yield* Deferred.make<void>();
+        const releaseFirst = yield* Deferred.make<void>();
+        const secondStarted = yield* Deferred.make<void>();
 
-    await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const translation = yield* WidgetTranslation;
-          const config = yield* WidgetConfigService;
-          yield* Deferred.await(firstStarted);
+        yield* Effect.scoped(
+          Effect.gen(function* () {
+            const translation = yield* WidgetTranslation;
+            const config = yield* WidgetConfigService;
+            yield* Deferred.await(firstStarted);
 
-          yield* config.update(
-            asHostConfiguration(
-              makeSettings({
-                customTranslations: {
-                  en: { translation: { details: { earn: "CUSTOM" } } },
-                },
-                language: "en",
-              })
-            )
-          );
-          yield* Deferred.await(secondStarted);
-          yield* expectEventually(
-            () => translation.i18n.t("errors.shared"),
-            "NEW"
-          );
+            yield* config.update(
+              asHostConfiguration(
+                makeSettings({
+                  customTranslations: {
+                    en: { translation: { details: { earn: "CUSTOM" } } },
+                  },
+                  language: "en",
+                })
+              )
+            );
+            yield* Deferred.await(secondStarted);
+            yield* expectEventually(
+              () => translation.i18n.t("errors.shared"),
+              "NEW"
+            );
 
-          yield* Deferred.succeed(releaseFirst, undefined);
-          yield* Effect.yieldNow;
-          yield* config.update(
-            asHostConfiguration(
-              makeSettings({ language: "en", variant: "utila" })
-            )
-          );
-          yield* expectEventually(
-            () => translation.i18n.t("details.earn"),
-            "Stake"
-          );
-          expect(translation.i18n.t("errors.shared")).toBe("NEW");
-          expect(yield* Ref.get(loadCount)).toBe(2);
-        })
-      ).pipe(
-        Effect.provide(
-          makeTranslationLayer(initial, () =>
-            Ref.updateAndGet(loadCount, (count) => count + 1).pipe(
-              Effect.flatMap((call) => {
-                if (call === 1) {
-                  return Deferred.succeed(firstStarted, undefined).pipe(
-                    Effect.andThen(Deferred.await(releaseFirst)),
-                    Effect.as({ shared: "OLD" })
+            yield* Deferred.succeed(releaseFirst, undefined);
+            yield* Effect.yieldNow;
+            yield* config.update(
+              asHostConfiguration(
+                makeSettings({ language: "en", variant: "utila" })
+              )
+            );
+            yield* expectEventually(
+              () => translation.i18n.t("details.earn"),
+              "Stake"
+            );
+            expect(translation.i18n.t("errors.shared")).toBe("NEW");
+            expect(yield* Ref.get(loadCount)).toBe(2);
+          })
+        ).pipe(
+          Effect.provide(
+            makeTranslationLayer(initial, () =>
+              Ref.updateAndGet(loadCount, (count) => count + 1).pipe(
+                Effect.flatMap((call) => {
+                  if (call === 1) {
+                    return Deferred.succeed(firstStarted, undefined).pipe(
+                      Effect.andThen(Deferred.await(releaseFirst)),
+                      Effect.as({ shared: "OLD" })
+                    );
+                  }
+
+                  return Deferred.succeed(secondStarted, undefined).pipe(
+                    Effect.as({ shared: "NEW" })
                   );
-                }
-
-                return Deferred.succeed(secondStarted, undefined).pipe(
-                  Effect.as({ shared: "NEW" })
-                );
-              })
+                })
+              )
             )
           )
-        )
-      )
-    );
-  });
+        );
+      })
+  );
 
-  it("creates a clean i18next instance for each scoped generation", async () => {
-    const acquire = async (settings: WidgetConfig) => {
-      return Effect.runPromise(
+  it.effect("creates a clean i18next instance for each scoped generation", () =>
+    Effect.gen(function* () {
+      const acquire = (settings: WidgetConfig) =>
         Effect.scoped(WidgetTranslation).pipe(
           Effect.provide(
             makeTranslationLayer(settings, () => Effect.succeed({}))
           )
-        )
-      );
-    };
-    const first = await acquire(
-      makeSettings({
-        customTranslations: {
-          en: {
-            translation: {
-              details: { rewards: { receive_output: "FIRST" } },
+        );
+      const first = yield* acquire(
+        makeSettings({
+          customTranslations: {
+            en: {
+              translation: {
+                details: { rewards: { receive_output: "FIRST" } },
+              },
             },
           },
-        },
-      })
-    );
-    const second = await acquire(makeSettings());
+        })
+      );
+      const second = yield* acquire(makeSettings());
 
-    expect(first.i18n).not.toBe(second.i18n);
-    expect(first.i18n.t("details.rewards.receive_output")).toBe("FIRST");
-    expect(second.i18n.t("details.rewards.receive_output")).toBe(
-      "You'll receive"
-    );
-  });
+      expect(first.i18n).not.toBe(second.i18n);
+      expect(first.i18n.t("details.rewards.receive_output")).toBe("FIRST");
+      expect(second.i18n.t("details.rewards.receive_output")).toBe(
+        "You'll receive"
+      );
+    })
+  );
 });
 
 describe("WidgetTranslation resource ownership", () => {

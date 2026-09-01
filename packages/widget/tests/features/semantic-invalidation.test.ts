@@ -1,10 +1,10 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import { Effect, Layer, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import * as Reactivity from "effect/unstable/reactivity/Reactivity";
-import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { Integration } from "../../src/domain/borrow/catalog/integration";
 import { Market } from "../../src/domain/borrow/catalog/market";
@@ -200,395 +200,427 @@ const workflowInvalidationKeys = (scope: WalletScopeKey) => {
 };
 
 describe("semantic resource invalidation", () => {
-  it("refreshes idle Earn bases for the workflow wallet scope only", async () => {
-    const versions = new Map([
-      [sameWalletCachedScope.address.toLowerCase(), "1"],
-      [scopeB.address.toLowerCase(), "2"],
-    ]);
-    const balanceCalls = new Map<string, number>();
-    const positionCalls = new Map<string, number>();
-    const getLegacyTokenOptions = vi.fn(() =>
-      Effect.succeed(
-        Schema.decodeUnknownSync(EarnLegacyTokenOptionsResponse)([
-          { availableYields: [yieldId], token: yieldDto.token },
-        ])
-      )
-    );
-    const scanTokenBalances = vi.fn(
-      ({
-        addresses: { address: walletAddress },
-      }: {
-        readonly addresses: { readonly address: WalletAddress };
-      }) => {
-        balanceCalls.set(
-          walletAddress,
-          (balanceCalls.get(walletAddress) ?? 0) + 1
+  it.effect(
+    "refreshes idle Earn bases for the workflow wallet scope only",
+    () =>
+      Effect.gen(function* () {
+        const versions = new Map([
+          [sameWalletCachedScope.address.toLowerCase(), "1"],
+          [scopeB.address.toLowerCase(), "2"],
+        ]);
+        const balanceCalls = new Map<string, number>();
+        const positionCalls = new Map<string, number>();
+        const getLegacyTokenOptions = vi.fn(() =>
+          Effect.succeed(
+            Schema.decodeUnknownSync(EarnLegacyTokenOptionsResponse)([
+              { availableYields: [yieldId], token: yieldDto.token },
+            ])
+          )
         );
-        return Effect.succeed(
-          Schema.decodeUnknownSync(TokenBalancesResponse)([
+        const scanTokenBalances = vi.fn(
+          ({
+            addresses: { address: walletAddress },
+          }: {
+            readonly addresses: { readonly address: WalletAddress };
+          }) => {
+            balanceCalls.set(
+              walletAddress,
+              (balanceCalls.get(walletAddress) ?? 0) + 1
+            );
+            return Effect.succeed(
+              Schema.decodeUnknownSync(TokenBalancesResponse)([
+                {
+                  amount: versions.get(walletAddress.toLowerCase()) ?? "0",
+                  availableYields: [yieldId],
+                  token: yieldDto.token,
+                },
+              ])
+            );
+          }
+        );
+        const getPositions = vi.fn((command: YieldBalancesCommand) => {
+          const walletAddress = command.queries[0]!.address;
+          positionCalls.set(
+            walletAddress,
+            (positionCalls.get(walletAddress) ?? 0) + 1
+          );
+          return Effect.succeed({ errors: [], items: [] });
+        });
+        const registry = AtomRegistry.make({
+          initialValues: [
+            Atom.initialValue(
+              appRuntime.layer,
+              Layer.mergeAll(
+                Reactivity.layer,
+                Layer.succeed(LegacyResourceSource, {
+                  getTokenOptions: getLegacyTokenOptions,
+                  scanTokenBalances,
+                } as never),
+                Layer.succeed(YieldResourceSource, { getPositions } as never)
+              ) as never
+            ),
+          ],
+        });
+        const tokenOptions = (scope: WalletScopeKey) =>
+          mergedTokenOptionsAtom(
+            new TokenOptionsKey({
+              category: null,
+              scope,
+            })
+          );
+        const positions = (scope: WalletScopeKey) =>
+          positionsDataAtom(new PositionsDataKey({ scope }));
+        const aTokens = tokenOptions(sameWalletCachedScope);
+        const currentTokens = tokenOptions(sameWalletCurrentScope);
+        const bTokens = tokenOptions(scopeB);
+        const aPositions = positions(sameWalletCachedScope);
+        const bPositions = positions(scopeB);
+        const unmountA = [registry.mount(aTokens), registry.mount(aPositions)];
+        const unmountCurrent = registry.mount(currentTokens);
+        const unmountB = [registry.mount(bTokens), registry.mount(bPositions)];
+        const unmountReactivity = registry.mount(reactivityAtom);
+
+        yield* Effect.promise(() =>
+          vi.waitFor(() => {
+            expect(
+              AsyncResult.getOrThrow(registry.get(aTokens))[0]?.amount
+            ).toBe("1");
+            expect(
+              AsyncResult.getOrThrow(registry.get(bTokens))[0]?.amount
+            ).toBe("2");
+            expect(
+              AsyncResult.getOrThrow(registry.get(currentTokens))[0]?.amount
+            ).toBe("1");
+            expect(positionCalls).toEqual(
+              new Map([
+                [sameWalletCachedScope.address, 1],
+                [scopeB.address, 1],
+              ])
+            );
+            expect(AsyncResult.isSuccess(registry.get(reactivityAtom))).toBe(
+              true
+            );
+          })
+        );
+        unmountA.forEach((unmount) => unmount());
+        versions.set(sameWalletCachedScope.address.toLowerCase(), "10");
+        const reactivity = AsyncResult.getOrThrow(registry.get(reactivityAtom));
+
+        yield* reactivity.withBatch(
+          reactivity.invalidate(workflowInvalidationKeys(sameWalletCachedScope))
+        );
+        yield* Effect.promise(() =>
+          vi.waitFor(() => {
+            expect(balanceCalls.get(sameWalletCachedScope.address)).toBe(4);
+            expect(positionCalls.get(sameWalletCachedScope.address)).toBe(2);
+            expect(
+              AsyncResult.getOrThrow(registry.get(currentTokens))[0]?.amount
+            ).toBe("10");
+          })
+        );
+
+        const remountA = [registry.mount(aTokens), registry.mount(aPositions)];
+        yield* Effect.promise(() =>
+          vi.waitFor(() =>
+            expect(
+              AsyncResult.getOrThrow(registry.get(aTokens))[0]?.amount
+            ).toBe("10")
+          )
+        );
+        expect(balanceCalls.get(scopeB.address)).toBe(1);
+        expect(positionCalls.get(scopeB.address)).toBe(1);
+
+        remountA.forEach((unmount) => unmount());
+        unmountCurrent();
+        unmountB.forEach((unmount) => unmount());
+        unmountReactivity();
+        registry.dispose();
+      })
+  );
+
+  it.effect(
+    "refreshes Activity Pull and bounded filter counts from the first page",
+    () =>
+      Effect.gen(function* () {
+        let version = 1;
+        const activityRequests: Array<{
+          address: WalletAddress;
+          limit: number;
+          network: string;
+          offset: number;
+          yieldTypes?: ReadonlyArray<string>;
+        }> = [];
+        const getActivityActions = vi.fn(
+          (request: {
+            readonly address: WalletAddress;
+            readonly limit: number;
+            readonly network: string;
+            readonly offset: number;
+            readonly yieldTypes?: ReadonlyArray<string>;
+          }) => {
+            activityRequests.push({
+              address: request.address,
+              limit: request.limit,
+              network: request.network,
+              offset: request.offset,
+              yieldTypes: request.yieldTypes,
+            });
+            if (request.limit === 1) {
+              return Effect.succeed({
+                items: [],
+                limit: 1,
+                offset: 0,
+                total: version === 1 ? 2 : 1,
+              });
+            }
+
+            const getId = () => {
+              if (version === 2) return "updated-action";
+              if (request.offset === 0) return "old-action-1";
+              return "old-action-2";
+            };
+            const id = getId();
+            return Effect.succeed({
+              items: [yieldApiActionFixture({ id, yieldId })],
+              limit: version === 1 ? 1 : 50,
+              offset: request.offset,
+              total: version === 1 ? 2 : 1,
+            });
+          }
+        );
+        const registry = AtomRegistry.make({
+          initialValues: [
+            Atom.initialValue(
+              appRuntime.layer,
+              Layer.mergeAll(
+                Reactivity.layer,
+                Layer.succeed(YieldResourceSource, {
+                  getOpportunity: () => Effect.succeed(yieldDto),
+                  getProvider: () => Effect.fail("no provider"),
+                  listActivity: getActivityActions,
+                  listYields: ({ limit, offset }: YieldDirectoryRequest) =>
+                    Effect.succeed({
+                      items: [yieldDto],
+                      limit,
+                      offset,
+                      total: 1,
+                    }),
+                } as never)
+              ) as never
+            ),
+          ],
+        });
+        const historyKey = (scope: WalletScopeKey) =>
+          getActivityHistoryKey(
+            new ActivityActionsKey({ filter: "all", scope })
+          )!;
+        const actions = activityHistoryPullAtom(
+          historyKey(sameWalletCachedScope)
+        );
+        const filters = activityFilterOptionsAtom(
+          new ActivityFilterOptionsKey({ scope: sameWalletCachedScope })
+        );
+        const otherWalletActions = activityHistoryPullAtom(historyKey(scopeB));
+        const otherNetworkActions = activityHistoryPullAtom(
+          historyKey(sameAddressOtherNetworkScope)
+        );
+        const unmountActions = registry.mount(actions);
+        const unmountFilters = registry.mount(filters);
+        const unmountOtherWalletActions = registry.mount(otherWalletActions);
+        const unmountOtherNetworkActions = registry.mount(otherNetworkActions);
+        const unmountReactivity = registry.mount(reactivityAtom);
+
+        yield* Effect.promise(() =>
+          vi.waitFor(() => {
+            expect(
+              getActivityActionViews(registry.get(actions)).map(({ id }) => id)
+            ).toEqual(["old-action-1"]);
+            expect(
+              getActivityActionViews(registry.get(otherWalletActions)).map(
+                ({ id }) => id
+              )
+            ).toEqual(["old-action-1"]);
+            expect(
+              getActivityActionViews(registry.get(otherNetworkActions)).map(
+                ({ id }) => id
+              )
+            ).toEqual(["old-action-1"]);
+          })
+        );
+        registry.set(actions, undefined);
+        registry.set(otherWalletActions, undefined);
+        registry.set(otherNetworkActions, undefined);
+        yield* Effect.promise(() =>
+          vi.waitFor(() => {
+            expect(
+              getActivityActionViews(registry.get(actions)).map(({ id }) => id)
+            ).toEqual(["old-action-1", "old-action-2"]);
+            expect(
+              getActivityActionViews(registry.get(otherWalletActions)).map(
+                ({ id }) => id
+              )
+            ).toEqual(["old-action-1", "old-action-2"]);
+            expect(
+              getActivityActionViews(registry.get(otherNetworkActions)).map(
+                ({ id }) => id
+              )
+            ).toEqual(["old-action-1", "old-action-2"]);
+          })
+        );
+        yield* Effect.promise(() =>
+          vi.waitFor(() =>
+            expect(AsyncResult.isSuccess(registry.get(filters))).toBe(true)
+          )
+        );
+        expect(
+          activityRequests
+            .filter(
+              ({ address: requestAddress, limit, network }) =>
+                requestAddress === sameWalletCachedScope.address &&
+                network === sameWalletCachedScope.network &&
+                limit > 1
+            )
+            .every(({ yieldTypes }) => yieldTypes === undefined)
+        ).toBe(true);
+        const countRequestsBefore = activityRequests.filter(
+          ({ address: requestAddress, network }) =>
+            requestAddress === sameWalletCachedScope.address &&
+            network === sameWalletCachedScope.network
+        ).length;
+        const otherWalletRequestsBefore = activityRequests.filter(
+          ({ address: requestAddress }) => requestAddress === scopeB.address
+        ).length;
+        const otherNetworkRequestsBefore = activityRequests.filter(
+          ({ address: requestAddress, network }) =>
+            requestAddress === sameAddressOtherNetworkScope.address &&
+            network === sameAddressOtherNetworkScope.network
+        ).length;
+        version = 2;
+        const reactivity = AsyncResult.getOrThrow(registry.get(reactivityAtom));
+
+        yield* reactivity.invalidate([
+          new ActivityInvalidationKey({ scope: sameWalletCachedScope }),
+        ]);
+        yield* Effect.promise(() =>
+          vi.waitFor(() =>
+            expect(
+              getActivityActionViews(registry.get(actions)).map(({ id }) => id)
+            ).toEqual(["updated-action"])
+          )
+        );
+        expect(
+          activityRequests.filter(
+            ({ address: requestAddress, network }) =>
+              requestAddress === sameWalletCachedScope.address &&
+              network === sameWalletCachedScope.network
+          ).length
+        ).toBeGreaterThan(countRequestsBefore);
+        expect(
+          activityRequests.filter(
+            ({ address: requestAddress }) => requestAddress === scopeB.address
+          )
+        ).toHaveLength(otherWalletRequestsBefore);
+        expect(
+          activityRequests.filter(
+            ({ address: requestAddress, network }) =>
+              requestAddress === sameAddressOtherNetworkScope.address &&
+              network === sameAddressOtherNetworkScope.network
+          )
+        ).toHaveLength(otherNetworkRequestsBefore);
+
+        unmountActions();
+        unmountFilters();
+        unmountOtherWalletActions();
+        unmountOtherNetworkActions();
+        unmountReactivity();
+        registry.dispose();
+      })
+  );
+
+  it.effect(
+    "refreshes the canonical Borrow base and its mounted detail projection",
+    () =>
+      Effect.gen(function* () {
+        let updated = false;
+        const getIntegrations = vi.fn(() =>
+          Effect.succeed([borrowIntegration])
+        );
+        const getMarkets = vi.fn(() =>
+          Effect.succeed({
+            items: [borrowMarket],
+            limit: 100,
+            offset: 0,
+            total: 1,
+          })
+        );
+        const getPositionData = vi.fn(() =>
+          Effect.succeed([
             {
-              amount: versions.get(walletAddress.toLowerCase()) ?? "0",
-              availableYields: [yieldId],
-              token: yieldDto.token,
+              integration: borrowIntegration,
+              position: borrowAccountPosition(updated),
             },
           ])
         );
-      }
-    );
-    const getPositions = vi.fn((command: YieldBalancesCommand) => {
-      const walletAddress = command.queries[0]!.address;
-      positionCalls.set(
-        walletAddress,
-        (positionCalls.get(walletAddress) ?? 0) + 1
-      );
-      return Effect.succeed({ errors: [], items: [] });
-    });
-    const registry = AtomRegistry.make({
-      initialValues: [
-        Atom.initialValue(
-          appRuntime.layer,
-          Layer.mergeAll(
-            Reactivity.layer,
-            Layer.succeed(LegacyResourceSource, {
-              getTokenOptions: getLegacyTokenOptions,
-              scanTokenBalances,
-            } as never),
-            Layer.succeed(YieldResourceSource, { getPositions } as never)
-          ) as never
-        ),
-      ],
-    });
-    const tokenOptions = (scope: WalletScopeKey) =>
-      mergedTokenOptionsAtom(
-        new TokenOptionsKey({
-          category: null,
-          scope,
-        })
-      );
-    const positions = (scope: WalletScopeKey) =>
-      positionsDataAtom(new PositionsDataKey({ scope }));
-    const aTokens = tokenOptions(sameWalletCachedScope);
-    const currentTokens = tokenOptions(sameWalletCurrentScope);
-    const bTokens = tokenOptions(scopeB);
-    const aPositions = positions(sameWalletCachedScope);
-    const bPositions = positions(scopeB);
-    const unmountA = [registry.mount(aTokens), registry.mount(aPositions)];
-    const unmountCurrent = registry.mount(currentTokens);
-    const unmountB = [registry.mount(bTokens), registry.mount(bPositions)];
-    const unmountReactivity = registry.mount(reactivityAtom);
-
-    await vi.waitFor(() => {
-      expect(AsyncResult.getOrThrow(registry.get(aTokens))[0]?.amount).toBe(
-        "1"
-      );
-      expect(AsyncResult.getOrThrow(registry.get(bTokens))[0]?.amount).toBe(
-        "2"
-      );
-      expect(
-        AsyncResult.getOrThrow(registry.get(currentTokens))[0]?.amount
-      ).toBe("1");
-      expect(positionCalls).toEqual(
-        new Map([
-          [sameWalletCachedScope.address, 1],
-          [scopeB.address, 1],
-        ])
-      );
-      expect(AsyncResult.isSuccess(registry.get(reactivityAtom))).toBe(true);
-    });
-    unmountA.forEach((unmount) => unmount());
-    versions.set(sameWalletCachedScope.address.toLowerCase(), "10");
-    const reactivity = AsyncResult.getOrThrow(registry.get(reactivityAtom));
-
-    await Effect.runPromise(
-      reactivity.withBatch(
-        reactivity.invalidate(workflowInvalidationKeys(sameWalletCachedScope))
-      )
-    );
-    await vi.waitFor(() => {
-      expect(balanceCalls.get(sameWalletCachedScope.address)).toBe(4);
-      expect(positionCalls.get(sameWalletCachedScope.address)).toBe(2);
-      expect(
-        AsyncResult.getOrThrow(registry.get(currentTokens))[0]?.amount
-      ).toBe("10");
-    });
-
-    const remountA = [registry.mount(aTokens), registry.mount(aPositions)];
-    await vi.waitFor(() =>
-      expect(AsyncResult.getOrThrow(registry.get(aTokens))[0]?.amount).toBe(
-        "10"
-      )
-    );
-    expect(balanceCalls.get(scopeB.address)).toBe(1);
-    expect(positionCalls.get(scopeB.address)).toBe(1);
-
-    remountA.forEach((unmount) => unmount());
-    unmountCurrent();
-    unmountB.forEach((unmount) => unmount());
-    unmountReactivity();
-    registry.dispose();
-  });
-
-  it("refreshes Activity Pull and bounded filter counts from the first page", async () => {
-    let version = 1;
-    const activityRequests: Array<{
-      address: WalletAddress;
-      limit: number;
-      network: string;
-      offset: number;
-      yieldTypes?: ReadonlyArray<string>;
-    }> = [];
-    const getActivityActions = vi.fn(
-      (request: {
-        readonly address: WalletAddress;
-        readonly limit: number;
-        readonly network: string;
-        readonly offset: number;
-        readonly yieldTypes?: ReadonlyArray<string>;
-      }) => {
-        activityRequests.push({
-          address: request.address,
-          limit: request.limit,
-          network: request.network,
-          offset: request.offset,
-          yieldTypes: request.yieldTypes,
+        const registry = AtomRegistry.make({
+          initialValues: [
+            Atom.initialValue(
+              appRuntime.layer,
+              Layer.mergeAll(
+                Reactivity.layer,
+                Layer.succeed(BorrowResourceSource, {
+                  getIntegrations,
+                  getMarkets,
+                  getPositionData,
+                } as never)
+              ) as never
+            ),
+          ],
         });
-        if (request.limit === 1) {
-          return Effect.succeed({
-            items: [],
-            limit: 1,
-            offset: 0,
-            total: version === 1 ? 2 : 1,
-          });
-        }
+        const detail = borrowPositionAtom(
+          new BorrowPositionKey({
+            marketId: borrowMarket.id,
+            scope: scopeA,
+          })
+        );
+        const unmountDetail = registry.mount(detail);
+        const unmountReactivity = registry.mount(reactivityAtom);
 
-        const getId = () => {
-          if (version === 2) return "updated-action";
-          if (request.offset === 0) return "old-action-1";
-          return "old-action-2";
-        };
-        const id = getId();
-        return Effect.succeed({
-          items: [yieldApiActionFixture({ id, yieldId })],
-          limit: version === 1 ? 1 : 50,
-          offset: request.offset,
-          total: version === 1 ? 2 : 1,
-        });
-      }
-    );
-    const registry = AtomRegistry.make({
-      initialValues: [
-        Atom.initialValue(
-          appRuntime.layer,
-          Layer.mergeAll(
-            Reactivity.layer,
-            Layer.succeed(YieldResourceSource, {
-              getOpportunity: () => Effect.succeed(yieldDto),
-              getProvider: () => Effect.fail("no provider"),
-              listActivity: getActivityActions,
-              listYields: ({ limit, offset }: YieldDirectoryRequest) =>
-                Effect.succeed({
-                  items: [yieldDto],
-                  limit,
-                  offset,
-                  total: 1,
-                }),
-            } as never)
-          ) as never
-        ),
-      ],
-    });
-    const historyKey = (scope: WalletScopeKey) =>
-      getActivityHistoryKey(new ActivityActionsKey({ filter: "all", scope }))!;
-    const actions = activityHistoryPullAtom(historyKey(sameWalletCachedScope));
-    const filters = activityFilterOptionsAtom(
-      new ActivityFilterOptionsKey({ scope: sameWalletCachedScope })
-    );
-    const otherWalletActions = activityHistoryPullAtom(historyKey(scopeB));
-    const otherNetworkActions = activityHistoryPullAtom(
-      historyKey(sameAddressOtherNetworkScope)
-    );
-    const unmountActions = registry.mount(actions);
-    const unmountFilters = registry.mount(filters);
-    const unmountOtherWalletActions = registry.mount(otherWalletActions);
-    const unmountOtherNetworkActions = registry.mount(otherNetworkActions);
-    const unmountReactivity = registry.mount(reactivityAtom);
+        yield* Effect.promise(() =>
+          vi.waitFor(() => {
+            const value = AsyncResult.getOrThrow(registry.get(detail));
+            expect(value.balances.debt?.balance).toEqual(new BigNumber(400));
+            expect(value.balances.debt?.pendingActions).toHaveLength(1);
+          })
+        );
+        updated = true;
+        const owner = walletScopeOwnerKey(scopeA);
+        const reactivity = AsyncResult.getOrThrow(registry.get(reactivityAtom));
 
-    await vi.waitFor(() => {
-      expect(
-        getActivityActionViews(registry.get(actions)).map(({ id }) => id)
-      ).toEqual(["old-action-1"]);
-      expect(
-        getActivityActionViews(registry.get(otherWalletActions)).map(
-          ({ id }) => id
-        )
-      ).toEqual(["old-action-1"]);
-      expect(
-        getActivityActionViews(registry.get(otherNetworkActions)).map(
-          ({ id }) => id
-        )
-      ).toEqual(["old-action-1"]);
-    });
-    registry.set(actions, undefined);
-    registry.set(otherWalletActions, undefined);
-    registry.set(otherNetworkActions, undefined);
-    await vi.waitFor(() => {
-      expect(
-        getActivityActionViews(registry.get(actions)).map(({ id }) => id)
-      ).toEqual(["old-action-1", "old-action-2"]);
-      expect(
-        getActivityActionViews(registry.get(otherWalletActions)).map(
-          ({ id }) => id
-        )
-      ).toEqual(["old-action-1", "old-action-2"]);
-      expect(
-        getActivityActionViews(registry.get(otherNetworkActions)).map(
-          ({ id }) => id
-        )
-      ).toEqual(["old-action-1", "old-action-2"]);
-    });
-    await vi.waitFor(() =>
-      expect(AsyncResult.isSuccess(registry.get(filters))).toBe(true)
-    );
-    expect(
-      activityRequests
-        .filter(
-          ({ address: requestAddress, limit, network }) =>
-            requestAddress === sameWalletCachedScope.address &&
-            network === sameWalletCachedScope.network &&
-            limit > 1
-        )
-        .every(({ yieldTypes }) => yieldTypes === undefined)
-    ).toBe(true);
-    const countRequestsBefore = activityRequests.filter(
-      ({ address: requestAddress, network }) =>
-        requestAddress === sameWalletCachedScope.address &&
-        network === sameWalletCachedScope.network
-    ).length;
-    const otherWalletRequestsBefore = activityRequests.filter(
-      ({ address: requestAddress }) => requestAddress === scopeB.address
-    ).length;
-    const otherNetworkRequestsBefore = activityRequests.filter(
-      ({ address: requestAddress, network }) =>
-        requestAddress === sameAddressOtherNetworkScope.address &&
-        network === sameAddressOtherNetworkScope.network
-    ).length;
-    version = 2;
-    const reactivity = AsyncResult.getOrThrow(registry.get(reactivityAtom));
+        yield* reactivity.withBatch(
+          reactivity.invalidate([
+            ...resourceInvalidationKeys.walletBalances(owner),
+            ...(isBorrowNetwork(owner.network)
+              ? [
+                  ...resourceInvalidationKeys.borrowPositions(owner),
+                  ...resourceInvalidationKeys.borrowMarkets(owner.network),
+                ]
+              : []),
+          ])
+        );
+        yield* Effect.promise(() =>
+          vi.waitFor(() => {
+            const value = AsyncResult.getOrThrow(registry.get(detail));
+            expect(value.balances.debt?.balance).toEqual(new BigNumber(100));
+            expect(value.balances.debt?.pendingActions).toHaveLength(0);
+          })
+        );
+        expect(getIntegrations).toHaveBeenCalledOnce();
+        expect(getMarkets).toHaveBeenCalledTimes(2);
+        expect(getPositionData).toHaveBeenCalledTimes(2);
 
-    await Effect.runPromise(
-      reactivity.invalidate([
-        new ActivityInvalidationKey({ scope: sameWalletCachedScope }),
-      ])
-    );
-    await vi.waitFor(() =>
-      expect(
-        getActivityActionViews(registry.get(actions)).map(({ id }) => id)
-      ).toEqual(["updated-action"])
-    );
-    expect(
-      activityRequests.filter(
-        ({ address: requestAddress, network }) =>
-          requestAddress === sameWalletCachedScope.address &&
-          network === sameWalletCachedScope.network
-      ).length
-    ).toBeGreaterThan(countRequestsBefore);
-    expect(
-      activityRequests.filter(
-        ({ address: requestAddress }) => requestAddress === scopeB.address
-      )
-    ).toHaveLength(otherWalletRequestsBefore);
-    expect(
-      activityRequests.filter(
-        ({ address: requestAddress, network }) =>
-          requestAddress === sameAddressOtherNetworkScope.address &&
-          network === sameAddressOtherNetworkScope.network
-      )
-    ).toHaveLength(otherNetworkRequestsBefore);
-
-    unmountActions();
-    unmountFilters();
-    unmountOtherWalletActions();
-    unmountOtherNetworkActions();
-    unmountReactivity();
-    registry.dispose();
-  });
-
-  it("refreshes the canonical Borrow base and its mounted detail projection", async () => {
-    let updated = false;
-    const getIntegrations = vi.fn(() => Effect.succeed([borrowIntegration]));
-    const getMarkets = vi.fn(() =>
-      Effect.succeed({
-        items: [borrowMarket],
-        limit: 100,
-        offset: 0,
-        total: 1,
+        unmountDetail();
+        unmountReactivity();
+        registry.dispose();
       })
-    );
-    const getPositionData = vi.fn(() =>
-      Effect.succeed([
-        {
-          integration: borrowIntegration,
-          position: borrowAccountPosition(updated),
-        },
-      ])
-    );
-    const registry = AtomRegistry.make({
-      initialValues: [
-        Atom.initialValue(
-          appRuntime.layer,
-          Layer.mergeAll(
-            Reactivity.layer,
-            Layer.succeed(BorrowResourceSource, {
-              getIntegrations,
-              getMarkets,
-              getPositionData,
-            } as never)
-          ) as never
-        ),
-      ],
-    });
-    const detail = borrowPositionAtom(
-      new BorrowPositionKey({
-        marketId: borrowMarket.id,
-        scope: scopeA,
-      })
-    );
-    const unmountDetail = registry.mount(detail);
-    const unmountReactivity = registry.mount(reactivityAtom);
-
-    await vi.waitFor(() => {
-      const value = AsyncResult.getOrThrow(registry.get(detail));
-      expect(value.balances.debt?.balance).toEqual(new BigNumber(400));
-      expect(value.balances.debt?.pendingActions).toHaveLength(1);
-    });
-    updated = true;
-    const owner = walletScopeOwnerKey(scopeA);
-    const reactivity = AsyncResult.getOrThrow(registry.get(reactivityAtom));
-
-    await Effect.runPromise(
-      reactivity.withBatch(
-        reactivity.invalidate([
-          ...resourceInvalidationKeys.walletBalances(owner),
-          ...(isBorrowNetwork(owner.network)
-            ? [
-                ...resourceInvalidationKeys.borrowPositions(owner),
-                ...resourceInvalidationKeys.borrowMarkets(owner.network),
-              ]
-            : []),
-        ])
-      )
-    );
-    await vi.waitFor(() => {
-      const value = AsyncResult.getOrThrow(registry.get(detail));
-      expect(value.balances.debt?.balance).toEqual(new BigNumber(100));
-      expect(value.balances.debt?.pendingActions).toHaveLength(0);
-    });
-    expect(getIntegrations).toHaveBeenCalledOnce();
-    expect(getMarkets).toHaveBeenCalledTimes(2);
-    expect(getPositionData).toHaveBeenCalledTimes(2);
-
-    unmountDetail();
-    unmountReactivity();
-    registry.dispose();
-  });
+  );
 });

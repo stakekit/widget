@@ -1,3 +1,4 @@
+import { describe, expect, it } from "@effect/vitest";
 import {
   type Adapter,
   type WalletName,
@@ -6,7 +7,6 @@ import {
 import { Connection } from "@solana/web3.js";
 import { Effect, Stream } from "effect";
 import type { Address } from "viem";
-import { describe, expect, it } from "vitest";
 import { createConfig, createConnector, http } from "wagmi";
 import { connect, disconnect, watchConnectors } from "wagmi/actions";
 import { solana } from "../../../src/services/wallet/internal/adapters/configured-chains";
@@ -94,13 +94,13 @@ const makeHarness = (
 };
 
 describe("Solana connector membership", () => {
-  it("replaces an inactive same-name fallback during scoped setup", async () => {
-    const fallback = descriptor(makeAdapter("Phantom"), "fallback");
-    const standard = descriptor(makeAdapter("Phantom"), "standard");
-    const harness = makeHarness(fallback, standard);
+  it.effect("replaces an inactive same-name fallback during scoped setup", () =>
+    Effect.gen(function* () {
+      const fallback = descriptor(makeAdapter("Phantom"), "fallback");
+      const standard = descriptor(makeAdapter("Phantom"), "standard");
+      const harness = makeHarness(fallback, standard);
 
-    await Effect.runPromise(
-      Effect.scoped(
+      yield* Effect.scoped(
         installSolanaConnectorMembership({
           actions: harness.actions,
           config: harness.config,
@@ -108,48 +108,52 @@ describe("Solana connector membership", () => {
           createConnector: harness.createConnector,
           runtime: harness.runtime,
         })
-      )
-    );
+      );
 
-    expect(harness.config.connectors[0]).toMatchObject({
-      solanaAdapter: standard.adapter,
-      solanaAdapterSource: "standard",
-    });
-  });
+      expect(harness.config.connectors[0]).toMatchObject({
+        solanaAdapter: standard.adapter,
+        solanaAdapterSource: "standard",
+      });
+    })
+  );
 
-  it("disconnects an active Standard before publishing its fallback", async () => {
-    const standard = descriptor(makeAdapter("Phantom"), "standard");
-    const fallback = descriptor(makeAdapter("Phantom"), "fallback");
-    const harness = makeHarness(standard, fallback);
-    const visible = harness.config.connectors[0]!;
-    await connect(harness.config, { connector: visible });
-    const unsubscribe = watchConnectors(harness.config, {
-      onChange: (connectors) => {
-        const connector = connectors[0];
-        if (connector && "solanaAdapterSource" in connector) {
-          harness.operations.push(
-            `publish:${String(connector.solanaAdapterSource)}`
-          );
-        }
-      },
-    });
+  it.effect(
+    "disconnects an active Standard before publishing its fallback",
+    () =>
+      Effect.gen(function* () {
+        const standard = descriptor(makeAdapter("Phantom"), "standard");
+        const fallback = descriptor(makeAdapter("Phantom"), "fallback");
+        const harness = makeHarness(standard, fallback);
+        const visible = harness.config.connectors[0]!;
+        yield* Effect.promise(() =>
+          connect(harness.config, { connector: visible })
+        );
+        const unsubscribe = watchConnectors(harness.config, {
+          onChange: (connectors) => {
+            const connector = connectors[0];
+            if (connector && "solanaAdapterSource" in connector) {
+              harness.operations.push(
+                `publish:${String(connector.solanaAdapterSource)}`
+              );
+            }
+          },
+        });
 
-    await Effect.runPromise(
-      Effect.scoped(
-        installSolanaConnectorMembership({
-          actions: harness.actions,
-          config: harness.config,
-          core: harness.core,
-          createConnector: harness.createConnector,
-          runtime: harness.runtime,
-        })
-      )
-    );
-    unsubscribe();
+        yield* Effect.scoped(
+          installSolanaConnectorMembership({
+            actions: harness.actions,
+            config: harness.config,
+            core: harness.core,
+            createConnector: harness.createConnector,
+            runtime: harness.runtime,
+          })
+        );
+        unsubscribe();
 
-    expect(harness.operations).toEqual([
-      "disconnect:standard",
-      "publish:fallback",
-    ]);
-  });
+        expect(harness.operations).toEqual([
+          "disconnect:standard",
+          "publish:fallback",
+        ]);
+      })
+  );
 });

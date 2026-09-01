@@ -1,6 +1,6 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import type { Connection as SolanaConnection } from "@solana/web3.js";
-import { Effect, Schema } from "effect";
-import { describe, expect, it, vi } from "vitest";
+import { Cause, Effect, Exit, Schema } from "effect";
 import type { Connector, createConfig } from "wagmi";
 import { AdditionalAddresses } from "../../src/domain/wallet/address";
 import { EnabledWalletNetworksResponse } from "../../src/domain/wallet/models";
@@ -48,16 +48,14 @@ const operationFailure = (cause: unknown) =>
   new WagmiOperationsError({ cause, operation: "reconnect" });
 
 const makeInitializer = (operations: InitialConnectionOperations) =>
-  Effect.runPromise(
-    makeInitializeWallet.pipe(
-      Effect.provideService(
-        WagmiOperations,
-        WagmiOperations.of({ ...wagmiOperations, ...operations })
-      )
+  makeInitializeWallet.pipe(
+    Effect.provideService(
+      WagmiOperations,
+      WagmiOperations.of({ ...wagmiOperations, ...operations })
     )
   );
 
-const initialize = async (
+const initialize = (
   operations: InitialConnectionOperations,
   input: Omit<
     WalletInitialConnectionInput,
@@ -66,16 +64,15 @@ const initialize = async (
     readonly isLedgerDappBrowser?: boolean;
     readonly isMobileWallet?: boolean;
   }
-) => {
-  const run = await makeInitializer(operations);
-  return Effect.runPromise(
-    run({
+) =>
+  Effect.gen(function* () {
+    const run = yield* makeInitializer(operations);
+    return yield* run({
       ...input,
       isLedgerDappBrowser: input.isLedgerDappBrowser ?? false,
       isMobileWallet: input.isMobileWallet ?? false,
-    })
-  );
-};
+    });
+  });
 
 describe("wallet Effect Atom boundaries", () => {
   it("reconciles cumulative MIPD snapshots without duplicating providers", () => {
@@ -204,169 +201,185 @@ describe("wallet Effect Atom boundaries", () => {
     ).toThrow();
   });
 
-  it("constructs EVM configuration directly from validated networks", async () => {
-    const config = await Effect.runPromise(
-      getEvmConfig({
-        enabledNetworks: new Set(["robinhood", "robinhood-testnet"]),
-        forceWalletConnectOnly: true,
-        institutionalWallets: false,
-        variant: "default",
+  it.effect(
+    "constructs EVM configuration directly from validated networks",
+    () =>
+      Effect.gen(function* () {
+        const config = yield* getEvmConfig({
+          enabledNetworks: new Set(["robinhood", "robinhood-testnet"]),
+          forceWalletConnectOnly: true,
+          institutionalWallets: false,
+          variant: "default",
+        });
+
+        expect(config.evmChains).toHaveLength(2);
+        expect(Object.keys(config.evmChainsMap)).toEqual([
+          "robinhood",
+          "robinhood-testnet",
+        ]);
       })
-    );
+  );
 
-    expect(config.evmChains).toHaveLength(2);
-    expect(Object.keys(config.evmChainsMap)).toEqual([
-      "robinhood",
-      "robinhood-testnet",
-    ]);
-  });
+  it.effect(
+    "runs reconnect, mobile fallback, and requested chain switching in order",
+    () =>
+      Effect.gen(function* () {
+        const calls: string[] = [];
+        const injectedConnector = { id: "injected" } as Connector;
+        const wagmiConfig = {
+          connectors: [injectedConnector],
+          state: { chainId: 1 },
+        } as unknown as ReturnType<typeof createConfig>;
+        const operations: InitialConnectionOperations = {
+          reconnect: vi.fn(() =>
+            Effect.sync(() => {
+              calls.push("reconnect");
+              return [];
+            })
+          ),
+          connect: vi.fn(() =>
+            Effect.sync(() => {
+              calls.push("connect");
+              return { accounts: [], chainId: 1 };
+            })
+          ),
+          switchChain: vi.fn(() =>
+            Effect.sync(() => {
+              calls.push("switch");
+              return { id: 2 };
+            })
+          ),
+        };
 
-  it("runs reconnect, mobile fallback, and requested chain switching in order", async () => {
-    const calls: string[] = [];
-    const injectedConnector = { id: "injected" } as Connector;
-    const wagmiConfig = {
-      connectors: [injectedConnector],
-      state: { chainId: 1 },
-    } as unknown as ReturnType<typeof createConfig>;
-    const operations: InitialConnectionOperations = {
-      reconnect: vi.fn(() =>
-        Effect.sync(() => {
-          calls.push("reconnect");
-          return [];
-        })
-      ),
-      connect: vi.fn(() =>
-        Effect.sync(() => {
-          calls.push("connect");
-          return { accounts: [], chainId: 1 };
-        })
-      ),
-      switchChain: vi.fn(() =>
-        Effect.sync(() => {
-          calls.push("switch");
-          return { id: 2 };
-        })
-      ),
-    };
+        const initializeWallet = yield* makeInitializer(operations);
+        yield* initializeWallet({
+          hasExternalProvider: false,
+          isLedgerDappBrowser: false,
+          isMobileWallet: true,
+          queryParamsInitChainId: 2,
+          wagmiConfig,
+        });
 
-    await Effect.runPromise(
-      (await makeInitializer(operations))({
-        hasExternalProvider: false,
-        isLedgerDappBrowser: false,
-        isMobileWallet: true,
-        queryParamsInitChainId: 2,
-        wagmiConfig,
+        expect(calls).toEqual(["reconnect", "connect", "switch"]);
+        expect(operations.reconnect).toHaveBeenCalledOnce();
+        expect(operations.connect).toHaveBeenCalledOnce();
+        expect(operations.switchChain).toHaveBeenCalledOnce();
       })
-    );
+  );
 
-    expect(calls).toEqual(["reconnect", "connect", "switch"]);
-    expect(operations.reconnect).toHaveBeenCalledOnce();
-    expect(operations.connect).toHaveBeenCalledOnce();
-    expect(operations.switchChain).toHaveBeenCalledOnce();
-  });
+  it.effect(
+    "continues after reconnect, fallback connect, and initial switch failures",
+    () =>
+      Effect.gen(function* () {
+        const injectedConnector = { id: "injected" } as Connector;
+        const wagmiConfig = {
+          connectors: [injectedConnector],
+          state: { chainId: 1 },
+        } as unknown as ReturnType<typeof createConfig>;
+        const cause = new Error("initialization failed");
+        const baseOperations: InitialConnectionOperations = {
+          connect: vi.fn(() => Effect.succeed({ accounts: [], chainId: 1 })),
+          reconnect: vi.fn(() => Effect.succeed([{} as never])),
+          switchChain: vi.fn(() => Effect.succeed({ id: 2 })),
+        };
+        const run = (
+          operations: InitialConnectionOperations,
+          isMobileWallet = false
+        ) =>
+          initialize(operations, {
+            hasExternalProvider: false,
+            isMobileWallet,
+            queryParamsInitChainId: 2,
+            wagmiConfig,
+          });
 
-  it("continues after reconnect, fallback connect, and initial switch failures", async () => {
-    const injectedConnector = { id: "injected" } as Connector;
-    const wagmiConfig = {
-      connectors: [injectedConnector],
-      state: { chainId: 1 },
-    } as unknown as ReturnType<typeof createConfig>;
-    const cause = new Error("initialization failed");
-    const baseOperations: InitialConnectionOperations = {
-      connect: vi.fn(() => Effect.succeed({ accounts: [], chainId: 1 })),
-      reconnect: vi.fn(() => Effect.succeed([{} as never])),
-      switchChain: vi.fn(() => Effect.succeed({ id: 2 })),
-    };
-    const run = (
-      operations: InitialConnectionOperations,
-      isMobileWallet = false
-    ) =>
-      initialize(operations, {
-        hasExternalProvider: false,
-        isMobileWallet,
-        queryParamsInitChainId: 2,
-        wagmiConfig,
-      });
+        const reconnectFailure = vi.fn(() =>
+          Effect.fail(operationFailure(cause))
+        );
+        const reconnectConnect = vi.fn(() =>
+          Effect.succeed({ accounts: [], chainId: 1 })
+        );
+        const reconnectSwitch = vi.fn(() => Effect.succeed({ id: 2 }));
+        yield* run(
+          {
+            ...baseOperations,
+            connect: reconnectConnect,
+            reconnect: reconnectFailure,
+            switchChain: reconnectSwitch,
+          },
+          true
+        );
+        const fallbackConnectFailure = vi.fn(() =>
+          Effect.fail(operationFailure(cause))
+        );
+        yield* run(
+          {
+            ...baseOperations,
+            connect: fallbackConnectFailure,
+            reconnect: vi.fn(() => Effect.succeed([])),
+          },
+          true
+        );
+        const switchFailure = vi.fn(() => Effect.fail(operationFailure(cause)));
+        yield* run({
+          ...baseOperations,
+          switchChain: switchFailure,
+        });
 
-    const reconnectFailure = vi.fn(() => Effect.fail(operationFailure(cause)));
-    const reconnectConnect = vi.fn(() =>
-      Effect.succeed({ accounts: [], chainId: 1 })
-    );
-    const reconnectSwitch = vi.fn(() => Effect.succeed({ id: 2 }));
-    await run(
-      {
-        ...baseOperations,
-        connect: reconnectConnect,
-        reconnect: reconnectFailure,
-        switchChain: reconnectSwitch,
-      },
-      true
-    );
-    const fallbackConnectFailure = vi.fn(() =>
-      Effect.fail(operationFailure(cause))
-    );
-    await run(
-      {
-        ...baseOperations,
-        connect: fallbackConnectFailure,
-        reconnect: vi.fn(() => Effect.succeed([])),
-      },
-      true
-    );
-    const switchFailure = vi.fn(() => Effect.fail(operationFailure(cause)));
-    await run({
-      ...baseOperations,
-      switchChain: switchFailure,
-    });
-
-    expect(reconnectFailure).toHaveBeenCalledOnce();
-    expect(reconnectSwitch).toHaveBeenCalledOnce();
-    expect(reconnectConnect).toHaveBeenCalledOnce();
-    expect(reconnectConnect).toHaveBeenCalledWith(wagmiConfig, {
-      chainId: 2,
-      connector: injectedConnector,
-    });
-    expect(fallbackConnectFailure).toHaveBeenCalledOnce();
-    expect(switchFailure).toHaveBeenCalledOnce();
-  });
-
-  it("retains configured connectors and manual connect after initial switching fails", async () => {
-    const configuredConnector = { id: "configured" } as Connector;
-    const wagmiConfig = {
-      connectors: [configuredConnector],
-      state: { chainId: 1 },
-    } as unknown as ReturnType<typeof createConfig>;
-    const connect = vi.fn(() => Effect.succeed({ accounts: [], chainId: 1 }));
-    const operations: InitialConnectionOperations = {
-      connect,
-      reconnect: vi.fn(() => Effect.succeed([{} as never])),
-      switchChain: vi.fn(() =>
-        Effect.fail(operationFailure(new Error("switch rejected")))
-      ),
-    };
-
-    await Effect.runPromise(
-      (await makeInitializer(operations))({
-        hasExternalProvider: false,
-        isLedgerDappBrowser: false,
-        isMobileWallet: false,
-        queryParamsInitChainId: 2,
-        wagmiConfig,
+        expect(reconnectFailure).toHaveBeenCalledOnce();
+        expect(reconnectSwitch).toHaveBeenCalledOnce();
+        expect(reconnectConnect).toHaveBeenCalledOnce();
+        expect(reconnectConnect).toHaveBeenCalledWith(wagmiConfig, {
+          chainId: 2,
+          connector: injectedConnector,
+        });
+        expect(fallbackConnectFailure).toHaveBeenCalledOnce();
+        expect(switchFailure).toHaveBeenCalledOnce();
       })
-    );
+  );
 
-    expect(wagmiConfig.connectors).toEqual([configuredConnector]);
+  it.effect(
+    "retains configured connectors and manual connect after initial switching fails",
+    () =>
+      Effect.gen(function* () {
+        const configuredConnector = { id: "configured" } as Connector;
+        const wagmiConfig = {
+          connectors: [configuredConnector],
+          state: { chainId: 1 },
+        } as unknown as ReturnType<typeof createConfig>;
+        const connect = vi.fn(() =>
+          Effect.succeed({ accounts: [], chainId: 1 })
+        );
+        const operations: InitialConnectionOperations = {
+          connect,
+          reconnect: vi.fn(() => Effect.succeed([{} as never])),
+          switchChain: vi.fn(() =>
+            Effect.fail(operationFailure(new Error("switch rejected")))
+          ),
+        };
 
-    await Effect.runPromise(
-      operations.connect(wagmiConfig, { connector: configuredConnector })
-    );
-    expect(connect).toHaveBeenCalledOnce();
-  });
+        const initializeWallet = yield* makeInitializer(operations);
+        yield* initializeWallet({
+          hasExternalProvider: false,
+          isLedgerDappBrowser: false,
+          isMobileWallet: false,
+          queryParamsInitChainId: 2,
+          wagmiConfig,
+        });
 
-  it("keeps wallet configuration construction failures fatal", async () => {
-    const cause = new Error("connector construction failed");
-    await expect(
-      Effect.runPromise(
+        expect(wagmiConfig.connectors).toEqual([configuredConnector]);
+
+        yield* operations.connect(wagmiConfig, {
+          connector: configuredConnector,
+        });
+        expect(connect).toHaveBeenCalledOnce();
+      })
+  );
+
+  it.effect("keeps wallet configuration construction failures fatal", () =>
+    Effect.gen(function* () {
+      const cause = new Error("connector construction failed");
+      const exit = yield* Effect.exit(
         Effect.scoped(
           Effect.gen(function* () {
             const buildActions = yield* makeWagmiActions;
@@ -397,76 +410,87 @@ describe("wallet Effect Atom boundaries", () => {
             );
           }).pipe(Effect.provide(WagmiOperations.layer))
         )
-      )
-    ).rejects.toThrow(cause.message);
-  });
+      );
+      if (Exit.isSuccess(exit)) {
+        throw new Error("Expected wallet configuration construction to fail");
+      }
 
-  it("builds an empty wallet topology when no Wallet Networks are enabled", async () => {
-    const walletListFactory = vi.fn(() => {
-      throw new Error("must not build connectors without Wallet Networks");
-    });
-    const controller = await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const buildActions = yield* makeWagmiActions;
-          return yield* buildWagmiConfig(
-            {
-              chainIconMapping: undefined,
-              walletListFactory,
-              disableInjectedProviderDiscovery: true,
-              enabledNetworks: new Set(),
-              forceWalletConnectOnly: false,
-              institutionalWallets: false,
-              isLedgerLive: false,
-              isMobileWallet: false,
-              isSafe: false,
-              mapWalletFn: undefined,
-              walletPolicy: undefined,
-              persistPublicKey: () => Effect.void,
-              queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
-              solanaConnection: {} as SolanaConnection,
-              solanaWallets: [],
-              tonConnectManifestUrl: undefined,
-              variant: "default",
+      expect(() => {
+        throw Cause.squash(exit.cause);
+      }).toThrow(cause.message);
+    })
+  );
+
+  it.effect(
+    "builds an empty wallet topology when no Wallet Networks are enabled",
+    () =>
+      Effect.gen(function* () {
+        const walletListFactory = vi.fn(() => {
+          throw new Error("must not build connectors without Wallet Networks");
+        });
+        const controller = yield* Effect.scoped(
+          Effect.gen(function* () {
+            const buildActions = yield* makeWagmiActions;
+            return yield* buildWagmiConfig(
+              {
+                chainIconMapping: undefined,
+                walletListFactory,
+                disableInjectedProviderDiscovery: true,
+                enabledNetworks: new Set(),
+                forceWalletConnectOnly: false,
+                institutionalWallets: false,
+                isLedgerLive: false,
+                isMobileWallet: false,
+                isSafe: false,
+                mapWalletFn: undefined,
+                walletPolicy: undefined,
+                persistPublicKey: () => Effect.void,
+                queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
+                solanaConnection: {} as SolanaConnection,
+                solanaWallets: [],
+                tonConnectManifestUrl: undefined,
+                variant: "default",
+              },
+              buildActions,
+              unusedStellarWalletsKitPlatform
+            );
+          }).pipe(Effect.provide(WagmiOperations.layer))
+        );
+
+        expect(controller.enabledNetworks).toEqual(new Set());
+        expect(controller.evmConfig.evmChains).toEqual([]);
+        expect(controller.cosmosConfig.cosmosWagmiChains).toEqual([]);
+        expect(controller.miscConfig.miscChains).toEqual([]);
+        expect(controller.substrateConfig.substrateChains).toEqual([]);
+        expect(controller.wagmiConfig.connectors).toEqual([]);
+        expect(walletListFactory).not.toHaveBeenCalled();
+      })
+  );
+
+  it.effect(
+    "disposes MIPD ownership and ignores callbacks from the released scope",
+    () =>
+      Effect.gen(function* () {
+        const publish = vi.fn();
+        const unsubscribe = vi.fn();
+        let publishAfterRelease: (() => void) | undefined;
+
+        yield* Effect.scoped(
+          scopedMipdSubscription({
+            initialProviders: [],
+            publish,
+            subscribe: (onProviders) => {
+              publishAfterRelease = () => onProviders([]);
+              return unsubscribe;
             },
-            buildActions,
-            unusedStellarWalletsKitPlatform
-          );
-        }).pipe(Effect.provide(WagmiOperations.layer))
-      )
-    );
+          })
+        );
 
-    expect(controller.enabledNetworks).toEqual(new Set());
-    expect(controller.evmConfig.evmChains).toEqual([]);
-    expect(controller.cosmosConfig.cosmosWagmiChains).toEqual([]);
-    expect(controller.miscConfig.miscChains).toEqual([]);
-    expect(controller.substrateConfig.substrateChains).toEqual([]);
-    expect(controller.wagmiConfig.connectors).toEqual([]);
-    expect(walletListFactory).not.toHaveBeenCalled();
-  });
+        expect(publish).toHaveBeenCalledOnce();
+        expect(unsubscribe).toHaveBeenCalledOnce();
 
-  it("disposes MIPD ownership and ignores callbacks from the released scope", async () => {
-    const publish = vi.fn();
-    const unsubscribe = vi.fn();
-    let publishAfterRelease: (() => void) | undefined;
-
-    await Effect.runPromise(
-      Effect.scoped(
-        scopedMipdSubscription({
-          initialProviders: [],
-          publish,
-          subscribe: (onProviders) => {
-            publishAfterRelease = () => onProviders([]);
-            return unsubscribe;
-          },
-        })
-      )
-    );
-
-    expect(publish).toHaveBeenCalledOnce();
-    expect(unsubscribe).toHaveBeenCalledOnce();
-
-    publishAfterRelease?.();
-    expect(publish).toHaveBeenCalledOnce();
-  });
+        publishAfterRelease?.();
+        expect(publish).toHaveBeenCalledOnce();
+      })
+  );
 });

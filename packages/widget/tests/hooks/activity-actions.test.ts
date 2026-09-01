@@ -1,7 +1,7 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer, Option, Schema } from "effect";
 import { Atom, AtomRegistry } from "effect/unstable/reactivity";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { ActivityActionsPage } from "../../src/domain/activity/models";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
@@ -39,68 +39,70 @@ describe("activity action atom boundary", () => {
     );
   });
 
-  it("omits a malformed action while retaining valid siblings", async () => {
-    const valid = yieldApiActionDtoFixture({ id: "valid-action" });
-    const malformed: Record<string, unknown> = {
-      ...yieldApiActionDtoFixture({ id: "invalid-action" }),
-      transactions: [
-        {
-          ...yieldApiActionDtoFixture().transactions[0]!,
-          network: "not-a-network",
-        },
-      ],
-    };
-    const page = await Effect.runPromise(
-      Schema.decodeUnknownEffect(ActivityActionsPage)({
+  it.effect("omits a malformed action while retaining valid siblings", () =>
+    Effect.gen(function* () {
+      const valid = yieldApiActionDtoFixture({ id: "valid-action" });
+      const malformed: Record<string, unknown> = {
+        ...yieldApiActionDtoFixture({ id: "invalid-action" }),
+        transactions: [
+          {
+            ...yieldApiActionDtoFixture().transactions[0]!,
+            network: "not-a-network",
+          },
+        ],
+      };
+      const page = yield* Schema.decodeUnknownEffect(ActivityActionsPage)({
         items: [valid, malformed],
         limit: 50,
         offset: 0,
         total: 2,
+      });
+
+      expect(page.items?.map((item) => item.id)).toEqual(["valid-action"]);
+      expect(page.total).toBe(2);
+    })
+  );
+
+  it.effect(
+    "accepts EVM unsigned transactions serialized as JSON strings",
+    () =>
+      Effect.gen(function* () {
+        const unsignedTransaction = JSON.stringify({
+          from: "0xcaA141ece9fEE66D15f0257F5c6C48E26784345C",
+          gasLimit: "0x027f4b",
+          to: "0xa6e768fEf2D1aF36c0cfdb276422E7881a83e951",
+          data: "0x8759c2340000000000000000000000000000000000000000000000000000000000000002",
+          nonce: 92,
+          type: 2,
+          maxFeePerGas: "0x11e1a300",
+          maxPriorityFeePerGas: "0x054e0840",
+          chainId: 1,
+        });
+        const page = yield* Schema.decodeUnknownEffect(ActivityActionsPage)({
+          items: [
+            yieldApiActionDtoFixture({
+              id: "json-serialized-unsigned-transaction",
+              transactions: [
+                {
+                  ...yieldApiActionDtoFixture().transactions[0]!,
+                  unsignedTransaction,
+                },
+              ],
+            }),
+          ],
+          limit: 50,
+          offset: 0,
+          total: 1,
+        });
+
+        expect(page.items?.map((item) => item.id)).toEqual([
+          "json-serialized-unsigned-transaction",
+        ]);
+        expect(page.items?.[0]?.transactions[0]?.unsignedTransaction).toBe(
+          unsignedTransaction
+        );
       })
-    );
-
-    expect(page.items?.map((item) => item.id)).toEqual(["valid-action"]);
-    expect(page.total).toBe(2);
-  });
-
-  it("accepts EVM unsigned transactions serialized as JSON strings", async () => {
-    const unsignedTransaction = JSON.stringify({
-      from: "0xcaA141ece9fEE66D15f0257F5c6C48E26784345C",
-      gasLimit: "0x027f4b",
-      to: "0xa6e768fEf2D1aF36c0cfdb276422E7881a83e951",
-      data: "0x8759c2340000000000000000000000000000000000000000000000000000000000000002",
-      nonce: 92,
-      type: 2,
-      maxFeePerGas: "0x11e1a300",
-      maxPriorityFeePerGas: "0x054e0840",
-      chainId: 1,
-    });
-    const page = await Effect.runPromise(
-      Schema.decodeUnknownEffect(ActivityActionsPage)({
-        items: [
-          yieldApiActionDtoFixture({
-            id: "json-serialized-unsigned-transaction",
-            transactions: [
-              {
-                ...yieldApiActionDtoFixture().transactions[0]!,
-                unsignedTransaction,
-              },
-            ],
-          }),
-        ],
-        limit: 50,
-        offset: 0,
-        total: 1,
-      })
-    );
-
-    expect(page.items?.map((item) => item.id)).toEqual([
-      "json-serialized-unsigned-transaction",
-    ]);
-    expect(page.items?.[0]?.transactions[0]?.unsignedTransaction).toBe(
-      unsignedTransaction
-    );
-  });
+  );
 
   it("loads activity presentation one semantic page at a time", async () => {
     const yieldModel = yieldApiYieldFixture();
