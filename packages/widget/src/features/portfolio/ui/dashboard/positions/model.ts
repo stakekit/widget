@@ -86,9 +86,7 @@ export const getUnifiedManagePositionsState = ({
   );
   const borrowPositionsCount = borrowPositions.length;
   const borrowIsLoading =
-    borrowWalletIsConnected &&
-    (AsyncResult.isInitial(borrowPositionsResult) ||
-      AsyncResult.isWaiting(borrowPositionsResult));
+    borrowWalletIsConnected && AsyncResult.isInitial(borrowPositionsResult);
   const borrowIsError =
     borrowWalletIsConnected && AsyncResult.isFailure(borrowPositionsResult);
   const earnIsActive = isConnected;

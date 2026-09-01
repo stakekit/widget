@@ -45,7 +45,13 @@ export const PositionsPage = () => {
 
   const { t } = useTranslation();
   const content = useMemo(() => {
-    if (manageState.isAnyPositionsLoading && isConnected) {
+    // Keep the list mounted while a source refreshes; only the first load with
+    // nothing to show uses the full-page spinner.
+    if (
+      manageState.isAnyPositionsLoading &&
+      isConnected &&
+      !manageState.showPositionsList
+    ) {
       return <FallbackContent type="spinner" />;
     }
     if (manageState.showConnectWallet) {

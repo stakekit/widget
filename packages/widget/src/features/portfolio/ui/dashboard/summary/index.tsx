@@ -33,8 +33,7 @@ export const Summary = () => {
   const borrowPositionsAreLoading =
     borrowPositions.enabled &&
     borrowPositions.connectionStatus === "connected" &&
-    (AsyncResult.isInitial(borrowPositions.positionsResult) ||
-      AsyncResult.isWaiting(borrowPositions.positionsResult));
+    AsyncResult.isInitial(borrowPositions.positionsResult);
   const hasBorrowPositions =
     borrowPositions.enabled && borrowPositionItems.length > 0;
   const borrowTotalSupplied = borrowPositionItems.reduce(

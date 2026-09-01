@@ -123,4 +123,49 @@ describe("unified Manage positions state", () => {
       showEmptyPositions: false,
     });
   });
+
+  it("keeps existing positions visible while earn refreshes", () => {
+    expect(
+      getState({
+        earnIsFetching: true,
+        earnIsLoading: false,
+        earnPositionsCount: 1,
+      })
+    ).toMatchObject({
+      isAnyPositionsLoading: false,
+      showEmptyPositions: false,
+      showPositionsList: true,
+      totalPositionsCount: 1,
+    });
+  });
+
+  it("keeps existing positions visible while borrow refreshes", () => {
+    expect(
+      getState({
+        borrowPositionsResult: AsyncResult.success<
+          ReadonlyArray<MarketPosition>,
+          unknown
+        >([{} as MarketPosition], { waiting: true }),
+        earnPositionsCount: 1,
+      })
+    ).toMatchObject({
+      isAnyPositionsLoading: false,
+      showEmptyPositions: false,
+      showPositionsList: true,
+      totalPositionsCount: 2,
+    });
+  });
+
+  it("shows loading only for the initial earn fetch", () => {
+    expect(
+      getState({
+        earnIsFetching: true,
+        earnIsLoading: true,
+        showEarnPositions: false,
+      })
+    ).toMatchObject({
+      isAnyPositionsLoading: true,
+      showEmptyPositions: false,
+    });
+  });
 });
