@@ -31,11 +31,13 @@ import {
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const makePosition = ({
+  amount = "1",
   amountUsd,
   rewardRate,
   yieldId,
 }: {
-  readonly amountUsd: string;
+  readonly amount?: string;
+  readonly amountUsd: string | null;
   readonly rewardRate: Parameters<typeof exactDecimal>[0];
   readonly yieldId: string;
 }) => {
@@ -46,8 +48,8 @@ const makePosition = ({
   const position = Schema.decodeUnknownSync(EarnPosition)({
     balances: [
       yieldBalanceFixture({
-        amount: "1",
-        amountUsd,
+        amount,
+        ...(amountUsd === null ? { amountUsd: null } : { amountUsd }),
         token: yieldDto.token,
       }),
     ],
@@ -60,6 +62,37 @@ const makePosition = ({
 };
 
 describe("summary atom derivations", () => {
+  it("matches the Manage summary zeros when a position has amount but no amountUsd", () => {
+    // Screenshot repro: list shows "0.2 USDG" + "3.92%" while Total staked is $0.00
+    // and Average APY is "-". The list renders token amount without a USD subline when
+    // amountUsd is missing; summary only sums amountUsd and skips APY when USD is 0.
+    const position = makePosition({
+      amount: "0.2",
+      amountUsd: null,
+      rewardRate: 0.0392,
+      yieldId: "robinhood-usdg-morpho-steakhouse-v2",
+    });
+    const yields = new Map([[position.yieldDto.id, position.yieldDto]]);
+
+    expect(position.item.balancesWithAmount[0]?.amount.toFixed()).toBe("0.2");
+    expect(getPositionsTotal([position.item], yields).toFixed()).toBe("0");
+    expect(getPositionsAverageApy([position.item], yields).toFixed()).toBe("0");
+  });
+
+  it("also zeros the summary when the Yield is missing from the multi-yield map", () => {
+    const position = makePosition({
+      amount: "0.2",
+      amountUsd: "0.2",
+      rewardRate: 0.0392,
+      yieldId: "robinhood-usdg-morpho-steakhouse-v2",
+    });
+
+    expect(getPositionsTotal([position.item], new Map()).toFixed()).toBe("0");
+    expect(getPositionsAverageApy([position.item], new Map()).toFixed()).toBe(
+      "0"
+    );
+  });
+
   it("recomputes position total and weighted APY when source state changes", () => {
     const first = makePosition({
       amountUsd: "5",

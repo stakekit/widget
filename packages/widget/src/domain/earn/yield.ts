@@ -525,6 +525,3 @@ export const isNonZeroRewardRateYield = (
 ) =>
   yieldDto.rewardRate.total.isGreaterThan(0) ||
   zeroRewardRateYieldIdWhitelist.has(yieldDto.id);
-
-export const isERC4626 = (yieldDto: EarnYieldWithProvider) =>
-  yieldDto.metadata.supportedStandards?.includes("ERC4626") ?? false;
