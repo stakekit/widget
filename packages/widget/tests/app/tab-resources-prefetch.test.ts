@@ -5,6 +5,7 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { tabResourcesPrefetchAtom } from "../../src/app/routes/state/tab-resources-prefetch";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { applicationRouterPathnameAtom } from "../../src/app/runtime/application-router";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
   walletConfigResultAtom,
@@ -55,15 +56,18 @@ type GetPositions = YieldResourceSource["Service"]["getPositions"];
 const makeRegistry = ({
   getPositions,
   listActivity,
+  pathname = "/positions",
   scope = walletScope,
 }: {
   readonly getPositions: GetPositions;
   readonly listActivity: ListActivity;
+  readonly pathname?: string;
   readonly scope?: WalletScopeKey | null;
 }) =>
   AtomRegistry.make({
     initialValues: [
       applicationRuntimeInitInitialValue(),
+      Atom.initialValue(applicationRouterPathnameAtom, pathname),
       Atom.initialValue(
         appRuntime.layer,
         Layer.mergeAll(
@@ -110,12 +114,11 @@ describe("tab resources prefetch", () => {
       })
     );
     const registry = makeRegistry({ getPositions, listActivity });
-    const prefetch = tabResourcesPrefetchAtom("manage");
-    const unmount = registry.mount(prefetch);
+    const unmount = registry.mount(tabResourcesPrefetchAtom);
 
     try {
       await vi.waitFor(() => {
-        expect(registry.get(prefetch)).toBe("warming");
+        expect(registry.get(tabResourcesPrefetchAtom)).toBe("warming");
         expect(getPositions).toHaveBeenCalled();
         expect(
           listActivity.mock.calls.some(
@@ -147,11 +150,10 @@ describe("tab resources prefetch", () => {
       listActivity,
       scope: null,
     });
-    const prefetch = tabResourcesPrefetchAtom("manage");
-    const unmount = registry.mount(prefetch);
+    const unmount = registry.mount(tabResourcesPrefetchAtom);
 
     try {
-      expect(registry.get(prefetch)).toBe("idle");
+      expect(registry.get(tabResourcesPrefetchAtom)).toBe("idle");
       expect(getPositions).not.toHaveBeenCalled();
       expect(listActivity).not.toHaveBeenCalled();
     } finally {

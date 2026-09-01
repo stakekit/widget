@@ -3,7 +3,10 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
-import { applicationRouterAtom } from "../../src/app/runtime/application-router";
+import {
+  applicationRouterAtom,
+  applicationRouterPathnameAtom,
+} from "../../src/app/runtime/application-router";
 import { applicationRuntimeInitAtom } from "../../src/app/runtime/application-runtime-init";
 import {
   toWidgetPath,
@@ -43,6 +46,28 @@ describe("ApplicationRouter runtime", () => {
       expect(router.state.location.pathname).toBe("/");
       expect(router.routes).toHaveLength(1);
     } finally {
+      registry.dispose();
+    }
+  });
+
+  it("publishes pathname changes through the ApplicationRouter stream", async () => {
+    const registry = makeRegistry();
+    const unmount = registry.mount(applicationRouterPathnameAtom);
+
+    try {
+      expect(registry.get(applicationRouterPathnameAtom)).toBe("/");
+
+      registry.set(navigationCommandAtom, {
+        _tag: "Push",
+        path: toWidgetPath("/positions"),
+        scroll: "preserve",
+      });
+
+      await vi.waitFor(() =>
+        expect(registry.get(applicationRouterPathnameAtom)).toBe("/positions")
+      );
+    } finally {
+      unmount();
       registry.dispose();
     }
   });

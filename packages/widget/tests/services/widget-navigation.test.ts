@@ -1,4 +1,4 @@
-import { Effect, Layer, Schema } from "effect";
+import { Effect, Layer, Schema, Stream } from "effect";
 import type { DataRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { ApplicationRouter } from "../../src/services/navigation/application-router";
@@ -61,6 +61,7 @@ describe("WidgetNavigation", () => {
     const applicationRouterLayer = Layer.succeed(
       ApplicationRouter,
       ApplicationRouter.of({
+        pathnames: Stream.never,
         router: {
           navigate: () =>
             Promise.reject(new Error("router rejected navigation")),

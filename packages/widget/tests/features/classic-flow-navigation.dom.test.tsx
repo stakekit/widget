@@ -334,7 +334,10 @@ const FlowTestApp = ({
     })
   );
   const applicationRouterLayer = Layer.merge(
-    Layer.succeed(ApplicationRouter, ApplicationRouter.of({ router })),
+    Layer.succeed(
+      ApplicationRouter,
+      ApplicationRouter.of({ pathnames: Stream.never, router })
+    ),
     WidgetConfigService.layer(hostConfiguration)
   );
   const navigationLayer = Layer.succeed(
