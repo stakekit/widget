@@ -11,7 +11,7 @@ import {
   getPendingActionAmountConfig,
   isPendingActionAmountRequired,
 } from "../../../domain/action/pending-action";
-import { getYieldActionArg, isERC4626 } from "../../../domain/earn/yield";
+import { isYieldActionAmountEditable } from "../../../domain/earn/stake";
 import {
   exactZero,
   truncateToTokenDecimals,
@@ -220,11 +220,7 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
         yield: integrationData,
       });
       const canChangeUnstakeAmount = integrationData
-        ? !amountConstraints.forceMax &&
-          (Boolean(
-            getYieldActionArg(integrationData, "exit", "amount")?.required
-          ) ||
-            isERC4626(integrationData))
+        ? isYieldActionAmountEditable(integrationData, "exit")
         : null;
       const workflow = get(positionDetailsWorkflowAtom(key));
       const exitReceiveTokenSelection = integrationData

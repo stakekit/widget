@@ -72,6 +72,14 @@ export const isForceMaxAmount = (
   exactDecimal(args.minimum).isEqualTo(-1) &&
   exactDecimal(args.maximum).isEqualTo(-1);
 
+export const isYieldActionAmountEditable = (
+  yieldDto: EarnYieldWithProvider,
+  type: "enter" | "exit"
+) => {
+  const amountArgument = getYieldActionArg(yieldDto, type, "amount");
+  return amountArgument != null && !isForceMaxAmount(amountArgument);
+};
+
 type EnterAmountConstraint =
   | { readonly type: "force-max" }
   | {
