@@ -25,7 +25,11 @@ import {
   TransactionSignError,
   TransactionSubmissionError,
 } from "../../src/services/transaction-workflow/transaction-workflow-model";
-import { WalletBroadcastError } from "../../src/services/wallet/wallet-errors";
+import { ExternalProviderError } from "../../src/services/wallet/external-provider";
+import {
+  WalletBroadcastError,
+  WalletSigningError,
+} from "../../src/services/wallet/wallet-errors";
 import { yieldApiTransactionFixture } from "../fixtures";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -366,5 +370,30 @@ describe("transaction workflow model", () => {
       "Wallet is not connected for transaction signing."
     );
     expect(getTransactionSignCustomMessage(withoutCustom)).toBeNull();
+  });
+
+  it("projects host custom messages from external-provider message-signing failures", () => {
+    const error = makeTransactionSignError({
+      batchId: "classic",
+      network: "ethereum",
+      reason: {
+        _tag: "WalletOperationFailed",
+        cause: new WalletSigningError({
+          cause: new ExternalProviderError({
+            customMessage: "Approve the message in your host wallet",
+            message: "Approve the message in your host wallet",
+          }),
+          operation: "message",
+        }),
+        operation: "message",
+      },
+      transactionId: "classic-1",
+      workflowId: "action-1",
+    });
+
+    expect(error.message).toBe("Message signing failed.");
+    expect(getTransactionSignCustomMessage(error)).toBe(
+      "Approve the message in your host wallet"
+    );
   });
 });

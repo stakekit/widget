@@ -9,6 +9,7 @@ import type { Transaction as BorrowTransaction } from "../../domain/borrow/execu
 import { WalletScopeKey } from "../../domain/wallet/wallet-scope";
 import type { ActionMeta } from "../../public-api/types";
 import { toRepresentationNumber } from "../../shared/lib/number-format";
+import { ExternalProviderError } from "../wallet/external-provider";
 import type {
   WalletBroadcastError,
   WalletCapabilityUnavailableError,
@@ -223,13 +224,20 @@ export const makeTransactionSignError = (input: {
 export const getTransactionSignCustomMessage = (
   error: TransactionSignError
 ): string | null => {
-  if (
-    error.reason._tag === "WalletOperationFailed" &&
-    error.reason.cause._tag === "WalletBroadcastError"
-  ) {
-    return error.reason.cause.customMessage;
+  if (error.reason._tag !== "WalletOperationFailed") {
+    return null;
   }
 
+  const walletError = error.reason.cause;
+  if (walletError._tag === "WalletBroadcastError") {
+    return walletError.customMessage;
+  }
+  if (
+    walletError._tag === "WalletSigningError" &&
+    walletError.cause instanceof ExternalProviderError
+  ) {
+    return walletError.cause.customMessage;
+  }
   return null;
 };
 
