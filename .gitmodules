@@ -1,0 +1,4 @@
+# Pinned to effect@4.0.0-rc.112 (matches widget catalog effect version).
+[submodule ".repos/effect"]
+	path = .repos/effect
+	url = https://github.com/Effect-TS/effect.git
