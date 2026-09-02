@@ -5,11 +5,14 @@ import type { Network } from "../../../../../domain/network/network";
 import { isEvmWalletNetwork } from "../../../../../domain/wallet/network";
 import type {
   BittensorTx,
+  SKBorrowTx,
   SKBorrowTxMeta,
   SKTx,
   SKTxMeta,
   TronTx,
 } from "../../../../../public-api/types";
+import type { ExternalProviderError } from "../../../external-provider";
+import type { WalletSignTypedDataInput } from "../../../wallet-commands";
 import {
   WalletBroadcastError,
   WalletCapabilityUnavailableError,
@@ -17,7 +20,10 @@ import {
   WalletSigningError,
 } from "../../../wallet-errors";
 import type { WalletBroadcastResult } from "../../../wallet-transactions";
-import { decodeAndPrepareEvmTransaction } from "../evm/transaction";
+import {
+  decodeAndPrepareBorrowEvmTransaction,
+  decodeAndPrepareEvmTransaction,
+} from "../evm/transaction";
 import {
   normalizeSolanaTransactionToHex,
   unsignedSolanaTransactionCodec,
@@ -29,6 +35,12 @@ import {
 } from "../ton/transaction";
 import { unsignedTronTransactionCodec } from "../tron/transaction";
 import { isExternalProviderConnector } from "./index";
+
+const toWalletBroadcastError = (cause: ExternalProviderError) =>
+  new WalletBroadcastError({
+    cause,
+    customMessage: cause.customMessage,
+  });
 
 const decodeSchema = <S extends Schema.ConstraintDecoder<unknown>>(
   schema: S,
@@ -118,6 +130,27 @@ const decodeExternalProviderTransaction = ({
     : Effect.succeed(result.success);
 };
 
+const decodeBorrowExternalProviderTransaction = ({
+  address,
+  network,
+  tx,
+}: {
+  readonly address: Address;
+  readonly network: Network;
+  readonly tx: string;
+}): Effect.Effect<SKBorrowTx, WalletDecodeError> => {
+  if (!isEvmWalletNetwork(network)) {
+    return Effect.fail(
+      new WalletDecodeError({ cause: "Unsupported Borrow network" })
+    );
+  }
+
+  return decodeAndPrepareBorrowEvmTransaction({ address, tx }).pipe(
+    Effect.map((decodedTx): SKBorrowTx => ({ type: "evm", tx: decodedTx })),
+    Effect.mapError((cause) => new WalletDecodeError({ cause }))
+  );
+};
+
 type ExternalProviderTransactionInput = {
   readonly address: Address;
   readonly network: Network;
@@ -162,6 +195,29 @@ export const makeExternalProviderWalletDriver = ({
           )
         );
     }),
+  signTypedData: (
+    input: WalletSignTypedDataInput
+  ): Effect.Effect<
+    string,
+    WalletCapabilityUnavailableError | WalletSigningError
+  > =>
+    Effect.gen(function* () {
+      if (!isExternalProviderConnector(connector)) {
+        return yield* new WalletCapabilityUnavailableError({
+          capability: "typed-data",
+          connectorId: connector.id,
+        });
+      }
+
+      return yield* connector
+        .signTypedData(input)
+        .pipe(
+          Effect.mapError(
+            (cause) =>
+              new WalletSigningError({ cause, operation: "typed-data" })
+          )
+        );
+    }),
   signTransaction: (
     input: ExternalProviderTransactionInput
   ): Effect.Effect<
@@ -176,24 +232,27 @@ export const makeExternalProviderWalletDriver = ({
         });
       }
 
-      const decodedTx = yield* decodeExternalProviderTransaction({
-        address: input.address,
-        network: input.network,
-        tx: input.tx,
+      const signedTx = yield* Effect.gen(function* () {
+        if (input.family === "borrow") {
+          const decodedTx = yield* decodeBorrowExternalProviderTransaction({
+            address: input.address,
+            network: input.network,
+            tx: input.tx,
+          });
+          return yield* connector
+            .sendBorrowTransaction(decodedTx, input.txMeta)
+            .pipe(Effect.mapError(toWalletBroadcastError));
+        }
+
+        const decodedTx = yield* decodeExternalProviderTransaction({
+          address: input.address,
+          network: input.network,
+          tx: input.tx,
+        });
+        return yield* connector
+          .sendTransaction(decodedTx, input.txMeta)
+          .pipe(Effect.mapError(toWalletBroadcastError));
       });
-      const sendTransaction =
-        input.family === "borrow"
-          ? connector.sendBorrowTransaction(decodedTx, input.txMeta)
-          : connector.sendTransaction(decodedTx, input.txMeta);
-      const signedTx = yield* sendTransaction.pipe(
-        Effect.mapError(
-          (cause) =>
-            new WalletBroadcastError({
-              cause,
-              customMessage: cause.customMessage,
-            })
-        )
-      );
 
       return { broadcasted: true, signedTx } satisfies WalletBroadcastResult;
     }),

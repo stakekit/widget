@@ -59,7 +59,7 @@ type BorrowExternalProviderProps = ClassicExternalProviderProps & {
     readonly supportsBorrow: true;
     readonly provider: ClassicExternalProviderProps["externalProviders"]["provider"] & {
       readonly sendBorrowTransaction: (
-        tx: import("../../src/public-api/types").SKTx,
+        tx: import("../../src/public-api/types").SKBorrowTx,
         txMeta: import("../../src/public-api/types").SKBorrowTxMeta
       ) => Promise<string>;
     };

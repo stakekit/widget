@@ -58,6 +58,7 @@ describe("Ledger wallet driver", () => {
         signedTx: "0xledger-hash",
       });
       expect(ledger.prepareTransaction).toHaveBeenCalledWith({
+        family: "classic",
         network: "ethereum",
         tx: "{}",
         txMeta: transactionInput.txMeta,

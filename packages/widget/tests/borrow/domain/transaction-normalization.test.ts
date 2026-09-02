@@ -2,6 +2,7 @@ import { describe, expect, it } from "@effect/vitest";
 import { Effect, Exit, Schema } from "effect";
 import {
   decodeBorrowTransactionForWallet,
+  decodeBorrowTypedDataForWallet,
   Transaction,
 } from "../../../src/domain/borrow/execution/transaction";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
@@ -18,6 +19,25 @@ const transaction = (signablePayload: unknown) =>
     network: "base",
     signablePayload,
     signingFormat: "EVM_TRANSACTION",
+    status: "WAITING_FOR_SIGNATURE",
+    type: "BORROW",
+  });
+
+const typedDataTransaction = (chainId: unknown) =>
+  Schema.decodeUnknownSync(Transaction)({
+    address,
+    chainId: "8453",
+    id: "tx-typed-data",
+    network: "base",
+    signablePayload: {
+      domain: { chainId, name: "Borrow Authorization" },
+      message: { owner: address },
+      primaryType: "Authorization",
+      types: {
+        Authorization: [{ name: "owner", type: "address" }],
+      },
+    },
+    signingFormat: "EIP712_TYPED_DATA",
     status: "WAITING_FOR_SIGNATURE",
     type: "BORROW",
   });
@@ -44,12 +64,41 @@ describe("borrow transaction wallet normalization", () => {
           data: "0xabcdef",
           from: address,
           gasLimit: "21000",
-          nonce: 0,
           to: "0x0000000000000000000000000000000000000002",
           type: 0,
           value: "0",
         });
       })
+  );
+
+  it.effect("preserves an explicit zero nonce", () =>
+    Effect.gen(function* () {
+      const serialized = yield* decodeBorrowTransactionForWallet(
+        transaction(
+          JSON.stringify({
+            data: "0xabcdef",
+            from: address,
+            gasLimit: "21000",
+            nonce: 0,
+            to: "0x0000000000000000000000000000000000000002",
+          })
+        )
+      );
+
+      expect(JSON.parse(serialized)).toMatchObject({ nonce: 0 });
+    })
+  );
+
+  it.effect("rejects malformed and unsafe EIP-712 chain IDs", () =>
+    Effect.gen(function* () {
+      for (const chainId of ["invalid", "9007199254740992"]) {
+        const exit = yield* Effect.exit(
+          decodeBorrowTypedDataForWallet(typedDataTransaction(chainId))
+        );
+
+        expect(Exit.isFailure(exit)).toBe(true);
+      }
+    })
   );
 
   it.effect("rejects missing, malformed, and non-hex payload fields", () =>

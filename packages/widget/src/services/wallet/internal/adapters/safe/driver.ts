@@ -7,7 +7,10 @@ import {
   WalletDecodeError,
 } from "../../../wallet-errors";
 import type { WalletBroadcastResult } from "../../../wallet-transactions";
-import { decodeAndPrepareEvmTransaction } from "../evm/transaction";
+import {
+  decodeAndPrepareBorrowEvmTransaction,
+  decodeAndPrepareEvmTransaction,
+} from "../evm/transaction";
 import { isSafeConnector } from "./safe-connector-meta";
 
 class SafeConfirmationPendingError extends Data.TaggedError(
@@ -27,9 +30,11 @@ export const makeSafeWalletDriver = ({
 }) => ({
   signTransaction: ({
     address,
+    family,
     tx,
   }: {
     readonly address: Address;
+    readonly family: "borrow" | "classic";
     readonly tx: string;
   }): Effect.Effect<
     WalletBroadcastResult,
@@ -43,10 +48,13 @@ export const makeSafeWalletDriver = ({
         });
       }
 
-      const decodedTx = yield* decodeAndPrepareEvmTransaction({
-        address,
-        tx,
-      }).pipe(Effect.mapError((cause) => new WalletDecodeError({ cause })));
+      const decode =
+        family === "borrow"
+          ? decodeAndPrepareBorrowEvmTransaction
+          : decodeAndPrepareEvmTransaction;
+      const decodedTx = yield* decode({ address, tx }).pipe(
+        Effect.mapError((cause) => new WalletDecodeError({ cause }))
+      );
       const response = yield* connector
         .sendTransactions({
           txs: [

@@ -4,6 +4,7 @@ import type { RefObject } from "react";
 import { ActionId, TransactionId } from "../../src/domain/identity/identifiers";
 import type { ExternalProviderSnapshot } from "../../src/public-api/external-provider-contract";
 import type {
+  SKBorrowTx,
   SKBorrowTxMeta,
   SKBorrowWallet,
   SKExternalProviders,
@@ -19,6 +20,29 @@ const transaction = {
   type: "solana",
   tx: "01020304",
 } satisfies SKTx;
+
+const borrowTransaction = {
+  type: "evm",
+  tx: {
+    chainId: "0x1",
+    data: "0x1234",
+    from: "0x0000000000000000000000000000000000000001",
+    gas: "0x5208",
+    gasPrice: "0x1",
+    to: "0x0000000000000000000000000000000000000002",
+    type: "0x1",
+    value: undefined,
+  },
+} satisfies SKBorrowTx;
+
+const typedData = {
+  domain: { chainId: 1, name: "Borrow Authorization" },
+  message: { owner: "0x0000000000000000000000000000000000000001" },
+  primaryType: "Authorization",
+  types: {
+    Authorization: [{ name: "owner", type: "address" }],
+  },
+} as const;
 
 const transactionMeta = {
   actionId: Schema.decodeSync(ActionId)("action-id"),
@@ -76,17 +100,26 @@ describe("generic external provider callback contract", () => {
     () =>
       Effect.gen(function* () {
         const signMessage = vi.fn(async () => "signed-message");
+        const signTypedData = vi.fn(async () => "typed-signature");
         const switchChain = vi.fn(async () => undefined);
         const sendTransaction = vi.fn(async () => ({
           type: "success" as const,
           txHash: "broadcast-hash",
         }));
         const provider = new ExternalProvider(
-          makeProviderRef({ signMessage, switchChain, sendTransaction })
+          makeProviderRef({
+            signMessage,
+            signTypedData,
+            switchChain,
+            sendTransaction,
+          })
         );
 
         expect(yield* provider.signMessage("message-hash")).toBe(
           "signed-message"
+        );
+        expect(yield* provider.signTypedData(typedData)).toBe(
+          "typed-signature"
         );
         expect(yield* provider.switchChain({ chainId: 501 })).toBeUndefined();
         expect(
@@ -94,6 +127,7 @@ describe("generic external provider callback contract", () => {
         ).toBe("broadcast-hash");
 
         expect(signMessage).toHaveBeenCalledWith("message-hash");
+        expect(signTypedData).toHaveBeenCalledWith(typedData);
         expect(switchChain).toHaveBeenCalledWith(501);
         expect(sendTransaction).toHaveBeenCalledWith(
           transaction,
@@ -154,13 +188,13 @@ describe("generic external provider callback contract", () => {
 
         expect(
           yield* provider.sendBorrowTransaction(
-            transaction,
+            borrowTransaction,
             borrowTransactionMeta
           )
         ).toBe("borrow-hash");
 
         expect(sendBorrowTransaction).toHaveBeenCalledWith(
-          transaction,
+          borrowTransaction,
           borrowTransactionMeta
         );
         expect(sendTransaction).not.toHaveBeenCalled();
@@ -180,7 +214,10 @@ describe("generic external provider callback contract", () => {
         );
 
         const error = yield* Effect.flip(
-          provider.sendBorrowTransaction(transaction, borrowTransactionMeta)
+          provider.sendBorrowTransaction(
+            borrowTransaction,
+            borrowTransactionMeta
+          )
         );
 
         expect(error).toBeInstanceOf(ExternalProviderError);

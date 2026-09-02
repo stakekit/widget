@@ -4,7 +4,9 @@ import {
   isBorrowExternalProvider,
 } from "../../public-api/external-provider-contract";
 import type {
+  SKBorrowTx,
   SKBorrowTxMeta,
+  SKEip712TypedData,
   SKExternalProviders,
   SKTx,
   SKTxMeta,
@@ -41,7 +43,7 @@ export class ExternalProvider {
     return sendExternalTransaction(() => sendTransaction(tx, txMeta));
   }
 
-  sendBorrowTransaction(tx: SKTx, txMeta: SKBorrowTxMeta) {
+  sendBorrowTransaction(tx: SKBorrowTx, txMeta: SKBorrowTxMeta) {
     const config = this.variantProvider.current;
     if (!isBorrowExternalProvider(config)) {
       return Effect.fail(
@@ -72,6 +74,23 @@ export class ExternalProvider {
   signMessage(messageHash: string) {
     return Effect.tryPromise({
       try: () => this.variantProvider.current.provider.signMessage(messageHash),
+      catch: toExternalProviderError,
+    });
+  }
+
+  signTypedData(typedData: SKEip712TypedData) {
+    const signTypedData = this.variantProvider.current.provider.signTypedData;
+    if (!signTypedData) {
+      return Effect.fail(
+        new ExternalProviderError({
+          customMessage: null,
+          message: "Typed-data signing capability is unavailable",
+        })
+      );
+    }
+
+    return Effect.tryPromise({
+      try: () => signTypedData(typedData),
       catch: toExternalProviderError,
     });
   }

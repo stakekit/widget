@@ -2,14 +2,15 @@ import { Data } from "effect";
 
 type WalletConnectionCommand = "connect" | "disconnect" | "reconnect";
 type WalletSwitchCommand = "account" | "chain";
-type WalletSigningCommand = "message" | "transaction";
+type WalletSigningCommand = "message" | "transaction" | "typed-data";
 
 type WalletCapability =
   | WalletConnectionCommand
   | WalletSwitchCommand
   | WalletSigningCommand
   | "decode-transaction"
-  | "broadcast-transaction";
+  | "broadcast-transaction"
+  | "typed-data";
 
 export class WalletConnectionError extends Data.TaggedError(
   "WalletConnectionError"

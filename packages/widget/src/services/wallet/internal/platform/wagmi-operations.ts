@@ -7,6 +7,7 @@ import {
   reconnect,
   sendTransaction,
   signMessage,
+  signTypedData,
   switchChain,
 } from "wagmi/actions";
 import type {
@@ -14,6 +15,7 @@ import type {
   WalletDisconnectInput,
   WalletReconnectInput,
   WalletSignMessageInput,
+  WalletSignTypedDataInput,
   WalletSwitchChainInput,
 } from "../../wallet-commands";
 import type { WalletEvmTransactionInput } from "../../wallet-transactions";
@@ -28,6 +30,7 @@ export class WagmiOperationsError extends Schema.TaggedError<WagmiOperationsErro
       "reconnect",
       "send-transaction",
       "sign-message",
+      "sign-typed-data",
       "switch-chain",
     ]),
   }
@@ -85,6 +88,16 @@ export const wagmiOperations = {
       try: () => signMessage(config, input),
       catch: (cause) =>
         new WagmiOperationsError({ cause, operation: "sign-message" }),
+    });
+  }),
+  signTypedData: Effect.fn("signTypedData")(function* (
+    config: Config,
+    input: WalletSignTypedDataInput
+  ): Effect.fn.Return<Hex, WagmiOperationsError> {
+    return yield* Effect.tryPromise({
+      try: () => signTypedData(config, input),
+      catch: (cause) =>
+        new WagmiOperationsError({ cause, operation: "sign-typed-data" }),
     });
   }),
   switchChain: Effect.fn("switchChain")(function* (

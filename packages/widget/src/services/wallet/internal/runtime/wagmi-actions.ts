@@ -5,6 +5,7 @@ import type {
   WalletDisconnectInput,
   WalletReconnectInput,
   WalletSignMessageInput,
+  WalletSignTypedDataInput,
   WalletSwitchChainInput,
 } from "../../wallet-commands";
 import {
@@ -99,6 +100,21 @@ export const makeWagmiActions = Effect.gen(function* () {
               new WalletSigningError({
                 cause: error.cause,
                 operation: "message",
+              })
+          )
+        );
+    }),
+    signTypedData: Effect.fn("signTypedData")(function* (
+      input: WalletSignTypedDataInput
+    ) {
+      return yield* operations
+        .signTypedData(config, { ...input, connector: undefined })
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new WalletSigningError({
+                cause: error.cause,
+                operation: "typed-data",
               })
           )
         );

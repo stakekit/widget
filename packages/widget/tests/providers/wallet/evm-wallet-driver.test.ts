@@ -3,6 +3,7 @@ import { Effect } from "effect";
 import type { Hash } from "viem";
 import { zeroAddress } from "viem";
 import {
+  decodeBorrowEvmTransaction,
   decodeEvmTransaction,
   makeEvmWalletDriver,
 } from "../../../src/services/wallet/internal/adapters/evm/driver";
@@ -20,6 +21,17 @@ const transaction = (fees: object) =>
     value: "12",
     ...fees,
   });
+
+const borrowTransactionWithoutNonce = JSON.stringify({
+  chainId: 1,
+  data: "0x1234",
+  from: zeroAddress,
+  gasLimit: "21000",
+  gasPrice: "7",
+  to: zeroAddress,
+  type: 0,
+  value: "12",
+});
 
 describe("EVM wallet driver", () => {
   it.effect(
@@ -62,6 +74,19 @@ describe("EVM wallet driver", () => {
     })
   );
 
+  it.effect("accepts an omitted nonce only for Borrow transactions", () =>
+    Effect.gen(function* () {
+      expect(
+        yield* decodeBorrowEvmTransaction(borrowTransactionWithoutNonce)
+      ).toMatchObject({ gasPrice: 7n, type: "legacy" });
+
+      const failure = yield* Effect.flip(
+        decodeEvmTransaction(borrowTransactionWithoutNonce)
+      );
+      expect(failure._tag).toBe("WalletDecodeError");
+    })
+  );
+
   it.effect("prepares an EIP-1559 request and preserves both fee fields", () =>
     Effect.gen(function* () {
       expect(
@@ -90,7 +115,10 @@ describe("EVM wallet driver", () => {
       const driver = makeEvmWalletDriver({ sendTransaction });
 
       expect(
-        yield* driver.signTransaction({ tx: transaction({ gasPrice: "7" }) })
+        yield* driver.signTransaction({
+          family: "classic",
+          tx: transaction({ gasPrice: "7" }),
+        })
       ).toEqual({ broadcasted: true, signedTx: hash });
       expect(sendTransaction).toHaveBeenCalledWith(
         expect.objectContaining({ gasPrice: 7n, type: "legacy" })
@@ -107,10 +135,13 @@ describe("EVM wallet driver", () => {
       });
 
       const decodeFailure = yield* Effect.flip(
-        driver.signTransaction({ tx: "not-json" })
+        driver.signTransaction({ family: "classic", tx: "not-json" })
       );
       const broadcastFailure = yield* Effect.flip(
-        driver.signTransaction({ tx: transaction({ gasPrice: "7" }) })
+        driver.signTransaction({
+          family: "classic",
+          tx: transaction({ gasPrice: "7" }),
+        })
       );
 
       expect(decodeFailure._tag).toBe("WalletDecodeError");

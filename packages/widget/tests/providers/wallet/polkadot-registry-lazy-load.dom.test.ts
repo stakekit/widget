@@ -214,6 +214,7 @@ describe("Polkadot registry lazy load", () => {
         expect(evaluated.polkadotLedgerTransaction).toBe(0);
 
         yield* prepareTransaction({
+          family: "classic",
           network: "cosmos",
           tx: "{}",
           txMeta: {
@@ -233,6 +234,7 @@ describe("Polkadot registry lazy load", () => {
         const prepareTransaction = yield* makePrepareLedgerLiveTransaction;
 
         yield* prepareTransaction({
+          family: "classic",
           network: "polkadot",
           tx: polkadotLedgerTx,
           txMeta,
@@ -242,6 +244,7 @@ describe("Polkadot registry lazy load", () => {
         expect(buildPolkadotLedgerTransaction).toHaveBeenCalledTimes(1);
 
         yield* prepareTransaction({
+          family: "classic",
           network: "polkadot",
           tx: polkadotLedgerTx,
           txMeta,

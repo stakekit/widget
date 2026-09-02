@@ -1,6 +1,9 @@
 import { Effect, Match } from "effect";
 import type { Action as BorrowAction } from "../../../domain/borrow/execution/action";
-import { decodeBorrowTransactionForWallet } from "../../../domain/borrow/execution/transaction";
+import {
+  decodeBorrowTransactionForWallet,
+  decodeBorrowTypedDataForWallet,
+} from "../../../domain/borrow/execution/transaction";
 import type { Network } from "../../../domain/network/network";
 import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
 import type { SKBorrowTxMeta } from "../../../public-api/types";
@@ -22,7 +25,7 @@ type WalletSignFailure =
 
 const walletSignFailureReason = (
   cause: WalletSignFailure,
-  operation: "message" | "transaction"
+  operation: "message" | "transaction" | "typed-data"
 ): TransactionSignFailureReason =>
   Match.valueTags(cause, {
     WalletBroadcastError: (cause) => ({
@@ -244,6 +247,33 @@ export const makePrepareAndSign = Effect.gen(function* () {
       }),
       Match.tag("Borrow", ({ domain, transaction }) => {
         const { source } = transaction;
+        const signingFormat = source.transaction.signingFormat;
+        if (signingFormat === "EIP712_TYPED_DATA") {
+          return decodeBorrowTypedDataForWallet(source.transaction).pipe(
+            Effect.mapError((cause) => fail({ _tag: "DecodeFailed", cause })),
+            Effect.flatMap((typedData) =>
+              wallet.signTypedData(typedData).pipe(
+                Effect.map((signedTx) => ({
+                  broadcasted: false as const,
+                  signedTx,
+                })),
+                Effect.mapError((cause) =>
+                  fail(walletSignFailureReason(cause, "typed-data"))
+                )
+              )
+            )
+          );
+        }
+
+        if (
+          signingFormat !== undefined &&
+          signingFormat !== "EVM_TRANSACTION"
+        ) {
+          return Effect.fail(
+            fail({ _tag: "UnsupportedBorrowSigningFormat", signingFormat })
+          );
+        }
+
         const txMeta = getBorrowTransactionMeta({
           action: domain.action,
           transaction: source.transaction,

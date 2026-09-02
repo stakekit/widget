@@ -5,6 +5,7 @@ export type {
   BittensorTx,
   BundledSKWidgetProps,
   SKBorrowExternalProviders,
+  SKBorrowTx,
   SKBorrowTxMeta,
   SKBorrowWallet,
   SKTheme,

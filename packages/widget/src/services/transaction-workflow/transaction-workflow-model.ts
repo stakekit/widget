@@ -153,11 +153,18 @@ export type TransactionSignFailureReason =
     }
   | { readonly _tag: "MissingUnsignedPayload" }
   | { readonly _tag: "MissingBorrowMeta" }
+  | {
+      readonly _tag: "UnsupportedBorrowSigningFormat";
+      readonly signingFormat: Exclude<
+        NonNullable<BorrowTransaction["signingFormat"]>,
+        "EIP712_TYPED_DATA" | "EVM_TRANSACTION"
+      >;
+    }
   | { readonly _tag: "DecodeFailed"; readonly cause: Schema.SchemaError }
   | {
       readonly _tag: "WalletOperationFailed";
       readonly cause: TransactionSignWalletOperationCause;
-      readonly operation: "message" | "transaction";
+      readonly operation: "message" | "transaction" | "typed-data";
     };
 
 const transactionSignFailureMessage = (
@@ -191,11 +198,13 @@ const transactionSignFailureMessage = (
     MissingUnsignedPayload: () => "The transaction has no unsigned payload.",
     MissingBorrowMeta: () =>
       "Borrow action metadata is unavailable for signing.",
+    UnsupportedBorrowSigningFormat: () =>
+      "This borrow transaction requires an unsupported signing method.",
     DecodeFailed: () => "Borrow transaction payload could not be decoded.",
     WalletOperationFailed: ({ operation }) =>
-      operation === "message"
-        ? "Message signing failed."
-        : "Transaction signing failed.",
+      operation === "transaction"
+        ? "Transaction signing failed."
+        : "Message signing failed.",
   });
 
 export class TransactionSignError extends Data.TaggedError(

@@ -530,6 +530,92 @@ describe("transaction workflow runtime", () => {
             reason: { _tag: "DecodeFailed" },
           },
         });
+
+        const signTransaction = vi.fn(() =>
+          Effect.fail(
+            new WalletSigningError({
+              cause: new Error("typed data reached transaction signing"),
+              operation: "transaction",
+            })
+          )
+        );
+        const signTypedData = vi.fn(() =>
+          Effect.fail(
+            new WalletSigningError({
+              cause: new Error("typed-data signing rejected"),
+              operation: "typed-data",
+            })
+          )
+        );
+        const typedDataAction = borrowAction({
+          id: "borrow-typed-data",
+          transactions: [
+            borrowTransaction("typed-data", {
+              signablePayload: JSON.stringify({
+                domain: {
+                  chainId: "8453",
+                  name: "Borrow Authorization",
+                  verifyingContract:
+                    "0x0000000000000000000000000000000000000002",
+                  version: "1",
+                },
+                message: { owner: address },
+                primaryType: "Authorization",
+                types: {
+                  Authorization: [{ name: "owner", type: "address" }],
+                  EIP712Domain: [{ name: "name", type: "string" }],
+                },
+              }),
+              signingFormat: "EIP712_TYPED_DATA",
+            }),
+          ],
+        });
+        const typedDataPayload = yield* Effect.scoped(
+          Effect.gen(function* () {
+            const machine = yield* makeWorkflowFromService({
+              capabilities: makeCapabilities({
+                initialWalletState: makeConnectedWalletState(borrowWalletScope),
+                wallet: { signTransaction, signTypedData },
+              }),
+              key: new BorrowTransactionWorkflowInput({
+                action: typedDataAction,
+                walletScope: borrowWalletScope,
+              }),
+            });
+            const failed = yield* waitForState(
+              machine,
+              (state) => state._tag === "SignFailed"
+            );
+            return Option.getOrThrow(yield* Fiber.join(failed));
+          })
+        );
+
+        expect(typedDataPayload).toMatchObject({
+          _tag: "SignFailed",
+          error: {
+            _tag: "TransactionSignError",
+            message: "Message signing failed.",
+            reason: {
+              _tag: "WalletOperationFailed",
+              operation: "typed-data",
+            },
+            transactionId: "typed-data",
+          },
+        });
+        expect(signTransaction).not.toHaveBeenCalled();
+        expect(signTypedData).toHaveBeenCalledWith({
+          domain: {
+            chainId: 8453,
+            name: "Borrow Authorization",
+            verifyingContract: "0x0000000000000000000000000000000000000002",
+            version: "1",
+          },
+          message: { owner: address },
+          primaryType: "Authorization",
+          types: {
+            Authorization: [{ name: "owner", type: "address" }],
+          },
+        });
       })
   );
 

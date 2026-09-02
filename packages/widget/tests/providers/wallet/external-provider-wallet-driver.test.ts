@@ -1,4 +1,4 @@
-import { describe, expect, it } from "@effect/vitest";
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect } from "effect";
 import { zeroAddress } from "viem";
 import type { Connector } from "wagmi";
@@ -16,6 +16,25 @@ const tx = JSON.stringify({
   type: 0,
 });
 
+const txWithoutNonce = JSON.stringify({
+  chainId: 1,
+  data: "0x1234",
+  from: zeroAddress,
+  gasLimit: "21000",
+  gasPrice: "1",
+  to: zeroAddress,
+  type: 0,
+});
+
+const typedData = {
+  domain: { chainId: 1, name: "Borrow Authorization" },
+  message: { owner: zeroAddress },
+  primaryType: "Authorization",
+  types: {
+    Authorization: [{ name: "owner", type: "address" }],
+  },
+} as const;
+
 type ExternalProviderTransactionInput = Parameters<
   ReturnType<typeof makeExternalProviderWalletDriver>["signTransaction"]
 >[0];
@@ -26,6 +45,23 @@ const txMeta = {} as Extract<
 >["txMeta"];
 
 describe("external-provider wallet driver", () => {
+  it.effect("routes typed data through the host signing capability", () =>
+    Effect.gen(function* () {
+      const signTypedData = vi.fn(() => Effect.succeed("typed-signature"));
+      const connector = {
+        id: "externalProviderConnector",
+        signTypedData,
+      } as unknown as Connector;
+
+      expect(
+        yield* makeExternalProviderWalletDriver({ connector }).signTypedData(
+          typedData
+        )
+      ).toBe("typed-signature");
+      expect(signTypedData).toHaveBeenCalledWith(typedData);
+    })
+  );
+
   it.effect(
     "reads fresh host callbacks and preserves their Promise contract",
     () =>
@@ -144,6 +180,53 @@ describe("external-provider wallet driver", () => {
   );
 
   it.effect(
+    "leaves an omitted Borrow nonce for the host wallet to select",
+    () =>
+      Effect.gen(function* () {
+        let received: unknown;
+        const connector = {
+          id: "externalProviderConnector",
+          sendBorrowTransaction: (input: unknown) => {
+            received = input;
+            return Effect.succeed("borrow-hash");
+          },
+        } as unknown as Connector;
+
+        yield* makeExternalProviderWalletDriver({ connector }).signTransaction({
+          address: zeroAddress,
+          family: "borrow",
+          network: "ethereum",
+          tx: txWithoutNonce,
+          txMeta: {
+            actionId: "borrow-action-id",
+            actionType: "borrow",
+            address: zeroAddress,
+            integrationId: "aave-v3",
+            rawArguments: {
+              amount: "1",
+              marketId: "aave-v3-ethereum-usdc",
+            },
+            txId: "borrow-transaction-id",
+            txType: "BORROW",
+          },
+        });
+
+        expect(received).toEqual({
+          type: "evm",
+          tx: {
+            chainId: "0x1",
+            data: "0x1234",
+            from: zeroAddress,
+            gas: "0x5208",
+            gasPrice: "0x1",
+            to: zeroAddress,
+            type: "0x1",
+          },
+        });
+      })
+  );
+
+  it.effect(
     "fails invalid host transaction payloads before invoking the callback",
     () =>
       Effect.gen(function* () {
@@ -160,7 +243,7 @@ describe("external-provider wallet driver", () => {
             address: zeroAddress,
             family: "classic",
             network: "ethereum",
-            tx: "{}",
+            tx: txWithoutNonce,
             txMeta,
           })
         );

@@ -31,11 +31,18 @@ vi.mock("@polkadot/types", () => ({
   },
 }));
 
-type PrepareParams = { network: string; tx: string; txMeta?: SKTxMeta };
+type PrepareParams = {
+  family?: "borrow" | "classic";
+  network: string;
+  tx: string;
+  txMeta?: SKTxMeta;
+};
 
 const prepared = (params: PrepareParams) =>
   makePrepareLedgerLiveTransaction.pipe(
-    Effect.flatMap((prepareTransaction) => prepareTransaction(params))
+    Effect.flatMap((prepareTransaction) =>
+      prepareTransaction({ ...params, family: params.family ?? "classic" })
+    )
   );
 
 const prepare = (params: PrepareParams) => prepared(params);
@@ -115,7 +122,49 @@ const polkadotBondParams = {
   }),
 };
 
+const evmTxWithoutNonce = JSON.stringify({
+  chainId: 1,
+  data: "0x1234",
+  from: "0x0000000000000000000000000000000000000001",
+  gasLimit: "21000",
+  gasPrice: "1",
+  to: "0x0000000000000000000000000000000000000002",
+  type: 0,
+  value: "0",
+});
+
 describe("prepareLedgerLiveTransaction", () => {
+  it.effect("leaves an omitted EVM nonce for Ledger Live to select", () =>
+    Effect.gen(function* () {
+      expect(
+        yield* prepare({
+          family: "borrow",
+          network: "ethereum",
+          tx: evmTxWithoutNonce,
+        })
+      ).toEqual({
+        amount: "0",
+        data: "1234",
+        family: "ethereum",
+        gasLimit: "21000",
+        gasPrice: "1",
+        recipient: "0x0000000000000000000000000000000000000002",
+      });
+    })
+  );
+
+  it.effect("requires an EVM nonce for classic Ledger transactions", () =>
+    Effect.gen(function* () {
+      const failure = yield* prepareFailure({
+        network: "ethereum",
+        tx: evmTxWithoutNonce,
+        txMeta: createTxMeta({}),
+      });
+
+      expect(failure._tag).toBe("LedgerTransactionPreparationError");
+    })
+  );
+
   it.effect(
     "builds Tron vote counts in TRX units distributed across validators",
     () =>

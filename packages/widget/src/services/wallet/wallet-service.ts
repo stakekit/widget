@@ -18,6 +18,7 @@ import {
   routeWalletLedgerAccountRequest,
   routeWalletMessage,
   routeWalletTransaction,
+  routeWalletTypedData,
 } from "./internal/runtime/router";
 import { makeWalletStateRuntime } from "./internal/runtime/state";
 import { WalletStorageCleanup } from "./internal/runtime/wallet-storage-cleanup";
@@ -28,6 +29,7 @@ import {
 } from "./wallet-command-identity";
 import type {
   WalletSignMessageInput,
+  WalletSignTypedDataInput,
   WalletSwitchAccountInput,
 } from "./wallet-commands";
 import type {
@@ -141,6 +143,13 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
     ) {
       return yield* withContext((routing) =>
         routeWalletMessage(routing, input)
+      );
+    }),
+    signTypedData: Effect.fn("signTypedData")(function* (
+      input: WalletSignTypedDataInput
+    ) {
+      return yield* withContext((routing) =>
+        routeWalletTypedData(routing, input)
       );
     }),
     signTransaction: Effect.fn("signTransaction")(function* (

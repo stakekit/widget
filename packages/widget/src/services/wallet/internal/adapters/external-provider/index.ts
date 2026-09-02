@@ -22,7 +22,10 @@ const configMeta = {
 type ExtraProps = ConnectorWithFilteredChains &
   Pick<
     ExternalProvider,
-    "sendBorrowTransaction" | "sendTransaction" | "signMessage"
+    | "sendBorrowTransaction"
+    | "sendTransaction"
+    | "signMessage"
+    | "signTypedData"
   > & {
     onSupportedChainsChanged: (args: {
       supportedChainIds: number[];
@@ -177,6 +180,7 @@ export const externalProviderConnector = (
               provider.sendBorrowTransaction.bind(provider),
             sendTransaction: provider.sendTransaction.bind(provider),
             signMessage: provider.signMessage.bind(provider),
+            signTypedData: provider.signTypedData.bind(provider),
             $filteredChains: filteredChains.changes,
             onSupportedChainsChanged,
           };

@@ -5,6 +5,7 @@ export type {
   ActionMeta,
   BittensorTx,
   SKBorrowExternalProviders,
+  SKBorrowTx,
   SKBorrowTxMeta,
   SKBorrowWallet,
   SKTheme,

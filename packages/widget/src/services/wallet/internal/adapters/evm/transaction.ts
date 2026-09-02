@@ -33,38 +33,53 @@ const HexQuantity = Schema.String.check(
 );
 const EvmBaseUnitQuantity = Schema.Union([ExactBaseUnitAmount, HexQuantity]);
 
-const UnsignedEvmTransaction = Schema.Struct({
+const unsignedEvmTransactionFields = {
   data: HexString,
   to: EvmAddress,
   gasLimit: EvmBaseUnitQuantity,
   from: EvmAddress,
   value: Schema.optionalKey(EvmBaseUnitQuantity),
-  nonce: Schema.Finite,
   type: Schema.Finite,
   gasPrice: Schema.optionalKey(EvmBaseUnitQuantity),
   maxFeePerGas: Schema.optionalKey(EvmBaseUnitQuantity),
   maxPriorityFeePerGas: Schema.optionalKey(EvmBaseUnitQuantity),
   chainId: Schema.Finite,
+};
+
+const UnsignedEvmTransaction = Schema.Struct({
+  ...unsignedEvmTransactionFields,
+  nonce: Schema.Finite,
+});
+
+const UnsignedBorrowEvmTransaction = Schema.Struct({
+  ...unsignedEvmTransactionFields,
+  nonce: Schema.optionalKey(Schema.Finite),
 });
 
 export const unsignedEVMTransactionCodec = UnsignedEvmTransaction;
+export const unsignedBorrowEVMTransactionCodec = UnsignedBorrowEvmTransaction;
 
 const UnsignedEvmTransactionFromJson = Schema.fromJsonString(
   UnsignedEvmTransaction
+);
+const UnsignedBorrowEvmTransactionFromJson = Schema.fromJsonString(
+  UnsignedBorrowEvmTransaction
 );
 
 export const decodeUnsignedEvmTransactionJson = (tx: string) =>
   Schema.decodeEffect(UnsignedEvmTransactionFromJson)(tx);
 
-const prepareDecodedEvmTransaction = (
-  decodedTx: typeof UnsignedEvmTransaction.Type,
+export const decodeUnsignedBorrowEvmTransactionJson = (tx: string) =>
+  Schema.decodeEffect(UnsignedBorrowEvmTransactionFromJson)(tx);
+
+const prepareDecodedEvmTransactionFields = (
+  decodedTx: typeof UnsignedBorrowEvmTransaction.Type,
   address: Address
 ) => ({
   to: decodedTx.to,
   from: address,
   data: decodedTx.data,
   value: decodedTx.value ? numberToHex(decodedTx.value) : undefined,
-  nonce: numberToHex(decodedTx.nonce),
   gas: numberToHex(decodedTx.gasLimit),
   chainId: numberToHex(decodedTx.chainId),
   ...(decodedTx.maxFeePerGas
@@ -91,5 +106,24 @@ export const decodeAndPrepareEvmTransaction = ({
   tx: string;
 }) =>
   decodeUnsignedEvmTransactionJson(tx).pipe(
-    Effect.map((decodedTx) => prepareDecodedEvmTransaction(decodedTx, address))
+    Effect.map((decodedTx) => ({
+      ...prepareDecodedEvmTransactionFields(decodedTx, address),
+      nonce: numberToHex(decodedTx.nonce),
+    }))
+  );
+
+export const decodeAndPrepareBorrowEvmTransaction = ({
+  address,
+  tx,
+}: {
+  address: Address;
+  tx: string;
+}) =>
+  decodeUnsignedBorrowEvmTransactionJson(tx).pipe(
+    Effect.map((decodedTx) => ({
+      ...prepareDecodedEvmTransactionFields(decodedTx, address),
+      ...(decodedTx.nonce === undefined
+        ? {}
+        : { nonce: numberToHex(decodedTx.nonce) }),
+    }))
   );

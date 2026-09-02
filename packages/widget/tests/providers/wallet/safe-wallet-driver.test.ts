@@ -54,7 +54,11 @@ describe("Safe wallet driver", () => {
       });
 
       expect(
-        yield* driver.signTransaction({ address: zeroAddress, tx })
+        yield* driver.signTransaction({
+          address: zeroAddress,
+          family: "classic",
+          tx,
+        })
       ).toEqual({
         broadcasted: true,
         signedTx: "0xsafe-hash",
@@ -73,7 +77,7 @@ describe("Safe wallet driver", () => {
           confirmationRetries: 2,
           confirmationSchedule: Schedule.spaced("1 millis"),
           connector: makeConnector(getTxStatus),
-        }).signTransaction({ address: zeroAddress, tx })
+        }).signTransaction({ address: zeroAddress, family: "classic", tx })
       );
 
       expect(failure._tag).toBe("WalletBroadcastError");
@@ -96,7 +100,7 @@ describe("Safe wallet driver", () => {
             confirmationRetries: 120,
             confirmationSchedule: Schedule.spaced("1 hour"),
             connector: makeConnector(getTxStatus),
-          }).signTransaction({ address: zeroAddress, tx })
+          }).signTransaction({ address: zeroAddress, family: "classic", tx })
         );
 
         yield* Effect.promise(() =>

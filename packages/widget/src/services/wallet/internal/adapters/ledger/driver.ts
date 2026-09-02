@@ -50,6 +50,7 @@ export const makeLedgerWalletDriver = ({
 
       const prepared = yield* ledgerConnector
         .prepareTransaction({
+          family: input.family,
           network: input.network,
           tx: input.tx,
           txMeta: input.family === "classic" ? input.txMeta : undefined,

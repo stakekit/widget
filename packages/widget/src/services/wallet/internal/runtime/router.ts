@@ -2,8 +2,11 @@ import type { ChainWalletBase } from "@cosmos-kit/core";
 import type { Chain } from "@stakekit/rainbowkit";
 import { Effect } from "effect";
 import type { Address } from "viem";
+import type { Connector } from "wagmi";
+import { isEvmWalletNetwork } from "../../../../domain/wallet/network";
 import type {
   WalletSignMessageInput,
+  WalletSignTypedDataInput,
   WalletSwitchAccountInput,
 } from "../../wallet-commands";
 import { WalletCapabilityUnavailableError } from "../../wallet-errors";
@@ -43,13 +46,23 @@ export type WalletRoutingContext = {
 };
 
 const unavailable = (
-  capability: "account" | "message" | "transaction",
+  capability: "account" | "message" | "transaction" | "typed-data",
   state: NormalizedWalletState
 ) =>
   new WalletCapabilityUnavailableError({
     capability,
     connectorId: state.connector?.id ?? null,
   });
+
+const canUseWagmiSigning = (connector: Connector) =>
+  !isLedgerLiveConnector(connector) &&
+  !isStellarConnector(connector) &&
+  !isSubstrateConnector(connector) &&
+  !isCosmosConnector(connector) &&
+  !isTronConnector(connector) &&
+  !isSolanaConnector(connector) &&
+  !isCardanoConnector(connector) &&
+  !isTonConnector(connector);
 
 export const routeWalletMessage = Effect.fn("routeWalletMessage")(function* (
   routing: WalletRoutingContext,
@@ -60,19 +73,41 @@ export const routeWalletMessage = Effect.fn("routeWalletMessage")(function* (
     return yield* unavailable("message", state);
   }
 
-  if (isStellarConnector(state.connector)) {
+  const { connector } = state;
+  if (isExternalProviderConnector(connector)) {
+    return yield* makeExternalProviderWalletDriver({
+      connector,
+    }).signMessage(input);
+  }
+
+  if (!isEvmWalletNetwork(state.network) || !canUseWagmiSigning(connector)) {
     return yield* unavailable("message", state);
   }
 
-  return yield* isExternalProviderConnector(state.connector)
-    ? makeExternalProviderWalletDriver({
-        connector: state.connector,
-      }).signMessage(input)
-    : actions.signMessage({
-        ...input,
-        connector: state.connector,
-      });
+  return yield* actions.signMessage({ ...input, connector });
 });
+
+export const routeWalletTypedData = Effect.fn("routeWalletTypedData")(
+  function* (routing: WalletRoutingContext, input: WalletSignTypedDataInput) {
+    const { actions, state } = routing;
+    if (state.status !== "connected") {
+      return yield* unavailable("typed-data", state);
+    }
+
+    const { connector } = state;
+    if (isExternalProviderConnector(connector)) {
+      return yield* makeExternalProviderWalletDriver({
+        connector,
+      }).signTypedData(input);
+    }
+
+    if (!isEvmWalletNetwork(state.network) || !canUseWagmiSigning(connector)) {
+      return yield* unavailable("typed-data", state);
+    }
+
+    return yield* actions.signTypedData({ ...input, connector });
+  }
+);
 
 export const routeWalletTransaction = Effect.fn("routeWalletTransaction")(
   function* (routing: WalletRoutingContext, input: WalletSignTransactionInput) {
@@ -134,6 +169,7 @@ export const routeWalletTransaction = Effect.fn("routeWalletTransaction")(
         connector,
       }).signTransaction({
         address: address as Address,
+        family: input.family,
         tx: input.tx,
       });
     }
@@ -143,6 +179,7 @@ export const routeWalletTransaction = Effect.fn("routeWalletTransaction")(
     }).signTransaction({
       account: address as Address,
       connector,
+      family: input.family,
       tx: input.tx,
     });
   }

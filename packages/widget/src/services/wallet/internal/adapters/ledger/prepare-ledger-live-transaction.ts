@@ -21,13 +21,17 @@ import {
   isEvmWalletNetwork,
 } from "../../../../../domain/wallet/network";
 import type { SKTxMeta } from "../../../../../public-api/types";
-import { unsignedEVMTransactionCodec } from "../evm/transaction";
+import {
+  unsignedBorrowEVMTransactionCodec,
+  unsignedEVMTransactionCodec,
+} from "../evm/transaction";
 import { substratePayloadCodec } from "../substrate/transaction";
 import { unsignedTonTransactionCodec } from "../ton/transaction";
 import { unsignedTronTransactionCodec } from "../tron/transaction";
 import type { BuildPolkadotLedgerTransaction } from "./polkadot-ledger-transaction";
 
 type PrepareLedgerLiveTransactionParams = {
+  family: "borrow" | "classic";
   tx: string;
   network: string;
   txMeta?: SKTxMeta;
@@ -104,7 +108,7 @@ export const makePrepareLedgerLiveTransaction: Effect.Effect<PrepareLedgerLiveTr
       })
     );
 
-    return ({ network, tx, txMeta }) =>
+    return ({ family, network, tx, txMeta }) =>
       Schema.decodeEffect(JsonValue)(tx).pipe(
         Effect.mapError(() =>
           transactionPreparationError("Failed to parse tx")
@@ -125,7 +129,7 @@ export const makePrepareLedgerLiveTransaction: Effect.Effect<PrepareLedgerLiveTr
           }
 
           return Effect.fromResult(
-            prepareSynchronousTransaction({ network, payload, txMeta })
+            prepareSynchronousTransaction({ family, network, payload, txMeta })
           ).pipe(Effect.mapError(transactionPreparationError));
         })
       );
@@ -163,16 +167,23 @@ const preparePolkadotTransaction = ({
   );
 
 const prepareSynchronousTransaction = ({
+  family,
   network,
   payload,
   txMeta,
 }: {
+  family: "borrow" | "classic";
   network: string;
   payload: unknown;
   txMeta?: SKTxMeta;
 }): Result.Result<RawTransaction, string> => {
   if (isEvmWalletNetwork(network)) {
-    return decodeSchema(unsignedEVMTransactionCodec, payload).pipe(
+    const codec =
+      family === "borrow"
+        ? unsignedBorrowEVMTransactionCodec
+        : unsignedEVMTransactionCodec;
+
+    return decodeSchema(codec, payload).pipe(
       Result.map((decodedTx) =>
         buildEthereumLedgerTransaction({
           network,
@@ -180,6 +191,10 @@ const prepareSynchronousTransaction = ({
         })
       )
     );
+  }
+
+  if (family === "borrow") {
+    return Result.fail("Unsupported Borrow network");
   }
 
   if (!txMeta) {
@@ -215,13 +230,13 @@ const buildEthereumLedgerTransaction = ({
   tx,
 }: {
   network: string;
-  tx: typeof unsignedEVMTransactionCodec.Type;
+  tx: typeof unsignedBorrowEVMTransactionCodec.Type;
 }): RawTransaction => {
   const ledgerTx: RawEthereumTransaction = {
     amount: (tx.value ?? 0n).toString(),
     recipient: tx.to,
     family: "ethereum",
-    nonce: tx.nonce,
+    ...(tx.nonce === undefined ? {} : { nonce: tx.nonce }),
     gasLimit: tx.gasLimit.toString(),
     data: Buffer.from(hexToBytes(tx.data)).toString("hex"),
   };

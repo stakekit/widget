@@ -31,10 +31,12 @@ export type ExtraProps = ConnectorWithFilteredChains & {
   noAccountPlaceholder: Address;
   deserializeTransaction: typeof deserializeTransaction;
   prepareTransaction: ({
+    family,
     network,
     tx,
     txMeta,
   }: {
+    family: "borrow" | "classic";
     network: string;
     tx: string;
     txMeta?: SKTxMeta;

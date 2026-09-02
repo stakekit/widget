@@ -26,12 +26,29 @@ export {
 
 type Hex = `0x${string}`;
 
-type DecodedEVMTransaction = {
+export type SKEip712TypedData = {
+  readonly domain: {
+    readonly chainId?: number;
+    readonly name?: string;
+    readonly salt?: Hex;
+    readonly verifyingContract?: Hex;
+    readonly version?: string;
+  };
+  readonly message: Readonly<Record<string, unknown>>;
+  readonly primaryType: string;
+  readonly types: Readonly<
+    Record<
+      string,
+      ReadonlyArray<{ readonly name: string; readonly type: string }>
+    >
+  >;
+};
+
+type DecodedEVMTransactionFields = {
   to: Hex;
   from: Hex;
   data: Hex;
   value: Hex | undefined;
-  nonce: Hex;
   gas: Hex;
   chainId: Hex;
 } & (
@@ -45,6 +62,14 @@ type DecodedEVMTransaction = {
       gasPrice: Hex | undefined;
     }
 );
+
+type DecodedEVMTransaction = DecodedEVMTransactionFields & {
+  nonce: Hex;
+};
+
+type DecodedBorrowEVMTransaction = DecodedEVMTransactionFields & {
+  nonce?: Hex;
+};
 
 type DecodedSolanaTransaction = string;
 
@@ -106,6 +131,8 @@ export type BittensorTx = {
 };
 
 export type SKTx = EVMTx | SolanaTx | TonTx | TronTx | BittensorTx;
+
+export type SKBorrowTx = { type: "evm"; tx: DecodedBorrowEVMTransaction };
 
 export type SKNetwork = Network;
 
@@ -275,6 +302,7 @@ type SKTransactionResult =
 
 export type SKWallet = {
   signMessage: (message: string) => Promise<string>;
+  signTypedData?: (typedData: SKEip712TypedData) => Promise<string>;
   switchChain: (chainId: number) => Promise<void>;
   getTransactionReceipt?(txHash: string): Promise<{ transactionHash?: string }>;
   sendTransaction(tx: SKTx, txMeta: SKTxMeta): Promise<SKTransactionResult>;
@@ -318,7 +346,7 @@ export type SKBorrowTxMeta = {
 
 export type SKBorrowWallet = SKWallet & {
   sendBorrowTransaction(
-    tx: SKTx,
+    tx: SKBorrowTx,
     txMeta: SKBorrowTxMeta
   ): Promise<SKTransactionResult>;
 };

@@ -35,6 +35,7 @@ const makeOperations = (): WagmiOperationsService => ({
   reconnect: vi.fn(() => Effect.succeed([])),
   sendTransaction: vi.fn(() => Effect.succeed(`0x${"1".repeat(64)}` as Hash)),
   signMessage: vi.fn(() => Effect.succeed("0xsigned" as Hex)),
+  signTypedData: vi.fn(() => Effect.succeed("0xtyped" as Hex)),
   switchChain: vi.fn(() => Effect.succeed(mainnet)),
 });
 
@@ -62,6 +63,14 @@ describe("Wagmi actions", () => {
       yield* commands.reconnect({ connectors: [connector] });
       yield* commands.switchChain({ chainId: mainnet.id });
       yield* commands.signMessage({ message: "hello" });
+      yield* commands.signTypedData({
+        domain: { chainId: 1, name: "Test" },
+        message: { owner: zeroAddress },
+        primaryType: "Authorization",
+        types: {
+          Authorization: [{ name: "owner", type: "address" }],
+        },
+      });
       yield* commands.sendEvmTransaction({
         data: "0x",
         gasPrice: 1n,
