@@ -1,5 +1,14 @@
 # @stakekit/widget
 
+## [0.0.283](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.282...@stakekit/widget@0.0.283) (2026-09-03)
+
+
+### Features
+
+* **widget:** add borrowing flows and migrate runtime to Effect ([#551](https://github.com/stakekit/widget/issues/551)) ([f756a38](https://github.com/stakekit/widget/commit/f756a38cb7cec15e14cfaefb593aac94bb8b025f))
+* **widget:** add collapsible split view for responsive dashboard ([#548](https://github.com/stakekit/widget/issues/548)) ([2baa313](https://github.com/stakekit/widget/commit/2baa3132ec0216051e19dc1394103bb53e42a3ef))
+* **widget:** show error screen when no yields enabled for api key ([#552](https://github.com/stakekit/widget/issues/552)) ([adb8dd0](https://github.com/stakekit/widget/commit/adb8dd0d627a7fbf7bdf1b33ebb819a7ead1334a))
+
 ## [0.0.282](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.281...@stakekit/widget@0.0.282) (2026-07-22)
 
 
