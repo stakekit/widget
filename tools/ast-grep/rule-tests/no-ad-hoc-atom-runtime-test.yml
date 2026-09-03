@@ -1,0 +1,6 @@
+id: no-ad-hoc-atom-runtime
+valid:
+  - "appRuntime.atom(program)"
+  - "walletRuntime.fn(program)"
+invalid:
+  - "Atom.runtime(layer)"

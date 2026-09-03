@@ -1,0 +1,7 @@
+id: no-direct-atom-idle-ttl
+valid:
+  - "Atom.keepAlive(atom)"
+  - "withApiResourcePolicy({ staleTime: Duration.minutes(1) })"
+invalid:
+  - "Atom.setIdleTTL(0)"
+  - "Atom.setIdleTTL(Duration.minutes(5))"

@@ -1,22 +1,24 @@
+import { DateTime } from "effect";
 import { HttpResponse, http } from "msw";
 import type {
-  YieldCreateActionDto,
-  YieldCreateManageActionDto,
-} from "../../src/domain/types/action";
-import type { TokenDto } from "../../src/domain/types/tokens";
+  ActionCommand,
+  ManageActionCommand,
+} from "../../src/domain/action/models";
+import type { Token } from "../../src/domain/token/token";
+
 import {
-  yieldApiActionFixture,
+  yieldApiActionDtoFixture,
   yieldApiProviderFixture,
-  yieldApiTransactionFixture,
+  yieldApiTransactionDtoFixture,
   yieldApiValidatorsFixture,
-  yieldApiYieldFixture,
+  yieldApiYieldDtoFixture,
   yieldBalanceFixture,
   yieldRiskSummaryFixture,
 } from "../fixtures";
 import { yieldApiRoute } from "./api-routes";
 import { mockDelay } from "./delay";
 
-const defaultToken: TokenDto = {
+const defaultToken: Token = {
   name: "Ethereum",
   symbol: "ETH",
   decimals: 18,
@@ -25,7 +27,7 @@ const defaultToken: TokenDto = {
   logoURI: "https://assets.stakek.it/tokens/eth.svg",
 };
 
-const defaultYield = yieldApiYieldFixture({
+const defaultYield = yieldApiYieldDtoFixture({
   id: "ethereum-eth-native-staking",
   token: defaultToken,
   tokens: [defaultToken],
@@ -35,35 +37,44 @@ const defaultYield = yieldApiYieldFixture({
 });
 
 const createDefaultAction = (
-  body: YieldCreateActionDto | YieldCreateManageActionDto,
+  body: ActionCommand | ManageActionCommand,
   type: "STAKE" | "UNSTAKE" | "CLAIM_REWARDS" = "STAKE"
 ) => {
-  const transaction = yieldApiTransactionFixture({
+  const transaction = yieldApiTransactionDtoFixture({
     id: "default-transaction-id",
     network: defaultToken.network,
     status: "CREATED",
     type,
   });
 
-  return yieldApiActionFixture({
+  return yieldApiActionDtoFixture({
     id: "default-action-id",
     yieldId: "yieldId" in body ? body.yieldId : defaultYield.id,
     type,
     address: body.address,
     amount: body.arguments?.amount ?? null,
-    amountRaw: body.arguments?.amount ?? null,
+    amountRaw: null,
     transactions: [transaction],
     rawArguments: body.arguments ?? null,
   });
 };
 
+const isoAt = (milliseconds: number) =>
+  DateTime.formatIso(DateTime.makeUnsafe(milliseconds));
+
 export const getYieldApiMock = () => [
+  http.get(yieldApiRoute("/v1/networks"), async () => {
+    await mockDelay();
+
+    return HttpResponse.json([{ id: defaultToken.network }]);
+  }),
+
   http.get(yieldApiRoute("/health"), async () => {
     await mockDelay();
 
     return HttpResponse.json({
       status: "OK",
-      timestamp: new Date(0).toISOString(),
+      timestamp: isoAt(0),
     });
   }),
 
@@ -114,7 +125,7 @@ export const getYieldApiMock = () => [
     await mockDelay();
 
     return HttpResponse.json(
-      yieldApiYieldFixture({
+      yieldApiYieldDtoFixture({
         ...defaultYield,
         id: String(params.yieldId),
       })
@@ -142,7 +153,7 @@ export const getYieldApiMock = () => [
     return HttpResponse.json(
       yieldApiProviderFixture({
         id: providerId,
-        logoURI: `https://assets.stakek.it/providers/${providerId}.svg`,
+        logoURI: `https://assets.stakek.it/app/composition/providers/${providerId}.svg`,
         name: providerNameById[providerId] ?? providerId,
       })
     );
@@ -170,16 +181,16 @@ export const getYieldApiMock = () => [
         offset: 0,
         limit: 20,
         interval: "day",
-        from: new Date(0).toISOString(),
-        to: new Date(2 * 24 * 60 * 60 * 1000).toISOString(),
+        from: isoAt(0),
+        to: isoAt(2 * 24 * 60 * 60 * 1000),
         items: [
-          { timestamp: new Date(0).toISOString(), rewardRate: "0.04" },
+          { timestamp: isoAt(0), rewardRate: "0.04" },
           {
-            timestamp: new Date(24 * 60 * 60 * 1000).toISOString(),
+            timestamp: isoAt(24 * 60 * 60 * 1000),
             rewardRate: "0.045",
           },
           {
-            timestamp: new Date(2 * 24 * 60 * 60 * 1000).toISOString(),
+            timestamp: isoAt(2 * 24 * 60 * 60 * 1000),
             rewardRate: "0.05",
           },
         ],
@@ -198,16 +209,16 @@ export const getYieldApiMock = () => [
         offset: 0,
         limit: 20,
         interval: "day",
-        from: new Date(0).toISOString(),
-        to: new Date(2 * 24 * 60 * 60 * 1000).toISOString(),
+        from: isoAt(0),
+        to: isoAt(2 * 24 * 60 * 60 * 1000),
         items: [
-          { timestamp: new Date(0).toISOString(), tvlUsd: "12000000" },
+          { timestamp: isoAt(0), tvlUsd: "12000000" },
           {
-            timestamp: new Date(24 * 60 * 60 * 1000).toISOString(),
+            timestamp: isoAt(24 * 60 * 60 * 1000),
             tvlUsd: "12500000",
           },
           {
-            timestamp: new Date(2 * 24 * 60 * 60 * 1000).toISOString(),
+            timestamp: isoAt(2 * 24 * 60 * 60 * 1000),
             tvlUsd: "13100000",
           },
         ],
@@ -240,7 +251,7 @@ export const getYieldApiMock = () => [
     await mockDelay();
 
     return HttpResponse.json(
-      createDefaultAction((await request.json()) as YieldCreateActionDto)
+      createDefaultAction((await request.json()) as ActionCommand)
     );
   }),
 
@@ -248,10 +259,7 @@ export const getYieldApiMock = () => [
     await mockDelay();
 
     return HttpResponse.json(
-      createDefaultAction(
-        (await request.json()) as YieldCreateActionDto,
-        "UNSTAKE"
-      )
+      createDefaultAction((await request.json()) as ActionCommand, "UNSTAKE")
     );
   }),
 
@@ -260,7 +268,7 @@ export const getYieldApiMock = () => [
 
     return HttpResponse.json(
       createDefaultAction(
-        (await request.json()) as YieldCreateManageActionDto,
+        (await request.json()) as ManageActionCommand,
         "CLAIM_REWARDS"
       )
     );
@@ -283,7 +291,7 @@ export const getYieldApiMock = () => [
       await mockDelay();
 
       return HttpResponse.json(
-        yieldApiTransactionFixture({
+        yieldApiTransactionDtoFixture({
           id: String(params.transactionId),
         })
       );
@@ -296,7 +304,7 @@ export const getYieldApiMock = () => [
       await mockDelay();
 
       return HttpResponse.json(
-        yieldApiTransactionFixture({
+        yieldApiTransactionDtoFixture({
           id: String(params.transactionId),
           status: "BROADCASTED",
         })
@@ -310,7 +318,7 @@ export const getYieldApiMock = () => [
       await mockDelay();
 
       return HttpResponse.json(
-        yieldApiTransactionFixture({
+        yieldApiTransactionDtoFixture({
           id: String(params.transactionId),
           status: "BROADCASTED",
         })

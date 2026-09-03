@@ -1,21 +1,16 @@
 {
-  "typescript.preferences.importModuleSpecifier": "relative",
+  "js/ts.preferences.importModuleSpecifier": "relative",
+  "js/ts.preferences.autoImportFileExcludePatterns": [".repos/**"],
   "editor.codeActionsOnSave": {
     "source.organizeImports.biome": "explicit"
   },
-
-  "typescript.preferences.autoImportFileExcludePatterns": ["repos/**"],
-  "javascript.preferences.autoImportFileExcludePatterns": ["repos/**"],
-
   "files.exclude": {
-    "repos/**": true
+    ".repos/**": true
   },
-
   "files.watcherExclude": {
-    "repos/**": true
+    ".repos/**": true
   },
-
   "search.exclude": {
-    "repos/**": true
+    ".repos/**": true
   }
 }

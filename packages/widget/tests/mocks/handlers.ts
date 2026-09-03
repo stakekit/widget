@@ -13,16 +13,8 @@ export const handlers = [
       url.pathname === "/health" ||
       url.pathname.startsWith("/v1/") ||
       url.pathname.startsWith("/v2/");
-    const isStakeKitApiOrigin =
-      url.origin === "https://api.stakek.it" ||
-      url.origin === "https://api.yield.xyz";
-
     if (url.origin === window.location.origin && !isAppApiPath) {
       return passthrough();
-    }
-
-    if (!isAppApiPath && !isStakeKitApiOrigin) {
-      return new HttpResponse(null, { status: 204 });
     }
 
     return HttpResponse.json(

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getThemeOverrides } from "../../src/providers/theme-wrapper";
-import { darkTheme, lightTheme } from "../../src/styles/theme/themes";
-import { portoThemeOverrides } from "../../src/styles/theme/variant-overrides/porto";
-import { utilaThemeOverrides } from "../../src/styles/theme/variant-overrides/utila";
+import { getThemeOverrides } from "../../src/app/composition/providers/theme-wrapper";
+import { darkTheme, lightTheme } from "../../src/shared/styles/theme/themes";
+import { portoThemeOverrides } from "../../src/shared/styles/theme/variant-overrides/porto";
+import { utilaThemeOverrides } from "../../src/shared/styles/theme/variant-overrides/utila";
 
 describe("getThemeOverrides", () => {
   it("keeps the default variant unthemed", () => {

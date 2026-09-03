@@ -1,18 +1,19 @@
 import { HttpResponse, http } from "msw";
 import { vitest } from "vitest";
-import type { YieldCreateActionDto } from "../../../src/domain/types/action";
-import { waitForMs } from "../../../src/utils";
+import type { ActionCommand } from "../../../src/domain/action/models";
+import { exactDecimal } from "../../../src/domain/finance/exact";
 import {
   legacyYieldFixture,
   yieldApiActionFixture,
   yieldApiTransactionFixture,
   yieldApiValidatorsFixture,
-  yieldApiYieldFixture,
+  yieldApiYieldDtoFixture,
 } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
 import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
+import { waitForMs } from "../../utils/wait";
 
 type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
 
@@ -36,7 +37,7 @@ export const setup = (worker: TestWorker) => {
   };
 
   const legacyYieldBase = legacyYieldFixture();
-  const yieldApiYieldBase = yieldApiYieldFixture();
+  const yieldApiYieldBase = yieldApiYieldDtoFixture();
   const createLegacyYield = ({
     id,
     token,
@@ -66,7 +67,7 @@ export const setup = (worker: TestWorker) => {
     token: LegacyTokenDto;
     gasFeeToken: LegacyTokenDto;
   }) =>
-    yieldApiYieldFixture({
+    yieldApiYieldDtoFixture({
       id,
       network: token.network,
       token,
@@ -151,9 +152,9 @@ export const setup = (worker: TestWorker) => {
   }) => yieldsTxGasAmountMap.set(yieldId, amount);
 
   worker.use(
-    http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await mockDelay();
-      return HttpResponse.json([avalancheCToken.network]);
+      return HttpResponse.json([{ id: avalancheCToken.network }]);
     }),
 
     http.get(legacyApiRoute("/v1/tokens"), async () => {
@@ -275,7 +276,7 @@ export const setup = (worker: TestWorker) => {
     http.post(yieldApiRoute("/v1/actions/enter"), async (info) => {
       await mockDelay();
 
-      const body = (await info.request.json()) as YieldCreateActionDto;
+      const body = (await info.request.json()) as ActionCommand;
       const selectedYield =
         body.yieldId === yieldWithSameGasAndStakeToken.yieldDto.id
           ? yieldWithSameGasAndStakeToken
@@ -288,8 +289,11 @@ export const setup = (worker: TestWorker) => {
           yieldId: selectedYield.actionDto.yieldId,
           type: selectedYield.actionDto.type,
           address: body.address,
-          amount: body.arguments?.amount ?? null,
-          amountRaw: body.arguments?.amount ?? null,
+          amount:
+            body.arguments?.amount === undefined
+              ? null
+              : exactDecimal(body.arguments.amount).toFixed(),
+          amountRaw: null,
           transactions: selectedYield.actionDto.transactions.map((tx, index) =>
             yieldApiTransactionFixture({
               id: tx.id,

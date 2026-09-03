@@ -1,0 +1,16 @@
+id: no-console-in-effect
+language: Tsx
+severity: error
+message: Use Effect.log* inside Effect programs.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+rule:
+  pattern: console.$METHOD($$$ARGS)
+  inside:
+    all:
+      - kind: call_expression
+      - regex: ^Effect\.(?:gen|fn|sync|suspend|try|tryPromise|tap|tapError)\b
+    stopBy: end

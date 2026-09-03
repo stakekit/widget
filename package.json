@@ -6,28 +6,33 @@
   ],
   "author": "Petar Todorovic <petar@omni.app> (https://github.com)",
   "license": "MIT",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.19.0"
+    }
+  },
   "scripts": {
+    "dev": "pnpm --filter @stakekit/widget dev",
     "build": "turbo run build",
-    "lint": "turbo run lint",
+    "lint": "turbo run lint //#lint:ast",
+    "lint:ast": "ast-grep scan --error=no-suppress-all --error=unused-suppression packages/widget --color=never && pnpm run test:ast",
+    "test:ast": "ast-grep test --skip-snapshot-tests --color=never",
     "test": "turbo run test",
+    "test:smoke": "pnpm --filter @stakekit/widget test:smoke",
     "format": "turbo run format",
     "clean": "turbo run clean",
-    "prepare": "husky",
-    "check-hygiene": "rev-dep config run --list-all-issues",
-    "check": "turbo run lint && pnpm run check-hygiene && turbo run test && turbo run build"
+    "prepare": "husky && pnpm --filter @stakekit/widget exec effect-tsgo patch --typescript --no-oxlint --typescript-package @typescript/native",
+    "check-hygiene": "turbo run check-hygiene --filter=@stakekit/widget",
+    "check": "turbo run lint //#lint:ast && pnpm run check-hygiene && turbo run test && turbo run build"
   },
   "devDependencies": {
+    "@ast-grep/cli": "catalog:",
     "@biomejs/biome": "catalog:",
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
+    "@effect/tsgo": "catalog:",
     "husky": "catalog:",
-    "rev-dep": "catalog:",
     "turbo": "catalog:"
-  },
-  "pnpm": {
-    "patchedDependencies": {
-      "purify-ts": "patches/purify-ts.patch",
-      "@stakekit/rainbowkit@2.2.11": "patches/@stakekit__rainbowkit@2.2.11.patch"
-    }
   }
 }

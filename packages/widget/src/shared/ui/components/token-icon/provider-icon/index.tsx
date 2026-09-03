@@ -1,0 +1,46 @@
+import type { YieldMetadata } from "../../../../../domain/earn/yield";
+import type { Token } from "../../../../../domain/token/token";
+import type { Atoms } from "../../../../styles/theme/atoms.css";
+import { NetworkLogoImage } from "../network-icon-image";
+import { TokenIconContainer } from "../token-icon-container";
+import { TokenIconImage } from "../token-icon-image";
+
+export const ProviderIcon = ({
+  token,
+  metadata,
+  tokenLogoHw,
+  tokenNetworkLogoHw,
+  hideNetwork,
+}: {
+  token: Token;
+  metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">;
+  tokenLogoHw?: Atoms["hw"];
+  tokenNetworkLogoHw?: Atoms["hw"];
+  hideNetwork?: boolean;
+}) => {
+  return (
+    <TokenIconContainer
+      hideNetwork={hideNetwork}
+      token={token}
+      metadata={metadata}
+    >
+      {({ fallbackUrl, mainUrl, name, providerIcon }) => (
+        <>
+          <TokenIconImage
+            fallbackUrl={fallbackUrl}
+            mainUrl={mainUrl}
+            name={name}
+            tokenLogoHw={tokenLogoHw}
+          />
+          {!hideNetwork && providerIcon && (
+            <NetworkLogoImage
+              networkLogoUri={providerIcon}
+              networkName={token.network}
+              tokenNetworkLogoHw={tokenNetworkLogoHw}
+            />
+          )}
+        </>
+      )}
+    </TokenIconContainer>
+  );
+};

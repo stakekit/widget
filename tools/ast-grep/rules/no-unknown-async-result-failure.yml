@@ -1,0 +1,16 @@
+id: no-unknown-async-result-failure
+language: Tsx
+severity: error
+message: Use a tagged domain error in the AsyncResult failure channel instead of unknown.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+rule:
+  pattern:
+    context: "type T = AsyncResult.AsyncResult<$A, $E>"
+    selector: generic_type
+constraints:
+  E:
+    regex: ^unknown$

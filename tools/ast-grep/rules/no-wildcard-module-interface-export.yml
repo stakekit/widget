@@ -1,0 +1,21 @@
+id: no-wildcard-module-interface-export
+language: Tsx
+severity: error
+message: Module interfaces must use explicit named exports.
+files:
+  - packages/widget/src/features/*/index.ts
+  - packages/widget/src/features/*/composition.ts
+  - packages/widget/src/features/*/views.ts
+  - packages/widget/src/features/*/runtime.ts
+  - packages/widget/src/features/borrow/*/index.ts
+  - packages/widget/src/features/borrow/*/composition.ts
+  - packages/widget/src/features/borrow/*/views.ts
+  - packages/widget/src/features/borrow/*/runtime.ts
+  - packages/widget/src/resources/*/index.ts
+  - packages/widget/src/services/api/operations.ts
+  - packages/widget/src/services/api/resource-sources.ts
+  - packages/widget/src/services/api/runtime.ts
+rule:
+  all:
+    - kind: export_statement
+    - regex: ^export\s+(?:type\s+)?\*

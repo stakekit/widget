@@ -1,0 +1,27 @@
+id: no-literal-effect-failure
+language: Tsx
+severity: error
+message: Pass a tagged domain error to Effect.fail.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+rule:
+  pattern: Effect.fail($FAILURE)
+constraints:
+  FAILURE:
+    any:
+      - kind: string
+      - kind: template_string
+      - kind: number
+      - kind: "true"
+      - kind: "false"
+      - kind: "null"
+      - all:
+          - kind: object
+          - not:
+              has:
+                regex: '^\s*_tag\s*:'
+      - kind: array
+      - kind: undefined

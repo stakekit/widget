@@ -1,0 +1,29 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+  "entry": [
+    "src/index.package.ts!",
+    "src/index.bundle.ts!",
+    "src/public-api/index.package.ts!",
+    "src/public-api/index.bundle.ts!",
+    "vite/*.ts!",
+    "tests/package-types/*.ts",
+    "tests/utils/setup.browser.ts",
+    "tests/utils/setup.dom.ts",
+    "tests/**/*.test.ts",
+    "tests/**/*.test.tsx"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}!",
+    "scripts/**/*.{ts,mts}",
+    "tests/**/*.{ts,tsx}",
+    "vite/**/*.ts!"
+  ],
+  "ignoreIssues": {
+    "src/generated/**": ["exports", "types"]
+  },
+  "ignoreDependencies": [
+    "@effect/language-service",
+    "@effect/openapi-generator",
+    "@effect/platform-node"
+  ]
+}

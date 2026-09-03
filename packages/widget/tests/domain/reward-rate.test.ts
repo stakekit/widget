@@ -2,18 +2,22 @@ import { describe, expect, it } from "vitest";
 import {
   getEffectiveYieldRewardRateDetails,
   getRewardRateBreakdown,
-} from "../../src/domain/types/reward-rate";
-import type { RewardDto } from "../../src/generated/api/yield";
+  type YieldRewardRate,
+} from "../../src/domain/earn/reward-rate";
+import { exactDecimal } from "../../src/domain/finance/exact";
 import {
   yieldApiValidatorFixture,
   yieldApiYieldFixture,
   yieldRewardRateFixture,
 } from "../fixtures";
+import { decodeValidator } from "../utils/validators";
 
 const token = yieldApiYieldFixture().token;
 
-const nativeComponent = (rate: number): RewardDto => ({
-  rate,
+const nativeComponent = (
+  rate: number
+): YieldRewardRate["components"][number] => ({
+  rate: exactDecimal(rate),
   rateType: "APY",
   token,
   yieldSource: "staking",
@@ -32,48 +36,56 @@ describe("getEffectiveYieldRewardRateDetails", () => {
         selectedValidators: new Map(),
         yieldDto,
       })
-    ).toBe(rewardRate);
+    ).toBe(yieldDto.rewardRate);
   });
 
   it("uses the selected validator reward rate", () => {
     const yieldDto = yieldApiYieldFixture({
       rewardRate: yieldRewardRateFixture({ total: 0.1539 }),
     });
-    const validator = yieldApiValidatorFixture({
-      address: "validator-1",
-      rewardRate: yieldRewardRateFixture({
-        total: 0.1582,
-        components: [nativeComponent(0.1582)],
-      }),
-    });
+    const validator = decodeValidator(
+      yieldApiValidatorFixture({
+        address: "validator-1",
+        rewardRate: yieldRewardRateFixture({
+          total: 0.1582,
+          components: [nativeComponent(0.1582)],
+        }),
+      })
+    );
 
     const rewardRate = getEffectiveYieldRewardRateDetails({
       selectedValidators: new Map([[validator.address, validator]]),
       yieldDto,
     });
 
-    expect(rewardRate?.total).toBe(0.1582);
-    expect(getRewardRateBreakdown(rewardRate)[0]?.rate).toBe(0.1582);
+    expect(rewardRate?.total.isEqualTo("0.1582")).toBe(true);
+    expect(
+      getRewardRateBreakdown(rewardRate)[0]?.rate.isEqualTo("0.1582")
+    ).toBe(true);
   });
 
   it("averages selected validator reward rates", () => {
     const yieldDto = yieldApiYieldFixture({
       rewardRate: yieldRewardRateFixture({ total: 0.1539 }),
     });
-    const firstValidator = yieldApiValidatorFixture({
-      address: "validator-1",
-      rewardRate: yieldRewardRateFixture({
-        total: 0.16,
-        components: [nativeComponent(0.16)],
-      }),
-    });
-    const secondValidator = yieldApiValidatorFixture({
-      address: "validator-2",
-      rewardRate: yieldRewardRateFixture({
-        total: 0.18,
-        components: [nativeComponent(0.18)],
-      }),
-    });
+    const firstValidator = decodeValidator(
+      yieldApiValidatorFixture({
+        address: "validator-1",
+        rewardRate: yieldRewardRateFixture({
+          total: 0.16,
+          components: [nativeComponent(0.16)],
+        }),
+      })
+    );
+    const secondValidator = decodeValidator(
+      yieldApiValidatorFixture({
+        address: "validator-2",
+        rewardRate: yieldRewardRateFixture({
+          total: 0.18,
+          components: [nativeComponent(0.18)],
+        }),
+      })
+    );
 
     const rewardRate = getEffectiveYieldRewardRateDetails({
       selectedValidators: new Map([
@@ -83,7 +95,9 @@ describe("getEffectiveYieldRewardRateDetails", () => {
       yieldDto,
     });
 
-    expect(rewardRate?.total).toBeCloseTo(0.17);
-    expect(getRewardRateBreakdown(rewardRate)[0]?.rate).toBeCloseTo(0.17);
+    expect(rewardRate?.total.isEqualTo("0.17")).toBe(true);
+    expect(getRewardRateBreakdown(rewardRate)[0]?.rate.isEqualTo("0.17")).toBe(
+      true
+    );
   });
 });

@@ -1,0 +1,122 @@
+import { useTranslation } from "react-i18next";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
+import { getDashboardYieldCategory } from "../../../../../domain/earn/yield";
+import { formatNetworkName } from "../../../../../shared/lib/formatters";
+import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
+import { Box } from "../../../../../shared/ui/primitives/box";
+import { HeaderBadge } from "../../../../../shared/ui/primitives/header-badge";
+import { Image } from "../../../../../shared/ui/primitives/image";
+import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { formatDisplayTokenSymbol } from "../../../model/yield-details-formatters";
+import * as styles from "./styles.css";
+
+type YieldDetailsHeaderBadge = Readonly<{
+  readonly label: string;
+  readonly tone: "default" | "auto";
+}>;
+
+export const YieldDetailsHeader = ({
+  headerBadges,
+  providerName,
+  yieldDto,
+}: {
+  readonly headerBadges: ReadonlyArray<YieldDetailsHeaderBadge>;
+  readonly providerName: string;
+  readonly yieldDto: EarnYieldWithProvider;
+}) => (
+  <Box display="flex" alignItems="center" gap="1">
+    <TokenIcon
+      metadata={{
+        logoURI: yieldDto.metadata.logoURI,
+        name: yieldDto.metadata.name,
+        provider: yieldDto.provider,
+      }}
+      token={yieldDto.token}
+      tokenLogoHw="12"
+    />
+
+    <Box minWidth="0">
+      <Text className={styles.titleText} variant={{ weight: "bold" }}>
+        {formatDetailsTitle({ providerName, yieldDto })}
+      </Text>
+
+      <Box className={styles.headerBadgeRow}>
+        <ProviderLabel providerName={providerName} yieldDto={yieldDto} />
+
+        <Text
+          className={styles.headerProviderText}
+          variant={{ type: "muted", weight: "normal" }}
+        >
+          {" · "}
+          {formatNetworkName(yieldDto.network)}
+          {" · "}
+          {formatDisplayTokenSymbol(yieldDto)}
+        </Text>
+
+        {headerBadges.length > 0 ? (
+          <Text
+            as="span"
+            className={styles.headerBadgeSeparator}
+            variant={{ type: "muted", weight: "normal" }}
+          >
+            {" · "}
+          </Text>
+        ) : null}
+
+        {headerBadges.map((badge) => (
+          <HeaderBadge
+            key={badge.label}
+            label={badge.label}
+            tone={badge.tone}
+          />
+        ))}
+      </Box>
+    </Box>
+  </Box>
+);
+
+const ProviderLabel = ({
+  providerName,
+  yieldDto,
+}: {
+  readonly providerName: string;
+  readonly yieldDto: EarnYieldWithProvider;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <Box display="flex" alignItems="center" gap="1" flexShrink={0}>
+      <Image
+        wrapperProps={{ hw: "5" }}
+        imgProps={{ borderRadius: "base" }}
+        src={yieldDto.provider?.logoURI}
+        fallbackName={providerName}
+      />
+      <Text
+        className={styles.headerProviderLabelText}
+        variant={{ weight: "normal" }}
+      >
+        {t("positions.via", { providerName, count: 1 })}
+      </Text>
+    </Box>
+  );
+};
+
+const formatDetailsTitle = ({
+  providerName,
+  yieldDto,
+}: {
+  readonly providerName: string;
+  readonly yieldDto: EarnYieldWithProvider;
+}) => {
+  const name = yieldDto.metadata.name;
+
+  if (
+    getDashboardYieldCategory(yieldDto) !== "stake" ||
+    name.toLowerCase().includes(providerName.toLowerCase())
+  ) {
+    return name;
+  }
+
+  return `${name} via ${providerName}`;
+};

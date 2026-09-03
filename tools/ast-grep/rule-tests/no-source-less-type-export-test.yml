@@ -1,0 +1,17 @@
+id: no-source-less-type-export
+valid:
+  - 'export type { Model } from "./model"'
+  - 'export { type Model } from "./model"'
+  - 'export type Model = { readonly id: string }'
+  - 'export type {}'
+  - 'export { value }'
+invalid:
+  - |-
+    import type { Model } from "./model"
+    export type { Model }
+  - |-
+    import { type Model, value } from "./model"
+    export type { Model }
+  - |-
+    import type { Model } from "./model"
+    export { type Model }

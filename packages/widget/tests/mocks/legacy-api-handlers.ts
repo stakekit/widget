@@ -1,9 +1,9 @@
 import { HttpResponse, http } from "msw";
+import { legacyYieldFixture } from "../fixtures";
 import type {
   TokenDto,
   YieldRewardsSummaryResponseDto,
-} from "../../src/generated/api/legacy";
-import { legacyYieldFixture } from "../fixtures";
+} from "../generated/legacy-api-types";
 import { legacyApiRoute } from "./api-routes";
 import { mockDelay } from "./delay";
 
@@ -24,12 +24,6 @@ const defaultYield = legacyYieldFixture({
 });
 
 export const getLegacyApiMock = () => [
-  http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
-    await mockDelay();
-
-    return HttpResponse.json([defaultToken.network]);
-  }),
-
   http.get(legacyApiRoute("/v1/tokens"), async () => {
     await mockDelay();
 

@@ -1,0 +1,16 @@
+id: no-tonumber-outside-representation
+language: Tsx
+severity: error
+message: Convert exact values to number only in representation or chart adapters.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+# Terminal .toNumber() stays in these two representation modules. Chart and
+# public numeric adapters call toChartNumber / toRepresentationNumber instead.
+# Remove an ignore only when that file no longer needs a native conversion.
+ignores:
+  - packages/widget/src/generated/**
+  - packages/widget/src/shared/lib/formatters.ts
+  - packages/widget/src/shared/lib/number-format.ts
+rule:
+  pattern: $X.toNumber()

@@ -17,8 +17,13 @@ export type AuthVerifyLoginCodeDto = {
   readonly code: string;
 };
 export type Role = "owner" | "admin" | "operator" | "member" | "superAdmin";
+export type AuthEmailLoginMfaChallengeResponseDto = {
+  readonly mfaRequired: boolean;
+  readonly challengeToken: string;
+};
 export type AuthConfirmEmailDto = { readonly hash: string };
 export type AuthUpdateDto = { readonly name: string; readonly surname: string };
+export type CampaignStatus = "draft" | "active" | "paused" | "ended";
 export type Networks =
   | "ethereum"
   | "ethereum-goerli"
@@ -36,6 +41,7 @@ export type Networks =
   | "zksync"
   | "linea"
   | "unichain"
+  | "plume"
   | "monad-testnet"
   | "monad"
   | "robinhood"
@@ -129,11 +135,10 @@ export type CampaignPayoutFrequency =
   | "daily"
   | "six_hourly"
   | "end_of_campaign";
-export type CampaignQualificationType = "min_token_amount";
 export type CampaignBudgetSpendStrategy =
   | "allow_underspend"
   | "spend_full_budget";
-export type CampaignStatus = "draft" | "active" | "paused" | "ended";
+export type CampaignQualificationType = "min_token_amount";
 export type StakeKitErrorDto = {
   readonly message: string;
   readonly code: number;
@@ -164,8 +169,8 @@ export type CampaignUserBalanceDto = {
   readonly totalUnpaid: string;
 };
 export type CampaignBalanceFreshnessDto = {
-  readonly balancesAsOfHour: string;
-  readonly pricePerShareAsOf: string;
+  readonly balancesAsOfHour: string | null;
+  readonly pricePerShareAsOf: string | null;
   readonly vaultAggregatesComputed: boolean;
 };
 export type CampaignLiabilityDto = {
@@ -198,8 +203,8 @@ export type CampaignUserPayoutEligibilityDto = {
   readonly isPayoutEligible: boolean;
   readonly totalUnpaid: string;
   readonly blacklistReason?: string | null;
-  readonly addedBy?: string;
-  readonly addedAt?: string;
+  readonly addedBy?: string | null;
+  readonly addedAt?: string | null;
 };
 export type CampaignUserEntitlementDto = {
   readonly campaignId: string;
@@ -311,15 +316,19 @@ export type CampaignAuditLogType =
   | "blacklist_reason_updated"
   | "paused"
   | "resumed"
-  | "acknowledged";
-export type CampaignConfigurationRequestType =
-  | "create_campaign"
-  | "update_configuration"
-  | "end_campaign";
+  | "acknowledged"
+  | "ended"
+  | "milestone_unlocked"
+  | "milestone_funded"
+  | "budget_top_up";
 export type CampaignConfigurationRequestStatus =
   | "pending"
   | "accepted"
   | "rejected";
+export type CampaignConfigurationRequestType =
+  | "create_campaign"
+  | "update_configuration"
+  | "end_campaign";
 export type AcceptCampaignConfigurationRequestDto = {
   readonly safeAddress?: string;
 };
@@ -337,6 +346,190 @@ export type CampaignAdminSortingOption =
   | "endTimeDesc"
   | "statusAsc"
   | "statusDesc";
+export type CampaignBlacklistBudgetHandling = "reserve" | "redistribute";
+export type AcceptCampaignV2ConfigurationRequestDto = {
+  readonly safeAddress?: string;
+  readonly feeConfigurationId?: string;
+};
+export type RejectCampaignV2ConfigurationRequestDto = {
+  readonly rejectionReason: string;
+};
+export type CampaignMilestoneStatus = "locked" | "unlocked" | "funded";
+export type CampaignV2MilestoneItemDto = {
+  readonly twTvlThreshold: string;
+  readonly tvlYearsTarget: string;
+  readonly trancheAmount: string;
+  readonly extendedEndTime?: string;
+};
+export type CampaignV2AlertFlagsDto = {
+  readonly lowBudget: boolean;
+  readonly noQualifyingUsers: boolean;
+  readonly recentPayoutFailure: boolean;
+};
+export type CampaignV2LiabilityDto = {
+  readonly totalEarned: string;
+  readonly totalPaid: string;
+  readonly totalUnpaid: string;
+  readonly recipientsCount: number;
+};
+export type BudgetProjectionV2Dto = {
+  readonly projectedTotalBudget: string;
+  readonly projectedEndTime: string;
+  readonly projectedEmissionRate: string;
+  readonly projectedRemainingBudget: string;
+  readonly remainingSeconds: number;
+  readonly currentEmissionRate: string;
+  readonly currentTotalBudget: string;
+  readonly currentEndTime: string;
+  readonly distributedBudget: string;
+  readonly unlockedBudget: string | null;
+  readonly lockedBudget: string | null;
+  readonly fundedBudget: string | null;
+  readonly releasedTrancheBudget: string | null;
+  readonly totalEarned: string;
+  readonly valid: boolean;
+  readonly validationErrors: ReadonlyArray<string>;
+};
+export type UpdateCampaignV2UserPayoutEligibilityDto = {
+  readonly isPayoutEligible: boolean;
+  readonly reason?: string;
+};
+export type CampaignV2UserPayoutEligibilityDto = {
+  readonly campaignId: string;
+  readonly address: string;
+  readonly isPayoutEligible: boolean;
+  readonly totalUnpaid: string;
+  readonly blacklistReason?: string | null;
+  readonly addedBy?: string | null;
+  readonly addedAt?: string | null;
+};
+export type CampaignV2UserEntitlementDto = {
+  readonly campaignId: string;
+  readonly address: string;
+  readonly cumulativeQualifiedBalance: string;
+  readonly totalEarned: string;
+  readonly totalPaid: string;
+  readonly totalUnpaid: string;
+};
+export type SafeTransactionDetailV2Dto = {
+  readonly batchKey: string;
+  readonly chainId: string | null;
+  readonly safeTxHash: string | null;
+  readonly executionTxHash: string | null;
+  readonly signaturesCollected: number | null;
+  readonly signaturesRequired: number | null;
+  readonly safeTxUiUrl: string | null;
+  readonly executionTxHashExplorerUrl: string | null;
+};
+export type PayoutRunBudgetStateV2Dto = {
+  readonly totalBudget: string;
+  readonly remainingBefore: string;
+  readonly distributedInRun: string;
+  readonly remainingAfter: string;
+};
+export type CampaignV2PayoutAuditDto = {
+  readonly campaignId: string;
+  readonly campaignPayoutRunId: string;
+  readonly recipientAddress: string;
+  readonly amount: string;
+  readonly txHash?: string | null;
+  readonly paidAt: string;
+};
+export type WeeklyDistributionV2Dto = {
+  readonly weekStart: string;
+  readonly totalReward: string;
+  readonly qualifyingUsers: number;
+};
+export type EligibleUserV2Dto = {
+  readonly address: string;
+  readonly totalEarned: string;
+  readonly totalPaid: string;
+  readonly totalUnpaid: string;
+  readonly cumulativeQualifiedBalance: string;
+};
+export type CampaignV2PayoutEligibilitySummaryDto = {
+  readonly campaignId: string;
+  readonly qualifiedUserCount: number;
+  readonly blacklistedUserCount: number;
+  readonly totalUserCount: number;
+};
+export type BlacklistedAddressV2Dto = {
+  readonly address: string;
+  readonly totalEarned: string;
+  readonly totalUnpaid: string;
+};
+export type CampaignV2PointsRunDto = {
+  readonly runId: string;
+  readonly status: string;
+  readonly pointsPerShareAtRun: string | null;
+  readonly createdAt: string;
+};
+export type CampaignV2UserPointsDto = {
+  readonly address: string;
+  readonly points: string;
+  readonly pointsPaid: string;
+  readonly pointsUnpaid: string;
+  readonly totalPaid: string;
+  readonly isPayoutEligible: boolean;
+};
+export type TopUpCampaignV2BudgetDto = {
+  readonly amount: string;
+  readonly targetMilestoneOrder?: number;
+};
+export type UnlockCampaignV2MilestoneDto = { readonly reason: string };
+export type WindowAccrualSummaryDto = {
+  readonly windowStart: string;
+  readonly windowEnd: string;
+  readonly qualifyingUserCount: number;
+  readonly totalQualifyingTvl: string;
+  readonly windowBudgetAllocated: string;
+  readonly windowBudgetDistributed: string;
+  readonly ceilingActive: boolean;
+  readonly calculatedApr: number | null;
+  readonly pricePerShare: string | null;
+};
+export type AccrualWindowSortField = "allocatedReward";
+export type UserWindowAccrualDto = {
+  readonly address: string;
+  readonly rawBalance: string | null;
+  readonly cappedBalance: string;
+  readonly qualified: boolean;
+  readonly qualificationReason: string;
+  readonly allocatedReward: string;
+  readonly pricePerShareApplied: string | null;
+};
+export type CampaignV2TvlStatsDto = {
+  readonly trailingPeriodStart: string;
+  readonly trailingPeriodEnd: string;
+  readonly trailingTimeWeightedTvl: string | null;
+  readonly tvlYears: string;
+};
+export type UserWindowAccrualHistoryDto = {
+  readonly windowStart: string;
+  readonly windowEnd: string;
+  readonly rawBalance: string | null;
+  readonly balance: string;
+  readonly qualified: boolean;
+  readonly qualificationReason: string;
+  readonly rewardEarned: string;
+  readonly cumulativeEarned: string;
+  readonly pricePerShareApplied: string | null;
+};
+export type CampaignV2UserBalanceDto = {
+  readonly address: string;
+  readonly currentIndexedBalanceRaw: string | null;
+  readonly inputTokenBalance: string | null;
+  readonly cappedBalance: string;
+  readonly qualified: boolean;
+  readonly totalEarned: string;
+  readonly totalPaid: string;
+  readonly totalUnpaid: string;
+};
+export type CampaignV2BalanceFreshnessDto = {
+  readonly balancesAsOf: string | null;
+  readonly pricePerShareAsOf: string | null;
+  readonly vaultAggregatesComputed: boolean;
+};
 export type CreateMasterBannedRegionDto = {
   readonly country: string;
   readonly isMandatory: boolean;
@@ -375,196 +568,111 @@ export type Team = {
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly activated: boolean;
-  readonly deletedAt: string;
+  readonly deletedAt: string | null;
   readonly contactDetails: {};
   readonly category: "pro" | "standard" | "trial";
   readonly name: string;
-  readonly serviceConditionsAcceptedAt: string;
+  readonly serviceConditionsAcceptedAt: string | null;
   readonly type: "provider" | "integrator";
   readonly providerId: string | null;
   readonly oavEnabled: boolean;
   readonly isMfaEnforced: boolean;
   readonly isMultiTenant: boolean;
+  readonly solanaStakeAccountMergeEnabled: boolean;
+  readonly borrowRevokeAuthorizationEnabled: boolean;
   readonly referredBy: string | null;
   readonly referralCode: string | null;
 };
-export type KeyCategory = "pro" | "standard" | "trial";
-export type CreateProjectDto = {
-  readonly description?: string;
-  readonly name: string;
+export type AuditLogDto = {
+  readonly id: string;
+  readonly event: string;
+  readonly actorEmail: string;
+  readonly actorRole: string;
+  readonly targetId: string | null;
+  readonly targetType: string | null;
+  readonly metadata: { readonly [x: string]: unknown } | null;
+  readonly ipAddress: string | null;
+  readonly createdAt: string;
 };
+export type KeyCategory = "pro" | "standard" | "trial";
 export type Project = {
   readonly id: string;
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly autoComplaintBansEnabled: boolean;
   readonly autoSweepEnabled: boolean;
-  readonly deletedAt: string;
+  readonly deletedAt: string | null;
   readonly description: string | null;
   readonly name: string;
   readonly teamId: string;
+};
+export type CreateProjectDto = {
+  readonly description?: string;
+  readonly name: string;
 };
 export type UpdateProjectDto = {
   readonly autoComplaintBansEnabled?: boolean;
   readonly description?: string;
   readonly name?: string;
 };
-export type CreateKeyDto = {
-  readonly name: string;
-  readonly info?: string;
-  readonly expiresAt?: string;
-};
 export type Key = {
   readonly id: string;
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly apiKey: string;
-  readonly deletedAt: string;
+  readonly deletedAt: string | null;
   readonly info: string | null;
   readonly category: string;
   readonly name: string;
-  readonly lastUsedAt: string;
-  readonly expiresAt: string;
-  readonly notifiedExpiration7DaysAt: string;
-  readonly notifiedExpiration1DayAt: string;
+  readonly lastUsedAt: string | null;
+  readonly expiresAt: string | null;
+  readonly notifiedExpiration7DaysAt: string | null;
+  readonly notifiedExpiration1DayAt: string | null;
   readonly projectId: string;
+};
+export type CreateKeyDto = {
+  readonly name: string;
+  readonly info?: string;
+  readonly expiresAt?: string;
 };
 export type UpdateKeyDto = {
   readonly expiresAt?: string;
   readonly info: string;
   readonly name: string;
 };
-export type HealthStatusDto = {
-  readonly status: "OK" | "FAIL" | "DEGRADED";
-  readonly db: "OK" | "FAIL" | "DEGRADED";
+export type HealthStatus = "OK" | "FAIL" | "DEGRADED";
+export type IndexingProgressDto = {
+  readonly startBlockNumber: number | null;
+  readonly currentBlockNumber: number | null;
+  readonly heightBlockNumber: number | null;
+  readonly startBlockTimestamp: string | null;
+  readonly currentBlockTimestamp: string | null;
+  readonly heightTimestamp: string | null;
+};
+export type IndexingOwnerDto = {
+  readonly source: "feeConfiguration" | "oav";
+  readonly teamId: string | null;
+  readonly teamName: string | null;
+  readonly projectId: string | null;
+  readonly projectName: string | null;
 };
 export type CreatePayoutAddressDto = {
   readonly address: string;
   readonly network: string;
   readonly scope?: "yield" | "trade" | null;
   readonly providerId?: string | null;
-  readonly note?: string;
+  readonly note?: string | null;
 };
 export type PayoutAddressDto = {
   readonly address: string;
   readonly id: string;
-  readonly lastPayout: string;
+  readonly lastPayout: string | null;
   readonly network: string;
   readonly projectId: string;
   readonly scope: "trade" | "yield" | "all";
   readonly providerId?: string | null;
-  readonly note?: string;
+  readonly note?: string | null;
   readonly addressInvalid: boolean;
-};
-export type UpdatePayoutAddressDto = {
-  readonly address: string;
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly scope?: "yield" | "trade" | null;
-  readonly providerId?: string | null;
-  readonly note?: string;
 };
 export type ReferralDto = { readonly id: string; readonly code: string };
 export type IntegrationFreshness =
@@ -573,54 +681,32 @@ export type IntegrationFreshness =
   | "weekly"
   | "monthly"
   | "coming_soon";
-export type KpiSummaryResponseDto = {
-  readonly total_earned_revenue_usd: {
-    readonly value: string | null;
-    readonly coverage: boolean;
-    readonly last_updated_at: string;
-    readonly delta_30d_usd?: string | null;
-    readonly delta_30d_pct?: string | null;
-    readonly delta_30d?: string | null;
-  };
-  readonly volume_inflow_usd: {
-    readonly value: string | null;
-    readonly coverage: boolean;
-    readonly last_updated_at: string;
-    readonly delta_30d_usd?: string | null;
-    readonly delta_30d_pct?: string | null;
-    readonly delta_30d?: string | null;
-  };
-  readonly volume_outflow_usd: {
-    readonly value: string | null;
-    readonly coverage: boolean;
-    readonly last_updated_at: string;
-    readonly delta_30d_usd?: string | null;
-    readonly delta_30d_pct?: string | null;
-    readonly delta_30d?: string | null;
-  };
-  readonly tvl_usd: {
-    readonly value: string | null;
-    readonly coverage: boolean;
-    readonly last_updated_at: string;
-    readonly delta_30d_usd?: string | null;
-    readonly delta_30d_pct?: string | null;
-    readonly delta_30d?: string | null;
-  };
-  readonly active_users_unique_addresses: {
-    readonly value: string | null;
-    readonly coverage: boolean;
-    readonly last_updated_at: string;
-    readonly delta_30d_usd?: string | null;
-    readonly delta_30d_pct?: string | null;
-    readonly delta_30d?: string | null;
-  };
-  readonly total_actions_count: number;
+export type KpiMetricDto = {
+  readonly value: string | null;
+  readonly coverage: boolean;
+  readonly last_updated_at: string | null;
+  readonly delta_30d_usd?: string | null;
+  readonly delta_30d_pct?: string | null;
+  readonly delta_30d?: string | null;
 };
 export type TrendDataPointDto = {
   readonly month: string;
   readonly tvl_usd: string | null;
   readonly revenue_usd: string | null;
   readonly active_users: string | null;
+};
+export type CosmosAdditionalAddressesDto = { readonly cosmosPubKey: string };
+export type BinanceAdditionalAddressesDto = {
+  readonly binanceBeaconAddress: string;
+};
+export type SolanaAdditionalAddressesDto = {
+  readonly stakeAccounts: ReadonlyArray<string>;
+  readonly lidoStakeAccounts: ReadonlyArray<string>;
+};
+export type TezosAdditionalAddressesDto = { readonly tezosPubKey: string };
+export type AvalancheCAdditionalAddressesDto = {
+  readonly cAddressBech: string;
+  readonly pAddressBech: string;
 };
 export type ActionStatus =
   | "CANCELED"
@@ -721,6 +807,21 @@ export type TransactionType =
   | "INFSTONES_EXIT_REQUEST"
   | "INFSTONES_CLAIM_REQUEST"
   | "BATCH";
+export type StructuredTransactionTronDto = {
+  readonly type: string;
+  readonly owner_address: string;
+  readonly votes?: ReadonlyArray<{
+    readonly vote_address?: string;
+    readonly vote_count?: number;
+  }>;
+  readonly frozen_balance?: number;
+  readonly resource?: string;
+  readonly unfreeze_balance?: number;
+  readonly receiver_address?: string;
+  readonly balance?: number;
+  readonly lock?: boolean;
+  readonly lock_period?: number;
+};
 export type AnnotatedFieldDto = {
   readonly key: string;
   readonly value: string;
@@ -798,9 +899,14 @@ export type YieldProviders =
   | "superstate"
   | "securitize"
   | "nest"
+  | "paxos-labs"
   | "r25"
+  | "infinifi"
   | "rocksolid"
-  | "yuzu";
+  | "t9"
+  | "gami-labs"
+  | "yuzu"
+  | "sentora";
 export type YieldType =
   | "staking"
   | "liquid-staking"
@@ -866,140 +972,30 @@ export type PerpActionTypes =
   | "updateMargin"
   | "setTpAndSl"
   | "setUnifiedAccount";
-export type ProgrammaticPerpReportingTransactionDto = {
-  readonly id: string;
-  readonly type:
-    | "APPROVAL"
-    | "OPEN_POSITION"
-    | "CLOSE_POSITION"
-    | "UPDATE_LEVERAGE"
-    | "STOP_LOSS"
-    | "TAKE_PROFIT"
-    | "CANCEL_ORDER"
-    | "EDIT_ORDER"
-    | "FUND"
-    | "WITHDRAW"
-    | "APPROVE_BUILDER_FEE"
-    | "ENABLE_DEX_ABSTRACTION"
-    | "APPROVE_AGENT"
-    | "UPDATE_MARGIN"
-    | "SET_TP_AND_SL"
-    | "SET_USER_ABSTRACTION";
-  readonly status:
-    | "CREATED"
-    | "QUEUED"
-    | "BROADCASTED"
-    | "CONFIRMED"
-    | "FAILED"
-    | "NOT_FOUND";
-  readonly hash: string | null;
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly explorerUrl: string | null;
-  readonly confirmedAt: string;
-};
+export type PerpTransactionType =
+  | "APPROVAL"
+  | "OPEN_POSITION"
+  | "CLOSE_POSITION"
+  | "UPDATE_LEVERAGE"
+  | "STOP_LOSS"
+  | "TAKE_PROFIT"
+  | "CANCEL_ORDER"
+  | "EDIT_ORDER"
+  | "FUND"
+  | "WITHDRAW"
+  | "APPROVE_BUILDER_FEE"
+  | "ENABLE_DEX_ABSTRACTION"
+  | "APPROVE_AGENT"
+  | "UPDATE_MARGIN"
+  | "SET_TP_AND_SL"
+  | "SET_USER_ABSTRACTION";
+export type PerpTransactionStatus =
+  | "CREATED"
+  | "QUEUED"
+  | "BROADCASTED"
+  | "CONFIRMED"
+  | "FAILED"
+  | "NOT_FOUND";
 export type UpdateUserMeDto = {
   readonly serviceConditionsAccepted?: boolean;
   readonly active?: boolean;
@@ -1059,222 +1055,8 @@ export type SubmitResponseDto = {
 export type SubmitHashRequestDto = { readonly hash: string };
 export type TransactionVerificationMessageDto = { readonly message: string };
 export type PriceResponseDto = {};
-export type CreateCustomUriDto = {
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly rpcUri: string;
-};
-export type UpdateCustomUriDto = {
-  readonly network?:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly rpcUri?: string;
-};
-export type EnabledYieldDto = { readonly integrationId: string };
 export type CreateEnabledYieldDto = { readonly integrationId: string };
+export type EnabledYieldDto = { readonly integrationId: string };
 export type DeleteEnabledYieldsDto = {
   readonly integrationIds: ReadonlyArray<string>;
 };
@@ -1315,127 +1097,9 @@ export type FeeConfigurationStatus =
   | "PROCESSING"
   | "LIVE"
   | "CHANGES_REQUESTED";
-export type AllocationDto = {
-  readonly address: string;
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly name: string;
-  readonly yieldId?: string;
-  readonly providerId?: string;
-  readonly allocation: string;
-  readonly allocationUsd: string | null;
-  readonly weight: number;
-  readonly targetWeight: number;
-  readonly rewardRate: {
-    readonly total: number;
-    readonly rateType: string;
-  } | null;
-  readonly tvl: string | null;
-  readonly tvlUsd: string | null;
-  readonly maxCapacity: string | null;
-  readonly remainingCapacity: string | null;
+export type AllocationRewardRateDto = {
+  readonly total: number;
+  readonly rateType: string;
 };
 export type OAVStrategyDto = {
   readonly yieldId: string;
@@ -1465,6 +1129,45 @@ export type CustomValidatorAddresses = {
   readonly integrationId: string;
   readonly validatorAddresses: ReadonlyArray<string>;
 };
+export type EvmNetworks =
+  | "ethereum"
+  | "ethereum-goerli"
+  | "ethereum-holesky"
+  | "ethereum-sepolia"
+  | "ethereum-hoodi"
+  | "arbitrum"
+  | "base"
+  | "base-sepolia"
+  | "gnosis"
+  | "optimism"
+  | "polygon"
+  | "polygon-amoy"
+  | "starknet"
+  | "zksync"
+  | "linea"
+  | "unichain"
+  | "plume"
+  | "monad-testnet"
+  | "monad"
+  | "robinhood"
+  | "robinhood-testnet"
+  | "avalanche-c"
+  | "avalanche-c-atomic"
+  | "avalanche-p"
+  | "binance"
+  | "celo"
+  | "fantom"
+  | "harmony"
+  | "moonriver"
+  | "okc"
+  | "viction"
+  | "core"
+  | "sonic"
+  | "plasma"
+  | "katana"
+  | "hyperevm"
+  | "tempo"
+  | "pharos";
 export type BalanceTransferEventDto = {
   readonly blockTimestamp: string;
   readonly blockNumber: number;
@@ -1489,11 +1192,11 @@ export type CreateFeeConfigurationDtoV2 = {
   readonly chargeOnFirstDepositOnly?: boolean;
   readonly layerzeroOVaultConfig?: {};
 };
-export type FailureViewDto = {
-  readonly code: number;
-  readonly reason: string;
-  readonly details: {};
+export type WalletViewDto = {
+  readonly network: string;
+  readonly address: string;
 };
+export type InterestViewDto = { readonly type: string; readonly value: string };
 export type EthDeFiDetailsViewDto = {
   readonly contract_address: string;
   readonly type?: string;
@@ -1595,22 +1298,19 @@ export type TezosDetailsViewDto = {
   readonly activated_at?: string;
   readonly updated_at: string;
 };
-export type WalletViewDto = {
-  readonly network: string;
-  readonly address: string;
+export type FailureViewDto = {
+  readonly code: number;
+  readonly reason: string;
+  readonly details: {};
 };
 export type InvalidRequestDto = { readonly msg: string };
 export type UnauthorizedDto = { readonly realm: string };
 export type NotFoundDto = { readonly what: string };
 export type ServerErrorDto = { readonly msg: string };
-export type GrowSuccessDto = {
-  readonly network: string;
-  readonly deposit_token: string;
-  readonly interest: {
-    readonly type: string;
-    readonly value: string;
-    readonly currency: string;
-  };
+export type ProtocolInterestViewDto = {
+  readonly type: string;
+  readonly value: string;
+  readonly currency: string;
 };
 export type CreateFeeConfigurationDto = {
   readonly integrationId: string;
@@ -1621,17 +1321,23 @@ export type CreateFeeConfigurationDto = {
   readonly layerzeroOVaultConfig?: {};
 };
 export type UpdateFeeConfigurationDto = {
-  readonly managementFeeBps?: number;
-  readonly performanceFeeBps?: number;
-  readonly depositFeeBps?: number;
+  readonly managementFeeBps?: number | null;
+  readonly performanceFeeBps?: number | null;
+  readonly depositFeeBps?: number | null;
   readonly chargeOnFirstDepositOnly?: boolean | null;
-  readonly layerzeroOVaultConfig?: {} | null;
+  readonly layerzeroOVaultConfig?: { readonly [x: string]: unknown } | null;
 };
 export type InitiateSsoDto = {
   readonly email?: string;
   readonly teamId?: string;
+  readonly returnUrl?: string;
 };
 export type InitiateSsoResponseDto = {};
+export type SpMetadataDto = {
+  readonly acsUrl?: string;
+  readonly entityId?: string;
+  readonly redirectUri?: string;
+};
 export type SsoAttributeMappingDto = {
   readonly email: string;
   readonly name?: string;
@@ -1648,7 +1354,11 @@ export type MfaVerifySetupResponseDto = {
   readonly recoveryCodes: ReadonlyArray<string>;
 };
 export type MfaBeginReenrollmentDto = { readonly code: string };
-export type MfaStatusResponseDto = { readonly isMfaEnabled: boolean };
+export type MfaWebauthnCredentialItemDto = {
+  readonly id: string;
+  readonly label?: string | null;
+  readonly createdAt: string;
+};
 export type MfaVerifyDto = {
   readonly challengeToken: string;
   readonly code: string;
@@ -1657,9 +1367,37 @@ export type MfaRecoverDto = {
   readonly challengeToken: string;
   readonly recoveryCode: string;
 };
-export type MfaDisableDto = { readonly code: string };
-export type CreatePerpsFeeConfigurationDto = {
-  readonly hyperliquidBuilderFeeBps: number;
+export type MfaDisableWithTotpBodyDto = { readonly code: string };
+export type MfaDisableWithWebauthnBodyDto = {
+  readonly webauthnCredential: { readonly [x: string]: unknown };
+};
+export type MfaWebauthnRpDto = { readonly name: string; readonly id: string };
+export type MfaWebauthnCreationUserDto = {
+  readonly id: string;
+  readonly name: string;
+  readonly displayName: string;
+};
+export type MfaWebauthnPubKeyCredParamDto = {
+  readonly type: "public-key";
+  readonly alg: number;
+};
+export type MfaWebauthnPublicKeyDescriptorDto = {
+  readonly type: "public-key";
+  readonly id: string;
+  readonly transports?: ReadonlyArray<string>;
+};
+export type MfaWebauthnRegisterVerifyDto = {
+  readonly credential: {};
+  readonly label?: string;
+};
+export type MfaWebauthnRegisterVerifyResponseDto = {
+  readonly recoveryCodes?: ReadonlyArray<string>;
+  readonly credentialId?: string;
+};
+export type MfaWebauthnLoginOptionsDto = { readonly challengeToken: string };
+export type MfaWebauthnLoginVerifyDto = {
+  readonly challengeToken: string;
+  readonly credential: {};
 };
 export type PerpsFeeConfigurationDto = {
   readonly id: string;
@@ -1670,10 +1408,20 @@ export type PerpsFeeConfigurationDto = {
   readonly createdAt: string;
   readonly updatedAt: string;
 };
+export type CreatePerpsFeeConfigurationDto = {
+  readonly hyperliquidBuilderFeeBps: number;
+};
 export type UpdatePerpsFeeConfigurationDto = {
   readonly status?: "REQUESTED" | "LIVE" | "DISABLED";
   readonly hyperliquidBuilderAddress?: string;
   readonly hyperliquidBuilderFeeBps?: number;
+};
+export type CreateValidatorProviderDto = {
+  readonly name: string;
+  readonly website: string;
+  readonly rank: number;
+  readonly preferred?: boolean;
+  readonly revshare?: {};
 };
 export type ValidatorProviderDto = {
   readonly id: string;
@@ -1686,13 +1434,6 @@ export type ValidatorProviderDto = {
   readonly createdAt: string;
   readonly updatedAt: string;
 };
-export type CreateValidatorProviderDto = {
-  readonly name: string;
-  readonly website: string;
-  readonly rank: number;
-  readonly preferred?: boolean;
-  readonly revshare?: {};
-};
 export type UpdateValidatorProviderDto = {
   readonly name?: string;
   readonly website?: string;
@@ -1700,6 +1441,9 @@ export type UpdateValidatorProviderDto = {
   readonly preferred?: boolean;
   readonly revshare?: {};
   readonly csvFile?: string;
+};
+export type UpdateValidatorHistoricalRevshareChangesDto = {
+  readonly lastDay: string;
 };
 export type ValidatorHistoricalRevshareChangesDto = {
   readonly id: string;
@@ -1710,9 +1454,6 @@ export type ValidatorHistoricalRevshareChangesDto = {
   readonly apr?: {};
   readonly commission?: {};
   readonly mevCommission?: {};
-};
-export type UpdateValidatorHistoricalRevshareChangesDto = {
-  readonly lastDay: string;
 };
 export type CreateValidatorDto = {
   readonly integrationId: string;
@@ -1750,19 +1491,19 @@ export type UpdateValidatorDto = {
   readonly commission?: number;
   readonly mevCommission?: number;
 };
-export type CreateAdminApiKeyDto = {
-  readonly name: string;
-  readonly info?: string;
-};
 export type AdminApiKey = {
   readonly id: string;
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly apiKey: string;
-  readonly deletedAt: string;
+  readonly deletedAt: string | null;
   readonly info: string | null;
   readonly name: string;
-  readonly lastUsedAt: string;
+  readonly lastUsedAt: string | null;
+};
+export type CreateAdminApiKeyDto = {
+  readonly name: string;
+  readonly info?: string;
 };
 export type UpdateAdminApiKeyDto = {
   readonly info?: string;
@@ -1778,6 +1519,19 @@ export type WebhookEndpointDto = {
   readonly updatedAt: string;
   readonly subscriptionCount: number;
 };
+export type CreateWebhookEndpointDto = {
+  readonly url: string;
+  readonly secret: string;
+  readonly description?: string;
+  readonly enabled?: boolean;
+};
+export type UpdateWebhookEndpointDto = {
+  readonly url?: string;
+  readonly secret?: string;
+  readonly description?: string;
+  readonly enabled?: boolean;
+};
+export type ToggleWebhookEndpointDto = { readonly enabled: boolean };
 export type WebhookSubscriptionDto = {
   readonly id: string;
   readonly projectId: string;
@@ -1789,23 +1543,10 @@ export type WebhookSubscriptionDto = {
   readonly createdAt: string;
   readonly updatedAt: string;
 };
-export type CreateWebhookEndpointDto = {
-  readonly url: string;
-  readonly secret: string;
-  readonly description?: string;
-  readonly enabled?: boolean;
-};
 export type CreateWebhookSubscriptionDto = {
   readonly events: ReadonlyArray<string>;
   readonly actions: ReadonlyArray<string>;
   readonly filtersJson?: {};
-  readonly enabled?: boolean;
-};
-export type ToggleWebhookEndpointDto = { readonly enabled: boolean };
-export type UpdateWebhookEndpointDto = {
-  readonly url?: string;
-  readonly secret?: string;
-  readonly description?: string;
   readonly enabled?: boolean;
 };
 export type UpdateWebhookSubscriptionDto = {
@@ -1828,12 +1569,12 @@ export type WebhookDeliveryDto = {
     | "dead";
   readonly attemptCount: number;
   readonly nextAttemptAt: string;
-  readonly lastAttemptAt: {} | null;
-  readonly lastHttpStatus: {} | null;
-  readonly lastDurationMs: {} | null;
-  readonly lastErrorCode: {} | null;
-  readonly lastErrorMessage: {} | null;
-  readonly lastResponseSnippet: {} | null;
+  readonly lastAttemptAt: { readonly [x: string]: unknown } | null;
+  readonly lastHttpStatus: { readonly [x: string]: unknown } | null;
+  readonly lastDurationMs: { readonly [x: string]: unknown } | null;
+  readonly lastErrorCode: { readonly [x: string]: unknown } | null;
+  readonly lastErrorMessage: { readonly [x: string]: unknown } | null;
+  readonly lastResponseSnippet: { readonly [x: string]: unknown } | null;
   readonly createdAt: string;
   readonly updatedAt: string;
 };
@@ -1846,11 +1587,11 @@ export type WebhookEventDto = {
   readonly type: string;
   readonly subjectJson: {};
   readonly dataJson: {};
-  readonly previousJson: {} | null;
-  readonly changesJson: {} | null;
+  readonly previousJson: { readonly [x: string]: unknown } | null;
+  readonly changesJson: { readonly [x: string]: unknown } | null;
   readonly sequence: number;
   readonly idempotencyKey: string;
-  readonly metaJson: {} | null;
+  readonly metaJson: { readonly [x: string]: unknown } | null;
   readonly createdAt: string;
   readonly updatedAt: string;
 };
@@ -1889,69 +1630,47 @@ export type SetPerpsOverrideDto = {
   readonly state: "down" | "degraded";
   readonly reason: string;
 };
-export type AvalancheCAdditionalAddressesDto = {
-  readonly cAddressBech: string;
-  readonly pAddressBech: string;
-};
-export type BinanceAdditionalAddressesDto = {
-  readonly binanceBeaconAddress: string;
-};
-export type CosmosAdditionalAddressesDto = { readonly cosmosPubKey: string };
-export type SolanaAdditionalAddressesDto = {
-  readonly stakeAccounts: ReadonlyArray<string>;
-  readonly lidoStakeAccounts: ReadonlyArray<string>;
-};
-export type TezosAdditionalAddressesDto = { readonly tezosPubKey: string };
-export type StructuredTransactionTronDto = {
-  readonly type: string;
-  readonly owner_address: string;
-  readonly votes?: ReadonlyArray<{
-    readonly vote_address?: string;
-    readonly vote_count?: number;
-  }>;
-  readonly frozen_balance?: number;
-  readonly resource?: string;
-  readonly unfreeze_balance?: number;
-  readonly receiver_address?: string;
-  readonly balance?: number;
-  readonly lock?: boolean;
-  readonly lock_period?: number;
-};
 export type UserDto = {
   readonly email: string;
   readonly emailVerified: boolean;
   readonly id: string;
-  readonly lastAccessedAt: string;
+  readonly lastAccessedAt: string | null;
   readonly name: string | null;
   readonly surname: string | null;
   readonly department: string | null;
   readonly role: Role;
-  readonly serviceConditionsAcceptedAt: string;
+  readonly serviceConditionsAcceptedAt: string | null;
   readonly teamId: string;
   readonly isMfaEnabled: boolean;
   readonly isSsoExempt: boolean;
 };
-export type SsoConfigResponseDto = {
-  readonly id: string;
-  readonly teamId: string;
-  readonly protocol: "saml" | "oidc";
-  readonly issuer: string;
-  readonly entryPoint?: string | null;
-  readonly certificate?: string | null;
-  readonly clientId?: string | null;
-  readonly attributeMapping: {};
-  readonly enabled: boolean;
-  readonly enforced: boolean;
-  readonly jitDefaultRole: Role;
-  readonly syncUserAttributesOnLogin: boolean;
-  readonly ssoLoginDomain?: string | null;
-  readonly createdAt: string;
-  readonly updatedAt: string;
-  readonly spMetadata?: {
-    readonly acsUrl?: string;
-    readonly entityId?: string;
-    readonly redirectUri?: string;
-  };
+export type CampaignBalanceTotalsDto = {
+  readonly totalBudget: string;
+  readonly totalDistributed: string;
+  readonly remainingBudget: string;
+  readonly undistributedDueToCeiling: string;
+  readonly qualifyingTvl: string;
+  readonly qualifyingUserCount: number;
+  readonly safeAddress: string;
+  readonly campaignStatus: CampaignStatus;
+  readonly nextPayoutDueAt: string | null;
+  readonly vaultTvl: string;
+  readonly totalInflows: string;
+  readonly totalOutflows: string;
+};
+export type CampaignV2BalanceTotalsDto = {
+  readonly totalBudget: string;
+  readonly totalDistributed: string;
+  readonly remainingBudget: string;
+  readonly undistributedDueToCeiling: string;
+  readonly qualifyingTvl: string;
+  readonly qualifyingUserCount: number;
+  readonly safeAddress: string;
+  readonly campaignStatus: CampaignStatus;
+  readonly nextPayoutDueAt: string | null;
+  readonly vaultTvl: string;
+  readonly totalInflows: string;
+  readonly totalOutflows: string;
 };
 export type TokenDto = {
   readonly name: string;
@@ -1964,6 +1683,17 @@ export type TokenDto = {
   readonly isPoints?: boolean;
   readonly feeConfigurationId?: string;
 };
+export type UpdatePayoutAddressDto = {
+  readonly address: string;
+  readonly network: Networks;
+  readonly scope?: "yield" | "trade" | null;
+  readonly providerId?: string | null;
+  readonly note?: string | null;
+};
+export type CreateCustomUriDto = {
+  readonly network: Networks;
+  readonly rpcUri: string;
+};
 export type CustomUri = {
   readonly id: string;
   readonly createdAt: string;
@@ -1971,6 +1701,10 @@ export type CustomUri = {
   readonly network: Networks;
   readonly rpcUri: string;
   readonly projectId: string;
+};
+export type UpdateCustomUriDto = {
+  readonly network?: Networks;
+  readonly rpcUri?: string;
 };
 export type RequiredArgumentWithNetworkDto = {
   readonly required: boolean;
@@ -2014,19 +1748,10 @@ export type CampaignQualificationConfigDto = {
   readonly threshold: string;
   readonly maxIncentivizedTvlToken?: string | null;
 };
-export type CampaignBalanceTotalsDto = {
-  readonly totalBudget: string;
-  readonly totalDistributed: string;
-  readonly remainingBudget: string;
-  readonly undistributedDueToCeiling: string;
-  readonly qualifyingTvl: string;
-  readonly qualifyingUserCount: number;
-  readonly safeAddress: string;
-  readonly campaignStatus: CampaignStatus;
-  readonly nextPayoutDueAt: string;
-  readonly vaultTvl: string;
-  readonly totalInflows: string;
-  readonly totalOutflows: string;
+export type CampaignV2QualificationConfigDto = {
+  readonly type: CampaignQualificationType;
+  readonly threshold: string;
+  readonly maxIncentivizedTvlToken?: string | null;
 };
 export type PaginatedCampaignUserBalanceDto = {
   readonly total: number;
@@ -2051,9 +1776,34 @@ export type CampaignPayoutRunDto = {
   readonly status: CampaignPayoutRunStatus;
   readonly currentStep: CampaignPayoutRunStep;
   readonly retryCount: number;
-  readonly preparedSafeTransactionMetadata?: {} | null;
-  readonly startedAt?: string;
-  readonly completedAt?: string;
+  readonly preparedSafeTransactionMetadata?: {
+    readonly [x: string]: unknown;
+  } | null;
+  readonly startedAt?: string | null;
+  readonly completedAt?: string | null;
+  readonly merkleRoot?: string | null;
+  readonly recipientCount: number;
+  readonly safeTransactionHash: string | null;
+  readonly executionTxHash: string | null;
+  readonly safeTransactionUiUrl: string | null;
+  readonly executionTxHashExplorerUrl: string | null;
+};
+export type CampaignV2PayoutRunDto = {
+  readonly id: string;
+  readonly campaignId: string;
+  readonly payoutWindowStart: string;
+  readonly payoutWindowEnd: string;
+  readonly actualWindowStart: string;
+  readonly actualWindowEnd: string;
+  readonly distributedAmount: string;
+  readonly status: CampaignPayoutRunStatus;
+  readonly currentStep: CampaignPayoutRunStep;
+  readonly retryCount: number;
+  readonly preparedSafeTransactionMetadata?: {
+    readonly [x: string]: unknown;
+  } | null;
+  readonly startedAt?: string | null;
+  readonly completedAt?: string | null;
   readonly merkleRoot?: string | null;
   readonly recipientCount: number;
   readonly safeTransactionHash: string | null;
@@ -2077,6 +1827,22 @@ export type ProgrammaticPayoutItemDto = {
   readonly status: CampaignPayoutItemStatus;
   readonly txHash?: string | null;
   readonly preRunUnpaidBalance?: string | null;
+};
+export type CampaignV2PayoutItemDto = {
+  readonly id: string;
+  readonly campaignPayoutRunId: string;
+  readonly recipientAddress: string;
+  readonly amount: string;
+  readonly status: CampaignPayoutItemStatus;
+  readonly batchKey: string;
+  readonly txHash?: string | null;
+};
+export type ProgrammaticPayoutItemV2Dto = {
+  readonly id: string;
+  readonly recipientAddress: string;
+  readonly amount: string;
+  readonly status: CampaignPayoutItemStatus;
+  readonly txHash?: string | null;
 };
 export type PaginatedCampaignPayoutAuditDto = {
   readonly total: number;
@@ -2126,7 +1892,17 @@ export type CampaignAuditLogDto = {
   readonly type: CampaignAuditLogType;
   readonly address?: string | null;
   readonly reason?: string | null;
-  readonly actorId?: string;
+  readonly actorId?: string | null;
+  readonly actorRole?: string | null;
+  readonly createdAt: string;
+};
+export type CampaignV2AuditLogDto = {
+  readonly id: string;
+  readonly campaignId: string;
+  readonly type: CampaignAuditLogType;
+  readonly address?: string | null;
+  readonly reason?: string | null;
+  readonly actorId?: string | null;
   readonly actorRole?: string | null;
   readonly createdAt: string;
 };
@@ -2139,20 +1915,117 @@ export type CampaignConfigurationRequestDto = {
   readonly status: CampaignConfigurationRequestStatus;
   readonly requestedBy: string;
   readonly reviewedBy?: string | null;
-  readonly reviewedAt?: string;
+  readonly reviewedAt?: string | null;
   readonly rejectionReason?: string | null;
-  readonly requestedChanges: { readonly [x: string]: Schema.Json };
-  readonly previousValues?: {};
+  readonly requestedChanges: { readonly [x: string]: unknown };
+  readonly previousValues?: { readonly [x: string]: unknown } | null;
   readonly version: number;
-  readonly metadata?: {};
+  readonly metadata?: { readonly [x: string]: unknown } | null;
   readonly createdAt: string;
   readonly updatedAt: string;
+};
+export type CampaignV2ConfigurationRequestDto = {
+  readonly id: string;
+  readonly projectId: string;
+  readonly teamId: string;
+  readonly campaignId?: string | null;
+  readonly requestType: CampaignConfigurationRequestType;
+  readonly status: CampaignConfigurationRequestStatus;
+  readonly requestedBy: string;
+  readonly reviewedBy?: string | null;
+  readonly reviewedAt?: string | null;
+  readonly rejectionReason?: string | null;
+  readonly requestedChanges: { readonly [x: string]: unknown };
+  readonly previousValues?: { readonly [x: string]: unknown } | null;
+  readonly version: number;
+  readonly metadata?: { readonly [x: string]: unknown } | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+};
+export type CampaignV2MilestoneDto = {
+  readonly milestoneOrder: number;
+  readonly twTvlThreshold: string;
+  readonly tvlYearsTarget: string;
+  readonly trancheAmount: string;
+  readonly status: CampaignMilestoneStatus;
+  readonly unlockedAt: string | null;
+  readonly fundedAt: string | null;
+  readonly extendedEndTime: string | null;
+};
+export type ReplaceCampaignV2MilestonesDto = {
+  readonly milestones: ReadonlyArray<CampaignV2MilestoneItemDto>;
+};
+export type PaginatedCampaignV2UserPayoutEligibilityDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<CampaignV2UserPayoutEligibilityDto>;
+};
+export type PaginatedCampaignV2PayoutAuditDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<CampaignV2PayoutAuditDto>;
+};
+export type PaginatedWeeklyDistributionV2Dto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<WeeklyDistributionV2Dto>;
+};
+export type PaginatedEligibleUserV2Dto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<EligibleUserV2Dto>;
+};
+export type PaginatedBlacklistedAddressV2Dto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<BlacklistedAddressV2Dto>;
+};
+export type CampaignV2UserPointsPageDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<CampaignV2UserPointsDto>;
+};
+export type PaginatedWindowAccrualSummaryDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<WindowAccrualSummaryDto>;
+};
+export type PaginatedUserWindowAccrualDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<UserWindowAccrualDto>;
+};
+export type PaginatedUserWindowAccrualHistoryDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<UserWindowAccrualHistoryDto>;
+};
+export type PaginatedCampaignV2UserBalanceDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<CampaignV2UserBalanceDto>;
 };
 export type CreateTeamDto = {
   readonly contactDetails: {};
   readonly name: string;
   readonly user: CreateTeamDtoUser;
   readonly referredBy?: string;
+};
+export type PaginatedAuditLogDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<AuditLogDto>;
 };
 export type UpdateTeamDto = {
   readonly activated?: boolean;
@@ -2161,6 +2034,29 @@ export type UpdateTeamDto = {
   readonly name?: string;
   readonly isMfaEnforced?: boolean;
   readonly isMultiTenant?: boolean;
+};
+export type HealthStatusDto = {
+  readonly status: HealthStatus;
+  readonly db: HealthStatus;
+};
+export type IndexingNetworkEntryDto = {
+  readonly sourceKey: string;
+  readonly scope: "pricePerShare" | "balances" | "rewards" | "borrow";
+  readonly kind: "indexingTable" | "statusTable";
+  readonly integrationType: string;
+  readonly integrationId: string | null;
+  readonly ambiguousIntegrationIds: ReadonlyArray<string>;
+  readonly contractAddress: string | null;
+  readonly protocol: string | null;
+  readonly indexer: string | null;
+  readonly progress: IndexingProgressDto;
+  readonly rowCount: number | null;
+};
+export type IndexingOwnershipGroupDto = {
+  readonly network: Networks;
+  readonly contractAddress: string;
+  readonly integrationIds: ReadonlyArray<string>;
+  readonly owners: ReadonlyArray<IndexingOwnerDto>;
 };
 export type IntegrationRevenueRowDto = {
   readonly integration_id: string;
@@ -2181,8 +2077,36 @@ export type TopIntegrationDto = {
   readonly tvl_usd: string | null;
   readonly data_freshness: IntegrationFreshness;
 };
+export type KpiSummaryResponseDto = {
+  readonly total_earned_revenue_usd: KpiMetricDto;
+  readonly volume_inflow_usd: KpiMetricDto;
+  readonly volume_outflow_usd: KpiMetricDto;
+  readonly tvl_usd: KpiMetricDto;
+  readonly active_users_unique_addresses: KpiMetricDto;
+  readonly total_actions_count: number;
+};
 export type KpiTrendsResponseDto = {
   readonly data_points: ReadonlyArray<TrendDataPointDto>;
+};
+export type AddressesDto = {
+  readonly address: string;
+  readonly additionalAddresses?:
+    | CosmosAdditionalAddressesDto
+    | BinanceAdditionalAddressesDto
+    | SolanaAdditionalAddressesDto
+    | TezosAdditionalAddressesDto
+    | AvalancheCAdditionalAddressesDto;
+};
+export type AddressWithTokenDto = {
+  readonly address: string;
+  readonly additionalAddresses?:
+    | CosmosAdditionalAddressesDto
+    | BinanceAdditionalAddressesDto
+    | SolanaAdditionalAddressesDto
+    | TezosAdditionalAddressesDto
+    | AvalancheCAdditionalAddressesDto;
+  readonly network: Networks;
+  readonly tokenAddress?: string;
 };
 export type TransactionStatusResponseDto = {
   readonly status: TransactionStatus;
@@ -2191,6 +2115,9 @@ export type TransactionStatusResponseDto = {
   readonly network: Networks;
   readonly hash: string;
   readonly raw: {};
+};
+export type AnnotatedTransactionDto = {
+  readonly fields: ReadonlyArray<AnnotatedFieldDto>;
 };
 export type YieldProviderDto = {
   readonly id: YieldProviders;
@@ -2204,6 +2131,15 @@ export type YieldCommissionDto = {
   readonly value: number;
 };
 export type YieldTvlDto = { readonly level: TvlLevel; readonly value: string };
+export type ProgrammaticPerpReportingTransactionDto = {
+  readonly id: string;
+  readonly type: PerpTransactionType;
+  readonly status: PerpTransactionStatus;
+  readonly hash: string | null;
+  readonly network: Networks;
+  readonly explorerUrl: string | null;
+  readonly confirmedAt: string | null;
+};
 export type PendingActionArgumentsDto = {
   readonly amount?: string;
   readonly validatorAddress?: string;
@@ -2259,49 +2195,50 @@ export type FeeConfigurationWithApyDto = {
   readonly id: string;
   readonly projectId: string;
   readonly integrationId: string;
-  readonly managementFeeBps: number;
-  readonly performanceFeeBps: number;
-  readonly depositFeeBps: number;
+  readonly managementFeeBps: number | null;
+  readonly performanceFeeBps: number | null;
+  readonly depositFeeBps: number | null;
   readonly chargeOnFirstDepositOnly: boolean;
   readonly allocatorVaultContractAddress: string | null;
   readonly feeWrapperContractAddress: string | null;
   readonly feeRecipientAddress: string | null;
   readonly status: FeeConfigurationStatus;
-  readonly layerzeroOVaultConfig?: {} | null;
+  readonly layerzeroOVaultConfig?: { readonly [x: string]: unknown } | null;
   readonly computedRewardRate: number;
 };
 export type FeeConfigurationDto = {
   readonly id: string;
   readonly projectId: string;
   readonly integrationId: string;
-  readonly managementFeeBps: number;
-  readonly performanceFeeBps: number;
-  readonly depositFeeBps: number;
+  readonly managementFeeBps: number | null;
+  readonly performanceFeeBps: number | null;
+  readonly depositFeeBps: number | null;
   readonly chargeOnFirstDepositOnly: boolean;
   readonly allocatorVaultContractAddress: string | null;
   readonly feeWrapperContractAddress: string | null;
   readonly feeRecipientAddress: string | null;
   readonly status: FeeConfigurationStatus;
-  readonly layerzeroOVaultConfig?: {} | null;
+  readonly layerzeroOVaultConfig?: { readonly [x: string]: unknown } | null;
 };
 export type AdminFeeConfigurationDto = {
   readonly id: string;
   readonly projectId: string;
   readonly integrationId: string;
-  readonly managementFeeBps: number;
-  readonly performanceFeeBps: number;
-  readonly depositFeeBps: number;
+  readonly managementFeeBps: number | null;
+  readonly performanceFeeBps: number | null;
+  readonly depositFeeBps: number | null;
   readonly chargeOnFirstDepositOnly: boolean;
   readonly allocatorVaultContractAddress: string | null;
   readonly feeWrapperContractAddress: string | null;
   readonly feeRecipientAddress: string | null;
   readonly status: FeeConfigurationStatus;
-  readonly layerzeroOVaultConfig?: {} | null;
+  readonly layerzeroOVaultConfig?: { readonly [x: string]: unknown } | null;
   readonly teamId?: string | null;
   readonly teamName?: string | null;
   readonly projectName?: string | null;
 };
-export type CreateOAVDto = {
+export type AllocationDto = {
+  readonly address: string;
   readonly network:
     | "ethereum"
     | "ethereum-goerli"
@@ -2319,6 +2256,7 @@ export type CreateOAVDto = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -2406,13 +2344,18 @@ export type CreateOAVDto = {
     | "ton"
     | "ton-testnet"
     | "hyperliquid";
-  readonly inputTokenAddress?: string;
   readonly name: string;
-  readonly strategies: ReadonlyArray<OAVStrategyDto>;
-  readonly autoRebalancing?: boolean;
-  readonly managementFeeBps?: number;
-  readonly performanceFeeBps?: number;
-  readonly depositFeeBps?: number;
+  readonly yieldId?: string;
+  readonly providerId?: string;
+  readonly allocation: string;
+  readonly allocationUsd: string | null;
+  readonly weight: number;
+  readonly targetWeight: number;
+  readonly rewardRate: AllocationRewardRateDto | null;
+  readonly tvl: string | null;
+  readonly tvlUsd: string | null;
+  readonly maxCapacity: string | null;
+  readonly remainingCapacity: string | null;
 };
 export type OAVResponseDto = {
   readonly id: string;
@@ -2429,6 +2372,16 @@ export type OAVResponseDto = {
   readonly performanceFeeBps: number | null;
   readonly depositFeeBps: number | null;
   readonly isThirdParty: boolean;
+};
+export type CreateOAVDto = {
+  readonly network: Networks;
+  readonly inputTokenAddress?: string;
+  readonly name: string;
+  readonly strategies: ReadonlyArray<OAVStrategyDto>;
+  readonly autoRebalancing?: boolean;
+  readonly managementFeeBps?: number;
+  readonly performanceFeeBps?: number;
+  readonly depositFeeBps?: number;
 };
 export type UpdateOAVDto = {
   readonly name?: string;
@@ -2449,11 +2402,10 @@ export type PaginatedBalanceTransferEventDto = {
   readonly limit: number;
   readonly items: ReadonlyArray<BalanceTransferEventDto>;
 };
-export type StakeFailureDto = { readonly error: FailureViewDto };
 export type StakeViewSuccessDto = {
   readonly protocol_name: string;
   readonly currency: string;
-  readonly interest: { readonly type: string; readonly value: string };
+  readonly interest: InterestViewDto;
   readonly logo?: string;
   readonly since?: string;
   readonly staked_balance: string;
@@ -2479,6 +2431,30 @@ export type StakeViewSuccessDto = {
     | StakeKitVaultDetailsViewDto
     | TezosDetailsViewDto;
 };
+export type StakeFailureDto = { readonly error: FailureViewDto };
+export type GrowSuccessDto = {
+  readonly network: string;
+  readonly deposit_token: string;
+  readonly interest: ProtocolInterestViewDto;
+};
+export type SsoConfigResponseDto = {
+  readonly id: string;
+  readonly teamId: string;
+  readonly protocol: "saml" | "oidc";
+  readonly issuer: string;
+  readonly entryPoint?: string | null;
+  readonly certificate?: string | null;
+  readonly clientId?: string | null;
+  readonly attributeMapping: {};
+  readonly enabled: boolean;
+  readonly enforced: boolean;
+  readonly jitDefaultRole: Role;
+  readonly syncUserAttributesOnLogin: boolean;
+  readonly ssoLoginDomain?: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly spMetadata?: SpMetadataDto;
+};
 export type UpsertSsoConfigDto = {
   readonly protocol: "saml" | "oidc";
   readonly issuer: string;
@@ -2492,6 +2468,32 @@ export type UpsertSsoConfigDto = {
   readonly jitDefaultRole?: "member";
   readonly syncUserAttributesOnLogin?: boolean;
   readonly ssoLoginDomain?: string | null;
+};
+export type MfaStatusResponseDto = {
+  readonly isMfaEnabled: boolean;
+  readonly hasTotp: boolean;
+  readonly webauthnCredentials: ReadonlyArray<MfaWebauthnCredentialItemDto>;
+};
+export type MfaWebauthnRegistrationOptionsResponseDto = {
+  readonly challenge: string;
+  readonly rp: MfaWebauthnRpDto;
+  readonly user: MfaWebauthnCreationUserDto;
+  readonly pubKeyCredParams: ReadonlyArray<MfaWebauthnPubKeyCredParamDto>;
+  readonly timeout: number;
+  readonly attestation: "none" | "indirect" | "direct" | "enterprise";
+  readonly excludeCredentials?: ReadonlyArray<MfaWebauthnPublicKeyDescriptorDto>;
+  readonly authenticatorSelection?: { readonly [x: string]: unknown };
+  readonly extensions?: { readonly [x: string]: unknown };
+  readonly hints?: ReadonlyArray<string>;
+};
+export type MfaWebauthnAuthenticationOptionsResponseDto = {
+  readonly challenge: string;
+  readonly timeout?: number;
+  readonly rpId?: string;
+  readonly allowCredentials: ReadonlyArray<MfaWebauthnPublicKeyDescriptorDto>;
+  readonly userVerification: "required" | "preferred" | "discouraged";
+  readonly extensions?: { readonly [x: string]: unknown };
+  readonly hints?: ReadonlyArray<string>;
 };
 export type ValidatorAdminDto = {
   readonly id: string;
@@ -2530,133 +2532,8 @@ export type PaginatedYieldStatusOverrideResponseDto = {
   readonly limit: number;
   readonly items: ReadonlyArray<YieldStatusOverrideResponseDto>;
 };
-export type AddressesDto = {
-  readonly address: string;
-  readonly additionalAddresses?:
-    | CosmosAdditionalAddressesDto
-    | BinanceAdditionalAddressesDto
-    | SolanaAdditionalAddressesDto
-    | TezosAdditionalAddressesDto
-    | AvalancheCAdditionalAddressesDto;
-};
-export type AddressWithTokenDto = {
-  readonly address: string;
-  readonly additionalAddresses?:
-    | CosmosAdditionalAddressesDto
-    | BinanceAdditionalAddressesDto
-    | SolanaAdditionalAddressesDto
-    | TezosAdditionalAddressesDto
-    | AvalancheCAdditionalAddressesDto;
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly tokenAddress?: string;
-};
-export type AuthEmailLoginResponseDto = {
+export type AuthEmailLoginSessionResponseDto = {
   readonly user?: UserDto;
-  readonly mfaRequired?: boolean;
-  readonly challengeToken?: string;
   readonly mfaSetupRequired?: boolean;
 };
 export type MfaVerifyResponseDto = { readonly user: UserDto };
@@ -2668,32 +2545,17 @@ export type CampaignSafeBalanceDto = {
   readonly balance: string;
   readonly asOf: string;
 };
-export type TransactionDto = {
-  readonly id: string;
+export type CampaignV2SafeBalanceDto = {
+  readonly safeAddress: string;
   readonly network: Networks;
-  readonly status: TransactionStatus;
-  readonly type: TransactionType | null;
-  readonly hash: string | null;
-  readonly createdAt: string;
-  readonly broadcastedAt: string;
-  readonly signedTransaction: string | null;
-  readonly unsignedTransaction: string | null;
-  readonly structuredTransaction: StructuredTransactionTronDto | null;
-  readonly annotatedTransaction: {
-    readonly fields: ReadonlyArray<AnnotatedFieldDto>;
-  } | null;
-  readonly stepIndex: number;
-  readonly error: string | null;
-  readonly gasEstimate: {
-    readonly amount: string | null;
-    readonly token: TokenDto;
-    readonly gasLimit?: string;
-  } | null;
-  readonly stakeId: string;
-  readonly explorerUrl: string | null;
-  readonly ledgerHwAppId: string | null;
-  readonly isMessage: boolean;
-  readonly accountAddresses?: ReadonlyArray<string>;
+  readonly token: TokenDto;
+  readonly balance: string;
+  readonly asOf: string;
+};
+export type GasEstimateDto = {
+  readonly amount: string | null;
+  readonly token: TokenDto;
+  readonly gasLimit?: string;
 };
 export type TransactionGasEstimateDto = {
   readonly amount: string | null;
@@ -2762,52 +2624,13 @@ export type AddressArgumentsDto = {
   readonly address?: RequiredArgumentWithNetworkDto;
   readonly additionalAddresses?: ReadonlyArray<BinanceAdditionalAddressesStakeArgumentOptionsDto>;
 };
-export type CreateCampaignWithSafeAddressDto = {
-  readonly yieldId: string;
-  readonly name?: string | null;
-  readonly rewardToken: {
-    readonly name: string;
-    readonly network: Networks;
-    readonly symbol: string;
-    readonly decimals: number;
-    readonly address?: string;
-    readonly coinGeckoId?: string;
-    readonly logoURI?: string;
-    readonly isPoints?: boolean;
-    readonly feeConfigurationId?: string;
-  };
-  readonly rewardMode?: CampaignRewardMode;
-  readonly totalBudget: string;
-  readonly apyCeiling?: number | null;
-  readonly startTime: string;
-  readonly endTime: string;
-  readonly payoutFrequency:
-    | "weekly"
-    | "daily"
-    | "six_hourly"
-    | "end_of_campaign";
-  readonly qualificationConfig: CampaignQualificationConfigDto;
-  readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
-  readonly status?: CampaignStatus;
-  readonly safeAddress: string;
-};
 export type CampaignDto = {
   readonly id: string;
   readonly name?: string | null;
   readonly projectId: string;
   readonly yieldId: string;
   readonly integrationId: string;
-  readonly rewardToken: {
-    readonly name: string;
-    readonly network: Networks;
-    readonly symbol: string;
-    readonly decimals: number;
-    readonly address?: string;
-    readonly coinGeckoId?: string;
-    readonly logoURI?: string;
-    readonly isPoints?: boolean;
-    readonly feeConfigurationId?: string;
-  };
+  readonly rewardToken: TokenDto;
   readonly rewardMode: CampaignRewardMode;
   readonly safeAddress: string;
   readonly totalBudget: string;
@@ -2817,30 +2640,35 @@ export type CampaignDto = {
   readonly endTime: string;
   readonly payoutFrequency: CampaignPayoutFrequency;
   readonly status: CampaignStatus;
-  readonly lastProcessedHour?: string;
-  readonly nextPayoutDueAt?: string;
+  readonly lastProcessedHour?: string | null;
+  readonly nextPayoutDueAt?: string | null;
   readonly apyCeiling?: number | null;
   readonly budgetSpendStrategy: CampaignBudgetSpendStrategy;
   readonly qualificationConfig: CampaignQualificationConfigDto;
-  readonly pausedBy?: string;
-  readonly pausedAt?: string;
+  readonly pausedBy?: string | null;
+  readonly pausedAt?: string | null;
   readonly pausedByRole?: string | null;
-  readonly acknowledgedAt?: string;
+  readonly acknowledgedAt?: string | null;
+};
+export type CreateCampaignWithSafeAddressDto = {
+  readonly yieldId: string;
+  readonly name?: string | null;
+  readonly rewardToken: TokenDto;
+  readonly rewardMode?: CampaignRewardMode;
+  readonly totalBudget: string;
+  readonly apyCeiling?: number | null;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly payoutFrequency: CampaignPayoutFrequency;
+  readonly qualificationConfig: CampaignQualificationConfigDto;
+  readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
+  readonly status?: CampaignStatus;
+  readonly safeAddress: string;
 };
 export type UpdateCampaignDto = {
   readonly yieldId?: string;
   readonly name?: string | null;
-  readonly rewardToken?: {
-    readonly name: string;
-    readonly network: Networks;
-    readonly symbol: string;
-    readonly decimals: number;
-    readonly address?: string;
-    readonly coinGeckoId?: string;
-    readonly logoURI?: string;
-    readonly isPoints?: boolean;
-    readonly feeConfigurationId?: string;
-  };
+  readonly rewardToken?: TokenDto;
   readonly rewardMode?: CampaignRewardMode;
   readonly safeAddress?: string;
   readonly totalBudget?: string;
@@ -2852,63 +2680,19 @@ export type UpdateCampaignDto = {
   readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
   readonly status?: CampaignStatus;
 };
-export type CreateCampaignConfigurationRequestDto = {
-  readonly requestType: CampaignConfigurationRequestType;
-  readonly campaignId?: string;
-  readonly createPayload?: {
-    readonly yieldId: string;
-    readonly name?: string | null;
-    readonly rewardToken: {
-      readonly name: string;
-      readonly network: Networks;
-      readonly symbol: string;
-      readonly decimals: number;
-      readonly address?: string;
-      readonly coinGeckoId?: string;
-      readonly logoURI?: string;
-      readonly isPoints?: boolean;
-      readonly feeConfigurationId?: string;
-    };
-    readonly rewardMode?: CampaignRewardMode;
-    readonly totalBudget: string;
-    readonly apyCeiling?: number | null;
-    readonly startTime: string;
-    readonly endTime: string;
-    readonly payoutFrequency:
-      | "weekly"
-      | "daily"
-      | "six_hourly"
-      | "end_of_campaign";
-    readonly qualificationConfig: CampaignQualificationConfigDto;
-    readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
-    readonly status?: CampaignStatus;
-  };
-  readonly updatePayload?: {
-    readonly yieldId?: string;
-    readonly name?: string | null;
-    readonly rewardToken?: {
-      readonly name: string;
-      readonly network: Networks;
-      readonly symbol: string;
-      readonly decimals: number;
-      readonly address?: string;
-      readonly coinGeckoId?: string;
-      readonly logoURI?: string;
-      readonly isPoints?: boolean;
-      readonly feeConfigurationId?: string;
-    };
-    readonly rewardMode?: CampaignRewardMode;
-    readonly safeAddress?: string;
-    readonly totalBudget?: string;
-    readonly apyCeiling?: number | null;
-    readonly startTime?: string;
-    readonly endTime?: string;
-    readonly payoutFrequency?: CampaignPayoutFrequency;
-    readonly qualificationConfig?: CampaignQualificationConfigDto;
-    readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
-    readonly status?: CampaignStatus;
-  };
-  readonly metadata?: { readonly [x: string]: Schema.Json };
+export type CreateCampaignDto = {
+  readonly yieldId: string;
+  readonly name?: string | null;
+  readonly rewardToken: TokenDto;
+  readonly rewardMode?: CampaignRewardMode;
+  readonly totalBudget: string;
+  readonly apyCeiling?: number | null;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly payoutFrequency: CampaignPayoutFrequency;
+  readonly qualificationConfig: CampaignQualificationConfigDto;
+  readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
+  readonly status?: CampaignStatus;
 };
 export type AdminCampaignDto = {
   readonly id: string;
@@ -2916,17 +2700,7 @@ export type AdminCampaignDto = {
   readonly projectId: string;
   readonly yieldId: string;
   readonly integrationId: string;
-  readonly rewardToken: {
-    readonly name: string;
-    readonly network: Networks;
-    readonly symbol: string;
-    readonly decimals: number;
-    readonly address?: string;
-    readonly coinGeckoId?: string;
-    readonly logoURI?: string;
-    readonly isPoints?: boolean;
-    readonly feeConfigurationId?: string;
-  };
+  readonly rewardToken: TokenDto;
   readonly rewardMode: CampaignRewardMode;
   readonly safeAddress: string;
   readonly totalBudget: string;
@@ -2936,15 +2710,122 @@ export type AdminCampaignDto = {
   readonly endTime: string;
   readonly payoutFrequency: CampaignPayoutFrequency;
   readonly status: CampaignStatus;
-  readonly lastProcessedHour?: string;
-  readonly nextPayoutDueAt?: string;
+  readonly lastProcessedHour?: string | null;
+  readonly nextPayoutDueAt?: string | null;
   readonly apyCeiling?: number | null;
   readonly budgetSpendStrategy: CampaignBudgetSpendStrategy;
   readonly qualificationConfig: CampaignQualificationConfigDto;
-  readonly pausedBy?: string;
-  readonly pausedAt?: string;
+  readonly pausedBy?: string | null;
+  readonly pausedAt?: string | null;
   readonly pausedByRole?: string | null;
-  readonly acknowledgedAt?: string;
+  readonly acknowledgedAt?: string | null;
+  readonly teamId?: string | null;
+};
+export type CreateCampaignV2Dto = {
+  readonly yieldId: string;
+  readonly feeConfigurationId?: string;
+  readonly name?: string | null;
+  readonly rewardToken: TokenDto;
+  readonly rewardMode?: CampaignRewardMode;
+  readonly totalBudget: string;
+  readonly apyCeiling?: number | null;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly payoutFrequency: CampaignPayoutFrequency;
+  readonly qualificationConfig: CampaignV2QualificationConfigDto;
+  readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
+  readonly blacklistBudgetHandling?: CampaignBlacklistBudgetHandling;
+  readonly status?: CampaignStatus;
+};
+export type UpdateCampaignV2Dto = {
+  readonly yieldId?: string;
+  readonly feeConfigurationId?: string;
+  readonly name?: string | null;
+  readonly rewardToken?: TokenDto;
+  readonly rewardMode?: CampaignRewardMode;
+  readonly safeAddress?: string;
+  readonly totalBudget?: string;
+  readonly apyCeiling?: number | null;
+  readonly startTime?: string;
+  readonly endTime?: string;
+  readonly payoutFrequency?: CampaignPayoutFrequency;
+  readonly qualificationConfig?: CampaignV2QualificationConfigDto;
+  readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
+  readonly blacklistBudgetHandling?: CampaignBlacklistBudgetHandling;
+  readonly status?: CampaignStatus;
+};
+export type CampaignV2Dto = {
+  readonly id: string;
+  readonly name?: string | null;
+  readonly projectId: string;
+  readonly yieldId: string;
+  readonly integrationId: string;
+  readonly feeConfigurationId?: string | null;
+  readonly rewardToken: TokenDto;
+  readonly rewardMode: CampaignRewardMode;
+  readonly safeAddress: string;
+  readonly totalBudget: string;
+  readonly distributedBudget: string;
+  readonly remainingBudget: string;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly payoutFrequency: CampaignPayoutFrequency;
+  readonly status: CampaignStatus;
+  readonly accruedThrough?: string | null;
+  readonly nextPayoutDueAt?: string | null;
+  readonly apyCeiling?: number | null;
+  readonly budgetSpendStrategy: CampaignBudgetSpendStrategy;
+  readonly blacklistBudgetHandling: CampaignBlacklistBudgetHandling;
+  readonly qualificationConfig: CampaignV2QualificationConfigDto;
+  readonly pausedBy?: string | null;
+  readonly pausedAt?: string | null;
+  readonly pausedByRole?: string | null;
+  readonly acknowledgedAt?: string | null;
+};
+export type CreateCampaignV2WithSafeAddressDto = {
+  readonly yieldId: string;
+  readonly feeConfigurationId?: string;
+  readonly name?: string | null;
+  readonly rewardToken: TokenDto;
+  readonly rewardMode?: CampaignRewardMode;
+  readonly totalBudget: string;
+  readonly apyCeiling?: number | null;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly payoutFrequency: CampaignPayoutFrequency;
+  readonly qualificationConfig: CampaignV2QualificationConfigDto;
+  readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
+  readonly blacklistBudgetHandling?: CampaignBlacklistBudgetHandling;
+  readonly status?: CampaignStatus;
+  readonly safeAddress: string;
+};
+export type AdminCampaignV2Dto = {
+  readonly id: string;
+  readonly name?: string | null;
+  readonly projectId: string;
+  readonly yieldId: string;
+  readonly integrationId: string;
+  readonly feeConfigurationId?: string | null;
+  readonly rewardToken: TokenDto;
+  readonly rewardMode: CampaignRewardMode;
+  readonly safeAddress: string;
+  readonly totalBudget: string;
+  readonly distributedBudget: string;
+  readonly remainingBudget: string;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly payoutFrequency: CampaignPayoutFrequency;
+  readonly status: CampaignStatus;
+  readonly accruedThrough?: string | null;
+  readonly nextPayoutDueAt?: string | null;
+  readonly apyCeiling?: number | null;
+  readonly budgetSpendStrategy: CampaignBudgetSpendStrategy;
+  readonly blacklistBudgetHandling: CampaignBlacklistBudgetHandling;
+  readonly qualificationConfig: CampaignV2QualificationConfigDto;
+  readonly pausedBy?: string | null;
+  readonly pausedAt?: string | null;
+  readonly pausedByRole?: string | null;
+  readonly acknowledgedAt?: string | null;
   readonly teamId?: string | null;
 };
 export type CampaignBalancesResponseDto = {
@@ -2958,6 +2839,12 @@ export type PaginatedCampaignPayoutRunDto = {
   readonly limit: number;
   readonly items: ReadonlyArray<CampaignPayoutRunDto>;
 };
+export type PaginatedCampaignV2PayoutRunDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<CampaignV2PayoutRunDto>;
+};
 export type CampaignPayoutRunDetailDto = {
   readonly run: CampaignPayoutRunDto;
   readonly items: ReadonlyArray<CampaignPayoutItemDto>;
@@ -2970,6 +2857,18 @@ export type PaginatedProgrammaticPayoutItemDto = {
   readonly limit: number;
   readonly items: ReadonlyArray<ProgrammaticPayoutItemDto>;
 };
+export type CampaignV2PayoutRunDetailDto = {
+  readonly run: CampaignV2PayoutRunDto;
+  readonly items: ReadonlyArray<CampaignV2PayoutItemDto>;
+  readonly safeTransactions: ReadonlyArray<SafeTransactionDetailV2Dto>;
+  readonly budgetState: PayoutRunBudgetStateV2Dto;
+};
+export type PaginatedProgrammaticPayoutItemV2Dto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<ProgrammaticPayoutItemV2Dto>;
+};
 export type HourlyAccrualDetailDto = {
   readonly summary: HourlyAccrualSummaryDto;
   readonly users: PaginatedUserHourlyAccrualDto;
@@ -2980,15 +2879,81 @@ export type PaginatedCampaignAuditLogDto = {
   readonly limit: number;
   readonly items: ReadonlyArray<CampaignAuditLogDto>;
 };
+export type PaginatedCampaignV2AuditLogDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<CampaignV2AuditLogDto>;
+};
 export type PaginatedCampaignConfigurationRequestDto = {
   readonly total: number;
   readonly offset: number;
   readonly limit: number;
   readonly items: ReadonlyArray<CampaignConfigurationRequestDto>;
 };
+export type PaginatedCampaignV2ConfigurationRequestDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<CampaignV2ConfigurationRequestDto>;
+};
+export type CampaignV2PointsMetricsDto = {
+  readonly releasedBudget: string;
+  readonly distributedBudget: string;
+  readonly totalBudget: string;
+  readonly envelope: string;
+  readonly includedUnpaidPoints: string;
+  readonly openRuns: ReadonlyArray<CampaignV2PointsRunDto>;
+  readonly users: CampaignV2UserPointsPageDto;
+};
+export type WindowAccrualDetailDto = {
+  readonly summary: WindowAccrualSummaryDto;
+  readonly users: PaginatedUserWindowAccrualDto;
+};
+export type CampaignV2BalancesResponseDto = {
+  readonly users: PaginatedCampaignV2UserBalanceDto;
+  readonly totals: CampaignV2BalanceTotalsDto;
+  readonly freshness: CampaignV2BalanceFreshnessDto;
+};
+export type IndexingNetworkGroupDto = {
+  readonly network: Networks;
+  readonly entries: ReadonlyArray<IndexingNetworkEntryDto>;
+};
 export type TopIntegrationsDto = {
   readonly by_revenue: ReadonlyArray<TopIntegrationDto>;
   readonly by_tvl: ReadonlyArray<TopIntegrationDto>;
+};
+export type TransactionVerificationMessageRequestDto = {
+  readonly addresses: AddressesDto;
+};
+export type TokenBalanceScanDto = {
+  readonly addresses: AddressesDto;
+  readonly network: Networks;
+};
+export type YieldBalanceWithIntegrationIdRequestDto = {
+  readonly addresses: AddressesDto;
+  readonly args?: ValidatorAddressesDto;
+  readonly integrationId: string;
+};
+export type YieldBalanceScanRequestDto = {
+  readonly addresses: AddressesDto;
+  readonly network: Networks;
+  readonly customValidators?: ReadonlyArray<CustomValidatorAddresses>;
+};
+export type YieldBalanceScanEvmRequestDto = {
+  readonly addresses: AddressesDto;
+  readonly customValidators?: ReadonlyArray<CustomValidatorAddresses>;
+  readonly networks: EvmNetworks;
+};
+export type YieldBalanceRequestDto = {
+  readonly addresses: AddressesDto;
+  readonly args?: ValidatorAddressesDto;
+};
+export type YieldRewardsSummaryRequestDto = {
+  readonly addresses: AddressesDto;
+};
+export type BalancesRequestDto = {
+  readonly addresses: ReadonlyArray<AddressWithTokenDto>;
 };
 export type YieldMetadataDto = {
   readonly name: string;
@@ -3066,319 +3031,26 @@ export type StakeResponseDto = {
   readonly id: WalletViewDto;
   readonly stake: StakeViewSuccessDto | StakeFailureDto;
 };
-export type TransactionVerificationMessageRequestDto = {
-  readonly addresses: AddressesDto;
-};
-export type TokenBalanceScanDto = {
-  readonly addresses: AddressesDto;
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-};
-export type YieldBalanceWithIntegrationIdRequestDto = {
-  readonly addresses: AddressesDto;
-  readonly args?: ValidatorAddressesDto;
-  readonly integrationId: string;
-};
-export type YieldBalanceScanRequestDto = {
-  readonly addresses: AddressesDto;
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly customValidators?: ReadonlyArray<CustomValidatorAddresses>;
-};
-export type YieldBalanceScanEvmRequestDto = {
-  readonly addresses: AddressesDto;
-  readonly customValidators?: ReadonlyArray<CustomValidatorAddresses>;
-  readonly networks:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos";
-};
-export type YieldBalanceRequestDto = {
-  readonly addresses: AddressesDto;
-  readonly args?: ValidatorAddressesDto;
-};
-export type YieldRewardsSummaryRequestDto = {
-  readonly addresses: AddressesDto;
-};
-export type BalancesRequestDto = {
-  readonly addresses: ReadonlyArray<AddressWithTokenDto>;
-};
-export type ActionWithLivePriceDto = {
+export type TransactionDto = {
   readonly id: string;
-  readonly integrationId: string;
-  readonly status: ActionStatus;
-  readonly type: ActionTypes;
-  readonly currentStepIndex: number;
-  readonly amount: string | null;
-  readonly USDAmount: string | null;
-  readonly tokenId: string | null;
-  readonly validatorAddress: string | null;
-  readonly validatorAddresses: ReadonlyArray<string>;
-  readonly transactions: ReadonlyArray<TransactionDto>;
+  readonly network: Networks;
+  readonly status: TransactionStatus;
+  readonly type: TransactionType | null;
+  readonly hash: string | null;
   readonly createdAt: string;
-  readonly completedAt: string;
-  readonly inputToken?: TokenDto;
-  readonly addresses: AddressesDto;
+  readonly broadcastedAt: string | null;
+  readonly signedTransaction: string | null;
+  readonly unsignedTransaction: string | null;
+  readonly structuredTransaction: StructuredTransactionTronDto | null;
+  readonly annotatedTransaction: AnnotatedTransactionDto | null;
+  readonly stepIndex: number;
+  readonly error: string | null;
+  readonly gasEstimate: GasEstimateDto | null;
+  readonly stakeId: string;
+  readonly explorerUrl: string | null;
+  readonly ledgerHwAppId: string | null;
+  readonly isMessage: boolean;
   readonly accountAddresses?: ReadonlyArray<string>;
-  readonly projectId: string | null;
-  readonly currentUSDAmount: string | null;
-};
-export type ActionDto = {
-  readonly id: string;
-  readonly integrationId: string;
-  readonly status: ActionStatus;
-  readonly type: ActionTypes;
-  readonly currentStepIndex: number;
-  readonly amount: string | null;
-  readonly USDAmount: string | null;
-  readonly tokenId: string | null;
-  readonly validatorAddress: string | null;
-  readonly validatorAddresses: ReadonlyArray<string>;
-  readonly transactions: ReadonlyArray<TransactionDto>;
-  readonly createdAt: string;
-  readonly completedAt: string;
-  readonly inputToken?: TokenDto;
-  readonly addresses: AddressesDto;
-  readonly accountAddresses?: ReadonlyArray<string>;
-  readonly projectId: string | null;
 };
 export type ActionGasEstimateDto = {
   readonly amount: string | null;
@@ -3438,11 +3110,46 @@ export type CampaignSummaryDto = {
   readonly ceilingActiveHoursCount: number;
   readonly alertFlags: CampaignAlertFlagsDto;
 };
+export type CreateCampaignConfigurationRequestDto = {
+  readonly requestType: CampaignConfigurationRequestType;
+  readonly campaignId?: string;
+  readonly createPayload?: CreateCampaignDto;
+  readonly updatePayload?: UpdateCampaignDto;
+  readonly metadata?: { readonly [x: string]: unknown };
+};
 export type PaginatedAdminCampaignDto = {
   readonly total: number;
   readonly offset: number;
   readonly limit: number;
   readonly items: ReadonlyArray<AdminCampaignDto>;
+};
+export type CreateCampaignV2ConfigurationRequestDto = {
+  readonly requestType: CampaignConfigurationRequestType;
+  readonly campaignId?: string;
+  readonly createPayload?: CreateCampaignV2Dto;
+  readonly updatePayload?: UpdateCampaignV2Dto;
+  readonly metadata?: { readonly [x: string]: unknown };
+};
+export type PaginatedCampaignV2Dto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<CampaignV2Dto>;
+};
+export type CampaignV2SummaryDto = {
+  readonly campaign: CampaignV2Dto;
+  readonly unpaidLiability: string;
+  readonly totalQualifyingTvl: string;
+  readonly participantsCount: number;
+  readonly averageEmissionRate: string;
+  readonly ceilingActiveWindowsCount: number;
+  readonly alertFlags: CampaignV2AlertFlagsDto;
+};
+export type PaginatedAdminCampaignV2Dto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<AdminCampaignV2Dto>;
 };
 export type ProgrammaticPayoutRunDetailDto = {
   readonly run: CampaignPayoutRunDto;
@@ -3454,10 +3161,25 @@ export type ProgrammaticPayoutBatchDetailDto = {
   readonly safeTransaction: SafeTransactionDetailDto;
   readonly recipients: PaginatedProgrammaticPayoutItemDto;
 };
+export type ProgrammaticPayoutRunDetailV2Dto = {
+  readonly run: CampaignV2PayoutRunDto;
+  readonly recipients: PaginatedProgrammaticPayoutItemV2Dto;
+  readonly budgetState: PayoutRunBudgetStateV2Dto;
+  readonly safeTransactions: ReadonlyArray<SafeTransactionDetailV2Dto>;
+};
+export type ProgrammaticPayoutBatchDetailV2Dto = {
+  readonly safeTransaction: SafeTransactionDetailV2Dto;
+  readonly recipients: PaginatedProgrammaticPayoutItemV2Dto;
+};
+export type IndexingStatusResponseDto = {
+  readonly generatedAt: string;
+  readonly networks: ReadonlyArray<IndexingNetworkGroupDto>;
+  readonly feeConfigurationOwnership: ReadonlyArray<IndexingOwnershipGroupDto>;
+};
 export type RevenueBreakdownResponseDto = {
   readonly total_earned_revenue_usd: string | null;
   readonly coverage: boolean;
-  readonly last_updated_at: string;
+  readonly last_updated_at: string | null;
   readonly integrations: ReadonlyArray<IntegrationRevenueRowDto>;
   readonly top_integrations: TopIntegrationsDto;
 };
@@ -3469,18 +3191,69 @@ export type ActionArgumentOptionsDto = {
   readonly addresses?: AddressArgumentsDto;
   readonly args?: ArgumentOptionsDto;
 };
-export type PendingActionDto = {
+export type ActionWithLivePriceDto = {
+  readonly id: string;
+  readonly integrationId: string;
+  readonly status: ActionStatus;
   readonly type: ActionTypes;
-  readonly passthrough: string;
-  readonly args?: {
-    readonly addresses?: AddressArgumentsDto;
-    readonly args?: ArgumentOptionsDto;
-  };
+  readonly currentStepIndex: number;
   readonly amount: string | null;
+  readonly USDAmount: string | null;
+  readonly tokenId: string | null;
+  readonly validatorAddress: string | null;
+  readonly validatorAddresses: ReadonlyArray<string> | null;
+  readonly transactions: ReadonlyArray<TransactionDto>;
+  readonly createdAt: string;
+  readonly completedAt: string | null;
+  readonly inputToken?: TokenDto;
+  readonly addresses: AddressesDto;
+  readonly accountAddresses?: ReadonlyArray<string>;
+  readonly projectId: string | null;
+  readonly currentUSDAmount: string | null;
+};
+export type ActionDto = {
+  readonly id: string;
+  readonly integrationId: string;
+  readonly status: ActionStatus;
+  readonly type: ActionTypes;
+  readonly currentStepIndex: number;
+  readonly amount: string | null;
+  readonly USDAmount: string | null;
+  readonly tokenId: string | null;
+  readonly validatorAddress: string | null;
+  readonly validatorAddresses: ReadonlyArray<string> | null;
+  readonly transactions: ReadonlyArray<TransactionDto>;
+  readonly createdAt: string;
+  readonly completedAt: string | null;
+  readonly inputToken?: TokenDto;
+  readonly addresses: AddressesDto;
+  readonly accountAddresses?: ReadonlyArray<string>;
+  readonly projectId: string | null;
 };
 export type ActionArgumentResponseDto = {
   readonly enter: ActionArgumentOptionsDto;
   readonly exit?: ActionArgumentOptionsDto;
+};
+export type PendingActionDto = {
+  readonly type: ActionTypes;
+  readonly passthrough: string;
+  readonly args?: ActionArgumentOptionsDto;
+  readonly amount: string | null;
+};
+export type YieldDto = {
+  readonly id: string;
+  readonly token: TokenDto;
+  readonly tokens: ReadonlyArray<TokenDto>;
+  readonly args: ActionArgumentResponseDto;
+  readonly status: YieldStatusResponseDto;
+  readonly apy: number;
+  readonly rewardRate: number;
+  readonly rewardType: RewardTypes;
+  readonly metadata: YieldMetadataDto;
+  readonly validators: ReadonlyArray<ValidatorDto>;
+  readonly isAvailable: boolean;
+  readonly feeConfigurations: ReadonlyArray<FeeConfigurationWithApyDto>;
+  readonly allocations?: ReadonlyArray<AllocationDto>;
 };
 export type YieldBalanceDto = {
   readonly groupId: string;
@@ -3501,21 +3274,6 @@ export type YieldBalanceDto = {
   readonly accountAddress?: string;
   readonly accountAddresses?: ReadonlyArray<string>;
 };
-export type YieldDto = {
-  readonly id: string;
-  readonly token: TokenDto;
-  readonly tokens: ReadonlyArray<TokenDto>;
-  readonly args: ActionArgumentResponseDto;
-  readonly status: YieldStatusResponseDto;
-  readonly apy: number;
-  readonly rewardRate: number;
-  readonly rewardType: RewardTypes;
-  readonly metadata: YieldMetadataDto;
-  readonly validators: ReadonlyArray<ValidatorDto>;
-  readonly isAvailable: boolean;
-  readonly feeConfigurations: ReadonlyArray<FeeConfigurationWithApyDto>;
-  readonly allocations?: ReadonlyArray<AllocationDto>;
-};
 export type PositionDto = {
   readonly balances: ReadonlyArray<YieldBalanceDto>;
   readonly integrationId: string;
@@ -3528,7 +3286,9 @@ export type YieldBalancesWithIntegrationIdDto = {
 export type AuthControllerRequestLoginCodeRequestJson = AuthRequestLoginCodeDto;
 export type AuthControllerRequestLoginCode200 = AuthRequestLoginCodeResponseDto;
 export type AuthControllerVerifyLoginCodeRequestJson = AuthVerifyLoginCodeDto;
-export type AuthControllerVerifyLoginCode200 = AuthEmailLoginResponseDto;
+export type AuthControllerVerifyLoginCode200 =
+  | AuthEmailLoginSessionResponseDto
+  | AuthEmailLoginMfaChallengeResponseDto;
 export type AuthControllerConfirmEmailRequestJson = AuthConfirmEmailDto;
 export type AuthControllerMe200 = UserDto;
 export type AuthControllerUpdateRequestJson = AuthUpdateDto;
@@ -3780,6 +3540,253 @@ export type ProgrammaticCampaignControllerGetCampaignBalancesParams = {
 };
 export type ProgrammaticCampaignControllerGetCampaignBalances200 =
   CampaignBalancesResponseDto;
+export type CampaignV2ConfigurationRequestControllerListForProjectParams = {
+  readonly status?: CampaignConfigurationRequestStatus;
+  readonly requestType?: CampaignConfigurationRequestType;
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type CampaignV2ConfigurationRequestControllerListForProject200 =
+  PaginatedCampaignV2ConfigurationRequestDto;
+export type CampaignV2ConfigurationRequestControllerCreateRequestJson =
+  CreateCampaignV2ConfigurationRequestDto;
+export type CampaignV2ConfigurationRequestControllerCreate201 =
+  CampaignV2ConfigurationRequestDto;
+export type CampaignV2ConfigurationRequestControllerGetById200 =
+  CampaignV2ConfigurationRequestDto;
+export type CampaignV2ConfigurationRequestControllerListForCampaignParams = {
+  readonly status?: CampaignConfigurationRequestStatus;
+  readonly requestType?: CampaignConfigurationRequestType;
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type CampaignV2ConfigurationRequestControllerListForCampaign200 =
+  PaginatedCampaignV2ConfigurationRequestDto;
+export type CampaignV2ConfigurationRequestControllerAcceptRequestJson =
+  AcceptCampaignV2ConfigurationRequestDto;
+export type CampaignV2ConfigurationRequestControllerAccept200 =
+  CampaignV2ConfigurationRequestDto;
+export type CampaignV2ConfigurationRequestControllerRejectRequestJson =
+  RejectCampaignV2ConfigurationRequestDto;
+export type CampaignV2ConfigurationRequestControllerReject200 =
+  CampaignV2ConfigurationRequestDto;
+export type CampaignLifecycleControllerListParams = {
+  readonly status?: CampaignStatus;
+  readonly yieldId?: string;
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type CampaignLifecycleControllerList200 = PaginatedCampaignV2Dto;
+export type CampaignLifecycleControllerCreateRequestJson =
+  CreateCampaignV2WithSafeAddressDto;
+export type CampaignLifecycleControllerCreate201 = CampaignV2Dto;
+export type CampaignLifecycleControllerGetById200 = CampaignV2Dto;
+export type CampaignLifecycleControllerUpdateRequestJson = UpdateCampaignV2Dto;
+export type CampaignLifecycleControllerUpdate200 = CampaignV2Dto;
+export type CampaignV2ReadsControllerGetMilestones200 =
+  ReadonlyArray<CampaignV2MilestoneDto>;
+export type CampaignLifecycleControllerReplaceMilestonesRequestJson =
+  ReplaceCampaignV2MilestonesDto;
+export type CampaignLifecycleControllerReplaceMilestones200 =
+  ReadonlyArray<CampaignV2MilestoneDto>;
+export type CampaignLifecycleControllerPause200 = CampaignV2Dto;
+export type CampaignLifecycleControllerPause409 = StakeKitErrorDto;
+export type CampaignLifecycleControllerResume200 = CampaignV2Dto;
+export type CampaignLifecycleControllerResume409 = StakeKitErrorDto;
+export type CampaignLifecycleControllerAcknowledgePause200 = CampaignV2Dto;
+export type CampaignLifecycleControllerAcknowledgePause409 = StakeKitErrorDto;
+export type CampaignLifecycleControllerEnd200 = CampaignV2Dto;
+export type CampaignV2ReadsControllerGetSummary200 = CampaignV2SummaryDto;
+export type CampaignV2ReadsControllerGetLiability200 = CampaignV2LiabilityDto;
+export type CampaignV2ReadsControllerGetBudgetProjectionParams = {
+  readonly totalBudget?: string;
+  readonly endTime?: string;
+};
+export type CampaignV2ReadsControllerGetBudgetProjection200 =
+  BudgetProjectionV2Dto;
+export type CampaignV2ReadsControllerSetUserPayoutEligibilityRequestJson =
+  UpdateCampaignV2UserPayoutEligibilityDto;
+export type CampaignV2ReadsControllerSetUserPayoutEligibility200 =
+  CampaignV2UserPayoutEligibilityDto;
+export type CampaignV2ReadsControllerGetUserEntitlement200 =
+  CampaignV2UserEntitlementDto;
+export type CampaignV2ReadsControllerGetPayoutRunsParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly status?: CampaignPayoutRunStatus;
+};
+export type CampaignV2ReadsControllerGetPayoutRuns200 =
+  PaginatedCampaignV2PayoutRunDto;
+export type CampaignV2ReadsControllerGetPayoutRunDetailParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type CampaignV2ReadsControllerGetPayoutRunDetail200 =
+  CampaignV2PayoutRunDetailDto;
+export type CampaignV2ReadsControllerGetPayoutAuditParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type CampaignV2ReadsControllerGetPayoutAudit200 =
+  PaginatedCampaignV2PayoutAuditDto;
+export type CampaignV2ReadsControllerGetWeeklyDistributionParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type CampaignV2ReadsControllerGetWeeklyDistribution200 =
+  PaginatedWeeklyDistributionV2Dto;
+export type CampaignV2ReadsControllerGetEligibleUsersParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly minTotalEarned?: string;
+  readonly sortField?: EligibleUserSortField;
+  readonly sortDirection?: "asc" | "desc";
+};
+export type CampaignV2ReadsControllerGetEligibleUsers200 =
+  PaginatedEligibleUserV2Dto;
+export type CampaignV2ReadsControllerGetBlacklistedUsersParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type CampaignV2ReadsControllerGetBlacklistedUsers200 =
+  PaginatedCampaignV2UserPayoutEligibilityDto;
+export type CampaignV2ReadsControllerGetSafeBalance200 =
+  CampaignV2SafeBalanceDto;
+export type CampaignV2ReadsControllerGetPayoutEligibilitySummary200 =
+  CampaignV2PayoutEligibilitySummaryDto;
+export type CampaignV2ReadsControllerGetBlacklistedAddressesParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type CampaignV2ReadsControllerGetBlacklistedAddresses200 =
+  PaginatedBlacklistedAddressV2Dto;
+export type CampaignV2ReadsControllerGetAuditHistoryParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly address?: string;
+  readonly type?: CampaignAuditLogType;
+};
+export type CampaignV2ReadsControllerGetAuditHistory200 =
+  PaginatedCampaignV2AuditLogDto;
+export type CampaignV2ConfigurationRequestAdminControllerListParams = {
+  readonly status?: CampaignConfigurationRequestStatus;
+  readonly requestType?: CampaignConfigurationRequestType;
+  readonly projectId?: string;
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type CampaignV2ConfigurationRequestAdminControllerList200 =
+  PaginatedCampaignV2ConfigurationRequestDto;
+export type CampaignV2AdminControllerListParams = {
+  readonly status?: CampaignStatus;
+  readonly projectId?: string;
+  readonly integrationId?: string;
+  readonly rewardMode?: CampaignRewardMode;
+  readonly startTimeFrom?: string;
+  readonly startTimeTo?: string;
+  readonly endTimeFrom?: string;
+  readonly endTimeTo?: string;
+  readonly sort?: CampaignAdminSortingOption;
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type CampaignV2AdminControllerList200 = PaginatedAdminCampaignV2Dto;
+export type CampaignV2AdminControllerGetById200 = AdminCampaignV2Dto;
+export type CampaignV2AdminControllerGetPointsMetricsParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type CampaignV2AdminControllerGetPointsMetrics200 =
+  CampaignV2PointsMetricsDto;
+export type CampaignV2AdminControllerTopUpBudgetRequestJson =
+  TopUpCampaignV2BudgetDto;
+export type CampaignV2AdminControllerTopUpBudget200 = CampaignV2Dto;
+export type CampaignV2AdminControllerUnlockMilestoneRequestJson =
+  UnlockCampaignV2MilestoneDto;
+export type CampaignV2AdminControllerUnlockMilestone200 =
+  CampaignV2MilestoneDto;
+export type ProgrammaticCampaignV2ControllerListCampaignsParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly status?: CampaignStatus;
+  readonly integrationId?: string;
+  readonly "X-ADMIN-API-KEY": string;
+};
+export type ProgrammaticCampaignV2ControllerListCampaigns200 =
+  PaginatedCampaignV2Dto;
+export type ProgrammaticCampaignV2ControllerGetAccrualDetailsParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly runId?: string;
+  readonly "X-ADMIN-API-KEY": string;
+};
+export type ProgrammaticCampaignV2ControllerGetAccrualDetails200 =
+  PaginatedWindowAccrualSummaryDto;
+export type ProgrammaticCampaignV2ControllerGetAccrualDetailForWindowParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly address?: string;
+  readonly qualified?: boolean;
+  readonly sortField?: AccrualWindowSortField;
+  readonly sortDirection?: "asc" | "desc";
+  readonly "X-ADMIN-API-KEY": string;
+};
+export type ProgrammaticCampaignV2ControllerGetAccrualDetailForWindow200 =
+  WindowAccrualDetailDto;
+export type ProgrammaticCampaignV2ControllerGetCampaignTvlStatsParams = {
+  readonly "X-ADMIN-API-KEY": string;
+};
+export type ProgrammaticCampaignV2ControllerGetCampaignTvlStats200 =
+  CampaignV2TvlStatsDto;
+export type ProgrammaticCampaignV2ControllerGetUserAccrualHistoryParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly "X-ADMIN-API-KEY": string;
+};
+export type ProgrammaticCampaignV2ControllerGetUserAccrualHistory200 =
+  PaginatedUserWindowAccrualHistoryDto;
+export type ProgrammaticCampaignV2ControllerGetPayoutRunsParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly status?: CampaignPayoutRunStatus;
+  readonly "X-ADMIN-API-KEY": string;
+};
+export type ProgrammaticCampaignV2ControllerGetPayoutRuns200 =
+  PaginatedCampaignV2PayoutRunDto;
+export type ProgrammaticCampaignV2ControllerGetPayoutRunDetailParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly "X-ADMIN-API-KEY": string;
+};
+export type ProgrammaticCampaignV2ControllerGetPayoutRunDetail200 =
+  ProgrammaticPayoutRunDetailV2Dto;
+export type ProgrammaticCampaignV2ControllerGetPayoutBatchDetailParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly "X-ADMIN-API-KEY": string;
+};
+export type ProgrammaticCampaignV2ControllerGetPayoutBatchDetail200 =
+  ProgrammaticPayoutBatchDetailV2Dto;
+export type ProgrammaticCampaignV2ControllerGetCampaignSafeBalanceParams = {
+  readonly "X-ADMIN-API-KEY": string;
+};
+export type ProgrammaticCampaignV2ControllerGetCampaignSafeBalance200 =
+  CampaignV2SafeBalanceDto;
+export type ProgrammaticCampaignV2ControllerGetCampaignPayoutEligibilitySummaryParams =
+  { readonly "X-ADMIN-API-KEY": string };
+export type ProgrammaticCampaignV2ControllerGetCampaignPayoutEligibilitySummary200 =
+  CampaignV2PayoutEligibilitySummaryDto;
+export type ProgrammaticCampaignV2ControllerGetCampaignBalancesParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly address?: string;
+  readonly qualified?: boolean;
+  readonly sortField?: CampaignBalanceSortField;
+  readonly sortDirection?: "asc" | "desc";
+  readonly "X-ADMIN-API-KEY": string;
+};
+export type ProgrammaticCampaignV2ControllerGetCampaignBalances200 =
+  CampaignV2BalancesResponseDto;
 export type MasterBannedRegionControllerListParams = {
   readonly limit?: number;
   readonly page?: number;
@@ -3855,11 +3862,11 @@ export type TeamsControllerFindAll200 = {
     readonly privilegedUsers: ReadonlyArray<UserDto>;
     readonly adminUsers?: ReadonlyArray<UserDto>;
     readonly category: string;
-    readonly deletedAt: string;
+    readonly deletedAt: string | null;
     readonly createdAt: string;
     readonly contactDetails: {};
     readonly name: string;
-    readonly serviceConditionsAcceptedAt: string;
+    readonly serviceConditionsAcceptedAt: string | null;
     readonly oavEnabled: boolean;
     readonly isMultiTenant: boolean;
   }>;
@@ -3869,6 +3876,15 @@ export type TeamsControllerFindAll200 = {
 };
 export type TeamsControllerCreateRequestJson = CreateTeamDto;
 export type TeamsControllerCreate201 = Team;
+export type TeamsControllerListAuditLogsParams = {
+  readonly page?: number;
+  readonly limit?: number;
+  readonly event?: string;
+  readonly actorId?: string;
+  readonly from?: string;
+  readonly to?: string;
+};
+export type TeamsControllerListAuditLogs200 = PaginatedAuditLogDto;
 export type TeamsControllerGetById200 = Team;
 export type TeamsControllerUpdateRequestJson = UpdateTeamDto;
 export type TeamsControllerUpdate200 = Team;
@@ -3929,16 +3945,21 @@ export type HealthControllerHealthV2429 = StakeKitErrorDto;
 export type HealthControllerHealthV2500 = StakeKitErrorDto;
 export type HealthControllerHealthV2502 = StakeKitErrorDto;
 export type HealthControllerHealthV2503 = StakeKitErrorDto;
+export type IndexingStatusControllerGetIndexingStatusParams = {
+  readonly network: Networks;
+};
+export type IndexingStatusControllerGetIndexingStatus200 =
+  IndexingStatusResponseDto;
 export type PayoutAddressesControllerGet200 = {
   readonly data: ReadonlyArray<{
     readonly address: string;
     readonly id: string;
-    readonly lastPayout: string;
+    readonly lastPayout: string | null;
     readonly network: string;
     readonly projectId: string;
     readonly scope: "trade" | "yield" | "all";
     readonly providerId?: string | null;
-    readonly note?: string;
+    readonly note?: string | null;
     readonly addressInvalid: boolean;
   }>;
   readonly hasNextPage: boolean;
@@ -4058,17 +4079,7 @@ export type ReportProjectControllerGetDailyRevenues200 = {
     readonly integrationId: string;
     readonly validatorAddress: string | null;
     readonly totalRevenueAmountWei: string;
-    readonly token: {
-      readonly name: string;
-      readonly network: Networks;
-      readonly symbol: string;
-      readonly decimals: number;
-      readonly address?: string;
-      readonly coinGeckoId?: string;
-      readonly logoURI?: string;
-      readonly isPoints?: boolean;
-      readonly feeConfigurationId?: string;
-    } | null;
+    readonly token: TokenDto | null;
   }>;
   readonly hasNextPage: boolean;
   readonly limit: number;
@@ -4090,17 +4101,7 @@ export type ReportProjectControllerGetDailyPerformance200 = {
     readonly totalEnteredAmountWei: string | null;
     readonly totalExitedAmountWei: string | null;
     readonly totalTvlAmountWei: string | null;
-    readonly token: {
-      readonly name: string;
-      readonly network: Networks;
-      readonly symbol: string;
-      readonly decimals: number;
-      readonly address?: string;
-      readonly coinGeckoId?: string;
-      readonly logoURI?: string;
-      readonly isPoints?: boolean;
-      readonly feeConfigurationId?: string;
-    } | null;
+    readonly token: TokenDto | null;
   }>;
   readonly hasNextPage: boolean;
   readonly limit: number;
@@ -4147,17 +4148,7 @@ export type ProgrammaticReportingControllerGetDailyRevenues200 = {
     readonly revShare: number | null;
     readonly projectShare: number | null;
     readonly performanceFee: number | null;
-    readonly token: {
-      readonly name: string;
-      readonly network: Networks;
-      readonly symbol: string;
-      readonly decimals: number;
-      readonly address?: string;
-      readonly coinGeckoId?: string;
-      readonly logoURI?: string;
-      readonly isPoints?: boolean;
-      readonly feeConfigurationId?: string;
-    } | null;
+    readonly token: TokenDto | null;
   }>;
   readonly hasNextPage: boolean;
   readonly limit: number;
@@ -4186,17 +4177,7 @@ export type ProgrammaticReportingControllerGetDailyPerformance200 = {
     readonly totalEnteredAmountWei: string;
     readonly totalExitedAmountWei: string;
     readonly totalTvlAmountWei: string;
-    readonly token: {
-      readonly name: string;
-      readonly network: Networks;
-      readonly symbol: string;
-      readonly decimals: number;
-      readonly address?: string;
-      readonly coinGeckoId?: string;
-      readonly logoURI?: string;
-      readonly isPoints?: boolean;
-      readonly feeConfigurationId?: string;
-    } | null;
+    readonly token: TokenDto | null;
   }>;
   readonly hasNextPage: boolean;
   readonly limit: number;
@@ -4224,35 +4205,14 @@ export type ProgrammaticReportingControllerGetPerpActionsParams = {
 export type ProgrammaticReportingControllerGetPerpActions200 = {
   readonly data: ReadonlyArray<{
     readonly id: string;
-    readonly type:
-      | "open"
-      | "close"
-      | "updateLeverage"
-      | "stopLoss"
-      | "takeProfit"
-      | "cancelOrder"
-      | "editOrder"
-      | "fund"
-      | "withdraw"
-      | "approveAgent"
-      | "approveBuilderFee"
-      | "updateMargin"
-      | "setTpAndSl"
-      | "setUnifiedAccount";
-    readonly status:
-      | "CANCELED"
-      | "CREATED"
-      | "WAITING_FOR_NEXT"
-      | "PROCESSING"
-      | "FAILED"
-      | "SUCCESS"
-      | "STALE";
+    readonly type: PerpActionTypes;
+    readonly status: ActionStatus;
     readonly providerId: string;
     readonly address: string;
     readonly args: {};
-    readonly summary: {} | null;
+    readonly summary: { readonly [x: string]: unknown } | null;
     readonly createdAt: string;
-    readonly completedAt: string;
+    readonly completedAt: string | null;
     readonly transactions: ReadonlyArray<ProgrammaticPerpReportingTransactionDto>;
   }>;
   readonly hasNextPage: boolean;
@@ -4272,12 +4232,12 @@ export type UsersControllerFindAll200 = {
     readonly email: string;
     readonly emailVerified: boolean;
     readonly id: string;
-    readonly lastAccessedAt: string;
+    readonly lastAccessedAt: string | null;
     readonly name: string | null;
     readonly surname: string | null;
     readonly department: string | null;
     readonly role: Role;
-    readonly serviceConditionsAcceptedAt: string;
+    readonly serviceConditionsAcceptedAt: string | null;
     readonly teamId: string;
     readonly isMfaEnabled: boolean;
     readonly isSsoExempt: boolean;
@@ -4457,10 +4417,10 @@ export type ActionControllerList200 = {
     readonly USDAmount: string | null;
     readonly tokenId: string | null;
     readonly validatorAddress: string | null;
-    readonly validatorAddresses: ReadonlyArray<string>;
+    readonly validatorAddresses: ReadonlyArray<string> | null;
     readonly transactions: ReadonlyArray<TransactionDto>;
     readonly createdAt: string;
-    readonly completedAt: string;
+    readonly completedAt: string | null;
     readonly inputToken?: TokenDto;
     readonly addresses: AddressesDto;
     readonly accountAddresses?: ReadonlyArray<string>;
@@ -4721,6 +4681,19 @@ export type NetworkTokensV2ControllerGetTokens500 = StakeKitErrorDto;
 export type NetworkTokensV2ControllerGetTokens502 = StakeKitErrorDto;
 export type NetworkTokensV2ControllerGetTokens503 = StakeKitErrorDto;
 export type TokenControllerGetTokensParams = {
+  readonly yieldTypes?: ReadonlyArray<
+    | "staking"
+    | "restaking"
+    | "lending"
+    | "vault"
+    | "fixed_yield"
+    | "real_world_asset"
+    | "concentrated_liquidity_pool"
+    | "liquidity_pool"
+    | "liquid_staking"
+  >;
+  readonly exit?: boolean;
+  readonly enter?: boolean;
   readonly enabledYieldsOnly?: boolean;
   readonly network?: Networks;
   readonly "X-API-KEY"?: string;
@@ -5322,9 +5295,14 @@ export type YieldV2ControllerYieldsParams = {
     | "superstate"
     | "securitize"
     | "nest"
+    | "paxos-labs"
     | "r25"
+    | "infinifi"
     | "rocksolid"
-    | "yuzu";
+    | "t9"
+    | "gami-labs"
+    | "yuzu"
+    | "sentora";
   readonly inputToken?: string;
   readonly enterStatus?: boolean;
   readonly preferredValidatorsOnly?: boolean;
@@ -5367,6 +5345,7 @@ export type YieldV2ControllerYieldsParams = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -5551,15 +5530,15 @@ export type YieldV2ControllerGetFeeConfigurations200 = {
     readonly id: string;
     readonly projectId: string;
     readonly integrationId: string;
-    readonly managementFeeBps: number;
-    readonly performanceFeeBps: number;
-    readonly depositFeeBps: number;
+    readonly managementFeeBps: number | null;
+    readonly performanceFeeBps: number | null;
+    readonly depositFeeBps: number | null;
     readonly chargeOnFirstDepositOnly: boolean;
     readonly allocatorVaultContractAddress: string | null;
     readonly feeWrapperContractAddress: string | null;
     readonly feeRecipientAddress: string | null;
     readonly status: FeeConfigurationStatus;
-    readonly layerzeroOVaultConfig?: {} | null;
+    readonly layerzeroOVaultConfig?: { readonly [x: string]: unknown } | null;
   }>;
   readonly hasNextPage: boolean;
   readonly limit: number;
@@ -5607,15 +5586,15 @@ export type FeeConfigurationControllerGet200 = {
     readonly id: string;
     readonly projectId: string;
     readonly integrationId: string;
-    readonly managementFeeBps: number;
-    readonly performanceFeeBps: number;
-    readonly depositFeeBps: number;
+    readonly managementFeeBps: number | null;
+    readonly performanceFeeBps: number | null;
+    readonly depositFeeBps: number | null;
     readonly chargeOnFirstDepositOnly: boolean;
     readonly allocatorVaultContractAddress: string | null;
     readonly feeWrapperContractAddress: string | null;
     readonly feeRecipientAddress: string | null;
     readonly status: FeeConfigurationStatus;
-    readonly layerzeroOVaultConfig?: {} | null;
+    readonly layerzeroOVaultConfig?: { readonly [x: string]: unknown } | null;
   }>;
   readonly hasNextPage: boolean;
   readonly limit: number;
@@ -5636,15 +5615,15 @@ export type ProgrammaticFeeConfigurationControllerGet200 = {
     readonly id: string;
     readonly projectId: string;
     readonly integrationId: string;
-    readonly managementFeeBps: number;
-    readonly performanceFeeBps: number;
-    readonly depositFeeBps: number;
+    readonly managementFeeBps: number | null;
+    readonly performanceFeeBps: number | null;
+    readonly depositFeeBps: number | null;
     readonly chargeOnFirstDepositOnly: boolean;
     readonly allocatorVaultContractAddress: string | null;
     readonly feeWrapperContractAddress: string | null;
     readonly feeRecipientAddress: string | null;
     readonly status: FeeConfigurationStatus;
-    readonly layerzeroOVaultConfig?: {} | null;
+    readonly layerzeroOVaultConfig?: { readonly [x: string]: unknown } | null;
   }>;
   readonly hasNextPage: boolean;
   readonly limit: number;
@@ -5727,7 +5706,27 @@ export type MfaControllerVerifyRequestJson = MfaVerifyDto;
 export type MfaControllerVerify200 = MfaVerifyResponseDto;
 export type MfaControllerRecoverRequestJson = MfaRecoverDto;
 export type MfaControllerRecover200 = MfaRecoverResponseDto;
-export type MfaControllerDisableRequestJson = MfaDisableDto;
+export type MfaControllerDisableRequestJson =
+  | MfaDisableWithTotpBodyDto
+  | MfaDisableWithWebauthnBodyDto;
+export type MfaControllerWebauthnRegisterOptions200 =
+  MfaWebauthnRegistrationOptionsResponseDto;
+export type MfaControllerWebauthnRegisterVerifyRequestJson =
+  MfaWebauthnRegisterVerifyDto;
+export type MfaControllerWebauthnRegisterVerify200 =
+  MfaWebauthnRegisterVerifyResponseDto;
+export type MfaControllerWebauthnAuthenticationOptionsRequestJson =
+  MfaWebauthnLoginOptionsDto;
+export type MfaControllerWebauthnAuthenticationOptions200 =
+  MfaWebauthnAuthenticationOptionsResponseDto;
+export type MfaControllerWebauthnAuthenticationVerifyRequestJson =
+  MfaWebauthnLoginVerifyDto;
+export type MfaControllerWebauthnAuthenticationVerify200 = MfaVerifyResponseDto;
+export type MfaControllerWebauthnReauthenticationOptions200 =
+  MfaWebauthnAuthenticationOptionsResponseDto;
+export type MfaControllerDeleteWebauthnCredentialRequestJson =
+  | MfaDisableWithTotpBodyDto
+  | MfaDisableWithWebauthnBodyDto;
 export type PerpsFeeConfigurationControllerGet200 = PerpsFeeConfigurationDto;
 export type PerpsFeeConfigurationControllerCreateRequestJson =
   CreatePerpsFeeConfigurationDto;
@@ -6026,7 +6025,7 @@ export type NetworksV2ControllerGetNetworksParams = {
   readonly "X-API-KEY"?: string;
 };
 export type NetworksV2ControllerGetNetworks200 = {
-  readonly data: ReadonlyArray<never>;
+  readonly data: readonly [];
   readonly hasNextPage: boolean;
   readonly limit: number;
   readonly page: number;
@@ -6776,6 +6775,634 @@ export const make = (
         }),
         onRequest(options.config)(["2xx"])
       ),
+    CampaignV2ConfigurationRequestControllerListForProject: (
+      teamId,
+      projectId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/requests`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          status: options?.params?.["status"] as any,
+          requestType: options?.params?.["requestType"] as any,
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignV2ConfigurationRequestControllerCreate: (
+      teamId,
+      projectId,
+      options
+    ) =>
+      HttpClientRequest.post(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/requests`
+      ).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"])
+      ),
+    CampaignV2ConfigurationRequestControllerGetById: (
+      teamId,
+      projectId,
+      requestId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/requests/${requestId}`
+      ).pipe(onRequest(options?.config)(["2xx"])),
+    CampaignV2ConfigurationRequestControllerListForCampaign: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/requests`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          status: options?.params?.["status"] as any,
+          requestType: options?.params?.["requestType"] as any,
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignV2ConfigurationRequestControllerAccept: (
+      teamId,
+      projectId,
+      requestId,
+      options
+    ) =>
+      HttpClientRequest.patch(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/requests/${requestId}/accept`
+      ).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"])
+      ),
+    CampaignV2ConfigurationRequestControllerReject: (
+      teamId,
+      projectId,
+      requestId,
+      options
+    ) =>
+      HttpClientRequest.patch(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/requests/${requestId}/reject`
+      ).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"])
+      ),
+    CampaignLifecycleControllerList: (teamId, projectId, options) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          status: options?.params?.["status"] as any,
+          yieldId: options?.params?.["yieldId"] as any,
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignLifecycleControllerCreate: (teamId, projectId, options) =>
+      HttpClientRequest.post(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns`
+      ).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"])
+      ),
+    CampaignLifecycleControllerGetById: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}`
+      ).pipe(onRequest(options?.config)(["2xx"])),
+    CampaignLifecycleControllerUpdate: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.patch(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}`
+      ).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"])
+      ),
+    CampaignV2ReadsControllerGetMilestones: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/milestones`
+      ).pipe(onRequest(options?.config)(["2xx"])),
+    CampaignLifecycleControllerReplaceMilestones: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.put(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/milestones`
+      ).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"])
+      ),
+    CampaignLifecycleControllerPause: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.post(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/pause`
+      ).pipe(
+        onRequest(options?.config)(["2xx"], {
+          "409": "CampaignLifecycleControllerPause409",
+        })
+      ),
+    CampaignLifecycleControllerResume: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.post(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/resume`
+      ).pipe(
+        onRequest(options?.config)(["2xx"], {
+          "409": "CampaignLifecycleControllerResume409",
+        })
+      ),
+    CampaignLifecycleControllerAcknowledgePause: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.post(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/acknowledge-pause`
+      ).pipe(
+        onRequest(options?.config)(["2xx"], {
+          "409": "CampaignLifecycleControllerAcknowledgePause409",
+        })
+      ),
+    CampaignLifecycleControllerEnd: (teamId, projectId, campaignId, options) =>
+      HttpClientRequest.post(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/end`
+      ).pipe(onRequest(options?.config)(["2xx"])),
+    CampaignV2ReadsControllerGetSummary: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/summary`
+      ).pipe(onRequest(options?.config)(["2xx"])),
+    CampaignV2ReadsControllerGetLiability: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/liability`
+      ).pipe(onRequest(options?.config)(["2xx"])),
+    CampaignV2ReadsControllerGetBudgetProjection: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/budget-projection`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          totalBudget: options?.params?.["totalBudget"] as any,
+          endTime: options?.params?.["endTime"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignV2ReadsControllerSetUserPayoutEligibility: (
+      teamId,
+      projectId,
+      campaignId,
+      address,
+      options
+    ) =>
+      HttpClientRequest.patch(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/accruals/${address}/payout-eligibility`
+      ).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"])
+      ),
+    CampaignV2ReadsControllerGetUserEntitlement: (
+      teamId,
+      projectId,
+      campaignId,
+      address,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/entitlements/${address}`
+      ).pipe(onRequest(options?.config)(["2xx"])),
+    CampaignV2ReadsControllerGetPayoutRuns: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/payout-runs`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+          status: options?.params?.["status"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignV2ReadsControllerGetPayoutRunDetail: (
+      teamId,
+      projectId,
+      campaignId,
+      runId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/payout-runs/${runId}`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignV2ReadsControllerGetPayoutAudit: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/payout-audit`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignV2ReadsControllerGetWeeklyDistribution: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/weekly-distribution`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignV2ReadsControllerGetEligibleUsers: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/eligible-users`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+          minTotalEarned: options?.params?.["minTotalEarned"] as any,
+          sortField: options?.params?.["sortField"] as any,
+          sortDirection: options?.params?.["sortDirection"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignV2ReadsControllerGetBlacklistedUsers: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/blacklisted-users`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignV2ReadsControllerGetSafeBalance: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/safe-balance`
+      ).pipe(onRequest(options?.config)(["2xx"])),
+    CampaignV2ReadsControllerGetPayoutEligibilitySummary: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/payout-eligibility/summary`
+      ).pipe(onRequest(options?.config)(["2xx"])),
+    CampaignV2ReadsControllerGetBlacklistedAddresses: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/blacklisted-addresses`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignV2ReadsControllerGetAuditHistory: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/audit-history`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+          address: options?.params?.["address"] as any,
+          type: options?.params?.["type"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignV2ConfigurationRequestAdminControllerList: (options) =>
+      HttpClientRequest.get(`/v2/admin/campaigns/requests`).pipe(
+        HttpClientRequest.setUrlParams({
+          status: options?.params?.["status"] as any,
+          requestType: options?.params?.["requestType"] as any,
+          projectId: options?.params?.["projectId"] as any,
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignV2AdminControllerList: (options) =>
+      HttpClientRequest.get(`/v2/admin/campaigns`).pipe(
+        HttpClientRequest.setUrlParams({
+          status: options?.params?.["status"] as any,
+          projectId: options?.params?.["projectId"] as any,
+          integrationId: options?.params?.["integrationId"] as any,
+          rewardMode: options?.params?.["rewardMode"] as any,
+          startTimeFrom: options?.params?.["startTimeFrom"] as any,
+          startTimeTo: options?.params?.["startTimeTo"] as any,
+          endTimeFrom: options?.params?.["endTimeFrom"] as any,
+          endTimeTo: options?.params?.["endTimeTo"] as any,
+          sort: options?.params?.["sort"] as any,
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignV2AdminControllerGetById: (campaignId, options) =>
+      HttpClientRequest.get(`/v2/admin/campaigns/${campaignId}`).pipe(
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignV2AdminControllerGetPointsMetrics: (campaignId, options) =>
+      HttpClientRequest.get(
+        `/v2/admin/campaigns/${campaignId}/points-metrics`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignV2AdminControllerTopUpBudget: (campaignId, options) =>
+      HttpClientRequest.post(`/v2/admin/campaigns/${campaignId}/top-up`).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"])
+      ),
+    CampaignV2AdminControllerUnlockMilestone: (
+      campaignId,
+      milestoneOrder,
+      options
+    ) =>
+      HttpClientRequest.post(
+        `/v2/admin/campaigns/${campaignId}/milestones/${milestoneOrder}/unlock`
+      ).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"])
+      ),
+    ProgrammaticCampaignV2ControllerListCampaigns: (projectId, options) =>
+      HttpClientRequest.get(
+        `/v2/programmatic/projects/${projectId}/campaigns`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options.params["offset"] as any,
+          limit: options.params["limit"] as any,
+          status: options.params["status"] as any,
+          integrationId: options.params["integrationId"] as any,
+        }),
+        HttpClientRequest.setHeaders({
+          "X-ADMIN-API-KEY": options.params["X-ADMIN-API-KEY"] ?? undefined,
+        }),
+        onRequest(options.config)(["2xx"])
+      ),
+    ProgrammaticCampaignV2ControllerGetAccrualDetails: (
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/programmatic/projects/${projectId}/campaigns/${campaignId}/accrual-details`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options.params["offset"] as any,
+          limit: options.params["limit"] as any,
+          runId: options.params["runId"] as any,
+        }),
+        HttpClientRequest.setHeaders({
+          "X-ADMIN-API-KEY": options.params["X-ADMIN-API-KEY"] ?? undefined,
+        }),
+        onRequest(options.config)(["2xx"])
+      ),
+    ProgrammaticCampaignV2ControllerGetAccrualDetailForWindow: (
+      projectId,
+      campaignId,
+      windowStart,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/programmatic/projects/${projectId}/campaigns/${campaignId}/accrual-details/window/${windowStart}`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options.params["offset"] as any,
+          limit: options.params["limit"] as any,
+          address: options.params["address"] as any,
+          qualified: options.params["qualified"] as any,
+          sortField: options.params["sortField"] as any,
+          sortDirection: options.params["sortDirection"] as any,
+        }),
+        HttpClientRequest.setHeaders({
+          "X-ADMIN-API-KEY": options.params["X-ADMIN-API-KEY"] ?? undefined,
+        }),
+        onRequest(options.config)(["2xx"])
+      ),
+    ProgrammaticCampaignV2ControllerGetCampaignTvlStats: (
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/programmatic/projects/${projectId}/campaigns/${campaignId}/tvl-stats`
+      ).pipe(
+        HttpClientRequest.setHeaders({
+          "X-ADMIN-API-KEY": options.params["X-ADMIN-API-KEY"] ?? undefined,
+        }),
+        onRequest(options.config)(["2xx"])
+      ),
+    ProgrammaticCampaignV2ControllerGetUserAccrualHistory: (
+      projectId,
+      campaignId,
+      address,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/programmatic/projects/${projectId}/campaigns/${campaignId}/user-accrual/${address}`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options.params["offset"] as any,
+          limit: options.params["limit"] as any,
+        }),
+        HttpClientRequest.setHeaders({
+          "X-ADMIN-API-KEY": options.params["X-ADMIN-API-KEY"] ?? undefined,
+        }),
+        onRequest(options.config)(["2xx"])
+      ),
+    ProgrammaticCampaignV2ControllerGetPayoutRuns: (
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/programmatic/projects/${projectId}/campaigns/${campaignId}/payout-runs`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options.params["offset"] as any,
+          limit: options.params["limit"] as any,
+          status: options.params["status"] as any,
+        }),
+        HttpClientRequest.setHeaders({
+          "X-ADMIN-API-KEY": options.params["X-ADMIN-API-KEY"] ?? undefined,
+        }),
+        onRequest(options.config)(["2xx"])
+      ),
+    ProgrammaticCampaignV2ControllerGetPayoutRunDetail: (
+      projectId,
+      campaignId,
+      runId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/programmatic/projects/${projectId}/campaigns/${campaignId}/payout-runs/${runId}`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options.params["offset"] as any,
+          limit: options.params["limit"] as any,
+        }),
+        HttpClientRequest.setHeaders({
+          "X-ADMIN-API-KEY": options.params["X-ADMIN-API-KEY"] ?? undefined,
+        }),
+        onRequest(options.config)(["2xx"])
+      ),
+    ProgrammaticCampaignV2ControllerGetPayoutBatchDetail: (
+      projectId,
+      campaignId,
+      runId,
+      batchKey,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/programmatic/projects/${projectId}/campaigns/${campaignId}/payout-runs/${runId}/batches/${batchKey}`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options.params["offset"] as any,
+          limit: options.params["limit"] as any,
+        }),
+        HttpClientRequest.setHeaders({
+          "X-ADMIN-API-KEY": options.params["X-ADMIN-API-KEY"] ?? undefined,
+        }),
+        onRequest(options.config)(["2xx"])
+      ),
+    ProgrammaticCampaignV2ControllerGetCampaignSafeBalance: (
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/programmatic/projects/${projectId}/campaigns/${campaignId}/safe-balance`
+      ).pipe(
+        HttpClientRequest.setHeaders({
+          "X-ADMIN-API-KEY": options.params["X-ADMIN-API-KEY"] ?? undefined,
+        }),
+        onRequest(options.config)(["2xx"])
+      ),
+    ProgrammaticCampaignV2ControllerGetCampaignPayoutEligibilitySummary: (
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/programmatic/projects/${projectId}/campaigns/${campaignId}/payout-eligibility/summary`
+      ).pipe(
+        HttpClientRequest.setHeaders({
+          "X-ADMIN-API-KEY": options.params["X-ADMIN-API-KEY"] ?? undefined,
+        }),
+        onRequest(options.config)(["2xx"])
+      ),
+    ProgrammaticCampaignV2ControllerGetCampaignBalances: (
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v2/programmatic/projects/${projectId}/campaigns/${campaignId}/balances`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options.params["offset"] as any,
+          limit: options.params["limit"] as any,
+          address: options.params["address"] as any,
+          qualified: options.params["qualified"] as any,
+          sortField: options.params["sortField"] as any,
+          sortDirection: options.params["sortDirection"] as any,
+        }),
+        HttpClientRequest.setHeaders({
+          "X-ADMIN-API-KEY": options.params["X-ADMIN-API-KEY"] ?? undefined,
+        }),
+        onRequest(options.config)(["2xx"])
+      ),
     MasterBannedRegionControllerList: (options) =>
       HttpClientRequest.get(`/v1/teams/projects/master-banned-regions`).pipe(
         HttpClientRequest.setUrlParams({
@@ -6841,6 +7468,18 @@ export const make = (
       HttpClientRequest.post(`/v1/teams`).pipe(
         HttpClientRequest.bodyJsonUnsafe(options.payload),
         onRequest(options.config)(["2xx"])
+      ),
+    TeamsControllerListAuditLogs: (teamId, options) =>
+      HttpClientRequest.get(`/v1/teams/${teamId}/audit-logs`).pipe(
+        HttpClientRequest.setUrlParams({
+          page: options?.params?.["page"] as any,
+          limit: options?.params?.["limit"] as any,
+          event: options?.params?.["event"] as any,
+          actorId: options?.params?.["actorId"] as any,
+          from: options?.params?.["from"] as any,
+          to: options?.params?.["to"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
       ),
     TeamsControllerGetById: (teamId, options) =>
       HttpClientRequest.get(`/v1/teams/${teamId}`).pipe(
@@ -6982,6 +7621,13 @@ export const make = (
       ),
     HomeControllerAppInfo: (options) =>
       HttpClientRequest.get(`/`).pipe(onRequest(options?.config)([])),
+    IndexingStatusControllerGetIndexingStatus: (options) =>
+      HttpClientRequest.get(`/v1/indexing-status`).pipe(
+        HttpClientRequest.setUrlParams({
+          network: options.params["network"] as any,
+        }),
+        onRequest(options.config)(["2xx"])
+      ),
     PayoutAddressesControllerGet: (teamId, projectId, options) =>
       HttpClientRequest.get(
         `/v1/teams/${teamId}/projects/${projectId}/payout-addresses`
@@ -7736,6 +8382,9 @@ export const make = (
     TokenControllerGetTokens: (options) =>
       HttpClientRequest.get(`/v1/tokens`).pipe(
         HttpClientRequest.setUrlParams({
+          yieldTypes: options?.params?.["yieldTypes"] as any,
+          exit: options?.params?.["exit"] as any,
+          enter: options?.params?.["enter"] as any,
           enabledYieldsOnly: options?.params?.["enabledYieldsOnly"] as any,
           network: options?.params?.["network"] as any,
         }),
@@ -8729,6 +9378,40 @@ export const make = (
       ),
     MfaControllerDisable: (options) =>
       HttpClientRequest.post(`/v1/auth/mfa/disable`).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)([])
+      ),
+    MfaControllerWebauthnRegisterOptions: (options) =>
+      HttpClientRequest.post(`/v1/auth/mfa/webauthn/register/options`).pipe(
+        onRequest(options?.config)(["2xx"])
+      ),
+    MfaControllerWebauthnRegisterVerify: (options) =>
+      HttpClientRequest.post(`/v1/auth/mfa/webauthn/register/verify`).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"])
+      ),
+    MfaControllerWebauthnAuthenticationOptions: (options) =>
+      HttpClientRequest.post(
+        `/v1/auth/mfa/webauthn/authentication-options`
+      ).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"])
+      ),
+    MfaControllerWebauthnAuthenticationVerify: (options) =>
+      HttpClientRequest.post(
+        `/v1/auth/mfa/webauthn/authentication-verify`
+      ).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"])
+      ),
+    MfaControllerWebauthnReauthenticationOptions: (options) =>
+      HttpClientRequest.post(
+        `/v1/auth/mfa/webauthn/reauthentication-options`
+      ).pipe(onRequest(options?.config)(["2xx"])),
+    MfaControllerDeleteWebauthnCredential: (credentialId, options) =>
+      HttpClientRequest.delete(
+        `/v1/auth/mfa/webauthn/credentials/${credentialId}`
+      ).pipe(
         HttpClientRequest.bodyJsonUnsafe(options.payload),
         onRequest(options.config)([])
       ),
@@ -9870,6 +10553,821 @@ export interface LegacyApi {
     >,
     HttpClientError.HttpClientError
   >;
+  /**
+   * List campaign configuration requests for a project
+   */
+  readonly CampaignV2ConfigurationRequestControllerListForProject: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignV2ConfigurationRequestControllerListForProjectParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignV2ConfigurationRequestControllerListForProject200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Submit a campaign configuration request
+   */
+  readonly CampaignV2ConfigurationRequestControllerCreate: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    options: {
+      readonly payload: CampaignV2ConfigurationRequestControllerCreateRequestJson;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignV2ConfigurationRequestControllerCreate201,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Get a single campaign configuration request
+   */
+  readonly CampaignV2ConfigurationRequestControllerGetById: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    requestId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignV2ConfigurationRequestControllerGetById200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * List campaign configuration requests for a specific campaign
+   */
+  readonly CampaignV2ConfigurationRequestControllerListForCampaign: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignV2ConfigurationRequestControllerListForCampaignParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignV2ConfigurationRequestControllerListForCampaign200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Accept a pending campaign configuration request
+   */
+  readonly CampaignV2ConfigurationRequestControllerAccept: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    requestId: string,
+    options: {
+      readonly payload: CampaignV2ConfigurationRequestControllerAcceptRequestJson;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignV2ConfigurationRequestControllerAccept200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Reject a pending campaign configuration request
+   */
+  readonly CampaignV2ConfigurationRequestControllerReject: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    requestId: string,
+    options: {
+      readonly payload: CampaignV2ConfigurationRequestControllerRejectRequestJson;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignV2ConfigurationRequestControllerReject200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignLifecycleControllerList: <Config extends OperationConfig>(
+    teamId: string,
+    projectId: string,
+    options:
+      | {
+          readonly params?: CampaignLifecycleControllerListParams | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignLifecycleControllerList200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignLifecycleControllerCreate: <Config extends OperationConfig>(
+    teamId: string,
+    projectId: string,
+    options: {
+      readonly payload: CampaignLifecycleControllerCreateRequestJson;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignLifecycleControllerCreate201, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignLifecycleControllerGetById: <Config extends OperationConfig>(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignLifecycleControllerGetById200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignLifecycleControllerUpdate: <Config extends OperationConfig>(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options: {
+      readonly payload: CampaignLifecycleControllerUpdateRequestJson;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignLifecycleControllerUpdate200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerGetMilestones: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignV2ReadsControllerGetMilestones200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignLifecycleControllerReplaceMilestones: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options: {
+      readonly payload: CampaignLifecycleControllerReplaceMilestonesRequestJson;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignLifecycleControllerReplaceMilestones200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignLifecycleControllerPause: <Config extends OperationConfig>(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignLifecycleControllerPause200, Config>,
+    | HttpClientError.HttpClientError
+    | LegacyApiError<
+        "CampaignLifecycleControllerPause409",
+        CampaignLifecycleControllerPause409
+      >
+  >;
+  readonly CampaignLifecycleControllerResume: <Config extends OperationConfig>(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignLifecycleControllerResume200, Config>,
+    | HttpClientError.HttpClientError
+    | LegacyApiError<
+        "CampaignLifecycleControllerResume409",
+        CampaignLifecycleControllerResume409
+      >
+  >;
+  readonly CampaignLifecycleControllerAcknowledgePause: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignLifecycleControllerAcknowledgePause200,
+      Config
+    >,
+    | HttpClientError.HttpClientError
+    | LegacyApiError<
+        "CampaignLifecycleControllerAcknowledgePause409",
+        CampaignLifecycleControllerAcknowledgePause409
+      >
+  >;
+  readonly CampaignLifecycleControllerEnd: <Config extends OperationConfig>(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignLifecycleControllerEnd200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerGetSummary: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignV2ReadsControllerGetSummary200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerGetLiability: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignV2ReadsControllerGetLiability200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerGetBudgetProjection: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignV2ReadsControllerGetBudgetProjectionParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignV2ReadsControllerGetBudgetProjection200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerSetUserPayoutEligibility: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    address: string,
+    options: {
+      readonly payload: CampaignV2ReadsControllerSetUserPayoutEligibilityRequestJson;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignV2ReadsControllerSetUserPayoutEligibility200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerGetUserEntitlement: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    address: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignV2ReadsControllerGetUserEntitlement200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerGetPayoutRuns: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignV2ReadsControllerGetPayoutRunsParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignV2ReadsControllerGetPayoutRuns200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerGetPayoutRunDetail: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    runId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignV2ReadsControllerGetPayoutRunDetailParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignV2ReadsControllerGetPayoutRunDetail200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerGetPayoutAudit: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignV2ReadsControllerGetPayoutAuditParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignV2ReadsControllerGetPayoutAudit200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerGetWeeklyDistribution: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignV2ReadsControllerGetWeeklyDistributionParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignV2ReadsControllerGetWeeklyDistribution200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerGetEligibleUsers: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignV2ReadsControllerGetEligibleUsersParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignV2ReadsControllerGetEligibleUsers200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerGetBlacklistedUsers: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignV2ReadsControllerGetBlacklistedUsersParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignV2ReadsControllerGetBlacklistedUsers200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerGetSafeBalance: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignV2ReadsControllerGetSafeBalance200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerGetPayoutEligibilitySummary: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignV2ReadsControllerGetPayoutEligibilitySummary200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerGetBlacklistedAddresses: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignV2ReadsControllerGetBlacklistedAddressesParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignV2ReadsControllerGetBlacklistedAddresses200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignV2ReadsControllerGetAuditHistory: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignV2ReadsControllerGetAuditHistoryParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignV2ReadsControllerGetAuditHistory200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * List pending campaign configuration requests across all projects (SuperAdmin).
+   */
+  readonly CampaignV2ConfigurationRequestAdminControllerList: <
+    Config extends OperationConfig,
+  >(
+    options:
+      | {
+          readonly params?:
+            | CampaignV2ConfigurationRequestAdminControllerListParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignV2ConfigurationRequestAdminControllerList200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * List all campaigns across all projects (SuperAdmin).
+   */
+  readonly CampaignV2AdminControllerList: <Config extends OperationConfig>(
+    options:
+      | {
+          readonly params?: CampaignV2AdminControllerListParams | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignV2AdminControllerList200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Get a campaign by ID (SuperAdmin).
+   */
+  readonly CampaignV2AdminControllerGetById: <Config extends OperationConfig>(
+    campaignId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignV2AdminControllerGetById200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Internal points/virtual-accounting metrics for a campaign (SuperAdmin). Points are internal and re-priced at payout.
+   */
+  readonly CampaignV2AdminControllerGetPointsMetrics: <
+    Config extends OperationConfig,
+  >(
+    campaignId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignV2AdminControllerGetPointsMetricsParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignV2AdminControllerGetPointsMetrics200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Add budget to a campaign (SuperAdmin). With milestone gating, the amount lands in a new unlocked tranche unless targetMilestoneOrder is supplied.
+   */
+  readonly CampaignV2AdminControllerTopUpBudget: <
+    Config extends OperationConfig,
+  >(
+    campaignId: string,
+    options: {
+      readonly payload: CampaignV2AdminControllerTopUpBudgetRequestJson;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignV2AdminControllerTopUpBudget200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Unlock a milestone tranche without its TW-TVL and TVL-years conditions being met (SuperAdmin). Only the lowest-order locked tranche is eligible.
+   */
+  readonly CampaignV2AdminControllerUnlockMilestone: <
+    Config extends OperationConfig,
+  >(
+    campaignId: string,
+    milestoneOrder: string,
+    options: {
+      readonly payload: CampaignV2AdminControllerUnlockMilestoneRequestJson;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignV2AdminControllerUnlockMilestone200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * List campaigns for a project
+   */
+  readonly ProgrammaticCampaignV2ControllerListCampaigns: <
+    Config extends OperationConfig,
+  >(
+    projectId: string,
+    options: {
+      readonly params: ProgrammaticCampaignV2ControllerListCampaignsParams;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      ProgrammaticCampaignV2ControllerListCampaigns200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Returns a paginated list of per-window accrual summaries. When `runId` is provided, only entries within the actual window settled by that payout run are returned.
+   */
+  readonly ProgrammaticCampaignV2ControllerGetAccrualDetails: <
+    Config extends OperationConfig,
+  >(
+    projectId: string,
+    campaignId: string,
+    options: {
+      readonly params: ProgrammaticCampaignV2ControllerGetAccrualDetailsParams;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      ProgrammaticCampaignV2ControllerGetAccrualDetails200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Returns summary plus paginated per-user detail for a specific accrual window.
+   */
+  readonly ProgrammaticCampaignV2ControllerGetAccrualDetailForWindow: <
+    Config extends OperationConfig,
+  >(
+    projectId: string,
+    campaignId: string,
+    windowStart: string,
+    options: {
+      readonly params: ProgrammaticCampaignV2ControllerGetAccrualDetailForWindowParams;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      ProgrammaticCampaignV2ControllerGetAccrualDetailForWindow200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Returns the trailing 14-day time-weighted qualifying TVL and cumulative TVL-years, derived from persisted accrual window checkpoints.
+   */
+  readonly ProgrammaticCampaignV2ControllerGetCampaignTvlStats: <
+    Config extends OperationConfig,
+  >(
+    projectId: string,
+    campaignId: string,
+    options: {
+      readonly params: ProgrammaticCampaignV2ControllerGetCampaignTvlStatsParams;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      ProgrammaticCampaignV2ControllerGetCampaignTvlStats200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Per-window qualification status, raw balance, capped balance, reward earned, and running cumulative total.
+   */
+  readonly ProgrammaticCampaignV2ControllerGetUserAccrualHistory: <
+    Config extends OperationConfig,
+  >(
+    projectId: string,
+    campaignId: string,
+    address: string,
+    options: {
+      readonly params: ProgrammaticCampaignV2ControllerGetUserAccrualHistoryParams;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      ProgrammaticCampaignV2ControllerGetUserAccrualHistory200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Lists all payout runs with recipient count and Safe tx status per run.
+   */
+  readonly ProgrammaticCampaignV2ControllerGetPayoutRuns: <
+    Config extends OperationConfig,
+  >(
+    projectId: string,
+    campaignId: string,
+    options: {
+      readonly params: ProgrammaticCampaignV2ControllerGetPayoutRunsParams;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      ProgrammaticCampaignV2ControllerGetPayoutRuns200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Per-recipient amounts and statuses, Safe tx details, and budget state before/after the run.
+   */
+  readonly ProgrammaticCampaignV2ControllerGetPayoutRunDetail: <
+    Config extends OperationConfig,
+  >(
+    projectId: string,
+    campaignId: string,
+    runId: string,
+    options: {
+      readonly params: ProgrammaticCampaignV2ControllerGetPayoutRunDetailParams;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      ProgrammaticCampaignV2ControllerGetPayoutRunDetail200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Per-recipient amounts and statuses scoped to a single Safe-tx batch within a payout run, plus the Safe transaction record for that batch.
+   */
+  readonly ProgrammaticCampaignV2ControllerGetPayoutBatchDetail: <
+    Config extends OperationConfig,
+  >(
+    projectId: string,
+    campaignId: string,
+    runId: string,
+    batchKey: string,
+    options: {
+      readonly params: ProgrammaticCampaignV2ControllerGetPayoutBatchDetailParams;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      ProgrammaticCampaignV2ControllerGetPayoutBatchDetail200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Returns the current on-chain balance of the campaign reward token held by the Safe.
+   */
+  readonly ProgrammaticCampaignV2ControllerGetCampaignSafeBalance: <
+    Config extends OperationConfig,
+  >(
+    projectId: string,
+    campaignId: string,
+    options: {
+      readonly params: ProgrammaticCampaignV2ControllerGetCampaignSafeBalanceParams;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      ProgrammaticCampaignV2ControllerGetCampaignSafeBalance200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Counts of qualified vs blacklisted addresses for the campaign. Blacklisted addresses are excluded from accrual and payout but their already-accrued balances remain in the database.
+   */
+  readonly ProgrammaticCampaignV2ControllerGetCampaignPayoutEligibilitySummary: <
+    Config extends OperationConfig,
+  >(
+    projectId: string,
+    campaignId: string,
+    options: {
+      readonly params: ProgrammaticCampaignV2ControllerGetCampaignPayoutEligibilitySummaryParams;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      ProgrammaticCampaignV2ControllerGetCampaignPayoutEligibilitySummary200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Per-user earned/paid/unpaid totals with current indexed balance. Includes campaign-level totals and data freshness timestamps.
+   */
+  readonly ProgrammaticCampaignV2ControllerGetCampaignBalances: <
+    Config extends OperationConfig,
+  >(
+    projectId: string,
+    campaignId: string,
+    options: {
+      readonly params: ProgrammaticCampaignV2ControllerGetCampaignBalancesParams;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      ProgrammaticCampaignV2ControllerGetCampaignBalances200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
   readonly MasterBannedRegionControllerList: <Config extends OperationConfig>(
     options:
       | {
@@ -9965,6 +11463,21 @@ export interface LegacyApi {
     readonly config?: Config | undefined;
   }) => Effect.Effect<
     WithOptionalResponse<TeamsControllerCreate201, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * List audit log entries for a team
+   */
+  readonly TeamsControllerListAuditLogs: <Config extends OperationConfig>(
+    teamId: string,
+    options:
+      | {
+          readonly params?: TeamsControllerListAuditLogsParams | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<TeamsControllerListAuditLogs200, Config>,
     HttpClientError.HttpClientError
   >;
   readonly TeamsControllerGetById: <Config extends OperationConfig>(
@@ -10194,6 +11707,18 @@ export interface LegacyApi {
     options: { readonly config?: Config | undefined } | undefined
   ) => Effect.Effect<
     WithOptionalResponse<void, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Get aggregated indexing status grouped by network with integration mapping and ownership.
+   */
+  readonly IndexingStatusControllerGetIndexingStatus: <
+    Config extends OperationConfig,
+  >(options: {
+    readonly params: IndexingStatusControllerGetIndexingStatusParams;
+    readonly config?: Config | undefined;
+  }) => Effect.Effect<
+    WithOptionalResponse<IndexingStatusControllerGetIndexingStatus200, Config>,
     HttpClientError.HttpClientError
   >;
   readonly PayoutAddressesControllerGet: <Config extends OperationConfig>(
@@ -11637,7 +13162,7 @@ export interface LegacyApi {
       >
   >;
   /**
-   * Returns the input tokens of the enabled yields
+   * Returns input tokens for project-enabled yields. Optionally filters each token’s available yields by network, enter/exit availability, and yield type.
    */
   readonly TokenControllerGetTokens: <Config extends OperationConfig>(
     options:
@@ -13629,6 +15154,64 @@ export interface LegacyApi {
     readonly payload: MfaControllerDisableRequestJson;
     readonly config?: Config | undefined;
   }) => Effect.Effect<
+    WithOptionalResponse<void, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly MfaControllerWebauthnRegisterOptions: <
+    Config extends OperationConfig,
+  >(
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<MfaControllerWebauthnRegisterOptions200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly MfaControllerWebauthnRegisterVerify: <
+    Config extends OperationConfig,
+  >(options: {
+    readonly payload: MfaControllerWebauthnRegisterVerifyRequestJson;
+    readonly config?: Config | undefined;
+  }) => Effect.Effect<
+    WithOptionalResponse<MfaControllerWebauthnRegisterVerify200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly MfaControllerWebauthnAuthenticationOptions: <
+    Config extends OperationConfig,
+  >(options: {
+    readonly payload: MfaControllerWebauthnAuthenticationOptionsRequestJson;
+    readonly config?: Config | undefined;
+  }) => Effect.Effect<
+    WithOptionalResponse<MfaControllerWebauthnAuthenticationOptions200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly MfaControllerWebauthnAuthenticationVerify: <
+    Config extends OperationConfig,
+  >(options: {
+    readonly payload: MfaControllerWebauthnAuthenticationVerifyRequestJson;
+    readonly config?: Config | undefined;
+  }) => Effect.Effect<
+    WithOptionalResponse<MfaControllerWebauthnAuthenticationVerify200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly MfaControllerWebauthnReauthenticationOptions: <
+    Config extends OperationConfig,
+  >(
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      MfaControllerWebauthnReauthenticationOptions200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  readonly MfaControllerDeleteWebauthnCredential: <
+    Config extends OperationConfig,
+  >(
+    credentialId: string,
+    options: {
+      readonly payload: MfaControllerDeleteWebauthnCredentialRequestJson;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
     WithOptionalResponse<void, Config>,
     HttpClientError.HttpClientError
   >;

@@ -1,0 +1,9 @@
+id: no-throw-in-effect-generator
+valid:
+  - 'Effect.gen(function* () { yield* new AppError({ message: "boom" }) })'
+  - 'Effect.fn("program")(function* () { yield* Effect.die("boom") })'
+  - 'Effect.gen(function* () { yield* Effect.try({ try: () => { throw new AppError({ message: "boom" }) }, catch: cause => new AppError({ cause }) }) })'
+  - 'const plain = () => { throw new AppError({ message: "boom" }) }'
+invalid:
+  - 'Effect.gen(function* () { throw new AppError({ message: "boom" }) })'
+  - 'Effect.fn("program")(function* () { if (bad) throw new AppError({ message: "boom" }) })'

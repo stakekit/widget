@@ -1,13 +1,15 @@
+import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
-import type { YieldBalanceDto } from "../../../src/domain/types/positions";
-import type { YieldRewardRateDto } from "../../../src/domain/types/reward-rate";
-import type { Yield } from "../../../src/domain/types/yields";
-import { waitForMs } from "../../../src/utils";
+import type { EarnYield } from "../../../src/domain/earn/models";
+import type { YieldRewardRate } from "../../../src/domain/earn/reward-rate";
+import { exactDecimal } from "../../../src/domain/finance/exact";
+import { Token } from "../../../src/domain/token/token";
 import {
+  encodeYieldRewardRateFixture,
   legacyYieldFixture,
-  yieldApiYieldFixture,
+  yieldApiYieldDtoFixture,
   yieldBalanceFixture,
   yieldRewardRateFixture,
 } from "../../fixtures";
@@ -15,9 +17,10 @@ import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
 import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
+import { waitForMs } from "../../utils/wait";
 
 type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
-type YieldApiYieldDto = Omit<Yield, "provider">;
+type YieldApiYieldDto = typeof EarnYield.Encoded;
 
 const setUrl = ({
   accountId,
@@ -53,7 +56,7 @@ export const setup = async (
     personalizedRewardRate: providedPersonalizedRewardRate,
     useRewardRateWithoutCampaign,
   }: {
-    personalizedRewardRate?: YieldRewardRateDto;
+    personalizedRewardRate?: YieldRewardRate;
     useRewardRateWithoutCampaign?: boolean;
   } = {}
 ) => {
@@ -68,44 +71,44 @@ export const setup = async (
     logoURI: "https://assets.stakek.it/tokens/usda.svg",
   };
 
-  const rewardToken: LegacyTokenDto = {
+  const rewardToken = Schema.decodeSync(Token)({
     name: "United Stables",
     symbol: "U",
     decimals: 18,
     network: token.network,
     address: "0x58D97B57BB95320F9a05dC918Aef65434969c2B2",
     logoURI: "https://assets.stakek.it/tokens/usda.svg",
-  };
+  });
 
-  const morphoToken: LegacyTokenDto = {
+  const morphoToken = Schema.decodeSync(Token)({
     name: "Morpho Token",
     symbol: "MORPHO",
     decimals: 18,
     network: token.network,
     address: "0x58D97B57BB95320F9a05dC918Aef65434969c2B3",
     logoURI: "https://assets.stakek.it/tokens/usda.svg",
-  };
+  });
 
-  const discoveryRewardRate: YieldRewardRateDto = yieldRewardRateFixture({
-    total: 0.045507546653006034,
+  const discoveryRewardRate: YieldRewardRate = yieldRewardRateFixture({
+    total: exactDecimal("0.045507546653006034"),
     rateType: "APY",
     components: [
       {
-        rate: 0.0028386677110199426,
+        rate: exactDecimal("0.0028386677110199426"),
         rateType: "APR",
         token: morphoToken,
         yieldSource: "protocol_incentive",
         description: "MORPHO rewards",
       },
       {
-        rate: 0.002,
+        rate: exactDecimal("0.002"),
         rateType: "APR",
         token: rewardToken,
         yieldSource: "campaign_incentive",
         description: "U rewards",
       },
       {
-        rate: 0.042668878941986094,
+        rate: exactDecimal("0.042668878941986094"),
         rateType: "APY",
         token: rewardToken,
         yieldSource: "vault",
@@ -114,49 +117,50 @@ export const setup = async (
     ],
   });
 
-  const defaultPersonalizedRewardRate: YieldRewardRateDto =
-    yieldRewardRateFixture({
-      total: 0.04530754665300604,
+  const defaultPersonalizedRewardRate: YieldRewardRate = yieldRewardRateFixture(
+    {
+      total: exactDecimal("0.04530754665300604"),
       rateType: "APY",
       components: [
         {
-          rate: 0.0028386677110199426,
+          rate: exactDecimal("0.0028386677110199426"),
           rateType: "APR",
           token: morphoToken,
           yieldSource: "protocol_incentive",
           description: "MORPHO rewards",
         },
         {
-          rate: 0.0018,
+          rate: exactDecimal("0.0018"),
           rateType: "APR",
           token: rewardToken,
           yieldSource: "campaign_incentive",
           description: "U rewards",
         },
         {
-          rate: 0.042668878941986094,
+          rate: exactDecimal("0.042668878941986094"),
           rateType: "APY",
           token: rewardToken,
           yieldSource: "vault",
           description: "Supply APY",
         },
       ],
-    });
+    }
+  );
 
-  const personalizedRewardRateWithoutCampaign: YieldRewardRateDto =
+  const personalizedRewardRateWithoutCampaign: YieldRewardRate =
     yieldRewardRateFixture({
-      total: 0.04530754665300604,
+      total: exactDecimal("0.04530754665300604"),
       rateType: "APY",
       components: [
         {
-          rate: 0.0028386677110199426,
+          rate: exactDecimal("0.0028386677110199426"),
           rateType: "APR",
           token: morphoToken,
           yieldSource: "protocol_incentive",
           description: "MORPHO rewards",
         },
         {
-          rate: 0.042668878941986094,
+          rate: exactDecimal("0.042668878941986094"),
           rateType: "APY",
           token: rewardToken,
           yieldSource: "vault",
@@ -175,16 +179,16 @@ export const setup = async (
     "avalanche-c-usda-trust-0xbeefa1abfebe621df50ceaef9f54fdb73648c92c-vault";
 
   const legacyYieldBase = legacyYieldFixture();
-  const rawYieldBase = yieldApiYieldFixture();
+  const rawYieldBase = yieldApiYieldDtoFixture();
 
   const legacyYield: ReturnType<typeof legacyYieldFixture> = {
     ...legacyYieldBase,
     id: yieldId,
     token,
     tokens: [token],
-    rewardRate: discoveryRewardRate.total,
+    rewardRate: discoveryRewardRate.total.toNumber(),
     rewardType: "apy",
-    apy: discoveryRewardRate.total,
+    apy: discoveryRewardRate.total.toNumber(),
     validators: [],
     feeConfigurations: [],
     args: {
@@ -217,7 +221,7 @@ export const setup = async (
         name: "Trust",
         description: "",
         externalLink: "https://trustwallet.com",
-        logoURI: "https://assets.stakek.it/providers/benqi.svg",
+        logoURI: "https://assets.stakek.it/app/composition/providers/benqi.svg",
       },
     },
     status: {
@@ -240,12 +244,12 @@ export const setup = async (
     network: token.network,
     chainId: `${avalanche.id}`,
     providerId: "trust",
-    rewardRate: discoveryRewardRate,
+    rewardRate: encodeYieldRewardRateFixture(discoveryRewardRate),
     metadata: {
       ...(rawYieldBase.metadata ?? {}),
       name: "Trust USDA Earn",
       description: "Trust campaign vault",
-      logoURI: "https://assets.stakek.it/providers/benqi.svg",
+      logoURI: "https://assets.stakek.it/app/composition/providers/benqi.svg",
     },
     mechanics: {
       ...(rawYieldBase.mechanics ?? {}),
@@ -262,7 +266,7 @@ export const setup = async (
     },
   };
 
-  const activeBalance: YieldBalanceDto = yieldBalanceFixture({
+  const activeBalance = yieldBalanceFixture({
     address: account,
     type: "active",
     amount: "1000251.8279906842",
@@ -274,9 +278,9 @@ export const setup = async (
   });
 
   worker.use(
-    http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await mockDelay();
-      return HttpResponse.json([token.network]);
+      return HttpResponse.json([{ id: token.network }]);
     }),
     http.get(legacyApiRoute("/v1/tokens"), async () => {
       await mockDelay();
@@ -350,7 +354,7 @@ export const setup = async (
           {
             yieldId,
             balances: [activeBalance],
-            rewardRate: personalizedRewardRate,
+            rewardRate: encodeYieldRewardRateFixture(personalizedRewardRate),
           },
         ],
         errors: [],

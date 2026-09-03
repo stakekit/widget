@@ -1,0 +1,7 @@
+id: no-financial-finite-from-string
+valid:
+  - 'const amount = ExactDecimal'
+  - 'const raw = ExactBaseUnitAmount'
+  - 'const count = Schema.Number'
+invalid:
+  - 'const amount = Schema.FiniteFromString'

@@ -1,0 +1,28 @@
+id: no-native-date
+language: Tsx
+severity: error
+message: Use Effect DateTime at application boundaries instead of native Date.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+  - packages/widget/tests/**/*.ts
+  - packages/widget/tests/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+  - packages/widget/tests/generated/**
+rule:
+  any:
+    - kind: identifier
+      regex: ^Date$
+    - kind: type_identifier
+      regex: ^Date$
+    - pattern: globalThis.Date
+    - pattern: window.Date
+    - pattern: DateTime.fromDateUnsafe
+    - pattern: DateTime.nowAsDate
+    - pattern: DateTime.toDate
+    - pattern: DateTime.toDateUtc
+    - pattern: Schema.Date
+    - pattern: Schema.DateFromString
+    - pattern: Schema.DateTimeUtcFromDate
+    - pattern: Schema.DateValid

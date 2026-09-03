@@ -1,0 +1,12 @@
+id: no-run-effect-in-test
+language: Tsx
+severity: error
+message: Return Effect test programs from it.effect or it.live; run Effects directly only at documented non-Effect boundaries.
+files:
+  - packages/widget/tests/**/*.ts
+  - packages/widget/tests/**/*.tsx
+rule:
+  pattern: Effect.$METHOD
+constraints:
+  METHOD:
+    regex: ^run(?:Promise|PromiseExit|Fork|Sync|SyncExit|Callback)(?:With)?$

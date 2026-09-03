@@ -1,0 +1,133 @@
+import type { DisclaimerComponent } from "@stakekit/rainbowkit";
+import {
+  RainbowKitProvider,
+  useChainModal,
+  useConnectModal,
+} from "@stakekit/rainbowkit";
+import type { PropsWithChildren } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useTrackEvent } from "../../../features/tracking/index";
+import {
+  addLedgerAccountAtom,
+  useLedgerDisabledChain,
+  useSKWallet,
+  walletModalAdapterAtom,
+} from "../../../features/wallet/index";
+import { useWidgetConfig } from "../../../features/widget-configuration/index";
+import { shouldShowDisconnect } from "../../../services/wallet/wallet-connectors";
+import { vars } from "../../../shared/styles/theme/contract.css";
+import { id } from "../../../shared/styles/theme/ids";
+import type { ConnectKitTheme } from "../../../shared/styles/tokens/connect-kit";
+import { connectKitTheme } from "../../../shared/styles/tokens/connect-kit";
+import { Text } from "../../../shared/ui/primitives/typography/text";
+
+const finalTheme: ConnectKitTheme = {
+  ...connectKitTheme.lightMode,
+  colors: vars.color.connectKit, // ThemeWrapper applies final light/dark colors
+  radii: vars.borderRadius.connectKit,
+  fonts: { body: vars.font.body },
+};
+
+export const RainbowKitProviderWithTheme = ({
+  children,
+}: PropsWithChildren) => {
+  const wallet = useSKWallet();
+  const connector = wallet?.network ? wallet.connector : null;
+  const connectorChains = wallet?.connectorChains ?? [];
+
+  const portalContainer = useWidgetConfig("portalContainer");
+
+  const ledgerDisabledChains = useLedgerDisabledChain();
+
+  const trackEvent = useTrackEvent();
+
+  const addLedgerAccount = useAtomSet(addLedgerAccountAtom);
+
+  const { t, i18n } = useTranslation();
+
+  const hideAccountAndChainSelector = useWidgetConfig(
+    "hideAccountAndChainSelector"
+  );
+  const initialChain = useWidgetConfig("initialChain");
+
+  const chainIdsToUse = useMemo(
+    () => new Set(connectorChains.map((c) => c.id)),
+    [connectorChains]
+  );
+
+  const disabledChains = useMemo(
+    () =>
+      ledgerDisabledChains.map((c) => ({
+        ...c,
+        info: t("chain_modal.disabled_chain_info"),
+      })),
+    [ledgerDisabledChains, t]
+  );
+
+  const hideDisconnect = useMemo(
+    () => (connector ? !shouldShowDisconnect(connector) : true),
+    [connector]
+  );
+
+  const locale = useMemo(() => {
+    if (i18n.language === "fr" || i18n.language === "fr-FR") {
+      return i18n.language;
+    }
+
+    return "en";
+  }, [i18n.language]);
+
+  return (
+    <RainbowKitProvider
+      chainIdsToUse={chainIdsToUse}
+      id={id}
+      modalSize="compact"
+      disabledChains={disabledChains}
+      onDisabledChainClick={(disabledChain) => {
+        trackEvent("addLedgerAccountClicked");
+        addLedgerAccount({ chain: disabledChain });
+      }}
+      locale={locale}
+      appInfo={{ disclaimer: Disclamer, appName: t("shared.stake_kit") }}
+      {...(hideAccountAndChainSelector && { avatar: null })}
+      showRecentTransactions={false}
+      initialChain={initialChain}
+      theme={finalTheme}
+      hideDisconnect={hideDisconnect}
+      dialogRoot={portalContainer}
+    >
+      <WalletModalBoundary />
+      {children}
+    </RainbowKitProvider>
+  );
+};
+
+const WalletModalBoundary = () => {
+  const updateAdapter = useAtomSet(walletModalAdapterAtom);
+  const [owner] = useState(() => ({}));
+  const { closeChainModal } = useChainModal();
+  const { openConnectModal } = useConnectModal();
+
+  useEffect(() => {
+    updateAdapter({
+      _tag: "Install",
+      adapter: {
+        closeChain: closeChainModal,
+        openConnect: () => openConnectModal?.(),
+      },
+      owner,
+    });
+    return () => {
+      updateAdapter({ _tag: "Uninstall", owner });
+    };
+  }, [closeChainModal, openConnectModal, owner, updateAdapter]);
+  return null;
+};
+
+const Disclamer: DisclaimerComponent = () => {
+  const { t } = useTranslation();
+  return <Text>{t("chain_modal_disclaimer")}</Text>;
+};
+
+import { useAtomSet } from "@effect/atom-react";

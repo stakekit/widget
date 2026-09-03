@@ -1,0 +1,9 @@
+id: no-direct-bignumber-construction
+valid:
+  - 'const amount = exactDecimal("1.5")'
+  - 'const zero = exactZero()'
+  - 'type Amount = BigNumber'
+invalid:
+  - 'const amount = new BigNumber("1.5")'
+  - 'const zero = new BigNumber(0)'
+  - 'const amount = BigNumber("1.5")'

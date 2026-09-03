@@ -1,0 +1,12 @@
+id: no-financial-finite-from-string
+language: Tsx
+severity: error
+message: Decode financial fields with ExactDecimal or ExactBaseUnitAmount, not Schema.FiniteFromString.
+files:
+  - packages/widget/src/domain/earn/**/*.ts
+  - packages/widget/src/domain/action/**/*.ts
+  - packages/widget/src/domain/borrow/**/*.ts
+  - packages/widget/src/domain/portfolio/**/*.ts
+  - packages/widget/src/domain/finance/**/*.ts
+rule:
+  pattern: Schema.FiniteFromString

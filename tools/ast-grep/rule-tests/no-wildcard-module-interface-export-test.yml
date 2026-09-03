@@ -1,0 +1,9 @@
+id: no-wildcard-module-interface-export
+valid:
+  - 'export { Model } from "./model"'
+  - 'export type { Model } from "./model"'
+  - 'export { type Model } from "./model"'
+invalid:
+  - 'export * from "./model"'
+  - 'export * as Model from "./model"'
+  - 'export type * from "./model"'

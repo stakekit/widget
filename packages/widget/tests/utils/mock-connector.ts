@@ -1,9 +1,10 @@
+import type { WalletList } from "@stakekit/rainbowkit";
 import { type EIP1193Provider, numberToHex, SwitchChainError } from "viem";
 import type { CreateConnectorFn } from "wagmi";
 import { ChainNotConfiguredError, custom } from "wagmi";
+import type { Chain } from "wagmi/chains";
 import type { MockParameters } from "wagmi/connectors";
 import { mock as mockConnector } from "wagmi/connectors";
-import type { BuildWagmiConfig } from "../../src/providers/wagmi";
 
 interface MyWalletOptions {
   accounts: MockParameters["accounts"];
@@ -16,7 +17,7 @@ export const rkMockWallet =
     connectorParams,
     accounts,
     requestFn,
-  }: MyWalletOptions): Parameters<BuildWagmiConfig>[0]["customConnectors"] =>
+  }: MyWalletOptions): ((chains: Chain[]) => WalletList) =>
   () => [
     {
       groupName: "Mock Wallet",
