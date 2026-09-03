@@ -1,0 +1,12 @@
+id: no-run-effect-in-test
+valid:
+  - 'it.effect("uses Effect", () => program)'
+  - 'it.live("uses live services", () => program)'
+  - 'const runWalletEffect = runtime.runPromise'
+invalid:
+  - 'it("runs an Effect", async () => await Effect.runPromise(program))'
+  - 'const decode = () => Effect.runSync(program)'
+  - 'const exit = Effect.runPromiseExit(program)'
+  - 'const fiber = Effect.runFork(program)'
+  - 'const cancel = Effect.runCallback(program)'
+  - 'const run = Effect.runPromiseWith(context)'

@@ -1,0 +1,8 @@
+id: no-runtime-provide-service
+valid:
+  - 'Layer.provide(WalletOperations.layer)'
+  - 'const operations = yield* WalletOperations'
+  - 'yield* operation'
+invalid:
+  - 'operation.pipe(Effect.provideService(WalletOperations, operations))'
+  - 'Effect.provideService(operation, WalletOperations, operations)'

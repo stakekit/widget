@@ -1,13 +1,25 @@
-export type { SKAppProps } from "./App";
 export { SKApp } from "./App";
-export { HelpModal } from "./components/molecules/help-modal";
-export type { SupportedSKChainIds } from "./domain/types/chains";
-export { evmChainGroup } from "./domain/types/chains";
-export { EvmChainIds } from "./domain/types/chains/evm";
-export { MiscChainIds } from "./domain/types/chains/misc";
-export { SubstrateChainIds } from "./domain/types/chains/substrate";
-export type * from "./domain/types/wallets/generic-wallet";
-export { DashboardYieldCategory } from "./domain/types/yields";
-export { TrackingContextProvider } from "./providers/tracking";
-export { createWallet } from "./providers/wagmi/utils";
-export { darkTheme, lightTheme } from "./styles/theme/themes";
+export { HelpModal } from "./features/preferences/views";
+export type { SKAppProps } from "./public-api/react-types";
+export type {
+  ActionMeta,
+  BittensorTx,
+  SKBorrowExternalProviders,
+  SKBorrowTx,
+  SKBorrowTxMeta,
+  SKBorrowWallet,
+  SKTheme,
+  SKTx,
+  SKTxMeta,
+  SKWallet,
+  SKWalletPolicy,
+  SupportedSKChainIds,
+  TronTx,
+} from "./public-api/types";
+export {
+  DashboardYieldCategory,
+  EvmChainIds,
+  MiscChainIds,
+  SubstrateChainIds,
+} from "./public-api/types";
+export { darkTheme, lightTheme } from "./shared/styles/theme/themes";

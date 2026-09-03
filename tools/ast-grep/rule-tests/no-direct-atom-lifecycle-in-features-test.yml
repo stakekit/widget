@@ -1,0 +1,17 @@
+id: no-direct-atom-lifecycle-in-features
+valid:
+  - 'atomToStream(context, stateAtom)'
+  - 'context.set(stateAtom, value)'
+invalid:
+  - 'context.registry'
+  - 'get.registry'
+  - 'ctx.registry'
+  - 'atomContext.registry'
+  - 'context.mount(stateAtom)'
+  - 'get.mount(stateAtom)'
+  - 'ctx.mount(stateAtom)'
+  - 'atomContext.mount(stateAtom)'
+  - 'context.subscribe(stateAtom, listener)'
+  - 'get.subscribe(stateAtom, listener)'
+  - 'ctx.subscribe(stateAtom, listener)'
+  - 'fnContext.subscribe(stateAtom, listener)'

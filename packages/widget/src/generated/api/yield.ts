@@ -28,6 +28,7 @@ export type TokenDto = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -120,154 +121,21 @@ export type TokenDto = {
   readonly isPoints?: boolean;
   readonly coinGeckoId?: string;
 };
-export type RewardDto = {
-  readonly rate: number;
-  readonly rateType: string;
-  readonly token: {
-    readonly symbol: string;
-    readonly name: string;
-    readonly decimals: number;
-    readonly network:
-      | "ethereum"
-      | "ethereum-goerli"
-      | "ethereum-holesky"
-      | "ethereum-sepolia"
-      | "ethereum-hoodi"
-      | "arbitrum"
-      | "base"
-      | "base-sepolia"
-      | "gnosis"
-      | "optimism"
-      | "polygon"
-      | "polygon-amoy"
-      | "starknet"
-      | "zksync"
-      | "linea"
-      | "unichain"
-      | "monad-testnet"
-      | "monad"
-      | "robinhood"
-      | "robinhood-testnet"
-      | "avalanche-c"
-      | "avalanche-c-atomic"
-      | "avalanche-p"
-      | "binance"
-      | "celo"
-      | "fantom"
-      | "harmony"
-      | "moonriver"
-      | "okc"
-      | "viction"
-      | "core"
-      | "sonic"
-      | "plasma"
-      | "katana"
-      | "hyperevm"
-      | "tempo"
-      | "pharos"
-      | "agoric"
-      | "akash"
-      | "axelar"
-      | "band-protocol"
-      | "bitsong"
-      | "canto"
-      | "chihuahua"
-      | "comdex"
-      | "coreum"
-      | "cosmos"
-      | "crescent"
-      | "cronos"
-      | "cudos"
-      | "desmos"
-      | "dydx"
-      | "evmos"
-      | "fetch-ai"
-      | "gravity-bridge"
-      | "injective"
-      | "irisnet"
-      | "juno"
-      | "kava"
-      | "ki-network"
-      | "mars-protocol"
-      | "nym"
-      | "okex-chain"
-      | "onomy"
-      | "osmosis"
-      | "persistence"
-      | "quicksilver"
-      | "regen"
-      | "secret"
-      | "sentinel"
-      | "sommelier"
-      | "stafi"
-      | "stargaze"
-      | "stride"
-      | "teritori"
-      | "tgrade"
-      | "umee"
-      | "sei"
-      | "mantra"
-      | "celestia"
-      | "saga"
-      | "zetachain"
-      | "dymension"
-      | "humansai"
-      | "neutron"
-      | "polkadot"
-      | "kusama"
-      | "westend"
-      | "bittensor"
-      | "aptos"
-      | "binancebeacon"
-      | "cardano"
-      | "near"
-      | "solana"
-      | "solana-devnet"
-      | "stellar"
-      | "stellar-testnet"
-      | "sui"
-      | "tezos"
-      | "tron"
-      | "ton"
-      | "ton-testnet"
-      | "hyperliquid";
-    readonly address?: string;
-    readonly logoURI?: string;
-    readonly isPoints?: boolean;
-    readonly coinGeckoId?: string;
-  };
-  readonly yieldSource:
-    | "staking"
-    | "liquid_staking"
-    | "restaking"
-    | "protocol_incentive"
-    | "campaign_incentive"
-    | "points"
-    | "lending"
-    | "mev"
-    | "real_world_asset_yield"
-    | "vault";
-  readonly description?: string;
-};
-export type YieldFeeConfigurationDto = {
-  readonly id: string;
-  readonly default: boolean;
-  readonly managementFeeBps?: {} | null;
-  readonly performanceFeeBps?: {} | null;
-  readonly depositFeeBps?: {} | null;
-  readonly allocatorVaultContractAddress?: {} | null;
-  readonly statistics?: {
-    readonly tvlUsd?: string | null;
-    readonly tvl?: string | null;
-    readonly tvlRaw?: string | null;
-    readonly uniqueUsers?: number | null;
-    readonly averagePositionSizeUsd?: string | null;
-    readonly averagePositionSize?: string | null;
-  };
+export type YieldStatisticsDto = {
+  readonly tvlUsd?: string | null;
+  readonly tvl?: string | null;
+  readonly tvlRaw?: string | null;
+  readonly uniqueUsers?: number | null;
+  readonly averagePositionSizeUsd?: string | null;
+  readonly averagePositionSize?: string | null;
 };
 export type YieldRiskEntryDto = {
   readonly rating: string;
   readonly source: "credora" | "stakingRewards";
+};
+export type YieldStatusDto = {
+  readonly enter: boolean;
+  readonly exit: boolean;
 };
 export type ERCStandards = "ERC20" | "ERC4626" | "ERC721" | "ERC1155";
 export type YieldType =
@@ -290,6 +158,18 @@ export type RewardSchedule =
   | "epoch"
   | "campaign";
 export type RewardClaiming = "auto" | "manual";
+export type TimePeriodDto = { readonly seconds: number };
+export type YieldFeeDto = {
+  readonly deposit?: string;
+  readonly withdrawal?: string;
+  readonly management?: string;
+  readonly performance?: string;
+};
+export type YieldEntryLimitsDto = {
+  readonly minimum: string | null;
+  readonly maximum: string | null;
+  readonly subsequentMinimum: string | null;
+};
 export type InvestorEligibilityEntryDto = {
   readonly jurisdiction: string;
   readonly tier:
@@ -324,6 +204,7 @@ export type SelfAttestationDocumentDto = {
 export type ArgumentFieldDto = {
   readonly name:
     | "amount"
+    | "amountRaw"
     | "amounts"
     | "shareAmount"
     | "shareAmountRaw"
@@ -367,172 +248,159 @@ export type ArgumentFieldDto = {
   readonly maximum?: string | null;
   readonly isArray?: boolean;
 };
-export type AllocationDto = {
-  readonly address: string;
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly name: string;
-  readonly yieldId?: string;
-  readonly providerId?: string;
-  readonly allocation: string;
-  readonly allocationUsd: string | null;
-  readonly weight: number;
-  readonly targetWeight: number;
-  readonly rewardRate: {
-    readonly total: number;
-    readonly rateType: string;
-  } | null;
-  readonly tvl: string | null;
-  readonly tvlUsd: string | null;
-  readonly maxCapacity: string | null;
-  readonly remainingCapacity: string | null;
+export type PossibleFeeTakingMechanismsDto = {
+  readonly depositFee: boolean;
+  readonly managementFee: boolean;
+  readonly performanceFee: boolean;
+  readonly validatorRebates: boolean;
 };
-export type SchedulePathDto = {
-  readonly kind: "instant" | "standard";
-  readonly cadence: "continuous" | "daily_cutoff" | "periodic" | "scheduled";
-  readonly status: "open" | "closed" | "settling";
-  readonly businessDaysOnly?: boolean;
-  readonly cutoffTime?: string;
-  readonly currentWindow?: {
-    readonly opensAt: string;
-    readonly closesAt: string;
-    readonly source?: "onchain" | "api" | "config";
-  } | null;
-  readonly nextWindow?: {
-    readonly opensAt: string;
-    readonly closesAt: string;
-    readonly source?: "onchain" | "api" | "config";
-  } | null;
-  readonly settlement: {
-    readonly type: "atomic" | "next_business_day" | "cohort" | "cooldown";
-    readonly marketDays?: number;
-    readonly estimatedDuration?: { readonly seconds: number };
-    readonly estimatedSettlementAt?: string;
-    readonly claimRequired?: boolean;
-    readonly instantPortion?: number;
-    readonly deferredDeliveryAt?: string;
-  };
-  readonly accrual: {
-    readonly startsAt:
-      | "immediate"
-      | "next_business_day"
-      | "on_cycle_start"
-      | "on_settlement";
-    readonly startsAtDate?: string;
-    readonly minimumHold?: { readonly seconds: number };
-  };
-  readonly limits?: {
-    readonly individualPer24h?: string;
-    readonly globalPer24h?: string;
-    readonly globalRemainingPer24h?: string;
-    readonly maxFractionOfNav?: number;
-    readonly liquidityBounded?: boolean;
-    readonly availableLiquidity?: string;
-    readonly minimumAmount?: string;
-  };
-  readonly fee?: { readonly rate: number };
+export type CuratorDto = {
+  readonly name?: string | null;
+  readonly description?: string | null;
+  readonly logoURI?: string | null;
+};
+export type CapacityDto = {
+  readonly current: string;
+  readonly max?: string | null;
+  readonly remaining?: string | null;
+};
+export type LiquidityStateDto = {
+  readonly liquidity?: string | null;
+  readonly utilization?: string | null;
+};
+export type AllocationRewardRateDto = {
+  readonly total: number;
+  readonly rateType: string;
+};
+export type WindowBoundsDto = {
+  readonly opensAt: string;
+  readonly closesAt: string;
+  readonly source?: "onchain" | "api" | "config";
+};
+export type PathLimitsDto = {
+  readonly individualPer24h?: string;
+  readonly globalPer24h?: string;
+  readonly globalRemainingPer24h?: string;
+  readonly maxFractionOfNav?: number;
+  readonly liquidityBounded?: boolean;
+  readonly availableLiquidity?: string;
+  readonly minimumAmount?: string;
+};
+export type PathFeeDto = { readonly rate: number };
+export type ExecutionContractsDto = {
+  readonly enter?: ReadonlyArray<string>;
+  readonly exit?: ReadonlyArray<string>;
+};
+export type Networks =
+  | "ethereum"
+  | "ethereum-goerli"
+  | "ethereum-holesky"
+  | "ethereum-sepolia"
+  | "ethereum-hoodi"
+  | "arbitrum"
+  | "base"
+  | "base-sepolia"
+  | "gnosis"
+  | "optimism"
+  | "polygon"
+  | "polygon-amoy"
+  | "starknet"
+  | "zksync"
+  | "linea"
+  | "unichain"
+  | "plume"
+  | "monad-testnet"
+  | "monad"
+  | "robinhood"
+  | "robinhood-testnet"
+  | "avalanche-c"
+  | "avalanche-c-atomic"
+  | "avalanche-p"
+  | "binance"
+  | "celo"
+  | "fantom"
+  | "harmony"
+  | "moonriver"
+  | "okc"
+  | "viction"
+  | "core"
+  | "sonic"
+  | "plasma"
+  | "katana"
+  | "hyperevm"
+  | "tempo"
+  | "pharos"
+  | "agoric"
+  | "akash"
+  | "axelar"
+  | "band-protocol"
+  | "bitsong"
+  | "canto"
+  | "chihuahua"
+  | "comdex"
+  | "coreum"
+  | "cosmos"
+  | "crescent"
+  | "cronos"
+  | "cudos"
+  | "desmos"
+  | "dydx"
+  | "evmos"
+  | "fetch-ai"
+  | "gravity-bridge"
+  | "injective"
+  | "irisnet"
+  | "juno"
+  | "kava"
+  | "ki-network"
+  | "mars-protocol"
+  | "nym"
+  | "okex-chain"
+  | "onomy"
+  | "osmosis"
+  | "persistence"
+  | "quicksilver"
+  | "regen"
+  | "secret"
+  | "sentinel"
+  | "sommelier"
+  | "stafi"
+  | "stargaze"
+  | "stride"
+  | "teritori"
+  | "tgrade"
+  | "umee"
+  | "sei"
+  | "mantra"
+  | "celestia"
+  | "saga"
+  | "zetachain"
+  | "dymension"
+  | "humansai"
+  | "neutron"
+  | "polkadot"
+  | "kusama"
+  | "westend"
+  | "bittensor"
+  | "aptos"
+  | "binancebeacon"
+  | "cardano"
+  | "near"
+  | "solana"
+  | "solana-devnet"
+  | "stellar"
+  | "stellar-testnet"
+  | "sui"
+  | "tezos"
+  | "tron"
+  | "ton"
+  | "ton-testnet"
+  | "hyperliquid";
+export type GetBalancesArgumentsDto = {
+  readonly cAddressBech?: string;
+  readonly pAddressBech?: string;
+  readonly autoSweepDayOfMonth?: number;
+  readonly autoSweepTimezone?: string;
 };
 export type BalanceType =
   | "active"
@@ -541,133 +409,63 @@ export type BalanceType =
   | "withdrawable"
   | "claimable"
   | "locked";
+export type RevShareDetailsDto = {
+  readonly minRevShare: number;
+  readonly maxRevShare: number;
+};
+export type ValidatorSubnetDto = {
+  readonly id: number;
+  readonly name?: string;
+  readonly tokenSymbol?: string;
+  readonly tvl?: string;
+  readonly pricePerShare?: string;
+};
 export type YieldErrorDto = {
   readonly yieldId: string;
   readonly error: string;
 };
-export type BalancesQueryDto = {
-  readonly yieldId?: string;
-  readonly address: string;
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly arguments?: {
-    readonly cAddressBech?: string;
-    readonly pAddressBech?: string;
-    readonly autoSweepDayOfMonth?: number;
-    readonly autoSweepTimezone?: string;
-  };
+export type YieldRiskCredoraDto = {
+  readonly rating?: string | null;
+  readonly score?: number | null;
+  readonly psl?: number | null;
+  readonly publishDate?: string | null;
+  readonly curator?: string | null;
 };
-export type YieldBalancesRequestDto = {
-  readonly address: string;
-  readonly arguments?: {
-    readonly cAddressBech?: string;
-    readonly pAddressBech?: string;
-    readonly autoSweepDayOfMonth?: number;
-    readonly autoSweepTimezone?: string;
-  };
+export type YieldRiskStakingRewardsMetricsDto = {
+  readonly users?: number | null;
 };
+export type BalanceHistorySnapshotPeriodDeltaDto = {
+  readonly shareAmount: string;
+  readonly shareAmountRaw: string;
+  readonly amount: string;
+  readonly amountRaw: string;
+};
+export type PaginatedResponseDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+};
+export type RewardRateSnapshotDto = {
+  readonly timestamp: string;
+  readonly rewardRate: string;
+};
+export type TvlHistoryResponseDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly yieldId: string;
+  readonly interval: "day" | "week" | "month";
+  readonly from: string;
+  readonly to: string;
+};
+export type CampaignStatus = "draft" | "active" | "paused" | "ended";
+export type CampaignRewardMode = "normal" | "compound";
+export type CampaignQualificationType = "min_token_amount";
+export type CampaignPayoutFrequency =
+  | "weekly"
+  | "daily"
+  | "six_hourly"
+  | "end_of_campaign";
 export type TransactionDto = {
   readonly id: string;
   readonly title: string;
@@ -688,6 +486,7 @@ export type TransactionDto = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -847,9 +646,12 @@ export type TransactionDto = {
   readonly createdAt: string;
   readonly broadcastedAt: string | null;
   readonly signedTransaction: string | null;
-  readonly unsignedTransaction: string | {} | null;
-  readonly annotatedTransaction?: {} | null;
-  readonly structuredTransaction?: {} | null;
+  readonly unsignedTransaction:
+    | string
+    | { readonly [x: string]: unknown }
+    | null;
+  readonly annotatedTransaction?: { readonly [x: string]: unknown } | null;
+  readonly structuredTransaction?: { readonly [x: string]: unknown } | null;
   readonly stepIndex?: number;
   readonly description?: string;
   readonly error?: string | null;
@@ -857,668 +659,312 @@ export type TransactionDto = {
   readonly explorerUrl?: string | null;
   readonly isMessage?: boolean;
 };
-export type PaginatedResponseDto = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
+export type ActionEventDto = {
+  readonly id: string;
+  readonly type: "REDEMPTION_SETTLED" | "REDEMPTION_CANCELLED";
+  readonly transactionHash: string | null;
+  readonly occurredAt: string;
 };
-export type YieldRiskCredoraDto = {
-  readonly rating?: {};
-  readonly score?: {};
-  readonly psl?: {};
-  readonly publishDate?: {};
-  readonly curator?: {};
+export type ActionArgumentsDto = {
+  readonly amount?: string;
+  readonly amountRaw?: string;
+  readonly amounts?: ReadonlyArray<string>;
+  readonly shareAmount?: string;
+  readonly shareAmountRaw?: string;
+  readonly validatorAddress?: string;
+  readonly validatorAddresses?: ReadonlyArray<string>;
+  readonly providerId?: string;
+  readonly duration?: number;
+  readonly inputToken?: string;
+  readonly inputTokenNetwork?:
+    | "ethereum"
+    | "ethereum-goerli"
+    | "ethereum-holesky"
+    | "ethereum-sepolia"
+    | "ethereum-hoodi"
+    | "arbitrum"
+    | "base"
+    | "base-sepolia"
+    | "gnosis"
+    | "optimism"
+    | "polygon"
+    | "polygon-amoy"
+    | "starknet"
+    | "zksync"
+    | "linea"
+    | "unichain"
+    | "plume"
+    | "monad-testnet"
+    | "monad"
+    | "robinhood"
+    | "robinhood-testnet"
+    | "avalanche-c"
+    | "avalanche-c-atomic"
+    | "avalanche-p"
+    | "binance"
+    | "celo"
+    | "fantom"
+    | "harmony"
+    | "moonriver"
+    | "okc"
+    | "viction"
+    | "core"
+    | "sonic"
+    | "plasma"
+    | "katana"
+    | "hyperevm"
+    | "tempo"
+    | "pharos"
+    | "agoric"
+    | "akash"
+    | "axelar"
+    | "band-protocol"
+    | "bitsong"
+    | "canto"
+    | "chihuahua"
+    | "comdex"
+    | "coreum"
+    | "cosmos"
+    | "crescent"
+    | "cronos"
+    | "cudos"
+    | "desmos"
+    | "dydx"
+    | "evmos"
+    | "fetch-ai"
+    | "gravity-bridge"
+    | "injective"
+    | "irisnet"
+    | "juno"
+    | "kava"
+    | "ki-network"
+    | "mars-protocol"
+    | "nym"
+    | "okex-chain"
+    | "onomy"
+    | "osmosis"
+    | "persistence"
+    | "quicksilver"
+    | "regen"
+    | "secret"
+    | "sentinel"
+    | "sommelier"
+    | "stafi"
+    | "stargaze"
+    | "stride"
+    | "teritori"
+    | "tgrade"
+    | "umee"
+    | "sei"
+    | "mantra"
+    | "celestia"
+    | "saga"
+    | "zetachain"
+    | "dymension"
+    | "humansai"
+    | "neutron"
+    | "polkadot"
+    | "kusama"
+    | "westend"
+    | "bittensor"
+    | "aptos"
+    | "binancebeacon"
+    | "cardano"
+    | "near"
+    | "solana"
+    | "solana-devnet"
+    | "stellar"
+    | "stellar-testnet"
+    | "sui"
+    | "tezos"
+    | "tron"
+    | "ton"
+    | "ton-testnet"
+    | "hyperliquid";
+  readonly outputToken?: string;
+  readonly outputTokenNetwork?:
+    | "ethereum"
+    | "ethereum-goerli"
+    | "ethereum-holesky"
+    | "ethereum-sepolia"
+    | "ethereum-hoodi"
+    | "arbitrum"
+    | "base"
+    | "base-sepolia"
+    | "gnosis"
+    | "optimism"
+    | "polygon"
+    | "polygon-amoy"
+    | "starknet"
+    | "zksync"
+    | "linea"
+    | "unichain"
+    | "plume"
+    | "monad-testnet"
+    | "monad"
+    | "robinhood"
+    | "robinhood-testnet"
+    | "avalanche-c"
+    | "avalanche-c-atomic"
+    | "avalanche-p"
+    | "binance"
+    | "celo"
+    | "fantom"
+    | "harmony"
+    | "moonriver"
+    | "okc"
+    | "viction"
+    | "core"
+    | "sonic"
+    | "plasma"
+    | "katana"
+    | "hyperevm"
+    | "tempo"
+    | "pharos"
+    | "agoric"
+    | "akash"
+    | "axelar"
+    | "band-protocol"
+    | "bitsong"
+    | "canto"
+    | "chihuahua"
+    | "comdex"
+    | "coreum"
+    | "cosmos"
+    | "crescent"
+    | "cronos"
+    | "cudos"
+    | "desmos"
+    | "dydx"
+    | "evmos"
+    | "fetch-ai"
+    | "gravity-bridge"
+    | "injective"
+    | "irisnet"
+    | "juno"
+    | "kava"
+    | "ki-network"
+    | "mars-protocol"
+    | "nym"
+    | "okex-chain"
+    | "onomy"
+    | "osmosis"
+    | "persistence"
+    | "quicksilver"
+    | "regen"
+    | "secret"
+    | "sentinel"
+    | "sommelier"
+    | "stafi"
+    | "stargaze"
+    | "stride"
+    | "teritori"
+    | "tgrade"
+    | "umee"
+    | "sei"
+    | "mantra"
+    | "celestia"
+    | "saga"
+    | "zetachain"
+    | "dymension"
+    | "humansai"
+    | "neutron"
+    | "polkadot"
+    | "kusama"
+    | "westend"
+    | "bittensor"
+    | "aptos"
+    | "binancebeacon"
+    | "cardano"
+    | "near"
+    | "solana"
+    | "solana-devnet"
+    | "stellar"
+    | "stellar-testnet"
+    | "sui"
+    | "tezos"
+    | "tron"
+    | "ton"
+    | "ton-testnet"
+    | "hyperliquid";
+  readonly subnetId?: number;
+  readonly tronResource?: "BANDWIDTH" | "ENERGY";
+  readonly feeConfigurationId?: string;
+  readonly cosmosPubKey?: string;
+  readonly tezosPubKey?: string;
+  readonly cAddressBech?: string;
+  readonly pAddressBech?: string;
+  readonly executionMode?: "individual" | "batched";
+  readonly ledgerWalletApiCompatible?: boolean;
+  readonly useMaxAmount?: boolean;
+  readonly useInstantExecution?: boolean;
+  readonly useAutoClaim?: boolean;
+  readonly skipPrechecks?: boolean;
+  readonly useMaxAllowance?: boolean;
+  readonly feePayerAddress?: string;
+  readonly receiverAddress?: string;
+  readonly rangeMin?: string;
+  readonly rangeMax?: string;
+  readonly percentage?: number;
+  readonly tokenId?: string;
 };
-export type YieldRiskStakingRewardsMetricsDto = { readonly users?: {} };
-export type RewardRateSnapshotDto = {
-  readonly timestamp: string;
-  readonly rewardRate: string;
-};
-export type TvlHistoryResponseDto = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly yieldId: string;
-  readonly interval: "day" | "week" | "month";
-  readonly from: string;
-  readonly to: string;
-};
-export type CampaignStatus = "draft" | "active" | "paused" | "ended";
-export type CampaignRewardMode = "normal" | "compound";
-export type CampaignQualificationType = "min_token_amount";
-export type CampaignPayoutFrequency =
-  | "weekly"
-  | "daily"
-  | "six_hourly"
-  | "end_of_campaign";
-export type TokenWithAvailableYieldsDto = {
-  readonly token: {
-    readonly symbol: string;
-    readonly name: string;
-    readonly decimals: number;
-    readonly network:
-      | "ethereum"
-      | "ethereum-goerli"
-      | "ethereum-holesky"
-      | "ethereum-sepolia"
-      | "ethereum-hoodi"
-      | "arbitrum"
-      | "base"
-      | "base-sepolia"
-      | "gnosis"
-      | "optimism"
-      | "polygon"
-      | "polygon-amoy"
-      | "starknet"
-      | "zksync"
-      | "linea"
-      | "unichain"
-      | "monad-testnet"
-      | "monad"
-      | "robinhood"
-      | "robinhood-testnet"
-      | "avalanche-c"
-      | "avalanche-c-atomic"
-      | "avalanche-p"
-      | "binance"
-      | "celo"
-      | "fantom"
-      | "harmony"
-      | "moonriver"
-      | "okc"
-      | "viction"
-      | "core"
-      | "sonic"
-      | "plasma"
-      | "katana"
-      | "hyperevm"
-      | "tempo"
-      | "pharos"
-      | "agoric"
-      | "akash"
-      | "axelar"
-      | "band-protocol"
-      | "bitsong"
-      | "canto"
-      | "chihuahua"
-      | "comdex"
-      | "coreum"
-      | "cosmos"
-      | "crescent"
-      | "cronos"
-      | "cudos"
-      | "desmos"
-      | "dydx"
-      | "evmos"
-      | "fetch-ai"
-      | "gravity-bridge"
-      | "injective"
-      | "irisnet"
-      | "juno"
-      | "kava"
-      | "ki-network"
-      | "mars-protocol"
-      | "nym"
-      | "okex-chain"
-      | "onomy"
-      | "osmosis"
-      | "persistence"
-      | "quicksilver"
-      | "regen"
-      | "secret"
-      | "sentinel"
-      | "sommelier"
-      | "stafi"
-      | "stargaze"
-      | "stride"
-      | "teritori"
-      | "tgrade"
-      | "umee"
-      | "sei"
-      | "mantra"
-      | "celestia"
-      | "saga"
-      | "zetachain"
-      | "dymension"
-      | "humansai"
-      | "neutron"
-      | "polkadot"
-      | "kusama"
-      | "westend"
-      | "bittensor"
-      | "aptos"
-      | "binancebeacon"
-      | "cardano"
-      | "near"
-      | "solana"
-      | "solana-devnet"
-      | "stellar"
-      | "stellar-testnet"
-      | "sui"
-      | "tezos"
-      | "tron"
-      | "ton"
-      | "ton-testnet"
-      | "hyperliquid";
-    readonly address?: string;
-    readonly logoURI?: string;
-    readonly isPoints?: boolean;
-    readonly coinGeckoId?: string;
-  };
-  readonly availableYields: ReadonlyArray<string>;
-};
-export type CreateActionDto = {
-  readonly yieldId: string;
-  readonly address: string;
-  readonly arguments?: {
-    readonly amount?: string;
-    readonly amounts?: ReadonlyArray<string>;
-    readonly shareAmount?: string;
-    readonly shareAmountRaw?: string;
-    readonly validatorAddress?: string;
-    readonly validatorAddresses?: ReadonlyArray<string>;
-    readonly providerId?: string;
-    readonly duration?: number;
-    readonly inputToken?: string;
-    readonly inputTokenNetwork?:
-      | "ethereum"
-      | "ethereum-goerli"
-      | "ethereum-holesky"
-      | "ethereum-sepolia"
-      | "ethereum-hoodi"
-      | "arbitrum"
-      | "base"
-      | "base-sepolia"
-      | "gnosis"
-      | "optimism"
-      | "polygon"
-      | "polygon-amoy"
-      | "starknet"
-      | "zksync"
-      | "linea"
-      | "unichain"
-      | "monad-testnet"
-      | "monad"
-      | "robinhood"
-      | "robinhood-testnet"
-      | "avalanche-c"
-      | "avalanche-c-atomic"
-      | "avalanche-p"
-      | "binance"
-      | "celo"
-      | "fantom"
-      | "harmony"
-      | "moonriver"
-      | "okc"
-      | "viction"
-      | "core"
-      | "sonic"
-      | "plasma"
-      | "katana"
-      | "hyperevm"
-      | "tempo"
-      | "pharos"
-      | "agoric"
-      | "akash"
-      | "axelar"
-      | "band-protocol"
-      | "bitsong"
-      | "canto"
-      | "chihuahua"
-      | "comdex"
-      | "coreum"
-      | "cosmos"
-      | "crescent"
-      | "cronos"
-      | "cudos"
-      | "desmos"
-      | "dydx"
-      | "evmos"
-      | "fetch-ai"
-      | "gravity-bridge"
-      | "injective"
-      | "irisnet"
-      | "juno"
-      | "kava"
-      | "ki-network"
-      | "mars-protocol"
-      | "nym"
-      | "okex-chain"
-      | "onomy"
-      | "osmosis"
-      | "persistence"
-      | "quicksilver"
-      | "regen"
-      | "secret"
-      | "sentinel"
-      | "sommelier"
-      | "stafi"
-      | "stargaze"
-      | "stride"
-      | "teritori"
-      | "tgrade"
-      | "umee"
-      | "sei"
-      | "mantra"
-      | "celestia"
-      | "saga"
-      | "zetachain"
-      | "dymension"
-      | "humansai"
-      | "neutron"
-      | "polkadot"
-      | "kusama"
-      | "westend"
-      | "bittensor"
-      | "aptos"
-      | "binancebeacon"
-      | "cardano"
-      | "near"
-      | "solana"
-      | "solana-devnet"
-      | "stellar"
-      | "stellar-testnet"
-      | "sui"
-      | "tezos"
-      | "tron"
-      | "ton"
-      | "ton-testnet"
-      | "hyperliquid";
-    readonly outputToken?: string;
-    readonly outputTokenNetwork?:
-      | "ethereum"
-      | "ethereum-goerli"
-      | "ethereum-holesky"
-      | "ethereum-sepolia"
-      | "ethereum-hoodi"
-      | "arbitrum"
-      | "base"
-      | "base-sepolia"
-      | "gnosis"
-      | "optimism"
-      | "polygon"
-      | "polygon-amoy"
-      | "starknet"
-      | "zksync"
-      | "linea"
-      | "unichain"
-      | "monad-testnet"
-      | "monad"
-      | "robinhood"
-      | "robinhood-testnet"
-      | "avalanche-c"
-      | "avalanche-c-atomic"
-      | "avalanche-p"
-      | "binance"
-      | "celo"
-      | "fantom"
-      | "harmony"
-      | "moonriver"
-      | "okc"
-      | "viction"
-      | "core"
-      | "sonic"
-      | "plasma"
-      | "katana"
-      | "hyperevm"
-      | "tempo"
-      | "pharos"
-      | "agoric"
-      | "akash"
-      | "axelar"
-      | "band-protocol"
-      | "bitsong"
-      | "canto"
-      | "chihuahua"
-      | "comdex"
-      | "coreum"
-      | "cosmos"
-      | "crescent"
-      | "cronos"
-      | "cudos"
-      | "desmos"
-      | "dydx"
-      | "evmos"
-      | "fetch-ai"
-      | "gravity-bridge"
-      | "injective"
-      | "irisnet"
-      | "juno"
-      | "kava"
-      | "ki-network"
-      | "mars-protocol"
-      | "nym"
-      | "okex-chain"
-      | "onomy"
-      | "osmosis"
-      | "persistence"
-      | "quicksilver"
-      | "regen"
-      | "secret"
-      | "sentinel"
-      | "sommelier"
-      | "stafi"
-      | "stargaze"
-      | "stride"
-      | "teritori"
-      | "tgrade"
-      | "umee"
-      | "sei"
-      | "mantra"
-      | "celestia"
-      | "saga"
-      | "zetachain"
-      | "dymension"
-      | "humansai"
-      | "neutron"
-      | "polkadot"
-      | "kusama"
-      | "westend"
-      | "bittensor"
-      | "aptos"
-      | "binancebeacon"
-      | "cardano"
-      | "near"
-      | "solana"
-      | "solana-devnet"
-      | "stellar"
-      | "stellar-testnet"
-      | "sui"
-      | "tezos"
-      | "tron"
-      | "ton"
-      | "ton-testnet"
-      | "hyperliquid";
-    readonly subnetId?: number;
-    readonly tronResource?: "BANDWIDTH" | "ENERGY";
-    readonly feeConfigurationId?: string;
-    readonly cosmosPubKey?: string;
-    readonly tezosPubKey?: string;
-    readonly cAddressBech?: string;
-    readonly pAddressBech?: string;
-    readonly executionMode?: "individual" | "batched";
-    readonly ledgerWalletApiCompatible?: boolean;
-    readonly useMaxAmount?: boolean;
-    readonly useInstantExecution?: boolean;
-    readonly useAutoClaim?: boolean;
-    readonly skipPrechecks?: boolean;
-    readonly useMaxAllowance?: boolean;
-    readonly feePayerAddress?: string;
-    readonly receiverAddress?: string;
-    readonly rangeMin?: string;
-    readonly rangeMax?: string;
-    readonly percentage?: number;
-    readonly tokenId?: string;
-  };
-};
-export type CreateManageActionDto = {
-  readonly yieldId: string;
-  readonly address: string;
-  readonly arguments?: {
-    readonly amount?: string;
-    readonly amounts?: ReadonlyArray<string>;
-    readonly shareAmount?: string;
-    readonly shareAmountRaw?: string;
-    readonly validatorAddress?: string;
-    readonly validatorAddresses?: ReadonlyArray<string>;
-    readonly providerId?: string;
-    readonly duration?: number;
-    readonly inputToken?: string;
-    readonly inputTokenNetwork?:
-      | "ethereum"
-      | "ethereum-goerli"
-      | "ethereum-holesky"
-      | "ethereum-sepolia"
-      | "ethereum-hoodi"
-      | "arbitrum"
-      | "base"
-      | "base-sepolia"
-      | "gnosis"
-      | "optimism"
-      | "polygon"
-      | "polygon-amoy"
-      | "starknet"
-      | "zksync"
-      | "linea"
-      | "unichain"
-      | "monad-testnet"
-      | "monad"
-      | "robinhood"
-      | "robinhood-testnet"
-      | "avalanche-c"
-      | "avalanche-c-atomic"
-      | "avalanche-p"
-      | "binance"
-      | "celo"
-      | "fantom"
-      | "harmony"
-      | "moonriver"
-      | "okc"
-      | "viction"
-      | "core"
-      | "sonic"
-      | "plasma"
-      | "katana"
-      | "hyperevm"
-      | "tempo"
-      | "pharos"
-      | "agoric"
-      | "akash"
-      | "axelar"
-      | "band-protocol"
-      | "bitsong"
-      | "canto"
-      | "chihuahua"
-      | "comdex"
-      | "coreum"
-      | "cosmos"
-      | "crescent"
-      | "cronos"
-      | "cudos"
-      | "desmos"
-      | "dydx"
-      | "evmos"
-      | "fetch-ai"
-      | "gravity-bridge"
-      | "injective"
-      | "irisnet"
-      | "juno"
-      | "kava"
-      | "ki-network"
-      | "mars-protocol"
-      | "nym"
-      | "okex-chain"
-      | "onomy"
-      | "osmosis"
-      | "persistence"
-      | "quicksilver"
-      | "regen"
-      | "secret"
-      | "sentinel"
-      | "sommelier"
-      | "stafi"
-      | "stargaze"
-      | "stride"
-      | "teritori"
-      | "tgrade"
-      | "umee"
-      | "sei"
-      | "mantra"
-      | "celestia"
-      | "saga"
-      | "zetachain"
-      | "dymension"
-      | "humansai"
-      | "neutron"
-      | "polkadot"
-      | "kusama"
-      | "westend"
-      | "bittensor"
-      | "aptos"
-      | "binancebeacon"
-      | "cardano"
-      | "near"
-      | "solana"
-      | "solana-devnet"
-      | "stellar"
-      | "stellar-testnet"
-      | "sui"
-      | "tezos"
-      | "tron"
-      | "ton"
-      | "ton-testnet"
-      | "hyperliquid";
-    readonly outputToken?: string;
-    readonly outputTokenNetwork?:
-      | "ethereum"
-      | "ethereum-goerli"
-      | "ethereum-holesky"
-      | "ethereum-sepolia"
-      | "ethereum-hoodi"
-      | "arbitrum"
-      | "base"
-      | "base-sepolia"
-      | "gnosis"
-      | "optimism"
-      | "polygon"
-      | "polygon-amoy"
-      | "starknet"
-      | "zksync"
-      | "linea"
-      | "unichain"
-      | "monad-testnet"
-      | "monad"
-      | "robinhood"
-      | "robinhood-testnet"
-      | "avalanche-c"
-      | "avalanche-c-atomic"
-      | "avalanche-p"
-      | "binance"
-      | "celo"
-      | "fantom"
-      | "harmony"
-      | "moonriver"
-      | "okc"
-      | "viction"
-      | "core"
-      | "sonic"
-      | "plasma"
-      | "katana"
-      | "hyperevm"
-      | "tempo"
-      | "pharos"
-      | "agoric"
-      | "akash"
-      | "axelar"
-      | "band-protocol"
-      | "bitsong"
-      | "canto"
-      | "chihuahua"
-      | "comdex"
-      | "coreum"
-      | "cosmos"
-      | "crescent"
-      | "cronos"
-      | "cudos"
-      | "desmos"
-      | "dydx"
-      | "evmos"
-      | "fetch-ai"
-      | "gravity-bridge"
-      | "injective"
-      | "irisnet"
-      | "juno"
-      | "kava"
-      | "ki-network"
-      | "mars-protocol"
-      | "nym"
-      | "okex-chain"
-      | "onomy"
-      | "osmosis"
-      | "persistence"
-      | "quicksilver"
-      | "regen"
-      | "secret"
-      | "sentinel"
-      | "sommelier"
-      | "stafi"
-      | "stargaze"
-      | "stride"
-      | "teritori"
-      | "tgrade"
-      | "umee"
-      | "sei"
-      | "mantra"
-      | "celestia"
-      | "saga"
-      | "zetachain"
-      | "dymension"
-      | "humansai"
-      | "neutron"
-      | "polkadot"
-      | "kusama"
-      | "westend"
-      | "bittensor"
-      | "aptos"
-      | "binancebeacon"
-      | "cardano"
-      | "near"
-      | "solana"
-      | "solana-devnet"
-      | "stellar"
-      | "stellar-testnet"
-      | "sui"
-      | "tezos"
-      | "tron"
-      | "ton"
-      | "ton-testnet"
-      | "hyperliquid";
-    readonly subnetId?: number;
-    readonly tronResource?: "BANDWIDTH" | "ENERGY";
-    readonly feeConfigurationId?: string;
-    readonly cosmosPubKey?: string;
-    readonly tezosPubKey?: string;
-    readonly cAddressBech?: string;
-    readonly pAddressBech?: string;
-    readonly executionMode?: "individual" | "batched";
-    readonly ledgerWalletApiCompatible?: boolean;
-    readonly useMaxAmount?: boolean;
-    readonly useInstantExecution?: boolean;
-    readonly useAutoClaim?: boolean;
-    readonly skipPrechecks?: boolean;
-    readonly useMaxAllowance?: boolean;
-    readonly feePayerAddress?: string;
-    readonly receiverAddress?: string;
-    readonly rangeMin?: string;
-    readonly rangeMax?: string;
-    readonly percentage?: number;
-    readonly tokenId?: string;
-  };
-  readonly action:
-    | "STAKE"
-    | "UNSTAKE"
-    | "WITHDRAW_REQUEST"
-    | "INSTANT_WITHDRAW"
-    | "CLAIM_REWARDS"
-    | "AUTO_SWEEP_UNSTAKE_REWARDS"
-    | "AUTO_SWEEP_WITHDRAW_REWARDS"
-    | "RESTAKE_REWARDS"
-    | "WITHDRAW"
-    | "WITHDRAW_ALL"
-    | "RESTAKE"
-    | "CLAIM_UNSTAKED"
-    | "UNLOCK_LOCKED"
-    | "STAKE_LOCKED"
-    | "VOTE"
-    | "REVOKE"
-    | "VOTE_LOCKED"
-    | "REVOTE"
-    | "REBOND"
-    | "MIGRATE"
-    | "VERIFY_WITHDRAW_CREDENTIALS"
-    | "DELEGATE";
-  readonly passthrough: string;
-};
+export type TransactionType =
+  | "SWAP"
+  | "DEPOSIT"
+  | "APPROVAL"
+  | "STAKE"
+  | "SET_OPERATOR"
+  | "CLAIM_UNSTAKED"
+  | "CLAIM_REWARDS"
+  | "RESTAKE_REWARDS"
+  | "UNSTAKE"
+  | "SPLIT"
+  | "MERGE"
+  | "LOCK"
+  | "UNLOCK"
+  | "SUPPLY"
+  | "ADD_LIQUIDITY"
+  | "REMOVE_LIQUIDITY"
+  | "BRIDGE"
+  | "VOTE"
+  | "REVOKE"
+  | "RESTAKE"
+  | "REBOND"
+  | "WITHDRAW"
+  | "WITHDRAW_ALL"
+  | "CREATE_ACCOUNT"
+  | "REVEAL"
+  | "MIGRATE"
+  | "DELEGATE"
+  | "UNDELEGATE"
+  | "UTXO_P_TO_C_IMPORT"
+  | "UTXO_C_TO_P_IMPORT"
+  | "WRAP"
+  | "UNWRAP"
+  | "UNFREEZE_LEGACY"
+  | "UNFREEZE_LEGACY_BANDWIDTH"
+  | "UNFREEZE_LEGACY_ENERGY"
+  | "UNFREEZE_BANDWIDTH"
+  | "UNFREEZE_ENERGY"
+  | "FREEZE_BANDWIDTH"
+  | "FREEZE_ENERGY"
+  | "UNDELEGATE_BANDWIDTH"
+  | "UNDELEGATE_ENERGY"
+  | "P2P_NODE_REQUEST"
+  | "CREATE_EIGENPOD"
+  | "VERIFY_WITHDRAW_CREDENTIALS"
+  | "START_CHECKPOINT"
+  | "VERIFY_CHECKPOINT_PROOFS"
+  | "QUEUE_WITHDRAWALS"
+  | "COMPLETE_QUEUED_WITHDRAWALS"
+  | "LZ_DEPOSIT"
+  | "LZ_WITHDRAW"
+  | "LUGANODES_PROVISION"
+  | "LUGANODES_EXIT_REQUEST"
+  | "INFSTONES_PROVISION"
+  | "INFSTONES_EXIT_REQUEST"
+  | "INFSTONES_CLAIM_REQUEST"
+  | "BATCH";
 export type SubmitHashDto = { readonly hash: string };
 export type SubmitTransactionDto = { readonly signedTransaction: string };
 export type KycStatusResponseDto = {
@@ -1548,6 +994,7 @@ export type NetworkDto = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -1645,72 +1092,89 @@ export type ProviderDto = {
   readonly logoURI: string;
   readonly description: string;
   readonly website: string;
-  readonly tvlUsd: {} | null;
+  readonly tvlUsd: string | null;
   readonly type: "protocol" | "validator_provider";
-  readonly references?: ReadonlyArray<string>;
+  readonly references?: ReadonlyArray<string> | null;
 };
-export type HealthStatusDto = {
-  readonly status: "OK" | "FAIL";
-  readonly timestamp: string;
+export type HealthStatus = "OK" | "FAIL";
+export type RewardDto = {
+  readonly rate: number;
+  readonly rateType: string;
+  readonly token: TokenDto;
+  readonly yieldSource:
+    | "staking"
+    | "liquid_staking"
+    | "restaking"
+    | "protocol_incentive"
+    | "campaign_incentive"
+    | "points"
+    | "lending"
+    | "mev"
+    | "real_world_asset_yield"
+    | "vault";
+  readonly description?: string;
 };
-export type ValidatorDto = {
-  readonly address: string;
-  readonly name?: string;
-  readonly logoURI?: string;
-  readonly website?: string;
-  readonly rewardRate?: {
-    readonly total: number;
-    readonly rateType: string;
-    readonly components: ReadonlyArray<RewardDto>;
-  };
-  readonly provider?: {
-    readonly name: string;
-    readonly id: string;
-    readonly logoURI: string;
-    readonly description: string;
-    readonly website: string;
-    readonly tvlUsd: {} | null;
-    readonly type: "protocol" | "validator_provider";
-    readonly references?: ReadonlyArray<string>;
-    readonly rank: number;
-    readonly preferred: boolean;
-    readonly revshare?: {
-      readonly trial?: {
-        readonly minRevShare: number;
-        readonly maxRevShare: number;
-      };
-      readonly standard?: {
-        readonly minRevShare: number;
-        readonly maxRevShare: number;
-      };
-      readonly pro?: {
-        readonly minRevShare: number;
-        readonly maxRevShare: number;
-      };
-    };
-    readonly uniqueId?: string;
-    readonly createdAt?: string;
-    readonly updatedAt?: string;
-  };
-  readonly commission?: number;
-  readonly tvlUsd?: string;
-  readonly tvl?: string;
-  readonly tvlRaw?: string;
-  readonly votingPower?: number;
-  readonly preferred?: boolean;
-  readonly minimumStake?: string;
-  readonly remainingPossibleStake?: string;
-  readonly remainingSlots?: number;
-  readonly nominatorCount?: number;
-  readonly status?: string;
-  readonly providerId?: string;
-  readonly subnet?: {
-    readonly id: number;
-    readonly name?: string;
-    readonly tokenSymbol?: string;
-    readonly tvl?: string;
-    readonly pricePerShare?: string;
-  };
+export type PricePerShareStateDto = {
+  readonly price: number;
+  readonly shareToken: TokenDto;
+  readonly quoteToken: TokenDto;
+};
+export type ConcentratedLiquidityPoolStateDto = {
+  readonly baseApr: number;
+  readonly price: number;
+  readonly tickSpacing: number;
+  readonly minTick: number;
+  readonly maxTick: number;
+  readonly volume24hUsd: number | null;
+  readonly fee24hUsd: number | null;
+  readonly tvlUsd: number | null;
+  readonly feeTier: number;
+  readonly baseToken: TokenDto;
+  readonly quoteToken: TokenDto;
+};
+export type TokenWithAvailableYieldsDto = {
+  readonly token: TokenDto;
+  readonly availableYields: ReadonlyArray<string>;
+};
+export type YieldFeeConfigurationDto = {
+  readonly id: string;
+  readonly default: boolean;
+  readonly managementFeeBps?: number | null;
+  readonly performanceFeeBps?: number | null;
+  readonly depositFeeBps?: number | null;
+  readonly allocatorVaultContractAddress?: string | null;
+  readonly statistics?: YieldStatisticsDto;
+};
+export type YieldRiskSummaryDto = {
+  readonly ratings: ReadonlyArray<YieldRiskEntryDto>;
+};
+export type YieldMetadataDto = {
+  readonly name: string;
+  readonly logoURI: string;
+  readonly description: string;
+  readonly documentation: string;
+  readonly underMaintenance: boolean;
+  readonly deprecated: boolean;
+  readonly supportedStandards: ReadonlyArray<ERCStandards>;
+  readonly supportsCampaigns: boolean;
+};
+export type SettlementSpecDto = {
+  readonly type: "atomic" | "next_business_day" | "cohort" | "cooldown";
+  readonly marketDays?: number;
+  readonly estimatedDuration?: TimePeriodDto;
+  readonly estimatedSettlementAt?: string;
+  readonly claimRequired?: boolean;
+  readonly instantPortion?: number;
+  readonly deferredDeliveryAt?: string;
+};
+export type AccrualSpecDto = {
+  readonly startsAt:
+    | "immediate"
+    | "next_business_day"
+    | "on_cycle_start"
+    | "on_settlement";
+  readonly startsAtDate?: string;
+  readonly minimumHold?: TimePeriodDto;
 };
 export type KycEligibilityDto = {
   readonly defaultPolicy: "deny" | "allow";
@@ -1722,44 +1186,179 @@ export type KycEligibilityDto = {
   readonly investorEligibility: ReadonlyArray<InvestorEligibilityEntryDto>;
   readonly subjectTypes: ReadonlyArray<"KYC" | "KYB">;
 };
+export type SelfAttestationDto = {
+  readonly documents: ReadonlyArray<SelfAttestationDocumentDto>;
+  readonly notes?: string;
+};
 export type ArgumentSchemaDto = {
   readonly fields: ReadonlyArray<ArgumentFieldDto>;
   readonly notes?: string;
 };
-export type PendingActionDto = {
-  readonly intent: "enter" | "manage" | "exit";
-  readonly type:
-    | "STAKE"
-    | "UNSTAKE"
-    | "WITHDRAW_REQUEST"
-    | "INSTANT_WITHDRAW"
-    | "CLAIM_REWARDS"
-    | "AUTO_SWEEP_UNSTAKE_REWARDS"
-    | "AUTO_SWEEP_WITHDRAW_REWARDS"
-    | "RESTAKE_REWARDS"
-    | "WITHDRAW"
-    | "WITHDRAW_ALL"
-    | "RESTAKE"
-    | "CLAIM_UNSTAKED"
-    | "UNLOCK_LOCKED"
-    | "STAKE_LOCKED"
-    | "VOTE"
-    | "REVOKE"
-    | "VOTE_LOCKED"
-    | "REVOTE"
-    | "REBOND"
-    | "MIGRATE"
-    | "VERIFY_WITHDRAW_CREDENTIALS"
-    | "DELEGATE";
-  readonly passthrough: string;
-  readonly arguments?: {
-    readonly fields: ReadonlyArray<ArgumentFieldDto>;
-    readonly notes?: string;
-  } | null;
-  readonly amount?: string | null;
+export type AllocationDto = {
+  readonly address: string;
+  readonly network:
+    | "ethereum"
+    | "ethereum-goerli"
+    | "ethereum-holesky"
+    | "ethereum-sepolia"
+    | "ethereum-hoodi"
+    | "arbitrum"
+    | "base"
+    | "base-sepolia"
+    | "gnosis"
+    | "optimism"
+    | "polygon"
+    | "polygon-amoy"
+    | "starknet"
+    | "zksync"
+    | "linea"
+    | "unichain"
+    | "plume"
+    | "monad-testnet"
+    | "monad"
+    | "robinhood"
+    | "robinhood-testnet"
+    | "avalanche-c"
+    | "avalanche-c-atomic"
+    | "avalanche-p"
+    | "binance"
+    | "celo"
+    | "fantom"
+    | "harmony"
+    | "moonriver"
+    | "okc"
+    | "viction"
+    | "core"
+    | "sonic"
+    | "plasma"
+    | "katana"
+    | "hyperevm"
+    | "tempo"
+    | "pharos"
+    | "agoric"
+    | "akash"
+    | "axelar"
+    | "band-protocol"
+    | "bitsong"
+    | "canto"
+    | "chihuahua"
+    | "comdex"
+    | "coreum"
+    | "cosmos"
+    | "crescent"
+    | "cronos"
+    | "cudos"
+    | "desmos"
+    | "dydx"
+    | "evmos"
+    | "fetch-ai"
+    | "gravity-bridge"
+    | "injective"
+    | "irisnet"
+    | "juno"
+    | "kava"
+    | "ki-network"
+    | "mars-protocol"
+    | "nym"
+    | "okex-chain"
+    | "onomy"
+    | "osmosis"
+    | "persistence"
+    | "quicksilver"
+    | "regen"
+    | "secret"
+    | "sentinel"
+    | "sommelier"
+    | "stafi"
+    | "stargaze"
+    | "stride"
+    | "teritori"
+    | "tgrade"
+    | "umee"
+    | "sei"
+    | "mantra"
+    | "celestia"
+    | "saga"
+    | "zetachain"
+    | "dymension"
+    | "humansai"
+    | "neutron"
+    | "polkadot"
+    | "kusama"
+    | "westend"
+    | "bittensor"
+    | "aptos"
+    | "binancebeacon"
+    | "cardano"
+    | "near"
+    | "solana"
+    | "solana-devnet"
+    | "stellar"
+    | "stellar-testnet"
+    | "sui"
+    | "tezos"
+    | "tron"
+    | "ton"
+    | "ton-testnet"
+    | "hyperliquid";
+  readonly name: string;
+  readonly yieldId?: string;
+  readonly providerId?: string;
+  readonly allocation: string;
+  readonly allocationUsd: string | null;
+  readonly weight: number;
+  readonly targetWeight: number;
+  readonly rewardRate: AllocationRewardRateDto | null;
+  readonly tvl: string | null;
+  readonly tvlUsd: string | null;
+  readonly maxCapacity: string | null;
+  readonly remainingCapacity: string | null;
 };
-export type BalancesRequestDto = {
-  readonly queries: ReadonlyArray<BalancesQueryDto>;
+export type BalancesQueryDto = {
+  readonly yieldId?: string;
+  readonly address: string;
+  readonly network: Networks;
+  readonly arguments?: GetBalancesArgumentsDto;
+};
+export type YieldBalancesRequestDto = {
+  readonly address: string;
+  readonly arguments?: GetBalancesArgumentsDto;
+};
+export type RevShareTiersDto = {
+  readonly trial?: RevShareDetailsDto;
+  readonly standard?: RevShareDetailsDto;
+  readonly pro?: RevShareDetailsDto;
+};
+export type YieldRiskStakingRewardsDto = {
+  readonly rating?: string | null;
+  readonly score?: number | null;
+  readonly potentialRating?: string | null;
+  readonly potentialScore?: number | null;
+  readonly ratedAt?: string | null;
+  readonly ratedSince?: string | null;
+  readonly profileUrl?: string | null;
+  readonly reportUrl?: string | null;
+  readonly providerName?: string | null;
+  readonly version?: string | null;
+  readonly type?: string | null;
+  readonly chain?: string | null;
+  readonly contractAddress?: string | null;
+  readonly riskMetrics?: YieldRiskStakingRewardsMetricsDto;
+};
+export type RewardRateHistoryResponseDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<RewardRateSnapshotDto>;
+  readonly yieldId: string;
+  readonly interval: "day" | "week" | "month";
+  readonly from: string;
+  readonly to: string;
+};
+export type CampaignQualificationConfigDto = {
+  readonly type: CampaignQualificationType;
+  readonly threshold: string;
+  readonly maxIncentivizedTvlToken?: string | null;
 };
 export type ActionDto = {
   readonly id: string;
@@ -1792,248 +1391,11 @@ export type ActionDto = {
   readonly amount: string | null;
   readonly amountRaw: string | null;
   readonly amountUsd: string | null;
+  readonly entryReserveEstimate?: string;
   readonly transactions: ReadonlyArray<TransactionDto>;
+  readonly events?: ReadonlyArray<ActionEventDto>;
   readonly executionPattern: "synchronous" | "asynchronous" | "batch";
-  readonly rawArguments: {
-    readonly amount?: string;
-    readonly amounts?: ReadonlyArray<string>;
-    readonly shareAmount?: string;
-    readonly shareAmountRaw?: string;
-    readonly validatorAddress?: string;
-    readonly validatorAddresses?: ReadonlyArray<string>;
-    readonly providerId?: string;
-    readonly duration?: number;
-    readonly inputToken?: string;
-    readonly inputTokenNetwork?:
-      | "ethereum"
-      | "ethereum-goerli"
-      | "ethereum-holesky"
-      | "ethereum-sepolia"
-      | "ethereum-hoodi"
-      | "arbitrum"
-      | "base"
-      | "base-sepolia"
-      | "gnosis"
-      | "optimism"
-      | "polygon"
-      | "polygon-amoy"
-      | "starknet"
-      | "zksync"
-      | "linea"
-      | "unichain"
-      | "monad-testnet"
-      | "monad"
-      | "robinhood"
-      | "robinhood-testnet"
-      | "avalanche-c"
-      | "avalanche-c-atomic"
-      | "avalanche-p"
-      | "binance"
-      | "celo"
-      | "fantom"
-      | "harmony"
-      | "moonriver"
-      | "okc"
-      | "viction"
-      | "core"
-      | "sonic"
-      | "plasma"
-      | "katana"
-      | "hyperevm"
-      | "tempo"
-      | "pharos"
-      | "agoric"
-      | "akash"
-      | "axelar"
-      | "band-protocol"
-      | "bitsong"
-      | "canto"
-      | "chihuahua"
-      | "comdex"
-      | "coreum"
-      | "cosmos"
-      | "crescent"
-      | "cronos"
-      | "cudos"
-      | "desmos"
-      | "dydx"
-      | "evmos"
-      | "fetch-ai"
-      | "gravity-bridge"
-      | "injective"
-      | "irisnet"
-      | "juno"
-      | "kava"
-      | "ki-network"
-      | "mars-protocol"
-      | "nym"
-      | "okex-chain"
-      | "onomy"
-      | "osmosis"
-      | "persistence"
-      | "quicksilver"
-      | "regen"
-      | "secret"
-      | "sentinel"
-      | "sommelier"
-      | "stafi"
-      | "stargaze"
-      | "stride"
-      | "teritori"
-      | "tgrade"
-      | "umee"
-      | "sei"
-      | "mantra"
-      | "celestia"
-      | "saga"
-      | "zetachain"
-      | "dymension"
-      | "humansai"
-      | "neutron"
-      | "polkadot"
-      | "kusama"
-      | "westend"
-      | "bittensor"
-      | "aptos"
-      | "binancebeacon"
-      | "cardano"
-      | "near"
-      | "solana"
-      | "solana-devnet"
-      | "stellar"
-      | "stellar-testnet"
-      | "sui"
-      | "tezos"
-      | "tron"
-      | "ton"
-      | "ton-testnet"
-      | "hyperliquid";
-    readonly outputToken?: string;
-    readonly outputTokenNetwork?:
-      | "ethereum"
-      | "ethereum-goerli"
-      | "ethereum-holesky"
-      | "ethereum-sepolia"
-      | "ethereum-hoodi"
-      | "arbitrum"
-      | "base"
-      | "base-sepolia"
-      | "gnosis"
-      | "optimism"
-      | "polygon"
-      | "polygon-amoy"
-      | "starknet"
-      | "zksync"
-      | "linea"
-      | "unichain"
-      | "monad-testnet"
-      | "monad"
-      | "robinhood"
-      | "robinhood-testnet"
-      | "avalanche-c"
-      | "avalanche-c-atomic"
-      | "avalanche-p"
-      | "binance"
-      | "celo"
-      | "fantom"
-      | "harmony"
-      | "moonriver"
-      | "okc"
-      | "viction"
-      | "core"
-      | "sonic"
-      | "plasma"
-      | "katana"
-      | "hyperevm"
-      | "tempo"
-      | "pharos"
-      | "agoric"
-      | "akash"
-      | "axelar"
-      | "band-protocol"
-      | "bitsong"
-      | "canto"
-      | "chihuahua"
-      | "comdex"
-      | "coreum"
-      | "cosmos"
-      | "crescent"
-      | "cronos"
-      | "cudos"
-      | "desmos"
-      | "dydx"
-      | "evmos"
-      | "fetch-ai"
-      | "gravity-bridge"
-      | "injective"
-      | "irisnet"
-      | "juno"
-      | "kava"
-      | "ki-network"
-      | "mars-protocol"
-      | "nym"
-      | "okex-chain"
-      | "onomy"
-      | "osmosis"
-      | "persistence"
-      | "quicksilver"
-      | "regen"
-      | "secret"
-      | "sentinel"
-      | "sommelier"
-      | "stafi"
-      | "stargaze"
-      | "stride"
-      | "teritori"
-      | "tgrade"
-      | "umee"
-      | "sei"
-      | "mantra"
-      | "celestia"
-      | "saga"
-      | "zetachain"
-      | "dymension"
-      | "humansai"
-      | "neutron"
-      | "polkadot"
-      | "kusama"
-      | "westend"
-      | "bittensor"
-      | "aptos"
-      | "binancebeacon"
-      | "cardano"
-      | "near"
-      | "solana"
-      | "solana-devnet"
-      | "stellar"
-      | "stellar-testnet"
-      | "sui"
-      | "tezos"
-      | "tron"
-      | "ton"
-      | "ton-testnet"
-      | "hyperliquid";
-    readonly subnetId?: number;
-    readonly tronResource?: "BANDWIDTH" | "ENERGY";
-    readonly feeConfigurationId?: string;
-    readonly cosmosPubKey?: string;
-    readonly tezosPubKey?: string;
-    readonly cAddressBech?: string;
-    readonly pAddressBech?: string;
-    readonly executionMode?: "individual" | "batched";
-    readonly ledgerWalletApiCompatible?: boolean;
-    readonly useMaxAmount?: boolean;
-    readonly useInstantExecution?: boolean;
-    readonly useAutoClaim?: boolean;
-    readonly skipPrechecks?: boolean;
-    readonly useMaxAllowance?: boolean;
-    readonly feePayerAddress?: string;
-    readonly receiverAddress?: string;
-    readonly rangeMin?: string;
-    readonly rangeMax?: string;
-    readonly percentage?: number;
-    readonly tokenId?: string;
-  } | null;
+  readonly rawArguments: ActionArgumentsDto | null;
   readonly createdAt: string;
   readonly completedAt: string | null;
   readonly status:
@@ -2045,31 +1407,155 @@ export type ActionDto = {
     | "SUCCESS"
     | "STALE";
 };
-export type YieldRiskStakingRewardsDto = {
-  readonly rating?: {};
-  readonly score?: {};
-  readonly potentialRating?: {};
-  readonly potentialScore?: {};
-  readonly ratedAt?: {};
-  readonly ratedSince?: {};
-  readonly profileUrl?: {};
-  readonly reportUrl?: {};
-  readonly providerName?: {};
-  readonly version?: {};
-  readonly type?: {};
-  readonly chain?: {};
-  readonly contractAddress?: {};
-  readonly riskMetrics?: YieldRiskStakingRewardsMetricsDto;
-};
-export type RewardRateHistoryResponseDto = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly items: ReadonlyArray<RewardRateSnapshotDto>;
+export type CreateActionDto = {
   readonly yieldId: string;
-  readonly interval: "day" | "week" | "month";
-  readonly from: string;
-  readonly to: string;
+  readonly address: string;
+  readonly arguments?: ActionArgumentsDto;
+};
+export type CreateManageActionDto = {
+  readonly yieldId: string;
+  readonly address: string;
+  readonly arguments?: ActionArgumentsDto;
+  readonly action:
+    | "STAKE"
+    | "UNSTAKE"
+    | "WITHDRAW_REQUEST"
+    | "INSTANT_WITHDRAW"
+    | "CLAIM_REWARDS"
+    | "AUTO_SWEEP_UNSTAKE_REWARDS"
+    | "AUTO_SWEEP_WITHDRAW_REWARDS"
+    | "RESTAKE_REWARDS"
+    | "WITHDRAW"
+    | "WITHDRAW_ALL"
+    | "RESTAKE"
+    | "CLAIM_UNSTAKED"
+    | "UNLOCK_LOCKED"
+    | "STAKE_LOCKED"
+    | "VOTE"
+    | "REVOKE"
+    | "VOTE_LOCKED"
+    | "REVOTE"
+    | "REBOND"
+    | "MIGRATE"
+    | "VERIFY_WITHDRAW_CREDENTIALS"
+    | "DELEGATE";
+  readonly passthrough: string;
+};
+export type TransactionGasEstimateDto = {
+  readonly amount: string | null;
+  readonly token: TokenDto;
+  readonly gasLimit?: string;
+  readonly stepIndex: number;
+  readonly type: TransactionType | null;
+};
+export type HealthStatusDto = {
+  readonly status: HealthStatus;
+  readonly timestamp: string;
+};
+export type RewardRateDto = {
+  readonly total: number;
+  readonly rateType: string;
+  readonly components: ReadonlyArray<RewardDto>;
+};
+export type SchedulePathDto = {
+  readonly kind: "instant" | "standard";
+  readonly cadence: "continuous" | "daily_cutoff" | "periodic" | "scheduled";
+  readonly status: "open" | "closed" | "settling";
+  readonly businessDaysOnly?: boolean;
+  readonly cutoffTime?: string;
+  readonly currentWindow?: WindowBoundsDto | null;
+  readonly nextWindow?: WindowBoundsDto | null;
+  readonly settlement: SettlementSpecDto;
+  readonly accrual: AccrualSpecDto;
+  readonly limits?: PathLimitsDto;
+  readonly fee?: PathFeeDto;
+};
+export type KycMetadataDto = {
+  readonly kycMode:
+    | "none"
+    | "oauth_redirect"
+    | "external_redirect"
+    | "iframe"
+    | "deeplink"
+    | "native_sdk";
+  readonly iframeAllowed: boolean;
+  readonly authorizeUrl?: string;
+  readonly notes?: string;
+  readonly eligibility: KycEligibilityDto;
+  readonly selfAttestation?: SelfAttestationDto;
+  readonly mandatoryDisclosureUrl?: string;
+};
+export type YieldMechanicsArgumentsDto = {
+  readonly enter?: ArgumentSchemaDto;
+  readonly exit?: ArgumentSchemaDto;
+  readonly manage?: { readonly [x: string]: ArgumentSchemaDto };
+  readonly balance?: ArgumentSchemaDto;
+};
+export type PendingActionDto = {
+  readonly intent: "enter" | "manage" | "exit";
+  readonly type:
+    | "STAKE"
+    | "UNSTAKE"
+    | "WITHDRAW_REQUEST"
+    | "INSTANT_WITHDRAW"
+    | "CLAIM_REWARDS"
+    | "AUTO_SWEEP_UNSTAKE_REWARDS"
+    | "AUTO_SWEEP_WITHDRAW_REWARDS"
+    | "RESTAKE_REWARDS"
+    | "WITHDRAW"
+    | "WITHDRAW_ALL"
+    | "RESTAKE"
+    | "CLAIM_UNSTAKED"
+    | "UNLOCK_LOCKED"
+    | "STAKE_LOCKED"
+    | "VOTE"
+    | "REVOKE"
+    | "VOTE_LOCKED"
+    | "REVOTE"
+    | "REBOND"
+    | "MIGRATE"
+    | "VERIFY_WITHDRAW_CREDENTIALS"
+    | "DELEGATE";
+  readonly passthrough: string;
+  readonly arguments?: ArgumentSchemaDto | null;
+  readonly amount?: string | null;
+};
+export type YieldStateDto = {
+  readonly pricePerShareState?: PricePerShareStateDto;
+  readonly concentratedLiquidityPoolState?: ConcentratedLiquidityPoolStateDto;
+  readonly capacityState?: CapacityDto;
+  readonly liquidityState?: LiquidityStateDto;
+  readonly allocations?: ReadonlyArray<AllocationDto>;
+};
+export type BalancesRequestDto = {
+  readonly queries: ReadonlyArray<BalancesQueryDto>;
+};
+export type ValidatorProviderDto = {
+  readonly name: string;
+  readonly id: string;
+  readonly logoURI: string;
+  readonly description: string;
+  readonly website: string;
+  readonly tvlUsd: string | null;
+  readonly type: "protocol" | "validator_provider";
+  readonly references?: ReadonlyArray<string> | null;
+  readonly rank: number;
+  readonly preferred: boolean;
+  readonly revshare?: RevShareTiersDto;
+  readonly uniqueId?: string;
+  readonly createdAt?: string;
+  readonly updatedAt?: string;
+};
+export type YieldRiskDto = {
+  readonly updatedAt: string;
+  readonly credora?: YieldRiskCredoraDto;
+  readonly stakingRewards?: YieldRiskStakingRewardsDto;
+};
+export type SimulationGasDto = {
+  readonly amount: string | null;
+  readonly token: TokenDto;
+  readonly gasLimit?: string;
+  readonly transactions: ReadonlyArray<TransactionGasEstimateDto>;
 };
 export type YieldCampaignDto = {
   readonly id: string;
@@ -2079,139 +1565,93 @@ export type YieldCampaignDto = {
   readonly yieldId: string;
   readonly status: CampaignStatus;
   readonly rewardMode: CampaignRewardMode;
-  readonly rewardRate: {
-    readonly total: number;
-    readonly rateType: string;
-    readonly components: ReadonlyArray<RewardDto>;
-  } | null;
+  readonly rewardRate: RewardRateDto | null;
   readonly totalBudget: string;
   readonly distributedBudget: string;
   readonly remainingBudget: string;
   readonly configuredHourlyEmission?: string | null;
   readonly apyCeiling?: number | null;
-  readonly qualificationConfig: {
-    readonly type: CampaignQualificationType;
-    readonly threshold: string;
-    readonly maxIncentivizedTvlToken?: string | null;
-  };
+  readonly qualificationConfig: CampaignQualificationConfigDto;
   readonly startTime: string;
   readonly endTime: string;
-  readonly lastProcessedHour?: string;
-  readonly nextPayoutDueAt?: string;
+  readonly lastProcessedHour?: string | null;
+  readonly nextPayoutDueAt?: string | null;
   readonly payoutFrequency: CampaignPayoutFrequency;
-  readonly rewardToken: {
-    readonly symbol: string;
-    readonly name: string;
-    readonly decimals: number;
-    readonly network:
-      | "ethereum"
-      | "ethereum-goerli"
-      | "ethereum-holesky"
-      | "ethereum-sepolia"
-      | "ethereum-hoodi"
-      | "arbitrum"
-      | "base"
-      | "base-sepolia"
-      | "gnosis"
-      | "optimism"
-      | "polygon"
-      | "polygon-amoy"
-      | "starknet"
-      | "zksync"
-      | "linea"
-      | "unichain"
-      | "monad-testnet"
-      | "monad"
-      | "robinhood"
-      | "robinhood-testnet"
-      | "avalanche-c"
-      | "avalanche-c-atomic"
-      | "avalanche-p"
-      | "binance"
-      | "celo"
-      | "fantom"
-      | "harmony"
-      | "moonriver"
-      | "okc"
-      | "viction"
-      | "core"
-      | "sonic"
-      | "plasma"
-      | "katana"
-      | "hyperevm"
-      | "tempo"
-      | "pharos"
-      | "agoric"
-      | "akash"
-      | "axelar"
-      | "band-protocol"
-      | "bitsong"
-      | "canto"
-      | "chihuahua"
-      | "comdex"
-      | "coreum"
-      | "cosmos"
-      | "crescent"
-      | "cronos"
-      | "cudos"
-      | "desmos"
-      | "dydx"
-      | "evmos"
-      | "fetch-ai"
-      | "gravity-bridge"
-      | "injective"
-      | "irisnet"
-      | "juno"
-      | "kava"
-      | "ki-network"
-      | "mars-protocol"
-      | "nym"
-      | "okex-chain"
-      | "onomy"
-      | "osmosis"
-      | "persistence"
-      | "quicksilver"
-      | "regen"
-      | "secret"
-      | "sentinel"
-      | "sommelier"
-      | "stafi"
-      | "stargaze"
-      | "stride"
-      | "teritori"
-      | "tgrade"
-      | "umee"
-      | "sei"
-      | "mantra"
-      | "celestia"
-      | "saga"
-      | "zetachain"
-      | "dymension"
-      | "humansai"
-      | "neutron"
-      | "polkadot"
-      | "kusama"
-      | "westend"
-      | "bittensor"
-      | "aptos"
-      | "binancebeacon"
-      | "cardano"
-      | "near"
-      | "solana"
-      | "solana-devnet"
-      | "stellar"
-      | "stellar-testnet"
-      | "sui"
-      | "tezos"
-      | "tron"
-      | "ton"
-      | "ton-testnet"
-      | "hyperliquid";
-    readonly address?: string;
-    readonly logoURI?: string;
-    readonly isPoints?: boolean;
-    readonly coinGeckoId?: string;
-  };
+  readonly rewardToken: TokenDto;
+};
+export type SideScheduleDto = {
+  readonly paths: ReadonlyArray<SchedulePathDto>;
+};
+export type YieldRequirementsDto = {
+  readonly kycRequired: boolean;
+  readonly kyc?: KycMetadataDto;
+};
+export type ValidatorDto = {
+  readonly address: string;
+  readonly name?: string;
+  readonly logoURI?: string;
+  readonly website?: string;
+  readonly rewardRate?: RewardRateDto;
+  readonly provider?: ValidatorProviderDto;
+  readonly commission?: number;
+  readonly tvlUsd?: string;
+  readonly tvl?: string;
+  readonly tvlRaw?: string;
+  readonly votingPower?: number;
+  readonly preferred?: boolean;
+  readonly minimumStake?: string;
+  readonly remainingPossibleStake?: string;
+  readonly remainingSlots?: number;
+  readonly nominatorCount?: number;
+  readonly status?: string;
+  readonly providerId?: string;
+  readonly subnet?: ValidatorSubnetDto;
+};
+export type ActionSimulationDto = {
+  readonly gas: SimulationGasDto;
+  readonly entryReserveEstimate?: string;
+};
+export type InvestmentScheduleDto = {
+  readonly timezone: string;
+  readonly subscription: SideScheduleDto;
+  readonly redemption: SideScheduleDto;
+  readonly notes?: string;
+};
+export type YieldMechanicsDto = {
+  readonly type: YieldType;
+  readonly requiresValidatorSelection?: boolean;
+  readonly rewardSchedule: RewardSchedule;
+  readonly rewardClaiming: RewardClaiming;
+  readonly gasFeeToken: TokenDto;
+  readonly lockupPeriod?: TimePeriodDto;
+  readonly cooldownPeriod?: TimePeriodDto;
+  readonly warmupPeriod?: TimePeriodDto;
+  readonly fee?: YieldFeeDto;
+  readonly entryLimits?: YieldEntryLimitsDto;
+  readonly requirements?: YieldRequirementsDto;
+  readonly supportsLedgerWalletApi?: boolean;
+  readonly extraTransactionFormatsSupported?: ReadonlyArray<"raw" | "default">;
+  readonly arguments?: YieldMechanicsArgumentsDto;
+  readonly possibleFeeTakingMechanisms?: PossibleFeeTakingMechanismsDto;
+};
+export type BalanceDto = {
+  readonly address: string;
+  readonly type: BalanceType;
+  readonly amount: string;
+  readonly amountRaw: string;
+  readonly date?: string | null;
+  readonly feeConfigurationId?: string;
+  readonly pendingActions: ReadonlyArray<PendingActionDto>;
+  readonly token: TokenDto;
+  readonly validator?: ValidatorDto | null;
+  readonly validators?: ReadonlyArray<ValidatorDto> | null;
+  readonly amountUsd?: string | null;
+  readonly isEarning: boolean;
+  readonly priceRange?: { readonly min: string; readonly max: string };
+  readonly tokenId?: string;
+  readonly shareAmount?: string;
+  readonly shareAmountRaw?: string;
+  readonly shareToken?: TokenDto;
 };
 export type YieldDto = {
   readonly id: string;
@@ -2232,6 +1672,7 @@ export type YieldDto = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -2321,1672 +1762,36 @@ export type YieldDto = {
     | "hyperliquid";
   readonly chainId?: string;
   readonly inputTokens: ReadonlyArray<TokenDto>;
-  readonly outputToken?: {
-    readonly symbol: string;
-    readonly name: string;
-    readonly decimals: number;
-    readonly network:
-      | "ethereum"
-      | "ethereum-goerli"
-      | "ethereum-holesky"
-      | "ethereum-sepolia"
-      | "ethereum-hoodi"
-      | "arbitrum"
-      | "base"
-      | "base-sepolia"
-      | "gnosis"
-      | "optimism"
-      | "polygon"
-      | "polygon-amoy"
-      | "starknet"
-      | "zksync"
-      | "linea"
-      | "unichain"
-      | "monad-testnet"
-      | "monad"
-      | "robinhood"
-      | "robinhood-testnet"
-      | "avalanche-c"
-      | "avalanche-c-atomic"
-      | "avalanche-p"
-      | "binance"
-      | "celo"
-      | "fantom"
-      | "harmony"
-      | "moonriver"
-      | "okc"
-      | "viction"
-      | "core"
-      | "sonic"
-      | "plasma"
-      | "katana"
-      | "hyperevm"
-      | "tempo"
-      | "pharos"
-      | "agoric"
-      | "akash"
-      | "axelar"
-      | "band-protocol"
-      | "bitsong"
-      | "canto"
-      | "chihuahua"
-      | "comdex"
-      | "coreum"
-      | "cosmos"
-      | "crescent"
-      | "cronos"
-      | "cudos"
-      | "desmos"
-      | "dydx"
-      | "evmos"
-      | "fetch-ai"
-      | "gravity-bridge"
-      | "injective"
-      | "irisnet"
-      | "juno"
-      | "kava"
-      | "ki-network"
-      | "mars-protocol"
-      | "nym"
-      | "okex-chain"
-      | "onomy"
-      | "osmosis"
-      | "persistence"
-      | "quicksilver"
-      | "regen"
-      | "secret"
-      | "sentinel"
-      | "sommelier"
-      | "stafi"
-      | "stargaze"
-      | "stride"
-      | "teritori"
-      | "tgrade"
-      | "umee"
-      | "sei"
-      | "mantra"
-      | "celestia"
-      | "saga"
-      | "zetachain"
-      | "dymension"
-      | "humansai"
-      | "neutron"
-      | "polkadot"
-      | "kusama"
-      | "westend"
-      | "bittensor"
-      | "aptos"
-      | "binancebeacon"
-      | "cardano"
-      | "near"
-      | "solana"
-      | "solana-devnet"
-      | "stellar"
-      | "stellar-testnet"
-      | "sui"
-      | "tezos"
-      | "tron"
-      | "ton"
-      | "ton-testnet"
-      | "hyperliquid";
-    readonly address?: string;
-    readonly logoURI?: string;
-    readonly isPoints?: boolean;
-    readonly coinGeckoId?: string;
-  };
-  readonly token: {
-    readonly symbol: string;
-    readonly name: string;
-    readonly decimals: number;
-    readonly network:
-      | "ethereum"
-      | "ethereum-goerli"
-      | "ethereum-holesky"
-      | "ethereum-sepolia"
-      | "ethereum-hoodi"
-      | "arbitrum"
-      | "base"
-      | "base-sepolia"
-      | "gnosis"
-      | "optimism"
-      | "polygon"
-      | "polygon-amoy"
-      | "starknet"
-      | "zksync"
-      | "linea"
-      | "unichain"
-      | "monad-testnet"
-      | "monad"
-      | "robinhood"
-      | "robinhood-testnet"
-      | "avalanche-c"
-      | "avalanche-c-atomic"
-      | "avalanche-p"
-      | "binance"
-      | "celo"
-      | "fantom"
-      | "harmony"
-      | "moonriver"
-      | "okc"
-      | "viction"
-      | "core"
-      | "sonic"
-      | "plasma"
-      | "katana"
-      | "hyperevm"
-      | "tempo"
-      | "pharos"
-      | "agoric"
-      | "akash"
-      | "axelar"
-      | "band-protocol"
-      | "bitsong"
-      | "canto"
-      | "chihuahua"
-      | "comdex"
-      | "coreum"
-      | "cosmos"
-      | "crescent"
-      | "cronos"
-      | "cudos"
-      | "desmos"
-      | "dydx"
-      | "evmos"
-      | "fetch-ai"
-      | "gravity-bridge"
-      | "injective"
-      | "irisnet"
-      | "juno"
-      | "kava"
-      | "ki-network"
-      | "mars-protocol"
-      | "nym"
-      | "okex-chain"
-      | "onomy"
-      | "osmosis"
-      | "persistence"
-      | "quicksilver"
-      | "regen"
-      | "secret"
-      | "sentinel"
-      | "sommelier"
-      | "stafi"
-      | "stargaze"
-      | "stride"
-      | "teritori"
-      | "tgrade"
-      | "umee"
-      | "sei"
-      | "mantra"
-      | "celestia"
-      | "saga"
-      | "zetachain"
-      | "dymension"
-      | "humansai"
-      | "neutron"
-      | "polkadot"
-      | "kusama"
-      | "westend"
-      | "bittensor"
-      | "aptos"
-      | "binancebeacon"
-      | "cardano"
-      | "near"
-      | "solana"
-      | "solana-devnet"
-      | "stellar"
-      | "stellar-testnet"
-      | "sui"
-      | "tezos"
-      | "tron"
-      | "ton"
-      | "ton-testnet"
-      | "hyperliquid";
-    readonly address?: string;
-    readonly logoURI?: string;
-    readonly isPoints?: boolean;
-    readonly coinGeckoId?: string;
-  };
+  readonly outputToken?: TokenDto;
+  readonly token: TokenDto;
   readonly tokens: ReadonlyArray<TokenDto>;
-  readonly rewardRate: {
-    readonly total: number;
-    readonly rateType: string;
-    readonly components: ReadonlyArray<RewardDto>;
-  };
+  readonly rewardRate: RewardRateDto;
   readonly feeConfigurations?: ReadonlyArray<YieldFeeConfigurationDto>;
-  readonly statistics?: {
-    readonly tvlUsd?: string | null;
-    readonly tvl?: string | null;
-    readonly tvlRaw?: string | null;
-    readonly uniqueUsers?: number | null;
-    readonly averagePositionSizeUsd?: string | null;
-    readonly averagePositionSize?: string | null;
-  };
-  readonly risk?: { readonly ratings: ReadonlyArray<YieldRiskEntryDto> };
-  readonly status: { readonly enter: boolean; readonly exit: boolean };
-  readonly metadata: {
-    readonly name: string;
-    readonly logoURI: string;
-    readonly description: string;
-    readonly documentation: string;
-    readonly underMaintenance: boolean;
-    readonly deprecated: boolean;
-    readonly supportedStandards: ReadonlyArray<ERCStandards>;
-    readonly supportsCampaigns: boolean;
-  };
-  readonly mechanics: {
-    readonly type: YieldType;
-    readonly requiresValidatorSelection?: boolean;
-    readonly rewardSchedule: RewardSchedule;
-    readonly rewardClaiming: RewardClaiming;
-    readonly gasFeeToken: {
-      readonly symbol: string;
-      readonly name: string;
-      readonly decimals: number;
-      readonly network:
-        | "ethereum"
-        | "ethereum-goerli"
-        | "ethereum-holesky"
-        | "ethereum-sepolia"
-        | "ethereum-hoodi"
-        | "arbitrum"
-        | "base"
-        | "base-sepolia"
-        | "gnosis"
-        | "optimism"
-        | "polygon"
-        | "polygon-amoy"
-        | "starknet"
-        | "zksync"
-        | "linea"
-        | "unichain"
-        | "monad-testnet"
-        | "monad"
-        | "robinhood"
-        | "robinhood-testnet"
-        | "avalanche-c"
-        | "avalanche-c-atomic"
-        | "avalanche-p"
-        | "binance"
-        | "celo"
-        | "fantom"
-        | "harmony"
-        | "moonriver"
-        | "okc"
-        | "viction"
-        | "core"
-        | "sonic"
-        | "plasma"
-        | "katana"
-        | "hyperevm"
-        | "tempo"
-        | "pharos"
-        | "agoric"
-        | "akash"
-        | "axelar"
-        | "band-protocol"
-        | "bitsong"
-        | "canto"
-        | "chihuahua"
-        | "comdex"
-        | "coreum"
-        | "cosmos"
-        | "crescent"
-        | "cronos"
-        | "cudos"
-        | "desmos"
-        | "dydx"
-        | "evmos"
-        | "fetch-ai"
-        | "gravity-bridge"
-        | "injective"
-        | "irisnet"
-        | "juno"
-        | "kava"
-        | "ki-network"
-        | "mars-protocol"
-        | "nym"
-        | "okex-chain"
-        | "onomy"
-        | "osmosis"
-        | "persistence"
-        | "quicksilver"
-        | "regen"
-        | "secret"
-        | "sentinel"
-        | "sommelier"
-        | "stafi"
-        | "stargaze"
-        | "stride"
-        | "teritori"
-        | "tgrade"
-        | "umee"
-        | "sei"
-        | "mantra"
-        | "celestia"
-        | "saga"
-        | "zetachain"
-        | "dymension"
-        | "humansai"
-        | "neutron"
-        | "polkadot"
-        | "kusama"
-        | "westend"
-        | "bittensor"
-        | "aptos"
-        | "binancebeacon"
-        | "cardano"
-        | "near"
-        | "solana"
-        | "solana-devnet"
-        | "stellar"
-        | "stellar-testnet"
-        | "sui"
-        | "tezos"
-        | "tron"
-        | "ton"
-        | "ton-testnet"
-        | "hyperliquid";
-      readonly address?: string;
-      readonly logoURI?: string;
-      readonly isPoints?: boolean;
-      readonly coinGeckoId?: string;
-    };
-    readonly lockupPeriod?: { readonly seconds: number };
-    readonly cooldownPeriod?: { readonly seconds: number };
-    readonly warmupPeriod?: { readonly seconds: number };
-    readonly fee?: {
-      readonly deposit?: string;
-      readonly withdrawal?: string;
-      readonly management?: string;
-      readonly performance?: string;
-    };
-    readonly entryLimits?: {
-      readonly minimum: string | null;
-      readonly maximum: string | null;
-      readonly subsequentMinimum: string | null;
-    };
-    readonly requirements?: {
-      readonly kycRequired: boolean;
-      readonly kyc?: {
-        readonly kycMode:
-          | "none"
-          | "oauth_redirect"
-          | "external_redirect"
-          | "iframe"
-          | "deeplink"
-          | "native_sdk";
-        readonly iframeAllowed: boolean;
-        readonly authorizeUrl?: string;
-        readonly notes?: string;
-        readonly eligibility: KycEligibilityDto;
-        readonly selfAttestation?: {
-          readonly documents: ReadonlyArray<SelfAttestationDocumentDto>;
-          readonly notes?: string;
-        };
-        readonly mandatoryDisclosureUrl?: string;
-      };
-    };
-    readonly supportsLedgerWalletApi?: boolean;
-    readonly extraTransactionFormatsSupported?: ReadonlyArray<
-      "raw" | "default"
-    >;
-    readonly arguments?: {
-      readonly enter?: ArgumentSchemaDto;
-      readonly exit?: ArgumentSchemaDto;
-      readonly manage?: { readonly [x: string]: ArgumentSchemaDto };
-      readonly balance?: {
-        readonly fields: ReadonlyArray<ArgumentFieldDto>;
-        readonly notes?: string;
-      };
-    };
-    readonly possibleFeeTakingMechanisms?: {
-      readonly depositFee: boolean;
-      readonly managementFee: boolean;
-      readonly performanceFee: boolean;
-      readonly validatorRebates: boolean;
-    };
-  };
+  readonly statistics?: YieldStatisticsDto;
+  readonly risk?: YieldRiskSummaryDto;
+  readonly status: YieldStatusDto;
+  readonly metadata: YieldMetadataDto;
+  readonly mechanics: YieldMechanicsDto;
   readonly providerId: string;
   readonly prime: boolean;
-  readonly curator?: {
-    readonly name?: {} | null;
-    readonly description?: {} | null;
-    readonly logoURI?: {} | null;
-  };
+  readonly curator?: CuratorDto;
   readonly tags?: ReadonlyArray<string>;
-  readonly state?: {
-    readonly pricePerShareState?: {
-      readonly price: number;
-      readonly shareToken: {
-        readonly symbol: string;
-        readonly name: string;
-        readonly decimals: number;
-        readonly network:
-          | "ethereum"
-          | "ethereum-goerli"
-          | "ethereum-holesky"
-          | "ethereum-sepolia"
-          | "ethereum-hoodi"
-          | "arbitrum"
-          | "base"
-          | "base-sepolia"
-          | "gnosis"
-          | "optimism"
-          | "polygon"
-          | "polygon-amoy"
-          | "starknet"
-          | "zksync"
-          | "linea"
-          | "unichain"
-          | "monad-testnet"
-          | "monad"
-          | "robinhood"
-          | "robinhood-testnet"
-          | "avalanche-c"
-          | "avalanche-c-atomic"
-          | "avalanche-p"
-          | "binance"
-          | "celo"
-          | "fantom"
-          | "harmony"
-          | "moonriver"
-          | "okc"
-          | "viction"
-          | "core"
-          | "sonic"
-          | "plasma"
-          | "katana"
-          | "hyperevm"
-          | "tempo"
-          | "pharos"
-          | "agoric"
-          | "akash"
-          | "axelar"
-          | "band-protocol"
-          | "bitsong"
-          | "canto"
-          | "chihuahua"
-          | "comdex"
-          | "coreum"
-          | "cosmos"
-          | "crescent"
-          | "cronos"
-          | "cudos"
-          | "desmos"
-          | "dydx"
-          | "evmos"
-          | "fetch-ai"
-          | "gravity-bridge"
-          | "injective"
-          | "irisnet"
-          | "juno"
-          | "kava"
-          | "ki-network"
-          | "mars-protocol"
-          | "nym"
-          | "okex-chain"
-          | "onomy"
-          | "osmosis"
-          | "persistence"
-          | "quicksilver"
-          | "regen"
-          | "secret"
-          | "sentinel"
-          | "sommelier"
-          | "stafi"
-          | "stargaze"
-          | "stride"
-          | "teritori"
-          | "tgrade"
-          | "umee"
-          | "sei"
-          | "mantra"
-          | "celestia"
-          | "saga"
-          | "zetachain"
-          | "dymension"
-          | "humansai"
-          | "neutron"
-          | "polkadot"
-          | "kusama"
-          | "westend"
-          | "bittensor"
-          | "aptos"
-          | "binancebeacon"
-          | "cardano"
-          | "near"
-          | "solana"
-          | "solana-devnet"
-          | "stellar"
-          | "stellar-testnet"
-          | "sui"
-          | "tezos"
-          | "tron"
-          | "ton"
-          | "ton-testnet"
-          | "hyperliquid";
-        readonly address?: string;
-        readonly logoURI?: string;
-        readonly isPoints?: boolean;
-        readonly coinGeckoId?: string;
-      };
-      readonly quoteToken: {
-        readonly symbol: string;
-        readonly name: string;
-        readonly decimals: number;
-        readonly network:
-          | "ethereum"
-          | "ethereum-goerli"
-          | "ethereum-holesky"
-          | "ethereum-sepolia"
-          | "ethereum-hoodi"
-          | "arbitrum"
-          | "base"
-          | "base-sepolia"
-          | "gnosis"
-          | "optimism"
-          | "polygon"
-          | "polygon-amoy"
-          | "starknet"
-          | "zksync"
-          | "linea"
-          | "unichain"
-          | "monad-testnet"
-          | "monad"
-          | "robinhood"
-          | "robinhood-testnet"
-          | "avalanche-c"
-          | "avalanche-c-atomic"
-          | "avalanche-p"
-          | "binance"
-          | "celo"
-          | "fantom"
-          | "harmony"
-          | "moonriver"
-          | "okc"
-          | "viction"
-          | "core"
-          | "sonic"
-          | "plasma"
-          | "katana"
-          | "hyperevm"
-          | "tempo"
-          | "pharos"
-          | "agoric"
-          | "akash"
-          | "axelar"
-          | "band-protocol"
-          | "bitsong"
-          | "canto"
-          | "chihuahua"
-          | "comdex"
-          | "coreum"
-          | "cosmos"
-          | "crescent"
-          | "cronos"
-          | "cudos"
-          | "desmos"
-          | "dydx"
-          | "evmos"
-          | "fetch-ai"
-          | "gravity-bridge"
-          | "injective"
-          | "irisnet"
-          | "juno"
-          | "kava"
-          | "ki-network"
-          | "mars-protocol"
-          | "nym"
-          | "okex-chain"
-          | "onomy"
-          | "osmosis"
-          | "persistence"
-          | "quicksilver"
-          | "regen"
-          | "secret"
-          | "sentinel"
-          | "sommelier"
-          | "stafi"
-          | "stargaze"
-          | "stride"
-          | "teritori"
-          | "tgrade"
-          | "umee"
-          | "sei"
-          | "mantra"
-          | "celestia"
-          | "saga"
-          | "zetachain"
-          | "dymension"
-          | "humansai"
-          | "neutron"
-          | "polkadot"
-          | "kusama"
-          | "westend"
-          | "bittensor"
-          | "aptos"
-          | "binancebeacon"
-          | "cardano"
-          | "near"
-          | "solana"
-          | "solana-devnet"
-          | "stellar"
-          | "stellar-testnet"
-          | "sui"
-          | "tezos"
-          | "tron"
-          | "ton"
-          | "ton-testnet"
-          | "hyperliquid";
-        readonly address?: string;
-        readonly logoURI?: string;
-        readonly isPoints?: boolean;
-        readonly coinGeckoId?: string;
-      };
-    };
-    readonly concentratedLiquidityPoolState?: {
-      readonly baseApr: number;
-      readonly price: number;
-      readonly tickSpacing: number;
-      readonly minTick: number;
-      readonly maxTick: number;
-      readonly volume24hUsd: number | null;
-      readonly fee24hUsd: number | null;
-      readonly tvlUsd: number | null;
-      readonly feeTier: number;
-      readonly baseToken: {
-        readonly symbol: string;
-        readonly name: string;
-        readonly decimals: number;
-        readonly network:
-          | "ethereum"
-          | "ethereum-goerli"
-          | "ethereum-holesky"
-          | "ethereum-sepolia"
-          | "ethereum-hoodi"
-          | "arbitrum"
-          | "base"
-          | "base-sepolia"
-          | "gnosis"
-          | "optimism"
-          | "polygon"
-          | "polygon-amoy"
-          | "starknet"
-          | "zksync"
-          | "linea"
-          | "unichain"
-          | "monad-testnet"
-          | "monad"
-          | "robinhood"
-          | "robinhood-testnet"
-          | "avalanche-c"
-          | "avalanche-c-atomic"
-          | "avalanche-p"
-          | "binance"
-          | "celo"
-          | "fantom"
-          | "harmony"
-          | "moonriver"
-          | "okc"
-          | "viction"
-          | "core"
-          | "sonic"
-          | "plasma"
-          | "katana"
-          | "hyperevm"
-          | "tempo"
-          | "pharos"
-          | "agoric"
-          | "akash"
-          | "axelar"
-          | "band-protocol"
-          | "bitsong"
-          | "canto"
-          | "chihuahua"
-          | "comdex"
-          | "coreum"
-          | "cosmos"
-          | "crescent"
-          | "cronos"
-          | "cudos"
-          | "desmos"
-          | "dydx"
-          | "evmos"
-          | "fetch-ai"
-          | "gravity-bridge"
-          | "injective"
-          | "irisnet"
-          | "juno"
-          | "kava"
-          | "ki-network"
-          | "mars-protocol"
-          | "nym"
-          | "okex-chain"
-          | "onomy"
-          | "osmosis"
-          | "persistence"
-          | "quicksilver"
-          | "regen"
-          | "secret"
-          | "sentinel"
-          | "sommelier"
-          | "stafi"
-          | "stargaze"
-          | "stride"
-          | "teritori"
-          | "tgrade"
-          | "umee"
-          | "sei"
-          | "mantra"
-          | "celestia"
-          | "saga"
-          | "zetachain"
-          | "dymension"
-          | "humansai"
-          | "neutron"
-          | "polkadot"
-          | "kusama"
-          | "westend"
-          | "bittensor"
-          | "aptos"
-          | "binancebeacon"
-          | "cardano"
-          | "near"
-          | "solana"
-          | "solana-devnet"
-          | "stellar"
-          | "stellar-testnet"
-          | "sui"
-          | "tezos"
-          | "tron"
-          | "ton"
-          | "ton-testnet"
-          | "hyperliquid";
-        readonly address?: string;
-        readonly logoURI?: string;
-        readonly isPoints?: boolean;
-        readonly coinGeckoId?: string;
-      };
-      readonly quoteToken: {
-        readonly symbol: string;
-        readonly name: string;
-        readonly decimals: number;
-        readonly network:
-          | "ethereum"
-          | "ethereum-goerli"
-          | "ethereum-holesky"
-          | "ethereum-sepolia"
-          | "ethereum-hoodi"
-          | "arbitrum"
-          | "base"
-          | "base-sepolia"
-          | "gnosis"
-          | "optimism"
-          | "polygon"
-          | "polygon-amoy"
-          | "starknet"
-          | "zksync"
-          | "linea"
-          | "unichain"
-          | "monad-testnet"
-          | "monad"
-          | "robinhood"
-          | "robinhood-testnet"
-          | "avalanche-c"
-          | "avalanche-c-atomic"
-          | "avalanche-p"
-          | "binance"
-          | "celo"
-          | "fantom"
-          | "harmony"
-          | "moonriver"
-          | "okc"
-          | "viction"
-          | "core"
-          | "sonic"
-          | "plasma"
-          | "katana"
-          | "hyperevm"
-          | "tempo"
-          | "pharos"
-          | "agoric"
-          | "akash"
-          | "axelar"
-          | "band-protocol"
-          | "bitsong"
-          | "canto"
-          | "chihuahua"
-          | "comdex"
-          | "coreum"
-          | "cosmos"
-          | "crescent"
-          | "cronos"
-          | "cudos"
-          | "desmos"
-          | "dydx"
-          | "evmos"
-          | "fetch-ai"
-          | "gravity-bridge"
-          | "injective"
-          | "irisnet"
-          | "juno"
-          | "kava"
-          | "ki-network"
-          | "mars-protocol"
-          | "nym"
-          | "okex-chain"
-          | "onomy"
-          | "osmosis"
-          | "persistence"
-          | "quicksilver"
-          | "regen"
-          | "secret"
-          | "sentinel"
-          | "sommelier"
-          | "stafi"
-          | "stargaze"
-          | "stride"
-          | "teritori"
-          | "tgrade"
-          | "umee"
-          | "sei"
-          | "mantra"
-          | "celestia"
-          | "saga"
-          | "zetachain"
-          | "dymension"
-          | "humansai"
-          | "neutron"
-          | "polkadot"
-          | "kusama"
-          | "westend"
-          | "bittensor"
-          | "aptos"
-          | "binancebeacon"
-          | "cardano"
-          | "near"
-          | "solana"
-          | "solana-devnet"
-          | "stellar"
-          | "stellar-testnet"
-          | "sui"
-          | "tezos"
-          | "tron"
-          | "ton"
-          | "ton-testnet"
-          | "hyperliquid";
-        readonly address?: string;
-        readonly logoURI?: string;
-        readonly isPoints?: boolean;
-        readonly coinGeckoId?: string;
-      };
-    };
-    readonly capacityState?: {
-      readonly current: string;
-      readonly max?: string | null;
-      readonly remaining?: string | null;
-    };
-    readonly liquidityState?: {
-      readonly liquidity?: {} | null;
-      readonly utilization?: {} | null;
-    };
-    readonly allocations?: ReadonlyArray<AllocationDto>;
-  };
-  readonly investmentSchedule?: {
-    readonly timezone: string;
-    readonly subscription: { readonly paths: ReadonlyArray<SchedulePathDto> };
-    readonly redemption: { readonly paths: ReadonlyArray<SchedulePathDto> };
-    readonly notes?: string;
-  };
-  readonly executionContracts?: {
-    readonly enter?: ReadonlyArray<string>;
-    readonly exit?: ReadonlyArray<string>;
-  };
-};
-export type BalanceDto = {
-  readonly address: string;
-  readonly type: BalanceType;
-  readonly amount: string;
-  readonly amountRaw: string;
-  readonly date?: string;
-  readonly feeConfigurationId?: string;
-  readonly pendingActions: ReadonlyArray<PendingActionDto>;
-  readonly token: {
-    readonly symbol: string;
-    readonly name: string;
-    readonly decimals: number;
-    readonly network:
-      | "ethereum"
-      | "ethereum-goerli"
-      | "ethereum-holesky"
-      | "ethereum-sepolia"
-      | "ethereum-hoodi"
-      | "arbitrum"
-      | "base"
-      | "base-sepolia"
-      | "gnosis"
-      | "optimism"
-      | "polygon"
-      | "polygon-amoy"
-      | "starknet"
-      | "zksync"
-      | "linea"
-      | "unichain"
-      | "monad-testnet"
-      | "monad"
-      | "robinhood"
-      | "robinhood-testnet"
-      | "avalanche-c"
-      | "avalanche-c-atomic"
-      | "avalanche-p"
-      | "binance"
-      | "celo"
-      | "fantom"
-      | "harmony"
-      | "moonriver"
-      | "okc"
-      | "viction"
-      | "core"
-      | "sonic"
-      | "plasma"
-      | "katana"
-      | "hyperevm"
-      | "tempo"
-      | "pharos"
-      | "agoric"
-      | "akash"
-      | "axelar"
-      | "band-protocol"
-      | "bitsong"
-      | "canto"
-      | "chihuahua"
-      | "comdex"
-      | "coreum"
-      | "cosmos"
-      | "crescent"
-      | "cronos"
-      | "cudos"
-      | "desmos"
-      | "dydx"
-      | "evmos"
-      | "fetch-ai"
-      | "gravity-bridge"
-      | "injective"
-      | "irisnet"
-      | "juno"
-      | "kava"
-      | "ki-network"
-      | "mars-protocol"
-      | "nym"
-      | "okex-chain"
-      | "onomy"
-      | "osmosis"
-      | "persistence"
-      | "quicksilver"
-      | "regen"
-      | "secret"
-      | "sentinel"
-      | "sommelier"
-      | "stafi"
-      | "stargaze"
-      | "stride"
-      | "teritori"
-      | "tgrade"
-      | "umee"
-      | "sei"
-      | "mantra"
-      | "celestia"
-      | "saga"
-      | "zetachain"
-      | "dymension"
-      | "humansai"
-      | "neutron"
-      | "polkadot"
-      | "kusama"
-      | "westend"
-      | "bittensor"
-      | "aptos"
-      | "binancebeacon"
-      | "cardano"
-      | "near"
-      | "solana"
-      | "solana-devnet"
-      | "stellar"
-      | "stellar-testnet"
-      | "sui"
-      | "tezos"
-      | "tron"
-      | "ton"
-      | "ton-testnet"
-      | "hyperliquid";
-    readonly address?: string;
-    readonly logoURI?: string;
-    readonly isPoints?: boolean;
-    readonly coinGeckoId?: string;
-  };
-  readonly validator?: {
-    readonly address: string;
-    readonly name?: string;
-    readonly logoURI?: string;
-    readonly website?: string;
-    readonly rewardRate?: {
-      readonly total: number;
-      readonly rateType: string;
-      readonly components: ReadonlyArray<RewardDto>;
-    };
-    readonly provider?: {
-      readonly name: string;
-      readonly id: string;
-      readonly logoURI: string;
-      readonly description: string;
-      readonly website: string;
-      readonly tvlUsd: {} | null;
-      readonly type: "protocol" | "validator_provider";
-      readonly references?: ReadonlyArray<string>;
-      readonly rank: number;
-      readonly preferred: boolean;
-      readonly revshare?: {
-        readonly trial?: {
-          readonly minRevShare: number;
-          readonly maxRevShare: number;
-        };
-        readonly standard?: {
-          readonly minRevShare: number;
-          readonly maxRevShare: number;
-        };
-        readonly pro?: {
-          readonly minRevShare: number;
-          readonly maxRevShare: number;
-        };
-      };
-      readonly uniqueId?: string;
-      readonly createdAt?: string;
-      readonly updatedAt?: string;
-    };
-    readonly commission?: number;
-    readonly tvlUsd?: string;
-    readonly tvl?: string;
-    readonly tvlRaw?: string;
-    readonly votingPower?: number;
-    readonly preferred?: boolean;
-    readonly minimumStake?: string;
-    readonly remainingPossibleStake?: string;
-    readonly remainingSlots?: number;
-    readonly nominatorCount?: number;
-    readonly status?: string;
-    readonly providerId?: string;
-    readonly subnet?: {
-      readonly id: number;
-      readonly name?: string;
-      readonly tokenSymbol?: string;
-      readonly tvl?: string;
-      readonly pricePerShare?: string;
-    };
-  } | null;
-  readonly validators?: ReadonlyArray<{
-    readonly address: string;
-    readonly name?: string;
-    readonly logoURI?: string;
-    readonly website?: string;
-    readonly rewardRate?: {
-      readonly total: number;
-      readonly rateType: string;
-      readonly components: ReadonlyArray<RewardDto>;
-    };
-    readonly provider?: {
-      readonly name: string;
-      readonly id: string;
-      readonly logoURI: string;
-      readonly description: string;
-      readonly website: string;
-      readonly tvlUsd: {} | null;
-      readonly type: "protocol" | "validator_provider";
-      readonly references?: ReadonlyArray<string>;
-      readonly rank: number;
-      readonly preferred: boolean;
-      readonly revshare?: {
-        readonly trial?: {
-          readonly minRevShare: number;
-          readonly maxRevShare: number;
-        };
-        readonly standard?: {
-          readonly minRevShare: number;
-          readonly maxRevShare: number;
-        };
-        readonly pro?: {
-          readonly minRevShare: number;
-          readonly maxRevShare: number;
-        };
-      };
-      readonly uniqueId?: string;
-      readonly createdAt?: string;
-      readonly updatedAt?: string;
-    };
-    readonly commission?: number;
-    readonly tvlUsd?: string;
-    readonly tvl?: string;
-    readonly tvlRaw?: string;
-    readonly votingPower?: number;
-    readonly preferred?: boolean;
-    readonly minimumStake?: string;
-    readonly remainingPossibleStake?: string;
-    readonly remainingSlots?: number;
-    readonly nominatorCount?: number;
-    readonly status?: string;
-    readonly providerId?: string;
-    readonly subnet?: {
-      readonly id: number;
-      readonly name?: string;
-      readonly tokenSymbol?: string;
-      readonly tvl?: string;
-      readonly pricePerShare?: string;
-    };
-  }>;
-  readonly amountUsd?: string | null;
-  readonly isEarning: boolean;
-  readonly priceRange?: {};
-  readonly tokenId?: string;
-  readonly shareAmount?: string;
-  readonly shareAmountRaw?: string;
-  readonly shareToken?: {
-    readonly symbol: string;
-    readonly name: string;
-    readonly decimals: number;
-    readonly network:
-      | "ethereum"
-      | "ethereum-goerli"
-      | "ethereum-holesky"
-      | "ethereum-sepolia"
-      | "ethereum-hoodi"
-      | "arbitrum"
-      | "base"
-      | "base-sepolia"
-      | "gnosis"
-      | "optimism"
-      | "polygon"
-      | "polygon-amoy"
-      | "starknet"
-      | "zksync"
-      | "linea"
-      | "unichain"
-      | "monad-testnet"
-      | "monad"
-      | "robinhood"
-      | "robinhood-testnet"
-      | "avalanche-c"
-      | "avalanche-c-atomic"
-      | "avalanche-p"
-      | "binance"
-      | "celo"
-      | "fantom"
-      | "harmony"
-      | "moonriver"
-      | "okc"
-      | "viction"
-      | "core"
-      | "sonic"
-      | "plasma"
-      | "katana"
-      | "hyperevm"
-      | "tempo"
-      | "pharos"
-      | "agoric"
-      | "akash"
-      | "axelar"
-      | "band-protocol"
-      | "bitsong"
-      | "canto"
-      | "chihuahua"
-      | "comdex"
-      | "coreum"
-      | "cosmos"
-      | "crescent"
-      | "cronos"
-      | "cudos"
-      | "desmos"
-      | "dydx"
-      | "evmos"
-      | "fetch-ai"
-      | "gravity-bridge"
-      | "injective"
-      | "irisnet"
-      | "juno"
-      | "kava"
-      | "ki-network"
-      | "mars-protocol"
-      | "nym"
-      | "okex-chain"
-      | "onomy"
-      | "osmosis"
-      | "persistence"
-      | "quicksilver"
-      | "regen"
-      | "secret"
-      | "sentinel"
-      | "sommelier"
-      | "stafi"
-      | "stargaze"
-      | "stride"
-      | "teritori"
-      | "tgrade"
-      | "umee"
-      | "sei"
-      | "mantra"
-      | "celestia"
-      | "saga"
-      | "zetachain"
-      | "dymension"
-      | "humansai"
-      | "neutron"
-      | "polkadot"
-      | "kusama"
-      | "westend"
-      | "bittensor"
-      | "aptos"
-      | "binancebeacon"
-      | "cardano"
-      | "near"
-      | "solana"
-      | "solana-devnet"
-      | "stellar"
-      | "stellar-testnet"
-      | "sui"
-      | "tezos"
-      | "tron"
-      | "ton"
-      | "ton-testnet"
-      | "hyperliquid";
-    readonly address?: string;
-    readonly logoURI?: string;
-    readonly isPoints?: boolean;
-    readonly coinGeckoId?: string;
-  };
-};
-export type YieldRiskDto = {
-  readonly updatedAt: string;
-  readonly credora?: YieldRiskCredoraDto;
-  readonly stakingRewards?: YieldRiskStakingRewardsDto;
+  readonly state?: YieldStateDto;
+  readonly investmentSchedule?: InvestmentScheduleDto;
+  readonly executionContracts?: ExecutionContractsDto;
 };
 export type YieldBalancesDto = {
   readonly yieldId: string;
   readonly balances: ReadonlyArray<BalanceDto>;
-  readonly outputTokenBalance?: {
-    readonly address: string;
-    readonly type: BalanceType;
-    readonly amount: string;
-    readonly amountRaw: string;
-    readonly date?: string;
-    readonly feeConfigurationId?: string;
-    readonly pendingActions: ReadonlyArray<PendingActionDto>;
-    readonly token: {
-      readonly symbol: string;
-      readonly name: string;
-      readonly decimals: number;
-      readonly network:
-        | "ethereum"
-        | "ethereum-goerli"
-        | "ethereum-holesky"
-        | "ethereum-sepolia"
-        | "ethereum-hoodi"
-        | "arbitrum"
-        | "base"
-        | "base-sepolia"
-        | "gnosis"
-        | "optimism"
-        | "polygon"
-        | "polygon-amoy"
-        | "starknet"
-        | "zksync"
-        | "linea"
-        | "unichain"
-        | "monad-testnet"
-        | "monad"
-        | "robinhood"
-        | "robinhood-testnet"
-        | "avalanche-c"
-        | "avalanche-c-atomic"
-        | "avalanche-p"
-        | "binance"
-        | "celo"
-        | "fantom"
-        | "harmony"
-        | "moonriver"
-        | "okc"
-        | "viction"
-        | "core"
-        | "sonic"
-        | "plasma"
-        | "katana"
-        | "hyperevm"
-        | "tempo"
-        | "pharos"
-        | "agoric"
-        | "akash"
-        | "axelar"
-        | "band-protocol"
-        | "bitsong"
-        | "canto"
-        | "chihuahua"
-        | "comdex"
-        | "coreum"
-        | "cosmos"
-        | "crescent"
-        | "cronos"
-        | "cudos"
-        | "desmos"
-        | "dydx"
-        | "evmos"
-        | "fetch-ai"
-        | "gravity-bridge"
-        | "injective"
-        | "irisnet"
-        | "juno"
-        | "kava"
-        | "ki-network"
-        | "mars-protocol"
-        | "nym"
-        | "okex-chain"
-        | "onomy"
-        | "osmosis"
-        | "persistence"
-        | "quicksilver"
-        | "regen"
-        | "secret"
-        | "sentinel"
-        | "sommelier"
-        | "stafi"
-        | "stargaze"
-        | "stride"
-        | "teritori"
-        | "tgrade"
-        | "umee"
-        | "sei"
-        | "mantra"
-        | "celestia"
-        | "saga"
-        | "zetachain"
-        | "dymension"
-        | "humansai"
-        | "neutron"
-        | "polkadot"
-        | "kusama"
-        | "westend"
-        | "bittensor"
-        | "aptos"
-        | "binancebeacon"
-        | "cardano"
-        | "near"
-        | "solana"
-        | "solana-devnet"
-        | "stellar"
-        | "stellar-testnet"
-        | "sui"
-        | "tezos"
-        | "tron"
-        | "ton"
-        | "ton-testnet"
-        | "hyperliquid";
-      readonly address?: string;
-      readonly logoURI?: string;
-      readonly isPoints?: boolean;
-      readonly coinGeckoId?: string;
-    };
-    readonly validator?: {
-      readonly address: string;
-      readonly name?: string;
-      readonly logoURI?: string;
-      readonly website?: string;
-      readonly rewardRate?: {
-        readonly total: number;
-        readonly rateType: string;
-        readonly components: ReadonlyArray<RewardDto>;
-      };
-      readonly provider?: {
-        readonly name: string;
-        readonly id: string;
-        readonly logoURI: string;
-        readonly description: string;
-        readonly website: string;
-        readonly tvlUsd: {} | null;
-        readonly type: "protocol" | "validator_provider";
-        readonly references?: ReadonlyArray<string>;
-        readonly rank: number;
-        readonly preferred: boolean;
-        readonly revshare?: {
-          readonly trial?: {
-            readonly minRevShare: number;
-            readonly maxRevShare: number;
-          };
-          readonly standard?: {
-            readonly minRevShare: number;
-            readonly maxRevShare: number;
-          };
-          readonly pro?: {
-            readonly minRevShare: number;
-            readonly maxRevShare: number;
-          };
-        };
-        readonly uniqueId?: string;
-        readonly createdAt?: string;
-        readonly updatedAt?: string;
-      };
-      readonly commission?: number;
-      readonly tvlUsd?: string;
-      readonly tvl?: string;
-      readonly tvlRaw?: string;
-      readonly votingPower?: number;
-      readonly preferred?: boolean;
-      readonly minimumStake?: string;
-      readonly remainingPossibleStake?: string;
-      readonly remainingSlots?: number;
-      readonly nominatorCount?: number;
-      readonly status?: string;
-      readonly providerId?: string;
-      readonly subnet?: {
-        readonly id: number;
-        readonly name?: string;
-        readonly tokenSymbol?: string;
-        readonly tvl?: string;
-        readonly pricePerShare?: string;
-      };
-    } | null;
-    readonly validators?: ReadonlyArray<{
-      readonly address: string;
-      readonly name?: string;
-      readonly logoURI?: string;
-      readonly website?: string;
-      readonly rewardRate?: {
-        readonly total: number;
-        readonly rateType: string;
-        readonly components: ReadonlyArray<RewardDto>;
-      };
-      readonly provider?: {
-        readonly name: string;
-        readonly id: string;
-        readonly logoURI: string;
-        readonly description: string;
-        readonly website: string;
-        readonly tvlUsd: {} | null;
-        readonly type: "protocol" | "validator_provider";
-        readonly references?: ReadonlyArray<string>;
-        readonly rank: number;
-        readonly preferred: boolean;
-        readonly revshare?: {
-          readonly trial?: {
-            readonly minRevShare: number;
-            readonly maxRevShare: number;
-          };
-          readonly standard?: {
-            readonly minRevShare: number;
-            readonly maxRevShare: number;
-          };
-          readonly pro?: {
-            readonly minRevShare: number;
-            readonly maxRevShare: number;
-          };
-        };
-        readonly uniqueId?: string;
-        readonly createdAt?: string;
-        readonly updatedAt?: string;
-      };
-      readonly commission?: number;
-      readonly tvlUsd?: string;
-      readonly tvl?: string;
-      readonly tvlRaw?: string;
-      readonly votingPower?: number;
-      readonly preferred?: boolean;
-      readonly minimumStake?: string;
-      readonly remainingPossibleStake?: string;
-      readonly remainingSlots?: number;
-      readonly nominatorCount?: number;
-      readonly status?: string;
-      readonly providerId?: string;
-      readonly subnet?: {
-        readonly id: number;
-        readonly name?: string;
-        readonly tokenSymbol?: string;
-        readonly tvl?: string;
-        readonly pricePerShare?: string;
-      };
-    }>;
-    readonly amountUsd?: string | null;
-    readonly isEarning: boolean;
-    readonly priceRange?: {};
-    readonly tokenId?: string;
-    readonly shareAmount?: string;
-    readonly shareAmountRaw?: string;
-    readonly shareToken?: {
-      readonly symbol: string;
-      readonly name: string;
-      readonly decimals: number;
-      readonly network:
-        | "ethereum"
-        | "ethereum-goerli"
-        | "ethereum-holesky"
-        | "ethereum-sepolia"
-        | "ethereum-hoodi"
-        | "arbitrum"
-        | "base"
-        | "base-sepolia"
-        | "gnosis"
-        | "optimism"
-        | "polygon"
-        | "polygon-amoy"
-        | "starknet"
-        | "zksync"
-        | "linea"
-        | "unichain"
-        | "monad-testnet"
-        | "monad"
-        | "robinhood"
-        | "robinhood-testnet"
-        | "avalanche-c"
-        | "avalanche-c-atomic"
-        | "avalanche-p"
-        | "binance"
-        | "celo"
-        | "fantom"
-        | "harmony"
-        | "moonriver"
-        | "okc"
-        | "viction"
-        | "core"
-        | "sonic"
-        | "plasma"
-        | "katana"
-        | "hyperevm"
-        | "tempo"
-        | "pharos"
-        | "agoric"
-        | "akash"
-        | "axelar"
-        | "band-protocol"
-        | "bitsong"
-        | "canto"
-        | "chihuahua"
-        | "comdex"
-        | "coreum"
-        | "cosmos"
-        | "crescent"
-        | "cronos"
-        | "cudos"
-        | "desmos"
-        | "dydx"
-        | "evmos"
-        | "fetch-ai"
-        | "gravity-bridge"
-        | "injective"
-        | "irisnet"
-        | "juno"
-        | "kava"
-        | "ki-network"
-        | "mars-protocol"
-        | "nym"
-        | "okex-chain"
-        | "onomy"
-        | "osmosis"
-        | "persistence"
-        | "quicksilver"
-        | "regen"
-        | "secret"
-        | "sentinel"
-        | "sommelier"
-        | "stafi"
-        | "stargaze"
-        | "stride"
-        | "teritori"
-        | "tgrade"
-        | "umee"
-        | "sei"
-        | "mantra"
-        | "celestia"
-        | "saga"
-        | "zetachain"
-        | "dymension"
-        | "humansai"
-        | "neutron"
-        | "polkadot"
-        | "kusama"
-        | "westend"
-        | "bittensor"
-        | "aptos"
-        | "binancebeacon"
-        | "cardano"
-        | "near"
-        | "solana"
-        | "solana-devnet"
-        | "stellar"
-        | "stellar-testnet"
-        | "sui"
-        | "tezos"
-        | "tron"
-        | "ton"
-        | "ton-testnet"
-        | "hyperliquid";
-      readonly address?: string;
-      readonly logoURI?: string;
-      readonly isPoints?: boolean;
-      readonly coinGeckoId?: string;
-    };
-  } | null;
-  readonly rewardRate?: {
-    readonly total: number;
-    readonly rateType: string;
-    readonly components: ReadonlyArray<RewardDto>;
-  } | null;
+  readonly outputTokenBalance?: BalanceDto | null;
+  readonly rewardRate?: RewardRateDto | null;
 };
 export type BalanceHistorySnapshotDto = {
   readonly timestamp: string;
   readonly blockNumber: number;
   readonly yieldId: string;
   readonly balances: ReadonlyArray<BalanceDto>;
-  readonly periodDelta?: {
-    readonly shareAmount: string;
-    readonly shareAmountRaw: string;
-    readonly amount: string;
-    readonly amountRaw: string;
-  };
+  readonly periodDelta?: BalanceHistorySnapshotPeriodDeltaDto;
 };
 export type BalancesResponseDto = {
   readonly items: ReadonlyArray<YieldBalancesDto>;
@@ -4013,6 +1818,7 @@ export type YieldsControllerGetYieldsParams = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -4460,6 +2266,10 @@ export type YieldsControllerGetYieldCampaigns500 = {
   readonly statusCode?: number;
 };
 export type TokensControllerGetTokensParams = {
+  readonly address?: string;
+  readonly symbol?: string;
+  readonly enter?: boolean;
+  readonly exit?: boolean;
   readonly networks?: ReadonlyArray<
     | "ethereum"
     | "ethereum-goerli"
@@ -4477,6 +2287,7 @@ export type TokensControllerGetTokensParams = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -4680,6 +2491,7 @@ export type ActionsControllerGetActionsParams = {
     | "zksync"
     | "linea"
     | "unichain"
+    | "plume"
     | "monad-testnet"
     | "monad"
     | "robinhood"
@@ -4869,6 +2681,62 @@ export type ActionsControllerExitYield429 = {
   readonly retryAfter?: number;
 };
 export type ActionsControllerExitYield500 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type ActionsControllerSimulateEnterRequestJson = CreateActionDto;
+export type ActionsControllerSimulateEnter200 = ActionSimulationDto;
+export type ActionsControllerSimulateEnter400 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type ActionsControllerSimulateEnter401 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type ActionsControllerSimulateEnter403 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type ActionsControllerSimulateEnter429 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+  readonly retryAfter?: number;
+};
+export type ActionsControllerSimulateEnter500 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type ActionsControllerSimulateExitRequestJson = CreateActionDto;
+export type ActionsControllerSimulateExit200 = ActionSimulationDto;
+export type ActionsControllerSimulateExit400 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type ActionsControllerSimulateExit401 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type ActionsControllerSimulateExit403 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type ActionsControllerSimulateExit429 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+  readonly retryAfter?: number;
+};
+export type ActionsControllerSimulateExit500 = {
   readonly message?: string;
   readonly error?: string;
   readonly statusCode?: number;
@@ -5344,6 +3212,10 @@ export const make = (
     TokensControllerGetTokens: (options) =>
       HttpClientRequest.get(`/v1/tokens`).pipe(
         HttpClientRequest.setUrlParams({
+          address: options?.params?.["address"] as any,
+          symbol: options?.params?.["symbol"] as any,
+          enter: options?.params?.["enter"] as any,
+          exit: options?.params?.["exit"] as any,
           networks: options?.params?.["networks"] as any,
           yieldTypes: options?.params?.["yieldTypes"] as any,
           offset: options?.params?.["offset"] as any,
@@ -5406,6 +3278,28 @@ export const make = (
           "403": "ActionsControllerExitYield403",
           "429": "ActionsControllerExitYield429",
           "500": "ActionsControllerExitYield500",
+        })
+      ),
+    ActionsControllerSimulateEnter: (options) =>
+      HttpClientRequest.post(`/v1/actions/enter/simulate`).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"], {
+          "400": "ActionsControllerSimulateEnter400",
+          "401": "ActionsControllerSimulateEnter401",
+          "403": "ActionsControllerSimulateEnter403",
+          "429": "ActionsControllerSimulateEnter429",
+          "500": "ActionsControllerSimulateEnter500",
+        })
+      ),
+    ActionsControllerSimulateExit: (options) =>
+      HttpClientRequest.post(`/v1/actions/exit/simulate`).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"], {
+          "400": "ActionsControllerSimulateExit400",
+          "401": "ActionsControllerSimulateExit401",
+          "403": "ActionsControllerSimulateExit403",
+          "429": "ActionsControllerSimulateExit429",
+          "500": "ActionsControllerSimulateExit500",
         })
       ),
     ActionsControllerManageYield: (options) =>
@@ -5816,7 +3710,7 @@ export interface YieldApi {
       >
   >;
   /**
-   * Retrieve tokens that have at least one enabled yield available for this project. Optionally filter by one or more networks and yield types. Returns the full list by default; callers should respect `total` and use `offset`/`limit`, as a default page size may be introduced in future.
+   * Retrieve tokens that have at least one enabled yield available for this project. Optionally filter by exact token identity, enter/exit availability, networks, and yield types. Returns the full list by default; callers should respect `total` and use `offset`/`limit`, as a default page size may be introduced in future. Maintenance, deprecated, and decommissioned yields are always excluded.
    */
   readonly TokensControllerGetTokens: <Config extends OperationConfig>(
     options:
@@ -5961,6 +3855,70 @@ export interface YieldApi {
     | YieldApiError<
         "ActionsControllerExitYield500",
         ActionsControllerExitYield500
+      >
+  >;
+  /**
+   * Simulates an enter action without creating or persisting an action or transactions. The response is sectioned so it can grow additively: v1 returns `gas` (and `entryReserveEstimate` for Solana enters); fee and execution-outcome sections will be added as further optional keys. A 200 does not guarantee the action would succeed on-chain — construction-level prechecks may be skipped during simulation.
+   */
+  readonly ActionsControllerSimulateEnter: <
+    Config extends OperationConfig,
+  >(options: {
+    readonly payload: ActionsControllerSimulateEnterRequestJson;
+    readonly config?: Config | undefined;
+  }) => Effect.Effect<
+    WithOptionalResponse<ActionsControllerSimulateEnter200, Config>,
+    | HttpClientError.HttpClientError
+    | YieldApiError<
+        "ActionsControllerSimulateEnter400",
+        ActionsControllerSimulateEnter400
+      >
+    | YieldApiError<
+        "ActionsControllerSimulateEnter401",
+        ActionsControllerSimulateEnter401
+      >
+    | YieldApiError<
+        "ActionsControllerSimulateEnter403",
+        ActionsControllerSimulateEnter403
+      >
+    | YieldApiError<
+        "ActionsControllerSimulateEnter429",
+        ActionsControllerSimulateEnter429
+      >
+    | YieldApiError<
+        "ActionsControllerSimulateEnter500",
+        ActionsControllerSimulateEnter500
+      >
+  >;
+  /**
+   * Simulates an exit action without creating or persisting an action or transactions. The response is sectioned so it can grow additively: v1 returns `gas`; fee and execution-outcome sections will be added as further optional keys. A 200 does not guarantee the action would succeed on-chain — construction-level prechecks may be skipped during simulation.
+   */
+  readonly ActionsControllerSimulateExit: <
+    Config extends OperationConfig,
+  >(options: {
+    readonly payload: ActionsControllerSimulateExitRequestJson;
+    readonly config?: Config | undefined;
+  }) => Effect.Effect<
+    WithOptionalResponse<ActionsControllerSimulateExit200, Config>,
+    | HttpClientError.HttpClientError
+    | YieldApiError<
+        "ActionsControllerSimulateExit400",
+        ActionsControllerSimulateExit400
+      >
+    | YieldApiError<
+        "ActionsControllerSimulateExit401",
+        ActionsControllerSimulateExit401
+      >
+    | YieldApiError<
+        "ActionsControllerSimulateExit403",
+        ActionsControllerSimulateExit403
+      >
+    | YieldApiError<
+        "ActionsControllerSimulateExit429",
+        ActionsControllerSimulateExit429
+      >
+    | YieldApiError<
+        "ActionsControllerSimulateExit500",
+        ActionsControllerSimulateExit500
       >
   >;
   /**

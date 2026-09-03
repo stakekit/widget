@@ -1,0 +1,25 @@
+import type { SignerPayloadJSON } from "@polkadot/types/types";
+import type { Effect } from "effect";
+import type { Connector } from "wagmi";
+import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
+
+export const configMeta = { type: "substrateProvider" };
+
+export type ExtraProps = ConnectorWithFilteredChains & {
+  signTransaction: (payload: {
+    tx: SignerPayloadJSON;
+    metadataRpc: string;
+    rawTx: string;
+  }) => Effect.Effect<string, Error>;
+};
+
+export type StorageItem = {
+  "substrate.disconnected": boolean;
+  "substrate.lastConnectedId": string;
+};
+
+type SubstrateConnector = Connector & ExtraProps;
+
+export const isSubstrateConnector = (
+  connector: Connector
+): connector is SubstrateConnector => connector.type === configMeta.type;

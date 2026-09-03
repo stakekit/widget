@@ -1,0 +1,245 @@
+import { Data, Option } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as Atom from "effect/unstable/reactivity/Atom";
+import {
+  isKycGateBlocking,
+  mapKycStatusToGate,
+} from "../../../domain/earn/kyc";
+import type { EarnYieldWithProvider } from "../../../domain/earn/models";
+import type {
+  WalletAddress,
+  YieldId,
+} from "../../../domain/identity/identifiers";
+import type { HistoryPeriod } from "../../../domain/portfolio/models";
+import { isValidYieldIdForRewardsSummary } from "../../../domain/portfolio/rewards";
+import {
+  RewardSummariesKey,
+  rewardSummariesResourceAtom,
+} from "../../../resources/reward-summaries/index";
+import {
+  YieldHistoryResourceKey,
+  YieldKycStatusKey,
+  yieldKycStatusResourceAtom,
+  yieldRewardRateHistoryResourceAtom,
+  yieldTvlHistoryResourceAtom,
+} from "../../../resources/yield-insights/index";
+import {
+  selectCurrentWalletAtom,
+  walletConnectionStateAtom,
+} from "../../wallet/index";
+
+class YieldKycKey extends Data.Class<{
+  readonly address: WalletAddress | null;
+  readonly yieldId: YieldId | null;
+}> {}
+
+const yieldKycStatusAtom = Atom.family((key: YieldKycKey) =>
+  Atom.readable(
+    (get) =>
+      key.address && key.yieldId
+        ? get(
+            yieldKycStatusResourceAtom.foreground(
+              new YieldKycStatusKey({
+                address: key.address,
+                yieldId: key.yieldId,
+              })
+            )
+          )
+        : AsyncResult.success(null),
+    (refresh) => {
+      if (key.address && key.yieldId) {
+        refresh(
+          yieldKycStatusResourceAtom.foreground(
+            new YieldKycStatusKey({
+              address: key.address,
+              yieldId: key.yieldId,
+            })
+          )
+        );
+      }
+    }
+  )
+);
+
+class CurrentYieldKycKey extends Data.Class<{
+  readonly enabled: boolean;
+  readonly kycRequired: boolean;
+  readonly yieldId: YieldId | null;
+}> {}
+
+const makeCurrentYieldKycResource = (
+  wallet: Atom.Type<typeof walletConnectionStateAtom>,
+  key: CurrentYieldKycKey
+) => {
+  const queryEnabled =
+    key.enabled && key.kycRequired && wallet.status === "connected";
+
+  return yieldKycStatusAtom(
+    new YieldKycKey({
+      address: queryEnabled ? wallet.address : null,
+      yieldId: queryEnabled ? key.yieldId : null,
+    })
+  );
+};
+
+const getCurrentYieldKycResource = (
+  get: Atom.AtomContext,
+  key: CurrentYieldKycKey
+) => makeCurrentYieldKycResource(get(walletConnectionStateAtom), key);
+
+const currentYieldKycStatusAtom = Atom.family((key: CurrentYieldKycKey) =>
+  Atom.make((get) => get(getCurrentYieldKycResource(get, key)))
+);
+
+const currentYieldKycQueryEnabledAtom = Atom.family((key: CurrentYieldKycKey) =>
+  Atom.make((get) => {
+    const wallet = get(walletConnectionStateAtom);
+
+    return (
+      key.enabled &&
+      key.kycRequired &&
+      key.yieldId !== null &&
+      wallet.status === "connected"
+    );
+  })
+);
+
+export class CurrentYieldKycGateKey extends Data.Class<{
+  readonly enabled: boolean;
+  readonly yieldDto: EarnYieldWithProvider | null;
+}> {}
+
+const getCurrentYieldKycKey = (key: CurrentYieldKycGateKey) =>
+  new CurrentYieldKycKey({
+    enabled: key.enabled,
+    kycRequired: key.yieldDto?.mechanics.requirements?.kycRequired === true,
+    yieldId: key.yieldDto?.id ?? null,
+  });
+
+export const refreshCurrentYieldKycAtom = Atom.family(
+  (key: CurrentYieldKycGateKey) =>
+    Atom.fnSync(
+      (_input: undefined, get) =>
+        get.refresh(
+          makeCurrentYieldKycResource(
+            get(walletConnectionStateAtom),
+            getCurrentYieldKycKey(key)
+          )
+        ),
+      { initialValue: undefined }
+    )
+);
+
+export const currentYieldKycGateAtom = Atom.family(
+  (key: CurrentYieldKycGateKey) =>
+    Atom.make((get) => {
+      const resourceKey = getCurrentYieldKycKey(key);
+      const queryEnabled = get(currentYieldKycQueryEnabledAtom(resourceKey));
+      const result = get(currentYieldKycStatusAtom(resourceKey));
+      const status = result.pipe(AsyncResult.value, Option.getOrUndefined);
+      const isFetching = queryEnabled && result.waiting;
+      const getGate = () => {
+        if (!queryEnabled) return { state: "pass" } as const;
+        if (AsyncResult.isFailure(result)) {
+          return mapKycStatusToGate({
+            status: null,
+            yieldDto: key.yieldDto,
+          });
+        }
+        return mapKycStatusToGate({ status, yieldDto: key.yieldDto });
+      };
+      const gate = getGate();
+      const isLoading = queryEnabled && AsyncResult.isInitial(result);
+
+      return {
+        gate,
+        isBlocking:
+          queryEnabled &&
+          (AsyncResult.isInitial(result) || isKycGateBlocking(gate)),
+        isChecking: isLoading || isFetching,
+        isLoading,
+      } as const;
+    })
+);
+
+export type CurrentYieldKycGate = Atom.Type<
+  ReturnType<typeof currentYieldKycGateAtom>
+>;
+
+export class YieldHistoryKey extends Data.Class<{
+  readonly period: HistoryPeriod;
+  readonly yieldId: YieldId | null;
+}> {}
+
+const getYieldHistoryInterval = (period: HistoryPeriod) =>
+  period === "1y" || period === "all" ? "week" : "day";
+
+export const yieldRewardRateHistoryAtom = Atom.family((key: YieldHistoryKey) =>
+  Atom.make((get) =>
+    key.yieldId
+      ? get(
+          yieldRewardRateHistoryResourceAtom.foreground(
+            new YieldHistoryResourceKey({
+              interval: getYieldHistoryInterval(key.period),
+              period: key.period,
+              yieldId: key.yieldId,
+            })
+          )
+        )
+      : AsyncResult.success(null)
+  )
+);
+
+export const yieldTvlHistoryAtom = Atom.family((key: YieldHistoryKey) =>
+  Atom.make((get) =>
+    key.yieldId
+      ? get(
+          yieldTvlHistoryResourceAtom.foreground(
+            new YieldHistoryResourceKey({
+              interval: getYieldHistoryInterval(key.period),
+              period: key.period,
+              yieldId: key.yieldId,
+            })
+          )
+        )
+      : AsyncResult.success(null)
+  )
+);
+
+export class CurrentRewardsSummaryKey extends Data.Class<{
+  readonly yieldIds: ReadonlyArray<YieldId>;
+}> {
+  constructor({ yieldIds }: { readonly yieldIds: ReadonlyArray<YieldId> }) {
+    super({ yieldIds: [...new Set(yieldIds)].sort() });
+  }
+}
+
+const currentRewardsAddressesAtom = selectCurrentWalletAtom((walletState) =>
+  walletState.status === "connected"
+    ? {
+        address: walletState.address,
+        ...(walletState.additionalAddresses
+          ? { additionalAddresses: walletState.additionalAddresses }
+          : {}),
+      }
+    : null
+).pipe(Atom.withLabel("currentRewardsAddressesAtom"));
+
+export const currentRewardsSummaryAtom = Atom.family(
+  (key: CurrentRewardsSummaryKey) =>
+    Atom.make((get) => {
+      const filteredIds = key.yieldIds.filter(isValidYieldIdForRewardsSummary);
+      const addresses = get(currentRewardsAddressesAtom);
+
+      return addresses && filteredIds.length > 0
+        ? get(
+            rewardSummariesResourceAtom.foreground(
+              new RewardSummariesKey({
+                addresses,
+                yieldIds: filteredIds,
+              })
+            )
+          )
+        : AsyncResult.success(null);
+    })
+);

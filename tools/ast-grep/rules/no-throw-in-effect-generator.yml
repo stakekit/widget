@@ -1,0 +1,25 @@
+id: no-throw-in-effect-generator
+language: Tsx
+severity: error
+message: Use yield* for expected failures or Effect.die for defects.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+rule:
+  kind: throw_statement
+  inside:
+    all:
+      - kind: generator_function
+      - inside:
+          any:
+            - pattern: Effect.gen($$$ARGS)
+            - pattern: Effect.fn($$$FIRST)($$$SECOND)
+          stopBy: end
+    stopBy:
+      any:
+        - kind: arrow_function
+        - kind: function_expression
+        - kind: function_declaration
+        - kind: generator_function

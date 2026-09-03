@@ -1,0 +1,15 @@
+id: no-default-atom-idle-ttl
+language: Tsx
+severity: error
+message: The application Atom registry must use native immediate disposal without a default idle TTL.
+files:
+  - packages/widget/**/*.ts
+  - packages/widget/**/*.tsx
+rule:
+  any:
+    - kind: property_identifier
+      regex: "^defaultIdleTTL$"
+    - pattern: "<$COMPONENT $$$BEFORE defaultIdleTTL={$TTL} $$$AFTER>$$$CHILDREN</$COMPONENT>"
+    - pattern: "<$COMPONENT $$$BEFORE defaultIdleTTL=$TTL $$$AFTER>$$$CHILDREN</$COMPONENT>"
+    - pattern: "<$COMPONENT $$$BEFORE defaultIdleTTL={$TTL} $$$AFTER />"
+    - pattern: "<$COMPONENT $$$BEFORE defaultIdleTTL=$TTL $$$AFTER />"

@@ -1,0 +1,16 @@
+id: no-native-date
+valid:
+  - 'const now = yield* DateTime.now'
+  - 'const timestamp: DateTime.Utc = DateTime.makeUnsafe(input)'
+  - 'const date = DateTime.toEpochMillis(timestamp)'
+  - 'const schema = Schema.DateTimeUtcFromString'
+invalid:
+  - 'const now = new Date()'
+  - 'const timestamp: Date = input'
+  - 'const parsed = Date.parse(input)'
+  - 'const parsed = window.Date.parse(input)'
+  - 'const parsed = globalThis.Date.parse(input)'
+  - 'const value = DateTime.toDate(timestamp)'
+  - 'const value = DateTime.toDateUtc(timestamp)'
+  - 'const schema = Schema.DateFromString'
+  - 'const schema = Schema.DateTimeUtcFromDate'

@@ -3,8 +3,9 @@ import {
   getKycProviderName,
   getKycUrl,
   mapKycStatusToGate,
-} from "../../src/domain/types/kyc";
-import type { Yield } from "../../src/domain/types/yields";
+} from "../../src/domain/earn/kyc";
+import type { EarnYieldWithProvider } from "../../src/domain/earn/models";
+
 import { yieldApiProviderFixture, yieldApiYieldFixture } from "../fixtures";
 
 const kycEligibility = {
@@ -17,7 +18,9 @@ const kycEligibility = {
   subjectTypes: ["KYC"],
 } as const;
 
-const createYield = (overrides?: Partial<Yield>): Yield =>
+const createYield = (
+  overrides?: Partial<EarnYieldWithProvider>
+): EarnYieldWithProvider =>
   ({
     ...yieldApiYieldFixture(),
     provider: yieldApiProviderFixture({
@@ -25,7 +28,7 @@ const createYield = (overrides?: Partial<Yield>): Yield =>
       website: "https://superstate.com",
     }),
     ...overrides,
-  }) as Yield;
+  }) as EarnYieldWithProvider;
 
 describe("KYC gate mapping", () => {
   it("allows approved and not required statuses", () => {

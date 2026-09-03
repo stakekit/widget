@@ -1,20 +1,20 @@
+import { Array as EArray } from "effect";
 import { HttpResponse, http } from "msw";
-import { Just } from "purify-ts";
 import { vitest } from "vitest";
-import type { YieldCreateManageActionDto } from "../../../src/domain/types/action";
-import { waitForMs } from "../../../src/utils";
+import type { ManageActionCommand } from "../../../src/domain/action/models";
 import {
   legacyYieldFixture,
   yieldApiActionFixture,
   yieldApiTransactionFixture,
   yieldApiValidatorFixture,
   yieldApiValidatorsFixture,
-  yieldApiYieldFixture,
+  yieldApiYieldDtoFixture,
 } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
 import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
+import { waitForMs } from "../../utils/wait";
 import { setUrl as _setUrl } from "./utils";
 
 type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
@@ -50,7 +50,7 @@ export const setup = async (
   const avaxLiquidStakingRewardRate = 0.0475;
 
   const legacyYieldBase = legacyYieldFixture();
-  const yieldApiYieldBase = yieldApiYieldFixture();
+  const yieldApiYieldBase = yieldApiYieldDtoFixture();
   const avaxNativeStaking = legacyYieldFixture({
     id: "avalanche-avax-native-staking",
     token,
@@ -122,13 +122,13 @@ export const setup = async (
         name: "Benqi",
         description: "",
         externalLink: "https://benqi.fi/",
-        logoURI: "https://assets.stakek.it/providers/benqi.svg",
+        logoURI: "https://assets.stakek.it/app/composition/providers/benqi.svg",
       },
       rewardTokens: [rewardToken],
     },
     validators: avaxLiquidStakingLegacyValidators,
   });
-  const avaxNativeStakingYieldApi = yieldApiYieldFixture({
+  const avaxNativeStakingYieldApi = yieldApiYieldDtoFixture({
     id: avaxNativeStaking.id,
     network: token.network,
     token,
@@ -145,7 +145,7 @@ export const setup = async (
       gasFeeToken: token,
     },
   });
-  const avaxLiquidStakingYieldApi = yieldApiYieldFixture({
+  const avaxLiquidStakingYieldApi = yieldApiYieldDtoFixture({
     id: avaxLiquidStaking.id,
     network: token.network,
     providerId: avaxLiquidStaking.metadata.provider?.id ?? "benqi",
@@ -261,14 +261,14 @@ export const setup = async (
             coinGeckoId: "avalanche-2",
             logoURI: "https://assets.stakek.it/tokens/avax.svg",
           },
-          availableYields: ["avalanche-avax-liquid-staking"],
+          availableYields: [avaxNativeStaking.id, avaxLiquidStaking.id],
         },
         { token: ether, availableYields: ["ethereum-eth-etherfi-staking"] },
       ]);
     }),
-    http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await mockDelay();
-      return HttpResponse.json([token.network, ether.network]);
+      return HttpResponse.json([{ id: token.network }, { id: ether.network }]);
     }),
 
     http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
@@ -335,13 +335,10 @@ export const setup = async (
 
       const yieldId = info.params.yieldId as string;
       const validators =
-        yieldId === avaxLiquidStaking.id
-          ? avaxLiquidStakingValidators.length
-            ? yieldApiValidatorsFixture(avaxLiquidStakingValidators)
-            : []
-          : yieldId === avaxNativeStaking.id
-            ? []
-            : [];
+        yieldId === avaxLiquidStaking.id &&
+        avaxLiquidStakingValidators.length > 0
+          ? yieldApiValidatorsFixture(avaxLiquidStakingValidators)
+          : [];
 
       return HttpResponse.json({
         items: validators,
@@ -392,7 +389,7 @@ export const setup = async (
       }
     ),
     http.post(yieldApiRoute("/v1/actions/manage"), async (info) => {
-      const data = (await info.request.json()) as YieldCreateManageActionDto;
+      const data = (await info.request.json()) as ManageActionCommand;
       await mockDelay();
 
       return HttpResponse.json({
@@ -401,13 +398,13 @@ export const setup = async (
           yieldId: data.yieldId,
           type: pendingAction.type,
           address: data.address,
-          amount: pendingAction.amount,
-          amountRaw: pendingAction.amount,
-          amountUsd: pendingAction.amountUsd,
+          amount: pendingAction.amount?.toFixed() ?? null,
+          amountRaw: pendingAction.amountRaw?.toString() ?? null,
+          amountUsd: pendingAction.amountUsd?.toFixed() ?? null,
           transactions: [
             yieldApiTransactionFixture({
-              id: pendingAction.transactions[0].id,
-              network: pendingAction.transactions[0].network,
+              id: EArray.getUnsafe(pendingAction.transactions, 0).id,
+              network: EArray.getUnsafe(pendingAction.transactions, 0).network,
               type: "CLAIM_REWARDS",
               status: "CREATED",
               unsignedTransaction:
@@ -431,7 +428,7 @@ export const setup = async (
         return HttpResponse.json({
           ...yieldApiTransactionFixture({
             type: "CLAIM_REWARDS",
-            network: pendingAction.transactions[0].network,
+            network: EArray.getUnsafe(pendingAction.transactions, 0).network,
             status: "BROADCASTED",
             id: transactionId,
             hash: "transaction_hash",
@@ -474,9 +471,8 @@ export const setup = async (
         case "eth_requestAccounts":
           return [account];
         case "wallet_switchEthereumChain": {
-          currentChainId = Just(params as { chainId: number }[])
-            .map((val) => Number(val[0].chainId))
-            .unsafeCoerce();
+          const chainParams = params as { chainId: number }[];
+          currentChainId = Number(chainParams[0]?.chainId);
 
           return currentChainId;
         }

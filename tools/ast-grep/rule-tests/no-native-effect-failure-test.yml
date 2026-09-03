@@ -1,0 +1,12 @@
+id: no-native-effect-failure
+valid:
+  - 'Effect.fail(new AppError({ message: "boom" }))'
+  - 'Effect.tryPromise({ try: load, catch: cause => new AppError({ cause }) })'
+  - 'Effect.mapError(cause => new AppError({ cause }))'
+  - 'throw new Error("third-party callback contract")'
+invalid:
+  - 'Effect.fail(new Error("boom"))'
+  - 'Effect.fail(TypeError("boom"))'
+  - 'Effect.mapError(cause => new Error("boom", { cause }))'
+  - 'Effect.try({ try: load, catch: cause => new Error("boom", { cause }) })'
+  - 'Effect.tryPromise({ try: load, catch: (cause) => new TypeError("boom", { cause }) })'

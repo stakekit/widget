@@ -1,13 +1,11 @@
 import path from "node:path";
-import babel from "@rolldown/plugin-babel";
 import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
-import react, { reactCompilerPreset } from "@vitejs/plugin-react";
-import { playwright } from "@vitest/browser-playwright";
+import react from "@vitejs/plugin-react";
 import autoprefixer from "autoprefixer";
-import merge from "lodash.merge";
 import macros from "unplugin-macros/vite";
 import {
   defineConfig,
+  mergeConfig,
   type Plugin,
   type UserConfig,
   type UserConfigFnObject,
@@ -29,8 +27,8 @@ export const getConfig = (
     const isBuild = command === "build";
     const shouldMinifyOutput = isBuild && overides?.build?.minify !== false;
 
-    return merge(overides, {
-      root: path.resolve(__dirname, ".."),
+    return mergeConfig(overides ?? {}, {
+      root: path.resolve(import.meta.dirname, ".."),
       optimizeDeps: {
         include: [
           "vite-plugin-node-polyfills/shims/buffer",
@@ -38,27 +36,24 @@ export const getConfig = (
           "vite-plugin-node-polyfills/shims/process",
           "@vanilla-extract/recipes/createRuntimeFn",
           "@vanilla-extract/sprinkles/createRuntimeSprinkles",
-          "date-fns/locale",
+          "react-router/dom",
         ],
-      },
-      test: {
-        browser: {
-          enabled: true,
-          screenshotFailures: false,
-          provider: playwright(),
-          instances: [{ browser: "chromium" }],
-          viewport: { width: 800, height: 900 },
-          headless: true,
-        },
-        include: ["tests/**/*.test.{ts,tsx}"],
-        setupFiles: [path.resolve(__dirname, "..", "tests/utils/setup.ts")],
       },
       plugins: [
         ...(options?.plugins ?? []),
         nodePolyfills({ include: ["buffer", "crypto"] }),
         macros(),
-        react(),
-        babel({ presets: [reactCompilerPreset()] }),
+        react({
+          compiler: true,
+          // Skip large generated and data-only modules that gain nothing from
+          // React Compiler.
+          exclude: [
+            /[/\\]node_modules[/\\]|^\0rolldown\/runtime\.js$/,
+            /[/\\]src[/\\]generated[/\\]/,
+            // Macro-inlined cosmos chain registry data.
+            /[/\\]adapters[/\\]cosmos[/\\]chains[/\\]chain-registry\.ts$/,
+          ],
+        }),
         vanillaExtractPlugin(),
       ],
       css: {

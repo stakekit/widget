@@ -1,0 +1,11 @@
+id: no-direct-atom-idle-ttl
+language: Tsx
+severity: error
+message: Atom retention is transient by default; only the shared API resource policy may configure a finite idle TTL.
+files:
+  - packages/widget/**/*.ts
+  - packages/widget/**/*.tsx
+ignores:
+  - packages/widget/src/shared/effect/api-resource.ts
+rule:
+  pattern: "Atom.setIdleTTL($TTL)"

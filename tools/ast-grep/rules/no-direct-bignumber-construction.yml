@@ -1,0 +1,14 @@
+id: no-direct-bignumber-construction
+language: Tsx
+severity: error
+message: Construct exact decimals with finance-owned constructors instead of new BigNumber.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+  - packages/widget/src/domain/finance/**
+rule:
+  any:
+    - pattern: new BigNumber($$$ARGS)
+    - pattern: BigNumber($$$ARGS)

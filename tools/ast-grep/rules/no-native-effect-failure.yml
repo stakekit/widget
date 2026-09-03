@@ -1,0 +1,22 @@
+id: no-native-effect-failure
+language: Tsx
+severity: error
+message: Map expected Effect failures to a tagged domain error.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+rule:
+  any:
+    - pattern: Effect.fail(new $ERROR($$$ARGS))
+    - pattern: Effect.fail($ERROR($$$ARGS))
+    - pattern: Effect.mapError(($ERR) => new $ERROR($$$ARGS))
+    - pattern: Effect.mapError($ERR => new $ERROR($$$ARGS))
+    - pattern: "Effect.try({ try: $TRY, catch: ($ERR) => new $ERROR($$$ARGS) })"
+    - pattern: "Effect.try({ try: $TRY, catch: $ERR => new $ERROR($$$ARGS) })"
+    - pattern: "Effect.tryPromise({ try: $TRY, catch: ($ERR) => new $ERROR($$$ARGS) })"
+    - pattern: "Effect.tryPromise({ try: $TRY, catch: $ERR => new $ERROR($$$ARGS) })"
+constraints:
+  ERROR:
+    regex: ^(?:(?:globalThis|window)\.)?(?:Error|TypeError|RangeError|ReferenceError|SyntaxError|URIError|EvalError|AggregateError)$

@@ -1,34 +1,52 @@
 import "@stakekit/rainbowkit/styles.css";
-import "./translation";
-import "./utils/extend-purify";
-import "./styles/theme/global.css";
-import type { ComponentProps, RefObject } from "react";
-import { createRef, useImperativeHandle, useState } from "react";
+import "./shared/styles/theme/global.css";
+import { useAtomValue } from "@effect/atom-react";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import { type PropsWithChildren, useState } from "react";
 import ReactDOM from "react-dom/client";
-import { createMemoryRouter, RouterProvider } from "react-router";
-import { preloadImages } from "./assets/images";
-import { Dashboard } from "./Dashboard";
-import { useNoEnabledYields } from "./hooks/use-no-enabled-yields";
-import NoEnabledYields from "./pages/components/no-enabled-yields";
-import { Providers } from "./providers";
-import { AppContainerProvider } from "./providers/app-container";
-import { SettingsContextProvider, useSettings } from "./providers/settings";
-import type { SettingsProps, VariantProps } from "./providers/settings/types";
-import { useLoadErrorTranslations } from "./translation";
-import { Widget } from "./Widget";
+import { RouterProvider } from "react-router/dom";
+import { ApplicationRouteContentProvider } from "./app/composition/application-route-content";
+import { Providers } from "./app/composition/providers";
+import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";
+import { acquireWidgetInstanceClaim } from "./app/embedding/widget-instance-claim";
+import { WidgetInstanceReactBoundary } from "./app/embedding/widget-instance-react-boundary";
+import { applicationRoutes } from "./app/routes/application-routes";
+import { useApplicationRouteEffects } from "./app/routes/react/use-application-route-effects";
+import { ClassicRoutes } from "./app/routes/ui/classic-routes";
+import { DashboardRoutes } from "./app/routes/ui/dashboard-routes";
+import { applicationRouterAtom } from "./app/runtime/application-router";
+import { walletEnabledNetworksResultAtom } from "./features/wallet/index";
+import { useWidgetConfig } from "./features/widget-configuration/index";
+import {
+  AppContainer,
+  NoEnabledYields,
+} from "./features/widget-shell/composition";
+import { useUnderMaintenance } from "./features/widget-shell/index";
+import { UnderMaintenance } from "./features/widget-shell/views";
+import type { SKAppProps } from "./public-api/react-types";
+import type { BundledSKWidgetProps } from "./public-api/types";
+import { isLedgerDappBrowserProvider } from "./services/wallet/browser-environment";
+import { preloadImages } from "./shared/assets/images";
 
 preloadImages();
 
 const App = () => {
-  useLoadErrorTranslations();
+  const dashboardVariant = useWidgetConfig("dashboardVariant");
+  const enabledNetworks = useAtomValue(walletEnabledNetworksResultAtom);
+  const underMaintenance = useUnderMaintenance();
+  const noEnabledYields =
+    AsyncResult.isSuccess(enabledNetworks) && enabledNetworks.value.size === 0;
 
-  const { dashboardVariant } = useSettings();
+  useApplicationRouteEffects();
 
-  const noEnabledYields = useNoEnabledYields();
+  if (noEnabledYields && !underMaintenance) return <NoEnabledYields />;
 
-  if (noEnabledYields) return <NoEnabledYields />;
+  const routeContent = (() => {
+    if (underMaintenance) return <UnderMaintenance />;
+    return dashboardVariant ? <DashboardRoutes /> : <ClassicRoutes />;
+  })();
 
-  return dashboardVariant ? <Dashboard /> : <Widget />;
+  return routeContent;
 };
 
 const Root = () => (
@@ -37,61 +55,93 @@ const Root = () => (
   </Providers>
 );
 
-export type SKAppProps = SettingsProps & (VariantProps | { variant?: never });
-
-export const SKApp = (props: SKAppProps) => {
-  const variantProps: VariantProps =
-    props.variant === "zerion"
-      ? { variant: props.variant, chainModal: props.chainModal }
-      : { variant: props.variant ?? "default" };
-
-  const [router] = useState(() =>
-    createMemoryRouter([{ path: "*", Component: Root }])
-  );
+const SKAppRouter = () => {
+  const dashboardVariant = useWidgetConfig("dashboardVariant");
+  const router = useAtomValue(applicationRouterAtom);
 
   return (
-    <SettingsContextProvider {...variantProps} {...props}>
-      <AppContainerProvider
-        variant={props.dashboardVariant ? "dashboard" : "widget"}
-      >
+    <ApplicationRouteContentProvider value={<Root />}>
+      <AppContainer variant={dashboardVariant ? "dashboard" : "widget"}>
         <RouterProvider router={router} />
-      </AppContainerProvider>
-    </SettingsContextProvider>
+      </AppContainer>
+    </ApplicationRouteContentProvider>
   );
 };
 
-export type BundledSKWidgetProps = SKAppProps & {
-  ref?: RefObject<{ rerender: (newProps: BundledSKWidgetProps) => void }>;
+export const SKAppRegistryContent = ({ children }: PropsWithChildren) => (
+  <>
+    <SKAppRouter />
+    {children}
+  </>
+);
+
+const SKAppProductionContent = ({
+  children,
+  ...hostConfiguration
+}: SKAppProps) => {
+  const [isLedgerDappBrowser] = useState(isLedgerDappBrowserProvider);
+
+  return (
+    <SKAtomRegistryProvider
+      hostConfiguration={hostConfiguration}
+      isLedgerLive={isLedgerDappBrowser}
+      routes={applicationRoutes}
+    >
+      <SKAppRegistryContent>{children}</SKAppRegistryContent>
+    </SKAtomRegistryProvider>
+  );
 };
 
-const BundledSKWidget = (_props: BundledSKWidgetProps) => {
-  const [props, setProps] = useState(_props);
+export const SKApp = ({ children, ...hostConfiguration }: SKAppProps) => (
+  <WidgetInstanceReactBoundary>
+    <SKAppProductionContent {...hostConfiguration}>
+      {children}
+    </SKAppProductionContent>
+  </WidgetInstanceReactBoundary>
+);
 
-  useImperativeHandle(props.ref, () => ({
-    rerender: (newProps: BundledSKWidgetProps) => setProps(newProps),
-  }));
-
-  return <SKApp {...props} />;
-};
+const BundledSKWidget = (props: BundledSKWidgetProps) => (
+  <SKAppProductionContent {...props} />
+);
 
 export const renderSKWidget = ({
   container,
   ...rest
-}: ComponentProps<typeof SKApp> & {
+}: BundledSKWidgetProps & {
   container: Parameters<typeof ReactDOM.createRoot>[0];
 }) => {
-  if (!rest.apiKey) throw new Error("API key is required");
+  const releaseClaim = acquireWidgetInstanceClaim(
+    container.ownerDocument ?? document
+  );
+  let root: ReturnType<typeof ReactDOM.createRoot>;
 
-  const root = ReactDOM.createRoot(container);
+  try {
+    root = ReactDOM.createRoot(container);
+    let currentProps = rest;
+    let unmounted = false;
+    const render = () => root.render(<BundledSKWidget {...currentProps} />);
 
-  const appRef = createRef<{ rerender: () => void }>() as NonNullable<
-    BundledSKWidgetProps["ref"]
-  >;
+    render();
 
-  root.render(<BundledSKWidget {...rest} ref={appRef} />);
+    return {
+      rerender: (newProps: BundledSKWidgetProps) => {
+        if (unmounted) return;
+        currentProps = newProps;
+        render();
+      },
+      unmount: () => {
+        if (unmounted) return;
 
-  return {
-    rerender: (newProps: SKAppProps) =>
-      appRef.current.rerender({ ...newProps, ref: appRef }),
-  };
+        unmounted = true;
+        try {
+          root.unmount();
+        } finally {
+          releaseClaim();
+        }
+      },
+    };
+  } catch (error) {
+    releaseClaim();
+    throw error;
+  }
 };

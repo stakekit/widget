@@ -1,0 +1,17 @@
+id: no-unsafe-date-time
+language: Tsx
+severity: error
+message: Use Effect Clock or DateTime.now; unsafe wall-clock access is reserved for the synchronous WalletConnect adapter.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+  - packages/widget/tests/**/*.ts
+  - packages/widget/tests/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+  - packages/widget/tests/generated/**
+rule:
+  any:
+    - pattern: DateTime.isFutureUnsafe
+    - pattern: DateTime.isPastUnsafe
+    - pattern: DateTime.nowUnsafe

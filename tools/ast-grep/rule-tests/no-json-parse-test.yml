@@ -1,0 +1,8 @@
+id: no-json-parse
+valid:
+  - 'Schema.decodeUnknown(Schema.fromJsonString(Payload))(input)'
+  - 'JSON.stringify(value)'
+invalid:
+  - 'JSON.parse(input)'
+  - 'globalThis.JSON.parse(input)'
+  - 'const value = JSON.parse(input) as unknown'

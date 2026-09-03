@@ -1,0 +1,7 @@
+id: no-react-query-outside-provider
+valid:
+  - 'import { Effect } from "effect"'
+  - 'import type { QueryClient } from "./query-client"'
+invalid:
+  - 'import { useQuery } from "@tanstack/react-query"'
+  - 'import { QueryClient } from "@tanstack/react-query/core"'

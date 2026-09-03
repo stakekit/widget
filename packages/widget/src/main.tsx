@@ -1,6 +1,6 @@
 import ReactDOM from "react-dom/client";
-import { SKApp, type SKAppProps } from "./App";
-import type { VariantProps } from "./providers/settings/types";
+import { SKApp } from "./App";
+import type { SKAppProps, VariantProps } from "./public-api/react-types";
 import {
   rootClassName,
   toggleThemeButtonClassName,
@@ -8,15 +8,16 @@ import {
 } from "./standalone.css";
 import "./standalone.css";
 import { useLayoutEffect, useState } from "react";
-import { darkTheme, lightTheme } from "./styles/theme/themes";
+import { darkTheme, lightTheme } from "./shared/styles/theme/themes";
 
 type StandaloneVariant = Exclude<VariantProps["variant"], "zerion">;
 
 const variant: StandaloneVariant =
   import.meta.env.VITE_APP_VARIANT ?? "default";
 
-const dashboardVariant: SKAppProps["dashboardVariant"] =
-  import.meta.env.VITE_FORCE_DASHBOARD === "true";
+// TODO: TESTING ONLY!
+const dashboardVariant: SKAppProps["dashboardVariant"] = true;
+const borrowEnabled: SKAppProps["borrowEnabled"] = true;
 
 const StandaloneApp = () => {
   const [themeVariant, setThemeVariant] = useState<"dark" | "light">("dark");
@@ -33,6 +34,7 @@ const StandaloneApp = () => {
 
   const props: SKAppProps = {
     variant,
+    borrowEnabled,
     dashboardVariant,
     theme: themeVariant === "dark" ? darkTheme : lightTheme,
     apiKey: import.meta.env.VITE_API_KEY,
@@ -41,9 +43,7 @@ const StandaloneApp = () => {
       tracking: { trackEvent: console.log, trackPageView: console.log },
     }),
     ...(import.meta.env.VITE_FORCE_WALLET_CONNECT_ONLY === "true" && {
-      wagmi: {
-        forceWalletConnectOnly: true,
-      },
+      forceWalletConnectOnly: true,
     }),
   };
 

@@ -1,0 +1,12 @@
+id: no-local-storage
+valid:
+  - 'persistence.get(key)'
+  - 'const order = ["localStorage"]'
+  - 'const storage = injectedStorage'
+invalid:
+  - 'localStorage.getItem(key)'
+  - 'window.localStorage.setItem(key, value)'
+  - 'globalThis.localStorage.removeItem(key)'
+  - 'window["localStorage"].clear()'
+  - 'localStorage[key]'
+  - 'const storage = window.localStorage'

@@ -1,0 +1,69 @@
+import { useAtomValue } from "@effect/atom-react";
+import type BigNumber from "bignumber.js";
+import type { YieldAction } from "../../../../../domain/action/models";
+import type { Token } from "../../../../../domain/token/token";
+import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
+import {
+  YieldSummaryKey,
+  yieldSummaryAtom,
+} from "../../../../yield-summary/index";
+import type { ClassicTransactionFlowIntake } from "../../../model/classic-transaction-flow";
+import { useClassicFlowExecution } from "../../../react/classic-flow-route";
+
+type ActivityIntake = Extract<
+  ClassicTransactionFlowIntake,
+  { readonly _tag: "YieldActionContinuation" }
+>;
+
+type ActivityCompleteView<Action> = Pick<
+  ActivityIntake,
+  "selectedValidators" | "selectedYield"
+> & {
+  readonly inputToken: Token | null;
+  readonly selectedAction: Action;
+};
+
+export const useActivityCompleteView = <
+  Action extends {
+    readonly amount: BigNumber | string | null;
+    readonly intent: YieldAction["intent"];
+    readonly type: YieldAction["type"];
+    readonly yieldId: YieldAction["yieldId"];
+  },
+>({
+  selectedAction,
+  selectedValidators,
+  selectedYield,
+  inputToken,
+}: ActivityCompleteView<Action>) => {
+  const yieldSummary = useAtomValue(
+    yieldSummaryAtom(
+      new YieldSummaryKey({
+        yield: selectedYield,
+        validators: selectedValidators,
+        selectedProviderYieldId: selectedAction.yieldId,
+      })
+    )
+  );
+
+  return {
+    amount: defaultFormattedNumber(selectedAction.amount ?? 0),
+    inputToken: inputToken ?? null,
+    metadata: selectedYield
+      ? {
+          logoURI: selectedYield.metadata.logoURI,
+          name: selectedYield.metadata.name,
+          provider: selectedYield.provider,
+        }
+      : null,
+    network: inputToken?.symbol ?? "",
+    providerDetails: yieldSummary.providers,
+    selectedAction,
+    yieldType: yieldSummary.yieldType,
+  };
+};
+
+export const useActivityComplete = () => {
+  const execution = useClassicFlowExecution();
+  return useAtomValue(execution.activityCompleteViewAtom);
+};

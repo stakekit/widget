@@ -1,0 +1,85 @@
+import { useTranslation } from "react-i18next";
+import {
+  getRewardRateBreakdown,
+  type RewardRateBreakdownItem,
+  type YieldRewardRate,
+} from "../../../../../domain/earn/reward-rate";
+import { getRewardRateFormatted } from "../../../../../shared/lib/formatters";
+import { Box } from "../../../../../shared/ui/primitives/box";
+import { Text } from "../../../../../shared/ui/primitives/typography/text";
+
+const getLabelKey = (key: RewardRateBreakdownItem["key"]) => {
+  switch (key) {
+    case "native":
+      return "details.apy_composition.native";
+    case "protocol_incentive":
+      return "details.apy_composition.protocol_incentive";
+    case "campaign":
+      return "details.apy_composition.campaign";
+  }
+};
+
+export const RewardRateBreakdown = ({
+  rewardRate,
+  showUpToCampaign = false,
+  title,
+  testId,
+}: {
+  rewardRate: YieldRewardRate | null | undefined;
+  showUpToCampaign?: boolean;
+  title?: string;
+  testId?: string;
+}) => {
+  const { t } = useTranslation();
+
+  const items = getRewardRateBreakdown(rewardRate, {
+    showUpToCampaign,
+  });
+
+  if (items.length < 2) {
+    return null;
+  }
+
+  return (
+    <Box
+      display="flex"
+      flexDirection="column"
+      gap="2"
+      marginTop="3"
+      data-testid={testId}
+    >
+      {title ? (
+        <Text variant={{ type: "muted", weight: "normal" }}>{title}</Text>
+      ) : null}
+
+      {items.map((item) => {
+        const value = getRewardRateFormatted({
+          rewardRate: item.rate,
+        });
+
+        return (
+          <Box
+            key={item.key}
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            gap="3"
+            data-testid={
+              testId ? `${testId}__${item.key.replaceAll("_", "-")}` : undefined
+            }
+          >
+            <Text variant={{ type: "muted", weight: "normal" }}>
+              {t(getLabelKey(item.key))}
+            </Text>
+
+            <Text variant={{ type: "muted", weight: "normal" }}>
+              {item.isUpTo
+                ? t("details.apy_composition.up_to", { value })
+                : value}
+            </Text>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+};

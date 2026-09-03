@@ -1,5 +1,6 @@
-import { test as base, describe, expect, vi } from "vitest";
+import { test as base, describe, expect, vi } from "@effect/vitest";
 import { worker } from "../mocks/worker";
+import { makeFixtureMethods } from "./effect-test";
 
 export type TestWorker = typeof worker;
 
@@ -24,6 +25,6 @@ const test = base.extend<{ worker: typeof worker }>({
   ],
 });
 
-export const it = test;
+export const it = makeFixtureMethods(test);
 
 export { describe, expect, vi };

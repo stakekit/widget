@@ -1,0 +1,28 @@
+const assetsUrl = "https://assets.stakek.it";
+
+export const config = {
+  appName: "Yield.xyz",
+  appIcon: `${assetsUrl}/stakekit/sk-icon_320x320.png`,
+  appUrl: "https://yield.xyz",
+  currency: "USD",
+  walletConnectV2: {
+    projectId: "10a5257c04d1d3097ff768a139c95f50",
+  },
+  appPrefix: "sk-widget",
+  env: {
+    apiUrl: import.meta.env.VITE_API_URL ?? "https://api.stakek.it/",
+    borrowApiUrl:
+      import.meta.env.VITE_BORROW_API_URL ?? "https://borrow.yield.xyz",
+    yieldsApiUrl:
+      import.meta.env.VITE_YIELDS_API_URL ?? "https://api.yield.xyz",
+    isTestMode: import.meta.env.MODE === "test",
+    isDevMode: import.meta.env.MODE === "development",
+    forceAddress: import.meta.env.VITE_FORCE_ADDRESS,
+  },
+  assetsUrl,
+  zerion: {
+    tracking: "2cbed59baa70c46f7cadef7b05eb1bc3",
+    iconsByAddress: "https://token-icons.s3.amazonaws.com/",
+    iconsByNetwork: "https://chain-icons.s3.amazonaws.com/",
+  },
+} as const;

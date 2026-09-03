@@ -1,33 +1,77 @@
 import { faker } from "@faker-js/faker";
+import { DateTime, Schema } from "effect";
+import { ActionTransaction, YieldAction } from "../../src/domain/action/models";
 import type {
-  YieldActionDto,
-  YieldTransactionDto,
-} from "../../src/domain/types/action";
-import { EvmNetworks } from "../../src/domain/types/chains/networks";
-import type { YieldBalanceDto } from "../../src/domain/types/positions";
-import type { YieldRewardRateDto } from "../../src/domain/types/reward-rate";
-import type { Yield } from "../../src/domain/types/yields";
+  EarnBalance,
+  EarnProvider,
+  EarnValidator,
+} from "../../src/domain/earn/models";
+import {
+  EarnProvider as EarnProviderSchema,
+  EarnYield,
+} from "../../src/domain/earn/models";
+import type { YieldRewardRate } from "../../src/domain/earn/reward-rate";
+import { exactDecimal } from "../../src/domain/finance/exact";
 import type {
   TokenDto as LegacyTokenDto,
   YieldDto as LegacyYieldDto,
-} from "../../src/generated/api/legacy";
-import type {
-  ValidatorDto,
-  ProviderDto as YieldApiProviderDto,
-} from "../../src/generated/api/yield";
+} from "../generated/legacy-api-types";
+import type { YieldDto as YieldApiYieldDto } from "../generated/yield-api-types";
 
-type YieldApiYieldDto = Omit<Yield, "provider">;
-
+type ValidatorDto = typeof EarnValidator.Encoded;
+type YieldApiProviderDto = typeof EarnProvider.Encoded;
 const apyFaker = () => faker.number.float({ min: 0, max: 0.05 });
 
+type ExactDecimalFixtureInput = Parameters<typeof exactDecimal>[0];
+type YieldRewardComponent = YieldRewardRate["components"][number];
+type YieldRewardComponentFixtureInput = Omit<YieldRewardComponent, "rate"> & {
+  readonly rate: ExactDecimalFixtureInput;
+};
+type YieldRewardRateFixtureInput = Omit<
+  Partial<YieldRewardRate>,
+  "components" | "total"
+> & {
+  readonly components?: ReadonlyArray<YieldRewardComponentFixtureInput>;
+  readonly total?: ExactDecimalFixtureInput;
+};
+
 export const yieldRewardRateFixture = (
-  overrides?: Partial<YieldRewardRateDto>
-): YieldRewardRateDto => ({
+  overrides?: YieldRewardRateFixtureInput
+): YieldRewardRate => {
+  const { components = [], total = apyFaker(), ...rest } = overrides ?? {};
+
+  return {
+    rateType: "APY",
+    ...rest,
+    total: exactDecimal(total),
+    components: components.map((component) => ({
+      ...component,
+      rate: exactDecimal(component.rate),
+    })),
+  };
+};
+
+const yieldRewardRateDtoFixture = (): YieldApiYieldDto["rewardRate"] => ({
   total: apyFaker(),
   rateType: "APY",
   components: [],
-  ...overrides,
 });
+
+export const encodeYieldRewardRateFixture = (
+  rewardRate:
+    | YieldRewardRateFixtureInput
+    | NonNullable<YieldApiYieldDto["rewardRate"]>
+    | NonNullable<ValidatorDto["rewardRate"]>
+): NonNullable<ValidatorDto["rewardRate"]> => {
+  return {
+    rateType: rewardRate.rateType ?? "APY",
+    total: exactDecimal(rewardRate.total ?? apyFaker()).toNumber(),
+    components: (rewardRate.components ?? []).map((component) => ({
+      ...component,
+      rate: exactDecimal(component.rate).toNumber(),
+    })),
+  };
+};
 
 const yieldApiTokenFixture = (
   overrides?: Partial<YieldApiYieldDto["token"]>
@@ -43,16 +87,17 @@ const yieldApiTokenFixture = (
 
 export const yieldApiProviderFixture = (
   overrides?: Partial<YieldApiProviderDto>
-): YieldApiProviderDto => ({
-  id: "stakekit",
-  name: "StakeKit",
-  description: "",
-  logoURI: "https://assets.stakek.it/providers/stakekit.svg",
-  website: "https://stakek.it",
-  tvlUsd: null,
-  type: "protocol",
-  ...overrides,
-});
+): EarnProvider =>
+  Schema.decodeSync(EarnProviderSchema)({
+    id: "stakekit",
+    name: "StakeKit",
+    description: "",
+    logoURI: "https://assets.stakek.it/app/composition/providers/stakekit.svg",
+    website: "https://stakek.it",
+    tvlUsd: null,
+    type: "protocol",
+    ...overrides,
+  });
 
 type YieldRiskSummaryDto = NonNullable<YieldApiYieldDto["risk"]>;
 type YieldRiskEntryDto = YieldRiskSummaryDto["ratings"][number];
@@ -72,7 +117,7 @@ export const yieldRiskSummaryFixture = (
   ...overrides,
 });
 
-export const yieldApiYieldFixture = (
+export const yieldApiYieldDtoFixture = (
   overrides?: Partial<YieldApiYieldDto>
 ): YieldApiYieldDto => {
   const token = overrides?.token ?? yieldApiTokenFixture();
@@ -85,7 +130,7 @@ export const yieldApiYieldFixture = (
     outputToken: overrides?.outputToken ?? token,
     token,
     tokens,
-    rewardRate: yieldRewardRateFixture(overrides?.rewardRate),
+    rewardRate: overrides?.rewardRate ?? yieldRewardRateDtoFixture(),
     status: { enter: true, exit: true },
     metadata: {
       name: "Ethereum Staking",
@@ -115,28 +160,53 @@ export const yieldApiYieldFixture = (
         },
       },
     },
+    prime: false,
     providerId: "stakekit",
-    validators: [],
     ...overrides,
-  } as YieldApiYieldDto;
+  };
+};
+
+export const yieldApiYieldFixture = (
+  overrides?: Omit<Partial<YieldApiYieldDto>, "rewardRate"> & {
+    readonly rewardRate?:
+      | YieldRewardRateFixtureInput
+      | NonNullable<YieldApiYieldDto["rewardRate"]>;
+  }
+): EarnYield => {
+  const { rewardRate, ...rest } = overrides ?? {};
+  const wire = yieldApiYieldDtoFixture(rest);
+
+  return Schema.decodeSync(EarnYield)(
+    rewardRate
+      ? { ...wire, rewardRate: encodeYieldRewardRateFixture(rewardRate) }
+      : wire
+  );
 };
 
 export const yieldApiValidatorFixture = (
-  overrides?: Partial<ValidatorDto>
-): ValidatorDto => ({
-  address: faker.finance.ethereumAddress(),
-  commission: 0,
-  logoURI: "https://assets.stakek.it/validators/default.png",
-  name: "StakeKit Validator",
-  preferred: false,
-  rewardRate: yieldRewardRateFixture({ rateType: "APR" }),
-  status: "active",
-  ...overrides,
-});
+  overrides?: Omit<Partial<ValidatorDto>, "rewardRate"> & {
+    readonly rewardRate?:
+      | YieldRewardRateFixtureInput
+      | NonNullable<ValidatorDto["rewardRate"]>;
+  }
+): ValidatorDto => {
+  const { rewardRate, ...rest } = overrides ?? {};
+
+  return {
+    address: faker.finance.ethereumAddress(),
+    commission: 0,
+    logoURI: "https://assets.stakek.it/validators/default.png",
+    name: "StakeKit Validator",
+    preferred: false,
+    rewardRate: encodeYieldRewardRateFixture(rewardRate ?? { rateType: "APR" }),
+    status: "active",
+    ...rest,
+  };
+};
 
 export const yieldBalanceFixture = (
-  overrides?: Partial<YieldBalanceDto>
-): YieldBalanceDto => {
+  overrides?: Partial<typeof EarnBalance.Encoded>
+): typeof EarnBalance.Encoded => {
   const token = overrides?.token ?? yieldApiYieldFixture().token;
 
   return {
@@ -148,7 +218,7 @@ export const yieldBalanceFixture = (
     token,
     isEarning: true,
     ...overrides,
-  } as YieldBalanceDto;
+  } as typeof EarnBalance.Encoded;
 };
 
 export const legacyYieldFixture = (
@@ -158,7 +228,7 @@ export const legacyYieldFixture = (
     name: "Ethereum",
     symbol: "ETH",
     decimals: 18,
-    network: EvmNetworks.Ethereum,
+    network: "ethereum",
     coinGeckoId: "ethereum",
     logoURI: "https://assets.stakek.it/tokens/eth.svg",
   };
@@ -197,7 +267,8 @@ export const legacyYieldFixture = (
         name: "StakeKit",
         description: "",
         externalLink: "https://stakek.it",
-        logoURI: "https://assets.stakek.it/providers/stakekit.svg",
+        logoURI:
+          "https://assets.stakek.it/app/composition/providers/stakekit.svg",
       },
       revshare: { enabled: false },
       rewardClaiming: "auto",
@@ -224,35 +295,49 @@ export const yieldApiValidatorsFixture = (
     yieldApiValidatorFixture(validator)
   );
 
-export const yieldApiTransactionFixture = (
-  overrides?: Partial<YieldTransactionDto>
-): YieldTransactionDto =>
-  ({
-    id: faker.string.uuid(),
-    title: "Stake",
-    network: "ethereum",
-    status: "CREATED",
-    type: "STAKE",
-    hash: null,
-    createdAt: new Date(0).toISOString(),
-    broadcastedAt: null,
-    signedTransaction: null,
-    unsignedTransaction: null,
-    stepIndex: 0,
-    annotatedTransaction: null,
-    structuredTransaction: null,
-    explorerUrl: null,
-    isMessage: false,
-    ...overrides,
-  }) as YieldTransactionDto;
+export const yieldApiTransactionDtoFixture = (
+  overrides?: Partial<typeof ActionTransaction.Encoded>
+): typeof ActionTransaction.Encoded => ({
+  id: faker.string.uuid(),
+  title: "Stake",
+  network: "ethereum",
+  status: "CREATED",
+  type: "STAKE",
+  hash: null,
+  createdAt: "2100-01-01T00:00:00.000Z",
+  broadcastedAt: null,
+  signedTransaction: null,
+  unsignedTransaction: null,
+  stepIndex: 0,
+  annotatedTransaction: null,
+  structuredTransaction: null,
+  explorerUrl: null,
+  isMessage: false,
+  ...overrides,
+});
 
-export const yieldApiActionFixture = (
-  overrides?: Partial<YieldActionDto>
-): YieldActionDto => {
+type TransactionFixtureOverrides = Partial<Omit<ActionTransaction, "id">> & {
+  readonly id?: string;
+};
+
+export const yieldApiTransactionFixture = (
+  overrides?: TransactionFixtureOverrides
+): ActionTransaction => {
+  const transaction = Schema.decodeSync(ActionTransaction)(
+    yieldApiTransactionDtoFixture()
+  );
+
+  return {
+    ...transaction,
+    ...overrides,
+  } as ActionTransaction;
+};
+
+export const yieldApiActionDtoFixture = (
+  overrides?: Partial<typeof YieldAction.Encoded>
+): typeof YieldAction.Encoded => {
   const type = overrides?.type ?? "STAKE";
-  const intent =
-    overrides?.intent ??
-    (type === "STAKE" ? "enter" : type === "UNSTAKE" ? "exit" : "manage");
+  const intent = overrides?.intent ?? getYieldActionIntent(type);
 
   return {
     id: faker.string.uuid(),
@@ -264,13 +349,79 @@ export const yieldApiActionFixture = (
     amountRaw: null,
     amountUsd: null,
     transactions: [
-      yieldApiTransactionFixture({ type: type as YieldTransactionDto["type"] }),
+      yieldApiTransactionDtoFixture({
+        type: type as ActionTransaction["type"],
+      }),
     ],
     executionPattern: "synchronous",
     rawArguments: null,
-    createdAt: new Date(0).toISOString(),
+    createdAt: "2100-01-01T00:00:00.000Z",
     completedAt: null,
     status: "CREATED",
     ...overrides,
-  } as YieldActionDto;
+  };
+};
+
+type ActionFixtureOverrides = Partial<
+  Omit<
+    YieldAction,
+    | "address"
+    | "amount"
+    | "amountRaw"
+    | "amountUsd"
+    | "completedAt"
+    | "createdAt"
+    | "id"
+    | "rawArguments"
+    | "transactions"
+    | "yieldId"
+  >
+> & {
+  readonly address?: string;
+  readonly amount?: typeof YieldAction.Encoded.amount;
+  readonly amountRaw?: typeof YieldAction.Encoded.amountRaw;
+  readonly amountUsd?: typeof YieldAction.Encoded.amountUsd;
+  readonly completedAt?: DateTime.Utc | null;
+  readonly createdAt?: DateTime.Utc;
+  readonly id?: string;
+  readonly rawArguments?: typeof YieldAction.Encoded.rawArguments;
+  readonly transactions?: ReadonlyArray<ActionTransaction>;
+  readonly yieldId?: string;
+};
+
+export const yieldApiActionFixture = (
+  overrides?: ActionFixtureOverrides
+): YieldAction => {
+  const type = overrides?.type ?? "STAKE";
+  const intent = overrides?.intent ?? getYieldActionIntent(type);
+  const { completedAt, createdAt, transactions, ...rest } = overrides ?? {};
+
+  return Schema.decodeSync(YieldAction)({
+    ...yieldApiActionDtoFixture(),
+    ...rest,
+    ...(completedAt === undefined
+      ? {}
+      : {
+          completedAt:
+            completedAt === null ? null : DateTime.formatIso(completedAt),
+        }),
+    ...(createdAt === undefined
+      ? {}
+      : { createdAt: DateTime.formatIso(createdAt) }),
+    intent,
+    ...(transactions
+      ? {
+          transactions: transactions.map((transaction) =>
+            Schema.encodeSync(ActionTransaction)(transaction)
+          ),
+        }
+      : {}),
+    type,
+  });
+};
+
+const getYieldActionIntent = (type: YieldAction["type"]) => {
+  if (type === "STAKE") return "enter" as const;
+  if (type === "UNSTAKE") return "exit" as const;
+  return "manage" as const;
 };
