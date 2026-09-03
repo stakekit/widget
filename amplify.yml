@@ -3,7 +3,7 @@ frontend:
   phases:
     preBuild:
       commands:
-        - curl https://mise.run | MISE_VERSION=v2026.5.6 sh
+        - curl https://mise.run | MISE_VERSION=v2026.7.17 sh
         - export PATH="$HOME/.local/bin:$PATH"
         - export PATH="$HOME/.local/share/mise/shims:$PATH"
         - mise install
