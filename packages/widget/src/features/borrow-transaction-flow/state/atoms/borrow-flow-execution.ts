@@ -35,6 +35,27 @@ export const makeBorrowFlowExecutionScopeAtom = <E>(
       outcome._tag === "Acquired" ? outcome.execution.states : Stream.never,
     label: "borrowFlowExecutionScope",
     makeValue: ({ handleAtom, stateAtom }) => {
+      // Read the existing workflow afresh on completion-route mount. Do not
+      // reacquire its execution or consult the potentially lagging viewAtom.
+      const makeCompletionStateAtom = () =>
+        walletRuntime
+          .atom((context) =>
+            Stream.unwrap(
+              context
+                .result(handleAtom)
+                .pipe(
+                  Effect.map((outcome) =>
+                    outcome._tag === "Acquired"
+                      ? outcome.execution.states.pipe(
+                          Stream.map((state) => state._tag === "Completed")
+                        )
+                      : Stream.succeed(false)
+                  )
+                )
+            )
+          )
+          .pipe(Atom.withLabel("borrowFlowCompletionState"));
+
       const viewAtom = Atom.make((get) => {
         const result = get(stateAtom);
         const state = Option.getOrNull(AsyncResult.value(result));
@@ -96,6 +117,7 @@ export const makeBorrowFlowExecutionScopeAtom = <E>(
         facade: {
           backAtom,
           finishAtom,
+          makeCompletionStateAtom,
           viewAtom,
           workflowCommandAtom,
         },

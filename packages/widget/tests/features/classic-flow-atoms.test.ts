@@ -15,7 +15,7 @@ import {
   isActiveClassicTransactionFlowPathAtom,
   startClassicTransactionFlowAtom,
 } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow";
-import { currentClassicFlowSessionRootAtom } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow-session";
+import { classicFlowSessionRootAtomFamily } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow-session";
 import type { ClassicFlowSessionHandle } from "../../src/features/classic-transaction-flow/state/orchestration/classic-flow-session";
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import { toWidgetPath } from "../../src/services/navigation/widget-navigation";
@@ -151,9 +151,9 @@ describe("Classic Flow Atom bridge", () => {
           registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
         ).toBe(true);
 
-        const rootAtom = registry.get(currentClassicFlowSessionRootAtom);
-        if (!rootAtom)
-          throw new Error("Expected a Classic Flow Session root Atom");
+        const session = registry.get(currentClassicFlowSessionAtom);
+        if (!session) throw new Error("Expected a Classic Flow Session");
+        const rootAtom = classicFlowSessionRootAtomFamily(session);
         const releaseRoot = registry.mount(rootAtom);
         yield* Effect.promise(() =>
           vi.waitFor(() => expect(probes.acquired).toBe(1))

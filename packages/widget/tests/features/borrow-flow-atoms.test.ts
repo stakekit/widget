@@ -17,7 +17,7 @@ import {
   startBorrowTransactionFlowAtom,
 } from "../../src/features/borrow-transaction-flow/state/atoms/borrow-flow";
 import {
-  currentBorrowFlowSessionRootAtom,
+  borrowFlowSessionRootAtomFamily,
   makeBorrowFlowExecutionScope,
   makeBorrowFlowReviewScope,
 } from "../../src/features/borrow-transaction-flow/state/atoms/borrow-flow-session";
@@ -147,9 +147,9 @@ describe("Borrow Flow Atom bridge", () => {
         );
         expect(startInputs).toEqual([intake]);
 
-        const rootAtom = registry.get(currentBorrowFlowSessionRootAtom);
-        if (!rootAtom)
-          throw new Error("Expected a Borrow Flow Session root Atom");
+        const session = registry.get(currentBorrowFlowSessionAtom);
+        if (!session) throw new Error("Expected a Borrow Flow Session");
+        const rootAtom = borrowFlowSessionRootAtomFamily(session);
         const releaseRoot = registry.mount(rootAtom);
         yield* Effect.promise(() =>
           vi.waitFor(() => expect(probes.acquired).toBe(1))
@@ -245,8 +245,7 @@ describe("Borrow Flow Atom bridge", () => {
           ],
         });
 
-        const sessionRootAtom = registry.get(currentBorrowFlowSessionRootAtom);
-        if (!sessionRootAtom) throw new Error("Expected a Session root Atom");
+        const sessionRootAtom = borrowFlowSessionRootAtomFamily(session);
         const releaseSession = registry.mount(sessionRootAtom);
         const sessionModule = registry.get(sessionRootAtom);
 

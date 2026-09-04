@@ -9,8 +9,9 @@ import { ActionCommand } from "../../src/domain/action/models";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { startClassicTransactionFlowAtom } from "../../src/features/classic-transaction-flow/index";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import { currentClassicFlowSessionAtom } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow";
 import {
-  currentClassicFlowSessionRootAtom,
+  classicFlowSessionRootAtomFamily,
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
 } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow-session";
@@ -106,9 +107,7 @@ const settings = getTestWidgetConfig({
 });
 
 const reviewScopeAtomFamily = Atom.family(
-  (
-    rootAtom: NonNullable<Atom.Type<typeof currentClassicFlowSessionRootAtom>>
-  ) =>
+  (rootAtom: ReturnType<typeof classicFlowSessionRootAtomFamily>) =>
     (() => {
       let reviewAtom: ReturnType<typeof makeClassicFlowReviewScope> | undefined;
 
@@ -120,8 +119,10 @@ const reviewScopeAtomFamily = Atom.family(
     })()
 );
 const sessionReviewFacadeAtom = Atom.make((get) => {
-  const rootAtom = get(currentClassicFlowSessionRootAtom);
-  return rootAtom ? get(reviewScopeAtomFamily(rootAtom)) : null;
+  const session = get(currentClassicFlowSessionAtom);
+  return session
+    ? get(reviewScopeAtomFamily(classicFlowSessionRootAtomFamily(session)))
+    : null;
 });
 const sessionReviewViewAtom = Atom.make((get) => {
   const review = get(sessionReviewFacadeAtom);
@@ -145,10 +146,10 @@ const confirmSessionAtom = Atom.fnSync(
   { initialValue: undefined }
 );
 const sessionAttachedActionAtom = Atom.make((get) => {
-  const rootAtom = get(currentClassicFlowSessionRootAtom);
-  if (!rootAtom) return null;
+  const session = get(currentClassicFlowSessionAtom);
+  if (!session) return null;
 
-  const flow = get(rootAtom);
+  const flow = get(classicFlowSessionRootAtomFamily(session));
   const execution = get(makeClassicFlowExecutionScope(flow));
   return AsyncResult.getOrElse(get(execution.availabilityAtom), () => null);
 });

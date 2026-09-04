@@ -3,10 +3,7 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import { makeScopedEffectAtom } from "../../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
 import type { BorrowFlowSession } from "../../model/borrow-transaction-flow";
-import {
-  borrowTransactionFlowServiceAtom,
-  currentBorrowFlowSessionAtom,
-} from "./borrow-flow";
+import { borrowTransactionFlowServiceAtom } from "./borrow-flow";
 import { makeBorrowFlowExecutionScopeAtom } from "./borrow-flow-execution";
 import { makeBorrowFlowReviewScopeAtom } from "./borrow-flow-review";
 
@@ -49,11 +46,6 @@ type BorrowFlowExecutionModule = Atom.Type<
 >;
 export type BorrowFlowExecutionFacade = BorrowFlowExecutionModule["facade"];
 
-const borrowFlowSessionRootAtomFamily = Atom.family(
+export const borrowFlowSessionRootAtomFamily = Atom.family(
   makeBorrowFlowSessionModule
 );
-
-export const currentBorrowFlowSessionRootAtom = Atom.make((get) => {
-  const session = get(currentBorrowFlowSessionAtom);
-  return session ? borrowFlowSessionRootAtomFamily(session) : null;
-}).pipe(Atom.withLabel("currentBorrowFlowSessionRootAtom"));

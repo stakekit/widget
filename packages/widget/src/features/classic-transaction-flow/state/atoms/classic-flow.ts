@@ -19,15 +19,24 @@ export const classicTransactionFlowServiceAtom = walletRuntime
   .atom(Effect.service(ClassicTransactionFlowService))
   .pipe(Atom.keepAlive, Atom.withLabel("classicTransactionFlowServiceAtom"));
 
-const currentClassicFlowSessionResultAtom = walletRuntime
-  .atom((context) =>
-    Stream.unwrap(
-      context
-        .result(classicTransactionFlowServiceAtom)
-        .pipe(Effect.map((service) => service.currentSession))
+// Route guards need a fresh replay on each mount, not a retained projection
+// that may still describe the session before navigation.
+export const makeClassicFlowRouteSessionAtom = () =>
+  walletRuntime
+    .atom((context) =>
+      Stream.unwrap(
+        context
+          .result(classicTransactionFlowServiceAtom)
+          .pipe(Effect.map((service) => service.currentSession))
+      )
     )
-  )
-  .pipe(Atom.keepAlive, Atom.withLabel("currentClassicFlowSessionResultAtom"));
+    .pipe(Atom.withLabel("classicFlowRouteSession"));
+
+const currentClassicFlowSessionResultAtom =
+  makeClassicFlowRouteSessionAtom().pipe(
+    Atom.keepAlive,
+    Atom.withLabel("currentClassicFlowSessionResultAtom")
+  );
 
 export const currentClassicFlowSessionAtom = Atom.make((get) =>
   AsyncResult.getOrElse(get(currentClassicFlowSessionResultAtom), () => null)
