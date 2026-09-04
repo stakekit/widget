@@ -5,9 +5,9 @@ project vocabulary, not implementation structure.
 
 ## Embedding
 
-**Widget Instance**: A mounted StakeKit Widget within a browser document. A
-document may contain one Widget Instance at a time; sequential instances are
-supported.
+**Widget Instance**: A mounted StakeKit Widget within a browser document. The
+Widget is designed for one instance at a time, though concurrent mounts are not
+blocked at runtime; sequential instances are fully supported.
 
 **Application Runtime Generation**: The continuous application-state lifetime
 from a Widget Instance's mount through its unmount.

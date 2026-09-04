@@ -3,7 +3,6 @@ import type { ComponentProps } from "react";
 import { type RenderOptions, render } from "vitest-browser-react";
 import { type SKApp, SKAppRegistryContent } from "../../src/App";
 import { WidgetConfigBoundaryAdapter } from "../../src/app/composition/providers/widget-config-binding";
-import { WidgetInstanceReactBoundary } from "../../src/app/embedding/widget-instance-react-boundary";
 import { applicationRoutes } from "../../src/app/routes/application-routes";
 import { applicationRuntimeInitAtom } from "../../src/app/runtime/application-runtime-init";
 import { walletConnectorSourceRuntime } from "../../src/app/runtime/wallet-connector-source-runtime";
@@ -31,25 +30,23 @@ const renderApp = (opts?: {
       ] as const)
     : [];
   const App = (
-    <WidgetInstanceReactBoundary>
-      <RegistryProvider
-        initialValues={[
-          [
-            applicationRuntimeInitAtom,
-            {
-              hostConfiguration,
-              isLedgerLive: false,
-              routes: applicationRoutes,
-            },
-          ],
-          ...connectorSourceInitialValues,
-        ]}
-      >
-        <WidgetConfigBoundaryAdapter hostConfiguration={hostConfiguration}>
-          <SKAppRegistryContent>{children}</SKAppRegistryContent>
-        </WidgetConfigBoundaryAdapter>
-      </RegistryProvider>
-    </WidgetInstanceReactBoundary>
+    <RegistryProvider
+      initialValues={[
+        [
+          applicationRuntimeInitAtom,
+          {
+            hostConfiguration,
+            isLedgerLive: false,
+            routes: applicationRoutes,
+          },
+        ],
+        ...connectorSourceInitialValues,
+      ]}
+    >
+      <WidgetConfigBoundaryAdapter hostConfiguration={hostConfiguration}>
+        <SKAppRegistryContent>{children}</SKAppRegistryContent>
+      </WidgetConfigBoundaryAdapter>
+    </RegistryProvider>
   );
 
   return render(App, opts?.options);

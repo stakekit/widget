@@ -1,10 +1,4 @@
-import {
-  act,
-  Component,
-  type PropsWithChildren,
-  type ReactNode,
-  StrictMode,
-} from "react";
+import { act, type PropsWithChildren, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "../utils/test-utils.dom.tsx";
@@ -51,28 +45,9 @@ vi.mock("../../src/shared/ui/primitives/box", () => ({
   Box: ({ children }: PropsWithChildren) => children,
 }));
 
-import { renderSKWidget, SKApp } from "../../src/App";
+import { type RenderedSKWidget, renderSKWidget, SKApp } from "../../src/App";
 
 const originalHref = window.location.href;
-
-class MountErrorBoundary extends Component<
-  PropsWithChildren<{ readonly onError: (error: unknown) => void }>,
-  { readonly failed: boolean }
-> {
-  override state = { failed: false };
-
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-
-  override componentDidCatch(error: unknown) {
-    this.props.onError(error);
-  }
-
-  override render(): ReactNode {
-    return this.state.failed ? <div>mount rejected</div> : this.props.children;
-  }
-}
 
 describe("Widget Instance lifecycle", () => {
   beforeEach(() => {
@@ -83,27 +58,16 @@ describe("Widget Instance lifecycle", () => {
     window.history.replaceState({}, "", originalHref);
   });
 
-  it("rejects a second package mount before its providers initialize", async () => {
+  it("mounts concurrent package instances in the same document", async () => {
     const first = await render(<SKApp apiKey="first-api-key" />);
-    const onError = vi.fn<(error: unknown) => void>();
-    const providerCallCount = providersRendered.mock.calls.length;
-
-    const second = await render(
-      <MountErrorBoundary onError={onError}>
-        <SKApp apiKey="second-api-key" />
-      </MountErrorBoundary>
-    );
+    const second = await render(<SKApp apiKey="second-api-key" />);
 
     expect(first.container.textContent).toContain("active widget");
-    expect(second.container.textContent).toContain("mount rejected");
-    expect(providersRendered).toHaveBeenCalledTimes(providerCallCount);
-    expect(onError).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: "StakeKitWidgetInstanceAlreadyMountedError",
-        message:
-          "Only one StakeKit Widget may be mounted in a browser document at a time.",
-      })
-    );
+    expect(second.container.textContent).toContain("active widget");
+
+    second.unmount();
+    expect(first.container.textContent).toContain("active widget");
+    first.unmount();
   });
 
   it("supports a clean sequential package remount", async () => {
@@ -158,7 +122,7 @@ describe("Widget Instance lifecycle", () => {
     expect(app.container.textContent).toContain("active widget");
   });
 
-  it("claims the document that owns the package mount container", async () => {
+  it("supports mounting across different documents", async () => {
     const mainDocumentApp = await render(<SKApp apiKey="main-api-key" />);
     const secondaryDocument = document.implementation.createHTMLDocument();
     const secondaryContainer = secondaryDocument.createElement("div");
@@ -175,10 +139,12 @@ describe("Widget Instance lifecycle", () => {
     act(() => secondaryRoot.unmount());
   });
 
-  it("accepts a bundled API key change and keeps the claim until unmount", async () => {
+  it("accepts a bundled API key change and supports concurrent bundled mounts", async () => {
     const container = document.createElement("div");
-    document.body.append(container);
-    let controller: ReturnType<typeof renderSKWidget>;
+    const otherContainer = document.createElement("div");
+    document.body.append(container, otherContainer);
+    let controller: RenderedSKWidget;
+    let otherController: RenderedSKWidget | undefined;
 
     try {
       await act(async () => {
@@ -191,17 +157,24 @@ describe("Widget Instance lifecycle", () => {
       expect(
         container.querySelector('[data-testid="bundled-api-key"]')?.textContent
       ).toBe("updated-api-key");
-      expect(() =>
-        renderSKWidget({
+
+      await act(async () => {
+        otherController = renderSKWidget({
           apiKey: "other-api-key",
-          container: document.createElement("div"),
-        })
-      ).toThrow(
-        "Only one StakeKit Widget may be mounted in a browser document at a time."
-      );
+          container: otherContainer,
+        });
+      });
+      expect(
+        otherContainer.querySelector('[data-testid="bundled-api-key"]')
+          ?.textContent
+      ).toBe("other-api-key");
     } finally {
-      act(() => controller.unmount());
+      act(() => {
+        controller.unmount();
+        otherController?.unmount();
+      });
       container.remove();
+      otherContainer.remove();
     }
   });
 
@@ -226,11 +199,10 @@ describe("Widget Instance lifecycle", () => {
       container.remove();
     }
   });
-
   it("ignores rerender after the bundled Widget Instance unmounts", async () => {
     const container = document.createElement("div");
     document.body.append(container);
-    let controller: ReturnType<typeof renderSKWidget>;
+    let controller: RenderedSKWidget;
 
     await act(async () => {
       controller = renderSKWidget({ apiKey: "api-key", container });
@@ -243,37 +215,28 @@ describe("Widget Instance lifecycle", () => {
     container.remove();
   });
 
-  it("releases the package claim after runtime cleanup", async () => {
+  it("supports mounting a bundled widget during runtime cleanup", async () => {
     const app = await render(<SKApp apiKey="api-key" />);
-    let cleanupMount: ReturnType<typeof renderSKWidget> | undefined;
-    let cleanupMountError: unknown;
+    let cleanupMount: RenderedSKWidget | undefined;
+    const cleanupContainer = document.createElement("div");
+    document.body.append(cleanupContainer);
 
     runtimeReleased.mockImplementation(() => {
-      try {
-        cleanupMount = renderSKWidget({
-          apiKey: "cleanup-api-key",
-          container: document.createElement("div"),
-        });
-      } catch (error) {
-        cleanupMountError = error;
-      }
+      cleanupMount = renderSKWidget({
+        apiKey: "cleanup-api-key",
+        container: cleanupContainer,
+      });
     });
 
     app.unmount();
-    cleanupMount?.unmount();
 
-    expect(cleanupMount).toBeUndefined();
-    expect(cleanupMountError).toMatchObject({
-      name: "StakeKitWidgetInstanceAlreadyMountedError",
-    });
+    expect(cleanupMount).toBeDefined();
+    expect(
+      cleanupContainer.querySelector('[data-testid="bundled-api-key"]')
+        ?.textContent
+    ).toBe("cleanup-api-key");
 
-    let remountedController: ReturnType<typeof renderSKWidget>;
-    await act(async () => {
-      remountedController = renderSKWidget({
-        apiKey: "remount-api-key",
-        container: document.createElement("div"),
-      });
-    });
-    act(() => remountedController.unmount());
+    act(() => cleanupMount?.unmount());
+    cleanupContainer.remove();
   });
 });
