@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.284](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.283...@stakekit/widget@0.0.284) (2026-09-04)
+
+
+### Bug Fixes
+
+* **widget:** wait for session atoms before redirecting transaction flows ([#560](https://github.com/stakekit/widget/issues/560)) ([ee1c5b6](https://github.com/stakekit/widget/commit/ee1c5b6c016f388957495b7d08928e55c946fc90))
+
 ## [0.0.283](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.282...@stakekit/widget@0.0.283) (2026-09-03)
 
 
