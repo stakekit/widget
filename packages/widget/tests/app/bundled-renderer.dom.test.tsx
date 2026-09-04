@@ -74,34 +74,24 @@ describe("bundled widget renderer", () => {
     widget.unmount();
   });
 
-  it("rejects a second Widget Instance without disturbing the active root", () => {
-    const activeWidget = renderSKWidget({
+  it("supports concurrent Widget Instances in the same document", () => {
+    const first = renderSKWidget({
+      apiKey: "api-key",
+      container: document.createElement("div"),
+    });
+    const second = renderSKWidget({
       apiKey: "api-key",
       container: document.createElement("div"),
     });
 
-    let mountError: unknown;
-    try {
-      renderSKWidget({
-        apiKey: "api-key",
-        container: document.createElement("div"),
-      });
-    } catch (error) {
-      mountError = error;
-    }
-
-    expect(mountError).toMatchObject({
-      name: "StakeKitWidgetInstanceAlreadyMountedError",
-      message:
-        "Only one StakeKit Widget may be mounted in a browser document at a time.",
-    });
-    expect(createRoot).toHaveBeenCalledOnce();
+    expect(createRoot).toHaveBeenCalledTimes(2);
     expect(reactRoot.unmount).not.toHaveBeenCalled();
 
-    activeWidget.unmount();
+    first.unmount();
+    second.unmount();
   });
 
-  it("releases the claim for a clean sequential bundled remount", () => {
+  it("supports a clean sequential bundled remount", () => {
     const first = renderSKWidget({
       apiKey: "api-key",
       container: document.createElement("div"),
@@ -119,7 +109,7 @@ describe("bundled widget renderer", () => {
     second.unmount();
   });
 
-  it("shares the document claim across separately evaluated copies", async () => {
+  it("allows separately evaluated copies to mount concurrently", async () => {
     const activeWidget = renderSKWidget({
       apiKey: "api-key",
       container: document.createElement("div"),
@@ -128,16 +118,14 @@ describe("bundled widget renderer", () => {
     vi.resetModules();
     const secondCopy = await import("../../src/App");
 
-    expect(() =>
-      secondCopy.renderSKWidget({
-        apiKey: "api-key",
-        container: document.createElement("div"),
-      })
-    ).toThrow(
-      "Only one StakeKit Widget may be mounted in a browser document at a time."
-    );
-    expect(createRoot).toHaveBeenCalledOnce();
+    const secondWidget = secondCopy.renderSKWidget({
+      apiKey: "api-key",
+      container: document.createElement("div"),
+    });
+
+    expect(createRoot).toHaveBeenCalledTimes(2);
 
     activeWidget.unmount();
+    secondWidget.unmount();
   });
 });

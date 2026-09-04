@@ -153,7 +153,8 @@ composition preserves registry-scoped Layer memoization; do not reconstruct
 Layers from built Effect contexts or use `Layer.fresh` without an explicit need
 for separate service instances.
 
-At most one Widget Instance may be mounted per browser document. Unmounting and
+The Widget is designed and tested for one mounted Widget Instance per browser
+document, though runtime claims no longer block concurrent mounts. Unmounting and
 later mounting a new instance creates a fresh generation. See
 [ADR 0001](../../docs/adr/0001-one-widget-instance-per-browser-document.md).
 

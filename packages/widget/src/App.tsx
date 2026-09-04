@@ -8,8 +8,6 @@ import { RouterProvider } from "react-router/dom";
 import { ApplicationRouteContentProvider } from "./app/composition/application-route-content";
 import { Providers } from "./app/composition/providers";
 import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";
-import { acquireWidgetInstanceClaim } from "./app/embedding/widget-instance-claim";
-import { WidgetInstanceReactBoundary } from "./app/embedding/widget-instance-react-boundary";
 import { applicationRoutes } from "./app/routes/application-routes";
 import { useApplicationRouteEffects } from "./app/routes/react/use-application-route-effects";
 import { ClassicRoutes } from "./app/routes/ui/classic-routes";
@@ -93,55 +91,41 @@ const SKAppProductionContent = ({
 };
 
 export const SKApp = ({ children, ...hostConfiguration }: SKAppProps) => (
-  <WidgetInstanceReactBoundary>
-    <SKAppProductionContent {...hostConfiguration}>
-      {children}
-    </SKAppProductionContent>
-  </WidgetInstanceReactBoundary>
+  <SKAppProductionContent {...hostConfiguration}>
+    {children}
+  </SKAppProductionContent>
 );
 
-const BundledSKWidget = (props: BundledSKWidgetProps) => (
-  <SKAppProductionContent {...props} />
-);
+export interface RenderedSKWidget {
+  rerender: (newProps: BundledSKWidgetProps) => void;
+  unmount: () => void;
+}
 
 export const renderSKWidget = ({
   container,
   ...rest
 }: BundledSKWidgetProps & {
-  container: Parameters<typeof ReactDOM.createRoot>[0];
-}) => {
-  const releaseClaim = acquireWidgetInstanceClaim(
-    container.ownerDocument ?? document
-  );
-  let root: ReturnType<typeof ReactDOM.createRoot>;
+  readonly container: Parameters<typeof ReactDOM.createRoot>[0];
+}): RenderedSKWidget => {
+  const root = ReactDOM.createRoot(container);
+  let currentProps = rest;
+  let unmounted = false;
+  const render = () =>
+    root.render(<SKAppProductionContent {...currentProps} />);
 
-  try {
-    root = ReactDOM.createRoot(container);
-    let currentProps = rest;
-    let unmounted = false;
-    const render = () => root.render(<BundledSKWidget {...currentProps} />);
+  render();
 
-    render();
+  return {
+    rerender: (newProps: BundledSKWidgetProps) => {
+      if (unmounted) return;
+      currentProps = newProps;
+      render();
+    },
+    unmount: () => {
+      if (unmounted) return;
 
-    return {
-      rerender: (newProps: BundledSKWidgetProps) => {
-        if (unmounted) return;
-        currentProps = newProps;
-        render();
-      },
-      unmount: () => {
-        if (unmounted) return;
-
-        unmounted = true;
-        try {
-          root.unmount();
-        } finally {
-          releaseClaim();
-        }
-      },
-    };
-  } catch (error) {
-    releaseClaim();
-    throw error;
-  }
+      unmounted = true;
+      root.unmount();
+    },
+  };
 };
