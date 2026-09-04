@@ -1,18 +1,23 @@
 import { make as makeScopedAtom, useAtomValue } from "@effect/atom-react";
-import type * as Atom from "effect/unstable/reactivity/Atom";
-import { createContext, type PropsWithChildren, useContext } from "react";
+import {
+  createContext,
+  type PropsWithChildren,
+  useContext,
+  useState,
+} from "react";
 import { Navigate, Outlet } from "react-router";
+import { LoadingSkeleton } from "../../../shared/ui/components/loading-skeleton";
 import {
   type ClassicTransactionFlowIntake,
   getClassicTransactionFlowIntakeVariant,
 } from "../model/classic-transaction-flow";
-import { currentClassicFlowSessionAtom } from "../state/atoms/classic-flow";
+import { makeClassicFlowRouteSessionAtom } from "../state/atoms/classic-flow";
 import {
   type ClassicFlowExecutionFacade,
   type ClassicFlowReviewFacade,
   type ClassicFlowSessionFacade,
   type ClassicFlowSessionModule,
-  currentClassicFlowSessionRootAtom,
+  classicFlowSessionRootAtomFamily,
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
 } from "../state/atoms/classic-flow-session";
@@ -59,31 +64,31 @@ export const ClassicFlowRoute = ({
 }: {
   readonly expected: ClassicTransactionFlowIntake["_tag"];
 }) => {
-  const session = useAtomValue(currentClassicFlowSessionAtom);
+  const [sessionAtom] = useState(makeClassicFlowRouteSessionAtom);
+  const result = useAtomValue(sessionAtom);
+  if (result._tag === "Initial") return <LoadingSkeleton />;
+  if (result._tag === "Failure") return <Navigate to="/" replace />;
+  const session = result.value;
   const intake = session
     ? getClassicTransactionFlowIntakeVariant(session.intake, expected)
     : null;
 
   if (session && intake) {
-    return <SessionBinding key={session.epoch} />;
+    return (
+      <MountedSessionBinding
+        key={session.epoch}
+        rootAtom={classicFlowSessionRootAtomFamily(session)}
+      />
+    );
   }
 
   return <Navigate to="/" replace />;
 };
 
-const SessionBinding = () => {
-  const rootAtom = useAtomValue(currentClassicFlowSessionRootAtom);
-  if (!rootAtom) return <Navigate to="/" replace />;
-
-  return <MountedSessionBinding rootAtom={rootAtom} />;
-};
-
 const MountedSessionBinding = ({
   rootAtom,
 }: {
-  readonly rootAtom: NonNullable<
-    Atom.Type<typeof currentClassicFlowSessionRootAtom>
-  >;
+  readonly rootAtom: ReturnType<typeof classicFlowSessionRootAtomFamily>;
 }) => {
   const session = useAtomValue(rootAtom);
 

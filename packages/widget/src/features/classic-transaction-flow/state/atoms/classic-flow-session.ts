@@ -7,10 +7,7 @@ import {
   type ClassicTransactionFlowIntake,
   getClassicTransactionFlowIntakeVariant,
 } from "../../model/classic-transaction-flow";
-import {
-  classicTransactionFlowServiceAtom,
-  currentClassicFlowSessionAtom,
-} from "./classic-flow";
+import { classicTransactionFlowServiceAtom } from "./classic-flow";
 import { makeClassicFlowExecutionScopeAtom } from "./classic-flow-execution";
 import { makeClassicFlowReviewScopeAtom } from "./classic-flow-review";
 
@@ -82,11 +79,6 @@ type ClassicFlowExecutionModule = Atom.Type<
 >;
 export type ClassicFlowExecutionFacade = ClassicFlowExecutionModule["facade"];
 
-const classicFlowSessionRootAtomFamily = Atom.family(
+export const classicFlowSessionRootAtomFamily = Atom.family(
   makeClassicFlowSessionModule
 );
-
-export const currentClassicFlowSessionRootAtom = Atom.make((get) => {
-  const session = get(currentClassicFlowSessionAtom);
-  return session ? classicFlowSessionRootAtomFamily(session) : null;
-}).pipe(Atom.withLabel("currentClassicFlowSessionRootAtom"));

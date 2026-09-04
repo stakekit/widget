@@ -1,21 +1,26 @@
 import { make as makeScopedAtom, useAtomValue } from "@effect/atom-react";
 import { Schema } from "effect";
-import type * as Atom from "effect/unstable/reactivity/Atom";
-import { createContext, type PropsWithChildren, useContext } from "react";
+import {
+  createContext,
+  type PropsWithChildren,
+  useContext,
+  useState,
+} from "react";
 import { Navigate, Outlet, useParams } from "react-router";
 import {
   type MarketId,
   MarketId as MarketIdSchema,
 } from "../../../domain/borrow/ids";
+import { LoadingSkeleton } from "../../../shared/ui/components/loading-skeleton";
 import type { BorrowTransactionFlowEntry } from "../model/borrow-transaction-flow";
 import { getBorrowTransactionFlowRoutes } from "../model/borrow-transaction-flow";
-import { currentBorrowFlowSessionAtom } from "../state/atoms/borrow-flow";
+import { makeBorrowFlowRouteSessionAtom } from "../state/atoms/borrow-flow";
 import {
   type BorrowFlowExecutionFacade,
   type BorrowFlowReviewFacade,
   type BorrowFlowSessionFacade,
   type BorrowFlowSessionModule,
-  currentBorrowFlowSessionRootAtom,
+  borrowFlowSessionRootAtomFamily,
   makeBorrowFlowExecutionScope,
   makeBorrowFlowReviewScope,
 } from "../state/atoms/borrow-flow-session";
@@ -74,34 +79,27 @@ export const BorrowTransactionFlowRoute = ({
   const marketId = routeParams.marketId
     ? Schema.decodeSync(MarketIdSchema)(routeParams.marketId)
     : undefined;
-  const session = useAtomValue(currentBorrowFlowSessionAtom);
-  if (session && matchesEntry(session.intake.entry, expected, marketId)) {
-    return <SessionBinding entry={session.intake.entry} key={session.epoch} />;
-  }
+  const [sessionAtom] = useState(makeBorrowFlowRouteSessionAtom);
+  const result = useAtomValue(sessionAtom);
   const fallbackPath = getEntryFallbackPath(expected, marketId);
-  return <Navigate replace to={fallbackPath} />;
-};
-
-const SessionBinding = ({
-  entry,
-}: {
-  readonly entry: BorrowTransactionFlowEntry;
-}) => {
-  const rootAtom = useAtomValue(currentBorrowFlowSessionRootAtom);
-  if (!rootAtom) {
+  if (result._tag === "Initial") return <LoadingSkeleton />;
+  if (result._tag === "Failure") return <Navigate replace to={fallbackPath} />;
+  const session = result.value;
+  if (session && matchesEntry(session.intake.entry, expected, marketId)) {
     return (
-      <Navigate replace to={getBorrowTransactionFlowRoutes(entry).basePath} />
+      <MountedSessionBinding
+        key={session.epoch}
+        rootAtom={borrowFlowSessionRootAtomFamily(session)}
+      />
     );
   }
-  return <MountedSessionBinding rootAtom={rootAtom} />;
+  return <Navigate replace to={fallbackPath} />;
 };
 
 const MountedSessionBinding = ({
   rootAtom,
 }: {
-  readonly rootAtom: NonNullable<
-    Atom.Type<typeof currentBorrowFlowSessionRootAtom>
-  >;
+  readonly rootAtom: ReturnType<typeof borrowFlowSessionRootAtomFamily>;
 }) => {
   const session = useAtomValue(rootAtom);
   return (
@@ -169,9 +167,17 @@ const ExecutionBinding = ({ children }: PropsWithChildren) => {
 
 export const BorrowTransactionFlowCompletionGuard = () => {
   const execution = useBorrowTransactionFlowExecution();
+  const [completionAtom] = useState(() => execution.makeCompletionStateAtom());
+  const result = useAtomValue(completionAtom);
   const view = useAtomValue(execution.viewAtom);
   const { stepsPath } = getBorrowTransactionFlowRoutes(
     useBorrowTransactionFlow().intake.entry
   );
-  return view.isDone ? <Outlet /> : <Navigate replace to={stepsPath} />;
+  if (result._tag === "Initial") return <LoadingSkeleton />;
+  if (result._tag === "Failure" || !result.value) {
+    return <Navigate replace to={stepsPath} />;
+  }
+  // Admission is authoritative; the page still needs its completion details.
+  if (!view.isDone) return <LoadingSkeleton />;
+  return <Outlet />;
 };

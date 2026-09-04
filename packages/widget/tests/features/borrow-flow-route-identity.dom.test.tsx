@@ -1,10 +1,11 @@
 import { RegistryProvider } from "@effect/atom-react";
+import { Effect, Layer, Stream } from "effect";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { describe, expect, it } from "vitest";
+import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import type { BorrowFlowSession } from "../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import { BorrowTransactionFlowRoute } from "../../src/features/borrow-transaction-flow/react/borrow-flow-route";
-import { currentBorrowFlowSessionAtom } from "../../src/features/borrow-transaction-flow/state/atoms/borrow-flow";
-import { currentBorrowFlowSessionRootAtom } from "../../src/features/borrow-transaction-flow/state/atoms/borrow-flow-session";
+import { BorrowTransactionFlowService } from "../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
 import { render } from "../utils/test-utils.dom.tsx";
 
 const LocationProbe = () => {
@@ -23,8 +24,15 @@ describe("Borrow Flow route identity", () => {
     const app = await render(
       <RegistryProvider
         initialValues={[
-          [currentBorrowFlowSessionAtom, session],
-          [currentBorrowFlowSessionRootAtom, null],
+          [
+            walletRuntime.layer,
+            Layer.succeed(BorrowTransactionFlowService, {
+              currentSession: Stream.succeed(session),
+              acquireSession: () =>
+                Effect.die("Mismatched session must not be acquired"),
+              start: () => Effect.die("Not used"),
+            }) as never,
+          ],
         ]}
       >
         <MemoryRouter initialEntries={["/positions/borrow/market-b/review"]}>

@@ -9,15 +9,23 @@ export const borrowTransactionFlowServiceAtom = walletRuntime
   .atom(Effect.service(BorrowTransactionFlowService))
   .pipe(Atom.keepAlive, Atom.withLabel("borrowTransactionFlowServiceAtom"));
 
-const currentBorrowFlowSessionResultAtom = walletRuntime
-  .atom((context) =>
-    Stream.unwrap(
-      context
-        .result(borrowTransactionFlowServiceAtom)
-        .pipe(Effect.map((service) => service.currentSession))
+// Keep route admission independent of previously retained stream values.
+export const makeBorrowFlowRouteSessionAtom = () =>
+  walletRuntime
+    .atom((context) =>
+      Stream.unwrap(
+        context
+          .result(borrowTransactionFlowServiceAtom)
+          .pipe(Effect.map((service) => service.currentSession))
+      )
     )
-  )
-  .pipe(Atom.keepAlive, Atom.withLabel("currentBorrowFlowSessionResultAtom"));
+    .pipe(Atom.withLabel("borrowFlowRouteSession"));
+
+const currentBorrowFlowSessionResultAtom =
+  makeBorrowFlowRouteSessionAtom().pipe(
+    Atom.keepAlive,
+    Atom.withLabel("currentBorrowFlowSessionResultAtom")
+  );
 
 export const currentBorrowFlowSessionAtom = Atom.make((get) =>
   AsyncResult.getOrElse(get(currentBorrowFlowSessionResultAtom), () => null)
