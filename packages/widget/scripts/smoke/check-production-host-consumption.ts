@@ -130,6 +130,26 @@ const assertHostsResolveBuiltWidget = () => {
   }
 };
 
+// An external import only shares React's work queue when the consumer resolves
+// it to the renderer's scheduler. Equal version ranges alone do not ensure this.
+const assertSharedScheduler = () => {
+  const widgetRequire = createRequire(join(widgetRoot, "package.json"));
+  const widgetScheduler = widgetRequire.resolve("scheduler");
+  for (const host of [hosts.vitePackage, hosts.next]) {
+    const hostRequire = createRequire(join(host.directory, "package.json"));
+    const rendererRequire = createRequire(hostRequire.resolve("react-dom"));
+    const rendererScheduler = rendererRequire.resolve("scheduler");
+    if (widgetScheduler !== rendererScheduler) {
+      throw new Error(
+        `${host.label} resolves a different scheduler from the widget. Align scheduler with react-dom before publishing. Widget: ${widgetScheduler}; renderer: ${rendererScheduler}`
+      );
+    }
+    console.log(
+      `[smoke] ${host.label} resolves the same scheduler as the widget`
+    );
+  }
+};
+
 const assertBuiltWidgetArtifacts = async () => {
   const artifactPaths = [
     "dist/package/index.package.js",
@@ -520,6 +540,10 @@ const withServer = async ({
 };
 
 const main = async () => {
+  assertSharedScheduler();
+  if (process.argv.includes("--check-dependencies")) {
+    return;
+  }
   const apiKey = await resolveApiKey();
 
   if (process.argv.includes("--check-key")) {

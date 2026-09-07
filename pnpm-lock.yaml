@@ -280,9 +280,18 @@ catalogs:
     '@radix-ui/react-dialog':
       specifier: ^1.1.23
       version: 1.1.23
+    '@radix-ui/react-dismissable-layer':
+      specifier: ^1.1.19
+      version: 1.1.19
     '@radix-ui/react-dropdown-menu':
       specifier: ^2.1.24
       version: 2.1.24
+    '@radix-ui/react-focus-guards':
+      specifier: ^1.1.6
+      version: 1.1.6
+    '@radix-ui/react-focus-scope':
+      specifier: ^1.1.16
+      version: 1.1.16
     '@radix-ui/react-tooltip':
       specifier: ^1.2.16
       version: 1.2.16
@@ -379,6 +388,9 @@ catalogs:
     '@wallet-standard/base':
       specifier: ^1.1.1
       version: 1.1.1
+    aria-hidden:
+      specifier: ^1.2.6
+      version: 1.2.6
     autoprefixer:
       specifier: ^10.5.4
       version: 10.5.4
@@ -451,12 +463,18 @@ catalogs:
     react-loading-skeleton:
       specifier: ^3.5.0
       version: 3.5.0
+    react-remove-scroll:
+      specifier: ^2.7.2
+      version: 2.7.2
     react-router:
       specifier: ^7.15.0
       version: 7.15.0
     recharts:
       specifier: ^3.10.1
       version: 3.10.1
+    scheduler:
+      specifier: '>=0.25.0 <0.28.0'
+      version: 0.27.0
     serve:
       specifier: ^14.2.6
       version: 14.2.6
@@ -493,6 +511,9 @@ catalogs:
     yaml:
       specifier: ^2.9.0
       version: 2.9.0
+
+overrides:
+  '@stakekit/rainbowkit@2.2.11>react-remove-scroll': 2.7.2
 
 packageExtensionsChecksum: sha256-FZ9pA8g2+w7cg8p8CU69qpPAEhtGVHP/kzcJxOvNvcM=
 
@@ -602,9 +623,27 @@ importers:
 
   packages/widget:
     dependencies:
+      '@radix-ui/react-dismissable-layer':
+        specifier: 'catalog:'
+        version: 1.1.19(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@radix-ui/react-focus-guards':
+        specifier: 'catalog:'
+        version: 1.1.6(@types/react@19.2.18)(react@19.2.8)
+      '@radix-ui/react-focus-scope':
+        specifier: 'catalog:'
+        version: 1.1.16(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      aria-hidden:
+        specifier: 'catalog:'
+        version: 1.2.6
       effect:
         specifier: 'catalog:'
         version: 4.0.0-rc.112
+      react-remove-scroll:
+        specifier: 'catalog:'
+        version: 2.7.2(@types/react@19.2.18)(react@19.2.8)
+      scheduler:
+        specifier: 'catalog:'
+        version: 0.27.0
     devDependencies:
       '@cosmjs/amino':
         specifier: 'catalog:'
@@ -10090,16 +10129,6 @@ packages:
       '@types/react':
         optional: true
 
-  react-remove-scroll@2.6.2:
-    resolution: {integrity: sha512-KmONPx5fnlXYJQqC62Q+lwIeAk64ws/cUw6omIumRzMRPqgnYqhSSti99nbj0Ry13bv7dF+BKn7NB+OqkdZGTw==}
-    engines: {node: '>=10'}
-    peerDependencies:
-      '@types/react': '*'
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-
   react-remove-scroll@2.7.2:
     resolution: {integrity: sha512-Iqb9NjCCTt6Hf+vOdNIZGdTiH1QSqr27H/Ek9sv/a97gfueI/5h1s3yRi1nngzMUaOOToin5dI1dXKdXiF+u0Q==}
     engines: {node: '>=10'}
@@ -18614,7 +18643,7 @@ snapshots:
       cuer: 0.0.3(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
-      react-remove-scroll: 2.6.2(@types/react@19.2.18)(react@19.2.8)
+      react-remove-scroll: 2.7.2(@types/react@19.2.18)(react@19.2.8)
       ua-parser-js: 1.0.41
       viem: 2.55.16(bufferutil@4.0.9)(typescript@6.0.3)(utf-8-validate@5.0.10)(zod@3.25.76)
       wagmi: 3.7.5(599d54e35e22cc79907e1e2327fb1205)
@@ -25501,17 +25530,6 @@ snapshots:
       react: 19.2.8
       react-style-singleton: 2.2.3(@types/react@19.2.18)(react@19.2.8)
       tslib: 2.8.1
-    optionalDependencies:
-      '@types/react': 19.2.18
-
-  react-remove-scroll@2.6.2(@types/react@19.2.18)(react@19.2.8):
-    dependencies:
-      react: 19.2.8
-      react-remove-scroll-bar: 2.3.8(@types/react@19.2.18)(react@19.2.8)
-      react-style-singleton: 2.2.3(@types/react@19.2.18)(react@19.2.8)
-      tslib: 2.8.1
-      use-callback-ref: 1.3.3(@types/react@19.2.18)(react@19.2.8)
-      use-sidecar: 1.1.3(@types/react@19.2.18)(react@19.2.8)
     optionalDependencies:
       '@types/react': 19.2.18
 

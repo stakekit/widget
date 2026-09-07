@@ -10,7 +10,7 @@ browser renderer.
 pnpm add @stakekit/widget
 ```
 
-React 18 or newer is required when using the component entrypoint.
+React 19 or newer is required when using the component entrypoint.
 
 ## React
 
