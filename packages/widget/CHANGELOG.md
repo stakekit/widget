@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.285](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.284...@stakekit/widget@0.0.285) (2026-09-07)
+
+
+### Bug Fixes
+
+* **widget:** share scheduler and modal runtime state ([#563](https://github.com/stakekit/widget/issues/563)) ([26f6792](https://github.com/stakekit/widget/commit/26f6792f421d57a26e08ed8da87522a22325d2c9))
+
 ## [0.0.284](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.283...@stakekit/widget@0.0.284) (2026-09-04)
 
 
