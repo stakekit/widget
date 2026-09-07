@@ -72,8 +72,8 @@
     "check-hygiene:production": "knip --production --include files,dependencies,unlisted --no-progress --treat-config-hints-as-errors"
   },
   "peerDependencies": {
-    "react": ">=18",
-    "react-dom": ">=18"
+    "react": ">=19",
+    "react-dom": ">=19"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -84,7 +84,13 @@
     }
   },
   "dependencies": {
-    "effect": "catalog:"
+    "@radix-ui/react-dismissable-layer": "catalog:",
+    "@radix-ui/react-focus-guards": "catalog:",
+    "@radix-ui/react-focus-scope": "catalog:",
+    "aria-hidden": "catalog:",
+    "effect": "catalog:",
+    "react-remove-scroll": "catalog:",
+    "scheduler": "catalog:"
   },
   "devDependencies": {
     "@cosmjs/amino": "catalog:",
