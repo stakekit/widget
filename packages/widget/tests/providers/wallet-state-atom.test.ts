@@ -46,7 +46,7 @@ const connected = {
   isConnected: true,
   isDisconnected: false,
   status: "connected",
-} as WalletConnectionSnapshot;
+} satisfies WalletConnectionSnapshot;
 
 const normalize = (
   connection: WalletConnectionSnapshot,
@@ -100,6 +100,72 @@ describe("normalized wallet state atom", () => {
       connector,
       network: null,
       status: "unsupported",
+    });
+  });
+
+  it("removes an excluded external chain's scope through normalization and transitions", () => {
+    const externalConnector = {
+      id: "externalProviderConnector",
+      uid: "external-provider",
+    } as Connector;
+    const externalConnection = { ...connected, connector: externalConnector };
+    const previous = normalize(externalConnection);
+    const excluded = normalize(externalConnection, {
+      connectorChains: [optimism],
+      previous,
+    });
+
+    expect(excluded).toMatchObject({
+      additionalAddresses: null,
+      address,
+      chain: mainnet,
+      connector: externalConnector,
+      ledgerAccounts: null,
+      network: null,
+      status: "unsupported",
+    });
+    expect(
+      transitionalWalletState({
+        additionalAddresses: null,
+        connection: externalConnection,
+        connectorChains: [mainnet],
+        controller,
+        forceAddress: undefined,
+        ledgerState: disconnectedLedgerConnectorState,
+        previous: excluded,
+      })
+    ).toMatchObject({
+      chain: mainnet,
+      connectorChains: [optimism],
+      network: null,
+      status: "unsupported",
+    });
+    expect(
+      normalize(
+        {
+          ...disconnectedWalletConnection,
+          isDisconnected: false,
+          isReconnecting: true,
+          status: "reconnecting",
+        },
+        { connectorChains: [optimism], previous }
+      )
+    ).toMatchObject({
+      additionalAddresses: null,
+      ledgerAccounts: null,
+      network: null,
+      status: "unsupported",
+    });
+    expect(
+      normalize(externalConnection, {
+        connectorChains: [mainnet],
+        previous: excluded,
+      })
+    ).toMatchObject({
+      address,
+      chain: mainnet,
+      network: "ethereum",
+      status: "connected",
     });
   });
 

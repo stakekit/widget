@@ -435,18 +435,27 @@ export const buildWagmiConfig = (
         )?.wagmiChain.id
       : undefined;
 
-    const wagmiConfig = createConfig({
-      // Wagmi requires one transport chain even when the project has no Wallet
-      // Networks. The fallback is absent from every adapter map and connector,
-      // so the exposed wallet topology remains empty.
-      chains: wagmiChains,
-      client: ({ chain }) => createClient({ chain, transport: http() }),
-      multiInjectedProviderDiscovery: false,
-      // The host owns external-provider connection state. Hydrating Wagmi's
-      // persisted connector can restore a connector from another topology
-      // before the external provider synchronizer establishes its connection.
-      storage: opts.externalProviders ? null : undefined,
-      connectors,
+    const wagmiConfig = yield* Effect.try({
+      try: () =>
+        createConfig({
+          // Wagmi requires one transport chain even when the project has no Wallet
+          // Networks. The fallback is absent from every adapter map and connector,
+          // so the exposed wallet topology remains empty.
+          chains: wagmiChains,
+          client: ({ chain }) => createClient({ chain, transport: http() }),
+          multiInjectedProviderDiscovery: false,
+          // The host owns external-provider connection state. Hydrating Wagmi's
+          // persisted connector can restore a connector from another topology
+          // before the external provider synchronizer establishes its connection.
+          storage: opts.externalProviders ? null : undefined,
+          connectors,
+        }),
+      catch: (cause) =>
+        new WalletIntegrationError({
+          cause,
+          message: "Could not create wallet configuration",
+          operation: "create-config",
+        }),
     });
 
     if (multiInjectedProviderDiscovery && evmConfig.evmChains.length > 0) {
