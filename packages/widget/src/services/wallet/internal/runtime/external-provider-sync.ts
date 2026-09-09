@@ -1,4 +1,4 @@
-import { Effect, Ref, type Scope, Stream } from "effect";
+import { Effect, Ref, Result, type Scope, Stream } from "effect";
 import {
   diffWidgetWalletConfig,
   selectWidgetBootstrapSnapshot,
@@ -126,24 +126,31 @@ export const installExternalProviderSynchronization = Effect.fn(
       snapshot.currentChain ??
       connection.chainId ??
       bootstrap.controller.wagmiConfig.state.chainId;
-    const supportedChainIds = snapshot.supportedChainIds
-      ? [...snapshot.supportedChainIds]
-      : [];
+    const supportedChainIds = snapshot.supportedChainIds;
     const currentMemory = yield* Ref.get(memory);
     const supportedChainsKey = `${connector.uid}:${currentChainId}:${
-      supportedChainIds.join(",") || "all"
+      supportedChainIds?.join(",") ?? "all"
     }`;
     if (currentMemory.supportedChainsNotification !== supportedChainsKey) {
       yield* Ref.update(memory, (current) => ({
         ...current,
         supportedChainsNotification: supportedChainsKey,
       }));
-      yield* runConnectorNotification(() =>
+      const notification = yield* Effect.try(() =>
         connector.onSupportedChainsChanged({
           currentChainId,
           supportedChainIds,
         })
-      );
+      ).pipe(Effect.result);
+      if (Result.isFailure(notification)) {
+        const cause = notification.failure.cause;
+        return yield* failInvariant(
+          cause instanceof WalletRuntimeInvariantError
+            ? cause.reason
+            : "external-provider-supported-chains-update-failed",
+          { cause }
+        );
+      }
     }
 
     if (

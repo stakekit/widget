@@ -9,6 +9,7 @@ import { config } from "../../../../../shared/config/widget-defaults";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import { type CurrentRef, ExternalProvider } from "../../../external-provider";
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
+import { WalletRuntimeInvariantError } from "../../../wallet-errors";
 import { normalizeChainId } from "../../normalize-chain-id";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import { wagmiConnectResult } from "../wagmi-connect-result";
@@ -28,7 +29,7 @@ type ExtraProps = ConnectorWithFilteredChains &
     | "signTypedData"
   > & {
     onSupportedChainsChanged: (args: {
-      supportedChainIds: number[];
+      supportedChainIds: number[] | undefined;
       currentChainId: number;
     }) => void;
   };
@@ -57,19 +58,28 @@ export const externalProviderConnector = (
       },
       createConnector: () =>
         createConnector<unknown, ExtraProps>((connectorConfig) => {
-          const filteredChains = makeCurrentValueStream(
-            variant.current.supportedChainIds
+          const resolveSupportedChains = (
+            supportedChainIds: number[] | undefined
+          ) => {
+            const supported =
+              supportedChainIds === undefined
+                ? null
+                : new Set(supportedChainIds);
+            const chains = supported
               ? connectorConfig.chains.filter((chain) =>
-                  new Set<number>(variant.current.supportedChainIds).has(
-                    chain.id
-                  )
+                  supported.has(chain.id)
                 )
-              : (connectorConfig.chains as [Chain, ...Chain[]])
+              : (connectorConfig.chains as [Chain, ...Chain[]]);
+            if (chains.length === 0) {
+              throw new WalletRuntimeInvariantError({
+                reason: "external-provider-no-supported-chains",
+              });
+            }
+            return chains;
+          };
+          const filteredChains = makeCurrentValueStream(
+            resolveSupportedChains(variant.current.supportedChainIds)
           );
-
-          if (filteredChains.get().length === 0) {
-            throw new Error("No supported chains found!");
-          }
 
           const provider = new ExternalProvider(variant);
 
@@ -81,10 +91,15 @@ export const externalProviderConnector = (
             );
 
           const getAccounts: ReturnType<CreateConnectorFn>["getAccounts"] =
-            async () => [variant.current.currentAddress as Address];
+            async () =>
+              variant.current.currentAddress
+                ? [variant.current.currentAddress as Address]
+                : [];
 
+          // Preserve the host's identity even when the topology cannot route it.
           const getChainId: ReturnType<CreateConnectorFn>["getChainId"] =
-            async () => getFirstFilteredChain().id;
+            async () =>
+              variant.current.currentChain ?? getFirstFilteredChain().id;
 
           const connect: ReturnType<CreateConnectorFn>["connect"] = async (
             args
@@ -95,6 +110,9 @@ export const externalProviderConnector = (
               getAccounts(),
               getChainId(),
             ]);
+            if (accounts.length === 0) {
+              throw new Error("External provider has no connected account");
+            }
 
             return wagmiConnectResult(
               args?.withCapabilities,
@@ -123,7 +141,7 @@ export const externalProviderConnector = (
             async () => ({});
 
           const isAuthorized: ReturnType<CreateConnectorFn>["isAuthorized"] =
-            async () => true;
+            async () => Boolean(variant.current.currentAddress);
 
           const onDisconnect: ReturnType<CreateConnectorFn>["onDisconnect"] =
             () => {
@@ -139,26 +157,27 @@ export const externalProviderConnector = (
 
           const onAccountsChanged: ReturnType<CreateConnectorFn>["onAccountsChanged"] =
             (accounts) => {
+              const connectedAccounts = accounts.filter(
+                (account) => !!account
+              ) as Address[];
+              if (connectedAccounts.length === 0) {
+                onDisconnect();
+                return;
+              }
               connectorConfig.emitter.emit("change", {
-                accounts: accounts.filter((a) => !!a) as Address[],
+                accounts: connectedAccounts,
               });
             };
 
           const onSupportedChainsChanged: ExtraProps["onSupportedChainsChanged"] =
             ({ currentChainId, supportedChainIds }) => {
-              filteredChains.set(
-                supportedChainIds.length
-                  ? connectorConfig.chains.filter((chain) =>
-                      new Set(supportedChainIds).has(chain.id)
-                    )
-                  : (connectorConfig.chains as [Chain, ...Chain[]])
-              );
+              filteredChains.set(resolveSupportedChains(supportedChainIds));
 
-              // If the current chain is not in the supported chains, switch to the first supported chain
-              if (filteredChains.get().every((c) => c.id !== currentChainId)) {
-                getChainId().then((chainId) =>
-                  onChainChanged(chainId.toString())
-                );
+              if (
+                variant.current.currentChain === undefined &&
+                filteredChains.get().every((c) => c.id !== currentChainId)
+              ) {
+                onChainChanged(getFirstFilteredChain().id.toString());
               }
             };
 

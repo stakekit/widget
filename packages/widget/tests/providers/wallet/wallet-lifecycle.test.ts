@@ -179,6 +179,39 @@ describe("Wallet lifecycle policy", () => {
     })
   );
 
+  it.effect(
+    "does not disconnect an unsupported external wallet and trigger reconnection",
+    () =>
+      Effect.gen(function* () {
+        const disconnect = vi.fn(() => Effect.void);
+        const externalConnector = {
+          ...connector,
+          id: "externalProviderConnector",
+        };
+        const supportedState = {
+          ...connected(),
+          connector: externalConnector,
+        };
+        const unsupportedState = {
+          ...unsupported,
+          connector: externalConnector,
+        };
+        const policy = yield* makePolicy(() => Effect.void);
+
+        for (const state of [
+          supportedState,
+          unsupportedState,
+          unsupportedState,
+          supportedState,
+          unsupportedState,
+        ]) {
+          yield* policy.transition({ actions: { disconnect }, state });
+        }
+
+        expect(disconnect).not.toHaveBeenCalled();
+      })
+  );
+
   it.effect("localizes tracking and disconnect failures", () =>
     Effect.gen(function* () {
       expect(

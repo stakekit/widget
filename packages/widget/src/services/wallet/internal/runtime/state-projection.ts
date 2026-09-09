@@ -27,6 +27,7 @@ import {
   isCosmosConnector,
 } from "../adapters/cosmos/cosmos-connector-meta";
 import type { EvmChainsMap } from "../adapters/evm/chains";
+import { isExternalProviderConnector } from "../adapters/external-provider";
 import { isLedgerLiveConnector } from "../adapters/ledger/ledger-live-connector-meta";
 import type { SubstrateChainsMap } from "../adapters/substrate/chains";
 import type { WalletRoutingContext } from "./router";
@@ -96,15 +97,21 @@ const decodeProjectionFacts = ({
     : null;
   const chain = connection.chain ?? null;
   const connector = connection.connector ?? null;
-  const network = chain
-    ? wagmiNetworkToSKNetwork({
-        chain,
-        cosmosChainsMap: controller.cosmosConfig.cosmosChainsMap,
-        evmChainsMap: controller.evmConfig.evmChainsMap,
-        miscChainsMap: controller.miscConfig.miscChainsMap,
-        substrateChainsMap: controller.substrateConfig.substrateChainsMap,
-      })
-    : null;
+  const isChainExcluded =
+    chain !== null &&
+    connector !== null &&
+    isExternalProviderConnector(connector) &&
+    !connectorChains.some((supportedChain) => supportedChain.id === chain.id);
+  const network =
+    chain && !isChainExcluded
+      ? wagmiNetworkToSKNetwork({
+          chain,
+          cosmosChainsMap: controller.cosmosConfig.cosmosChainsMap,
+          evmChainsMap: controller.evmConfig.evmChainsMap,
+          miscChainsMap: controller.miscConfig.miscChainsMap,
+          substrateChainsMap: controller.substrateConfig.substrateChainsMap,
+        })
+      : null;
 
   return {
     additionalAddresses,
@@ -184,6 +191,23 @@ const connectingWalletState = (
     previous.connector &&
     previous.ledgerAccounts
   ) {
+    if (
+      isExternalProviderConnector(previous.connector) &&
+      !common.connectorChains.some(
+        (supportedChain) => supportedChain.id === previous.chain.id
+      )
+    ) {
+      return {
+        ...previous,
+        ...common,
+        additionalAddresses: null,
+        isLedgerLiveAccountPlaceholder: false,
+        ledgerAccounts: null,
+        network: null,
+        status: "unsupported",
+      };
+    }
+
     return {
       ...previous,
       ...common,
@@ -277,7 +301,18 @@ export const transitionalWalletState = (
     return normalizeWalletState(input);
   }
 
-  return connectingWalletState(decodeProjectionFacts(input));
+  const previous = input.previous;
+  const connectorChains =
+    previous?.connector &&
+    isExternalProviderConnector(previous.connector) &&
+    (!input.connection.connector ||
+      previous.connector.uid === input.connection.connector.uid)
+      ? previous.connectorChains
+      : input.connectorChains;
+
+  return connectingWalletState(
+    decodeProjectionFacts({ ...input, connectorChains })
+  );
 };
 
 const makeConnectorChainsStream = ({

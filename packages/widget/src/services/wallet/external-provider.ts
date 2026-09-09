@@ -28,35 +28,39 @@ export class ExternalProvider {
   constructor(private variantProvider: CurrentRef<ExternalProviderSnapshot>) {}
 
   sendTransaction(tx: SKTx, txMeta: SKTxMeta) {
-    const sendTransaction =
-      this.variantProvider.current.provider.sendTransaction;
+    return Effect.suspend(() => {
+      const sendTransaction =
+        this.variantProvider.current.provider.sendTransaction;
 
-    if (!sendTransaction) {
-      return Effect.fail(
-        new ExternalProviderError({
-          customMessage: null,
-          message: "Invalid provider type",
-        })
-      );
-    }
+      if (!sendTransaction) {
+        return Effect.fail(
+          new ExternalProviderError({
+            customMessage: null,
+            message: "Invalid provider type",
+          })
+        );
+      }
 
-    return sendExternalTransaction(() => sendTransaction(tx, txMeta));
+      return sendExternalTransaction(() => sendTransaction(tx, txMeta));
+    });
   }
 
   sendBorrowTransaction(tx: SKBorrowTx, txMeta: SKBorrowTxMeta) {
-    const config = this.variantProvider.current;
-    if (!isBorrowExternalProvider(config)) {
-      return Effect.fail(
-        new ExternalProviderError({
-          customMessage: null,
-          message: "Borrow transaction capability is unavailable",
-        })
-      );
-    }
+    return Effect.suspend(() => {
+      const config = this.variantProvider.current;
+      if (!isBorrowExternalProvider(config)) {
+        return Effect.fail(
+          new ExternalProviderError({
+            customMessage: null,
+            message: "Borrow transaction capability is unavailable",
+          })
+        );
+      }
 
-    return sendExternalTransaction(() =>
-      config.provider.sendBorrowTransaction(tx, txMeta)
-    );
+      return sendExternalTransaction(() =>
+        config.provider.sendBorrowTransaction(tx, txMeta)
+      );
+    });
   }
 
   switchChain({ chainId }: { chainId: number }) {
@@ -79,19 +83,21 @@ export class ExternalProvider {
   }
 
   signTypedData(typedData: SKEip712TypedData) {
-    const signTypedData = this.variantProvider.current.provider.signTypedData;
-    if (!signTypedData) {
-      return Effect.fail(
-        new ExternalProviderError({
-          customMessage: null,
-          message: "Typed-data signing capability is unavailable",
-        })
-      );
-    }
+    return Effect.suspend(() => {
+      const signTypedData = this.variantProvider.current.provider.signTypedData;
+      if (!signTypedData) {
+        return Effect.fail(
+          new ExternalProviderError({
+            customMessage: null,
+            message: "Typed-data signing capability is unavailable",
+          })
+        );
+      }
 
-    return Effect.tryPromise({
-      try: () => signTypedData(typedData),
-      catch: toExternalProviderError,
+      return Effect.tryPromise({
+        try: () => signTypedData(typedData),
+        catch: toExternalProviderError,
+      });
     });
   }
 }

@@ -95,6 +95,38 @@ const makeBorrowProviderRef = (
 });
 
 describe("generic external provider callback contract", () => {
+  it.effect("uses the live provider when a deferred operation starts", () =>
+    Effect.gen(function* () {
+      const oldWallet: SKBorrowWallet = {
+        signMessage: async () => "old-message",
+        signTypedData: async () => "old-typed",
+        switchChain: async () => undefined,
+        sendTransaction: async () => "old-transaction",
+        sendBorrowTransaction: async () => "old-borrow",
+      };
+      const ref = makeBorrowProviderRef(oldWallet);
+      const provider = new ExternalProvider(ref);
+      const send = provider.sendTransaction(transaction, transactionMeta);
+      const borrow = provider.sendBorrowTransaction(
+        borrowTransaction,
+        borrowTransactionMeta
+      );
+      const sign = provider.signTypedData(typedData);
+      ref.current = {
+        ...ref.current,
+        supportsBorrow: true,
+        provider: {
+          ...oldWallet,
+          signTypedData: async () => "new-typed",
+          sendTransaction: async () => "new-transaction",
+          sendBorrowTransaction: async () => "new-borrow",
+        },
+      };
+      expect(yield* send).toBe("new-transaction");
+      expect(yield* borrow).toBe("new-borrow");
+      expect(yield* sign).toBe("new-typed");
+    })
+  );
   it.effect(
     "passes message, chain, transaction, and metadata through Promise callbacks",
     () =>
@@ -205,25 +237,23 @@ describe("generic external provider callback contract", () => {
     "rejects Borrow invocation when the live provider loses its Borrow capability",
     () =>
       Effect.gen(function* () {
-        const provider = new ExternalProvider(
-          makeProviderRef({
-            signMessage: async () => "signed-message",
-            switchChain: async () => undefined,
-            sendTransaction: async () => "classic-hash",
-          })
+        const wallet: SKBorrowWallet = {
+          signMessage: async () => "signed-message",
+          switchChain: async () => undefined,
+          sendTransaction: async () => "classic-hash",
+          sendBorrowTransaction: vi.fn(async () => "borrow-hash"),
+        };
+        const ref = makeBorrowProviderRef(wallet);
+        const provider = new ExternalProvider(ref);
+        const pending = provider.sendBorrowTransaction(
+          borrowTransaction,
+          borrowTransactionMeta
         );
-
-        const error = yield* Effect.flip(
-          provider.sendBorrowTransaction(
-            borrowTransaction,
-            borrowTransactionMeta
-          )
-        );
+        ref.current = makeProviderRef(wallet).current;
+        const error = yield* Effect.flip(pending);
 
         expect(error).toBeInstanceOf(ExternalProviderError);
-        expect((error as ExternalProviderError).message).toBe(
-          "Borrow transaction capability is unavailable"
-        );
+        expect(wallet.sendBorrowTransaction).not.toHaveBeenCalled();
       })
   );
 });

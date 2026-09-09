@@ -311,6 +311,83 @@ describe("WalletService authoritative Wallet State", () => {
     })
   );
 
+  it.effect(
+    "removes and restores external chain availability without changing core identity",
+    () =>
+      Effect.gen(function* () {
+        const chains = yield* SubscriptionRef.make<Chain[]>([mainnet]);
+        const connector = {
+          $filteredChains: SubscriptionRef.changes(chains),
+          id: "externalProviderConnector",
+          name: "External Provider",
+          type: "externalProvider",
+          uid: "external-provider",
+        } as unknown as Connector;
+        const controller = makeController(makeDefaultConfig());
+        const core = yield* SubscriptionRef.make<WalletCoreState>({
+          connection: connectedConnection(connector),
+          connectors: [connector],
+        });
+
+        const result = yield* Effect.scoped(
+          Effect.gen(function* () {
+            const state = yield* makeWalletStateRuntime({
+              controller: controller as WalletController,
+              core: {
+                current: SubscriptionRef.get(core),
+                states: SubscriptionRef.changes(core),
+              },
+              readStoredPublicKeys: Effect.succeed({}),
+            });
+            const excluded = yield* state.contexts.pipe(
+              Stream.filter(
+                (context) => context.state.connection.status === "unsupported"
+              ),
+              Stream.runHead,
+              Effect.map(Option.getOrThrow),
+              Effect.forkChild({ startImmediately: true })
+            );
+            yield* SubscriptionRef.set(chains, [optimism]);
+            const unsupported = yield* Fiber.join(excluded);
+            const restored = yield* state.contexts.pipe(
+              Stream.filter(
+                (context) => context.state.connection.status === "connected"
+              ),
+              Stream.runHead,
+              Effect.map(Option.getOrThrow),
+              Effect.forkChild({ startImmediately: true })
+            );
+            yield* SubscriptionRef.set(chains, [mainnet]);
+            return { restored: yield* Fiber.join(restored), unsupported };
+          })
+        );
+
+        expect(result.unsupported.core.connection).toMatchObject({
+          address,
+          chainId: mainnet.id,
+          status: "connected",
+        });
+        expect(result.unsupported.state.connection).toMatchObject({
+          additionalAddresses: null,
+          address,
+          chain: mainnet,
+          connector,
+          connectorChains: [optimism],
+          ledgerAccounts: null,
+          network: null,
+          status: "unsupported",
+        });
+        expect(result.restored.state.connection).toMatchObject({
+          address,
+          chain: mainnet,
+          connector,
+          connectorChains: [mainnet],
+          network: "ethereum",
+          status: "connected",
+        });
+      })
+  );
+
   it.effect("keeps the last Wallet Scope Owner through a reconnect gap", () =>
     Effect.gen(function* () {
       const connector = {
