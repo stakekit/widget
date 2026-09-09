@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.286](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.285...@stakekit/widget@0.0.286) (2026-09-09)
+
+
+### Bug Fixes
+
+* **wallet:** synchronize external provider state and capabilities ([#565](https://github.com/stakekit/widget/issues/565)) ([df247b2](https://github.com/stakekit/widget/commit/df247b23a40484da8ec885ad5c5fda401673b572))
+
 ## [0.0.285](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.284...@stakekit/widget@0.0.285) (2026-09-07)
 
 
