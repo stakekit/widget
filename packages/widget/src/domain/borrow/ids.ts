@@ -51,7 +51,7 @@ const AddressedTokenId = Schema.TemplateLiteral([
   Schema.Literal("address:"),
   Schema.NonEmptyString,
   Schema.Literal(":"),
-  TokenAddress,
+  CanonicalTokenAddress,
 ]);
 const NativeTokenId = Schema.TemplateLiteral([
   Schema.Literal("native:"),

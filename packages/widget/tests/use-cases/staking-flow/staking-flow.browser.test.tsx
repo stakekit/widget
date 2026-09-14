@@ -78,7 +78,7 @@ describe("Staking flow", () => {
     const rewardTokenDetails = getYieldSummaryRewardToken(yieldOp)!;
 
     await expect
-      .element(app.getByText(`You'll receive`).first())
+      .element(app.getByText("You'll receive", { exact: false }).first())
       .toBeInTheDocument();
     await expect
       .element(
@@ -116,7 +116,9 @@ describe("Staking flow", () => {
     await expect
       .element(app.getByText(yieldOp.token.symbol).first())
       .toBeInTheDocument();
-    await expect.element(app.getByText("& earn").first()).toBeInTheDocument();
+    await expect
+      .element(app.getByText("& earn", { exact: false }).first())
+      .toBeInTheDocument();
     await expect.element(app.getByText("5.08%").first()).toBeInTheDocument();
 
     await expect

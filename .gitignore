@@ -14,6 +14,7 @@ coverage/
 .nyc_output/
 playwright-report/
 test-results/
+.vitest/
 *.lcov
 *.tsbuildinfo
 next-env.d.ts

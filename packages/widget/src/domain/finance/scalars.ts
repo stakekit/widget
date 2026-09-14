@@ -92,7 +92,7 @@ export const TolerantOptionalUtcDateTimeFromString = (
 ) =>
   Schema.Unknown.pipe(
     Schema.decodeTo(Schema.UndefinedOr(Schema.DateTimeUtc), {
-      decode: SchemaGetter.transformOrFail((input) => {
+      decode: SchemaGetter.transformEffect((input) => {
         if (input === undefined) {
           // Effect.void widens the success type to void, which is incompatible
           // with the schema's precise DateTime.Utc | undefined output.
@@ -112,7 +112,7 @@ export const TolerantNullableUtcDateTimeFromString = (
 ) =>
   Schema.Unknown.pipe(
     Schema.decodeTo(Schema.NullOr(Schema.DateTimeUtc), {
-      decode: SchemaGetter.transformOrFail((input) =>
+      decode: SchemaGetter.transformEffect((input) =>
         input === null
           ? Effect.succeed(null)
           : decodeOptionalUtcDateTime(input, options).pipe(

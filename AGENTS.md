@@ -14,7 +14,7 @@ source of truth for behavior.
 | Ownership, dependency direction, and Module interfaces | `packages/widget/ARCHITECTURE.md` |
 | Project vocabulary | `CONTEXT.md` |
 | A decision that constrains the change | The relevant current file in `docs/adr/` |
-| Effect APIs | Run `git submodule update --init .repos/effect` (pinned to the same release as the catalog `effect` version, currently `effect@4.0.0-rc.112`), then read `.repos/effect/LLMS.md`, then the exact upstream source or tests |
+| Effect APIs | Run `git submodule update --init .repos/effect` (pinned to the same release as the catalog `effect` version), then read `.repos/effect/LLMS.md`, then the exact upstream source or tests |
 | Local issues, domain docs, and triage | `docs/agents/` |
 | Publishing | `docs/releases.md` |
 
@@ -26,6 +26,7 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`.
 - `pnpm --filter @stakekit/widget test:unit` — Node tests.
 - `pnpm --filter @stakekit/widget test:dom` — jsdom tests.
 - `pnpm --filter @stakekit/widget test:browser` — Chromium tests.
+- `pnpm --filter @stakekit/widget test:browser:diagnostic` — Chromium tests with trace replay in `packages/widget/.vitest/index.html`; serve that directory over HTTP to view the report.
 - `pnpm check-hygiene` — dependency-cruiser and Knip; run after changing the import graph.
 - `pnpm lint` — all workspaces plus the root ast-grep rules.
 - `pnpm check` — lint, hygiene, tests, and builds.

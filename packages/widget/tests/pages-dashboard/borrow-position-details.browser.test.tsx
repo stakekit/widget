@@ -335,7 +335,9 @@ describe("Borrow position details", () => {
     await expect.element(app.getByText("Total supplied")).toBeInTheDocument();
     await expect.element(app.getByText("Net worth")).toBeInTheDocument();
     await expect.element(app.getByText("WETH/USDC")).toBeInTheDocument();
-    await expect.element(app.getByText("Aave V3")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Aave V3", { exact: false }))
+      .toBeInTheDocument();
 
     await userEvent.click(app.getByText("WETH/USDC"));
 

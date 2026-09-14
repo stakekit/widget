@@ -107,19 +107,21 @@ describe("Activity History resource", () => {
   });
 
   it("shares normalized requests and loads one semantic batch per Pull", async () => {
-    const listActivity = vi.fn((request: { readonly offset: number }) =>
+    const mockActivityPage = (actionId: string, offset: number) =>
       Effect.succeed({
-        items: [
-          yieldApiActionFixture({
-            id: request.offset === 0 ? "action-a" : "action-b",
-            yieldId,
-          }),
-        ],
+        items: [yieldApiActionFixture({ id: actionId, yieldId })],
         limit: 1,
-        offset: request.offset,
+        offset,
         total: 2,
-      })
-    );
+      });
+
+    const listActivity =
+      vi.fn<YieldResourceSource["Service"]["listActivity"]>();
+    vi.when(listActivity, { onUnmatched: "throw" })
+      .calledWith(expect.objectContaining({ offset: 0 }))
+      .thenReturn(mockActivityPage("action-a", 0))
+      .calledWith(expect.objectContaining({ offset: 1 }))
+      .thenReturn(mockActivityPage("action-b", 1));
     const registry = makeRegistry(listActivity);
     const firstPull = activityHistoryPullAtom(makeKey());
     const equivalentPull = activityHistoryPullAtom(makeKey());

@@ -27,61 +27,42 @@ type FixtureMethods<Worker> = TestAPI<WorkerFixtureContext<Worker>> & {
   readonly live: FixtureEffectTester<Worker, Scope.Scope>;
 };
 
-const fixtureContext =
-  <Worker>(self: (context: FixtureTestContext<Worker>) => unknown) =>
-  ({
-    worker,
-    task,
-    signal,
-    onTestFailed,
-    onTestFinished,
-    skip,
-    annotate,
-    expect,
-    _local,
-  }: FixtureTestContext<Worker>) =>
-    self({
-      worker,
-      task,
-      signal,
-      onTestFailed,
-      onTestFinished,
-      skip,
-      annotate,
-      expect,
-      _local,
-    });
+const fixtureContext = <Worker>(
+  self: (context: FixtureTestContext<Worker>) => unknown
+) =>
+  function ({
+    worker: _worker,
+    task: _task,
+    signal: _signal,
+    onTestFailed: _onTestFailed,
+    onTestFinished: _onTestFinished,
+    skip: _skip,
+    annotate: _annotate,
+    expect: _expect,
+    bench: _bench,
+  }: FixtureTestContext<Worker>) {
+    // biome-ignore lint/complexity/noArguments: Vitest fixture parsing requires explicit destructuring and rejects rest parameters.
+    return self(arguments[0] as FixtureTestContext<Worker>);
+  };
 
-const fixtureContextLast =
-  <Worker>(self: CallableFunction) =>
-  (
+const fixtureContextLast = <Worker>(self: CallableFunction) =>
+  function (
     testCase: unknown,
     {
-      worker,
-      task,
-      signal,
-      onTestFailed,
-      onTestFinished,
-      skip,
-      annotate,
-      expect,
-      _local,
+      worker: _worker,
+      task: _task,
+      signal: _signal,
+      onTestFailed: _onTestFailed,
+      onTestFinished: _onTestFinished,
+      skip: _skip,
+      annotate: _annotate,
+      expect: _expect,
+      bench: _bench,
     }: FixtureTestContext<Worker>
-  ) =>
-    Reflect.apply(self, undefined, [
-      testCase,
-      {
-        worker,
-        task,
-        signal,
-        onTestFailed,
-        onTestFinished,
-        skip,
-        annotate,
-        expect,
-        _local,
-      },
-    ]);
+  ) {
+    // biome-ignore lint/complexity/noArguments: Vitest fixture parsing requires explicit destructuring and rejects rest parameters.
+    return Reflect.apply(self, undefined, [testCase, arguments[1]]);
+  };
 
 const collectorModifiers = new Set(["only", "skip"]);
 const collectorFactories = new Set(["runIf", "skipIf"]);

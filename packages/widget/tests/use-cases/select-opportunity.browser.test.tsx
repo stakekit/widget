@@ -269,7 +269,7 @@ describe("Select opportunity", () => {
     await clickOpportunity("ethereum-eth-reth-staking");
 
     await expect
-      .element(app.getByText("You'll receive").first())
+      .element(app.getByText("You'll receive", { exact: false }).first())
       .toBeInTheDocument();
     await expect.element(app.getByText("rETH").first()).toBeInTheDocument();
     await expect
@@ -295,7 +295,7 @@ describe("Select opportunity", () => {
     await clickOpportunity("ethereum-eth-lido-staking");
 
     await expect
-      .element(app.getByText("You'll receive").first())
+      .element(app.getByText("You'll receive", { exact: false }).first())
       .toBeInTheDocument();
     await expect.element(app.getByText("stETH").first()).toBeInTheDocument();
     await expect.element(app.getByText("Rated by Credora")).toBeInTheDocument();
