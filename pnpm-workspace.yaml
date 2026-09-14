@@ -38,7 +38,6 @@ catalog:
   "@effect/platform-node": 4.0.0-rc.115
   "@effect/tsgo": 0.39.0
   "@effect/vitest": 4.0.0-rc.115
-  "@faker-js/faker": ^10.6.0
   "@ledgerhq/wallet-api-client": ^1.15.3
   "@ledgerhq/wallet-api-core": ^1.35.0
   "@luno-kit/core": ^0.0.13

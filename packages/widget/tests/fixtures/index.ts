@@ -1,5 +1,5 @@
-import { faker } from "@faker-js/faker";
-import { DateTime, Schema } from "effect";
+import { DateTime, Effect, Random, Schema } from "effect";
+import { Arbitrary } from "effect/unstable/arbitrary";
 import { ActionTransaction, YieldAction } from "../../src/domain/action/models";
 import type {
   EarnBalance,
@@ -20,7 +20,22 @@ import type { YieldDto as YieldApiYieldDto } from "../generated/yield-api-types"
 
 type ValidatorDto = typeof EarnValidator.Encoded;
 type YieldApiProviderDto = typeof EarnProvider.Encoded;
-const apyFaker = () => faker.number.float({ min: 0, max: 0.05 });
+// ast-grep-ignore: no-run-effect-in-test -- synchronous fixture helper for random APY values
+const apyFaker = () => Effect.runSync(Random.nextBetween(0, 0.05));
+
+const ethereumAddressArbitrary = Arbitrary.schema(
+  Schema.String.check(Schema.isPattern(/^0x[a-f0-9]{40}$/))
+);
+const ethereumAddressFaker = () =>
+  // ast-grep-ignore: no-run-effect-in-test -- synchronous fixture helper for generated addresses
+  Effect.runSync(
+    Arbitrary.sampleEffect(ethereumAddressArbitrary, { count: 1 })
+  )[0]!;
+
+const uuidArbitrary = Arbitrary.schema(Schema.String.check(Schema.isUUID(4)));
+const uuidFaker = () =>
+  // ast-grep-ignore: no-run-effect-in-test -- synchronous fixture helper for generated UUIDs
+  Effect.runSync(Arbitrary.sampleEffect(uuidArbitrary, { count: 1 }))[0]!;
 
 type ExactDecimalFixtureInput = Parameters<typeof exactDecimal>[0];
 type YieldRewardComponent = YieldRewardRate["components"][number];
@@ -193,7 +208,7 @@ export const yieldApiValidatorFixture = (
   const { rewardRate, ...rest } = overrides ?? {};
 
   return {
-    address: faker.finance.ethereumAddress(),
+    address: ethereumAddressFaker(),
     commission: 0,
     logoURI: "https://assets.stakek.it/validators/default.png",
     name: "StakeKit Validator",
@@ -210,7 +225,7 @@ export const yieldBalanceFixture = (
   const token = overrides?.token ?? yieldApiYieldFixture().token;
 
   return {
-    address: faker.finance.ethereumAddress(),
+    address: ethereumAddressFaker(),
     type: "active",
     amount: "1",
     amountRaw: "1000000000000000000",
@@ -298,7 +313,7 @@ export const yieldApiValidatorsFixture = (
 export const yieldApiTransactionDtoFixture = (
   overrides?: Partial<typeof ActionTransaction.Encoded>
 ): typeof ActionTransaction.Encoded => ({
-  id: faker.string.uuid(),
+  id: uuidFaker(),
   title: "Stake",
   network: "ethereum",
   status: "CREATED",
@@ -340,11 +355,11 @@ export const yieldApiActionDtoFixture = (
   const intent = overrides?.intent ?? getYieldActionIntent(type);
 
   return {
-    id: faker.string.uuid(),
+    id: uuidFaker(),
     intent,
     type,
     yieldId: "ethereum-eth-native-staking",
-    address: faker.finance.ethereumAddress(),
+    address: ethereumAddressFaker(),
     amount: null,
     amountRaw: null,
     amountUsd: null,
