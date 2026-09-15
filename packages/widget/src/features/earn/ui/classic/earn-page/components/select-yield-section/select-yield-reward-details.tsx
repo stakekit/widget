@@ -1,3 +1,4 @@
+import type { PropsWithChildren } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import type { EarnValidator } from "../../../../../../../domain/earn/models";
 import { getEffectiveYieldRewardRateDetails } from "../../../../../../../domain/earn/reward-rate";
@@ -11,6 +12,7 @@ import { useWidgetConfig } from "../../../../../../../features/widget-configurat
 import { formatNumber } from "../../../../../../../shared/lib/number-format";
 import { Divider } from "../../../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
+import { ContentLoaderLine } from "../../../../../../../shared/ui/primitives/content-loader";
 import { MorphoStarsIcon } from "../../../../../../../shared/ui/primitives/icons/morpho-stars";
 import { Image } from "../../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
@@ -27,6 +29,40 @@ type StrategyProvider = {
   key: string;
   logo: string | undefined;
   name: string;
+};
+
+const YieldRewardDetailsLayout = ({ children }: PropsWithChildren) => (
+  <Box data-rk="yield-rewards">
+    <Box display="flex" flexDirection="column" gap="4" marginTop="3">
+      {children}
+    </Box>
+  </Box>
+);
+
+export const SelectYieldRewardDetailsSkeleton = () => {
+  const dashboardVariant = useWidgetConfig("dashboardVariant");
+  const variant = useWidgetConfig("variant");
+
+  return (
+    <YieldRewardDetailsLayout>
+      {variant !== "zerion" && dashboardVariant && (
+        <>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            gap="2"
+            flexWrap="wrap"
+          >
+            <ContentLoaderLine widthPx="12ch" />
+            <ContentLoaderLine widthPx="10ch" />
+          </Box>
+          <Divider />
+        </>
+      )}
+      <EstimatedRewardAmounts loading />
+    </YieldRewardDetailsLayout>
+  );
 };
 
 export const SelectYieldRewardDetails = () => {
@@ -109,89 +145,87 @@ export const SelectYieldRewardDetails = () => {
     : null;
 
   return (
-    <Box data-rk="yield-rewards">
-      <Box display="flex" flexDirection="column" gap="4" marginTop="3">
-        {showYieldStrategyDetails && (
-          <>
-            {strategyDetails &&
-            (dashboardVariant || strategyDetails.outputToken) ? (
-              <YieldStrategyDetails {...strategyDetails} />
-            ) : null}
+    <YieldRewardDetailsLayout>
+      {showYieldStrategyDetails && (
+        <>
+          {strategyDetails &&
+          (dashboardVariant || strategyDetails.outputToken) ? (
+            <YieldStrategyDetails {...strategyDetails} />
+          ) : null}
 
-            {dashboardVariant && <Divider />}
-          </>
-        )}
+          {dashboardVariant && <Divider />}
+        </>
+      )}
 
-        {variant === "zerion" && rewardToken ? (
+      {variant === "zerion" && rewardToken ? (
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          gap="2"
+        >
+          <Text variant={{ type: "muted", weight: "normal" }}>
+            <Trans
+              i18nKey="details.rewards.receive"
+              components={{
+                symbols1: (
+                  <Box as="span" fontWeight="bold">
+                    {getRewardTokenSymbols(rewardToken.rewardTokens)}
+                  </Box>
+                ),
+              }}
+            />
+          </Text>
+
           <Box
             display="flex"
-            justifyContent="space-between"
+            justifyContent="center"
             alignItems="center"
-            gap="2"
+            flexShrink={0}
           >
+            {rewardToken.logoUri && (
+              <Box
+                marginRight="1"
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                gap="1"
+              >
+                <Image
+                  imgProps={{ borderRadius: "full" }}
+                  wrapperProps={{ hw: "5" }}
+                  src={rewardToken.logoUri}
+                  fallbackName={rewardToken.providerName}
+                />
+
+                {isMorphoProvider(rewardToken.providerName) && (
+                  <Box width="5" height="5">
+                    <MorphoStarsIcon />
+                  </Box>
+                )}
+              </Box>
+            )}
             <Text variant={{ type: "muted", weight: "normal" }}>
-              <Trans
-                i18nKey="details.rewards.receive"
-                components={{
-                  symbols1: (
-                    <Box as="span" fontWeight="bold">
-                      {getRewardTokenSymbols(rewardToken.rewardTokens)}
-                    </Box>
-                  ),
-                }}
-              />
+              {rewardToken.providerName}
             </Text>
-
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              flexShrink={0}
-            >
-              {rewardToken.logoUri && (
-                <Box
-                  marginRight="1"
-                  display="flex"
-                  justifyContent="center"
-                  alignItems="center"
-                  gap="1"
-                >
-                  <Image
-                    imgProps={{ borderRadius: "full" }}
-                    wrapperProps={{ hw: "5" }}
-                    src={rewardToken.logoUri}
-                    fallbackName={rewardToken.providerName}
-                  />
-
-                  {isMorphoProvider(rewardToken.providerName) && (
-                    <Box width="5" height="5">
-                      <MorphoStarsIcon />
-                    </Box>
-                  )}
-                </Box>
-              )}
-              <Text variant={{ type: "muted", weight: "normal" }}>
-                {rewardToken.providerName}
-              </Text>
-            </Box>
           </Box>
-        ) : null}
+        </Box>
+      ) : null}
 
-        <EstimatedRewardAmounts
-          earnMonthly={earnMonthly}
-          earnYearly={earnYearly}
+      <EstimatedRewardAmounts
+        earnMonthly={earnMonthly}
+        earnYearly={earnYearly}
+      />
+
+      {rewardRateDetails ? (
+        <RewardRateBreakdown
+          rewardRate={rewardRateDetails}
+          showUpToCampaign
+          title={t("details.apy_composition.title")}
+          testId="reward-rate-breakdown"
         />
-
-        {rewardRateDetails ? (
-          <RewardRateBreakdown
-            rewardRate={rewardRateDetails}
-            showUpToCampaign
-            title={t("details.apy_composition.title")}
-            testId="reward-rate-breakdown"
-          />
-        ) : null}
-      </Box>
-    </Box>
+      ) : null}
+    </YieldRewardDetailsLayout>
   );
 };
 

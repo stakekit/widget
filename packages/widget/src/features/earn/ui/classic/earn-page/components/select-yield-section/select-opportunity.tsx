@@ -1,6 +1,7 @@
 import { Trigger } from "@radix-ui/react-dialog";
 import clsx from "clsx";
 import { Array as EArray, Option } from "effect";
+import { type ComponentProps, forwardRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getYieldOutputToken,
@@ -13,10 +14,15 @@ import {
   SelectModalItemContainer,
 } from "../../../../../../../shared/ui/components/select-modal";
 import { selectModalGroupLabel } from "../../../../../../../shared/ui/components/select-modal/styles.css";
+import { TokenIconSkeleton } from "../../../../../../../shared/ui/components/token-icon";
 import { ProviderIcon } from "../../../../../../../shared/ui/components/token-icon/provider-icon";
 import { GroupedVirtualList } from "../../../../../../../shared/ui/components/virtual-list";
-import { Box } from "../../../../../../../shared/ui/primitives/box";
+import {
+  Box,
+  type BoxProps,
+} from "../../../../../../../shared/ui/primitives/box";
 import { pressAnimation } from "../../../../../../../shared/ui/primitives/button/styles.css";
+import { ContentLoaderLine } from "../../../../../../../shared/ui/primitives/content-loader";
 import { CaretDownIcon } from "../../../../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
 import { useTrackEvent } from "../../../../../../tracking/index";
@@ -45,8 +51,6 @@ export const SelectOpportunity = () => {
       }
     : null;
 
-  const variant = useWidgetConfig("variant");
-
   if (!data) return null;
 
   const displayToken = getYieldOutputToken(data.ss) ?? data.ss.token;
@@ -60,35 +64,16 @@ export const SelectOpportunity = () => {
       onOpen={() => trackEvent("selectYieldModalOpened")}
       trigger={
         <Trigger asChild>
-          <Box
-            as="button"
-            className={clsx(
-              combineRecipeWithVariant({
-                rec: selectOpportunityButton,
-                variant,
-              }),
-              pressAnimation
-            )}
-            data-testid="select-opportunity"
-          >
-            <Box
-              marginRight="2"
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-            >
-              <ProviderIcon
-                token={displayToken}
-                metadata={{
-                  logoURI: data.ss.metadata.logoURI,
-                  name: data.ss.metadata.name,
-                  provider: data.ss.provider,
-                }}
-              />
-              <Text variant={{ weight: "bold" }}>{displayToken.symbol}</Text>
-            </Box>
-            <CaretDownIcon />
-          </Box>
+          <SelectOpportunityTrigger
+            icon={{
+              token: displayToken,
+              metadata: {
+                logoURI: data.ss.metadata.logoURI,
+                name: data.ss.metadata.name,
+                provider: data.ss.provider,
+              },
+            }}
+          />
         </Trigger>
       }
     >
@@ -148,3 +133,55 @@ export const SelectOpportunity = () => {
     </SelectModal>
   );
 };
+
+export const SelectOpportunityTrigger = forwardRef<
+  unknown,
+  BoxProps & { icon?: ComponentProps<typeof ProviderIcon> }
+>(({ icon, ...buttonProps }, ref) => {
+  const variant = useWidgetConfig("variant");
+
+  return (
+    <Box
+      as="button"
+      ref={ref}
+      className={clsx(
+        combineRecipeWithVariant({
+          rec: selectOpportunityButton,
+          variant,
+        }),
+        pressAnimation
+      )}
+      data-testid="select-opportunity"
+      {...buttonProps}
+      disabled={!icon}
+    >
+      {icon ? (
+        <>
+          <Box
+            marginRight="2"
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+          >
+            <ProviderIcon {...icon} />
+            <Text variant={{ weight: "bold" }}>{icon.token.symbol}</Text>
+          </Box>
+          <CaretDownIcon />
+        </>
+      ) : (
+        <>
+          <Box
+            marginRight="2"
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+          >
+            <TokenIconSkeleton />
+            <ContentLoaderLine widthPx="6ch" />
+          </Box>
+          <CaretDownIcon loading />
+        </>
+      )}
+    </Box>
+  );
+});

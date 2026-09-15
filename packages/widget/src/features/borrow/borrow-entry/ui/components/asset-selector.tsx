@@ -3,12 +3,16 @@ import clsx from "clsx";
 import type { ReactNode } from "react";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
-import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
+import {
+  TokenIcon,
+  TokenIconSkeleton,
+} from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import {
   pressAnimation,
   selectTokenButton,
 } from "../../../../../shared/ui/primitives/button/styles.css";
+import { ContentLoaderLine } from "../../../../../shared/ui/primitives/content-loader";
 import { CaretDownIcon } from "../../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import * as amountStyles from "../../../amount-input/views";
@@ -20,33 +24,41 @@ const AmountTokenButtonContent = ({
   token,
 }: {
   readonly showCaret: boolean;
-  readonly token: BorrowEntryToken;
-}) => (
-  <>
-    <TokenIcon token={token} />
-    <Text
-      className={amountStyles.amountTokenButtonText}
-      variant={{ weight: "bold" }}
-    >
-      {token.symbol}
-    </Text>
-    {showCaret ? (
-      <Box className={amountStyles.amountTokenButtonCaret}>
-        <CaretDownIcon />
-      </Box>
-    ) : null}
-  </>
-);
+  readonly token: BorrowEntryToken | null;
+}) =>
+  token ? (
+    <>
+      <TokenIcon token={token} />
+      <Text
+        className={amountStyles.amountTokenButtonText}
+        variant={{ weight: "bold" }}
+      >
+        {token.symbol}
+      </Text>
+      {showCaret ? (
+        <Box className={amountStyles.amountTokenButtonCaret}>
+          <CaretDownIcon />
+        </Box>
+      ) : null}
+    </>
+  ) : (
+    <>
+      <TokenIconSkeleton />
+      <ContentLoaderLine widthPx="6ch" />
+    </>
+  );
 
 export const StaticAmountTokenButton = ({
   token,
 }: {
-  readonly token: BorrowEntryToken;
+  readonly token: BorrowEntryToken | null;
 }) => {
   const variant = useWidgetConfig("variant");
 
   return (
     <Box
+      as={token ? "div" : "button"}
+      disabled={!token}
       className={clsx(
         amountStyles.amountTokenButton,
         combineRecipeWithVariant({

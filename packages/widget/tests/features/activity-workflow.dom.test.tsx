@@ -16,15 +16,6 @@ import { render } from "../utils/test-utils.dom.tsx";
 
 const i18nInstance = createWidgetI18nInstance();
 
-vi.mock(
-  "../../src/features/activity/ui/activity-page/components/action-list-item",
-  () => ({
-    ActionListItem: ({ action }: { readonly action: ActivityActionItem }) => (
-      <div data-rk="activity-action">{action.actionData.id}</div>
-    ),
-  })
-);
-
 const settings = {
   apiKey: "test-api-key",
   variant: "default" as const,

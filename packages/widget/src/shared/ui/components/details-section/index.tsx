@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { formatAddress } from "../../../lib/general";
 import { Box } from "../../primitives/box";
+import { ContentLoaderLine } from "../../primitives/content-loader";
 import * as CopyText from "../../primitives/copy-text";
 import { Text } from "../../primitives/typography/text";
 import {
@@ -14,6 +15,7 @@ import * as styles from "./styles.css";
 type DetailRowProps = Readonly<{
   readonly id?: string;
   readonly label: string;
+  readonly loading?: boolean;
   readonly value: ReactNode;
 }>;
 
@@ -25,12 +27,14 @@ type AddressRowProps = Readonly<{
 export const DetailsSection = ({
   children,
   title,
+  loading,
 }: {
   children: ReactNode;
   title: string;
+  loading?: boolean;
 }) => (
   <CollapsibleRoot initial={false}>
-    <Box display="flex" flexDirection="column">
+    <Box display="flex" flexDirection="column" aria-busy={loading || undefined}>
       <Box
         display="flex"
         justifyContent="space-between"
@@ -38,7 +42,12 @@ export const DetailsSection = ({
         paddingBottom="3"
       >
         <Text variant={{ weight: "bold" }}>{title}</Text>
-        <CollapsibleTrigger flex={1} justifyContent="flex-end">
+        <CollapsibleTrigger
+          flex={1}
+          justifyContent="flex-end"
+          inert={loading || undefined}
+          aria-disabled={loading || undefined}
+        >
           <CollapsibleArrow />
         </CollapsibleTrigger>
       </Box>
@@ -48,28 +57,32 @@ export const DetailsSection = ({
   </CollapsibleRoot>
 );
 
-export const DetailRow = ({ label, value }: DetailRowProps) => (
-  <Box className={styles.detailRow}>
-    <Text
-      as="span"
-      className={styles.detailRowLabel}
-      variant={{ type: "muted", weight: "normal" }}
-    >
-      {label}
-    </Text>
-    {typeof value === "string" ? (
+export const DetailRow = ({ label, loading, value }: DetailRowProps) => {
+  const content = loading ? <ContentLoaderLine widthPx="8ch" /> : value;
+
+  return (
+    <Box className={styles.detailRow} aria-busy={loading || undefined}>
       <Text
         as="span"
-        className={styles.valueText}
-        variant={{ weight: "normal" }}
+        className={styles.detailRowLabel}
+        variant={{ type: "muted", weight: "normal" }}
       >
-        {value}
+        {label}
       </Text>
-    ) : (
-      <Box className={styles.valueText}>{value}</Box>
-    )}
-  </Box>
-);
+      {loading || typeof value === "string" ? (
+        <Text
+          as="span"
+          className={styles.valueText}
+          variant={{ weight: "normal" }}
+        >
+          {content}
+        </Text>
+      ) : (
+        <Box className={styles.valueText}>{value}</Box>
+      )}
+    </Box>
+  );
+};
 
 export const AddressRow = ({ address, label }: AddressRowProps) => (
   <Box className={styles.addressBox}>

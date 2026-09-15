@@ -1,45 +1,39 @@
 import clsx from "clsx";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { VerticalDivider } from "../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../shared/ui/primitives/box";
+import { ContentLoaderLine } from "../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { selectYieldRewardsText } from "./styles.css";
 
-type EstimatedRewardAmountsProps = {
-  earnYearly: string;
-  earnMonthly: string;
-};
+type EstimatedRewardAmountsProps =
+  | {
+      loading: true;
+      earnYearly?: ReactNode;
+      earnMonthly?: ReactNode;
+    }
+  | {
+      loading?: false;
+      earnYearly: ReactNode;
+      earnMonthly: ReactNode;
+    };
 
-export const EstimatedRewardAmounts = ({
-  earnYearly,
-  earnMonthly,
-}: EstimatedRewardAmountsProps) => {
+export const EstimatedRewardAmounts = (props: EstimatedRewardAmountsProps) => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");
   const variant = useWidgetConfig("variant");
 
   if (dashboardVariant || variant === "utila" || variant === "porto") {
-    return (
-      <CompactEarnYearlyOrMonthly
-        earnMonthly={earnMonthly}
-        earnYearly={earnYearly}
-      />
-    );
+    return <CompactEarnYearlyOrMonthly {...props} />;
   }
 
-  return (
-    <DefaultEarnYearlyOrMonthly
-      earnMonthly={earnMonthly}
-      earnYearly={earnYearly}
-    />
-  );
+  return <DefaultEarnYearlyOrMonthly {...props} />;
 };
 
-const DefaultEarnYearlyOrMonthly = ({
-  earnMonthly,
-  earnYearly,
-}: EstimatedRewardAmountsProps) => {
+const DefaultEarnYearlyOrMonthly = (props: EstimatedRewardAmountsProps) => {
+  const { earnMonthly, earnYearly, loading = false } = props;
   const { t } = useTranslation();
   const variant = useWidgetConfig("variant");
 
@@ -64,17 +58,21 @@ const DefaultEarnYearlyOrMonthly = ({
         >
           {t(variant === "zerion" ? "details.rewards.yearly" : "shared.yearly")}
         </Text>
-        <Text
-          variant={{ type: "muted", weight: "normal" }}
-          className={clsx(
-            combineRecipeWithVariant({
-              rec: selectYieldRewardsText,
-              variant,
-            })
-          )}
-        >
-          {earnYearly}
-        </Text>
+        {loading ? (
+          <ContentLoaderLine widthPx="7ch" />
+        ) : (
+          <Text
+            variant={{ type: "muted", weight: "normal" }}
+            className={clsx(
+              combineRecipeWithVariant({
+                rec: selectYieldRewardsText,
+                variant,
+              })
+            )}
+          >
+            {earnYearly}
+          </Text>
+        )}
       </Box>
 
       <Box
@@ -96,27 +94,45 @@ const DefaultEarnYearlyOrMonthly = ({
         >
           {t("shared.monthly")}
         </Text>
-        <Text
-          variant={{ type: "muted", weight: "normal" }}
-          className={clsx(
-            combineRecipeWithVariant({
-              rec: selectYieldRewardsText,
-              variant,
-            })
-          )}
-        >
-          {earnMonthly}
-        </Text>
+        {loading ? (
+          <ContentLoaderLine widthPx="7ch" />
+        ) : (
+          <Text
+            variant={{ type: "muted", weight: "normal" }}
+            className={clsx(
+              combineRecipeWithVariant({
+                rec: selectYieldRewardsText,
+                variant,
+              })
+            )}
+          >
+            {earnMonthly}
+          </Text>
+        )}
       </Box>
     </>
   );
 };
 
-const CompactEarnYearlyOrMonthly = ({
-  earnMonthly,
-  earnYearly,
-}: EstimatedRewardAmountsProps) => {
+const CompactEarnYearlyOrMonthly = (props: EstimatedRewardAmountsProps) => {
+  const { earnMonthly, earnYearly, loading = false } = props;
   const { t } = useTranslation();
+
+  if (loading) {
+    return (
+      <Box display="flex" alignItems="center" gap="3" flexWrap="wrap">
+        <Box display="flex" alignItems="center">
+          <ContentLoaderLine widthPx="12ch" />
+        </Box>
+
+        <VerticalDivider />
+
+        <Box display="flex" alignItems="center">
+          <ContentLoaderLine widthPx="13ch" />
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box display="flex" alignItems="center" gap="3" flexWrap="wrap">

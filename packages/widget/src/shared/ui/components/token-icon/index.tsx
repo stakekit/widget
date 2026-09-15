@@ -3,7 +3,7 @@ import type { Token } from "../../../../domain/token/token";
 import type { Atoms } from "../../../styles/theme/atoms.css";
 import { useWidgetPresentation } from "../../widget-presentation";
 import { NetworkLogoImage } from "./network-icon-image";
-import { TokenIconContainer } from "./token-icon-container";
+import { TokenIconContainer, TokenIconFrame } from "./token-icon-container";
 import { TokenIconImage } from "./token-icon-image";
 
 export const TokenIcon = ({
@@ -47,3 +47,15 @@ export const TokenIcon = ({
     </TokenIconContainer>
   );
 };
+
+export const TokenIconSkeleton = ({
+  tokenLogoHw,
+  hideNetwork,
+}: {
+  tokenLogoHw?: Atoms["hw"];
+  hideNetwork?: boolean;
+}) => (
+  <TokenIconFrame hideNetwork={hideNetwork}>
+    <TokenIconImage loading tokenLogoHw={tokenLogoHw} />
+  </TokenIconFrame>
+);

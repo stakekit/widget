@@ -4,31 +4,39 @@ import { useTranslation } from "react-i18next";
 import { combineRecipeWithVariant } from "../../../styles/recipe-variant";
 import { Box, type BoxProps } from "../../primitives/box";
 import { pressAnimation } from "../../primitives/button/styles.css";
+import { ContentLoaderLine } from "../../primitives/content-loader";
 import { Text } from "../../primitives/typography/text";
 import { useWidgetPresentation } from "../../widget-presentation";
 import { container, text } from "./styles.css";
 
 type MaxButtonProps = PropsWithChildren<{
   onMaxClick: () => void;
+  loading?: boolean;
 }> &
   BoxProps;
 
 export const MaxButton = ({
   onMaxClick,
   className,
+  loading = false,
+  disabled,
   ...rest
 }: MaxButtonProps) => {
   const { t } = useTranslation();
 
   const { variant } = useWidgetPresentation();
+  const isDisabled = disabled || loading;
 
   return (
     <Box
       data-rk="stake-token-section-max-button"
       as="button"
-      onClick={onMaxClick}
+      type="button"
+      disabled={isDisabled}
+      aria-busy={loading || undefined}
+      onClick={isDisabled ? undefined : onMaxClick}
       className={clsx(
-        pressAnimation,
+        !isDisabled && pressAnimation,
         combineRecipeWithVariant({ rec: container, variant }),
         className
       )}
@@ -38,7 +46,7 @@ export const MaxButton = ({
         variant={{ type: "regular" }}
         className={combineRecipeWithVariant({ rec: text, variant })}
       >
-        {t("shared.max")}
+        {loading ? <ContentLoaderLine widthPx="3ch" /> : t("shared.max")}
       </Text>
     </Box>
   );

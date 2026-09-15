@@ -105,8 +105,6 @@ export const amountTokenSection = recipe({
   ],
 });
 
-export const selectTokenSection = amountTokenSection;
-
 export const selectTokenBalance = recipe({
   variants: {
     variant: {
