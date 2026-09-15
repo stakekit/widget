@@ -289,7 +289,7 @@ export const emptyChartContainer = style([
     justifyContent: "center",
   }),
   {
-    height: "150px",
+    height: "100%",
   },
 ]);
 

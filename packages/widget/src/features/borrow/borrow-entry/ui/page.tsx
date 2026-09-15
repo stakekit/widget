@@ -2,7 +2,6 @@ import { useAtomSet } from "@effect/atom-react";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
 import { useTrackPage } from "../../../tracking/index";
 import { ConnectButton } from "../../../wallet/views";
 import { PageCtaButton } from "../../../widget-shell/views";
@@ -133,7 +132,21 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
       (AsyncResult.isInitial(marketsResult) ||
         AsyncResult.isWaiting(marketsResult))
     ) {
-      return <ContentLoaderSquare heightPx={340} />;
+      return (
+        <>
+          <AmountField
+            highlight
+            label={t("dashboard.borrow.form.borrow")}
+            loading
+          />
+          <AmountField
+            label={t("dashboard.borrow.form.collateral")}
+            loading
+            showBalance
+          />
+          <BorrowFormDetails loading />
+        </>
+      );
     }
     if (markets.length === 0 && AsyncResult.isFailure(marketsResult)) {
       return (

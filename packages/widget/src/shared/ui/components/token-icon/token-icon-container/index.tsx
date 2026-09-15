@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { PropsWithChildren, ReactElement } from "react";
 import type { YieldMetadata } from "../../../../../domain/earn/yield";
 import type { Network } from "../../../../../domain/network/network";
 import type { Token } from "../../../../../domain/token/token";
@@ -17,6 +17,15 @@ type TokenIconContainerReturnType = ReturnType<typeof useVariantTokenUrls> & {
   networkLogoUri: string;
 };
 
+export const TokenIconFrame = ({
+  children,
+  hideNetwork,
+}: PropsWithChildren<{ hideNetwork?: boolean }>) => (
+  <Box position="relative" marginRight={hideNetwork ? "0" : "2"} display="flex">
+    {children}
+  </Box>
+);
+
 export const TokenIconContainer = ({
   token,
   metadata,
@@ -31,12 +40,8 @@ export const TokenIconContainer = ({
   const networkLogoUri = useVariantNetworkUrls(token.network as Network);
 
   return (
-    <Box
-      position="relative"
-      marginRight={hideNetwork ? "0" : "2"}
-      display="flex"
-    >
+    <TokenIconFrame hideNetwork={hideNetwork}>
       {children({ mainUrl, fallbackUrl, name, networkLogoUri, providerIcon })}
-    </Box>
+    </TokenIconFrame>
   );
 };

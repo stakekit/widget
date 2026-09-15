@@ -16,12 +16,9 @@ import {
   makeBorrowPositionActionRouteKey,
   startBorrowPositionActionReviewAtom,
 } from "../state/action-form";
+import { BorrowPositionActions } from "./actions.page";
 import { BorrowPositionBreadcrumb } from "./components/breadcrumb";
 import { BorrowPositionInfo } from "./components/position-info";
-import {
-  BorrowPositionActionsSkeleton,
-  BorrowPositionInfoSkeleton,
-} from "./components/skeletons";
 import {
   type BorrowPositionContext,
   getBorrowPositionBasePath,
@@ -78,12 +75,12 @@ export const BorrowPositionDetailsPage = () => {
           primary={
             <PositionDetailsPane kind="actions">
               <BorrowPositionBreadcrumb positionName={null} />
-              <BorrowPositionActionsSkeleton />
+              <BorrowPositionActions loading />
             </PositionDetailsPane>
           }
           secondary={
             <PositionDetailsPane kind="info">
-              <BorrowPositionInfoSkeleton />
+              <BorrowPositionInfo content="loading" />
             </PositionDetailsPane>
           }
         />
@@ -93,7 +90,7 @@ export const BorrowPositionDetailsPage = () => {
 
   const rightContent = (() => {
     if (isPositionLoading) {
-      return <BorrowPositionInfoSkeleton />;
+      return <BorrowPositionInfo content="loading" />;
     }
 
     if (AsyncResult.isFailure(borrowPosition.positionResult)) {

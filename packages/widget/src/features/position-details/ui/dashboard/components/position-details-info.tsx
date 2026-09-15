@@ -56,6 +56,7 @@ export const PositionDetailsInfo = () => {
   );
 
   if (positionDetails.isLoading) {
+    // Balances and integration metadata determine the metrics and detail rows.
     return <ContentLoaderSquare heightPx={430} />;
   }
 

@@ -1,7 +1,7 @@
 import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { createContext, useContext } from "react";
 import { Navigate, Outlet, useMatch, useParams } from "react-router";
-import { ContentLoaderSquare } from "../../../shared/ui/primitives/content-loader";
+import { LoadingSkeleton } from "../../../shared/ui/components/loading-skeleton";
 import { YieldActionContinuationSessionRoute } from "../../classic-transaction-flow/views";
 import { walletScopeAtom } from "../../wallet/index";
 import type { YieldSummaryProvider } from "../../yield-summary/index";
@@ -83,7 +83,7 @@ const BoundActivityActionRoute = ({
   const retry = useAtomSet(retryActivityActionRouteAtom(selectionKey));
 
   if (result.status === "loading") {
-    return <ContentLoaderSquare heightPx={320} />;
+    return <LoadingSkeleton />;
   }
   if (result.status === "failed") {
     return <ActivityDetailsFailure onRetry={() => retry(undefined)} />;

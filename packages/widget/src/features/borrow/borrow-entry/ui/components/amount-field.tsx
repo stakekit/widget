@@ -10,71 +10,103 @@ import {
 import * as AmountToggle from "../../../../../shared/ui/components/amount-toggle";
 import { MaxButton } from "../../../../../shared/ui/components/max-button";
 import { NumberInput } from "../../../../../shared/ui/components/number-input";
+import * as inputStyles from "../../../../../shared/ui/components/number-input/styles.css";
 import { Box } from "../../../../../shared/ui/primitives/box";
+import { ContentLoaderLine } from "../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { WarningBox } from "../../../../../shared/ui/primitives/warning-box";
 import * as styles from "../../../amount-input/views";
+import { StaticAmountTokenButton } from "./asset-selector";
 
-export const AmountField = ({
-  amount,
-  balanceLabel,
-  highlight = false,
-  label,
-  onMaxClick,
-  onAmountChange,
-  tokenSelector,
-  usdValue,
-  warningText,
-}: {
-  readonly amount: BigNumber;
-  readonly balanceLabel: ReactNode;
-  readonly highlight?: boolean;
-  readonly label: string;
-  readonly onMaxClick: (() => void) | null;
-  readonly onAmountChange: (amount: BigNumber) => void;
-  readonly tokenSelector: ReactNode;
-  readonly usdValue: BigNumber;
-  readonly warningText?: string | null;
-}) => (
-  <Box display="flex" flexDirection="column" gap="4">
-    <Text variant={{ weight: "bold" }}>{label}</Text>
+export const AmountField = (
+  props: {
+    readonly highlight?: boolean;
+    readonly label: string;
+  } & (
+    | { readonly loading: true; readonly showBalance?: boolean }
+    | {
+        readonly loading?: false;
+        readonly amount: BigNumber;
+        readonly balanceLabel: ReactNode;
+        readonly onMaxClick: (() => void) | null;
+        readonly onAmountChange: (amount: BigNumber) => void;
+        readonly tokenSelector: ReactNode;
+        readonly usdValue: BigNumber;
+        readonly warningText?: string | null;
+      }
+  )
+) => (
+  <Box aria-busy={props.loading} display="flex" flexDirection="column" gap="4">
+    <Text variant={{ weight: "bold" }}>{props.label}</Text>
     <Box
       className={clsx(
         styles.amountCard,
-        highlight && styles.amountCardHighlighted
+        props.highlight && styles.amountCardHighlighted
       )}
       data-rk="borrow-amount-section"
     >
       <Box className={styles.amountCardHeader}>
-        <NumberInput onChange={onAmountChange} value={amount} />
-
-        {tokenSelector}
+        {props.loading ? (
+          <Box className={inputStyles.container}>
+            <Text
+              className={inputStyles.numberInput}
+              variant={{ weight: "normal" }}
+            >
+              <ContentLoaderLine widthPx="3ch" />
+            </Text>
+          </Box>
+        ) : (
+          <NumberInput onChange={props.onAmountChange} value={props.amount} />
+        )}
+        {props.loading ? (
+          <StaticAmountTokenButton token={null} />
+        ) : (
+          props.tokenSelector
+        )}
       </Box>
 
       <Box className={styles.amountCardFooter}>
         <Text variant={{ type: "muted", weight: "normal" }}>
-          {formatUsd(usdValue)}
+          {props.loading ? (
+            <ContentLoaderLine widthPx="7ch" />
+          ) : (
+            formatUsd(props.usdValue)
+          )}
         </Text>
         <Box className={styles.amountBalanceGroup}>
           <Text variant={{ type: "muted", weight: "normal" }}>
-            {balanceLabel}
+            {props.loading
+              ? props.showBalance && <BorrowBalanceLabel loading />
+              : props.balanceLabel}
           </Text>
-          {onMaxClick ? <MaxButton onMaxClick={onMaxClick} /> : null}
+          {!props.loading && props.onMaxClick ? (
+            <MaxButton onMaxClick={props.onMaxClick} />
+          ) : null}
         </Box>
       </Box>
-      {warningText ? <WarningBox text={warningText} /> : null}
+      {!props.loading && props.warningText ? (
+        <WarningBox text={props.warningText} />
+      ) : null}
     </Box>
   </Box>
 );
 
-export const BorrowBalanceLabel = ({
-  amount,
-  symbol,
-}: {
-  readonly amount: string | number | BigNumber;
-  readonly symbol: string;
-}) => {
+export const BorrowBalanceLabel = (
+  props:
+    | { readonly loading: true }
+    | {
+        readonly loading?: false;
+        readonly amount: string | number | BigNumber;
+        readonly symbol: string;
+      }
+) => {
   const { t } = useTranslation();
+
+  if (props.loading) {
+    return <ContentLoaderLine widthPx="14ch" />;
+  }
+
+  const { amount, symbol } = props;
 
   return (
     <AmountToggle.Root>

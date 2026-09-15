@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
 import { Box } from "../../primitives/box";
+import { ContentLoaderLine } from "../../primitives/content-loader";
 import { Text } from "../../primitives/typography/text";
 import * as styles from "./styles.css";
 
@@ -9,6 +10,7 @@ type PositionMetricTone = "action" | "claim" | "default";
 export type PositionMetricCard = Readonly<{
   readonly id: string;
   readonly label: ReactNode;
+  readonly loading?: boolean;
   readonly subValue?: ReactNode;
   readonly tone?: PositionMetricTone;
   readonly value: ReactNode;
@@ -94,6 +96,11 @@ export const PositionMetricCards = ({
   <Box className={styles.metricGrid}>
     {cards.map((card) => {
       const tone = card.tone ?? "default";
+      const value = card.loading ? (
+        <ContentLoaderLine widthPx="6ch" />
+      ) : (
+        card.value
+      );
 
       return (
         <Box
@@ -102,6 +109,7 @@ export const PositionMetricCards = ({
           flexDirection="column"
           gap="1"
           key={card.id}
+          aria-busy={card.loading || undefined}
         >
           {typeof card.label === "string" ? (
             <Text
@@ -114,7 +122,7 @@ export const PositionMetricCards = ({
             card.label
           )}
 
-          {typeof card.value === "string" ? (
+          {card.loading || typeof card.value === "string" ? (
             <Text
               className={clsx(
                 styles.metricValueText({ tone }),
@@ -122,7 +130,7 @@ export const PositionMetricCards = ({
               )}
               variant={{ weight: "bold" }}
             >
-              {card.value}
+              {value}
             </Text>
           ) : (
             card.value
