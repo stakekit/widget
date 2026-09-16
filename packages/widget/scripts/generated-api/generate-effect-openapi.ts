@@ -85,6 +85,11 @@ const specs: SpecConfig[] = [
         schemaOnly: true,
       },
     ],
+    // NestJS URI versioning appends `_v1` to Swagger operationIds
+    // (e.g. `TokenController_getTokens_v1`). Strip the suffix so openapigen
+    // generates stable client method and DTO names without `V1` suffixes.
+    prepareSpec: (contents) =>
+      contents.replace(/operationId:\s*(.+?)_v\d+\b/g, "operationId: $1"),
     patches: [
       // Upstream currently declares regionCode as an object, but production
       // payloads and widget geo-block handling use it as a string.
@@ -97,8 +102,7 @@ const specs: SpecConfig[] = [
   },
   {
     name: "YieldApi",
-    url:
-      process.env.YIELD_API_SPEC_URL ?? "https://api.stg.yield.xyz/docs.yaml",
+    url: process.env.YIELD_API_SPEC_URL ?? "https://api.yield.xyz/docs.yaml",
     specFileName: "yield-api.yaml",
     outputs: [
       {
@@ -111,6 +115,11 @@ const specs: SpecConfig[] = [
         schemaOnly: true,
       },
     ],
+    // NestJS URI versioning appends `_v1` to Swagger operationIds
+    // (e.g. `YieldsController_getYields_v1`). Strip the suffix so openapigen
+    // generates stable client method and DTO names without `V1` suffixes.
+    prepareSpec: (contents) =>
+      contents.replace(/operationId:\s*(.+?)_v\d+\b/g, "operationId: $1"),
     patches: [
       // These DTO properties have concrete scalar types in the Yield API
       // source, but their Swagger decorators omit the explicit property type.
@@ -171,6 +180,17 @@ const specs: SpecConfig[] = [
         description: "Total TVL across the entire provider in USD",
         example: "10,200,000",
       }),
+      {
+        op: "replace",
+        path: "/components/schemas/ValidatorProviderDto/properties/revshare",
+        value: {
+          description: "Revenue sharing details by tier",
+          oneOf: [
+            { $ref: "#/components/schemas/RevShareTiersDto" },
+            { type: "null" },
+          ],
+        },
+      },
       nullableScalarPatch({
         schema: "CuratorDto",
         property: "name",
@@ -353,6 +373,25 @@ const specs: SpecConfig[] = [
       },
       {
         op: "replace",
+        path: "/components/schemas/TransactionDto/properties/unsignedTransaction",
+        value: {
+          description:
+            "The unsigned transaction data to be signed by the wallet",
+          nullable: true,
+          oneOf: [
+            { type: "string", description: "Serialized transaction data" },
+            {
+              type: "object",
+              description: "Transaction object (for non-EVM chains)",
+            },
+            { type: "null" },
+          ],
+          example:
+            "0x02f87082012a022f2f83018000947a250d5630b4cf539739df2c5dacb4c659f2488d880de0b6b3a764000080c080a0ef0de6c7b46fc75dd6cb86dccc3cfd731c2bdf6f3d736557240c3646c6fe01a6a07cd60b58dfe01847249dfdd7950ba0d045dded5bbe410b07a015a0ed34e5e00d",
+        },
+      },
+      {
+        op: "replace",
         path: "/components/schemas/ActionDto/properties/completedAt",
         value: {
           type: "string",
@@ -448,9 +487,41 @@ const fetchSpec = async (spec: SpecConfig) => {
   return response.text();
 };
 
+/**
+ * In Effect rc.115, openapigen emits `Schema.StructWithRest` for OpenAPI objects
+ * that omit `additionalProperties`. Explicitly closing objects that declare
+ * `properties` ensures openapigen emits `Schema.Struct`, preserving direct
+ * `.fields` access across widget domain models.
+ */
+const closeOpenApiObjectSchemas = (document: unknown): void => {
+  const isJsonObject = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null && !Array.isArray(value);
+
+  const visit = (value: unknown): void => {
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item);
+      return;
+    }
+    if (!isJsonObject(value)) return;
+
+    if (
+      value.type === "object" &&
+      value.additionalProperties === undefined &&
+      isJsonObject(value.properties)
+    ) {
+      value.additionalProperties = false;
+    }
+
+    for (const child of Object.values(value)) visit(child);
+  };
+
+  visit(document);
+};
+
 const prepareSpecContents = (spec: SpecConfig, contents: string) => {
   const document = parse(spec.prepareSpec?.(contents) ?? contents) as unknown;
   normalizeOpenApiUnionObjects(document);
+  closeOpenApiObjectSchemas(document);
 
   return spec.specFileName.endsWith(".json")
     ? `${JSON.stringify(document, null, 2)}\n`
