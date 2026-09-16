@@ -509,6 +509,7 @@ describe("Renders initial page", () => {
               feeWrapperAddress: null,
               originationFeeBps: "0",
               originationFeeWrapperAddress: null,
+              blueBundleOriginationFeeBps: null,
               minLoan: null,
             },
             {
@@ -552,6 +553,7 @@ describe("Renders initial page", () => {
               feeWrapperAddress: null,
               originationFeeBps: "0",
               originationFeeWrapperAddress: null,
+              blueBundleOriginationFeeBps: null,
               minLoan: null,
             },
           ],
@@ -709,6 +711,7 @@ describe("Renders initial page", () => {
               feeWrapperAddress: null,
               originationFeeBps: "0",
               originationFeeWrapperAddress: null,
+              blueBundleOriginationFeeBps: null,
               minLoan: null,
             },
           ],
