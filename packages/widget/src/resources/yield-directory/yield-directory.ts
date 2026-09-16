@@ -15,7 +15,9 @@ import { YieldResourceSource } from "../../services/api/resource-sources";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import {
   API_MAX_PAGE_SIZE,
+  loadAllPages,
   loadAllPagesByIdChunks,
+  YIELD_IDS_CHUNK_SIZE,
 } from "../../shared/effect/pagination";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 import type { YieldProviderError } from "../yield-provider/index";
@@ -27,18 +29,21 @@ type YieldType = EarnYield["mechanics"]["type"];
 
 export class YieldDirectoryKey extends Data.TaggedClass("YieldDirectoryKey")<{
   readonly network: Network | null;
+  readonly token: string | null;
   readonly types: ReadonlyArray<YieldType>;
   readonly yieldIds: ReadonlyArray<YieldId>;
 }> {
   constructor(input: {
     readonly network?: Network | null;
+    readonly token?: string | null;
     readonly types?: ReadonlyArray<YieldType>;
-    readonly yieldIds: ReadonlyArray<YieldId>;
+    readonly yieldIds?: ReadonlyArray<YieldId>;
   }) {
     super({
       network: input.network ?? null,
+      token: input.token ?? null,
       types: [...new Set(input.types ?? [])].sort(),
-      yieldIds: [...new Set(input.yieldIds)].sort(),
+      yieldIds: [...new Set(input.yieldIds ?? [])].sort(),
     });
   }
 }
@@ -69,7 +74,7 @@ const yieldDirectoryCanonicalAtom = Atom.family((key: YieldDirectoryKey) =>
   appRuntime
     .atom(() =>
       Effect.gen(function* () {
-        if (key.yieldIds?.length === 0) {
+        if (!key.token && key.yieldIds?.length === 0) {
           return {
             items: [],
             missingYieldIds: [],
@@ -82,18 +87,25 @@ const yieldDirectoryCanonicalAtom = Atom.family((key: YieldDirectoryKey) =>
             limit: API_MAX_PAGE_SIZE,
             offset,
             ...(key.network ? { network: key.network } : {}),
+            ...(key.token ? { token: key.token } : {}),
             ...(key.types.length > 0 ? { types: key.types } : {}),
-            ...(yieldIds ? { yieldIds } : {}),
+            ...(yieldIds && yieldIds.length > 0 ? { yieldIds } : {}),
           });
 
-        const items = yield* loadAllPagesByIdChunks({
-          chunkSize: API_MAX_PAGE_SIZE,
-          concurrency: CONCURRENCY,
-          fetchPage: ({ ids, offset }) => fetchPage(offset, ids),
-          getItemId: (yieldModel) => yieldModel.id,
-          ids: key.yieldIds,
-          pageSize: API_MAX_PAGE_SIZE,
-        });
+        const items = key.token
+          ? yield* loadAllPages({
+              concurrency: CONCURRENCY,
+              fetchPage: (offset) => fetchPage(offset),
+              pageSize: API_MAX_PAGE_SIZE,
+            })
+          : yield* loadAllPagesByIdChunks({
+              chunkSize: YIELD_IDS_CHUNK_SIZE,
+              concurrency: CONCURRENCY,
+              fetchPage: ({ ids, offset }) => fetchPage(offset, ids),
+              getItemId: (yieldModel) => yieldModel.id,
+              ids: key.yieldIds,
+              pageSize: API_MAX_PAGE_SIZE,
+            });
         const returnedIds = new Set(items.map((yieldModel) => yieldModel.id));
 
         return {

@@ -26,6 +26,7 @@ type PaginationMetadata = {
 };
 
 export const API_MAX_PAGE_SIZE = 100;
+export const YIELD_IDS_CHUNK_SIZE = 20;
 
 export const getNextPageOffset = ({
   limit,

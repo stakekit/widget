@@ -46,6 +46,7 @@ const toYieldDirectoryParams = (request: YieldDirectoryRequest) => ({
   limit: request.limit,
   ...(request.network ? { network: request.network } : {}),
   offset: request.offset,
+  ...(request.token ? { token: request.token } : {}),
   ...(request.types ? { types: [...request.types] } : {}),
   ...(request.yieldIds ? { yieldIds: [...request.yieldIds] } : {}),
 });

@@ -65,15 +65,18 @@ describe("atom family key identity", () => {
     const first = new YieldCatalogKey({
       category: null,
       network: "ethereum",
+      token: "ETH",
       yieldIds: [secondYieldId, firstYieldId, secondYieldId],
     });
     const equivalent = new YieldCatalogKey({
       category: null,
       network: "ethereum",
+      token: "ETH",
       yieldIds: [firstYieldId, secondYieldId],
     });
 
     expect(first.yieldIds).toEqual([firstYieldId, secondYieldId]);
+    expect(first.token).toBe("ETH");
     expect(earnYieldCatalogAtom(first)).toBe(earnYieldCatalogAtom(equivalent));
   });
 
