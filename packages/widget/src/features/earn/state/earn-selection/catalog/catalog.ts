@@ -115,6 +115,7 @@ export const earnYieldCatalogAtom = Atom.family((key: YieldCatalogKey) => {
   const source = enrichedYieldDirectoryResourceAtom.foreground(
     new YieldDirectoryKey({
       network: key.network,
+      token: key.token,
       types: undefined,
       yieldIds: key.yieldIds,
     })

@@ -54,6 +54,7 @@ export type YieldDirectoryRequest = {
   readonly limit: number;
   readonly network?: Network;
   readonly offset: number;
+  readonly token?: string;
   readonly types?: ReadonlyArray<EarnYield["mechanics"]["type"]>;
   readonly yieldIds?: ReadonlyArray<YieldId>;
 };

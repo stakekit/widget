@@ -14,15 +14,19 @@ export class AvailableYieldCategoriesKey extends Data.TaggedClass(
 export class YieldCatalogKey extends Data.TaggedClass("YieldCatalogKey")<{
   category: DashboardYieldCategory | null;
   network: Network;
+  token: string | null;
   yieldIds: ReadonlyArray<YieldId>;
 }> {
   constructor(input: {
     readonly category: DashboardYieldCategory | null;
     readonly network: Network;
+    readonly token?: string | null;
     readonly yieldIds: ReadonlyArray<YieldId>;
   }) {
     super({
-      ...input,
+      category: input.category,
+      network: input.network,
+      token: input.token ?? null,
       yieldIds: [...new Set(input.yieldIds)].sort(),
     });
   }

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Deferred, Effect, Layer, Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { YieldId } from "../../src/domain/identity/identifiers";
 import {
   enrichedYieldDirectoryResourceAtom,
   YieldDirectoryError,
@@ -77,13 +78,51 @@ describe("Yield Directory resource", () => {
         registry.get(yieldDirectoryResourceAtom(equivalent))
       ).items
     ).toHaveLength(101);
-    expect(listYields).toHaveBeenCalledTimes(2);
+    expect(listYields).toHaveBeenCalledTimes(6);
     expect(listYields.mock.calls.map(([request]) => request.offset)).toEqual([
-      0, 0,
+      0, 0, 0, 0, 0, 0,
     ]);
     expect(
       listYields.mock.calls.map(([request]) => request.yieldIds?.length)
-    ).toEqual([100, 1]);
+    ).toEqual([20, 20, 20, 20, 20, 1]);
+  });
+
+  it("loads yields by token using standard pagination without yieldIds in request", () => {
+    const yields = Array.from({ length: 150 }, (_, index) =>
+      makeYield(`yield-${index}`)
+    );
+    const listYields = vi.fn((request: YieldDirectoryRequest) => {
+      expect(request.yieldIds).toBeUndefined();
+      expect(request.token).toBe("ETH");
+      expect(request.network).toBe("ethereum");
+
+      return Effect.succeed({
+        items: yields.slice(request.offset, request.offset + request.limit),
+        limit: request.limit,
+        offset: request.offset,
+        total: yields.length,
+      });
+    });
+    const registry = makeRegistry(
+      YieldResourceSource.of({ listYields } as never)
+    );
+    const missingId = YieldId.make("yield-999");
+    const key = new YieldDirectoryKey({
+      network: "ethereum",
+      token: "ETH",
+      yieldIds: [yields[0]!.id, yields[149]!.id, missingId],
+    });
+
+    const result = AsyncResult.getOrThrow(
+      registry.get(yieldDirectoryResourceAtom(key))
+    );
+
+    expect(result.items).toHaveLength(150);
+    expect(result.missingYieldIds).toEqual([missingId]);
+    expect(listYields).toHaveBeenCalledTimes(2);
+    expect(listYields.mock.calls.map(([request]) => request.offset)).toEqual([
+      0, 100,
+    ]);
   });
 
   it("skips empty ID sets and distinguishes explicit directories", () => {

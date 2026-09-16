@@ -104,6 +104,7 @@ const readYieldCatalog = (
       new YieldCatalogKey({
         category: null,
         network: selectedToken.token.network,
+        token: selectedToken.token.address || selectedToken.token.symbol,
         yieldIds: selectedToken.availableYields,
       })
     )
