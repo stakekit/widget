@@ -6,6 +6,7 @@ import {
   EarnPosition,
   EarnProvider,
   EarnValidator,
+  EarnValidatorPage,
   EarnYield,
 } from "../../src/domain/earn/models";
 import { Token } from "../../src/domain/token/token";
@@ -44,6 +45,57 @@ describe("Earn application models", () => {
     });
 
     expect(validator.key).toBe("validator-1:7");
+  });
+
+  it("decodes validator with nullable provider revshare", () => {
+    const validator = Schema.decodeSync(EarnValidator)({
+      address: "BbM5kJgrwEj3tYFfBPnjcARB54wDUHkXmLUTkazUmt2x",
+      preferred: true,
+      provider: {
+        id: "tangem",
+        name: "Tangem",
+        logoURI: "https://example.com/logo.png",
+        description: "Tangem validator provider",
+        website: "https://tangem.com",
+        tvlUsd: null,
+        type: "validator_provider",
+        rank: 99,
+        preferred: true,
+        revshare: null,
+      },
+    });
+
+    expect(validator.provider?.revshare).toBeNull();
+    expect(validator.key).toBe("BbM5kJgrwEj3tYFfBPnjcARB54wDUHkXmLUTkazUmt2x");
+  });
+
+  it("preserves validators with nullable provider revshare in EarnValidatorPage", () => {
+    const page = Schema.decodeSync(EarnValidatorPage)({
+      total: 1,
+      offset: 0,
+      limit: 100,
+      items: [
+        {
+          address: "BbM5kJgrwEj3tYFfBPnjcARB54wDUHkXmLUTkazUmt2x",
+          preferred: true,
+          provider: {
+            id: "tangem",
+            name: "Tangem",
+            logoURI: "https://example.com/logo.png",
+            description: "Tangem validator provider",
+            website: "https://tangem.com",
+            tvlUsd: null,
+            type: "validator_provider",
+            rank: 99,
+            preferred: true,
+            revshare: null,
+          },
+        },
+      ],
+    });
+
+    expect(page.items).toHaveLength(1);
+    expect(page.items?.[0]?.provider?.revshare).toBeNull();
   });
 
   it("uses lossless balance amount and raw-unit representations", () => {

@@ -98,6 +98,7 @@ const marketDto = {
   feeWrapperAddress: null,
   originationFeeBps: "0",
   originationFeeWrapperAddress: null,
+  blueBundleOriginationFeeBps: null,
   minLoan: null,
 } as const;
 

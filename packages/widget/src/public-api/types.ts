@@ -316,7 +316,8 @@ export type SKBorrowTxMeta = {
     | "repay"
     | "withdraw"
     | "enableCollateral"
-    | "disableCollateral";
+    | "disableCollateral"
+    | "supplyAndBorrow";
   readonly address: string;
   readonly integrationId: string;
   readonly rawArguments: {
@@ -341,7 +342,8 @@ export type SKBorrowTxMeta = {
     | "REPAY"
     | "WITHDRAW"
     | "ENABLE_COLLATERAL"
-    | "DISABLE_COLLATERAL";
+    | "DISABLE_COLLATERAL"
+    | "BUNDLE";
 };
 
 export type SKBorrowWallet = SKWallet & {
