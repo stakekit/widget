@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.287](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.286...@stakekit/widget@0.0.287) (2026-09-16)
+
+
+### Bug Fixes
+
+* **earn:** load eligible yields by token to avoid WAF 403 blocks ([#571](https://github.com/stakekit/widget/issues/571)) ([d355429](https://github.com/stakekit/widget/commit/d355429c37066c54de6994cf5721379de278af85))
+
 ## [0.0.286](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.285...@stakekit/widget@0.0.286) (2026-09-09)
 
 
