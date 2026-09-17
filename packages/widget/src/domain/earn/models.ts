@@ -180,7 +180,7 @@ const TronResourceArgument = decodeApiArgument(
   "tronResource",
   "enum",
   TronResourceArgumentDomain,
-  SchemaGetter.transformOrFail<
+  SchemaGetter.transformEffect<
     typeof TronResourceArgumentDomain.Encoded,
     ApiArgumentField
   >((field, options) =>

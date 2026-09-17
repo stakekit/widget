@@ -103,7 +103,9 @@ describe("Position source yield details", () => {
     await userEvent.click(app.getByTestId("position-source-details-trigger"));
 
     await expect.element(app.getByText("Fees")).toBeInTheDocument();
-    await expect.element(app.getByText("2%")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("2%", { exact: false }))
+      .toBeInTheDocument();
     await expect
       .element(app.getByText("Price per share"))
       .not.toBeInTheDocument();

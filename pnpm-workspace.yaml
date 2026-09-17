@@ -32,13 +32,12 @@ catalog:
   "@cosmos-kit/leap": ^2.17.1
   "@cosmos-kit/walletconnect": 2.15.1
   "@creit-tech/stellar-wallets-kit": jsr:2.6.0
-  "@effect/atom-react": 4.0.0-rc.112
-  "@effect/openapi-generator": 4.0.0-rc.112
-  "@effect/platform-browser": 4.0.0-rc.112
-  "@effect/platform-node": 4.0.0-rc.112
+  "@effect/atom-react": 4.0.0-rc.115
+  "@effect/openapi-generator": 4.0.0-rc.115
+  "@effect/platform-browser": 4.0.0-rc.115
+  "@effect/platform-node": 4.0.0-rc.115
   "@effect/tsgo": 0.39.0
-  "@effect/vitest": 4.0.0-rc.112
-  "@faker-js/faker": ^10.6.0
+  "@effect/vitest": 4.0.0-rc.115
   "@ledgerhq/wallet-api-client": ^1.15.3
   "@ledgerhq/wallet-api-core": ^1.35.0
   "@luno-kit/core": ^0.0.13
@@ -80,7 +79,8 @@ catalog:
   "@vanilla-extract/sprinkles": ^1.7.1
   "@vanilla-extract/vite-plugin": ^5.2.6
   "@vitejs/plugin-react": ^6.1.0
-  "@vitest/browser-playwright": ^4.1.11
+  "@vitest/browser-playwright": 5.0.0
+  "@vitest/ui": 5.0.0
   "@wallet-standard/app": ^1.1.1
   "@wallet-standard/base": ^1.1.1
   aria-hidden: ^1.2.6
@@ -90,7 +90,7 @@ catalog:
   clsx: ^2.1.1
   cosmjs-types: ^0.10.1
   dependency-cruiser: ^18.1.0
-  effect: 4.0.0-rc.112
+  effect: 4.0.0-rc.115
   husky: ^9.1.7
   i18next: ^26.4.0
   i18next-browser-languagedetector: ^8.2.1
@@ -121,8 +121,8 @@ catalog:
   viem: ^2.55.16
   vite: ^8.2.2
   vite-plugin-node-polyfills: ^0.28.0
-  vitest: ^4.1.11
-  vitest-browser-react: ^2.2.0
+  vitest: 5.0.0
+  vitest-browser-react: ^2.3.0
   wagmi: 3.7.5
   yaml: ^2.9.0
 

@@ -8,6 +8,7 @@
       "!**/.next",
       "!**/next",
       "!**/.turbo",
+      "!**/.vitest",
       "!**/node_modules",
       "!**/dist",
       "!**/.next",

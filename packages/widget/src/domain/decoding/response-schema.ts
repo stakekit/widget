@@ -36,7 +36,7 @@ export const TolerantTopLevelArray = <
 ) =>
   Schema.Array(Schema.Unknown).pipe(
     Schema.decodeTo(Schema.Array(Schema.toType(item)), {
-      decode: SchemaGetter.transformOrFail((inputs) =>
+      decode: SchemaGetter.transformEffect((inputs) =>
         Effect.forEach(inputs, (input, index) => {
           const result = Schema.decodeUnknownResult(item)(input);
 
@@ -74,7 +74,7 @@ export const TolerantTopLevelRecord = <
 
   return Schema.Record(Schema.String, Schema.Unknown).pipe(
     Schema.decodeTo(target, {
-      decode: SchemaGetter.transformOrFail((input) =>
+      decode: SchemaGetter.transformEffect((input) =>
         Effect.forEach(Object.entries(input), ([rawKey, rawValue]) => {
           const decodedKey = Schema.decodeResult(key)(rawKey);
           const decodedValue = Schema.decodeUnknownResult(value)(rawValue);

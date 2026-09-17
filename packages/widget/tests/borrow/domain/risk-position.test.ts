@@ -124,6 +124,8 @@ describe("BorrowPositions", () => {
       })
     );
     expect(() => Schema.decodeUnknownSync(TokenId)("ETH::native")).toThrow();
+    expect(() => Schema.decodeSync(TokenId)("address:ETH:")).toThrow();
+    expect(() => Schema.decodeSync(TokenId)("native:")).toThrow();
   });
 
   it("decodes underwater current LTV without hiding the account snapshot", () => {

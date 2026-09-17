@@ -175,7 +175,9 @@ describe("ProviderSelectionCard", () => {
 
     const app = await renderProviderSelectionCard();
 
-    await expect.element(app.getByText("Inactive")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Inactive", { exact: false }))
+      .toBeInTheDocument();
   });
 
   it("keeps the selector available from the multi-validator dashboard card", async () => {

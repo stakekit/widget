@@ -64,19 +64,38 @@ describe("Earn Token Catalog", () => {
   });
 
   it("omits failed dashboard categories when another category is usable", () => {
-    const getTokenOptions = vi.fn((request: EarnTokenCatalogRequest) => {
-      if (request.yieldTypes?.includes("staking")) {
-        return Effect.fail(
+    const ethereumYieldRequest = (yieldTypes: ReadonlyArray<string>) =>
+      expect.objectContaining({
+        enter: true,
+        network: "ethereum",
+        yieldTypes,
+      });
+
+    const getTokenOptions = vi.fn<Parameters<typeof makeRegistry>[0]>();
+    vi.when(getTokenOptions, { onUnmatched: "throw" })
+      .calledWith(
+        ethereumYieldRequest(["staking", "restaking", "liquid_staking"])
+      )
+      .thenReturn(
+        Effect.fail(
           new ApiRequestError({
             cause: new Error("offline"),
             operation: "legacy-token-options",
           })
-        );
-      }
-      return Effect.succeed(
-        request.yieldTypes?.includes("lending") ? [tokenOption] : []
-      );
-    });
+        )
+      )
+      .calledWith(
+        ethereumYieldRequest([
+          "lending",
+          "vault",
+          "fixed_yield",
+          "concentrated_liquidity_pool",
+          "liquidity_pool",
+        ])
+      )
+      .thenReturn(Effect.succeed([tokenOption]))
+      .calledWith(ethereumYieldRequest(["real_world_asset"]))
+      .thenReturn(Effect.succeed([]));
     const registry = makeRegistry(getTokenOptions);
     const result = registry.get(
       availableYieldCategoriesAtom(
