@@ -1,6 +1,7 @@
 import { DateTime } from "effect";
 import { useId } from "react";
-import { Area, AreaChart, XAxis, YAxis } from "recharts";
+import { useTranslation } from "react-i18next";
+import { Area, AreaChart, Tooltip, XAxis, YAxis } from "recharts";
 import type {
   HistoryPeriod,
   HistoryPoint,
@@ -16,6 +17,9 @@ import {
   chartContainer,
   chartLoadingOverlay,
   chartSurface,
+  chartTooltipContainer,
+  chartTooltipDate,
+  chartTooltipValue,
   emptyChartContainer,
 } from "./styles.css";
 
@@ -26,6 +30,7 @@ type Props = {
   isRefreshing: boolean;
   refreshKey: HistoryPeriod;
   tickFormatter: (value: number) => string;
+  valueFormatter?: (value: number) => string;
 };
 
 const height = 150;
@@ -38,6 +43,59 @@ type EndpointDotProps = {
   index?: number;
 };
 
+export type ChartTooltipProps = {
+  active?: boolean;
+  chartId?: string;
+  formatValue?: (value: number) => string;
+  locale?: string;
+  payload?: ReadonlyArray<{
+    payload?: HistoryPoint;
+    value?: number;
+  }>;
+};
+
+export const ChartTooltip = ({
+  active,
+  chartId,
+  formatValue,
+  locale = "en",
+  payload,
+}: ChartTooltipProps) => {
+  if (!active || !payload?.length) {
+    return null;
+  }
+
+  const point = payload[0]?.payload;
+  if (
+    !point?.timestamp ||
+    point.value == null ||
+    !Number.isFinite(point.value)
+  ) {
+    return null;
+  }
+
+  const formattedValue = formatValue
+    ? formatValue(point.value)
+    : `${point.value}`;
+  const formattedDate = DateTime.formatLocal(point.timestamp, {
+    locale,
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return (
+    <Box className={chartTooltipContainer} data-testid={`${chartId}-tooltip`}>
+      <Box as="span" className={chartTooltipValue}>
+        {formattedValue}
+      </Box>
+      <Box as="span" className={chartTooltipDate}>
+        {formattedDate}
+      </Box>
+    </Box>
+  );
+};
+
 export const HistoryChart = ({
   chartId,
   data,
@@ -45,7 +103,11 @@ export const HistoryChart = ({
   isRefreshing,
   refreshKey,
   tickFormatter,
+  valueFormatter,
 }: Props) => {
+  const { i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage ?? i18n.language ?? "en";
+  const formatValue = valueFormatter ?? tickFormatter;
   const gradientId = `${chartId}-gradient-${useId().replaceAll(":", "")}`;
   const showRefreshChrome = useDelayedBusy(isRefreshing, refreshKey);
 
@@ -103,6 +165,26 @@ export const HistoryChart = ({
     );
   };
 
+  const renderActiveDot = ({ cx, cy }: EndpointDotProps) => {
+    if (cx == null || cy == null) {
+      return <g key={`${chartId}-active-dot`} />;
+    }
+
+    return (
+      <g key={`${chartId}-active-dot`}>
+        <circle cx={cx} cy={cy} fill={accentColor} fillOpacity={0.25} r={6} />
+        <circle
+          cx={cx}
+          cy={cy}
+          fill={accentColor}
+          r={3.5}
+          stroke={vars.color.background}
+          strokeWidth={1.5}
+        />
+      </g>
+    );
+  };
+
   return (
     <Box className={chartContainer}>
       <Box className={chartSurface({ loading: showRefreshChrome })}>
@@ -139,8 +221,25 @@ export const HistoryChart = ({
             width={46}
           />
 
+          <Tooltip
+            animationDuration={100}
+            content={
+              <ChartTooltip
+                chartId={chartId}
+                formatValue={formatValue}
+                locale={locale}
+              />
+            }
+            cursor={{
+              stroke: vars.color.tabBorder,
+              strokeDasharray: "3 3",
+              strokeWidth: 1,
+            }}
+            isAnimationActive={false}
+          />
+
           <Area
-            activeDot={false}
+            activeDot={renderActiveDot}
             dataKey="value"
             dot={renderEndpointDot}
             fill={`url(#${gradientId})`}
