@@ -77,7 +77,7 @@ export const ChartTooltip = ({
   const formattedValue = formatValue
     ? formatValue(point.value)
     : `${point.value}`;
-  const formattedDate = DateTime.formatLocal(point.timestamp, {
+  const formattedDate = DateTime.formatUtc(point.timestamp, {
     locale,
     month: "short",
     day: "numeric",

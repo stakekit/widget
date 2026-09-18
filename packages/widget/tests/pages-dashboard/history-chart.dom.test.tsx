@@ -1,6 +1,6 @@
 import { type DateTime, Schema } from "effect";
 import { I18nextProvider } from "react-i18next";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { UtcDateTimeFromString } from "../../src/domain/finance/scalars";
 import type { HistoryPoint } from "../../src/domain/portfolio/models";
 import {
@@ -84,25 +84,31 @@ describe("ChartTooltip component", () => {
     u2();
   });
 
-  it("renders formatted value and formatted date when active with a data point", async () => {
-    const point = samplePoints[1]!;
-    const { container, unmount } = await render(
-      <ChartTooltip
-        active={true}
-        chartId="reward-rate"
-        formatValue={(val) => `${val.toFixed(2)}%`}
-        locale="en"
-        payload={[{ payload: point, value: point.value }]}
-      />
-    );
+  it("preserves the UTC snapshot date west of UTC", async () => {
+    vi.stubEnv("TZ", "America/Los_Angeles");
 
-    const tooltip = container.querySelector(
-      '[data-testid="reward-rate-tooltip"]'
-    );
-    expect(tooltip).toBeTruthy();
-    expect(tooltip?.textContent).toContain("6.85%");
-    expect(tooltip?.textContent).toContain("Jun 15, 2026");
-    unmount();
+    try {
+      const point = samplePoints[1]!;
+      const { container, unmount } = await render(
+        <ChartTooltip
+          active={true}
+          chartId="reward-rate"
+          formatValue={(val) => `${val.toFixed(2)}%`}
+          locale="en"
+          payload={[{ payload: point, value: point.value }]}
+        />
+      );
+
+      const tooltip = container.querySelector(
+        '[data-testid="reward-rate-tooltip"]'
+      );
+      expect(tooltip).toBeTruthy();
+      expect(tooltip?.textContent).toContain("6.85%");
+      expect(tooltip?.textContent).toContain("Jun 15, 2026");
+      unmount();
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("formats dates with French locale when specified", async () => {
