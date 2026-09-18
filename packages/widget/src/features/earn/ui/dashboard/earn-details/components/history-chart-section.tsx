@@ -18,6 +18,7 @@ export const HistoryChartSection = ({
   tickFormatter,
   title,
   value,
+  valueFormatter,
   view,
 }: {
   chartId: string;
@@ -25,6 +26,7 @@ export const HistoryChartSection = ({
   tickFormatter: (value: number) => string;
   title: string;
   value: string;
+  valueFormatter?: (value: number) => string;
   view: YieldHistoryChartView;
 }) => (
   <Box>
@@ -60,6 +62,7 @@ export const HistoryChartSection = ({
       isRefreshing={view.isRefreshing}
       refreshKey={view.period}
       tickFormatter={tickFormatter}
+      valueFormatter={valueFormatter}
     />
   </Box>
 );

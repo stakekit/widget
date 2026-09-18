@@ -333,3 +333,37 @@ export const integrationDocsLink = style([
     width: "fit-content",
   },
 ]);
+
+export const chartTooltipContainer = style([
+  atoms({
+    borderRadius: "base",
+    px: "2",
+    py: "1",
+  }),
+  {
+    backgroundColor: `color-mix(in srgb, ${vars.color.tooltipBackground} 88%, ${vars.color.white})`,
+    border: `1px solid color-mix(in srgb, ${vars.color.white} 18%, transparent)`,
+    boxShadow: `0 4px 14px color-mix(in srgb, ${vars.color.tooltipBackground} 45%, transparent), 0 2px 4px color-mix(in srgb, ${vars.color.tooltipBackground} 30%, transparent)`,
+    display: "flex",
+    flexDirection: "column",
+    gap: "2px",
+    pointerEvents: "none",
+    whiteSpace: "nowrap",
+  },
+]);
+
+export const chartTooltipValue = style([
+  atoms({ color: "white" }),
+  {
+    fontSize: "12px",
+    fontWeight: 600,
+    lineHeight: "16px",
+  },
+]);
+
+export const chartTooltipDate = style({
+  color: `color-mix(in srgb, ${vars.color.white} 72%, transparent)`,
+  fontSize: "11px",
+  fontWeight: 400,
+  lineHeight: "14px",
+});
