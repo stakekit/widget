@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.288](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.287...@stakekit/widget@0.0.288) (2026-09-18)
+
+
+### Features
+
+* **earn:** add history chart hover details ([#573](https://github.com/stakekit/widget/issues/573)) ([6fcc882](https://github.com/stakekit/widget/commit/6fcc882a953a27ccc91ed6ad991e283b3081571a))
+
 ## [0.0.287](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.286...@stakekit/widget@0.0.287) (2026-09-16)
 
 
