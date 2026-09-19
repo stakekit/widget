@@ -7,290 +7,6 @@ import * as HttpClientError from "effect/unstable/http/HttpClientError";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 import * as HttpClientResponse from "effect/unstable/http/HttpClientResponse";
 // non-recursive definitions
-export type TokenDto = {
-  readonly symbol: string;
-  readonly name: string;
-  readonly decimals: number;
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "plume"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly address?: string;
-  readonly logoURI?: string;
-  readonly isPoints?: boolean;
-  readonly coinGeckoId?: string;
-};
-export type YieldStatisticsDto = {
-  readonly tvlUsd?: string | null;
-  readonly tvl?: string | null;
-  readonly tvlRaw?: string | null;
-  readonly uniqueUsers?: number | null;
-  readonly averagePositionSizeUsd?: string | null;
-  readonly averagePositionSize?: string | null;
-};
-export type YieldRiskEntryDto = {
-  readonly rating: string;
-  readonly source: "credora" | "stakingRewards";
-};
-export type YieldStatusDto = {
-  readonly enter: boolean;
-  readonly exit: boolean;
-};
-export type ERCStandards = "ERC20" | "ERC4626" | "ERC721" | "ERC1155";
-export type YieldType =
-  | "staking"
-  | "restaking"
-  | "lending"
-  | "vault"
-  | "fixed_yield"
-  | "real_world_asset"
-  | "concentrated_liquidity_pool"
-  | "liquidity_pool"
-  | "liquid_staking";
-export type RewardSchedule =
-  | "block"
-  | "hour"
-  | "day"
-  | "week"
-  | "month"
-  | "era"
-  | "epoch"
-  | "campaign";
-export type RewardClaiming = "auto" | "manual";
-export type TimePeriodDto = { readonly seconds: number };
-export type YieldFeeDto = {
-  readonly deposit?: string;
-  readonly withdrawal?: string;
-  readonly management?: string;
-  readonly performance?: string;
-};
-export type YieldEntryLimitsDto = {
-  readonly minimum: string | null;
-  readonly maximum: string | null;
-  readonly subsequentMinimum: string | null;
-};
-export type InvestorEligibilityEntryDto = {
-  readonly jurisdiction: string;
-  readonly tier:
-    | "us_retail"
-    | "us_accredited"
-    | "us_qualified_purchaser"
-    | "eu_retail"
-    | "eu_professional"
-    | "eu_professional_optup"
-    | "eu_eligible_counterparty"
-    | "uk_retail"
-    | "uk_professional"
-    | "ch_qualified"
-    | "sg_ai"
-    | "sg_ii"
-    | "hk_pi"
-    | "my_sophisticated"
-    | "br_qi"
-    | "br_pi"
-    | "ae_professional";
-  readonly verificationLevel:
-    | "self_attested"
-    | "verified_documentation"
-    | "letter"
-    | "third_party_attestation";
-  readonly expiresAfterDays?: number;
-};
-export type SelfAttestationDocumentDto = {
-  readonly name: string;
-  readonly url: string;
-};
-export type ArgumentFieldDto = {
-  readonly name:
-    | "amount"
-    | "amountRaw"
-    | "amounts"
-    | "shareAmount"
-    | "shareAmountRaw"
-    | "validatorAddress"
-    | "validatorAddresses"
-    | "receiverAddress"
-    | "providerId"
-    | "duration"
-    | "inputToken"
-    | "inputTokenNetwork"
-    | "outputToken"
-    | "outputTokenNetwork"
-    | "subnetId"
-    | "tronResource"
-    | "feeConfigurationId"
-    | "cosmosPubKey"
-    | "tezosPubKey"
-    | "cAddressBech"
-    | "pAddressBech"
-    | "executionMode"
-    | "ledgerWalletApiCompatible"
-    | "useMaxAmount"
-    | "useInstantExecution"
-    | "useAutoClaim"
-    | "rangeMin"
-    | "rangeMax"
-    | "percentage"
-    | "tokenId"
-    | "skipPrechecks"
-    | "useMaxAllowance"
-    | "feePayerAddress";
-  readonly type: "string" | "number" | "address" | "enum" | "boolean";
-  readonly label: string;
-  readonly description?: string;
-  readonly required?: boolean;
-  readonly options?: ReadonlyArray<string>;
-  readonly optionsRef?: string;
-  readonly default?: {};
-  readonly placeholder?: string;
-  readonly minimum?: string | null;
-  readonly maximum?: string | null;
-  readonly isArray?: boolean;
-};
-export type PossibleFeeTakingMechanismsDto = {
-  readonly depositFee: boolean;
-  readonly managementFee: boolean;
-  readonly performanceFee: boolean;
-  readonly validatorRebates: boolean;
-};
-export type CuratorDto = {
-  readonly name?: string | null;
-  readonly description?: string | null;
-  readonly logoURI?: string | null;
-};
-export type CapacityDto = {
-  readonly current: string;
-  readonly max?: string | null;
-  readonly remaining?: string | null;
-};
-export type LiquidityStateDto = {
-  readonly liquidity?: string | null;
-  readonly utilization?: string | null;
-};
-export type AllocationRewardRateDto = {
-  readonly total: number;
-  readonly rateType: string;
-};
-export type WindowBoundsDto = {
-  readonly opensAt: string;
-  readonly closesAt: string;
-  readonly source?: "onchain" | "api" | "config";
-};
-export type PathLimitsDto = {
-  readonly individualPer24h?: string;
-  readonly globalPer24h?: string;
-  readonly globalRemainingPer24h?: string;
-  readonly maxFractionOfNav?: number;
-  readonly liquidityBounded?: boolean;
-  readonly availableLiquidity?: string;
-  readonly minimumAmount?: string;
-};
-export type PathFeeDto = { readonly rate: number };
-export type ExecutionContractsDto = {
-  readonly enter?: ReadonlyArray<string>;
-  readonly exit?: ReadonlyArray<string>;
-};
 export type Networks =
   | "ethereum"
   | "ethereum-goerli"
@@ -313,6 +29,7 @@ export type Networks =
   | "monad"
   | "robinhood"
   | "robinhood-testnet"
+  | "arc-testnet"
   | "avalanche-c"
   | "avalanche-c-atomic"
   | "avalanche-p"
@@ -409,6 +126,168 @@ export type BalanceType =
   | "withdrawable"
   | "claimable"
   | "locked";
+export type ArgumentFieldDto = {
+  readonly name:
+    | "amount"
+    | "amountRaw"
+    | "amounts"
+    | "shareAmount"
+    | "shareAmountRaw"
+    | "validatorAddress"
+    | "validatorAddresses"
+    | "receiverAddress"
+    | "providerId"
+    | "duration"
+    | "inputToken"
+    | "inputTokenNetwork"
+    | "outputToken"
+    | "outputTokenNetwork"
+    | "subnetId"
+    | "tronResource"
+    | "feeConfigurationId"
+    | "cosmosPubKey"
+    | "tezosPubKey"
+    | "cAddressBech"
+    | "pAddressBech"
+    | "executionMode"
+    | "ledgerWalletApiCompatible"
+    | "useMaxAmount"
+    | "useInstantExecution"
+    | "useAutoClaim"
+    | "rangeMin"
+    | "rangeMax"
+    | "percentage"
+    | "tokenId"
+    | "skipPrechecks"
+    | "useMaxAllowance"
+    | "feePayerAddress";
+  readonly type: "string" | "number" | "address" | "enum" | "boolean";
+  readonly label: string;
+  readonly description?: string;
+  readonly required?: boolean;
+  readonly options?: ReadonlyArray<string>;
+  readonly optionsRef?: string;
+  readonly default?: { readonly [x: string]: unknown };
+  readonly placeholder?: string;
+  readonly minimum?: string | null;
+  readonly maximum?: string | null;
+  readonly isArray?: boolean;
+};
+export type TokenDto = {
+  readonly symbol: string;
+  readonly name: string;
+  readonly decimals: number;
+  readonly network:
+    | "ethereum"
+    | "ethereum-goerli"
+    | "ethereum-holesky"
+    | "ethereum-sepolia"
+    | "ethereum-hoodi"
+    | "arbitrum"
+    | "base"
+    | "base-sepolia"
+    | "gnosis"
+    | "optimism"
+    | "polygon"
+    | "polygon-amoy"
+    | "starknet"
+    | "zksync"
+    | "linea"
+    | "unichain"
+    | "plume"
+    | "monad-testnet"
+    | "monad"
+    | "robinhood"
+    | "robinhood-testnet"
+    | "arc-testnet"
+    | "avalanche-c"
+    | "avalanche-c-atomic"
+    | "avalanche-p"
+    | "binance"
+    | "celo"
+    | "fantom"
+    | "harmony"
+    | "moonriver"
+    | "okc"
+    | "viction"
+    | "core"
+    | "sonic"
+    | "plasma"
+    | "katana"
+    | "hyperevm"
+    | "tempo"
+    | "pharos"
+    | "agoric"
+    | "akash"
+    | "axelar"
+    | "band-protocol"
+    | "bitsong"
+    | "canto"
+    | "chihuahua"
+    | "comdex"
+    | "coreum"
+    | "cosmos"
+    | "crescent"
+    | "cronos"
+    | "cudos"
+    | "desmos"
+    | "dydx"
+    | "evmos"
+    | "fetch-ai"
+    | "gravity-bridge"
+    | "injective"
+    | "irisnet"
+    | "juno"
+    | "kava"
+    | "ki-network"
+    | "mars-protocol"
+    | "nym"
+    | "okex-chain"
+    | "onomy"
+    | "osmosis"
+    | "persistence"
+    | "quicksilver"
+    | "regen"
+    | "secret"
+    | "sentinel"
+    | "sommelier"
+    | "stafi"
+    | "stargaze"
+    | "stride"
+    | "teritori"
+    | "tgrade"
+    | "umee"
+    | "sei"
+    | "mantra"
+    | "celestia"
+    | "saga"
+    | "zetachain"
+    | "dymension"
+    | "humansai"
+    | "neutron"
+    | "polkadot"
+    | "kusama"
+    | "westend"
+    | "bittensor"
+    | "aptos"
+    | "binancebeacon"
+    | "cardano"
+    | "near"
+    | "solana"
+    | "solana-devnet"
+    | "stellar"
+    | "stellar-testnet"
+    | "sui"
+    | "tezos"
+    | "tron"
+    | "ton"
+    | "ton-testnet"
+    | "hyperliquid";
+  readonly address?: string;
+  readonly logoURI?: string;
+  readonly isPoints?: boolean;
+  readonly coinGeckoId?: string;
+};
 export type RevShareDetailsDto = {
   readonly minRevShare: number;
   readonly maxRevShare: number;
@@ -424,6 +303,241 @@ export type YieldErrorDto = {
   readonly yieldId: string;
   readonly error: string;
 };
+export type YieldStatisticsDto = {
+  readonly tvlUsd?: string | null;
+  readonly tvl?: string | null;
+  readonly tvlRaw?: string | null;
+  readonly uniqueUsers?: number | null;
+  readonly averagePositionSizeUsd?: string | null;
+  readonly averagePositionSize?: string | null;
+};
+export type YieldRiskEntryDto = {
+  readonly rating: string;
+  readonly source: "credora" | "stakingRewards";
+};
+export type YieldStatusDto = {
+  readonly enter: boolean;
+  readonly exit: boolean;
+};
+export type ERCStandards = "ERC20" | "ERC4626" | "ERC721" | "ERC1155";
+export type YieldType =
+  | "staking"
+  | "restaking"
+  | "lending"
+  | "vault"
+  | "fixed_yield"
+  | "real_world_asset"
+  | "concentrated_liquidity_pool"
+  | "liquidity_pool"
+  | "liquid_staking";
+export type RewardSchedule =
+  | "block"
+  | "hour"
+  | "day"
+  | "week"
+  | "month"
+  | "era"
+  | "epoch"
+  | "campaign";
+export type RewardClaiming = "auto" | "manual";
+export type TimePeriodDto = { readonly seconds: number };
+export type YieldFeeDto = {
+  readonly deposit?: string;
+  readonly withdrawal?: string;
+  readonly management?: string;
+  readonly performance?: string;
+};
+export type YieldEntryLimitsDto = {
+  readonly minimum: string | null;
+  readonly maximum: string | null;
+  readonly subsequentMinimum: string | null;
+};
+export type InvestorEligibilityEntryDto = {
+  readonly jurisdiction: string;
+  readonly tier:
+    | "us_retail"
+    | "us_accredited"
+    | "us_qualified_purchaser"
+    | "eu_retail"
+    | "eu_professional"
+    | "eu_professional_optup"
+    | "eu_eligible_counterparty"
+    | "uk_retail"
+    | "uk_professional"
+    | "ch_qualified"
+    | "sg_ai"
+    | "sg_ii"
+    | "hk_pi"
+    | "my_sophisticated"
+    | "br_qi"
+    | "br_pi"
+    | "ae_professional";
+  readonly verificationLevel:
+    | "self_attested"
+    | "verified_documentation"
+    | "letter"
+    | "third_party_attestation";
+  readonly expiresAfterDays?: number;
+};
+export type SelfAttestationDocumentDto = {
+  readonly name: string;
+  readonly url: string;
+};
+export type PossibleFeeTakingMechanismsDto = {
+  readonly depositFee: boolean;
+  readonly managementFee: boolean;
+  readonly performanceFee: boolean;
+  readonly validatorRebates: boolean;
+};
+export type CuratorDto = {
+  readonly name?: string | null;
+  readonly description?: string | null;
+  readonly logoURI?: string | null;
+};
+export type CapacityDto = {
+  readonly current: string;
+  readonly max?: string | null;
+  readonly remaining?: string | null;
+};
+export type LiquidityStateDto = {
+  readonly liquidity?: string | null;
+  readonly utilization?: string | null;
+};
+export type AllocationDto = {
+  readonly address: string;
+  readonly network:
+    | "ethereum"
+    | "ethereum-goerli"
+    | "ethereum-holesky"
+    | "ethereum-sepolia"
+    | "ethereum-hoodi"
+    | "arbitrum"
+    | "base"
+    | "base-sepolia"
+    | "gnosis"
+    | "optimism"
+    | "polygon"
+    | "polygon-amoy"
+    | "starknet"
+    | "zksync"
+    | "linea"
+    | "unichain"
+    | "plume"
+    | "monad-testnet"
+    | "monad"
+    | "robinhood"
+    | "robinhood-testnet"
+    | "arc-testnet"
+    | "avalanche-c"
+    | "avalanche-c-atomic"
+    | "avalanche-p"
+    | "binance"
+    | "celo"
+    | "fantom"
+    | "harmony"
+    | "moonriver"
+    | "okc"
+    | "viction"
+    | "core"
+    | "sonic"
+    | "plasma"
+    | "katana"
+    | "hyperevm"
+    | "tempo"
+    | "pharos"
+    | "agoric"
+    | "akash"
+    | "axelar"
+    | "band-protocol"
+    | "bitsong"
+    | "canto"
+    | "chihuahua"
+    | "comdex"
+    | "coreum"
+    | "cosmos"
+    | "crescent"
+    | "cronos"
+    | "cudos"
+    | "desmos"
+    | "dydx"
+    | "evmos"
+    | "fetch-ai"
+    | "gravity-bridge"
+    | "injective"
+    | "irisnet"
+    | "juno"
+    | "kava"
+    | "ki-network"
+    | "mars-protocol"
+    | "nym"
+    | "okex-chain"
+    | "onomy"
+    | "osmosis"
+    | "persistence"
+    | "quicksilver"
+    | "regen"
+    | "secret"
+    | "sentinel"
+    | "sommelier"
+    | "stafi"
+    | "stargaze"
+    | "stride"
+    | "teritori"
+    | "tgrade"
+    | "umee"
+    | "sei"
+    | "mantra"
+    | "celestia"
+    | "saga"
+    | "zetachain"
+    | "dymension"
+    | "humansai"
+    | "neutron"
+    | "polkadot"
+    | "kusama"
+    | "westend"
+    | "bittensor"
+    | "aptos"
+    | "binancebeacon"
+    | "cardano"
+    | "near"
+    | "solana"
+    | "solana-devnet"
+    | "stellar"
+    | "stellar-testnet"
+    | "sui"
+    | "tezos"
+    | "tron"
+    | "ton"
+    | "ton-testnet"
+    | "hyperliquid";
+  readonly name: string;
+  readonly yieldId?: string;
+  readonly providerId?: string;
+  readonly allocation: string;
+  readonly allocationUsd: string | null;
+  readonly weight: number;
+  readonly targetWeight: number;
+  readonly rewardRate: { readonly total: number; readonly rateType: string };
+  readonly tvl: string | null;
+  readonly tvlUsd: string | null;
+  readonly maxCapacity: string | null;
+  readonly remainingCapacity: string | null;
+};
+export type PathLimitsDto = {
+  readonly individualPer24h?: string;
+  readonly globalPer24h?: string;
+  readonly globalRemainingPer24h?: string;
+  readonly maxFractionOfNav?: number;
+  readonly liquidityBounded?: boolean;
+  readonly availableLiquidity?: string;
+  readonly minimumAmount?: string;
+};
+export type PathFeeDto = { readonly rate: number };
+export type ExecutionContractsDto = {
+  readonly enter?: ReadonlyArray<string>;
+  readonly exit?: ReadonlyArray<string>;
+};
 export type YieldRiskCredoraDto = {
   readonly rating?: string | null;
   readonly score?: number | null;
@@ -433,17 +547,6 @@ export type YieldRiskCredoraDto = {
 };
 export type YieldRiskStakingRewardsMetricsDto = {
   readonly users?: number | null;
-};
-export type BalanceHistorySnapshotPeriodDeltaDto = {
-  readonly shareAmount: string;
-  readonly shareAmountRaw: string;
-  readonly amount: string;
-  readonly amountRaw: string;
-};
-export type PaginatedResponseDto = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
 };
 export type RewardRateSnapshotDto = {
   readonly timestamp: string;
@@ -459,13 +562,6 @@ export type TvlHistoryResponseDto = {
   readonly to: string;
 };
 export type CampaignStatus = "draft" | "active" | "paused" | "ended";
-export type CampaignRewardMode = "normal" | "compound";
-export type CampaignQualificationType = "min_token_amount";
-export type CampaignPayoutFrequency =
-  | "weekly"
-  | "daily"
-  | "six_hourly"
-  | "end_of_campaign";
 export type TransactionDto = {
   readonly id: string;
   readonly title: string;
@@ -491,6 +587,7 @@ export type TransactionDto = {
     | "monad"
     | "robinhood"
     | "robinhood-testnet"
+    | "arc-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -698,6 +795,7 @@ export type ActionArgumentsDto = {
     | "monad"
     | "robinhood"
     | "robinhood-testnet"
+    | "arc-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -804,6 +902,7 @@ export type ActionArgumentsDto = {
     | "monad"
     | "robinhood"
     | "robinhood-testnet"
+    | "arc-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -999,6 +1098,7 @@ export type NetworkDto = {
     | "monad"
     | "robinhood"
     | "robinhood-testnet"
+    | "arc-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -1097,6 +1197,52 @@ export type ProviderDto = {
   readonly references?: ReadonlyArray<string> | null;
 };
 export type HealthStatus = "OK" | "FAIL";
+export type BalancesQueryDto = {
+  readonly yieldId?: string;
+  readonly address: string;
+  readonly network: Networks;
+  readonly arguments?: GetBalancesArgumentsDto;
+};
+export type YieldBalancesRequestDto = {
+  readonly address: string;
+  readonly arguments?: GetBalancesArgumentsDto;
+};
+export type PendingActionDto = {
+  readonly intent: "enter" | "manage" | "exit";
+  readonly type:
+    | "STAKE"
+    | "UNSTAKE"
+    | "WITHDRAW_REQUEST"
+    | "INSTANT_WITHDRAW"
+    | "CLAIM_REWARDS"
+    | "AUTO_SWEEP_UNSTAKE_REWARDS"
+    | "AUTO_SWEEP_WITHDRAW_REWARDS"
+    | "RESTAKE_REWARDS"
+    | "WITHDRAW"
+    | "WITHDRAW_ALL"
+    | "RESTAKE"
+    | "CLAIM_UNSTAKED"
+    | "UNLOCK_LOCKED"
+    | "STAKE_LOCKED"
+    | "VOTE"
+    | "REVOKE"
+    | "VOTE_LOCKED"
+    | "REVOTE"
+    | "REBOND"
+    | "MIGRATE"
+    | "VERIFY_WITHDRAW_CREDENTIALS"
+    | "DELEGATE";
+  readonly passthrough: string;
+  readonly arguments?: {
+    readonly fields: ReadonlyArray<ArgumentFieldDto>;
+    readonly notes?: string;
+  };
+  readonly amount?: string | null;
+};
+export type ArgumentSchemaDto = {
+  readonly fields: ReadonlyArray<ArgumentFieldDto>;
+  readonly notes?: string;
+};
 export type RewardDto = {
   readonly rate: number;
   readonly rateType: string;
@@ -1132,9 +1278,10 @@ export type ConcentratedLiquidityPoolStateDto = {
   readonly baseToken: TokenDto;
   readonly quoteToken: TokenDto;
 };
-export type TokenWithAvailableYieldsDto = {
-  readonly token: TokenDto;
-  readonly availableYields: ReadonlyArray<string>;
+export type RevShareTiersDto = {
+  readonly trial?: RevShareDetailsDto;
+  readonly standard?: RevShareDetailsDto;
+  readonly pro?: RevShareDetailsDto;
 };
 export type YieldFeeConfigurationDto = {
   readonly id: string;
@@ -1190,145 +1337,6 @@ export type SelfAttestationDto = {
   readonly documents: ReadonlyArray<SelfAttestationDocumentDto>;
   readonly notes?: string;
 };
-export type ArgumentSchemaDto = {
-  readonly fields: ReadonlyArray<ArgumentFieldDto>;
-  readonly notes?: string;
-};
-export type AllocationDto = {
-  readonly address: string;
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "plume"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly name: string;
-  readonly yieldId?: string;
-  readonly providerId?: string;
-  readonly allocation: string;
-  readonly allocationUsd: string | null;
-  readonly weight: number;
-  readonly targetWeight: number;
-  readonly rewardRate: AllocationRewardRateDto | null;
-  readonly tvl: string | null;
-  readonly tvlUsd: string | null;
-  readonly maxCapacity: string | null;
-  readonly remainingCapacity: string | null;
-};
-export type BalancesQueryDto = {
-  readonly yieldId?: string;
-  readonly address: string;
-  readonly network: Networks;
-  readonly arguments?: GetBalancesArgumentsDto;
-};
-export type YieldBalancesRequestDto = {
-  readonly address: string;
-  readonly arguments?: GetBalancesArgumentsDto;
-};
-export type RevShareTiersDto = {
-  readonly trial?: RevShareDetailsDto;
-  readonly standard?: RevShareDetailsDto;
-  readonly pro?: RevShareDetailsDto;
-};
 export type YieldRiskStakingRewardsDto = {
   readonly rating?: string | null;
   readonly score?: number | null;
@@ -1354,11 +1362,6 @@ export type RewardRateHistoryResponseDto = {
   readonly interval: "day" | "week" | "month";
   readonly from: string;
   readonly to: string;
-};
-export type CampaignQualificationConfigDto = {
-  readonly type: CampaignQualificationType;
-  readonly threshold: string;
-  readonly maxIncentivizedTvlToken?: string | null;
 };
 export type ActionDto = {
   readonly id: string;
@@ -1395,7 +1398,251 @@ export type ActionDto = {
   readonly transactions: ReadonlyArray<TransactionDto>;
   readonly events?: ReadonlyArray<ActionEventDto>;
   readonly executionPattern: "synchronous" | "asynchronous" | "batch";
-  readonly rawArguments: ActionArgumentsDto | null;
+  readonly rawArguments: {
+    readonly amount?: string;
+    readonly amountRaw?: string;
+    readonly amounts?: ReadonlyArray<string>;
+    readonly shareAmount?: string;
+    readonly shareAmountRaw?: string;
+    readonly validatorAddress?: string;
+    readonly validatorAddresses?: ReadonlyArray<string>;
+    readonly providerId?: string;
+    readonly duration?: number;
+    readonly inputToken?: string;
+    readonly inputTokenNetwork?:
+      | "ethereum"
+      | "ethereum-goerli"
+      | "ethereum-holesky"
+      | "ethereum-sepolia"
+      | "ethereum-hoodi"
+      | "arbitrum"
+      | "base"
+      | "base-sepolia"
+      | "gnosis"
+      | "optimism"
+      | "polygon"
+      | "polygon-amoy"
+      | "starknet"
+      | "zksync"
+      | "linea"
+      | "unichain"
+      | "plume"
+      | "monad-testnet"
+      | "monad"
+      | "robinhood"
+      | "robinhood-testnet"
+      | "arc-testnet"
+      | "avalanche-c"
+      | "avalanche-c-atomic"
+      | "avalanche-p"
+      | "binance"
+      | "celo"
+      | "fantom"
+      | "harmony"
+      | "moonriver"
+      | "okc"
+      | "viction"
+      | "core"
+      | "sonic"
+      | "plasma"
+      | "katana"
+      | "hyperevm"
+      | "tempo"
+      | "pharos"
+      | "agoric"
+      | "akash"
+      | "axelar"
+      | "band-protocol"
+      | "bitsong"
+      | "canto"
+      | "chihuahua"
+      | "comdex"
+      | "coreum"
+      | "cosmos"
+      | "crescent"
+      | "cronos"
+      | "cudos"
+      | "desmos"
+      | "dydx"
+      | "evmos"
+      | "fetch-ai"
+      | "gravity-bridge"
+      | "injective"
+      | "irisnet"
+      | "juno"
+      | "kava"
+      | "ki-network"
+      | "mars-protocol"
+      | "nym"
+      | "okex-chain"
+      | "onomy"
+      | "osmosis"
+      | "persistence"
+      | "quicksilver"
+      | "regen"
+      | "secret"
+      | "sentinel"
+      | "sommelier"
+      | "stafi"
+      | "stargaze"
+      | "stride"
+      | "teritori"
+      | "tgrade"
+      | "umee"
+      | "sei"
+      | "mantra"
+      | "celestia"
+      | "saga"
+      | "zetachain"
+      | "dymension"
+      | "humansai"
+      | "neutron"
+      | "polkadot"
+      | "kusama"
+      | "westend"
+      | "bittensor"
+      | "aptos"
+      | "binancebeacon"
+      | "cardano"
+      | "near"
+      | "solana"
+      | "solana-devnet"
+      | "stellar"
+      | "stellar-testnet"
+      | "sui"
+      | "tezos"
+      | "tron"
+      | "ton"
+      | "ton-testnet"
+      | "hyperliquid";
+    readonly outputToken?: string;
+    readonly outputTokenNetwork?:
+      | "ethereum"
+      | "ethereum-goerli"
+      | "ethereum-holesky"
+      | "ethereum-sepolia"
+      | "ethereum-hoodi"
+      | "arbitrum"
+      | "base"
+      | "base-sepolia"
+      | "gnosis"
+      | "optimism"
+      | "polygon"
+      | "polygon-amoy"
+      | "starknet"
+      | "zksync"
+      | "linea"
+      | "unichain"
+      | "plume"
+      | "monad-testnet"
+      | "monad"
+      | "robinhood"
+      | "robinhood-testnet"
+      | "arc-testnet"
+      | "avalanche-c"
+      | "avalanche-c-atomic"
+      | "avalanche-p"
+      | "binance"
+      | "celo"
+      | "fantom"
+      | "harmony"
+      | "moonriver"
+      | "okc"
+      | "viction"
+      | "core"
+      | "sonic"
+      | "plasma"
+      | "katana"
+      | "hyperevm"
+      | "tempo"
+      | "pharos"
+      | "agoric"
+      | "akash"
+      | "axelar"
+      | "band-protocol"
+      | "bitsong"
+      | "canto"
+      | "chihuahua"
+      | "comdex"
+      | "coreum"
+      | "cosmos"
+      | "crescent"
+      | "cronos"
+      | "cudos"
+      | "desmos"
+      | "dydx"
+      | "evmos"
+      | "fetch-ai"
+      | "gravity-bridge"
+      | "injective"
+      | "irisnet"
+      | "juno"
+      | "kava"
+      | "ki-network"
+      | "mars-protocol"
+      | "nym"
+      | "okex-chain"
+      | "onomy"
+      | "osmosis"
+      | "persistence"
+      | "quicksilver"
+      | "regen"
+      | "secret"
+      | "sentinel"
+      | "sommelier"
+      | "stafi"
+      | "stargaze"
+      | "stride"
+      | "teritori"
+      | "tgrade"
+      | "umee"
+      | "sei"
+      | "mantra"
+      | "celestia"
+      | "saga"
+      | "zetachain"
+      | "dymension"
+      | "humansai"
+      | "neutron"
+      | "polkadot"
+      | "kusama"
+      | "westend"
+      | "bittensor"
+      | "aptos"
+      | "binancebeacon"
+      | "cardano"
+      | "near"
+      | "solana"
+      | "solana-devnet"
+      | "stellar"
+      | "stellar-testnet"
+      | "sui"
+      | "tezos"
+      | "tron"
+      | "ton"
+      | "ton-testnet"
+      | "hyperliquid";
+    readonly subnetId?: number;
+    readonly tronResource?: "BANDWIDTH" | "ENERGY";
+    readonly feeConfigurationId?: string;
+    readonly cosmosPubKey?: string;
+    readonly tezosPubKey?: string;
+    readonly cAddressBech?: string;
+    readonly pAddressBech?: string;
+    readonly executionMode?: "individual" | "batched";
+    readonly ledgerWalletApiCompatible?: boolean;
+    readonly useMaxAmount?: boolean;
+    readonly useInstantExecution?: boolean;
+    readonly useAutoClaim?: boolean;
+    readonly skipPrechecks?: boolean;
+    readonly useMaxAllowance?: boolean;
+    readonly feePayerAddress?: string;
+    readonly receiverAddress?: string;
+    readonly rangeMin?: string;
+    readonly rangeMax?: string;
+    readonly percentage?: number;
+    readonly tokenId?: string;
+  };
   readonly createdAt: string;
   readonly completedAt: string | null;
   readonly status:
@@ -1446,16 +1693,48 @@ export type TransactionGasEstimateDto = {
   readonly token: TokenDto;
   readonly gasLimit?: string;
   readonly stepIndex: number;
-  readonly type: TransactionType | null;
+  readonly type: TransactionType;
 };
 export type HealthStatusDto = {
   readonly status: HealthStatus;
   readonly timestamp: string;
 };
+export type BalancesRequestDto = {
+  readonly queries: ReadonlyArray<BalancesQueryDto>;
+};
+export type YieldMechanicsArgumentsDto = {
+  readonly enter?: ArgumentSchemaDto;
+  readonly exit?: ArgumentSchemaDto;
+  readonly manage?: { readonly [x: string]: ArgumentSchemaDto };
+  readonly balance?: ArgumentSchemaDto;
+};
 export type RewardRateDto = {
   readonly total: number;
   readonly rateType: string;
   readonly components: ReadonlyArray<RewardDto>;
+};
+export type YieldStateDto = {
+  readonly pricePerShareState?: PricePerShareStateDto;
+  readonly concentratedLiquidityPoolState?: ConcentratedLiquidityPoolStateDto;
+  readonly capacityState?: CapacityDto;
+  readonly liquidityState?: LiquidityStateDto;
+  readonly allocations?: ReadonlyArray<AllocationDto>;
+};
+export type ValidatorProviderDto = {
+  readonly name: string;
+  readonly id: string;
+  readonly logoURI: string;
+  readonly description: string;
+  readonly website: string;
+  readonly tvlUsd: string | null;
+  readonly type: "protocol" | "validator_provider";
+  readonly references?: ReadonlyArray<string> | null;
+  readonly rank: number;
+  readonly preferred: boolean;
+  readonly revshare?: RevShareTiersDto | null;
+  readonly uniqueId?: string;
+  readonly createdAt?: string;
+  readonly updatedAt?: string;
 };
 export type SchedulePathDto = {
   readonly kind: "instant" | "standard";
@@ -1463,8 +1742,16 @@ export type SchedulePathDto = {
   readonly status: "open" | "closed" | "settling";
   readonly businessDaysOnly?: boolean;
   readonly cutoffTime?: string;
-  readonly currentWindow?: WindowBoundsDto | null;
-  readonly nextWindow?: WindowBoundsDto | null;
+  readonly currentWindow?: {
+    readonly opensAt: string;
+    readonly closesAt: string;
+    readonly source?: "onchain" | "api" | "config";
+  };
+  readonly nextWindow?: {
+    readonly opensAt: string;
+    readonly closesAt: string;
+    readonly source?: "onchain" | "api" | "config";
+  };
   readonly settlement: SettlementSpecDto;
   readonly accrual: AccrualSpecDto;
   readonly limits?: PathLimitsDto;
@@ -1485,67 +1772,6 @@ export type KycMetadataDto = {
   readonly selfAttestation?: SelfAttestationDto;
   readonly mandatoryDisclosureUrl?: string;
 };
-export type YieldMechanicsArgumentsDto = {
-  readonly enter?: ArgumentSchemaDto;
-  readonly exit?: ArgumentSchemaDto;
-  readonly manage?: { readonly [x: string]: ArgumentSchemaDto };
-  readonly balance?: ArgumentSchemaDto;
-};
-export type PendingActionDto = {
-  readonly intent: "enter" | "manage" | "exit";
-  readonly type:
-    | "STAKE"
-    | "UNSTAKE"
-    | "WITHDRAW_REQUEST"
-    | "INSTANT_WITHDRAW"
-    | "CLAIM_REWARDS"
-    | "AUTO_SWEEP_UNSTAKE_REWARDS"
-    | "AUTO_SWEEP_WITHDRAW_REWARDS"
-    | "RESTAKE_REWARDS"
-    | "WITHDRAW"
-    | "WITHDRAW_ALL"
-    | "RESTAKE"
-    | "CLAIM_UNSTAKED"
-    | "UNLOCK_LOCKED"
-    | "STAKE_LOCKED"
-    | "VOTE"
-    | "REVOKE"
-    | "VOTE_LOCKED"
-    | "REVOTE"
-    | "REBOND"
-    | "MIGRATE"
-    | "VERIFY_WITHDRAW_CREDENTIALS"
-    | "DELEGATE";
-  readonly passthrough: string;
-  readonly arguments?: ArgumentSchemaDto | null;
-  readonly amount?: string | null;
-};
-export type YieldStateDto = {
-  readonly pricePerShareState?: PricePerShareStateDto;
-  readonly concentratedLiquidityPoolState?: ConcentratedLiquidityPoolStateDto;
-  readonly capacityState?: CapacityDto;
-  readonly liquidityState?: LiquidityStateDto;
-  readonly allocations?: ReadonlyArray<AllocationDto>;
-};
-export type BalancesRequestDto = {
-  readonly queries: ReadonlyArray<BalancesQueryDto>;
-};
-export type ValidatorProviderDto = {
-  readonly name: string;
-  readonly id: string;
-  readonly logoURI: string;
-  readonly description: string;
-  readonly website: string;
-  readonly tvlUsd: string | null;
-  readonly type: "protocol" | "validator_provider";
-  readonly references?: ReadonlyArray<string> | null;
-  readonly rank: number;
-  readonly preferred: boolean;
-  readonly revshare?: RevShareTiersDto;
-  readonly uniqueId?: string;
-  readonly createdAt?: string;
-  readonly updatedAt?: string;
-};
 export type YieldRiskDto = {
   readonly updatedAt: string;
   readonly credora?: YieldRiskCredoraDto;
@@ -1556,35 +1782,6 @@ export type SimulationGasDto = {
   readonly token: TokenDto;
   readonly gasLimit?: string;
   readonly transactions: ReadonlyArray<TransactionGasEstimateDto>;
-};
-export type YieldCampaignDto = {
-  readonly id: string;
-  readonly name?: string | null;
-  readonly createdAt: string;
-  readonly updatedAt: string;
-  readonly yieldId: string;
-  readonly status: CampaignStatus;
-  readonly rewardMode: CampaignRewardMode;
-  readonly rewardRate: RewardRateDto | null;
-  readonly totalBudget: string;
-  readonly distributedBudget: string;
-  readonly remainingBudget: string;
-  readonly configuredHourlyEmission?: string | null;
-  readonly apyCeiling?: number | null;
-  readonly qualificationConfig: CampaignQualificationConfigDto;
-  readonly startTime: string;
-  readonly endTime: string;
-  readonly lastProcessedHour?: string | null;
-  readonly nextPayoutDueAt?: string | null;
-  readonly payoutFrequency: CampaignPayoutFrequency;
-  readonly rewardToken: TokenDto;
-};
-export type SideScheduleDto = {
-  readonly paths: ReadonlyArray<SchedulePathDto>;
-};
-export type YieldRequirementsDto = {
-  readonly kycRequired: boolean;
-  readonly kyc?: KycMetadataDto;
 };
 export type ValidatorDto = {
   readonly address: string;
@@ -1607,9 +1804,57 @@ export type ValidatorDto = {
   readonly providerId?: string;
   readonly subnet?: ValidatorSubnetDto;
 };
+export type SideScheduleDto = {
+  readonly paths: ReadonlyArray<SchedulePathDto>;
+};
+export type YieldRequirementsDto = {
+  readonly kycRequired: boolean;
+  readonly kyc?: KycMetadataDto;
+};
 export type ActionSimulationDto = {
   readonly gas: SimulationGasDto;
   readonly entryReserveEstimate?: string;
+};
+export type BalanceDto = {
+  readonly address: string;
+  readonly type: BalanceType;
+  readonly amount: string;
+  readonly amountRaw: string;
+  readonly date?: string | null;
+  readonly feeConfigurationId?: string;
+  readonly pendingActions: ReadonlyArray<PendingActionDto>;
+  readonly token: TokenDto;
+  readonly validator?: {
+    readonly address: string;
+    readonly name?: string;
+    readonly logoURI?: string;
+    readonly website?: string;
+    readonly rewardRate?: RewardRateDto;
+    readonly provider?: ValidatorProviderDto;
+    readonly commission?: number;
+    readonly tvlUsd?: string;
+    readonly tvl?: string;
+    readonly tvlRaw?: string;
+    readonly votingPower?: number;
+    readonly preferred?: boolean;
+    readonly minimumStake?: string;
+    readonly remainingPossibleStake?: string;
+    readonly remainingSlots?: number;
+    readonly nominatorCount?: number;
+    readonly status?: string;
+    readonly providerId?: string;
+    readonly subnet?: ValidatorSubnetDto;
+  };
+  readonly validators?: ReadonlyArray<ValidatorDto> | null;
+  readonly amountUsd?: string | null;
+  readonly isEarning: boolean;
+  readonly priceRange?: { readonly min: string; readonly max: string } & {
+    readonly [x: string]: unknown;
+  };
+  readonly tokenId?: string;
+  readonly shareAmount?: string;
+  readonly shareAmountRaw?: string;
+  readonly shareToken?: TokenDto;
 };
 export type InvestmentScheduleDto = {
   readonly timezone: string;
@@ -1634,24 +1879,55 @@ export type YieldMechanicsDto = {
   readonly arguments?: YieldMechanicsArgumentsDto;
   readonly possibleFeeTakingMechanisms?: PossibleFeeTakingMechanismsDto;
 };
-export type BalanceDto = {
-  readonly address: string;
-  readonly type: BalanceType;
-  readonly amount: string;
-  readonly amountRaw: string;
-  readonly date?: string | null;
-  readonly feeConfigurationId?: string;
-  readonly pendingActions: ReadonlyArray<PendingActionDto>;
-  readonly token: TokenDto;
-  readonly validator?: ValidatorDto | null;
-  readonly validators?: ReadonlyArray<ValidatorDto> | null;
-  readonly amountUsd?: string | null;
-  readonly isEarning: boolean;
-  readonly priceRange?: { readonly min: string; readonly max: string };
-  readonly tokenId?: string;
-  readonly shareAmount?: string;
-  readonly shareAmountRaw?: string;
-  readonly shareToken?: TokenDto;
+export type YieldBalancesDto = {
+  readonly yieldId: string;
+  readonly balances: ReadonlyArray<BalanceDto>;
+  readonly outputTokenBalance?: {
+    readonly address: string;
+    readonly type: BalanceType;
+    readonly amount: string;
+    readonly amountRaw: string;
+    readonly date?: string | null;
+    readonly feeConfigurationId?: string;
+    readonly pendingActions: ReadonlyArray<PendingActionDto>;
+    readonly token: TokenDto;
+    readonly validator?: {
+      readonly address: string;
+      readonly name?: string;
+      readonly logoURI?: string;
+      readonly website?: string;
+      readonly rewardRate?: RewardRateDto;
+      readonly provider?: ValidatorProviderDto;
+      readonly commission?: number;
+      readonly tvlUsd?: string;
+      readonly tvl?: string;
+      readonly tvlRaw?: string;
+      readonly votingPower?: number;
+      readonly preferred?: boolean;
+      readonly minimumStake?: string;
+      readonly remainingPossibleStake?: string;
+      readonly remainingSlots?: number;
+      readonly nominatorCount?: number;
+      readonly status?: string;
+      readonly providerId?: string;
+      readonly subnet?: ValidatorSubnetDto;
+    };
+    readonly validators?: ReadonlyArray<ValidatorDto> | null;
+    readonly amountUsd?: string | null;
+    readonly isEarning: boolean;
+    readonly priceRange?: { readonly min: string; readonly max: string } & {
+      readonly [x: string]: unknown;
+    };
+    readonly tokenId?: string;
+    readonly shareAmount?: string;
+    readonly shareAmountRaw?: string;
+    readonly shareToken?: TokenDto;
+  };
+  readonly rewardRate?: {
+    readonly total: number;
+    readonly rateType: string;
+    readonly components: ReadonlyArray<RewardDto>;
+  };
 };
 export type YieldDto = {
   readonly id: string;
@@ -1677,6 +1953,7 @@ export type YieldDto = {
     | "monad"
     | "robinhood"
     | "robinhood-testnet"
+    | "arc-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -1780,19 +2057,6 @@ export type YieldDto = {
   readonly investmentSchedule?: InvestmentScheduleDto;
   readonly executionContracts?: ExecutionContractsDto;
 };
-export type YieldBalancesDto = {
-  readonly yieldId: string;
-  readonly balances: ReadonlyArray<BalanceDto>;
-  readonly outputTokenBalance?: BalanceDto | null;
-  readonly rewardRate?: RewardRateDto | null;
-};
-export type BalanceHistorySnapshotDto = {
-  readonly timestamp: string;
-  readonly blockNumber: number;
-  readonly yieldId: string;
-  readonly balances: ReadonlyArray<BalanceDto>;
-  readonly periodDelta?: BalanceHistorySnapshotPeriodDeltaDto;
-};
 export type BalancesResponseDto = {
   readonly items: ReadonlyArray<YieldBalancesDto>;
   readonly errors: ReadonlyArray<YieldErrorDto>;
@@ -1823,6 +2087,7 @@ export type YieldsControllerGetYieldsParams = {
     | "monad"
     | "robinhood"
     | "robinhood-testnet"
+    | "arc-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -1952,7 +2217,7 @@ export type YieldsControllerGetYields200 = {
   readonly total: number;
   readonly offset: number;
   readonly limit: number;
-  readonly items?: ReadonlyArray<YieldDto>;
+  readonly items?: never;
 };
 export type YieldsControllerGetYields400 = {
   readonly message?: string;
@@ -2043,44 +2308,6 @@ export type YieldsControllerGetYieldRisk500 = {
   readonly error?: string;
   readonly statusCode?: number;
 };
-export type YieldsControllerGetBalanceHistoryParams = {
-  readonly address: string;
-  readonly from?: string;
-  readonly to?: string;
-  readonly blockNumber?: number;
-  readonly feeConfigurationId?: string;
-  readonly interval?: "block" | "hour" | "day" | "week";
-  readonly sort?: "asc" | "desc";
-  readonly limit?: number;
-  readonly offset?: number;
-};
-export type YieldsControllerGetBalanceHistory200 = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly items?: ReadonlyArray<BalanceHistorySnapshotDto>;
-};
-export type YieldsControllerGetBalanceHistory400 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type YieldsControllerGetBalanceHistory401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type YieldsControllerGetBalanceHistory429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export type YieldsControllerGetBalanceHistory500 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
 export type YieldsControllerGetYieldBalancesRequestJson =
   YieldBalancesRequestDto;
 export type YieldsControllerGetYieldBalances200 = YieldBalancesDto;
@@ -2101,36 +2328,6 @@ export type YieldsControllerGetYieldBalances429 = {
   readonly retryAfter?: number;
 };
 export type YieldsControllerGetYieldBalances500 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type YieldsControllerGetYieldRewardsParams = {
-  readonly address: string;
-  readonly from?: string;
-  readonly to?: string;
-  readonly sort?: "asc" | "desc";
-  readonly limit?: number;
-  readonly offset?: number;
-};
-export type YieldsControllerGetYieldRewards200 = PaginatedResponseDto;
-export type YieldsControllerGetYieldRewards400 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type YieldsControllerGetYieldRewards401 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-};
-export type YieldsControllerGetYieldRewards429 = {
-  readonly message?: string;
-  readonly error?: string;
-  readonly statusCode?: number;
-  readonly retryAfter?: number;
-};
-export type YieldsControllerGetYieldRewards500 = {
   readonly message?: string;
   readonly error?: string;
   readonly statusCode?: number;
@@ -2210,7 +2407,7 @@ export type YieldsControllerGetYieldValidators200 = {
   readonly total: number;
   readonly offset: number;
   readonly limit: number;
-  readonly items?: ReadonlyArray<ValidatorDto>;
+  readonly items?: never;
 };
 export type YieldsControllerGetYieldValidators400 = {
   readonly message?: string;
@@ -2242,7 +2439,7 @@ export type YieldsControllerGetYieldCampaigns200 = {
   readonly total: number;
   readonly offset: number;
   readonly limit: number;
-  readonly items?: ReadonlyArray<YieldCampaignDto>;
+  readonly items?: never;
 };
 export type YieldsControllerGetYieldCampaigns400 = {
   readonly message?: string;
@@ -2292,6 +2489,7 @@ export type TokensControllerGetTokensParams = {
     | "monad"
     | "robinhood"
     | "robinhood-testnet"
+    | "arc-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -2394,7 +2592,7 @@ export type TokensControllerGetTokens200 = {
   readonly total: number;
   readonly offset: number;
   readonly limit: number;
-  readonly items?: ReadonlyArray<TokenWithAvailableYieldsDto>;
+  readonly items?: never;
 };
 export type TokensControllerGetTokens400 = {
   readonly message?: string;
@@ -2496,6 +2694,7 @@ export type ActionsControllerGetActionsParams = {
     | "monad"
     | "robinhood"
     | "robinhood-testnet"
+    | "arc-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -2584,7 +2783,7 @@ export type ActionsControllerGetActions200 = {
   readonly total: number;
   readonly offset: number;
   readonly limit: number;
-  readonly items?: ReadonlyArray<ActionDto>;
+  readonly items?: never;
 };
 export type ActionsControllerGetActions400 = {
   readonly message?: string;
@@ -2872,7 +3071,7 @@ export type ProvidersControllerGetProviders200 = {
   readonly total: number;
   readonly offset: number;
   readonly limit: number;
-  readonly items?: ReadonlyArray<ProviderDto>;
+  readonly items?: never;
 };
 export type ProvidersControllerGetProviders400 = {
   readonly message?: string;
@@ -2999,6 +3198,51 @@ export const make = (
         : (request) =>
             Effect.flatMap(httpClient.execute(request), withOptionalResponse);
     };
+  const __encodePathParam = encodeURIComponent;
+  const __makePathRequest = (
+    method: (url: string) => HttpClientRequest.HttpClientRequest,
+    parameters: ReadonlyArray<string>,
+    getPath: () => string
+  ) =>
+    Effect.suspend(() => {
+      const fail = (description: string, cause?: unknown) =>
+        Effect.fail(
+          new HttpClientError.HttpClientError({
+            reason: new HttpClientError.InvalidUrlError({
+              request: method(""),
+              cause,
+              description,
+            }),
+          })
+        );
+      if (
+        parameters.some(
+          (value) => value === "" || /^(?:\.|%2e){1,2}$/i.test(value)
+        )
+      ) {
+        return fail(
+          "Path parameters must be non-empty and cannot be dot segments"
+        );
+      }
+      let path: string;
+      try {
+        path = getPath();
+      } catch (cause) {
+        return fail("Failed to encode path parameter", cause);
+      }
+      if (
+        path.split("/").some((segment) => /^(?:\.|%2e){1,2}$/i.test(segment))
+      ) {
+        return fail("Request paths cannot contain dot segments");
+      }
+      return Effect.succeed(method(path));
+    });
+  const decodeBinary = (response: HttpClientResponse.HttpClientResponse) =>
+    Effect.map(response.arrayBuffer, (buffer) => new Uint8Array(buffer));
+  const decodeVoidError =
+    <const Tag extends string>(tag: Tag) =>
+    (response: HttpClientResponse.HttpClientResponse) =>
+      Effect.fail(YieldApiError(tag, undefined, response));
   const decodeSuccess = <A>(response: HttpClientResponse.HttpClientResponse) =>
     response.json as Effect.Effect<A, HttpClientError.HttpClientError>;
   const decodeVoid = (_response: HttpClientResponse.HttpClientResponse) =>
@@ -3019,7 +3263,12 @@ export const make = (
     <Config extends OperationConfig>(config: Config | undefined) =>
     (
       successCodes: ReadonlyArray<string>,
-      errorCodes?: Record<string, string>
+      errorCodes?: Record<string, string>,
+      responseCodes: {
+        readonly binary: ReadonlyArray<string>;
+        readonly voidSuccess: ReadonlyArray<string>;
+        readonly voidError: ReadonlyArray<string>;
+      } = { binary: [], voidSuccess: [], voidError: [] }
     ) => {
       const cases: any = { orElse: unexpectedStatus };
       for (const code of successCodes) {
@@ -3030,7 +3279,20 @@ export const make = (
           cases[code] = decodeError(tag);
         }
       }
-      if (successCodes.length === 0) {
+      for (const code of responseCodes.binary) {
+        cases[code] = decodeBinary;
+      }
+      for (const code of responseCodes.voidSuccess) {
+        cases[code] = decodeVoid;
+      }
+      for (const code of responseCodes.voidError) {
+        cases[code] = decodeVoidError(code);
+      }
+      if (
+        successCodes.length === 0 &&
+        responseCodes.binary.length === 0 &&
+        responseCodes.voidSuccess.length === 0
+      ) {
         cases["2xx"] = decodeVoid;
       }
       return withResponse(config)(HttpClientResponse.matchStatus(cases) as any);
@@ -3038,7 +3300,7 @@ export const make = (
   return {
     httpClient,
     YieldsControllerGetYields: (options) =>
-      HttpClientRequest.get(`/v1/yields`).pipe(
+      HttpClientRequest.get("/v1/yields").pipe(
         HttpClientRequest.setUrlParams({
           offset: options?.params?.["offset"] as any,
           limit: options?.params?.["limit"] as any,
@@ -3068,7 +3330,7 @@ export const make = (
         })
       ),
     YieldsControllerGetAggregateBalances: (options) =>
-      HttpClientRequest.post(`/v1/yields/balances`).pipe(
+      HttpClientRequest.post("/v1/yields/balances").pipe(
         HttpClientRequest.bodyJsonUnsafe(options.payload),
         onRequest(options.config)(["2xx"], {
           "400": "YieldsControllerGetAggregateBalances400",
@@ -3078,139 +3340,189 @@ export const make = (
         })
       ),
     YieldsControllerGetYield: (yieldId, options) =>
-      HttpClientRequest.get(`/v1/yields/${yieldId}`).pipe(
-        onRequest(options?.config)(["2xx"], {
-          "400": "YieldsControllerGetYield400",
-          "401": "YieldsControllerGetYield401",
-          "429": "YieldsControllerGetYield429",
-          "500": "YieldsControllerGetYield500",
-        })
+      __makePathRequest(
+        HttpClientRequest.get,
+        [yieldId],
+        () => "/v1/yields/" + __encodePathParam(yieldId) + ""
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            onRequest(options?.config)(
+              ["2xx"],
+              {
+                "400": "YieldsControllerGetYield400",
+                "401": "YieldsControllerGetYield401",
+                "429": "YieldsControllerGetYield429",
+                "500": "YieldsControllerGetYield500",
+              },
+              { binary: [], voidSuccess: [], voidError: ["404"] }
+            )
+          )
+        )
       ),
     YieldsControllerGetYieldRisk: (yieldId, options) =>
-      HttpClientRequest.get(`/v1/yields/${yieldId}/risk`).pipe(
-        onRequest(options?.config)(["2xx"], {
-          "400": "YieldsControllerGetYieldRisk400",
-          "401": "YieldsControllerGetYieldRisk401",
-          "429": "YieldsControllerGetYieldRisk429",
-          "500": "YieldsControllerGetYieldRisk500",
-        })
-      ),
-    YieldsControllerGetBalanceHistory: (yieldId, options) =>
-      HttpClientRequest.get(`/v1/yields/${yieldId}/balances/history`).pipe(
-        HttpClientRequest.setUrlParams({
-          address: options.params["address"] as any,
-          from: options.params["from"] as any,
-          to: options.params["to"] as any,
-          blockNumber: options.params["blockNumber"] as any,
-          feeConfigurationId: options.params["feeConfigurationId"] as any,
-          interval: options.params["interval"] as any,
-          sort: options.params["sort"] as any,
-          limit: options.params["limit"] as any,
-          offset: options.params["offset"] as any,
-        }),
-        onRequest(options.config)(["2xx"], {
-          "400": "YieldsControllerGetBalanceHistory400",
-          "401": "YieldsControllerGetBalanceHistory401",
-          "429": "YieldsControllerGetBalanceHistory429",
-          "500": "YieldsControllerGetBalanceHistory500",
-        })
+      __makePathRequest(
+        HttpClientRequest.get,
+        [yieldId],
+        () => "/v1/yields/" + __encodePathParam(yieldId) + "/risk"
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            onRequest(options?.config)(
+              ["2xx"],
+              {
+                "400": "YieldsControllerGetYieldRisk400",
+                "401": "YieldsControllerGetYieldRisk401",
+                "429": "YieldsControllerGetYieldRisk429",
+                "500": "YieldsControllerGetYieldRisk500",
+              },
+              { binary: [], voidSuccess: [], voidError: ["404"] }
+            )
+          )
+        )
       ),
     YieldsControllerGetYieldBalances: (yieldId, options) =>
-      HttpClientRequest.post(`/v1/yields/${yieldId}/balances`).pipe(
-        HttpClientRequest.bodyJsonUnsafe(options.payload),
-        onRequest(options.config)(["2xx"], {
-          "400": "YieldsControllerGetYieldBalances400",
-          "401": "YieldsControllerGetYieldBalances401",
-          "429": "YieldsControllerGetYieldBalances429",
-          "500": "YieldsControllerGetYieldBalances500",
-        })
-      ),
-    YieldsControllerGetYieldRewards: (yieldId, options) =>
-      HttpClientRequest.get(`/v1/yields/${yieldId}/rewards/history`).pipe(
-        HttpClientRequest.setUrlParams({
-          address: options.params["address"] as any,
-          from: options.params["from"] as any,
-          to: options.params["to"] as any,
-          sort: options.params["sort"] as any,
-          limit: options.params["limit"] as any,
-          offset: options.params["offset"] as any,
-        }),
-        onRequest(options.config)(["2xx"], {
-          "400": "YieldsControllerGetYieldRewards400",
-          "401": "YieldsControllerGetYieldRewards401",
-          "429": "YieldsControllerGetYieldRewards429",
-          "500": "YieldsControllerGetYieldRewards500",
-        })
+      __makePathRequest(
+        HttpClientRequest.post,
+        [yieldId],
+        () => "/v1/yields/" + __encodePathParam(yieldId) + "/balances"
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            HttpClientRequest.bodyJsonUnsafe(options.payload),
+            onRequest(options.config)(
+              ["2xx"],
+              {
+                "400": "YieldsControllerGetYieldBalances400",
+                "401": "YieldsControllerGetYieldBalances401",
+                "429": "YieldsControllerGetYieldBalances429",
+                "500": "YieldsControllerGetYieldBalances500",
+              },
+              { binary: [], voidSuccess: [], voidError: ["404"] }
+            )
+          )
+        )
       ),
     YieldsControllerGetYieldRewardRateHistory: (yieldId, options) =>
-      HttpClientRequest.get(`/v1/yields/${yieldId}/reward-rate/history`).pipe(
-        HttpClientRequest.setUrlParams({
-          offset: options?.params?.["offset"] as any,
-          limit: options?.params?.["limit"] as any,
-          from: options?.params?.["from"] as any,
-          to: options?.params?.["to"] as any,
-          period: options?.params?.["period"] as any,
-          interval: options?.params?.["interval"] as any,
-        }),
-        onRequest(options?.config)(["2xx"], {
-          "400": "YieldsControllerGetYieldRewardRateHistory400",
-          "401": "YieldsControllerGetYieldRewardRateHistory401",
-          "429": "YieldsControllerGetYieldRewardRateHistory429",
-          "500": "YieldsControllerGetYieldRewardRateHistory500",
-        })
+      __makePathRequest(
+        HttpClientRequest.get,
+        [yieldId],
+        () =>
+          "/v1/yields/" + __encodePathParam(yieldId) + "/reward-rate/history"
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            HttpClientRequest.setUrlParams({
+              offset: options?.params?.["offset"] as any,
+              limit: options?.params?.["limit"] as any,
+              from: options?.params?.["from"] as any,
+              to: options?.params?.["to"] as any,
+              period: options?.params?.["period"] as any,
+              interval: options?.params?.["interval"] as any,
+            }),
+            onRequest(options?.config)(
+              ["2xx"],
+              {
+                "400": "YieldsControllerGetYieldRewardRateHistory400",
+                "401": "YieldsControllerGetYieldRewardRateHistory401",
+                "429": "YieldsControllerGetYieldRewardRateHistory429",
+                "500": "YieldsControllerGetYieldRewardRateHistory500",
+              },
+              { binary: [], voidSuccess: [], voidError: ["404"] }
+            )
+          )
+        )
       ),
     YieldsControllerGetYieldTvlHistory: (yieldId, options) =>
-      HttpClientRequest.get(`/v1/yields/${yieldId}/tvl/history`).pipe(
-        HttpClientRequest.setUrlParams({
-          offset: options?.params?.["offset"] as any,
-          limit: options?.params?.["limit"] as any,
-          from: options?.params?.["from"] as any,
-          to: options?.params?.["to"] as any,
-          period: options?.params?.["period"] as any,
-          interval: options?.params?.["interval"] as any,
-          feeConfigurationId: options?.params?.["feeConfigurationId"] as any,
-        }),
-        onRequest(options?.config)(["2xx"], {
-          "400": "YieldsControllerGetYieldTvlHistory400",
-          "401": "YieldsControllerGetYieldTvlHistory401",
-          "429": "YieldsControllerGetYieldTvlHistory429",
-          "500": "YieldsControllerGetYieldTvlHistory500",
-        })
+      __makePathRequest(
+        HttpClientRequest.get,
+        [yieldId],
+        () => "/v1/yields/" + __encodePathParam(yieldId) + "/tvl/history"
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            HttpClientRequest.setUrlParams({
+              offset: options?.params?.["offset"] as any,
+              limit: options?.params?.["limit"] as any,
+              from: options?.params?.["from"] as any,
+              to: options?.params?.["to"] as any,
+              period: options?.params?.["period"] as any,
+              interval: options?.params?.["interval"] as any,
+              feeConfigurationId: options?.params?.[
+                "feeConfigurationId"
+              ] as any,
+            }),
+            onRequest(options?.config)(
+              ["2xx"],
+              {
+                "400": "YieldsControllerGetYieldTvlHistory400",
+                "401": "YieldsControllerGetYieldTvlHistory401",
+                "429": "YieldsControllerGetYieldTvlHistory429",
+                "500": "YieldsControllerGetYieldTvlHistory500",
+              },
+              { binary: [], voidSuccess: [], voidError: ["404"] }
+            )
+          )
+        )
       ),
     YieldsControllerGetYieldValidators: (yieldId, options) =>
-      HttpClientRequest.get(`/v1/yields/${yieldId}/validators`).pipe(
-        HttpClientRequest.setUrlParams({
-          offset: options?.params?.["offset"] as any,
-          limit: options?.params?.["limit"] as any,
-          name: options?.params?.["name"] as any,
-          address: options?.params?.["address"] as any,
-          provider: options?.params?.["provider"] as any,
-          status: options?.params?.["status"] as any,
-          preferred: options?.params?.["preferred"] as any,
-        }),
-        onRequest(options?.config)(["2xx"], {
-          "400": "YieldsControllerGetYieldValidators400",
-          "401": "YieldsControllerGetYieldValidators401",
-          "429": "YieldsControllerGetYieldValidators429",
-          "500": "YieldsControllerGetYieldValidators500",
-        })
+      __makePathRequest(
+        HttpClientRequest.get,
+        [yieldId],
+        () => "/v1/yields/" + __encodePathParam(yieldId) + "/validators"
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            HttpClientRequest.setUrlParams({
+              offset: options?.params?.["offset"] as any,
+              limit: options?.params?.["limit"] as any,
+              name: options?.params?.["name"] as any,
+              address: options?.params?.["address"] as any,
+              provider: options?.params?.["provider"] as any,
+              status: options?.params?.["status"] as any,
+              preferred: options?.params?.["preferred"] as any,
+            }),
+            onRequest(options?.config)(
+              ["2xx"],
+              {
+                "400": "YieldsControllerGetYieldValidators400",
+                "401": "YieldsControllerGetYieldValidators401",
+                "429": "YieldsControllerGetYieldValidators429",
+                "500": "YieldsControllerGetYieldValidators500",
+              },
+              { binary: [], voidSuccess: [], voidError: ["404"] }
+            )
+          )
+        )
       ),
     YieldsControllerGetYieldCampaigns: (yieldId, options) =>
-      HttpClientRequest.get(`/v1/yields/${yieldId}/campaigns`).pipe(
-        HttpClientRequest.setUrlParams({
-          offset: options?.params?.["offset"] as any,
-          limit: options?.params?.["limit"] as any,
-          status: options?.params?.["status"] as any,
-        }),
-        onRequest(options?.config)(["2xx"], {
-          "400": "YieldsControllerGetYieldCampaigns400",
-          "401": "YieldsControllerGetYieldCampaigns401",
-          "429": "YieldsControllerGetYieldCampaigns429",
-          "500": "YieldsControllerGetYieldCampaigns500",
-        })
+      __makePathRequest(
+        HttpClientRequest.get,
+        [yieldId],
+        () => "/v1/yields/" + __encodePathParam(yieldId) + "/campaigns"
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            HttpClientRequest.setUrlParams({
+              offset: options?.params?.["offset"] as any,
+              limit: options?.params?.["limit"] as any,
+              status: options?.params?.["status"] as any,
+            }),
+            onRequest(options?.config)(
+              ["2xx"],
+              {
+                "400": "YieldsControllerGetYieldCampaigns400",
+                "401": "YieldsControllerGetYieldCampaigns401",
+                "429": "YieldsControllerGetYieldCampaigns429",
+                "500": "YieldsControllerGetYieldCampaigns500",
+              },
+              { binary: [], voidSuccess: [], voidError: ["404"] }
+            )
+          )
+        )
       ),
     TokensControllerGetTokens: (options) =>
-      HttpClientRequest.get(`/v1/tokens`).pipe(
+      HttpClientRequest.get("/v1/tokens").pipe(
         HttpClientRequest.setUrlParams({
           address: options?.params?.["address"] as any,
           symbol: options?.params?.["symbol"] as any,
@@ -3229,7 +3541,7 @@ export const make = (
         })
       ),
     ActionsControllerGetActions: (options) =>
-      HttpClientRequest.get(`/v1/actions`).pipe(
+      HttpClientRequest.get("/v1/actions").pipe(
         HttpClientRequest.setUrlParams({
           offset: options.params["offset"] as any,
           limit: options.params["limit"] as any,
@@ -3250,110 +3562,191 @@ export const make = (
         })
       ),
     ActionsControllerGetAction: (actionId, options) =>
-      HttpClientRequest.get(`/v1/actions/${actionId}`).pipe(
-        onRequest(options?.config)(["2xx"], {
-          "400": "ActionsControllerGetAction400",
-          "401": "ActionsControllerGetAction401",
-          "429": "ActionsControllerGetAction429",
-          "500": "ActionsControllerGetAction500",
-        })
+      __makePathRequest(
+        HttpClientRequest.get,
+        [actionId],
+        () => "/v1/actions/" + __encodePathParam(actionId) + ""
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            onRequest(options?.config)(
+              ["2xx"],
+              {
+                "400": "ActionsControllerGetAction400",
+                "401": "ActionsControllerGetAction401",
+                "429": "ActionsControllerGetAction429",
+                "500": "ActionsControllerGetAction500",
+              },
+              { binary: [], voidSuccess: [], voidError: ["404"] }
+            )
+          )
+        )
       ),
     ActionsControllerEnterYield: (options) =>
-      HttpClientRequest.post(`/v1/actions/enter`).pipe(
+      HttpClientRequest.post("/v1/actions/enter").pipe(
         HttpClientRequest.bodyJsonUnsafe(options.payload),
-        onRequest(options.config)(["2xx"], {
-          "400": "ActionsControllerEnterYield400",
-          "401": "ActionsControllerEnterYield401",
-          "403": "ActionsControllerEnterYield403",
-          "429": "ActionsControllerEnterYield429",
-          "500": "ActionsControllerEnterYield500",
-        })
+        onRequest(options.config)(
+          ["2xx"],
+          {
+            "400": "ActionsControllerEnterYield400",
+            "401": "ActionsControllerEnterYield401",
+            "403": "ActionsControllerEnterYield403",
+            "429": "ActionsControllerEnterYield429",
+            "500": "ActionsControllerEnterYield500",
+          },
+          { binary: [], voidSuccess: [], voidError: ["404"] }
+        )
       ),
     ActionsControllerExitYield: (options) =>
-      HttpClientRequest.post(`/v1/actions/exit`).pipe(
+      HttpClientRequest.post("/v1/actions/exit").pipe(
         HttpClientRequest.bodyJsonUnsafe(options.payload),
-        onRequest(options.config)(["2xx"], {
-          "400": "ActionsControllerExitYield400",
-          "401": "ActionsControllerExitYield401",
-          "403": "ActionsControllerExitYield403",
-          "429": "ActionsControllerExitYield429",
-          "500": "ActionsControllerExitYield500",
-        })
+        onRequest(options.config)(
+          ["2xx"],
+          {
+            "400": "ActionsControllerExitYield400",
+            "401": "ActionsControllerExitYield401",
+            "403": "ActionsControllerExitYield403",
+            "429": "ActionsControllerExitYield429",
+            "500": "ActionsControllerExitYield500",
+          },
+          { binary: [], voidSuccess: [], voidError: ["404"] }
+        )
       ),
     ActionsControllerSimulateEnter: (options) =>
-      HttpClientRequest.post(`/v1/actions/enter/simulate`).pipe(
+      HttpClientRequest.post("/v1/actions/enter/simulate").pipe(
         HttpClientRequest.bodyJsonUnsafe(options.payload),
-        onRequest(options.config)(["2xx"], {
-          "400": "ActionsControllerSimulateEnter400",
-          "401": "ActionsControllerSimulateEnter401",
-          "403": "ActionsControllerSimulateEnter403",
-          "429": "ActionsControllerSimulateEnter429",
-          "500": "ActionsControllerSimulateEnter500",
-        })
+        onRequest(options.config)(
+          ["2xx"],
+          {
+            "400": "ActionsControllerSimulateEnter400",
+            "401": "ActionsControllerSimulateEnter401",
+            "403": "ActionsControllerSimulateEnter403",
+            "429": "ActionsControllerSimulateEnter429",
+            "500": "ActionsControllerSimulateEnter500",
+          },
+          { binary: [], voidSuccess: [], voidError: ["404", "412"] }
+        )
       ),
     ActionsControllerSimulateExit: (options) =>
-      HttpClientRequest.post(`/v1/actions/exit/simulate`).pipe(
+      HttpClientRequest.post("/v1/actions/exit/simulate").pipe(
         HttpClientRequest.bodyJsonUnsafe(options.payload),
-        onRequest(options.config)(["2xx"], {
-          "400": "ActionsControllerSimulateExit400",
-          "401": "ActionsControllerSimulateExit401",
-          "403": "ActionsControllerSimulateExit403",
-          "429": "ActionsControllerSimulateExit429",
-          "500": "ActionsControllerSimulateExit500",
-        })
+        onRequest(options.config)(
+          ["2xx"],
+          {
+            "400": "ActionsControllerSimulateExit400",
+            "401": "ActionsControllerSimulateExit401",
+            "403": "ActionsControllerSimulateExit403",
+            "429": "ActionsControllerSimulateExit429",
+            "500": "ActionsControllerSimulateExit500",
+          },
+          { binary: [], voidSuccess: [], voidError: ["404", "412"] }
+        )
       ),
     ActionsControllerManageYield: (options) =>
-      HttpClientRequest.post(`/v1/actions/manage`).pipe(
+      HttpClientRequest.post("/v1/actions/manage").pipe(
         HttpClientRequest.bodyJsonUnsafe(options.payload),
-        onRequest(options.config)(["2xx"], {
-          "400": "ActionsControllerManageYield400",
-          "401": "ActionsControllerManageYield401",
-          "403": "ActionsControllerManageYield403",
-          "429": "ActionsControllerManageYield429",
-          "500": "ActionsControllerManageYield500",
-        })
+        onRequest(options.config)(
+          ["2xx"],
+          {
+            "400": "ActionsControllerManageYield400",
+            "401": "ActionsControllerManageYield401",
+            "403": "ActionsControllerManageYield403",
+            "429": "ActionsControllerManageYield429",
+            "500": "ActionsControllerManageYield500",
+          },
+          { binary: [], voidSuccess: [], voidError: ["404"] }
+        )
       ),
     TransactionsControllerSubmitTransactionHash: (transactionId, options) =>
-      HttpClientRequest.put(
-        `/v1/transactions/${transactionId}/submit-hash`
+      __makePathRequest(
+        HttpClientRequest.put,
+        [transactionId],
+        () =>
+          "/v1/transactions/" +
+          __encodePathParam(transactionId) +
+          "/submit-hash"
       ).pipe(
-        HttpClientRequest.bodyJsonUnsafe(options.payload),
-        onRequest(options.config)(["2xx"], {
-          "401": "TransactionsControllerSubmitTransactionHash401",
-          "429": "TransactionsControllerSubmitTransactionHash429",
-          "500": "TransactionsControllerSubmitTransactionHash500",
-        })
+        Effect.flatMap((request) =>
+          request.pipe(
+            HttpClientRequest.bodyJsonUnsafe(options.payload),
+            onRequest(options.config)(
+              ["2xx"],
+              {
+                "401": "TransactionsControllerSubmitTransactionHash401",
+                "429": "TransactionsControllerSubmitTransactionHash429",
+                "500": "TransactionsControllerSubmitTransactionHash500",
+              },
+              { binary: [], voidSuccess: [], voidError: ["400", "404"] }
+            )
+          )
+        )
       ),
     TransactionsControllerSubmitTransaction: (transactionId, options) =>
-      HttpClientRequest.post(`/v1/transactions/${transactionId}/submit`).pipe(
-        HttpClientRequest.bodyJsonUnsafe(options.payload),
-        onRequest(options.config)(["2xx"], {
-          "401": "TransactionsControllerSubmitTransaction401",
-          "429": "TransactionsControllerSubmitTransaction429",
-          "500": "TransactionsControllerSubmitTransaction500",
-        })
+      __makePathRequest(
+        HttpClientRequest.post,
+        [transactionId],
+        () => "/v1/transactions/" + __encodePathParam(transactionId) + "/submit"
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            HttpClientRequest.bodyJsonUnsafe(options.payload),
+            onRequest(options.config)(
+              ["2xx"],
+              {
+                "401": "TransactionsControllerSubmitTransaction401",
+                "429": "TransactionsControllerSubmitTransaction429",
+                "500": "TransactionsControllerSubmitTransaction500",
+              },
+              { binary: [], voidSuccess: [], voidError: ["400", "404"] }
+            )
+          )
+        )
       ),
     TransactionsControllerGetTransaction: (transactionId, options) =>
-      HttpClientRequest.get(`/v1/transactions/${transactionId}`).pipe(
-        onRequest(options?.config)(["2xx"], {
-          "400": "TransactionsControllerGetTransaction400",
-          "401": "TransactionsControllerGetTransaction401",
-          "429": "TransactionsControllerGetTransaction429",
-          "500": "TransactionsControllerGetTransaction500",
-        })
+      __makePathRequest(
+        HttpClientRequest.get,
+        [transactionId],
+        () => "/v1/transactions/" + __encodePathParam(transactionId) + ""
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            onRequest(options?.config)(
+              ["2xx"],
+              {
+                "400": "TransactionsControllerGetTransaction400",
+                "401": "TransactionsControllerGetTransaction401",
+                "429": "TransactionsControllerGetTransaction429",
+                "500": "TransactionsControllerGetTransaction500",
+              },
+              { binary: [], voidSuccess: [], voidError: ["404"] }
+            )
+          )
+        )
       ),
     KycControllerGetStatus: (yieldId, options) =>
-      HttpClientRequest.get(`/v1/yields/${yieldId}/kyc/status`).pipe(
-        HttpClientRequest.setUrlParams({
-          address: options.params["address"] as any,
-        }),
-        onRequest(options.config)(["2xx"], {
-          "401": "KycControllerGetStatus401",
-          "429": "KycControllerGetStatus429",
-        })
+      __makePathRequest(
+        HttpClientRequest.get,
+        [yieldId],
+        () => "/v1/yields/" + __encodePathParam(yieldId) + "/kyc/status"
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            HttpClientRequest.setUrlParams({
+              address: options.params["address"] as any,
+            }),
+            onRequest(options.config)(
+              ["2xx"],
+              {
+                "401": "KycControllerGetStatus401",
+                "429": "KycControllerGetStatus429",
+              },
+              { binary: [], voidSuccess: [], voidError: ["400", "404"] }
+            )
+          )
+        )
       ),
     NetworksControllerGetNetworks: (options) =>
-      HttpClientRequest.get(`/v1/networks`).pipe(
+      HttpClientRequest.get("/v1/networks").pipe(
         onRequest(options?.config)(["2xx"], {
           "400": "NetworksControllerGetNetworks400",
           "401": "NetworksControllerGetNetworks401",
@@ -3362,7 +3755,7 @@ export const make = (
         })
       ),
     ProvidersControllerGetProviders: (options) =>
-      HttpClientRequest.get(`/v1/providers`).pipe(
+      HttpClientRequest.get("/v1/providers").pipe(
         HttpClientRequest.setUrlParams({
           offset: options?.params?.["offset"] as any,
           limit: options?.params?.["limit"] as any,
@@ -3375,16 +3768,24 @@ export const make = (
         })
       ),
     ProvidersControllerGetProvider: (providerId, options) =>
-      HttpClientRequest.get(`/v1/providers/${providerId}`).pipe(
-        onRequest(options?.config)(["2xx"], {
-          "400": "ProvidersControllerGetProvider400",
-          "401": "ProvidersControllerGetProvider401",
-          "429": "ProvidersControllerGetProvider429",
-          "500": "ProvidersControllerGetProvider500",
-        })
+      __makePathRequest(
+        HttpClientRequest.get,
+        [providerId],
+        () => "/v1/providers/" + __encodePathParam(providerId) + ""
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            onRequest(options?.config)(["2xx"], {
+              "400": "ProvidersControllerGetProvider400",
+              "401": "ProvidersControllerGetProvider401",
+              "429": "ProvidersControllerGetProvider429",
+              "500": "ProvidersControllerGetProvider500",
+            })
+          )
+        )
       ),
     HealthControllerHealth: (options) =>
-      HttpClientRequest.get(`/health`).pipe(
+      HttpClientRequest.get("/health").pipe(
         onRequest(options?.config)(["2xx"])
       ),
   };
@@ -3463,6 +3864,7 @@ export interface YieldApi {
     | YieldApiError<"YieldsControllerGetYield401", YieldsControllerGetYield401>
     | YieldApiError<"YieldsControllerGetYield429", YieldsControllerGetYield429>
     | YieldApiError<"YieldsControllerGetYield500", YieldsControllerGetYield500>
+    | YieldApiError<"404", undefined>
   >;
   /**
    * Retrieve consolidated risk ratings from third-party providers for a yield.
@@ -3489,35 +3891,7 @@ export interface YieldApi {
         "YieldsControllerGetYieldRisk500",
         YieldsControllerGetYieldRisk500
       >
-  >;
-  /**
-   * Returns a chronological time series of balance snapshots for a wallet address within a yield. Each entry reflects the position at a specific timestamp or block. Supports configurable sampling intervals and point-in-time queries. Only available for ERC4626 vaults with indexed transfer history.
-   */
-  readonly YieldsControllerGetBalanceHistory: <Config extends OperationConfig>(
-    yieldId: string,
-    options: {
-      readonly params: YieldsControllerGetBalanceHistoryParams;
-      readonly config?: Config | undefined;
-    }
-  ) => Effect.Effect<
-    WithOptionalResponse<YieldsControllerGetBalanceHistory200, Config>,
-    | HttpClientError.HttpClientError
-    | YieldApiError<
-        "YieldsControllerGetBalanceHistory400",
-        YieldsControllerGetBalanceHistory400
-      >
-    | YieldApiError<
-        "YieldsControllerGetBalanceHistory401",
-        YieldsControllerGetBalanceHistory401
-      >
-    | YieldApiError<
-        "YieldsControllerGetBalanceHistory429",
-        YieldsControllerGetBalanceHistory429
-      >
-    | YieldApiError<
-        "YieldsControllerGetBalanceHistory500",
-        YieldsControllerGetBalanceHistory500
-      >
+    | YieldApiError<"404", undefined>
   >;
   /**
    * Retrieve all balances associated with a yield opportunity for a specific wallet address, including active, pending, claimable, and withdrawable balances. The network is automatically determined from the yield configuration.
@@ -3547,35 +3921,7 @@ export interface YieldApi {
         "YieldsControllerGetYieldBalances500",
         YieldsControllerGetYieldBalances500
       >
-  >;
-  /**
-   * Retrieve a chronological list of on-chain reward events for an indexed yield. Each record includes timestamp, token metadata, amount, reward source, and transaction reference.
-   */
-  readonly YieldsControllerGetYieldRewards: <Config extends OperationConfig>(
-    yieldId: string,
-    options: {
-      readonly params: YieldsControllerGetYieldRewardsParams;
-      readonly config?: Config | undefined;
-    }
-  ) => Effect.Effect<
-    WithOptionalResponse<YieldsControllerGetYieldRewards200, Config>,
-    | HttpClientError.HttpClientError
-    | YieldApiError<
-        "YieldsControllerGetYieldRewards400",
-        YieldsControllerGetYieldRewards400
-      >
-    | YieldApiError<
-        "YieldsControllerGetYieldRewards401",
-        YieldsControllerGetYieldRewards401
-      >
-    | YieldApiError<
-        "YieldsControllerGetYieldRewards429",
-        YieldsControllerGetYieldRewards429
-      >
-    | YieldApiError<
-        "YieldsControllerGetYieldRewards500",
-        YieldsControllerGetYieldRewards500
-      >
+    | YieldApiError<"404", undefined>
   >;
   /**
    * Returns a chronological time series of reward rate snapshots for the specified yield, suitable for charting and analytics. Supports configurable time ranges, sampling intervals (day/week/month), and pagination.
@@ -3611,6 +3957,7 @@ export interface YieldApi {
         "YieldsControllerGetYieldRewardRateHistory500",
         YieldsControllerGetYieldRewardRateHistory500
       >
+    | YieldApiError<"404", undefined>
   >;
   /**
    * Returns a chronological time series of Total Value Locked for the specified yield, expressed in underlying token units. Supports configurable time ranges, sampling intervals (day/week/month), and pagination.
@@ -3644,6 +3991,7 @@ export interface YieldApi {
         "YieldsControllerGetYieldTvlHistory500",
         YieldsControllerGetYieldTvlHistory500
       >
+    | YieldApiError<"404", undefined>
   >;
   /**
    * Retrieve a paginated list of validators available for staking or delegation for this yield opportunity.
@@ -3677,6 +4025,7 @@ export interface YieldApi {
         "YieldsControllerGetYieldValidators500",
         YieldsControllerGetYieldValidators500
       >
+    | YieldApiError<"404", undefined>
   >;
   /**
    * Returns campaign metadata for the given yield opportunity within the API key project scope.
@@ -3708,6 +4057,7 @@ export interface YieldApi {
         "YieldsControllerGetYieldCampaigns500",
         YieldsControllerGetYieldCampaigns500
       >
+    | YieldApiError<"404", undefined>
   >;
   /**
    * Retrieve tokens that have at least one enabled yield available for this project. Optionally filter by exact token identity, enter/exit availability, networks, and yield types. Returns the full list by default; callers should respect `total` and use `offset`/`limit`, as a default page size may be introduced in future. Maintenance, deprecated, and decommissioned yields are always excluded.
@@ -3740,7 +4090,7 @@ export interface YieldApi {
       >
   >;
   /**
-   * Retrieve all actions performed by a user, with optional filtering by yield, status, category, etc. In the future, this may include personalized action recommendations.
+   * Retrieve all actions performed by a user, with optional filtering by yield, status, category, etc. STALE actions that never reached the chain are excluded unless a status filter is provided. In the future, this may include personalized action recommendations.
    */
   readonly ActionsControllerGetActions: <
     Config extends OperationConfig,
@@ -3792,6 +4142,7 @@ export interface YieldApi {
         "ActionsControllerGetAction500",
         ActionsControllerGetAction500
       >
+    | YieldApiError<"404", undefined>
   >;
   /**
    * Generate the transactions needed to enter a yield position with the provided parameters.
@@ -3824,6 +4175,7 @@ export interface YieldApi {
         "ActionsControllerEnterYield500",
         ActionsControllerEnterYield500
       >
+    | YieldApiError<"404", undefined>
   >;
   /**
    * Generate the transactions needed to exit a yield position with the provided parameters.
@@ -3856,6 +4208,7 @@ export interface YieldApi {
         "ActionsControllerExitYield500",
         ActionsControllerExitYield500
       >
+    | YieldApiError<"404", undefined>
   >;
   /**
    * Simulates an enter action without creating or persisting an action or transactions. The response is sectioned so it can grow additively: v1 returns `gas` (and `entryReserveEstimate` for Solana enters); fee and execution-outcome sections will be added as further optional keys. A 200 does not guarantee the action would succeed on-chain — construction-level prechecks may be skipped during simulation.
@@ -3888,6 +4241,8 @@ export interface YieldApi {
         "ActionsControllerSimulateEnter500",
         ActionsControllerSimulateEnter500
       >
+    | YieldApiError<"404", undefined>
+    | YieldApiError<"412", undefined>
   >;
   /**
    * Simulates an exit action without creating or persisting an action or transactions. The response is sectioned so it can grow additively: v1 returns `gas`; fee and execution-outcome sections will be added as further optional keys. A 200 does not guarantee the action would succeed on-chain — construction-level prechecks may be skipped during simulation.
@@ -3920,6 +4275,8 @@ export interface YieldApi {
         "ActionsControllerSimulateExit500",
         ActionsControllerSimulateExit500
       >
+    | YieldApiError<"404", undefined>
+    | YieldApiError<"412", undefined>
   >;
   /**
    * Generate the transactions needed to perform management actions on a yield position.
@@ -3952,6 +4309,7 @@ export interface YieldApi {
         "ActionsControllerManageYield500",
         ActionsControllerManageYield500
       >
+    | YieldApiError<"404", undefined>
   >;
   /**
    * Submit the transaction hash after broadcasting a transaction to the blockchain. This updates the transaction status and enables tracking.
@@ -3982,6 +4340,8 @@ export interface YieldApi {
         "TransactionsControllerSubmitTransactionHash500",
         TransactionsControllerSubmitTransactionHash500
       >
+    | YieldApiError<"400", undefined>
+    | YieldApiError<"404", undefined>
   >;
   /**
    * Submit the transaction to the blockchain.
@@ -4009,6 +4369,8 @@ export interface YieldApi {
         "TransactionsControllerSubmitTransaction500",
         TransactionsControllerSubmitTransaction500
       >
+    | YieldApiError<"400", undefined>
+    | YieldApiError<"404", undefined>
   >;
   /**
    * Retrieve detailed information about a specific transaction including current status, hash, and execution details.
@@ -4037,6 +4399,7 @@ export interface YieldApi {
         "TransactionsControllerGetTransaction500",
         TransactionsControllerGetTransaction500
       >
+    | YieldApiError<"404", undefined>
   >;
   /**
    * Returns the normalized KYC status for the given address. Yields without a KYC requirement return not_required.
@@ -4052,6 +4415,8 @@ export interface YieldApi {
     | HttpClientError.HttpClientError
     | YieldApiError<"KycControllerGetStatus401", KycControllerGetStatus401>
     | YieldApiError<"KycControllerGetStatus429", KycControllerGetStatus429>
+    | YieldApiError<"400", undefined>
+    | YieldApiError<"404", undefined>
   >;
   /**
    * Retrieve networks with enabled yield opportunities for the authenticated project.

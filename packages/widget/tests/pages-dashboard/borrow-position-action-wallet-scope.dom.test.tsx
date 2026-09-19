@@ -60,6 +60,7 @@ const marketDto = {
   network: "ethereum",
   originationFeeBps: "0",
   originationFeeWrapperAddress: null,
+  blueBundleOriginationFeeBps: null,
   poolAddress: "0x0000000000000000000000000000000000000001",
   supplyCollateralFeeBps: "0",
   totalBorrow: "500000",
