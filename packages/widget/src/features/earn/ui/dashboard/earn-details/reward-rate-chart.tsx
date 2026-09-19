@@ -33,8 +33,6 @@ type Props = {
   valueFormatter?: (value: number) => string;
 };
 
-const height = 150;
-
 const accentColor = vars.color.primaryButtonBackground;
 
 type EndpointDotProps = {
@@ -118,7 +116,11 @@ export const HistoryChart = ({
   ) : null;
 
   if (isLoading && data.length < 2) {
-    return <ContentLoaderSquare heightPx={height} />;
+    return (
+      <Box className={chartContainer}>
+        <ContentLoaderSquare />
+      </Box>
+    );
   }
 
   if (data.length < 2) {
@@ -193,7 +195,7 @@ export const HistoryChart = ({
           data={[...data]}
           margin={{ top: 8, right: 4, bottom: 4, left: 0 }}
           responsive
-          style={{ height, width: "100%" }}
+          style={{ height: "100%", width: "100%" }}
           tabIndex={-1}
         >
           <defs>

@@ -2,10 +2,13 @@ import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import type { MarketPosition } from "../../../../../../domain/borrow/positions/market-position";
 import type { PositionDetailsLabelType } from "../../../../../../domain/portfolio/positions";
-import { TokenIcon } from "../../../../../../shared/ui/components/token-icon";
+import {
+  TokenIcon,
+  TokenIconSkeleton,
+} from "../../../../../../shared/ui/components/token-icon";
 import { ToolTip } from "../../../../../../shared/ui/components/tooltip";
 import { Box } from "../../../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/content-loader";
+import { ContentLoaderLine } from "../../../../../../shared/ui/primitives/content-loader";
 import { SKLink } from "../../../../../../shared/ui/primitives/link";
 import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
 import { Spinner } from "../../../../../../shared/ui/primitives/spinner";
@@ -132,24 +135,25 @@ const EarnPositionsListItem = ({
       viewTransition
     >
       <Box py="1">
-        {integrationData ? (
-          <ListItem className={listItem}>
+        <ListItem className={listItem}>
+          <Box
+            display="flex"
+            width="full"
+            alignItems="center"
+            justifyContent="space-between"
+            gap="2"
+          >
+            {/* Yield */}
             <Box
               display="flex"
-              width="full"
               alignItems="center"
-              justifyContent="space-between"
               gap="2"
+              flex={1}
+              minWidth="0"
             >
-              {/* Yield */}
-              <Box
-                display="flex"
-                alignItems="center"
-                gap="2"
-                flex={1}
-                minWidth="0"
-              >
-                {item.token ? (
+              {!integrationData && <TokenIconSkeleton />}
+              {integrationData &&
+                (item.token ? (
                   <TokenIcon
                     metadata={{
                       logoURI: integrationData.metadata.logoURI,
@@ -162,134 +166,150 @@ const EarnPositionsListItem = ({
                   <Box display="flex" marginRight="2">
                     <Spinner />
                   </Box>
-                )}
+                ))}
 
-                <Box className={positionInfoColumn}>
-                  <Box display="flex" alignItems="center" gap="1">
-                    <Text className={positionName}>
-                      {integrationData.metadata.name}
-                    </Text>
+              <Box className={positionInfoColumn}>
+                <Box display="flex" alignItems="center" gap="1">
+                  <Text className={positionName}>
+                    {integrationData ? (
+                      integrationData.metadata.name
+                    ) : (
+                      <ContentLoaderLine widthPx="12ch" />
+                    )}
+                  </Text>
 
-                    {item.yieldLabelDto ? (
-                      <ToolTip
-                        textAlign="left"
-                        maxWidth={300}
-                        label={t(
-                          `position_details.labels.${item.yieldLabelDto.type as PositionDetailsLabelType}.details`,
-                          item.yieldLabelDto.params as
-                            | Record<string, string>
-                            | undefined
-                        )}
-                      >
-                        <Box
-                          className={listItemContainer({
-                            type: "actionRequired",
-                          })}
-                        >
-                          <Text variant={{ type: "white" }} className={noWrap}>
-                            {t(
-                              `position_details.labels.${item.yieldLabelDto.type as PositionDetailsLabelType}.label`
-                            )}
-                          </Text>
-                        </Box>
-                      </ToolTip>
-                    ) : null}
-
-                    {(item.actionRequired ||
-                      item.hasPendingClaimRewards ||
-                      !!inactiveValidator) && (
+                  {item.yieldLabelDto ? (
+                    <ToolTip
+                      textAlign="left"
+                      maxWidth={300}
+                      label={t(
+                        `position_details.labels.${item.yieldLabelDto.type as PositionDetailsLabelType}.details`,
+                        item.yieldLabelDto.params as
+                          | Record<string, string>
+                          | undefined
+                      )}
+                    >
                       <Box
                         className={listItemContainer({
-                          type: actionBadgeType,
+                          type: "actionRequired",
                         })}
                       >
                         <Text variant={{ type: "white" }} className={noWrap}>
-                          {actionBadgeLabel}
+                          {t(
+                            `position_details.labels.${item.yieldLabelDto.type as PositionDetailsLabelType}.label`
+                          )}
                         </Text>
                       </Box>
-                    )}
-                  </Box>
-
-                  {providersDetails?.[0] ? (
-                    <Text
-                      className={viaText}
-                      variant={{ type: "muted", weight: "normal" }}
-                    >
-                      {t("positions.via", {
-                        providerName:
-                          providersDetails[0].name ??
-                          providersDetails[0].address,
-                        count: Math.max(providersDetails.length - 1, 1),
-                      })}
-                    </Text>
+                    </ToolTip>
                   ) : null}
-                </Box>
-              </Box>
 
-              {/* Reward rate + staked */}
-              <Box display="flex" alignItems="center" gap="4" flexShrink={0}>
-                {rewardRateAverage ? (
-                  <Text className={rewardRateText}>{rewardRateAverage}</Text>
-                ) : null}
-
-                {totalAmountFormatted && item.token ? (
-                  <Box
-                    display="flex"
-                    flexDirection="column"
-                    alignItems="flex-end"
-                    textAlign="end"
-                    gap="1"
-                  >
-                    <Text className={noWrap}>
-                      {totalAmountFormatted} {item.token.symbol}
-                    </Text>
-
-                    {totalAmountPriceFormatted ? (
-                      <Text
-                        className={noWrap}
-                        variant={{ type: "muted", weight: "normal" }}
-                      >
-                        ≈ ${totalAmountPriceFormatted}
+                  {(item.actionRequired ||
+                    item.hasPendingClaimRewards ||
+                    !!inactiveValidator) && (
+                    <Box
+                      className={listItemContainer({
+                        type: actionBadgeType,
+                      })}
+                    >
+                      <Text variant={{ type: "white" }} className={noWrap}>
+                        {actionBadgeLabel}
                       </Text>
-                    ) : null}
-                  </Box>
-                ) : (
-                  <Text>-</Text>
-                )}
+                    </Box>
+                  )}
+                </Box>
+
+                {providersDetails?.[0] ? (
+                  <Text
+                    className={viaText}
+                    variant={{ type: "muted", weight: "normal" }}
+                  >
+                    {t("positions.via", {
+                      providerName:
+                        providersDetails[0].name ?? providersDetails[0].address,
+                      count: Math.max(providersDetails.length - 1, 1),
+                    })}
+                  </Text>
+                ) : null}
               </Box>
             </Box>
 
-            {item.pointsRewardTokenBalances.length > 0 && (
-              <Box display="flex" alignSelf="flex-end" gap="1">
-                {item.pointsRewardTokenBalances.map((val, i) => (
-                  <Box
-                    key={i}
-                    alignSelf="flex-end"
-                    background="background"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    borderRadius="lg"
-                    px="2"
-                    py="1"
-                    gap="1"
-                  >
-                    <TokenIcon token={val.token} hideNetwork tokenLogoHw="5" />
+            {/* Reward rate + staked */}
+            <Box display="flex" alignItems="center" gap="4" flexShrink={0}>
+              {!integrationData || rewardRateAverage ? (
+                <Text className={rewardRateText}>
+                  {integrationData ? (
+                    rewardRateAverage
+                  ) : (
+                    <ContentLoaderLine widthPx="5ch" />
+                  )}
+                </Text>
+              ) : null}
 
+              {!integrationData || (totalAmountFormatted && item.token) ? (
+                <Box
+                  display="flex"
+                  flexDirection="column"
+                  alignItems="flex-end"
+                  textAlign="end"
+                  gap="1"
+                >
+                  <Text className={noWrap}>
+                    {integrationData ? (
+                      <>
+                        {totalAmountFormatted} {item.token?.symbol}
+                      </>
+                    ) : (
+                      <ContentLoaderLine widthPx="9ch" />
+                    )}
+                  </Text>
+
+                  {!integrationData || totalAmountPriceFormatted ? (
                     <Text
-                      overflowWrap="anywhere"
+                      className={noWrap}
                       variant={{ type: "muted", weight: "normal" }}
                     >
-                      {val.amount}
+                      {integrationData ? (
+                        <>≈ ${totalAmountPriceFormatted}</>
+                      ) : (
+                        <ContentLoaderLine widthPx="7ch" />
+                      )}
                     </Text>
-                  </Box>
-                ))}
-              </Box>
-            )}
-          </ListItem>
-        ) : (
-          <ContentLoaderSquare heightPx={60} />
-        )}
+                  ) : null}
+                </Box>
+              ) : (
+                <Text>-</Text>
+              )}
+            </Box>
+          </Box>
+
+          {item.pointsRewardTokenBalances.length > 0 && (
+            <Box display="flex" alignSelf="flex-end" gap="1">
+              {item.pointsRewardTokenBalances.map((val, i) => (
+                <Box
+                  key={i}
+                  alignSelf="flex-end"
+                  background="background"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  borderRadius="lg"
+                  px="2"
+                  py="1"
+                  gap="1"
+                >
+                  <TokenIcon token={val.token} hideNetwork tokenLogoHw="5" />
+
+                  <Text
+                    overflowWrap="anywhere"
+                    variant={{ type: "muted", weight: "normal" }}
+                  >
+                    {val.amount}
+                  </Text>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </ListItem>
       </Box>
     </SKLink>
   );

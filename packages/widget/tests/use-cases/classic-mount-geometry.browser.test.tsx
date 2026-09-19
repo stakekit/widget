@@ -1,6 +1,7 @@
 import { MotionGlobalConfig } from "motion/react";
 import { delay, HttpResponse, http } from "msw";
 import { afterEach } from "vitest";
+import { userEvent } from "vitest/browser";
 import { yieldApiYieldDtoFixture } from "../fixtures";
 import { yieldApiRoute } from "../mocks/api-routes";
 import { describe, expect, it } from "../utils/test-extend";
@@ -188,5 +189,54 @@ describe("classic mount geometry", () => {
       .not.toContain(generationCopy);
     await expect.poll(() => defaultApp.container.textContent).toContain("Earn");
     await defaultApp.unmount();
+  });
+
+  it("keeps the amount layout stable with a loader until the catalog is ready", async ({
+    worker,
+  }) => {
+    const catalog = Promise.withResolvers<void>();
+    const readyYield = yieldApiYieldDtoFixture();
+    worker.use(
+      http.get(yieldApiRoute("/v1/yields"), async () => {
+        await catalog.promise;
+        return HttpResponse.json({
+          items: [readyYield],
+          total: 1,
+          limit: 20,
+          offset: 0,
+        });
+      }),
+      http.get(yieldApiRoute(`/v1/yields/${readyYield.id}`), () =>
+        HttpResponse.json(readyYield)
+      )
+    );
+    const app = await renderApp({
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        disableInitLayoutAnimation: true,
+        language: "fr",
+        theme: {
+          font: { body: "Georgia, serif" },
+          fontSize: { md: "20px" },
+        },
+      },
+    });
+
+    try {
+      const section = app.getByTestId("stake-token-section");
+      await expect.element(section).toBeVisible();
+      await expect.element(app.getByRole("textbox")).not.toBeInTheDocument();
+
+      catalog.resolve();
+
+      const input = app.getByRole("textbox");
+      await expect.element(input).toBeVisible();
+      await expect.element(input).toBeEnabled();
+      await userEvent.fill(input, "1");
+      await expect.element(input).toHaveValue("1");
+    } finally {
+      catalog.resolve();
+      await app.unmount();
+    }
   });
 });

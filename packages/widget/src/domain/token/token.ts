@@ -30,3 +30,4 @@ export const tokenString = (token: TokenLike): TokenString => {
 
 export const equalTokens = (a: TokenLike, b: TokenLike) =>
   tokenString(a) === tokenString(b);
+export const isNativeToken = (token: TokenLike) => token.address === undefined;

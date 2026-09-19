@@ -3,7 +3,7 @@ import { Array as EArray, Option } from "effect";
 import { exactDecimal, exactZero } from "../finance/exact";
 import type { YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
-import { equalTokens, type Token } from "../token/token";
+import { equalTokens, isNativeToken, type Token } from "../token/token";
 import type { EarnValidator, EarnYieldWithProvider } from "./models";
 import type { ValidatorKey } from "./validator";
 import { getYieldActionArg, isBittensorStaking } from "./yield";
@@ -13,8 +13,11 @@ export const stakeTokenSameAsGasToken = ({
   yieldDto,
 }: {
   stakeToken: Token;
-  yieldDto: EarnYieldWithProvider;
-}) => equalTokens(stakeToken, yieldDto.mechanics.gasFeeToken);
+  yieldDto: EarnYieldWithProvider | null;
+}) =>
+  isNativeToken(stakeToken) ||
+  (yieldDto !== null &&
+    equalTokens(stakeToken, yieldDto.mechanics.gasFeeToken));
 
 export const getMaxAmount = ({
   availableAmount,

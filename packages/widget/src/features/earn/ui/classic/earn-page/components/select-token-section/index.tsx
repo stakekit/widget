@@ -4,26 +4,43 @@ import { useWidgetConfig } from "../../../../../../../features/widget-configurat
 import { formatNumber } from "../../../../../../../shared/lib/number-format";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
 import * as AmountToggle from "../../../../../../../shared/ui/components/amount-toggle";
-import {
-  minMaxContainer,
-  priceTxt,
-  selectTokenBalance,
-  selectTokenSection,
-} from "../../../../../../../shared/ui/components/amount-token-section/styles.css";
-import { MaxButton } from "../../../../../../../shared/ui/components/max-button";
-import { NumberInput } from "../../../../../../../shared/ui/components/number-input";
+import { AmountTokenSection } from "../../../../../../../shared/ui/components/amount-token-section";
+import { minMaxContainer } from "../../../../../../../shared/ui/components/amount-token-section/styles.css";
 import {
   Box,
   type BoxProps,
 } from "../../../../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
 import {
   useEarnEntry,
   useEarnTokenSelection,
 } from "../../../../../react/use-earn-facades";
-import { SelectToken } from "./select-token";
-import { SelectTokenTitle } from "./title";
+import { SelectToken, SelectTokenTrigger } from "./select-token";
+import { SelectTokenTitle, SelectTokenTitleView } from "./title";
+
+export const SelectTokenSectionSkeleton = ({
+  canSelectToken = true,
+  sectionMarginTop = "2",
+}: {
+  canSelectToken?: boolean;
+  sectionMarginTop?: BoxProps["marginTop"];
+} = {}) => {
+  const variant = useWidgetConfig("variant");
+  return (
+    <AmountTokenSection
+      loading
+      marginTop={sectionMarginTop}
+      accessory={<SelectTokenTrigger canSelect={canSelectToken} />}
+      header={
+        variant === "zerion" ? (
+          <Box display="flex" justifyContent="space-between">
+            <SelectTokenTitleView isLoading />
+          </Box>
+        ) : undefined
+      }
+    />
+  );
+};
 
 export const SelectTokenSection = ({
   canSelectToken = true,
@@ -78,6 +95,7 @@ export const SelectTokenSection = ({
     stakeMaxAmount === null
       ? null
       : `${t("shared.max")} ${formatNumber(stakeMaxAmount)} ${symbol}`;
+  const minMaxLabel = min && max ? `${min} / ${max}` : (min ?? max);
   const minStakeAmount =
     min || max ? (
       <Box
@@ -91,7 +109,7 @@ export const SelectTokenSection = ({
           key="min"
           variant={{ type: stakeAmountLessThanMin ? "danger" : "muted" }}
         >
-          {min && max ? `${min} / ${max}` : (min ?? max)}
+          {minMaxLabel}
         </Text>
       </Box>
     ) : null;
@@ -134,98 +152,37 @@ export const SelectTokenSection = ({
   const balanceContent = getBalanceContent();
 
   return isLoading ? (
-    <Box marginTop={sectionMarginTop}>
-      <ContentLoaderSquare heightPx={112.5} />
-    </Box>
+    <SelectTokenSectionSkeleton
+      canSelectToken={canSelectToken}
+      sectionMarginTop={sectionMarginTop}
+    />
   ) : (
     <Box>
-      <Box
-        data-rk="stake-token-section"
-        background="stakeSectionBackground"
+      <AmountTokenSection
+        value={stakeAmount}
+        onChange={setAmount}
+        isInvalid={errorInput}
+        state={submitted && stakeAmountIsZero ? "danger" : "default"}
         marginTop={sectionMarginTop}
-        py="4"
-        px="4"
-        borderStyle="solid"
-        borderWidth={1}
-        className={combineRecipeWithVariant({
-          rec: selectTokenSection,
-          variant,
-          state: submitted && stakeAmountIsZero ? "danger" : "default",
-        })}
-      >
-        {variant === "zerion" && (
-          <Box display="flex" justifyContent="space-between">
-            <SelectTokenTitle />
-            {minStakeAmount}
-          </Box>
-        )}
-
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box minWidth="0" display="flex" flex={1}>
-            <NumberInput
-              shakeOnInvalid
-              isInvalid={errorInput}
-              onChange={setAmount}
-              value={stakeAmount}
-            />
-          </Box>
-
-          <Box display="flex" justifyContent="center" alignItems="center">
-            <SelectToken canSelect={canSelectToken} />
-          </Box>
-        </Box>
-
-        {variant !== "zerion" && minStakeAmount}
-
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          marginTop="2"
-          flexWrap="wrap"
-          data-rk="stake-token-section-balance"
-          gap="1"
-        >
-          <Box className={priceTxt} display="flex">
-            <Text
-              variant={{ type: "muted", weight: "normal" }}
-              className={combineRecipeWithVariant({
-                rec: selectTokenBalance,
-                variant,
-              })}
-            >
-              {formattedPrice}
-            </Text>
-          </Box>
-
-          <Box
-            flexGrow={1}
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Box display="flex">
-              <Text
-                variant={{
-                  weight: "normal",
-                  type: errorBalance ? "danger" : "muted",
-                }}
-                data-state={errorBalance ? "error" : "valid"}
-                className={combineRecipeWithVariant({
-                  rec: selectTokenBalance,
-                  variant,
-                })}
-              >
-                {balanceContent}
-              </Text>
+        accessory={<SelectToken canSelect={canSelectToken} />}
+        formattedPrice={formattedPrice}
+        balance={balanceContent}
+        balanceError={errorBalance}
+        onMaxClick={
+          isStakeTokenSameAsGasToken ? undefined : () => setMaxAmount(undefined)
+        }
+        minMaxLabel={variant === "zerion" ? undefined : minMaxLabel}
+        minMaxError={stakeAmountLessThanMin}
+        minMaxTextAlign="left"
+        header={
+          variant === "zerion" ? (
+            <Box display="flex" justifyContent="space-between">
+              <SelectTokenTitle />
+              {minStakeAmount}
             </Box>
-
-            {!isStakeTokenSameAsGasToken && (
-              <MaxButton onMaxClick={() => setMaxAmount(undefined)} />
-            )}
-          </Box>
-        </Box>
-      </Box>
+          ) : undefined
+        }
+      />
     </Box>
   );
 };

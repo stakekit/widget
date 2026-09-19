@@ -11,31 +11,40 @@ import { getBorrowDetailsModel } from "../../model/details";
 import * as styles from "../styles.css";
 import { BorrowInfoNote } from "./notices";
 
-export const BorrowFormDetails = ({
-  borrowAmount,
-  collateralAmount,
-  ltvGreaterThanMax,
-  market,
-  projection,
-  walletBalances,
-}: {
-  readonly borrowAmount: BigNumber;
-  readonly collateralAmount: BigNumber;
-  readonly ltvGreaterThanMax: boolean;
-  readonly market: Market;
-  readonly projection: BorrowFormProjection;
-  readonly walletBalances: BorrowMarketWalletBalances | null;
-}) => {
+export const BorrowFormDetails = (
+  props:
+    | { readonly loading: true }
+    | {
+        readonly loading?: false;
+        readonly borrowAmount: BigNumber;
+        readonly collateralAmount: BigNumber;
+        readonly ltvGreaterThanMax: boolean;
+        readonly market: Market;
+        readonly projection: BorrowFormProjection;
+        readonly walletBalances: BorrowMarketWalletBalances | null;
+      }
+) => {
   const { t } = useTranslation();
-  const model = getBorrowDetailsModel({
-    balances: walletBalances,
-    borrowAmount,
-    collateralAmount,
-    integration: null,
-    market,
-    projection,
-    t,
-  });
+  const model = props.loading
+    ? null
+    : getBorrowDetailsModel({
+        balances: props.walletBalances,
+        borrowAmount: props.borrowAmount,
+        collateralAmount: props.collateralAmount,
+        integration: null,
+        market: props.market,
+        projection: props.projection,
+        t,
+      });
+  const rows = model?.formRows ?? [
+    { id: "max-ltv", label: t("dashboard.borrow.details.max_ltv") },
+    {
+      id: "collateral-value",
+      label: t("dashboard.borrow.form.collateral_value"),
+    },
+    { id: "loan", label: t("dashboard.borrow.form.loan") },
+    { id: "borrow-rate", label: t("dashboard.borrow.form.borrow_rate") },
+  ];
 
   return (
     <Box display="flex" flexDirection="column" gap="4">
@@ -43,11 +52,16 @@ export const BorrowFormDetails = ({
         {t("dashboard.borrow.form.details")}
       </Text>
       <Box className={styles.detailCard}>
-        {model.formRows.map((row) => (
-          <DetailRow key={row.id} {...row} />
+        {rows.map((row) => (
+          <DetailRow
+            key={row.id}
+            label={row.label}
+            loading={props.loading}
+            value={"value" in row ? row.value : null}
+          />
         ))}
       </Box>
-      {ltvGreaterThanMax ? (
+      {!props.loading && props.ltvGreaterThanMax ? (
         <WarningBox text={t("dashboard.borrow.form.validation.ltv")} />
       ) : (
         <BorrowInfoNote>{t("dashboard.borrow.form.ltv_note")}</BorrowInfoNote>

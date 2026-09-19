@@ -10,7 +10,6 @@ import { AmountTokenSection } from "../../../../../shared/ui/components/amount-t
 import { Dropdown } from "../../../../../shared/ui/components/dropdown";
 import { SelectedToken } from "../../../../../shared/ui/components/selected-token";
 import { Box } from "../../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { type PageCta, PageCtaButton } from "../../../../widget-shell/views";
 import { KycGateCard, MetaInfo } from "../../../../yield-summary/views";
@@ -73,9 +72,12 @@ const PositionDetailsStakeTokenSection = ({
 
   if (isLoading) {
     return (
-      <Box marginTop="0">
-        <ContentLoaderSquare heightPx={112.5} />
-      </Box>
+      <AmountTokenSection
+        loading
+        accessory={<SelectedToken loading />}
+        marginTop="0"
+        showMaxButton={!stake.isStakeTokenSameAsGasToken}
+      />
     );
   }
 
