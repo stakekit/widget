@@ -13,13 +13,13 @@ export type IntegrationMetadataDto = {
   readonly logoURI: string;
 };
 export type ArgumentSchemaDto = {
-  readonly type?: {};
-  readonly properties?: {};
+  readonly type?: { readonly [x: string]: unknown };
+  readonly properties?: { readonly [x: string]: unknown };
   readonly required?: ReadonlyArray<string>;
-  readonly additionalProperties?: {};
-  readonly items?: {};
+  readonly additionalProperties?: { readonly [x: string]: unknown };
+  readonly items?: { readonly [x: string]: unknown };
   readonly enum?: ReadonlyArray<string>;
-  readonly default?: {};
+  readonly default?: { readonly [x: string]: unknown };
   readonly notes?: string;
 };
 export type TokenDto = {
@@ -47,27 +47,6 @@ export type ArgumentsDto = {
   readonly targetLtv?: string;
   readonly marketId: string;
 };
-export type RepaidDebtDto = {
-  readonly tokenAddress: string;
-  readonly tokenSymbol: string;
-  readonly amount: string;
-  readonly amountRaw: string;
-  readonly amountUsd: string | null;
-  readonly shares: string;
-};
-export type SeizedCollateralDto = {
-  readonly tokenAddress: string;
-  readonly tokenSymbol: string;
-  readonly amount: string;
-  readonly amountRaw: string;
-  readonly amountUsd: string | null;
-};
-export type BadDebtDto = {
-  readonly amountRaw: string;
-  readonly amount: string;
-  readonly amountUsd: string | null;
-  readonly shares: string;
-};
 export type TransactionDto = {
   readonly id: string;
   readonly network:
@@ -92,6 +71,7 @@ export type TransactionDto = {
     | "monad"
     | "robinhood"
     | "robinhood-testnet"
+    | "arc-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -185,7 +165,8 @@ export type TransactionDto = {
     | "REPAY"
     | "WITHDRAW"
     | "ENABLE_COLLATERAL"
-    | "DISABLE_COLLATERAL";
+    | "DISABLE_COLLATERAL"
+    | "BUNDLE";
   readonly status:
     | "NOT_FOUND"
     | "CREATED"
@@ -239,7 +220,7 @@ export type SubmitTransactionResponseDto = {
     | "FAILED"
     | "SKIPPED";
   readonly error?: string;
-  readonly details?: {};
+  readonly details?: { readonly [x: string]: unknown };
 };
 export type HealthStatus = "OK" | "FAIL";
 export type ActionDefinitionDto = {
@@ -249,7 +230,8 @@ export type ActionDefinitionDto = {
     | "repay"
     | "withdraw"
     | "enableCollateral"
-    | "disableCollateral";
+    | "disableCollateral"
+    | "supplyAndBorrow";
   readonly label: string;
   readonly schema: ArgumentSchemaDto;
 };
@@ -268,7 +250,8 @@ export type BorrowPendingActionDto = {
     | "repay"
     | "withdraw"
     | "enableCollateral"
-    | "disableCollateral";
+    | "disableCollateral"
+    | "supplyAndBorrow";
   readonly label: string;
   readonly args: ArgumentsDto;
 };
@@ -280,131 +263,10 @@ export type ActionRequestDto = {
     | "repay"
     | "withdraw"
     | "enableCollateral"
-    | "disableCollateral";
+    | "disableCollateral"
+    | "supplyAndBorrow";
   readonly address: string;
   readonly args: ArgumentsDto;
-};
-export type LiquidationDto = {
-  readonly id: string;
-  readonly integrationId: string;
-  readonly network:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "plume"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly address: string;
-  readonly marketId: string;
-  readonly type: "partial" | "full" | null;
-  readonly realizedBadDebt: boolean;
-  readonly occurredAt: string;
-  readonly blockNumber: number;
-  readonly transactionHash: string;
-  readonly transactionLink: string;
-  readonly liquidator: string;
-  readonly repaidDebt: RepaidDebtDto;
-  readonly seizedCollateral: SeizedCollateralDto;
-  readonly badDebt: BadDebtDto;
-  readonly lif: string;
 };
 export type ActionDto = {
   readonly id: string;
@@ -415,7 +277,8 @@ export type ActionDto = {
     | "repay"
     | "withdraw"
     | "enableCollateral"
-    | "disableCollateral";
+    | "disableCollateral"
+    | "supplyAndBorrow";
   readonly address: string;
   readonly status:
     | "CANCELED"
@@ -463,6 +326,7 @@ export type IntegrationDto = {
     | "monad"
     | "robinhood"
     | "robinhood-testnet"
+    | "arc-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -575,6 +439,7 @@ export type MarketDto = {
     | "monad"
     | "robinhood"
     | "robinhood-testnet"
+    | "arc-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -676,6 +541,7 @@ export type MarketDto = {
   readonly feeWrapperAddress: string | null;
   readonly originationFeeBps: string;
   readonly originationFeeWrapperAddress: string | null;
+  readonly blueBundleOriginationFeeBps: string | null;
   readonly minLoan: string | null;
 };
 export type SupplyBalanceDto = {
@@ -725,6 +591,7 @@ export type PositionDto = {
     | "monad"
     | "robinhood"
     | "robinhood-testnet"
+    | "arc-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -871,6 +738,7 @@ export type MarketsControllerGetMarketsV1Params = {
     | "monad"
     | "robinhood"
     | "robinhood-testnet"
+    | "arc-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -960,7 +828,7 @@ export type MarketsControllerGetMarketsV1200 = {
   readonly total: number;
   readonly offset: number;
   readonly limit: number;
-  readonly items?: ReadonlyArray<MarketDto>;
+  readonly items?: never;
 };
 export type MarketsControllerGetMarketsV1401 = {
   readonly message?: string;
@@ -1009,6 +877,7 @@ export type PositionsControllerGetPositionsV1Params = {
     | "monad"
     | "robinhood"
     | "robinhood-testnet"
+    | "arc-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -1132,6 +1001,7 @@ export type PositionsControllerGetLiquidationsV1Params = {
     | "monad"
     | "robinhood"
     | "robinhood-testnet"
+    | "arc-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -1222,7 +1092,7 @@ export type PositionsControllerGetLiquidationsV1200 = {
   readonly total: number;
   readonly offset: number;
   readonly limit: number;
-  readonly items?: ReadonlyArray<LiquidationDto>;
+  readonly items?: never;
 };
 export type PositionsControllerGetLiquidationsV1401 = {
   readonly message?: string;
@@ -1246,7 +1116,8 @@ export type ActionsControllerGetActionsV1Params = {
     | "repay"
     | "withdraw"
     | "enableCollateral"
-    | "disableCollateral";
+    | "disableCollateral"
+    | "supplyAndBorrow";
   readonly status?:
     | "CANCELED"
     | "CREATED"
@@ -1269,7 +1140,7 @@ export type ActionsControllerGetActionsV1200 = {
   readonly total: number;
   readonly offset: number;
   readonly limit: number;
-  readonly items?: ReadonlyArray<ActionDto>;
+  readonly items?: never;
 };
 export type ActionsControllerGetActionsV1401 = {
   readonly message?: string;
@@ -1416,6 +1287,51 @@ export const make = (
         : (request) =>
             Effect.flatMap(httpClient.execute(request), withOptionalResponse);
     };
+  const __encodePathParam = encodeURIComponent;
+  const __makePathRequest = (
+    method: (url: string) => HttpClientRequest.HttpClientRequest,
+    parameters: ReadonlyArray<string>,
+    getPath: () => string
+  ) =>
+    Effect.suspend(() => {
+      const fail = (description: string, cause?: unknown) =>
+        Effect.fail(
+          new HttpClientError.HttpClientError({
+            reason: new HttpClientError.InvalidUrlError({
+              request: method(""),
+              cause,
+              description,
+            }),
+          })
+        );
+      if (
+        parameters.some(
+          (value) => value === "" || /^(?:\.|%2e){1,2}$/i.test(value)
+        )
+      ) {
+        return fail(
+          "Path parameters must be non-empty and cannot be dot segments"
+        );
+      }
+      let path: string;
+      try {
+        path = getPath();
+      } catch (cause) {
+        return fail("Failed to encode path parameter", cause);
+      }
+      if (
+        path.split("/").some((segment) => /^(?:\.|%2e){1,2}$/i.test(segment))
+      ) {
+        return fail("Request paths cannot contain dot segments");
+      }
+      return Effect.succeed(method(path));
+    });
+  const decodeBinary = (response: HttpClientResponse.HttpClientResponse) =>
+    Effect.map(response.arrayBuffer, (buffer) => new Uint8Array(buffer));
+  const decodeVoidError =
+    <const Tag extends string>(tag: Tag) =>
+    (response: HttpClientResponse.HttpClientResponse) =>
+      Effect.fail(BorrowApiError(tag, undefined, response));
   const decodeSuccess = <A>(response: HttpClientResponse.HttpClientResponse) =>
     response.json as Effect.Effect<A, HttpClientError.HttpClientError>;
   const decodeVoid = (_response: HttpClientResponse.HttpClientResponse) =>
@@ -1436,7 +1352,12 @@ export const make = (
     <Config extends OperationConfig>(config: Config | undefined) =>
     (
       successCodes: ReadonlyArray<string>,
-      errorCodes?: Record<string, string>
+      errorCodes?: Record<string, string>,
+      responseCodes: {
+        readonly binary: ReadonlyArray<string>;
+        readonly voidSuccess: ReadonlyArray<string>;
+        readonly voidError: ReadonlyArray<string>;
+      } = { binary: [], voidSuccess: [], voidError: [] }
     ) => {
       const cases: any = { orElse: unexpectedStatus };
       for (const code of successCodes) {
@@ -1447,7 +1368,20 @@ export const make = (
           cases[code] = decodeError(tag);
         }
       }
-      if (successCodes.length === 0) {
+      for (const code of responseCodes.binary) {
+        cases[code] = decodeBinary;
+      }
+      for (const code of responseCodes.voidSuccess) {
+        cases[code] = decodeVoid;
+      }
+      for (const code of responseCodes.voidError) {
+        cases[code] = decodeVoidError(code);
+      }
+      if (
+        successCodes.length === 0 &&
+        responseCodes.binary.length === 0 &&
+        responseCodes.voidSuccess.length === 0
+      ) {
         cases["2xx"] = decodeVoid;
       }
       return withResponse(config)(HttpClientResponse.matchStatus(cases) as any);
@@ -1455,21 +1389,33 @@ export const make = (
   return {
     httpClient,
     IntegrationsControllerGetIntegrationsV1: (options) =>
-      HttpClientRequest.get(`/v1/integrations`).pipe(
+      HttpClientRequest.get("/v1/integrations").pipe(
         onRequest(options?.config)(["2xx"], {
           "401": "IntegrationsControllerGetIntegrationsV1401",
           "429": "IntegrationsControllerGetIntegrationsV1429",
         })
       ),
     IntegrationsControllerGetIntegrationV1: (integrationId, options) =>
-      HttpClientRequest.get(`/v1/integrations/${integrationId}`).pipe(
-        onRequest(options?.config)(["2xx"], {
-          "401": "IntegrationsControllerGetIntegrationV1401",
-          "429": "IntegrationsControllerGetIntegrationV1429",
-        })
+      __makePathRequest(
+        HttpClientRequest.get,
+        [integrationId],
+        () => "/v1/integrations/" + __encodePathParam(integrationId) + ""
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            onRequest(options?.config)(
+              ["2xx"],
+              {
+                "401": "IntegrationsControllerGetIntegrationV1401",
+                "429": "IntegrationsControllerGetIntegrationV1429",
+              },
+              { binary: [], voidSuccess: [], voidError: ["404"] }
+            )
+          )
+        )
       ),
     MarketsControllerGetMarketsV1: (options) =>
-      HttpClientRequest.get(`/v1/markets`).pipe(
+      HttpClientRequest.get("/v1/markets").pipe(
         HttpClientRequest.setUrlParams({
           offset: options?.params?.["offset"] as any,
           limit: options?.params?.["limit"] as any,
@@ -1483,14 +1429,26 @@ export const make = (
         })
       ),
     MarketsControllerGetMarketByIdV1: (marketId, options) =>
-      HttpClientRequest.get(`/v1/markets/${marketId}`).pipe(
-        onRequest(options?.config)(["2xx"], {
-          "401": "MarketsControllerGetMarketByIdV1401",
-          "429": "MarketsControllerGetMarketByIdV1429",
-        })
+      __makePathRequest(
+        HttpClientRequest.get,
+        [marketId],
+        () => "/v1/markets/" + __encodePathParam(marketId) + ""
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            onRequest(options?.config)(
+              ["2xx"],
+              {
+                "401": "MarketsControllerGetMarketByIdV1401",
+                "429": "MarketsControllerGetMarketByIdV1429",
+              },
+              { binary: [], voidSuccess: [], voidError: ["404"] }
+            )
+          )
+        )
       ),
     PositionsControllerGetPositionsV1: (options) =>
-      HttpClientRequest.get(`/v1/positions`).pipe(
+      HttpClientRequest.get("/v1/positions").pipe(
         HttpClientRequest.setUrlParams({
           integrationId: options.params["integrationId"] as any,
           network: options.params["network"] as any,
@@ -1502,7 +1460,7 @@ export const make = (
         })
       ),
     PositionsControllerGetLiquidationsV1: (options) =>
-      HttpClientRequest.get(`/v1/positions/liquidations`).pipe(
+      HttpClientRequest.get("/v1/positions/liquidations").pipe(
         HttpClientRequest.setUrlParams({
           offset: options.params["offset"] as any,
           limit: options.params["limit"] as any,
@@ -1517,7 +1475,7 @@ export const make = (
         })
       ),
     ActionsControllerGetActionsV1: (options) =>
-      HttpClientRequest.get(`/v1/actions`).pipe(
+      HttpClientRequest.get("/v1/actions").pipe(
         HttpClientRequest.setUrlParams({
           offset: options.params["offset"] as any,
           limit: options.params["limit"] as any,
@@ -1533,7 +1491,7 @@ export const make = (
         })
       ),
     ActionsControllerExecuteActionV1: (options) =>
-      HttpClientRequest.post(`/v1/actions`).pipe(
+      HttpClientRequest.post("/v1/actions").pipe(
         HttpClientRequest.bodyJsonUnsafe(options.payload),
         onRequest(options.config)(["2xx"], {
           "401": "ActionsControllerExecuteActionV1401",
@@ -1541,29 +1499,65 @@ export const make = (
         })
       ),
     ActionsControllerGetActionV1: (id, options) =>
-      HttpClientRequest.get(`/v1/actions/${id}`).pipe(
-        onRequest(options?.config)(["2xx"], {
-          "401": "ActionsControllerGetActionV1401",
-          "429": "ActionsControllerGetActionV1429",
-        })
+      __makePathRequest(
+        HttpClientRequest.get,
+        [id],
+        () => "/v1/actions/" + __encodePathParam(id) + ""
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            onRequest(options?.config)(
+              ["2xx"],
+              {
+                "401": "ActionsControllerGetActionV1401",
+                "429": "ActionsControllerGetActionV1429",
+              },
+              { binary: [], voidSuccess: [], voidError: ["404"] }
+            )
+          )
+        )
       ),
     ActionsControllerStepV1: (id, options) =>
-      HttpClientRequest.post(`/v1/actions/${id}/step`).pipe(
-        onRequest(options?.config)(["2xx"], {
-          "401": "ActionsControllerStepV1401",
-          "429": "ActionsControllerStepV1429",
-        })
+      __makePathRequest(
+        HttpClientRequest.post,
+        [id],
+        () => "/v1/actions/" + __encodePathParam(id) + "/step"
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            onRequest(options?.config)(
+              ["2xx"],
+              {
+                "401": "ActionsControllerStepV1401",
+                "429": "ActionsControllerStepV1429",
+              },
+              { binary: [], voidSuccess: [], voidError: ["404"] }
+            )
+          )
+        )
       ),
     TransactionsControllerSubmitTransactionV1: (transactionId, options) =>
-      HttpClientRequest.post(`/v1/transactions/${transactionId}/submit`).pipe(
-        HttpClientRequest.bodyJsonUnsafe(options.payload),
-        onRequest(options.config)(["2xx"], {
-          "401": "TransactionsControllerSubmitTransactionV1401",
-          "429": "TransactionsControllerSubmitTransactionV1429",
-        })
+      __makePathRequest(
+        HttpClientRequest.post,
+        [transactionId],
+        () => "/v1/transactions/" + __encodePathParam(transactionId) + "/submit"
+      ).pipe(
+        Effect.flatMap((request) =>
+          request.pipe(
+            HttpClientRequest.bodyJsonUnsafe(options.payload),
+            onRequest(options.config)(
+              ["2xx"],
+              {
+                "401": "TransactionsControllerSubmitTransactionV1401",
+                "429": "TransactionsControllerSubmitTransactionV1429",
+              },
+              { binary: [], voidSuccess: [], voidError: ["403", "404"] }
+            )
+          )
+        )
       ),
     HealthControllerHealth: (options) =>
-      HttpClientRequest.get(`/health`).pipe(
+      HttpClientRequest.get("/health").pipe(
         onRequest(options?.config)(["2xx"])
       ),
   };
@@ -1609,6 +1603,7 @@ export interface BorrowApi {
         "IntegrationsControllerGetIntegrationV1429",
         IntegrationsControllerGetIntegrationV1429
       >
+    | BorrowApiError<"404", undefined>
   >;
   /**
    * Retrieve a paginated list of available lending markets across all supported integrations and networks. Each market represents a token that can be supplied or borrowed.
@@ -1649,6 +1644,7 @@ export interface BorrowApi {
         "MarketsControllerGetMarketByIdV1429",
         MarketsControllerGetMarketByIdV1429
       >
+    | BorrowApiError<"404", undefined>
   >;
   /**
    * Retrieve all supply and borrow positions for a user address across specified integration and network.
@@ -1747,6 +1743,7 @@ export interface BorrowApi {
         "ActionsControllerGetActionV1429",
         ActionsControllerGetActionV1429
       >
+    | BorrowApiError<"404", undefined>
   >;
   /**
    * For async multi-step actions (e.g., cross-chain bridges, delayed withdrawals), retrieve the next transaction(s) after the previous step has been confirmed on-chain. Call this when hasNextStep is true on the action response.
@@ -1759,6 +1756,7 @@ export interface BorrowApi {
     | HttpClientError.HttpClientError
     | BorrowApiError<"ActionsControllerStepV1401", ActionsControllerStepV1401>
     | BorrowApiError<"ActionsControllerStepV1429", ActionsControllerStepV1429>
+    | BorrowApiError<"404", undefined>
   >;
   /**
    * Submit a signed transaction. Provide signedPayload to have us broadcast it to the blockchain, or transactionHash if already submitted by the client.
@@ -1782,6 +1780,8 @@ export interface BorrowApi {
         "TransactionsControllerSubmitTransactionV1429",
         TransactionsControllerSubmitTransactionV1429
       >
+    | BorrowApiError<"403", undefined>
+    | BorrowApiError<"404", undefined>
   >;
   /**
    * Get the health status of the borrow API with current timestamp
