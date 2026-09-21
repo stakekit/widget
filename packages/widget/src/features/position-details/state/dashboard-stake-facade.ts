@@ -253,26 +253,28 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         cta,
         estimatedRewards: entry.estimatedRewards,
         footerIsLoading: input.isFetching,
-        formattedPrice:
-          input.prices && selectedYield && selectedToken
-            ? formatUsd(
-                getTokenPriceInUSD({
-                  amount: entry.amount,
-                  baseToken: selectedYield.token,
-                  pricePerShare: null,
-                  prices: input.prices,
-                  token: selectedToken,
-                })
-              )
-            : "",
-        isFetching: input.isFetching,
-        isStakeTokenSameAsGasToken:
-          selectedYield && selectedToken
-            ? stakeTokenSameAsGasToken({
-                stakeToken: selectedToken,
-                yieldDto: selectedYield,
+        formattedPrice: (() => {
+          if (entry.amount.isZero()) return formatUsd(exactZero());
+          if (input.prices && selectedYield && selectedToken) {
+            return formatUsd(
+              getTokenPriceInUSD({
+                amount: entry.amount,
+                baseToken: selectedYield.token,
+                pricePerShare: null,
+                prices: input.prices,
+                token: selectedToken,
               })
-            : false,
+            );
+          }
+          return "";
+        })(),
+        isFetching: input.isFetching,
+        isStakeTokenSameAsGasToken: selectedToken
+          ? stakeTokenSameAsGasToken({
+              stakeToken: selectedToken,
+              yieldDto: selectedYield,
+            })
+          : false,
         kyc: entry.kyc,
         ownerCurrent: input.ownerCurrent,
         preparation: entry.preparation,

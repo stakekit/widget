@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Box } from "../box";
 import { Text } from "../typography/text";
 import * as styles from "./styles.css";
@@ -8,7 +9,7 @@ export const HeaderBadge = ({
   label,
   tone = "default",
 }: {
-  label: string;
+  label: ReactNode;
   tone?: HeaderBadgeTone;
 }) => (
   <Box

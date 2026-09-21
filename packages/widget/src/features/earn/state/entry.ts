@@ -10,7 +10,7 @@ import {
   getYieldRewardTokens,
   isBittensorStaking,
 } from "../../../domain/earn/yield";
-import { exactDecimal } from "../../../domain/finance/exact";
+import { exactDecimal, exactZero } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import { hasActivePositionForYield } from "../../../domain/portfolio/positions";
@@ -148,27 +148,29 @@ export const earnEntryViewAtom = Atom.make((get) => {
     cta: entry.cta,
     estimatedRewards: entry.estimatedRewards,
     footerIsLoading: input.footerIsLoading,
-    formattedPrice:
-      prices && selectedToken && selectedYield
-        ? formatUsd(
-            getTokenPriceInUSD({
-              amount: entry.amount,
-              baseToken: selectedYield.token,
-              pricePerShare: null,
-              prices,
-              token: selectedToken,
-            })
-          )
-        : "",
+    formattedPrice: (() => {
+      if (entry.amount.isZero()) return formatUsd(exactZero());
+      if (prices && selectedToken && selectedYield) {
+        return formatUsd(
+          getTokenPriceInUSD({
+            amount: entry.amount,
+            baseToken: selectedYield.token,
+            pricePerShare: null,
+            prices,
+            token: selectedToken,
+          })
+        );
+      }
+      return "";
+    })(),
     isFetching: entry.isFetching,
     isLedgerLiveAccountPlaceholder: entry.isLedgerAccountPlaceholder,
-    isStakeTokenSameAsGasToken:
-      selectedYield && selectedToken
-        ? stakeTokenSameAsGasToken({
-            stakeToken: selectedToken,
-            yieldDto: selectedYield,
-          })
-        : false,
+    isStakeTokenSameAsGasToken: selectedToken
+      ? stakeTokenSameAsGasToken({
+          stakeToken: selectedToken,
+          yieldDto: selectedYield,
+        })
+      : false,
     kyc: entry.kyc,
     pointsRewardTokens: selectedYield
       ? getYieldRewardTokens(selectedYield).filter((token) => token.isPoints)

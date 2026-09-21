@@ -1,10 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../../shared/ui/primitives/box";
+import { ContentLoaderLine } from "../../../../../../shared/ui/primitives/content-loader";
 import { ListItem } from "../../../../../../shared/ui/primitives/list/list-item";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import type { ActivityActionItem } from "../../../../model/activity-action";
+import type { ActivityStatusLabel } from "../../../../model/activity-action-list-item";
 import { useActionListItem } from "../../hooks/use-action-list-item";
-import { ActivityIcon } from "../activity-icon";
+import { ActivityIcon, type ActivityIconType } from "../activity-icon";
 import {
   amountNeutral,
   amountPositive,
@@ -33,9 +35,58 @@ export const ActionListItem = ({
 
   if (!listItemView) return null;
 
+  const { providersDetails } = listItemView;
+
+  const firstProvider = providersDetails?.[0];
+  const providerLabel = firstProvider
+    ? t("positions.via", {
+        providerName: firstProvider.name ?? firstProvider.address,
+        count: Math.max((providersDetails?.length ?? 0) - 1, 1),
+      })
+    : null;
+  return (
+    <ActionListItemPresentation
+      view={listItemView}
+      viaLabel={providerLabel}
+      isSelected={isSelected}
+      onSelect={() => onActionSelect(action)}
+    />
+  );
+};
+
+export const ActionListItemSkeleton = () => <ActionListItemPresentation />;
+
+type ActionListItemContent = {
+  readonly canOpenDetails: boolean;
+  readonly iconType: ActivityIconType;
+  readonly title: string;
+  readonly tokenSymbol: string | null;
+  readonly amount: string | null;
+  readonly amountSign: "" | "+" | "-";
+  readonly isPositive: boolean;
+  readonly timestampAbsolute: string;
+  readonly timestampRelative: string;
+  readonly badgeLabel: string | null;
+  readonly statusLabel: ActivityStatusLabel | null;
+};
+
+const ActionListItemPresentation = ({
+  view,
+  viaLabel,
+  isSelected = false,
+  onSelect,
+}: {
+  readonly view?: ActionListItemContent;
+  readonly viaLabel?: string | null;
+  readonly isSelected?: boolean;
+  readonly onSelect?: () => void;
+}) => {
+  const loading = !view;
+  const readyDataRk = isSelected
+    ? "activity-list-item-selected"
+    : "activity-list-item";
   const {
     canOpenDetails,
-    providersDetails,
     iconType,
     title,
     tokenSymbol,
@@ -46,25 +97,14 @@ export const ActionListItem = ({
     timestampRelative,
     badgeLabel,
     statusLabel,
-  } = listItemView;
-
-  const firstProvider = providersDetails?.[0];
-  const providerLabel = firstProvider
-    ? t("positions.via", {
-        providerName: firstProvider.name ?? firstProvider.address,
-        count: Math.max((providersDetails?.length ?? 0) - 1, 1),
-      })
-    : null;
-  const viaLabel = providerLabel;
+  } = view ?? {};
 
   return (
-    <Box py="1" width="full">
+    <Box py="1" width="full" aria-hidden={loading || undefined}>
       <ListItem
-        onClick={canOpenDetails ? () => onActionSelect(action) : undefined}
+        onClick={canOpenDetails ? onSelect : undefined}
         className={listItem}
-        data-rk={
-          isSelected ? "activity-list-item-selected" : "activity-list-item"
-        }
+        data-rk={loading ? "activity-list-item-skeleton" : readyDataRk}
         variant={{
           active: isSelected ? "active" : "inactive",
           hover: canOpenDetails ? "enabled" : "disabled",
@@ -88,9 +128,11 @@ export const ActionListItem = ({
             <ActivityIcon type={iconType} />
 
             <Box className={infoColumn}>
-              <Text className={titleText}>{title}</Text>
+              <Text className={titleText}>
+                {loading ? <ContentLoaderLine widthPx="14ch" /> : title}
+              </Text>
 
-              {badgeLabel || viaLabel ? (
+              {loading || badgeLabel || viaLabel ? (
                 <Box className={metaRow}>
                   {badgeLabel && statusLabel ? (
                     <Box
@@ -112,12 +154,16 @@ export const ActionListItem = ({
                     </Box>
                   ) : null}
 
-                  {viaLabel ? (
+                  {loading || viaLabel ? (
                     <Text
                       className={viaText}
                       variant={{ type: "muted", weight: "normal" }}
                     >
-                      {viaLabel}
+                      {loading ? (
+                        <ContentLoaderLine widthPx="10ch" />
+                      ) : (
+                        viaLabel
+                      )}
                     </Text>
                   ) : null}
                 </Box>
@@ -132,10 +178,16 @@ export const ActionListItem = ({
             gap="3"
             flexShrink={0}
           >
-            {amount ? (
+            {loading || amount ? (
               <Text className={isPositive ? amountPositive : amountNeutral}>
-                {amountSign}
-                {tokenSymbol ? `${amount} ${tokenSymbol}` : amount}
+                {loading ? (
+                  <ContentLoaderLine widthPx="8ch" />
+                ) : (
+                  <>
+                    {amountSign}
+                    {tokenSymbol ? `${amount} ${tokenSymbol}` : amount}
+                  </>
+                )}
               </Text>
             ) : null}
 
@@ -143,12 +195,20 @@ export const ActionListItem = ({
               <Text
                 variant={{ type: "muted", weight: "normal", size: "small" }}
               >
-                {timestampAbsolute}
+                {loading ? (
+                  <ContentLoaderLine widthPx="9ch" />
+                ) : (
+                  timestampAbsolute
+                )}
               </Text>
               <Text
                 variant={{ type: "muted", weight: "normal", size: "small" }}
               >
-                {timestampRelative}
+                {loading ? (
+                  <ContentLoaderLine widthPx="6ch" />
+                ) : (
+                  timestampRelative
+                )}
               </Text>
             </Box>
           </Box>

@@ -4,7 +4,7 @@ import type { Token } from "../../../../../../domain/token/token";
 import { Divider } from "../../../../../../shared/ui/components/divider";
 import { ToolTip } from "../../../../../../shared/ui/components/tooltip";
 import { Box } from "../../../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/content-loader";
+import { ContentLoaderLine } from "../../../../../../shared/ui/primitives/content-loader";
 import { InfoIcon } from "../../../../../../shared/ui/primitives/icons/info";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
 import { WarningBox } from "../../../../../../shared/ui/primitives/warning-box";
@@ -184,21 +184,11 @@ const GasFee = ({
       marginTop="2"
       marginBottom="2"
       data-testid="estimated_gas_fee"
-      height="4"
     >
       <Text variant={{ weight: "normal", type: "muted" }}>{label}</Text>
-      {loading ? (
-        <Box width="40">
-          <ContentLoaderSquare heightPx={16} variant={{ size: "medium" }} />
-        </Box>
-      ) : (
-        <Text
-          className={feeStyles}
-          variant={{ type: "muted", weight: "normal" }}
-        >
-          {price}
-        </Text>
-      )}
+      <Text className={feeStyles} variant={{ type: "muted", weight: "normal" }}>
+        {loading ? <ContentLoaderLine widthPx="8ch" /> : price}
+      </Text>
     </Box>
   );
 };

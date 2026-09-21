@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { VirtualList } from "../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { Button } from "../../../../shared/ui/primitives/button";
-import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { FallbackContent } from "../../../widget-shell/views";
 import type { ActivityActionItem } from "../../model/activity-action";
@@ -12,7 +11,10 @@ import type {
   ActivityPagePagination,
   ActivityPageView,
 } from "../../state/page";
-import { ActionListItem } from "./components/action-list-item";
+import {
+  ActionListItem,
+  ActionListItemSkeleton,
+} from "./components/action-list-item";
 import { ActivityFilters } from "./components/activity-filters";
 import { container } from "./style.css";
 
@@ -23,11 +25,10 @@ const ActivityPageSkeleton = () => (
     aria-hidden="true"
     data-rk="activity-page-skeleton"
     display="flex"
-    gap="1"
     flexDirection="column"
   >
     {[...Array(5).keys()].map((item) => (
-      <ContentLoaderSquare key={item} heightPx={60} />
+      <ActionListItemSkeleton key={item} />
     ))}
   </Box>
 );

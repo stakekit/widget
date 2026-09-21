@@ -27,6 +27,16 @@ export const SelectTokenTitle = () => {
     ? getYieldTypeLabels(entry.selectedStake, t).title
     : "";
 
+  return <SelectTokenTitleView isLoading={isLoading} title={yieldType} />;
+};
+
+export const SelectTokenTitleView = ({
+  isLoading,
+  title,
+}: {
+  isLoading: boolean;
+  title?: string;
+}) => {
   const variant = useWidgetConfig("variant");
 
   return (
@@ -42,7 +52,7 @@ export const SelectTokenTitle = () => {
             variant,
           })}
         >
-          {yieldType}
+          {title}
         </Text>
       )}
     </Box>

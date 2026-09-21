@@ -3,8 +3,6 @@ import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { Box } from "../../../../../shared/ui/primitives/box";
-import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
-import { Spinner } from "../../../../../shared/ui/primitives/spinner";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useMountAnimation } from "../../../../mount-animation/index";
 import { useTrackPage } from "../../../../tracking/index";
@@ -14,16 +12,29 @@ import {
   type PageCta,
   PageCtaButton,
 } from "../../../../widget-shell/views";
+import { MetaInfoSkeleton } from "../../../../yield-summary/views";
 import { useEarnPageStatus } from "../../../react/use-earn-facades";
 import { EarnKycGate } from "../../components/earn-kyc-gate";
 import { EarnPageCta } from "../../components/earn-page-cta";
 import { ExtraArgsSelection } from "./components/extra-args-selection";
 import { Footer } from "./components/footer";
-import { SelectProvider } from "./components/select-provider";
-import { SelectTokenSection } from "./components/select-token-section";
-import { SelectTokenTitle } from "./components/select-token-section/title";
+import {
+  SelectProvider,
+  SelectProviderCard,
+} from "./components/select-provider";
+import {
+  SelectTokenSection,
+  SelectTokenSectionSkeleton,
+} from "./components/select-token-section";
+import {
+  SelectTokenTitle,
+  SelectTokenTitleView,
+} from "./components/select-token-section/title";
 import { SelectValidatorSection } from "./components/select-validator-section";
-import { SelectYieldSection } from "./components/select-yield-section";
+import {
+  SelectYieldSection,
+  SelectYieldSectionSkeleton,
+} from "./components/select-yield-section";
 
 const hiddenLivePresentationStyle = {
   inset: 0,
@@ -46,27 +57,17 @@ const EarnPageSkeleton = () => {
   return (
     <PageContainer aria-hidden="true" data-rk="earn-mount-skeleton" inert>
       <Box>
-        {variant !== "zerion" && (
-          <Box display="flex" alignItems="center" my="1">
-            <Spinner />
-          </Box>
-        )}
+        {variant !== "zerion" && <SelectTokenTitleView isLoading />}
 
-        <Box marginTop="2">
-          <ContentLoaderSquare heightPx={112.5} />
-        </Box>
+        <SelectTokenSectionSkeleton />
 
-        <Box marginTop="2">
-          <ContentLoaderSquare heightPx={112.5} />
-        </Box>
+        <SelectYieldSectionSkeleton />
 
-        <Box marginTop="2">
-          <ContentLoaderSquare heightPx={20} variant={{ size: "medium" }} />
-        </Box>
+        <SelectProviderCard />
       </Box>
 
       <Box marginTop="4">
-        <ContentLoaderSquare heightPx={150} />
+        <MetaInfoSkeleton />
       </Box>
 
       <PageCtaButton cta={loadingCta} />

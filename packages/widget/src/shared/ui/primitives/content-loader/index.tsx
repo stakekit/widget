@@ -1,47 +1,31 @@
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import type { ComponentProps } from "react";
 import { vars } from "../../../styles/theme/contract.css";
+import { fillContainer } from "./styles.css";
 
-export const ContentLoaderSquare = ({
-  heightPx,
-  variant,
-  containerClassName,
-}: {
-  heightPx: number;
-  variant?: { size?: "regular" | "medium" };
-  containerClassName?: ComponentProps<typeof Skeleton>["containerClassName"];
-}) => {
+export const ContentLoaderSquare = ({ heightPx }: { heightPx?: number }) => {
   return (
     <Skeleton
-      height={heightPx}
-      containerClassName={containerClassName}
+      height={heightPx ?? "100%"}
+      inline={heightPx === undefined}
+      containerClassName={heightPx === undefined ? fillContainer : undefined}
       baseColor={vars.color.skeletonLoaderBase}
       highlightColor={vars.color.skeletonLoaderHighlight}
       enableAnimation
-      borderRadius={
-        variant?.size === "medium"
-          ? vars.borderRadius.baseContract.md
-          : vars.borderRadius.baseContract.xl
-      }
+      borderRadius={vars.borderRadius.baseContract.xl}
     />
   );
 };
 
 export const ContentLoaderLine = ({
-  heightPx = 12,
   widthPx,
-  containerClassName,
 }: {
-  heightPx?: number;
   widthPx?: number | string;
-  containerClassName?: ComponentProps<typeof Skeleton>["containerClassName"];
 }) => {
   return (
     <Skeleton
-      height={heightPx}
       width={widthPx}
-      containerClassName={containerClassName}
+      inline
       baseColor={vars.color.skeletonLoaderBase}
       highlightColor={vars.color.skeletonLoaderHighlight}
       enableAnimation
@@ -50,12 +34,14 @@ export const ContentLoaderLine = ({
   );
 };
 
-export const ContentLoaderCircle = ({ sizePx }: { sizePx: number }) => {
+export const ContentLoaderCircle = () => {
   return (
     <Skeleton
       circle
-      height={sizePx}
-      width={sizePx}
+      height="100%"
+      width="100%"
+      inline
+      containerClassName={fillContainer}
       baseColor={vars.color.skeletonLoaderBase}
       highlightColor={vars.color.skeletonLoaderHighlight}
       enableAnimation

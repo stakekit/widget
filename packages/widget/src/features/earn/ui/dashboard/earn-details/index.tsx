@@ -61,6 +61,8 @@ const EarnDetailsView = ({
   const tvlChart = useEarnTvlHistoryChart(yieldDto?.id ?? null);
 
   if (isLoading) {
+    // The integration determines metrics, provider controls, history charts and
+    // detail rows, so there is no fixed panel structure before it resolves.
     return <ContentLoaderSquare heightPx={430} />;
   }
 
