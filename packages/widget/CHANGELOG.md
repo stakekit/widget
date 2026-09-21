@@ -1,5 +1,17 @@
 # @stakekit/widget
 
+## [0.0.288](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.287...@stakekit/widget@0.0.288) (2026-09-21)
+
+
+### Features
+
+* **earn:** add history chart hover details ([#573](https://github.com/stakekit/widget/issues/573)) ([6fcc882](https://github.com/stakekit/widget/commit/6fcc882a953a27ccc91ed6ad991e283b3081571a))
+
+
+### Bug Fixes
+
+* **widget:** permit null in validator provider revshare and update openapi generation ([#575](https://github.com/stakekit/widget/issues/575)) ([ebd7fe5](https://github.com/stakekit/widget/commit/ebd7fe5f122fa859ab8a956a36a820d4ad5aa75f))
+
 ## [0.0.287](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.286...@stakekit/widget@0.0.287) (2026-09-16)
 
 
