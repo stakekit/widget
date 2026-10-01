@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Outlet } from "react-router";
+import { Navigate, Outlet, useMatch } from "react-router";
 import {
   PositionDetailsBreadcrumb as PositionDetailsBreadcrumbLayout,
   PositionDetailsPane,
@@ -11,6 +11,7 @@ import {
   BackButtonProvider,
   SplitView,
 } from "../../../widget-shell/views";
+import { resolvePositionDetailsPageLayout } from "../../model/hub";
 import { usePositionDetails } from "../classic/hooks/use-position-details";
 import { PositionDetailsInfo } from "./components/position-details-info";
 
@@ -32,19 +33,24 @@ const PositionBreadcrumb = ({
   );
 };
 
-export const positionDetailsPageShouldShowActionsPane = (
-  positionDetails: ReturnType<typeof usePositionDetails>
-) =>
-  positionDetails.isLoading ||
-  (!!positionDetails.integrationData &&
-    !!positionDetails.positionBalancesByType);
-
 const PositionDetailsPageComponent = () => {
   const { t } = useTranslation();
   const positionDetails = usePositionDetails();
-  const shouldShowActions =
-    positionDetailsPageShouldShowActionsPane(positionDetails);
+  const flowSegment = useMatch("positions/:integrationId/:balanceId/:flow/*")
+    ?.params.flow;
+  const layout = resolvePositionDetailsPageLayout({
+    ...positionDetails,
+    flowActive:
+      flowSegment === "stake" ||
+      flowSegment === "unstake" ||
+      flowSegment === "pending-action",
+  });
 
+  if (layout === "PositionLost") {
+    return <Navigate replace to="/positions" />;
+  }
+
+  const shouldShowActions = layout === "Actions";
   const positionName = positionDetails.integrationData?.metadata.name ?? null;
 
   return (

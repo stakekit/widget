@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Navigate } from "react-router";
 import type { YieldPendingActionType } from "../../../../domain/action/pending-action";
 import { getExtendedYieldType } from "../../../../domain/earn/yield";
 import { getRewardRateFormatted } from "../../../../shared/lib/formatters";
@@ -28,6 +29,7 @@ const PositionDetails = () => {
     positionBalancesByType: positionBalancesByTypeValue,
     onPendingActionClick,
     pendingActions: pendingActionsValue,
+    positionLost,
     providersDetails,
     positionSource,
     shareToAmountConversions: shareToAmountConversionsValue,
@@ -42,6 +44,10 @@ const PositionDetails = () => {
   });
 
   const { t } = useTranslation();
+
+  if (!isLoading && positionLost) {
+    return <Navigate replace to="/positions" />;
+  }
 
   return (
     <AnimationPage>

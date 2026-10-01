@@ -143,6 +143,10 @@ export const positionDetailsClassicViewAtom = Atom.family(
         kycGateIsChecking: exitResources.kyc.isChecking,
         kycProviderName: exitResources.kyc.providerName,
         personalizedRewardRate,
+        positionLost:
+          AsyncResult.isSuccess(workflow.positionBalancesResult) &&
+          !workflow.positionBalancesResult.waiting &&
+          workflow.positionBalancesResult.value === null,
         positionBalancesByType: workflow.positionBalancesByType,
         providersDetails: providers,
         reducedStakedOrLiquidBalance: workflow.reducedStakedOrLiquidBalance,
