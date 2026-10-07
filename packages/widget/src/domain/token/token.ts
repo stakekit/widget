@@ -30,3 +30,9 @@ export const tokenString = (token: TokenLike): TokenString => {
 
 export const equalTokens = (a: TokenLike, b: TokenLike) =>
   tokenString(a) === tokenString(b);
+
+/** Yield API sentinel for a network's native token in `inputToken`/`outputToken`. */
+export const NATIVE_TOKEN_ADDRESS = "0x";
+
+export const getTokenArgumentAddress = (token: Pick<Token, "address">) =>
+  token.address ?? NATIVE_TOKEN_ADDRESS;

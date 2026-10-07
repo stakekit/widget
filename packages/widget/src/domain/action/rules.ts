@@ -2,7 +2,7 @@ import type BigNumber from "bignumber.js";
 import { Option, Result, Schema } from "effect";
 import type { EarnYieldWithProvider } from "../earn/models";
 import type { TokenAddress, ValidatorAddress } from "../identity/identifiers";
-import type { Token } from "../token/token";
+import { NATIVE_TOKEN_ADDRESS, type Token } from "../token/token";
 import {
   type ActionCommand,
   type ActionTransaction,
@@ -54,8 +54,6 @@ export const TransactionStatus = {
   SKIPPED: "SKIPPED",
 } as const satisfies Record<TransactionStatus, TransactionStatus>;
 
-const NATIVE_TOKEN_PLACEHOLDER = "0x";
-
 const toLower = (value: string) => value.toLowerCase();
 
 export const getActionInputToken = ({
@@ -90,7 +88,7 @@ export const getActionInputToken = ({
       return (
         address === needle ||
         token.symbol.toLowerCase() === needle ||
-        (needle === NATIVE_TOKEN_PLACEHOLDER && !token.address)
+        (needle === NATIVE_TOKEN_ADDRESS && !token.address)
       );
     }) ??
     yieldDto.token ??
