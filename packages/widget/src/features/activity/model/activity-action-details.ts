@@ -25,7 +25,7 @@ export type ActivityActionDetailsProjection = Readonly<{
   readonly continuationUnavailable: boolean;
   readonly createdAt: string;
   readonly network: string;
-  readonly statusLabel: ActivityStatusLabel;
+  readonly statusLabel: ActivityStatusLabel | null;
   readonly title: ActivityActionTitle;
   readonly tokenSymbol: string | null;
   readonly transactions: ReadonlyArray<ActivityDetailsTransaction>;

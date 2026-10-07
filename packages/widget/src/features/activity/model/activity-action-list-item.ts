@@ -16,7 +16,6 @@ import type { ActivityActionItem } from "./activity-action";
 export type ActivityDirection = "deposit" | "withdraw" | "rewards" | "neutral";
 
 export type ActivityStatusLabel =
-  | "action-required"
   | "canceled"
   | "completed"
   | "created"
@@ -90,10 +89,11 @@ const getActivityDirection = (type: ActionType): ActivityDirection => {
   }
 };
 
+/** Waiting actions show no badge: the user may have continued elsewhere. */
 export const projectActivityStatusLabel = (
   action: ActivityActionItem["actionData"],
   presentationTime: ActivityPresentationTime | null
-): ActivityStatusLabel => {
+): ActivityStatusLabel | null => {
   switch (action.status) {
     case ActionStatus.SUCCESS:
       return "completed";
@@ -103,7 +103,7 @@ export const projectActivityStatusLabel = (
       return presentationTime &&
         !isContinuableYieldAction(action, presentationTime.now)
         ? "expired"
-        : "action-required";
+        : null;
     case ActionStatus.CANCELED:
       return "canceled";
     case ActionStatus.CREATED:

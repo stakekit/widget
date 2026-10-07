@@ -98,19 +98,12 @@ const ContinuationControls = () => {
 const StatusBadge = ({
   status,
 }: {
-  readonly status: ActivityActionDetailsProjection["statusLabel"];
+  readonly status: NonNullable<ActivityActionDetailsProjection["statusLabel"]>;
 }) => {
   const { t } = useTranslation();
-  const action = status === "action-required";
   return (
-    <Box className={action ? styles.badgeAction : styles.badgeMuted}>
-      <Text
-        variant={{
-          size: "small",
-          type: action ? "white" : "muted",
-          weight: "medium",
-        }}
-      >
+    <Box className={styles.badgeMuted}>
+      <Text variant={{ size: "small", type: "muted", weight: "medium" }}>
         {t(`activity.status.${status}`)}
       </Text>
     </Box>
@@ -165,7 +158,9 @@ const Receipt = ({
         >
           <Box alignItems="center" display="flex" flexWrap="wrap" gap="2">
             <Text variant={{ size: "large", weight: "bold" }}>{title}</Text>
-            <StatusBadge status={view.statusLabel} />
+            {view.statusLabel ? (
+              <StatusBadge status={view.statusLabel} />
+            ) : null}
           </Box>
           <Text variant={{ type: "muted", weight: "normal" }}>
             {providerName

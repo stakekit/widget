@@ -289,7 +289,6 @@
     },
     "failed": "Échec",
     "status": {
-      "action-required": "Action requise",
       "canceled": "Annulée",
       "completed": "Terminée",
       "created": "Créée",

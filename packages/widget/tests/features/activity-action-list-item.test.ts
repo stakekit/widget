@@ -220,7 +220,7 @@ describe("Activity action list item projection", () => {
   it.each([
     ["SUCCESS", "completed"],
     ["FAILED", "failed"],
-    ["WAITING_FOR_NEXT", "action-required"],
+    ["WAITING_FOR_NEXT", null],
   ] as const)("projects the %s status label", (status, statusLabel) => {
     const yieldData = yieldApiYieldFixture();
     const projection = projectActivityActionListItem({
