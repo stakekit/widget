@@ -23,7 +23,10 @@ import type {
   WalletAddress,
   YieldId,
 } from "../../../domain/identity/identifiers";
-import type { Token } from "../../../domain/token/token";
+import {
+  getTokenArgumentAddress,
+  type Token,
+} from "../../../domain/token/token";
 import type { AdditionalAddresses } from "../../../domain/wallet/address";
 import { getYieldEstimatedRewards } from "../../yield-summary/index";
 
@@ -136,7 +139,7 @@ const makeYieldEntryActionCommand = ({
       yieldId: selectedYield.id,
       arguments: {
         amount: executableAmount.toFixed(),
-        ...(entry.token.address ? { inputToken: entry.token.address } : {}),
+        inputToken: getTokenArgumentAddress(entry.token),
         ...(wallet.isLedgerLive ? { ledgerWalletApiCompatible: true } : {}),
         ...(entry.tronResource ? { tronResource: entry.tronResource } : {}),
         ...(entry.useMaxAmount ? { useMaxAmount: true } : {}),
