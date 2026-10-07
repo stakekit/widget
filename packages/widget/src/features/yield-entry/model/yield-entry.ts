@@ -87,6 +87,7 @@ const makeYieldEntryActionCommand = ({
 }) => {
   const selectedYield = entry.yield;
   if (!wallet.address || !selectedYield || !entry.token) return null;
+  if (!selectedYield.status.enter) return null;
 
   const providerIdRequired = Boolean(
     getYieldActionArg(selectedYield, "enter", "providerId")?.required

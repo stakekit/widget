@@ -1,6 +1,9 @@
 import { Option, Schema } from "effect";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
-import { isNonZeroRewardRateYield } from "../../../../../domain/earn/yield";
+import {
+  isNonZeroRewardRateYield,
+  isYieldVisible,
+} from "../../../../../domain/earn/yield";
 import { YieldId } from "../../../../../domain/identity/identifiers";
 import { tokenString } from "../../../../../domain/token/token";
 import { isWalletNetwork } from "../../../../../domain/wallet/network";
@@ -26,7 +29,7 @@ export const resolveYieldOptions = ({
 };
 
 const canShowYieldOption = (yieldOption: EarnYieldWithProvider) =>
-  yieldOption.status.enter && isWalletNetwork(yieldOption.token.network);
+  isYieldVisible(yieldOption) && isWalletNetwork(yieldOption.token.network);
 
 export const resolveYield = ({
   entry,
@@ -101,7 +104,13 @@ const findYieldById = (
   ) ?? null;
 
 const getDefaultYield = (yieldOptions: ReadonlyArray<EarnYieldWithProvider>) =>
-  yieldOptions.find(isNonZeroRewardRateYield) ?? yieldOptions[0] ?? null;
+  yieldOptions.find(
+    (yieldOption) =>
+      yieldOption.status.enter && isNonZeroRewardRateYield(yieldOption)
+  ) ??
+  yieldOptions.find((yieldOption) => yieldOption.status.enter) ??
+  yieldOptions[0] ??
+  null;
 
 const getPreferredYieldId = ({
   preferredTokenYieldsPerNetwork,

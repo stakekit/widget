@@ -1,7 +1,11 @@
 import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
-import { getApiYieldTypesForDashboardCategory } from "../../domain/earn/yield";
+import {
+  getApiYieldTypesForDashboardCategory,
+  getDisplayOnlyYieldTypes,
+  withDisplayOnlyYields,
+} from "../../domain/earn/yield";
 import type { Network } from "../../domain/network/network";
 import type { DashboardYieldCategory } from "../../public-api/types";
 import type {
@@ -32,17 +36,29 @@ const earnTokenCatalogCanonicalAtom = Atom.family((key: EarnTokenCatalogKey) =>
     .atom(() =>
       Effect.gen(function* () {
         const source = yield* LegacyResourceSource;
-        return yield* source
-          .getTokenOptions({
-            enter: true,
-            network: key.network ?? undefined,
-            yieldTypes: key.category
-              ? getApiYieldTypesForDashboardCategory(key.category)
-              : undefined,
-          })
-          .pipe(
-            Effect.mapError((cause) => new EarnTokenCatalogError({ cause }))
-          );
+        const network = key.network ?? undefined;
+        const yieldTypes = key.category
+          ? getApiYieldTypesForDashboardCategory(key.category)
+          : undefined;
+        const displayOnlyYieldTypes = getDisplayOnlyYieldTypes({
+          network,
+          yieldTypes,
+        });
+        const [enterable, offered] = yield* Effect.all(
+          [
+            source.getTokenOptions({ enter: true, network, yieldTypes }),
+            displayOnlyYieldTypes.length === 0
+              ? Effect.succeed([])
+              : source.getTokenOptions({
+                  network,
+                  yieldTypes: displayOnlyYieldTypes,
+                }),
+          ],
+          { concurrency: "unbounded" }
+        ).pipe(
+          Effect.mapError((cause) => new EarnTokenCatalogError({ cause }))
+        );
+        return withDisplayOnlyYields(enterable, offered);
       })
     )
     .pipe(

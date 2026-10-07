@@ -71,7 +71,8 @@ export type ValidatorDirectoryRequest = {
 
 export type EarnTokenCatalogRequest = {
   readonly network?: Network;
-  readonly enter: true;
+  /** Omit to include yields closed to deposits. */
+  readonly enter?: true;
   readonly yieldTypes?: ReadonlyArray<KnownApiYieldType>;
 };
 

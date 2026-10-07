@@ -11,6 +11,7 @@ import {
   earnSelectionStatusViewAtom,
   earnSelectionTokenOptionsViewAtom,
   earnSelectionViewAtom,
+  earnSelectionYieldOptionsViewAtom,
   selectEarnSelectionTokenAtom,
   setEarnSelectionAmountAtom,
 } from "../../src/features/earn/state/earn-selection";
@@ -263,6 +264,63 @@ describe("Earn Selection", () => {
           secondYield.id
         )
       );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("lists display-only yields closed to deposits without defaulting to them", async () => {
+    const displayOnlyYield = yieldApiYieldFixture({
+      id: "ethereum-usdc-midas-mglobal-vault",
+      status: { enter: false, exit: true },
+      token: secondYield.token,
+    });
+    const closedYield = yieldApiYieldFixture({
+      id: "ethereum-usdc-closed-vault",
+      status: { enter: false, exit: true },
+      token: secondYield.token,
+    });
+    const usdcYields = [displayOnlyYield, closedYield, secondYield];
+    const { registry } = makeRegistry({
+      listYields: () =>
+        Effect.succeed({
+          items: usdcYields,
+          limit: 100,
+          offset: 0,
+          total: usdcYields.length,
+        }),
+      scanTokenBalances: () =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: "1",
+              availableYields: usdcYields.map(({ id }) => id),
+              token: secondYield.token,
+            },
+          ])
+        ),
+      tokenOptions: [
+        {
+          availableYields: usdcYields.map(({ id }) => id),
+          token: secondYield.token,
+        },
+      ],
+    });
+    const unmount = registry.mount(earnSelectionYieldOptionsViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(
+          registry.get(earnSelectionYieldOptionsViewAtom).selected?.id
+        ).toBe(secondYield.id)
+      );
+      expect(
+        registry
+          .get(earnSelectionYieldOptionsViewAtom)
+          .items.map(({ id }) => id)
+          .sort()
+      ).toEqual([displayOnlyYield.id, secondYield.id].sort());
     } finally {
       unmount();
       registry.dispose();
