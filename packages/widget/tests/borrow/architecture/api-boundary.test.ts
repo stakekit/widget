@@ -138,6 +138,32 @@ describe("Borrow API boundary policies", () => {
     })
   );
 
+  it.effect("keeps an integration whose action schema is JSON Schema", () =>
+    Effect.gen(function* () {
+      const result = yield* decode(BorrowIntegrationsResponse, [
+        {
+          ...integration,
+          actions: [
+            {
+              id: "supply",
+              label: "Supply",
+              schema: {
+                $schema: "https://json-schema.org/draft/2020-12/schema",
+                additionalProperties: false,
+                properties: {
+                  amount: { label: "Amount", type: "string" },
+                },
+                type: "object",
+              },
+            },
+          ],
+        },
+      ]);
+
+      expect(result.map((item) => item.id)).toEqual([integration.id]);
+    })
+  );
+
   it.effect("omits a complete market when a nested token fails", () =>
     Effect.gen(function* () {
       const result = yield* decode(BorrowMarketsResponse, {

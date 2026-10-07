@@ -89,6 +89,42 @@ describe("Earn API boundary policies", () => {
       })
   );
 
+  it.effect("keeps a yield whose argument field has a scalar default", () =>
+    Effect.gen(function* () {
+      const valid = yieldApiYieldDtoFixture({ prime: false });
+      const withScalarDefault = {
+        ...valid,
+        id: "ethereum-usdc-aave-v3-lending",
+        mechanics: {
+          ...valid.mechanics,
+          arguments: {
+            enter: {
+              fields: [
+                {
+                  default: "individual",
+                  label: "Transaction Execution Mode",
+                  name: "executionMode",
+                  options: ["individual", "batched"],
+                  type: "enum",
+                },
+              ],
+            },
+          },
+        },
+      };
+      const result = yield* decode(EarnYieldPage, {
+        items: [withScalarDefault],
+        limit: 100,
+        offset: 0,
+        total: 1,
+      });
+
+      expect(result.items?.map((item) => item.id)).toEqual([
+        withScalarDefault.id,
+      ]);
+    })
+  );
+
   it.effect(
     "returns an empty catalog when every top-level yield is invalid",
     () =>

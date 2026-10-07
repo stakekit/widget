@@ -167,7 +167,7 @@ export type ArgumentFieldDto = {
   readonly required?: boolean;
   readonly options?: ReadonlyArray<string>;
   readonly optionsRef?: string;
-  readonly default?: { readonly [x: string]: unknown };
+  readonly default?: unknown;
   readonly placeholder?: string;
   readonly minimum?: string | null;
   readonly maximum?: string | null;

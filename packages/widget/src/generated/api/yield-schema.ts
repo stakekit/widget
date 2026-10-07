@@ -319,7 +319,7 @@ export type ArgumentFieldDto = {
   readonly required?: boolean;
   readonly options?: ReadonlyArray<string>;
   readonly optionsRef?: string;
-  readonly default?: { readonly [x: string]: Schema.Json };
+  readonly default?: Schema.Json;
   readonly placeholder?: string;
   readonly minimum?: string | null;
   readonly maximum?: string | null;
@@ -395,10 +395,10 @@ export const ArgumentFieldDto = Schema.Struct({
     })
   ),
   default: Schema.optionalKey(
-    Schema.Record(
-      Schema.String,
-      Schema.Json.annotate({ expected: "JSON value" })
-    ).annotate({ description: "Default value for the field" })
+    Schema.Json.annotate({
+      expected: "JSON value",
+      description: "Default value for the field",
+    })
   ),
   placeholder: Schema.optionalKey(
     Schema.String.annotate({ description: "Placeholder text for the field" })

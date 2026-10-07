@@ -13,13 +13,13 @@ export type IntegrationMetadataDto = {
   readonly logoURI: string;
 };
 export type ArgumentSchemaDto = {
-  readonly type?: { readonly [x: string]: unknown };
+  readonly type?: string;
   readonly properties?: { readonly [x: string]: unknown };
   readonly required?: ReadonlyArray<string>;
-  readonly additionalProperties?: { readonly [x: string]: unknown };
+  readonly additionalProperties?: unknown;
   readonly items?: { readonly [x: string]: unknown };
   readonly enum?: ReadonlyArray<string>;
-  readonly default?: { readonly [x: string]: unknown };
+  readonly default?: unknown;
   readonly notes?: string;
 };
 export type TokenDto = {
