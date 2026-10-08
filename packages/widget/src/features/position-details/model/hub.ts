@@ -87,3 +87,29 @@ export const positionDetailsHubHasContent = (val: {
   positionDetailsStakeHasContent(val) ||
   val.canUnstake ||
   positionDetailsPendingHasContent(val);
+
+type PositionDetailsPageLayout = "Actions" | "InfoOnly" | "PositionLost";
+
+/**
+ * An active flow (stake, unstake, pending action) keeps its pane even when the
+ * position disappears: exiting everything removes the position while the flow
+ * still has steps or its completion screen to show.
+ */
+export const resolvePositionDetailsPageLayout = ({
+  flowActive,
+  integrationData,
+  isLoading,
+  positionBalancesByType,
+  positionLost,
+}: {
+  flowActive: boolean;
+  integrationData: unknown;
+  isLoading: boolean;
+  positionBalancesByType: unknown;
+  positionLost: boolean;
+}): PositionDetailsPageLayout => {
+  if (flowActive || isLoading) return "Actions";
+  if (positionLost) return "PositionLost";
+  if (integrationData && positionBalancesByType) return "Actions";
+  return "InfoOnly";
+};

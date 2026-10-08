@@ -6,8 +6,8 @@ import {
   getPositionDetailsHubPath,
   positionDetailsExitHasContent,
   positionDetailsPendingHasContent,
+  resolvePositionDetailsPageLayout,
 } from "../../src/features/position-details/model/hub";
-import { positionDetailsPageShouldShowActionsPane } from "../../src/features/position-details/ui/dashboard";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 
 const balance = Schema.decodeSync(EarnBalance)(
@@ -37,7 +37,17 @@ describe("position details action content", () => {
     const view = makeView();
 
     expect(positionDetailsExitHasContent(view)).toBe(false);
-    expect(positionDetailsPageShouldShowActionsPane(view)).toBe(true);
+    expect(
+      resolvePositionDetailsPageLayout({
+        flowActive: false,
+        integrationData: yieldApiYieldFixture({
+          status: { enter: false, exit: false },
+        }),
+        isLoading: false,
+        positionBalancesByType: new Map(),
+        positionLost: false,
+      })
+    ).toBe("Actions");
   });
 
   it("keeps a real pending action in the action pane", () => {
@@ -61,6 +71,42 @@ describe("position details action content", () => {
         })
       )
     ).toBe(true);
+  });
+
+  it("leaves the details page once the position is gone", () => {
+    expect(
+      resolvePositionDetailsPageLayout({
+        flowActive: false,
+        integrationData: yieldApiYieldFixture(),
+        isLoading: false,
+        positionBalancesByType: null,
+        positionLost: true,
+      })
+    ).toBe("PositionLost");
+  });
+
+  it("keeps an active flow mounted when its exit removes the position", () => {
+    expect(
+      resolvePositionDetailsPageLayout({
+        flowActive: true,
+        integrationData: yieldApiYieldFixture(),
+        isLoading: false,
+        positionBalancesByType: null,
+        positionLost: true,
+      })
+    ).toBe("Actions");
+  });
+
+  it("shows only details when the position cannot be resolved", () => {
+    expect(
+      resolvePositionDetailsPageLayout({
+        flowActive: false,
+        integrationData: null,
+        isLoading: false,
+        positionBalancesByType: null,
+        positionLost: false,
+      })
+    ).toBe("InfoOnly");
   });
 
   it("builds the position hub path", () => {
