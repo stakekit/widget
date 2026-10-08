@@ -44,21 +44,36 @@ const earnTokenCatalogCanonicalAtom = Atom.family((key: EarnTokenCatalogKey) =>
           network,
           yieldTypes,
         });
-        const [enterable, offered] = yield* Effect.all(
+        // The display-only request is supplemental: its failure must not hide
+        // the enterable yields, so it degrades to no display-only yields.
+        const offered =
+          displayOnlyYieldTypes.length === 0
+            ? Effect.succeed([])
+            : source
+                .getTokenOptions({ network, yieldTypes: displayOnlyYieldTypes })
+                .pipe(
+                  Effect.catch((cause) =>
+                    Effect.logWarning("Display-only yields unavailable").pipe(
+                      Effect.annotateLogs({
+                        cause,
+                        event: "earn_display_only_yields_degraded",
+                      }),
+                      Effect.as([])
+                    )
+                  )
+                );
+        const [enterableTokens, offeredTokens] = yield* Effect.all(
           [
-            source.getTokenOptions({ enter: true, network, yieldTypes }),
-            displayOnlyYieldTypes.length === 0
-              ? Effect.succeed([])
-              : source.getTokenOptions({
-                  network,
-                  yieldTypes: displayOnlyYieldTypes,
-                }),
+            source
+              .getTokenOptions({ enter: true, network, yieldTypes })
+              .pipe(
+                Effect.mapError((cause) => new EarnTokenCatalogError({ cause }))
+              ),
+            offered,
           ],
           { concurrency: "unbounded" }
-        ).pipe(
-          Effect.mapError((cause) => new EarnTokenCatalogError({ cause }))
         );
-        return withDisplayOnlyYields(enterable, offered);
+        return withDisplayOnlyYields(enterableTokens, offeredTokens);
       })
     )
     .pipe(

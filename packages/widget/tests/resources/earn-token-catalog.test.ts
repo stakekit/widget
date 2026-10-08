@@ -148,6 +148,32 @@ describe("Earn Token Catalog", () => {
     ]);
   });
 
+  it("keeps enterable yields when the display-only request fails", () => {
+    const getTokenOptions = vi.fn((request: EarnTokenCatalogRequest) =>
+      request.enter
+        ? Effect.succeed([tokenOption])
+        : Effect.fail(
+            new ApiRequestError({
+              cause: new Error("offline"),
+              operation: "legacy-token-options",
+            })
+          )
+    );
+    const registry = makeRegistry(getTokenOptions);
+
+    const result = registry.get(
+      earnTokenCatalogResourceAtom(
+        new EarnTokenCatalogKey({ category: "rwa", network: "ethereum" })
+      )
+    );
+
+    expect(AsyncResult.getOrThrow(result)).toEqual([tokenOption]);
+    expect(getTokenOptions).toHaveBeenCalledWith({
+      network: "ethereum",
+      yieldTypes: ["real_world_asset"],
+    });
+  });
+
   it("omits failed dashboard categories when another category is usable", () => {
     const ethereumYieldRequest = (yieldTypes: ReadonlyArray<string>) =>
       expect.objectContaining({
