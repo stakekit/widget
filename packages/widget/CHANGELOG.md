@@ -1,5 +1,18 @@
 # @stakekit/widget
 
+## [0.0.289](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.288...@stakekit/widget@0.0.289) (2026-10-08)
+
+
+### Features
+
+* **earn:** show closed mGLO/mGLOBAL vaults, remove activity badge, fix API decoding ([#579](https://github.com/stakekit/widget/issues/579)) ([ece7197](https://github.com/stakekit/widget/commit/ece71976dab3738723711f7a97a6da8e44e637cd))
+
+
+### Bug Fixes
+
+* **widget:** leave position details once the position is gone ([#576](https://github.com/stakekit/widget/issues/576)) ([6a7658d](https://github.com/stakekit/widget/commit/6a7658d6beb736b3c4c90d6ee8392c22b57278d0))
+* **widget:** send native input token explicitly on enter ([#577](https://github.com/stakekit/widget/issues/577)) ([65ec22c](https://github.com/stakekit/widget/commit/65ec22cce1995d8fad0273a009661659e11164e5))
+
 ## [0.0.288](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.287...@stakekit/widget@0.0.288) (2026-09-21)
 
 
