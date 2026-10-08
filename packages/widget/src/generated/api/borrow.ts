@@ -24,21 +24,18 @@ export const IntegrationMetadataDto = Schema.Struct({
   }),
 }).annotate({ identifier: "IntegrationMetadataDto" });
 export type ArgumentSchemaDto = {
-  readonly type?: { readonly [x: string]: Schema.Json };
+  readonly type?: string;
   readonly properties?: { readonly [x: string]: Schema.Json };
   readonly required?: ReadonlyArray<string>;
-  readonly additionalProperties?: { readonly [x: string]: Schema.Json };
+  readonly additionalProperties?: Schema.Json;
   readonly items?: { readonly [x: string]: Schema.Json };
   readonly enum?: ReadonlyArray<string>;
-  readonly default?: { readonly [x: string]: Schema.Json };
+  readonly default?: Schema.Json;
   readonly notes?: string;
 };
 export const ArgumentSchemaDto = Schema.Struct({
   type: Schema.optionalKey(
-    Schema.Record(
-      Schema.String,
-      Schema.Json.annotate({ expected: "JSON value" })
-    ).annotate({ description: "Schema type" })
+    Schema.String.annotate({ description: "Schema type", examples: ["object"] })
   ),
   properties: Schema.optionalKey(
     Schema.Record(
@@ -65,10 +62,10 @@ export const ArgumentSchemaDto = Schema.Struct({
     })
   ),
   additionalProperties: Schema.optionalKey(
-    Schema.Record(
-      Schema.String,
-      Schema.Json.annotate({ expected: "JSON value" })
-    ).annotate({ description: "Allow additional properties" })
+    Schema.Json.annotate({
+      expected: "JSON value",
+      description: "Allow additional properties",
+    })
   ),
   items: Schema.optionalKey(
     Schema.Record(
@@ -80,10 +77,10 @@ export const ArgumentSchemaDto = Schema.Struct({
     Schema.Array(Schema.String).annotate({ description: "Enum values" })
   ),
   default: Schema.optionalKey(
-    Schema.Record(
-      Schema.String,
-      Schema.Json.annotate({ expected: "JSON value" })
-    ).annotate({ description: "Default value" })
+    Schema.Json.annotate({
+      expected: "JSON value",
+      description: "Default value",
+    })
   ),
   notes: Schema.optionalKey(
     Schema.String.annotate({

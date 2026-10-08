@@ -34,11 +34,6 @@ export const badgeMuted = style([
   { background: "color-mix(in srgb, currentColor 12%, transparent)" },
 ]);
 
-export const badgeAction = style([
-  badge,
-  atoms({ background: "positionsActionRequiredBackground", color: "white" }),
-]);
-
 export const amount = style({
   fontSize: "clamp(28px, 3vw, 40px)",
   lineHeight: 1.15,

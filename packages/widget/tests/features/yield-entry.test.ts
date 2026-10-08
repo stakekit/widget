@@ -432,6 +432,43 @@ describe("Yield Entry", () => {
     }
   });
 
+  it("keeps Submit disabled and rejects submission for a yield closed to deposits", async () => {
+    const ports = makeObservablePorts();
+    const registry = makeObservableRegistry(ports);
+    const validInput = makeFacadeInput();
+    const closedYield = yieldApiYieldFixture({
+      status: { enter: false, exit: true },
+    });
+    const inputAtom = Atom.make(
+      makeFacadeInput({
+        entry: { ...validInput.entry, yield: closedYield },
+      })
+    );
+    const facade = makeYieldEntry(inputAtom);
+
+    try {
+      expect(registry.get(facade.viewAtom).cta).toEqual({
+        _tag: "Submit",
+        disabled: true,
+        loading: false,
+      });
+
+      registry.set(facade.submitAtom, undefined);
+      await expect
+        .poll(() =>
+          registry
+            .get(facade.submitAtom)
+            .pipe(AsyncResult.value, Option.getOrNull)
+        )
+        .toBe("unavailable");
+      expect(
+        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
+      ).toBe(false);
+    } finally {
+      registry.dispose();
+    }
+  });
+
   it("starts one session and pushes Review through the navigation port", async () => {
     const ports = makeObservablePorts();
     const input = makeFacadeInput();

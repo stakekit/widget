@@ -399,6 +399,13 @@ const specs: SpecConfig[] = [
           description: "When the action was completed",
         },
       },
+      // Upstream declares field defaults as objects, but production returns
+      // scalars such as `"individual"`. Accept any JSON value.
+      {
+        op: "replace",
+        path: "/components/schemas/ArgumentFieldDto/properties/default",
+        value: { description: "Default value for the field" },
+      },
     ],
   },
   {
@@ -417,7 +424,29 @@ const specs: SpecConfig[] = [
         schemaOnly: true,
       },
     ],
-    patches: [],
+    patches: [
+      // Upstream declares these JSON Schema keywords as objects, but
+      // production returns `type: "object"` and `additionalProperties: false`.
+      {
+        op: "replace",
+        path: "/components/schemas/ArgumentSchemaDto/properties/type",
+        value: {
+          type: "string",
+          description: "Schema type",
+          example: "object",
+        },
+      },
+      {
+        op: "replace",
+        path: "/components/schemas/ArgumentSchemaDto/properties/additionalProperties",
+        value: { description: "Allow additional properties" },
+      },
+      {
+        op: "replace",
+        path: "/components/schemas/ArgumentSchemaDto/properties/default",
+        value: { description: "Default value" },
+      },
+    ],
     prepareSpec: (contents) =>
       contents.replaceAll(
         '"allOf":[{"$ref":"#/components/schemas/ArgumentSchemaPropertyDto"}]',

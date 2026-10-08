@@ -97,7 +97,11 @@ Wallet transactions and raw balances use this value.
 ## Earn
 
 **Earn Catalog**: The authoritative project-enabled, enterable categories,
-tokens, yields, and validators under the current filters.
+tokens, yields, and validators under the current filters, plus any
+**Display-only Yields** the project offers.
+
+**Display-only Yields**: A fixed set of yields closed to deposits that the
+Earn Catalog still lists; entry stays disabled until the yield reopens.
 
 **Earn Selection**: The category, token, yield, validators, and entry values
 currently resolved for an Earn journey.

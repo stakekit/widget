@@ -525,3 +525,90 @@ export const isNonZeroRewardRateYield = (
 ) =>
   yieldDto.rewardRate.total.isGreaterThan(0) ||
   zeroRewardRateYieldIdWhitelist.has(yieldDto.id);
+
+/**
+ * Yields closed to deposits (`status.enter: false`) that stay visible while
+ * their investment schedule pauses deposits. Entry remains disabled for them.
+ */
+const displayOnlyYields: Record<
+  string,
+  { readonly network: Network; readonly yieldType: KnownApiYieldType }
+> = {
+  "base-usdc-midas-mglo-vault": {
+    network: "base",
+    yieldType: "real_world_asset",
+  },
+  "robinhood-usdg-midas-mglo-vault": {
+    network: "robinhood",
+    yieldType: "real_world_asset",
+  },
+  "ethereum-usdc-midas-mglobal-vault": {
+    network: "ethereum",
+    yieldType: "real_world_asset",
+  },
+};
+
+export const isYieldVisible = (
+  yieldDto: Pick<EarnYieldWithProvider, "id" | "status">
+) => yieldDto.status.enter || Object.hasOwn(displayOnlyYields, yieldDto.id);
+
+/**
+ * API yield types that can hold a display-only yield within a token-catalog
+ * scope; empty when the scope cannot contain one.
+ */
+export const getDisplayOnlyYieldTypes = (scope: {
+  readonly network?: Network;
+  readonly yieldTypes?: ReadonlyArray<KnownApiYieldType>;
+}): KnownApiYieldType[] => [
+  ...new Set(
+    Object.values(displayOnlyYields)
+      .filter(
+        ({ network, yieldType }) =>
+          (!scope.network || scope.network === network) &&
+          (!scope.yieldTypes || scope.yieldTypes.includes(yieldType))
+      )
+      .map(({ yieldType }) => yieldType)
+  ),
+];
+
+type TokenYieldOption = {
+  readonly token: Parameters<typeof equalTokens>[0];
+  readonly availableYields: ReadonlyArray<YieldId>;
+};
+
+/**
+ * Adds the display-only yields found among all offered yields to the
+ * enterable token options, appending tokens that only offer such yields.
+ */
+export const withDisplayOnlyYields = <Option extends TokenYieldOption>(
+  enterable: ReadonlyArray<Option>,
+  offered: ReadonlyArray<Option>
+): ReadonlyArray<Option> => {
+  const options = [...enterable];
+
+  for (const offeredOption of offered) {
+    const displayOnly = offeredOption.availableYields.filter((id) =>
+      Object.hasOwn(displayOnlyYields, id)
+    );
+    if (displayOnly.length === 0) continue;
+
+    const index = options.findIndex((option) =>
+      equalTokens(option.token, offeredOption.token)
+    );
+    const option = options[index];
+    if (!option) {
+      options.push({ ...offeredOption, availableYields: displayOnly });
+      continue;
+    }
+
+    options[index] = {
+      ...option,
+      availableYields: [
+        ...option.availableYields,
+        ...displayOnly.filter((id) => !option.availableYields.includes(id)),
+      ],
+    };
+  }
+
+  return options;
+};

@@ -290,7 +290,6 @@
     },
     "failed": "Failed",
     "status": {
-      "action-required": "Action required",
       "canceled": "Canceled",
       "completed": "Completed",
       "created": "Created",

@@ -1,6 +1,7 @@
 import { Data } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import { isYieldVisible } from "../../../domain/earn/yield";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import { isWalletNetwork } from "../../../domain/wallet/network";
 import {
@@ -36,7 +37,7 @@ export const visibleMultiYieldsAtom = Atom.family((key: MultiYieldsKey) =>
         (yields) =>
           yields?.filter((yieldModel) => {
             const visible =
-              yieldModel.status.enter &&
+              isYieldVisible(yieldModel) &&
               isWalletNetwork(yieldModel.token.network);
 
             return (
