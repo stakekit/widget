@@ -125,7 +125,9 @@ rebuilding mount graphs in Features.
 
 Relevance is a lifetime, not a counter. A Session, reservation, modal opening,
 or attempt owns a `Scope`; ending it closes the Scope and interrupts its work.
-Do not guard continuation with revision, epoch, or `isCurrent` checks. See
+Do not guard continuation with revision, epoch, or `isCurrent` checks. A
+lifetime consumed by a React subtree is owned by that subtree's scoped Atom
+instance, not by a service-held "current" slot. See
 [ADR 0011](../../docs/adr/0011-lifetimes-are-scopes-staleness-is-interruption.md).
 
 ## Trust boundaries

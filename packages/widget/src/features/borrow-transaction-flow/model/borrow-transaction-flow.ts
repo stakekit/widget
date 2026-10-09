@@ -1,3 +1,4 @@
+import { Data, Option, Schema } from "effect";
 import type { ActionCommand } from "../../../domain/borrow/execution/action-command";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
@@ -220,12 +221,29 @@ export type BorrowTransactionFlowIntake = BorrowTransactionFlowReview & {
   readonly entry: BorrowTransactionFlowEntry;
 };
 
-export type BorrowFlowSession = Readonly<{
-  /** Distinguishes Session instances (React and Atom family keys); never a staleness guard. */
-  readonly epoch: number;
+/**
+ * A started Flow Session's immutable input. Start hands it to the flow route
+ * through Review navigation state; the route that mounts it owns its lifetime.
+ */
+export class BorrowFlowSession extends Data.Class<{
   readonly intake: BorrowTransactionFlowIntake;
   readonly walletScope: WalletScopeKey;
-}>;
+}> {}
+
+const BorrowFlowNavigationState = Schema.Struct({
+  borrowFlowSession: Schema.instanceOf(BorrowFlowSession),
+});
+
+export const makeBorrowFlowNavigationState = (
+  session: BorrowFlowSession
+): typeof BorrowFlowNavigationState.Type => ({ borrowFlowSession: session });
+
+export const decodeBorrowFlowNavigationState = (
+  state: unknown
+): Option.Option<BorrowFlowSession> =>
+  Schema.decodeUnknownOption(BorrowFlowNavigationState)(state).pipe(
+    Option.map((decoded) => decoded.borrowFlowSession)
+  );
 
 export const getBorrowReviewTrackingProperties = (
   intake: BorrowTransactionFlowIntake

@@ -1,28 +1,31 @@
 import { make as makeScopedAtom, useAtomValue } from "@effect/atom-react";
-import { Schema } from "effect";
+import { Option, Schema } from "effect";
 import {
   createContext,
   type PropsWithChildren,
   useContext,
   useState,
 } from "react";
-import { Navigate, Outlet, useParams } from "react-router";
+import { Navigate, Outlet, useLocation, useParams } from "react-router";
 import {
   type MarketId,
   MarketId as MarketIdSchema,
 } from "../../../domain/borrow/ids";
 import { LoadingSkeleton } from "../../../shared/ui/components/loading-skeleton";
-import type { BorrowTransactionFlowEntry } from "../model/borrow-transaction-flow";
-import { getBorrowTransactionFlowRoutes } from "../model/borrow-transaction-flow";
-import { makeBorrowFlowRouteSessionAtom } from "../state/atoms/borrow-flow";
+import {
+  type BorrowFlowSession,
+  type BorrowTransactionFlowEntry,
+  decodeBorrowFlowNavigationState,
+  getBorrowTransactionFlowRoutes,
+} from "../model/borrow-transaction-flow";
 import {
   type BorrowFlowExecutionFacade,
   type BorrowFlowReviewFacade,
   type BorrowFlowSessionFacade,
   type BorrowFlowSessionModule,
-  borrowFlowSessionRootAtomFamily,
   makeBorrowFlowExecutionScope,
   makeBorrowFlowReviewScope,
+  makeBorrowFlowSessionModule,
 } from "../state/atoms/borrow-flow-session";
 
 const BorrowFlowSessionContext = createContext<BorrowFlowSessionModule | null>(
@@ -38,6 +41,7 @@ const useBorrowFlowSessionModule = (): BorrowFlowSessionModule => {
 export const useBorrowTransactionFlow = (): BorrowFlowSessionFacade =>
   useBorrowFlowSessionModule().facade;
 
+const SessionScopedAtom = makeScopedAtom(makeBorrowFlowSessionModule);
 const ReviewScopedAtom = makeScopedAtom(makeBorrowFlowReviewScope);
 
 export const useBorrowTransactionFlowReview = (): BorrowFlowReviewFacade => {
@@ -70,6 +74,17 @@ const getEntryFallbackPath = (
   return "/positions";
 };
 
+type MountedBorrowFlowSession = Readonly<{
+  /** The location that delivered the Session; remounts the Session subtree. */
+  readonly key: string;
+  readonly session: BorrowFlowSession;
+}>;
+
+/**
+ * Owns the Flow Session it was navigated to: the Session lives while this
+ * route stays mounted and ends when it unmounts. A Start that navigates here
+ * again carries a new Session, which replaces the mounted one.
+ */
 export const BorrowTransactionFlowRoute = ({
   expected,
 }: {
@@ -79,29 +94,30 @@ export const BorrowTransactionFlowRoute = ({
   const marketId = routeParams.marketId
     ? Schema.decodeSync(MarketIdSchema)(routeParams.marketId)
     : undefined;
-  const [sessionAtom] = useState(makeBorrowFlowRouteSessionAtom);
-  const result = useAtomValue(sessionAtom);
-  const fallbackPath = getEntryFallbackPath(expected, marketId);
-  if (result._tag === "Initial") return <LoadingSkeleton />;
-  if (result._tag === "Failure") return <Navigate replace to={fallbackPath} />;
-  const session = result.value;
-  if (session && matchesEntry(session.intake.entry, expected, marketId)) {
-    return (
-      <MountedSessionBinding
-        key={session.epoch}
-        rootAtom={borrowFlowSessionRootAtomFamily(session)}
-      />
-    );
+  const location = useLocation();
+  const navigated = Option.getOrNull(
+    decodeBorrowFlowNavigationState(location.state)
+  );
+  const [mounted, setMounted] = useState<MountedBorrowFlowSession | null>(null);
+  if (navigated && navigated !== mounted?.session) {
+    setMounted({ key: location.key, session: navigated });
+    return null;
   }
-  return <Navigate replace to={fallbackPath} />;
+  if (
+    !mounted ||
+    !matchesEntry(mounted.session.intake.entry, expected, marketId)
+  ) {
+    return <Navigate replace to={getEntryFallbackPath(expected, marketId)} />;
+  }
+  return (
+    <SessionScopedAtom.Provider key={mounted.key} value={mounted.session}>
+      <MountedSessionBinding />
+    </SessionScopedAtom.Provider>
+  );
 };
 
-const MountedSessionBinding = ({
-  rootAtom,
-}: {
-  readonly rootAtom: ReturnType<typeof borrowFlowSessionRootAtomFamily>;
-}) => {
-  const session = useAtomValue(rootAtom);
+const MountedSessionBinding = () => {
+  const session = useAtomValue(SessionScopedAtom.use());
   return (
     <BorrowFlowSessionContext.Provider value={session}>
       <Outlet />

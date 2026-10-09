@@ -23,9 +23,10 @@ import type {
 } from "../../src/domain/borrow/execution/transaction";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
-import type {
+import {
   BorrowFlowSession,
-  BorrowTransactionFlowReview,
+  type BorrowTransactionFlowReview,
+  makeBorrowFlowNavigationState,
 } from "../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import {
   BorrowTransactionFlowCompletionGuard,
@@ -102,14 +103,13 @@ const reviewState: BorrowTransactionFlowReview = {
     warnings: [],
   },
 };
-const session: BorrowFlowSession = {
-  epoch: 1,
+const session = new BorrowFlowSession({
   intake: {
     ...reviewState,
     entry: { _tag: "BorrowEntry" },
   },
   walletScope,
-};
+});
 
 const transaction = (
   overrides: Partial<TransactionDto> = {}
@@ -392,7 +392,13 @@ const renderExecution = (
       BorrowTransactionFlowService.layer.pipe(Layer.provide(flowDependencies))
     );
     const flowService = Context.get(flowContext, BorrowTransactionFlowService);
-    yield* flowService.start((options.session ?? session).intake);
+    // Start hands its Session to the flow route through navigation state.
+    const flowState = makeBorrowFlowNavigationState(options.session ?? session);
+    const initialEntries = (
+      options.initialEntries ?? [options.initialPath ?? "/borrow/review"]
+    ).map((pathname) =>
+      pathname === "/borrow" ? pathname : { pathname, state: flowState }
+    );
 
     const app = yield* Effect.acquireRelease(
       Effect.promise(() =>
@@ -431,11 +437,7 @@ const renderExecution = (
               ]}
             >
               <MemoryRouter
-                initialEntries={
-                  options.initialEntries
-                    ? [...options.initialEntries]
-                    : [options.initialPath ?? "/borrow/review"]
-                }
+                initialEntries={initialEntries}
                 initialIndex={options.initialIndex}
               >
                 <NavigationCapture
@@ -541,7 +543,7 @@ describe("borrow execution flow component", () => {
 
   it.live("labels a repayment amount on Review", () =>
     Effect.gen(function* () {
-      const repaySession = {
+      const repaySession = new BorrowFlowSession({
         ...session,
         intake: {
           ...session.intake,
@@ -568,7 +570,7 @@ describe("borrow execution flow component", () => {
             warnings: [],
           },
         },
-      } as BorrowFlowSession;
+      });
       const app = yield* renderExecution(makeBorrowApi({}), {
         autoStart: false,
         reviewElement: <BorrowReviewPage />,
@@ -586,7 +588,7 @@ describe("borrow execution flow component", () => {
 
   it.live("omits projected metrics when risk is unavailable", () =>
     Effect.gen(function* () {
-      const unavailableSession: BorrowFlowSession = {
+      const unavailableSession = new BorrowFlowSession({
         ...session,
         intake: {
           ...session.intake,
@@ -595,7 +597,7 @@ describe("borrow execution flow component", () => {
             riskStatus: "unavailable",
           },
         },
-      };
+      });
       const app = yield* renderExecution(makeBorrowApi({}), {
         autoStart: false,
         reviewElement: <BorrowReviewPage />,
@@ -623,7 +625,7 @@ describe("borrow execution flow component", () => {
 
   it.live("shows known constraint warnings without blocking Confirm", () =>
     Effect.gen(function* () {
-      const warnedSession: BorrowFlowSession = {
+      const warnedSession = new BorrowFlowSession({
         ...session,
         intake: {
           ...session.intake,
@@ -632,7 +634,7 @@ describe("borrow execution flow component", () => {
             warnings: ["RiskCapacityExceeded"],
           },
         },
-      };
+      });
       const app = yield* renderExecution(makeBorrowApi({}), {
         autoStart: false,
         reviewElement: <BorrowReviewPage />,
@@ -872,7 +874,7 @@ describe("borrow execution flow component", () => {
   );
 
   it.live(
-    "does not restart an abandoned submitted workflow from browser history",
+    "returns to a fresh Review without resuming an abandoned workflow from browser history",
     () =>
       Effect.gen(function* () {
         const confirmationInterrupted = yield* Deferred.make<void>();
@@ -935,10 +937,14 @@ describe("borrow execution flow component", () => {
         yield* Effect.promise(() =>
           userEvent.click(app.getByRole("button", { name: "Forward" }))
         );
+        // Forward reopens Review with a fresh Session; execution needs a new Confirm.
         yield* Effect.promise(() =>
           expect
             .element(app.getByTestId("history-path"))
-            .toHaveTextContent("/borrow")
+            .toHaveTextContent("/borrow/review")
+        );
+        yield* Effect.promise(() =>
+          expect.element(app.getByTestId("start-execution")).toBeInTheDocument()
         );
 
         expect(

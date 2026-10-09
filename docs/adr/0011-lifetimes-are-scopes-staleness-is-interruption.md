@@ -17,6 +17,16 @@ consumer holds is acquired with `acquireInChildScope`, so it ends with
 whichever closes first. Handles route their operations through
 `makeScopedSerialOperations` created in their own Scope.
 
+The owner of a lifetime is whoever consumes it. When that consumer is a React
+subtree, the subtree owns the Scope: a scoped Atom instance created per mount
+opens the unit and its Scope ends it on unmount. The service exposes an opener
+and the data handoff (for a Flow Session, Review navigation state; for a Yield
+Action Continuation, the Activity route that mounts it), not a global "current"
+slot that a route must look up and reconcile. A second owner for the same
+lifetime is what reintroduces identity counters and admission checks. Layouts
+that remount routes on navigation derive their key from the path (a flow's
+Review, Steps, and Complete share one), never from a live Session.
+
 Interruption cannot cancel work that has already left Effect. Side effects that
 must not be torn — router navigation, reservation plus navigation — run
 uninterruptibly, so closing the Scope waits for them instead of abandoning them

@@ -1,6 +1,7 @@
-import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { createContext, useContext } from "react";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { createContext, useContext, useState } from "react";
 import { Navigate, Outlet, useMatch, useParams } from "react-router";
+import type { ActionId } from "../../../domain/identity/identifiers";
 import { ContentLoaderSquare } from "../../../shared/ui/primitives/content-loader";
 import { YieldActionContinuationSessionRoute } from "../../classic-transaction-flow/views";
 import { walletScopeAtom } from "../../wallet/index";
@@ -8,7 +9,6 @@ import type { YieldSummaryProvider } from "../../yield-summary/index";
 import type { ActivityActionItem } from "../model/activity-action";
 import {
   ActivitySelectionKey,
-  activityActionContinuationMountAtom,
   activityDetailsViewAtom,
   parseActivityRouteIntent,
   resolveUnavailableActivitySelection,
@@ -78,9 +78,13 @@ const BoundActivityActionRoute = ({
   readonly presentation: ActivityPresentation;
   readonly selectionKey: ActivitySelectionKey;
 }) => {
-  useAtomMount(activityActionContinuationMountAtom(selectionKey));
   const result = useAtomValue(activityDetailsViewAtom(selectionKey));
   const retry = useAtomSet(retryActivityActionRouteAtom(selectionKey));
+  // The action whose Continuation this route mounted from its Review. Its
+  // Session lives in this subtree across Review, Steps, and Complete.
+  const [continuedActionId, setContinuedActionId] = useState<ActionId | null>(
+    null
+  );
 
   if (result.status === "loading") {
     return <ContentLoaderSquare heightPx={320} />;
@@ -95,22 +99,47 @@ const BoundActivityActionRoute = ({
     ) : null;
   }
 
-  const reviewPath = `/activity/${encodeURIComponent(result.item.actionData.id)}`;
-  if (selectionKey.surface === "execution" && !result.continuationReady) {
+  const { item } = result;
+  const action = item.actionData;
+  const reviewPath = `/activity/${encodeURIComponent(action.id)}`;
+  // Only the explicit action route spans Review, Steps, and Complete, so it is
+  // the one that owns a continuation.
+  if (result.canContinue && selectionKey.intent._tag === "default") {
+    return <Navigate replace to={reviewPath} />;
+  }
+  // A continuation started on this action's Review stays mounted through its
+  // execution; any other action drops it.
+  const nextContinuedActionId =
+    result.canContinue || continuedActionId === action.id ? action.id : null;
+  if (nextContinuedActionId !== continuedActionId) {
+    setContinuedActionId(nextContinuedActionId);
+    return null;
+  }
+  const continuationReady = continuedActionId === action.id;
+  if (selectionKey.surface === "execution" && !continuationReady) {
     return <Navigate replace to={reviewPath} />;
   }
 
   return (
     <ActivityActionRouteContext.Provider
       value={{
-        continuationReady: result.continuationReady,
-        item: result.item,
+        continuationReady,
+        item,
         presentation,
         providersDetails: result.providersDetails,
       }}
     >
-      {result.continuationReady ? (
-        <YieldActionContinuationSessionRoute />
+      {continuationReady && item.yieldData ? (
+        <YieldActionContinuationSessionRoute
+          key={action.id}
+          continuation={{
+            action,
+            providersDetails: result.providersDetails,
+            selectedValidators: item.validatorsData,
+            selectedYield: item.yieldData,
+            walletScope: item.walletScope,
+          }}
+        />
       ) : (
         <Outlet />
       )}

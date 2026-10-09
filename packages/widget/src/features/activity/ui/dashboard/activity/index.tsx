@@ -42,13 +42,11 @@ export const ActivityTabPage = () => {
             isExecution ? "activity-execution-panel" : "activity-details-panel"
           }
         >
-          {isExecution ? (
-            <BackButtonProvider>
-              <Outlet />
-            </BackButtonProvider>
-          ) : (
+          {/* One tree shape for Review and execution: the action route below
+              owns the continuation Session across them. */}
+          <BackButtonProvider enabled={isExecution}>
             <Outlet />
-          )}
+          </BackButtonProvider>
         </Box>
       </Box>
     </AnimationPage>

@@ -1,25 +1,26 @@
 import { make as makeScopedAtom, useAtomValue } from "@effect/atom-react";
+import { Option } from "effect";
 import {
   createContext,
   type PropsWithChildren,
   useContext,
   useState,
 } from "react";
-import { Navigate, Outlet } from "react-router";
-import { LoadingSkeleton } from "../../../shared/ui/components/loading-skeleton";
+import { Navigate, Outlet, useLocation } from "react-router";
 import {
+  type ClassicFlowSession,
   type ClassicTransactionFlowIntake,
+  decodeClassicFlowNavigationState,
   getClassicTransactionFlowIntakeVariant,
 } from "../model/classic-transaction-flow";
-import { makeClassicFlowRouteSessionAtom } from "../state/atoms/classic-flow";
 import {
   type ClassicFlowExecutionFacade,
   type ClassicFlowReviewFacade,
   type ClassicFlowSessionFacade,
   type ClassicFlowSessionModule,
-  classicFlowSessionRootAtomFamily,
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
+  makeClassicFlowSessionModule,
 } from "../state/atoms/classic-flow-session";
 
 const useClassicFlowSessionModule = (): ClassicFlowSessionModule => {
@@ -36,6 +37,7 @@ export const useClassicFlowSession = (): ClassicFlowSessionFacade => {
   return session.facade;
 };
 
+const SessionScopedAtom = makeScopedAtom(makeClassicFlowSessionModule);
 const ReviewScopedAtom = makeScopedAtom(makeClassicFlowReviewScope);
 
 export const useClassicFlowReview = (): ClassicFlowReviewFacade => {
@@ -59,38 +61,63 @@ export const useClassicFlowIntake = <
   return session.getIntake(variant);
 };
 
+type MountedClassicFlowSession = Readonly<{
+  /** The location that delivered the Session; remounts the Session subtree. */
+  readonly key: string;
+  readonly session: ClassicFlowSession;
+}>;
+
+/**
+ * Owns the Flow Session it was navigated to: the Session lives while this
+ * route stays mounted and ends when it unmounts. A Start that navigates here
+ * again carries a new Session, which replaces the mounted one.
+ */
 export const ClassicFlowRoute = ({
   expected,
 }: {
-  readonly expected: ClassicTransactionFlowIntake["_tag"];
+  readonly expected: Exclude<
+    ClassicTransactionFlowIntake["_tag"],
+    "YieldActionContinuation"
+  >;
 }) => {
-  const [sessionAtom] = useState(makeClassicFlowRouteSessionAtom);
-  const result = useAtomValue(sessionAtom);
-  if (result._tag === "Initial") return <LoadingSkeleton />;
-  if (result._tag === "Failure") return <Navigate to="/" replace />;
-  const session = result.value;
-  const intake = session
-    ? getClassicTransactionFlowIntakeVariant(session.intake, expected)
-    : null;
-
-  if (session && intake) {
-    return (
-      <MountedSessionBinding
-        key={session.epoch}
-        rootAtom={classicFlowSessionRootAtomFamily(session)}
-      />
-    );
+  const location = useLocation();
+  const navigated = Option.getOrNull(
+    decodeClassicFlowNavigationState(location.state)
+  );
+  const [mounted, setMounted] = useState<MountedClassicFlowSession | null>(
+    null
+  );
+  if (navigated && navigated !== mounted?.session) {
+    setMounted({ key: location.key, session: navigated });
+    return null;
   }
-
-  return <Navigate to="/" replace />;
+  if (
+    !mounted ||
+    !getClassicTransactionFlowIntakeVariant(mounted.session.intake, expected)
+  ) {
+    return <Navigate to="/" replace />;
+  }
+  return (
+    <ClassicFlowSessionRoute key={mounted.key} session={mounted.session} />
+  );
 };
 
-const MountedSessionBinding = ({
-  rootAtom,
+/**
+ * Owns `session` for as long as it stays mounted. Callers remount it (by key)
+ * to replace the Session.
+ */
+export const ClassicFlowSessionRoute = ({
+  session,
 }: {
-  readonly rootAtom: ReturnType<typeof classicFlowSessionRootAtomFamily>;
-}) => {
-  const session = useAtomValue(rootAtom);
+  readonly session: ClassicFlowSession;
+}) => (
+  <SessionScopedAtom.Provider value={session}>
+    <MountedSessionBinding />
+  </SessionScopedAtom.Provider>
+);
+
+const MountedSessionBinding = () => {
+  const session = useAtomValue(SessionScopedAtom.use());
 
   return (
     <ClassicFlowSessionContext.Provider value={session}>

@@ -1,4 +1,3 @@
-import { useAtomValue } from "@effect/atom-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
 import {
@@ -6,7 +5,7 @@ import {
   createActivityActionRoutes,
 } from "../../../features/activity/composition";
 import { createClassicFlowRoutes } from "../../../features/classic-transaction-flow/composition";
-import { isActiveClassicTransactionFlowPathAtom } from "../../../features/classic-transaction-flow/index";
+import { getClassicFlowRouteGroup } from "../../../features/classic-transaction-flow/index";
 import { AnimatedEarnPage } from "../../../features/earn/composition";
 import { AnimatedPositionsPage } from "../../../features/portfolio/composition";
 import { usePortfolioPendingActionsCount } from "../../../features/portfolio/index";
@@ -33,9 +32,9 @@ const ClassicDetails = () => {
 
 export const ClassicRoutes = () => {
   const location = useLocation();
-  const isActiveClassicFlowPath = useAtomValue(
-    isActiveClassicTransactionFlowPathAtom(location.pathname)
-  );
+  // Review, Steps, and Complete of one flow mount share a key, so the flow
+  // subtree (which owns its Session) stays mounted across them.
+  const classicFlowRouteGroup = getClassicFlowRouteGroup(location.pathname);
 
   const detailsMatch = useDetailsMatch();
 
@@ -44,8 +43,8 @@ export const ClassicRoutes = () => {
    * Handle position details pages in their own Routes
    */
   const resolveRouteKey = () => {
-    if (isActiveClassicFlowPath) {
-      return "classic-flow-session";
+    if (classicFlowRouteGroup !== null) {
+      return `classic-flow:${classicFlowRouteGroup}`;
     }
     if (detailsMatch) return "/";
     return location.key;

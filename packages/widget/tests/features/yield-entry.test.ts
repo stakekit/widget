@@ -3,18 +3,25 @@ import { Effect, Layer, Option, Schema } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, type Mock, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
-import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/index";
+import {
+  type ClassicFlowSession,
+  decodeClassicFlowNavigationState,
+} from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { walletScopeAtom } from "../../src/features/wallet/index";
 import { makeYieldEntry } from "../../src/features/yield-entry/index";
 import { getYieldEntryCta } from "../../src/features/yield-entry/model/yield-entry";
 import type { YieldEntryFacadeInput } from "../../src/features/yield-entry/state/atoms/yield-entry";
 import { YieldEntrySubmissionService } from "../../src/features/yield-entry/state/orchestration/yield-entry-submission-service";
-import { makeWidgetNavigation } from "../../src/services/navigation/widget-navigation";
+import {
+  makeWidgetNavigation,
+  type WidgetNavigationOptions,
+  type WidgetPath,
+} from "../../src/services/navigation/widget-navigation";
 import { WalletModal } from "../../src/services/wallet/wallet-modal";
 import {
   disconnectedLedgerConnectorState,
@@ -95,7 +102,7 @@ const makeFacadeInput = (
 const makeObservablePorts = () => {
   const closeChain = vi.fn();
   const openConnect = vi.fn();
-  const push = vi.fn(() => Effect.void);
+  const push = vi.fn<Push>(() => Effect.void);
   const replace = vi.fn(() => Effect.void);
   const trackEvent = vi.fn(() => Effect.void);
   const navigation = makeWidgetNavigation({
@@ -182,6 +189,19 @@ const readSubmitOutcome = (
   expect.poll(() =>
     registry.get(submitAtom).pipe(AsyncResult.value, Option.getOrNull)
   );
+
+type Push = (
+  path: WidgetPath,
+  options?: WidgetNavigationOptions
+) => Effect.Effect<void>;
+
+/** The Session the single Start navigation carried to Review. */
+const startedSession = (push: Mock<Push>): ClassicFlowSession => {
+  expect(push).toHaveBeenCalledOnce();
+  const [path, options] = push.mock.calls[0] ?? [];
+  expect(path).toBe("/review");
+  return Option.getOrThrow(decodeClassicFlowNavigationState(options?.state));
+};
 
 describe("Yield Entry", () => {
   it("owns validation attempts and resets them when the validation identity changes", async () => {
@@ -390,9 +410,7 @@ describe("Yield Entry", () => {
             .pipe(AsyncResult.value, Option.getOrNull)
         )
         .toBe("invalid");
-      expect(
-        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
-      ).toBe(false);
+      expect(ports.push).not.toHaveBeenCalled();
 
       registry.set(inputAtom, {
         ...validInput,
@@ -406,9 +424,7 @@ describe("Yield Entry", () => {
             .pipe(AsyncResult.value, Option.getOrNull)
         )
         .toBe("unavailable");
-      expect(
-        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
-      ).toBe(false);
+      expect(ports.push).not.toHaveBeenCalled();
 
       registry.set(inputAtom, validInput);
       registry.set(facade.submitAtom, undefined);
@@ -419,13 +435,13 @@ describe("Yield Entry", () => {
             .pipe(AsyncResult.value, Option.getOrNull)
         )
         .toBe("submitted");
-      expect(
-        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
-      ).toBe(true);
-      expect(ports.push).toHaveBeenCalledWith(
-        "/review",
-        expect.objectContaining({ _tag: "Push" })
-      );
+      expect(startedSession(ports.push)).toMatchObject({
+        intake: {
+          _tag: "Enter",
+          selectedStake: { id: validInput.entry.yield?.id },
+        },
+        mount: { _tag: "Earn" },
+      });
     } finally {
       registry.dispose();
     }
@@ -460,15 +476,13 @@ describe("Yield Entry", () => {
             .pipe(AsyncResult.value, Option.getOrNull)
         )
         .toBe("unavailable");
-      expect(
-        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
-      ).toBe(false);
+      expect(ports.push).not.toHaveBeenCalled();
     } finally {
       registry.dispose();
     }
   });
 
-  it("starts one session and pushes Review through the navigation port", async () => {
+  it("starts one Session and pushes Review carrying it through the navigation port", async () => {
     const ports = makeObservablePorts();
     const input = makeFacadeInput();
     const facade = makeYieldEntry(Atom.make(input));
@@ -481,17 +495,22 @@ describe("Yield Entry", () => {
         "/review",
         expect.objectContaining({ _tag: "Push" })
       );
+      expect(startedSession(ports.push)).toMatchObject({
+        intake: {
+          _tag: "Enter",
+          selectedStake: { id: input.entry.yield?.id },
+          walletScope,
+        },
+        mount: { _tag: "Earn" },
+      });
       expect(ports.replace).not.toHaveBeenCalled();
       expect(ports.openConnect).not.toHaveBeenCalled();
-      expect(
-        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
-      ).toBe(true);
     } finally {
       registry.dispose();
     }
   });
 
-  it("does not publish a session when Review navigation fails", async () => {
+  it("fails submission when Review navigation fails", async () => {
     const navigationFailure = {
       _tag: "WidgetNavigationError",
       cause: new Error("navigation failed"),
@@ -532,11 +551,6 @@ describe("Yield Entry", () => {
       await expect
         .poll(() => AsyncResult.isFailure(registry.get(facade.submitAtom)))
         .toBe(true);
-      await expect
-        .poll(() =>
-          registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
-        )
-        .toBe(false);
     } finally {
       registry.dispose();
     }
@@ -561,9 +575,6 @@ describe("Yield Entry", () => {
       expect(ports.trackEvent).toHaveBeenCalledWith("connectWalletClicked");
       expect(ports.push).not.toHaveBeenCalled();
       expect(ports.replace).not.toHaveBeenCalled();
-      expect(
-        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
-      ).toBe(false);
     } finally {
       registry.dispose();
     }
@@ -603,9 +614,6 @@ describe("Yield Entry", () => {
       expect(ports.closeChain).not.toHaveBeenCalled();
       expect(ports.openConnect).not.toHaveBeenCalled();
       expect(ports.push).not.toHaveBeenCalled();
-      expect(
-        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
-      ).toBe(false);
     } finally {
       registry.dispose();
     }
@@ -648,9 +656,6 @@ describe("Yield Entry", () => {
       try {
         registry.set(facade.submitAtom, undefined);
         await readSubmitOutcome(registry, facade.submitAtom).toBe(expected);
-        expect(
-          registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
-        ).toBe(false);
         expect(ports.openConnect).not.toHaveBeenCalled();
         expect(ports.closeChain).not.toHaveBeenCalled();
         expect(ports.trackEvent).not.toHaveBeenCalled();

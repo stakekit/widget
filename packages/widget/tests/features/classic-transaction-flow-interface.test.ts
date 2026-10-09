@@ -9,10 +9,14 @@ import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
-  isActiveClassicTransactionFlowPathAtom,
+  getClassicFlowRouteGroup,
   startClassicTransactionFlowAtom,
 } from "../../src/features/classic-transaction-flow/index";
-import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import {
+  type ClassicTransactionFlowIntake,
+  decodeClassicFlowNavigationState,
+  type NavigatingClassicTransactionFlowStart,
+} from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { walletScopeAtom } from "../../src/features/wallet/index";
 import {
   makeWidgetNavigation,
@@ -23,7 +27,7 @@ import {
   disconnectedLedgerConnectorState,
   disconnectedNormalizedWalletState,
 } from "../../src/services/wallet/wallet-state";
-import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
+import { yieldApiYieldFixture } from "../fixtures";
 import { makeClassicFlowTestKit } from "../utils/classic-flow-test-kit";
 import { makeTestNavigation } from "../utils/services/widget-navigation";
 
@@ -104,25 +108,6 @@ const makeManageIntake = (): Intake<"Manage"> => {
   };
 };
 
-const makeYieldActionContinuationIntake =
-  (): Intake<"YieldActionContinuation"> => {
-    const selectedYield = yieldApiYieldFixture();
-
-    return {
-      _tag: "YieldActionContinuation",
-      action: yieldApiActionFixture({
-        id: "action-1",
-        status: "WAITING_FOR_NEXT",
-        type: "STAKE",
-        yieldId: selectedYield.id,
-      }),
-      providersDetails: [],
-      selectedValidators: [],
-      selectedYield,
-      walletScope,
-    };
-  };
-
 const makeRegistry = (
   push: (path: WidgetPath, options?: WidgetNavigationOptions) => void,
   currentWalletScope: WalletScopeKey = walletScope
@@ -177,10 +162,65 @@ const readStartOutcome = (registry: AtomRegistry.AtomRegistry) =>
     .get(startClassicTransactionFlowAtom)
     .pipe(AsyncResult.value, Option.getOrNull);
 
-const waitForActivePath = (registry: AtomRegistry.AtomRegistry, path: string) =>
-  expect
-    .poll(() => registry.get(isActiveClassicTransactionFlowPathAtom(path)))
-    .toBe(true);
+const startCases: ReadonlyArray<
+  Readonly<{
+    readonly name: string;
+    readonly makeCommand: () => NavigatingClassicTransactionFlowStart;
+    readonly reviewPath: string;
+    readonly stepsPath: string;
+    readonly completePath: string;
+  }>
+> = [
+  {
+    completePath: "/complete",
+    makeCommand: () => ({ intake: makeEnterIntake(), mount: { _tag: "Earn" } }),
+    name: "root Enter",
+    reviewPath: "/review",
+    stepsPath: "/steps",
+  },
+  {
+    completePath: "/positions/yield/balance/stake/complete",
+    makeCommand: () => ({
+      intake: makeEnterIntake(),
+      mount: {
+        _tag: "PositionStake",
+        balanceId: "balance",
+        integrationId: "yield",
+      },
+    }),
+    name: "position Stake",
+    reviewPath: "/positions/yield/balance/stake/review",
+    stepsPath: "/positions/yield/balance/stake/steps",
+  },
+  {
+    completePath: "/positions/yield/balance/unstake/complete",
+    makeCommand: () => ({
+      intake: makeExitIntake(),
+      mount: {
+        _tag: "PositionExit",
+        balanceId: "balance",
+        integrationId: "yield",
+      },
+    }),
+    name: "position Exit",
+    reviewPath: "/positions/yield/balance/unstake/review",
+    stepsPath: "/positions/yield/balance/unstake/steps",
+  },
+  {
+    completePath: "/positions/yield/balance/pending-action/complete",
+    makeCommand: () => ({
+      intake: makeManageIntake(),
+      mount: {
+        _tag: "PositionManage",
+        balanceId: "balance",
+        integrationId: "yield",
+      },
+    }),
+    name: "position Manage",
+    reviewPath: "/positions/yield/balance/pending-action/review",
+    stepsPath: "/positions/yield/balance/pending-action/steps",
+  },
+];
 
 describe("Classic Transaction Flow interface", () => {
   it("rejects Start when the captured Wallet Scope Owner is stale", async () => {
@@ -197,192 +237,108 @@ describe("Classic Transaction Flow interface", () => {
         .poll(() => readStartOutcome(registry))
         .toEqual({ _tag: "RejectedOwner" });
       expect(push).not.toHaveBeenCalled();
-      expect(
-        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
-      ).toBe(false);
     } finally {
       registry.dispose();
     }
   });
 
-  it("starts root Enter and publishes only its active route lifetime", async () => {
-    const push = vi.fn();
-    const registry = makeRegistry(push);
+  it.each(startCases)(
+    "starts $name by pushing its Review route with the new Session",
+    async ({ completePath, makeCommand, reviewPath, stepsPath }) => {
+      const push =
+        vi.fn<(path: WidgetPath, options?: WidgetNavigationOptions) => void>();
+      const registry = makeRegistry(push);
+      const command = makeCommand();
 
-    try {
-      registry.set(startClassicTransactionFlowAtom, {
-        intake: makeEnterIntake(),
-        mount: { _tag: "Earn" },
-      });
+      try {
+        registry.set(startClassicTransactionFlowAtom, command);
 
-      await waitForActivePath(registry, "/review");
-      expect(push).toHaveBeenCalledWith("/review", {
-        _tag: "Push",
-        path: "/review",
-      });
-      expect(
-        registry.get(isActiveClassicTransactionFlowPathAtom("/review"))
-      ).toBe(true);
-      expect(
-        registry.get(isActiveClassicTransactionFlowPathAtom("/steps"))
-      ).toBe(true);
-      expect(
-        registry.get(isActiveClassicTransactionFlowPathAtom("/complete"))
-      ).toBe(true);
-      expect(registry.get(isActiveClassicTransactionFlowPathAtom("/"))).toBe(
-        false
-      );
-    } finally {
-      registry.dispose();
+        await expect
+          .poll(() => readStartOutcome(registry)?._tag)
+          .toBe("Started");
+        expect(push).toHaveBeenCalledOnce();
+        const [path, options] = push.mock.calls[0] ?? [];
+        expect(path).toBe(reviewPath);
+        const session = Option.getOrThrow(
+          decodeClassicFlowNavigationState(options?.state)
+        );
+        expect(session.intake).toEqual(command.intake);
+        expect(session.mount).toEqual(command.mount);
+        expect(session.destination).toEqual({
+          completePath,
+          reviewPath,
+          stepsPath,
+        });
+        const outcome = readStartOutcome(registry);
+        expect(outcome?._tag === "Started" && outcome.session).toBe(session);
+      } finally {
+        registry.dispose();
+      }
     }
+  );
+});
+
+describe("Classic Flow route group", () => {
+  it.each([
+    ["/review", "/"],
+    ["/steps", "/"],
+    ["/complete", "/"],
+    ["/complete/", "/"],
+    ["/positions/yield/balance/stake/review", "/positions/yield/balance/stake"],
+    ["/positions/yield/balance/stake/steps", "/positions/yield/balance/stake"],
+    [
+      "/positions/yield/balance/stake/complete/",
+      "/positions/yield/balance/stake",
+    ],
+    [
+      "/positions/yield/balance/unstake/review",
+      "/positions/yield/balance/unstake",
+    ],
+    [
+      "/positions/yield/balance/unstake/complete",
+      "/positions/yield/balance/unstake",
+    ],
+    [
+      "/positions/yield/balance/pending-action/steps",
+      "/positions/yield/balance/pending-action",
+    ],
+    [
+      "/positions/yield/other/pending-action/steps",
+      "/positions/yield/other/pending-action",
+    ],
+    ["/activity/action-1", "/activity/action-1"],
+    ["/activity/action-1/", "/activity/action-1"],
+    ["/activity/action-1/steps", "/activity/action-1"],
+    ["/activity/action-1/complete", "/activity/action-1"],
+    ["/activity/action-2/steps", "/activity/action-2"],
+    ["/", null],
+    ["/positions", null],
+    ["/positions/yield/balance", null],
+    ["/activity", null],
+    ["/activity/", null],
+    ["/borrow/review", null],
+  ] as const)("groups %s as %s", (pathname, group) => {
+    expect(getClassicFlowRouteGroup(pathname)).toBe(group);
   });
 
-  it("starts position Stake at its canonical route mount", async () => {
-    const push = vi.fn();
-    const registry = makeRegistry(push);
+  it("shares a group across one mount's flow routes and separates other mounts", () => {
+    const groupsOf = (paths: ReadonlyArray<string>) =>
+      new Set(paths.map(getClassicFlowRouteGroup));
+    const mounts = [
+      "",
+      "/positions/yield/balance/stake",
+      "/positions/yield/balance/unstake",
+      "/positions/yield/balance/pending-action",
+      "/positions/yield/other/stake",
+    ];
 
-    try {
-      registry.set(startClassicTransactionFlowAtom, {
-        intake: makeEnterIntake(),
-        mount: {
-          _tag: "PositionStake",
-          balanceId: "balance",
-          integrationId: "yield",
-        },
-      });
-
-      await waitForActivePath(
-        registry,
-        "/positions/yield/balance/stake/review"
-      );
-      expect(push).toHaveBeenCalledWith(
-        "/positions/yield/balance/stake/review",
-        {
-          _tag: "Push",
-          path: "/positions/yield/balance/stake/review",
-        }
-      );
+    for (const base of mounts) {
       expect(
-        registry.get(
-          isActiveClassicTransactionFlowPathAtom(
-            "/positions/yield/balance/stake/steps"
-          )
-        )
-      ).toBe(true);
-    } finally {
-      registry.dispose();
+        groupsOf([`${base}/review`, `${base}/steps`, `${base}/complete`]).size
+      ).toBe(1);
     }
-  });
-
-  it("starts position Exit at its canonical route mount", async () => {
-    const push = vi.fn();
-    const registry = makeRegistry(push);
-
-    try {
-      registry.set(startClassicTransactionFlowAtom, {
-        intake: makeExitIntake(),
-        mount: {
-          _tag: "PositionExit",
-          balanceId: "balance",
-          integrationId: "yield",
-        },
-      });
-
-      await waitForActivePath(
-        registry,
-        "/positions/yield/balance/unstake/review"
-      );
-      expect(push).toHaveBeenCalledWith(
-        "/positions/yield/balance/unstake/review",
-        {
-          _tag: "Push",
-          path: "/positions/yield/balance/unstake/review",
-        }
-      );
-    } finally {
-      registry.dispose();
-    }
-  });
-
-  it("starts position Manage at its canonical route mount", async () => {
-    const push = vi.fn();
-    const registry = makeRegistry(push);
-
-    try {
-      registry.set(startClassicTransactionFlowAtom, {
-        intake: makeManageIntake(),
-        mount: {
-          _tag: "PositionManage",
-          balanceId: "balance",
-          integrationId: "yield",
-        },
-      });
-
-      await waitForActivePath(
-        registry,
-        "/positions/yield/balance/pending-action/review"
-      );
-      expect(push).toHaveBeenCalledWith(
-        "/positions/yield/balance/pending-action/review",
-        {
-          _tag: "Push",
-          path: "/positions/yield/balance/pending-action/review",
-        }
-      );
-    } finally {
-      registry.dispose();
-    }
-  });
-
-  it("starts Yield Action Continuation at the existing Activity details route", async () => {
-    const push = vi.fn();
-    const registry = makeRegistry(push);
-
-    try {
-      registry.set(startClassicTransactionFlowAtom, {
-        intake: makeYieldActionContinuationIntake(),
-        mount: {
-          _tag: "YieldActionContinuation",
-        },
-      });
-
-      await waitForActivePath(registry, "/activity/action-1");
-      expect(push).not.toHaveBeenCalled();
-      expect(
-        registry.get(
-          isActiveClassicTransactionFlowPathAtom("/activity/action-1/steps")
-        )
-      ).toBe(true);
-    } finally {
-      registry.dispose();
-    }
-  });
-
-  it("does not own another action's Activity route", async () => {
-    const push = vi.fn();
-    const registry = makeRegistry(push);
-
-    try {
-      registry.set(startClassicTransactionFlowAtom, {
-        intake: makeYieldActionContinuationIntake(),
-        mount: {
-          _tag: "YieldActionContinuation",
-        },
-      });
-
-      await waitForActivePath(registry, "/activity/action-1/steps");
-      expect(
-        registry.get(
-          isActiveClassicTransactionFlowPathAtom("/activity/action-2/steps")
-        )
-      ).toBe(false);
-      expect(
-        registry.get(
-          isActiveClassicTransactionFlowPathAtom("/activity/action-2/complete")
-        )
-      ).toBe(false);
-    } finally {
-      registry.dispose();
-    }
+    expect(groupsOf(mounts.map((base) => `${base}/review`)).size).toBe(
+      mounts.length
+    );
   });
 });

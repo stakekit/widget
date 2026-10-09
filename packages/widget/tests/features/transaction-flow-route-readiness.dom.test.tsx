@@ -16,52 +16,27 @@ import { Action } from "../../src/domain/borrow/execution/action";
 import { IntegrationId, MarketId } from "../../src/domain/borrow/ids";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
-import type { BorrowFlowSession } from "../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
+import {
+  BorrowFlowSession,
+  makeBorrowFlowNavigationState,
+} from "../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import {
   BorrowTransactionFlowCompletionGuard,
   BorrowTransactionFlowExecutionScope,
   BorrowTransactionFlowRoute,
   useBorrowTransactionFlowExecution,
 } from "../../src/features/borrow-transaction-flow/react/borrow-flow-route";
-import { currentBorrowFlowSessionAtom } from "../../src/features/borrow-transaction-flow/state/atoms/borrow-flow";
 import { BorrowTransactionFlowService } from "../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
-import type { ClassicFlowSession } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { ClassicFlowRoute } from "../../src/features/classic-transaction-flow/react/classic-flow-route";
-import { currentClassicFlowSessionAtom } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow";
-import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
-import { toWidgetPath } from "../../src/services/navigation/widget-navigation";
 import { initializeTransactionWorkflow } from "../../src/services/transaction-workflow/internal/model";
 import {
   BorrowTransactionWorkflowInput,
   type TransactionWorkflowState,
 } from "../../src/services/transaction-workflow/transaction-workflow-model";
-import { yieldApiYieldFixture } from "../fixtures";
 import { render } from "../utils/test-utils.dom.tsx";
 
 const address = Schema.decodeSync(WalletAddress)("0xWallet");
 const walletScope = new WalletScopeKey({ address, network: "ethereum" });
-const selectedStake = yieldApiYieldFixture();
-const classicSession: ClassicFlowSession = {
-  epoch: 1,
-  destination: {
-    reviewPath: toWidgetPath("/review"),
-    stepsPath: toWidgetPath("/steps"),
-    completePath: toWidgetPath("/complete"),
-  },
-  mount: { _tag: "Earn" },
-  intake: {
-    _tag: "Enter",
-    gasFeeToken: selectedStake.mechanics.gasFeeToken,
-    providersDetails: [],
-    request: { address, yieldId: selectedStake.id },
-    selectedStake,
-    selectedToken: selectedStake.token,
-    selectedValidators: new Map(),
-    walletScope,
-  },
-};
-const borrowSession: BorrowFlowSession = {
-  epoch: 1,
+const borrowSession = new BorrowFlowSession({
   walletScope,
   intake: {
     command: {
@@ -86,20 +61,6 @@ const borrowSession: BorrowFlowSession = {
       warnings: [],
     },
   },
-};
-
-const makeDelayedSession = Effect.fn("test.makeDelayedSession")(function* <A>(
-  session: A
-) {
-  const current = yield* SubscriptionRef.make<A | null>(session);
-  const ready = yield* Deferred.make<void>();
-  return {
-    current,
-    ready,
-    states: Stream.unwrap(
-      Deferred.await(ready).pipe(Effect.as(SubscriptionRef.changes(current)))
-    ),
-  };
 });
 
 const actEffect = <A,>(effect: Effect.Effect<A>) =>
@@ -109,161 +70,6 @@ const actEffect = <A,>(effect: Effect.Effect<A>) =>
       await Effect.runPromise(effect);
     })
   );
-
-describe("Transaction Flow route admission", () => {
-  it.live.each([
-    { kind: "Classic", projection: "cold" },
-    { kind: "Classic", projection: "retained null" },
-    { kind: "Borrow", projection: "cold" },
-    { kind: "Borrow", projection: "retained null" },
-  ] as const)(
-    "$kind waits for authoritative state with a $projection projection, and reads afresh on re-entry",
-    ({ kind, projection }) =>
-      Effect.gen(function* () {
-        const classic = yield* makeDelayedSession(classicSession);
-        const borrow = yield* makeDelayedSession(borrowSession);
-        const acquired = vi.fn();
-        const released = vi.fn();
-        const classicService = ClassicTransactionFlowService.of({
-          acquireSession: (session) =>
-            Effect.acquireRelease(
-              Effect.sync(() => {
-                acquired(session.epoch);
-                return {
-                  intake: session.intake,
-                  acquireReview: () => Effect.die("Not used"),
-                  acquireExecution: () => Effect.die("Not used"),
-                };
-              }),
-              () => Effect.sync(() => released())
-            ),
-          currentSession: classic.states,
-          start: () => Effect.die("Not used"),
-        });
-        const borrowService = BorrowTransactionFlowService.of({
-          acquireSession: (session) =>
-            Effect.acquireRelease(
-              Effect.sync(() => {
-                acquired(session.epoch);
-                return {
-                  intake: session.intake,
-                  acquireReview: () => Effect.die("Not used"),
-                  acquireExecution: () => Effect.die("Not used"),
-                };
-              }),
-              () => Effect.sync(() => released())
-            ),
-          currentSession: borrow.states,
-          start: () => Effect.die("Not used"),
-        });
-        const router = createMemoryRouter(
-          [
-            { path: "/", element: <div>Entry</div> },
-            { path: "/borrow", element: <div>Entry</div> },
-            {
-              element:
-                kind === "Classic" ? (
-                  <ClassicFlowRoute expected="Enter" />
-                ) : (
-                  <BorrowTransactionFlowRoute expected="BorrowEntry" />
-                ),
-              children: [{ path: "/review", element: <div>Review</div> }],
-            },
-          ],
-          { initialEntries: ["/review"] }
-        );
-        const app = yield* Effect.promise(() =>
-          render(
-            <RegistryProvider
-              initialValues={[
-                Atom.initialValue(
-                  walletRuntime.layer,
-                  Layer.merge(
-                    Layer.succeed(
-                      ClassicTransactionFlowService,
-                      classicService
-                    ),
-                    Layer.succeed(BorrowTransactionFlowService, borrowService)
-                  ) as never
-                ),
-                ...(projection === "retained null"
-                  ? [
-                      Atom.initialValue(currentClassicFlowSessionAtom, null),
-                      Atom.initialValue(currentBorrowFlowSessionAtom, null),
-                    ]
-                  : []),
-              ]}
-            >
-              <RouterProvider router={router} />
-            </RegistryProvider>
-          )
-        );
-
-        expect(router.state.location.pathname).toBe("/review");
-        expect(
-          app.container.querySelector('[aria-busy="true"]')
-        ).not.toBeNull();
-        yield* actEffect(
-          Effect.all([
-            Deferred.succeed(classic.ready, undefined),
-            Deferred.succeed(borrow.ready, undefined),
-          ])
-        );
-        yield* Effect.promise(() =>
-          vi.waitFor(() => expect(app.container.textContent).toBe("Review"))
-        );
-        expect(acquired).toHaveBeenCalledWith(1);
-
-        yield* Effect.promise(() =>
-          act(async () => {
-            await router.navigate("/");
-          })
-        );
-        yield* Effect.promise(() =>
-          vi.waitFor(() => expect(released).toHaveBeenCalledTimes(1))
-        );
-        yield* SubscriptionRef.set(classic.current, {
-          ...classicSession,
-          epoch: 2,
-        });
-        yield* SubscriptionRef.set(borrow.current, {
-          ...borrowSession,
-          epoch: 2,
-        });
-        yield* Effect.promise(() =>
-          act(async () => {
-            await router.navigate("/review");
-          })
-        );
-        yield* Effect.promise(() =>
-          vi.waitFor(() => expect(acquired).toHaveBeenLastCalledWith(2))
-        );
-        expect(router.state.location.pathname).toBe("/review");
-
-        yield* actEffect(
-          Effect.all([
-            SubscriptionRef.set(classic.current, null),
-            SubscriptionRef.set(borrow.current, null),
-          ])
-        );
-        yield* Effect.promise(() =>
-          vi.waitFor(() => expect(app.container.textContent).toBe("Entry"))
-        );
-        // A fresh visit with genuinely absent authoritative state still redirects.
-        yield* Effect.promise(() =>
-          act(async () => {
-            await router.navigate("/review");
-          })
-        );
-        yield* Effect.promise(() =>
-          vi.waitFor(() => expect(app.container.textContent).toBe("Entry"))
-        );
-        expect(acquired).toHaveBeenCalledTimes(2);
-        app.unmount();
-        router.dispose();
-      })
-  );
-});
 
 const BorrowExecutionProbe = () => {
   const execution = useBorrowTransactionFlowExecution();
@@ -338,17 +144,13 @@ describe("Borrow completion admission", () => {
           })
         );
         const service = BorrowTransactionFlowService.of({
-          currentSession: Stream.concat(
-            Stream.succeed(borrowSession),
-            Stream.never
-          ),
-          start: () => Effect.die("Not used"),
-          acquireSession: () =>
+          openSession: () =>
             Effect.succeed({
               intake: borrowSession.intake,
               acquireExecution,
               acquireReview: () => Effect.die("Not used"),
             }),
+          start: () => Effect.die("Not used"),
         });
         const router = createMemoryRouter(
           [
@@ -378,7 +180,14 @@ describe("Borrow completion admission", () => {
               ],
             },
           ],
-          { initialEntries: ["/borrow/steps"] }
+          {
+            initialEntries: [
+              {
+                pathname: "/borrow/steps",
+                state: makeBorrowFlowNavigationState(borrowSession),
+              },
+            ],
+          }
         );
         const app = yield* Effect.promise(() =>
           render(
@@ -388,7 +197,6 @@ describe("Borrow completion admission", () => {
                   walletRuntime.layer,
                   Layer.succeed(BorrowTransactionFlowService, service) as never
                 ),
-                Atom.initialValue(currentBorrowFlowSessionAtom, borrowSession),
               ]}
             >
               <RouterProvider router={router} />

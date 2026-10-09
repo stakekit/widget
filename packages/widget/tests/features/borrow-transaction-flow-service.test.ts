@@ -17,7 +17,10 @@ import { Transaction } from "../../src/domain/borrow/execution/transaction";
 import { IntegrationId, MarketId } from "../../src/domain/borrow/ids";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
-import type { BorrowTransactionFlowIntake } from "../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
+import {
+  type BorrowTransactionFlowIntake,
+  decodeBorrowFlowNavigationState,
+} from "../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import { BorrowActionCreationError } from "../../src/features/borrow-transaction-flow/state/orchestration/borrow-flow-review";
 import { BorrowTransactionFlowService } from "../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
 import { BorrowOperations } from "../../src/services/api/operations";
@@ -161,20 +164,21 @@ const makeBorrowFlowTestLayer = Effect.fn("makeBorrowFlowTestLayer")(function* (
   } as const;
 });
 
+// The flow route opens the Session it was navigated to, in its own Scope.
 const acquireStartedSession = Effect.fn("test.acquireStartedBorrowSession")(
   function* (service: BorrowTransactionFlowService["Service"]) {
     const started = yield* service.start(intake);
     if (started._tag !== "Started") {
       return yield* Effect.die("Expected a started Borrow Flow Session");
     }
-    const session = yield* service.acquireSession(started.session);
+    const session = yield* service.openSession(started.session);
     return { captured: started.session, session } as const;
   }
 );
 
 describe("BorrowTransactionFlowService", () => {
   it.effect(
-    "creates a fresh Session and derives Review navigation from a copied intake",
+    "navigates to Review carrying a fresh Flow Session with a copied intake",
     () =>
       Effect.gen(function* () {
         const commands: Array<WidgetNavigationCommand> = [];
@@ -196,61 +200,53 @@ describe("BorrowTransactionFlowService", () => {
           })
         ).pipe(Effect.provide(flow.layer));
 
-        expect(result.first).toMatchObject({
-          _tag: "Started",
-          session: { epoch: 1 },
-        });
-        expect(result.second).toMatchObject({
-          _tag: "Started",
-          session: { epoch: 2 },
-        });
+        if (
+          result.first._tag !== "Started" ||
+          result.second._tag !== "Started"
+        ) {
+          throw new Error("Expected started Borrow Flow Sessions");
+        }
+        expect(result.first.session).not.toBe(result.second.session);
+        expect(result.second.session.intake).toEqual(intake);
+        expect(result.second.session.intake).not.toBe(intake);
         expect(
-          result.second._tag === "Started" && result.second.session.intake
-        ).not.toBe(intake);
-        expect(commands).toEqual([
-          { _tag: "Push", path: toWidgetPath("/borrow/review") },
-          { _tag: "Push", path: toWidgetPath("/borrow/review") },
+          commands.map((command) => ({
+            path: command._tag === "Back" ? null : command.path,
+            session: Option.getOrNull(
+              decodeBorrowFlowNavigationState(command.state)
+            ),
+          }))
+        ).toEqual([
+          {
+            path: toWidgetPath("/borrow/review"),
+            session: result.first.session,
+          },
+          {
+            path: toWidgetPath("/borrow/review"),
+            session: result.second.session,
+          },
         ]);
       })
   );
 
   it.effect(
-    "abandons the replacement Session when its derived Review navigation fails",
-    () =>
-      Effect.gen(function* () {
-        const flow = yield* makeBorrowFlowTestLayer(
-          connectedWalletState(walletScope),
-          {
-            execute: () =>
-              Effect.fail(new WidgetNavigationError({ cause: "blocked" })),
-          }
-        );
-        const result = yield* Effect.scoped(
-          Effect.gen(function* () {
-            const service = yield* BorrowTransactionFlowService;
-            const failed = yield* Effect.exit(service.start(intake));
-            const current = yield* service.currentSession.pipe(Stream.runHead);
-            return { current, failed };
-          })
-        ).pipe(Effect.provide(flow.layer));
-
-        expect(result.failed._tag).toBe("Failure");
-        expect(result.current).toEqual(Option.some(null));
-      })
-  );
-
-  it.effect(
-    "finishes a committed Start when its caller is interrupted during navigation",
+    "finishes Review navigation before an interrupted Start completes",
     () =>
       Effect.gen(function* () {
         const navigationStarted = yield* Deferred.make<void>();
         const navigationRelease = yield* Deferred.make<void>();
+        const navigated: Array<string> = [];
         const flow = yield* makeBorrowFlowTestLayer(
           connectedWalletState(walletScope),
           {
             execute: () =>
               Deferred.succeed(navigationStarted, undefined).pipe(
-                Effect.andThen(Deferred.await(navigationRelease))
+                Effect.andThen(Deferred.await(navigationRelease)),
+                Effect.andThen(
+                  Effect.sync(() => {
+                    navigated.push("review");
+                  })
+                )
               ),
           }
         );
@@ -265,73 +261,117 @@ describe("BorrowTransactionFlowService", () => {
               Effect.forkChild({ startImmediately: true })
             );
             yield* Effect.yieldNow;
-            const duringInterrupt = yield* service.currentSession.pipe(
-              Stream.runHead
-            );
+            const interruptedBeforeNavigation = interrupt.pollUnsafe();
             yield* Deferred.succeed(navigationRelease, undefined);
             yield* Fiber.join(interrupt);
-            const afterNavigation = yield* service.currentSession.pipe(
-              Stream.runHead
-            );
-            return { afterNavigation, duringInterrupt };
+            return { interruptedBeforeNavigation };
           })
         ).pipe(Effect.provide(flow.layer));
 
-        expect(result.duringInterrupt).toMatchObject({
-          _tag: "Some",
-          value: { epoch: 1 },
-        });
-        expect(result.afterNavigation).toMatchObject({
-          _tag: "Some",
-          value: { epoch: 1 },
-        });
+        expect(result.interruptedBeforeNavigation).toBeUndefined();
+        expect(navigated).toEqual(["review"]);
       })
   );
 
+  it.effect("fails Start when its Review navigation fails", () =>
+    Effect.gen(function* () {
+      const flow = yield* makeBorrowFlowTestLayer(
+        connectedWalletState(walletScope),
+        {
+          execute: () =>
+            Effect.fail(new WidgetNavigationError({ cause: "blocked" })),
+        }
+      );
+      const failed = yield* Effect.scoped(
+        Effect.gen(function* () {
+          const service = yield* BorrowTransactionFlowService;
+          return yield* Effect.exit(service.start(intake));
+        })
+      ).pipe(Effect.provide(flow.layer));
+
+      expect(failed._tag).toBe("Failure");
+    })
+  );
+
+  it.effect("rejects disabled or non-owning Starts", () =>
+    Effect.gen(function* () {
+      const disabledFlow = yield* makeBorrowFlowTestLayer(
+        connectedWalletState(walletScope),
+        { borrowEnabled: false }
+      );
+      const otherOwnerFlow = yield* makeBorrowFlowTestLayer(
+        connectedWalletState(
+          new WalletScopeKey({ address: otherAddress, network: "base" })
+        )
+      );
+      const start = Effect.scoped(
+        Effect.gen(function* () {
+          return yield* (yield* BorrowTransactionFlowService).start(intake);
+        })
+      );
+
+      expect(yield* start.pipe(Effect.provide(disabledFlow.layer))).toEqual({
+        _tag: "RejectedDisabled",
+      });
+      expect(yield* start.pipe(Effect.provide(otherOwnerFlow.layer))).toEqual({
+        _tag: "RejectedOwner",
+      });
+    })
+  );
+
   it.effect(
-    "rejects disabled or non-owning Starts and clears an owner-invalidated Session",
+    "interrupts opening a Flow Session for another Wallet Scope Owner",
     () =>
       Effect.gen(function* () {
-        const disabledFlow = yield* makeBorrowFlowTestLayer(
-          connectedWalletState(walletScope),
-          { borrowEnabled: false }
-        );
         const flow = yield* makeBorrowFlowTestLayer(
           connectedWalletState(walletScope)
         );
-        const disabled = yield* Effect.scoped(
-          Effect.gen(function* () {
-            return yield* (yield* BorrowTransactionFlowService).start(intake);
-          })
-        ).pipe(Effect.provide(disabledFlow.layer));
-        expect(disabled).toEqual({ _tag: "RejectedDisabled" });
-
-        const result = yield* Effect.scoped(
+        const exit = yield* Effect.scoped(
           Effect.gen(function* () {
             const service = yield* BorrowTransactionFlowService;
             const started = yield* service.start(intake);
-            yield* flow.setWalletState(connectingWalletState(walletScope));
-            const retained = yield* service.currentSession.pipe(Stream.runHead);
+            if (started._tag !== "Started") return yield* Effect.die("start");
             yield* flow.setWalletState(
               connectedWalletState(
                 new WalletScopeKey({ address: otherAddress, network: "base" })
               )
             );
-            const cleared = yield* service.currentSession.pipe(
-              Stream.filter((current) => current === null),
-              Stream.runHead
-            );
-            const rejected = yield* service.start(intake);
-            return { cleared, rejected, retained, started };
+            return yield* Effect.exit(service.openSession(started.session));
           })
         ).pipe(Effect.provide(flow.layer));
-        expect(result.started._tag).toBe("Started");
-        expect(result.retained).toMatchObject({
-          _tag: "Some",
-          value: { epoch: 1 },
+
+        expect(Exit.hasInterrupts(exit)).toBe(true);
+      })
+  );
+
+  it.effect(
+    "reopens a revisited Flow Session without its previous reservation",
+    () =>
+      Effect.gen(function* () {
+        const flow = yield* makeBorrowFlowTestLayer(
+          connectedWalletState(walletScope)
+        );
+        const result = yield* Effect.scoped(
+          Effect.gen(function* () {
+            const service = yield* BorrowTransactionFlowService;
+            const started = yield* service.start(intake);
+            if (started._tag !== "Started") return yield* Effect.die("start");
+            const confirmed = yield* Effect.scoped(
+              Effect.gen(function* () {
+                const session = yield* service.openSession(started.session);
+                const review = yield* session.acquireReview();
+                return yield* review.confirm();
+              })
+            );
+            const reopened = yield* service.openSession(started.session);
+            return { confirmed, execution: yield* reopened.acquireExecution() };
+          })
+        ).pipe(Effect.provide(flow.layer));
+
+        expect(result).toEqual({
+          confirmed: { _tag: "Confirmed" },
+          execution: { _tag: "RejectedNoReservation" },
         });
-        expect(result.cleared).toEqual(Option.some(null));
-        expect(result.rejected).toEqual({ _tag: "RejectedOwner" });
       })
   );
 
@@ -534,34 +574,6 @@ describe("BorrowTransactionFlowService", () => {
     })
   );
 
-  it.effect("does not let a released stale Session clear its replacement", () =>
-    Effect.gen(function* () {
-      const flow = yield* makeBorrowFlowTestLayer(
-        connectedWalletState(walletScope)
-      );
-      const result = yield* Effect.scoped(
-        Effect.gen(function* () {
-          const service = yield* BorrowTransactionFlowService;
-          const first = yield* service.start(intake);
-          if (first._tag !== "Started") return yield* Effect.die("first");
-          const firstScope = yield* Scope.make();
-          yield* service
-            .acquireSession(first.session)
-            .pipe(Effect.provideService(Scope.Scope, firstScope));
-          const second = yield* service.start(intake);
-          if (second._tag !== "Started") return yield* Effect.die("second");
-          yield* Scope.close(firstScope, Exit.void);
-          const current = yield* service.currentSession.pipe(Stream.runHead);
-          return { current, second };
-        })
-      ).pipe(Effect.provide(flow.layer));
-      expect(result.current).toMatchObject({
-        _tag: "Some",
-        value: { epoch: result.second.session.epoch },
-      });
-    })
-  );
-
   it.effect(
     "retries automatic completion navigation every 100 milliseconds",
     () =>
@@ -628,7 +640,7 @@ describe("BorrowTransactionFlowService", () => {
   );
 
   it.effect(
-    "interrupts a replaced Session's in-flight Confirm before it reserves or navigates",
+    "interrupts an in-flight Confirm before it reserves or navigates when its Session Scope closes",
     () =>
       Effect.gen(function* () {
         const commands: Array<WidgetNavigationCommand> = [];
@@ -655,18 +667,23 @@ describe("BorrowTransactionFlowService", () => {
         const result = yield* Effect.scoped(
           Effect.gen(function* () {
             const service = yield* BorrowTransactionFlowService;
-            const { session } = yield* acquireStartedSession(service);
+            const started = yield* service.start(intake);
+            if (started._tag !== "Started") return yield* Effect.die("start");
+            const sessionScope = yield* Scope.make();
+            const session = yield* service
+              .openSession(started.session)
+              .pipe(Scope.provide(sessionScope));
             const review = yield* session.acquireReview();
             const confirmation = yield* review
               .confirm()
               .pipe(Effect.forkChild({ startImmediately: true }));
             yield* Deferred.await(creationStarted);
-            const replacement = yield* service
-              .start(intake)
-              .pipe(Effect.forkChild({ startImmediately: true }));
+            const close = yield* Scope.close(sessionScope, Exit.void).pipe(
+              Effect.forkChild({ startImmediately: true })
+            );
             yield* Effect.yieldNow;
             yield* Deferred.succeed(creationRelease, undefined);
-            yield* Fiber.join(replacement);
+            yield* Fiber.join(close);
             const confirmed = yield* Fiber.await(confirmation);
             const back = yield* Effect.exit(review.back());
             return {
@@ -680,10 +697,7 @@ describe("BorrowTransactionFlowService", () => {
         expect(Exit.hasInterrupts(result.confirmed)).toBe(true);
         expect(Exit.hasInterrupts(result.back)).toBe(true);
         expect(result.creationInterrupted).toBe(true);
-        expect(commands).toEqual([
-          { _tag: "Push", path: toWidgetPath("/borrow/review") },
-          { _tag: "Push", path: toWidgetPath("/borrow/review") },
-        ]);
+        expect(commands.map((command) => command._tag)).toEqual(["Push"]);
       })
   );
 
@@ -741,27 +755,8 @@ describe("BorrowTransactionFlowService", () => {
       })
   );
 
-  it.effect("interrupts acquisition of a Session that has ended", () =>
-    Effect.gen(function* () {
-      const flow = yield* makeBorrowFlowTestLayer(
-        connectedWalletState(walletScope)
-      );
-      const exit = yield* Effect.scoped(
-        Effect.gen(function* () {
-          const service = yield* BorrowTransactionFlowService;
-          const first = yield* service.start(intake);
-          if (first._tag !== "Started") return yield* Effect.die("first");
-          yield* service.start(intake);
-          return yield* Effect.exit(service.acquireSession(first.session));
-        })
-      ).pipe(Effect.provide(flow.layer));
-
-      expect(Exit.hasInterrupts(exit)).toBe(true);
-    })
-  );
-
   it.effect(
-    "finishes an in-flight Execution navigation before a replacement Session navigates",
+    "lets an in-flight Execution navigation finish before its Session Scope closes",
     () =>
       Effect.gen(function* () {
         const backStarted = yield* Deferred.make<void>();
@@ -788,35 +783,38 @@ describe("BorrowTransactionFlowService", () => {
         const result = yield* Effect.scoped(
           Effect.gen(function* () {
             const service = yield* BorrowTransactionFlowService;
-            const { session } = yield* acquireStartedSession(service);
+            const started = yield* service.start(intake);
+            if (started._tag !== "Started") return yield* Effect.die("start");
+            const sessionScope = yield* Scope.make();
+            const session = yield* service
+              .openSession(started.session)
+              .pipe(Scope.provide(sessionScope));
             const review = yield* session.acquireReview();
             yield* review.confirm();
             const acquired = yield* session.acquireExecution();
             if (acquired._tag !== "Acquired") {
               return yield* Effect.die("Expected Execution acquisition");
             }
-            const back = yield* acquired.execution
+            yield* acquired.execution
               .back()
               .pipe(Effect.forkChild({ startImmediately: true }));
             yield* Deferred.await(backStarted);
-            const replacement = yield* service
-              .start(intake)
-              .pipe(Effect.forkChild({ startImmediately: true }));
+            const close = yield* Scope.close(sessionScope, Exit.void).pipe(
+              Effect.forkChild({ startImmediately: true })
+            );
             yield* Effect.yieldNow;
-            const replacementWhileBackPending = replacement.pollUnsafe();
+            const closedWhileBackPending = close.pollUnsafe();
             yield* Deferred.succeed(backRelease, undefined);
-            yield* Fiber.join(replacement);
-            yield* Fiber.await(back);
-            return { replacementWhileBackPending };
+            yield* Fiber.join(close);
+            return { closedWhileBackPending };
           })
         ).pipe(Effect.provide(flow.layer));
 
-        expect(result.replacementWhileBackPending).toBeUndefined();
-        expect(commands).toEqual([
-          { _tag: "Push", path: toWidgetPath("/borrow/review") },
-          { _tag: "Push", path: toWidgetPath("/borrow/steps") },
-          { _tag: "Replace", path: toWidgetPath("/borrow") },
-          { _tag: "Push", path: toWidgetPath("/borrow/review") },
+        expect(result.closedWhileBackPending).toBeUndefined();
+        expect(commands.map((command) => command._tag)).toEqual([
+          "Push",
+          "Push",
+          "Replace",
         ]);
       })
   );

@@ -6,7 +6,10 @@ import {
 } from "../../src/app/runtime/deep-link-coordinator";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
-import { resolveClassicTransactionFlowStart } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import {
+  makeClassicFlowSession,
+  type NavigatingClassicTransactionFlowStart,
+} from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import {
   WidgetNavigationError,
@@ -71,18 +74,11 @@ const disconnectedWalletState: WalletState = {
   ledger: disconnectedLedgerConnectorState,
 };
 
-const startFlow = (
-  input: Parameters<ClassicTransactionFlowService["Service"]["start"]>[0]
-) => {
-  const resolved = resolveClassicTransactionFlowStart(
-    input,
-    input.intake.walletScope
-  );
-  return Effect.succeed({
+const startFlow = (input: NavigatingClassicTransactionFlowStart) =>
+  Effect.succeed({
     _tag: "Started",
-    session: { ...resolved.session, epoch: 1 },
+    session: makeClassicFlowSession(input, input.intake.walletScope),
   } as const);
-};
 
 const makeCoordinatorTestKit = Effect.fn("makeCoordinatorTestKit")(function* ({
   connected = true,
@@ -109,11 +105,10 @@ const makeCoordinatorTestKit = Effect.fn("makeCoordinatorTestKit")(function* ({
     Layer.succeed(
       ClassicTransactionFlowService,
       ClassicTransactionFlowService.of({
-        acquireSession: () =>
+        openSession: () =>
           Effect.die(
-            "makeCoordinatorTestKit: unexpected call to ClassicTransactionFlowService.acquireSession"
+            "makeCoordinatorTestKit: unexpected call to ClassicTransactionFlowService.openSession"
           ),
-        currentSession: Stream.never,
         start,
       })
     )

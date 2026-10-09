@@ -20,7 +20,7 @@ import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { ActionCommand } from "../../src/domain/action/models";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
-  isActiveClassicTransactionFlowPathAtom,
+  getClassicFlowRouteGroup,
   startClassicTransactionFlowAtom,
 } from "../../src/features/classic-transaction-flow/index";
 import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
@@ -159,9 +159,6 @@ const TestNavigationBridge = ({
 };
 
 const StartPage = () => {
-  const isActive = useAtomValue(
-    isActiveClassicTransactionFlowPathAtom("/review")
-  );
   const start = useAtomSet(startClassicTransactionFlowAtom);
   const navigate = useNavigate();
 
@@ -173,18 +170,10 @@ const StartPage = () => {
       >
         Start
       </button>
-      <button
-        type="button"
-        disabled={!isActive}
-        onClick={() => navigate("/review")}
-      >
+      <button type="button" onClick={() => navigate("/review")}>
         Review
       </button>
-      <button
-        type="button"
-        disabled={!isActive}
-        onClick={() => navigate("/steps")}
-      >
+      <button type="button" onClick={() => navigate("/steps")}>
         Steps
       </button>
     </>
@@ -281,10 +270,10 @@ const FlowRoutes = ({
   readonly walletState: NormalizedWalletState;
 }) => {
   const location = useLocation();
-  const isActive = useAtomValue(
-    isActiveClassicTransactionFlowPathAtom(location.pathname)
-  );
-  const key = isActive ? "flow-session" : location.key;
+  // Mirrors the Classic layout: one flow mount's routes share a key, so the
+  // flow subtree (which owns its Session) stays mounted across them.
+  const group = getClassicFlowRouteGroup(location.pathname);
+  const key = group === null ? location.key : `classic-flow:${group}`;
 
   return (
     <>
@@ -447,6 +436,8 @@ describe("Classic Transaction Flow navigation", () => {
       if (!match) throw new Error(`Expected ${label} button`);
       return match;
     };
+    await act(async () => button("Steps").click());
+    await vi.waitFor(() => expect(button("Start")).toBeDefined());
     await act(async () => button("Start").click());
     await vi.waitFor(() => expect(button("Host Steps")).toBeDefined());
     await act(async () => button("Host Steps").click());
@@ -686,6 +677,11 @@ describe("Classic Transaction Flow navigation", () => {
         app.container.querySelector('[data-testid="review-session"]')
       ).toBeNull()
     );
-    await vi.waitFor(() => expect(buttons()[1]?.disabled).toBe(true));
+    await vi.waitFor(() => expect(buttons()[0]?.textContent).toBe("Start"));
+    await act(async () => buttons()[1]?.click());
+    await vi.waitFor(() => expect(buttons()[0]?.textContent).toBe("Start"));
+    expect(
+      app.container.querySelector('[data-testid="review-session"]')
+    ).toBeNull();
   });
 });
