@@ -1,6 +1,6 @@
 import { Schema, SchemaGetter } from "effect";
 import * as BorrowApi from "../../generated/api/borrow";
-import { TolerantTopLevelArray } from "../decoding/response-schema";
+import { TolerantArray } from "../decoding/response-schema";
 import { Integration } from "./catalog/integration";
 import { Market } from "./catalog/market";
 import { BorrowAccountSnapshot } from "./positions/borrow-account-snapshot";
@@ -12,12 +12,12 @@ const ItemIdentifier = Schema.Struct({ id: Schema.String }).pipe(
   })
 );
 
-export const BorrowIntegrationsResponse = TolerantTopLevelArray(Integration, {
+export const BorrowIntegrationsResponse = TolerantArray(Integration, {
   operation: "borrow-integrations",
   identifier: ItemIdentifier,
 });
 
-const BorrowMarketItems = TolerantTopLevelArray(Market, {
+const BorrowMarketItems = TolerantArray(Market, {
   operation: "borrow-markets",
   identifier: ItemIdentifier,
 });
@@ -32,7 +32,7 @@ const IntegrationPositionResponse = Schema.Struct({
   position: BorrowAccountSnapshot,
 });
 
-export const BorrowIntegrationPositionsResponse = TolerantTopLevelArray(
+export const BorrowIntegrationPositionsResponse = TolerantArray(
   IntegrationPositionResponse,
   { operation: "borrow-positions" }
 );

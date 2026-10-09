@@ -167,12 +167,20 @@ describe("wallet Effect Atom boundaries", () => {
     );
   });
 
-  it("rejects unknown Yield network IDs", () => {
-    expect(() =>
-      Schema.decodeUnknownSync(EnabledWalletNetworksResponse)([
-        { id: "not-a-network" },
+  it("ignores network IDs added to the API after the client was generated", () => {
+    expect(
+      Schema.decodeSync(EnabledWalletNetworksResponse)([
+        { id: "ethereum" },
+        { id: "network-added-later" },
+        { id: "solana" },
       ])
-    ).toThrow(/Expected Networks[\s\S]*at \[0\]\["id"\]/);
+    ).toEqual(new Set(["ethereum", "solana"]));
+  });
+
+  it("rejects a malformed networks response", () => {
+    expect(() =>
+      Schema.decodeUnknownSync(EnabledWalletNetworksResponse)([{ id: 1 }])
+    ).toThrow(/Expected string/);
   });
 
   it("decodes valid initialization parameters and ignores invalid fields", () => {

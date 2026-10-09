@@ -31,7 +31,6 @@ describe("Earn application models", () => {
         "https://assets.stakek.it/app/composition/providers/stakekit.svg",
       website: "https://stakek.it",
       tvlUsd: null,
-      type: "protocol",
     });
 
     expect(decodedToken.address).toBe("0xAbCd");
@@ -58,7 +57,6 @@ describe("Earn application models", () => {
         description: "Tangem validator provider",
         website: "https://tangem.com",
         tvlUsd: null,
-        type: "validator_provider",
         rank: 99,
         preferred: true,
         revshare: null,
@@ -85,7 +83,6 @@ describe("Earn application models", () => {
             description: "Tangem validator provider",
             website: "https://tangem.com",
             tvlUsd: null,
-            type: "validator_provider",
             rank: 99,
             preferred: true,
             revshare: null,

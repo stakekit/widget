@@ -91,7 +91,6 @@ const sameAddressOtherNetworkScope = new WalletScopeKey({
 const yieldDto = yieldApiYieldFixture();
 const yieldId = Schema.decodeSync(YieldId)(yieldDto.id);
 const borrowIntegration = Schema.decodeSync(Integration)({
-  actions: [],
   id: "aave-borrow",
   metadata: {
     description: "Aave lending and borrowing",

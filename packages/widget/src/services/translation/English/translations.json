@@ -1033,6 +1033,10 @@
     "no_enabled_yields": {
       "title": "No yields enabled",
       "description": "There are no yields enabled for this API key. Enable at least one yield to start earning."
+    },
+    "widget_unavailable": {
+      "title": "Something went wrong",
+      "description": "The widget couldn't load. Please refresh the page or try again later."
     }
   },
   "positions": {

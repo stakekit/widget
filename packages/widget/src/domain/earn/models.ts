@@ -1,8 +1,15 @@
-import { Effect, Option, Schema, SchemaGetter, SchemaParser } from "effect";
+import {
+  Effect,
+  Option,
+  Schema,
+  SchemaGetter,
+  SchemaParser,
+  Struct,
+} from "effect";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { PendingAction } from "../action/models";
 import { TronResource } from "../action/tron-resource";
-import { TolerantTopLevelArray } from "../decoding/response-schema";
+import { TolerantArray, TolerantNullOr } from "../decoding/response-schema";
 import { exactDecimal } from "../finance/exact";
 import {
   ExactBaseUnitAmount,
@@ -18,27 +25,44 @@ import {
 } from "../identity/identifiers";
 import { Token } from "../token/token";
 
+// `yieldSource` stays open: reward-rate breakdowns already fall back for
+// sources they do not group.
 const EarnReward = Schema.Struct({
   ...YieldApi.RewardDto.fields,
   rate: ExactDecimal,
   token: Token,
+  yieldSource: Schema.String,
 });
 
 const EarnRewardRate = Schema.Struct({
   ...YieldApi.RewardRateDto.fields,
-  components: Schema.Array(EarnReward),
+  components: TolerantArray(EarnReward, {
+    operation: "reward-rate-components",
+  }),
   total: ExactDecimal,
 });
 
-type ApiArgumentField = typeof ArgumentField.Type;
-type ApiArgumentName = ApiArgumentField["name"];
-type ApiArgumentType = ApiArgumentField["type"];
+const EarnYieldTokens = TolerantArray(Token, { operation: "yield-tokens" });
 
+type ApiArgumentField = typeof ArgumentField.Type;
+type ApiArgumentName = YieldApi.ArgumentFieldDto["name"];
+type ApiArgumentType = YieldApi.ArgumentFieldDto["type"];
+
+// Argument names and types stay open so arguments added to the API after the
+// client was generated do not reject the yield unless they are required.
 const ArgumentField = Schema.Struct({
   ...YieldApi.ArgumentFieldDto.fields,
   maximum: Schema.optionalKey(Schema.NullOr(ExactDecimalInput)),
   minimum: Schema.optionalKey(Schema.NullOr(ExactDecimalInput)),
+  name: Schema.String,
+  type: Schema.String,
 });
+
+// A required argument must use a name and type the generated client knows;
+// otherwise the widget cannot supply it and the yield is rejected.
+const isKnownArgument = Schema.is(
+  YieldApi.ArgumentFieldDto.mapFields(Struct.pick(["name", "type"]))
+);
 
 const hasCoherentAmountBounds = (
   minimumValue: ExactDecimal,
@@ -238,6 +262,17 @@ const EarnYieldArgumentFieldsDomain = Schema.Struct({
 });
 
 const EarnYieldArgumentFields = Schema.Array(ArgumentField).pipe(
+  Schema.check(
+    Schema.makeFilter((fields) => {
+      const unsupported = fields.find(
+        (field) => field.required && !isKnownArgument(field)
+      );
+
+      return unsupported
+        ? `required mechanic argument ${unsupported.name} is not supported`
+        : true;
+    })
+  ),
   Schema.decodeTo(EarnYieldArgumentFieldsDomain, {
     decode: SchemaGetter.transform((fields) =>
       Object.fromEntries(fields.map((field) => [field.name, field]))
@@ -261,8 +296,9 @@ const EarnYieldArguments = Schema.Struct({
   balance: Schema.optionalKey(EarnYieldActionArguments),
 });
 
+// Provider `type` is unread; omitting it keeps new provider kinds decodable.
 export const EarnProvider = Schema.Struct({
-  ...YieldApi.ProviderDto.fields,
+  ...Struct.omit(YieldApi.ProviderDto.fields, ["type"]),
   id: ProviderId,
 });
 export type EarnProvider = typeof EarnProvider.Type;
@@ -277,6 +313,9 @@ const makeEarnValidatorKey = Schema.decodeSync(EarnValidatorKey);
 const EarnValidatorWire = Schema.Struct({
   ...YieldApi.ValidatorDto.fields,
   address: ValidatorAddress,
+  provider: Schema.optionalKey(
+    YieldApi.ValidatorProviderDto.mapFields(Struct.omit(["type"]))
+  ),
   providerId: Schema.optionalKey(ProviderId),
   rewardRate: Schema.optionalKey(EarnRewardRate),
 });
@@ -298,20 +337,52 @@ export const EarnValidator = EarnValidatorWire.pipe(
 );
 export type EarnValidator = typeof EarnValidator.Type;
 
+// Unread metadata is not decoded, so values the API adds to those enums cannot
+// reject an otherwise usable yield.
+const EarnYieldMetadata = YieldApi.YieldMetadataDto.mapFields(
+  Struct.omit(["supportedStandards"])
+);
+
+const EarnYieldRequirements = Schema.Struct({
+  ...YieldApi.YieldRequirementsDto.fields,
+  kyc: Schema.optionalKey(
+    YieldApi.KycMetadataDto.mapFields(Struct.omit(["kycMode", "eligibility"]))
+  ),
+});
+
+const EarnYieldState = YieldApi.YieldStateDto.mapFields(
+  Struct.omit(["allocations"])
+);
+
+const EarnYieldRisk = Schema.Struct({
+  ratings: Schema.Array(
+    Schema.Struct({
+      ...YieldApi.YieldRiskEntryDto.fields,
+      source: Schema.String,
+    })
+  ),
+});
+
 export const EarnYield = Schema.Struct({
-  ...YieldApi.YieldDto.fields,
+  ...Struct.omit(YieldApi.YieldDto.fields, ["investmentSchedule"]),
   id: YieldId,
   providerId: ProviderId,
-  inputTokens: Schema.Array(Token),
+  inputTokens: EarnYieldTokens,
   mechanics: Schema.Struct({
-    ...YieldApi.YieldMechanicsDto.fields,
+    ...Struct.omit(YieldApi.YieldMechanicsDto.fields, [
+      "extraTransactionFormatsSupported",
+    ]),
     arguments: Schema.optionalKey(EarnYieldArguments),
     gasFeeToken: Token,
+    requirements: Schema.optionalKey(EarnYieldRequirements),
   }),
+  metadata: EarnYieldMetadata,
   outputToken: Schema.optionalKey(Token),
   rewardRate: EarnRewardRate,
+  risk: Schema.optionalKey(EarnYieldRisk),
+  state: Schema.optionalKey(EarnYieldState),
   token: Token,
-  tokens: Schema.Array(Token),
+  tokens: EarnYieldTokens,
 });
 export type EarnYield = typeof EarnYield.Type;
 
@@ -332,32 +403,35 @@ export const EarnBalance = Schema.Struct({
       field: "date",
     })
   ),
-  pendingActions: Schema.Array(PendingAction),
+  pendingActions: TolerantArray(PendingAction, {
+    operation: "balance-pending-actions",
+  }),
   token: Token,
   validator: Schema.optionalKey(EarnValidator),
-  validators: Schema.optionalKey(Schema.Array(EarnValidator)),
+  validators: Schema.optionalKey(
+    TolerantArray(EarnValidator, { operation: "balance-validators" })
+  ),
 });
 export type EarnBalance = typeof EarnBalance.Type;
 
 export const EarnPosition = Schema.Struct({
   ...YieldApi.YieldBalancesDto.fields,
   yieldId: YieldId,
-  balances: Schema.Array(EarnBalance),
-  outputTokenBalance: Schema.optionalKey(Schema.NullOr(EarnBalance)),
+  balances: TolerantArray(EarnBalance, {
+    operation: "yield-balances",
+  }),
+  outputTokenBalance: Schema.optionalKey(
+    TolerantNullOr(EarnBalance, {
+      operation: "yield-balances",
+      field: "outputTokenBalance",
+    })
+  ),
   rewardRate: Schema.optionalKey(Schema.NullOr(EarnRewardRate)),
 });
 export type EarnPosition = typeof EarnPosition.Type;
 
-export const EarnYieldBalancesResponse = Schema.Struct({
-  ...YieldApi.YieldBalancesDto.fields,
-  yieldId: YieldId,
-  balances: TolerantTopLevelArray(EarnBalance, {
-    operation: "yield-balances",
-  }),
-  outputTokenBalance: Schema.optionalKey(Schema.NullOr(EarnBalance)),
-  rewardRate: Schema.optionalKey(Schema.NullOr(EarnRewardRate)),
-});
-export type EarnYieldBalancesResponse = typeof EarnYieldBalancesResponse.Type;
+export const EarnYieldBalancesResponse = EarnPosition;
+export type EarnYieldBalancesResponse = EarnPosition;
 
 const YieldIdentifier = Schema.Struct({ id: Schema.String }).pipe(
   Schema.decodeTo(Schema.String, {
@@ -377,7 +451,7 @@ const makeEarnYieldPage = (operation: string) =>
   Schema.Struct({
     ...YieldApi.YieldsControllerGetYields200.fields,
     items: Schema.optionalKey(
-      TolerantTopLevelArray(EarnYield, {
+      TolerantArray(EarnYield, {
         operation,
         identifier: YieldIdentifier,
       })
@@ -391,14 +465,14 @@ const EarnTokenWithAvailableYields = Schema.Struct({
   availableYields: Schema.Array(YieldId),
 });
 
-const EarnTokenWithAvailableYieldItems = TolerantTopLevelArray(
+const EarnTokenWithAvailableYieldItems = TolerantArray(
   EarnTokenWithAvailableYields,
   { operation: "default-token-options" }
 );
 
 export const EarnLegacyTokenOptionsResponse = EarnTokenWithAvailableYieldItems;
 
-const EarnValidatorItems = TolerantTopLevelArray(EarnValidator, {
+const EarnValidatorItems = TolerantArray(EarnValidator, {
   operation: "validators",
   identifier: ValidatorIdentifier,
 });
@@ -410,7 +484,7 @@ export const EarnValidatorPage = Schema.Struct({
 
 export const EarnPositionsResponse = Schema.Struct({
   ...YieldApi.BalancesResponseDto.fields,
-  items: TolerantTopLevelArray(EarnPosition, {
+  items: TolerantArray(EarnPosition, {
     operation: "positions-data",
   }),
 });

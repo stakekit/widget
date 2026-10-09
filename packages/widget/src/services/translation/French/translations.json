@@ -700,6 +700,10 @@
     "no_enabled_yields": {
       "title": "Aucun rendement activé",
       "description": "Aucun rendement n'est activé pour cette clé API. Activez au moins un rendement pour commencer à générer des intérêts."
+    },
+    "widget_unavailable": {
+      "title": "Une erreur s'est produite",
+      "description": "Le widget n'a pas pu se charger. Veuillez actualiser la page ou réessayer plus tard."
     }
   },
   "positions": {

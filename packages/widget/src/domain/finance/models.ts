@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 import * as LegacyApi from "../../generated/api/legacy-schema";
 import * as YieldApi from "../../generated/api/yield-schema";
-import { TolerantTopLevelArray } from "../decoding/response-schema";
+import { TolerantArray } from "../decoding/response-schema";
 import { TokenAddress, WalletAddress, YieldId } from "../identity/identifiers";
 import { Network } from "../network/network";
 import { Token } from "../token/token";
@@ -22,7 +22,7 @@ export const TokenBalance = Schema.Struct({
 });
 export type TokenBalance = typeof TokenBalance.Type;
 
-export const TokenBalancesResponse = TolerantTopLevelArray(TokenBalance, {
+export const TokenBalancesResponse = TolerantArray(TokenBalance, {
   operation: "token-balances-scan",
 });
 
@@ -40,7 +40,7 @@ export const GasBalancesCommand = Schema.Struct({
 });
 export type GasBalancesCommand = typeof GasBalancesCommand.Type;
 
-export const GasTokenBalancesResponse = TolerantTopLevelArray(TokenBalance, {
+export const GasTokenBalancesResponse = TolerantArray(TokenBalance, {
   operation: "gas-balance-check",
 });
 

@@ -139,7 +139,7 @@ describe("Market Position action preparation atoms", () => {
         const integration =
           yield* Schema.decodeEffect(Integration)(integrationDto);
         const market = yield* Schema.decodeEffect(Market)(marketDto);
-        const accountSnapshot = yield* Schema.decodeUnknownEffect(
+        const accountSnapshot = yield* Schema.decodeEffect(
           BorrowAccountSnapshot
         )({
           ...positionDto,

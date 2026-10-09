@@ -72,7 +72,6 @@ const marketDto = {
 } as const;
 
 const integration = Schema.decodeSync(Integration)({
-  actions: [],
   id: marketDto.integrationId,
   metadata: {
     description: "Aave lending and borrowing",

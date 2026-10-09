@@ -138,30 +138,20 @@ describe("Borrow API boundary policies", () => {
     })
   );
 
-  it.effect("keeps an integration whose action schema is JSON Schema", () =>
-    Effect.gen(function* () {
-      const result = yield* decode(BorrowIntegrationsResponse, [
-        {
-          ...integration,
-          actions: [
-            {
-              id: "supply",
-              label: "Supply",
-              schema: {
-                $schema: "https://json-schema.org/draft/2020-12/schema",
-                additionalProperties: false,
-                properties: {
-                  amount: { label: "Amount", type: "string" },
-                },
-                type: "object",
-              },
-            },
-          ],
-        },
-      ]);
+  it.effect(
+    "keeps an integration whose advertised actions or networks are unknown",
+    () =>
+      Effect.gen(function* () {
+        const result = yield* decode(BorrowIntegrationsResponse, [
+          {
+            ...integration,
+            networks: ["ethereum", "network-added-later"],
+            actions: [{ id: "action-added-later", label: "New", schema: {} }],
+          },
+        ]);
 
-      expect(result.map((item) => item.id)).toEqual([integration.id]);
-    })
+        expect(result.map((item) => item.networks)).toEqual([["ethereum"]]);
+      })
   );
 
   it.effect("omits a complete market when a nested token fails", () =>
@@ -199,6 +189,48 @@ describe("Borrow API boundary policies", () => {
 
       expect(result).toHaveLength(1);
     })
+  );
+
+  it.effect(
+    "keeps a position and drops only pending actions the widget cannot run",
+    () =>
+      Effect.gen(function* () {
+        const decodedIntegration =
+          yield* Schema.decodeEffect(Integration)(integration);
+        const withdraw = {
+          type: "withdraw",
+          label: "Withdraw",
+          args: {
+            amountRaw: "1",
+            tokenAddress: supplyBalance.tokenAddress,
+            marketId: market.id,
+          },
+        };
+        const result = yield* decode(BorrowIntegrationPositionsResponse, [
+          {
+            integration: decodedIntegration,
+            position: {
+              ...accountPosition,
+              supplyBalances: [
+                {
+                  ...supplyBalance,
+                  pendingActions: [
+                    withdraw,
+                    { ...withdraw, type: "supply", label: "Supply" },
+                    { ...withdraw, type: "action-added-later", label: "New" },
+                  ],
+                },
+              ],
+            },
+          },
+        ]);
+
+        expect(
+          result[0]?.position.supplyBalances[0]?.pendingActions.map(
+            ({ type }) => type
+          )
+        ).toEqual(["withdraw"]);
+      })
   );
 
   it.effect(

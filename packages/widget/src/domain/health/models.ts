@@ -2,7 +2,7 @@ import type BigNumber from "bignumber.js";
 import { Schema, SchemaTransformation } from "effect";
 import * as LegacyApi from "../../generated/api/legacy-schema";
 import * as YieldApi from "../../generated/api/yield-schema";
-import { TolerantTopLevelRecord } from "../decoding/response-schema";
+import { TolerantRecord } from "../decoding/response-schema";
 import { ExactDecimal, UtcDateTimeFromString } from "../finance/scalars";
 import { Token } from "../token/token";
 
@@ -56,7 +56,7 @@ const PriceEntry = Schema.Struct({
   price_24_h: Schema.optionalKey(ExactDecimal),
 });
 
-const PriceEntries = TolerantTopLevelRecord(Schema.NonEmptyString, PriceEntry, {
+const PriceEntries = TolerantRecord(Schema.NonEmptyString, PriceEntry, {
   operation: "token-prices",
 });
 

@@ -47,9 +47,14 @@ const enrichedYieldOpportunityCanonicalAtom = Atom.family((yieldId: YieldId) =>
       const yieldModel = yield* get.result(
         yieldOpportunityResourceAtom.local(yieldId)
       );
+      // Provider details are optional enrichment; a failed lookup must not
+      // take the opportunity down with it.
       const provider = yield* get
         .result(yieldProviderResourceAtom.local(yieldModel.providerId))
-        .pipe(Effect.map(Option.getOrUndefined));
+        .pipe(
+          Effect.map(Option.getOrUndefined),
+          Effect.orElseSucceed(() => undefined)
+        );
 
       return {
         ...yieldModel,

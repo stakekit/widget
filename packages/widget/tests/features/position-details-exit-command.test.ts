@@ -369,7 +369,7 @@ describe("Position Details exit command", () => {
       const eligibleYield = yieldApiYieldFixture({
         ...skySavingsRateFields,
         id: selectedYield.id,
-        metadata: selectedYield.metadata,
+        metadata: { ...yieldDto.metadata, ...selectedYield.metadata },
         mechanics: {
           ...yieldDto.mechanics,
           arguments: {
@@ -1091,7 +1091,7 @@ describe("Position Details exit command", () => {
     const partialExitYield = yieldApiYieldFixture({
       ...skySavingsRateFields,
       id: selectedYield.id,
-      metadata: selectedYield.metadata,
+      metadata: { ...yieldDto.metadata, ...selectedYield.metadata },
       mechanics: {
         ...yieldDto.mechanics,
         arguments: {

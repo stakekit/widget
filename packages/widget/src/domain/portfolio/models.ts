@@ -1,10 +1,7 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 import * as LegacyApi from "../../generated/api/legacy-schema";
 import * as YieldApi from "../../generated/api/yield-schema";
-import {
-  TolerantTopLevelArray,
-  TolerantTopLevelRecord,
-} from "../decoding/response-schema";
+import { TolerantArray, TolerantRecord } from "../decoding/response-schema";
 import { ExactDecimal, UtcDateTimeFromString } from "../finance/scalars";
 import { WalletAddress, YieldId } from "../identity/identifiers";
 import { Token } from "../token/token";
@@ -36,22 +33,24 @@ const TvlHistoryItem = Schema.Struct({
 });
 export type TvlHistoryItem = typeof TvlHistoryItem.Type;
 
+// The response `interval` echoes the request and is unread, so it is not
+// decoded.
 export const RewardRateHistoryResponse = Schema.Struct({
-  ...YieldApi.RewardRateHistoryResponseDto.fields,
+  ...Struct.omit(YieldApi.RewardRateHistoryResponseDto.fields, ["interval"]),
   from: UtcDateTimeFromString,
   to: UtcDateTimeFromString,
   yieldId: YieldId,
-  items: TolerantTopLevelArray(RewardRateHistoryItem, {
+  items: TolerantArray(RewardRateHistoryItem, {
     operation: "yield-reward-rate-history",
   }),
 });
 
 export const TvlHistoryResponse = Schema.Struct({
-  ...YieldApi.TvlHistoryResponseDto.fields,
+  ...Struct.omit(YieldApi.TvlHistoryResponseDto.fields, ["interval"]),
   from: UtcDateTimeFromString,
   to: UtcDateTimeFromString,
   yieldId: YieldId,
-  items: TolerantTopLevelArray(TvlHistoryItem, {
+  items: TolerantArray(TvlHistoryItem, {
     operation: "yield-tvl-history",
   }),
 });
@@ -62,11 +61,9 @@ export const RewardsSummary = Schema.Struct({
 });
 export type RewardsSummary = typeof RewardsSummary.Type;
 
-export const RewardsSummaryRecord = TolerantTopLevelRecord(
-  YieldId,
-  RewardsSummary,
-  { operation: "yield-rewards-summary" }
-);
+export const RewardsSummaryRecord = TolerantRecord(YieldId, RewardsSummary, {
+  operation: "yield-rewards-summary",
+});
 
 export const RewardsAddresses = Schema.Struct({
   address: WalletAddress,
