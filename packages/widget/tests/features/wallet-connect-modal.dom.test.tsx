@@ -98,6 +98,20 @@ const walletGroups = () =>
     })
   );
 
+/** Connection requests reach the connector asynchronously after a click. */
+const awaitCalls = <A,>(
+  calls: Effect.Effect<ReadonlyArray<A>>,
+  count: number
+) =>
+  calls.pipe(
+    Effect.repeat({
+      schedule: Schedule.spaced("10 millis"),
+      until: (current) => current.length >= count,
+    }),
+    Effect.timeoutOrElse({ duration: "5 seconds", orElse: () => calls }),
+    TestClock.withLive
+  );
+
 const singleGroup = (
   ...wallets: ReadonlyArray<PickerWallet>
 ): ReadonlyArray<PickerWalletGroup> => [{ groupName: "Wallets", wallets }];
@@ -186,7 +200,9 @@ describe("wallet connection picker", () => {
         yield* waitFor(testId);
         yield* click(() => element(testId));
 
-        expect(yield* picker.calls).toEqual([{ walletId: wallet.id, chainId }]);
+        expect(yield* awaitCalls(picker.calls, 1)).toEqual([
+          { walletId: wallet.id, chainId },
+        ]);
       })
   );
 
@@ -200,7 +216,7 @@ describe("wallet connection picker", () => {
       yield* waitFor("connect-wallet-evm-metamask");
       yield* click(() => element("connect-wallet-evm-metamask"));
 
-      expect(yield* picker.calls).toEqual([
+      expect(yield* awaitCalls(picker.calls, 1)).toEqual([
         { walletId: "metamask", chainId: undefined },
       ]);
     })
@@ -219,6 +235,7 @@ describe("wallet connection picker", () => {
         yield* waitFor("connect-wallet-evm-metamask");
         yield* click(() => element("connect-wallet-evm-metamask"));
         yield* Effect.promise(() => expect.poll(pendingSpinner).not.toBeNull());
+        yield* awaitCalls(picker.calls, 1);
 
         yield* click(() => element("connect-wallet-evm-metamask"));
         // Lets an interrupted first attempt reach the wallet again, if it would.
@@ -252,15 +269,7 @@ describe("wallet connection picker", () => {
 
         yield* click(() => element("connect-wallet-evm-metamask"));
         yield* Effect.promise(() => expect.poll(pendingSpinner).not.toBeNull());
-        const calls = yield* picker.calls.pipe(
-          Effect.repeat({
-            schedule: Schedule.spaced("10 millis"),
-            until: (current) => current.length === 2,
-          }),
-          Effect.timeout("1 second"),
-          TestClock.withLive
-        );
-        expect(calls).toHaveLength(2);
+        expect(yield* awaitCalls(picker.calls, 2)).toHaveLength(2);
       })
   );
 
@@ -275,7 +284,7 @@ describe("wallet connection picker", () => {
         yield* waitFor("connect-wallet-evm-walletconnect");
         yield* click(() => element("connect-wallet-evm-walletconnect"));
 
-        expect(yield* picker.calls).toEqual([
+        expect(yield* awaitCalls(picker.calls, 1)).toEqual([
           { walletId: "walletconnect", chainId: undefined },
         ]);
       })
@@ -390,7 +399,7 @@ describe("wallet connection picker", () => {
       );
       yield* click(() => element("connect-wallet-evm-extension"));
 
-      expect(yield* picker.calls).toEqual([
+      expect(yield* awaitCalls(picker.calls, 1)).toEqual([
         { walletId: "extension", chainId: undefined },
       ]);
     })
@@ -560,18 +569,23 @@ describe("wallet connection picker", () => {
 
         yield* picker.settle("extension");
         yield* pollTagName("connect-wallet-evm-extension", "BUTTON");
-        expect(walletGroups()).toEqual([
-          { name: "Primary", wallets: ["connect-wallet-evm-remote"] },
-          { name: "Other", wallets: ["connect-wallet-evm-extension"] },
-        ]);
+        yield* Effect.promise(() =>
+          expect.poll(walletGroups).toEqual([
+            { name: "Primary", wallets: ["connect-wallet-evm-remote"] },
+            { name: "Other", wallets: ["connect-wallet-evm-extension"] },
+          ])
+        );
 
         yield* closePicker;
         yield* showPicker;
         yield* waitFor("connect-wallet-evm-extension");
-        expect(walletGroups()).toEqual([
-          { name: "Installed", wallets: ["connect-wallet-evm-extension"] },
-          { name: "Primary", wallets: ["connect-wallet-evm-remote"] },
-        ]);
+        // The reopened session groups by the detection results it starts with.
+        yield* Effect.promise(() =>
+          expect.poll(walletGroups).toEqual([
+            { name: "Installed", wallets: ["connect-wallet-evm-extension"] },
+            { name: "Primary", wallets: ["connect-wallet-evm-remote"] },
+          ])
+        );
       })
   );
 

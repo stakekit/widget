@@ -118,7 +118,6 @@ catalog:
   scheduler: ">=0.25.0 <0.29.0"
   serve: ^14.2.6
   tsx: ^4.23.15
-  turbo: ^2.11.7
   typescript: ^6.0.3
   unplugin-macros: ^0.23.2
   viem: ^2.57.3

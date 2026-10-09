@@ -170,16 +170,19 @@ const run = async (
   }
 };
 
+// npm_execpath is a JavaScript entry for npm-installed pnpm and a native
+// executable for the standalone pnpm binary pinned by mise.
 const packageManagerCommand = () => {
   const pnpmCli = process.env.npm_execpath;
-  if (pnpmCli) {
-    return {
-      argsPrefix: [pnpmCli],
-      command: process.execPath,
-    } as const;
+  if (!pnpmCli) {
+    return { argsPrefix: [], command: "pnpm" } as const;
   }
 
-  return { argsPrefix: [], command: "pnpm" } as const;
+  if (/\.[cm]?js$/.test(pnpmCli)) {
+    return { argsPrefix: [pnpmCli], command: process.execPath } as const;
+  }
+
+  return { argsPrefix: [], command: pnpmCli } as const;
 };
 
 const runPnpm = async (

@@ -117,7 +117,10 @@ export const BorrowTransactionFlowRoute = ({
 };
 
 const MountedSessionBinding = () => {
-  const session = useAtomValue(SessionScopedAtom.use());
+  // Not `SessionScopedAtom.use()`: React Compiler does not treat a member named
+  // `use` as a hook and caches the call, which drops its useContext on rerender.
+  const sessionAtom = useContext(SessionScopedAtom.Context);
+  const session = useAtomValue(sessionAtom);
   return (
     <BorrowFlowSessionContext.Provider value={session}>
       <Outlet />

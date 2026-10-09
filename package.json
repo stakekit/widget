@@ -13,18 +13,18 @@
     }
   },
   "scripts": {
-    "dev": "pnpm --filter @stakekit/widget dev",
-    "build": "turbo run build",
-    "lint": "turbo run lint //#lint:ast",
-    "lint:ast": "ast-grep scan --error=no-suppress-all --error=unused-suppression packages/widget --color=never && pnpm run test:ast",
-    "test:ast": "ast-grep test --skip-snapshot-tests --color=never",
-    "test": "turbo run test",
-    "test:smoke": "pnpm --filter @stakekit/widget test:smoke",
-    "format": "turbo run format",
-    "clean": "turbo run clean",
+    "dev": "mise run dev --",
+    "build": "mise run build --",
+    "lint": "mise run lint --",
+    "lint:ast": "mise run lint:ast --",
+    "test:ast": "mise run test:ast --",
+    "test": "mise run test --",
+    "test:smoke": "mise run test:smoke --",
+    "format": "mise run format --",
+    "clean": "mise run clean --",
     "prepare": "husky && pnpm --filter @stakekit/widget exec effect-tsgo patch --typescript --no-oxlint --typescript-package @typescript/native",
-    "check-hygiene": "turbo run check-hygiene --filter=@stakekit/widget",
-    "check": "turbo run lint //#lint:ast && pnpm run check-hygiene && turbo run test && turbo run build"
+    "check-hygiene": "mise run check-hygiene --",
+    "check": "mise run check --"
   },
   "devDependencies": {
     "@ast-grep/cli": "catalog:",
@@ -32,7 +32,6 @@
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "@effect/tsgo": "catalog:",
-    "husky": "catalog:",
-    "turbo": "catalog:"
+    "husky": "catalog:"
   }
 }

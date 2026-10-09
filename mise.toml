@@ -1,6 +1,73 @@
 [settings]
 lockfile = true
+task.output = "prefix"
+task.timings = true
 
 [tools]
 node = "24"
 "aqua:pnpm/pnpm" = "12"
+
+# Workspace tasks. Package commands stay in each package.json; these compose them.
+# Root package.json scripts alias these tasks, so `pnpm <task>` and `mise run <task>` are equivalent.
+
+[tasks.dev]
+raw = true
+run = "pnpm --filter @stakekit/widget dev"
+
+[tasks."build:widget"]
+run = "pnpm --filter @stakekit/widget build"
+
+# The examples consume the built widget from packages/widget/dist.
+[tasks.build]
+depends = ["build:widget"]
+run = "pnpm --filter './packages/examples/*' run build"
+
+[tasks."lint:widget"]
+run = "pnpm --filter @stakekit/widget lint"
+
+[tasks."lint:examples"]
+depends = ["build:widget"]
+run = "pnpm --filter './packages/examples/*' run lint"
+
+[tasks."lint:ast"]
+depends = ["test:ast"]
+run = "pnpm exec ast-grep scan --error=no-suppress-all --error=unused-suppression packages/widget --color=never"
+
+[tasks."test:ast"]
+run = "pnpm exec ast-grep test --skip-snapshot-tests --color=never"
+
+[tasks.lint]
+description = "Widget, example and ast-grep lint"
+depends = ["lint:widget", "lint:examples", "lint:ast"]
+
+[tasks.format]
+run = "pnpm --recursive run format"
+
+[tasks.clean]
+run = "pnpm --recursive run clean"
+
+[tasks."check-hygiene"]
+run = "pnpm --filter @stakekit/widget check-hygiene"
+
+[tasks."test:unit"]
+run = "pnpm --filter @stakekit/widget test:unit"
+
+[tasks."test:dom"]
+run = "pnpm --filter @stakekit/widget test:dom"
+
+[tasks."test:browser"]
+run = "pnpm --filter @stakekit/widget test:browser"
+
+[tasks.test]
+description = "Widget unit, jsdom and Chromium tests"
+depends = ["test:unit", "test:dom", "test:browser"]
+
+[tasks."test:smoke"]
+run = "pnpm --filter @stakekit/widget test:smoke"
+
+# Continue independent gates so one run reports every failure, then fail if any did.
+# Mise suppresses nested timings by default; keep individual gate durations visible.
+[tasks.check]
+description = "Lint, hygiene, tests and builds"
+run = "MISE_TASK_TIMINGS=1 mise run --jobs 4 --continue-on-error --output prefix lint ::: check-hygiene ::: test ::: build"
+output = "interleave"
