@@ -14,7 +14,7 @@ import {
   Queue,
   Stream,
 } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { HttpResponse, http } from "msw";
 import {
   Component,

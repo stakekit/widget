@@ -1,5 +1,5 @@
 import { Cause, Effect, Layer, Option } from "effect";
-import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
+import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { exactDecimal } from "../../src/domain/finance/exact";

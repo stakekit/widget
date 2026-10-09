@@ -1,7 +1,7 @@
 import { RegistryProvider } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Schema from "effect/Schema";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { TFunction } from "i18next";
 import { act } from "react";
 import { I18nextProvider } from "react-i18next";

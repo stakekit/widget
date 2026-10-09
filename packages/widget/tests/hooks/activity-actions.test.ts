@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Effect, Layer, Option, Schema } from "effect";
-import { Atom, AtomRegistry } from "effect/unstable/reactivity";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import { Atom, AtomRegistry } from "effect/reactivity";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { ActivityActionsPage } from "../../src/domain/activity/models";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";

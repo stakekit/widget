@@ -1,6 +1,6 @@
 import { Effect, Stream } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
 import type { BorrowTransactionFlowIntake } from "../../model/borrow-transaction-flow";
 import { BorrowTransactionFlowService } from "../orchestration/borrow-transaction-flow-service";

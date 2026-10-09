@@ -1,5 +1,5 @@
 import { useAtomSet } from "@effect/atom-react";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";

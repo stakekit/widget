@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { richErrorAtom } from "../../src/features/widget-shell/react/use-rich-errors";
 import { ApiRequestError } from "../../src/services/api/resource-sources";

@@ -1,5 +1,5 @@
 import { DateTime, Effect, Layer, Schema } from "effect";
-import { Atom, AtomRegistry } from "effect/unstable/reactivity";
+import { Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { exactDecimal } from "../../src/domain/finance/exact";

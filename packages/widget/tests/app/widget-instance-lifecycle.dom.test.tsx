@@ -10,7 +10,7 @@ const runtimeReleased = vi.hoisted(() => vi.fn());
 
 vi.mock("../../src/app/composition/providers", async () => {
   const { useAtomValue } = await import("@effect/atom-react");
-  const Atom = await import("effect/unstable/reactivity/Atom");
+  const Atom = await import("effect/reactivity/Atom");
   const { widgetConfigAtom } = await import("../utils/widget-config");
   const { useLayoutEffect } = await import("react");
   const runtimeIdentityAtom = Atom.make(() => ({}));

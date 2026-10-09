@@ -67,6 +67,7 @@ describe("wallet connection picker", () => {
         );
 
         const last = page.getByTestId("connect-wallet-evm-wallet-19");
+        yield* Effect.promise(() => expect.element(last).toBeInTheDocument());
         last.element().scrollIntoView({ block: "end" });
         yield* Effect.promise(() =>
           expect

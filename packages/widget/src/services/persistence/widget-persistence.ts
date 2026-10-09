@@ -10,7 +10,7 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
-import * as KeyValueStore from "effect/unstable/persistence/KeyValueStore";
+import * as KeyValueStore from "effect/persistence/KeyValueStore";
 import type { WalletAddress } from "../../domain/identity/identifiers";
 import { config } from "../../shared/config/widget-defaults";
 

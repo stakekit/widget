@@ -575,7 +575,7 @@ const extractSchemaOnlyOutput = (output: string, specName: string) => {
     .replace(/^import \* as Effect from "effect\/Effect";?\r?\n/m, "")
     .replace(/^import type \{ SchemaError \} from "effect\/Schema";?\r?\n/m, "")
     .replace(
-      /^import(?: type)? \* as HttpClient[^\n]+"effect\/unstable\/http\/[^\n]+\r?\n/gm,
+      /^import(?: type)? \* as HttpClient[^\n]+"effect\/http\/[^\n]+\r?\n/gm,
       ""
     )
     .trimEnd()}\n`;

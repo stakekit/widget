@@ -1,6 +1,6 @@
 import { useAtomSet } from "@effect/atom-react";
 import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import { useWidgetConfig } from "../../../features/widget-configuration/index";

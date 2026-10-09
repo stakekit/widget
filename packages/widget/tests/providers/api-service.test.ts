@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Context, Effect, Layer, Option, Schema } from "effect";
-import * as HttpClientError from "effect/unstable/http/HttpClientError";
+import * as HttpClientError from "effect/http/HttpClientError";
 import { YieldAction } from "../../src/domain/action/models";
 import { BorrowFeatureDisabled } from "../../src/domain/borrow/availability";
 import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";

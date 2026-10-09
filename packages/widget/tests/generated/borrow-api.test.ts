@@ -1,6 +1,6 @@
 import { Effect } from "effect";
+import { HttpClient } from "effect/http";
 import * as Schema from "effect/Schema";
-import { HttpClient } from "effect/unstable/http";
 import { describe, expect, it } from "vitest";
 import * as BorrowApi from "../../src/generated/api/borrow";
 import * as BorrowClient from "../../src/generated/api/borrow-client";

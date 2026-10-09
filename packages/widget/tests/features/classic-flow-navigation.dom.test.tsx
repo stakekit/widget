@@ -1,6 +1,6 @@
 import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Effect, Layer, Schema, Stream, SubscriptionRef } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { HttpResponse, http } from "msw";
 import { act, useEffect, useState } from "react";
 import {

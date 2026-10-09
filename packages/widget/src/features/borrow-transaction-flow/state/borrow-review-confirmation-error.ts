@@ -1,5 +1,5 @@
 import { Data } from "effect";
-import type * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import type * as AsyncResult from "effect/reactivity/AsyncResult";
 import { mapAsyncResultError } from "../../../shared/effect/async-result";
 
 export class BorrowReviewConfirmationError extends Data.TaggedError(

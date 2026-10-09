@@ -1,6 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { getActionProviderYieldId } from "../../../domain/action/rules";
 import { isBittensorStaking } from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";

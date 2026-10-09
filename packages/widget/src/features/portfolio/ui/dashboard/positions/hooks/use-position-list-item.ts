@@ -1,5 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { exactDecimal } from "../../../../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../../../../domain/finance/price";

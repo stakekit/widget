@@ -1,5 +1,5 @@
 import { Data } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import type { TronResource } from "../../../domain/action/tron-resource";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";

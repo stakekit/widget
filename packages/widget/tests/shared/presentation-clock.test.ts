@@ -1,5 +1,5 @@
 import { DateTime } from "effect";
-import { AtomRegistry } from "effect/unstable/reactivity";
+import { AtomRegistry } from "effect/reactivity";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { presentationClockAtom } from "../../src/shared/effect/presentation-clock";
 

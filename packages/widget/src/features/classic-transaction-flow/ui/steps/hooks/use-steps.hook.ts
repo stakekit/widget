@@ -1,6 +1,6 @@
 import { useAtomSet } from "@effect/atom-react";
 import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { useTrackEvent } from "../../../../tracking/index";
 import type { PageCta } from "../../../../widget-shell/views";

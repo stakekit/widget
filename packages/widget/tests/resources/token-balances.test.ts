@@ -1,5 +1,5 @@
 import { Cause, Effect, Layer, Option, Schema } from "effect";
-import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
+import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import type { TokenBalanceScanCommand } from "../../src/domain/finance/models";

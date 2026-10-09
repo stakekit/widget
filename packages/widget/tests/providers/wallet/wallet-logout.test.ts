@@ -172,8 +172,12 @@ describe("WalletService logout", () => {
     Effect.gen(function* () {
       const started = yield* Deferred.make<void>();
       const release = yield* Deferred.make<void>();
+      // Yield before signalling: Effect 4.0.2's cachedWithTTL starts the shared
+      // run synchronously, so a caller resumed re-entrantly from inside that
+      // start would join a run whose fiber is not yet assigned.
       const disconnect = vi.fn(() =>
-        Deferred.succeed(started, undefined).pipe(
+        Effect.yieldNow.pipe(
+          Effect.andThen(Deferred.succeed(started, undefined)),
           Effect.andThen(Deferred.await(release))
         )
       );

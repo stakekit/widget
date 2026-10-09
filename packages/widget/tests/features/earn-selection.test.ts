@@ -1,6 +1,6 @@
 import { Effect, Layer, Schema } from "effect";
-import { Atom, AtomRegistry } from "effect/unstable/reactivity";
-import * as Reactivity from "effect/unstable/reactivity/Reactivity";
+import { Atom, AtomRegistry } from "effect/reactivity";
+import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { TokenBalancesResponse } from "../../src/domain/finance/models";

@@ -1,5 +1,5 @@
 import { Layer } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { widgetConfigAtom } from "../../features/widget-configuration/index";
 import { apiLayer } from "../../services/api/runtime";
 import { RichErrorService } from "../../services/errors/rich-error-service";

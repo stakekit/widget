@@ -11,7 +11,10 @@
         "includeSuggestionsInTsc": true,
         "ignoreEffectSuggestionsInTscExitCode": false,
         "ignoreEffectWarningsInTscExitCode": false,
-        "ignoreEffectErrorsInTscExitCode": false
+        "ignoreEffectErrorsInTscExitCode": false,
+        "diagnosticSeverity": {
+          "unstableApiUsage": "off"
+        }
       }
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo/tsconfig.tsbuildinfo"

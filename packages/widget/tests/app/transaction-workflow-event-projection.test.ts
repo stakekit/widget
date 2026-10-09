@@ -7,8 +7,8 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
+import * as Reactivity from "effect/reactivity/Reactivity";
 import { TestClock } from "effect/testing";
-import * as Reactivity from "effect/unstable/reactivity/Reactivity";
 import { transactionWorkflowResourceEventProjection } from "../../src/app/runtime/transaction-workflow-event-projection";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import {

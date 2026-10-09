@@ -6,8 +6,8 @@ import {
 } from "@effect/atom-react";
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Deferred, Effect, Equal, Layer, Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { act } from "react";
 import type { DataRouter } from "react-router";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";

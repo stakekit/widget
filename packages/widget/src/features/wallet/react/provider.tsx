@@ -1,6 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { type PropsWithChildren, useState } from "react";
 import { WagmiContext } from "wagmi";
 import { makeDefaultConfig } from "../../../services/wallet/default-wagmi-config";

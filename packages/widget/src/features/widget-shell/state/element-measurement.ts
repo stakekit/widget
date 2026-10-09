@@ -1,5 +1,5 @@
 import { Option } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 
 type ElementSlotUpdate =
   | { readonly _tag: "Attached"; readonly element: HTMLElement }

@@ -1,6 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { Data, Array as EArray, Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import type {
   EarnValidator,
   EarnYieldWithProvider,

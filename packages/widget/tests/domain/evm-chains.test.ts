@@ -17,11 +17,6 @@ describe("EVM chains", () => {
           symbol: "ETH",
           decimals: 18,
         },
-        rpcUrls: {
-          default: {
-            http: ["https://rpc.mainnet.chain.robinhood.com"],
-          },
-        },
         blockExplorers: {
           default: {
             url: "https://robinhoodchain.blockscout.com",
@@ -30,6 +25,10 @@ describe("EVM chains", () => {
       },
     });
     expect(evmChainsMap.robinhood.wagmiChain.testnet).toBeUndefined();
+    // wagmi's http() transport uses the first default RPC URL.
+    expect(evmChainsMap.robinhood.wagmiChain.rpcUrls.default.http[0]).toBe(
+      "https://rpc.mainnet.chain.robinhood.com"
+    );
 
     expect(evmChainsMap["robinhood-testnet"]).toMatchObject({
       type: "evm",

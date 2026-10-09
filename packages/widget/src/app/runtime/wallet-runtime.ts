@@ -1,5 +1,5 @@
 import { Layer } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { BorrowTransactionFlowService } from "../../features/borrow-transaction-flow/runtime";
 import { ClassicTransactionFlowService } from "../../features/classic-transaction-flow/runtime";
 import { WalletPresentationService } from "../../features/wallet/runtime";

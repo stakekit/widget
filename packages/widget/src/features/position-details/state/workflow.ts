@@ -1,6 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { Data } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import type { PendingActionStateKey } from "../../../domain/action/action-command";
 import type { YieldPendingActionType } from "../../../domain/action/pending-action";
 import { exactZero } from "../../../domain/finance/exact";

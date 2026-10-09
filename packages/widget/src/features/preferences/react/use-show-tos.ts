@@ -1,6 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useWidgetConfig } from "../../../features/widget-configuration/index";
 import { acknowledgeTosAtom, tosAcknowledgementAtom } from "../state/tos-atoms";
 

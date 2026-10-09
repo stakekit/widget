@@ -1,4 +1,4 @@
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import type { TFunction } from "i18next";
 import {
   deriveMarketPositionOverview,

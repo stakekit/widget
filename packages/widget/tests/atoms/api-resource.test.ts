@@ -1,7 +1,7 @@
 import { Data, Duration, Effect, Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
-import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { withApiResourcePolicy } from "../../src/shared/effect/api-resource";
 
@@ -85,10 +85,12 @@ describe("shared API resource conventions", () => {
     const registry = AtomRegistry.make({ timeoutResolution: 1 });
 
     expect(AsyncResult.getOrThrow(registry.get(resource))).toBe(1);
-    await Promise.resolve();
     await vi.advanceTimersByTimeAsync(
       Duration.toMillis(Duration.minutes(5)) + 1
     );
+    // The idle sweep removes the resource; its source node is released on the
+    // registry's next scheduled task.
+    await vi.runOnlyPendingTimersAsync();
     expect(AsyncResult.getOrThrow(registry.get(resource))).toBe(2);
   });
 });

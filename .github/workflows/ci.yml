@@ -11,6 +11,9 @@ on:
       - reopened
       - synchronize
 
+env:
+  MISE_LOCKED: 1
+
 jobs:
   clean-code-stage:
     runs-on: ubuntu-latest

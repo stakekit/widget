@@ -1,7 +1,7 @@
 import { Array as EArray, Effect, Option } from "effect";
 import { chunksOf } from "effect/Array";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 
 type PaginatedPage<Item> = {
   readonly items?: ReadonlyArray<Item> | null;

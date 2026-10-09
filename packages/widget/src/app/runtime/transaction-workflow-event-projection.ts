@@ -1,6 +1,6 @@
 import { Cause, Effect, Match, Schedule, Stream } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
-import * as Reactivity from "effect/unstable/reactivity/Reactivity";
+import * as Atom from "effect/reactivity/Atom";
+import * as Reactivity from "effect/reactivity/Reactivity";
 import { isBorrowNetwork } from "../../domain/borrow/network";
 import {
   sameWalletScopeOwner,

@@ -1,4 +1,4 @@
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { exactDecimal } from "../../../domain/finance/exact";
 import { tokenString } from "../../../domain/token/token";
 import { type EarnSelection, earnSelectionViewAtom } from "./earn-selection";

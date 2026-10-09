@@ -1,5 +1,5 @@
 import { Equal, Option } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 
 export const selectAtom = <A, B>(
   source: Atom.Atom<A>,

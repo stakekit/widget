@@ -1,5 +1,5 @@
 import { useAtomSet } from "@effect/atom-react";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useParams } from "react-router";
 import { PositionDetailsPane } from "../../../../shared/ui/components/position-details";

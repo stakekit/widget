@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Deferred, Effect, Layer, Option } from "effect";
-import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
+import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { YieldId } from "../../src/domain/identity/identifiers";
 import {

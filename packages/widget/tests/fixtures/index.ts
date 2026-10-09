@@ -1,5 +1,4 @@
-import { DateTime, Effect, Random, Schema } from "effect";
-import { Arbitrary } from "effect/unstable/arbitrary";
+import { Arbitrary, DateTime, Effect, Random, Schema } from "effect";
 import { ActionTransaction, YieldAction } from "../../src/domain/action/models";
 import type {
   EarnBalance,

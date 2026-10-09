@@ -7,4 +7,4 @@ files:
   - packages/widget/src/features/**/state/orchestration/**/*.ts
 rule:
   kind: string
-  regex: ^["']effect/unstable/reactivity/(?:Atom|AtomRegistry)["']$
+  regex: ^["']effect/reactivity/(?:Atom|AtomRegistry)["']$

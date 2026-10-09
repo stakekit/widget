@@ -1,4 +1,4 @@
-import type { AsyncResult } from "effect/unstable/reactivity/AsyncResult";
+import type { AsyncResult } from "effect/reactivity/AsyncResult";
 import type {
   EarnValidator,
   EarnYieldWithProvider,

@@ -1,10 +1,6 @@
 import { Data } from "effect";
-import type { AsyncResult } from "effect/unstable/reactivity/AsyncResult";
-import type {
-  Atom,
-  PullResult,
-  Writable,
-} from "effect/unstable/reactivity/Atom";
+import type { AsyncResult } from "effect/reactivity/AsyncResult";
+import type { Atom, PullResult, Writable } from "effect/reactivity/Atom";
 import type { TronResource } from "../../../../domain/action/tron-resource";
 import type {
   EarnValidator,

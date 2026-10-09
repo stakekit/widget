@@ -46,7 +46,7 @@ export type PickerWalletGroup = Readonly<{
   wallets: ReadonlyArray<PickerWallet>;
 }>;
 
-export type ConnectorCall = Readonly<{
+type ConnectorCall = Readonly<{
   walletId: string;
   chainId: number | undefined;
 }>;

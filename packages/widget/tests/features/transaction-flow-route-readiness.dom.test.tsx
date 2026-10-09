@@ -8,7 +8,7 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { act } from "react";
 import { createMemoryRouter, Outlet, RouterProvider } from "react-router";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
