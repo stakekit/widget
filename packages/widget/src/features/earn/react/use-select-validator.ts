@@ -1,5 +1,5 @@
-import type { EarnValidator } from "../../../../../../../domain/earn/models";
-import { useEarnValidatorSelection } from "../../../../../react/use-earn-facades";
+import type { EarnValidator } from "../../../domain/earn/models";
+import { useEarnValidatorSelection } from "./use-earn-facades";
 
 export const useSelectValidator = () => {
   const { loadMore, recordModalEvent, remove, select, setSearch, view } =

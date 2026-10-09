@@ -25,7 +25,12 @@ import { logoutAtom } from "../../state/workflows";
 import { WalletDialog, WalletDialogClose } from "../wallet-dialog";
 import { WalletChainIcon } from "../wallet-dialog/chain-icon";
 import { DisconnectSquareIcon } from "../wallet-dialog/icons";
-import { heading, menuButton } from "../wallet-dialog/styles.css";
+import {
+  heading,
+  menuButton,
+  walletSummaryTitle,
+  walletSummaryTrigger,
+} from "../wallet-dialog/styles.css";
 import {
   chainBody,
   chainIcon,
@@ -33,7 +38,6 @@ import {
   chainList,
   chainRow,
   connectedDot,
-  container,
   dialogHeading,
   disabledRow,
   disconnectRow,
@@ -44,7 +48,6 @@ import {
   pendingDot,
   separator,
   status,
-  titleStyle,
   wrongNetwork,
 } from "./styles.css";
 
@@ -90,7 +93,10 @@ export const ChainModal = () => {
         display="flex"
         justifyContent="space-between"
         alignItems="center"
-        className={combineRecipeWithVariant({ variant, rec: container })}
+        className={combineRecipeWithVariant({
+          variant,
+          rec: walletSummaryTrigger,
+        })}
         paddingLeft="2"
         py="2"
         onClick={() => {
@@ -100,7 +106,7 @@ export const ChainModal = () => {
       >
         {currentChain && <WalletChainIcon chain={currentChain} size={24} />}
         <Box marginLeft="2">
-          <Text className={titleStyle}>{wallet.chain.name}</Text>
+          <Text className={walletSummaryTitle}>{wallet.chain.name}</Text>
         </Box>
         <Box mx="2">
           <CaretDownIcon />

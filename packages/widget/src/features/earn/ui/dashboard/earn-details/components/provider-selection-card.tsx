@@ -5,17 +5,12 @@ import type {
   EarnValidator,
   EarnYieldWithProvider,
 } from "../../../../../../domain/earn/models";
-import {
-  isYieldActionArgRequired,
-  isYieldValidatorSelectionRequired,
-} from "../../../../../../domain/earn/yield";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { CaretDownIcon } from "../../../../../../shared/ui/primitives/icons/caret-down";
 import { PlusIcon } from "../../../../../../shared/ui/primitives/icons/plus";
 import { XIcon } from "../../../../../../shared/ui/primitives/icons/x-icon";
 import { Image } from "../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import { SelectValidator } from "../../../../../yield-entry/views";
 import type { YieldSummaryProvider } from "../../../../../yield-summary/index";
 import {
   formatCommission,
@@ -25,8 +20,9 @@ import {
   formatProviderWebsiteHref,
 } from "../../../../../yield-summary/index";
 import { useEarnEntry } from "../../../../react/use-earn-facades";
-import { useSelectValidator } from "../../../classic/earn-page/components/select-validator-section/use-select-validator";
+import { EarnValidatorSelection } from "../../../components/earn-validator-selection";
 import * as styles from "../styles.css";
+import { ExternalLinkIcon } from "./external-link-icon";
 
 type ProviderDetailsItem = YieldSummaryProvider;
 
@@ -43,67 +39,28 @@ type ProviderCardItem = {
 };
 
 export const ProviderSelectionCard = () => {
-  const {
-    hasMoreValidators,
-    isLoading,
-    isLoadingMoreValidators,
-    onClose,
-    onItemClick,
-    onLoadMoreValidators,
-    onOpen,
-    onRemoveValidator,
-    onValidatorSearch,
-    onViewMoreClick,
-    selectedStake,
-    selectedValidators,
-    validatorSearch,
-    validatorsData,
-  } = useSelectValidator();
   const { view: entry } = useEarnEntry();
   const providersDetails = entry.providers;
 
-  const yieldDto = selectedStake;
-
-  if (!yieldDto || !isYieldValidatorSelectionRequired(yieldDto)) return null;
-
-  const selectedValidatorsArr = [...selectedValidators.values()];
-  const providerDetailsArr = providersDetails ?? [];
-  const providerCardItems = getProviderCardItems({
-    providerDetailsArr,
-    selectedValidatorsArr,
-    yieldDto,
-  });
-  const multiSelect = isYieldActionArgRequired(
-    yieldDto,
-    "enter",
-    "validatorAddresses"
-  );
-  const validators = validatorsData ?? [];
-
   return (
-    <SelectValidator
-      trigger={
+    <EarnValidatorSelection
+      renderTrigger={({
+        multiSelect,
+        onRemoveValidator,
+        selectedStake,
+        selectedValidators,
+      }) => (
         <ProviderCardsTrigger
-          items={providerCardItems}
+          items={getProviderCardItems({
+            providerDetailsArr: providersDetails ?? [],
+            selectedValidatorsArr: selectedValidators,
+            yieldDto: selectedStake,
+          })}
           multiSelect={multiSelect}
           onRemoveValidator={onRemoveValidator}
-          tokenSymbol={yieldDto.token.symbol}
+          tokenSymbol={selectedStake.token.symbol}
         />
-      }
-      selectedValidators={new Set(selectedValidatorsArr.map((v) => v.key))}
-      multiSelect={multiSelect}
-      selectedStake={yieldDto}
-      onItemClick={onItemClick}
-      onViewMoreClick={onViewMoreClick}
-      onClose={onClose}
-      onOpen={onOpen}
-      onSearch={onValidatorSearch}
-      searchValue={validatorSearch}
-      isLoading={isLoading}
-      validators={validators}
-      hasMore={hasMoreValidators}
-      isLoadingMore={isLoadingMoreValidators}
-      onLoadMore={onLoadMoreValidators}
+      )}
     />
   );
 };
@@ -320,37 +277,3 @@ const ProviderMetaLine = ({
     </Text>
   );
 };
-
-const ExternalLinkIcon = () => (
-  <svg
-    aria-hidden="true"
-    className={styles.externalLinkIcon}
-    fill="none"
-    height="14"
-    viewBox="0 0 14 14"
-    width="14"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M5.25 3.5H3.5C2.5335 3.5 1.75 4.2835 1.75 5.25V10.5C1.75 11.4665 2.5335 12.25 3.5 12.25H8.75C9.7165 12.25 10.5 11.4665 10.5 10.5V8.75"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.5"
-    />
-    <path
-      d="M8.75 1.75H12.25V5.25"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.5"
-    />
-    <path
-      d="M6.41699 7.58333L12.2503 1.75"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.5"
-    />
-  </svg>
-);

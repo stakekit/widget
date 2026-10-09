@@ -131,27 +131,18 @@ export const validateTransactionWorkflowInput = (
 const initializeTransactionWorkflowContext = (
   input: TransactionWorkflowInput
 ): TransactionWorkflowContext => {
-  if (input._tag === "Classic") {
-    const batch = makeClassicTransactionWorkflowBatch(input.transactions);
-    const currentTransactionIndex = batch.transactions.findIndex(
-      ({ meta }) => !meta.done
-    );
-
-    return {
-      batches: [batch],
-      currentBatchIndex: currentTransactionIndex === -1 ? null : 0,
-      currentTransactionIndex:
-        currentTransactionIndex === -1 ? null : currentTransactionIndex,
-      domain: {
-        _tag: "Classic",
-        actionMeta: input.actionMeta,
-        yieldId: input.yieldId,
-      },
-      submissions: [],
-    };
-  }
-
-  const batch = makeBorrowTransactionWorkflowBatch(input.action);
+  const batch =
+    input._tag === "Classic"
+      ? makeClassicTransactionWorkflowBatch(input.transactions)
+      : makeBorrowTransactionWorkflowBatch(input.action);
+  const domain: TransactionWorkflowDomainContext =
+    input._tag === "Classic"
+      ? {
+          _tag: "Classic",
+          actionMeta: input.actionMeta,
+          yieldId: input.yieldId,
+        }
+      : { _tag: "Borrow", action: input.action };
   const currentTransactionIndex = batch.transactions.findIndex(
     ({ meta }) => !meta.done
   );
@@ -161,7 +152,7 @@ const initializeTransactionWorkflowContext = (
     currentBatchIndex: currentTransactionIndex === -1 ? null : 0,
     currentTransactionIndex:
       currentTransactionIndex === -1 ? null : currentTransactionIndex,
-    domain: { _tag: "Borrow", action: input.action },
+    domain,
     submissions: [],
   };
 };

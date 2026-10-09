@@ -1,15 +1,16 @@
 import * as AsyncResult from "effect/reactivity/AsyncResult";
-import { motion } from "motion/react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useMountAnimation } from "../../../../mount-animation/index";
 import { useTrackPage } from "../../../../tracking/index";
 import { useSKWallet } from "../../../../wallet/index";
 import { ZerionChainModal } from "../../../../wallet/views";
-import { FallbackContent, PageContainer } from "../../../../widget-shell/views";
+import {
+  FallbackContent,
+  MountAnimatedPage,
+} from "../../../../widget-shell/views";
 import { usePositions } from "../../../react/use-positions";
 import { PositionsListItem } from "./components/positions-list-item";
 import { container } from "./style.css";
@@ -98,21 +99,8 @@ const PositionsPage = () => {
   );
 };
 
-export const AnimatedPositionsPage = () => {
-  const { mountAnimationFinished } = useMountAnimation();
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, translateY: "-10px" }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{
-        duration: mountAnimationFinished ? 0.3 : 1,
-        delay: mountAnimationFinished ? 0 : 1.5,
-      }}
-    >
-      <PageContainer>
-        <PositionsPage />
-      </PageContainer>
-    </motion.div>
-  );
-};
+export const AnimatedPositionsPage = () => (
+  <MountAnimatedPage>
+    <PositionsPage />
+  </MountAnimatedPage>
+);

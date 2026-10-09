@@ -8,6 +8,7 @@ import type { WalletConnectProtocol } from "../../platform/wallet-connect-protoc
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import type { CosmosChainsMap } from "./chains";
 import { getWagmiChain } from "./chains/index";
+import type { CosmosWalletManagerOptions } from "./wallet-manager";
 
 const logCosmosConnectorFailure = (operation: string, cause: unknown) =>
   Effect.logError("Cosmos wallet connector failed to load").pipe(
@@ -23,15 +24,7 @@ const loadCosmosConnector = Effect.fn("loadCosmosConnector")(function* ({
   persistPublicKey,
   walletConnectProtocol,
   runWalletEffect,
-}: {
-  cosmosChainsMap: Partial<CosmosChainsMap>;
-  walletConnectProtocol: WalletConnectProtocol;
-  runWalletEffect: RunWalletEffect;
-  persistPublicKey: (input: {
-    readonly address: WalletAddress;
-    readonly publicKey: string;
-  }) => Promise<void>;
-}) {
+}: CosmosWalletManagerOptions) {
   const walletManagerModule = yield* Effect.tryPromise({
     try: () => import("./wallet-manager"),
     catch: (cause) =>

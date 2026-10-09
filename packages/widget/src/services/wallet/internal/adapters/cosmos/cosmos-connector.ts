@@ -18,6 +18,7 @@ import { WalletIntegrationError } from "../../../wallet-errors";
 import { getWalletNetworkLogo } from "../../runtime/assets";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import { wagmiConnectResult } from "../wagmi-connect-result";
+import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
 import type { CosmosChainsAssets, CosmosChainsMap } from "./chains";
 import type { CosmosChainWallet, ExtraProps } from "./cosmos-connector-meta";
 import { configMeta } from "./cosmos-connector-meta";
@@ -196,29 +197,8 @@ export const createCosmosConnector = ({
         return wagmiChain;
       };
 
-      const onAccountsChanged: ReturnType<CreateConnectorFn>["onAccountsChanged"] =
-        (accounts) => {
-          if (accounts.length === 0) {
-            config.emitter.emit("disconnect");
-          } else {
-            config.emitter.emit("change", {
-              accounts: accounts as Address[],
-            });
-          }
-        };
-
-      const onChainChanged: ReturnType<CreateConnectorFn>["onChainChanged"] = (
-        chainId
-      ) => {
-        config.emitter.emit("change", {
-          chainId: cosmosWagmiChainId(chainId),
-        });
-      };
-
-      const onDisconnect: ReturnType<CreateConnectorFn>["onDisconnect"] =
-        () => {
-          config.emitter.emit("disconnect");
-        };
+      const { onAccountsChanged, onChainChanged, onDisconnect } =
+        makeWagmiConnectorEvents(config.emitter, cosmosWagmiChainId);
 
       const signTransaction = ({
         cw,

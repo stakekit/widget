@@ -4,9 +4,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { exactDecimal } from "../../../domain/finance/exact";
 import {
-  formatBorrowProviderName,
   formatHealthFactor,
-  formatNetworkName,
   formatPercent,
   formatUsd,
 } from "../../../shared/lib/formatters";
@@ -21,10 +19,7 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/views";
-import {
-  getBorrowTransactionFlowAmountLabelKey,
-  projectBorrowTransactionFlowSummary,
-} from "../model/borrow-transaction-flow";
+import { projectBorrowTransactionFlowSummary } from "../model/borrow-transaction-flow";
 import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowReview,
@@ -34,6 +29,7 @@ import {
   presentBorrowReviewConfirmationError,
 } from "./borrow-review-confirmation-error";
 import * as styles from "./styles.css";
+import { BorrowFlowAmountRows, BorrowFlowMarketRows } from "./summary-rows";
 
 const formatOptionalSummary = (value: string | undefined) => {
   if (!value) return null;
@@ -138,48 +134,7 @@ export const BorrowReviewPage = () => {
     "effectiveAmount" in projectedSummary.collateral
       ? `${projectedSummary.collateral.effectiveAmount} ${projectedSummary.collateral.symbol}`
       : null;
-  const actionRows = [
-    {
-      id: "action",
-      label: t("dashboard.borrow.review_page.action"),
-      value: t(`dashboard.borrow.review_page.actions.${summary.action}`),
-    },
-    projectedSummary.borrow
-      ? {
-          id: "borrow-amount",
-          label: t(getBorrowTransactionFlowAmountLabelKey(summary.action)),
-          value: `${projectedSummary.borrow.amount} ${projectedSummary.borrow.symbol}`,
-        }
-      : null,
-    projectedSummary.collateral
-      ? {
-          id: "collateral-amount",
-          label: t("dashboard.borrow.review_page.collateral_amount"),
-          value: `${projectedSummary.collateral.amount} ${projectedSummary.collateral.symbol}`,
-        }
-      : null,
-    effectiveCollateral
-      ? {
-          id: "effective-collateral",
-          label: t("dashboard.borrow.review_page.effective_collateral"),
-          value: effectiveCollateral,
-        }
-      : null,
-    {
-      id: "market",
-      label: t("dashboard.borrow.review_page.market"),
-      value: summary.marketLabel,
-    },
-    {
-      id: "provider",
-      label: t("dashboard.borrow.review_page.provider"),
-      value: formatBorrowProviderName(summary.providerName),
-    },
-    {
-      id: "network",
-      label: t("dashboard.borrow.review_page.network"),
-      value: formatNetworkName(summary.network),
-    },
+  const financialRows = [
     collateralValue
       ? {
           id: "collateral-value",
@@ -247,7 +202,26 @@ export const BorrowReviewPage = () => {
           <Divider />
 
           <Box display="flex" flexDirection="column" gap="1">
-            {actionRows.map((row) => (
+            <DetailRow
+              id="action"
+              label={t("dashboard.borrow.review_page.action")}
+              value={t(
+                `dashboard.borrow.review_page.actions.${summary.action}`
+              )}
+            />
+            <BorrowFlowAmountRows
+              action={summary.action}
+              projected={projectedSummary}
+            />
+            {effectiveCollateral ? (
+              <DetailRow
+                id="effective-collateral"
+                label={t("dashboard.borrow.review_page.effective_collateral")}
+                value={effectiveCollateral}
+              />
+            ) : null}
+            <BorrowFlowMarketRows summary={summary} />
+            {financialRows.map((row) => (
               <DetailRow key={row.id} {...row} />
             ))}
           </Box>

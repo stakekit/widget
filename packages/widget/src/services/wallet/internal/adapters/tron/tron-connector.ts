@@ -25,6 +25,7 @@ import {
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import { tron } from "../configured-chains";
 import { wagmiConnectResult } from "../wagmi-connect-result";
+import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
 import type {
   ExtraProps,
   StorageItem,
@@ -120,21 +121,7 @@ const createTronConnector = ({
 
         return wallet.isAuthorized();
       },
-      onAccountsChanged: (accounts: string[]) => {
-        if (accounts.length === 0) {
-          config.emitter.emit("disconnect");
-        } else {
-          config.emitter.emit("change", { accounts: accounts as Address[] });
-        }
-      },
-      onChainChanged: (chainId) => {
-        config.emitter.emit("change", {
-          chainId: chainId as unknown as number,
-        });
-      },
-      onDisconnect: () => {
-        config.emitter.emit("disconnect");
-      },
+      ...makeWagmiConnectorEvents(config.emitter),
       getProvider: async () => wallet,
       $filteredChains: Stream.succeed<Chain[]>([tron]),
     };

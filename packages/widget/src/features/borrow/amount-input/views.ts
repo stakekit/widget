@@ -1,7 +1,6 @@
+export { BorrowAmountCardFooter } from "./ui/amount-card-footer";
 export {
-  amountBalanceGroup,
   amountCard,
-  amountCardFooter,
   amountCardHeader,
   amountCardHighlighted,
   amountTokenButton,

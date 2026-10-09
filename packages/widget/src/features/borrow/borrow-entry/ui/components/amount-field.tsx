@@ -2,18 +2,17 @@ import type BigNumber from "bignumber.js";
 import clsx from "clsx";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { formatUsd } from "../../../../../shared/lib/formatters";
 import {
   defaultFormattedNumber,
   formatNumber,
 } from "../../../../../shared/lib/number-format";
 import * as AmountToggle from "../../../../../shared/ui/components/amount-toggle";
-import { MaxButton } from "../../../../../shared/ui/components/max-button";
 import { NumberInput } from "../../../../../shared/ui/components/number-input";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { WarningBox } from "../../../../../shared/ui/primitives/warning-box";
 import * as styles from "../../../amount-input/views";
+import { BorrowAmountCardFooter } from "../../../amount-input/views";
 
 export const AmountField = ({
   amount,
@@ -51,17 +50,11 @@ export const AmountField = ({
         {tokenSelector}
       </Box>
 
-      <Box className={styles.amountCardFooter}>
-        <Text variant={{ type: "muted", weight: "normal" }}>
-          {formatUsd(usdValue)}
-        </Text>
-        <Box className={styles.amountBalanceGroup}>
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {balanceLabel}
-          </Text>
-          {onMaxClick ? <MaxButton onMaxClick={onMaxClick} /> : null}
-        </Box>
-      </Box>
+      <BorrowAmountCardFooter
+        balanceLabel={balanceLabel}
+        onMaxClick={onMaxClick}
+        usdValue={usdValue}
+      />
       {warningText ? <WarningBox text={warningText} /> : null}
     </Box>
   </Box>

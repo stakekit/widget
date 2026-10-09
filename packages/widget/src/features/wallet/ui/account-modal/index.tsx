@@ -22,7 +22,12 @@ import { logoutAtom, switchAccountAtom } from "../../state/workflows";
 import { WalletDialog, WalletDialogClose } from "../wallet-dialog";
 import { WalletAvatar } from "../wallet-dialog/avatar";
 import { CopiedIcon, CopyIcon, DisconnectIcon } from "../wallet-dialog/icons";
-import { heading, menuButton } from "../wallet-dialog/styles.css";
+import {
+  heading,
+  menuButton,
+  walletSummaryTitle,
+  walletSummaryTrigger,
+} from "../wallet-dialog/styles.css";
 import {
   accountOption,
   action,
@@ -30,11 +35,9 @@ import {
   actionIcon,
   actions,
   close,
-  container,
   profile,
   profileAvatar,
   profileDetails,
-  titleStyle,
   triggerAvatar,
 } from "./styles.css";
 
@@ -74,7 +77,10 @@ export const AccountModal = () => {
         display="flex"
         justifyContent="space-between"
         alignItems="center"
-        className={combineRecipeWithVariant({ variant, rec: container })}
+        className={combineRecipeWithVariant({
+          variant,
+          rec: walletSummaryTrigger,
+        })}
         paddingLeft="2"
         py="2"
         onClick={() => {
@@ -83,7 +89,7 @@ export const AccountModal = () => {
         }}
       >
         <WalletAvatar address={wallet.address} className={triggerAvatar} />
-        <Text className={titleStyle}>{displayAddress}</Text>
+        <Text className={walletSummaryTitle}>{displayAddress}</Text>
         <Box mx="2">
           <CaretDownIcon />
         </Box>

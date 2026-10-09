@@ -1,4 +1,6 @@
 import { keyframes, style } from "@vanilla-extract/css";
+import { recipe } from "@vanilla-extract/recipes";
+import { atoms } from "../../../../shared/styles/theme/atoms.css";
 import { vars } from "../../../../shared/styles/theme/contract.css";
 import {
   breakpoints,
@@ -140,3 +142,34 @@ export const mobileClose = style({
   display: "none",
   selectors: { [mobile]: { display: "flex" } },
 });
+
+// The connected-wallet summary buttons that open the account and chain modals.
+export const walletSummaryTrigger = recipe({
+  base: {
+    cursor: "pointer",
+    transition: "0.125s ease",
+    ":hover": {
+      transform: "scale(1.025)",
+    },
+    ":active": {
+      transform: "scale(0.95)",
+    },
+  },
+  variants: {
+    variant: {
+      default: {},
+      finery: {
+        background: vars.color.summaryItemBackground,
+        boxShadow: "0px 15px 30px 0px #0000000D",
+      },
+      porto: {
+        background: vars.color.summaryItemBackground,
+      },
+      utila: {},
+    },
+  },
+});
+
+export const walletSummaryTitle = style([
+  atoms({ fontWeight: "modalHeading" }),
+]);

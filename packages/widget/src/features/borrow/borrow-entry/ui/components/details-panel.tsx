@@ -5,6 +5,11 @@ import {
   formatNetworkName,
 } from "../../../../../shared/lib/formatters";
 import {
+  dashboardDetailsScroll,
+  dashboardMetricCard,
+  dashboardMetricGrid,
+} from "../../../../../shared/ui/components/dashboard-details/styles.css";
+import {
   AddressRow,
   DetailRow,
   DetailsSection,
@@ -26,10 +31,10 @@ const BorrowMetricGrid = ({
 }: {
   readonly cards: ReturnType<typeof getBorrowDetailsModel>["metricCards"];
 }) => (
-  <Box className={styles.metricGrid}>
+  <Box className={dashboardMetricGrid}>
     {cards.map((card) => (
       <Box
-        className={styles.metricCard}
+        className={dashboardMetricCard}
         display="flex"
         flexDirection="column"
         gap="1"
@@ -112,7 +117,7 @@ export const BorrowDetailsPanel = ({
 
   return (
     <Box
-      className={styles.detailsScroll}
+      className={dashboardDetailsScroll}
       display="flex"
       flexDirection="column"
       gap="4"

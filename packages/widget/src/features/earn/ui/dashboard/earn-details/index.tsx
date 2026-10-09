@@ -3,6 +3,7 @@ import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import type { SelectedValidators } from "../../../../../domain/earn/reward-rate";
 import { formatUsd } from "../../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../../shared/lib/number-format";
+import { dashboardDetailsScroll } from "../../../../../shared/ui/components/dashboard-details/styles.css";
 import {
   AddressRow,
   DetailRow,
@@ -26,7 +27,6 @@ import {
   canPresentRewardRateHistory,
   getEarnDetailsModel,
 } from "./earn-details-model";
-import * as styles from "./styles.css";
 
 export const EarnDetails = () => {
   const { view: entry } = useEarnEntry();
@@ -68,7 +68,7 @@ const EarnDetailsView = ({
     return (
       <Box
         alignItems="center"
-        className={styles.container}
+        className={dashboardDetailsScroll}
         display="flex"
         justifyContent="center"
       >
@@ -96,7 +96,7 @@ const EarnDetailsView = ({
 
   return (
     <Box
-      className={styles.container}
+      className={dashboardDetailsScroll}
       display="flex"
       flexDirection="column"
       gap="4"

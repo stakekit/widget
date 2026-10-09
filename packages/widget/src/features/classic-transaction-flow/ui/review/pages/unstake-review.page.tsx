@@ -1,5 +1,4 @@
 import { useTrackPage } from "../../../../tracking/index";
-import { KycGateCard } from "../../../../yield-summary/views";
 import { useUnstakeActionReview } from "../hooks/use-unstake-review.hook";
 import { ReviewPage } from "./common-page/common.page.tsx";
 import { UnstakeSignPopup } from "./unstake-sign-popup";
@@ -50,16 +49,12 @@ export const UnstakeReviewPage = () => {
         loading={gasCheckLoading}
         commissionFee={null}
         cta={cta}
-        notice={
-          kycGate.state !== "pass" || kycStatusIsChecking ? (
-            <KycGateCard
-              gate={kycGate}
-              isChecking={kycStatusIsChecking}
-              onCheckStatus={onKycStatusRefresh}
-              providerName={kycProviderName}
-            />
-          ) : null
-        }
+        kyc={{
+          gate: kycGate,
+          isChecking: kycStatusIsChecking,
+          onCheckStatus: onKycStatusRefresh,
+          providerName: kycProviderName,
+        }}
         {...metaInfo}
       />
       <UnstakeSignPopup

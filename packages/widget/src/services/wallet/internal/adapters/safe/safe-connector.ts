@@ -84,21 +84,7 @@ function safe(parameters: { shimDisconnect?: boolean } = {}) {
           getAddress
         );
       },
-      async getProvider() {
-        // Only allowed in iframe context
-        if (!isWalletIframe()) return;
-
-        if (!provider_) {
-          // `getInfo` hangs when not used in Safe App iFrame
-          // https://github.com/safe-global/safe-apps-sdk/issues/263#issuecomment-1029835840
-          const safe = await withTimeout(() => sdk.safe.getInfo(), {
-            timeout: 10,
-          });
-          if (!safe) throw new Error("Could not load Safe information");
-          provider_ = new SafeAppProvider(safe, sdk);
-        }
-        return provider_;
-      },
+      getProvider,
       async getChainId() {
         const provider = await getProvider();
         if (!provider) throw new ProviderNotFoundError();

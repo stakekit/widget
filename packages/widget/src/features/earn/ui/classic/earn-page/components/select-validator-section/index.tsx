@@ -1,66 +1,20 @@
-import {
-  isYieldActionArgRequired,
-  isYieldValidatorSelectionRequired,
-} from "../../../../../../../domain/earn/yield";
-import { SelectValidator } from "../../../../../../yield-entry/views";
+import { EarnValidatorSelection } from "../../../../components/earn-validator-selection";
 import { SelectValidatorTrigger } from "./select-validator-trigger";
-import { useSelectValidator } from "./use-select-validator";
 
-export const SelectValidatorSection = () => {
-  const {
-    isLoading,
-    onViewMoreClick,
-    onClose,
-    onOpen,
-    onItemClick,
-    onRemoveValidator,
-    selectedValidators,
-    selectedStake,
-    validatorsData,
-    validatorSearch,
-    onValidatorSearch,
-    hasMoreValidators,
-    isLoadingMoreValidators,
-    onLoadMoreValidators,
-  } = useSelectValidator();
-
-  const validators = validatorsData ?? [];
-
-  if (!selectedStake || !isYieldValidatorSelectionRequired(selectedStake)) {
-    return null;
-  }
-  const selectedValidatorsArr = [...selectedValidators.values()];
-
-  const multiSelect = isYieldActionArgRequired(
-    selectedStake,
-    "enter",
-    "validatorAddresses"
-  );
-
-  return (
-    <SelectValidator
-      trigger={
-        <SelectValidatorTrigger
-          onRemoveValidator={onRemoveValidator}
-          selectedValidatorsArr={selectedValidatorsArr}
-          multiSelect={multiSelect}
-          selectedStake={selectedStake}
-        />
-      }
-      selectedValidators={new Set(selectedValidatorsArr.map((v) => v.key))}
-      multiSelect={multiSelect}
-      selectedStake={selectedStake}
-      onItemClick={onItemClick}
-      onViewMoreClick={onViewMoreClick}
-      onClose={onClose}
-      onOpen={onOpen}
-      onSearch={onValidatorSearch}
-      searchValue={validatorSearch}
-      isLoading={isLoading}
-      validators={validators}
-      hasMore={hasMoreValidators}
-      isLoadingMore={isLoadingMoreValidators}
-      onLoadMore={onLoadMoreValidators}
-    />
-  );
-};
+export const SelectValidatorSection = () => (
+  <EarnValidatorSelection
+    renderTrigger={({
+      multiSelect,
+      onRemoveValidator,
+      selectedStake,
+      selectedValidators,
+    }) => (
+      <SelectValidatorTrigger
+        onRemoveValidator={onRemoveValidator}
+        selectedValidatorsArr={selectedValidators}
+        multiSelect={multiSelect}
+        selectedStake={selectedStake}
+      />
+    )}
+  />
+);

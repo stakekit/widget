@@ -2,7 +2,6 @@ import { globalStyle, style } from "@vanilla-extract/css";
 import { atoms } from "../../../../shared/styles/theme/atoms.css";
 import { vars } from "../../../../shared/styles/theme/contract.css";
 import { splitExpandedContainerQuery } from "../../../../shared/styles/tokens/breakpoints";
-import { DASHBOARD_OUTLET_PADDING } from "../../../../shared/styles/tokens/layout";
 
 const pane = style({
   minWidth: 0,
@@ -33,19 +32,6 @@ export const detailsPaneWrapper = style([
     position: "relative",
   },
 ]);
-
-export const detailsScroll = style({
-  bottom: 0,
-  boxSizing: "border-box",
-  left: 0,
-  marginRight: `calc(-1 * ${DASHBOARD_OUTLET_PADDING})`,
-  overflowY: "auto",
-  paddingRight: DASHBOARD_OUTLET_PADDING,
-  position: "absolute",
-  right: 0,
-  scrollbarGutter: "stable",
-  top: 0,
-});
 
 export const assetSelectorList = style({
   display: "flex",
@@ -191,18 +177,3 @@ export const detailsHeader = style({
   gap: "12px",
   minWidth: 0,
 });
-
-export const metricGrid = style({
-  display: "grid",
-  gap: "8px",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-});
-
-export const metricCard = style([
-  atoms({
-    background: "stakeSectionBackground",
-    borderRadius: "base",
-    px: "3",
-    py: "3",
-  }),
-]);

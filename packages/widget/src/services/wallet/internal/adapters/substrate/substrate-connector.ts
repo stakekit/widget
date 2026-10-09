@@ -23,6 +23,7 @@ import { getWalletNetworkLogo } from "../../runtime/assets";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import walletConnectIcon from "../evm/icons/wallet-connect.svg";
 import { wagmiConnectResult } from "../wagmi-connect-result";
+import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
 import type { SubstrateChain } from "./chains";
 import type { encodeSignedExtrinsic } from "./extrinsic-encoding";
 import {
@@ -249,21 +250,7 @@ const createSubstrateConnector = ({
 
         return lastConnectedId === id && (await wallet.canRestore());
       },
-      onAccountsChanged: (accounts: string[]) => {
-        if (accounts.length === 0) {
-          config.emitter.emit("disconnect");
-        } else {
-          config.emitter.emit("change", { accounts: accounts as Address[] });
-        }
-      },
-      onChainChanged: (chainId) => {
-        config.emitter.emit("change", {
-          chainId: chainId as unknown as number,
-        });
-      },
-      onDisconnect: () => {
-        config.emitter.emit("disconnect");
-      },
+      ...makeWagmiConnectorEvents(config.emitter),
       getProvider: async () => wallet,
       $filteredChains: Stream.succeed(filteredChains),
     };

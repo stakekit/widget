@@ -13,6 +13,7 @@ import {
 import { getWalletNetworkLogo } from "../../runtime/assets";
 import { cardano } from "../configured-chains";
 import { wagmiConnectResult } from "../wagmi-connect-result";
+import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
 import {
   configMeta,
   type ExtraProps,
@@ -166,21 +167,7 @@ const createCardanoConnector = ({
 
         return lastConnectedWallet.id === wallet.id;
       },
-      onAccountsChanged: (accounts: string[]) => {
-        if (accounts.length === 0) {
-          config.emitter.emit("disconnect");
-        } else {
-          config.emitter.emit("change", { accounts: accounts as Address[] });
-        }
-      },
-      onChainChanged: (chainId) => {
-        config.emitter.emit("change", {
-          chainId: chainId as unknown as number,
-        });
-      },
-      onDisconnect: () => {
-        config.emitter.emit("disconnect");
-      },
+      ...makeWagmiConnectorEvents(config.emitter),
       getProvider: async () => ({}),
       $filteredChains: Stream.succeed<Chain[]>([cardano]),
     };

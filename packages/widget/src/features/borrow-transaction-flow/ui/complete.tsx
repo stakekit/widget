@@ -1,10 +1,5 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
-import {
-  formatBorrowProviderName,
-  formatNetworkName,
-} from "../../../shared/lib/formatters";
-import { DetailRow } from "../../../shared/ui/components/details-section";
 import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
 import { CheckCircleIcon } from "../../../shared/ui/primitives/icons/check-circle";
@@ -15,14 +10,12 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/views";
-import {
-  getBorrowTransactionFlowAmountLabelKey,
-  projectBorrowTransactionFlowSummary,
-} from "../model/borrow-transaction-flow";
+import { projectBorrowTransactionFlowSummary } from "../model/borrow-transaction-flow";
 import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowExecution,
 } from "../react/borrow-flow-route";
+import { BorrowFlowAmountRows, BorrowFlowMarketRows } from "./summary-rows";
 import { useBorrowExecution } from "./use-borrow-execution";
 
 export const BorrowCompletePage = () => {
@@ -39,38 +32,6 @@ export const BorrowCompletePage = () => {
   const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
 
   if (!result) return null;
-
-  const rows = [
-    projectedSummary.borrow
-      ? {
-          id: "borrow-amount",
-          label: t(getBorrowTransactionFlowAmountLabelKey(summary.action)),
-          value: `${projectedSummary.borrow.amount} ${projectedSummary.borrow.symbol}`,
-        }
-      : null,
-    projectedSummary.collateral
-      ? {
-          id: "collateral-amount",
-          label: t("dashboard.borrow.review_page.collateral_amount"),
-          value: `${projectedSummary.collateral.amount} ${projectedSummary.collateral.symbol}`,
-        }
-      : null,
-    {
-      id: "market",
-      label: t("dashboard.borrow.review_page.market"),
-      value: summary.marketLabel,
-    },
-    {
-      id: "provider",
-      label: t("dashboard.borrow.review_page.provider"),
-      value: formatBorrowProviderName(summary.providerName),
-    },
-    {
-      id: "network",
-      label: t("dashboard.borrow.review_page.network"),
-      value: formatNetworkName(summary.network),
-    },
-  ].filter((row): row is NonNullable<typeof row> => !!row);
 
   return (
     <AnimationPage>
@@ -109,9 +70,11 @@ export const BorrowCompletePage = () => {
           </Box>
 
           <Box display="flex" flexDirection="column" gap="1" textAlign="left">
-            {rows.map((row) => (
-              <DetailRow key={row.id} {...row} />
-            ))}
+            <BorrowFlowAmountRows
+              action={summary.action}
+              projected={projectedSummary}
+            />
+            <BorrowFlowMarketRows summary={summary} />
           </Box>
 
           {result.submissions.length > 0 && (

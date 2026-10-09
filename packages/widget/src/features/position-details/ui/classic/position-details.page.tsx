@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
-import type { YieldPendingActionType } from "../../../../domain/action/pending-action";
 import { getExtendedYieldType } from "../../../../domain/earn/yield";
 import { getRewardRateFormatted } from "../../../../shared/lib/formatters";
 import { TokenIcon } from "../../../../shared/ui/components/token-icon";
@@ -11,12 +10,11 @@ import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { useTrackPage } from "../../../tracking/index";
 import { AnimationPage, PageContainer } from "../../../widget-shell/views";
 import { RewardRateBreakdown } from "../../../yield-summary/views";
-import { AmountBlock } from "./components/amount-block";
+import { PositionDetailsPendingActions } from "../components/position-details-pending-actions";
 import { PositionBalances } from "./components/position-balances";
 import { PositionDetailsUnstakeActions } from "./components/position-details-unstake-actions";
 import { PositionDetailsValidatorModal } from "./components/position-details-validator-modal";
 import { ProviderDetails } from "./components/provider-details";
-import { StaticActionBlock } from "./components/static-action-block";
 import { YieldDetails } from "./components/yield-details";
 import { usePositionDetails } from "./hooks/use-position-details";
 import { container } from "./styles.css";
@@ -212,47 +210,15 @@ const PositionDetails = () => {
               gap="2"
             >
               {/* Pending actions */}
-              {pendingActionsValue?.map((val) =>
-                val.amount ? (
-                  <AmountBlock
-                    key={`${val.pendingAction.type}-${val.pendingAction.passthrough}`}
-                    variant="action"
-                    onAmountChange={(amount) =>
-                      onPendingActionAmountChange({
-                        balanceType: val.yieldBalance.type,
-                        token: val.yieldBalance.token,
-                        actionType: val.pendingAction.type,
-                        passthrough: val.pendingAction.passthrough,
-                        amount,
-                      })
-                    }
-                    value={val.amount}
-                    canChangeAmount
-                    onClick={() =>
-                      onPendingActionClick({
-                        pendingAction: val.pendingAction,
-                        yieldBalance: val.yieldBalance,
-                      })
-                    }
-                    label={t(
-                      `position_details.pending_action_button.${
-                        val.pendingAction.type.toLowerCase() as Lowercase<YieldPendingActionType>
-                      }`
-                    )}
-                    onMaxClick={null}
-                    formattedAmount={val.formattedAmount}
-                    balance={null}
-                    unstakeAmountError={val.validation !== null}
-                  />
-                ) : (
-                  <StaticActionBlock
-                    {...val}
-                    key={`${val.pendingAction.type}-${val.pendingAction.passthrough}`}
-                    onPendingActionClick={onPendingActionClick}
-                    yieldId={integrationDataValue.id}
-                  />
-                )
-              )}
+              <PositionDetailsPendingActions
+                positionDetails={{
+                  integrationData: integrationDataValue,
+                  pendingActions: pendingActionsValue,
+                  onPendingActionAmountChange,
+                  onPendingActionClick,
+                }}
+                presentation="classic"
+              />
               {/* Unstake */}
               <PositionDetailsUnstakeActions />
             </Box>

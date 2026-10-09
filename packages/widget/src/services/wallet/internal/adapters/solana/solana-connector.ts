@@ -24,6 +24,7 @@ import type { SolanaWalletDescriptor } from "../../runtime/solana-runtime";
 import { WalletConnectSolanaAdapter } from "../../runtime/solana-wallet-connect-adapter";
 import { solana } from "../configured-chains";
 import { wagmiConnectResult } from "../wagmi-connect-result";
+import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
 import {
   type ExtraProps,
   extensionInstallUrls,
@@ -152,21 +153,7 @@ const createSolanaConnector = ({
         );
       },
 
-      onAccountsChanged: (accounts: string[]) => {
-        if (accounts.length === 0) {
-          config.emitter.emit("disconnect");
-        } else {
-          config.emitter.emit("change", { accounts: accounts as Address[] });
-        }
-      },
-      onChainChanged: (chainId) => {
-        config.emitter.emit("change", {
-          chainId: chainId as unknown as number,
-        });
-      },
-      onDisconnect: () => {
-        config.emitter.emit("disconnect");
-      },
+      ...makeWagmiConnectorEvents(config.emitter),
       getProvider: async () => ({}),
       $filteredChains: Stream.succeed<Chain[]>([solana]),
     };

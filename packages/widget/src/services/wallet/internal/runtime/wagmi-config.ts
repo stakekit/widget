@@ -113,16 +113,7 @@ export const scopedMipdSubscription = ({
 
 export type BuildWagmiConfigOptions = {
   disableInjectedProviderDiscovery: boolean;
-  mapWalletFn?: (props: {
-    id: string;
-    iconUrl: string | (() => Promise<string>);
-    name: string;
-    iconBackground: string;
-  }) => {
-    iconUrl: string | (() => Promise<string>);
-    name: string;
-    iconBackground: string;
-  };
+  mapWalletFn?: SettingsProps["mapWalletFn"];
   externalProviders?: CurrentRef<ExternalProviderSnapshot>;
   enabledNetworks: EnabledWalletNetworks;
   walletListFactory?: (chains: Chain[]) => WalletList;

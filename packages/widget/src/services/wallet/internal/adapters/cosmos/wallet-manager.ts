@@ -18,12 +18,7 @@ import { type CosmosWallet, createCosmosConnector } from "./cosmos-connector";
 import { makeExtensionWallet } from "./extension-wallet";
 import { makeCosmosWalletConnectWallet } from "./wallet-connect";
 
-export const getWalletManager = ({
-  cosmosChainsMap,
-  persistPublicKey,
-  walletConnectProtocol,
-  runWalletEffect,
-}: {
+export type CosmosWalletManagerOptions = {
   cosmosChainsMap: Partial<CosmosChainsMap>;
   walletConnectProtocol: WalletConnectProtocol;
   runWalletEffect: RunWalletEffect;
@@ -31,7 +26,14 @@ export const getWalletManager = ({
     readonly address: WalletAddress;
     readonly publicKey: string;
   }) => Promise<void>;
-}): {
+};
+
+export const getWalletManager = ({
+  cosmosChainsMap,
+  persistPublicKey,
+  walletConnectProtocol,
+  runWalletEffect,
+}: CosmosWalletManagerOptions): {
   connector: {
     groupName: string;
     wallets: WalletList[number]["wallets"];

@@ -21,6 +21,7 @@ import { normalizeChainId } from "../../normalize-chain-id";
 import { walletImages } from "../../runtime/assets";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import { wagmiConnectResult } from "../wagmi-connect-result";
+import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
 import {
   ledgerChainPriority,
   type SupportedLedgerLiveFamilies,
@@ -267,24 +268,8 @@ const createLedgerLiveConnector = ({
           )
         : Result.fail(new Error("Current chain not found"));
 
-    const onAccountsChanged: ReturnType<CreateConnectorFn>["onAccountsChanged"] =
-      (accounts) => {
-        if (accounts.length === 0) {
-          config.emitter.emit("disconnect");
-        } else {
-          config.emitter.emit("change", { accounts: accounts as Address[] });
-        }
-      };
-
-    const onChainChanged: ReturnType<CreateConnectorFn>["onChainChanged"] = (
-      chainId
-    ) => {
-      config.emitter.emit("change", { chainId: normalizeChainId(chainId) });
-    };
-
-    const onDisconnect: ReturnType<CreateConnectorFn>["onDisconnect"] = () => {
-      config.emitter.emit("disconnect");
-    };
+    const { onAccountsChanged, onChainChanged, onDisconnect } =
+      makeWagmiConnectorEvents(config.emitter, normalizeChainId);
 
     const getProvider: ReturnType<CreateConnectorFn>["getProvider"] =
       async () => ({});

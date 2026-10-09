@@ -20,6 +20,7 @@ import {
   WalletSigningError,
 } from "../../../wallet-errors";
 import type { WalletBroadcastResult } from "../../../wallet-transactions";
+import { decodeWalletPayload } from "../decode-wallet-payload";
 import {
   decodeAndPrepareBorrowEvmTransaction,
   decodeAndPrepareEvmTransaction,
@@ -41,14 +42,6 @@ const toWalletBroadcastError = (cause: ExternalProviderError) =>
     cause,
     customMessage: cause.customMessage,
   });
-
-const decodeSchema = <S extends Schema.ConstraintDecoder<unknown>>(
-  schema: S,
-  input: unknown
-): Result.Result<S["Type"], string> =>
-  Schema.decodeUnknownResult(schema)(input).pipe(
-    Result.mapError((error) => error.message)
-  );
 
 const tryResult = <A>(
   evaluate: () => A,
@@ -79,7 +72,7 @@ const decodeExternalProviderTransaction = ({
 
   const result: Result.Result<SKTx, string> = (() => {
     if (network === "solana") {
-      return decodeSchema(unsignedSolanaTransactionCodec, tx).pipe(
+      return decodeWalletPayload(unsignedSolanaTransactionCodec, tx).pipe(
         Result.map((decodedTx) => ({
           type: "solana",
           tx: normalizeSolanaTransactionToHex(decodedTx),
@@ -88,7 +81,7 @@ const decodeExternalProviderTransaction = ({
     }
 
     if (network === "ton") {
-      return decodeSchema(
+      return decodeWalletPayload(
         Schema.fromJsonString(unsignedTonTransactionCodec),
         tx
       ).pipe(
@@ -103,7 +96,7 @@ const decodeExternalProviderTransaction = ({
     }
 
     if (network === "tron") {
-      return decodeSchema(
+      return decodeWalletPayload(
         Schema.fromJsonString(unsignedTronTransactionCodec),
         tx
       ).pipe(
@@ -112,7 +105,7 @@ const decodeExternalProviderTransaction = ({
     }
 
     if (network === "bittensor") {
-      return decodeSchema(
+      return decodeWalletPayload(
         Schema.fromJsonString(substratePayloadCodec),
         tx
       ).pipe(

@@ -1,18 +1,14 @@
 import { Match } from "effect";
 import { useTranslation } from "react-i18next";
-import {
-  getYieldActionArg,
-  getYieldTypeLabels,
-} from "../../../../../domain/earn/yield";
+import { getYieldTypeLabels } from "../../../../../domain/earn/yield";
 import { formatNumber } from "../../../../../shared/lib/number-format";
 import * as AmountToggle from "../../../../../shared/ui/components/amount-toggle";
 import { AmountTokenSection } from "../../../../../shared/ui/components/amount-token-section";
-import { Dropdown } from "../../../../../shared/ui/components/dropdown";
 import { SelectedToken } from "../../../../../shared/ui/components/selected-token";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
-import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { type PageCta, PageCtaButton } from "../../../../widget-shell/views";
+import { TronResourceSelection } from "../../../../yield-entry/views";
 import { KycGateCard, MetaInfo } from "../../../../yield-summary/views";
 import { usePositionDetailsStake } from "../hooks/use-position-details-stake";
 
@@ -135,46 +131,14 @@ const PositionDetailsStakeExtraArgs = ({
   stake,
 }: {
   stake: PositionDetailsStakeState;
-}) => {
-  const { t } = useTranslation();
-
-  const tronResources = stake.selectedStake
-    ? getYieldActionArg(stake.selectedStake, "enter", "tronResource")
-    : null;
-  if (!tronResources) return null;
-
-  const options = (tronResources.options ?? []).map((value) => ({
-    label: value,
-    value,
-  }));
-  const selectedOption = stake.tronResource
-    ? { value: stake.tronResource, label: stake.tronResource }
-    : undefined;
-  const isError =
-    stake.validation.submitted && stake.validation.errors.tronResource;
-
-  return (
-    <Box>
-      <Box my="2">
-        <Text
-          variant={{
-            type: isError ? "danger" : "regular",
-          }}
-        >
-          {t("details.tron_resources.label")}
-        </Text>
-      </Box>
-
-      <Dropdown
-        options={options}
-        onSelect={(value) => stake.onTronResourceSelect(value)}
-        selectedOption={selectedOption}
-        placeholder={t("details.tron_resources.placeholder")}
-        isError={isError}
-      />
-    </Box>
-  );
-};
+}) => (
+  <TronResourceSelection
+    selectedYield={stake.selectedStake}
+    value={stake.tronResource}
+    isError={stake.validation.submitted && stake.validation.errors.tronResource}
+    onSelect={(value) => stake.onTronResourceSelect(value)}
+  />
+);
 
 const PositionDetailsStakePrimaryAction = ({
   stake,

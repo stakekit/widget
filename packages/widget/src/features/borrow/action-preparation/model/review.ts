@@ -92,6 +92,15 @@ const getRiskSummary = (
   };
 };
 
+const serializeOpenPositionFinancials = (
+  facts: OpenPositionFinancialFacts
+): { readonly [K in keyof OpenPositionFinancialFacts]: string } => ({
+  existingCollateralUsd: facts.existingCollateralUsd.toString(10),
+  existingDebtUsd: facts.existingDebtUsd.toString(10),
+  projectedCollateralUsd: facts.projectedCollateralUsd.toString(10),
+  projectedDebtUsd: facts.projectedDebtUsd.toString(10),
+});
+
 export const toBorrowTransactionFlowReview = (
   facts: PreparedActionFacts
 ): BorrowTransactionFlowReview => {
@@ -118,13 +127,10 @@ export const toBorrowTransactionFlowReview = (
         },
         summary: {
           ...commonSummary,
+          ...serializeOpenPositionFinancials(facts),
           action: "borrow",
           borrowAmount: facts.amount.toString(10),
-          existingCollateralUsd: facts.existingCollateralUsd.toString(10),
-          existingDebtUsd: facts.existingDebtUsd.toString(10),
           loanTokenSymbol: facts.loanTokenSymbol,
-          projectedCollateralUsd: facts.projectedCollateralUsd.toString(10),
-          projectedDebtUsd: facts.projectedDebtUsd.toString(10),
         },
       };
     case "BorrowAndSupply":
@@ -143,6 +149,7 @@ export const toBorrowTransactionFlowReview = (
         },
         summary: {
           ...commonSummary,
+          ...serializeOpenPositionFinancials(facts),
           action: "borrowAndSupply",
           borrowAmount: facts.borrowAmount.toString(10),
           collateralAmount: facts.collateralAmount.toString(10),
@@ -150,11 +157,7 @@ export const toBorrowTransactionFlowReview = (
           collateralTokenSymbol: facts.collateralTokenSymbol,
           effectiveCollateralAmount:
             facts.effectiveCollateralAmount.toString(10),
-          existingCollateralUsd: facts.existingCollateralUsd.toString(10),
-          existingDebtUsd: facts.existingDebtUsd.toString(10),
           loanTokenSymbol: facts.loanTokenSymbol,
-          projectedCollateralUsd: facts.projectedCollateralUsd.toString(10),
-          projectedDebtUsd: facts.projectedDebtUsd.toString(10),
         },
       };
     case "Supply":
@@ -171,16 +174,13 @@ export const toBorrowTransactionFlowReview = (
         },
         summary: {
           ...commonSummary,
+          ...serializeOpenPositionFinancials(facts),
           action: "supply",
           collateralAmount: facts.amount.toString(10),
           collateralFeeAmount: facts.collateralFeeAmount.toString(10),
           collateralTokenSymbol: facts.collateralTokenSymbol,
           effectiveCollateralAmount:
             facts.effectiveCollateralAmount.toString(10),
-          existingCollateralUsd: facts.existingCollateralUsd.toString(10),
-          existingDebtUsd: facts.existingDebtUsd.toString(10),
-          projectedCollateralUsd: facts.projectedCollateralUsd.toString(10),
-          projectedDebtUsd: facts.projectedDebtUsd.toString(10),
         },
       };
     case "Repay":

@@ -116,49 +116,25 @@ export const projectBorrowTransactionFlowSummary = (
 
   switch (summary.action) {
     case "borrow":
-      return {
-        borrow: {
-          amount: summary.borrowAmount,
-          symbol: summary.loanTokenSymbol,
-        },
-        collateral: null,
-        financials: {
-          existingCollateralUsd: summary.existingCollateralUsd,
-          existingDebtUsd: summary.existingDebtUsd,
-          projectedCollateralUsd: summary.projectedCollateralUsd,
-          projectedDebtUsd: summary.projectedDebtUsd,
-        },
-        risk,
-      };
     case "borrowAndSupply":
-      return {
-        borrow: {
-          amount: summary.borrowAmount,
-          symbol: summary.loanTokenSymbol,
-        },
-        collateral: {
-          amount: summary.collateralAmount,
-          effectiveAmount: summary.effectiveCollateralAmount,
-          feeAmount: summary.collateralFeeAmount,
-          symbol: summary.collateralTokenSymbol,
-        },
-        financials: {
-          existingCollateralUsd: summary.existingCollateralUsd,
-          existingDebtUsd: summary.existingDebtUsd,
-          projectedCollateralUsd: summary.projectedCollateralUsd,
-          projectedDebtUsd: summary.projectedDebtUsd,
-        },
-        risk,
-      };
     case "supply":
       return {
-        borrow: null,
-        collateral: {
-          amount: summary.collateralAmount,
-          effectiveAmount: summary.effectiveCollateralAmount,
-          feeAmount: summary.collateralFeeAmount,
-          symbol: summary.collateralTokenSymbol,
-        },
+        borrow:
+          summary.action === "supply"
+            ? null
+            : {
+                amount: summary.borrowAmount,
+                symbol: summary.loanTokenSymbol,
+              },
+        collateral:
+          summary.action === "borrow"
+            ? null
+            : {
+                amount: summary.collateralAmount,
+                effectiveAmount: summary.effectiveCollateralAmount,
+                feeAmount: summary.collateralFeeAmount,
+                symbol: summary.collateralTokenSymbol,
+              },
         financials: {
           existingCollateralUsd: summary.existingCollateralUsd,
           existingDebtUsd: summary.existingDebtUsd,

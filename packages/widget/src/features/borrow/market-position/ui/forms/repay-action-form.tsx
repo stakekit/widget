@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { formatPercent } from "../../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../../shared/lib/number-format";
 import { DetailRow } from "../../../../../shared/ui/components/details-section";
 import { Divider } from "../../../../../shared/ui/components/divider";
@@ -12,6 +11,7 @@ import { useBorrowRepayForm } from "../../react/use-action-form";
 import * as styles from "../styles.css";
 import { AmountInputCard } from "./amount-input-card";
 import { getBorrowPositionFormWarningMessage } from "./form-warning";
+import { LtvTransitionRow } from "./ltv-transition-row";
 import { useStartBorrowPositionReview } from "./use-start-review";
 
 export const RepayActionForm = ({
@@ -76,19 +76,10 @@ export const RepayActionForm = ({
 
         <Divider />
 
-        {view.projectedLtv === null ? null : (
-          <DetailRow
-            id="ltv"
-            label={t("dashboard.borrow.form.ltv_ratio")}
-            value={
-              view.currentLtv === null
-                ? formatPercent(view.projectedLtv)
-                : `${formatPercent(view.currentLtv)} -> ${formatPercent(
-                    view.projectedLtv
-                  )}`
-            }
-          />
-        )}
+        <LtvTransitionRow
+          currentLtv={view.currentLtv}
+          projectedLtv={view.projectedLtv}
+        />
         <DetailRow
           id="loan"
           label={t("dashboard.borrow.form.loan")}
