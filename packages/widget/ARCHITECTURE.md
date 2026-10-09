@@ -2,7 +2,8 @@
 
 This document records stable ownership and dependency boundaries. Behavior,
 route topology, failure presentation, and detailed workflows belong in code and
-tests. Executable policy lives in Biome, dependency-cruiser, Knip, and ast-grep.
+tests. Executable policy lives in Biome, dependency-cruiser, Knip, jscpd, and
+ast-grep.
 
 ## Ownership
 
@@ -179,6 +180,8 @@ and Effect Atom registry.
   `Date`, global `fetch`, throws in Effect generators, and wildcard Module
   exports.
 - Knip checks ordinary and production reachability.
+- jscpd fails when duplicated source and tooling code (tests and generated API
+  clients excluded) exceeds 1% of lines.
 
 Run `mise exec -- pnpm check-hygiene` after changing the module graph. Change
 the implementation or the exact policy when the design changes; do not silence

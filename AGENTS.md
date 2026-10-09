@@ -27,7 +27,7 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`.
 - `pnpm --filter @stakekit/widget test:dom` — jsdom tests.
 - `pnpm --filter @stakekit/widget test:browser` — Chromium tests.
 - `pnpm --filter @stakekit/widget test:browser:diagnostic` — Chromium tests with trace replay in `packages/widget/.vitest/index.html`; serve that directory over HTTP to view the report.
-- `pnpm check-hygiene` — dependency-cruiser and Knip; run after changing the import graph.
+- `pnpm check-hygiene` — dependency-cruiser, Knip, and jscpd duplication; run after changing the import graph or copying code between Modules.
 - `pnpm lint` — all workspaces plus the root ast-grep rules.
 - `pnpm check` — lint, hygiene, tests, and builds.
 - `pnpm test:smoke` — built package consumption; requires a configured API key.

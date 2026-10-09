@@ -32,8 +32,8 @@
         "src/**",
         "scripts/**",
         "tests/**",
-        "knip.json",
-        "knip.jsonc",
+        ".jscpd.json",
+        "knip.ts",
         "tsconfig*.json",
         "vite/**/*.ts",
         "package.json"
