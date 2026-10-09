@@ -66,3 +66,15 @@ export class WalletIntegrationError extends Data.TaggedError(
   readonly message: string;
   readonly operation: string;
 }> {}
+
+/**
+ * A wallet connector's connect found no injected provider for its wallet, e.g.
+ * the extension was removed or disabled after the picker opened. Family
+ * connectors reject `connect` with this error so the picker can tell the user
+ * the wallet is not available instead of reporting a generic failure.
+ */
+export class WalletNotAvailableError extends Data.TaggedError(
+  "WalletNotAvailableError"
+)<{
+  readonly walletId: string;
+}> {}

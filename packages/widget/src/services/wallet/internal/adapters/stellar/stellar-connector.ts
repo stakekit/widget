@@ -1,7 +1,10 @@
-import type { WalletDetailsParams, WalletList } from "@stakekit/rainbowkit";
 import { Effect, Option, Schema, Stream } from "effect";
 import type { Address, Chain } from "viem";
 import { createConnector } from "wagmi";
+import type {
+  WalletDetailsParams,
+  WalletList,
+} from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import type { StellarWalletClient } from "../../platform/stellar-wallets-kit-platform";
 import { getWalletNetworkLogo } from "../../runtime/assets";
@@ -13,7 +16,6 @@ import {
   stellarConnectorType,
 } from "./stellar-connector-meta";
 
-const walletConnectId = "stellar-wallet-connect" as const;
 const reconnectStorageKey = "stellar.reconnect" as const;
 
 const ReconnectRecord = Schema.Struct({
@@ -50,6 +52,10 @@ const createStellarConnector = ({
         // The in-memory connection remains authoritative when storage fails.
       }
     };
+    client.subscribeEnded(() => {
+      void clearLocalConnection();
+      config.emitter.emit("disconnect");
+    });
 
     const restoreConnection = async () => {
       try {
@@ -144,55 +150,30 @@ const createStellarConnector = ({
     };
   });
 
-const downloadUrls = (client: StellarWalletClient) => {
-  if (client.id === walletConnectId) return undefined;
-  if (client.id === "freighter") {
-    return {
-      browserExtension:
-        "https://chromewebstore.google.com/detail/freighter/bcacfldlkkdogcmkkibnjlakofdplcbk",
-      chrome:
-        "https://chromewebstore.google.com/detail/freighter/bcacfldlkkdogcmkkibnjlakofdplcbk",
-      firefox: "https://addons.mozilla.org/firefox/addon/freighter/",
-    };
-  }
-  return { browserExtension: client.productUrl };
-};
-
 export const getStellarConnectors = ({
   clients,
-  forceWalletConnectOnly,
-  isMobileWallet,
   runWalletEffect,
 }: {
   readonly clients: ReadonlyArray<StellarWalletClient>;
-  readonly forceWalletConnectOnly: boolean;
-  readonly isMobileWallet: boolean;
   readonly runWalletEffect: RunWalletEffect;
 }): WalletList[number] => ({
   groupName: "Stellar",
-  wallets: clients
-    .filter((client) => {
-      if (forceWalletConnectOnly) return client.id === walletConnectId;
-      if (!isMobileWallet) return true;
-      return client.id === walletConnectId || client.installed;
-    })
-    .map((client) => () => ({
-      id: client.id,
-      name: client.name,
-      iconUrl: client.iconUrl,
-      iconBackground: "#fff",
-      installed: client.installed,
-      downloadUrls: downloadUrls(client),
-      chainGroup: {
-        id: "stellar",
-        title: "Stellar",
-        iconUrl: getWalletNetworkLogo("stellar"),
-      },
-      createConnector: (walletDetailsParams) =>
-        createStellarConnector({
-          client,
-          runWalletEffect,
-          walletDetailsParams,
-        }),
-    })),
+  wallets: clients.map((client) => () => ({
+    id: client.id,
+    name: client.name,
+    iconUrl: client.iconUrl,
+    iconBackground: "#fff",
+    availability: client.availability,
+    chainGroup: {
+      id: "stellar",
+      title: "Stellar",
+      iconUrl: getWalletNetworkLogo("stellar"),
+    },
+    createConnector: (walletDetailsParams) =>
+      createStellarConnector({
+        client,
+        runWalletEffect,
+        walletDetailsParams,
+      }),
+  })),
 });

@@ -1,4 +1,3 @@
-import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { Effect, Ref, type Scope, Semaphore, Stream } from "effect";
 import type { Config, Connector, CreateConnectorFn } from "wagmi";
 import { WalletIntegrationError } from "../../wallet-errors";
@@ -14,11 +13,8 @@ import type {
 } from "./solana-runtime";
 import type { WagmiActions } from "./wagmi-actions";
 
-type RainbowKitSolanaConnector = SolanaConnector & {
-  readonly rkDetails: {
-    readonly installed: boolean;
-    readonly [key: string]: unknown;
-  };
+type DescribedSolanaConnector = SolanaConnector & {
+  readonly walletDetails: unknown;
 };
 
 type SolanaConnectorMembershipOptions = {
@@ -31,14 +27,10 @@ type SolanaConnectorMembershipOptions = {
   readonly runtime: SolanaRuntime;
 };
 
-const isRainbowKitSolanaConnector = (
+const isDescribedSolanaConnector = (
   connector: Connector
-): connector is RainbowKitSolanaConnector =>
-  isSolanaConnector(connector) && "rkDetails" in connector;
-
-const isInstalled = (wallet: SolanaWalletDescriptor) =>
-  wallet.readyState === WalletReadyState.Installed ||
-  wallet.readyState === WalletReadyState.Loadable;
+): connector is DescribedSolanaConnector =>
+  isSolanaConnector(connector) && "walletDetails" in connector;
 
 const sameConnectors = (
   current: ReadonlyArray<Connector>,
@@ -62,14 +54,14 @@ export const installSolanaConnectorMembership = Effect.fn(
 > {
   const initialConnectors = config.connectors;
   const initialSolanaIndex = initialConnectors.findIndex(
-    isRainbowKitSolanaConnector
+    isDescribedSolanaConnector
   );
   const initialCache = new Map<
     SolanaWalletDescriptor["adapter"],
-    RainbowKitSolanaConnector
+    DescribedSolanaConnector
   >();
   for (const connector of initialConnectors) {
-    if (isRainbowKitSolanaConnector(connector)) {
+    if (isDescribedSolanaConnector(connector)) {
       initialCache.set(connector.solanaAdapter, connector);
     }
   }
@@ -86,7 +78,7 @@ export const installSolanaConnectorMembership = Effect.fn(
     const connector = yield* Effect.try(() =>
       config._internal.connectors.setup(factory)
     );
-    if (!isRainbowKitSolanaConnector(connector)) {
+    if (!isDescribedSolanaConnector(connector)) {
       return yield* new WalletIntegrationError({
         message: "Expected a Solana connector from membership factory",
         operation: "solana-connector-membership",
@@ -100,29 +92,10 @@ export const installSolanaConnectorMembership = Effect.fn(
     return connector;
   });
 
-  const refreshConnector = Effect.fn("refreshConnector")(function* (
-    wallet: SolanaWalletDescriptor
-  ) {
-    const connector = yield* setupConnector(wallet);
-    const installed = isInstalled(wallet);
-    if (connector.rkDetails.installed === installed) return connector;
-
-    const refreshed = {
-      ...connector,
-      rkDetails: { ...connector.rkDetails, installed },
-    } satisfies RainbowKitSolanaConnector;
-    yield* Ref.update(connectorCache, (cache) => {
-      const next = new Map(cache);
-      next.set(wallet.adapter, refreshed);
-      return next;
-    });
-    return refreshed;
-  });
-
   const synchronize = Effect.fn("synchronize")(function* (
     snapshot: SolanaWalletSnapshot
   ) {
-    const current = config.connectors.filter(isRainbowKitSolanaConnector);
+    const current = config.connectors.filter(isDescribedSolanaConnector);
     const currentByName = new Map(
       current.map((connector) => [connector.name, connector])
     );
@@ -135,10 +108,10 @@ export const installSolanaConnectorMembership = Effect.fn(
       Effect.fnUntraced(function* (wallet) {
         const visible = currentByName.get(wallet.adapter.name);
         if (!visible || visible.solanaAdapter === wallet.adapter) {
-          return yield* refreshConnector(wallet);
+          return yield* setupConnector(wallet);
         }
         if (!activeUids.has(visible.uid)) {
-          return yield* refreshConnector(wallet);
+          return yield* setupConnector(wallet);
         }
         if (
           visible.solanaAdapterSource === "fallback" &&
@@ -148,7 +121,7 @@ export const installSolanaConnectorMembership = Effect.fn(
         }
         if (visible.solanaAdapterSource === "standard") {
           yield* actions.disconnect({ connector: visible });
-          return yield* refreshConnector(wallet);
+          return yield* setupConnector(wallet);
         }
         return visible;
       }),
@@ -175,7 +148,7 @@ export const installSolanaConnectorMembership = Effect.fn(
     yield* Effect.sync(() => {
       config._internal.connectors.setState((all) => {
         const nonSolana = all.filter(
-          (connector) => !isRainbowKitSolanaConnector(connector)
+          (connector) => !isDescribedSolanaConnector(connector)
         );
         const insertionIndex =
           initialSolanaIndex < 0

@@ -8,7 +8,7 @@ import {
   yieldApiRoute,
 } from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";
-import { rkMockWallet } from "../utils/mock-connector";
+import { mockWalletListFactory } from "../utils/mock-connector";
 import { describe, expect, it } from "../utils/test-extend";
 import { renderApp } from "../utils/test-utils";
 
@@ -562,7 +562,7 @@ describe("Renders initial page", () => {
     );
 
     const app = await renderApp({
-      walletListFactory: rkMockWallet({
+      walletListFactory: mockWalletListFactory({
         accounts: ["0x0000000000000000000000000000000000000001"],
       }),
       skProps: {
@@ -720,7 +720,7 @@ describe("Renders initial page", () => {
     );
 
     const app = await renderApp({
-      walletListFactory: rkMockWallet({ accounts: [account] }),
+      walletListFactory: mockWalletListFactory({ accounts: [account] }),
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
         borrowEnabled: true,

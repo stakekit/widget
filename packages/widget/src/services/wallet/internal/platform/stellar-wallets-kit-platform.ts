@@ -1,16 +1,14 @@
-import {
-  Clock,
-  Context,
-  Duration,
-  Effect,
-  Layer,
-  Option,
-  Schedule,
-  Schema,
-} from "effect";
+import { Context, Effect, Layer, Schema, type Scope } from "effect";
 import { getProtocolChainIdentity } from "../../../../domain/wallet/network";
-import { config } from "../../../../shared/config/widget-defaults";
-import { WalletIntegrationError } from "../../wallet-errors";
+import type { WalletAvailability } from "../../wallet-descriptors";
+import {
+  WalletIntegrationError,
+  WalletNotAvailableError,
+} from "../../wallet-errors";
+import type {
+  WalletConnectProtocol,
+  WalletConnectSession,
+} from "./wallet-connect-protocol";
 
 const publicNetworkPassphrase =
   getProtocolChainIdentity("stellar").networkPassphrase;
@@ -26,17 +24,9 @@ const SignedTransactionResult = Schema.Struct({
   signedTxXdr: Schema.String,
   signerAddress: Schema.optionalKey(Schema.String),
 });
-const WalletConnectSession = Schema.Struct({
-  expiry: Schema.Finite,
-  namespaces: Schema.Struct({
-    stellar: Schema.Struct({
-      accounts: Schema.Array(Schema.String),
-      methods: Schema.Array(Schema.String),
-    }),
-  }),
-  topic: Schema.String,
+const WalletConnectSignedTransaction = Schema.Struct({
+  signedXDR: Schema.String.check(Schema.isMinLength(1)),
 });
-const WalletConnectSessionCandidates = Schema.Array(Schema.Unknown);
 
 export type StellarWalletId =
   | "albedo"
@@ -56,7 +46,6 @@ export type StellarWalletModule = Readonly<{
   productIcon: string;
   productId: string;
   productName: string;
-  productUrl: string;
   signTransaction: (
     transactionXdr: string,
     options?: Readonly<{
@@ -67,21 +56,17 @@ export type StellarWalletModule = Readonly<{
   ) => Promise<unknown>;
 }>;
 
-type WalletConnectModule = StellarWalletModule &
-  Readonly<{ getSessions: () => Promise<unknown> }>;
-
-type WalletConnectSessionPaths = {
-  value: Array<{ publicKey: string; topic: string }>;
-};
-
 export type StellarWalletClient = Readonly<{
-  connect: Effect.Effect<Readonly<{ address: string }>, WalletIntegrationError>;
+  availability: WalletAvailability;
+  /** Fails with `WalletNotAvailableError` when the wallet's extension is missing. */
+  connect: Effect.Effect<
+    Readonly<{ address: string }>,
+    WalletIntegrationError | WalletNotAvailableError
+  >;
   disconnect: Effect.Effect<void, WalletIntegrationError>;
   iconUrl: string;
   id: StellarWalletId;
-  installed: boolean;
   name: string;
-  productUrl: string;
   reconnect: (
     address: string
   ) => Effect.Effect<Readonly<{ address: string }>, WalletIntegrationError>;
@@ -93,6 +78,11 @@ export type StellarWalletClient = Readonly<{
     Readonly<{ signedTxXdr: string; signerAddress?: string }>,
     WalletIntegrationError
   >;
+  /**
+   * Calls `listener` when the wallet ends the selected connection remotely.
+   * Returns the unsubscribe function.
+   */
+  subscribeEnded: (listener: () => void) => () => void;
 }>;
 
 const integrationError = (operation: string, cause?: unknown) =>
@@ -168,6 +158,11 @@ const moduleAvailability = (module: StellarWalletModule) =>
     Schema.Boolean
   );
 
+/** Freighter's extension sets `window.freighter = true` in every page it injects into. */
+const hasFreighterGlobal = Schema.is(
+  Schema.Struct({ freighter: Schema.Literal(true) })
+);
+
 const moduleSignTransaction = (
   module: StellarWalletModule,
   input: {
@@ -186,14 +181,23 @@ const moduleSignTransaction = (
     SignedTransactionResult
   );
 
+/**
+ * Chrome Web Store pages of the wallets that live in a browser extension.
+ * Albedo and xBull connect through a web popup and need no extension.
+ */
+const extensionStorePages: Partial<Record<StellarWalletId, string>> = {
+  freighter:
+    "https://chromewebstore.google.com/detail/freighter/bcacfldlkkdogcmkkibnjlakofdplcbk",
+  lobstr:
+    "https://chromewebstore.google.com/detail/lobstr/ldiagbjmlmjiieclmdkagofdjcgodjle",
+};
+
 export const makeDirectStellarWalletClient = ({
   id,
-  installed,
   module,
   validateMainnet: shouldValidateMainnet,
 }: {
   readonly id: Exclude<StellarWalletId, "stellar-wallet-connect">;
-  readonly installed: boolean;
   readonly module: StellarWalletModule;
   readonly validateMainnet: boolean;
 }): StellarWalletClient => {
@@ -204,14 +208,41 @@ export const makeDirectStellarWalletClient = ({
       )
     );
 
+  const installUrl = extensionStorePages[id];
+  const availability: WalletAvailability =
+    installUrl === undefined
+      ? { _tag: "Remote" }
+      : {
+          _tag: "Injected",
+          // Freighter is found from its page global without the module's
+          // slower postMessage round trip when the global is set.
+          detect: Effect.suspend(() =>
+            id === "freighter" && hasFreighterGlobal(globalThis)
+              ? Effect.succeed(true)
+              : moduleAvailability(module).pipe(
+                  Effect.orElseSucceed(() => false)
+                )
+          ),
+          installUrl,
+        };
+  const ensureAvailable =
+    availability._tag === "Injected"
+      ? availability.detect.pipe(
+          Effect.flatMap((present) =>
+            present
+              ? Effect.void
+              : Effect.fail(new WalletNotAvailableError({ walletId: id }))
+          )
+        )
+      : Effect.void;
+
   return {
-    connect: readAddress(false),
+    availability,
+    connect: ensureAvailable.pipe(Effect.andThen(readAddress(false))),
     disconnect: moduleDisconnect(module),
     iconUrl: module.productIcon,
     id,
-    installed,
     name: module.productName,
-    productUrl: module.productUrl,
     reconnect: () =>
       id === "freighter"
         ? readAddress(true)
@@ -222,78 +253,167 @@ export const makeDirectStellarWalletClient = ({
             })
           ),
     signTransaction: (input) => moduleSignTransaction(module, input),
+    // Extension wallets expose no remote-end event.
+    subscribeEnded: () => () => {},
   };
 };
 
-const waitForWalletConnect = (module: WalletConnectModule) =>
-  moduleAvailability(module).pipe(
-    Effect.filterOrFail(
-      (available) => available,
-      () => integrationError("stellar-wallet-connect-ready")
-    ),
-    Effect.retry({
-      schedule: Schedule.spaced(Duration.millis(50)),
-      times: 100,
-    }),
-    Effect.asVoid
+export const makeWalletConnectStellarWalletClient = Effect.fn(
+  "makeWalletConnectStellarWalletClient"
+)(function* (
+  protocol: WalletConnectProtocol
+): Effect.fn.Return<StellarWalletClient, never, Scope.Scope> {
+  let selected: { address: string; topic: string } | undefined;
+  let unsubscribeEnded: (() => void) | undefined;
+  const endedListeners = new Set<() => void>();
+  let revision = 0;
+  let disposed = false;
+  const select = (next: typeof selected) => {
+    unsubscribeEnded?.();
+    unsubscribeEnded = undefined;
+    selected = next;
+    if (!next) return;
+    unsubscribeEnded = protocol.subscribeEnded(next.topic, () => {
+      if (selected !== next) return;
+      select(undefined);
+      for (const listener of [...endedListeners]) listener();
+    });
+  };
+  yield* Effect.addFinalizer(() =>
+    Effect.sync(() => {
+      disposed = true;
+      revision++;
+      select(undefined);
+      endedListeners.clear();
+    })
   );
 
-export const makeWalletConnectStellarWalletClient = ({
-  module,
-  sessionPaths,
-}: {
-  readonly module: WalletConnectModule;
-  readonly sessionPaths: WalletConnectSessionPaths;
-}): StellarWalletClient => {
-  const ready = waitForWalletConnect(module);
+  const supportsAccount = (session: WalletConnectSession, address: string) =>
+    session.accounts.includes(`${walletConnectPublicChain}:${address}`) &&
+    session.methods.includes(walletConnectSignMethod);
+  const unavailable = (operation: string) =>
+    new WalletIntegrationError({
+      message: "The Stellar WalletConnect session expired",
+      operation,
+    });
+  const ensureCurrent = (attempt: number) =>
+    disposed || attempt !== revision
+      ? Effect.fail(integrationError("stellar-wallet-connect-cancelled"))
+      : Effect.void;
+
   return {
-    connect: ready.pipe(Effect.andThen(moduleAddress(module))),
-    disconnect: moduleDisconnect(module),
-    iconUrl: module.productIcon,
+    connect: Effect.gen(function* () {
+      const attempt = ++revision;
+      yield* ensureCurrent(attempt);
+      const session = yield* protocol.connect({
+        namespace: "stellar",
+        chains: [walletConnectPublicChain],
+        requiredMethods: [walletConnectSignMethod],
+        optionalMethods: [
+          "stellar_signAndSubmitXDR",
+          "stellar_signAuthEntry",
+          "stellar_signMessage",
+        ],
+      });
+      const account = session.accounts.find(
+        (account) =>
+          account.startsWith(`${walletConnectPublicChain}:`) &&
+          account.split(":").length === 3
+      );
+      const address = account?.slice(walletConnectPublicChain.length + 1);
+      if (!address || !supportsAccount(session, address)) {
+        return yield* unavailable("stellar-wallet-connect-approval");
+      }
+      yield* ensureCurrent(attempt);
+      select({ address, topic: session.topic });
+      return { address };
+    }),
+    disconnect: Effect.gen(function* () {
+      const attempt = ++revision;
+      const session = selected;
+      select(undefined);
+      if (!session || disposed) return;
+      const sessions = yield* protocol.sessions("stellar");
+      if (!sessions.some((candidate) => candidate.topic === session.topic)) {
+        return;
+      }
+      yield* ensureCurrent(attempt);
+      yield* protocol.disconnect(session.topic);
+    }),
+    iconUrl: "https://stellar.creit.tech/wallet-icons/walletconnect.png",
     id: "stellar-wallet-connect",
-    installed: true,
-    name: module.productName,
-    productUrl: module.productUrl,
-    reconnect: (address) =>
-      Effect.gen(function* () {
-        yield* ready;
-        const now = yield* Clock.currentTimeMillis;
-        const candidates = yield* callModule(
-          "stellar-wallet-connect-sessions",
-          () => module.getSessions(),
-          WalletConnectSessionCandidates
-        );
-        const sessions = candidates.flatMap((candidate) => {
-          const decoded =
-            Schema.decodeUnknownOption(WalletConnectSession)(candidate);
-          return Option.isSome(decoded) ? [decoded.value] : [];
-        });
-        const account = `${walletConnectPublicChain}:${address}`;
-        const session = sessions.find(
-          (candidate) =>
-            candidate.expiry * 1000 > now &&
-            candidate.namespaces.stellar.accounts.includes(account) &&
-            candidate.namespaces.stellar.methods.includes(
-              walletConnectSignMethod
-            )
-        );
-        if (!session) {
-          return yield* new WalletIntegrationError({
-            message: "The Stellar WalletConnect session expired",
-            operation: "stellar-reconnect",
-          });
+    availability: { _tag: "Remote" },
+    name: "WalletConnect",
+    reconnect: Effect.fn("StellarWalletConnect.reconnect")(function* (
+      address: string
+    ) {
+      const attempt = ++revision;
+      yield* ensureCurrent(attempt);
+      const sessions = yield* protocol.sessions("stellar");
+      const session = sessions.find((candidate) =>
+        supportsAccount(candidate, address)
+      );
+      if (!address || !session) {
+        return yield* unavailable("stellar-reconnect");
+      }
+      yield* ensureCurrent(attempt);
+      select({ address, topic: session.topic });
+      return { address };
+    }),
+    signTransaction: Effect.fn("StellarWalletConnect.signTransaction")(
+      function* (input: Parameters<StellarWalletClient["signTransaction"]>[0]) {
+        const session = selected;
+        if (
+          disposed ||
+          !session ||
+          session.address !== input.address ||
+          input.networkPassphrase !== publicNetworkPassphrase
+        ) {
+          return yield* unavailable("stellar-sign-transaction");
         }
-        sessionPaths.value = [{ publicKey: address, topic: session.topic }];
-        return { address };
-      }),
-    signTransaction: (input) => moduleSignTransaction(module, input),
+        const sessions = yield* protocol.sessions("stellar");
+        if (
+          selected !== session ||
+          !sessions.some(
+            (candidate) =>
+              candidate.topic === session.topic &&
+              supportsAccount(candidate, input.address)
+          )
+        ) {
+          return yield* unavailable("stellar-sign-transaction");
+        }
+        const result = yield* protocol
+          .request({
+            topic: session.topic,
+            chainId: walletConnectPublicChain,
+            method: walletConnectSignMethod,
+            params: { xdr: input.transactionXdr },
+            response: WalletConnectSignedTransaction,
+          })
+          .pipe(
+            Effect.mapError((cause) =>
+              integrationError("stellar-sign-transaction", cause)
+            )
+          );
+        return { signedTxXdr: result.signedXDR };
+      }
+    ),
+    subscribeEnded: (listener) => {
+      endedListeners.add(listener);
+      return () => {
+        endedListeners.delete(listener);
+      };
+    },
   };
-};
+});
 
 export type StellarWalletsKitPlatformService = Readonly<{
-  load: Effect.Effect<
+  load: (
+    walletConnectProtocol: WalletConnectProtocol
+  ) => Effect.Effect<
     ReadonlyArray<StellarWalletClient>,
-    WalletIntegrationError
+    WalletIntegrationError,
+    Scope.Scope
   >;
 }>;
 
@@ -304,7 +424,6 @@ const initializeKit = Effect.tryPromise({
       { FreighterModule },
       { LobstrModule },
       { xBullModule },
-      { WalletConnectModule, WalletConnectTargetChain },
       { Networks },
       state,
     ] = await Promise.all([
@@ -312,7 +431,6 @@ const initializeKit = Effect.tryPromise({
       import("@creit-tech/stellar-wallets-kit/modules/freighter"),
       import("@creit-tech/stellar-wallets-kit/modules/lobstr"),
       import("@creit-tech/stellar-wallets-kit/modules/xbull"),
-      import("@creit-tech/stellar-wallets-kit/modules/wallet-connect"),
       import("@creit-tech/stellar-wallets-kit/types"),
       import("@creit-tech/stellar-wallets-kit/state"),
     ] as const);
@@ -340,22 +458,8 @@ const initializeKit = Effect.tryPromise({
         validateMainnet: false,
       },
     ] as const;
-    const walletConnectModule = new WalletConnectModule({
-      allowedChains: [WalletConnectTargetChain.PUBLIC],
-      metadata: {
-        description: `${config.appName} wallet connection`,
-        icons: [config.appIcon],
-        name: config.appName,
-        url: config.appUrl,
-      },
-      projectId: config.walletConnectV2.projectId,
-    });
 
-    return {
-      directModules,
-      sessionPaths: state.wcSessionPaths,
-      walletConnectModule,
-    };
+    return directModules;
   },
   catch: (cause) =>
     new WalletIntegrationError({
@@ -365,29 +469,19 @@ const initializeKit = Effect.tryPromise({
     }),
 });
 
-const load = Effect.gen(function* () {
-  const { directModules, sessionPaths, walletConnectModule } =
-    yield* initializeKit;
-  const installed = yield* Effect.all(
-    directModules.map(({ module }) =>
-      moduleAvailability(module).pipe(Effect.orElseSucceed(() => false))
-    ),
-    { concurrency: "unbounded" }
+const load = Effect.fn("StellarWalletsKitPlatform.load")(function* (
+  walletConnectProtocol: WalletConnectProtocol
+) {
+  const directModules = yield* initializeKit;
+  const walletConnect = yield* makeWalletConnectStellarWalletClient(
+    walletConnectProtocol
   );
 
   return [
-    ...directModules.map(({ id, module, validateMainnet }, index) =>
-      makeDirectStellarWalletClient({
-        id,
-        installed: installed[index] ?? false,
-        module,
-        validateMainnet,
-      })
+    ...directModules.map(({ id, module, validateMainnet }) =>
+      makeDirectStellarWalletClient({ id, module, validateMainnet })
     ),
-    makeWalletConnectStellarWalletClient({
-      module: walletConnectModule,
-      sessionPaths,
-    }),
+    walletConnect,
   ];
 });
 

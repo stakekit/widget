@@ -1,11 +1,11 @@
 import { SafeAppProvider } from "@safe-global/safe-apps-provider";
 import SafeSDK, { TransactionStatus } from "@safe-global/safe-apps-sdk";
-import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import { Effect } from "effect";
 import { getAddress, withTimeout } from "viem";
 import { type Connector, createConnector, ProviderNotFoundError } from "wagmi";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import { isWalletIframe } from "../../../browser-environment";
+import type { Chain, WalletList } from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { wagmiConnectResult } from "../wagmi-connect-result";
 import { configMeta, type ExtraProps } from "./safe-connector-meta";
@@ -163,6 +163,8 @@ export const safeConnector = (): WalletList[number] => ({
       name: configMeta.name,
       iconUrl: "",
       iconBackground: "#fff",
+      // Registered only inside the Safe app, whose frame provides the wallet.
+      availability: { _tag: "Remote" },
       chainGroup: {
         id: configMeta.id,
         title: configMeta.name,

@@ -1,4 +1,3 @@
-import type { ChainWalletBase } from "@cosmos-kit/core";
 import { Effect, Schema, Stream } from "effect";
 import type { Chain } from "viem";
 import type { Connector } from "wagmi";
@@ -23,6 +22,7 @@ import {
 import type { MiscChainsMap } from "../adapters/configured-chains";
 import type { CosmosChainsMap } from "../adapters/cosmos/chains";
 import {
+  type CosmosChainWallet,
   type CosmosConnector,
   isCosmosConnector,
 } from "../adapters/cosmos/cosmos-connector-meta";
@@ -357,7 +357,7 @@ const makeCosmosChainWalletStream = (
   connector: WalletCoreState["connection"]["connector"]
 ) => {
   if (!connector || !isCosmosConnector(connector)) {
-    return Stream.succeed<ChainWalletBase | null>(null);
+    return Stream.succeed<CosmosChainWallet | null>(null);
   }
 
   return connector.$chainWallet.pipe(Stream.changes);
@@ -371,7 +371,7 @@ const getCosmosAdditionalAddresses = Effect.fn("getCosmosAdditionalAddresses")(
     readStoredPublicKeys,
   }: {
     readonly address: WalletAddressType;
-    readonly chainWallet: ChainWalletBase;
+    readonly chainWallet: CosmosChainWallet;
     readonly connector: CosmosConnector;
     readonly readStoredPublicKeys: WidgetPersistence["Service"]["readStoredPublicKeys"];
   }) {
@@ -379,10 +379,8 @@ const getCosmosAdditionalAddresses = Effect.fn("getCosmosAdditionalAddresses")(
     const storedPublicKey = storedPublicKeys[address];
     const cosmosPubKey = storedPublicKey
       ? storedPublicKey
-      : yield* Effect.tryPromise(() =>
-          chainWallet.client.getAccount!(chainWallet.chainId).then((account) =>
-            connector.toBase64(account.pubkey)
-          )
+      : yield* chainWallet.getAccount.pipe(
+          Effect.map((account) => connector.toBase64(account.pubkey))
         );
 
     return yield* Schema.decodeEffect(AdditionalAddresses)({ cosmosPubKey });
@@ -395,7 +393,7 @@ const makeAdditionalAddresses = Effect.fn("makeAdditionalAddresses")(
     connection,
     readStoredPublicKeys,
   }: {
-    readonly chainWallet: ChainWalletBase | null;
+    readonly chainWallet: CosmosChainWallet | null;
     readonly connection: WalletCoreState["connection"];
     readonly readStoredPublicKeys: WidgetPersistence["Service"]["readStoredPublicKeys"];
   }) {

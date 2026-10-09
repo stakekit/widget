@@ -79,6 +79,13 @@ identity.
 **Wallet Command Context**: The wallet-routing snapshot captured when a command
 begins. A started command retains it even if current Wallet State changes.
 
+**WalletConnect Protocol Client**: The single Widget-owned WalletConnect client
+that proposes, restores, requests on, and disconnects non-EVM WalletConnect
+sessions. Each session belongs to one namespace and one topic.
+
+**WalletConnect Presentation**: The display of a pending pairing URI as a QR
+code, wallet explorer, or wallet deep link. It never owns protocol sessions.
+
 **External Provider Snapshot**: The latest host-supplied external wallet
 identity, supported networks, and operations.
 

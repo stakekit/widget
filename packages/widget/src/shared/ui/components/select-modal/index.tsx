@@ -1,7 +1,9 @@
 import { Content, Overlay, Portal, Root, Title } from "@radix-ui/react-dialog";
 import { Root as VisuallyHiddenRoot } from "@radix-ui/react-visually-hidden";
+import clsx from "clsx";
 import type { ChangeEvent, PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { id } from "../../../styles/theme/ids";
 import { Box } from "../../primitives/box";
 import { SearchIcon } from "../../primitives/icons/search";
@@ -14,8 +16,10 @@ import { useWidgetPresentation } from "../../widget-presentation";
 import {
   container,
   content,
+  contentSize,
   noOutline,
   overlay,
+  selectModalItemButton,
   selectModalItemContainer,
 } from "./styles.css";
 
@@ -33,6 +37,9 @@ type SelectModalWithoutStateProps = PropsWithChildren<
     errorMessage?: string;
     disableClose?: boolean;
     hideTopBar?: boolean;
+    headerAlignment?: "start" | "center";
+    headerStart?: ReactNode;
+    size?: "default" | "compact";
   } & (
     | {
         onSearch: (value: string) => void;
@@ -81,9 +88,13 @@ const SelectModalWithoutState = ({
   errorMessage,
   disableClose,
   hideTopBar,
+  headerAlignment = "start",
+  headerStart,
+  size = "default",
   portalContainer,
 }: SelectModalProps) => {
   const { isOpen, setOpen } = useSelectModalContext();
+  const { t } = useTranslation();
   const { portalContainer: configuredPortalContainer } =
     useWidgetPresentation();
 
@@ -99,7 +110,7 @@ const SelectModalWithoutState = ({
 
           <Content
             data-testid="select-modal__container"
-            className={content}
+            className={clsx(content, contentSize[size])}
             aria-describedby={undefined}
           >
             <Box display="flex" flexDirection="column" height="full">
@@ -110,7 +121,25 @@ const SelectModalWithoutState = ({
                   alignItems="center"
                   px="4"
                 >
-                  <Box flex={1} display="flex" alignItems="center" gap="2">
+                  {(headerStart || headerAlignment === "center") && (
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      width="7"
+                    >
+                      {headerStart}
+                    </Box>
+                  )}
+                  <Box
+                    flex={1}
+                    display="flex"
+                    alignItems="center"
+                    justifyContent={
+                      headerAlignment === "center" ? "center" : "flex-start"
+                    }
+                    gap="2"
+                  >
                     {title ? (
                       <Title>
                         <Text
@@ -129,7 +158,15 @@ const SelectModalWithoutState = ({
                     {isLoading && <Spinner />}
                   </Box>
                   {!disableClose && (
-                    <Box as="button" onClick={() => setOpen(false)}>
+                    <Box
+                      as="button"
+                      type="button"
+                      aria-label={t("wallet_modal.close")}
+                      display="flex"
+                      justifyContent="center"
+                      width={headerAlignment === "center" ? "7" : undefined}
+                      onClick={() => setOpen(false)}
+                    >
                       <XIcon />
                     </Box>
                   )}
@@ -251,6 +288,9 @@ export const SelectModalItem = ({
 
   return (
     <ListItem
+      as="button"
+      type="button"
+      disabled={variant?.type === "disabled"}
       variant={{
         appearance: "plain",
         ...variant,
@@ -259,7 +299,7 @@ export const SelectModalItem = ({
       onClick={onClick}
       testId={testId}
       data-selected={selected || undefined}
-      className={className}
+      className={clsx(selectModalItemButton, className)}
     >
       {children}
     </ListItem>

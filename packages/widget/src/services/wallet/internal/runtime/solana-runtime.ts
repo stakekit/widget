@@ -8,7 +8,6 @@ import {
 import {
   PhantomWalletAdapter,
   TrustWalletAdapter,
-  WalletConnectWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { StandardWalletAdapter } from "@solana/wallet-standard-wallet-adapter-base";
 import { type Cluster, Connection, clusterApiUrl } from "@solana/web3.js";
@@ -21,11 +20,19 @@ import {
 } from "@solana-mobile/wallet-adapter-mobile";
 import { getWallets, type Wallets } from "@wallet-standard/app";
 import type { Wallet as StandardWallet } from "@wallet-standard/base";
-import { Effect, type Scope } from "effect";
+import { Effect, Schema, type Scope } from "effect";
 import { config } from "../../../../shared/config/widget-defaults";
+import type { WalletConnectProtocol } from "../platform/wallet-connect-protocol";
+import type { RunWalletEffect } from "./effect-runner";
+import { WalletConnectSolanaAdapter } from "./solana-wallet-connect-adapter";
 
 export type SolanaWalletDescriptor = {
   readonly adapter: Adapter;
+  /**
+   * Whether the wallet's provider is in the page right now: still registered
+   * for Wallet Standard wallets, still injected for the fallback adapters.
+   */
+  readonly isPresent: () => boolean;
   readonly readyState: WalletReadyState;
   readonly source: "fallback" | "standard";
 };
@@ -62,7 +69,6 @@ type HeadlessSolanaRuntimeDependencies = {
   readonly createConnection: (endpoint: string) => Connection;
   readonly createFallbackAdapters: (input: {
     readonly network: SolanaFallbackNetwork;
-    readonly walletConnectProjectId: string;
   }) => ReadonlyArray<Adapter>;
   readonly createMobileAdapter: (input: {
     readonly appIdentityUri: string | undefined;
@@ -75,11 +81,12 @@ type HeadlessSolanaRuntimeDependencies = {
 };
 
 type HeadlessSolanaRuntimeOptions = {
+  readonly walletConnectProtocol: WalletConnectProtocol;
+  readonly runWalletEffect: RunWalletEffect;
   readonly endpoint?: string;
   readonly includeFallbackAdapters?: boolean;
   readonly includeWalletAdapters?: boolean;
   readonly network?: SolanaFallbackNetwork;
-  readonly walletConnectProjectId?: string;
 };
 
 const inferCluster = (endpoint: string): Cluster => {
@@ -111,15 +118,18 @@ const shouldIncludeMobileAdapter = (
   );
 };
 
-const makeDefaultDependencies = (): HeadlessSolanaRuntimeDependencies => ({
+const makeDefaultDependencies = (
+  options: HeadlessSolanaRuntimeOptions
+): HeadlessSolanaRuntimeDependencies => ({
   createConnection: (endpoint) =>
     new Connection(endpoint, { commitment: "confirmed" }),
-  createFallbackAdapters: ({ network, walletConnectProjectId }) => [
+  createFallbackAdapters: ({ network }) => [
     new PhantomWalletAdapter(),
     new TrustWalletAdapter(),
-    new WalletConnectWalletAdapter({
+    new WalletConnectSolanaAdapter({
       network,
-      options: { projectId: walletConnectProjectId },
+      walletConnectProtocol: options.walletConnectProtocol,
+      runWalletEffect: options.runWalletEffect,
     }),
   ],
   createMobileAdapter: ({ appIdentityUri, cluster }) =>
@@ -176,28 +186,50 @@ const snapshotsEqual = (
         wallet.source === right.wallets[index]?.source)
   );
 
+/**
+ * Providers the fallback adapters connect through. Their readyState is
+ * settled once at discovery, so it stays Installed after the provider leaves.
+ */
+const injectedProviders: Readonly<Record<string, (page: unknown) => boolean>> =
+  {
+    Phantom: Schema.is(
+      Schema.Union([
+        Schema.Struct({
+          phantom: Schema.Struct({
+            solana: Schema.Struct({ isPhantom: Schema.Literal(true) }),
+          }),
+        }),
+        Schema.Struct({
+          solana: Schema.Struct({ isPhantom: Schema.Literal(true) }),
+        }),
+      ])
+    ),
+    Trust: Schema.is(
+      Schema.Struct({
+        trustwallet: Schema.Struct({
+          solana: Schema.Struct({ isTrust: Schema.Literal(true) }),
+        }),
+      })
+    ),
+  };
+
 const disposeAdapter = (adapter: Adapter) => {
   (adapter as DisposableAdapter).destroy?.();
 };
 
 const makeHeadlessSolanaRuntime = (
-  options: HeadlessSolanaRuntimeOptions = {}
+  options: HeadlessSolanaRuntimeOptions
 ): Effect.Effect<HeadlessSolanaRuntime, never, Scope.Scope> =>
   Effect.acquireRelease(
     Effect.sync(() => {
-      const deps = makeDefaultDependencies();
+      const deps = makeDefaultDependencies(options);
       const network = options.network ?? WalletAdapterNetwork.Mainnet;
       const endpoint = options.endpoint ?? clusterApiUrl(network);
       const connection = deps.createConnection(endpoint);
       const fallbackAdapters =
         (options.includeWalletAdapters ?? true) &&
         (options.includeFallbackAdapters ?? true)
-          ? deps.createFallbackAdapters({
-              network,
-              walletConnectProjectId:
-                options.walletConnectProjectId ??
-                config.walletConnectV2.projectId,
-            })
+          ? deps.createFallbackAdapters({ network })
           : [];
       const standardAdapters = new Map<StandardWallet, StandardAdapter>();
       const descriptorCache = new Map<Adapter, SolanaWalletDescriptor>();
@@ -220,8 +252,20 @@ const makeHeadlessSolanaRuntime = (
           return cached;
         }
 
+        const standardWallet = [...standardAdapters].find(
+          ([, standardAdapter]) => standardAdapter === adapter
+        )?.[0];
+        const injectedProvider = injectedProviders[adapter.name];
+        const isPresent = (): boolean => {
+          if (standardWallet) {
+            return deps.registry.get().includes(standardWallet);
+          }
+          if (injectedProvider) return injectedProvider(globalThis);
+          return adapter.readyState === WalletReadyState.Installed;
+        };
         const descriptor = Object.freeze({
           adapter,
+          isPresent,
           readyState: adapter.readyState,
           source,
         });
@@ -385,10 +429,14 @@ const makeHeadlessSolanaRuntime = (
     ({ dispose }) => Effect.sync(dispose)
   ).pipe(Effect.map(({ runtime }) => runtime));
 
-export const makeDefaultHeadlessSolanaRuntime = (options?: {
+export const makeDefaultHeadlessSolanaRuntime = (options: {
+  readonly walletConnectProtocol: WalletConnectProtocol;
+  readonly runWalletEffect: RunWalletEffect;
   readonly includeWalletAdapters?: boolean;
+  /** Defaults to off in test mode, where the extension adapters are unwanted. */
+  readonly includeFallbackAdapters?: boolean;
 }) =>
   makeHeadlessSolanaRuntime({
     includeFallbackAdapters: !config.env.isTestMode,
-    includeWalletAdapters: options?.includeWalletAdapters,
+    ...options,
   });

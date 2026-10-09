@@ -7,19 +7,16 @@ import { runWalletEffect } from "../../utils/run-wallet-effect";
 
 const address = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 
-const makeClient = (
-  id: StellarWalletClient["id"],
-  installed = true
-): StellarWalletClient => ({
+const makeClient = (id: StellarWalletClient["id"]): StellarWalletClient => ({
+  availability: { _tag: "Remote" },
   connect: Effect.succeed({ address }),
   disconnect: Effect.void,
   iconUrl: `https://example.com/${id}.png`,
   id,
-  installed,
   name: id,
-  productUrl: `https://example.com/${id}`,
   reconnect: () => Effect.succeed({ address }),
   signTransaction: () => Effect.succeed({ signedTxXdr: "signed-xdr" }),
+  subscribeEnded: () => () => {},
 });
 
 const clients = [
@@ -39,8 +36,6 @@ const createConnectorForTest = ({
 } = {}) => {
   const group = getStellarConnectors({
     clients: [client],
-    forceWalletConnectOnly: false,
-    isMobileWallet: false,
     runWalletEffect,
   });
   const wallet = group.wallets[0];
@@ -72,8 +67,6 @@ describe("Stellar connector", () => {
   it("offers the agreed Stellar wallet catalog", () => {
     const group = getStellarConnectors({
       clients,
-      forceWalletConnectOnly: false,
-      isMobileWallet: false,
       runWalletEffect,
     });
 
@@ -164,33 +157,4 @@ describe("Stellar connector", () => {
       expect(emitter.emit).toHaveBeenCalledWith("disconnect");
     })
   );
-
-  it("keeps only WalletConnect in WalletConnect-only mode", () => {
-    const group = getStellarConnectors({
-      clients,
-      forceWalletConnectOnly: true,
-      isMobileWallet: false,
-      runWalletEffect,
-    });
-
-    expect(
-      group.wallets.map((createWallet) => createWallet({} as never).id)
-    ).toEqual(["stellar-wallet-connect"]);
-  });
-
-  it("hides unavailable extension wallets on mobile", () => {
-    const group = getStellarConnectors({
-      clients: [makeClient("freighter", false), ...clients.slice(1)],
-      forceWalletConnectOnly: false,
-      isMobileWallet: true,
-      runWalletEffect,
-    });
-
-    expect(
-      group.wallets.map((createWallet) => createWallet({} as never).id)
-    ).not.toContain("freighter");
-    expect(
-      group.wallets.map((createWallet) => createWallet({} as never).id)
-    ).toContain("stellar-wallet-connect");
-  });
 });

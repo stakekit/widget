@@ -1,4 +1,3 @@
-import "@stakekit/rainbowkit/styles.css";
 import "./shared/styles/theme/global.css";
 import { useAtomValue } from "@effect/atom-react";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";

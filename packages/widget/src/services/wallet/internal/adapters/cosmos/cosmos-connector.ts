@@ -1,12 +1,5 @@
 import { decodeSignature } from "@cosmjs/amino";
 import { fromHex, toBase64, toHex } from "@cosmjs/encoding";
-import type {
-  ChainWalletBase,
-  DirectSignDoc,
-  MainWalletBase,
-} from "@cosmos-kit/core";
-import type { WCClient } from "@cosmos-kit/walletconnect";
-import type { Wallet } from "@stakekit/rainbowkit";
 import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { Array as EArray, Effect, Option, Schema, Stream } from "effect";
 import type { Address, Chain } from "viem";
@@ -17,321 +10,284 @@ import {
   type WalletAddress as WalletAddressType,
 } from "../../../../../domain/identity/identifiers";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
+import type {
+  WalletAvailability,
+  WalletDescriptor,
+} from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { getWalletNetworkLogo } from "../../runtime/assets";
+import type { RunWalletEffect } from "../../runtime/effect-runner";
 import { wagmiConnectResult } from "../wagmi-connect-result";
-import type { CosmosChainsMap } from "./chains";
-import type { ExtraProps } from "./cosmos-connector-meta";
+import type { CosmosChainsAssets, CosmosChainsMap } from "./chains";
+import type { CosmosChainWallet, ExtraProps } from "./cosmos-connector-meta";
 import { configMeta } from "./cosmos-connector-meta";
 
-const waitForWalletDelay = (milliseconds: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
+export type CosmosWalletConnection = Readonly<{
+  address: string;
+  wallet: CosmosChainWallet;
+}>;
 
-const createDisplayUriProvider = () => {
-  let listener: ((uri: string) => void) | undefined;
+export const cosmosWalletConnectStorageKey = "cosmos.walletConnect" as const;
 
-  return {
-    once(_event: "display_uri", next: (uri: string) => void) {
-      listener = next;
-    },
-    emit(_event: "display_uri", uri: string) {
-      listener?.(uri);
-      listener = undefined;
-    },
-  };
+export const CosmosWalletConnectRecord = Schema.Struct({
+  connectorId: Schema.String,
+  topic: Schema.String,
+  chainId: Schema.String,
+  address: Schema.String,
+});
+
+/** The chain an extension wallet last connected on, restored after reload. */
+export const cosmosExtensionChainStorageKey = "cosmos.extensionChain" as const;
+
+export const CosmosExtensionChainRecord = Schema.Struct({
+  connectorId: Schema.String,
+  chainId: Schema.String,
+});
+
+export type CosmosStorage = {
+  [cosmosWalletConnectStorageKey]: typeof CosmosWalletConnectRecord.Type;
+  [cosmosExtensionChainStorageKey]: typeof CosmosExtensionChainRecord.Type;
 };
 
-const getCosmosWalletInstalled = (
-  wallet: MainWalletBase
-): boolean | undefined => {
-  if (wallet.walletInfo.mode !== "extension") return undefined;
+export type CosmosConnectorStorage = Parameters<
+  CreateConnectorFn<unknown, ExtraProps, CosmosStorage>
+>[0]["storage"];
 
-  return wallet.clientMutable.state === "Done" && !!wallet.client;
-};
+/** One wallet's connection lifecycle, bound to a single wagmi connector. */
+export type CosmosWalletSession = Readonly<{
+  /** Resolves once the wallet can be asked to connect. */
+  ready: () => Promise<void>;
+  connect: (chain: CosmosChainsAssets) => Promise<CosmosWalletConnection>;
+  /**
+   * Restores the persisted connection, on the chain it was made on, without
+   * prompting; rejects when nothing restorable exists.
+   */
+  restore: () => Promise<CosmosWalletConnection>;
+  isAuthorized: () => Promise<boolean>;
+  disconnect: (chain: CosmosChainsAssets) => Promise<void>;
+}>;
+
+export type CosmosWallet = Readonly<{
+  id: string;
+  name: string;
+  iconUrl: string;
+  availability: WalletAvailability;
+  makeSession: (
+    input: Readonly<{
+      connectorId: string;
+      storage: CosmosConnectorStorage;
+      /** The wallet ended the connection. */
+      onEnded: () => void;
+    }>
+  ) => CosmosWalletSession;
+}>;
+
+const cosmosWagmiChainId = (chainId: string) => chainId as unknown as number;
 
 export const createCosmosConnector = ({
   wallet,
   cosmosChainsMap,
   cosmosWagmiChains,
   persistPublicKey,
+  runWalletEffect,
 }: {
-  wallet: MainWalletBase;
+  wallet: CosmosWallet;
   cosmosChainsMap: Partial<CosmosChainsMap>;
   cosmosWagmiChains: Chain[];
+  runWalletEffect: RunWalletEffect;
   persistPublicKey: (input: {
     readonly address: WalletAddressType;
     readonly publicKey: string;
   }) => Promise<void>;
-}): Wallet => {
-  const getDownloadLink = (index: number) =>
-    EArray.get(wallet.walletInfo.downloads ?? [], index).pipe(
-      Option.map((download) => download.link),
-      Option.getOrUndefined
-    );
+}): WalletDescriptor => ({
+  id: wallet.id,
+  name: wallet.name,
+  iconUrl: wallet.iconUrl,
+  iconBackground: "transparent",
+  availability: wallet.availability,
+  chainGroup: {
+    iconUrl: getWalletNetworkLogo("cosmos"),
+    title: "Cosmos",
+    id: "cosmos",
+  },
+  createConnector: (walletDetailsParams) =>
+    createConnector<unknown, ExtraProps, CosmosStorage>((config) => {
+      const chains = Object.values(cosmosChainsMap).map(({ chain }) => chain);
+      const initialChain =
+        cosmosChainsMap.cosmos?.chain ??
+        EArray.head(chains).pipe(Option.getOrUndefined);
 
-  return {
-    id: wallet.walletInfo.name,
-    name: wallet.walletInfo.prettyName,
-    iconUrl:
-      (typeof wallet.walletInfo.logo === "string"
-        ? wallet.walletInfo.logo
-        : (wallet.walletInfo.logo?.major ?? wallet.walletInfo.logo?.minor)) ??
-      "",
-    iconBackground: "transparent",
-    downloadUrls: {
-      chrome: getDownloadLink(0),
-      firefox: getDownloadLink(1),
-      browserExtension: getDownloadLink(0),
-    },
-    qrCode: {
-      getUri: (uri) => uri,
-    },
-    chainGroup: {
-      iconUrl: getWalletNetworkLogo("cosmos"),
-      title: "Cosmos",
-      id: "cosmos",
-    },
-    installed: getCosmosWalletInstalled(wallet),
-    createConnector: (walletDetailsParams) =>
-      createConnector<unknown, ExtraProps>((config) => {
-        const provider = createDisplayUriProvider();
-        const initialChainName =
-          cosmosChainsMap.cosmos?.chain.chain_name ??
-          EArray.head(Object.values(cosmosChainsMap)).pipe(
-            Option.map(({ chain }) => chain.chain_name),
-            Option.getOrUndefined
-          );
-        const initCw = initialChainName
-          ? wallet.chainWalletMap.get(initialChainName)
-          : undefined;
+      if (!initialChain) throw new Error("Cosmos chain not found");
 
-        if (!initCw) throw new Error("Chain wallet not found");
+      let currentChain = initialChain;
+      let connection: CosmosWalletConnection | null = null;
+      const chainWallet = makeCurrentValueStream<CosmosChainWallet | null>(
+        null
+      );
 
-        const chainWallet = makeCurrentValueStream<ChainWalletBase>(initCw);
+      const setConnection = (next: CosmosWalletConnection | null) => {
+        connection = next;
+        chainWallet.set(next?.wallet ?? null);
+      };
 
-        const setup: ReturnType<CreateConnectorFn>["setup"] = () =>
-          new Promise((res, rej) => {
-            let retryTimes = 0;
+      const session = wallet.makeSession({
+        connectorId: wallet.id,
+        storage: config.storage,
+        onEnded: () => {
+          setConnection(null);
+          config.emitter.emit("disconnect");
+        },
+      });
 
-            const check = async () => {
-              if (retryTimes > 3) {
-                return rej();
-              }
+      const persistAccountPublicKey = async (signer: CosmosChainWallet) => {
+        const { address, pubkey } = await runWalletEffect(signer.getAccount);
 
-              if (
-                initCw.clientMutable.state === "Done" ||
-                initCw.clientMutable.state === "Error"
-              ) {
-                res();
-              } else {
-                await waitForWalletDelay(1000);
-                retryTimes++;
-                check();
-              }
-            };
+        await persistPublicKey({
+          address: Schema.decodeSync(WalletAddress)(address),
+          publicKey: toBase64(pubkey),
+        });
+      };
 
-            check();
-          });
+      const connect: ReturnType<CreateConnectorFn>["connect"] = async (
+        args
+      ) => {
+        config.emitter.emit("message", { type: "connecting" });
 
-        const connect: ReturnType<CreateConnectorFn>["connect"] = async (
-          args
-        ) => {
-          config.emitter.emit("message", { type: "connecting" });
-
-          const cw = chainWallet.get();
-          const getConnectResult = (chainWallet: ChainWalletBase) => {
-            if (!chainWallet.address || !chainWallet.chainId) {
-              throw new Error(
-                chainWallet.message ?? "Cosmos wallet did not return an account"
-              );
-            }
-
-            return wagmiConnectResult(
-              args?.withCapabilities,
-              [chainWallet.address as Address],
-              chainWallet.chainId as unknown as number
+        const next = args?.isReconnecting
+          ? await session.restore()
+          : await session.connect(
+              // The host's initial chain, when it is one of this connector's chains.
+              chains.find(
+                (chain) => cosmosWagmiChainId(chain.chain_id) === args?.chainId
+              ) ?? currentChain
             );
-          };
+        currentChain =
+          chains.find((chain) => chain.chain_id === next.wallet.chainId) ??
+          currentChain;
+        setConnection(next);
 
-          if (cw.address && cw.chainId) {
-            if (cw.walletInfo.mode === "wallet-connect") {
-              await (cw.client as WCClient).init();
-            }
+        if (!args?.isReconnecting) await persistAccountPublicKey(next.wallet);
 
-            return getConnectResult(cw);
-          }
+        return wagmiConnectResult(
+          args?.withCapabilities,
+          [next.address as Address],
+          cosmosWagmiChainId(next.wallet.chainId)
+        );
+      };
 
-          const checkForQRCode = async (timesCheck: number) => {
-            if (timesCheck <= 0) return;
+      const switchChain: ReturnType<CreateConnectorFn>["switchChain"] = async ({
+        chainId,
+      }) => {
+        const wagmiChain = config.chains.find((c) => c.id === chainId);
+        const chain = chains.find(
+          (chain) => cosmosWagmiChainId(chain.chain_id) === chainId
+        );
 
-            await waitForWalletDelay(400);
+        if (!wagmiChain || !chain) throw new Error("Chain not found");
 
-            if (cw.qrUrl.data) {
-              return provider.emit("display_uri", cw.qrUrl.data);
-            }
+        const next = await session.connect(chain);
+        currentChain = chain;
+        setConnection(next);
+        await persistAccountPublicKey(next.wallet);
 
-            checkForQRCode(timesCheck - 1);
-          };
+        onChainChanged(chainId.toString());
+        onAccountsChanged([next.address as Address]);
 
-          if (cw.walletInfo.mode === "wallet-connect") {
-            checkForQRCode(20);
-          }
+        return wagmiChain;
+      };
 
-          await cw.connect();
-
-          const result = getConnectResult(cw);
-
-          await getAndSavePubKeyToStorage();
-
-          return result;
-        };
-
-        const getAndSavePubKeyToStorage = async () => {
-          const cw = chainWallet.get();
-
-          const result = await cw.client?.getAccount?.(cw.chainId);
-
-          if (!result) return;
-
-          const { address, pubkey } = result;
-
-          await persistPublicKey({
-            address: Schema.decodeSync(WalletAddress)(address),
-            publicKey: toBase64(pubkey),
-          });
-        };
-
-        const switchChain: ReturnType<CreateConnectorFn>["switchChain"] =
-          async ({ chainId }) => {
-            const wagmiChain = config.chains.find((c) => c.id === chainId);
-
-            if (!wagmiChain) throw new Error("Chain not found");
-
-            const cosmosChain = wagmiChain as Chain & {
-              cosmosChainName: string;
-            };
-
-            const newCw = wallet.getChainWallet(
-              cosmosChain.cosmosChainName
-            ) as ChainWalletBase;
-
-            if (!newCw) throw new Error("Chain wallet not found");
-
-            chainWallet.set(newCw);
-
-            await connect();
-
-            const chain = config.chains.find((c) => c.id === chainId);
-
-            if (!chain) throw new Error("Chain not found");
-
-            onChainChanged(chainId.toString());
-            onAccountsChanged([newCw.address as Address]);
-
-            return chain;
-          };
-
-        const onAccountsChanged: ReturnType<CreateConnectorFn>["onAccountsChanged"] =
-          (accounts) => {
-            if (accounts.length === 0) {
-              config.emitter.emit("disconnect");
-            } else {
-              config.emitter.emit("change", {
-                accounts: accounts as Address[],
-              });
-            }
-          };
-
-        const onChainChanged: ReturnType<CreateConnectorFn>["onChainChanged"] =
-          (chainId) => {
-            config.emitter.emit("change", {
-              chainId: chainId as unknown as number,
-            });
-          };
-
-        const onDisconnect: ReturnType<CreateConnectorFn>["onDisconnect"] =
-          () => {
+      const onAccountsChanged: ReturnType<CreateConnectorFn>["onAccountsChanged"] =
+        (accounts) => {
+          if (accounts.length === 0) {
             config.emitter.emit("disconnect");
-          };
-
-        const getAccounts: ReturnType<CreateConnectorFn>["getAccounts"] =
-          async () => {
-            const address = chainWallet.get().address;
-
-            return address ? [address as Address] : [];
-          };
-
-        const isAuthorized: ReturnType<CreateConnectorFn>["isAuthorized"] =
-          async () => {
-            try {
-              return !!chainWallet.get().address;
-            } catch (_error) {
-              return false;
-            }
-          };
-
-        const signTransaction = ({
-          cw,
-          tx,
-        }: {
-          cw: ChainWalletBase;
-          tx: string;
-        }) =>
-          Effect.tryPromise({
-            try: () =>
-              cw.client.signDirect!(
-                cw.chainId,
-                cw.address!,
-                SignDoc.decode(fromHex(tx)) as unknown as DirectSignDoc // accountNumber bigint/Long issue
-              ),
-            catch: (cause) =>
-              new WalletIntegrationError({
-                cause,
-                message: "signDirect failed",
-                operation: "cosmos-sign-direct",
-              }),
-          }).pipe(
-            Effect.map((val) =>
-              toHex(
-                TxRaw.encode({
-                  authInfoBytes: val.signed.authInfoBytes,
-                  bodyBytes: val.signed.bodyBytes,
-                  signatures: [decodeSignature(val.signature).signature],
-                }).finish()
-              )
-            )
-          );
-
-        const getChainId: ReturnType<CreateConnectorFn>["getChainId"] =
-          async () => chainWallet.get().chainId as unknown as number;
-
-        const getProvider: ReturnType<CreateConnectorFn>["getProvider"] =
-          async () => provider;
-
-        const disconnect: ReturnType<CreateConnectorFn>["disconnect"] =
-          async () => chainWallet.get().disconnect();
-
-        return {
-          ...walletDetailsParams,
-          setup,
-          id: wallet.walletInfo.name,
-          name: wallet.walletInfo.name,
-          type: configMeta.type,
-          $filteredChains: Stream.succeed(cosmosWagmiChains),
-          $chainWallet: chainWallet.changes,
-          connect,
-          switchChain,
-          onAccountsChanged,
-          onChainChanged,
-          onDisconnect,
-          getAccounts,
-          isAuthorized,
-          getChainId,
-          getProvider,
-          disconnect,
-          signTransaction,
-          toBase64,
+          } else {
+            config.emitter.emit("change", {
+              accounts: accounts as Address[],
+            });
+          }
         };
-      }),
-  };
-};
+
+      const onChainChanged: ReturnType<CreateConnectorFn>["onChainChanged"] = (
+        chainId
+      ) => {
+        config.emitter.emit("change", {
+          chainId: cosmosWagmiChainId(chainId),
+        });
+      };
+
+      const onDisconnect: ReturnType<CreateConnectorFn>["onDisconnect"] =
+        () => {
+          config.emitter.emit("disconnect");
+        };
+
+      const signTransaction = ({
+        cw,
+        tx,
+      }: {
+        cw: CosmosChainWallet;
+        tx: string;
+      }) =>
+        Effect.try({
+          try: () => SignDoc.decode(fromHex(tx)),
+          catch: (cause) =>
+            new WalletIntegrationError({
+              cause,
+              message: "Invalid Cosmos sign document",
+              operation: "cosmos-sign-direct",
+            }),
+        }).pipe(
+          Effect.flatMap(cw.signDirect),
+          Effect.flatMap((response) =>
+            Effect.try({
+              // The wallet may modify the document; encode what it signed.
+              try: () =>
+                toHex(
+                  TxRaw.encode({
+                    authInfoBytes: response.signed.authInfoBytes,
+                    bodyBytes: response.signed.bodyBytes,
+                    signatures: [decodeSignature(response.signature).signature],
+                  }).finish()
+                ),
+              catch: (cause) =>
+                new WalletIntegrationError({
+                  cause,
+                  message: "Invalid Cosmos signature",
+                  operation: "cosmos-sign-direct",
+                }),
+            })
+          )
+        );
+
+      return {
+        ...walletDetailsParams,
+        setup: () => session.ready(),
+        id: wallet.id,
+        name: wallet.id,
+        type: configMeta.type,
+        $filteredChains: Stream.succeed(cosmosWagmiChains),
+        $chainWallet: chainWallet.changes,
+        connect,
+        switchChain,
+        onAccountsChanged,
+        onChainChanged,
+        onDisconnect,
+        getAccounts: async () =>
+          connection ? [connection.address as Address] : [],
+        isAuthorized: async () => {
+          try {
+            return await session.isAuthorized();
+          } catch {
+            return false;
+          }
+        },
+        getChainId: async () => cosmosWagmiChainId(currentChain.chain_id),
+        getProvider: async () => ({}),
+        disconnect: async () => {
+          setConnection(null);
+          await session.disconnect(currentChain);
+        },
+        signTransaction,
+        toBase64,
+      };
+    }),
+});

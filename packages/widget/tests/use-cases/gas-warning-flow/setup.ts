@@ -11,7 +11,7 @@ import {
 } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
-import { rkMockWallet } from "../../utils/mock-connector";
+import { mockWalletListFactory } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
 import { waitForMs } from "../../utils/wait";
 
@@ -331,7 +331,10 @@ export const setup = (worker: TestWorker) => {
         throw new Error("unhandled method");
     }
   });
-  const customConnectors = rkMockWallet({ accounts: [account], requestFn });
+  const customConnectors = mockWalletListFactory({
+    accounts: [account],
+    requestFn,
+  });
 
   return {
     customConnectors,

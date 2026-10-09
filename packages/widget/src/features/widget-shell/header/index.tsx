@@ -1,11 +1,9 @@
-import { ConnectButton } from "@stakekit/rainbowkit";
-import classNames from "clsx";
 import { motion } from "motion/react";
 import { Box } from "../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
 import { XIcon } from "../../../shared/ui/primitives/icons/x-icon";
 import { AccountModal, ChainModal } from "../../wallet/views";
-import { animationContainer, parentButton } from "./styles.css";
+import { animationContainer } from "./styles.css";
 import { useHeader } from "./use-header";
 
 export const Header = () => {
@@ -60,30 +58,18 @@ export const Header = () => {
           )}
         </Box>
 
-        {walletConfigReady && variant !== "zerion" ? (
-          <ConnectButton.Custom>
-            {({ account, chain, mounted }) => {
-              return (
-                <Box
-                  className={classNames({ [parentButton]: !mounted })}
-                  aria-hidden={!mounted}
-                >
-                  {(isConnected || isConnecting) && chain && account ? (
-                    <motion.div
-                      className={animationContainer}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.2, duration: 0.2 }}
-                    >
-                      {!hideChainSelector && <ChainModal />}
-
-                      <AccountModal />
-                    </motion.div>
-                  ) : null}
-                </Box>
-              );
-            }}
-          </ConnectButton.Custom>
+        {walletConfigReady &&
+        variant !== "zerion" &&
+        (isConnected || isConnecting) ? (
+          <motion.div
+            className={animationContainer}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.2 }}
+          >
+            {!hideChainSelector && <ChainModal />}
+            <AccountModal />
+          </motion.div>
         ) : null}
       </Box>
     </Box>

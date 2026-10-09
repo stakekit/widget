@@ -466,7 +466,6 @@ type SettingsPropsBase = {
   theme?: SKTheme;
   tracking?: TrackingConfig;
   onMountAnimationComplete?: () => void;
-  forceWalletConnectOnly?: boolean;
   hideNetworkLogo?: boolean;
   disableInitLayoutAnimation?: boolean;
   disableResizingInputFontSize?: boolean;

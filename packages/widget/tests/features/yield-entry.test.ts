@@ -25,6 +25,7 @@ import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
 import { makeClassicFlowTestKit } from "../utils/classic-flow-test-kit";
 import { makeTestTracking } from "../utils/services/tracking-service";
 import { makeTestNavigation } from "../utils/services/widget-navigation";
+import { stubWalletModal } from "../utils/wallet-modal";
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -114,11 +115,9 @@ const makeObservablePorts = () => {
           Layer.mergeAll(
             Layer.succeed(
               WalletModal,
-              WalletModal.of({
+              stubWalletModal({
                 closeChain: Effect.sync(closeChain),
-                install: () => Effect.void,
                 openConnect: Effect.sync(openConnect),
-                uninstall: () => Effect.void,
               })
             ),
             testNavigation.layer,

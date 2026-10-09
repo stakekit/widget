@@ -20,6 +20,7 @@ import { WalletConnectionError } from "../../../src/services/wallet/wallet-error
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
 import type { WalletCoreState } from "../../../src/services/wallet/wallet-state";
+import { stubWalletModal } from "../../utils/wallet-modal";
 import { makeWalletTestController } from "./wallet-test-controller";
 
 const connector = {
@@ -69,11 +70,8 @@ const makeLogoutLayer = ({
     queryParamsInitChainId: undefined,
     wagmiConfig,
   });
-  const modal = WalletModal.of({
+  const modal = stubWalletModal({
     closeChain: close,
-    install: () => Effect.void,
-    openConnect: Effect.void,
-    uninstall: () => Effect.void,
   });
 
   return WalletService.layer.pipe(

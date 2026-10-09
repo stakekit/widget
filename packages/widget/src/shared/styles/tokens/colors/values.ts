@@ -1,6 +1,5 @@
 import type { CompleteTheme } from "../../../../public-api/theme";
 import { vars } from "../../theme/contract.css";
-import { connectKitTheme } from "../connect-kit";
 
 const primitiveColors = {
   transparent: "transparent",
@@ -129,6 +128,8 @@ export const lightThemeColors: CompleteTheme["color"] = {
   text: lightSemanticColors.foreground.default,
   textMuted: lightSemanticColors.foreground.muted,
   textDanger: lightSemanticColors.foreground.danger,
+  statusSuccess: sharedSemanticColors.status.rewardRate,
+  statusWarning: sharedSemanticColors.status.warning,
 
   background: vars.color.primary,
   backgroundMuted: "#f5f5f6",
@@ -178,15 +179,6 @@ export const lightThemeColors: CompleteTheme["color"] = {
   disabledButtonColor: vars.color.white,
   disabledButtonBackground: vars.color.disabled,
 
-  connectKit: {
-    ...connectKitTheme.lightMode.colors,
-    modalBackground: vars.color.modalBodyBackground,
-    profileForeground: vars.color.modalBodyBackground,
-    profileAction: vars.color.backgroundMuted,
-    profileActionHover: vars.color.disabled,
-    modalBackdrop: sharedSemanticColors.overlay.modal,
-  },
-
   dashboardDetailsSectionBackground: "#f5f5f6",
   summaryItemBackground: "#f5f5f6",
   summaryLabelStakedBackground: "#F6F0FF",
@@ -207,6 +199,8 @@ export const darkThemeColors: CompleteTheme["color"] = {
   text: darkSemanticColors.foreground.default,
   textMuted: "#87899C",
   textDanger: darkSemanticColors.foreground.danger,
+  statusSuccess: sharedSemanticColors.status.success,
+  statusWarning: sharedSemanticColors.status.warning,
 
   background: vars.color.primary,
   backgroundMuted: "#333333",
@@ -255,15 +249,6 @@ export const darkThemeColors: CompleteTheme["color"] = {
 
   disabledButtonColor: primitiveColors.blackFull,
   disabledButtonBackground: vars.color.disabled,
-
-  connectKit: {
-    ...connectKitTheme.darkMode.colors,
-    modalBackground: vars.color.modalBodyBackground,
-    profileForeground: vars.color.modalBodyBackground,
-    profileAction: "#282828",
-    profileActionHover: "#333333",
-    modalBackdrop: sharedSemanticColors.overlay.modal,
-  },
 
   dashboardDetailsSectionBackground: "#282828",
   summaryItemBackground: "#282828",

@@ -280,11 +280,25 @@ describe("Select opportunity", () => {
 
     await app.getByText("Connect Wallet").click();
 
-    await expect.element(app.getByText("Select a Chain")).toBeInTheDocument();
+    await expect.element(app.getByText("Choose ecosystem")).toBeInTheDocument();
 
     await clickText("EVM");
 
-    await expect.element(app.getByText("Connect a Wallet")).toBeInTheDocument();
+    await expect
+      .element(
+        app.getByRole("heading", { name: "Connect wallet", exact: true })
+      )
+      .toBeInTheDocument();
+
+    await expect
+      .element(app.getByTestId("connect-ecosystem-back"))
+      .toBeInTheDocument();
+
+    await app.getByTestId("connect-ecosystem-back").click();
+
+    await expect.element(app.getByText("Choose ecosystem")).toBeInTheDocument();
+
+    await clickText("EVM");
 
     await userEvent.keyboard("[Escape]");
 

@@ -158,7 +158,6 @@ export const bootstrapWallet = Effect.gen(function* () {
   const includeSolanaWalletAdapters =
     snapshot.enabledNetworks.has("solana") &&
     !walletConfig.hasExternalProvider &&
-    !walletConfig.forceWalletConnectOnly &&
     !walletConfig.isLedgerLive &&
     !walletConfig.isSafe &&
     !connectorSource.walletListFactory;
@@ -175,7 +174,6 @@ export const bootstrapWallet = Effect.gen(function* () {
       ...walletConfig,
       enabledNetworks: snapshot.enabledNetworks,
       externalProviders: snapshot.externalProviders,
-      isMobileWallet: snapshot.browser.isMobileWallet,
       persistPublicKey: persistence.upsertStoredPublicKey,
       queryParams: snapshot.initParams,
       solanaConnection: solanaRuntime.connection,

@@ -1,11 +1,13 @@
 import type { Connection } from "@solana/web3.js";
-import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import { Effect, Record } from "effect";
 import type { Network } from "../../../../domain/network/network";
 import type { VariantProps } from "../../../../public-api/react-types";
 import { config } from "../../../../shared/config/widget-defaults";
+import type { Chain, WalletList } from "../../wallet-descriptors";
 import { WalletIntegrationError } from "../../wallet-errors";
+import type { WalletModal } from "../../wallet-modal";
 import type { StellarWalletsKitPlatformService } from "../platform/stellar-wallets-kit-platform";
+import type { WalletConnectProtocol } from "../platform/wallet-connect-protocol";
 import type { RunWalletEffect } from "../runtime/effect-runner";
 import type { SolanaWalletDescriptor } from "../runtime/solana-runtime";
 import { type MiscChainsMap, miscChainsMap } from "./configured-chains";
@@ -14,22 +16,25 @@ import { loadStellarConnector } from "./stellar/config";
 const queryFn = async ({
   buildConnectors,
   enabledNetworks,
-  forceWalletConnectOnly,
   solanaWallets,
   solanaConnection,
   variant,
   tonConnectManifestUrl,
   stellarConnector,
+  walletConnectProtocol,
+  runWalletEffect,
+  walletModal,
 }: {
   buildConnectors: boolean;
   enabledNetworks: ReadonlySet<Network>;
-  forceWalletConnectOnly: boolean;
-  isMobileWallet?: boolean;
   solanaWallets: ReadonlyArray<SolanaWalletDescriptor>;
   solanaConnection: Connection;
   variant: VariantProps["variant"];
   tonConnectManifestUrl: string | undefined;
   stellarConnector: WalletList[number] | null;
+  readonly walletConnectProtocol: WalletConnectProtocol;
+  readonly runWalletEffect: RunWalletEffect;
+  readonly walletModal: WalletModal["Service"];
 }): Promise<{
   miscChainsMap: Partial<MiscChainsMap>;
   miscChains: Chain[];
@@ -53,13 +58,15 @@ const queryFn = async ({
     ? await Promise.all([
         filteredMiscChainsMap.tron
           ? import("./tron/tron-connector").then((module) =>
-              module.getTronConnectors({ forceWalletConnectOnly })
+              module.getTronConnectors({
+                walletConnectProtocol,
+                runWalletEffect,
+              })
             )
           : null,
         filteredMiscChainsMap.solana && !config.env.isTestMode
           ? import("./solana/solana-connector").then((module) =>
               module.getSolanaConnectors({
-                forceWalletConnectOnly,
                 wallets: solanaWallets,
                 connection: solanaConnection,
                 variant,
@@ -73,7 +80,11 @@ const queryFn = async ({
           : null,
         filteredMiscChainsMap.ton
           ? import("./ton/ton-connector").then((module) =>
-              module.getTonConnectors({ tonConnectManifestUrl })
+              module.getTonConnectors({
+                runWalletEffect,
+                tonConnectManifestUrl,
+                walletModal,
+              })
             )
           : null,
         stellarConnector,

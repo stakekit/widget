@@ -2,6 +2,7 @@ import { Layer } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { BorrowTransactionFlowService } from "../../features/borrow-transaction-flow/runtime";
 import { ClassicTransactionFlowService } from "../../features/classic-transaction-flow/runtime";
+import { WalletPresentationService } from "../../features/wallet/runtime";
 import { YieldEntrySubmissionService } from "../../features/yield-entry/runtime";
 import { TransactionWorkflowService } from "../../services/transaction-workflow/transaction-workflow-service";
 import { WalletService } from "../../services/wallet/wallet-service";
@@ -32,11 +33,15 @@ export const walletRuntime = Atom.runtime((get) => {
       Layer.mergeAll(appLayer, walletLayer, classicTransactionFlowLayer)
     )
   );
+  const walletPresentationLayer = WalletPresentationService.layer.pipe(
+    Layer.provide(Layer.merge(appLayer, walletLayer))
+  );
 
   return Layer.mergeAll(
     appLayer,
     walletLayer,
     transactionWorkflowLayer,
+    walletPresentationLayer,
     borrowTransactionFlowLayer,
     classicTransactionFlowLayer,
     deepLinkCoordinatorLayer,

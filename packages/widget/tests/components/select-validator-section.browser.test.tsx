@@ -189,4 +189,31 @@ describe("SelectValidatorSection", () => {
 
     await expect.element(app.getByText("View all")).toBeInTheDocument();
   });
+
+  it("offers one control per validator row when selecting several validators", async () => {
+    hookState.current = createHookValue({
+      selectedStake: multiSelectStake,
+      validatorsData: [
+        decodeValidator(
+          yieldApiValidatorFixture({
+            address: "validator-0",
+            name: "Validator 0",
+            preferred: true,
+          })
+        ),
+      ],
+    });
+
+    const app = await renderSection();
+    const trigger = app.container.querySelector(
+      '[data-rk="select-validator-plus"]'
+    );
+    await userEvent.click(trigger as HTMLButtonElement);
+    await expect.element(app.getByText("Validator 0")).toBeInTheDocument();
+
+    const dialog = document.querySelector(
+      '[data-testid="select-modal__container"]'
+    );
+    expect(dialog?.querySelectorAll("button button")).toHaveLength(0);
+  });
 });

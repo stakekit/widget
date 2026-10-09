@@ -245,6 +245,31 @@
     "connect_wallet": "Connectez un portefeuille",
     "ledger_add_account": "Ajoutez un portefeuille"
   },
+  "wallet_modal": {
+    "account": "Compte",
+    "close": "Fermer",
+    "copy_address": "Copier l'adresse",
+    "copied": "Copié !",
+    "connected": "Connecté",
+    "confirm": "Confirmer dans le portefeuille",
+    "confirm_error": "Erreur de changement de réseau",
+    "wrong_network": "Mauvais réseau détecté, changez ou déconnectez-vous pour continuer.",
+    "chain_error": "Impossible de changer de réseau. Réessayez.",
+    "select_ecosystem": "Choisissez un écosystème",
+    "connect_wallet": "Connectez un portefeuille",
+    "change_ecosystem": "Choisissez un autre écosystème",
+    "connection_error": "Impossible de connecter le portefeuille. Réessayez.",
+    "wallet_not_available": "Ce portefeuille n'est plus disponible. Activez ou installez son extension, puis réessayez.",
+    "disconnect": "Déconnecter",
+    "network": "Changer de réseau",
+    "install": "Installer",
+    "checking": "Vérification",
+    "groups": {
+      "installed": "Installés",
+      "primary": "Principaux",
+      "other": "Autres"
+    }
+  },
   "activity": {
     "complete": {
       "continue": "Continuer"

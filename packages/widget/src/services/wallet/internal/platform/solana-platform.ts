@@ -1,9 +1,18 @@
-import { Context, Effect, Layer, Queue, type Scope, Stream } from "effect";
+import {
+  Context,
+  Effect,
+  FiberSet,
+  Layer,
+  Queue,
+  type Scope,
+  Stream,
+} from "effect";
 import {
   type HeadlessSolanaRuntime,
   makeDefaultHeadlessSolanaRuntime,
   type SolanaWalletSnapshot,
 } from "../runtime/solana-runtime";
+import { WalletConnectProtocolPlatform } from "./wallet-connect-protocol";
 
 export type SolanaRuntime = {
   readonly connection: HeadlessSolanaRuntime["connection"];
@@ -46,19 +55,27 @@ const fromHeadlessRuntime = Effect.fn("fromHeadlessRuntime")(function* (
   } satisfies SolanaRuntime;
 });
 
-const makeRuntime = Effect.fn("makeRuntime")(function* (options: {
-  readonly includeWalletAdapters: boolean;
-}) {
-  const runtime = yield* makeDefaultHeadlessSolanaRuntime(options);
-  return yield* fromHeadlessRuntime(runtime);
-});
-
 export class SolanaPlatform extends Context.Service<
   SolanaPlatform,
   SolanaPlatformService
 >()("stakekit/widget/wallet/platform/SolanaPlatform") {
-  static readonly layer = Layer.succeed(
+  static readonly layer = Layer.effect(
     SolanaPlatform,
-    SolanaPlatform.of({ makeRuntime })
+    Effect.gen(function* () {
+      const protocolPlatform = yield* WalletConnectProtocolPlatform;
+      const makeRuntime = Effect.fn("SolanaPlatform.makeRuntime")(
+        function* (options: { readonly includeWalletAdapters: boolean }) {
+          const walletConnectProtocol = yield* protocolPlatform.make;
+          const runWalletEffect = yield* FiberSet.makeRuntimePromise();
+          const runtime = yield* makeDefaultHeadlessSolanaRuntime({
+            ...options,
+            walletConnectProtocol,
+            runWalletEffect,
+          });
+          return yield* fromHeadlessRuntime(runtime);
+        }
+      );
+      return SolanaPlatform.of({ makeRuntime });
+    })
   );
 }

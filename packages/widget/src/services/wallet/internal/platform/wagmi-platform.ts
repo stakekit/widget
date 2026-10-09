@@ -15,6 +15,7 @@ import {
   watchConnectors,
 } from "wagmi/actions";
 import type { WidgetPersistence } from "../../../persistence/widget-persistence";
+import { WalletModal } from "../../wallet-modal";
 import type { WalletCoreState } from "../../wallet-state";
 import { makeInitializeWallet } from "../runtime/initial-connection";
 import { makeWagmiActions } from "../runtime/wagmi-actions";
@@ -24,7 +25,9 @@ import {
   type WalletController,
 } from "../runtime/wagmi-config";
 import { StellarWalletsKitPlatform } from "./stellar-wallets-kit-platform";
-import { WagmiOperations } from "./wagmi-operations";
+import { ownWagmiConnections, WagmiOperations } from "./wagmi-operations";
+import { WalletConnectPresentationPlatform } from "./wallet-connect-presentation";
+import { WalletConnectProtocolPlatform } from "./wallet-connect-protocol";
 
 class WagmiPlatformError extends Schema.TaggedError<WagmiPlatformError>()(
   "WagmiPlatformError",
@@ -150,19 +153,32 @@ export class WagmiPlatform extends Context.Service<
       const initialize = yield* makeInitializeWallet;
       const buildActions = yield* makeWagmiActions;
       const stellarWalletsKitPlatform = yield* StellarWalletsKitPlatform;
+      const walletConnectPresentationPlatform =
+        yield* WalletConnectPresentationPlatform;
+      const walletConnectProtocolPlatform =
+        yield* WalletConnectProtocolPlatform;
+      const walletModal = yield* WalletModal;
       const buildConfig = Effect.fn("buildConfig")(function* (
         options: WagmiBuildConfigOptions
       ) {
-        return yield* buildWagmiConfig(
+        const controller = yield* buildWagmiConfig(
           options,
           buildActions,
-          stellarWalletsKitPlatform
+          stellarWalletsKitPlatform,
+          walletConnectPresentationPlatform,
+          walletConnectProtocolPlatform,
+          walletModal
         ).pipe(
           Effect.mapError(
             (cause) =>
               new WagmiPlatformError({ cause, operation: "build-config" })
           )
         );
+        yield* Effect.acquireRelease(
+          Effect.sync(() => ownWagmiConnections(controller.wagmiConfig)),
+          (unsubscribe) => Effect.sync(unsubscribe)
+        );
+        return controller;
       });
       return WagmiPlatform.of({
         buildConfig,
@@ -174,7 +190,7 @@ export class WagmiPlatform extends Context.Service<
 
   static readonly defaultLayer = WagmiPlatform.layer.pipe(
     Layer.provide(
-      Layer.merge(WagmiOperations.layer, StellarWalletsKitPlatform.layer)
+      Layer.mergeAll(WagmiOperations.layer, StellarWalletsKitPlatform.layer)
     )
   );
 }

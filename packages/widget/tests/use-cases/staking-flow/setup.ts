@@ -21,7 +21,7 @@ import type {
 } from "../../generated/legacy-api-types";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
-import { rkMockWallet } from "../../utils/mock-connector";
+import { mockWalletListFactory } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
 import { waitForMs } from "../../utils/wait";
 
@@ -429,7 +429,10 @@ export const setup = async (worker: TestWorker) => {
     }
   });
 
-  const customConnectors = rkMockWallet({ accounts: [account], requestFn });
+  const customConnectors = mockWalletListFactory({
+    accounts: [account],
+    requestFn,
+  });
   const mergedYieldOp = {
     ...yieldApiYieldOp,
     provider: yieldApiProviderFixture({

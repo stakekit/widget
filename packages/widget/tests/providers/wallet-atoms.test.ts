@@ -14,6 +14,11 @@ import {
   wagmiOperations,
 } from "../../src/services/wallet/internal/platform/wagmi-operations";
 import {
+  type WalletConnectPresentation,
+  WalletConnectPresentationPlatform,
+} from "../../src/services/wallet/internal/platform/wallet-connect-presentation";
+import { WalletConnectProtocolPlatform } from "../../src/services/wallet/internal/platform/wallet-connect-protocol";
+import {
   makeInitializeWallet,
   type WalletInitialConnectionInput,
 } from "../../src/services/wallet/internal/runtime/initial-connection";
@@ -23,6 +28,9 @@ import {
   getUnseenMipdProviders,
   scopedMipdSubscription,
 } from "../../src/services/wallet/internal/runtime/wagmi-config";
+import { runWalletEffect } from "../utils/run-wallet-effect";
+import { unusedWalletConnectProtocol } from "../utils/wallet-connect";
+import { stubWalletModal } from "../utils/wallet-modal";
 
 const emptyInitParams = {
   accountId: null,
@@ -36,8 +44,13 @@ const emptyInitParams = {
 } as const;
 
 const unusedStellarWalletsKitPlatform = StellarWalletsKitPlatform.of({
-  load: Effect.succeed([]),
+  load: () => Effect.succeed([]),
 });
+
+const unusedWalletConnectPresentation = {
+  connect: () =>
+    Effect.die(new Error("Wallet topology must not open a QR dialog")),
+} satisfies WalletConnectPresentation;
 
 type InitialConnectionOperations = Pick<
   WagmiOperationsService,
@@ -207,9 +220,10 @@ describe("wallet Effect Atom boundaries", () => {
       Effect.gen(function* () {
         const config = yield* getEvmConfig({
           enabledNetworks: new Set(["robinhood", "robinhood-testnet"]),
-          forceWalletConnectOnly: true,
           institutionalWallets: false,
           variant: "default",
+          walletConnectPresentation: unusedWalletConnectPresentation,
+          runWalletEffect,
         });
 
         expect(config.evmChains).toHaveLength(2);
@@ -393,10 +407,8 @@ describe("wallet Effect Atom boundaries", () => {
                 },
                 disableInjectedProviderDiscovery: true,
                 enabledNetworks: new Set(["ethereum"]),
-                forceWalletConnectOnly: false,
                 institutionalWallets: false,
                 isLedgerLive: false,
-                isMobileWallet: false,
                 isSafe: false,
                 mapWalletFn: undefined,
                 walletPolicy: undefined,
@@ -408,7 +420,14 @@ describe("wallet Effect Atom boundaries", () => {
                 variant: "default",
               },
               buildActions,
-              unusedStellarWalletsKitPlatform
+              unusedStellarWalletsKitPlatform,
+              WalletConnectPresentationPlatform.of({
+                make: Effect.succeed(unusedWalletConnectPresentation),
+              }),
+              WalletConnectProtocolPlatform.of({
+                make: Effect.succeed(unusedWalletConnectProtocol),
+              }),
+              stubWalletModal()
             );
           }).pipe(Effect.provide(WagmiOperations.layer))
         )
@@ -441,10 +460,8 @@ describe("wallet Effect Atom boundaries", () => {
                 walletListFactory,
                 disableInjectedProviderDiscovery: true,
                 enabledNetworks: new Set(),
-                forceWalletConnectOnly: false,
                 institutionalWallets: false,
                 isLedgerLive: false,
-                isMobileWallet: false,
                 isSafe: false,
                 mapWalletFn: undefined,
                 walletPolicy: undefined,
@@ -456,7 +473,14 @@ describe("wallet Effect Atom boundaries", () => {
                 variant: "default",
               },
               buildActions,
-              unusedStellarWalletsKitPlatform
+              unusedStellarWalletsKitPlatform,
+              WalletConnectPresentationPlatform.of({
+                make: Effect.succeed(unusedWalletConnectPresentation),
+              }),
+              WalletConnectProtocolPlatform.of({
+                make: Effect.succeed(unusedWalletConnectProtocol),
+              }),
+              stubWalletModal()
             );
           }).pipe(Effect.provide(WagmiOperations.layer))
         );

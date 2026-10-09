@@ -1,26 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { render } from "../utils/test-utils";
 
-vi.mock("@stakekit/rainbowkit", async (importOriginal) => {
-  const actual = await importOriginal<object>();
-
-  return {
-    ...actual,
-    ConnectButton: {
-      Custom: ({
-        children,
-      }: {
-        children: (state: object) => React.ReactNode;
-      }) =>
-        children({
-          account: { address: "0x1234" },
-          chain: { id: 1 },
-          mounted: true,
-        }),
-    },
-  };
-});
-
 vi.mock("../../src/features/wallet/views", async (importOriginal) => {
   const actual = await importOriginal<object>();
 

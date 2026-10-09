@@ -1,53 +1,52 @@
-import { Context, Effect, Layer, Ref } from "effect";
+import { Context, Effect, Layer, Stream, SubscriptionRef } from "effect";
 
-export type WalletModalAdapter = Readonly<{
-  readonly closeChain: () => void;
-  readonly openConnect: () => void;
+type WalletModalOpenState = Readonly<{
+  readonly changes: Stream.Stream<boolean>;
+  readonly current: Effect.Effect<boolean>;
+  readonly revision: Effect.Effect<number>;
+  readonly set: (open: boolean) => Effect.Effect<void>;
 }>;
 
-export type WalletModalOwner = object;
-
-type WalletModalRegistration = Readonly<{
-  readonly adapter: WalletModalAdapter;
-  readonly owner: WalletModalOwner;
-}>;
+const makeOpenState = Effect.gen(function* () {
+  const state = yield* SubscriptionRef.make({ open: false, revision: 0 });
+  return {
+    changes: SubscriptionRef.changes(state).pipe(
+      Stream.map((value) => value.open)
+    ),
+    current: SubscriptionRef.get(state).pipe(Effect.map((value) => value.open)),
+    revision: SubscriptionRef.get(state).pipe(
+      Effect.map((value) => value.revision)
+    ),
+    set: (open: boolean) =>
+      SubscriptionRef.update(state, (value) => ({
+        open,
+        revision: value.revision + 1,
+      })),
+  } satisfies WalletModalOpenState;
+});
 
 export class WalletModal extends Context.Service<
   WalletModal,
   {
+    readonly chainOpen: WalletModalOpenState;
     readonly closeChain: Effect.Effect<void>;
-    readonly install: (
-      owner: WalletModalOwner,
-      adapter: WalletModalAdapter
-    ) => Effect.Effect<void>;
+    readonly connectOpen: WalletModalOpenState;
     readonly openConnect: Effect.Effect<void>;
-    readonly uninstall: (owner: WalletModalOwner) => Effect.Effect<void>;
+    readonly presentationOpen: WalletModalOpenState;
   }
 >()("@stakekit/widget/services/wallet/WalletModal") {
   static readonly layer = Layer.effect(
     WalletModal,
     Effect.gen(function* () {
-      const current = yield* Ref.make<WalletModalRegistration | undefined>(
-        undefined
-      );
-
-      const invoke = (method: keyof WalletModalAdapter): Effect.Effect<void> =>
-        Ref.get(current).pipe(
-          Effect.flatMap((registration) =>
-            Effect.sync(() => {
-              registration?.adapter[method]();
-            })
-          )
-        );
-
+      const chainOpen = yield* makeOpenState;
+      const connectOpen = yield* makeOpenState;
+      const presentationOpen = yield* makeOpenState;
       return WalletModal.of({
-        closeChain: invoke("closeChain"),
-        install: (owner, adapter) => Ref.set(current, { adapter, owner }),
-        openConnect: invoke("openConnect"),
-        uninstall: (owner) =>
-          Ref.update(current, (registration) =>
-            registration?.owner === owner ? undefined : registration
-          ),
+        chainOpen,
+        closeChain: chainOpen.set(false),
+        connectOpen,
+        openConnect: connectOpen.set(true),
+        presentationOpen,
       });
     })
   );

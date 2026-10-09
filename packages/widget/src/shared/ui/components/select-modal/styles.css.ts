@@ -1,4 +1,4 @@
-import { keyframes, style } from "@vanilla-extract/css";
+import { keyframes, style, styleVariants } from "@vanilla-extract/css";
 import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
 import { breakpoints, minMediaQuery } from "../../../styles/tokens/breakpoints";
@@ -19,6 +19,8 @@ export const container = style({
   justifyContent: "center",
   alignItems: "center",
   position: "fixed",
+  width: "100vw",
+  height: "100dvh",
   top: 0,
   bottom: 0,
   left: 0,
@@ -60,6 +62,8 @@ export const content = style([
     },
 
     maxWidth: `${breakpoints.tablet}px`,
+    maxHeight: "100dvh",
+    boxSizing: "border-box",
     position: "absolute",
     overflow: "scroll",
     bottom: 0,
@@ -73,6 +77,18 @@ export const content = style([
   },
 ]);
 
+export const contentSize = styleVariants({
+  default: {},
+  compact: {
+    "@media": {
+      [minMediaQuery("tablet")]: {
+        maxWidth: "368px",
+        width: "368px",
+      },
+    },
+  },
+});
+
 export const noOutline = style({ outline: "none" });
 
 export const selectModalItemContainer = style({
@@ -82,4 +98,15 @@ export const selectModalItemContainer = style({
 export const selectModalGroupLabel = style({
   textTransform: "uppercase",
   letterSpacing: "0.06em",
+});
+
+export const selectModalItemButton = style({
+  width: "100%",
+  textAlign: "left",
+  font: "inherit",
+  color: "inherit",
+  ":focus-visible": {
+    outline: `2px solid ${vars.color.accent}`,
+    outlineOffset: 2,
+  },
 });

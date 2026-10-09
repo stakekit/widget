@@ -1,10 +1,10 @@
-import type { Chain } from "@stakekit/rainbowkit";
 import {
   getProtocolChainIdentity,
   getWalletRoutingId,
   type WalletSubstrateNetwork,
 } from "../../../../../domain/wallet/network";
 import { getNetworkLogo } from "../../../network-assets";
+import type { Chain } from "../../../wallet-descriptors";
 
 export type SubstrateChainsMap = {
   [Key in WalletSubstrateNetwork]: {
@@ -15,6 +15,8 @@ export type SubstrateChainsMap = {
     ss58Format: number;
   };
 };
+
+export type SubstrateChain = SubstrateChainsMap[keyof SubstrateChainsMap];
 
 const polkadot = {
   id: getWalletRoutingId("polkadot"),
