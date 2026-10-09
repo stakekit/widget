@@ -343,7 +343,8 @@ export type SKBorrowTxMeta = {
     | "WITHDRAW"
     | "ENABLE_COLLATERAL"
     | "DISABLE_COLLATERAL"
-    | "BUNDLE";
+    | "BUNDLE"
+    | "WRAP";
 };
 
 export type SKBorrowWallet = SKWallet & {

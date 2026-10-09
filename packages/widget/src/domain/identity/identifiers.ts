@@ -30,3 +30,9 @@ export const ValidatorAddress = Schema.NonEmptyString.pipe(
   Schema.brand("ValidatorAddress")
 );
 export type ValidatorAddress = typeof ValidatorAddress.Type;
+
+const hexAddress = /^0x[0-9a-f]+$/i;
+
+/** 0x-prefixed hex addresses are case-insensitive; other encodings keep their case. */
+export const addressIdentity = (address: string) =>
+  hexAddress.test(address) ? address.toLowerCase() : address;

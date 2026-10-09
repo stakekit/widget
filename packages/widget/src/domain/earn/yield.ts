@@ -159,14 +159,13 @@ export const filterValidators = <T extends ValidatorDto>({
         // A wildcard policy must be normalized against the concrete network.
         const toAddressIdentities = (
           addresses: ReadonlySet<string> | undefined
-        ) =>
-          addresses && new Set(validatorAddressIdentities(network, addresses));
+        ) => addresses && new Set(validatorAddressIdentities(addresses));
         const allowedIdentities = toAddressIdentities(allowed);
         const blockedIdentities = toAddressIdentities(blocked);
         const preferredIdentities = toAddressIdentities(preferred);
 
         return validators.flatMap((v) => {
-          const addressIdentity = validatorAddressIdentity(network, v.address);
+          const addressIdentity = validatorAddressIdentity(v.address);
 
           if (allowedIdentities && !allowedIdentities.has(addressIdentity)) {
             return [];

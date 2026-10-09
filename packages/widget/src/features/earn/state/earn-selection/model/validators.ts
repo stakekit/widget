@@ -2,32 +2,26 @@ import type { EarnValidator } from "../../../../../domain/earn/models";
 import { validatorAddressIdentity } from "../../../../../domain/earn/validator";
 import type { EarnEntry } from "../types";
 
-const sameValidator = (
-  network: string,
-  first: EarnValidator,
-  second: EarnValidator
-) =>
-  validatorAddressIdentity(network, first.address) ===
-    validatorAddressIdentity(network, second.address) &&
+const sameValidator = (first: EarnValidator, second: EarnValidator) =>
+  validatorAddressIdentity(first.address) ===
+    validatorAddressIdentity(second.address) &&
   first.subnet?.id === second.subnet?.id;
 
 export const resolveValidators = ({
   complete,
   entry,
-  network,
   selectedValidators,
   validatorOptions,
 }: {
   readonly complete: boolean;
   readonly entry: EarnEntry;
-  readonly network: string;
   readonly selectedValidators: ReadonlyArray<EarnValidator> | null;
   readonly validatorOptions: ReadonlyArray<EarnValidator>;
 }) => {
   if (selectedValidators?.length) {
     return selectedValidators.flatMap((selected) => {
       const current = validatorOptions.find((option) =>
-        sameValidator(network, option, selected)
+        sameValidator(option, selected)
       );
       if (current) return [current];
       return complete ? [] : [selected];
@@ -40,8 +34,8 @@ export const resolveValidators = ({
         (validator) =>
           validator.name?.toLowerCase() ===
             entry.initParams?.validator?.toLowerCase() ||
-          validatorAddressIdentity(network, validator.address) ===
-            validatorAddressIdentity(network, entry.initParams?.validator ?? "")
+          validatorAddressIdentity(validator.address) ===
+            validatorAddressIdentity(entry.initParams?.validator ?? "")
       )
     : undefined;
 

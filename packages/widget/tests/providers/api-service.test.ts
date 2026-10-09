@@ -555,22 +555,18 @@ describe("application API services", () => {
       })
   );
 
-  it.effect(
-    "maps token balance scans through the narrow Legacy read capability",
-    () =>
-      Effect.gen(function* () {
-        const scan = vi.fn(() => Effect.succeed([]));
-        const source = makeLegacyResourceSource({
-          TokenControllerTokenBalancesScan: scan,
-        } as never);
-        const command = {
-          addresses: { address },
-          network: "ethereum" as const,
-        };
+  it.effect("maps token balance scans to the v2 network address endpoint", () =>
+    Effect.gen(function* () {
+      const scan = vi.fn(() => Effect.succeed([]));
+      const source = makeLegacyResourceSource({
+        NetworkAddressesTokenV2ControllerGetTokenBalances: scan,
+      } as never);
 
-        expect(yield* source.scanTokenBalances(command)).toEqual([]);
-        expect(scan).toHaveBeenCalledWith({ payload: command });
-      })
+      expect(
+        yield* source.scanTokenBalances({ address, network: "ethereum" })
+      ).toEqual([]);
+      expect(scan).toHaveBeenCalledWith("ethereum", address, {});
+    })
   );
 
   it.effect(

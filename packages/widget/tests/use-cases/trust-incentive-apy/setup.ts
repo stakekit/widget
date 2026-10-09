@@ -291,16 +291,19 @@ export const setup = async (
         },
       ]);
     }),
-    http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-      await mockDelay();
-      return HttpResponse.json([
-        {
-          token,
-          amount: "1000251.8279906842",
-          availableYields: [yieldId],
-        },
-      ]);
-    }),
+    http.get(
+      legacyApiRoute("/v2/networks/:network/addresses/:address/tokens"),
+      async () => {
+        await mockDelay();
+        return HttpResponse.json([
+          {
+            token,
+            amount: "1000251.8279906842",
+            availableYields: [yieldId],
+          },
+        ]);
+      }
+    ),
     http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
       await mockDelay();
       return HttpResponse.json([

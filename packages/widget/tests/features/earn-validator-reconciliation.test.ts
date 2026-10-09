@@ -33,7 +33,6 @@ describe("Earn validator reconciliation", () => {
       resolveValidators({
         complete: true,
         entry,
-        network: "ethereum",
         selectedValidators: [selected],
         validatorOptions: [current],
       })
@@ -49,7 +48,6 @@ describe("Earn validator reconciliation", () => {
       resolveValidators({
         complete: false,
         entry,
-        network: "ethereum",
         selectedValidators: [selected],
         validatorOptions: [],
       })
@@ -58,7 +56,6 @@ describe("Earn validator reconciliation", () => {
       resolveValidators({
         complete: true,
         entry,
-        network: "ethereum",
         selectedValidators: [selected],
         validatorOptions: [],
       })

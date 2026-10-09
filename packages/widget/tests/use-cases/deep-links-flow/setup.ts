@@ -271,16 +271,19 @@ export const setup = async (
       return HttpResponse.json([{ id: token.network }, { id: ether.network }]);
     }),
 
-    http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-      await mockDelay();
-      return HttpResponse.json([
-        {
-          token,
-          amount,
-          availableYields: [avaxNativeStaking.id, avaxLiquidStaking.id],
-        },
-      ]);
-    }),
+    http.get(
+      legacyApiRoute("/v2/networks/:network/addresses/:address/tokens"),
+      async () => {
+        await mockDelay();
+        return HttpResponse.json([
+          {
+            token,
+            amount,
+            availableYields: [avaxNativeStaking.id, avaxLiquidStaking.id],
+          },
+        ]);
+      }
+    ),
 
     http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
       await mockDelay();

@@ -266,16 +266,19 @@ export const setup = async (worker: TestWorker) => {
       ]);
     }),
 
-    http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-      await mockDelay();
-      return HttpResponse.json([
-        {
-          token,
-          amount,
-          availableYields: ["avalanche-avax-liquid-staking"],
-        },
-      ]);
-    }),
+    http.get(
+      legacyApiRoute("/v2/networks/:network/addresses/:address/tokens"),
+      async () => {
+        await mockDelay();
+        return HttpResponse.json([
+          {
+            token,
+            amount,
+            availableYields: ["avalanche-avax-liquid-staking"],
+          },
+        ]);
+      }
+    ),
 
     http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
       await mockDelay();

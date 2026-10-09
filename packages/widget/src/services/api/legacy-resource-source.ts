@@ -89,7 +89,11 @@ export const makeLegacyResourceSource = (legacyApi: LegacyApi.LegacyApi) => {
   const scanTokenBalances = Effect.fn("LegacyResourceSource.scanTokenBalances")(
     function* (command: TokenBalanceScanCommand) {
       return yield* legacyApi
-        .TokenControllerTokenBalancesScan({ payload: command })
+        .NetworkAddressesTokenV2ControllerGetTokenBalances(
+          command.network,
+          command.address,
+          {}
+        )
         .pipe(decodeApiResponse("token-balances-scan", TokenBalancesResponse));
     }
   );

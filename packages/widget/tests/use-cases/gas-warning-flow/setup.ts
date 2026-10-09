@@ -172,21 +172,24 @@ export const setup = (worker: TestWorker) => {
       ]);
     }),
 
-    http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-      await mockDelay();
-      return HttpResponse.json([
-        {
-          token: avalancheCToken,
-          amount: avalancheCTokenAmount,
-          availableYields: [yieldWithSameGasAndStakeToken.yieldDto.id],
-        },
-        {
-          token: usdcToken,
-          amount: usdcTokenAmount,
-          availableYields: [yieldWithDifferentGasAndStakeToken.yieldDto.id],
-        },
-      ]);
-    }),
+    http.get(
+      legacyApiRoute("/v2/networks/:network/addresses/:address/tokens"),
+      async () => {
+        await mockDelay();
+        return HttpResponse.json([
+          {
+            token: avalancheCToken,
+            amount: avalancheCTokenAmount,
+            availableYields: [yieldWithSameGasAndStakeToken.yieldDto.id],
+          },
+          {
+            token: usdcToken,
+            amount: usdcTokenAmount,
+            availableYields: [yieldWithDifferentGasAndStakeToken.yieldDto.id],
+          },
+        ]);
+      }
+    ),
 
     http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
       await mockDelay();

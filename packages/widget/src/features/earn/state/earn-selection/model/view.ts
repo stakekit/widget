@@ -311,7 +311,6 @@ export const resolveEarnView = ({
   const selectedValidators = resolveValidators({
     complete: validatorInput._tag === "enabled" && validatorInput.complete,
     entry,
-    network: selectedYield.token.network,
     selectedValidators: selectedValidatorIntent,
     validatorOptions,
   });

@@ -27,7 +27,7 @@ const decode = <S extends Schema.ConstraintDecoder<unknown>>(
 describe("financial API boundary schemas", () => {
   it("decodes wallet-scoped balance commands into branded application values", () => {
     const tokenCommand = Schema.decodeSync(TokenBalanceScanCommand)({
-      addresses: { address: "0xWallet" },
+      address: "0xWallet",
       network: "ethereum",
     });
     const yieldCommand = Schema.decodeSync(YieldBalancesCommand)({
@@ -49,7 +49,7 @@ describe("financial API boundary schemas", () => {
       ],
     });
 
-    expect(tokenCommand.addresses.address).toBe("0xWallet");
+    expect(tokenCommand.address).toBe("0xWallet");
     expect(gasCommand.addresses[0]?.tokenAddress).toBe("0xGasToken");
     expect(yieldCommand.queries[0]?.yieldId).toBe(
       "ethereum-eth-native-staking"

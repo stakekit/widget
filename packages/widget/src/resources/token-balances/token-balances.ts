@@ -24,12 +24,7 @@ export class TokenBalancesError extends Data.TaggedError("TokenBalancesError")<{
 const toTokenBalancesScanCommand = (
   scope: WalletScopeKey
 ): TokenBalanceScanCommand => ({
-  addresses: {
-    address: scope.address,
-    ...(scope.additionalAddresses
-      ? { additionalAddresses: scope.additionalAddresses }
-      : {}),
-  },
+  address: scope.address,
   network: scope.network,
 });
 

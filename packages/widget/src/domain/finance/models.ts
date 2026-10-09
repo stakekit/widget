@@ -9,11 +9,7 @@ import { AdditionalAddresses } from "../wallet/address";
 import { ExactDecimal } from "./scalars";
 
 export const TokenBalanceScanCommand = Schema.Struct({
-  ...LegacyApi.TokenBalanceScanDto.fields,
-  addresses: Schema.Struct({
-    address: WalletAddress,
-    additionalAddresses: Schema.optionalKey(AdditionalAddresses),
-  }),
+  address: WalletAddress,
   network: Network,
 });
 export type TokenBalanceScanCommand = typeof TokenBalanceScanCommand.Type;

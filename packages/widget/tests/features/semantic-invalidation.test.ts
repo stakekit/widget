@@ -215,11 +215,7 @@ describe("semantic resource invalidation", () => {
           )
         );
         const scanTokenBalances = vi.fn(
-          ({
-            addresses: { address: walletAddress },
-          }: {
-            readonly addresses: { readonly address: WalletAddress };
-          }) => {
+          ({ address: walletAddress }: { readonly address: WalletAddress }) => {
             balanceCalls.set(
               walletAddress,
               (balanceCalls.get(walletAddress) ?? 0) + 1

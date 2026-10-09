@@ -417,8 +417,8 @@ describe("Renders initial page", () => {
     const yieldBalanceRequestSignals: AbortSignal[] = [];
 
     worker.use(
-      http.post(
-        legacyApiRoute("/v1/tokens/balances/scan"),
+      http.get(
+        legacyApiRoute("/v2/networks/:network/addresses/:address/tokens"),
         async ({ request }) => {
           tokenBalanceRequestSignals.push(request.signal);
           await mockDelay();
@@ -630,20 +630,22 @@ describe("Renders initial page", () => {
     const account = "0x0000000000000000000000000000000000000001";
 
     worker.use(
-      http.post(legacyApiRoute("/v1/tokens/balances/scan"), () =>
-        HttpResponse.json([
-          {
-            token: {
-              network: "ethereum",
-              address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-              symbol: "WETH",
-              name: "Wrapped Ether",
-              decimals: 18,
+      http.get(
+        legacyApiRoute("/v2/networks/:network/addresses/:address/tokens"),
+        () =>
+          HttpResponse.json([
+            {
+              token: {
+                network: "ethereum",
+                address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                symbol: "WETH",
+                name: "Wrapped Ether",
+                decimals: 18,
+              },
+              amount: "1",
+              availableYields: [],
             },
-            amount: "1",
-            availableYields: [],
-          },
-        ])
+          ])
       ),
       http.get(borrowApiRoute("/v1/positions"), () =>
         HttpResponse.json(emptyBorrowPosition)

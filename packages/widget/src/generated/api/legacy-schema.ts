@@ -80,6 +80,7 @@ export type Networks =
   | "robinhood"
   | "robinhood-testnet"
   | "arc-testnet"
+  | "arc"
   | "avalanche-c"
   | "avalanche-c-atomic"
   | "avalanche-p"
@@ -97,6 +98,7 @@ export type Networks =
   | "hyperevm"
   | "tempo"
   | "pharos"
+  | "xlayer"
   | "agoric"
   | "akash"
   | "axelar"
@@ -186,6 +188,7 @@ export const Networks = Schema.Literals([
   "robinhood",
   "robinhood-testnet",
   "arc-testnet",
+  "arc",
   "avalanche-c",
   "avalanche-c-atomic",
   "avalanche-p",
@@ -203,6 +206,7 @@ export const Networks = Schema.Literals([
   "hyperevm",
   "tempo",
   "pharos",
+  "xlayer",
   "agoric",
   "akash",
   "axelar",
@@ -824,6 +828,27 @@ export const BlacklistedAddressDto = Schema.Struct({
   totalEarned: Schema.String,
   totalUnpaid: Schema.String,
 }).annotate({ identifier: "BlacklistedAddressDto" });
+export type CampaignV1AuditLogType =
+  | "blacklist_added"
+  | "blacklist_removed"
+  | "blacklist_reason_updated"
+  | "paused"
+  | "resumed"
+  | "acknowledged"
+  | "ended"
+  | "milestone_unlocked"
+  | "budget_top_up";
+export const CampaignV1AuditLogType = Schema.Literals([
+  "blacklist_added",
+  "blacklist_removed",
+  "blacklist_reason_updated",
+  "paused",
+  "resumed",
+  "acknowledged",
+  "ended",
+  "milestone_unlocked",
+  "budget_top_up",
+]).annotate({ identifier: "CampaignV1AuditLogType" });
 export type CampaignAuditLogType =
   | "blacklist_added"
   | "blacklist_removed"
@@ -834,7 +859,10 @@ export type CampaignAuditLogType =
   | "ended"
   | "milestone_unlocked"
   | "milestone_funded"
-  | "budget_top_up";
+  | "budget_top_up"
+  | "payout_run_approved"
+  | "payout_run_rejected"
+  | "checkpoint_decided";
 export const CampaignAuditLogType = Schema.Literals([
   "blacklist_added",
   "blacklist_removed",
@@ -846,6 +874,9 @@ export const CampaignAuditLogType = Schema.Literals([
   "milestone_unlocked",
   "milestone_funded",
   "budget_top_up",
+  "payout_run_approved",
+  "payout_run_rejected",
+  "checkpoint_decided",
 ]).annotate({ identifier: "CampaignAuditLogType" });
 export type CampaignConfigurationRequestStatus =
   | "pending"
@@ -1177,6 +1208,36 @@ export const CampaignV2UserEntitlementDto = Schema.Struct({
       "Live token estimate of the unpaid claim. Re-priced at payout.",
   }),
 }).annotate({ identifier: "CampaignV2UserEntitlementDto" });
+export type CampaignV2PayoutRunStatus =
+  | "open"
+  | "awaiting_approval"
+  | "completed"
+  | "failed"
+  | "rejected";
+export const CampaignV2PayoutRunStatus = Schema.Literals([
+  "open",
+  "awaiting_approval",
+  "completed",
+  "failed",
+  "rejected",
+]).annotate({ identifier: "CampaignV2PayoutRunStatus" });
+export type CampaignV2PayoutRunStep =
+  | "collecting"
+  | "awaiting_approval"
+  | "batching"
+  | "awaiting_signature"
+  | "submitted"
+  | "confirming"
+  | "settled";
+export const CampaignV2PayoutRunStep = Schema.Literals([
+  "collecting",
+  "awaiting_approval",
+  "batching",
+  "awaiting_signature",
+  "submitted",
+  "confirming",
+  "settled",
+]).annotate({ identifier: "CampaignV2PayoutRunStep" });
 export type SafeTransactionDetailV2Dto = {
   readonly batchKey: string;
   readonly chainId: string | null;
@@ -1529,6 +1590,16 @@ export const UnlockCampaignV2MilestoneDto = Schema.Struct({
     ],
   }),
 }).annotate({ identifier: "UnlockCampaignV2MilestoneDto" });
+export type RejectCampaignV2PayoutRunDto = { readonly reason: string };
+export const RejectCampaignV2PayoutRunDto = Schema.Struct({
+  reason: Schema.String.annotate({
+    description:
+      "Why the run is being rejected. Recorded on the run and the campaign audit log.",
+    examples: [
+      "Recipient count is far below the previous run; holding until accrual is checked.",
+    ],
+  }),
+}).annotate({ identifier: "RejectCampaignV2PayoutRunDto" });
 export type AccrualWindowSortField = "allocatedReward";
 export const AccrualWindowSortField = Schema.Literal(
   "allocatedReward"
@@ -2085,8 +2156,8 @@ export const CreatePayoutAddressDto = Schema.Struct({
   note: Schema.optionalKey(
     Schema.Union([
       Schema.String.check(
-        Schema.isMaxLength(50).annotate({
-          expected: "a value with a length of at most 50",
+        Schema.isMaxCodePoints(50).annotate({
+          expected: "a string with at most 50 code points",
         })
       ),
       Schema.Null,
@@ -2117,8 +2188,8 @@ export const PayoutAddressDto = Schema.Struct({
   note: Schema.optionalKey(
     Schema.Union([
       Schema.String.check(
-        Schema.isMaxLength(50).annotate({
-          expected: "a value with a length of at most 50",
+        Schema.isMaxCodePoints(50).annotate({
+          expected: "a string with at most 50 code points",
         })
       ),
       Schema.Null,
@@ -2155,6 +2226,7 @@ export type UpdatePayoutAddressDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -2172,6 +2244,7 @@ export type UpdatePayoutAddressDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2269,6 +2342,7 @@ export const UpdatePayoutAddressDto = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -2286,6 +2360,7 @@ export const UpdatePayoutAddressDto = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -2366,8 +2441,8 @@ export const UpdatePayoutAddressDto = Schema.Struct({
   note: Schema.optionalKey(
     Schema.Union([
       Schema.String.check(
-        Schema.isMaxLength(50).annotate({
-          expected: "a value with a length of at most 50",
+        Schema.isMaxCodePoints(50).annotate({
+          expected: "a string with at most 50 code points",
         })
       ),
       Schema.Null,
@@ -2481,13 +2556,13 @@ export const CosmosAdditionalAddressesDto = Schema.Struct({
     format: "byte",
   })
     .check(
-      Schema.isMinLength(44).annotate({
-        expected: "a value with a length of at least 44",
+      Schema.isMinCodePoints(44).annotate({
+        expected: "a string with at least 44 code points",
       })
     )
     .check(
-      Schema.isMaxLength(44).annotate({
-        expected: "a value with a length of at most 44",
+      Schema.isMaxCodePoints(44).annotate({
+        expected: "a string with at most 44 code points",
       })
     ),
 }).annotate({ identifier: "CosmosAdditionalAddressesDto" });
@@ -2871,8 +2946,10 @@ export type YieldProviders =
   | "rocksolid"
   | "t9"
   | "gami-labs"
+  | "lagoon"
   | "yuzu"
-  | "sentora";
+  | "sentora"
+  | "ember";
 export const YieldProviders = Schema.Literals([
   "aave",
   "edel",
@@ -2951,8 +3028,10 @@ export const YieldProviders = Schema.Literals([
   "rocksolid",
   "t9",
   "gami-labs",
+  "lagoon",
   "yuzu",
   "sentora",
+  "ember",
 ]).annotate({ identifier: "YieldProviders" });
 export type YieldType =
   | "staking"
@@ -3207,6 +3286,130 @@ export const ProgrammaticPerpEventOrderTimeInForce = Schema.Literals([
 ]).annotate({
   description: "Normalized time in force",
   identifier: "ProgrammaticPerpEventOrderTimeInForce",
+});
+export type BorrowActionTypes =
+  | "supply"
+  | "borrow"
+  | "repay"
+  | "withdraw"
+  | "enableCollateral"
+  | "disableCollateral"
+  | "supplyAndBorrow";
+export const BorrowActionTypes = Schema.Literals([
+  "supply",
+  "borrow",
+  "repay",
+  "withdraw",
+  "enableCollateral",
+  "disableCollateral",
+  "supplyAndBorrow",
+]).annotate({
+  description: "Action type executed",
+  identifier: "BorrowActionTypes",
+});
+export type ProgrammaticBorrowReportingArgsDto = {
+  readonly amount?: string;
+  readonly amountRaw?: string;
+  readonly collateralAmount?: string;
+  readonly collateralAmountRaw?: string;
+  readonly borrowAmount?: string;
+  readonly targetLtv?: string;
+  readonly repayAll?: boolean;
+  readonly tokenAddress?: string;
+  readonly collateralTokenAddress?: string;
+  readonly marketId?: string;
+};
+export const ProgrammaticBorrowReportingArgsDto = Schema.Struct({
+  amount: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Primary amount in token units",
+      examples: ["100.5"],
+    })
+  ),
+  amountRaw: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Primary amount in raw token units",
+      examples: ["100500000"],
+    })
+  ),
+  collateralAmount: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Secondary collateral amount in token units",
+      examples: ["1.25"],
+    })
+  ),
+  collateralAmountRaw: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Secondary collateral amount in raw token units",
+      examples: ["1250000000000000000"],
+    })
+  ),
+  borrowAmount: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Desired borrow amount in loan-token units (supply borrow-derived mode)",
+      examples: ["50"],
+    })
+  ),
+  targetLtv: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Target loan-to-value as a decimal (supply borrow-derived mode)",
+      examples: ["0.1"],
+    })
+  ),
+  repayAll: Schema.optionalKey(
+    Schema.Boolean.annotate({
+      description: "When true, repay the entire outstanding debt",
+      examples: [true],
+    })
+  ),
+  tokenAddress: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Token address for the primary amount",
+      examples: ["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"],
+    })
+  ),
+  collateralTokenAddress: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Collateral token address",
+      examples: ["0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"],
+    })
+  ),
+  marketId: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Market identifier",
+      examples: ["morpho-blue-ethereum-weth-usdc"],
+    })
+  ),
+}).annotate({ identifier: "ProgrammaticBorrowReportingArgsDto" });
+export type BorrowTransactionType =
+  | "APPROVAL"
+  | "AUTHORIZE"
+  | "DEAUTHORIZE"
+  | "SUPPLY"
+  | "BORROW"
+  | "REPAY"
+  | "WITHDRAW"
+  | "ENABLE_COLLATERAL"
+  | "DISABLE_COLLATERAL"
+  | "BUNDLE"
+  | "WRAP";
+export const BorrowTransactionType = Schema.Literals([
+  "APPROVAL",
+  "AUTHORIZE",
+  "DEAUTHORIZE",
+  "SUPPLY",
+  "BORROW",
+  "REPAY",
+  "WITHDRAW",
+  "ENABLE_COLLATERAL",
+  "DISABLE_COLLATERAL",
+  "BUNDLE",
+  "WRAP",
+]).annotate({
+  description: "Transaction type",
+  identifier: "BorrowTransactionType",
 });
 export type UpdateUserMeDto = {
   readonly serviceConditionsAccepted?: boolean;
@@ -3523,6 +3726,7 @@ export type AllocationDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -3540,6 +3744,7 @@ export type AllocationDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -3647,6 +3852,7 @@ export const AllocationDto = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -3664,6 +3870,7 @@ export const AllocationDto = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -3880,95 +4087,6 @@ export const ValidatorAddressesDto = Schema.Struct({
     })
   ),
 }).annotate({ identifier: "ValidatorAddressesDto" });
-export type CustomValidatorAddresses = {
-  readonly integrationId: string;
-  readonly validatorAddresses: ReadonlyArray<string>;
-};
-export const CustomValidatorAddresses = Schema.Struct({
-  integrationId: Schema.String,
-  validatorAddresses: Schema.Array(Schema.String),
-}).annotate({ identifier: "CustomValidatorAddresses" });
-export type EvmNetworks =
-  | "ethereum"
-  | "ethereum-goerli"
-  | "ethereum-holesky"
-  | "ethereum-sepolia"
-  | "ethereum-hoodi"
-  | "arbitrum"
-  | "base"
-  | "base-sepolia"
-  | "gnosis"
-  | "optimism"
-  | "polygon"
-  | "polygon-amoy"
-  | "starknet"
-  | "zksync"
-  | "linea"
-  | "unichain"
-  | "plume"
-  | "monad-testnet"
-  | "monad"
-  | "robinhood"
-  | "robinhood-testnet"
-  | "arc-testnet"
-  | "avalanche-c"
-  | "avalanche-c-atomic"
-  | "avalanche-p"
-  | "binance"
-  | "celo"
-  | "fantom"
-  | "harmony"
-  | "moonriver"
-  | "okc"
-  | "viction"
-  | "core"
-  | "sonic"
-  | "plasma"
-  | "katana"
-  | "hyperevm"
-  | "tempo"
-  | "pharos";
-export const EvmNetworks = Schema.Literals([
-  "ethereum",
-  "ethereum-goerli",
-  "ethereum-holesky",
-  "ethereum-sepolia",
-  "ethereum-hoodi",
-  "arbitrum",
-  "base",
-  "base-sepolia",
-  "gnosis",
-  "optimism",
-  "polygon",
-  "polygon-amoy",
-  "starknet",
-  "zksync",
-  "linea",
-  "unichain",
-  "plume",
-  "monad-testnet",
-  "monad",
-  "robinhood",
-  "robinhood-testnet",
-  "arc-testnet",
-  "avalanche-c",
-  "avalanche-c-atomic",
-  "avalanche-p",
-  "binance",
-  "celo",
-  "fantom",
-  "harmony",
-  "moonriver",
-  "okc",
-  "viction",
-  "core",
-  "sonic",
-  "plasma",
-  "katana",
-  "hyperevm",
-  "tempo",
-  "pharos",
-]).annotate({ identifier: "EvmNetworks" });
 export type BalanceTransferEventDto = {
   readonly blockTimestamp: string;
   readonly blockNumber: number;
@@ -5116,36 +5234,10 @@ export const ValidatorProviderDto = Schema.Struct({
   createdAt: Schema.String.annotate({ format: "date-time" }),
   updatedAt: Schema.String.annotate({ format: "date-time" }),
 }).annotate({ identifier: "ValidatorProviderDto" });
-export type UpdateValidatorProviderDto = {
-  readonly name?: string;
-  readonly website?: string;
-  readonly rank?: number;
-  readonly preferred?: boolean;
-  readonly revshare?: { readonly [x: string]: Schema.Json };
-  readonly csvFile?: string;
-};
-export const UpdateValidatorProviderDto = Schema.Struct({
-  name: Schema.optionalKey(Schema.String),
-  website: Schema.optionalKey(Schema.String),
-  rank: Schema.optionalKey(
-    Schema.Number.check(
-      Schema.isFinite().annotate({ expected: "a finite number" })
-    )
-  ),
-  preferred: Schema.optionalKey(Schema.Boolean.annotate({ default: false })),
-  revshare: Schema.optionalKey(
-    Schema.Record(
-      Schema.String,
-      Schema.Json.annotate({ expected: "JSON value" })
-    )
-  ),
-  csvFile: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "CSV file for validator data",
-      format: "binary",
-    })
-  ),
-}).annotate({ identifier: "UpdateValidatorProviderDto" });
+export type __ClientMultipartFile = globalThis.File | globalThis.Blob;
+export const __ClientMultipartFile = Schema.instanceOf(globalThis.Blob, {
+  expected: "File | Blob",
+});
 export type UpdateValidatorHistoricalRevshareChangesDto = {
   readonly lastDay: string;
 };
@@ -5412,8 +5504,8 @@ export const CreateWebhookEndpointDto = Schema.Struct({
     description:
       "Secret key for HMAC signature verification. Store this securely - it will be encrypted at rest.",
   }).check(
-    Schema.isMinLength(24).annotate({
-      expected: "a value with a length of at least 24",
+    Schema.isMinCodePoints(24).annotate({
+      expected: "a string with at least 24 code points",
     })
   ),
   description: Schema.optionalKey(
@@ -5448,8 +5540,8 @@ export const UpdateWebhookEndpointDto = Schema.Struct({
       description:
         "Secret key for HMAC signature verification. If provided, the old secret will be replaced.",
     }).check(
-      Schema.isMinLength(24).annotate({
-        expected: "a value with a length of at least 24",
+      Schema.isMinCodePoints(24).annotate({
+        expected: "a string with at least 24 code points",
       })
     )
   ),
@@ -5839,8 +5931,8 @@ export const SetPerpsOverrideDto = Schema.Struct({
       expected: "a value with a length of at least 1",
     })
   ).check(
-    Schema.isMaxLength(500).annotate({
-      expected: "a value with a length of at most 500",
+    Schema.isMaxCodePoints(500).annotate({
+      expected: "a string with at most 500 code points",
     })
   ),
 }).annotate({ identifier: "SetPerpsOverrideDto" });
@@ -6275,6 +6367,78 @@ export const UpdateRiskParameterDto = Schema.Struct({
     ).annotate({ description: "Yield integration ID" })
   ),
 }).annotate({ identifier: "UpdateRiskParameterDto" });
+export type CampaignV2CheckpointDecisionDto = {
+  readonly campaignId: string;
+  readonly checkpointAt: string;
+  readonly decidedAt: string;
+  readonly decidedBy: string | null;
+  readonly reason: string;
+  readonly configuredEmissionRate: string | null;
+  readonly budgetSpendStrategy: CampaignBudgetSpendStrategy;
+  readonly apyCeiling: number | null;
+  readonly endTime: string | null;
+};
+export const CampaignV2CheckpointDecisionDto = Schema.Struct({
+  campaignId: Schema.String.annotate({ format: "uuid" }),
+  checkpointAt: Schema.String.annotate({ format: "date-time" }),
+  decidedAt: Schema.String.annotate({ format: "date-time" }),
+  decidedBy: Schema.Union([Schema.String, Schema.Null]).annotate({
+    format: "uuid",
+  }),
+  reason: Schema.String,
+  configuredEmissionRate: Schema.Union([Schema.String, Schema.Null]),
+  budgetSpendStrategy: CampaignBudgetSpendStrategy,
+  apyCeiling: Schema.Union([
+    Schema.Number.check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    ),
+    Schema.Null,
+  ]),
+  endTime: Schema.Union([Schema.String, Schema.Null]).annotate({
+    format: "date-time",
+  }),
+}).annotate({ identifier: "CampaignV2CheckpointDecisionDto" });
+export type RecordCampaignV2CheckpointDecisionDto = {
+  readonly reason: string;
+  readonly configuredEmissionRate?: string;
+  readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
+  readonly apyCeiling?: number | null;
+  readonly endTime?: string;
+};
+export const RecordCampaignV2CheckpointDecisionDto = Schema.Struct({
+  reason: Schema.String.annotate({
+    description:
+      "Why this decision was taken. Stored on the decision record and the audit log.",
+    examples: [
+      "TVL held above target through the review window; continuing at a reduced rate.",
+    ],
+  }),
+  configuredEmissionRate: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Phase 2 emission rate. Omit to keep the rate the campaign is already running.",
+    })
+  ),
+  budgetSpendStrategy: Schema.optionalKey(CampaignBudgetSpendStrategy),
+  apyCeiling: Schema.optionalKey(
+    Schema.Union([
+      Schema.Number.check(
+        Schema.isFinite().annotate({ expected: "a finite number" })
+      ),
+      Schema.Null,
+    ]).annotate({
+      description:
+        "Phase 2 APY ceiling as a decimal rate, where 0.125 = 12.5%. Null removes it.",
+      examples: [0.125],
+    })
+  ),
+  endTime: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Phase 2 end date. Rejected on milestone-gated campaigns.",
+      format: "date-time",
+    })
+  ),
+}).annotate({ identifier: "RecordCampaignV2CheckpointDecisionDto" });
 export type CampaignQualificationConfigDto = {
   readonly type: CampaignQualificationType;
   readonly threshold: string;
@@ -6442,95 +6606,6 @@ export const CampaignPayoutRunDto = Schema.Struct({
       "Block explorer URL for executionTxHash. Null before execution.",
   }),
 }).annotate({ identifier: "CampaignPayoutRunDto" });
-export type CampaignV2PayoutRunDto = {
-  readonly id: string;
-  readonly campaignId: string;
-  readonly payoutWindowStart: string;
-  readonly payoutWindowEnd: string;
-  readonly actualWindowStart: string;
-  readonly actualWindowEnd: string;
-  readonly distributedAmount: string;
-  readonly status: CampaignPayoutRunStatus;
-  readonly currentStep: CampaignPayoutRunStep;
-  readonly retryCount: number;
-  readonly preparedSafeTransactionMetadata?: {
-    readonly [x: string]: Schema.Json;
-  } | null;
-  readonly startedAt?: string | null;
-  readonly completedAt?: string | null;
-  readonly merkleRoot?: string | null;
-  readonly recipientCount: number;
-  readonly safeTransactionHash: string | null;
-  readonly executionTxHash: string | null;
-  readonly safeTransactionUiUrl: string | null;
-  readonly executionTxHashExplorerUrl: string | null;
-};
-export const CampaignV2PayoutRunDto = Schema.Struct({
-  id: Schema.String,
-  campaignId: Schema.String,
-  payoutWindowStart: Schema.String.annotate({
-    description:
-      "Scheduled cadence start (inclusive): when this run was planned to begin covering accruals.",
-    format: "date-time",
-  }),
-  payoutWindowEnd: Schema.String.annotate({
-    description:
-      "Scheduled cadence end (exclusive): when this run was planned to stop covering accruals.",
-    format: "date-time",
-  }),
-  actualWindowStart: Schema.String.annotate({
-    description:
-      "Actual start (inclusive) of the accrual windows settled by this run, derived from accrual data. Equals the previous run actual end (or campaign startTime for the first run).",
-    format: "date-time",
-  }),
-  actualWindowEnd: Schema.String.annotate({
-    description:
-      "Actual end (exclusive) of the accrual windows settled by this run, derived from accrual data. Equal to actualWindowStart when the run covered no new windows.",
-    format: "date-time",
-  }),
-  distributedAmount: Schema.String,
-  status: CampaignPayoutRunStatus,
-  currentStep: CampaignPayoutRunStep,
-  retryCount: Schema.Number.check(
-    Schema.isFinite().annotate({ expected: "a finite number" })
-  ),
-  preparedSafeTransactionMetadata: Schema.optionalKey(
-    Schema.Union([
-      Schema.Record(
-        Schema.String,
-        Schema.Json.annotate({ expected: "JSON value" })
-      ),
-      Schema.Null,
-    ])
-  ),
-  startedAt: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({ format: "date-time" })
-  ),
-  completedAt: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({ format: "date-time" })
-  ),
-  merkleRoot: Schema.optionalKey(Schema.Union([Schema.String, Schema.Null])),
-  recipientCount: Schema.Number.annotate({
-    description: "Number of payout recipients in this run.",
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  safeTransactionHash: Schema.Union([Schema.String, Schema.Null]).annotate({
-    description: "Safe tx hash of the first batch. Null before signing.",
-  }),
-  executionTxHash: Schema.Union([Schema.String, Schema.Null]).annotate({
-    description: "On-chain tx hash of the first batch. Null before execution.",
-  }),
-  safeTransactionUiUrl: Schema.Union([Schema.String, Schema.Null]).annotate({
-    description:
-      "Safe app URL to view the proposed transaction. Null before signing.",
-  }),
-  executionTxHashExplorerUrl: Schema.Union([
-    Schema.String,
-    Schema.Null,
-  ]).annotate({
-    description:
-      "Block explorer URL for executionTxHash. Null before execution.",
-  }),
-}).annotate({ identifier: "CampaignV2PayoutRunDto" });
 export type CampaignPayoutItemDto = {
   readonly id: string;
   readonly campaignPayoutRunId: string;
@@ -6983,6 +7058,125 @@ export const PaginatedCampaignV2UserPayoutEligibilityDto = Schema.Struct({
   }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
   items: Schema.Array(CampaignV2UserPayoutEligibilityDto),
 }).annotate({ identifier: "PaginatedCampaignV2UserPayoutEligibilityDto" });
+export type CampaignV2PayoutRunDto = {
+  readonly id: string;
+  readonly campaignId: string;
+  readonly payoutWindowStart: string;
+  readonly payoutWindowEnd: string;
+  readonly actualWindowStart: string;
+  readonly actualWindowEnd: string;
+  readonly distributedAmount: string;
+  readonly status: CampaignV2PayoutRunStatus;
+  readonly currentStep: CampaignV2PayoutRunStep;
+  readonly retryCount: number;
+  readonly preparedSafeTransactionMetadata?: {
+    readonly [x: string]: Schema.Json;
+  } | null;
+  readonly startedAt?: string | null;
+  readonly completedAt?: string | null;
+  readonly merkleRoot?: string | null;
+  readonly recipientCount: number;
+  readonly safeTransactionHash: string | null;
+  readonly executionTxHash: string | null;
+  readonly safeTransactionUiUrl: string | null;
+  readonly executionTxHashExplorerUrl: string | null;
+};
+export const CampaignV2PayoutRunDto = Schema.Struct({
+  id: Schema.String,
+  campaignId: Schema.String,
+  payoutWindowStart: Schema.String.annotate({
+    description:
+      "Scheduled cadence start (inclusive): when this run was planned to begin covering accruals.",
+    format: "date-time",
+  }),
+  payoutWindowEnd: Schema.String.annotate({
+    description:
+      "Scheduled cadence end (exclusive): when this run was planned to stop covering accruals.",
+    format: "date-time",
+  }),
+  actualWindowStart: Schema.String.annotate({
+    description:
+      "Actual start (inclusive) of the accrual windows settled by this run, derived from accrual data. Equals the previous run actual end (or campaign startTime for the first run).",
+    format: "date-time",
+  }),
+  actualWindowEnd: Schema.String.annotate({
+    description:
+      "Actual end (exclusive) of the accrual windows settled by this run, derived from accrual data. Equal to actualWindowStart when the run covered no new windows.",
+    format: "date-time",
+  }),
+  distributedAmount: Schema.String,
+  status: CampaignV2PayoutRunStatus,
+  currentStep: CampaignV2PayoutRunStep,
+  retryCount: Schema.Number.check(
+    Schema.isFinite().annotate({ expected: "a finite number" })
+  ),
+  preparedSafeTransactionMetadata: Schema.optionalKey(
+    Schema.Union([
+      Schema.Record(
+        Schema.String,
+        Schema.Json.annotate({ expected: "JSON value" })
+      ),
+      Schema.Null,
+    ])
+  ),
+  startedAt: Schema.optionalKey(
+    Schema.Union([Schema.String, Schema.Null]).annotate({ format: "date-time" })
+  ),
+  completedAt: Schema.optionalKey(
+    Schema.Union([Schema.String, Schema.Null]).annotate({ format: "date-time" })
+  ),
+  merkleRoot: Schema.optionalKey(Schema.Union([Schema.String, Schema.Null])),
+  recipientCount: Schema.Number.annotate({
+    description: "Number of payout recipients in this run.",
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  safeTransactionHash: Schema.Union([Schema.String, Schema.Null]).annotate({
+    description: "Safe tx hash of the first batch. Null before signing.",
+  }),
+  executionTxHash: Schema.Union([Schema.String, Schema.Null]).annotate({
+    description: "On-chain tx hash of the first batch. Null before execution.",
+  }),
+  safeTransactionUiUrl: Schema.Union([Schema.String, Schema.Null]).annotate({
+    description:
+      "Safe app URL to view the proposed transaction. Null before signing.",
+  }),
+  executionTxHashExplorerUrl: Schema.Union([
+    Schema.String,
+    Schema.Null,
+  ]).annotate({
+    description:
+      "Block explorer URL for executionTxHash. Null before execution.",
+  }),
+}).annotate({ identifier: "CampaignV2PayoutRunDto" });
+export type CampaignV2PayoutRunDecisionDto = {
+  readonly runId: string;
+  readonly campaignId: string;
+  readonly status: CampaignV2PayoutRunStatus;
+  readonly currentStep: CampaignV2PayoutRunStep;
+  readonly approvedAt: string | null;
+  readonly approvedBy: string | null;
+  readonly rejectedAt: string | null;
+  readonly rejectedBy: string | null;
+  readonly rejectionReason: string | null;
+};
+export const CampaignV2PayoutRunDecisionDto = Schema.Struct({
+  runId: Schema.String.annotate({ format: "uuid" }),
+  campaignId: Schema.String.annotate({ format: "uuid" }),
+  status: CampaignV2PayoutRunStatus,
+  currentStep: CampaignV2PayoutRunStep,
+  approvedAt: Schema.Union([Schema.String, Schema.Null]).annotate({
+    format: "date-time",
+  }),
+  approvedBy: Schema.Union([Schema.String, Schema.Null]).annotate({
+    format: "uuid",
+  }),
+  rejectedAt: Schema.Union([Schema.String, Schema.Null]).annotate({
+    format: "date-time",
+  }),
+  rejectedBy: Schema.Union([Schema.String, Schema.Null]).annotate({
+    format: "uuid",
+  }),
+  rejectionReason: Schema.Union([Schema.String, Schema.Null]),
+}).annotate({ identifier: "CampaignV2PayoutRunDecisionDto" });
 export type PaginatedCampaignV2PayoutAuditDto = {
   readonly total: number;
   readonly offset: number;
@@ -7836,6 +8030,52 @@ export const ProgrammaticPerpReportingEventOrderDto = Schema.Struct({
     }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
   ),
 }).annotate({ identifier: "ProgrammaticPerpReportingEventOrderDto" });
+export type ProgrammaticBorrowReportingTransactionDto = {
+  readonly id: string;
+  readonly type: BorrowTransactionType;
+  readonly status: TransactionStatus;
+  readonly hash: string | null;
+  readonly network: Networks;
+  readonly explorerUrl: string | null;
+  readonly confirmedAt: string | null;
+};
+export const ProgrammaticBorrowReportingTransactionDto = Schema.Struct({
+  id: Schema.String.annotate({
+    description: "Transaction ID for API tracking (UUID)",
+    examples: ["550e8400-e29b-41d4-a716-446655440000"],
+  }),
+  type: Schema.suspend(
+    (): Schema.Codec<BorrowTransactionType> => BorrowTransactionType
+  ).annotate({ description: "Transaction type", examples: ["SUPPLY"] }),
+  status: Schema.suspend(
+    (): Schema.Codec<TransactionStatus> => TransactionStatus
+  ).annotate({
+    description: "Current transaction status",
+    examples: ["CONFIRMED"],
+  }),
+  hash: Schema.Union([Schema.String, Schema.Null]).annotate({
+    description: "Transaction hash, if available",
+    examples: [
+      "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    ],
+  }),
+  network: Schema.suspend((): Schema.Codec<Networks> => Networks).annotate({
+    description: "Network identifier",
+    examples: ["ethereum"],
+  }),
+  explorerUrl: Schema.Union([Schema.String, Schema.Null]).annotate({
+    description: "Block explorer URL for this transaction",
+    examples: [
+      "https://etherscan.io/tx/0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    ],
+  }),
+  confirmedAt: Schema.Union([Schema.String, Schema.Null]).annotate({
+    description:
+      "When the transaction was confirmed (null if not confirmed yet)",
+    examples: ["2026-02-19T10:23:48.000Z"],
+    format: "date-time",
+  }),
+}).annotate({ identifier: "ProgrammaticBorrowReportingTransactionDto" });
 export type PendingActionArgumentsDto = {
   readonly amount?: string;
   readonly validatorAddress?: string;
@@ -9031,6 +9271,31 @@ export const ValidatorAdminDto = Schema.Struct({
   createdAt: Schema.String.annotate({ format: "date-time" }),
   updatedAt: Schema.String.annotate({ format: "date-time" }),
 }).annotate({ identifier: "ValidatorAdminDto" });
+export type UpdateValidatorProviderDtoMultipart = {
+  readonly name?: string;
+  readonly website?: string;
+  readonly rank?: number;
+  readonly preferred?: boolean;
+  readonly revshare?: { readonly [x: string]: Schema.Json };
+  readonly csvFile?: __ClientMultipartFile;
+};
+export const UpdateValidatorProviderDtoMultipart = Schema.Struct({
+  name: Schema.optionalKey(Schema.String),
+  website: Schema.optionalKey(Schema.String),
+  rank: Schema.optionalKey(
+    Schema.Number.check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+  preferred: Schema.optionalKey(Schema.Boolean.annotate({ default: false })),
+  revshare: Schema.optionalKey(
+    Schema.Record(
+      Schema.String,
+      Schema.Json.annotate({ expected: "JSON value" })
+    )
+  ),
+  csvFile: Schema.optionalKey(__ClientMultipartFile),
+}).annotate({ identifier: "UpdateValidatorProviderDtoMultipart" });
 export type PaginatedYieldStatusOverrideResponseDto = {
   readonly total: number;
   readonly offset: number;
@@ -9866,6 +10131,7 @@ export type UpdateCampaignV2Dto = {
   readonly qualificationConfig?: CampaignV2QualificationConfigDto;
   readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
   readonly blacklistBudgetHandling?: CampaignBlacklistBudgetHandling;
+  readonly checkpointAt?: string | null;
   readonly status?: CampaignStatus;
 };
 export const UpdateCampaignV2Dto = Schema.Struct({
@@ -9929,6 +10195,13 @@ export const UpdateCampaignV2Dto = Schema.Struct({
         "Controls what happens to an excluded address's accrued share. reserve holds it so it stays payable if the exclusion is lifted; redistribute spreads it across the remaining eligible recipients.",
     })
   ),
+  checkpointAt: Schema.optionalKey(
+    Schema.Union([Schema.String, Schema.Null]).annotate({
+      description:
+        "Scheduled mid-campaign review date. Must fall strictly between startTime and endTime. Editable on drafts; a super admin may also move it on a live campaign while it is still in the future. Null clears the schedule.",
+      format: "date-time",
+    })
+  ),
   status: Schema.optionalKey(CampaignStatus),
 }).annotate({ identifier: "UpdateCampaignV2Dto" });
 export type CampaignV2Dto = {
@@ -9958,6 +10231,7 @@ export type CampaignV2Dto = {
   readonly pausedAt?: string | null;
   readonly pausedByRole?: string | null;
   readonly acknowledgedAt?: string | null;
+  readonly checkpointAt?: string | null;
 };
 export const CampaignV2Dto = Schema.Struct({
   id: Schema.String,
@@ -10030,6 +10304,9 @@ export const CampaignV2Dto = Schema.Struct({
   ),
   pausedByRole: Schema.optionalKey(Schema.Union([Schema.String, Schema.Null])),
   acknowledgedAt: Schema.optionalKey(
+    Schema.Union([Schema.String, Schema.Null]).annotate({ format: "date-time" })
+  ),
+  checkpointAt: Schema.optionalKey(
     Schema.Union([Schema.String, Schema.Null]).annotate({ format: "date-time" })
   ),
 }).annotate({ identifier: "CampaignV2Dto" });
@@ -10145,6 +10422,7 @@ export type AdminCampaignV2Dto = {
   readonly pausedAt?: string | null;
   readonly pausedByRole?: string | null;
   readonly acknowledgedAt?: string | null;
+  readonly checkpointAt?: string | null;
   readonly teamId?: string | null;
 };
 export const AdminCampaignV2Dto = Schema.Struct({
@@ -10220,6 +10498,9 @@ export const AdminCampaignV2Dto = Schema.Struct({
   acknowledgedAt: Schema.optionalKey(
     Schema.Union([Schema.String, Schema.Null]).annotate({ format: "date-time" })
   ),
+  checkpointAt: Schema.optionalKey(
+    Schema.Union([Schema.String, Schema.Null]).annotate({ format: "date-time" })
+  ),
   teamId: Schema.optionalKey(
     Schema.Union([Schema.String, Schema.Null]).annotate({
       description: "Team ID the project belongs to.",
@@ -10257,27 +10538,6 @@ export const PaginatedCampaignPayoutRunDto = Schema.Struct({
   }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
   items: Schema.Array(CampaignPayoutRunDto),
 }).annotate({ identifier: "PaginatedCampaignPayoutRunDto" });
-export type PaginatedCampaignV2PayoutRunDto = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly items: ReadonlyArray<CampaignV2PayoutRunDto>;
-};
-export const PaginatedCampaignV2PayoutRunDto = Schema.Struct({
-  total: Schema.Number.annotate({
-    description: "Total number of items available",
-    examples: [100],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  offset: Schema.Number.annotate({
-    description: "Offset of the current page",
-    examples: [0],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  limit: Schema.Number.annotate({
-    description: "Limit of the current page",
-    examples: [20],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  items: Schema.Array(CampaignV2PayoutRunDto),
-}).annotate({ identifier: "PaginatedCampaignV2PayoutRunDto" });
 export type CampaignPayoutRunDetailDto = {
   readonly run: CampaignPayoutRunDto;
   readonly items: ReadonlyArray<CampaignPayoutItemDto>;
@@ -10311,18 +10571,27 @@ export const PaginatedProgrammaticPayoutItemDto = Schema.Struct({
   }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
   items: Schema.Array(ProgrammaticPayoutItemDto),
 }).annotate({ identifier: "PaginatedProgrammaticPayoutItemDto" });
-export type CampaignV2PayoutRunDetailDto = {
-  readonly run: CampaignV2PayoutRunDto;
+export type CampaignV2PayoutRunItemPageDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
   readonly items: ReadonlyArray<CampaignV2PayoutItemDto>;
-  readonly safeTransactions: ReadonlyArray<SafeTransactionDetailV2Dto>;
-  readonly budgetState: PayoutRunBudgetStateV2Dto;
 };
-export const CampaignV2PayoutRunDetailDto = Schema.Struct({
-  run: CampaignV2PayoutRunDto,
+export const CampaignV2PayoutRunItemPageDto = Schema.Struct({
+  total: Schema.Number.annotate({
+    description: "Total number of items available",
+    examples: [100],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  offset: Schema.Number.annotate({
+    description: "Offset of the current page",
+    examples: [0],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  limit: Schema.Number.annotate({
+    description: "Limit of the current page",
+    examples: [20],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
   items: Schema.Array(CampaignV2PayoutItemDto),
-  safeTransactions: Schema.Array(SafeTransactionDetailV2Dto),
-  budgetState: PayoutRunBudgetStateV2Dto,
-}).annotate({ identifier: "CampaignV2PayoutRunDetailDto" });
+}).annotate({ identifier: "CampaignV2PayoutRunItemPageDto" });
 export type PaginatedProgrammaticPayoutItemV2Dto = {
   readonly total: number;
   readonly offset: number;
@@ -10436,6 +10705,39 @@ export const PaginatedCampaignV2ConfigurationRequestDto = Schema.Struct({
   }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
   items: Schema.Array(CampaignV2ConfigurationRequestDto),
 }).annotate({ identifier: "PaginatedCampaignV2ConfigurationRequestDto" });
+export type PaginatedCampaignV2PayoutRunDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<CampaignV2PayoutRunDto>;
+};
+export const PaginatedCampaignV2PayoutRunDto = Schema.Struct({
+  total: Schema.Number.annotate({
+    description: "Total number of items available",
+    examples: [100],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  offset: Schema.Number.annotate({
+    description: "Offset of the current page",
+    examples: [0],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  limit: Schema.Number.annotate({
+    description: "Limit of the current page",
+    examples: [20],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  items: Schema.Array(CampaignV2PayoutRunDto),
+}).annotate({ identifier: "PaginatedCampaignV2PayoutRunDto" });
+export type CampaignV2PayoutRunDetailDto = {
+  readonly run: CampaignV2PayoutRunDto;
+  readonly items: ReadonlyArray<CampaignV2PayoutItemDto>;
+  readonly safeTransactions: ReadonlyArray<SafeTransactionDetailV2Dto>;
+  readonly budgetState: PayoutRunBudgetStateV2Dto;
+};
+export const CampaignV2PayoutRunDetailDto = Schema.Struct({
+  run: CampaignV2PayoutRunDto,
+  items: Schema.Array(CampaignV2PayoutItemDto),
+  safeTransactions: Schema.Array(SafeTransactionDetailV2Dto),
+  budgetState: PayoutRunBudgetStateV2Dto,
+}).annotate({ identifier: "CampaignV2PayoutRunDetailDto" });
 export type CreateCampaignSimulationDto = {
   readonly yieldId?: string;
   readonly projectId?: string;
@@ -10637,16 +10939,6 @@ export type TransactionVerificationMessageRequestDto = {
 export const TransactionVerificationMessageRequestDto = Schema.Struct({
   addresses: AddressesDto,
 }).annotate({ identifier: "TransactionVerificationMessageRequestDto" });
-export type TokenBalanceScanDto = {
-  readonly addresses: AddressesDto;
-  readonly network: Networks;
-};
-export const TokenBalanceScanDto = Schema.Struct({
-  addresses: AddressesDto,
-  network: Schema.suspend((): Schema.Codec<Networks> => Networks).annotate({
-    examples: ["ethereum"],
-  }),
-}).annotate({ identifier: "TokenBalanceScanDto" });
 export type YieldBalanceWithIntegrationIdRequestDto = {
   readonly addresses: AddressesDto;
   readonly args?: ValidatorAddressesDto;
@@ -10657,32 +10949,6 @@ export const YieldBalanceWithIntegrationIdRequestDto = Schema.Struct({
   args: Schema.optionalKey(ValidatorAddressesDto),
   integrationId: Schema.String,
 }).annotate({ identifier: "YieldBalanceWithIntegrationIdRequestDto" });
-export type YieldBalanceScanRequestDto = {
-  readonly addresses: AddressesDto;
-  readonly network: Networks;
-  readonly customValidators?: ReadonlyArray<CustomValidatorAddresses>;
-};
-export const YieldBalanceScanRequestDto = Schema.Struct({
-  addresses: AddressesDto,
-  network: Schema.suspend((): Schema.Codec<Networks> => Networks).annotate({
-    examples: ["ethereum"],
-  }),
-  customValidators: Schema.optionalKey(Schema.Array(CustomValidatorAddresses)),
-}).annotate({ identifier: "YieldBalanceScanRequestDto" });
-export type YieldBalanceScanEvmRequestDto = {
-  readonly addresses: AddressesDto;
-  readonly customValidators?: ReadonlyArray<CustomValidatorAddresses>;
-  readonly networks: EvmNetworks;
-};
-export const YieldBalanceScanEvmRequestDto = Schema.Struct({
-  addresses: AddressesDto,
-  customValidators: Schema.optionalKey(Schema.Array(CustomValidatorAddresses)),
-  networks: Schema.suspend(
-    (): Schema.Codec<EvmNetworks> => EvmNetworks
-  ).annotate({
-    default: ["base", "ethereum", "arbitrum", "polygon", "binance"],
-  }),
-}).annotate({ identifier: "YieldBalanceScanEvmRequestDto" });
 export type YieldBalanceRequestDto = {
   readonly addresses: AddressesDto;
   readonly args?: ValidatorAddressesDto;
@@ -11497,6 +11763,59 @@ export const ProgrammaticPayoutBatchDetailDto = Schema.Struct({
   safeTransaction: SafeTransactionDetailDto,
   recipients: PaginatedProgrammaticPayoutItemDto,
 }).annotate({ identifier: "ProgrammaticPayoutBatchDetailDto" });
+export type CampaignV2PayoutRunApprovalPreviewDto = {
+  readonly runId: string;
+  readonly campaignId: string;
+  readonly status: CampaignV2PayoutRunStatus;
+  readonly currentStep: CampaignV2PayoutRunStep;
+  readonly payoutWindowStart: string;
+  readonly payoutWindowEnd: string;
+  readonly cappedBudget: string;
+  readonly pointsPerShareAtRun: string | null;
+  readonly recipientCount: number;
+  readonly totalPoints: string;
+  readonly totalAmount: string;
+  readonly flaggedCount: number;
+  readonly items: CampaignV2PayoutRunItemPageDto;
+  readonly safeBalance: CampaignV2SafeBalanceDto;
+};
+export const CampaignV2PayoutRunApprovalPreviewDto = Schema.Struct({
+  runId: Schema.String.annotate({ format: "uuid" }),
+  campaignId: Schema.String.annotate({ format: "uuid" }),
+  status: CampaignV2PayoutRunStatus,
+  currentStep: CampaignV2PayoutRunStep,
+  payoutWindowStart: Schema.String.annotate({ format: "date-time" }),
+  payoutWindowEnd: Schema.String.annotate({ format: "date-time" }),
+  cappedBudget: Schema.String.annotate({
+    description: "Run spend envelope, in reward token units.",
+  }),
+  pointsPerShareAtRun: Schema.Union([Schema.String, Schema.Null]).annotate({
+    description:
+      "Point price this run was collected at: run budget / priced unpaid points.",
+  }),
+  recipientCount: Schema.Number.annotate({
+    description: "Addresses that would be paid by this run.",
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  totalPoints: Schema.String.annotate({
+    description: "Total points this run consumes across every recipient.",
+  }),
+  totalAmount: Schema.String.annotate({
+    description:
+      "Sum of the derived per-recipient amounts, in reward token units.",
+  }),
+  flaggedCount: Schema.Number.annotate({
+    description:
+      "Blacklisted addresses holding unpaid points (excluded from this run; their share is held or redistributed per the campaign blacklist handling), plus recipients of this run blacklisted after collection, who are still paid if the run is approved.",
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  items: Schema.suspend(
+    (): Schema.Codec<CampaignV2PayoutRunItemPageDto> =>
+      CampaignV2PayoutRunItemPageDto
+  ).annotate({
+    description:
+      "Derived per-recipient amounts this run would pay, in reward token units.",
+  }),
+  safeBalance: CampaignV2SafeBalanceDto,
+}).annotate({ identifier: "CampaignV2PayoutRunApprovalPreviewDto" });
 export type ProgrammaticPayoutRunDetailV2Dto = {
   readonly run: CampaignV2PayoutRunDto;
   readonly recipients: PaginatedProgrammaticPayoutItemV2Dto;
@@ -12233,7 +12552,7 @@ export type CampaignControllerGetAuditHistoryParams = {
   readonly offset?: number;
   readonly limit?: number;
   readonly address?: string;
-  readonly type?: CampaignAuditLogType;
+  readonly type?: CampaignV1AuditLogType;
 };
 export const CampaignControllerGetAuditHistoryParams = Schema.Struct({
   offset: Schema.optionalKey(
@@ -12260,7 +12579,7 @@ export const CampaignControllerGetAuditHistoryParams = Schema.Struct({
       )
   ),
   address: Schema.optionalKey(Schema.String),
-  type: Schema.optionalKey(CampaignAuditLogType),
+  type: Schema.optionalKey(CampaignV1AuditLogType),
 });
 export type CampaignControllerGetAuditHistory200 = PaginatedCampaignAuditLogDto;
 export const CampaignControllerGetAuditHistory200 =
@@ -13017,7 +13336,7 @@ export const CampaignV2ReadsControllerGetUserEntitlement200 =
 export type CampaignV2ReadsControllerGetPayoutRunsParams = {
   readonly offset?: number;
   readonly limit?: number;
-  readonly status?: CampaignPayoutRunStatus;
+  readonly status?: CampaignV2PayoutRunStatus;
 };
 export const CampaignV2ReadsControllerGetPayoutRunsParams = Schema.Struct({
   offset: Schema.optionalKey(
@@ -13043,7 +13362,7 @@ export const CampaignV2ReadsControllerGetPayoutRunsParams = Schema.Struct({
         })
       )
   ),
-  status: Schema.optionalKey(CampaignPayoutRunStatus),
+  status: Schema.optionalKey(CampaignV2PayoutRunStatus),
 });
 export type CampaignV2ReadsControllerGetPayoutRuns200 =
   PaginatedCampaignV2PayoutRunDto;
@@ -13497,6 +13816,64 @@ export type CampaignV2AdminControllerUnlockMilestone200 =
   CampaignV2MilestoneDto;
 export const CampaignV2AdminControllerUnlockMilestone200 =
   CampaignV2MilestoneDto;
+export type CampaignV2AdminControllerGetPayoutRunApprovalPreviewParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export const CampaignV2AdminControllerGetPayoutRunApprovalPreviewParams =
+  Schema.Struct({
+    offset: Schema.optionalKey(
+      Schema.Number.annotate({ default: 0, examples: [0] })
+        .check(Schema.isFinite().annotate({ expected: "a finite number" }))
+        .check(
+          Schema.isGreaterThanOrEqualTo(0).annotate({
+            expected: "a value greater than or equal to 0",
+          })
+        )
+    ),
+    limit: Schema.optionalKey(
+      Schema.Number.annotate({ default: 20, examples: [20] })
+        .check(Schema.isFinite().annotate({ expected: "a finite number" }))
+        .check(
+          Schema.isGreaterThanOrEqualTo(1).annotate({
+            expected: "a value greater than or equal to 1",
+          })
+        )
+        .check(
+          Schema.isLessThanOrEqualTo(100).annotate({
+            expected: "a value less than or equal to 100",
+          })
+        )
+    ),
+  });
+export type CampaignV2AdminControllerGetPayoutRunApprovalPreview200 =
+  CampaignV2PayoutRunApprovalPreviewDto;
+export const CampaignV2AdminControllerGetPayoutRunApprovalPreview200 =
+  CampaignV2PayoutRunApprovalPreviewDto;
+export type CampaignV2AdminControllerApprovePayoutRun200 =
+  CampaignV2PayoutRunDecisionDto;
+export const CampaignV2AdminControllerApprovePayoutRun200 =
+  CampaignV2PayoutRunDecisionDto;
+export type CampaignV2AdminControllerRejectPayoutRunRequestJson =
+  RejectCampaignV2PayoutRunDto;
+export const CampaignV2AdminControllerRejectPayoutRunRequestJson =
+  RejectCampaignV2PayoutRunDto;
+export type CampaignV2AdminControllerRejectPayoutRun200 =
+  CampaignV2PayoutRunDecisionDto;
+export const CampaignV2AdminControllerRejectPayoutRun200 =
+  CampaignV2PayoutRunDecisionDto;
+export type CampaignV2AdminControllerGetCheckpointDecision200 =
+  CampaignV2CheckpointDecisionDto;
+export const CampaignV2AdminControllerGetCheckpointDecision200 =
+  CampaignV2CheckpointDecisionDto;
+export type CampaignV2AdminControllerRecordCheckpointDecisionRequestJson =
+  RecordCampaignV2CheckpointDecisionDto;
+export const CampaignV2AdminControllerRecordCheckpointDecisionRequestJson =
+  RecordCampaignV2CheckpointDecisionDto;
+export type CampaignV2AdminControllerRecordCheckpointDecision200 =
+  CampaignV2CheckpointDecisionDto;
+export const CampaignV2AdminControllerRecordCheckpointDecision200 =
+  CampaignV2CheckpointDecisionDto;
 export type ProgrammaticCampaignV2ControllerListCampaignsParams = {
   readonly offset?: number;
   readonly limit?: number;
@@ -13669,7 +14046,7 @@ export const ProgrammaticCampaignV2ControllerGetUserAccrualHistory200 =
 export type ProgrammaticCampaignV2ControllerGetPayoutRunsParams = {
   readonly offset?: number;
   readonly limit?: number;
-  readonly status?: CampaignPayoutRunStatus;
+  readonly status?: CampaignV2PayoutRunStatus;
   readonly "X-ADMIN-API-KEY": string;
 };
 export const ProgrammaticCampaignV2ControllerGetPayoutRunsParams =
@@ -13697,7 +14074,7 @@ export const ProgrammaticCampaignV2ControllerGetPayoutRunsParams =
           })
         )
     ),
-    status: Schema.optionalKey(CampaignPayoutRunStatus),
+    status: Schema.optionalKey(CampaignV2PayoutRunStatus),
     "X-ADMIN-API-KEY": Schema.String,
   });
 export type ProgrammaticCampaignV2ControllerGetPayoutRuns200 =
@@ -14316,8 +14693,8 @@ export const PayoutAddressesControllerGet200 = Schema.Struct({
       note: Schema.optionalKey(
         Schema.Union([
           Schema.String.check(
-            Schema.isMaxLength(50).annotate({
-              expected: "a value with a length of at most 50",
+            Schema.isMaxCodePoints(50).annotate({
+              expected: "a string with at most 50 code points",
             })
           ),
           Schema.Null,
@@ -15266,6 +15643,203 @@ export const ProgrammaticReportingControllerGetPerpActivity200 = Schema.Struct({
     Schema.isFinite().annotate({ expected: "a finite number" })
   ),
 });
+export type ProgrammaticReportingControllerGetBorrowActionsParams = {
+  readonly address?: string;
+  readonly status?: ActionStatus;
+  readonly type?: BorrowActionTypes;
+  readonly marketId?: string;
+  readonly integrationId?: string;
+  readonly from?: string;
+  readonly to?: string;
+  readonly limit?: number;
+  readonly page?: number;
+  readonly "X-ADMIN-API-KEY": string;
+};
+export const ProgrammaticReportingControllerGetBorrowActionsParams =
+  Schema.Struct({
+    address: Schema.optionalKey(
+      Schema.String.annotate({
+        examples: ["0xb8c8eb8efc68796e766f6ab320db8c165c064949"],
+      })
+    ),
+    status: Schema.optionalKey(ActionStatus),
+    type: Schema.optionalKey(BorrowActionTypes),
+    marketId: Schema.optionalKey(
+      Schema.String.annotate({ examples: ["morpho-blue-ethereum-weth-usdc"] })
+    ),
+    integrationId: Schema.optionalKey(
+      Schema.String.annotate({ examples: ["morpho-blue-borrow"] })
+    ),
+    from: Schema.optionalKey(
+      Schema.String.annotate({ examples: ["2026-04-01T00:00:00.000Z"] })
+    ),
+    to: Schema.optionalKey(
+      Schema.String.annotate({ examples: ["2026-04-30T23:59:59.999Z"] })
+    ),
+    limit: Schema.optionalKey(
+      Schema.Number.check(
+        Schema.isFinite().annotate({ expected: "a finite number" })
+      )
+    ),
+    page: Schema.optionalKey(
+      Schema.Number.check(
+        Schema.isFinite().annotate({ expected: "a finite number" })
+      )
+    ),
+    "X-ADMIN-API-KEY": Schema.String,
+  });
+export type ProgrammaticReportingControllerGetBorrowActions200 = {
+  readonly data: ReadonlyArray<{
+    readonly id: string;
+    readonly type: BorrowActionTypes;
+    readonly status: ActionStatus;
+    readonly integrationId: string;
+    readonly marketId: string;
+    readonly address: string;
+    readonly args: ProgrammaticBorrowReportingArgsDto;
+    readonly token: {
+      readonly name: string;
+      readonly network: Networks;
+      readonly symbol: string;
+      readonly decimals: number;
+      readonly address?: string;
+      readonly coinGeckoId?: string;
+      readonly logoURI?: string;
+      readonly isPoints?: boolean;
+      readonly feeConfigurationId?: string;
+    };
+    readonly createdAt: string;
+    readonly completedAt: string | null;
+    readonly usdValue: string | null;
+    readonly transactions: ReadonlyArray<ProgrammaticBorrowReportingTransactionDto>;
+    readonly feeAmount?: string;
+    readonly feeBps?: number;
+    readonly originationFeeAmount?: string;
+    readonly originationFeeBps?: number;
+    readonly effectivePrincipalAmount?: string;
+  }>;
+  readonly hasNextPage: boolean;
+  readonly limit: number;
+  readonly page: number;
+};
+export const ProgrammaticReportingControllerGetBorrowActions200 = Schema.Struct(
+  {
+    data: Schema.Array(
+      Schema.Struct({
+        id: Schema.String.annotate({
+          description: "Unique action identifier (UUID)",
+          examples: ["550e8400-e29b-41d4-a716-446655440000"],
+        }),
+        type: Schema.suspend(
+          (): Schema.Codec<BorrowActionTypes> => BorrowActionTypes
+        ).annotate({
+          description: "Action type executed",
+          examples: ["supply"],
+        }),
+        status: Schema.suspend(
+          (): Schema.Codec<ActionStatus> => ActionStatus
+        ).annotate({
+          description: "Current action status",
+          examples: ["SUCCESS"],
+        }),
+        integrationId: Schema.String.annotate({
+          description: "Borrow integration identifier",
+          examples: ["morpho-blue-borrow"],
+        }),
+        marketId: Schema.String.annotate({
+          description: "Market identifier",
+          examples: ["morpho-blue-ethereum-weth-usdc"],
+        }),
+        address: Schema.String.annotate({
+          description: "User wallet address",
+          examples: ["0xb8c8eb8efc68796e766f6ab320db8c165c064949"],
+        }),
+        args: Schema.suspend(
+          (): Schema.Codec<ProgrammaticBorrowReportingArgsDto> =>
+            ProgrammaticBorrowReportingArgsDto
+        ).annotate({
+          description: "Action arguments with amounts in token units",
+        }),
+        token: Schema.Struct({
+          name: Schema.String,
+          network: Networks,
+          symbol: Schema.String,
+          decimals: Schema.Number.check(
+            Schema.isFinite().annotate({ expected: "a finite number" })
+          ),
+          address: Schema.optionalKey(Schema.String),
+          coinGeckoId: Schema.optionalKey(Schema.String),
+          logoURI: Schema.optionalKey(Schema.String),
+          isPoints: Schema.optionalKey(Schema.Boolean),
+          feeConfigurationId: Schema.optionalKey(Schema.String),
+        }).annotate({
+          description:
+            "Primary token for this action. Null when it cannot be resolved.",
+        }),
+        createdAt: Schema.String.annotate({
+          description: "When the action was created",
+          examples: ["2026-02-19T10:23:45.000Z"],
+          format: "date-time",
+        }),
+        completedAt: Schema.Union([Schema.String, Schema.Null]).annotate({
+          description: "When the action completed (null if still in progress)",
+          examples: ["2026-02-19T10:23:48.000Z"],
+          format: "date-time",
+        }),
+        usdValue: Schema.Union([Schema.String, Schema.Null]).annotate({
+          description:
+            "USD value of the action at completion. Null when no price is available.",
+          examples: ["150.25"],
+        }),
+        transactions: Schema.Array(
+          ProgrammaticBorrowReportingTransactionDto
+        ).annotate({ description: "Transactions associated with the action" }),
+        feeAmount: Schema.optionalKey(
+          Schema.String.annotate({
+            description:
+              "Fee charged on supplied collateral, in token units, when a supply fee wrapper applied",
+            examples: ["0.0005"],
+          })
+        ),
+        feeBps: Schema.optionalKey(
+          Schema.Number.annotate({
+            description:
+              "Supply fee rate in basis points when a supply fee wrapper applied",
+            examples: [50],
+          }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
+        ),
+        originationFeeAmount: Schema.optionalKey(
+          Schema.String.annotate({
+            description:
+              "Origination fee amount in borrowed-token units when a borrow wrapper applied",
+            examples: ["1.00"],
+          })
+        ),
+        originationFeeBps: Schema.optionalKey(
+          Schema.Number.annotate({
+            description:
+              "Origination fee in basis points when a borrow wrapper applied",
+            examples: [100],
+          }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
+        ),
+        effectivePrincipalAmount: Schema.optionalKey(
+          Schema.String.annotate({
+            description:
+              "Gross on-chain principal in borrowed-token units when a borrow wrapper applied",
+            examples: ["101.00"],
+          })
+        ),
+      })
+    ).annotate({ description: "Array of data items" }),
+    hasNextPage: Schema.Boolean,
+    limit: Schema.Number.check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    ),
+    page: Schema.Number.check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    ),
+  }
+);
 export type UsersMeControllerFindMe200 = UserDto;
 export const UsersMeControllerFindMe200 = UserDto;
 export type UsersMeControllerPatchMeRequestJson = UpdateUserMeDto;
@@ -16388,41 +16962,6 @@ export type TokenControllerGetTokenBalances502 = StakeKitErrorDto;
 export const TokenControllerGetTokenBalances502 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances503 = StakeKitErrorDto;
 export const TokenControllerGetTokenBalances503 = StakeKitErrorDto;
-export type TokenControllerTokenBalancesScanParams = {
-  readonly "X-API-KEY"?: string;
-};
-export const TokenControllerTokenBalancesScanParams = Schema.Struct({
-  "X-API-KEY": Schema.optionalKey(Schema.String),
-});
-export type TokenControllerTokenBalancesScanRequestJson = TokenBalanceScanDto;
-export const TokenControllerTokenBalancesScanRequestJson = TokenBalanceScanDto;
-export type TokenControllerTokenBalancesScan200 =
-  ReadonlyArray<TokenBalanceScanResponseDto>;
-export const TokenControllerTokenBalancesScan200 = Schema.Array(
-  TokenBalanceScanResponseDto
-);
-export type TokenControllerTokenBalancesScan400 = StakeKitErrorDto;
-export const TokenControllerTokenBalancesScan400 = StakeKitErrorDto;
-export type TokenControllerTokenBalancesScan401 = StakeKitErrorDto;
-export const TokenControllerTokenBalancesScan401 = StakeKitErrorDto;
-export type TokenControllerTokenBalancesScan404 = StakeKitErrorDto;
-export const TokenControllerTokenBalancesScan404 = StakeKitErrorDto;
-export type TokenControllerTokenBalancesScan408 = StakeKitErrorDto;
-export const TokenControllerTokenBalancesScan408 = StakeKitErrorDto;
-export type TokenControllerTokenBalancesScan409 = StakeKitErrorDto;
-export const TokenControllerTokenBalancesScan409 = StakeKitErrorDto;
-export type TokenControllerTokenBalancesScan410 = StakeKitErrorDto;
-export const TokenControllerTokenBalancesScan410 = StakeKitErrorDto;
-export type TokenControllerTokenBalancesScan412 = StakeKitErrorDto;
-export const TokenControllerTokenBalancesScan412 = StakeKitErrorDto;
-export type TokenControllerTokenBalancesScan429 = StakeKitErrorDto;
-export const TokenControllerTokenBalancesScan429 = StakeKitErrorDto;
-export type TokenControllerTokenBalancesScan500 = StakeKitErrorDto;
-export const TokenControllerTokenBalancesScan500 = StakeKitErrorDto;
-export type TokenControllerTokenBalancesScan502 = StakeKitErrorDto;
-export const TokenControllerTokenBalancesScan502 = StakeKitErrorDto;
-export type TokenControllerTokenBalancesScan503 = StakeKitErrorDto;
-export const TokenControllerTokenBalancesScan503 = StakeKitErrorDto;
 export type CustomUrisControllerGet200 = {
   readonly data: ReadonlyArray<{
     readonly id: string;
@@ -16944,80 +17483,6 @@ export type YieldControllerGetMultipleYieldBalances502 = StakeKitErrorDto;
 export const YieldControllerGetMultipleYieldBalances502 = StakeKitErrorDto;
 export type YieldControllerGetMultipleYieldBalances503 = StakeKitErrorDto;
 export const YieldControllerGetMultipleYieldBalances503 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScanParams = {
-  readonly "X-API-KEY"?: string;
-};
-export const YieldControllerYieldBalancesScanParams = Schema.Struct({
-  "X-API-KEY": Schema.optionalKey(Schema.String),
-});
-export type YieldControllerYieldBalancesScanRequestJson =
-  YieldBalanceScanRequestDto;
-export const YieldControllerYieldBalancesScanRequestJson =
-  YieldBalanceScanRequestDto;
-export type YieldControllerYieldBalancesScan201 =
-  ReadonlyArray<YieldBalancesWithIntegrationIdDto>;
-export const YieldControllerYieldBalancesScan201 = Schema.Array(
-  YieldBalancesWithIntegrationIdDto
-);
-export type YieldControllerYieldBalancesScan400 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScan400 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScan401 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScan401 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScan404 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScan404 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScan408 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScan408 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScan409 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScan409 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScan410 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScan410 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScan412 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScan412 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScan429 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScan429 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScan500 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScan500 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScan502 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScan502 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScan503 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScan503 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScanEvmParams = {
-  readonly "X-API-KEY"?: string;
-};
-export const YieldControllerYieldBalancesScanEvmParams = Schema.Struct({
-  "X-API-KEY": Schema.optionalKey(Schema.String),
-});
-export type YieldControllerYieldBalancesScanEvmRequestJson =
-  YieldBalanceScanEvmRequestDto;
-export const YieldControllerYieldBalancesScanEvmRequestJson =
-  YieldBalanceScanEvmRequestDto;
-export type YieldControllerYieldBalancesScanEvm201 =
-  ReadonlyArray<YieldBalancesWithIntegrationIdDto>;
-export const YieldControllerYieldBalancesScanEvm201 = Schema.Array(
-  YieldBalancesWithIntegrationIdDto
-);
-export type YieldControllerYieldBalancesScanEvm400 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScanEvm400 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScanEvm401 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScanEvm401 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScanEvm404 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScanEvm404 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScanEvm408 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScanEvm408 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScanEvm409 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScanEvm409 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScanEvm410 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScanEvm410 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScanEvm412 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScanEvm412 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScanEvm429 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScanEvm429 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScanEvm500 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScanEvm500 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScanEvm502 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScanEvm502 = StakeKitErrorDto;
-export type YieldControllerYieldBalancesScanEvm503 = StakeKitErrorDto;
-export const YieldControllerYieldBalancesScanEvm503 = StakeKitErrorDto;
 export type YieldControllerGetMyYieldsParams = {
   readonly preferredValidatorsOnly?: boolean;
   readonly ledgerWalletAPICompatible?: boolean;
@@ -17586,8 +18051,10 @@ export type YieldV2ControllerYieldsParams = {
     | "rocksolid"
     | "t9"
     | "gami-labs"
+    | "lagoon"
     | "yuzu"
-    | "sentora";
+    | "sentora"
+    | "ember";
   readonly inputToken?: string;
   readonly enterStatus?: boolean;
   readonly preferredValidatorsOnly?: boolean;
@@ -17636,6 +18103,7 @@ export type YieldV2ControllerYieldsParams = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -17653,6 +18121,7 @@ export type YieldV2ControllerYieldsParams = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -17802,8 +18271,10 @@ export const YieldV2ControllerYieldsParams = Schema.Struct({
       "rocksolid",
       "t9",
       "gami-labs",
+      "lagoon",
       "yuzu",
       "sentora",
+      "ember",
     ])
   ),
   inputToken: Schema.optionalKey(Schema.String),
@@ -17867,6 +18338,7 @@ export const YieldV2ControllerYieldsParams = Schema.Struct({
       "robinhood",
       "robinhood-testnet",
       "arc-testnet",
+      "arc",
       "avalanche-c",
       "avalanche-c-atomic",
       "avalanche-p",
@@ -17884,6 +18356,7 @@ export const YieldV2ControllerYieldsParams = Schema.Struct({
       "hyperevm",
       "tempo",
       "pharos",
+      "xlayer",
       "agoric",
       "akash",
       "axelar",
@@ -18997,9 +19470,9 @@ export const ValidatorControllerCreateProvider201 = ValidatorProviderDto;
 export type ValidatorControllerFindOneProvider200 = ValidatorProviderDto;
 export const ValidatorControllerFindOneProvider200 = ValidatorProviderDto;
 export type ValidatorControllerUpdateProviderRequestFormData =
-  UpdateValidatorProviderDto;
+  UpdateValidatorProviderDtoMultipart;
 export const ValidatorControllerUpdateProviderRequestFormData =
-  UpdateValidatorProviderDto;
+  UpdateValidatorProviderDtoMultipart;
 export type ValidatorControllerUpdateProvider200 = ValidatorProviderDto;
 export const ValidatorControllerUpdateProvider200 = ValidatorProviderDto;
 export type ValidatorControllerGetAllHistoricalRevshareChangesParams = {
