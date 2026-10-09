@@ -90,7 +90,7 @@ const makeSessionHandle = (): BorrowFlowSessionHandle => ({
     Effect.succeed({ _tag: "RejectedNoReservation" } as const),
   acquireReview: () =>
     Effect.succeed({
-      back: () => Effect.succeed({ _tag: "Accepted" } as const),
+      back: () => Effect.void,
       confirm: () => Effect.succeed({ _tag: "Confirmed" } as const),
     }),
   intake,
@@ -111,10 +111,7 @@ describe("Borrow Flow Atom bridge", () => {
             Effect.acquireRelease(
               Effect.sync(() => {
                 probes.acquired += 1;
-                return {
-                  _tag: "Acquired",
-                  session: makeSessionHandle(),
-                } as const;
+                return makeSessionHandle();
               }),
               () =>
                 Effect.sync(() => {
@@ -173,21 +170,15 @@ describe("Borrow Flow Atom bridge", () => {
         );
         const reviewProbes = { acquired: 0, released: 0 };
         const executionProbes = { acquired: 0, released: 0 };
-        const reviewBack = vi.fn(() =>
-          Effect.succeed({ _tag: "Accepted" } as const)
-        );
+        const reviewBack = vi.fn(() => Effect.void);
         const reviewConfirm = vi.fn(() =>
           Effect.succeed({ _tag: "Confirmed" } as const)
         );
-        const executionBack = vi.fn(() =>
-          Effect.succeed({ _tag: "Accepted" } as const)
-        );
+        const executionBack = vi.fn(() => Effect.void);
         const executionFinish = vi.fn(() =>
           Effect.succeed({ _tag: "Accepted" } as const)
         );
-        const workflowDispatch = vi.fn(() =>
-          Effect.succeed({ _tag: "Accepted" } as const)
-        );
+        const workflowDispatch = vi.fn(() => Effect.void);
         const workflowState = initializeTransactionWorkflow(
           new BorrowTransactionWorkflowInput({ action, walletScope })
         );
@@ -227,10 +218,7 @@ describe("Borrow Flow Atom bridge", () => {
         const service = BorrowTransactionFlowService.of({
           acquireSession: () =>
             Effect.acquireRelease(
-              Effect.succeed({
-                _tag: "Acquired",
-                session: sessionHandle,
-              } as const),
+              Effect.succeed(sessionHandle),
               () => Effect.void
             ),
           currentSession: SubscriptionRef.changes(current),

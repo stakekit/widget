@@ -324,6 +324,78 @@ describe("Stellar Wallets Kit platform", () => {
       }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
   );
 
+  it.live(
+    "settles a pending connect as cancelled when a restore supersedes it",
+    () =>
+      Effect.gen(function* () {
+        const { client, modal, signClient } = yield* makeWalletConnectClient([
+          makeSession("restored-topic"),
+        ]);
+        const first = yield* client.connect.pipe(Effect.forkScoped);
+        yield* Queue.take(modal.opened);
+
+        expect(yield* client.reconnect(address)).toEqual({ address });
+        expect(
+          yield* Effect.flip(Fiber.join(first)).pipe(Effect.timeout("1 second"))
+        ).toMatchObject({ operation: "stellar-wallet-connect-cancelled" });
+
+        signClient.approve(makeSession("late-topic"));
+        yield* Effect.yieldNow;
+        expect(yield* client.signTransaction(signInput)).toEqual({
+          signedTxXdr: "signed-xdr",
+        });
+        expect(signClient.state.requests[0]?.topic).toBe("restored-topic");
+      }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
+  );
+
+  it.live(
+    "settles a pending connect as cancelled when a disconnect supersedes it",
+    () =>
+      Effect.gen(function* () {
+        const { client, modal, signClient } = yield* makeWalletConnectClient();
+        const first = yield* client.connect.pipe(Effect.forkScoped);
+        yield* Queue.take(modal.opened);
+
+        yield* client.disconnect;
+        expect(
+          yield* Effect.flip(Fiber.join(first)).pipe(Effect.timeout("1 second"))
+        ).toMatchObject({ operation: "stellar-wallet-connect-cancelled" });
+
+        signClient.approve(makeSession("late-topic"));
+        yield* Effect.yieldNow;
+        expect(
+          yield* Effect.flip(client.signTransaction(signInput))
+        ).toMatchObject({ operation: "stellar-sign-transaction" });
+        expect(signClient.state.requests).toEqual([]);
+      }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
+  );
+
+  it.live("cancels a pending connect when the client is disposed", () =>
+    Effect.gen(function* () {
+      const scope = yield* Scope.make();
+      const { modal, protocol, signClient } = yield* makeTestWalletConnect(
+        makeFakeSignClient()
+      );
+      const client = yield* makeWalletConnectStellarWalletClient(protocol).pipe(
+        Effect.provideService(Scope.Scope, scope)
+      );
+      const first = yield* client.connect.pipe(Effect.forkScoped);
+      yield* Queue.take(modal.opened);
+
+      yield* Scope.close(scope, Exit.void);
+      expect(
+        yield* Effect.flip(Fiber.join(first)).pipe(Effect.timeout("1 second"))
+      ).toMatchObject({ operation: "stellar-wallet-connect-cancelled" });
+
+      signClient.approve(makeSession("late-topic"));
+      yield* Effect.yieldNow;
+      expect(
+        yield* Effect.flip(client.signTransaction(signInput))
+      ).toMatchObject({ operation: "stellar-sign-transaction" });
+      expect(signClient.state.requests).toEqual([]);
+    }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
+  );
+
   it.effect(
     "reports a wallet-side session end as a wagmi disconnect of the Stellar connector",
     () =>

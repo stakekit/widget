@@ -1,10 +1,12 @@
 import {
   Context,
   Effect,
+  Equal,
+  Exit,
   Layer,
   PubSub,
   Ref,
-  type Scope,
+  Scope,
   Stream,
   SubscriptionRef,
 } from "effect";
@@ -31,7 +33,6 @@ import {
 import {
   type BorrowFlowSessionHandle,
   makeBorrowFlowSessionFactory,
-  type RunBorrowFlowCurrentOperation,
 } from "./borrow-flow-session";
 
 type StartBorrowTransactionFlowOutcome =
@@ -39,17 +40,14 @@ type StartBorrowTransactionFlowOutcome =
   | Readonly<{ readonly _tag: "RejectedDisabled" }>
   | Readonly<{ readonly _tag: "RejectedOwner" }>;
 
-export type AcquireBorrowFlowSessionOutcome =
-  | Readonly<{
-      readonly _tag: "Acquired";
-      readonly session: BorrowFlowSessionHandle;
-    }>
-  | Readonly<{ readonly _tag: "RejectedStale" }>;
-
 type BorrowTransactionFlowServiceApi = Readonly<{
+  /**
+   * Binds the caller's Scope to a live Session; closing it ends the Session.
+   * A Session that has already ended is interrupted.
+   */
   readonly acquireSession: (
     session: BorrowFlowSession
-  ) => Effect.Effect<AcquireBorrowFlowSessionOutcome, never, Scope.Scope>;
+  ) => Effect.Effect<BorrowFlowSessionHandle, never, Scope.Scope>;
   readonly currentSession: Stream.Stream<BorrowFlowSession | null>;
   readonly start: (
     intake: BorrowTransactionFlowIntake
@@ -57,6 +55,13 @@ type BorrowTransactionFlowServiceApi = Readonly<{
     StartBorrowTransactionFlowOutcome,
     WalletRuntimeInvariantError | WidgetNavigationError
   >;
+}>;
+
+/** A started Session and the Scope that bounds all of its work. */
+type LiveBorrowFlowSession = Readonly<{
+  readonly handle: BorrowFlowSessionHandle;
+  readonly scope: Scope.Closeable;
+  readonly session: BorrowFlowSession;
 }>;
 
 const makeBorrowTransactionFlowService = Effect.fn(
@@ -67,36 +72,19 @@ const makeBorrowTransactionFlowService = Effect.fn(
   const tracking = yield* TrackingService;
   const wallet = yield* WalletService;
   const makeSession = yield* makeBorrowFlowSessionFactory();
-  const stateRef = yield* SubscriptionRef.make<BorrowFlowSession | null>(null);
+  const serviceScope = yield* Effect.scope;
+  const liveRef = yield* SubscriptionRef.make<LiveBorrowFlowSession | null>(
+    null
+  );
   const nextEpochRef = yield* Ref.make(1);
   const operations = yield* makeScopedSerialOperations();
-  yield* Effect.addFinalizer(() => PubSub.shutdown(stateRef.pubsub));
+  yield* Effect.addFinalizer(() => PubSub.shutdown(liveRef.pubsub));
 
-  const isCurrent = (session: BorrowFlowSession) =>
-    SubscriptionRef.get(stateRef).pipe(
-      Effect.map((current) => current?.epoch === session.epoch)
-    );
-
-  const clearCurrent = (session: BorrowFlowSession) =>
-    SubscriptionRef.modify(stateRef, (current) =>
-      current?.epoch === session.epoch ? [true, null] : [false, current]
-    );
-
-  const runCurrent =
-    (session: BorrowFlowSession): RunBorrowFlowCurrentOperation =>
-    (operation) =>
-      operations.run(
-        Effect.gen(function* () {
-          if (!(yield* isCurrent(session))) {
-            return { _tag: "Stale" } as const;
-          }
-          return { _tag: "Current", value: yield* operation } as const;
-        })
-      );
-
-  const commitTransition = (
-    command: Parameters<typeof navigation.execute>[0]
-  ) => navigation.execute(command);
+  // Ending a Session closes its Scope, interrupting its in-flight work.
+  const end = (live: LiveBorrowFlowSession) =>
+    SubscriptionRef.update(liveRef, (current) =>
+      current === live ? null : current
+    ).pipe(Effect.andThen(Scope.close(live.scope, Exit.void)));
 
   const startOpen = Effect.fn("BorrowTransactionFlowService.start")(function* (
     intake: BorrowTransactionFlowIntake
@@ -120,21 +108,27 @@ const makeBorrowTransactionFlowService = Effect.fn(
 
     const session = yield* Effect.uninterruptible(
       Effect.gen(function* () {
-        const epoch = yield* Ref.getAndUpdate(nextEpochRef, (next) => next + 1);
+        const previous = yield* SubscriptionRef.get(liveRef);
+        if (previous) yield* Scope.close(previous.scope, Exit.void);
         const session: BorrowFlowSession = {
-          epoch,
+          epoch: yield* Ref.getAndUpdate(nextEpochRef, (next) => next + 1),
           intake: { ...intake },
           walletScope: new WalletScopeKey(walletScope),
         };
-        yield* SubscriptionRef.set(stateRef, session);
-        const rollback = clearCurrent(session).pipe(Effect.asVoid);
+        const scope = yield* Scope.fork(serviceScope);
+        const live: LiveBorrowFlowSession = {
+          handle: yield* makeSession(session).pipe(Scope.provide(scope)),
+          scope,
+          session,
+        };
+        yield* SubscriptionRef.set(liveRef, live);
         yield* navigation
           .execute({
             _tag: "Push",
             path: getBorrowTransactionFlowRoutes(session.intake.entry)
               .reviewPath,
           })
-          .pipe(Effect.tapError(() => rollback));
+          .pipe(Effect.tapError(() => end(live)));
         return session;
       })
     );
@@ -151,36 +145,35 @@ const makeBorrowTransactionFlowService = Effect.fn(
     "BorrowTransactionFlowService.acquireSession"
   )(function* (
     session: BorrowFlowSession
-  ): Effect.fn.Return<AcquireBorrowFlowSessionOutcome, never, Scope.Scope> {
-    if (!(yield* isCurrent(session))) {
-      return { _tag: "RejectedStale" } as const;
+  ): Effect.fn.Return<BorrowFlowSessionHandle, never, Scope.Scope> {
+    const live = yield* SubscriptionRef.get(liveRef);
+    // Route Atom families key Sessions structurally, so admission does too.
+    if (!live || !Equal.equals(live.session, session)) {
+      return yield* Effect.interrupt;
     }
-    const handle = yield* makeSession({
-      commitTransition,
-      release: operations.run(clearCurrent(session)).pipe(Effect.asVoid),
-      runCurrent: runCurrent(session),
-      session,
-    });
-    return { _tag: "Acquired", session: handle } as const;
+    yield* Effect.addFinalizer(() =>
+      operations.run(end(live)).pipe(Effect.ignore)
+    );
+    return live.handle;
   });
 
   yield* wallet.states.pipe(
     Stream.runForEach((state) =>
       operations.run(
         Effect.gen(function* () {
-          const current = yield* SubscriptionRef.get(stateRef);
+          const live = yield* SubscriptionRef.get(liveRef);
           const walletScope = walletScopeFromState(state.connection);
           if (
-            !current ||
+            !live ||
             (walletScope &&
               sameWalletScopeOwner(walletScope, {
-                address: current.intake.command.address,
-                network: current.intake.summary.network,
+                address: live.session.intake.command.address,
+                network: live.session.intake.summary.network,
               }))
           ) {
             return;
           }
-          yield* clearCurrent(current);
+          yield* end(live);
         })
       )
     ),
@@ -189,7 +182,9 @@ const makeBorrowTransactionFlowService = Effect.fn(
 
   return {
     acquireSession: (session) => operations.run(acquireSessionOpen(session)),
-    currentSession: SubscriptionRef.changes(stateRef),
+    currentSession: SubscriptionRef.changes(liveRef).pipe(
+      Stream.map((live) => live?.session ?? null)
+    ),
     start: (intake) => operations.run(startOpen(intake)),
   } satisfies BorrowTransactionFlowServiceApi;
 });

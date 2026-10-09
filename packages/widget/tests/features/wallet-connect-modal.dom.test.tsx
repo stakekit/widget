@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Schedule } from "effect";
 import { TestClock } from "effect/testing";
 import { act } from "react";
 import { avalanche } from "viem/chains";
@@ -228,6 +228,39 @@ describe("wallet connection picker", () => {
           { walletId: "metamask", chainId: undefined },
         ]);
         expect(pendingSpinner()).not.toBeNull();
+      })
+  );
+
+  it.effect(
+    "abandons a pending connection when the picker closes so the reopened picker connects again",
+    () =>
+      Effect.gen(function* () {
+        const picker = yield* openPicker({
+          groups: singleGroup({ id: "metamask" }),
+        });
+        const pendingSpinner = () =>
+          element("wallet-connect-dialog")?.querySelector("h2")
+            ?.nextElementSibling ?? null;
+        yield* waitFor("connect-wallet-evm-metamask");
+        yield* click(() => element("connect-wallet-evm-metamask"));
+        yield* Effect.promise(() => expect.poll(pendingSpinner).not.toBeNull());
+
+        yield* closePicker;
+        yield* showPicker;
+        yield* waitFor("connect-wallet-evm-metamask");
+        expect(pendingSpinner()).toBeNull();
+
+        yield* click(() => element("connect-wallet-evm-metamask"));
+        yield* Effect.promise(() => expect.poll(pendingSpinner).not.toBeNull());
+        const calls = yield* picker.calls.pipe(
+          Effect.repeat({
+            schedule: Schedule.spaced("10 millis"),
+            until: (current) => current.length === 2,
+          }),
+          Effect.timeout("1 second"),
+          TestClock.withLive
+        );
+        expect(calls).toHaveLength(2);
       })
   );
 

@@ -1,8 +1,9 @@
-import { Effect, Ref, type Scope, type Stream } from "effect";
+import { Effect, type Scope, ScopedRef, type Stream } from "effect";
 import type { YieldAction } from "../../../../domain/action/models";
 import type { WidgetNavigationError } from "../../../../services/navigation/widget-navigation";
 import { WidgetNavigation } from "../../../../services/navigation/widget-navigation";
 import type { TransactionWorkflowInputError } from "../../../../services/transaction-workflow/transaction-workflow-model";
+import { acquireInChildScope } from "../../../../shared/effect/child-scope";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 import type {
   ClassicFlowSession,
@@ -22,24 +23,14 @@ type PromoteToExecutionOutcome =
   | Readonly<{ readonly _tag: "Promoted" }>
   | Readonly<{ readonly _tag: "RejectedAlreadyReserved" }>
   | Readonly<{ readonly _tag: "RejectedBlocked" }>
-  | Readonly<{ readonly _tag: "RejectedExpired" }>
-  | Readonly<{ readonly _tag: "RejectedStale" }>;
-
-type ClassicFlowCurrentOperationOutcome<A> =
-  | Readonly<{ readonly _tag: "Current"; readonly value: A }>
-  | Readonly<{ readonly _tag: "Stale" }>;
-
-export type RunClassicFlowCurrentOperation = <A, E, R>(
-  operation: Effect.Effect<A, E, R>
-) => Effect.Effect<ClassicFlowCurrentOperationOutcome<A>, E, R>;
+  | Readonly<{ readonly _tag: "RejectedExpired" }>;
 
 type AcquireClassicFlowExecutionOutcome =
   | Readonly<{
       readonly _tag: "Acquired";
       readonly execution: ClassicFlowExecutionHandle;
     }>
-  | Readonly<{ readonly _tag: "RejectedNoReservation" }>
-  | Readonly<{ readonly _tag: "RejectedStale" }>;
+  | Readonly<{ readonly _tag: "RejectedNoReservation" }>;
 
 export type ClassicFlowSessionHandle = Readonly<{
   readonly acquireExecution: () => Effect.Effect<
@@ -53,6 +44,12 @@ export type ClassicFlowSessionHandle = Readonly<{
   readonly intake: ClassicTransactionFlowIntake;
 }>;
 
+/** The reserved action and the Scope its Execution lives in. */
+type ClassicFlowReservation = Readonly<{
+  readonly action: YieldAction;
+  readonly scope: Scope.Scope;
+}>;
+
 export const makeClassicFlowSessionFactory = Effect.fn(
   "makeClassicFlowSessionFactory"
 )(function* () {
@@ -60,44 +57,22 @@ export const makeClassicFlowSessionFactory = Effect.fn(
   const makeExecution = yield* makeClassicFlowExecutionFactory();
   const makeReview = yield* makeClassicFlowReviewFactory();
 
-  return Effect.fn("makeClassicFlowSession")(function* ({
-    isCurrent,
-    release,
-    runCurrent,
-    session,
-  }: {
-    readonly isCurrent: Effect.Effect<boolean>;
-    readonly release: Effect.Effect<void>;
-    readonly runCurrent: RunClassicFlowCurrentOperation;
-    readonly session: ClassicFlowSession;
-  }): Effect.fn.Return<ClassicFlowSessionHandle, never, Scope.Scope> {
-    const executionActionRef = yield* Ref.make<YieldAction | null>(null);
+  /**
+   * Builds the Session's operations in the provided Session Scope. Closing that
+   * Scope interrupts every Session, Review, and Execution operation in flight
+   * and rejects later ones by interruption.
+   */
+  return Effect.fn("makeClassicFlowSession")(function* (
+    session: ClassicFlowSession
+  ): Effect.fn.Return<ClassicFlowSessionHandle, never, Scope.Scope> {
+    const sessionScope = yield* Effect.scope;
     const operations = yield* makeScopedSerialOperations();
-
-    const runExecutionOperation =
-      (action: YieldAction) =>
-      <E>(
-        operation: () => Effect.Effect<void, E>
-      ): Effect.Effect<
-        | Readonly<{ readonly _tag: "Accepted" }>
-        | Readonly<{ readonly _tag: "RejectedStale" }>,
-        E
-      > =>
-        operations.run(
-          Ref.get(executionActionRef).pipe(
-            Effect.flatMap((reserved) =>
-              reserved !== action
-                ? Effect.succeed({ _tag: "RejectedStale" } as const)
-                : runCurrent(Effect.suspend(operation)).pipe(
-                    Effect.map((result) =>
-                      result._tag === "Current"
-                        ? ({ _tag: "Accepted" } as const)
-                        : ({ _tag: "RejectedStale" } as const)
-                    )
-                  )
-            )
-          )
-        );
+    // Replacing the reservation closes the previous one's Scope, which ends
+    // any Execution acquired for it.
+    const reservation = yield* ScopedRef.make<ClassicFlowReservation | null>(
+      () => null
+    );
+    const releaseReservation = ScopedRef.set(reservation, Effect.succeed(null));
 
     const promoteToExecutionOpen = Effect.fn(
       "ClassicFlowSession.promoteToExecution"
@@ -110,43 +85,38 @@ export const makeClassicFlowSessionFactory = Effect.fn(
       readonly afterReservation: Effect.Effect<void>;
       readonly eligibility: Effect.Effect<ClassicFlowReviewEligibility>;
     }): Effect.fn.Return<PromoteToExecutionOutcome, WidgetNavigationError> {
-      const current = yield* runCurrent(
-        Effect.gen(function* () {
-          const latestEligibility = yield* eligibility;
-          if (latestEligibility.kycBlocking) {
-            return { _tag: "RejectedBlocked" } as const;
-          }
-          if (latestEligibility.activityExpired) {
-            return { _tag: "RejectedExpired" } as const;
-          }
-          if ((yield* Ref.get(executionActionRef)) !== null) {
-            return { _tag: "RejectedAlreadyReserved" } as const;
-          }
+      const latestEligibility = yield* eligibility;
+      if (latestEligibility.kycBlocking) {
+        return { _tag: "RejectedBlocked" } as const;
+      }
+      if (latestEligibility.activityExpired) {
+        return { _tag: "RejectedExpired" } as const;
+      }
+      if ((yield* ScopedRef.get(reservation)) !== null) {
+        return { _tag: "RejectedAlreadyReserved" } as const;
+      }
 
-          yield* Effect.uninterruptible(
-            Effect.gen(function* () {
-              yield* Ref.set(executionActionRef, action);
-              const rollback = Ref.modify(executionActionRef, (reserved) =>
-                reserved === action ? [undefined, null] : [undefined, reserved]
-              );
-              yield* Effect.all(
-                [
-                  navigation.execute({
-                    _tag: "Push",
-                    path: session.destination.stepsPath,
-                  }),
-                  afterReservation,
-                ],
-                { concurrency: "unbounded", discard: true }
-              ).pipe(Effect.tapError(() => rollback));
-            })
-          );
-          return { _tag: "Promoted" } as const;
-        })
+      yield* Effect.uninterruptible(
+        ScopedRef.set(
+          reservation,
+          Effect.map(Effect.scope, (scope) => ({ action, scope }))
+        ).pipe(
+          Effect.andThen(
+            Effect.all(
+              [
+                navigation.execute({
+                  _tag: "Push",
+                  path: session.destination.stepsPath,
+                }),
+                afterReservation,
+              ],
+              { concurrency: "unbounded", discard: true }
+            )
+          ),
+          Effect.tapError(() => releaseReservation)
+        )
       );
-      return current._tag === "Current"
-        ? current.value
-        : ({ _tag: "RejectedStale" } as const);
+      return { _tag: "Promoted" } as const;
     });
 
     const promoteToExecution = (
@@ -162,14 +132,16 @@ export const makeClassicFlowSessionFactory = Effect.fn(
       eligibilityStates: Stream.Stream<ClassicFlowReviewEligibility>
     ) =>
       operations.run(
-        Ref.set(executionActionRef, null).pipe(
+        releaseReservation.pipe(
           Effect.andThen(
-            makeReview({
-              eligibilityStates,
-              intake: session.intake,
-              isCurrent,
-              promoteToExecution,
-            })
+            acquireInChildScope(
+              sessionScope,
+              makeReview({
+                eligibilityStates,
+                intake: session.intake,
+                promoteToExecution,
+              })
+            )
           )
         )
       );
@@ -181,28 +153,18 @@ export const makeClassicFlowSessionFactory = Effect.fn(
       TransactionWorkflowInputError,
       Scope.Scope
     > {
-      const current = yield* runCurrent(
-        Effect.gen(function* () {
-          const action = yield* Ref.get(executionActionRef);
-          if (!action) {
-            return { _tag: "RejectedNoReservation" } as const;
-          }
-
-          const execution = yield* makeExecution({
-            action,
-            intake: session.intake,
-            paths: session.destination,
-            runOperation: runExecutionOperation(action),
-          });
-          return { _tag: "Acquired", execution } as const;
+      const reserved = yield* ScopedRef.get(reservation);
+      if (!reserved) return { _tag: "RejectedNoReservation" } as const;
+      const execution = yield* acquireInChildScope(
+        reserved.scope,
+        makeExecution({
+          action: reserved.action,
+          intake: session.intake,
+          paths: session.destination,
         })
       );
-      return current._tag === "Current"
-        ? current.value
-        : ({ _tag: "RejectedStale" } as const);
+      return { _tag: "Acquired", execution } as const;
     });
-
-    yield* Effect.addFinalizer(() => release.pipe(Effect.ignore));
 
     return {
       acquireExecution: () => operations.run(acquireExecutionOpen()),

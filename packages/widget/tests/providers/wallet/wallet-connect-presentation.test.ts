@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@effect/vitest";
-import { Effect, Exit, Fiber, Queue, Scope } from "effect";
+import { Effect, Exit, Fiber, Option, Queue, Scope } from "effect";
 import {
   makeWalletConnectPresentation,
   type WalletConnectModal,
@@ -43,10 +43,7 @@ describe("WalletConnect presentation", () => {
         const presentation = yield* makeWalletConnectPresentation(
           Effect.succeed(modal),
           () => {}
-        ).pipe(
-          Effect.provide(WalletModal.layer),
-          Effect.provideService(Scope.Scope, scope)
-        );
+        ).pipe(Effect.provideService(Scope.Scope, scope));
         const subscribeUri = (publish: (uri: string) => void) =>
           Effect.acquireRelease(
             Effect.sync(() => {
@@ -86,7 +83,7 @@ describe("WalletConnect presentation", () => {
           _tag: "WalletIntegrationError",
           operation: "wallet-connect-disposed",
         });
-      })
+      }).pipe(Effect.provide(WalletModal.layer))
   );
 
   it.live(
@@ -119,7 +116,7 @@ describe("WalletConnect presentation", () => {
         const presentation = yield* makeWalletConnectPresentation(
           Effect.succeed(modal),
           () => {}
-        ).pipe(Effect.provide(WalletModal.layer));
+        );
         const connection = yield* presentation
           .connect({
             connection: Effect.never,
@@ -137,7 +134,7 @@ describe("WalletConnect presentation", () => {
         });
         expect(state.visible).toBe(false);
         expect(state.listener).toBeUndefined();
-      }).pipe(Effect.scoped)
+      }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
   );
 
   it.live(
@@ -174,7 +171,7 @@ describe("WalletConnect presentation", () => {
           (url) => {
             deepLinks.push(url);
           }
-        ).pipe(Effect.provide(WalletModal.layer));
+        );
         const connection = Effect.tryPromise({
           try: async (signal) => {
             sdkStarts++;
@@ -240,7 +237,7 @@ describe("WalletConnect presentation", () => {
         expect(yield* Fiber.join(next)).toBe("new-session");
         expect(session).toBe("new-session");
         expect(disconnects).toBe(0);
-      }).pipe(Effect.scoped)
+      }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
   );
 
   it.live("retries a transient modal load failure", () =>
@@ -268,7 +265,7 @@ describe("WalletConnect presentation", () => {
             : Effect.succeed(modal);
         }),
         () => {}
-      ).pipe(Effect.provide(WalletModal.layer));
+      );
       const connection = Effect.tryPromise({
         try: () => approval.promise,
         catch: (cause) =>
@@ -288,7 +285,7 @@ describe("WalletConnect presentation", () => {
       });
       expect(yield* presentation.connect(input)).toBe("approved");
       expect(loads).toBe(2);
-    }).pipe(Effect.scoped)
+    }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
   );
 
   it.live(
@@ -319,7 +316,7 @@ describe("WalletConnect presentation", () => {
           (url) => {
             deepLinks.push(url);
           }
-        ).pipe(Effect.provide(WalletModal.layer));
+        );
         const connecting = yield* presentation
           .connect({
             connection: Effect.promise(() => approval.promise),
@@ -345,6 +342,114 @@ describe("WalletConnect presentation", () => {
           `wallet://wc?uri=${uri}`,
           "wallet://wc?uri=wc:refreshed-proposal@2",
         ]);
-      }).pipe(Effect.scoped)
+      }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
+  );
+
+  it.live(
+    "cancels a QR handoff when its picker opening ends and ignores its later URIs",
+    () =>
+      Effect.gen(function* () {
+        const opened = yield* Queue.unbounded<string>();
+        const deepLinks: Array<string> = [];
+        const listeners = new Set<(state: unknown) => void>();
+        const modal: WalletConnectModal = {
+          open: async ({ uri }) => {
+            listeners.forEach((listener) => listener({ open: true }));
+            Queue.offerUnsafe(opened, uri);
+          },
+          close: async () => {
+            listeners.forEach((listener) => listener({ open: false }));
+          },
+          resetWcConnection: () => {},
+          subscribeState: (listener) => {
+            listeners.add(listener);
+            return () => {
+              listeners.delete(listener);
+            };
+          },
+        };
+        const walletModal = yield* WalletModal;
+        const presentation = yield* makeWalletConnectPresentation(
+          Effect.succeed(modal),
+          (url) => {
+            deepLinks.push(url);
+          }
+        );
+        let publishUri: ((uri: string) => void) | undefined;
+        yield* walletModal.openConnect;
+        const connecting = yield* presentation
+          .connect({
+            connection: Effect.never,
+            subscribeUri: (publish) =>
+              Effect.sync(() => {
+                publishUri = publish;
+                publish(uri);
+              }),
+            deepLink: (value) => `wallet://wc?uri=${value}`,
+          })
+          .pipe(Effect.forkScoped({ startImmediately: true }));
+        expect(yield* Queue.take(opened)).toBe(uri);
+        expect(yield* walletModal.presentationOpen.current).toBe(true);
+
+        yield* walletModal.openConnect;
+        expect(yield* walletModal.presentationOpen.current).toBe(false);
+        expect(yield* Effect.flip(Fiber.join(connecting))).toMatchObject({
+          operation: "wallet-connect-cancelled",
+          cause: { code: 4001 },
+        });
+        expect(listeners.size).toBe(0);
+
+        publishUri?.("wc:late-proposal@2");
+        yield* Effect.sleep(10);
+        expect(Option.isNone(yield* Queue.poll(opened))).toBe(true);
+        expect(deepLinks).toEqual([`wallet://wc?uri=${uri}`]);
+      }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
+  );
+
+  it.live(
+    "never presents or deep links a handoff whose picker opening ended first",
+    () =>
+      Effect.gen(function* () {
+        const opened: Array<string> = [];
+        const deepLinks: Array<string> = [];
+        const modal: WalletConnectModal = {
+          open: async ({ uri }) => {
+            opened.push(uri);
+          },
+          close: async () => {},
+          resetWcConnection: () => {},
+          subscribeState: () => () => {},
+        };
+        const walletModal = yield* WalletModal;
+        const presentation = yield* makeWalletConnectPresentation(
+          Effect.succeed(modal),
+          (url) => {
+            deepLinks.push(url);
+          }
+        );
+        let publishUri: ((uri: string) => void) | undefined;
+        yield* walletModal.openConnect;
+        const connecting = yield* presentation
+          .connect({
+            connection: Effect.never,
+            subscribeUri: (publish) =>
+              Effect.sync(() => {
+                publishUri = publish;
+              }),
+            deepLink: (value) => `wallet://wc?uri=${value}`,
+          })
+          .pipe(Effect.forkScoped({ startImmediately: true }));
+        yield* Effect.yieldNow;
+
+        yield* walletModal.connectOpen.set(false);
+        publishUri?.(uri);
+        expect(yield* Effect.flip(Fiber.join(connecting))).toMatchObject({
+          operation: "wallet-connect-cancelled",
+        });
+        yield* Effect.sleep(10);
+        expect(opened).toEqual([]);
+        expect(deepLinks).toEqual([]);
+        expect(yield* walletModal.presentationOpen.current).toBe(false);
+      }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
   );
 });

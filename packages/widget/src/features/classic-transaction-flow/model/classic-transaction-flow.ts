@@ -154,6 +154,7 @@ export type StartClassicTransactionFlow =
 
 export type ClassicFlowSession = Readonly<{
   readonly destination: ClassicTransactionFlowDestination;
+  /** Distinguishes Session instances (React and Atom family keys); never a staleness guard. */
   readonly epoch: number;
   readonly intake: ClassicTransactionFlowIntake;
   readonly mount: ClassicTransactionFlowMount;

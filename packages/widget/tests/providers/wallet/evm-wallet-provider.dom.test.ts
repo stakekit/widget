@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import { describe, expect, it } from "@effect/vitest";
-import { Effect, Fiber, Queue, Stream } from "effect";
+import { Effect, Exit, Fiber, Queue, Stream } from "effect";
 import { afterEach, vi } from "vitest";
 import { createConfig, http } from "wagmi";
 import { connect, getAccount } from "wagmi/actions";
@@ -233,7 +233,7 @@ describe("named EVM native handoff", () => {
         const walletConnectPresentation = yield* makeWalletConnectPresentation(
           Effect.succeed(modal),
           () => {}
-        ).pipe(Effect.provide(WalletModal.layer));
+        );
         const wallets = createEvmWallets({
           walletConnectPresentation,
           runWalletEffect,
@@ -286,7 +286,7 @@ describe("named EVM native handoff", () => {
         expect(getAccount(config).address).toBe(otherAddress);
         nativeSession.disconnect?.();
         expect(getAccount(config).isDisconnected).toBe(true);
-      }).pipe(Effect.scoped)
+      }).pipe(Effect.scoped, Effect.provide(WalletModal.layer))
   );
 });
 
@@ -298,7 +298,7 @@ describe("cross-ecosystem WalletConnect handoff", () => {
         Effect.gen(function* () {
           const walletModal = yield* WalletModal;
           yield* walletModal.openConnect;
-          const revision = yield* walletModal.connectOpen.revision;
+          const opening = yield* walletModal.connectOpen.opening;
           const opened = yield* Queue.unbounded<string>();
           const listeners = new Set<(state: { open: boolean }) => void>();
           let visible: string | undefined;
@@ -387,7 +387,10 @@ describe("cross-ecosystem WalletConnect handoff", () => {
           ).toBe(true);
           expect(yield* walletModal.presentationOpen.current).toBe(false);
           expect(yield* walletModal.connectOpen.current).toBe(true);
-          expect(yield* walletModal.connectOpen.revision).toBe(revision);
+          // Dismissing the QR dialog keeps the picker's opening alive.
+          expect(
+            Exit.isSuccess(yield* Effect.exit(opening.run(Effect.void)))
+          ).toBe(true);
 
           const second = yield* (
             firstNamespace === "eip155" ? cosmos : evm

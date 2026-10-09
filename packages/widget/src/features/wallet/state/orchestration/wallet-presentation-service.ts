@@ -19,7 +19,10 @@ import type {
   WalletRuntimeInvariantError,
   WalletSwitchError,
 } from "../../../../services/wallet/wallet-errors";
-import { WalletModal } from "../../../../services/wallet/wallet-modal";
+import {
+  WalletModal,
+  type WalletModalOpening,
+} from "../../../../services/wallet/wallet-modal";
 import { WalletService } from "../../../../services/wallet/wallet-service";
 import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-serial-operations";
 
@@ -49,7 +52,8 @@ const makeWalletPresentationService = Effect.fn(
     );
   });
   const chainSelection = yield* SubscriptionRef.make<{
-    readonly revision: number;
+    /** The network dialog opening this selection reports for while it lasts. */
+    readonly opening: WalletModalOpening;
     readonly owner: WalletCommandIdentity;
     readonly selection: WalletChainSelection;
   } | null>(null);
@@ -58,11 +62,9 @@ const makeWalletPresentationService = Effect.fn(
     WalletRuntimeInvariantError
   > = Effect.gen(function* () {
     const attempt = yield* SubscriptionRef.get(chainSelection);
-    const revision = yield* modal.chainOpen.revision;
     const state = yield* wallet.state;
     if (
       !attempt ||
-      attempt.revision !== revision ||
       !sameWalletCommandIdentity(
         attempt.owner,
         walletCommandIdentity(state.connection)
@@ -94,10 +96,7 @@ const makeWalletPresentationService = Effect.fn(
       wallet.states
     ).pipe(Stream.mapEffect(() => currentAddressCopied)),
     chainSelection: Stream.merge(
-      Stream.merge(
-        SubscriptionRef.changes(chainSelection),
-        modal.chainOpen.changes
-      ),
+      SubscriptionRef.changes(chainSelection),
       wallet.states
     ).pipe(Stream.mapEffect(() => currentChainSelection)),
     copyAddress: copyOperations.run(copyAddress()),
@@ -105,62 +104,69 @@ const makeWalletPresentationService = Effect.fn(
       readonly chain: Chain;
       readonly addLedgerAccount: boolean;
     }) {
+      // Closing the network dialog interrupts the selection made in it.
+      const opening = yield* modal.chainOpen.opening;
       yield* operations
         .run(
-          Effect.gen(function* () {
-            const state = yield* wallet.state;
-            if (state.connection.status !== "connected") return;
-            const revision = yield* modal.chainOpen.revision;
-            const owner = walletCommandIdentity(state.connection);
-            yield* SubscriptionRef.set(chainSelection, {
-              revision,
-              owner,
-              selection: { pendingChainId: input.chain.id },
-            });
-            const operation: Effect.Effect<
-              boolean,
-              | WalletIntegrationError
-              | WalletRuntimeInvariantError
-              | WalletSwitchError
-            > = input.addLedgerAccount
-              ? wallet
-                  .addLedgerAccount({
-                    expected: walletCommandIdentity(state.connection),
-                    targetChain: input.chain,
-                  })
-                  .pipe(Effect.map((outcome) => outcome._tag === "Added"))
-              : wallet
-                  .switchChain({
-                    chainId: input.chain.id,
-                    connector: state.connection.connector,
-                  })
-                  .pipe(Effect.as(true));
-            yield* operation.pipe(
-              Effect.matchEffect({
-                onFailure: () =>
-                  SubscriptionRef.set(chainSelection, {
-                    revision,
-                    owner,
-                    selection: { failedChainId: input.chain.id },
-                  }),
-                onSuccess: (changed) =>
-                  Effect.gen(function* () {
-                    yield* SubscriptionRef.set(chainSelection, null);
-                    const after = walletCommandIdentity(
-                      (yield* wallet.state).connection
-                    );
-                    if (
-                      changed &&
-                      after.status === "connected" &&
-                      after.address === owner.address &&
-                      after.connectorUid === owner.connectorUid &&
-                      (yield* modal.chainOpen.revision) === revision
-                    )
-                      yield* modal.closeChain;
-                  }),
-              })
-            );
-          })
+          opening.run(
+            Effect.gen(function* () {
+              const state = yield* wallet.state;
+              if (state.connection.status !== "connected") return;
+              const owner = walletCommandIdentity(state.connection);
+              yield* SubscriptionRef.set(chainSelection, {
+                opening,
+                owner,
+                selection: { pendingChainId: input.chain.id },
+              });
+              yield* opening.onEnd(
+                SubscriptionRef.update(chainSelection, (current) =>
+                  current?.opening === opening ? null : current
+                )
+              );
+              const operation: Effect.Effect<
+                boolean,
+                | WalletIntegrationError
+                | WalletRuntimeInvariantError
+                | WalletSwitchError
+              > = input.addLedgerAccount
+                ? wallet
+                    .addLedgerAccount({
+                      expected: walletCommandIdentity(state.connection),
+                      targetChain: input.chain,
+                    })
+                    .pipe(Effect.map((outcome) => outcome._tag === "Added"))
+                : wallet
+                    .switchChain({
+                      chainId: input.chain.id,
+                      connector: state.connection.connector,
+                    })
+                    .pipe(Effect.as(true));
+              yield* operation.pipe(
+                Effect.matchEffect({
+                  onFailure: () =>
+                    SubscriptionRef.set(chainSelection, {
+                      opening,
+                      owner,
+                      selection: { failedChainId: input.chain.id },
+                    }),
+                  onSuccess: (changed) =>
+                    Effect.gen(function* () {
+                      yield* SubscriptionRef.set(chainSelection, null);
+                      const after = walletCommandIdentity(
+                        (yield* wallet.state).connection
+                      );
+                      if (
+                        changed &&
+                        after.status === "connected" &&
+                        after.address === owner.address &&
+                        after.connectorUid === owner.connectorUid
+                      )
+                        yield* modal.closeChain;
+                    }),
+                })
+              );
+            })
+          )
         )
         .pipe(chainPermit.withPermitsIfAvailable(1));
     }),

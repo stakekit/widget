@@ -121,8 +121,6 @@ export const wagmiOperations = {
     WagmiOperationsError
   > {
     const owner = connectionOwner(config);
-    const isCurrent = input.isCurrent ?? Effect.succeed(true);
-    if (!(yield* isCurrent)) return yield* Effect.interrupt;
     if (config.state.current === input.connector.uid) {
       return yield* new WagmiOperationsError({
         cause: new ConnectorAlreadyConnectedError(),
@@ -150,9 +148,7 @@ export const wagmiOperations = {
         catch: (cause) =>
           new WagmiOperationsError({ cause, operation: "connect" }),
       });
-      if (owner.pending !== attempt || !(yield* isCurrent)) {
-        return yield* Effect.interrupt;
-      }
+      if (owner.pending !== attempt) return yield* Effect.interrupt;
       yield* Effect.tryPromise({
         try: async () => {
           await config.storage?.setItem(
@@ -163,9 +159,7 @@ export const wagmiOperations = {
         catch: (cause) =>
           new WagmiOperationsError({ cause, operation: "connect" }),
       });
-      if (owner.pending !== attempt || !(yield* isCurrent)) {
-        return yield* Effect.interrupt;
-      }
+      if (owner.pending !== attempt) return yield* Effect.interrupt;
       config.setState((state) => ({
         ...state,
         connections: new Map(state.connections).set(input.connector.uid, {

@@ -18,7 +18,7 @@ const makeClassicFlowSessionModule = (session: ClassicFlowSession) =>
         .result(classicTransactionFlowServiceAtom)
         .pipe(Effect.flatMap((service) => service.acquireSession(session))),
     label: "classicFlowSessionScope",
-    makeValue: (sessionOutcomeAtom) => {
+    makeValue: (sessionAtom) => {
       const getIntake = <Variant extends ClassicTransactionFlowIntake["_tag"]>(
         variant: Variant
       ): Extract<ClassicTransactionFlowIntake, { readonly _tag: Variant }> => {
@@ -41,15 +41,9 @@ const makeClassicFlowSessionModule = (session: ClassicFlowSession) =>
         facade,
         ports: {
           makeExecutionScopeAtom: () =>
-            makeClassicFlowExecutionScopeAtom({
-              session,
-              sessionOutcomeAtom,
-            }),
+            makeClassicFlowExecutionScopeAtom({ session, sessionAtom }),
           makeReviewScopeAtom: () =>
-            makeClassicFlowReviewScopeAtom({
-              session,
-              sessionOutcomeAtom,
-            }),
+            makeClassicFlowReviewScopeAtom({ session, sessionAtom }),
         },
       } as const;
     },

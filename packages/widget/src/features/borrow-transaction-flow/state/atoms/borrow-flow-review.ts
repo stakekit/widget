@@ -1,36 +1,24 @@
-import { Data, Effect } from "effect";
+import { Effect, type Scope } from "effect";
 import type * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { makeScopedEffectAtom } from "../../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
 import { normalizeBorrowReviewConfirmationResult } from "../borrow-review-confirmation-error";
 import type { BorrowFlowReviewHandle } from "../orchestration/borrow-flow-review";
-import type { AcquireBorrowFlowSessionOutcome } from "../orchestration/borrow-transaction-flow-service";
-
-class BorrowFlowReviewUnavailableError extends Data.TaggedError(
-  "BorrowFlowReviewUnavailableError"
-)<{ readonly message: string }> {}
-
-const unavailable = () =>
-  new BorrowFlowReviewUnavailableError({
-    message: "The Borrow Flow route no longer owns its Session.",
-  });
+import type { BorrowFlowSessionHandle } from "../orchestration/borrow-flow-session";
 
 export const makeBorrowFlowReviewScopeAtom = <E>(
-  sessionOutcomeAtom: Atom.Atom<
-    AsyncResult.AsyncResult<AcquireBorrowFlowSessionOutcome, E>
-  >
+  sessionAtom: Atom.Atom<AsyncResult.AsyncResult<BorrowFlowSessionHandle, E>>
 ) =>
   makeScopedEffectAtom({
     acquire: (context) =>
       Effect.gen(function* (): Effect.fn.Return<
         BorrowFlowReviewHandle,
-        BorrowFlowReviewUnavailableError | E,
-        import("effect").Scope.Scope
+        E,
+        Scope.Scope
       > {
-        const outcome = yield* context.result(sessionOutcomeAtom);
-        if (outcome._tag !== "Acquired") return yield* unavailable();
-        return yield* outcome.session.acquireReview();
+        const session = yield* context.result(sessionAtom);
+        return yield* session.acquireReview();
       }),
     label: "borrowFlowReviewScope",
     makeValue: (handleAtom) => {

@@ -1,5 +1,14 @@
 import { expect, it } from "@effect/vitest";
-import { Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
+import {
+  Deferred,
+  Effect,
+  Exit,
+  Fiber,
+  Layer,
+  Option,
+  Schema,
+  Stream,
+} from "effect";
 import { createConfig, http } from "wagmi";
 import { avalanche, mainnet } from "wagmi/chains";
 import { mock } from "wagmi/connectors";
@@ -156,10 +165,63 @@ it.effect(
           }),
           { startImmediately: true }
         );
-        expect(Option.isSome(yield* Deferred.poll(switching))).toBe(true);
+        yield* Deferred.await(switching);
         yield* Deferred.succeed(releaseCopy, undefined);
         yield* Fiber.join(copy);
         yield* Fiber.join(selection);
+      }).pipe(Effect.provide(layer));
+    })
+);
+
+it.effect(
+  "interrupts a network switch when its dialog closes and keeps the reopened dialog open",
+  () =>
+    Effect.gen(function* () {
+      const started = yield* Deferred.make<void>();
+      const release = yield* Deferred.make<void>();
+      const continued = { value: false };
+      const wallet = yield* makeTestWallet({
+        initialState: stateFor(firstAddress),
+        switchChain: () =>
+          Deferred.succeed(started, undefined).pipe(
+            Effect.andThen(Deferred.await(release)),
+            Effect.andThen(
+              Effect.sync(() => {
+                continued.value = true;
+              })
+            ),
+            Effect.as({ id: avalanche.id })
+          ),
+      });
+      const layer = WalletPresentationService.layer.pipe(
+        Layer.provideMerge(
+          Layer.mergeAll(wallet.layer, WalletModal.layer, WalletClipboard.layer)
+        )
+      );
+      yield* Effect.gen(function* () {
+        const presentation = yield* WalletPresentationService;
+        const modal = yield* WalletModal;
+        yield* modal.chainOpen.set(true);
+        const pending = yield* Effect.forkChild(
+          presentation.selectChain({
+            chain: avalanche,
+            addLedgerAccount: false,
+          })
+        );
+        yield* Deferred.await(started);
+        expect(yield* Stream.runHead(presentation.chainSelection)).toEqual(
+          Option.some({ pendingChainId: avalanche.id })
+        );
+
+        yield* modal.chainOpen.set(false);
+        expect(yield* Stream.runHead(presentation.chainSelection)).toEqual(
+          Option.some({})
+        );
+        yield* modal.chainOpen.set(true);
+        yield* Deferred.succeed(release, undefined);
+        expect(Exit.hasInterrupts(yield* Fiber.await(pending))).toBe(true);
+        expect(continued.value).toBe(false);
+        expect(yield* modal.chainOpen.current).toBe(true);
       }).pipe(Effect.provide(layer));
     })
 );

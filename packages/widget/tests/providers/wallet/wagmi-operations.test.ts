@@ -96,22 +96,18 @@ describe("Wagmi connection ownership", () => {
   );
 
   it.effect(
-    "checks picker ownership when approval wins the race with interruption",
+    "does not commit an approval that settles as the connection is interrupted",
     () =>
       Effect.gen(function* () {
         const native = pendingConnector("native", firstAddress);
         const config = makeConfig(native.connector);
-        let current = true;
         const pending = yield* wagmiOperations
-          .connect(config, {
-            connector: config.connectors[0]!,
-            isCurrent: Effect.sync(() => current),
-          })
+          .connect(config, { connector: config.connectors[0]! })
           .pipe(Effect.forkChild({ startImmediately: true }));
         yield* Effect.promise(() => native.started.promise);
-        current = false;
         native.approval.resolve();
-        yield* Fiber.await(pending);
+        yield* Fiber.interrupt(pending);
+        yield* Effect.promise(() => native.settled.promise);
         expect(getConnection(config).status).toBe("disconnected");
         expect(config.state.connections.size).toBe(0);
       })

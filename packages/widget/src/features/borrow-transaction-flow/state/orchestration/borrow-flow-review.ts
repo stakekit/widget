@@ -23,20 +23,12 @@ const validateCreatedAction = (action: Action) =>
       )
     : Effect.succeed(action);
 
-export type BorrowFlowReviewOutcome =
+type BorrowFlowReviewOutcome =
   | Readonly<{ readonly _tag: "Confirmed" }>
-  | Readonly<{ readonly _tag: "RejectedAlreadyReserved" }>
-  | Readonly<{ readonly _tag: "RejectedStale" }>;
-
-type BorrowFlowBackOutcome =
-  | Readonly<{ readonly _tag: "Accepted" }>
-  | Readonly<{ readonly _tag: "RejectedStale" }>;
+  | Readonly<{ readonly _tag: "RejectedAlreadyReserved" }>;
 
 export type BorrowFlowReviewHandle = Readonly<{
-  readonly back: () => Effect.Effect<
-    BorrowFlowBackOutcome,
-    WidgetNavigationError
-  >;
+  readonly back: () => Effect.Effect<void, WidgetNavigationError>;
   readonly confirm: () => Effect.Effect<
     BorrowFlowReviewOutcome,
     BorrowActionCreationError | WidgetNavigationError
@@ -60,10 +52,7 @@ export const makeBorrowFlowReviewFactory = Effect.fn(
     command,
     confirmAction,
   }: {
-    readonly back: () => Effect.Effect<
-      BorrowFlowBackOutcome,
-      WidgetNavigationError
-    >;
+    readonly back: Effect.Effect<void, WidgetNavigationError>;
     readonly command: Parameters<
       BorrowOperations["Service"]["executeAction"]
     >[0];
@@ -85,7 +74,7 @@ export const makeBorrowFlowReviewFactory = Effect.fn(
     );
 
     return {
-      back: () => operations.run(back()),
+      back: () => operations.run(back),
       confirm: () => operations.run(confirmAction(createAction)),
     };
   });

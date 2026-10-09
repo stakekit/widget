@@ -1,4 +1,4 @@
-import { Data, Effect, Option } from "effect";
+import { Data, Effect, Option, type Scope } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { makeScopedEffectStateAtom } from "../../../../app/runtime/scoped-effect-atom";
@@ -14,21 +14,13 @@ import {
 } from "../../model/classic-transaction-flow";
 import { getClassicTransactionStepsView } from "../../model/classic-transaction-workflow";
 import type { ClassicFlowExecutionHandle } from "../orchestration/classic-flow-execution";
-import type { AcquireClassicFlowSessionOutcome } from "../orchestration/classic-transaction-flow-service";
+import type { ClassicFlowSessionHandle } from "../orchestration/classic-flow-session";
 
 class ClassicFlowExecutionUnavailableError extends Data.TaggedError(
   "ClassicFlowExecutionUnavailableError"
 )<{
   readonly message: string;
 }> {}
-
-const unavailable = (reason: "no-reservation" | "stale") =>
-  new ClassicFlowExecutionUnavailableError({
-    message:
-      reason === "stale"
-        ? "The Classic Flow route no longer owns its Session."
-        : "The Classic Flow Session has no reserved execution action.",
-  });
 
 const getIntakeYieldId = (session: ClassicFlowSession) => {
   switch (session.intake._tag) {
@@ -43,11 +35,11 @@ const getIntakeYieldId = (session: ClassicFlowSession) => {
 
 export const makeClassicFlowExecutionScopeAtom = <E>({
   session,
-  sessionOutcomeAtom,
+  sessionAtom,
 }: {
   readonly session: ClassicFlowSession;
-  readonly sessionOutcomeAtom: Atom.Atom<
-    AsyncResult.AsyncResult<AcquireClassicFlowSessionOutcome, E>
+  readonly sessionAtom: Atom.Atom<
+    AsyncResult.AsyncResult<ClassicFlowSessionHandle, E>
   >;
 }) =>
   makeScopedEffectStateAtom({
@@ -57,21 +49,17 @@ export const makeClassicFlowExecutionScopeAtom = <E>({
         | E
         | ClassicFlowExecutionUnavailableError
         | TransactionWorkflowInputError,
-        import("effect").Scope.Scope
+        Scope.Scope
       > {
-        const sessionOutcome = yield* context.result(sessionOutcomeAtom);
-        if (sessionOutcome._tag !== "Acquired") {
-          return yield* unavailable("stale");
+        const handle = yield* context.result(sessionAtom);
+        const outcome = yield* handle.acquireExecution();
+        if (outcome._tag === "RejectedNoReservation") {
+          return yield* new ClassicFlowExecutionUnavailableError({
+            message:
+              "The Classic Flow Session has no reserved execution action.",
+          });
         }
-        const outcome = yield* sessionOutcome.session.acquireExecution();
-        switch (outcome._tag) {
-          case "Acquired":
-            return outcome.execution;
-          case "RejectedNoReservation":
-            return yield* unavailable("no-reservation");
-          case "RejectedStale":
-            return yield* unavailable("stale");
-        }
+        return outcome.execution;
       }),
     getStates: (execution: ClassicFlowExecutionHandle) => execution.states,
     label: "classicFlowExecutionScope",

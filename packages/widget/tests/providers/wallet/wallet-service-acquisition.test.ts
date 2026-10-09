@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Deferred, Effect, Fiber, Layer, Option, Stream } from "effect";
+import { Deferred, Effect, Exit, Fiber, Layer, Option, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import type { Config } from "wagmi";
 import { getConnection, getConnectors } from "wagmi/actions";
@@ -107,11 +107,12 @@ const makeObservation = (wagmiConfig: Config) => {
 
 describe("WalletService acquisition", () => {
   it.effect(
-    "does not close a reopened picker when an abandoned connection completes",
+    "interrupts a connection when its picker closes, leaving the reopened picker open",
     () =>
       Effect.gen(function* () {
         const started = yield* Deferred.make<void>();
         const release = yield* Deferred.make<void>();
+        const continued = { value: false };
         const wagmiConfig = makeDefaultConfig();
         const layer = makeWalletLayer({
           buildConfig: () =>
@@ -121,6 +122,11 @@ describe("WalletService acquisition", () => {
                   connect: () =>
                     Deferred.succeed(started, undefined).pipe(
                       Effect.andThen(Deferred.await(release)),
+                      Effect.andThen(
+                        Effect.sync(() => {
+                          continued.value = true;
+                        })
+                      ),
                       Effect.as({ accounts: [], chainId: 1 })
                     ),
                 },
@@ -149,9 +155,78 @@ describe("WalletService acquisition", () => {
           expect(yield* wallet.connectionAttempt).toEqual({ _tag: "Idle" });
           yield* modal.openConnect;
           yield* Deferred.succeed(release, undefined);
-          yield* Fiber.join(pending);
+          expect(Exit.hasInterrupts(yield* Fiber.await(pending))).toBe(true);
+          expect(continued.value).toBe(false);
           expect(yield* modal.connectOpen.current).toBe(true);
           expect(yield* wallet.connectionAttempt).toEqual({ _tag: "Idle" });
+        }).pipe(Effect.provide(layer));
+      })
+  );
+
+  it.effect(
+    "keeps a reopened picker's attempt when the abandoned wallet approves",
+    () =>
+      Effect.gen(function* () {
+        const firstStarted = yield* Deferred.make<void>();
+        const firstApproval = yield* Deferred.make<void>();
+        const secondStarted = yield* Deferred.make<void>();
+        const secondApproval = yield* Deferred.make<void>();
+        const connect = vi.fn((input: { connector: { uid: string } }) =>
+          input.connector.uid === "first"
+            ? Deferred.succeed(firstStarted, undefined).pipe(
+                Effect.andThen(Deferred.await(firstApproval)),
+                Effect.as({ accounts: [], chainId: 1 })
+              )
+            : Deferred.succeed(secondStarted, undefined).pipe(
+                Effect.andThen(Deferred.await(secondApproval)),
+                Effect.as({ accounts: [], chainId: 1 })
+              )
+        );
+        const wagmiConfig = makeDefaultConfig();
+        const layer = makeWalletLayer({
+          buildConfig: () =>
+            Effect.succeed(
+              makeWalletTestController({
+                actions: { connect },
+                wagmiConfig,
+              })
+            ),
+          initialize: () => Effect.void,
+          observeCore: () => Effect.succeed(makeObservation(wagmiConfig)),
+        });
+        yield* Effect.gen(function* () {
+          const wallet = yield* WalletService;
+          const modal = yield* WalletModal;
+          yield* modal.openConnect;
+          const first = yield* Effect.forkChild(
+            wallet.connect({
+              connector: {
+                uid: "first",
+                id: "first",
+              } as Config["connectors"][number],
+            })
+          );
+          yield* Deferred.await(firstStarted);
+          yield* modal.openConnect;
+          const second = yield* Effect.forkChild(
+            wallet.connect({
+              connector: {
+                uid: "second",
+                id: "second",
+              } as Config["connectors"][number],
+            })
+          );
+          yield* Deferred.await(secondStarted);
+
+          yield* Deferred.succeed(firstApproval, undefined);
+          expect(Exit.hasInterrupts(yield* Fiber.await(first))).toBe(true);
+          expect(yield* wallet.connectionAttempt).toEqual({ _tag: "Pending" });
+          expect(yield* modal.connectOpen.current).toBe(true);
+
+          yield* Deferred.succeed(secondApproval, undefined);
+          yield* Fiber.join(second);
+          expect(yield* wallet.connectionAttempt).toEqual({ _tag: "Idle" });
+          expect(yield* modal.connectOpen.current).toBe(false);
         }).pipe(Effect.provide(layer));
       })
   );
@@ -329,8 +404,8 @@ describe("WalletService acquisition", () => {
             })
             .pipe(Effect.forkChild({ startImmediately: true }));
           yield* Deferred.await(started);
-          // Back and ecosystem selection keep the logical picker open but change
-          // its revision, so they cancel just like an explicit close.
+          // Back and ecosystem selection keep the logical picker open but start
+          // a new opening, so they interrupt just like an explicit close.
           yield* modal.connectOpen.set(true);
           expect(yield* wallet.connectionAttempt).toEqual({ _tag: "Idle" });
           yield* wallet.connect({
@@ -340,7 +415,7 @@ describe("WalletService acquisition", () => {
             } as Config["connectors"][number],
           });
           yield* Deferred.await(interrupted);
-          yield* Fiber.join(first);
+          expect(Exit.hasInterrupts(yield* Fiber.await(first))).toBe(true);
           expect(connect).toHaveBeenCalledTimes(2);
           expect(yield* wallet.connectionAttempt).toEqual({ _tag: "Failed" });
           expect(yield* modal.connectOpen.current).toBe(true);

@@ -7,7 +7,7 @@ const unexpectedModalOperation = (operation: string) =>
 const unexpectedOpenState = (modal: string) => ({
   changes: Stream.fromEffect(unexpectedModalOperation(`${modal}.changes`)),
   current: unexpectedModalOperation(`${modal}.current`),
-  revision: unexpectedModalOperation(`${modal}.revision`),
+  opening: unexpectedModalOperation(`${modal}.opening`),
   set: (_open: boolean) => unexpectedModalOperation(`${modal}.set`),
 });
 

@@ -221,6 +221,7 @@ export type BorrowTransactionFlowIntake = BorrowTransactionFlowReview & {
 };
 
 export type BorrowFlowSession = Readonly<{
+  /** Distinguishes Session instances (React and Atom family keys); never a staleness guard. */
   readonly epoch: number;
   readonly intake: BorrowTransactionFlowIntake;
   readonly walletScope: WalletScopeKey;

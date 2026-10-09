@@ -110,10 +110,7 @@ describe("Classic Flow Atom bridge", () => {
             Effect.acquireRelease(
               Effect.sync(() => {
                 probes.acquired += 1;
-                return {
-                  _tag: "Acquired",
-                  session: makeSessionHandle(session),
-                } as const;
+                return makeSessionHandle(session);
               }),
               () =>
                 Effect.sync(() => {

@@ -14,13 +14,12 @@ const makeBorrowFlowSessionModule = (session: BorrowFlowSession) =>
         .result(borrowTransactionFlowServiceAtom)
         .pipe(Effect.flatMap((service) => service.acquireSession(session))),
     label: "borrowFlowSessionScope",
-    makeValue: (sessionOutcomeAtom) => ({
+    makeValue: (sessionAtom) => ({
       facade: { intake: session.intake },
       ports: {
         makeExecutionScopeAtom: () =>
-          makeBorrowFlowExecutionScopeAtom(sessionOutcomeAtom),
-        makeReviewScopeAtom: () =>
-          makeBorrowFlowReviewScopeAtom(sessionOutcomeAtom),
+          makeBorrowFlowExecutionScopeAtom(sessionAtom),
+        makeReviewScopeAtom: () => makeBorrowFlowReviewScopeAtom(sessionAtom),
       },
     }),
     runtime: walletRuntime,

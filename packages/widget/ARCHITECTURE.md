@@ -123,6 +123,11 @@ Resource and workflow retention is an explicit ownership decision. Use the
 shared application-runtime lifecycle adapter for scoped handles rather than
 rebuilding mount graphs in Features.
 
+Relevance is a lifetime, not a counter. A Session, reservation, modal opening,
+or attempt owns a `Scope`; ending it closes the Scope and interrupts its work.
+Do not guard continuation with revision, epoch, or `isCurrent` checks. See
+[ADR 0011](../../docs/adr/0011-lifetimes-are-scopes-staleness-is-interruption.md).
+
 ## Trust boundaries
 
 The Module that owns a value-shaped input boundary owns its Effect Schema and

@@ -1,5 +1,4 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
-import type { Effect } from "effect";
 import type { Address } from "viem";
 import type { Connector } from "wagmi";
 import type { SKEip712TypedData } from "../../public-api/types";
@@ -7,7 +6,6 @@ import type { SKEip712TypedData } from "../../public-api/types";
 export type WalletConnectInput = {
   readonly chainId?: number;
   readonly connector: Connector;
-  readonly isCurrent?: Effect.Effect<boolean>;
 };
 
 export type WalletDisconnectInput = {

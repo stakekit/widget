@@ -130,13 +130,10 @@ describe("Transaction Flow route admission", () => {
               Effect.sync(() => {
                 acquired(session.epoch);
                 return {
-                  _tag: "Acquired",
-                  session: {
-                    intake: session.intake,
-                    acquireReview: () => Effect.die("Not used"),
-                    acquireExecution: () => Effect.die("Not used"),
-                  },
-                } as const;
+                  intake: session.intake,
+                  acquireReview: () => Effect.die("Not used"),
+                  acquireExecution: () => Effect.die("Not used"),
+                };
               }),
               () => Effect.sync(() => released())
             ),
@@ -149,13 +146,10 @@ describe("Transaction Flow route admission", () => {
               Effect.sync(() => {
                 acquired(session.epoch);
                 return {
-                  _tag: "Acquired",
-                  session: {
-                    intake: session.intake,
-                    acquireReview: () => Effect.die("Not used"),
-                    acquireExecution: () => Effect.die("Not used"),
-                  },
-                } as const;
+                  intake: session.intake,
+                  acquireReview: () => Effect.die("Not used"),
+                  acquireExecution: () => Effect.die("Not used"),
+                };
               }),
               () => Effect.sync(() => released())
             ),
@@ -337,9 +331,9 @@ describe("Borrow completion admission", () => {
             _tag: "Acquired" as const,
             execution: {
               states,
-              back: () => Effect.succeed({ _tag: "Accepted" as const }),
+              back: () => Effect.void,
               finish: () => Effect.succeed({ _tag: "Accepted" as const }),
-              runWorkflow: () => Effect.succeed({ _tag: "Accepted" as const }),
+              runWorkflow: () => Effect.void,
             },
           })
         );
@@ -351,12 +345,9 @@ describe("Borrow completion admission", () => {
           start: () => Effect.die("Not used"),
           acquireSession: () =>
             Effect.succeed({
-              _tag: "Acquired",
-              session: {
-                intake: borrowSession.intake,
-                acquireExecution,
-                acquireReview: () => Effect.die("Not used"),
-              },
+              intake: borrowSession.intake,
+              acquireExecution,
+              acquireReview: () => Effect.die("Not used"),
             }),
         });
         const router = createMemoryRouter(

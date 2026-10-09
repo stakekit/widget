@@ -1,10 +1,12 @@
 import {
   Context,
   Effect,
+  Equal,
+  Exit,
   Layer,
   PubSub,
   Ref,
-  type Scope,
+  Scope,
   Stream,
   SubscriptionRef,
 } from "effect";
@@ -25,7 +27,6 @@ import {
 import {
   type ClassicFlowSessionHandle,
   makeClassicFlowSessionFactory,
-  type RunClassicFlowCurrentOperation,
 } from "./classic-flow-session";
 
 type StartClassicTransactionFlowOutcome =
@@ -35,17 +36,14 @@ type StartClassicTransactionFlowOutcome =
     }>
   | Readonly<{ readonly _tag: "RejectedOwner" }>;
 
-export type AcquireClassicFlowSessionOutcome =
-  | Readonly<{
-      readonly _tag: "Acquired";
-      readonly session: ClassicFlowSessionHandle;
-    }>
-  | Readonly<{ readonly _tag: "RejectedStale" }>;
-
 type ClassicTransactionFlowServiceApi = Readonly<{
+  /**
+   * Binds the caller's Scope to a live Session; closing it ends the Session.
+   * A Session that has already ended is interrupted.
+   */
   readonly acquireSession: (
     session: ClassicFlowSession
-  ) => Effect.Effect<AcquireClassicFlowSessionOutcome, never, Scope.Scope>;
+  ) => Effect.Effect<ClassicFlowSessionHandle, never, Scope.Scope>;
   readonly currentSession: Stream.Stream<ClassicFlowSession | null>;
   readonly start: (
     input: StartClassicTransactionFlow
@@ -55,38 +53,32 @@ type ClassicTransactionFlowServiceApi = Readonly<{
   >;
 }>;
 
+/** A started Session and the Scope that bounds all of its work. */
+type LiveClassicFlowSession = Readonly<{
+  readonly handle: ClassicFlowSessionHandle;
+  readonly scope: Scope.Closeable;
+  readonly session: ClassicFlowSession;
+}>;
+
 const makeClassicTransactionFlowService = Effect.fn(
   "makeClassicTransactionFlowService"
 )(function* () {
   const wallet = yield* WalletService;
   const navigation = yield* WidgetNavigation;
   const makeSession = yield* makeClassicFlowSessionFactory();
-  const stateRef = yield* SubscriptionRef.make<ClassicFlowSession | null>(null);
+  const serviceScope = yield* Effect.scope;
+  const liveRef = yield* SubscriptionRef.make<LiveClassicFlowSession | null>(
+    null
+  );
   const nextEpochRef = yield* Ref.make(1);
-  yield* Effect.addFinalizer(() => PubSub.shutdown(stateRef.pubsub));
+  yield* Effect.addFinalizer(() => PubSub.shutdown(liveRef.pubsub));
   const operations = yield* makeScopedSerialOperations();
 
-  const isCurrent = (session: ClassicFlowSession) =>
-    SubscriptionRef.get(stateRef).pipe(
-      Effect.map((current) => current?.epoch === session.epoch)
-    );
-
-  const clearCurrent = (session: ClassicFlowSession) =>
-    SubscriptionRef.modify(stateRef, (current) =>
-      current?.epoch === session.epoch ? [true, null] : [false, current]
-    );
-
-  const runCurrent =
-    (session: ClassicFlowSession): RunClassicFlowCurrentOperation =>
-    (operation) =>
-      operations.run(
-        Effect.gen(function* () {
-          if (!(yield* isCurrent(session))) {
-            return { _tag: "Stale" } as const;
-          }
-          return { _tag: "Current", value: yield* operation } as const;
-        })
-      );
+  // Ending a Session closes its Scope, interrupting its in-flight work.
+  const end = (live: LiveClassicFlowSession) =>
+    SubscriptionRef.update(liveRef, (current) =>
+      current === live ? null : current
+    ).pipe(Effect.andThen(Scope.close(live.scope, Exit.void)));
 
   const startOpen = Effect.fn("ClassicTransactionFlowService.start")(function* (
     input: StartClassicTransactionFlow
@@ -107,14 +99,13 @@ const makeClassicTransactionFlowService = Effect.fn(
       return { _tag: "RejectedOwner" } as const;
     }
 
-    if (input.intake._tag === "YieldActionContinuation") {
-      const current = yield* SubscriptionRef.get(stateRef);
-      if (
-        current?.intake._tag === "YieldActionContinuation" &&
-        current.intake.action.id === input.intake.action.id
-      ) {
-        return { _tag: "Started", session: current } as const;
-      }
+    const previous = yield* SubscriptionRef.get(liveRef);
+    if (
+      input.intake._tag === "YieldActionContinuation" &&
+      previous?.session.intake._tag === "YieldActionContinuation" &&
+      previous.session.intake.action.id === input.intake.action.id
+    ) {
+      return { _tag: "Started", session: previous.session } as const;
     }
 
     const resolved = resolveClassicTransactionFlowStart(
@@ -123,15 +114,23 @@ const makeClassicTransactionFlowService = Effect.fn(
     );
     return yield* Effect.uninterruptible(
       Effect.gen(function* () {
-        const epoch = yield* Ref.getAndUpdate(nextEpochRef, (next) => next + 1);
-        const session: ClassicFlowSession = { ...resolved.session, epoch };
-        yield* SubscriptionRef.set(stateRef, session);
+        if (previous) yield* Scope.close(previous.scope, Exit.void);
+        const session: ClassicFlowSession = {
+          ...resolved.session,
+          epoch: yield* Ref.getAndUpdate(nextEpochRef, (next) => next + 1),
+        };
+        const scope = yield* Scope.fork(serviceScope);
+        const live: LiveClassicFlowSession = {
+          handle: yield* makeSession(session).pipe(Scope.provide(scope)),
+          scope,
+          session,
+        };
+        yield* SubscriptionRef.set(liveRef, live);
 
         if (resolved.navigation) {
-          const rollback = clearCurrent(session).pipe(Effect.asVoid);
           yield* navigation
             .execute(resolved.navigation)
-            .pipe(Effect.tapError(() => rollback));
+            .pipe(Effect.tapError(() => end(live)));
         }
 
         return { _tag: "Started", session } as const;
@@ -143,35 +142,33 @@ const makeClassicTransactionFlowService = Effect.fn(
     "ClassicTransactionFlowService.acquireSession"
   )(function* (
     session: ClassicFlowSession
-  ): Effect.fn.Return<AcquireClassicFlowSessionOutcome, never, Scope.Scope> {
-    if (!(yield* isCurrent(session))) {
-      return { _tag: "RejectedStale" } as const;
+  ): Effect.fn.Return<ClassicFlowSessionHandle, never, Scope.Scope> {
+    const live = yield* SubscriptionRef.get(liveRef);
+    // Route Atom families key Sessions structurally, so admission does too.
+    if (!live || !Equal.equals(live.session, session)) {
+      return yield* Effect.interrupt;
     }
-
-    const handle = yield* makeSession({
-      isCurrent: isCurrent(session),
-      release: operations.run(clearCurrent(session)).pipe(Effect.asVoid),
-      runCurrent: runCurrent(session),
-      session,
-    });
-    return { _tag: "Acquired", session: handle } as const;
+    yield* Effect.addFinalizer(() =>
+      operations.run(end(live)).pipe(Effect.ignore)
+    );
+    return live.handle;
   });
 
   yield* wallet.states.pipe(
     Stream.runForEach((state) =>
       operations.run(
         Effect.gen(function* () {
-          const current = yield* SubscriptionRef.get(stateRef);
+          const live = yield* SubscriptionRef.get(liveRef);
           if (
-            !current ||
+            !live ||
             isClassicTransactionFlowWalletScopeValid(
-              current.intake,
+              live.session.intake,
               walletScopeFromState(state.connection)
             )
           ) {
             return;
           }
-          yield* clearCurrent(current);
+          yield* end(live);
         })
       )
     ),
@@ -180,7 +177,9 @@ const makeClassicTransactionFlowService = Effect.fn(
 
   return {
     acquireSession: (session) => operations.run(acquireSessionOpen(session)),
-    currentSession: SubscriptionRef.changes(stateRef),
+    currentSession: SubscriptionRef.changes(liveRef).pipe(
+      Stream.map((live) => live?.session ?? null)
+    ),
     start: (input) => operations.run(startOpen(input)),
   } satisfies ClassicTransactionFlowServiceApi;
 });

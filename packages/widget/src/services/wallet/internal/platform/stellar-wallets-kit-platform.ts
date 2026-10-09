@@ -1,4 +1,14 @@
-import { Context, Effect, Layer, Schema, type Scope } from "effect";
+import {
+  Cause,
+  Context,
+  Effect,
+  Exit,
+  Fiber,
+  FiberHandle,
+  Layer,
+  Schema,
+  type Scope,
+} from "effect";
 import { getProtocolChainIdentity } from "../../../../domain/wallet/network";
 import type { WalletAvailability } from "../../wallet-descriptors";
 import {
@@ -266,8 +276,7 @@ export const makeWalletConnectStellarWalletClient = Effect.fn(
   let selected: { address: string; topic: string } | undefined;
   let unsubscribeEnded: (() => void) | undefined;
   const endedListeners = new Set<() => void>();
-  let revision = 0;
-  let disposed = false;
+  const cancelled = () => integrationError("stellar-wallet-connect-cancelled");
   const select = (next: typeof selected) => {
     unsubscribeEnded?.();
     unsubscribeEnded = undefined;
@@ -281,8 +290,6 @@ export const makeWalletConnectStellarWalletClient = Effect.fn(
   };
   yield* Effect.addFinalizer(() =>
     Effect.sync(() => {
-      disposed = true;
-      revision++;
       select(undefined);
       endedListeners.clear();
     })
@@ -296,75 +303,105 @@ export const makeWalletConnectStellarWalletClient = Effect.fn(
       message: "The Stellar WalletConnect session expired",
       operation,
     });
-  const ensureCurrent = (attempt: number) =>
-    disposed || attempt !== revision
-      ? Effect.fail(integrationError("stellar-wallet-connect-cancelled"))
-      : Effect.void;
+  // Added after the selection finalizer so closing the scope interrupts the
+  // in-flight operation before the selection is released.
+  const operations = yield* FiberHandle.make();
+  /**
+   * Runs `operation` as the client's latest connect/disconnect/restore: a
+   * later one interrupts it and closing the client's scope cancels it, so a
+   * superseded operation never selects a session. Superseded or disposed
+   * callers observe `stellar-wallet-connect-cancelled`.
+   */
+  const latest = <A, E>(
+    operation: Effect.Effect<A, E>,
+    whenDisposed: Effect.Effect<A, E | WalletIntegrationError>
+  ): Effect.Effect<A, E | WalletIntegrationError> =>
+    Effect.uninterruptibleMask((restore) => {
+      if (operations.state._tag === "Closed") return restore(whenDisposed);
+      return FiberHandle.run(operations, operation, {
+        startImmediately: false,
+      }).pipe(
+        Effect.flatMap((fiber) =>
+          restore(Fiber.await(fiber)).pipe(
+            Effect.onInterrupt(() => Fiber.interrupt(fiber))
+          )
+        ),
+        Effect.flatMap(
+          (exit): Effect.Effect<A, E | WalletIntegrationError> =>
+            Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause)
+              ? Effect.fail(cancelled())
+              : exit
+        )
+      );
+    });
 
   return {
-    connect: Effect.gen(function* () {
-      const attempt = ++revision;
-      yield* ensureCurrent(attempt);
-      const session = yield* protocol.connect({
-        namespace: "stellar",
-        chains: [walletConnectPublicChain],
-        requiredMethods: [walletConnectSignMethod],
-        optionalMethods: [
-          "stellar_signAndSubmitXDR",
-          "stellar_signAuthEntry",
-          "stellar_signMessage",
-        ],
-      });
-      const account = session.accounts.find(
-        (account) =>
-          account.startsWith(`${walletConnectPublicChain}:`) &&
-          account.split(":").length === 3
-      );
-      const address = account?.slice(walletConnectPublicChain.length + 1);
-      if (!address || !supportsAccount(session, address)) {
-        return yield* unavailable("stellar-wallet-connect-approval");
-      }
-      yield* ensureCurrent(attempt);
-      select({ address, topic: session.topic });
-      return { address };
-    }),
-    disconnect: Effect.gen(function* () {
-      const attempt = ++revision;
+    connect: latest(
+      Effect.gen(function* () {
+        const session = yield* protocol.connect({
+          namespace: "stellar",
+          chains: [walletConnectPublicChain],
+          requiredMethods: [walletConnectSignMethod],
+          optionalMethods: [
+            "stellar_signAndSubmitXDR",
+            "stellar_signAuthEntry",
+            "stellar_signMessage",
+          ],
+        });
+        const account = session.accounts.find(
+          (account) =>
+            account.startsWith(`${walletConnectPublicChain}:`) &&
+            account.split(":").length === 3
+        );
+        const address = account?.slice(walletConnectPublicChain.length + 1);
+        if (!address || !supportsAccount(session, address)) {
+          return yield* unavailable("stellar-wallet-connect-approval");
+        }
+        select({ address, topic: session.topic });
+        return { address };
+      }),
+      Effect.fail(cancelled())
+    ),
+    disconnect: Effect.suspend(() => {
       const session = selected;
       select(undefined);
-      if (!session || disposed) return;
-      const sessions = yield* protocol.sessions("stellar");
-      if (!sessions.some((candidate) => candidate.topic === session.topic)) {
-        return;
-      }
-      yield* ensureCurrent(attempt);
-      yield* protocol.disconnect(session.topic);
+      if (!session) return latest(Effect.void, Effect.void);
+      return latest(
+        Effect.gen(function* () {
+          const sessions = yield* protocol.sessions("stellar");
+          if (
+            !sessions.some((candidate) => candidate.topic === session.topic)
+          ) {
+            return;
+          }
+          yield* protocol.disconnect(session.topic);
+        }),
+        Effect.void
+      );
     }),
     iconUrl: "https://stellar.creit.tech/wallet-icons/walletconnect.png",
     id: "stellar-wallet-connect",
     availability: { _tag: "Remote" },
     name: "WalletConnect",
-    reconnect: Effect.fn("StellarWalletConnect.reconnect")(function* (
-      address: string
-    ) {
-      const attempt = ++revision;
-      yield* ensureCurrent(attempt);
-      const sessions = yield* protocol.sessions("stellar");
-      const session = sessions.find((candidate) =>
-        supportsAccount(candidate, address)
-      );
-      if (!address || !session) {
-        return yield* unavailable("stellar-reconnect");
-      }
-      yield* ensureCurrent(attempt);
-      select({ address, topic: session.topic });
-      return { address };
-    }),
+    reconnect: (address: string) =>
+      latest(
+        Effect.gen(function* () {
+          const sessions = yield* protocol.sessions("stellar");
+          const session = sessions.find((candidate) =>
+            supportsAccount(candidate, address)
+          );
+          if (!address || !session) {
+            return yield* unavailable("stellar-reconnect");
+          }
+          select({ address, topic: session.topic });
+          return { address };
+        }).pipe(Effect.withSpan("StellarWalletConnect.reconnect")),
+        Effect.fail(cancelled())
+      ),
     signTransaction: Effect.fn("StellarWalletConnect.signTransaction")(
       function* (input: Parameters<StellarWalletClient["signTransaction"]>[0]) {
         const session = selected;
         if (
-          disposed ||
           !session ||
           session.address !== input.address ||
           input.networkPassphrase !== publicNetworkPassphrase

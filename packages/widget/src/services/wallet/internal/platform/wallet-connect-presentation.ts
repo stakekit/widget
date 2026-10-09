@@ -1,5 +1,6 @@
 import type { AppKitNetwork, ChainNamespace } from "@reown/appkit/networks";
 import {
+  Cause,
   Context,
   Effect,
   Fiber,
@@ -152,7 +153,7 @@ export const makeWalletConnectPresentation = Effect.fn(
       return yield* presentationError("wallet-connect-disposed");
     }
 
-    const revision = yield* walletModal.connectOpen.revision;
+    const opening = yield* walletModal.connectOpen.opening;
     const requestOwner = {};
     const releasePresentation = Effect.gen(function* () {
       if (presentationOwner !== requestOwner) return;
@@ -163,17 +164,9 @@ export const makeWalletConnectPresentation = Effect.fn(
       "wallet-connect-cancelled",
       new UserRejectedRequestError(new Error("WalletConnect dialog closed"))
     );
-    const cancelOnPickerChange = walletModal.connectOpen.changes.pipe(
-      Stream.filterEffect(() =>
-        walletModal.connectOpen.revision.pipe(
-          Effect.map((current) => current !== revision)
-        )
-      ),
-      Stream.runForEach(() =>
-        releasePresentation.pipe(Effect.andThen(cancelled))
-      ),
-      Effect.andThen(Effect.never)
-    );
+    // Ending the picker opening hides this presentation at once; the request
+    // itself is interrupted and closes the QR dialog as it unwinds.
+    yield* opening.onEnd(releasePresentation);
     const pending = yield* getConnection(input);
     const request = Effect.gen(function* () {
       const events = yield* Queue.unbounded<PresentationEvent>();
@@ -234,14 +227,9 @@ export const makeWalletConnectPresentation = Effect.fn(
         while (true) {
           if (event.type === "closed") return yield* cancelled;
           if (event.type === "opened") {
-            if ((yield* walletModal.connectOpen.revision) === revision) {
-              yield* walletModal.presentationOpen.set(true);
-            }
+            yield* walletModal.presentationOpen.set(true);
           } else {
             const uri = event.uri;
-            if ((yield* walletModal.connectOpen.revision) !== revision) {
-              return yield* cancelled;
-            }
             const deepLink = input.deepLink?.(uri);
             if (deepLink) {
               yield* Effect.try({
@@ -265,13 +253,16 @@ export const makeWalletConnectPresentation = Effect.fn(
         Effect.raceFirst(present),
         Effect.raceFirst(Fiber.join(source))
       );
-    }).pipe(
-      Effect.scoped,
-      modalPermit.withPermits(1),
-      Effect.raceFirst(cancelOnPickerChange)
-    );
+    }).pipe(Effect.scoped, modalPermit.withPermits(1));
 
-    const fiber = yield* request.pipe(Effect.forkIn(owner));
+    const fiber = yield* opening.run(request).pipe(
+      // Only the picker opening ending interrupts the request without
+      // interrupting this fiber: report it as the user's cancellation.
+      Effect.catchCauseIf(Cause.hasInterruptsOnly, () =>
+        Effect.fail(cancelled)
+      ),
+      Effect.forkIn(owner)
+    );
     return yield* Fiber.join(fiber).pipe(
       Effect.ensuring(Fiber.interrupt(fiber))
     );

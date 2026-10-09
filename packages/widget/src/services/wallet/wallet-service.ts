@@ -54,7 +54,7 @@ import {
   WalletNotAvailableError,
   type WalletRuntimeInvariantError,
 } from "./wallet-errors";
-import { WalletModal } from "./wallet-modal";
+import { WalletModal, type WalletModalOpening } from "./wallet-modal";
 import type { WalletSignTransactionInput } from "./wallet-transactions";
 
 type AddLedgerAccountInput = Readonly<{
@@ -83,16 +83,13 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
     Readonly<{
       /** `WalletNotAvailable`: the wallet's injected provider was missing. */
       readonly _tag: "Idle" | "Pending" | "Failed" | "WalletNotAvailable";
-      readonly revision?: number;
+      /** The picker opening this attempt reports for while it lasts. */
+      readonly opening?: WalletModalOpening;
     }>
   >({ _tag: "Idle" });
-  const currentConnectionAttempt = Effect.gen(function* () {
-    const attempt = yield* SubscriptionRef.get(connectionAttempt);
-    const revision = yield* modal.connectOpen.revision;
-    return {
-      _tag: attempt.revision !== revision ? "Idle" : attempt._tag,
-    } as const;
-  });
+  const currentConnectionAttempt = SubscriptionRef.get(connectionAttempt).pipe(
+    Effect.map((attempt) => ({ _tag: attempt._tag }) as const)
+  );
   const bootstrap = yield* bootstrapWallet;
   const state = yield* makeWalletStateRuntime({
     controller: bootstrap.controller,
@@ -220,64 +217,44 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
       );
     }),
     connect: Effect.fn("connect")(function* (input: WalletConnectInput) {
-      const revision = yield* modal.connectOpen.revision;
+      const opening = yield* modal.connectOpen.opening;
       const previous = yield* SubscriptionRef.get(connectionAttempt);
-      if (previous._tag === "Pending" && previous.revision === revision) return;
+      if (previous._tag === "Pending" && previous.opening === opening) return;
 
-      const attempt = { _tag: "Pending", revision } as const;
-      yield* SubscriptionRef.set(connectionAttempt, attempt);
-      const isCurrent = Effect.gen(function* () {
-        return (
-          (yield* SubscriptionRef.get(connectionAttempt)) === attempt &&
-          (yield* modal.connectOpen.revision) === revision
-        );
-      });
-      const cancelled = modal.connectOpen.changes.pipe(
-        Stream.filterEffect(() =>
-          modal.connectOpen.revision.pipe(
-            Effect.map((current) => current !== revision)
-          )
-        ),
-        Stream.runHead,
-        Effect.asVoid
+      const pending = { _tag: "Pending", opening } as const;
+      yield* SubscriptionRef.set(connectionAttempt, pending);
+      yield* opening.onEnd(
+        SubscriptionRef.update(connectionAttempt, (current) =>
+          current.opening === opening ? { _tag: "Idle" as const } : current
+        )
       );
 
+      // Ending the picker opening interrupts the attempt: a dismissed wallet
+      // prompt that settles later neither reports nor closes a newer picker.
       yield* connectionOperations.run(
-        Effect.gen(function* () {
-          if (!(yield* isCurrent)) return;
-          yield* bootstrap.controller.actions
-            .connect({ ...input, isCurrent })
-            .pipe(
+        opening
+          .run(
+            bootstrap.controller.actions.connect(input).pipe(
               Effect.matchEffect({
                 onFailure: (error) =>
-                  Effect.gen(function* () {
-                    if (!(yield* isCurrent)) return;
-                    yield* SubscriptionRef.set(connectionAttempt, {
-                      _tag: connectionFailure(error.cause),
-                      revision,
-                    });
+                  SubscriptionRef.set(connectionAttempt, {
+                    _tag: connectionFailure(error.cause),
+                    opening,
                   }),
                 onSuccess: () =>
-                  Effect.gen(function* () {
-                    if (!(yield* isCurrent)) return;
-                    yield* SubscriptionRef.set(connectionAttempt, {
-                      _tag: "Idle",
-                      revision,
-                    });
-                    yield* modal.connectOpen.set(false);
-                  }),
-              }),
-              Effect.raceFirst(cancelled)
-            );
-        }).pipe(
-          Effect.ensuring(
-            SubscriptionRef.update(connectionAttempt, (current) =>
-              current === attempt
-                ? { _tag: "Idle" as const, revision }
-                : current
+                  SubscriptionRef.set(connectionAttempt, {
+                    _tag: "Idle",
+                  }).pipe(Effect.andThen(modal.connectOpen.set(false))),
+              })
             )
           )
-        )
+          .pipe(
+            Effect.ensuring(
+              SubscriptionRef.update(connectionAttempt, (current) =>
+                current === pending ? { _tag: "Idle" as const } : current
+              )
+            )
+          )
       );
     }),
     connectionAttempt: currentConnectionAttempt,
@@ -290,10 +267,9 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
       detectionRequests,
       (count) => count + 1
     ),
-    connectionAttempts: Stream.merge(
-      SubscriptionRef.changes(connectionAttempt),
-      modal.connectOpen.changes
-    ).pipe(Stream.mapEffect(() => currentConnectionAttempt)),
+    connectionAttempts: SubscriptionRef.changes(connectionAttempt).pipe(
+      Stream.map((attempt) => ({ _tag: attempt._tag }) as const)
+    ),
     enabledNetworks: bootstrap.snapshot.enabledNetworks,
     logout,
     signMessage: Effect.fn("signMessage")(function* (

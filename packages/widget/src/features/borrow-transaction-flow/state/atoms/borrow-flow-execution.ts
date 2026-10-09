@@ -1,40 +1,56 @@
-import { Effect, Option, Stream } from "effect";
+import { Effect, Option, type Scope, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { makeScopedEffectStateAtom } from "../../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
-import type { TransactionWorkflowCommand } from "../../../../services/transaction-workflow/transaction-workflow-model";
+import type {
+  TransactionWorkflowCommand,
+  TransactionWorkflowInputError,
+} from "../../../../services/transaction-workflow/transaction-workflow-model";
 import {
   emptyBorrowExecutionView,
   getBorrowExecutionSetupError,
   projectBorrowExecution,
 } from "../../model/borrow-transaction-workflow";
-import type { AcquireBorrowFlowExecutionOutcome } from "../orchestration/borrow-flow-session";
-import type { AcquireBorrowFlowSessionOutcome } from "../orchestration/borrow-transaction-flow-service";
+import type { BorrowFlowExecutionHandle } from "../orchestration/borrow-flow-execution";
+import type {
+  AcquireBorrowFlowExecutionOutcome,
+  BorrowFlowSessionHandle,
+} from "../orchestration/borrow-flow-session";
 
 export const makeBorrowFlowExecutionScopeAtom = <E>(
-  sessionOutcomeAtom: Atom.Atom<
-    AsyncResult.AsyncResult<AcquireBorrowFlowSessionOutcome, E>
-  >
+  sessionAtom: Atom.Atom<AsyncResult.AsyncResult<BorrowFlowSessionHandle, E>>
 ) =>
   makeScopedEffectStateAtom({
     acquire: (context) =>
       Effect.gen(function* (): Effect.fn.Return<
         AcquireBorrowFlowExecutionOutcome,
-        | E
-        | import("../../../../services/transaction-workflow/transaction-workflow-model").TransactionWorkflowInputError,
-        import("effect").Scope.Scope
+        E | TransactionWorkflowInputError,
+        Scope.Scope
       > {
-        const sessionOutcome = yield* context.result(sessionOutcomeAtom);
-        if (sessionOutcome._tag !== "Acquired") {
-          return { _tag: "RejectedStale" } as const;
-        }
-        return yield* sessionOutcome.session.acquireExecution();
+        const session = yield* context.result(sessionAtom);
+        return yield* session.acquireExecution();
       }),
     getStates: (outcome) =>
       outcome._tag === "Acquired" ? outcome.execution.states : Stream.never,
     label: "borrowFlowExecutionScope",
     makeValue: ({ handleAtom, stateAtom }) => {
+      // Without a reserved Execution there is nothing for a command to run in.
+      const withExecution =
+        <A, E2>(
+          use: (execution: BorrowFlowExecutionHandle) => Effect.Effect<A, E2>
+        ) =>
+        (context: Atom.FnContext) =>
+          context
+            .result(handleAtom)
+            .pipe(
+              Effect.flatMap((outcome) =>
+                outcome._tag === "Acquired"
+                  ? use(outcome.execution)
+                  : Effect.interrupt
+              )
+            );
+
       // Read the existing workflow afresh on completion-route mount. Do not
       // reacquire its execution or consult the potentially lagging viewAtom.
       const makeCompletionStateAtom = () =>
@@ -69,45 +85,23 @@ export const makeBorrowFlowExecutionScopeAtom = <E>(
       const workflowCommandAtom = walletRuntime
         .fn(
           (command: TransactionWorkflowCommand, context) =>
-            context
-              .result(handleAtom)
-              .pipe(
-                Effect.flatMap((outcome) =>
-                  outcome._tag === "Acquired"
-                    ? outcome.execution.runWorkflow(command)
-                    : Effect.succeed({ _tag: "RejectedStale" } as const)
-                )
-              ),
+            withExecution((execution) => execution.runWorkflow(command))(
+              context
+            ),
           { concurrent: false, initialValue: undefined }
         )
         .pipe(Atom.withLabel("borrowFlowWorkflowCommand"));
       const backAtom = walletRuntime
         .fn(
           (_input: undefined, context) =>
-            context
-              .result(handleAtom)
-              .pipe(
-                Effect.flatMap((outcome) =>
-                  outcome._tag === "Acquired"
-                    ? outcome.execution.back()
-                    : Effect.succeed({ _tag: "RejectedStale" } as const)
-                )
-              ),
+            withExecution((execution) => execution.back())(context),
           { initialValue: undefined }
         )
         .pipe(Atom.withLabel("backBorrowFlowExecution"));
       const finishAtom = walletRuntime
         .fn(
           (_input: undefined, context) =>
-            context
-              .result(handleAtom)
-              .pipe(
-                Effect.flatMap((outcome) =>
-                  outcome._tag === "Acquired"
-                    ? outcome.execution.finish()
-                    : Effect.succeed({ _tag: "RejectedStale" } as const)
-                )
-              ),
+            withExecution((execution) => execution.finish())(context),
           { initialValue: undefined }
         )
         .pipe(Atom.withLabel("finishBorrowFlowExecution"));
