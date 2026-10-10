@@ -20,10 +20,6 @@ export const selectCurrentWalletAtom = <A>(
   select: (state: NormalizedWalletState) => A
 ): Atom.Atom<A> => selectAtom(currentWalletStateAtom, select);
 
-export const currentWalletConnectedNetworkAtom = selectCurrentWalletAtom(
-  (state) => (state.status === "connected" ? state.network : null)
-).pipe(Atom.withLabel("currentWalletConnectedNetworkAtom"));
-
 export const currentWalletScopeAtom = selectCurrentWalletAtom(
   walletScopeFromState
 ).pipe(Atom.withLabel("currentWalletScopeAtom"));

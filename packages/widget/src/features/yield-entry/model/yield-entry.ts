@@ -20,8 +20,8 @@ import {
   truncateToTokenDecimals,
 } from "../../../domain/finance/exact";
 import type {
+  ProviderOption,
   WalletAddress,
-  YieldId,
 } from "../../../domain/identity/identifiers";
 import {
   getTokenArgumentAddress,
@@ -32,7 +32,7 @@ import { getYieldEstimatedRewards } from "../../yield-summary/index";
 
 type YieldEntryInput = Readonly<{
   readonly amount: BigNumber;
-  readonly selectedProviderYieldId: YieldId | null;
+  readonly selectedProviderOption: ProviderOption | null;
   readonly token: Token | null;
   readonly tronResource: TronResource | null;
   readonly useMaxAmount: boolean;
@@ -92,7 +92,7 @@ const makeYieldEntryActionCommand = ({
   const providerIdRequired = Boolean(
     getYieldActionArg(selectedYield, "enter", "providerId")?.required
   );
-  if (providerIdRequired && !entry.selectedProviderYieldId) return null;
+  if (providerIdRequired && !entry.selectedProviderOption) return null;
 
   const validators = [...entry.validators.values()];
   const validatorArguments = (() => {
@@ -144,8 +144,8 @@ const makeYieldEntryActionCommand = ({
         ...(wallet.isLedgerLive ? { ledgerWalletApiCompatible: true } : {}),
         ...(entry.tronResource ? { tronResource: entry.tronResource } : {}),
         ...(entry.useMaxAmount ? { useMaxAmount: true } : {}),
-        ...(entry.selectedProviderYieldId
-          ? { providerId: entry.selectedProviderYieldId }
+        ...(entry.selectedProviderOption
+          ? { providerId: entry.selectedProviderOption }
           : {}),
         ...validatorArguments,
         ...(wallet.additionalAddresses ?? {}),

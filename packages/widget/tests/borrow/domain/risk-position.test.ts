@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 import { Schema } from "effect";
+import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
 import { Integration } from "../../../src/domain/borrow/catalog/integration";
 import { Market } from "../../../src/domain/borrow/catalog/market";
@@ -9,7 +10,13 @@ import {
   TokenId,
 } from "../../../src/domain/borrow/ids";
 import { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borrow-account-snapshot";
-import { deriveBorrowPositions } from "../../../src/domain/borrow/positions/borrow-positions";
+import {
+  deriveBorrowPositions,
+  emptyBorrowPositions,
+} from "../../../src/domain/borrow/positions/borrow-positions";
+import { getBorrowPositionDetailsModel } from "../../../src/features/borrow/market-position/model/details";
+
+const t = ((key: string) => key) as TFunction;
 
 const address = "0x0000000000000000000000000000000000000001";
 const integrationDto = {
@@ -496,6 +503,394 @@ describe("BorrowPositions", () => {
     expect(conflictingPositions.riskFor(usdcMarket).current).toMatchObject({
       reason: "conflictingPositionState",
       status: "unavailable",
+    });
+  });
+
+  describe("isolated market valuation", () => {
+    const usdcMarket = makeMarket({
+      id: "morpho-blue-ethereum-weth-usdc",
+      integrationId: "morpho-blue-borrow",
+      loanTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      loanTokenSymbol: "USDC",
+      type: "isolated",
+    });
+    const integration = Schema.decodeSync(Integration)({
+      ...integrationDto,
+      id: "morpho-blue-borrow",
+      name: "Morpho Blue",
+      providerId: "morpho-blue",
+    });
+    const collateralTokenId = decodeTokenId({
+      address: usdcMarket.collateralTokens[0]!.token.address,
+      symbol: usdcMarket.collateralTokens[0]!.token.symbol,
+    });
+    const derive = ({
+      collateral,
+      debt,
+      positionState,
+    }: {
+      readonly collateral: string;
+      readonly debt: string;
+      readonly positionState: {
+        readonly availableToBorrowUsd: string;
+        readonly currentLtv: string;
+        readonly healthFactor: string | null;
+        readonly liquidationThreshold: string;
+      };
+    }) => {
+      // Display valuation: WETH at $2000, USDC at $1.
+      const collateralUsd = new BigNumber(collateral).times(2000).toFixed();
+      const snapshot = Schema.decodeUnknownSync(BorrowAccountSnapshot)({
+        address,
+        availableToBorrowUsd: null,
+        currentLtv: positionState.currentLtv,
+        debtBalances: new BigNumber(debt).isZero()
+          ? []
+          : [
+              {
+                apy: "0.06",
+                balance: debt,
+                balanceRaw: new BigNumber(debt).shiftedBy(6).toFixed(),
+                balanceUsd: debt,
+                marketId: usdcMarket.id,
+                pendingActions: [],
+                tokenAddress: usdcMarket.loanToken.address,
+                tokenSymbol: "USDC",
+              },
+            ],
+        healthFactor: positionState.healthFactor,
+        integrationId: integration.id,
+        netApy: "0",
+        netWorthUsd: "0",
+        network: "ethereum",
+        supplyBalances: [
+          {
+            apy: "0",
+            balance: collateral,
+            balanceRaw: new BigNumber(collateral).shiftedBy(18).toFixed(),
+            balanceUsd: collateralUsd,
+            isCollateral: true,
+            marketId: usdcMarket.id,
+            pendingActions: [],
+            positionState,
+            tokenAddress: collateralToken.token.address,
+            tokenSymbol: collateralToken.token.symbol,
+          },
+        ],
+        totalBorrowedUsd: debt,
+        totalCollateralUsd: collateralUsd,
+        totalSuppliedUsd: collateralUsd,
+      });
+
+      return deriveBorrowPositions({
+        integrationAccountSnapshots: [
+          { accountSnapshot: snapshot, integration },
+        ],
+        markets: [usdcMarket],
+      });
+    };
+
+    // Oracle values 1 WETH at 1600 USDC while display prices it at $2000.
+    // LLTV 0.86: LTV = 400 / 1600 = 0.25, HF = 1600 * 0.86 / 400 = 3.44,
+    // headroom = 1600 * 0.86 - 400 = 976.
+    const anchoredPositionState = {
+      availableToBorrowUsd: "976",
+      currentLtv: "0.25",
+      healthFactor: "3.44",
+      liquidationThreshold: "0.86",
+    };
+
+    it("projects borrow and withdraw in the oracle valuation of the current position", () => {
+      const risk = derive({
+        collateral: "1",
+        debt: "400",
+        positionState: anchoredPositionState,
+      }).riskFor(usdcMarket);
+
+      expect(
+        risk.assess([
+          {
+            amount: new BigNumber(400),
+            marketId: usdcMarket.id,
+            type: "borrow",
+          },
+        ])
+      ).toMatchObject({
+        decision: "allow",
+        projection: {
+          healthFactor: new BigNumber("1.72"),
+          ltv: new BigNumber("0.5"),
+          maxLtv: new BigNumber("0.86"),
+          status: "available",
+          totalDebtUsd: new BigNumber(800),
+        },
+      });
+      expect(
+        risk.assess([
+          {
+            amount: new BigNumber("0.5"),
+            tokenId: collateralTokenId,
+            type: "withdraw",
+          },
+        ])
+      ).toMatchObject({
+        decision: "allow",
+        projection: {
+          healthFactor: new BigNumber("1.72"),
+          ltv: new BigNumber("0.5"),
+          status: "available",
+          totalCollateralUsd: new BigNumber(1000),
+        },
+      });
+    });
+
+    it("blocks borrowing past the oracle liquidation limit even when display prices allow it", () => {
+      const risk = derive({
+        collateral: "1",
+        debt: "400",
+        positionState: anchoredPositionState,
+      }).riskFor(usdcMarket);
+
+      // Oracle limit: 1600 * 0.86 = 1376 USDC; display limit would be 1600.
+      expect(
+        risk.assess([
+          {
+            amount: new BigNumber(976),
+            marketId: usdcMarket.id,
+            type: "borrow",
+          },
+        ])
+      ).toMatchObject({ decision: "allow" });
+      expect(
+        risk.assess([
+          {
+            amount: new BigNumber(1000),
+            marketId: usdcMarket.id,
+            type: "borrow",
+          },
+        ])
+      ).toMatchObject({
+        decision: "block",
+        projection: { ltv: new BigNumber("0.875"), status: "available" },
+        reason: "borrowCapacityExceeded",
+      });
+    });
+
+    it("reports no health factor once the debt is fully repaid", () => {
+      const risk = derive({
+        collateral: "1",
+        debt: "400",
+        positionState: anchoredPositionState,
+      }).riskFor(usdcMarket);
+
+      expect(
+        risk.assess([
+          {
+            amount: new BigNumber(400),
+            marketId: usdcMarket.id,
+            type: "repay",
+          },
+        ])
+      ).toMatchObject({
+        decision: "allow",
+        projection: {
+          healthFactor: null,
+          ltv: new BigNumber(0),
+          status: "available",
+          totalDebtUsd: new BigNumber(0),
+        },
+      });
+    });
+
+    it("anchors a debt-free position on its borrow headroom", () => {
+      // Oracle collateral = 1376 / 0.86 = 1600 USDC.
+      const risk = derive({
+        collateral: "1",
+        debt: "0",
+        positionState: {
+          availableToBorrowUsd: "1376",
+          currentLtv: "0",
+          healthFactor: null,
+          liquidationThreshold: "0.86",
+        },
+      }).riskFor(usdcMarket);
+
+      expect(
+        risk.assess([
+          {
+            amount: new BigNumber(400),
+            marketId: usdcMarket.id,
+            type: "borrow",
+          },
+        ])
+      ).toMatchObject({
+        decision: "allow",
+        projection: {
+          healthFactor: new BigNumber("3.44"),
+          ltv: new BigNumber("0.25"),
+          status: "available",
+        },
+      });
+    });
+
+    it("leaves projected risk unavailable without an oracle anchor", () => {
+      const risk = emptyBorrowPositions.riskFor(usdcMarket);
+
+      expect(risk.current).toMatchObject({
+        maxLtv: new BigNumber("0.8"),
+        status: "available",
+      });
+      expect(
+        risk.assess([
+          {
+            amount: new BigNumber(1),
+            tokenId: collateralTokenId,
+            type: "supply",
+          },
+          {
+            amount: new BigNumber(400),
+            marketId: usdcMarket.id,
+            type: "borrow",
+          },
+        ])
+      ).toMatchObject({
+        decision: "allow",
+        projection: {
+          reason: "missingRiskAnchor",
+          status: "unavailable",
+          totalCollateralUsd: new BigNumber(2000),
+          totalDebtUsd: new BigNumber(400),
+        },
+      });
+      expect(
+        risk.assess([
+          {
+            amount: new BigNumber(1),
+            tokenId: collateralTokenId,
+            type: "supply",
+          },
+          {
+            amount: new BigNumber(1601),
+            marketId: usdcMarket.id,
+            type: "borrow",
+          },
+        ])
+      ).toMatchObject({
+        decision: "block",
+        projection: { reason: "missingRiskAnchor", status: "unavailable" },
+        reason: "borrowCapacityExceeded",
+      });
+
+      const debtFreeWithoutHeadroom = derive({
+        collateral: "1",
+        debt: "0",
+        positionState: {
+          availableToBorrowUsd: "0",
+          currentLtv: "0",
+          healthFactor: null,
+          liquidationThreshold: "0.86",
+        },
+      }).riskFor(usdcMarket);
+      expect(
+        debtFreeWithoutHeadroom.assess([
+          {
+            amount: new BigNumber(100),
+            marketId: usdcMarket.id,
+            type: "borrow",
+          },
+        ]).projection
+      ).toMatchObject({ reason: "missingRiskAnchor", status: "unavailable" });
+    });
+
+    it("shows the market LLTV as max LTV for an underwater position", () => {
+      // Oracle collateral 400 / 0.9 = 444.44 USDC; headroom clamps to zero.
+      const positions = derive({
+        collateral: "1",
+        debt: "400",
+        positionState: {
+          availableToBorrowUsd: "0",
+          currentLtv: "0.9",
+          healthFactor: "0.9556",
+          liquidationThreshold: "0.86",
+        },
+      });
+      const position = positions.items.find(
+        (item) => item.id === usdcMarket.id
+      );
+      if (!position) {
+        throw new Error("Expected isolated position");
+      }
+
+      expect(position.risk.current).toMatchObject({
+        ltv: new BigNumber("0.9"),
+        maxLtv: new BigNumber("0.86"),
+        status: "available",
+      });
+      expect(
+        getBorrowPositionDetailsModel({ position, t }).detailRows.find(
+          (row) => row.id === "max-ltv"
+        )?.value
+      ).toBe("86%");
+    });
+  });
+
+  it("keeps the collateral-weighted max LTV for an underwater pool account", () => {
+    const usdcMarket = makeMarket({
+      id: "aave-v3-ethereum-usdc",
+      loanTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      loanTokenSymbol: "USDC",
+    });
+    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const snapshot = Schema.decodeUnknownSync(BorrowAccountSnapshot)({
+      address,
+      availableToBorrowUsd: "0",
+      currentLtv: "0.9",
+      debtBalances: [
+        {
+          apy: "0.06",
+          balance: "900",
+          balanceRaw: "900000000",
+          balanceUsd: "900",
+          marketId: usdcMarket.id,
+          pendingActions: [],
+          tokenAddress: usdcMarket.loanToken.address,
+          tokenSymbol: "USDC",
+        },
+      ],
+      healthFactor: "0.9444",
+      integrationId: integration.id,
+      netApy: "-0.06",
+      netWorthUsd: "100",
+      network: "ethereum",
+      supplyBalances: [
+        {
+          apy: "0.02",
+          balance: "0.5",
+          balanceRaw: "500000000000000000",
+          balanceUsd: "1000",
+          isCollateral: true,
+          marketId: usdcMarket.id,
+          pendingActions: [],
+          tokenAddress: collateralToken.token.address,
+          tokenSymbol: collateralToken.token.symbol,
+        },
+      ],
+      totalBorrowedUsd: "900",
+      totalCollateralUsd: "1000",
+      totalSuppliedUsd: "1000",
+    });
+
+    expect(
+      deriveBorrowPositions({
+        integrationAccountSnapshots: [
+          { accountSnapshot: snapshot, integration },
+        ],
+        markets: [usdcMarket],
+      }).riskFor(usdcMarket).current
+    ).toMatchObject({
+      ltv: new BigNumber("0.9"),
+      maxLtv: new BigNumber("0.8"),
+      status: "available",
     });
   });
 });

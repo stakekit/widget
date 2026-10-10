@@ -299,7 +299,6 @@ export const activityDetailsViewAtom = Atom.family(
         context(
           yieldSummaryAtom(
             new YieldSummaryKey({
-              selectedProviderYieldId: null,
               validators: item.validatorsData,
               yield: item.yieldData,
             })

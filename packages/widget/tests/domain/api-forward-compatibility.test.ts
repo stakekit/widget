@@ -1,10 +1,14 @@
 import { describe, expect, it } from "@effect/vitest";
-import { Effect, Logger, Schema } from "effect";
+import { Effect, Logger, References, Schema } from "effect";
 import {
   ActionTransactionReceipt,
   YieldAction,
 } from "../../src/domain/action/models";
-import { EarnPositionsResponse, EarnYield } from "../../src/domain/earn/models";
+import {
+  EarnPositionsResponse,
+  EarnYield,
+  EarnYieldPage,
+} from "../../src/domain/earn/models";
 import {
   RewardRateHistoryResponse,
   TvlHistoryResponse,
@@ -118,14 +122,14 @@ describe("API responses with values added after client generation", () => {
             withEnterFields([amount, { ...unknownArgument, required: true }])
           )
         );
-        const requiredUnknownType = yield* Effect.flip(
+        const requiredSupportedNameUnknownType = yield* Effect.flip(
           decode(
             EarnYield,
             withEnterFields([
               amount,
               {
-                label: "Duration",
-                name: "duration",
+                label: "Input token",
+                name: "inputToken",
                 type: UNKNOWN,
                 required: true,
               },
@@ -138,8 +142,163 @@ describe("API responses with values added after client generation", () => {
           minimum: expect.anything(),
           required: false,
         });
-        expect(required.message).toContain(UNKNOWN);
-        expect(requiredUnknownType.message).toContain("duration");
+        expect(required.message).toContain(
+          `required enter argument ${UNKNOWN} is not supported`
+        );
+        expect(requiredSupportedNameUnknownType.message).toContain(
+          "inputToken"
+        );
+      })
+  );
+
+  it.effect(
+    "drops catalogue yields whose required enter or exit arguments the widget cannot build",
+    () =>
+      Effect.gen(function* () {
+        const issues: Array<unknown> = [];
+        const logger = Logger.make<unknown, void>((options) => {
+          const annotations = options.fiber.getRef(
+            References.CurrentLogAnnotations
+          );
+          if (annotations.event === "api_decode_rejection") {
+            issues.push({
+              identifier: annotations.identifier,
+              issue: annotations.issue,
+            });
+          }
+        });
+        const yieldDto = yieldApiYieldDtoFixture({ prime: false });
+        const amount = { label: "Amount", name: "amount", type: "string" };
+        const required = (name: string, type = "string") => ({
+          label: name,
+          name,
+          required: true,
+          type,
+        });
+        const withArguments = (id: string, args: Record<string, unknown>) => ({
+          ...yieldDto,
+          id,
+          mechanics: { ...yieldDto.mechanics, arguments: args },
+        });
+
+        const page = yield* Schema.decodeEffect(EarnYieldPage)({
+          items: [
+            yieldDto,
+            withArguments("avalanche-avax-liquid-staking", {
+              enter: { fields: [amount, required("duration", "number")] },
+            }),
+            withArguments("ethereum-curve-lp", {
+              enter: { fields: [required("amounts")] },
+            }),
+            withArguments("bsc-pancakeswap-v3-lp", {
+              enter: { fields: [amount] },
+              exit: {
+                fields: [required("tokenId"), required("percentage", "number")],
+              },
+            }),
+            withArguments("ethereum-fee-vault", {
+              enter: { fields: [amount, required("feeConfigurationId")] },
+            }),
+            withArguments("plume-nest-vault", {
+              enter: { fields: [amount, required("inputToken")] },
+            }),
+            withArguments("cosmos-atom-native-staking", {
+              enter: {
+                fields: [
+                  amount,
+                  required("validatorAddress"),
+                  required("cosmosPubKey"),
+                ],
+              },
+              exit: { fields: [amount, required("cosmosPubKey")] },
+            }),
+            withArguments("ethereum-kelp-rseth-staking", {
+              exit: {
+                fields: [
+                  amount,
+                  {
+                    ...required("outputToken"),
+                    options: ["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"],
+                  },
+                ],
+              },
+            }),
+            withArguments("ethereum-manage-duration", {
+              manage: {
+                CLAIM_REWARDS: { fields: [required("duration", "number")] },
+              },
+            }),
+          ],
+          limit: 100,
+          offset: 0,
+          total: 9,
+        }).pipe(Effect.provide(Logger.layer([logger])));
+
+        expect(page.items?.map(({ id }) => id)).toEqual([
+          yieldDto.id,
+          "plume-nest-vault",
+          "cosmos-atom-native-staking",
+          "ethereum-kelp-rseth-staking",
+          "ethereum-manage-duration",
+        ]);
+        expect(issues).toEqual([
+          {
+            identifier: "avalanche-avax-liquid-staking",
+            issue: expect.stringContaining(
+              "required enter argument duration is not supported"
+            ),
+          },
+          {
+            identifier: "ethereum-curve-lp",
+            issue: expect.stringContaining(
+              "required enter argument amounts is not supported"
+            ),
+          },
+          {
+            identifier: "bsc-pancakeswap-v3-lp",
+            issue: expect.stringContaining(
+              "required exit argument tokenId is not supported"
+            ),
+          },
+          {
+            identifier: "ethereum-fee-vault",
+            issue: expect.stringContaining(
+              "required enter argument feeConfigurationId is not supported"
+            ),
+          },
+        ]);
+      })
+  );
+
+  it.effect(
+    "rejects a required exit argument that only the enter builder supplies",
+    () =>
+      Effect.gen(function* () {
+        const yieldDto = yieldApiYieldDtoFixture();
+        const failure = yield* Effect.flip(
+          decode(EarnYield, {
+            ...yieldDto,
+            mechanics: {
+              ...yieldDto.mechanics,
+              arguments: {
+                exit: {
+                  fields: [
+                    {
+                      label: "Input token",
+                      name: "inputToken",
+                      required: true,
+                      type: "string",
+                    },
+                  ],
+                },
+              },
+            },
+          })
+        );
+
+        expect(failure.message).toContain(
+          "required exit argument inputToken is not supported"
+        );
       })
   );
 

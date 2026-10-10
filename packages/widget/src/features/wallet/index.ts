@@ -4,7 +4,6 @@ import {
   currentWalletStateResultAtom,
 } from "./state/root-atom";
 import {
-  currentWalletConnectedNetworkAtom,
   currentWalletScopeAtom,
   currentWalletStateAtom,
 } from "./state/selectors";
@@ -15,7 +14,6 @@ export const walletEnabledNetworksResultAtom =
   currentWalletEnabledNetworksResultAtom;
 export const walletScopeAtom = currentWalletScopeAtom;
 export const walletStateResultAtom = currentWalletStateResultAtom;
-export const walletConnectedNetworkAtom = currentWalletConnectedNetworkAtom;
 
 export { useSKWallet } from "./react/use-wallet";
 export { useWalletConfig } from "./react/use-wallet-config";

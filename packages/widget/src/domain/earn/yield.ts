@@ -1,7 +1,7 @@
-import { Array as EArray, pipe, Schema } from "effect";
+import { Array as EArray, pipe } from "effect";
 import type { TFunction } from "i18next";
 import { exactDecimal } from "../finance/exact";
-import { YieldId } from "../identity/identifiers";
+import type { ProviderOption, YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
 import { equalTokens, tokenString } from "../token/token";
 import {
@@ -492,13 +492,28 @@ const isNativeStaking = (yieldDto: EarnYieldWithProvider) => {
 const isPooledStaking = (yieldDto: EarnYieldWithProvider) =>
   isEthereumStaking(yieldDto) && !isNativeStaking(yieldDto);
 
-export const isYieldWithProviderOptions = (yieldDto: EarnYieldWithProvider) =>
-  !!getYieldActionArg(yieldDto, "enter", "providerId")?.required;
+export const getYieldProviderOptions = (
+  yieldDto: EarnYieldWithProvider
+): ReadonlyArray<ProviderOption> =>
+  getYieldActionArg(yieldDto, "enter", "providerId")?.options ?? [];
 
-export const getYieldProviderYieldIds = (yieldDto: EarnYieldWithProvider) =>
-  Schema.decodeSync(Schema.Array(YieldId))(
-    getYieldActionArg(yieldDto, "enter", "providerId")?.options ?? []
-  );
+/**
+ * Keeps a still-advertised selection; otherwise defaults to the first option
+ * when the argument is required or only one option is advertised.
+ */
+export const resolveYieldProviderOption = (
+  yieldDto: EarnYieldWithProvider,
+  selected: ProviderOption | null
+): ProviderOption | null => {
+  const argument = getYieldActionArg(yieldDto, "enter", "providerId");
+  const options = argument?.options ?? [];
+
+  if (selected !== null && options.includes(selected)) return selected;
+
+  return argument?.required || options.length === 1
+    ? (options[0] ?? null)
+    : null;
+};
 
 export const isYieldValidatorSelectionRequired = (
   yieldDto: EarnYieldWithProvider

@@ -29,7 +29,11 @@ import {
   presentBorrowReviewConfirmationError,
 } from "./borrow-review-confirmation-error";
 import * as styles from "./styles.css";
-import { BorrowFlowAmountRows, BorrowFlowMarketRows } from "./summary-rows";
+import {
+  BorrowFlowAmountRows,
+  BorrowFlowMarketRows,
+  BorrowFlowOriginationRows,
+} from "./summary-rows";
 
 const formatOptionalSummary = (value: string | undefined) => {
   if (!value) return null;
@@ -224,6 +228,9 @@ export const BorrowReviewPage = () => {
             {financialRows.map((row) => (
               <DetailRow key={row.id} {...row} />
             ))}
+            <BorrowFlowOriginationRows
+              origination={projectedSummary.origination}
+            />
           </Box>
 
           <Box display="flex" flexDirection="column" gap="1">

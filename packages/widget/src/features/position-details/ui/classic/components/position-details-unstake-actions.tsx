@@ -18,7 +18,7 @@ export const PositionDetailsUnstakeActions = () => {
     unstakeIsGreaterOrLessIntegrationLimitError,
     unstakeAmount,
     unstakeFormattedAmount,
-    reducedStakedOrLiquidBalance: reducedStakedOrLiquidBalanceValue,
+    exitBalance,
     canChangeUnstakeAmount: canChangeUnstakeAmountValue,
     canUnstake,
     unstakeDisabled,
@@ -37,7 +37,7 @@ export const PositionDetailsUnstakeActions = () => {
   const { t } = useTranslation();
 
   if (
-    !reducedStakedOrLiquidBalanceValue ||
+    !exitBalance ||
     canChangeUnstakeAmountValue === null ||
     !unstakeTokenValue ||
     !integrationDataValue
@@ -85,7 +85,7 @@ export const PositionDetailsUnstakeActions = () => {
           `position_details.unstake_label.${getExtendedYieldType(integrationDataValue)}`
         )}
         formattedAmount={unstakeFormattedAmount}
-        balance={reducedStakedOrLiquidBalanceValue}
+        balance={exitBalance}
         yieldDto={integrationDataValue}
         validators={providersDetails ?? []}
         showUnstakeInfo={false}

@@ -18,7 +18,10 @@ import {
 } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
 import { YieldId } from "../../../domain/identity/identifiers";
-import type { PositionBalancesByType } from "../../../domain/portfolio/positions";
+import {
+  getSingleExitTokenSum,
+  type PositionBalancesByType,
+} from "../../../domain/portfolio/positions";
 import { PricesKey, pricesAtom } from "../../../resources/token-prices/index";
 import {
   YieldOpportunityKey,
@@ -198,23 +201,13 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
       ).pipe(AsyncResult.value, Option.getOrNull);
       const stakedOrLiquidBalances =
         positionBalancesByType?.get("active") ?? null;
-      const firstBalance = stakedOrLiquidBalances?.[0] ?? null;
-      const reducedStakedOrLiquidBalance = firstBalance
-        ? (stakedOrLiquidBalances?.reduce(
-            (total, balance) => ({
-              amount: total.amount.plus(balance.amount),
-              amountUsd: total.amountUsd.plus(balance.amountUsd ?? 0),
-              token: balance.token,
-            }),
-            {
-              amount: exactZero(),
-              amountUsd: exactZero(),
-              token: firstBalance.token,
-            }
-          ) ?? null)
+      // Several active token identities have no scalar exit amount; exit is
+      // then unavailable rather than built from a mixed-token sum.
+      const exitBalance = stakedOrLiquidBalances
+        ? getSingleExitTokenSum(stakedOrLiquidBalances)
         : null;
       const amountConstraints = getYieldAmountConstraints({
-        availableAmount: reducedStakedOrLiquidBalance?.amount ?? null,
+        availableAmount: exitBalance?.amount ?? null,
         pricePerShare: null,
         type: "exit",
         yield: integrationData,
@@ -232,14 +225,13 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
       const resolvedUnstakeAmount = resolveUnstakeAmount({
         canChangeAmount: canChangeUnstakeAmount,
         forceMax: amountConstraints.forceMax,
-        liveBalance: reducedStakedOrLiquidBalance?.amount ?? null,
+        liveBalance: exitBalance?.amount ?? null,
         maximum: amountConstraints.allowedMaximum,
         storedAmount: workflow.unstakeAmount,
         useMax: workflow.unstakeUseMaxAmount,
       });
       const unstakeDecimals =
-        reducedStakedOrLiquidBalance?.token.decimals ??
-        integrationData?.token.decimals;
+        exitBalance?.token.decimals ?? integrationData?.token.decimals;
       const unstakeAmount =
         unstakeDecimals == null
           ? resolvedUnstakeAmount
@@ -280,6 +272,7 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
         ...workflow,
         canChangeUnstakeAmount,
         currentWalletScope: key.scope,
+        exitBalance,
         exitReceiveTokenSelection,
         integrationData,
         maxUnstakeAmount: amountConstraints.allowedMaximum,
@@ -291,7 +284,6 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
         positionBalances,
         positionBalancesByType,
         positionBalancesResult,
-        reducedStakedOrLiquidBalance,
         stakedOrLiquidBalances,
         unstakeAmount,
         unstakeAmountError,
@@ -303,7 +295,7 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
           unstakeAmount.isLessThanOrEqualTo(amountConstraints.allowedMaximum) &&
           !unstakeAmount.isZero(),
         unstakeIsGreaterOrLessIntegrationLimitError,
-        unstakeToken: firstBalance?.token ?? null,
+        unstakeToken: exitBalance?.token ?? null,
         yieldOpportunity,
       } as const;
     }).pipe(Atom.withLabel("positionDetailsWorkflowViewAtom"))
@@ -400,17 +392,14 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
                   view.pendingActionProjections.get(pendingKey);
                 const amount = projection?.amount ?? null;
                 const formattedAmount =
-                  prices &&
-                  amount &&
-                  view.reducedStakedOrLiquidBalance &&
-                  baseToken
+                  prices && amount && baseToken
                     ? formatUsd(
                         getTokenPriceInUSD({
                           amount,
                           baseToken,
                           pricePerShare: null,
                           prices,
-                          token: view.reducedStakedOrLiquidBalance.token,
+                          token: balance.token,
                         })
                       )
                     : "";

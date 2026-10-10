@@ -6,7 +6,10 @@ import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, type Mock, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { WalletAddress } from "../../src/domain/identity/identifiers";
+import {
+  ProviderOption,
+  WalletAddress,
+} from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
   type ClassicFlowSession,
@@ -79,7 +82,7 @@ const makeFacadeInput = (
     availableAmount: new BigNumber(10),
     entry: {
       amount: new BigNumber(1),
-      selectedProviderYieldId: null,
+      selectedProviderOption: null,
       token: selectedYield.token,
       tronResource: null,
       useMaxAmount: false,
@@ -505,6 +508,58 @@ describe("Yield Entry", () => {
       });
       expect(ports.replace).not.toHaveBeenCalled();
       expect(ports.openConnect).not.toHaveBeenCalled();
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("submits the selected provider option exactly as the yield advertises it", async () => {
+    const ports = makeObservablePorts();
+    const base = yieldApiYieldDtoFixture();
+    const providerOptionYield = yieldApiYieldFixture({
+      mechanics: {
+        ...base.mechanics,
+        arguments: {
+          ...base.mechanics.arguments,
+          enter: {
+            fields: [
+              ...(base.mechanics.arguments?.enter?.fields ?? []),
+              {
+                label: "Provider",
+                name: "providerId",
+                options: ["P2P"],
+                required: true,
+                type: "string",
+              },
+            ],
+          },
+        },
+      },
+    });
+    const validInput = makeFacadeInput();
+    const facade = makeYieldEntry(
+      Atom.make(
+        makeFacadeInput({
+          entry: {
+            ...validInput.entry,
+            selectedProviderOption: ProviderOption.make("P2P"),
+            token: providerOptionYield.token,
+            yield: providerOptionYield,
+          },
+        })
+      )
+    );
+    const registry = makeObservableRegistry(ports);
+
+    try {
+      registry.set(facade.submitAtom, undefined);
+      await readSubmitOutcome(registry, facade.submitAtom).toBe("submitted");
+      expect(startedSession(ports.push)).toMatchObject({
+        intake: {
+          _tag: "Enter",
+          request: { arguments: { providerId: "P2P" } },
+        },
+      });
     } finally {
       registry.dispose();
     }

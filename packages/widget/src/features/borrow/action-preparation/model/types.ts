@@ -138,25 +138,34 @@ export type OpenPositionFinancialFacts = {
   readonly projectedDebtUsd: BigNumber;
 };
 
+/** The requested borrow is net; debt opens at the gross principal. */
+export type OpenPositionOriginationFacts = {
+  readonly debtPrincipalAmount: BigNumber;
+  readonly loanTokenPriceUsd: BigNumber;
+  readonly originationFeeAmount: BigNumber;
+};
+
 export type PreparedActionFacts = PreparedActionCommonFacts &
   (
-    | (OpenPositionFinancialFacts & {
-        readonly _tag: "Borrow";
-        readonly amount: BigNumber;
-        readonly loanTokenAddress: TokenAddress | undefined;
-        readonly loanTokenSymbol: string;
-      })
-    | (OpenPositionFinancialFacts & {
-        readonly _tag: "BorrowAndSupply";
-        readonly borrowAmount: BigNumber;
-        readonly collateralAmount: BigNumber;
-        readonly collateralFeeAmount: BigNumber;
-        readonly collateralTokenAddress: TokenAddress | undefined;
-        readonly collateralTokenSymbol: string;
-        readonly effectiveCollateralAmount: BigNumber;
-        readonly loanTokenAddress: TokenAddress | undefined;
-        readonly loanTokenSymbol: string;
-      })
+    | (OpenPositionFinancialFacts &
+        OpenPositionOriginationFacts & {
+          readonly _tag: "Borrow";
+          readonly amount: BigNumber;
+          readonly loanTokenAddress: TokenAddress | undefined;
+          readonly loanTokenSymbol: string;
+        })
+    | (OpenPositionFinancialFacts &
+        OpenPositionOriginationFacts & {
+          readonly _tag: "BorrowAndSupply";
+          readonly borrowAmount: BigNumber;
+          readonly collateralAmount: BigNumber;
+          readonly collateralFeeAmount: BigNumber;
+          readonly collateralTokenAddress: TokenAddress | undefined;
+          readonly collateralTokenSymbol: string;
+          readonly effectiveCollateralAmount: BigNumber;
+          readonly loanTokenAddress: TokenAddress | undefined;
+          readonly loanTokenSymbol: string;
+        })
     | (OpenPositionFinancialFacts & {
         readonly _tag: "Supply";
         readonly amount: BigNumber;

@@ -116,23 +116,35 @@ const isYieldWithEnterMinBasedOnPosition = (yieldDto: EarnYieldWithProvider) =>
     .get(yieldDto.mechanics.gasFeeToken.network as Network)
     ?.has(yieldDto.id) ?? false;
 
+/**
+ * The amount argument minimum is the backend's `subsequentMinimum ?? minimum`,
+ * so first entries read `entryLimits.minimum` and holders read
+ * `entryLimits.subsequentMinimum`, each falling back toward the argument.
+ */
 export const getMinStakeAmount = (
   yieldDto: EarnYieldWithProvider,
   selectedYieldHasActivePosition: boolean
 ) => {
-  const integrationMin = exactDecimal(
-    getYieldActionArg(yieldDto, "enter", "amount")?.minimum ?? 0
+  const entryLimits = yieldDto.mechanics.entryLimits;
+  const firstEntryMin = exactDecimal(
+    entryLimits?.minimum ??
+      getYieldActionArg(yieldDto, "enter", "amount")?.minimum ??
+      0
   );
 
-  if (isYieldWithEnterMinBasedOnPosition(yieldDto)) {
-    if (selectedYieldHasActivePosition) {
-      return exactZero();
-    }
-
-    return integrationMin;
+  if (!selectedYieldHasActivePosition) {
+    return firstEntryMin;
   }
 
-  return integrationMin;
+  if (entryLimits?.subsequentMinimum != null) {
+    return exactDecimal(entryLimits.subsequentMinimum);
+  }
+
+  if (isYieldWithEnterMinBasedOnPosition(yieldDto)) {
+    return exactZero();
+  }
+
+  return firstEntryMin;
 };
 
 export const getMinUnstakeAmount = (

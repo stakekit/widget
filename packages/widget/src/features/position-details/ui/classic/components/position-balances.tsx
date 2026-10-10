@@ -1,16 +1,12 @@
 import { useAtomValue } from "@effect/atom-react";
-import type BigNumber from "bignumber.js";
 import { DateTime, Match } from "effect";
 import { useTranslation } from "react-i18next";
-import type {
-  EarnBalance,
-  EarnYieldWithProvider,
-} from "../../../../../domain/earn/models";
+import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import {
   getExtendedYieldType,
   isDepositYieldType,
 } from "../../../../../domain/earn/yield";
-import { exactDecimal } from "../../../../../domain/finance/exact";
+import type { PositionBalanceRow } from "../../../../../domain/portfolio/positions";
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
 import { getDisplayDurationUntil } from "../../../../../shared/lib/date";
 import { formatUsd } from "../../../../../shared/lib/formatters";
@@ -23,7 +19,7 @@ export const PositionBalances = ({
   yieldBalance,
   integrationData,
 }: {
-  yieldBalance: EarnBalance & { tokenPriceInUsd: BigNumber };
+  yieldBalance: PositionBalanceRow;
   integrationData: EarnYieldWithProvider;
 }) => {
   const { t } = useTranslation();
@@ -95,10 +91,10 @@ export const PositionBalances = ({
             overflowWrap="anywhere"
             variant={{ type: "muted", weight: "normal" }}
           >
-            {defaultFormattedNumber(exactDecimal(yieldBalance.amount ?? 0))}{" "}
+            {defaultFormattedNumber(yieldBalance.amount)}{" "}
             {yieldBalance.token.symbol}
             {!yieldBalance.token.isPoints &&
-              ` (${formatUsd(yieldBalance.tokenPriceInUsd)})`}
+              ` (${formatUsd(yieldBalance.amountUsd)})`}
           </Text>
         </Box>
 

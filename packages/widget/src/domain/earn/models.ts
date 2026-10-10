@@ -1,6 +1,7 @@
 import {
   Effect,
   Option,
+  Predicate,
   Schema,
   SchemaGetter,
   SchemaParser,
@@ -19,6 +20,7 @@ import {
 } from "../finance/scalars";
 import {
   ProviderId,
+  ProviderOption,
   TokenAddress,
   ValidatorAddress,
   YieldId,
@@ -63,6 +65,38 @@ const ArgumentField = Schema.Struct({
 const isKnownArgument = Schema.is(
   YieldApi.ArgumentFieldDto.mapFields(Struct.pick(["name", "type"]))
 );
+
+// Arguments the enter and exit action builders actually supply (including
+// wallet-derived additional addresses). A required argument outside this set
+// would produce an action the API rejects, so the yield is unsupported.
+const SupportedActionArguments: Record<
+  "enter" | "exit",
+  Partial<Record<ApiArgumentName, true>>
+> = {
+  enter: {
+    amount: true,
+    inputToken: true,
+    useMaxAmount: true,
+    ledgerWalletApiCompatible: true,
+    tronResource: true,
+    providerId: true,
+    validatorAddress: true,
+    validatorAddresses: true,
+    subnetId: true,
+    cosmosPubKey: true,
+  },
+  exit: {
+    amount: true,
+    outputToken: true,
+    useMaxAmount: true,
+    tronResource: true,
+    providerId: true,
+    validatorAddress: true,
+    validatorAddresses: true,
+    subnetId: true,
+    cosmosPubKey: true,
+  },
+};
 
 const hasCoherentAmountBounds = (
   minimumValue: ExactDecimal,
@@ -159,7 +193,7 @@ const makeRequiredOptionsFilter = (name: ApiArgumentName) =>
 
 const ProviderIdArgumentDomain = Schema.Struct({
   required: Schema.Boolean,
-  options: Schema.Array(YieldId),
+  options: Schema.Array(ProviderOption),
 }).check(makeRequiredOptionsFilter("providerId"));
 
 const ProviderIdArgument = decodeApiArgument(
@@ -261,39 +295,56 @@ const EarnYieldArgumentFieldsDomain = Schema.Struct({
   validatorAddresses: Schema.optionalKey(ValidatorAddressesArgument),
 });
 
-const EarnYieldArgumentFields = Schema.Array(ArgumentField).pipe(
-  Schema.check(
-    Schema.makeFilter((fields) => {
-      const unsupported = fields.find(
-        (field) => field.required && !isKnownArgument(field)
-      );
+const makeEarnYieldActionArguments = (
+  isSupported: (field: ApiArgumentField) => boolean,
+  scope: string
+) =>
+  Schema.Struct({
+    fields: Schema.Array(ArgumentField).pipe(
+      Schema.check(
+        Schema.makeFilter((fields) => {
+          const unsupported = fields.find(
+            (field) => field.required && !isSupported(field)
+          );
 
-      return unsupported
-        ? `required mechanic argument ${unsupported.name} is not supported`
-        : true;
-    })
-  ),
-  Schema.decodeTo(EarnYieldArgumentFieldsDomain, {
-    decode: SchemaGetter.transform((fields) =>
-      Object.fromEntries(fields.map((field) => [field.name, field]))
+          return unsupported
+            ? `required ${scope} argument ${unsupported.name} is not supported`
+            : true;
+        })
+      ),
+      Schema.decodeTo(EarnYieldArgumentFieldsDomain, {
+        decode: SchemaGetter.transform((fields) =>
+          Object.fromEntries(fields.map((field) => [field.name, field]))
+        ),
+        encode: SchemaGetter.forbidden(
+          () => "Resolved Earn mechanic arguments are decode-only"
+        ),
+      })
     ),
-    encode: SchemaGetter.forbidden(
-      () => "Resolved Earn mechanic arguments are decode-only"
-    ),
-  })
+  });
+
+const makeBuiltActionArguments = (action: "enter" | "exit") =>
+  makeEarnYieldActionArguments(
+    (field) =>
+      isKnownArgument(field) &&
+      SupportedActionArguments[action][field.name] === true,
+    action
+  );
+
+// Manage and balance arguments are not built by the widget's enter/exit flows;
+// they only require a name and type the generated client knows.
+const KnownActionArguments = makeEarnYieldActionArguments(
+  isKnownArgument,
+  "mechanic"
 );
 
-const EarnYieldActionArguments = Schema.Struct({
-  fields: EarnYieldArgumentFields,
-});
-
 const EarnYieldArguments = Schema.Struct({
-  enter: Schema.optionalKey(EarnYieldActionArguments),
-  exit: Schema.optionalKey(EarnYieldActionArguments),
+  enter: Schema.optionalKey(makeBuiltActionArguments("enter")),
+  exit: Schema.optionalKey(makeBuiltActionArguments("exit")),
   manage: Schema.optionalKey(
-    Schema.Record(Schema.String, EarnYieldActionArguments)
+    Schema.Record(Schema.String, KnownActionArguments)
   ),
-  balance: Schema.optionalKey(EarnYieldActionArguments),
+  balance: Schema.optionalKey(KnownActionArguments),
 });
 
 // Provider `type` is unread; omitting it keeps new provider kinds decodable.
@@ -392,6 +443,18 @@ export const EarnYieldWithProvider = Schema.Struct({
 });
 export type EarnYieldWithProvider = typeof EarnYieldWithProvider.Type;
 
+// The API sends `null` for absent validator metadata; normalizing it to an
+// absent key keeps a single "not present" representation for consumers.
+const OptionalKeyFromNullOr = <S extends Schema.Top>(schema: S) =>
+  Schema.optionalKey(Schema.NullOr(schema)).pipe(
+    Schema.decodeTo(Schema.optionalKey(Schema.toType(schema)), {
+      decode: SchemaGetter.transformOptional(
+        Option.filter(Predicate.isNotNull)
+      ),
+      encode: SchemaGetter.passthroughSubtype(),
+    })
+  );
+
 export const EarnBalance = Schema.Struct({
   ...YieldApi.BalanceDto.fields,
   amount: ExactDecimal,
@@ -407,8 +470,8 @@ export const EarnBalance = Schema.Struct({
     operation: "balance-pending-actions",
   }),
   token: Token,
-  validator: Schema.optionalKey(EarnValidator),
-  validators: Schema.optionalKey(
+  validator: OptionalKeyFromNullOr(EarnValidator),
+  validators: OptionalKeyFromNullOr(
     TolerantArray(EarnValidator, { operation: "balance-validators" })
   ),
 });

@@ -87,6 +87,9 @@ const reviewState: BorrowTransactionFlowReview = {
   summary: {
     action: "borrowAndSupply",
     borrowAmount: "25",
+    debtPrincipalAmount: "25",
+    loanTokenPriceUsd: "1",
+    originationFeeAmount: "0",
     collateralAmount: "0.5",
     collateralFeeAmount: "0.025",
     collateralTokenSymbol: "cbBTC",

@@ -22,8 +22,10 @@ import type { InitParams } from "../../../services/wallet/init-params";
 import { walletScopeFromState } from "../../../services/wallet/wallet-scope-adapter";
 import { initParamsAtom } from "../../init-params/index";
 import { walletConnectionStateAtom } from "../../wallet/index";
+import { findPendingActionDeepLinkTarget } from "../model/pending-action-deep-link";
 
 class PendingActionDeepLinkRequestKey extends Data.Class<{
+  readonly balanceId: InitParams["balanceId"];
   readonly pendingAction: NonNullable<InitParams["pendingaction"]>;
   readonly scope: WalletScopeKey;
   readonly validator: InitParams["validator"];
@@ -32,6 +34,7 @@ class PendingActionDeepLinkRequestKey extends Data.Class<{
 
 class PendingActionDeepLinkIntentId extends Data.Class<{
   readonly address: WalletScopeKey["address"];
+  readonly balanceId: InitParams["balanceId"];
   readonly network: WalletScopeKey["network"];
   readonly pendingAction: NonNullable<InitParams["pendingaction"]>;
   readonly validator: InitParams["validator"];
@@ -56,26 +59,15 @@ const pendingActionDeepLinkResourceAtom = Atom.family(
             })
           )
         );
-        const balance = position.balances.find((item) => {
-          if (
-            key.validator &&
-            item.validator?.address !== key.validator &&
-            !item.validators?.some(
-              (validator) => validator.address === key.validator
-            )
-          ) {
-            return false;
-          }
-
-          return item.pendingActions.some(
-            (pendingAction) => pendingAction.type === key.pendingAction
-          );
+        const target = findPendingActionDeepLinkTarget({
+          balanceId: key.balanceId,
+          balances: position.balances,
+          pendingActionType: key.pendingAction,
+          validator: key.validator,
         });
-        const pendingAction = balance?.pendingActions.find(
-          (item) => item.type === key.pendingAction
-        );
 
-        if (!balance || !pendingAction) return null;
+        if (!target) return null;
+        const { balance, pendingAction } = target;
 
         const yieldData = yield* get.result(
           yieldOpportunityAtom.foreground(
@@ -89,6 +81,7 @@ const pendingActionDeepLinkResourceAtom = Atom.family(
               balance,
               intentId: new PendingActionDeepLinkIntentId({
                 address: key.scope.address,
+                balanceId: key.balanceId,
                 network: key.scope.network,
                 pendingAction: key.pendingAction,
                 validator: key.validator,
@@ -122,6 +115,7 @@ const currentPendingActionDeepLinkAtom = Atom.make((get) => {
   return get(
     pendingActionDeepLinkResourceAtom(
       new PendingActionDeepLinkRequestKey({
+        balanceId: initParams.balanceId,
         pendingAction: initParams.pendingaction,
         scope: walletScope,
         validator: initParams.validator,

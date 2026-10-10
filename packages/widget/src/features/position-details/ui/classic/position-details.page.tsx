@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import { getExtendedYieldType } from "../../../../domain/earn/yield";
+import { groupPositionBalanceRows } from "../../../../domain/portfolio/positions";
 import { getRewardRateFormatted } from "../../../../shared/lib/formatters";
 import { TokenIcon } from "../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../shared/ui/primitives/box";
@@ -174,16 +175,15 @@ const PositionDetails = () => {
             </Box>
 
             <Box py="3" gap="2" display="flex" flexDirection="column">
-              {[...positionBalancesByTypeValue.values()].flatMap(
-                (yieldBalance) =>
-                  yieldBalance.map((yb, i) => (
-                    <PositionBalances
-                      key={`${yb.type}-${i}`}
-                      integrationData={integrationDataValue}
-                      yieldBalance={yb}
-                    />
-                  ))
-              )}
+              {groupPositionBalanceRows(
+                [...positionBalancesByTypeValue.values()].flat()
+              ).map((row, i) => (
+                <PositionBalances
+                  key={`${row.type}-${i}`}
+                  integrationData={integrationDataValue}
+                  yieldBalance={row}
+                />
+              ))}
             </Box>
             {shareToAmountConversionsValue ? (
               <Box

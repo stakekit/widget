@@ -44,7 +44,6 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
     Atom.make((get) => {
       const input = get(inputAtom);
       return {
-        selectedProviderYieldId: input.entry.selectedProviderYieldId,
         validators: input.entry.validators,
         yield: input.entry.yield,
       };

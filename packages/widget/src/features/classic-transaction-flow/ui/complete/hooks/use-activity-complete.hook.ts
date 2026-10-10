@@ -41,7 +41,6 @@ export const useActivityCompleteView = <
       new YieldSummaryKey({
         yield: selectedYield,
         validators: selectedValidators,
-        selectedProviderYieldId: selectedAction.yieldId,
       })
     )
   );

@@ -18,6 +18,7 @@ import {
   type ClassicTransactionFlowIntake,
   decodeClassicFlowNavigationState,
 } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import { resolvePositionDetailsExitSubmission } from "../../src/features/position-details/model/classic-flow-actions";
 import { positionDetailsExitActions } from "../../src/features/position-details/state/classic-actions/exit";
 import { positionDetailsPendingActions } from "../../src/features/position-details/state/classic-actions/pending-action";
 import { positionDetailsClassicViewAtom } from "../../src/features/position-details/state/classic-facade";
@@ -122,10 +123,94 @@ const skySavingsRateFields = {
   token: usdsToken,
   tokens: [usdsToken],
 } as const;
+const positionYieldId =
+  "ethereum-usds-susds-0xa3931d71877c0e7a3148cb7eb4463524fec27fbd-4626-vault";
+const ethxAddress = "0xA35b1B31Ce002FBF2058D22F30f95D405200A15b";
+const stethAddress = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84";
+const psm3ShareAddress = "0x5555555555555555555555555555555555555555";
+const paxosShareAddress = "0x6666666666666666666666666666666666666666";
+const ethxToken = {
+  ...skyYieldDto.token,
+  address: ethxAddress,
+  name: "Stader ETHx",
+  symbol: "ETHx",
+};
+const stethToken = {
+  ...skyYieldDto.token,
+  address: stethAddress,
+  name: "Lido Staked ETH",
+  symbol: "stETH",
+};
+const rsethToken = {
+  ...skyYieldDto.token,
+  address: "0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7",
+  name: "KelpDAO Restaked ETH",
+  symbol: "rsETH",
+};
+/** Native ETH is advertised as `"0x"` and only described by the gas fee token. */
+const kelpRsethYield = yieldApiYieldFixture({
+  id: positionYieldId,
+  inputTokens: [ethxToken, stethToken],
+  mechanics: {
+    ...skyYieldDto.mechanics,
+    arguments: {
+      enter: { fields: [] },
+      exit: {
+        fields: [
+          {
+            label: "Output Token",
+            name: "outputToken",
+            options: ["0x", ethxAddress, stethAddress],
+            required: true,
+            type: "string",
+          },
+        ],
+      },
+    },
+  },
+  outputToken: rsethToken,
+  providerId: "kelpdao",
+  token: rsethToken,
+  tokens: [ethxToken, stethToken],
+});
+const optionalOutputTokenYield = ({
+  options,
+  outputToken,
+  providerId,
+}: {
+  readonly options: ReadonlyArray<string>;
+  readonly outputToken: typeof skyYieldDto.token;
+  readonly providerId: string;
+}) =>
+  yieldApiYieldFixture({
+    id: positionYieldId,
+    inputTokens: [usdcToken, usdsToken],
+    mechanics: {
+      ...skyYieldDto.mechanics,
+      arguments: {
+        enter: { fields: [] },
+        exit: {
+          fields: [
+            {
+              label: "Output Token",
+              name: "outputToken",
+              options: [...options],
+              required: false,
+              type: "string",
+            },
+          ],
+        },
+      },
+    },
+    outputToken,
+    providerId,
+    token: usdcToken,
+    tokens: [usdcToken],
+  });
 const baseYield = yieldApiYieldFixture();
 const selectedYield = yieldApiYieldFixture({
   ...skySavingsRateFields,
-  id: "ethereum-usds-susds-0xa3931d71877c0e7a3148cb7eb4463524fec27fbd-4626-vault",
+  id: positionYieldId,
   metadata: {
     ...baseYield.metadata,
     supportedStandards: ["ERC4626"],
@@ -438,6 +523,189 @@ describe("Position Details exit command", () => {
       }
     }
   );
+
+  it.each([
+    {
+      expectedAddress: "0x",
+      expectedSymbol: "ETH",
+      name: "default native ETH",
+      selectedAddress: null,
+    },
+    {
+      expectedAddress: ethxAddress,
+      expectedSymbol: "ETHx",
+      name: "selected ETHx",
+      selectedAddress: ethxAddress,
+    },
+    {
+      expectedAddress: stethAddress,
+      expectedSymbol: "stETH",
+      name: "selected stETH",
+      selectedAddress: stethAddress,
+    },
+  ] as const)(
+    "sends the $name receive token for a KelpDAO rsETH Exit",
+    async ({ expectedAddress, expectedSymbol, selectedAddress }) => {
+      const push = vi.fn<Push>();
+      const registry = makeRegistry({
+        push,
+        trackEvent: () => Effect.void,
+        yieldOpportunity: kelpRsethYield,
+      });
+      const viewAtom = positionDetailsClassicViewAtom(workflowKey);
+      const unmountView = registry.mount(viewAtom);
+
+      try {
+        registry.set(positionDetailsWorkflowAtom(workflowKey), {
+          exitReceiveTokenAddress: null,
+          pendingActions: new Map(),
+          unstakeAmount: new BigNumber("0.4"),
+          unstakeUseMaxAmount: false,
+        });
+        if (selectedAddress) {
+          registry.set(
+            setPositionDetailsExitReceiveTokenAtom(workflowKey),
+            Schema.decodeSync(TokenAddress)(selectedAddress)
+          );
+        }
+        expect(registry.get(viewAtom)).toMatchObject({
+          exitReceiveTokenSelection: {
+            options: [
+              { address: "0x", symbol: "ETH" },
+              { address: ethxAddress, symbol: "ETHx" },
+              { address: stethAddress, symbol: "stETH" },
+            ],
+            selected: { address: expectedAddress, symbol: expectedSymbol },
+          },
+        });
+        registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
+
+        await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
+        expect(startedIntake(push, exitReviewPath)).toMatchObject({
+          _tag: "Exit",
+          receiveToken: { address: expectedAddress, symbol: expectedSymbol },
+          request: { arguments: { outputToken: expectedAddress } },
+        });
+      } finally {
+        unmountView();
+        registry.dispose();
+      }
+    }
+  );
+
+  it.each([
+    {
+      expectedAddress: usdcAddress,
+      expectedSymbol: "USDC",
+      name: "Sky PSM3",
+      yieldOpportunity: optionalOutputTokenYield({
+        options: [usdcAddress, usdsAddress],
+        outputToken: {
+          ...usdcToken,
+          address: psm3ShareAddress,
+          symbol: "sUSDC",
+        },
+        providerId: "sky",
+      }),
+    },
+    {
+      expectedAddress: usdcAddress,
+      expectedSymbol: "USDC",
+      name: "Paxos",
+      yieldOpportunity: optionalOutputTokenYield({
+        options: [usdcAddress, usdsAddress],
+        outputToken: {
+          ...usdcToken,
+          address: paxosShareAddress,
+          symbol: "USDG",
+        },
+        providerId: "paxos",
+      }),
+    },
+  ] as const)(
+    "defaults the optional $name receive token to the first advertised option",
+    async ({ expectedAddress, expectedSymbol, yieldOpportunity }) => {
+      const push = vi.fn<Push>();
+      const registry = makeRegistry({
+        push,
+        trackEvent: () => Effect.void,
+        yieldOpportunity,
+      });
+
+      try {
+        registry.set(positionDetailsWorkflowAtom(workflowKey), {
+          exitReceiveTokenAddress: null,
+          pendingActions: new Map(),
+          unstakeAmount: new BigNumber("0.4"),
+          unstakeUseMaxAmount: false,
+        });
+        registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
+
+        await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
+        expect(startedIntake(push, exitReviewPath)).toMatchObject({
+          _tag: "Exit",
+          receiveToken: { address: expectedAddress, symbol: expectedSymbol },
+          request: { arguments: { outputToken: expectedAddress } },
+        });
+      } finally {
+        registry.dispose();
+      }
+    }
+  );
+
+  it("does not offer a receive token when the optional field advertises no options", async () => {
+    const push = vi.fn<Push>();
+    const registry = makeRegistry({
+      push,
+      trackEvent: () => Effect.void,
+      yieldOpportunity: optionalOutputTokenYield({
+        options: [],
+        outputToken: susdsToken,
+        providerId: "sky",
+      }),
+    });
+
+    try {
+      registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        exitReceiveTokenAddress: null,
+        pendingActions: new Map(),
+        unstakeAmount: new BigNumber("0.4"),
+        unstakeUseMaxAmount: false,
+      });
+      registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
+
+      await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
+      const intake = startedIntake(push, exitReviewPath);
+      expect(intake).toMatchObject({ _tag: "Exit", receiveToken: null });
+      if (intake._tag !== "Exit") {
+        throw new Error("Expected an active Exit intake");
+      }
+      expect(intake.request.arguments).not.toHaveProperty("outputToken");
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("blocks an Exit whose required receive token is unresolved", () => {
+    expect(
+      resolvePositionDetailsExitSubmission({
+        amountValid: true,
+        canMount: true,
+        facts: {
+          additionalAddresses: null,
+          address,
+          amount: new BigNumber("0.4"),
+          integration: kelpRsethYield,
+          receiveToken: null,
+          stakedOrLiquidBalances: [],
+          token: kelpRsethYield.token,
+          useMaxAmount: false,
+        },
+        kycBlocking: false,
+        token: kelpRsethYield.token,
+      })
+    ).toEqual({ _tag: "Invalid" });
+  });
 
   it("preserves the closed Classic rejection for Exit", async () => {
     const push = vi.fn<Push>();

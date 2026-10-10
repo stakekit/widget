@@ -57,6 +57,7 @@ const t = (key: string, options?: Record<string, unknown>): string => {
     "details.validators_inactive": "Inactive",
     "position_details.balance_type.active": "Active",
     "position_details.balance_type.claimable": "Claimable",
+    "position_details.balance_type.exiting": "Exiting",
     "position_details.balance_type.locked": "Locked",
     "position_details.pending_action.claim_rewards": "Claim rewards",
     "position_details.personalized_apy": "Personalized APY",
@@ -145,11 +146,6 @@ describe("getDashboardPositionDetailsModel", () => {
       personalizedRewardRate: yieldRewardRateFixture({ total: 0.025 }),
       positionBalancesByType: makePositionBalances(),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      reducedStakedOrLiquidBalance: {
-        amount: new BigNumber(12),
-        amountUsd: new BigNumber(41400),
-        token: yieldApiYieldFixture().token,
-      },
       rewardsSummary: undefined,
       t: t as TFunction,
     });
@@ -185,6 +181,183 @@ describe("getDashboardPositionDetailsModel", () => {
       false
     );
     expect(model.chartSections).toEqual([]);
+  });
+
+  it("shows every active token sum and totals only USD across tokens", () => {
+    const token = yieldApiYieldFixture().token;
+    const cake = { ...token, symbol: "CAKE" };
+    const usdt = {
+      ...token,
+      address: "0x0000000000000000000000000000000000000003",
+      symbol: "USDT",
+    };
+    const active = (overrides: Parameters<typeof yieldBalanceFixture>[0]) => ({
+      ...makeBalance({ type: "active", ...overrides }),
+      tokenPriceInUsd: new BigNumber(0),
+    });
+
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: false,
+      integrationData: makeYield(),
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map([
+        [
+          "active",
+          [
+            active({ amount: "2", amountUsd: "4", token: cake }),
+            active({ amount: "1", amountUsd: "2", token: cake }),
+            active({ amount: "10", amountUsd: "10", token: usdt }),
+          ],
+        ],
+      ]),
+      providersDetails: [],
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(
+      model.metricCards.find((card) => card.id === "balance")
+    ).toMatchObject({
+      subValue: "$16.00",
+      value: ["3 CAKE", "10 USDT"],
+    });
+  });
+
+  it("groups breakdown rows by status, token identity, and date", () => {
+    const token = yieldApiYieldFixture().token;
+    const usdcA = {
+      ...token,
+      address: "0x00000000000000000000000000000000000000a1",
+      symbol: "USDC",
+    };
+    const usdcB = {
+      ...usdcA,
+      address: "0x00000000000000000000000000000000000000b2",
+    };
+    const balance = (overrides: Parameters<typeof yieldBalanceFixture>[0]) => ({
+      ...makeBalance(overrides),
+      tokenPriceInUsd: new BigNumber(0),
+    });
+
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: true,
+      integrationData: makeYield(),
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map([
+        [
+          "active",
+          [
+            balance({ amount: "2", amountUsd: "2", token: usdcA }),
+            balance({ amount: "1", amountUsd: "1", token: usdcB }),
+            balance({ amount: "3", amountUsd: "3", token: usdcA }),
+          ],
+        ],
+        [
+          "exiting",
+          [
+            balance({
+              amount: "4",
+              amountUsd: "4",
+              date: "2026-11-01T00:00:00.000Z",
+              token: usdcA,
+              type: "exiting",
+            }),
+            balance({
+              amount: "6",
+              amountUsd: "6",
+              date: "2026-12-01T00:00:00.000Z",
+              token: usdcA,
+              type: "exiting",
+            }),
+            balance({
+              amount: "1",
+              amountUsd: "1",
+              date: "2026-11-01T00:00:00.000Z",
+              token: usdcA,
+              type: "exiting",
+            }),
+          ],
+        ],
+      ]),
+      providersDetails: [],
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(
+      model.breakdownRows.map(({ label, value }) => ({ label, value }))
+    ).toEqual([
+      { label: "Active", value: "5 USDC" },
+      { label: "Active", value: "1 USDC" },
+      { label: "Exiting", value: "5 USDC" },
+      { label: "Exiting", value: "6 USDC" },
+    ]);
+    expect(model.breakdownRows.map((row) => row.subValue)).toEqual([
+      "$5.00",
+      "$1.00",
+      "$5.00",
+      "$6.00",
+    ]);
+  });
+
+  it("sums repeated claimable tokens and shows every reward token", () => {
+    const token = yieldApiYieldFixture().token;
+    const kmno = {
+      ...token,
+      address: "0x0000000000000000000000000000000000000004",
+      symbol: "KMNO",
+    };
+    const usdcA = {
+      ...token,
+      address: "0x0000000000000000000000000000000000000005",
+      symbol: "USDC",
+    };
+    const usdcB = {
+      ...token,
+      address: "0x0000000000000000000000000000000000000006",
+      symbol: "USDC",
+    };
+    const claimable = (
+      overrides: Parameters<typeof yieldBalanceFixture>[0]
+    ) => ({
+      ...makeBalance({ type: "claimable", ...overrides }),
+      tokenPriceInUsd: new BigNumber(0),
+    });
+
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: true,
+      integrationData: makeYield(),
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map([
+        [
+          "claimable",
+          [
+            claimable({ amount: "1.5", amountUsd: "3", token: kmno }),
+            claimable({ amount: "2", amountUsd: "2", token: usdcA }),
+            claimable({ amount: "2.5", amountUsd: "5", token: kmno }),
+            claimable({ amount: "7", amountUsd: "7", token: usdcB }),
+            claimable({
+              amount: "99",
+              amountUsd: "0",
+              token: { ...token, isPoints: true, symbol: "PTS" },
+            }),
+          ],
+        ],
+      ]),
+      providersDetails: [],
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(
+      model.metricCards.find((card) => card.id === "rewards")
+    ).toMatchObject({
+      subValue: "$17.00",
+      value: ["4 KMNO", "2 USDC", "7 USDC"],
+    });
   });
 
   it("keeps claimable balances out of status when no action is pending", () => {
@@ -236,11 +409,6 @@ describe("getDashboardPositionDetailsModel", () => {
         ],
       ]),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      reducedStakedOrLiquidBalance: {
-        amount: new BigNumber(activeBalance.amount),
-        amountUsd: new BigNumber(activeBalance.amountUsd ?? 0),
-        token: activeToken,
-      },
       rewardsSummary: undefined,
       t: t as TFunction,
     });
@@ -273,7 +441,6 @@ describe("getDashboardPositionDetailsModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: new Map(),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      reducedStakedOrLiquidBalance: null,
       rewardsSummary: undefined,
       t: t as TFunction,
     });
@@ -322,11 +489,6 @@ describe("getDashboardPositionDetailsModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType,
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      reducedStakedOrLiquidBalance: {
-        amount: new BigNumber(12),
-        amountUsd: new BigNumber(41400),
-        token,
-      },
       rewardsSummary: undefined,
       t: t as TFunction,
     });
@@ -354,7 +516,6 @@ describe("getDashboardPositionDetailsModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: makePositionBalances(),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      reducedStakedOrLiquidBalance: null,
       rewardsSummary: Schema.decodeSync(RewardsSummary)({
         rewards: {
           last24H: "0",
@@ -410,7 +571,6 @@ describe("getDashboardPositionDetailsModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: makePositionBalances(),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
-      reducedStakedOrLiquidBalance: null,
       rewardsSummary: undefined,
       t: t as TFunction,
     });
@@ -457,7 +617,6 @@ describe("getDashboardPositionDetailsModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: makePositionBalances(),
       providersDetails: [{ name: "Midas", status: "active" }],
-      reducedStakedOrLiquidBalance: null,
       rewardsSummary: undefined,
       t: t as TFunction,
     });
@@ -485,7 +644,6 @@ describe("getDashboardPositionDetailsModel", () => {
       personalizedRewardRate: null,
       positionBalancesByType: new Map(),
       providersDetails: [{ name: "Midas", status: "active" }],
-      reducedStakedOrLiquidBalance: null,
       rewardsSummary: undefined,
       t: t as TFunction,
     });

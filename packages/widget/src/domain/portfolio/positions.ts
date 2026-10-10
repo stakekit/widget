@@ -1,10 +1,11 @@
 import type BigNumber from "bignumber.js";
+import { DateTime } from "effect";
 import type { EarnBalance, EarnPosition, EarnValidator } from "../earn/models";
 import type { YieldRewardRate } from "../earn/reward-rate";
 import type { ValidatorKey } from "../earn/validator";
 import { exactDecimal, exactZero } from "../finance/exact";
 import type { YieldId } from "../identity/identifiers";
-import { equalTokens } from "../token/token";
+import { equalTokens, type TokenString, tokenString } from "../token/token";
 
 export type YieldBalanceType = EarnBalance["type"];
 
@@ -125,13 +126,97 @@ export const getPositionBalances = (
 ): PositionBalances | null => {
   if (!position || !balanceId) return null;
 
-  const balanceData =
-    position.balanceData.get(balanceId as BalanceDataKey) ??
-    position.balanceData.values().next().value;
-
+  const balanceData = position.balanceData.get(balanceId as BalanceDataKey);
   return balanceData
     ? { ...balanceData, rewardRate: position.rewardRate }
     : null;
+};
+
+export type PositionTokenSum = Readonly<{
+  readonly amount: BigNumber;
+  readonly amountUsd: BigNumber;
+  readonly token: EarnBalance["token"];
+}>;
+
+/**
+ * Exact per-token sums, keyed by token identity (network, symbol, address) so
+ * equal symbols on different contracts stay apart. Order follows first
+ * appearance. Amounts of different tokens are never added together.
+ */
+export const sumBalancesByToken = (
+  balances: ReadonlyArray<Pick<EarnBalance, "amount" | "amountUsd" | "token">>
+): ReadonlyArray<PositionTokenSum> => [
+  ...balances
+    .reduce((sums, balance) => {
+      const key = tokenString(balance.token);
+      const previous = sums.get(key);
+
+      sums.set(key, {
+        amount: (previous?.amount ?? exactZero()).plus(balance.amount),
+        amountUsd: (previous?.amountUsd ?? exactZero()).plus(
+          balance.amountUsd ?? 0
+        ),
+        token: previous?.token ?? balance.token,
+      });
+
+      return sums;
+    }, new Map<TokenString, PositionTokenSum>())
+    .values(),
+];
+
+export type PositionBalanceRow = PositionTokenSum &
+  Readonly<{
+    readonly date: EarnBalance["date"];
+    readonly type: YieldBalanceType;
+  }>;
+
+/**
+ * Display rows for raw balances: equal status, token identity, and date are
+ * summed exactly; different maturity/unlock dates stay apart so countdowns
+ * remain correct. Order follows first appearance. Raw balances (and their
+ * pending actions) are left untouched for execution.
+ */
+export const groupPositionBalanceRows = (
+  balances: ReadonlyArray<
+    Pick<EarnBalance, "amount" | "amountUsd" | "date" | "token" | "type">
+  >
+): ReadonlyArray<PositionBalanceRow> => [
+  ...balances
+    .reduce((rows, balance) => {
+      const key = `${balance.type}::${tokenString(balance.token)}::${
+        balance.date ? DateTime.toEpochMillis(balance.date) : ""
+      }`;
+      const previous = rows.get(key);
+
+      rows.set(key, {
+        amount: (previous?.amount ?? exactZero()).plus(balance.amount),
+        amountUsd: (previous?.amountUsd ?? exactZero()).plus(
+          balance.amountUsd ?? 0
+        ),
+        date: balance.date,
+        token: previous?.token ?? balance.token,
+        type: balance.type,
+      });
+
+      return rows;
+    }, new Map<string, PositionBalanceRow>())
+    .values(),
+];
+
+/**
+ * The exit amount is scalar only when the active balances hold exactly one
+ * non-points token; several token identities have no single max or precision.
+ */
+export const getSingleExitTokenSum = (
+  activeBalances: ReadonlyArray<
+    Pick<EarnBalance, "amount" | "amountUsd" | "token">
+  >
+): PositionTokenSum | null => {
+  const sums = sumBalancesByToken(
+    activeBalances.filter((balance) => !balance.token.isPoints)
+  );
+
+  return sums.length === 1 ? (sums[0] ?? null) : null;
 };
 
 export const toPositionBalancesByType = (

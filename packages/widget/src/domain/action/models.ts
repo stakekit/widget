@@ -8,6 +8,7 @@ import {
 } from "../finance/scalars";
 import {
   ActionId,
+  ProviderOption,
   TransactionId,
   ValidatorAddress,
   WalletAddress,
@@ -23,14 +24,14 @@ const PendingActionArgumentField = Schema.Struct({
 
 const ActionArguments = Schema.Struct({
   ...YieldApi.ActionArgumentsDto.fields,
-  providerId: Schema.optionalKey(YieldId),
+  providerId: Schema.optionalKey(ProviderOption),
   validatorAddress: Schema.optionalKey(ValidatorAddress),
   validatorAddresses: Schema.optionalKey(Schema.Array(ValidatorAddress)),
 });
 
 const ManageActionArguments = Schema.Struct({
   ...YieldApi.ActionArgumentsDto.fields,
-  providerId: Schema.optionalKey(YieldId),
+  providerId: Schema.optionalKey(ProviderOption),
   validatorAddress: Schema.optionalKey(ValidatorAddress),
   validatorAddresses: Schema.optionalKey(Schema.Array(ValidatorAddress)),
 });

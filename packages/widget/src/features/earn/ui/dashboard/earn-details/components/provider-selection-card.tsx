@@ -20,6 +20,8 @@ import {
   formatProviderWebsiteHref,
 } from "../../../../../yield-summary/index";
 import { useEarnEntry } from "../../../../react/use-earn-facades";
+import type { EarnProviderOption } from "../../../../state/earn-selection/types";
+import { EarnProviderOptionSelection } from "../../../components/earn-provider-option-selection";
 import { EarnValidatorSelection } from "../../../components/earn-validator-selection";
 import * as styles from "../styles.css";
 import { ExternalLinkIcon } from "./external-link-icon";
@@ -43,25 +45,54 @@ export const ProviderSelectionCard = () => {
   const providersDetails = entry.providers;
 
   return (
-    <EarnValidatorSelection
-      renderTrigger={({
-        multiSelect,
-        onRemoveValidator,
-        selectedStake,
-        selectedValidators,
-      }) => (
-        <ProviderCardsTrigger
-          items={getProviderCardItems({
-            providerDetailsArr: providersDetails ?? [],
-            selectedValidatorsArr: selectedValidators,
-            yieldDto: selectedStake,
-          })}
-          multiSelect={multiSelect}
-          onRemoveValidator={onRemoveValidator}
-          tokenSymbol={selectedStake.token.symbol}
-        />
-      )}
-    />
+    <>
+      <EarnProviderOptionSelection
+        renderTrigger={({ canSelect, selectedOption, title }) => (
+          <Box className={styles.providerCardList}>
+            <ProviderCard
+              action={canSelect ? <ProviderChangeTrigger /> : null}
+              item={getProviderOptionCardItem(selectedOption, title)}
+              meta={null}
+            />
+          </Box>
+        )}
+      />
+
+      <EarnValidatorSelection
+        renderTrigger={({
+          multiSelect,
+          onRemoveValidator,
+          selectedStake,
+          selectedValidators,
+        }) => (
+          <ProviderCardsTrigger
+            items={getProviderCardItems({
+              providerDetailsArr: providersDetails ?? [],
+              selectedValidatorsArr: selectedValidators,
+              yieldDto: selectedStake,
+            })}
+            multiSelect={multiSelect}
+            onRemoveValidator={onRemoveValidator}
+            tokenSymbol={selectedStake.token.symbol}
+          />
+        )}
+      />
+    </>
+  );
+};
+
+const ProviderChangeTrigger = () => {
+  const { t } = useTranslation();
+
+  return (
+    <Trigger asChild>
+      <Box as="button" className={styles.providerChangeButton} type="button">
+        <Text variant={{ weight: "bold", size: "small" }}>
+          {t("shared.change")}
+        </Text>
+        <CaretDownIcon />
+      </Box>
+    </Trigger>
   );
 };
 
@@ -98,74 +129,16 @@ const ProviderCardsTrigger = ({
             );
           }
           if (multiSelect) return null;
-          return (
-            <Trigger asChild>
-              <Box
-                as="button"
-                className={styles.providerChangeButton}
-                type="button"
-              >
-                <Text variant={{ weight: "bold", size: "small" }}>
-                  {t("shared.change")}
-                </Text>
-                <CaretDownIcon />
-              </Box>
-            </Trigger>
-          );
+          return <ProviderChangeTrigger />;
         };
-        const providerAction = getProviderAction();
 
         return (
-          <Box className={styles.providerCard} key={item.key}>
-            <Box className={styles.providerCardMainRow}>
-              <Image
-                wrapperProps={{ hw: "8", flexShrink: 0 }}
-                imgProps={{ borderRadius: "base" }}
-                src={item.logo}
-                fallbackName={item.name}
-              />
-
-              <Box className={styles.providerCardContent}>
-                <Box className={styles.providerCardHeader}>
-                  <Text
-                    className={styles.providerNameText}
-                    variant={{ weight: "bold" }}
-                  >
-                    {item.name}
-                  </Text>
-
-                  {item.preferred ? (
-                    <Box className={styles.autoBadge}>
-                      <Text
-                        className={styles.autoBadgeText}
-                        variant={{ weight: "bold", size: "small" }}
-                      >
-                        {t("details.validators_preferred")}
-                      </Text>
-                    </Box>
-                  ) : null}
-                </Box>
-
-                <ProviderMetaLine item={item} tokenSymbol={tokenSymbol} />
-              </Box>
-
-              {providerAction}
-            </Box>
-
-            {item.website ? (
-              <Text
-                as="a"
-                className={styles.providerWebsiteText}
-                href={formatProviderWebsiteHref(item.website)}
-                rel="noreferrer"
-                target="_blank"
-                variant={{ type: "muted", weight: "normal" }}
-              >
-                {formatProviderWebsite(item.website)}
-                <ExternalLinkIcon />
-              </Text>
-            ) : null}
-          </Box>
+          <ProviderCard
+            action={getProviderAction()}
+            item={item}
+            key={item.key}
+            meta={<ProviderMetaLine item={item} tokenSymbol={tokenSymbol} />}
+          />
         );
       })}
 
@@ -186,6 +159,86 @@ const ProviderCardsTrigger = ({
     </Box>
   );
 };
+
+const ProviderCard = ({
+  action,
+  item,
+  meta,
+}: {
+  action: ReactNode;
+  item: ProviderCardItem;
+  meta: ReactNode;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <Box className={styles.providerCard}>
+      <Box className={styles.providerCardMainRow}>
+        <Image
+          wrapperProps={{ hw: "8", flexShrink: 0 }}
+          imgProps={{ borderRadius: "base" }}
+          src={item.logo}
+          fallbackName={item.name}
+        />
+
+        <Box className={styles.providerCardContent}>
+          <Box className={styles.providerCardHeader}>
+            <Text
+              className={styles.providerNameText}
+              variant={{ weight: "bold" }}
+            >
+              {item.name}
+            </Text>
+
+            {item.preferred ? (
+              <Box className={styles.autoBadge}>
+                <Text
+                  className={styles.autoBadgeText}
+                  variant={{ weight: "bold", size: "small" }}
+                >
+                  {t("details.validators_preferred")}
+                </Text>
+              </Box>
+            ) : null}
+          </Box>
+
+          {meta}
+        </Box>
+
+        {action}
+      </Box>
+
+      {item.website ? (
+        <Text
+          as="a"
+          className={styles.providerWebsiteText}
+          href={formatProviderWebsiteHref(item.website)}
+          rel="noreferrer"
+          target="_blank"
+          variant={{ type: "muted", weight: "normal" }}
+        >
+          {formatProviderWebsite(item.website)}
+          <ExternalLinkIcon />
+        </Text>
+      ) : null}
+    </Box>
+  );
+};
+
+const getProviderOptionCardItem = (
+  option: EarnProviderOption | null,
+  placeholder: string
+): ProviderCardItem => ({
+  key: option?.value ?? placeholder,
+  commission: undefined,
+  logo: option?.provider?.logoURI,
+  name: option?.provider?.name ?? option?.value ?? placeholder,
+  preferred: undefined,
+  stakedBalance: undefined,
+  status: undefined,
+  validator: undefined,
+  website: option?.provider?.website,
+});
 
 const getProviderCardItems = ({
   providerDetailsArr,

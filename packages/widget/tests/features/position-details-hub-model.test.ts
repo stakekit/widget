@@ -74,7 +74,7 @@ describe("position details hub model", () => {
         }),
         pendingActions: [{ pendingAction: { type: "CLAIM_REWARDS" } }],
         positionBalancesByType: new Map(),
-        reducedStakedOrLiquidBalance: { amount: 1 },
+        exitBalance: { amount: 1 },
         unstakeToken: { symbol: "ETH" },
       } as never)
     ).toBe(false);
@@ -88,7 +88,7 @@ describe("position details hub model", () => {
         }),
         pendingActions: [],
         positionBalancesByType: new Map(),
-        reducedStakedOrLiquidBalance: { amount: 1 },
+        exitBalance: { amount: 1 },
         unstakeToken: { symbol: "ETH" },
       } as never)
     ).toBe(true);
@@ -103,7 +103,7 @@ describe("position details hub model", () => {
       }),
       pendingActions: [{ pendingAction: { type: "UNLOCK" } }],
       positionBalancesByType: new Map(),
-      reducedStakedOrLiquidBalance: null,
+      exitBalance: null,
       unstakeToken: null,
     } as never;
 

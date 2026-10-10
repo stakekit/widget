@@ -132,6 +132,32 @@ describe("Earn application models", () => {
     })
   );
 
+  it("decodes a position whose balances carry null validator metadata", () => {
+    const balance = {
+      address: "wallet-1",
+      type: "active",
+      amount: "1",
+      amountRaw: "1",
+      pendingActions: [],
+      token,
+      isEarning: true,
+    };
+    const position = Schema.decodeSync(EarnPosition)({
+      yieldId: "ethereum-eth-native-staking",
+      balances: [
+        { ...balance, validator: null },
+        { ...balance, validators: null },
+        { ...balance, validator: null, validators: null },
+      ],
+    });
+
+    expect(position.balances).toHaveLength(3);
+    for (const decoded of position.balances) {
+      expect(decoded).not.toHaveProperty("validator");
+      expect(decoded).not.toHaveProperty("validators");
+    }
+  });
+
   it("decodes complete yield and position models with branded yield IDs", () => {
     const yieldModel = yieldApiYieldFixture({ prime: false });
     const position = Schema.decodeSync(EarnPosition)({
@@ -226,6 +252,33 @@ describe("Earn application models", () => {
     expect(yieldModel.state?.liquidityState).toEqual({
       liquidity: "8045570",
       utilization: "0",
+    });
+  });
+
+  it("decodes advertised provider options as opaque values", () => {
+    const baseYield = yieldApiYieldDtoFixture();
+    const yieldModel = yieldApiYieldFixture({
+      mechanics: {
+        ...baseYield.mechanics,
+        arguments: {
+          enter: {
+            fields: [
+              {
+                label: "Provider",
+                name: "providerId",
+                options: ["P2P", "figment"],
+                required: true,
+                type: "string",
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    expect(yieldModel.mechanics.arguments?.enter?.fields.providerId).toEqual({
+      options: ["P2P", "figment"],
+      required: true,
     });
   });
 

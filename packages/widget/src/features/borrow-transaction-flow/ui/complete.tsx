@@ -15,7 +15,11 @@ import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowExecution,
 } from "../react/borrow-flow-route";
-import { BorrowFlowAmountRows, BorrowFlowMarketRows } from "./summary-rows";
+import {
+  BorrowFlowAmountRows,
+  BorrowFlowMarketRows,
+  BorrowFlowOriginationRows,
+} from "./summary-rows";
 import { useBorrowExecution } from "./use-borrow-execution";
 
 export const BorrowCompletePage = () => {
@@ -28,7 +32,10 @@ export const BorrowCompletePage = () => {
   const done = useAtomSet(executionFlow.finishAtom);
   const result = execution.completionResult;
   const { summary } = flow.intake;
-  const projectedSummary = projectBorrowTransactionFlowSummary(summary);
+  const projectedSummary = projectBorrowTransactionFlowSummary(
+    summary,
+    result?.action.metadata
+  );
   const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
 
   if (!result) return null;
@@ -73,6 +80,9 @@ export const BorrowCompletePage = () => {
             <BorrowFlowAmountRows
               action={summary.action}
               projected={projectedSummary}
+            />
+            <BorrowFlowOriginationRows
+              origination={projectedSummary.origination}
             />
             <BorrowFlowMarketRows summary={summary} />
           </Box>

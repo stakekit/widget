@@ -1,3 +1,4 @@
+import { resolveBorrowOrigination } from "../../../../domain/borrow/execution/origination-fee";
 import { decodeTokenId } from "../../../../domain/borrow/ids";
 import { isDebtBelowMarketMinimum } from "../../../../domain/borrow/risk/minimum-debt";
 import {
@@ -48,15 +49,29 @@ export const prepareOpenPositionAction = (
   const borrowMaxAmount = market.availableLiquidity;
   const collateralMaxAmount =
     walletBalances.selectedCollateralToken?.amountValue ?? exactZero();
+  const origination = resolveBorrowOrigination({
+    market,
+    netAmount: executableBorrowAmount,
+  });
+  const debtPrincipalAmount = origination.grossAmount;
   const borrowUsd = executableBorrowAmount.multipliedBy(
     market.loanTokenPriceUsd
   );
-  const collateralFeeAmount = truncateToTokenDecimals(
-    executableCollateralAmount
-      .multipliedBy(market.supplyCollateralFeeBps)
-      .dividedBy(10_000),
-    collateralToken.token.decimals
+  const debtPrincipalUsd = debtPrincipalAmount.multipliedBy(
+    market.loanTokenPriceUsd
   );
+  // A borrow routed through BlueBundle supplies the full collateral.
+  const chargesCollateralFee = !(
+    executableBorrowAmount.gt(0) && origination.route === "BlueBundle"
+  );
+  const collateralFeeAmount = chargesCollateralFee
+    ? truncateToTokenDecimals(
+        executableCollateralAmount
+          .multipliedBy(market.supplyCollateralFeeBps)
+          .dividedBy(10_000),
+        collateralToken.token.decimals
+      )
+    : exactZero();
   const effectiveCollateralAmount =
     executableCollateralAmount.minus(collateralFeeAmount);
   const collateralUsd = effectiveCollateralAmount.multipliedBy(
@@ -66,7 +81,7 @@ export const prepareOpenPositionAction = (
     ...(executableBorrowAmount.gt(0)
       ? [
           {
-            amount: executableBorrowAmount,
+            amount: debtPrincipalAmount,
             marketId: market.id,
             type: "borrow" as const,
           },
@@ -93,7 +108,8 @@ export const prepareOpenPositionAction = (
     assessment.projection.totalCollateralUsd ??
     existingCollateralUsd.plus(collateralUsd);
   const projectedDebtUsd =
-    assessment.projection.totalDebtUsd ?? existingDebtUsd.plus(borrowUsd);
+    assessment.projection.totalDebtUsd ??
+    existingDebtUsd.plus(debtPrincipalUsd);
   const risk = toBorrowRiskProjection({
     current,
     projected: assessment.projection,
@@ -120,7 +136,7 @@ export const prepareOpenPositionAction = (
   }
 
   const warnings: BorrowConstraintWarning[] = [];
-  if (executableBorrowAmount.gt(borrowMaxAmount)) {
+  if (debtPrincipalAmount.gt(borrowMaxAmount)) {
     warnings.push("AmountExceedsAvailableLiquidity");
   }
   if (executableCollateralAmount.gt(collateralMaxAmount)) {
@@ -131,7 +147,7 @@ export const prepareOpenPositionAction = (
   }
   const existingDebtAmount =
     marketPosition?.balances.debt?.balance ?? exactZero();
-  const projectedDebtAmount = existingDebtAmount.plus(executableBorrowAmount);
+  const projectedDebtAmount = existingDebtAmount.plus(debtPrincipalAmount);
   if (
     hasBorrow &&
     isDebtBelowMarketMinimum({
@@ -165,8 +181,10 @@ export const prepareOpenPositionAction = (
     collateralFeeAmount,
     collateralToken,
     common: commonFacts,
+    debtPrincipalAmount,
     effectiveCollateralAmount,
     market,
+    originationFeeAmount: origination.feeAmount,
   });
 
   return {

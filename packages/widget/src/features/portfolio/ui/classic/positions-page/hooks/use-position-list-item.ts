@@ -32,7 +32,6 @@ export const usePositionListItem = (item: PositionItem) => {
       new YieldSummaryKey({
         yield: integrationData,
         validators: item.type === "validators" ? item.validators : [],
-        selectedProviderYieldId: null,
       })
     )
   ).providers;

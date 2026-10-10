@@ -2,9 +2,10 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import {
   earnEntryViewAtom,
+  earnProviderOptionsViewAtom,
   refreshEarnKycAtom,
   runEarnPrimaryActionAtom,
-  selectEarnProviderAtom,
+  selectEarnProviderOptionAtom,
   selectEarnTronResourceAtom,
   setEarnAmountAtom,
   setEarnMaxAmountAtom,
@@ -59,11 +60,15 @@ export const useEarnValidatorSelection = () => ({
 export const useEarnEntry = () => ({
   refreshKyc: useAtomSet(refreshEarnKycAtom),
   runPrimaryAction: useAtomSet(runEarnPrimaryActionAtom),
-  selectProvider: useAtomSet(selectEarnProviderAtom),
   selectTronResource: useAtomSet(selectEarnTronResourceAtom),
   setAmount: useAtomSet(setEarnAmountAtom),
   setMaxAmount: useAtomSet(setEarnMaxAmountAtom),
   view: useAtomValue(earnEntryViewAtom),
+});
+
+export const useEarnProviderOptions = () => ({
+  select: useAtomSet(selectEarnProviderOptionAtom),
+  view: useAtomValue(earnProviderOptionsViewAtom),
 });
 
 export const useEarnPageStatus = () => ({

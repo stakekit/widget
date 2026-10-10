@@ -11,6 +11,7 @@ export type PositionMetricCard = Readonly<{
   readonly label: ReactNode;
   readonly subValue?: ReactNode;
   readonly tone?: PositionMetricTone;
+  /** A string array renders one value line per entry (e.g. one per token). */
   readonly value: ReactNode;
   readonly valueClassName?: string;
 }>;
@@ -27,6 +28,14 @@ const renderMetricSubValue = (subValue: ReactNode) => {
       {subValue}
     </Text>
   );
+};
+
+const toMetricValueLines = (value: ReactNode): ReadonlyArray<string> | null => {
+  if (typeof value === "string") return [value];
+  if (Array.isArray(value) && value.every((line) => typeof line === "string")) {
+    return value;
+  }
+  return null;
 };
 
 export const PositionDetailsPane = ({
@@ -94,6 +103,7 @@ export const PositionMetricCards = ({
   <Box className={styles.metricGrid}>
     {cards.map((card) => {
       const tone = card.tone ?? "default";
+      const valueLines = toMetricValueLines(card.value);
 
       return (
         <Box
@@ -114,19 +124,20 @@ export const PositionMetricCards = ({
             card.label
           )}
 
-          {typeof card.value === "string" ? (
-            <Text
-              className={clsx(
-                styles.metricValueText({ tone }),
-                card.valueClassName
-              )}
-              variant={{ weight: "bold" }}
-            >
-              {card.value}
-            </Text>
-          ) : (
-            card.value
-          )}
+          {valueLines
+            ? valueLines.map((line, index) => (
+                <Text
+                  className={clsx(
+                    styles.metricValueText({ tone }),
+                    card.valueClassName
+                  )}
+                  key={index}
+                  variant={{ weight: "bold" }}
+                >
+                  {line}
+                </Text>
+              ))
+            : card.value}
 
           {renderMetricSubValue(card.subValue)}
         </Box>

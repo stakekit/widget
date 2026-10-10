@@ -11,11 +11,14 @@ import {
   type AvailableRiskProjection,
   type CollateralDefinition,
   decodeChanges,
+  type OracleRiskAnchor,
   type RiskAssessment,
   type RiskChange,
   type RiskProjection,
   type RiskState,
   type RiskStateResult,
+  type RiskUnavailableReason,
+  type RiskValuation,
   unavailable,
 } from "./risk-model";
 
@@ -221,6 +224,166 @@ const applyChanges = ({
     }
   );
 
+type OracleRiskState = {
+  readonly collateralAmount: BigNumber;
+  readonly collateralEnabled: boolean;
+  readonly debtAmount: BigNumber;
+};
+
+type OracleRiskStateResult =
+  | { readonly state: OracleRiskState; readonly status: "available" }
+  | { readonly reason: RiskUnavailableReason; readonly status: "unavailable" };
+
+const applyOracleChange = ({
+  anchor,
+  change,
+  state,
+}: {
+  readonly anchor: OracleRiskAnchor;
+  readonly change: RiskChange;
+  readonly state: OracleRiskState;
+}): OracleRiskStateResult => {
+  switch (change.type) {
+    case "borrow":
+    case "repay": {
+      if (change.marketId !== anchor.marketId) {
+        return { reason: "unknownMarket", status: "unavailable" };
+      }
+
+      return {
+        state: {
+          ...state,
+          debtAmount:
+            change.type === "borrow"
+              ? state.debtAmount.plus(change.amount)
+              : BigNumber.maximum(state.debtAmount.minus(change.amount), 0),
+        },
+        status: "available",
+      };
+    }
+    case "supply":
+    case "withdraw": {
+      if (change.tokenId !== anchor.collateralTokenId) {
+        return { reason: "unknownCollateral", status: "unavailable" };
+      }
+
+      return {
+        state: {
+          ...state,
+          collateralAmount:
+            change.type === "supply"
+              ? state.collateralAmount.plus(change.amount)
+              : BigNumber.maximum(
+                  state.collateralAmount.minus(change.amount),
+                  0
+                ),
+        },
+        status: "available",
+      };
+    }
+    case "disableCollateral":
+    case "enableCollateral": {
+      if (change.tokenId !== anchor.collateralTokenId) {
+        return { reason: "unknownCollateral", status: "unavailable" };
+      }
+
+      return {
+        state: {
+          ...state,
+          collateralEnabled: change.type === "enableCollateral",
+        },
+        status: "available",
+      };
+    }
+  }
+};
+
+/** Collateral value in loan-token units at the anchored oracle price. */
+const oracleCollateralValue = ({
+  anchor,
+  state,
+}: {
+  readonly anchor: OracleRiskAnchor;
+  readonly state: OracleRiskState;
+}) =>
+  state.collateralEnabled
+    ? anchor.oraclePrice.multipliedBy(state.collateralAmount)
+    : exactZero();
+
+const assessOracle = ({
+  anchor,
+  changes,
+  displayState,
+}: {
+  readonly anchor: OracleRiskAnchor;
+  readonly changes: ReadonlyArray<RiskChange>;
+  readonly displayState: RiskState;
+}): RiskAssessment => {
+  const baseline: OracleRiskState = {
+    collateralAmount: anchor.collateralAmount,
+    collateralEnabled: true,
+    debtAmount: anchor.debtAmount,
+  };
+  const changed = changes.reduce<OracleRiskStateResult>(
+    (result, change) =>
+      result.status === "unavailable"
+        ? result
+        : applyOracleChange({ anchor, change, state: result.state }),
+    { state: baseline, status: "available" }
+  );
+  if (changed.status === "unavailable") {
+    return {
+      decision: "allow",
+      projection: unavailable({
+        reason: changed.reason,
+        totalCollateralUsd: null,
+        totalDebtUsd: null,
+      }),
+    };
+  }
+
+  const { debtAmount } = changed.state;
+  const collateralValue = oracleCollateralValue({
+    anchor,
+    state: changed.state,
+  });
+  const liquidationCapacity = collateralValue.multipliedBy(
+    anchor.liquidationThreshold
+  );
+  const liquidationCapacityUsd = liquidationCapacity.multipliedBy(
+    anchor.loanPriceUsd
+  );
+  const ltv = (() => {
+    if (collateralValue.isGreaterThan(0)) {
+      return debtAmount.dividedBy(collateralValue);
+    }
+
+    return debtAmount.isGreaterThan(0) ? exactDecimal(1) : exactZero();
+  })();
+  const projection: AvailableRiskProjection = {
+    borrowCapacityUsd: liquidationCapacityUsd,
+    healthFactor: debtAmount.isGreaterThan(0)
+      ? liquidationCapacity.dividedBy(debtAmount)
+      : null,
+    liquidationCapacityUsd,
+    liquidationThreshold: anchor.liquidationThreshold,
+    ltv,
+    maxLtv: anchor.liquidationThreshold,
+    status: "available",
+    totalCollateralUsd: projectExactRiskTotals(displayState).totalCollateralUsd,
+    totalDebtUsd: displayState.debtUsd,
+  };
+  const riskIncreasing =
+    debtAmount.isGreaterThan(baseline.debtAmount) ||
+    collateralValue.isLessThan(
+      oracleCollateralValue({ anchor, state: baseline })
+    );
+
+  return riskIncreasing && debtAmount.isGreaterThan(liquidationCapacity)
+    ? { decision: "block", projection, reason: "borrowCapacityExceeded" }
+    : { decision: "allow", projection };
+};
+
 export type RiskPositionContract = {
   readonly assess: (changes: ReadonlyArray<RiskChange>) => RiskAssessment;
   readonly current: RiskProjection;
@@ -233,12 +396,14 @@ export const makeRiskPosition = ({
   loanPrices,
   scope,
   state,
+  valuation,
 }: {
   readonly current: RiskProjection;
   readonly definitions: ReadonlyMap<TokenId, CollateralDefinition>;
   readonly loanPrices: ReadonlyMap<MarketId, BigNumber>;
   readonly scope: RiskPositionContract["scope"];
   readonly state: RiskState;
+  readonly valuation: RiskValuation;
 }): RiskPositionContract => ({
   assess: (changes) => {
     const decodedChanges = decodeChanges(changes);
@@ -277,15 +442,31 @@ export const makeRiskPosition = ({
       };
     }
 
+    if (valuation.type === "oracle") {
+      return assessOracle({
+        anchor: valuation.anchor,
+        changes,
+        displayState: changed.state,
+      });
+    }
+
     const baseline = projectExactRiskTotals(state);
     const projectedTotals = projectExactRiskTotals(changed.state);
-    const projection = projectState(changed.state);
+    // Without an oracle anchor, display prices only guard capacity; they
+    // never stand in for the protocol's projected LTV or health factor.
+    const projection =
+      valuation.type === "display"
+        ? projectState(changed.state)
+        : unavailable({
+            reason: "missingRiskAnchor",
+            totalCollateralUsd: projectedTotals.totalCollateralUsd,
+            totalDebtUsd: changed.state.debtUsd,
+          });
     const riskIncreasing =
       changed.state.debtUsd.isGreaterThan(state.debtUsd) ||
       projectedTotals.borrowCapacityUsd.isLessThan(baseline.borrowCapacityUsd);
 
-    return projection.status === "available" &&
-      riskIncreasing &&
+    return riskIncreasing &&
       changed.state.debtUsd.isGreaterThan(projectedTotals.borrowCapacityUsd)
       ? {
           decision: "block",
@@ -343,9 +524,7 @@ export const makeAuthoritativeAccountCurrent = ({
       ? liquidationCapacityUsd.dividedBy(snapshot.totalCollateralUsd)
       : null,
     ltv: snapshot.currentLtv,
-    maxLtv: snapshot.totalCollateralUsd.isGreaterThan(0)
-      ? borrowCapacityUsd.dividedBy(snapshot.totalCollateralUsd)
-      : null,
+    maxLtv: local.maxLtv,
     status: "available",
     totalCollateralUsd: snapshot.totalCollateralUsd,
     totalDebtUsd: snapshot.totalBorrowedUsd,
@@ -374,8 +553,6 @@ export const makeAuthoritativeMarketCurrent = ({
     liquidationCapacityUsd,
     liquidationThreshold: positionState.liquidationThreshold,
     ltv: positionState.currentLtv,
-    maxLtv: local.totalCollateralUsd.isGreaterThan(0)
-      ? borrowCapacityUsd.dividedBy(local.totalCollateralUsd)
-      : null,
+    maxLtv: positionState.liquidationThreshold,
   };
 };

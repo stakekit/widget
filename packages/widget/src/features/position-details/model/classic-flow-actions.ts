@@ -189,6 +189,12 @@ type PositionDetailsExitFacts = Readonly<{
 
 const preparePositionDetailsExitAction = (facts: PositionDetailsExitFacts) => {
   const outputToken = facts.receiveToken?.address;
+  if (
+    getYieldActionArg(facts.integration, "exit", "outputToken")?.required &&
+    !outputToken
+  ) {
+    return null;
+  }
 
   const optionArguments = (() => {
     const providerArgument = getYieldActionArg(

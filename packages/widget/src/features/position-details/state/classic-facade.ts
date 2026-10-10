@@ -8,7 +8,7 @@ import {
 import { isForceMaxAmount } from "../../../domain/earn/stake";
 import { getYieldActionArg } from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
-import type { Token } from "../../../domain/token/token";
+import { type TokenString, tokenString } from "../../../domain/token/token";
 import { formatUsd } from "../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../shared/lib/number-format";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
@@ -70,7 +70,6 @@ export const positionDetailsClassicViewAtom = Atom.family(
       const providers = get(
         yieldSummaryAtom(
           new YieldSummaryKey({
-            selectedProviderYieldId: null,
             validators:
               workflow.positionBalances?.type === "validators"
                 ? workflow.positionBalances.validators
@@ -101,7 +100,7 @@ export const positionDetailsClassicViewAtom = Atom.family(
                   )
                   .forEach((balance) => {
                     conversions.set(
-                      balance.token.symbol,
+                      tokenString(balance.token),
                       `1 ${balance.token.symbol} = ${defaultFormattedNumber(
                         exactDecimal(balance.shareAmount ?? 0).dividedBy(
                           exactDecimal(balance.amount ?? 0)
@@ -111,7 +110,7 @@ export const positionDetailsClassicViewAtom = Atom.family(
                   });
                 return conversions;
               },
-              new Map<Token["symbol"], string>()
+              new Map<TokenString, string>()
             )
           : null;
       const canUnstake = Boolean(integration?.status.exit);
@@ -126,6 +125,7 @@ export const positionDetailsClassicViewAtom = Atom.family(
           !personalizedRewardRate && Boolean(fallbackRewardRate),
         canChangeUnstakeAmount: workflow.canChangeUnstakeAmount,
         canUnstake,
+        exitBalance: workflow.exitBalance,
         exitReceiveTokenSelection: workflow.exitReceiveTokenSelection,
         hasMoreValidators: exitResources.hasMoreValidators,
         positionSource:
@@ -149,7 +149,6 @@ export const positionDetailsClassicViewAtom = Atom.family(
           workflow.positionBalancesResult.value === null,
         positionBalancesByType: workflow.positionBalancesByType,
         providersDetails: providers,
-        reducedStakedOrLiquidBalance: workflow.reducedStakedOrLiquidBalance,
         shareToAmountConversions,
         unstakeAmount: workflow.unstakeAmount,
         unstakeAmountError:
@@ -158,9 +157,9 @@ export const positionDetailsClassicViewAtom = Atom.family(
           AsyncResult.isInitial(workflow.yieldOpportunity) ||
           !canUnstake ||
           exitResources.kyc.isBlocking,
-        unstakeFormattedAmount: workflow.reducedStakedOrLiquidBalance
+        unstakeFormattedAmount: workflow.exitBalance
           ? formatUnstakeAmount({
-              ...workflow.reducedStakedOrLiquidBalance,
+              ...workflow.exitBalance,
               unstakeAmount: workflow.unstakeAmount,
             })
           : "",

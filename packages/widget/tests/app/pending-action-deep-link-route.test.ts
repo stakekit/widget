@@ -4,6 +4,7 @@ import {
   DeepLinkCoordinator,
   type DeepLinkRouteObservation,
 } from "../../src/app/runtime/deep-link-coordinator";
+import { EarnBalance } from "../../src/domain/earn/models";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
@@ -11,6 +12,7 @@ import {
   type NavigatingClassicTransactionFlowStart,
 } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
+import { findPendingActionDeepLinkTarget } from "../../src/features/earn/model/pending-action-deep-link";
 import {
   WidgetNavigationError,
   type WidgetNavigationOptions,
@@ -21,6 +23,7 @@ import {
   disconnectedNormalizedWalletState,
   type WalletState,
 } from "../../src/services/wallet/wallet-state";
+import { yieldApiValidatorFixture, yieldBalanceFixture } from "../fixtures";
 import { makeConnectedWalletState } from "../fixtures/wallet-state";
 import { makeTestWallet } from "../utils/services/wallet-service";
 import { makeTestNavigation } from "../utils/services/widget-navigation";
@@ -288,4 +291,76 @@ describe("DeepLinkCoordinator", () => {
       expect(navigate).not.toHaveBeenCalled();
     })
   );
+});
+
+describe("findPendingActionDeepLinkTarget", () => {
+  const claimAction = (passthrough: string) => ({
+    intent: "manage" as const,
+    passthrough,
+    type: "CLAIM_REWARDS" as const,
+  });
+  const validatorA = yieldApiValidatorFixture({ address: "validator-a" });
+  const validatorB = yieldApiValidatorFixture({ address: "validator-b" });
+  const balances = [
+    yieldBalanceFixture({
+      pendingActions: [claimAction("claim-a")],
+      type: "claimable",
+      validator: validatorA,
+    }),
+    yieldBalanceFixture({
+      pendingActions: [],
+      type: "active",
+      validator: validatorB,
+    }),
+    yieldBalanceFixture({
+      pendingActions: [claimAction("claim-b")],
+      type: "claimable",
+      validator: validatorB,
+    }),
+  ].map((balance) => Schema.decodeSync(EarnBalance)(balance));
+
+  it("targets the balance matching balanceId even when an earlier balance has the same action", () => {
+    const target = findPendingActionDeepLinkTarget({
+      balanceId: "validator::validator-b",
+      balances,
+      pendingActionType: "CLAIM_REWARDS",
+      validator: null,
+    });
+
+    expect(target?.pendingAction.passthrough).toBe("claim-b");
+    expect(target?.balance.validator?.address).toBe("validator-b");
+  });
+
+  it("returns no action for an unknown balanceId", () => {
+    expect(
+      findPendingActionDeepLinkTarget({
+        balanceId: "validator::unknown",
+        balances,
+        pendingActionType: "CLAIM_REWARDS",
+        validator: null,
+      })
+    ).toBeNull();
+  });
+
+  it("returns no action when the matching balance lacks the action type", () => {
+    expect(
+      findPendingActionDeepLinkTarget({
+        balanceId: "validator::validator-b",
+        balances,
+        pendingActionType: "UNLOCK_LOCKED",
+        validator: null,
+      })
+    ).toBeNull();
+  });
+
+  it("keeps the first balance with the action when balanceId is absent", () => {
+    expect(
+      findPendingActionDeepLinkTarget({
+        balanceId: null,
+        balances,
+        pendingActionType: "CLAIM_REWARDS",
+        validator: null,
+      })?.pendingAction.passthrough
+    ).toBe("claim-a");
+  });
 });

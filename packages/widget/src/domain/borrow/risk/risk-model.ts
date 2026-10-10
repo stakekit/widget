@@ -9,6 +9,7 @@ export type RiskUnavailableReason =
   | "invalidAmount"
   | "missingParameters"
   | "missingPositionState"
+  | "missingRiskAnchor"
   | "missingPrice"
   | "unknownCollateral"
   | "unknownMarket";
@@ -70,7 +71,7 @@ export type RiskAssessment =
     }
   | {
       readonly decision: "block";
-      readonly projection: AvailableRiskProjection;
+      readonly projection: RiskProjection;
       readonly reason: "borrowCapacityExceeded";
     };
 
@@ -90,6 +91,25 @@ export type RiskState = {
   readonly collateral: ReadonlyArray<CollateralExposure>;
   readonly debtUsd: BigNumber;
 };
+
+/**
+ * Isolated-market collateral valued in loan-token units at the oracle price
+ * implied by the current on-chain position snapshot.
+ */
+export type OracleRiskAnchor = {
+  readonly collateralAmount: BigNumber;
+  readonly collateralTokenId: TokenId;
+  readonly debtAmount: BigNumber;
+  readonly liquidationThreshold: BigNumber;
+  readonly loanPriceUsd: BigNumber;
+  readonly marketId: MarketId;
+  readonly oraclePrice: BigNumber;
+};
+
+export type RiskValuation =
+  | { readonly type: "display" }
+  | { readonly anchor: OracleRiskAnchor; readonly type: "oracle" }
+  | { readonly type: "unanchored" };
 
 export type RiskStateResult =
   | {

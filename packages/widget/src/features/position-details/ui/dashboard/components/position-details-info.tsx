@@ -69,8 +69,6 @@ export const PositionDetailsInfo = () => {
       personalizedRewardRate: positionDetails.personalizedRewardRate,
       positionBalancesByType,
       providersDetails: positionDetails.providersDetails ?? [],
-      reducedStakedOrLiquidBalance:
-        positionDetails.reducedStakedOrLiquidBalance,
       rewardsSummary: rewardsYieldId
         ? (rewardsSummaries?.[rewardsYieldId] ?? undefined)
         : undefined,

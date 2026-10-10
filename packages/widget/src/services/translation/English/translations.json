@@ -681,6 +681,8 @@
         "projected_health_factor": "Projected health factor",
         "estimated_fee": "Estimated fee",
         "estimated_fee_pending": "Shown in wallet",
+        "origination_fee": "Origination fee",
+        "debt_principal": "Debt principal",
         "confirmation_error_description": "We couldn't prepare your borrow transaction. Please try again.",
         "warning_title": "Review warning",
         "warnings": {

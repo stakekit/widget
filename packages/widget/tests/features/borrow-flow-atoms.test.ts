@@ -36,6 +36,9 @@ const intake: BorrowTransactionFlowIntake = {
   summary: {
     action: "borrow",
     borrowAmount: "1",
+    debtPrincipalAmount: "1",
+    loanTokenPriceUsd: "1",
+    originationFeeAmount: "0",
     existingCollateralUsd: "100",
     existingDebtUsd: "0",
     loanTokenSymbol: "USDC",

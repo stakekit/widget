@@ -3,15 +3,21 @@ import { Atom, AtomRegistry } from "effect/reactivity";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import type { EarnYield } from "../../src/domain/earn/models";
 import { TokenBalancesResponse } from "../../src/domain/finance/models";
-import { WalletAddress } from "../../src/domain/identity/identifiers";
+import {
+  ProviderOption,
+  WalletAddress,
+} from "../../src/domain/identity/identifiers";
 import { tokenString } from "../../src/domain/token/token";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
+  earnSelectionProviderOptionsViewAtom,
   earnSelectionStatusViewAtom,
   earnSelectionTokenOptionsViewAtom,
   earnSelectionViewAtom,
   earnSelectionYieldOptionsViewAtom,
+  selectEarnSelectionProviderAtom,
   selectEarnSelectionTokenAtom,
   setEarnSelectionAmountAtom,
 } from "../../src/features/earn/state/earn-selection";
@@ -22,7 +28,11 @@ import {
   LegacyResourceSource,
   YieldResourceSource,
 } from "../../src/services/api/resource-sources";
-import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
+import {
+  yieldApiProviderFixture,
+  yieldApiYieldDtoFixture,
+  yieldApiYieldFixture,
+} from "../fixtures";
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const firstYield = yieldApiYieldFixture();
@@ -57,6 +67,7 @@ const tokenCatalog = [firstYield, secondYield].map((yieldModel) => ({
 
 const makeRegistry = ({
   entry = classicEntry,
+  getProvider = () => Effect.succeedNone,
   listYields = () =>
     Effect.succeed({
       items: [firstYield, secondYield],
@@ -68,6 +79,7 @@ const makeRegistry = ({
   tokenOptions = tokenCatalog,
 }: {
   readonly entry?: EarnEntry;
+  readonly getProvider?: YieldResourceSource["Service"]["getProvider"];
   readonly listYields?: YieldResourceSource["Service"]["listYields"];
   readonly scanTokenBalances: LegacyResourceSource["Service"]["scanTokenBalances"];
   readonly tokenOptions?: typeof tokenCatalog;
@@ -92,7 +104,7 @@ const makeRegistry = ({
             YieldResourceSource,
             YieldResourceSource.of({
               getPositions: () => Effect.succeed({ errors: [], items: [] }),
-              getProvider: () => Effect.succeedNone,
+              getProvider,
               listYields,
             } as never)
           )
@@ -575,5 +587,140 @@ describe("Earn Selection", () => {
       unmount();
       registry.dispose();
     }
+  });
+
+  describe("provider options", () => {
+    const makeProviderOptionsYield = ({
+      options,
+      required,
+    }: {
+      readonly options: ReadonlyArray<string>;
+      readonly required: boolean;
+    }) => {
+      const base = yieldApiYieldDtoFixture();
+      return yieldApiYieldFixture({
+        mechanics: {
+          ...base.mechanics,
+          arguments: {
+            ...base.mechanics.arguments,
+            enter: {
+              fields: [
+                ...(base.mechanics.arguments?.enter?.fields ?? []),
+                {
+                  label: "Provider",
+                  name: "providerId",
+                  options: [...options],
+                  required,
+                  type: "string",
+                },
+              ],
+            },
+          },
+        },
+        token: firstYield.token,
+      });
+    };
+
+    const makeProviderOptionsRegistry = (
+      yieldModel: EarnYield,
+      getProvider?: YieldResourceSource["Service"]["getProvider"]
+    ) =>
+      makeRegistry({
+        getProvider,
+        listYields: () =>
+          Effect.succeed({
+            items: [yieldModel],
+            limit: 100,
+            offset: 0,
+            total: 1,
+          }),
+        scanTokenBalances: () =>
+          Effect.succeed(
+            Schema.decodeSync(TokenBalancesResponse)([
+              {
+                amount: "10",
+                availableYields: [yieldModel.id],
+                token: yieldModel.token,
+              },
+            ])
+          ),
+        tokenOptions: [
+          { availableYields: [yieldModel.id], token: yieldModel.token },
+        ],
+      }).registry;
+
+    it("defaults a single required option and shows it without a choice", async () => {
+      const registry = makeProviderOptionsRegistry(
+        makeProviderOptionsYield({ options: ["P2P"], required: true })
+      );
+      const unmountView = registry.mount(earnSelectionViewAtom);
+      const unmountOptions = registry.mount(
+        earnSelectionProviderOptionsViewAtom
+      );
+
+      try {
+        await vi.waitFor(() =>
+          expect(registry.get(earnSelectionViewAtom).form).toMatchObject({
+            providerOption: "P2P",
+          })
+        );
+        await vi.waitFor(() =>
+          expect(registry.get(earnSelectionProviderOptionsViewAtom)).toEqual({
+            canSelect: false,
+            items: [{ provider: null, value: "P2P" }],
+            selected: "P2P",
+          })
+        );
+      } finally {
+        unmountOptions();
+        unmountView();
+        registry.dispose();
+      }
+    });
+
+    it("lists optional options in advertised order with metadata when the provider is known", async () => {
+      const p2p = yieldApiProviderFixture({ id: "P2P", name: "P2P.org" });
+      const registry = makeProviderOptionsRegistry(
+        makeProviderOptionsYield({
+          options: ["unlisted-operator", "P2P"],
+          required: false,
+        }),
+        (providerId) =>
+          providerId === "P2P" ? Effect.succeedSome(p2p) : Effect.succeedNone
+      );
+      const unmountView = registry.mount(earnSelectionViewAtom);
+      const unmountOptions = registry.mount(
+        earnSelectionProviderOptionsViewAtom
+      );
+
+      try {
+        await vi.waitFor(() =>
+          expect(registry.get(earnSelectionProviderOptionsViewAtom)).toEqual({
+            canSelect: true,
+            items: [
+              { provider: null, value: "unlisted-operator" },
+              { provider: p2p, value: "P2P" },
+            ],
+            selected: null,
+          })
+        );
+
+        registry.set(
+          selectEarnSelectionProviderAtom,
+          ProviderOption.make("unlisted-operator")
+        );
+
+        expect(
+          registry.get(earnSelectionProviderOptionsViewAtom)
+        ).toMatchObject({ selected: "unlisted-operator" });
+        expect(registry.get(earnSelectionViewAtom).form).toMatchObject({
+          providerOption: "unlisted-operator",
+        });
+      } finally {
+        unmountOptions();
+        unmountView();
+        registry.dispose();
+      }
+    });
   });
 });

@@ -67,7 +67,7 @@ describe("Earn facade", () => {
         Atom.initialValue(earnSelectionViewAtom, {
           canSubmit: false,
           form: {
-            providerYieldId: null,
+            providerOption: null,
             stakeAmount: "0",
             tronResource: null,
             useMaxAmount: false,
