@@ -975,6 +975,8 @@
     "n_available_opps": "{{count}} opportunités disponibles",
     "yields_available_one": "{{token_name}} · {{count}} rendement disponible",
     "yields_available_other": "{{token_name}} · {{count}} rendements disponibles",
+    "yields_count_one": "{{count}} rendement",
+    "yields_count_other": "{{count}} rendements",
     "up_to_rate_type": "JUSQU'À {{rateType}}"
   },
   "error_modal": {

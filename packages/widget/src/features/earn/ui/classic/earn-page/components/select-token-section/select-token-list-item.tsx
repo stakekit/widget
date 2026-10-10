@@ -1,4 +1,5 @@
 import type { ComponentProps } from "react";
+import { useTranslation } from "react-i18next";
 import {
   SelectModalItem,
   SelectModalItemContainer,
@@ -6,13 +7,13 @@ import {
 import { TokenIcon } from "../../../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
-import type { EarnTokenOption } from "../../../../../state/earn-selection";
+import type { EarnTokenSelectionItem } from "../../../../../state/token-selection";
 import { selectItemText } from "../../styles.css";
 
 type Props = {
-  item: EarnTokenOption;
+  item: EarnTokenSelectionItem;
   isSelected: boolean;
-  onTokenBalanceSelect: (tokenBalance: EarnTokenOption) => void;
+  onTokenBalanceSelect: (tokenBalance: EarnTokenSelectionItem) => void;
 };
 
 export const SelectTokenListItem = ({
@@ -20,6 +21,8 @@ export const SelectTokenListItem = ({
   isSelected,
   onTokenBalanceSelect,
 }: Props) => {
+  const { t } = useTranslation();
+
   const _onItemClick: ComponentProps<typeof SelectModalItem>["onItemClick"] = ({
     closeModal,
   }) => {
@@ -53,6 +56,37 @@ export const SelectTokenListItem = ({
             <Text variant={{ type: "muted", weight: "normal", size: "small" }}>
               {item.token.name}
             </Text>
+          </Box>
+
+          <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="flex-end"
+            flexShrink={0}
+            gap="1"
+          >
+            {item.formattedAmount ? (
+              <>
+                <Text variant={{ weight: "normal" }}>
+                  {item.formattedAmount}
+                </Text>
+                {item.formattedUsd && (
+                  <Text
+                    variant={{ type: "muted", weight: "normal", size: "small" }}
+                  >
+                    {item.formattedUsd}
+                  </Text>
+                )}
+              </>
+            ) : (
+              <Text
+                variant={{ type: "muted", weight: "normal", size: "small" }}
+              >
+                {t("select_token.yields_count", {
+                  count: item.availableYields.length,
+                })}
+              </Text>
+            )}
           </Box>
         </Box>
       </SelectModalItem>

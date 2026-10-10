@@ -1,9 +1,12 @@
-import { Effect, Layer } from "effect";
+import BigNumber from "bignumber.js";
+import { Effect, Layer, Schema } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
+import { type PriceRequest, Prices } from "../../src/domain/health/models";
+import { TokenAddress } from "../../src/domain/identity/identifiers";
 import {
   type EarnTokenOption,
   earnSelectionStatusViewAtom,
@@ -26,6 +29,7 @@ import {
   earnYieldSelectionViewAtom,
   setEarnYieldSearchAtom,
 } from "../../src/features/earn/state/yield-selection";
+import { LegacyResourceSource } from "../../src/services/api/resource-sources";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 import { makeTestTracking } from "../utils/services/tracking-service";
 import { decodeValidator } from "../utils/validators";
@@ -40,6 +44,34 @@ const trackingLayer = (trackEvent: () => Effect.Effect<void>) =>
       )
     ) as never
   );
+
+const tokenSelectionInitialValues = (items: ReadonlyArray<EarnTokenOption>) => [
+  Atom.initialValue(earnSelectionStatusViewAtom, {
+    blockingFailure: false,
+    empty: {
+      categories: false,
+      tokens: false,
+      yields: false,
+      validators: false,
+    },
+    isFetching: false,
+    loading: {
+      wallet: false,
+      categories: false,
+      initialSelection: false,
+      tokens: false,
+      yields: false,
+      positions: false,
+      validators: false,
+    },
+  }),
+  Atom.initialValue(earnSelectionTokenOptionsViewAtom, {
+    canSelect: true,
+    items,
+    selected: items[0] ?? null,
+    waiting: false,
+  }),
+];
 
 describe("Earn facade", () => {
   it("tracks validator intent through the Earn Selection interface", async () => {
@@ -122,31 +154,7 @@ describe("Earn facade", () => {
     const registry = AtomRegistry.make({
       initialValues: [
         applicationRuntimeInitInitialValue(),
-        Atom.initialValue(earnSelectionStatusViewAtom, {
-          blockingFailure: false,
-          empty: {
-            categories: false,
-            tokens: false,
-            yields: false,
-            validators: false,
-          },
-          isFetching: false,
-          loading: {
-            wallet: false,
-            categories: false,
-            initialSelection: false,
-            tokens: false,
-            yields: false,
-            positions: false,
-            validators: false,
-          },
-        }),
-        Atom.initialValue(earnSelectionTokenOptionsViewAtom, {
-          canSelect: true,
-          items: [tokenOption],
-          selected: tokenOption,
-          waiting: false,
-        }),
+        ...tokenSelectionInitialValues([tokenOption]),
         Atom.initialValue(earnSelectionYieldOptionsViewAtom, {
           availableCategories: [],
           canSelect: true,
@@ -169,6 +177,82 @@ describe("Earn facade", () => {
         selectedYield,
       ]);
     } finally {
+      registry.dispose();
+    }
+  });
+
+  it("shows wallet amount and USD value for funded tokens only", async () => {
+    const selectedYield = yieldApiYieldFixture();
+    const option = (
+      symbol: string,
+      address: string,
+      amount: string | null
+    ): EarnTokenOption => ({
+      amount,
+      availableYields: [selectedYield.id],
+      source: amount === null ? "default" : "balance",
+      token: {
+        ...selectedYield.token,
+        address: Schema.decodeSync(TokenAddress)(address),
+        symbol,
+      },
+    });
+    const priced = option("PRC", "0xAAA", "1.234567891");
+    const unpriced = option("UNP", "0xbbb", "5");
+    const empty = option("EMP", "0xccc", "0");
+    const unscanned = option("DEF", "0xddd", null);
+    const getPrices = vi.fn((_request: PriceRequest) =>
+      Effect.succeed(
+        new Prices(
+          new Map([
+            [
+              `${priced.token.network}-0xaaa`,
+              { price: new BigNumber(100), price24H: undefined },
+            ],
+          ])
+        )
+      )
+    );
+    const registry = AtomRegistry.make({
+      initialValues: [
+        applicationRuntimeInitInitialValue(),
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.succeed(LegacyResourceSource, { getPrices } as never) as never
+        ),
+        ...tokenSelectionInitialValues([priced, unpriced, empty, unscanned]),
+      ],
+    });
+    const unmount = registry.mount(earnTokenSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(
+          registry
+            .get(earnTokenSelectionViewAtom)
+            .filtered.map(({ token, formattedAmount, formattedUsd }) => ({
+              symbol: token.symbol,
+              formattedAmount,
+              formattedUsd,
+            }))
+        ).toEqual([
+          {
+            symbol: "PRC",
+            formattedAmount: "1.234567",
+            formattedUsd: "$123.46",
+          },
+          { symbol: "UNP", formattedAmount: "5", formattedUsd: null },
+          { symbol: "EMP", formattedAmount: null, formattedUsd: null },
+          { symbol: "DEF", formattedAmount: null, formattedUsd: null },
+        ])
+      );
+      expect(
+        getPrices.mock.calls.flatMap(([request]) =>
+          request.tokenList.map((token) => token.symbol)
+        )
+      ).toEqual(["PRC", "UNP"]);
+    } finally {
+      unmount();
       registry.dispose();
     }
   });
