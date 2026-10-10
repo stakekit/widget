@@ -139,7 +139,9 @@ export const SelectValidatorList = ({
                           : "selectValidatorMultiDefaultBackground"
                       }
                       hw="8"
-                      as="button"
+                      as="span"
+                      aria-hidden
+                      flexShrink={0}
                       borderRadius="full"
                       marginRight="2"
                       display="flex"

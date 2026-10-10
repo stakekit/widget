@@ -20,7 +20,6 @@ const loanTokenAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 const collateralTokenAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 
 const integration = Schema.decodeSync(Integration)({
-  actions: [],
   id: "aave-borrow",
   metadata: {
     description: "Aave lending and borrowing",
@@ -219,6 +218,9 @@ describe("Borrow action preparation", () => {
       summary: {
         action: "borrowAndSupply",
         borrowAmount: "25",
+        debtPrincipalAmount: "25",
+        originationFeeAmount: "0",
+        loanTokenPriceUsd: "1",
         collateralAmount: "1",
         collateralTokenSymbol: "WETH",
         existingCollateralUsd: "1000",
@@ -351,6 +353,119 @@ describe("Borrow action preparation", () => {
           collateralAmount: "1.23",
           collateralFeeAmount: "0.06",
           effectiveCollateralAmount: "1.17",
+        },
+      },
+    });
+  });
+
+  it("projects BlueBundle debt at the gross principal and supplies full collateral", () => {
+    const blueBundleMarket = {
+      ...market,
+      blueBundleOriginationFeeBps: 25,
+      originationFeeBps: 25,
+      supplyCollateralFeeBps: 500,
+    };
+
+    const result = prepareBorrowAction({
+      _tag: "OpenPositionDraft",
+      address,
+      borrowAmount: new BigNumber(1),
+      collateralAmount: new BigNumber(1),
+      collateralToken: blueBundleMarket.collateralTokens[0]!,
+      integrations: [integration],
+      market: blueBundleMarket,
+      positions,
+      tokenBalances,
+    });
+
+    // Net 1 USDC = 1_000_000 base units at 25 bps:
+    // T = 2_500, G = 1_002_500, R = floor(2_500e18 / 1_002_500), F = 2_499.
+    // Debt: 400 + 1.0025 = 401.0025 USD; collateral: 1000 + 1 WETH * 2000 = 3000.
+    expect(result).toMatchObject({
+      _tag: "Ready",
+      projection: {
+        financials: {
+          projectedCollateralUsd: new BigNumber(3000),
+          projectedDebtUsd: new BigNumber("401.0025"),
+        },
+      },
+      review: {
+        command: { args: { amount: "1", collateralAmount: "1" } },
+        summary: {
+          action: "borrowAndSupply",
+          borrowAmount: "1",
+          collateralFeeAmount: "0",
+          debtPrincipalAmount: "1.0025",
+          effectiveCollateralAmount: "1",
+          originationFeeAmount: "0.002499",
+          projectedDebtUsd: "401.0025",
+          projectedLtv: "0.1336675",
+        },
+      },
+    });
+
+    const borrowOnly = prepareBorrowAction({
+      _tag: "OpenPositionDraft",
+      address,
+      borrowAmount: new BigNumber(1),
+      collateralAmount: new BigNumber(0),
+      collateralToken: blueBundleMarket.collateralTokens[0]!,
+      integrations: [integration],
+      market: blueBundleMarket,
+      positions,
+      tokenBalances,
+    });
+
+    expect(borrowOnly).toMatchObject({
+      _tag: "Ready",
+      review: {
+        command: { args: { amount: "1" } },
+        summary: {
+          action: "borrow",
+          debtPrincipalAmount: "1.0025",
+          originationFeeAmount: "0.002499",
+          projectedDebtUsd: "401.0025",
+        },
+      },
+    });
+  });
+
+  it("projects allocator debt at the ceiling gross-up and deducts the collateral fee", () => {
+    const allocatorMarket = {
+      ...market,
+      originationFeeBps: 50,
+      originationFeeWrapperAddress:
+        "0x3C778911B9e36eA8CE53dBF211a203e3300939b6",
+      supplyCollateralFeeBps: 500,
+    };
+
+    const result = prepareBorrowAction({
+      _tag: "OpenPositionDraft",
+      address,
+      borrowAmount: new BigNumber(1),
+      collateralAmount: new BigNumber(1),
+      collateralToken: allocatorMarket.collateralTokens[0]!,
+      integrations: [integration],
+      market: allocatorMarket,
+      positions,
+      tokenBalances,
+    });
+
+    // Net 1 USDC = 1_000_000 base units at 50 bps:
+    // G = ceil(1_000_000 * 10_000 / 9_950) = 1_005_026, F = floor(G * 50 / 10_000) = 5_025.
+    // Debt: 400 + 1.005026 USD; collateral: 1000 + 0.95 WETH * 2000 = 2900.
+    expect(result).toMatchObject({
+      _tag: "Ready",
+      review: {
+        command: { args: { amount: "1", collateralAmount: "1" } },
+        summary: {
+          borrowAmount: "1",
+          collateralFeeAmount: "0.05",
+          debtPrincipalAmount: "1.005026",
+          effectiveCollateralAmount: "0.95",
+          originationFeeAmount: "0.005025",
+          projectedCollateralUsd: "2900",
+          projectedDebtUsd: "401.005026",
         },
       },
     });
@@ -494,6 +609,34 @@ describe("Borrow action preparation", () => {
     expect(result).toMatchObject({
       _tag: "Ready",
       warnings: ["ProjectedDebtBelowMarketMinimum"],
+    });
+  });
+
+  it("compares the gross debt principal with the market minimum", () => {
+    const minimumMarket = {
+      ...market,
+      minLoan: new BigNumber(10),
+      originationFeeBps: 50,
+      originationFeeWrapperAddress:
+        "0x3C778911B9e36eA8CE53dBF211a203e3300939b6",
+    };
+    // Net 9.99 USDC grosses up to ceil(9_990_000 * 10_000 / 9_950) = ceil(10_040_201.005) = 10_040_202 base units.
+    const result = prepareBorrowAction({
+      _tag: "OpenPositionDraft",
+      address,
+      borrowAmount: new BigNumber("9.99"),
+      collateralAmount: new BigNumber(1),
+      collateralToken: minimumMarket.collateralTokens[0]!,
+      integrations: [integration],
+      market: minimumMarket,
+      positions: emptyBorrowPositions,
+      tokenBalances,
+    });
+
+    expect(result).toMatchObject({
+      _tag: "Ready",
+      review: { summary: { debtPrincipalAmount: "10.040202" } },
+      warnings: [],
     });
   });
 

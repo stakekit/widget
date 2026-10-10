@@ -1,4 +1,4 @@
-import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   isMountRevealSettled,

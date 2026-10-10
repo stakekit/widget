@@ -1,6 +1,6 @@
 import type BigNumber from "bignumber.js";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/models";
 import { exactZero } from "../../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../../domain/finance/price";

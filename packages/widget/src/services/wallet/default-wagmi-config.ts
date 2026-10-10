@@ -1,9 +1,9 @@
-import type { Chain as RainbowkitChain } from "@stakekit/rainbowkit";
 import { createClient } from "viem";
 import { createConfig, http } from "wagmi";
 import { mainnet } from "wagmi/chains";
+import type { Chain as WalletChain } from "./wallet-descriptors";
 
-export const omitEnsUniversalResolver = <T extends RainbowkitChain>(
+export const omitEnsUniversalResolver = <T extends WalletChain>(
   chain: T
 ): T => {
   if (!chain.contracts?.ensUniversalResolver) return chain;

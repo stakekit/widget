@@ -1,7 +1,6 @@
-import "@stakekit/rainbowkit/styles.css";
 import "./shared/styles/theme/global.css";
 import { useAtomValue } from "@effect/atom-react";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { type PropsWithChildren, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router/dom";

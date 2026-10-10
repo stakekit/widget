@@ -1,5 +1,5 @@
 import { Option, Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { filterValidators } from "../../../../../domain/earn/yield";
 import { YieldId } from "../../../../../domain/identity/identifiers";
 import { tokenString } from "../../../../../domain/token/token";
@@ -311,7 +311,6 @@ export const resolveEarnView = ({
   const selectedValidators = resolveValidators({
     complete: validatorInput._tag === "enabled" && validatorInput.complete,
     entry,
-    network: selectedYield.token.network,
     selectedValidators: selectedValidatorIntent,
     validatorOptions,
   });

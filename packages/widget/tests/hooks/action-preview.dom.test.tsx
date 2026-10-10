@@ -1,19 +1,21 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Effect, Layer, Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { HttpResponse, http } from "msw";
-import { type PropsWithChildren, useEffect } from "react";
+import type { PropsWithChildren } from "react";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { ActionCommand } from "../../src/domain/action/models";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
-import { startClassicTransactionFlowAtom } from "../../src/features/classic-transaction-flow/index";
-import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
-import { currentClassicFlowSessionAtom } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow";
 import {
-  classicFlowSessionRootAtomFamily,
+  type ClassicTransactionFlowIntake,
+  makeClassicFlowSession,
+} from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import {
+  type ClassicFlowSessionModule,
   makeClassicFlowExecutionScope,
   makeClassicFlowReviewScope,
+  makeClassicFlowSessionModule,
 } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow-session";
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import {
@@ -106,53 +108,50 @@ const settings = getTestWidgetConfig({
   yieldsApiUrl: yieldApiUrl,
 });
 
-const reviewScopeAtomFamily = Atom.family(
-  (rootAtom: ReturnType<typeof classicFlowSessionRootAtomFamily>) =>
-    (() => {
-      let reviewAtom: ReturnType<typeof makeClassicFlowReviewScope> | undefined;
+// The route owns one Session module per mount; each module's Review and
+// Execution scopes are created once and live as long as it does.
+const reviewScopeAtomFamily = Atom.family((session: ClassicFlowSessionModule) =>
+  makeClassicFlowReviewScope(session)
+);
+const executionScopeAtomFamily = Atom.family(
+  (session: ClassicFlowSessionModule) => makeClassicFlowExecutionScope(session)
+);
 
-      return Atom.make((get) => {
-        const flow = get(rootAtom);
-        reviewAtom ??= makeClassicFlowReviewScope(flow);
-        return get(reviewAtom).facade;
-      });
-    })()
-);
-const sessionReviewFacadeAtom = Atom.make((get) => {
-  const session = get(currentClassicFlowSessionAtom);
-  return session
-    ? get(reviewScopeAtomFamily(classicFlowSessionRootAtomFamily(session)))
-    : null;
-});
-const sessionReviewViewAtom = Atom.make((get) => {
-  const review = get(sessionReviewFacadeAtom);
-  return review ? get(review.reviewViewAtom) : null;
-});
-const sessionKycGateAtom = Atom.make((get) => {
-  return get(sessionReviewViewAtom)?.kyc ?? null;
-});
-const refreshSessionKycAtom = Atom.fnSync(
-  (_input: undefined, get) => {
-    const review = get(sessionReviewFacadeAtom);
-    if (review) get.set(review.refreshKycAtom, undefined);
-  },
-  { initialValue: undefined }
-);
-const confirmSessionAtom = Atom.fnSync(
-  (_input: undefined, get) => {
-    const review = get(sessionReviewFacadeAtom);
-    if (review) get.set(review.confirmAtom, undefined);
-  },
-  { initialValue: undefined }
-);
-const sessionAttachedActionAtom = Atom.make((get) => {
-  const session = get(currentClassicFlowSessionAtom);
-  if (!session) return null;
+/** Mounts an Earn Flow Session for `intake`, as the Classic flow route does. */
+const makeEarnSessionAtoms = (
+  intake: Extract<ClassicTransactionFlowIntake, { readonly _tag: "Enter" }>
+) => {
+  const sessionAtom = makeClassicFlowSessionModule(
+    makeClassicFlowSession({ intake, mount: { _tag: "Earn" } }, walletScope)
+  );
+  const reviewFacadeAtom = Atom.make(
+    (get) => get(reviewScopeAtomFamily(get(sessionAtom))).facade
+  );
+  const reviewViewAtom = Atom.make((get) =>
+    get(get(reviewFacadeAtom).reviewViewAtom)
+  );
 
-  const flow = get(classicFlowSessionRootAtomFamily(session));
-  const execution = get(makeClassicFlowExecutionScope(flow));
-  return AsyncResult.getOrElse(get(execution.availabilityAtom), () => null);
-});
+  return {
+    attachedActionAtom: Atom.make((get) => {
+      const execution = get(executionScopeAtomFamily(get(sessionAtom)));
+      return AsyncResult.getOrElse(get(execution.availabilityAtom), () => null);
+    }),
+    confirmAtom: Atom.fnSync(
+      (_input: undefined, get) => {
+        get.set(get(reviewFacadeAtom).confirmAtom, undefined);
+      },
+      { initialValue: undefined }
+    ),
+    kycGateAtom: Atom.make((get) => get(reviewViewAtom).kyc),
+    refreshKycAtom: Atom.fnSync(
+      (_input: undefined, get) => {
+        get.set(get(reviewFacadeAtom).refreshKycAtom, undefined);
+      },
+      { initialValue: undefined }
+    ),
+    reviewViewAtom,
+  } as const;
+};
 
 const ConnectedWrapper = ({ children }: PropsWithChildren) => (
   <TestAtomRuntimeProvider
@@ -210,28 +209,18 @@ describe("action preview", () => {
       )
     );
 
+    const session = makeEarnSessionAtoms({
+      _tag: "Enter",
+      gasFeeToken: stake.mechanics.gasFeeToken,
+      providersDetails: [],
+      request: command,
+      selectedStake: stake,
+      selectedToken: stake.token,
+      selectedValidators: new Map(),
+      walletScope,
+    });
     const { result } = await renderHook(
-      () => {
-        const startFlow = useAtomSet(startClassicTransactionFlowAtom);
-
-        useEffect(() => {
-          startFlow({
-            intake: {
-              _tag: "Enter",
-              gasFeeToken: stake.mechanics.gasFeeToken,
-              providersDetails: [],
-              request: command,
-              selectedStake: stake,
-              selectedToken: stake.token,
-              selectedValidators: new Map(),
-              walletScope,
-            } satisfies ClassicTransactionFlowIntake,
-            mount: { _tag: "Earn" },
-          });
-        }, [startFlow]);
-
-        return useAtomValue(sessionReviewViewAtom);
-      },
+      () => useAtomValue(session.reviewViewAtom),
       { wrapper: Wrapper }
     );
 
@@ -269,37 +258,24 @@ describe("action preview", () => {
       })
     );
 
+    const session = makeEarnSessionAtoms({
+      _tag: "Enter",
+      gasFeeToken: kycRequiredStake.mechanics.gasFeeToken,
+      providersDetails: [],
+      request: command,
+      selectedStake: kycRequiredStake,
+      selectedToken: kycRequiredStake.token,
+      selectedValidators: new Map(),
+      walletScope,
+    });
     const { act, result } = await renderHook(
-      () => {
-        const startFlow = useAtomSet(startClassicTransactionFlowAtom);
-
-        useEffect(() => {
-          startFlow({
-            intake: {
-              _tag: "Enter",
-              gasFeeToken: kycRequiredStake.mechanics.gasFeeToken,
-              providersDetails: [],
-              request: command,
-              selectedStake: kycRequiredStake,
-              selectedToken: kycRequiredStake.token,
-              selectedValidators: new Map(),
-              walletScope: new WalletScopeKey({
-                address: command.address,
-                network: "ethereum",
-              }),
-            },
-            mount: { _tag: "Earn" },
-          });
-        }, [startFlow]);
-
-        return {
-          kyc: useAtomValue(sessionKycGateAtom),
-          review: useAtomValue(sessionReviewViewAtom),
-          refreshKyc: useAtomSet(refreshSessionKycAtom),
-          confirmFlow: useAtomSet(confirmSessionAtom),
-          attachedAction: useAtomValue(sessionAttachedActionAtom),
-        };
-      },
+      () => ({
+        kyc: useAtomValue(session.kycGateAtom),
+        review: useAtomValue(session.reviewViewAtom),
+        refreshKyc: useAtomSet(session.refreshKycAtom),
+        confirmFlow: useAtomSet(session.confirmAtom),
+        attachedAction: useAtomValue(session.attachedActionAtom),
+      }),
       { wrapper: ConnectedWrapper }
     );
 

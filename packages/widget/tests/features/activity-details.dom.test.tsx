@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import type { ActivityActionItem } from "../../src/features/activity/model/activity-action";
 import { ActivityDetailsPage } from "../../src/features/activity/ui/activity-details/activity-details.page";
+import { ActivityDetailsFailure } from "../../src/features/activity/ui/activity-details/activity-details-status";
 import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
 import {
   yieldApiActionFixture,
@@ -118,5 +119,21 @@ describe("Activity details receipt", () => {
       "This action cannot continue because its yield details are unavailable."
     );
     expect(app.container.textContent).not.toContain("Continue");
+  });
+
+  it("shows a retryable failure when the action cannot be loaded", async () => {
+    const onRetry = vi.fn();
+    const app = await render(
+      <I18nextProvider i18n={i18n}>
+        <ActivityDetailsFailure onRetry={onRetry} />
+      </I18nextProvider>
+    );
+    const retry = Array.from(app.container.querySelectorAll("button")).find(
+      (button) => button.textContent === "Try Again"
+    );
+
+    expect(app.container.textContent).toContain("Something went wrong");
+    await act(async () => retry?.click());
+    expect(onRetry).toHaveBeenCalledOnce();
   });
 });

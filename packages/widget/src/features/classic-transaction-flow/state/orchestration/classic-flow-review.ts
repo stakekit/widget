@@ -82,8 +82,7 @@ type ClassicFlowReviewOutcome =
   | Readonly<{ readonly _tag: "RejectedExpired" }>
   | Readonly<{ readonly _tag: "RejectedNotReady" }>
   | Readonly<{ readonly _tag: "RejectedPreview" }>
-  | Readonly<{ readonly _tag: "RejectedSession" }>
-  | Readonly<{ readonly _tag: "RejectedStale" }>;
+  | Readonly<{ readonly _tag: "RejectedSession" }>;
 
 export type ClassicFlowReviewHandle = Readonly<{
   readonly confirm: () => Effect.Effect<
@@ -101,8 +100,7 @@ type PromoteToExecution = (
   | Readonly<{ readonly _tag: "Promoted" }>
   | Readonly<{ readonly _tag: "RejectedAlreadyReserved" }>
   | Readonly<{ readonly _tag: "RejectedBlocked" }>
-  | Readonly<{ readonly _tag: "RejectedExpired" }>
-  | Readonly<{ readonly _tag: "RejectedStale" }>,
+  | Readonly<{ readonly _tag: "RejectedExpired" }>,
   WidgetNavigationError
 >;
 
@@ -150,12 +148,10 @@ export const makeClassicFlowReviewFactory = Effect.fn(
   return Effect.fn("makeClassicFlowReview")(function* ({
     eligibilityStates,
     intake,
-    isCurrent,
     promoteToExecution,
   }: {
     readonly eligibilityStates: Stream.Stream<ClassicFlowReviewEligibility>;
     readonly intake: ClassicTransactionFlowIntake;
-    readonly isCurrent: Effect.Effect<boolean>;
     readonly promoteToExecution: PromoteToExecution;
   }): Effect.fn.Return<ClassicFlowReviewHandle, never, Scope.Scope> {
     const eligibilityRef = yield* Ref.make<ClassicFlowReviewEligibility>({
@@ -237,9 +233,6 @@ export const makeClassicFlowReviewFactory = Effect.fn(
     );
 
     const confirmOpen = Effect.fn("ClassicFlowReview.confirm")(function* () {
-      if (!(yield* isCurrent)) {
-        return { _tag: "RejectedStale" } as const;
-      }
       const eligibility = yield* Ref.get(eligibilityRef);
       if (eligibility.kycBlocking) {
         return { _tag: "RejectedBlocked" } as const;
@@ -286,8 +279,6 @@ export const makeClassicFlowReviewFactory = Effect.fn(
       switch (promotion._tag) {
         case "Promoted":
           return { _tag: "Confirmed" } as const;
-        case "RejectedStale":
-          return { _tag: "RejectedStale" } as const;
         case "RejectedAlreadyReserved":
           return { _tag: "RejectedSession" } as const;
         case "RejectedBlocked":

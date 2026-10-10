@@ -15,7 +15,7 @@ import {
 } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
-import { rkMockWallet } from "../../utils/mock-connector";
+import { mockWalletListFactory } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
 import { waitForMs } from "../../utils/wait";
 
@@ -291,16 +291,19 @@ export const setup = async (
         },
       ]);
     }),
-    http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-      await mockDelay();
-      return HttpResponse.json([
-        {
-          token,
-          amount: "1000251.8279906842",
-          availableYields: [yieldId],
-        },
-      ]);
-    }),
+    http.get(
+      legacyApiRoute("/v2/networks/:network/addresses/:address/tokens"),
+      async () => {
+        await mockDelay();
+        return HttpResponse.json([
+          {
+            token,
+            amount: "1000251.8279906842",
+            availableYields: [yieldId],
+          },
+        ]);
+      }
+    ),
     http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
       await mockDelay();
       return HttpResponse.json([
@@ -375,7 +378,10 @@ export const setup = async (
     }
   });
 
-  const customConnectors = rkMockWallet({ accounts: [account], requestFn });
+  const customConnectors = mockWalletListFactory({
+    accounts: [account],
+    requestFn,
+  });
 
   return {
     account,

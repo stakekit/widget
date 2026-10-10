@@ -42,9 +42,6 @@ const StandaloneApp = () => {
     ...(import.meta.env.VITE_ANALYTICS_LOGGING === "true" && {
       tracking: { trackEvent: console.log, trackPageView: console.log },
     }),
-    ...(import.meta.env.VITE_FORCE_WALLET_CONNECT_ONLY === "true" && {
-      forceWalletConnectOnly: true,
-    }),
   };
 
   return (

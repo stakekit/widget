@@ -1,10 +1,10 @@
 import { useAtomSet } from "@effect/atom-react";
-import { useConnectModal } from "@stakekit/rainbowkit";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../../../shared/ui/primitives/button";
 import { useTrackEvent } from "../../../tracking/index";
 import { useSKWallet } from "../../react/use-wallet";
+import { setWalletConnectModalOpenAtom } from "../../state/wallet-modal";
 import { addLedgerAccountAtom } from "../../state/workflows";
 
 export const ConnectButton = (props: ComponentProps<typeof Button>) => {
@@ -15,8 +15,7 @@ export const ConnectButton = (props: ComponentProps<typeof Button>) => {
     wallet?.isLedgerLiveAccountPlaceholder ?? false;
   const chain = wallet?.chain;
   const addLedgerAccount = useAtomSet(addLedgerAccountAtom);
-
-  const { openConnectModal } = useConnectModal();
+  const setConnectOpen = useAtomSet(setWalletConnectModalOpenAtom);
 
   const trackEvent = useTrackEvent();
 
@@ -27,7 +26,7 @@ export const ConnectButton = (props: ComponentProps<typeof Button>) => {
     }
 
     trackEvent("connectWalletClicked");
-    openConnectModal?.();
+    setConnectOpen(true);
   };
 
   return (

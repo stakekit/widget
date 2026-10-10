@@ -343,7 +343,8 @@ export type SKBorrowTxMeta = {
     | "WITHDRAW"
     | "ENABLE_COLLATERAL"
     | "DISABLE_COLLATERAL"
-    | "BUNDLE";
+    | "BUNDLE"
+    | "WRAP";
 };
 
 export type SKBorrowWallet = SKWallet & {
@@ -466,7 +467,6 @@ type SettingsPropsBase = {
   theme?: SKTheme;
   tracking?: TrackingConfig;
   onMountAnimationComplete?: () => void;
-  forceWalletConnectOnly?: boolean;
   hideNetworkLogo?: boolean;
   disableInitLayoutAnimation?: boolean;
   disableResizingInputFontSize?: boolean;

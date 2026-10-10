@@ -5,9 +5,18 @@ import { useHeader } from "../../header/use-header";
 
 const BackButtonContext = createContext<boolean>(false);
 
-export const BackButtonProvider = ({ children }: PropsWithChildren) => {
+/**
+ * Shows nested `BackButton`s while `enabled`. Toggle `enabled` instead of
+ * conditionally wrapping, so the subtree below keeps its identity.
+ */
+export const BackButtonProvider = ({
+  children,
+  enabled = true,
+}: PropsWithChildren<{ readonly enabled?: boolean }>) => {
   return (
-    <BackButtonContext.Provider value>{children}</BackButtonContext.Provider>
+    <BackButtonContext.Provider value={enabled}>
+      {children}
+    </BackButtonContext.Provider>
   );
 };
 

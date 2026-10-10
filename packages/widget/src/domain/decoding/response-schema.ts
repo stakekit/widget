@@ -6,11 +6,23 @@ import {
   Schema,
   SchemaGetter,
 } from "effect";
-import { logDecodeRejection } from "./decode-diagnostics";
+import {
+  logDecodeFieldRejection,
+  logDecodeRejection,
+} from "./decode-diagnostics";
 
 type CollectionResponseSchemaOptions = {
   readonly operation: string;
   readonly identifier?: Schema.ConstraintDecoder<PropertyKey>;
+};
+
+type ArrayResponseSchemaOptions = CollectionResponseSchemaOptions & {
+  /**
+   * Entries outside the widget's supported set are expected and skipped
+   * without a rejection diagnostic. Supported entries that fail to decode are
+   * still rejected and reported.
+   */
+  readonly isSupported?: (input: unknown) => boolean;
 };
 
 const decodeIdentifier = (
@@ -24,20 +36,23 @@ const decodeIdentifier = (
 };
 
 /**
- * A response schema that rejects invalid top-level array entries independently.
- * The complete item schema is applied once per entry, so nested failures reject
- * their parent entry instead of producing partially decoded models.
+ * A response schema that rejects invalid array entries independently, at any
+ * depth of a response. The complete item schema is applied once per entry, so
+ * nested failures reject their parent entry instead of producing partially
+ * decoded models.
  */
-export const TolerantTopLevelArray = <
-  Item extends Schema.ConstraintDecoder<unknown>,
->(
+export const TolerantArray = <Item extends Schema.ConstraintDecoder<unknown>>(
   item: Item,
-  options: CollectionResponseSchemaOptions
+  options: ArrayResponseSchemaOptions
 ) =>
   Schema.Array(Schema.Unknown).pipe(
     Schema.decodeTo(Schema.Array(Schema.toType(item)), {
       decode: SchemaGetter.transformEffect((inputs) =>
         Effect.forEach(inputs, (input, index) => {
+          if (options.isSupported && !options.isSupported(input)) {
+            return Effect.succeedNone;
+          }
+
           const result = Schema.decodeUnknownResult(item)(input);
 
           return Result.match(result, {
@@ -53,16 +68,16 @@ export const TolerantTopLevelArray = <
         }).pipe(Effect.map(EArray.getSomes))
       ),
       encode: SchemaGetter.forbidden(
-        () => "Cannot encode a tolerant top-level array response"
+        () => "Cannot encode a tolerant array response"
       ),
     })
   );
 
 /**
- * A response schema that rejects invalid top-level key-value entries
- * independently. Both the key and the complete value must decode successfully.
+ * A response schema that rejects invalid key-value entries independently.
+ * Both the key and the complete value must decode successfully.
  */
-export const TolerantTopLevelRecord = <
+export const TolerantRecord = <
   Key extends Schema.Record.Key & Schema.ConstraintDecoder<PropertyKey>,
   Value extends Schema.ConstraintDecoder<unknown>,
 >(
@@ -109,8 +124,37 @@ export const TolerantTopLevelRecord = <
         }).pipe(Effect.map(EArray.getSomes), Effect.map(Object.fromEntries))
       ),
       encode: SchemaGetter.forbidden(
-        () => "Cannot encode a tolerant top-level record response"
+        () => "Cannot encode a tolerant record response"
       ),
     })
   );
 };
+
+/**
+ * A nullable response field that becomes `null` when its value fails to
+ * decode, for optional sub-models whose absence the widget already handles.
+ */
+export const TolerantNullOr = <Value extends Schema.ConstraintDecoder<unknown>>(
+  value: Value,
+  options: { readonly operation: string; readonly field: string }
+) =>
+  Schema.Unknown.pipe(
+    Schema.decodeTo(Schema.NullOr(Schema.toType(value)), {
+      decode: SchemaGetter.transformEffect((input) => {
+        if (input === null) return Effect.succeed(null);
+
+        return Result.match(Schema.decodeResult(value)(input), {
+          onFailure: (failure) =>
+            logDecodeFieldRejection({
+              operation: options.operation,
+              field: options.field,
+              issue: failure.message,
+            }).pipe(Effect.as(null)),
+          onSuccess: Effect.succeed,
+        });
+      }),
+      encode: SchemaGetter.forbidden(
+        () => "Cannot encode a tolerant nullable response field"
+      ),
+    })
+  );

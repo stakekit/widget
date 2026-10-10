@@ -20,6 +20,7 @@ import { WalletConnectionError } from "../../../src/services/wallet/wallet-error
 import { WalletModal } from "../../../src/services/wallet/wallet-modal";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
 import type { WalletCoreState } from "../../../src/services/wallet/wallet-state";
+import { stubWalletModal } from "../../utils/wallet-modal";
 import { makeWalletTestController } from "./wallet-test-controller";
 
 const connector = {
@@ -69,11 +70,8 @@ const makeLogoutLayer = ({
     queryParamsInitChainId: undefined,
     wagmiConfig,
   });
-  const modal = WalletModal.of({
+  const modal = stubWalletModal({
     closeChain: close,
-    install: () => Effect.void,
-    openConnect: Effect.void,
-    uninstall: () => Effect.void,
   });
 
   return WalletService.layer.pipe(
@@ -174,8 +172,12 @@ describe("WalletService logout", () => {
     Effect.gen(function* () {
       const started = yield* Deferred.make<void>();
       const release = yield* Deferred.make<void>();
+      // Yield before signalling: Effect 4.0.2's cachedWithTTL starts the shared
+      // run synchronously, so a caller resumed re-entrantly from inside that
+      // start would join a run whose fiber is not yet assigned.
       const disconnect = vi.fn(() =>
-        Deferred.succeed(started, undefined).pipe(
+        Effect.yieldNow.pipe(
+          Effect.andThen(Deferred.succeed(started, undefined)),
           Effect.andThen(Deferred.await(release))
         )
       );

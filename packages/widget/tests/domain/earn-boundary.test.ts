@@ -2,7 +2,6 @@ import { describe, expect, it } from "@effect/vitest";
 import { Effect, Logger, Schema } from "effect";
 import {
   EarnLegacyTokenOptionsResponse,
-  EarnPositionsResponse,
   EarnProvider,
   EarnValidatorPage,
   EarnYield,
@@ -219,42 +218,5 @@ describe("Earn API boundary policies", () => {
 
       expect(result.items?.map((item) => item.key)).toEqual(["validator-1:7"]);
     })
-  );
-
-  it.effect(
-    "rejects a complete position when a nested balance is invalid",
-    () =>
-      Effect.gen(function* () {
-        const result = yield* decode(EarnPositionsResponse, {
-          errors: [],
-          items: [
-            {
-              yieldId: "ethereum-eth-native-staking",
-              balances: [
-                {
-                  address: "wallet-1",
-                  type: "active",
-                  amount: "1.5",
-                  amountRaw: "1500000000000000000",
-                  pendingActions: [],
-                  token,
-                  isEarning: true,
-                },
-                {
-                  address: "wallet-1",
-                  type: "active",
-                  amount: "NaN",
-                  amountRaw: "1",
-                  pendingActions: [],
-                  token,
-                  isEarning: true,
-                },
-              ],
-            },
-          ],
-        });
-
-        expect(result.items).toEqual([]);
-      })
   );
 });

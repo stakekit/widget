@@ -22,6 +22,7 @@ import {
 } from "../../src/services/wallet/wallet-state";
 import { makeTestTracking } from "../utils/services/tracking-service";
 import { makeTestWallet } from "../utils/services/wallet-service";
+import { stubWalletModal } from "../utils/wallet-modal";
 
 const disconnectedWalletState: WalletState = {
   connection: disconnectedNormalizedWalletState,
@@ -85,13 +86,11 @@ const makeSubmissionHarness = Effect.fn("makeSubmissionHarness")(function* (
       : undefined,
     initialState: options.initialWalletState,
   });
-  const modal = WalletModal.of({
+  const modal = stubWalletModal({
     closeChain: Ref.update(closeChainCount, (count) => count + 1),
-    install: () => Effect.void,
     openConnect: Ref.update(openConnectCount, (count) => count + 1).pipe(
       Effect.andThen(options.openConnect?.(wallet.setState) ?? Effect.void)
     ),
-    uninstall: () => Effect.void,
   });
   const dependencies = Layer.mergeAll(
     tracking.layer,

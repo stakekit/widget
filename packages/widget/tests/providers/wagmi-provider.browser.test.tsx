@@ -14,7 +14,7 @@ import {
   Queue,
   Stream,
 } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { HttpResponse, http } from "msw";
 import {
   Component,
@@ -61,7 +61,7 @@ import { WalletService } from "../../src/services/wallet/wallet-service";
 import { yieldApiRoute } from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
-import { rkMockWallet } from "../utils/mock-connector";
+import { mockWalletListFactory } from "../utils/mock-connector";
 import { describe, expect, it, vi } from "../utils/test-extend";
 import { render, renderHook } from "../utils/test-utils";
 import { getTestWidgetConfig } from "../utils/widget-config";
@@ -143,7 +143,7 @@ const ConfigObserver = ({
   return null;
 };
 
-const useRainbowKitWagmiContract = () => ({
+const useWagmiContract = () => ({
   account: useAccount(),
   connect: useConnect(),
   connectors: useConnectors(),
@@ -163,7 +163,12 @@ const makeSolanaDescriptor = (
   adapter: Adapter,
   source: SolanaWalletDescriptor["source"],
   readyState: WalletReadyState
-): SolanaWalletDescriptor => ({ adapter, readyState, source });
+): SolanaWalletDescriptor => ({
+  adapter,
+  isPresent: () => true,
+  readyState,
+  source,
+});
 
 const makeSolanaConnectorFactory = (wallet: SolanaWalletDescriptor) =>
   createConnector((config) => ({
@@ -171,12 +176,7 @@ const makeSolanaConnectorFactory = (wallet: SolanaWalletDescriptor) =>
     id: wallet.adapter.name,
     isSolanaConnector: true,
     name: wallet.adapter.name,
-    rkDetails: {
-      groupName: "Solana",
-      installed:
-        wallet.readyState === WalletReadyState.Installed ||
-        wallet.readyState === WalletReadyState.Loadable,
-    },
+    walletDetails: { groupName: "Solana" },
     solanaAdapter: wallet.adapter,
     solanaAdapterSource: wallet.source,
     type: `solana-${wallet.source}`,
@@ -230,10 +230,8 @@ const makeSolanaRuntime = (initial: SolanaWalletSnapshot) => {
 };
 
 const ControllerHarness = ({
-  forceWalletConnectOnly,
   onConfig,
 }: {
-  readonly forceWalletConnectOnly: boolean;
   readonly onConfig: (config: Config) => void;
 }) => (
   <ThirdPartyQueryClientProvider>
@@ -242,7 +240,6 @@ const ControllerHarness = ({
         settings={getTestWidgetConfig({
           apiKey: import.meta.env.VITE_API_KEY,
           disableInjectedProviderDiscovery: true,
-          forceWalletConnectOnly,
           variant: "default",
         })}
       >
@@ -265,7 +262,7 @@ describe("WagmiConfigProvider", () => {
     );
     let initialized = 0;
     let disposed = 0;
-    const walletListFactory = rkMockWallet({
+    const walletListFactory = mockWalletListFactory({
       accounts: ["0x0000000000000000000000000000000000000001"],
     });
     const connectorSourceLayer = Layer.effect(
@@ -313,121 +310,90 @@ describe("WagmiConfigProvider", () => {
     await expect.poll(() => disposed).toBe(1);
   });
 
-  it.live(
-    "publishes dynamic Solana membership and same-uid readiness through useConnectors",
-    () =>
-      Effect.gen(function* () {
-        const fallbackAdapter = makeSolanaAdapter("Phantom");
-        const standardAdapter = makeSolanaAdapter("Phantom");
-        const fallback = makeSolanaDescriptor(
-          fallbackAdapter,
-          "fallback",
-          WalletReadyState.NotDetected
-        );
-        const standard = makeSolanaDescriptor(
-          standardAdapter,
-          "standard",
-          WalletReadyState.NotDetected
-        );
-        const readyStandard = makeSolanaDescriptor(
-          standardAdapter,
-          "standard",
-          WalletReadyState.Loadable
-        );
-        const runtime = makeSolanaRuntime({ wallets: [fallback] });
-        const config = createConfig({
-          chains: [solana],
-          connectors: [makeSolanaConnectorFactory(fallback)],
-          transports: { [solana.id]: wagmiHttp() },
-        });
-        const coreSnapshots: ReadonlyArray<unknown>[] = [];
-        const unsubscribeCore = watchConnectors(config, {
-          onChange: (connectors) => coreSnapshots.push(connectors),
-        });
+  it.live("publishes dynamic Solana membership through useConnectors", () =>
+    Effect.gen(function* () {
+      const fallbackAdapter = makeSolanaAdapter("Phantom");
+      const standardAdapter = makeSolanaAdapter("Phantom");
+      const fallback = makeSolanaDescriptor(
+        fallbackAdapter,
+        "fallback",
+        WalletReadyState.NotDetected
+      );
+      const standard = makeSolanaDescriptor(
+        standardAdapter,
+        "standard",
+        WalletReadyState.NotDetected
+      );
+      const runtime = makeSolanaRuntime({ wallets: [fallback] });
+      const config = createConfig({
+        chains: [solana],
+        connectors: [makeSolanaConnectorFactory(fallback)],
+        transports: { [solana.id]: wagmiHttp() },
+      });
+      const coreSnapshots: ReadonlyArray<unknown>[] = [];
+      const unsubscribeCore = watchConnectors(config, {
+        onChange: (connectors) => coreSnapshots.push(connectors),
+      });
 
-        yield* Effect.scoped(
-          Effect.gen(function* () {
-            yield* installSolanaConnectorMembership({
-              actions: { disconnect: () => Effect.void },
-              config,
-              core: {
-                current: Effect.succeed({
+      yield* Effect.scoped(
+        Effect.gen(function* () {
+          yield* installSolanaConnectorMembership({
+            actions: { disconnect: () => Effect.void },
+            config,
+            core: {
+              current: Effect.succeed({
+                connection: {} as never,
+                connectors: config.connectors,
+              }),
+              states: Stream.concat(
+                Stream.succeed({
                   connection: {} as never,
                   connectors: config.connectors,
                 }),
-                states: Stream.concat(
-                  Stream.succeed({
-                    connection: {} as never,
-                    connectors: config.connectors,
-                  }),
-                  Stream.never
-                ),
-              },
-              createConnector: (wallet) =>
-                Effect.succeed(makeSolanaConnectorFactory(wallet)),
-              runtime: runtime.runtime,
-            });
-            yield* Effect.promise(() =>
-              expect.poll(() => runtime.listenerCount()).toBe(1)
-            );
-            const configIdentity = config;
-            const hook = yield* Effect.promise(() =>
-              renderHook(() => useConnectors(), {
-                wrapper: ({ children }) => (
-                  <WagmiContext.Provider value={config}>
-                    {children}
-                  </WagmiContext.Provider>
-                ),
-              })
-            );
+                Stream.never
+              ),
+            },
+            createConnector: (wallet) =>
+              Effect.succeed(makeSolanaConnectorFactory(wallet)),
+            runtime: runtime.runtime,
+          });
+          yield* Effect.promise(() =>
+            expect.poll(() => runtime.listenerCount()).toBe(1)
+          );
+          const configIdentity = config;
+          const hook = yield* Effect.promise(() =>
+            renderHook(() => useConnectors(), {
+              wrapper: ({ children }) => (
+                <WagmiContext.Provider value={config}>
+                  {children}
+                </WagmiContext.Provider>
+              ),
+            })
+          );
 
-            yield* Effect.promise(() =>
-              hook.act(() => runtime.emit({ wallets: [standard] }))
-            );
-            yield* Effect.promise(() =>
-              expect
-                .poll(() => hook.result.current[0]?.solanaAdapterSource)
-                .toBe("standard")
-            );
-            const standardConnector = hook.result.current[0]!;
-            expect(standardConnector).toMatchObject({
-              rkDetails: { installed: false },
-              solanaAdapter: standardAdapter,
-            });
+          yield* Effect.promise(() =>
+            hook.act(() => runtime.emit({ wallets: [standard] }))
+          );
+          yield* Effect.promise(() =>
+            expect
+              .poll(() => hook.result.current[0]?.solanaAdapterSource)
+              .toBe("standard")
+          );
+          const standardConnector = hook.result.current[0]!;
+          expect(standardConnector).toMatchObject({
+            solanaAdapter: standardAdapter,
+          });
+          expect(config).toBe(configIdentity);
+        })
+      );
 
-            yield* Effect.promise(() =>
-              hook.act(() => runtime.emit({ wallets: [readyStandard] }))
-            );
-            yield* Effect.promise(() =>
-              expect
-                .poll(() => {
-                  const connector = hook.result.current[0];
-                  return connector && "rkDetails" in connector
-                    ? (connector.rkDetails as { readonly installed: boolean })
-                        .installed
-                    : false;
-                })
-                .toBe(true)
-            );
-            const readyConnector = hook.result.current[0]!;
-            expect(readyConnector).not.toBe(standardConnector);
-            expect(readyConnector.uid).toBe(standardConnector.uid);
-            expect(readyConnector.emitter).toBe(standardConnector.emitter);
-            expect(readyConnector).toMatchObject({
-              rkDetails: { installed: true },
-              solanaAdapter: standardAdapter,
-            });
-            expect(config).toBe(configIdentity);
-          })
-        );
-
-        unsubscribeCore();
-        expect(coreSnapshots).toHaveLength(2);
-        expect(coreSnapshots.at(-1)?.[0]).toMatchObject({
-          rkDetails: { installed: true },
-          uid: config.connectors[0]?.uid,
-        });
-      })
+      unsubscribeCore();
+      expect(coreSnapshots).toHaveLength(1);
+      expect(coreSnapshots.at(-1)?.[0]).toMatchObject({
+        solanaAdapter: standardAdapter,
+        uid: config.connectors[0]?.uid,
+      });
+    })
   );
 
   it("stops providing the fallback when wallet bootstrap fails", async () => {
@@ -519,13 +485,8 @@ describe("WagmiConfigProvider", () => {
       )
     );
     const onConfig = vi.fn<(config: Config) => void>();
-    const renderHarness = (forceWalletConnectOnly: boolean) => (
-      <ControllerHarness
-        forceWalletConnectOnly={forceWalletConnectOnly}
-        onConfig={onConfig}
-      />
-    );
-    const app = await render(renderHarness(false));
+    const renderHarness = () => <ControllerHarness onConfig={onConfig} />;
+    const app = await render(renderHarness());
 
     await vi.waitFor(() => {
       expect(onConfig).toHaveBeenCalled();
@@ -534,20 +495,18 @@ describe("WagmiConfigProvider", () => {
     expect(firstConfig).toBeDefined();
     onConfig.mockClear();
 
-    await app.rerender(renderHarness(false));
+    await app.rerender(renderHarness());
     expect(onConfig).not.toHaveBeenCalled();
   });
 
-  it("keeps RainbowKit-facing actions on the authoritative config", async ({
-    worker,
-  }) => {
+  it("keeps wallet actions on the authoritative config", async ({ worker }) => {
     worker.use(
       http.get(yieldApiRoute("/v1/networks"), () =>
         HttpResponse.json([{ id: "ethereum" }, { id: "optimism" }])
       )
     );
     const account = "0x0000000000000000000000000000000000000001";
-    const hook = await renderHook(useRainbowKitWagmiContract, {
+    const hook = await renderHook(useWagmiContract, {
       wrapper: ({ children }) => (
         <ThirdPartyQueryClientProvider>
           <TestAtomRuntimeProvider
@@ -555,7 +514,7 @@ describe("WagmiConfigProvider", () => {
               [
                 walletConnectorSourceRuntime.layer,
                 WalletConnectorSource.layer(
-                  rkMockWallet({ accounts: [account] })
+                  mockWalletListFactory({ accounts: [account] })
                 ),
               ],
             ]}

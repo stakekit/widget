@@ -16,7 +16,11 @@ import {
   type TransactionSignWalletOperationCause,
   type TransactionWorkflowContext,
 } from "../transaction-workflow-model";
-import { type CurrentWorkflow, requireCurrentWorkflow } from "./current";
+import {
+  type CurrentWorkflow,
+  getCurrentWorkflowTrackingYieldId,
+  requireCurrentWorkflow,
+} from "./current";
 import { updateCurrentTransactionWorkflowTransaction } from "./model";
 
 type WalletSignFailure =
@@ -305,16 +309,10 @@ export const makePrepareAndSign = Effect.gen(function* () {
       Match.exhaustive
     );
 
-    const yieldId = Match.value(current).pipe(
-      Match.tag("Classic", ({ domain }) => domain.yieldId),
-      Match.tag("Borrow", ({ domain }) => domain.action.integrationId),
-      Match.exhaustive
-    );
-
     yield* tracking.trackEvent("txSigned", {
       network,
       txId: source.transaction.id,
-      yieldId,
+      yieldId: getCurrentWorkflowTrackingYieldId(current),
     });
 
     return updateCurrentTransactionWorkflowTransaction({

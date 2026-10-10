@@ -2,7 +2,7 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 import type { BorrowNetwork } from "../../src/domain/borrow/network";
 import type { Network as NetworkContract } from "../../src/domain/network/contract";
 import { intersectNetworkLiterals } from "../../src/domain/network/intersection";
-import { isEvmNetwork, type Network } from "../../src/domain/network/network";
+import type { Network } from "../../src/domain/network/network";
 import type { WalletNetwork } from "../../src/domain/wallet/network";
 import {
   isCosmosWalletNetwork,
@@ -54,11 +54,5 @@ describe("Network", () => {
     expect(isEvmWalletNetwork("plume")).toBe(false);
     expect(isCosmosWalletNetwork("cosmos")).toBe(true);
     expect(isCosmosWalletNetwork("evmos")).toBe(false);
-  });
-
-  it("derives EVM classification from the generated Legacy schema", () => {
-    expect(isEvmNetwork("ethereum")).toBe(true);
-    expect(isEvmNetwork("plume")).toBe(true);
-    expect(isEvmNetwork("cosmos")).toBe(false);
   });
 });

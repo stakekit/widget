@@ -1,8 +1,6 @@
-import type { YieldMetadata } from "../../../../domain/earn/yield";
-import type { Token } from "../../../../domain/token/token";
-import type { Atoms } from "../../../styles/theme/atoms.css";
 import { useWidgetPresentation } from "../../widget-presentation";
 import { NetworkLogoImage } from "./network-icon-image";
+import type { TokenIconProps } from "./props";
 import { TokenIconContainer } from "./token-icon-container";
 import { TokenIconImage } from "./token-icon-image";
 
@@ -12,13 +10,7 @@ export const TokenIcon = ({
   tokenLogoHw,
   tokenNetworkLogoHw,
   hideNetwork,
-}: {
-  token: Token;
-  metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">;
-  tokenLogoHw?: Atoms["hw"];
-  tokenNetworkLogoHw?: Atoms["hw"];
-  hideNetwork?: boolean;
-}) => {
+}: TokenIconProps) => {
   const { hideNetworkLogo } = useWidgetPresentation();
 
   return (

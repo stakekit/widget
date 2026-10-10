@@ -1,6 +1,6 @@
 import { Effect, Layer, Option, Schema } from "effect";
-import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
-import * as Reactivity from "effect/unstable/reactivity/Reactivity";
+import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
+import * as Reactivity from "effect/reactivity/Reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { YieldId } from "../../src/domain/identity/identifiers";

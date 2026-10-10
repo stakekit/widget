@@ -160,17 +160,20 @@ const mockKycRequiredDefaultYield = () => {
   });
 
   return [
-    http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-      await mockDelay();
+    http.get(
+      legacyApiRoute("/v2/networks/:network/addresses/:address/tokens"),
+      async () => {
+        await mockDelay();
 
-      return HttpResponse.json([
-        {
-          token: baseYield.token,
-          amount: "1",
-          availableYields: [baseYield.id],
-        },
-      ]);
-    }),
+        return HttpResponse.json([
+          {
+            token: baseYield.token,
+            amount: "1",
+            availableYields: [baseYield.id],
+          },
+        ]);
+      }
+    ),
     http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
       await mockDelay();
 

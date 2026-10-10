@@ -1,4 +1,3 @@
-import type { Chain } from "@stakekit/rainbowkit";
 import {
   getWalletProtocolFamily,
   getWalletRoutingId,
@@ -6,6 +5,7 @@ import {
   type WalletProtocolFamily,
 } from "../../../../domain/wallet/network";
 import { getTokenLogo } from "../../network-assets";
+import type { Chain } from "../../wallet-descriptors";
 
 export type MiscChainsMap = {
   [Key in WalletMiscNetwork]: {

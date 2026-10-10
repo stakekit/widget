@@ -1,6 +1,6 @@
-import { Cause, Data, Effect } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import { Cause, Data, Effect, type Scope } from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import {
   atomToStream,
   makeScopedEffectStateAtom,
@@ -19,30 +19,24 @@ import {
   getClassicTransactionFlowKycYield,
 } from "../../model/classic-transaction-flow";
 import type { ClassicFlowReviewHandle } from "../orchestration/classic-flow-review";
-import type { AcquireClassicFlowSessionOutcome } from "../orchestration/classic-transaction-flow-service";
+import type { ClassicFlowSessionHandle } from "../orchestration/classic-flow-session";
 import { makeClassicFlowStakeReviewViewAtom } from "../yield-summary";
 import { makeClassicFlowSessionReviewResources } from "./classic-flow-review-view";
 
-class ClassicFlowScopeUnavailableError extends Data.TaggedError(
-  "ClassicFlowScopeUnavailableError"
+class ClassicFlowReviewUnavailableError extends Data.TaggedError(
+  "ClassicFlowReviewUnavailableError"
 )<{
   readonly message: string;
   readonly retryable: false;
 }> {}
 
-const unavailable = () =>
-  new ClassicFlowScopeUnavailableError({
-    message: "The Classic Flow route no longer owns its Session.",
-    retryable: false,
-  });
-
 export const makeClassicFlowReviewScopeAtom = <E>({
   session,
-  sessionOutcomeAtom,
+  sessionAtom,
 }: {
   readonly session: ClassicFlowSession;
-  readonly sessionOutcomeAtom: Atom.Atom<
-    AsyncResult.AsyncResult<AcquireClassicFlowSessionOutcome, E>
+  readonly sessionAtom: Atom.Atom<
+    AsyncResult.AsyncResult<ClassicFlowSessionHandle, E>
   >;
 }) => {
   const intakeAtom = Atom.make(session.intake).pipe(
@@ -93,14 +87,11 @@ export const makeClassicFlowReviewScopeAtom = <E>({
     acquire: (context) =>
       Effect.gen(function* (): Effect.fn.Return<
         ClassicFlowReviewHandle,
-        E | ClassicFlowScopeUnavailableError,
-        import("effect").Scope.Scope
+        E,
+        Scope.Scope
       > {
-        const outcome = yield* context.result(sessionOutcomeAtom);
-        if (outcome._tag !== "Acquired") {
-          return yield* unavailable();
-        }
-        return yield* outcome.session.acquireReview(
+        const handle = yield* context.result(sessionAtom);
+        return yield* handle.acquireReview(
           atomToStream(context, eligibilityAtom)
         );
       }),
@@ -124,7 +115,14 @@ export const makeClassicFlowReviewScopeAtom = <E>({
               YieldAction | null,
               { retryable: boolean }
             >(
-              Cause.map(result.cause, () => unavailable()),
+              Cause.map(
+                result.cause,
+                () =>
+                  new ClassicFlowReviewUnavailableError({
+                    message: "The Classic Flow Review is unavailable.",
+                    retryable: false,
+                  })
+              ),
               { waiting: result.waiting }
             );
           case "Success": {

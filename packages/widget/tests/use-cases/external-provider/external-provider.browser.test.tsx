@@ -60,15 +60,12 @@ describe("External Provider", () => {
     await chainText.click();
 
     const getChainOptions = () =>
-      app
-        .getByTestId(/^rk-chain-option/)
-        .elements()
-        .filter((el) => (el as HTMLButtonElement).type === "button");
+      app.getByTestId(/^wallet-chain-\d+$/).elements();
 
     await expect.poll(() => getChainOptions().length).toBe(4);
 
     const solanaOption = app
-      .getByTestId(/^rk-chain-option/)
+      .getByTestId(/^wallet-chain-\d+$/)
       .getByText(chainNames.solana);
 
     await solanaOption.click();
@@ -102,7 +99,7 @@ describe("External Provider", () => {
     await expect.poll(() => getChainOptions().length).toBe(2);
 
     const tonOption = app
-      .getByTestId(/^rk-chain-option/)
+      .getByTestId(/^wallet-chain-\d+$/)
       .getByText(chainNames.ton);
 
     await tonOption.click();

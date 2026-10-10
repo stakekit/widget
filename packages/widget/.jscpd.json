@@ -1,0 +1,9 @@
+{
+  "path": ["src", "scripts", "vite"],
+  "format": ["typescript", "tsx"],
+  "ignore": ["**/src/generated/**"],
+  "minTokens": 50,
+  "threshold": 1,
+  "reporters": ["console"],
+  "absolute": false
+}

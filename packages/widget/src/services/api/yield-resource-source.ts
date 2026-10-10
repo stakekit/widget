@@ -1,5 +1,5 @@
 import { Effect, Option, Schema } from "effect";
-import * as HttpClientError from "effect/unstable/http/HttpClientError";
+import * as HttpClientError from "effect/http/HttpClientError";
 import { YieldAction } from "../../domain/action/models";
 import { ActivityActionsPage } from "../../domain/activity/models";
 import type { ActivityActionsQuery } from "../../domain/activity/query";

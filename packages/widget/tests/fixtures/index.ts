@@ -1,24 +1,22 @@
-import { DateTime, Effect, Random, Schema } from "effect";
-import { Arbitrary } from "effect/unstable/arbitrary";
+import { Arbitrary, DateTime, Effect, Random, Schema } from "effect";
 import { ActionTransaction, YieldAction } from "../../src/domain/action/models";
-import type {
-  EarnBalance,
-  EarnProvider,
-  EarnValidator,
-} from "../../src/domain/earn/models";
+import type { EarnBalance, EarnProvider } from "../../src/domain/earn/models";
 import {
   EarnProvider as EarnProviderSchema,
   EarnYield,
 } from "../../src/domain/earn/models";
 import type { YieldRewardRate } from "../../src/domain/earn/reward-rate";
 import { exactDecimal } from "../../src/domain/finance/exact";
+import * as YieldApi from "../../src/generated/api/yield-schema";
 import type {
   TokenDto as LegacyTokenDto,
   YieldDto as LegacyYieldDto,
 } from "../generated/legacy-api-types";
-import type { YieldDto as YieldApiYieldDto } from "../generated/yield-api-types";
+import type {
+  ValidatorDto,
+  YieldDto as YieldApiYieldDto,
+} from "../generated/yield-api-types";
 
-type ValidatorDto = typeof EarnValidator.Encoded;
 type YieldApiProviderDto = typeof EarnProvider.Encoded;
 // ast-grep-ignore: no-run-effect-in-test -- synchronous fixture helper for random APY values
 const apyFaker = () => Effect.runSync(Random.nextBetween(0, 0.05));
@@ -72,6 +70,12 @@ const yieldRewardRateDtoFixture = (): YieldApiYieldDto["rewardRate"] => ({
   components: [],
 });
 
+// The domain keeps reward sources open; wire fixtures must still carry a
+// source the generated client knows.
+const decodeWireYieldSource = Schema.decodeUnknownSync(
+  YieldApi.RewardDto.fields.yieldSource
+);
+
 export const encodeYieldRewardRateFixture = (
   rewardRate:
     | YieldRewardRateFixtureInput
@@ -84,6 +88,7 @@ export const encodeYieldRewardRateFixture = (
     components: (rewardRate.components ?? []).map((component) => ({
       ...component,
       rate: exactDecimal(component.rate).toNumber(),
+      yieldSource: decodeWireYieldSource(component.yieldSource),
     })),
   };
 };
@@ -110,7 +115,6 @@ export const yieldApiProviderFixture = (
     logoURI: "https://assets.stakek.it/app/composition/providers/stakekit.svg",
     website: "https://stakek.it",
     tvlUsd: null,
-    type: "protocol",
     ...overrides,
   });
 
@@ -368,7 +372,6 @@ export const yieldApiActionDtoFixture = (
         type: type as ActionTransaction["type"],
       }),
     ],
-    executionPattern: "synchronous",
     rawArguments: null,
     createdAt: "2100-01-01T00:00:00.000Z",
     completedAt: null,

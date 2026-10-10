@@ -28,7 +28,6 @@ export type WidgetConfig = {
   readonly disableInjectedProviderDiscovery: boolean;
   readonly disableResizingInputFontSize: boolean;
   readonly externalProviders?: ExternalProviderSnapshot;
-  readonly forceWalletConnectOnly: boolean;
   readonly hideAccountAndChainSelector: boolean;
   readonly hideChainSelector: boolean;
   readonly hideNetworkLogo: boolean;

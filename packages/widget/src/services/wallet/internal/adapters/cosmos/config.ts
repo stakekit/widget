@@ -1,11 +1,14 @@
-import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import { Effect, Record } from "effect";
 import type { WalletAddress } from "../../../../../domain/identity/identifiers";
 import type { Network } from "../../../../../domain/network/network";
 import { walletCosmosNetworks } from "../../../../../domain/wallet/network";
+import type { Chain, WalletList } from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";
+import type { WalletConnectProtocol } from "../../platform/wallet-connect-protocol";
+import type { RunWalletEffect } from "../../runtime/effect-runner";
 import type { CosmosChainsMap } from "./chains";
 import { getWagmiChain } from "./chains/index";
+import type { CosmosWalletManagerOptions } from "./wallet-manager";
 
 const logCosmosConnectorFailure = (operation: string, cause: unknown) =>
   Effect.logError("Cosmos wallet connector failed to load").pipe(
@@ -18,16 +21,10 @@ const logCosmosConnectorFailure = (operation: string, cause: unknown) =>
 
 const loadCosmosConnector = Effect.fn("loadCosmosConnector")(function* ({
   cosmosChainsMap,
-  forceWalletConnectOnly,
   persistPublicKey,
-}: {
-  cosmosChainsMap: Partial<CosmosChainsMap>;
-  forceWalletConnectOnly: boolean;
-  persistPublicKey: (input: {
-    readonly address: WalletAddress;
-    readonly publicKey: string;
-  }) => Promise<void>;
-}) {
+  walletConnectProtocol,
+  runWalletEffect,
+}: CosmosWalletManagerOptions) {
   const walletManagerModule = yield* Effect.tryPromise({
     try: () => import("./wallet-manager"),
     catch: (cause) =>
@@ -51,8 +48,9 @@ const loadCosmosConnector = Effect.fn("loadCosmosConnector")(function* ({
     try: () =>
       walletManagerModule.getWalletManager({
         cosmosChainsMap,
-        forceWalletConnectOnly,
         persistPublicKey,
+        walletConnectProtocol,
+        runWalletEffect,
       }),
     catch: (cause) =>
       new WalletIntegrationError({
@@ -72,6 +70,9 @@ const loadCosmosConnector = Effect.fn("loadCosmosConnector")(function* ({
   }
 
   const { connector, walletManager } = initialized;
+  yield* Effect.addFinalizer(() =>
+    Effect.sync(() => walletManager.onUnmounted())
+  );
 
   yield* Effect.matchEffect(
     Effect.tryPromise(() => walletManager.onMounted()),
@@ -95,12 +96,14 @@ const loadCosmosConnector = Effect.fn("loadCosmosConnector")(function* ({
 const queryFn = ({
   buildConnectors,
   enabledNetworks,
-  forceWalletConnectOnly,
   persistPublicKey,
+  walletConnectProtocol,
+  runWalletEffect,
 }: {
   buildConnectors: boolean;
   enabledNetworks: ReadonlySet<Network>;
-  forceWalletConnectOnly: boolean;
+  walletConnectProtocol: WalletConnectProtocol;
+  runWalletEffect: RunWalletEffect;
   persistPublicKey: (input: {
     readonly address: WalletAddress;
     readonly publicKey: string;
@@ -167,8 +170,9 @@ const queryFn = ({
 
     const connector = yield* loadCosmosConnector({
       cosmosChainsMap,
-      forceWalletConnectOnly,
       persistPublicKey,
+      walletConnectProtocol,
+      runWalletEffect,
     });
 
     return {

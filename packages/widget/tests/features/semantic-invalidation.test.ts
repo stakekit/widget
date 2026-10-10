@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import { Effect, Layer, Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
-import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
-import * as Reactivity from "effect/unstable/reactivity/Reactivity";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
+import * as Reactivity from "effect/reactivity/Reactivity";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { Integration } from "../../src/domain/borrow/catalog/integration";
 import { Market } from "../../src/domain/borrow/catalog/market";
@@ -91,7 +91,6 @@ const sameAddressOtherNetworkScope = new WalletScopeKey({
 const yieldDto = yieldApiYieldFixture();
 const yieldId = Schema.decodeSync(YieldId)(yieldDto.id);
 const borrowIntegration = Schema.decodeSync(Integration)({
-  actions: [],
   id: "aave-borrow",
   metadata: {
     description: "Aave lending and borrowing",
@@ -215,11 +214,7 @@ describe("semantic resource invalidation", () => {
           )
         );
         const scanTokenBalances = vi.fn(
-          ({
-            addresses: { address: walletAddress },
-          }: {
-            readonly addresses: { readonly address: WalletAddress };
-          }) => {
+          ({ address: walletAddress }: { readonly address: WalletAddress }) => {
             balanceCalls.set(
               walletAddress,
               (balanceCalls.get(walletAddress) ?? 0) + 1

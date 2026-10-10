@@ -1,6 +1,6 @@
-import type { Adapter } from "@tronweb3/tronwallet-abstract-adapter";
 import type { Connector } from "wagmi";
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
+import type { UnsignedTronTransaction } from "./transaction";
 
 export const configMeta = {
   tronLink: {
@@ -25,8 +25,20 @@ export const configMeta = {
   },
 } as const;
 
+/** What the Tron wagmi connector consumes from a wallet. */
+export type TronWallet = Readonly<{
+  address: () => string | null;
+  connect: (input: { readonly isReconnecting: boolean }) => Promise<void>;
+  disconnect: () => Promise<void>;
+  signTransaction: (transaction: UnsignedTronTransaction) => Promise<unknown>;
+  /** Whether a previous connection can resume without user interaction. */
+  isAuthorized: () => Promise<boolean>;
+  /** Registers `listener` for connections the wallet ends on its side. */
+  onEnded?: (listener: () => void) => void;
+}>;
+
 export type ExtraProps = ConnectorWithFilteredChains &
-  Pick<Adapter, "signTransaction">;
+  Pick<TronWallet, "signTransaction">;
 
 type TronConnector = Connector & ExtraProps;
 

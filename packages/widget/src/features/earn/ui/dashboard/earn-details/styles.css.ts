@@ -2,20 +2,7 @@ import { globalStyle, keyframes, style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../../../shared/styles/theme/atoms.css";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
-import { DASHBOARD_OUTLET_PADDING } from "../../../../../shared/styles/tokens/layout";
-
-export const container = style({
-  bottom: 0,
-  boxSizing: "border-box",
-  left: 0,
-  marginRight: `calc(-1 * ${DASHBOARD_OUTLET_PADDING})`,
-  overflowY: "auto",
-  paddingRight: DASHBOARD_OUTLET_PADDING,
-  position: "absolute",
-  right: 0,
-  scrollbarGutter: "stable",
-  top: 0,
-});
+import { dashboardMetricCard } from "../../../../../shared/ui/components/dashboard-details/styles.css";
 
 export const autoBadge = style([
   atoms({
@@ -32,23 +19,7 @@ export const autoBadgeText = style({
   color: vars.color.positionsRewardRate,
 });
 
-export const metricGrid = style({
-  display: "grid",
-  gap: "8px",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-});
-
-export const metricCard = style([
-  atoms({
-    background: "stakeSectionBackground",
-    borderRadius: "base",
-    px: "3",
-    py: "3",
-  }),
-  {
-    minWidth: 0,
-  },
-]);
+export const metricCard = style([dashboardMetricCard, { minWidth: 0 }]);
 
 export const providerCard = style([
   atoms({

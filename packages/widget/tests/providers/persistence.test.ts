@@ -1,7 +1,7 @@
 import { Layer, Schema } from "effect";
-import * as KeyValueStore from "effect/unstable/persistence/KeyValueStore";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
+import * as KeyValueStore from "effect/persistence/KeyValueStore";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import {

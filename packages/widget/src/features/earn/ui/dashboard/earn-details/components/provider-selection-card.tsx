@@ -5,17 +5,12 @@ import type {
   EarnValidator,
   EarnYieldWithProvider,
 } from "../../../../../../domain/earn/models";
-import {
-  isYieldActionArgRequired,
-  isYieldValidatorSelectionRequired,
-} from "../../../../../../domain/earn/yield";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { CaretDownIcon } from "../../../../../../shared/ui/primitives/icons/caret-down";
 import { PlusIcon } from "../../../../../../shared/ui/primitives/icons/plus";
 import { XIcon } from "../../../../../../shared/ui/primitives/icons/x-icon";
 import { Image } from "../../../../../../shared/ui/primitives/image";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
-import { SelectValidator } from "../../../../../yield-entry/views";
 import type { YieldSummaryProvider } from "../../../../../yield-summary/index";
 import {
   formatCommission,
@@ -25,8 +20,11 @@ import {
   formatProviderWebsiteHref,
 } from "../../../../../yield-summary/index";
 import { useEarnEntry } from "../../../../react/use-earn-facades";
-import { useSelectValidator } from "../../../classic/earn-page/components/select-validator-section/use-select-validator";
+import type { EarnProviderOption } from "../../../../state/earn-selection/types";
+import { EarnProviderOptionSelection } from "../../../components/earn-provider-option-selection";
+import { EarnValidatorSelection } from "../../../components/earn-validator-selection";
 import * as styles from "../styles.css";
+import { ExternalLinkIcon } from "./external-link-icon";
 
 type ProviderDetailsItem = YieldSummaryProvider;
 
@@ -43,68 +41,58 @@ type ProviderCardItem = {
 };
 
 export const ProviderSelectionCard = () => {
-  const {
-    hasMoreValidators,
-    isLoading,
-    isLoadingMoreValidators,
-    onClose,
-    onItemClick,
-    onLoadMoreValidators,
-    onOpen,
-    onRemoveValidator,
-    onValidatorSearch,
-    onViewMoreClick,
-    selectedStake,
-    selectedValidators,
-    validatorSearch,
-    validatorsData,
-  } = useSelectValidator();
   const { view: entry } = useEarnEntry();
   const providersDetails = entry.providers;
 
-  const yieldDto = selectedStake;
+  return (
+    <>
+      <EarnProviderOptionSelection
+        renderTrigger={({ canSelect, selectedOption, title }) => (
+          <Box className={styles.providerCardList}>
+            <ProviderCard
+              action={canSelect ? <ProviderChangeTrigger /> : null}
+              item={getProviderOptionCardItem(selectedOption, title)}
+              meta={null}
+            />
+          </Box>
+        )}
+      />
 
-  if (!yieldDto || !isYieldValidatorSelectionRequired(yieldDto)) return null;
-
-  const selectedValidatorsArr = [...selectedValidators.values()];
-  const providerDetailsArr = providersDetails ?? [];
-  const providerCardItems = getProviderCardItems({
-    providerDetailsArr,
-    selectedValidatorsArr,
-    yieldDto,
-  });
-  const multiSelect = isYieldActionArgRequired(
-    yieldDto,
-    "enter",
-    "validatorAddresses"
+      <EarnValidatorSelection
+        renderTrigger={({
+          multiSelect,
+          onRemoveValidator,
+          selectedStake,
+          selectedValidators,
+        }) => (
+          <ProviderCardsTrigger
+            items={getProviderCardItems({
+              providerDetailsArr: providersDetails ?? [],
+              selectedValidatorsArr: selectedValidators,
+              yieldDto: selectedStake,
+            })}
+            multiSelect={multiSelect}
+            onRemoveValidator={onRemoveValidator}
+            tokenSymbol={selectedStake.token.symbol}
+          />
+        )}
+      />
+    </>
   );
-  const validators = validatorsData ?? [];
+};
+
+const ProviderChangeTrigger = () => {
+  const { t } = useTranslation();
 
   return (
-    <SelectValidator
-      trigger={
-        <ProviderCardsTrigger
-          items={providerCardItems}
-          multiSelect={multiSelect}
-          onRemoveValidator={onRemoveValidator}
-          tokenSymbol={yieldDto.token.symbol}
-        />
-      }
-      selectedValidators={new Set(selectedValidatorsArr.map((v) => v.key))}
-      multiSelect={multiSelect}
-      selectedStake={yieldDto}
-      onItemClick={onItemClick}
-      onViewMoreClick={onViewMoreClick}
-      onClose={onClose}
-      onOpen={onOpen}
-      onSearch={onValidatorSearch}
-      searchValue={validatorSearch}
-      isLoading={isLoading}
-      validators={validators}
-      hasMore={hasMoreValidators}
-      isLoadingMore={isLoadingMoreValidators}
-      onLoadMore={onLoadMoreValidators}
-    />
+    <Trigger asChild>
+      <Box as="button" className={styles.providerChangeButton} type="button">
+        <Text variant={{ weight: "bold", size: "small" }}>
+          {t("shared.change")}
+        </Text>
+        <CaretDownIcon />
+      </Box>
+    </Trigger>
   );
 };
 
@@ -141,74 +129,16 @@ const ProviderCardsTrigger = ({
             );
           }
           if (multiSelect) return null;
-          return (
-            <Trigger asChild>
-              <Box
-                as="button"
-                className={styles.providerChangeButton}
-                type="button"
-              >
-                <Text variant={{ weight: "bold", size: "small" }}>
-                  {t("shared.change")}
-                </Text>
-                <CaretDownIcon />
-              </Box>
-            </Trigger>
-          );
+          return <ProviderChangeTrigger />;
         };
-        const providerAction = getProviderAction();
 
         return (
-          <Box className={styles.providerCard} key={item.key}>
-            <Box className={styles.providerCardMainRow}>
-              <Image
-                wrapperProps={{ hw: "8", flexShrink: 0 }}
-                imgProps={{ borderRadius: "base" }}
-                src={item.logo}
-                fallbackName={item.name}
-              />
-
-              <Box className={styles.providerCardContent}>
-                <Box className={styles.providerCardHeader}>
-                  <Text
-                    className={styles.providerNameText}
-                    variant={{ weight: "bold" }}
-                  >
-                    {item.name}
-                  </Text>
-
-                  {item.preferred ? (
-                    <Box className={styles.autoBadge}>
-                      <Text
-                        className={styles.autoBadgeText}
-                        variant={{ weight: "bold", size: "small" }}
-                      >
-                        {t("details.validators_preferred")}
-                      </Text>
-                    </Box>
-                  ) : null}
-                </Box>
-
-                <ProviderMetaLine item={item} tokenSymbol={tokenSymbol} />
-              </Box>
-
-              {providerAction}
-            </Box>
-
-            {item.website ? (
-              <Text
-                as="a"
-                className={styles.providerWebsiteText}
-                href={formatProviderWebsiteHref(item.website)}
-                rel="noreferrer"
-                target="_blank"
-                variant={{ type: "muted", weight: "normal" }}
-              >
-                {formatProviderWebsite(item.website)}
-                <ExternalLinkIcon />
-              </Text>
-            ) : null}
-          </Box>
+          <ProviderCard
+            action={getProviderAction()}
+            item={item}
+            key={item.key}
+            meta={<ProviderMetaLine item={item} tokenSymbol={tokenSymbol} />}
+          />
         );
       })}
 
@@ -229,6 +159,86 @@ const ProviderCardsTrigger = ({
     </Box>
   );
 };
+
+const ProviderCard = ({
+  action,
+  item,
+  meta,
+}: {
+  action: ReactNode;
+  item: ProviderCardItem;
+  meta: ReactNode;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <Box className={styles.providerCard}>
+      <Box className={styles.providerCardMainRow}>
+        <Image
+          wrapperProps={{ hw: "8", flexShrink: 0 }}
+          imgProps={{ borderRadius: "base" }}
+          src={item.logo}
+          fallbackName={item.name}
+        />
+
+        <Box className={styles.providerCardContent}>
+          <Box className={styles.providerCardHeader}>
+            <Text
+              className={styles.providerNameText}
+              variant={{ weight: "bold" }}
+            >
+              {item.name}
+            </Text>
+
+            {item.preferred ? (
+              <Box className={styles.autoBadge}>
+                <Text
+                  className={styles.autoBadgeText}
+                  variant={{ weight: "bold", size: "small" }}
+                >
+                  {t("details.validators_preferred")}
+                </Text>
+              </Box>
+            ) : null}
+          </Box>
+
+          {meta}
+        </Box>
+
+        {action}
+      </Box>
+
+      {item.website ? (
+        <Text
+          as="a"
+          className={styles.providerWebsiteText}
+          href={formatProviderWebsiteHref(item.website)}
+          rel="noreferrer"
+          target="_blank"
+          variant={{ type: "muted", weight: "normal" }}
+        >
+          {formatProviderWebsite(item.website)}
+          <ExternalLinkIcon />
+        </Text>
+      ) : null}
+    </Box>
+  );
+};
+
+const getProviderOptionCardItem = (
+  option: EarnProviderOption | null,
+  placeholder: string
+): ProviderCardItem => ({
+  key: option?.value ?? placeholder,
+  commission: undefined,
+  logo: option?.provider?.logoURI,
+  name: option?.provider?.name ?? option?.value ?? placeholder,
+  preferred: undefined,
+  stakedBalance: undefined,
+  status: undefined,
+  validator: undefined,
+  website: option?.provider?.website,
+});
 
 const getProviderCardItems = ({
   providerDetailsArr,
@@ -320,37 +330,3 @@ const ProviderMetaLine = ({
     </Text>
   );
 };
-
-const ExternalLinkIcon = () => (
-  <svg
-    aria-hidden="true"
-    className={styles.externalLinkIcon}
-    fill="none"
-    height="14"
-    viewBox="0 0 14 14"
-    width="14"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M5.25 3.5H3.5C2.5335 3.5 1.75 4.2835 1.75 5.25V10.5C1.75 11.4665 2.5335 12.25 3.5 12.25H8.75C9.7165 12.25 10.5 11.4665 10.5 10.5V8.75"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.5"
-    />
-    <path
-      d="M8.75 1.75H12.25V5.25"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.5"
-    />
-    <path
-      d="M6.41699 7.58333L12.2503 1.75"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.5"
-    />
-  </svg>
-);

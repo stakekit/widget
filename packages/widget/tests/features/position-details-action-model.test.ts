@@ -1,7 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Result, Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
 import {
   getPendingActionStateKey,
@@ -9,7 +9,9 @@ import {
   preparePendingActionCommand,
 } from "../../src/domain/action/action-command";
 import { EarnBalance } from "../../src/domain/earn/models";
+import { Prices } from "../../src/domain/health/models";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { toPositionBalancesByType } from "../../src/domain/portfolio/positions";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
   makeAutomaticPendingActionModalState,
@@ -18,9 +20,12 @@ import {
   reconcilePendingActionModalReceipt,
 } from "../../src/features/position-details/model/classic-flow-actions";
 import { resolvePositionDetailsExitReceiveTokenSelection } from "../../src/features/position-details/model/exit-receive-token";
+import { resolvePositionDetailsActionCapabilities } from "../../src/features/position-details/model/hub";
 import {
   dispatchPositionDetailsWorkflowAtom,
   positionDetailsPendingActionsViewAtom,
+  positionDetailsPricesAtom,
+  positionDetailsWorkflowViewAtom,
 } from "../../src/features/position-details/state/classic-view";
 import {
   PositionDetailsWorkflowKey,
@@ -157,38 +162,43 @@ describe("Position Details action model", () => {
     });
   });
 
-  it("does not enable receive-token selection for another yield", () => {
-    const baseYield = yieldApiYieldDtoFixture();
-    const otherSkySavingsRoute = yieldApiYieldFixture({
-      id: "ethereum-usds-oav-sky-savings-rate",
-      mechanics: {
-        ...baseYield.mechanics,
-        arguments: {
-          ...baseYield.mechanics.arguments,
-          exit: {
-            fields: [
-              {
-                label: "Output Token",
-                name: "outputToken",
-                options: [
-                  "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
-                  "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-                ],
-                type: "string",
-              },
-            ],
+  it.each([
+    { name: "advertises no exit outputToken field", options: null },
+    { name: "advertises an empty optional outputToken list", options: [] },
+  ])(
+    "does not enable receive-token selection when a yield $name",
+    ({ options }) => {
+      const baseYield = yieldApiYieldDtoFixture();
+      const integration = yieldApiYieldFixture({
+        mechanics: {
+          ...baseYield.mechanics,
+          arguments: {
+            ...baseYield.mechanics.arguments,
+            exit: {
+              fields: options
+                ? [
+                    {
+                      label: "Output Token",
+                      name: "outputToken",
+                      options,
+                      required: false,
+                      type: "string",
+                    },
+                  ]
+                : [],
+            },
           },
         },
-      },
-    });
+      });
 
-    expect(
-      resolvePositionDetailsExitReceiveTokenSelection({
-        integration: otherSkySavingsRoute,
-        selectedAddress: null,
-      })
-    ).toBeNull();
-  });
+      expect(
+        resolvePositionDetailsExitReceiveTokenSelection({
+          integration,
+          selectedAddress: null,
+        })
+      ).toBeNull();
+    }
+  );
 
   it("uses every receive token advertised by Sky Savings Rate", () => {
     const baseYield = yieldApiYieldDtoFixture();
@@ -460,4 +470,181 @@ describe("Position Details action model", () => {
 
     registry.dispose();
   });
+
+  it("offers exit only when the active balances hold exactly one token", () => {
+    const usdt = {
+      ...selectedYield.token,
+      address: "0x0000000000000000000000000000000000000007",
+      symbol: "USDT",
+    };
+    const active = (
+      amount: string,
+      token: NonNullable<
+        Parameters<typeof yieldBalanceFixture>[0]
+      >["token"] = selectedYield.token
+    ) =>
+      Schema.decodeSync(EarnBalance)(
+        yieldBalanceFixture({
+          amount,
+          amountUsd: amount,
+          token,
+          type: "active",
+        })
+      );
+
+    const singleToken = readWorkflowView("single-token", [
+      active("1.25"),
+      active("0.75"),
+    ]);
+
+    expect(singleToken.exitBalance?.amount.toFixed()).toBe("2");
+    expect(singleToken.unstakeToken?.symbol).toBe(selectedYield.token.symbol);
+    expect(singleToken.maxUnstakeAmount.toFixed()).toBe("2");
+    expect(
+      resolvePositionDetailsActionCapabilities({
+        ...singleToken,
+        canUnstake: true,
+      }).canUnstake
+    ).toBe(true);
+
+    const twoTokens = readWorkflowView("two-tokens", [
+      active("1.25"),
+      active("10", usdt),
+    ]);
+
+    expect(twoTokens.exitBalance).toBeNull();
+    expect(twoTokens.unstakeToken).toBeNull();
+    expect(
+      resolvePositionDetailsActionCapabilities({
+        ...twoTokens,
+        canUnstake: true,
+      }).canUnstake
+    ).toBe(false);
+  });
+
+  it("values each pending action with its own balance token", () => {
+    const rewardToken = {
+      ...selectedYield.token,
+      address: "0x0000000000000000000000000000000000000008",
+      symbol: "KMNO",
+    };
+    const activeBalance = Schema.decodeSync(EarnBalance)(
+      yieldBalanceFixture({
+        amount: "1",
+        amountUsd: "2000",
+        token: selectedYield.token,
+        type: "active",
+      })
+    );
+    const claimableBalance = Schema.decodeSync(EarnBalance)(
+      yieldBalanceFixture({
+        amount: "10",
+        amountUsd: "5",
+        pendingActions: [
+          {
+            amount: null,
+            arguments: {
+              fields: [
+                {
+                  label: "Amount",
+                  name: "amount",
+                  required: true,
+                  type: "string",
+                },
+              ],
+            },
+            intent: "manage",
+            passthrough: "claim-kmno",
+            type: "CLAIM_REWARDS",
+          },
+        ],
+        token: rewardToken,
+        type: "claimable",
+      })
+    );
+    const priceKey = (token: { network: string; address?: string }) =>
+      `${token.network}-${token.address?.toLowerCase() ?? ""}`;
+    const { registry, workflowKey } = makeWorkflowRegistry(
+      "valuation",
+      [activeBalance, claimableBalance],
+      new Prices(
+        new Map([
+          [
+            priceKey(selectedYield.token),
+            { price: new BigNumber(2000), price24H: undefined },
+          ],
+          [
+            priceKey(rewardToken),
+            { price: new BigNumber(0.5), price24H: undefined },
+          ],
+        ])
+      )
+    );
+
+    expect(
+      registry
+        .get(positionDetailsPendingActionsViewAtom(workflowKey))
+        ?.map(({ formattedAmount }) => formattedAmount)
+    ).toEqual(["$5.00"]);
+
+    registry.dispose();
+  });
 });
+
+const makeWorkflowRegistry = (
+  balanceId: string,
+  balances: ReadonlyArray<EarnBalance>,
+  prices: Prices = new Prices(new Map())
+) => {
+  const scope = new WalletScopeKey({
+    address: Schema.decodeSync(WalletAddress)(balance.address),
+    network: "ethereum",
+  });
+  const workflowKey = new PositionDetailsWorkflowKey({
+    balanceId,
+    integrationId: selectedYield.id,
+    pendingActionType: null,
+    scope,
+  });
+  const positionKey = new PositionBalancesKey({
+    balanceId,
+    scope,
+    yieldId: selectedYield.id,
+  });
+  const registry = AtomRegistry.make({
+    initialValues: [
+      applicationRuntimeInitInitialValue(),
+      [
+        yieldOpportunityAtom(
+          new YieldOpportunityKey({ yieldId: selectedYield.id })
+        ),
+        AsyncResult.success(selectedYield),
+      ],
+      [
+        positionBalancesAtom(positionKey),
+        AsyncResult.success({
+          balances: [...balances],
+          rewardRate: null,
+          type: "default" as const,
+        }),
+      ],
+      [
+        positionBalancesByTypeAtom(positionKey),
+        AsyncResult.success(toPositionBalancesByType(balances)),
+      ],
+      [positionDetailsPricesAtom(workflowKey), AsyncResult.success(prices)],
+    ],
+  });
+
+  return { registry, workflowKey };
+};
+
+const readWorkflowView = (
+  balanceId: string,
+  balances: ReadonlyArray<EarnBalance>
+) => {
+  const { registry, workflowKey } = makeWorkflowRegistry(balanceId, balances);
+  const view = registry.get(positionDetailsWorkflowViewAtom(workflowKey));
+  registry.dispose();
+  return view;
+};

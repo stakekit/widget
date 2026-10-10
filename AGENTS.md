@@ -1,8 +1,8 @@
 # StakeKit Widget: Agent Guide
 
-This is a pnpm-workspace/Turborepo monorepo. The main package is
-`@stakekit/widget` in `packages/widget` (React, TypeScript, and Vite), published
-as both a React component and a bundled browser renderer.
+This is a pnpm-workspace monorepo with root tasks in `mise.toml`. The main
+package is `@stakekit/widget` in `packages/widget` (React, TypeScript, and
+Vite), published as both a React component and a bundled browser renderer.
 
 This file is operational guidance. The code and executable checks are the
 source of truth for behavior.
@@ -20,14 +20,15 @@ source of truth for behavior.
 
 ## Commands
 
-Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`.
+Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
+`pnpm <script>` commands alias the `mise run <task>` tasks in `mise.toml`.
 
 - `pnpm --filter @stakekit/widget lint` — widget formatting and type checks.
 - `pnpm --filter @stakekit/widget test:unit` — Node tests.
 - `pnpm --filter @stakekit/widget test:dom` — jsdom tests.
 - `pnpm --filter @stakekit/widget test:browser` — Chromium tests.
 - `pnpm --filter @stakekit/widget test:browser:diagnostic` — Chromium tests with trace replay in `packages/widget/.vitest/index.html`; serve that directory over HTTP to view the report.
-- `pnpm check-hygiene` — dependency-cruiser and Knip; run after changing the import graph.
+- `pnpm check-hygiene` — dependency-cruiser, Knip, and jscpd duplication; run after changing the import graph or copying code between Modules.
 - `pnpm lint` — all workspaces plus the root ast-grep rules.
 - `pnpm check` — lint, hygiene, tests, and builds.
 - `pnpm test:smoke` — built package consumption; requires a configured API key.

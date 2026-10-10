@@ -5,12 +5,15 @@ import {
   useAtomValue,
 } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
-import { Option, Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import { Effect, Layer, Option, Schema } from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
+import * as Reactivity from "effect/reactivity/Reactivity";
 import { act } from "react";
 import { describe, expect, it } from "vitest";
+import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { EarnPosition } from "../../src/domain/earn/models";
+import type { YieldBalancesCommand } from "../../src/domain/finance/models";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
@@ -21,8 +24,8 @@ import {
   PositionBalancesKey,
   positionBalancesAtom,
   positionBalancesByTypeAtom,
-  yieldPositionsResourceAtom,
 } from "../../src/resources/yield-positions/yield-positions";
+import { YieldResourceSource } from "../../src/services/api/resource-sources";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 import { render } from "../utils/test-utils.dom.tsx";
 
@@ -135,13 +138,26 @@ const PositionRouteHarness = ({
 
 describe("dashboard position wallet ownership", () => {
   it("clears wallet A data and action state before wallet B can stage an action", async () => {
-    const resourceA = yieldPositionsResourceAtom(scopeA);
-    const resourceB = yieldPositionsResourceAtom(scopeB);
+    const positionsSource = Layer.mergeAll(
+      Reactivity.layer,
+      Layer.succeed(
+        YieldResourceSource,
+        YieldResourceSource.of({
+          getPositions: (command: YieldBalancesCommand) =>
+            Effect.succeed({
+              errors: [],
+              items:
+                command.queries[0]?.address === scopeA.address
+                  ? [position]
+                  : [],
+            }),
+        } as never)
+      )
+    );
     const wrapper = (scope: WalletScopeKey) => (
       <RegistryProvider
         initialValues={[
-          [resourceA, AsyncResult.success({ errors: [], items: [position] })],
-          [resourceB, AsyncResult.success({ errors: [], items: [] })],
+          Atom.initialValue(appRuntime.layer, positionsSource as never),
         ]}
       >
         <PositionRouteHarness scope={scope} />

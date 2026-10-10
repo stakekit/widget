@@ -2,8 +2,8 @@ import { describe, expect, it } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import { Effect, Logger, References, Schema, SchemaGetter } from "effect";
 import {
-  TolerantTopLevelArray,
-  TolerantTopLevelRecord,
+  TolerantArray,
+  TolerantRecord,
 } from "../../src/domain/decoding/response-schema";
 import { ExactDecimal } from "../../src/domain/finance/scalars";
 
@@ -21,7 +21,7 @@ const ItemIdentifier = Schema.Struct({ id: Schema.String }).pipe(
   })
 );
 
-const Items = TolerantTopLevelArray(Item, {
+const Items = TolerantArray(Item, {
   operation: "test-items",
   identifier: ItemIdentifier,
 });
@@ -158,12 +158,45 @@ describe("API response schemas", () => {
       })
   );
 
+  it.effect(
+    "skips unsupported entries silently and still reports malformed supported entries",
+    () =>
+      Effect.gen(function* () {
+        const SupportedItems = TolerantArray(Item, {
+          operation: "test-supported-items",
+          identifier: ItemIdentifier,
+          isSupported: (input) =>
+            typeof input === "object" &&
+            input !== null &&
+            "id" in input &&
+            input.id !== "unsupported",
+        });
+        const decoded = captureDiagnostics(
+          Schema.decodeEffect(SupportedItems)([
+            validItem("item-1"),
+            { id: "unsupported", shape: "anything" },
+            validItem("item-amount-invalid", "NaN"),
+          ])
+        );
+
+        const result = yield* decoded.result;
+
+        expect(result.map((item) => item.id)).toEqual(["item-1"]);
+        expect(decoded.annotations).toEqual([
+          expect.objectContaining({
+            operation: "test-supported-items",
+            identifier: "item-amount-invalid",
+          }),
+        ]);
+      })
+  );
+
   it.effect("omits an entire key-value entry when its key or value fails", () =>
     Effect.gen(function* () {
       const RecordKey = Schema.String.check(Schema.isPattern(/^item-/)).pipe(
         Schema.brand("ResponseSchemaTestRecordKey")
       );
-      const RecordResponse = TolerantTopLevelRecord(RecordKey, Item, {
+      const RecordResponse = TolerantRecord(RecordKey, Item, {
         operation: "test-record",
         identifier: ItemIdentifier,
       });

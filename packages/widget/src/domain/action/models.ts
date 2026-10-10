@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 import * as YieldApi from "../../generated/api/yield-schema";
 import {
   ExactBaseUnitAmount,
@@ -8,6 +8,7 @@ import {
 } from "../finance/scalars";
 import {
   ActionId,
+  ProviderOption,
   TransactionId,
   ValidatorAddress,
   WalletAddress,
@@ -23,14 +24,14 @@ const PendingActionArgumentField = Schema.Struct({
 
 const ActionArguments = Schema.Struct({
   ...YieldApi.ActionArgumentsDto.fields,
-  providerId: Schema.optionalKey(YieldId),
+  providerId: Schema.optionalKey(ProviderOption),
   validatorAddress: Schema.optionalKey(ValidatorAddress),
   validatorAddresses: Schema.optionalKey(Schema.Array(ValidatorAddress)),
 });
 
 const ManageActionArguments = Schema.Struct({
   ...YieldApi.ActionArgumentsDto.fields,
-  providerId: Schema.optionalKey(YieldId),
+  providerId: Schema.optionalKey(ProviderOption),
   validatorAddress: Schema.optionalKey(ValidatorAddress),
   validatorAddresses: Schema.optionalKey(Schema.Array(ValidatorAddress)),
 });
@@ -56,8 +57,16 @@ export const ActionTransaction = Schema.Struct({
 });
 export type ActionTransaction = typeof ActionTransaction.Type;
 
+// Status polling and submission only read these fields; validating the rest
+// would let unrelated additions fail an in-flight transaction.
+export const ActionTransactionReceipt = Schema.Struct(
+  Struct.pick(YieldApi.TransactionDto.fields, ["status", "hash", "explorerUrl"])
+);
+export type ActionTransactionReceipt = typeof ActionTransactionReceipt.Type;
+
+// `executionPattern` and `events` are unread, so they are not decoded.
 export const YieldAction = Schema.Struct({
-  ...YieldApi.ActionDto.fields,
+  ...Struct.omit(YieldApi.ActionDto.fields, ["executionPattern", "events"]),
   address: WalletAddress,
   amount: Schema.NullOr(ExactDecimal),
   amountRaw: Schema.NullOr(ExactBaseUnitAmount),

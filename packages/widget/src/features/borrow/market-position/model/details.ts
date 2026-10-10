@@ -215,7 +215,8 @@ export const getBorrowPositionDetailsModel = ({
     currentRisk.status === "available" ? currentRisk.healthFactor : null;
   const marketRisk = deriveMarketRiskLimits(position.market);
   const maxLtv =
-    currentRisk.status === "available" ? currentRisk.maxLtv : marketRisk.maxLtv;
+    (currentRisk.status === "available" ? currentRisk.maxLtv : null) ??
+    marketRisk.maxLtv;
   const liquidationThreshold =
     currentRisk.status === "available"
       ? currentRisk.liquidationThreshold

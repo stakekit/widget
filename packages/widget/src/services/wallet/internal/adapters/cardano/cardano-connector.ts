@@ -1,27 +1,90 @@
 import { BrowserWallet } from "@meshsdk/wallet";
-import type { WalletDetailsParams, WalletList } from "@stakekit/rainbowkit";
 import { Effect, Stream } from "effect";
 import type { Address, Chain } from "viem";
 import { createConnector } from "wagmi";
-import { WalletIntegrationError } from "../../../wallet-errors";
+import type {
+  WalletDetailsParams,
+  WalletList,
+} from "../../../wallet-descriptors";
+import {
+  WalletIntegrationError,
+  WalletNotAvailableError,
+} from "../../../wallet-errors";
 import { getWalletNetworkLogo } from "../../runtime/assets";
 import { cardano } from "../configured-chains";
 import { wagmiConnectResult } from "../wagmi-connect-result";
+import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
 import {
   configMeta,
   type ExtraProps,
   type StorageItem,
 } from "./cardano-connector-meta";
+// Wallet logos from the wallets' Chrome Web Store listings, bundled because
+// the store's image CDN rate-limits hotlinked requests.
+import eternlIcon from "./icons/eternl.png";
+import laceIcon from "./icons/lace.png";
+import typhonIcon from "./icons/typhon.png";
+import vesprIcon from "./icons/vespr.png";
+import yoroiIcon from "./icons/yoroi.png";
 
-type MeshWallet = Awaited<
-  ReturnType<(typeof BrowserWallet)["getAvailableWallets"]>
->[number];
+type CardanoWallet = Readonly<{
+  id: string;
+  name: string;
+  iconUrl: string;
+  installUrl?: string;
+}>;
+
+/**
+ * Well-known CIP-30 extension wallets, offered before any is installed.
+ * Ids are their `window.cardano` keys, which Mesh's `BrowserWallet` enables.
+ */
+const catalogue: ReadonlyArray<CardanoWallet> = [
+  {
+    id: "eternl",
+    name: "Eternl",
+    iconUrl: eternlIcon,
+    installUrl:
+      "https://chromewebstore.google.com/detail/eternl/kmhcihpebfmpgmihbkipmjlmmioameka",
+  },
+  {
+    id: "lace",
+    name: "Lace",
+    iconUrl: laceIcon,
+    installUrl:
+      "https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk",
+  },
+  {
+    id: "yoroi",
+    name: "Yoroi",
+    iconUrl: yoroiIcon,
+    installUrl:
+      "https://chromewebstore.google.com/detail/secondfi-yoroi/ffnbelfdoeiohenkjibnmadjiehjhajb",
+  },
+  {
+    id: "typhoncip30",
+    name: "Typhon",
+    iconUrl: typhonIcon,
+    installUrl:
+      "https://chromewebstore.google.com/detail/typhon-wallet/kfdniefadaanbjodldohaedphafoffoh",
+  },
+  {
+    id: "vespr",
+    name: "VESPR",
+    iconUrl: vesprIcon,
+    installUrl:
+      "https://chromewebstore.google.com/detail/vespr-wallet/bedogdpgdnifilpgeianmmdabklhfkcn",
+  },
+];
+
+/** Whether the extension has injected its CIP-30 provider, per Mesh. */
+const isInjected = (id: string) =>
+  BrowserWallet.getInstalledWallets().some((wallet) => wallet.id === id);
 
 const createCardanoConnector = ({
   wallet,
   walletDetailsParams,
 }: {
-  wallet: MeshWallet;
+  wallet: CardanoWallet;
   walletDetailsParams: WalletDetailsParams;
 }) =>
   createConnector<unknown, ExtraProps, StorageItem>((config) => {
@@ -55,6 +118,9 @@ const createCardanoConnector = ({
 
         config.storage?.removeItem("cardano.disconnected");
 
+        if (!isInjected(wallet.id)) {
+          throw new WalletNotAvailableError({ walletId: wallet.id });
+        }
         connectedWallet = await BrowserWallet.enable(wallet.id);
 
         const address = await connectedWallet
@@ -101,39 +167,47 @@ const createCardanoConnector = ({
 
         return lastConnectedWallet.id === wallet.id;
       },
-      onAccountsChanged: (accounts: string[]) => {
-        if (accounts.length === 0) {
-          config.emitter.emit("disconnect");
-        } else {
-          config.emitter.emit("change", { accounts: accounts as Address[] });
-        }
-      },
-      onChainChanged: (chainId) => {
-        config.emitter.emit("change", {
-          chainId: chainId as unknown as number,
-        });
-      },
-      onDisconnect: () => {
-        config.emitter.emit("disconnect");
-      },
+      ...makeWagmiConnectorEvents(config.emitter),
       getProvider: async () => ({}),
       $filteredChains: Stream.succeed<Chain[]>([cardano]),
     };
   });
 
-export const getCardanoConnectors = (): WalletList[number] => ({
-  groupName: "Cardano",
-  wallets: BrowserWallet.getInstalledWallets().map((wallet) => () => ({
-    id: wallet.id,
-    name: wallet.name,
-    iconUrl: wallet.icon,
-    iconBackground: "#fff",
-    chainGroup: {
-      id: "cardano",
-      title: "Cardano",
-      iconUrl: getWalletNetworkLogo("cardano"),
-    },
-    createConnector: (walletDetailsParams) =>
-      createCardanoConnector({ wallet, walletDetailsParams }),
-  })),
-});
+export const getCardanoConnectors = (): WalletList[number] => {
+  const detected = BrowserWallet.getInstalledWallets().map(
+    (wallet): CardanoWallet => ({
+      id: wallet.id,
+      name: wallet.name,
+      iconUrl: wallet.icon,
+      installUrl: catalogue.find(({ id }) => id === wallet.id)?.installUrl,
+    })
+  );
+  const listed = [
+    ...detected,
+    ...catalogue.filter(
+      ({ id }) => !detected.some((wallet) => wallet.id === id)
+    ),
+  ];
+
+  return {
+    groupName: "Cardano",
+    wallets: listed.map((wallet) => () => ({
+      id: wallet.id,
+      name: wallet.name,
+      iconUrl: wallet.iconUrl,
+      iconBackground: "#fff",
+      availability: {
+        _tag: "Injected",
+        detect: Effect.sync(() => isInjected(wallet.id)),
+        installUrl: wallet.installUrl,
+      },
+      chainGroup: {
+        id: "cardano",
+        title: "Cardano",
+        iconUrl: getWalletNetworkLogo("cardano"),
+      },
+      createConnector: (walletDetailsParams) =>
+        createCardanoConnector({ wallet, walletDetailsParams }),
+    })),
+  };
+};

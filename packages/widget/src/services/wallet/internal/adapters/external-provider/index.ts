@@ -1,4 +1,3 @@
-import type { WalletList } from "@stakekit/rainbowkit";
 import { Array as EArray, Option } from "effect";
 import type { Address } from "viem";
 import type { Connector, CreateConnectorFn } from "wagmi";
@@ -9,6 +8,7 @@ import { config } from "../../../../../shared/config/widget-defaults";
 import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import { type CurrentRef, ExternalProvider } from "../../../external-provider";
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
+import type { WalletList } from "../../../wallet-descriptors";
 import { WalletRuntimeInvariantError } from "../../../wallet-errors";
 import { normalizeChainId } from "../../normalize-chain-id";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
@@ -51,6 +51,8 @@ export const externalProviderConnector = (
       name: configMeta.name,
       iconUrl: config.appIcon,
       iconBackground: "#fff",
+      // The host supplies the provider; nothing is injected into the page.
+      availability: { _tag: "Remote" },
       chainGroup: {
         id: configMeta.id,
         title: configMeta.name,

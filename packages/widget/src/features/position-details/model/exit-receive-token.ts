@@ -1,8 +1,16 @@
+import { Struct } from "effect";
 import type { ExitReceiveToken } from "../../../domain/action/rules";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import { getYieldActionArg } from "../../../domain/earn/yield";
-import type { TokenAddress } from "../../../domain/identity/identifiers";
-import type { Token } from "../../../domain/token/token";
+import {
+  addressIdentity,
+  type TokenAddress,
+} from "../../../domain/identity/identifiers";
+import {
+  getTokenArgumentAddress,
+  NATIVE_TOKEN_ADDRESS,
+  type Token,
+} from "../../../domain/token/token";
 import { formatAddress } from "../../../shared/lib/general";
 
 export type PositionDetailsExitReceiveTokenSelection = Readonly<{
@@ -35,7 +43,7 @@ type ExitReceiveTokenNoteView = Readonly<{
 export const equalExitReceiveTokenAddresses = (
   first: TokenAddress,
   second: TokenAddress
-) => first.toLowerCase() === second.toLowerCase();
+) => addressIdentity(first) === addressIdentity(second);
 
 const formatReceiveTokenAddress = (address: TokenAddress) =>
   formatAddress(address, {
@@ -47,6 +55,33 @@ const isSkySavingsRate = (integration: EarnYieldWithProvider) =>
   integration.providerId.toLowerCase() === "sky" &&
   integration.outputToken?.symbol.toLowerCase() === "susds";
 
+/**
+ * Indexes every token the yield describes by the identity of its argument
+ * address, so the native `"0x"` option resolves to the native token (often
+ * only the gas fee token). Look up with `addressIdentity`.
+ */
+export const buildExitReceiveTokensByAddress = (
+  integration: EarnYieldWithProvider
+): ReadonlyMap<string, Token> => {
+  const tokens = new Map<string, Token>();
+  for (const token of [
+    ...integration.inputTokens,
+    integration.token,
+    ...integration.tokens,
+    ...(integration.outputToken ? [integration.outputToken] : []),
+    integration.mechanics.gasFeeToken,
+  ]) {
+    const key = addressIdentity(getTokenArgumentAddress(token));
+    if (!tokens.has(key)) tokens.set(key, token);
+  }
+  return tokens;
+};
+
+/**
+ * Resolves the Exit Receive Token for any yield advertising exit `outputToken`
+ * options. Sky sUSDS keeps its USDS preference; others default to the first
+ * advertised option.
+ */
 export const resolvePositionDetailsExitReceiveTokenSelection = ({
   integration,
   selectedAddress,
@@ -54,50 +89,32 @@ export const resolvePositionDetailsExitReceiveTokenSelection = ({
   readonly integration: EarnYieldWithProvider;
   readonly selectedAddress: TokenAddress | null;
 }): PositionDetailsExitReceiveTokenSelection | null => {
-  if (!isSkySavingsRate(integration)) return null;
-
   const advertisedOptions = getYieldActionArg(
     integration,
     "exit",
     "outputToken"
   )?.options;
-  if (!advertisedOptions) return null;
+  if (!advertisedOptions?.length) return null;
 
-  const options = advertisedOptions.map((address) => {
-    const token = integration.inputTokens.find(
-      (candidate) =>
-        candidate.address &&
-        equalExitReceiveTokenAddresses(candidate.address, address)
-    );
-
-    return { address, symbol: token?.symbol ?? address };
-  });
+  const tokensByAddress = buildExitReceiveTokensByAddress(integration);
+  const options = advertisedOptions.map((address) => ({
+    address,
+    symbol: tokensByAddress.get(addressIdentity(address))?.symbol ?? address,
+  }));
 
   const selected = selectedAddress
     ? options.find((option) =>
         equalExitReceiveTokenAddresses(option.address, selectedAddress)
       )
-    : null;
+    : undefined;
+  const preferred = isSkySavingsRate(integration)
+    ? options.find((option) => option.symbol.toLowerCase() === "usds")
+    : undefined;
 
   return {
     options,
-    selected:
-      selected ??
-      options.find((option) => option.symbol.toLowerCase() === "usds") ??
-      options[0]!,
+    selected: selected ?? preferred ?? options[0]!,
   };
-};
-
-export const buildExitReceiveTokensByAddress = (
-  integration: EarnYieldWithProvider
-): ReadonlyMap<string, Token> => {
-  const tokens = new Map<string, Token>();
-  for (const token of integration.inputTokens) {
-    if (token.address) {
-      tokens.set(token.address.toLowerCase(), token);
-    }
-  }
-  return tokens;
 };
 
 export const projectExitReceiveTokenOption = ({
@@ -109,12 +126,14 @@ export const projectExitReceiveTokenOption = ({
   readonly positionToken: Token;
   readonly tokensByAddress: ReadonlyMap<string, Token>;
 }): ExitReceiveTokenOptionView => {
-  const known = tokensByAddress.get(option.address.toLowerCase());
+  const known = tokensByAddress.get(addressIdentity(option.address));
   const token =
     known ??
     ({
-      ...positionToken,
-      address: option.address,
+      ...Struct.omit(positionToken, ["address"]),
+      ...(option.address === NATIVE_TOKEN_ADDRESS
+        ? {}
+        : { address: option.address }),
       name: option.symbol,
       symbol: option.symbol,
       logoURI: undefined,

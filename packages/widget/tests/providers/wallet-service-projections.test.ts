@@ -1,6 +1,6 @@
 import { Effect, Layer, Option, Stream } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import {

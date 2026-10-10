@@ -1,7 +1,7 @@
-import type { ChainWalletBase } from "@cosmos-kit/core";
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect } from "effect";
 import type { Connector } from "wagmi";
+import type { CosmosChainWallet } from "../../../src/services/wallet/internal/adapters/cosmos/cosmos-connector-meta";
 import { makeCosmosWalletDriver } from "../../../src/services/wallet/internal/adapters/cosmos/driver";
 import { makeSubstrateWalletDriver } from "../../../src/services/wallet/internal/adapters/substrate/driver";
 
@@ -35,7 +35,11 @@ describe("Cosmos and Substrate wallet drivers", () => {
         type: "cosmosProvider",
         signTransaction,
       } as unknown as Connector;
-      const chainWallet = { chainId: "cosmoshub-4" } as ChainWalletBase;
+      const chainWallet: CosmosChainWallet = {
+        chainId: "cosmoshub-4",
+        getAccount: Effect.die("unused"),
+        signDirect: () => Effect.die("unused"),
+      };
 
       expect(
         yield* makeCosmosWalletDriver({

@@ -58,7 +58,6 @@ type WidgetWalletSnapshot = {
   readonly disableInjectedProviderDiscovery: boolean;
   readonly externalProviderInitToken: ExternalProviderSnapshot["initToken"];
   readonly hasExternalProvider: boolean;
-  readonly forceWalletConnectOnly: boolean;
   readonly institutionalWallets: boolean;
   readonly isLedgerLive: boolean;
   readonly isSafe: boolean;
@@ -91,7 +90,6 @@ export const selectWidgetBootstrapSnapshot = (
     chainIconMapping: settings.chainIconMapping,
     disableInjectedProviderDiscovery: settings.disableInjectedProviderDiscovery,
     externalProviderInitToken: settings.externalProviders?.initToken,
-    forceWalletConnectOnly: settings.forceWalletConnectOnly,
     hasExternalProvider: settings.externalProviders !== undefined,
     institutionalWallets: settings.institutionalWallets,
     isLedgerLive: settings.isLedgerLive,
@@ -107,7 +105,6 @@ const walletSnapshotKeys = [
   "chainIconMapping",
   "disableInjectedProviderDiscovery",
   "externalProviderInitToken",
-  "forceWalletConnectOnly",
   "hasExternalProvider",
   "institutionalWallets",
   "isLedgerLive",
@@ -197,17 +194,15 @@ const normalizeWidgetConfig = (
           network as Network | "*",
           {
             allowed: validators.allowed
-              ? new Set(validatorAddressIdentities(network, validators.allowed))
+              ? new Set(validatorAddressIdentities(validators.allowed))
               : undefined,
             blocked: validators.blocked
-              ? new Set(validatorAddressIdentities(network, validators.blocked))
+              ? new Set(validatorAddressIdentities(validators.blocked))
               : undefined,
             mergePreferredWithDefault:
               validators.mergePreferredWithDefault ?? true,
             preferred: validators.preferred
-              ? new Set(
-                  validatorAddressIdentities(network, validators.preferred)
-                )
+              ? new Set(validatorAddressIdentities(validators.preferred))
               : undefined,
             preferredOnly: validators.preferredOnly ?? false,
           },
@@ -247,7 +242,6 @@ const normalizeWidgetConfig = (
     disableResizingInputFontSize:
       hostConfiguration.disableResizingInputFontSize ?? false,
     externalProviders,
-    forceWalletConnectOnly: hostConfiguration.forceWalletConnectOnly ?? false,
     hideAccountAndChainSelector:
       hostConfiguration.hideAccountAndChainSelector ?? false,
     hideChainSelector: hostConfiguration.hideChainSelector ?? false,

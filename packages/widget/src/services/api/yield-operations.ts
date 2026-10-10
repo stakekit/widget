@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import {
   ActionCommand,
-  ActionTransaction,
+  ActionTransactionReceipt,
   ManageActionCommand,
   type SubmitSignedTransactionCommand,
   type SubmitTransactionHashCommand,
@@ -72,7 +72,7 @@ export const makeYieldOperations = (
     return yield* yieldApi
       .TransactionsControllerGetTransaction(command.transactionId, undefined)
       .pipe(
-        decodeApiResponse("get-transaction-status", ActionTransaction),
+        decodeApiResponse("get-transaction-status", ActionTransactionReceipt),
         presentRequestError
       );
   });
@@ -85,7 +85,7 @@ export const makeYieldOperations = (
         payload: command.payload,
       })
       .pipe(
-        decodeApiResponse("submit-transaction-hash", ActionTransaction),
+        decodeApiResponse("submit-transaction-hash", ActionTransactionReceipt),
         presentRequestError
       );
   });
@@ -98,7 +98,10 @@ export const makeYieldOperations = (
         payload: command.payload,
       })
       .pipe(
-        decodeApiResponse("submit-signed-transaction", ActionTransaction),
+        decodeApiResponse(
+          "submit-signed-transaction",
+          ActionTransactionReceipt
+        ),
         presentRequestError
       );
   });

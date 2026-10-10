@@ -21,6 +21,7 @@ import {
   isEvmWalletNetwork,
 } from "../../../../../domain/wallet/network";
 import type { SKTxMeta } from "../../../../../public-api/types";
+import { decodeWalletPayload } from "../decode-wallet-payload";
 import {
   unsignedBorrowEVMTransactionCodec,
   unsignedEVMTransactionCodec,
@@ -62,14 +63,6 @@ const eip1559FieldsUnsupportedNetworks = new Set<string>([
   "avalanche-c",
   "core",
 ]);
-
-const decodeSchema = <S extends Schema.ConstraintDecoder<unknown>>(
-  schema: S,
-  input: unknown
-): Result.Result<S["Type"], string> =>
-  Schema.decodeUnknownResult(schema)(input).pipe(
-    Result.mapError((error) => error.message)
-  );
 
 export type PrepareLedgerLiveTransaction = (
   params: PrepareLedgerLiveTransactionParams
@@ -147,7 +140,7 @@ const preparePolkadotTransaction = ({
   payload: unknown;
   txMeta: SKTxMeta;
 }): Effect.Effect<RawTransaction, LedgerTransactionPreparationError> =>
-  Effect.fromResult(decodeSchema(substratePayloadCodec, payload)).pipe(
+  Effect.fromResult(decodeWalletPayload(substratePayloadCodec, payload)).pipe(
     Effect.mapError(transactionPreparationError),
     Effect.flatMap((decodedPayload) =>
       loadPolkadotBuilder.pipe(
@@ -183,7 +176,7 @@ const prepareSynchronousTransaction = ({
         ? unsignedBorrowEVMTransactionCodec
         : unsignedEVMTransactionCodec;
 
-    return decodeSchema(codec, payload).pipe(
+    return decodeWalletPayload(codec, payload).pipe(
       Result.map((decodedTx) =>
         buildEthereumLedgerTransaction({
           network,
@@ -203,7 +196,7 @@ const prepareSynchronousTransaction = ({
 
   switch (network) {
     case "tron":
-      return decodeSchema(unsignedTronTransactionCodec, payload).pipe(
+      return decodeWalletPayload(unsignedTronTransactionCodec, payload).pipe(
         Result.flatMap(() => buildTronLedgerTransaction(txMeta))
       );
     case "near":
@@ -211,7 +204,7 @@ const prepareSynchronousTransaction = ({
     case "tezos":
       return buildTezosLedgerTransaction(txMeta);
     case "ton":
-      return decodeSchema(unsignedTonTransactionCodec, payload).pipe(
+      return decodeWalletPayload(unsignedTonTransactionCodec, payload).pipe(
         Result.flatMap((decodedTx) =>
           buildTonLedgerTransaction(decodedTx, txMeta)
         )

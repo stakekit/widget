@@ -1,5 +1,5 @@
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
 import type { EarnBalance } from "../../../../domain/earn/models";

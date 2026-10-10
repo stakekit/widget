@@ -1,4 +1,4 @@
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { walletConnectionStateAtom } from "../../../wallet/index";
 import {
   CurrentYieldKycGateKey,
@@ -18,7 +18,6 @@ export const positionDetailsFlowFactsAtom = Atom.family(
       const providers = get(
         yieldSummaryAtom(
           new YieldSummaryKey({
-            selectedProviderYieldId: null,
             validators:
               workflow.positionBalances?.type === "validators"
                 ? workflow.positionBalances.validators

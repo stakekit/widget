@@ -2,8 +2,8 @@ import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { EarnYieldWithProvider } from "../../src/domain/earn/models";
+import type { useSelectValidator } from "../../src/features/earn/react/use-select-validator";
 import { SelectValidatorSection } from "../../src/features/earn/ui/classic/earn-page/components/select-validator-section";
-import type { useSelectValidator } from "../../src/features/earn/ui/classic/earn-page/components/select-validator-section/use-select-validator";
 import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 import { render } from "../utils/test-utils";
@@ -16,12 +16,9 @@ const hookState = vi.hoisted(() => ({
   current: undefined as unknown as ReturnType<typeof useSelectValidator>,
 }));
 
-vi.mock(
-  "../../src/features/earn/ui/classic/earn-page/components/select-validator-section/use-select-validator",
-  () => ({
-    useSelectValidator: () => hookState.current,
-  })
-);
+vi.mock("../../src/features/earn/react/use-select-validator", () => ({
+  useSelectValidator: () => hookState.current,
+}));
 
 const baseYield = yieldApiYieldFixture();
 const selectedStake = {
@@ -188,5 +185,32 @@ describe("SelectValidatorSection", () => {
     await userEvent.click(trigger as HTMLButtonElement);
 
     await expect.element(app.getByText("View all")).toBeInTheDocument();
+  });
+
+  it("offers one control per validator row when selecting several validators", async () => {
+    hookState.current = createHookValue({
+      selectedStake: multiSelectStake,
+      validatorsData: [
+        decodeValidator(
+          yieldApiValidatorFixture({
+            address: "validator-0",
+            name: "Validator 0",
+            preferred: true,
+          })
+        ),
+      ],
+    });
+
+    const app = await renderSection();
+    const trigger = app.container.querySelector(
+      '[data-rk="select-validator-plus"]'
+    );
+    await userEvent.click(trigger as HTMLButtonElement);
+    await expect.element(app.getByText("Validator 0")).toBeInTheDocument();
+
+    const dialog = document.querySelector(
+      '[data-testid="select-modal__container"]'
+    );
+    expect(dialog?.querySelectorAll("button button")).toHaveLength(0);
   });
 });

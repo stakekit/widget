@@ -1,7 +1,7 @@
 import { Context, type Effect } from "effect";
 import type {
   ActionCommand,
-  ActionTransaction,
+  ActionTransactionReceipt,
   ManageActionCommand,
   SubmitSignedTransactionCommand,
   SubmitTransactionHashCommand,
@@ -59,16 +59,16 @@ type BorrowOperationsService = {
 type YieldOperationsService = {
   readonly getTransactionStatus: (
     command: TransactionStatusCommand
-  ) => Effect.Effect<ActionTransaction, ApiOperationFailure>;
+  ) => Effect.Effect<ActionTransactionReceipt, ApiOperationFailure>;
   readonly previewAction: (
     request: ActionPreviewRequest
   ) => Effect.Effect<YieldAction, ApiOperationFailure | InputValidationError>;
   readonly submitSignedTransaction: (
     command: SubmitSignedTransactionCommand
-  ) => Effect.Effect<ActionTransaction, ApiOperationFailure>;
+  ) => Effect.Effect<ActionTransactionReceipt, ApiOperationFailure>;
   readonly submitTransactionHash: (
     command: SubmitTransactionHashCommand
-  ) => Effect.Effect<ActionTransaction, ApiOperationFailure>;
+  ) => Effect.Effect<ActionTransactionReceipt, ApiOperationFailure>;
 };
 
 export class BorrowOperations extends Context.Service<

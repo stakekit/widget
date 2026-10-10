@@ -1,5 +1,5 @@
 import { Cause, Option, Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { describe, expect, it } from "vitest";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import type { ActivityActionItem } from "../../src/features/activity/model/activity-action";

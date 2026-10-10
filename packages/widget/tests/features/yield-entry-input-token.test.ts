@@ -23,7 +23,7 @@ const projectEnterArguments = (token: Token) => {
       connected: true,
       entry: {
         amount: new BigNumber("1"),
-        selectedProviderYieldId: null,
+        selectedProviderOption: null,
         token,
         tronResource: null,
         useMaxAmount: false,

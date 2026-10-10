@@ -16,6 +16,7 @@ import {
   PageCtaButton,
 } from "../../../../../widget-shell/views";
 import {
+  KycGateCard,
   MetaInfo,
   type RewardTokenDetails,
 } from "../../../../../yield-summary/views";
@@ -45,7 +46,7 @@ type ReviewPageProps = {
   managementFee: FeesBps | null;
   performanceFee: FeesBps | null;
   commissionFee: string | null;
-  notice?: ReactNode;
+  kyc?: ComponentProps<typeof KycGateCard>;
   feeConfigLoading?: boolean;
   cta: PageCta;
 } & MetaInfoProps;
@@ -66,7 +67,7 @@ export const ReviewPage = ({
   performanceFee,
   feeConfigLoading = false,
   commissionFee,
-  notice,
+  kyc,
   cta,
   ...rest
 }: ReviewPageProps) => {
@@ -88,7 +89,11 @@ export const ReviewPage = ({
           token={token}
         />
 
-        {notice && <Box marginTop="4">{notice}</Box>}
+        {kyc && (kyc.gate.state !== "pass" || kyc.isChecking) && (
+          <Box marginTop="4">
+            <KycGateCard {...kyc} />
+          </Box>
+        )}
 
         <Divider />
 

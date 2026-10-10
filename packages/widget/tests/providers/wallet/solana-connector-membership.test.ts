@@ -23,6 +23,7 @@ const descriptor = (
   source: SolanaWalletDescriptor["source"]
 ): SolanaWalletDescriptor => ({
   adapter,
+  isPresent: () => true,
   readyState: WalletReadyState.Installed,
   source,
 });
@@ -36,7 +37,7 @@ const makeConnectorFactory = (
     id: wallet.adapter.name,
     isSolanaConnector: true,
     name: wallet.adapter.name,
-    rkDetails: { groupName: "Solana", installed: true },
+    walletDetails: { groupName: "Solana" },
     solanaAdapter: wallet.adapter,
     solanaAdapterSource: wallet.source,
     type: `solana-${wallet.source}`,

@@ -26,6 +26,7 @@ import {
   stepsBefore,
   stepsBeforeMuted,
 } from "./styles.css";
+import { TransactionStepCircle } from "./transaction-step-circle";
 
 type Props = {
   txState: ReturnType<typeof useSteps>["txStates"][number];
@@ -129,30 +130,8 @@ const TxStateContent = ({
                   txState.state < ClassicTransactionStepState.SIGN_SUCCESS,
               })}
             >
-              <Box
-                background={
-                  txState.state > ClassicTransactionStepState.SIGN_IDLE
-                    ? "text"
-                    : "white"
-                }
-                borderColor={
-                  txState.state > ClassicTransactionStepState.SIGN_IDLE
-                    ? "text"
-                    : "textMuted"
-                }
-                borderRadius="half"
-                hw="10"
-                borderWidth={3}
-                borderStyle="solid"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                data-rk="tx-state-step-circle"
-                data-state={
-                  txState.state > ClassicTransactionStepState.SIGN_IDLE
-                    ? "success"
-                    : "pending"
-                }
+              <TransactionStepCircle
+                active={txState.state > ClassicTransactionStepState.SIGN_IDLE}
               >
                 {getStepIcon({
                   error: ClassicTransactionStepState.SIGN_ERROR,
@@ -160,7 +139,7 @@ const TxStateContent = ({
                   state: txState.state,
                   success: ClassicTransactionStepState.SIGN_SUCCESS,
                 })}
-              </Box>
+              </TransactionStepCircle>
             </Box>
 
             <Box
@@ -209,29 +188,9 @@ const TxStateContent = ({
                   txState.state < ClassicTransactionStepState.SIGN_SUCCESS,
               })}
             >
-              <Box
-                background={
+              <TransactionStepCircle
+                active={
                   txState.state >= ClassicTransactionStepState.SIGN_SUCCESS
-                    ? "text"
-                    : "white"
-                }
-                borderColor={
-                  txState.state >= ClassicTransactionStepState.SIGN_SUCCESS
-                    ? "text"
-                    : "textMuted"
-                }
-                borderRadius="half"
-                borderWidth={3}
-                borderStyle="solid"
-                hw="10"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                data-rk="tx-state-step-circle"
-                data-state={
-                  txState.state >= ClassicTransactionStepState.SIGN_SUCCESS
-                    ? "success"
-                    : "pending"
                 }
               >
                 {getStepIcon({
@@ -240,25 +199,15 @@ const TxStateContent = ({
                   state: txState.state,
                   success: ClassicTransactionStepState.BROADCAST_SUCCESS,
                 })}
-              </Box>
+              </TransactionStepCircle>
             </Box>
 
-            <Box
-              flexDirection="column"
-              display="flex"
-              alignItems="flex-start"
-              gap="1"
-              // TODO: CHANGE THIS!
-              marginTop="6"
-            >
-              <Text>{t("steps.submitting")}</Text>
-              {txState.state ===
-                ClassicTransactionStepState.BROADCAST_ERROR && (
-                <Text variant={{ type: "danger" }}>
-                  {t("shared.something_went_wrong")}
-                </Text>
-              )}
-            </Box>
+            <FailableStepLabel
+              label={t("steps.submitting")}
+              failed={
+                txState.state === ClassicTransactionStepState.BROADCAST_ERROR
+              }
+            />
           </Box>
 
           <Box
@@ -290,29 +239,9 @@ const TxStateContent = ({
                   txState.state < ClassicTransactionStepState.BROADCAST_SUCCESS,
               })}
             >
-              <Box
-                background={
+              <TransactionStepCircle
+                active={
                   txState.state >= ClassicTransactionStepState.BROADCAST_SUCCESS
-                    ? "text"
-                    : "white"
-                }
-                borderColor={
-                  txState.state >= ClassicTransactionStepState.BROADCAST_SUCCESS
-                    ? "text"
-                    : "textMuted"
-                }
-                borderRadius="half"
-                borderWidth={3}
-                borderStyle="solid"
-                hw="10"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                data-rk="tx-state-step-circle"
-                data-state={
-                  txState.state >= ClassicTransactionStepState.BROADCAST_SUCCESS
-                    ? "success"
-                    : "pending"
                 }
               >
                 {getStepIcon({
@@ -321,25 +250,16 @@ const TxStateContent = ({
                   state: txState.state,
                   success: ClassicTransactionStepState.CHECK_TX_STATUS_SUCCESS,
                 })}
-              </Box>
+              </TransactionStepCircle>
             </Box>
 
-            <Box
-              flexDirection="column"
-              display="flex"
-              alignItems="flex-start"
-              gap="1"
-              // TODO: CHANGE THIS!
-              marginTop="6"
-            >
-              <Text>{t("steps.pending")}</Text>
-              {txState.state ===
-                ClassicTransactionStepState.CHECK_TX_STATUS_ERROR && (
-                <Text variant={{ type: "danger" }}>
-                  {t("shared.something_went_wrong")}
-                </Text>
-              )}
-            </Box>
+            <FailableStepLabel
+              label={t("steps.pending")}
+              failed={
+                txState.state ===
+                ClassicTransactionStepState.CHECK_TX_STATUS_ERROR
+              }
+            />
           </Box>
 
           <Box
@@ -365,39 +285,17 @@ const TxStateContent = ({
                   ClassicTransactionStepState.CHECK_TX_STATUS_SUCCESS,
               })}
             >
-              <Box
-                background={
+              <TransactionStepCircle
+                active={
                   txState.state >=
                   ClassicTransactionStepState.CHECK_TX_STATUS_SUCCESS
-                    ? "text"
-                    : "white"
-                }
-                borderColor={
-                  txState.state >=
-                  ClassicTransactionStepState.CHECK_TX_STATUS_SUCCESS
-                    ? "text"
-                    : "textMuted"
-                }
-                borderWidth={3}
-                borderStyle="solid"
-                borderRadius="half"
-                hw="10"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                data-rk="tx-state-step-circle"
-                data-state={
-                  txState.state >=
-                  ClassicTransactionStepState.CHECK_TX_STATUS_SUCCESS
-                    ? "success"
-                    : "pending"
                 }
               >
                 {txState.state >=
                   ClassicTransactionStepState.CHECK_TX_STATUS_SUCCESS && (
                   <CheckSteps hw={18} />
                 )}
-              </Box>
+              </TransactionStepCircle>
             </Box>
 
             <Box
@@ -413,6 +311,34 @@ const TxStateContent = ({
           </Box>
         </CollapsibleContent>
       </CollapsibleRoot>
+    </Box>
+  );
+};
+
+const FailableStepLabel = ({
+  label,
+  failed,
+}: {
+  readonly label: string;
+  readonly failed: boolean;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <Box
+      flexDirection="column"
+      display="flex"
+      alignItems="flex-start"
+      gap="1"
+      // TODO: CHANGE THIS!
+      marginTop="6"
+    >
+      <Text>{label}</Text>
+      {failed && (
+        <Text variant={{ type: "danger" }}>
+          {t("shared.something_went_wrong")}
+        </Text>
+      )}
     </Box>
   );
 };

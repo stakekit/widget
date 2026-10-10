@@ -4,12 +4,12 @@ import type {
   WalletAPIClient,
 } from "@ledgerhq/wallet-api-client";
 import type { RawTransaction } from "@ledgerhq/wallet-api-core";
-import type { Chain } from "@stakekit/rainbowkit";
 import type { Effect, Stream } from "effect";
 import type { Address } from "viem";
 import type { Connector } from "wagmi";
 import type { SKTxMeta } from "../../../../../public-api/types";
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
+import type { Chain } from "../../../wallet-descriptors";
 import type { WalletIntegrationError } from "../../../wallet-errors";
 import type { LedgerTransactionPreparationError } from "./prepare-ledger-live-transaction";
 

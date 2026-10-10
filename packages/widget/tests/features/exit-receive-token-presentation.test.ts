@@ -3,11 +3,14 @@ import { describe, expect, it } from "vitest";
 import { TokenAddress } from "../../src/domain/identity/identifiers";
 import type { Token } from "../../src/domain/token/token";
 import {
+  buildExitReceiveTokensByAddress,
+  equalExitReceiveTokenAddresses,
   projectExitReceiveTokenOption,
   resolveExitReceiveTokenAccessory,
   resolveExitReceiveTokenNote,
+  resolvePositionDetailsExitReceiveTokenSelection,
 } from "../../src/features/position-details/model/exit-receive-token";
-import { yieldApiYieldDtoFixture } from "../fixtures";
+import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../fixtures";
 
 const address = (value: string) => Schema.decodeSync(TokenAddress)(value);
 
@@ -151,5 +154,148 @@ describe("Exit receive token presentation", () => {
         coinGeckoId: undefined,
       },
     });
+  });
+
+  it("projects the native receive option from the gas fee token without an address", () => {
+    const baseYield = yieldApiYieldDtoFixture();
+    const nativeEth = baseYield.token as Token;
+    const integration = yieldApiYieldFixture({
+      inputTokens: [usdc],
+      mechanics: { ...baseYield.mechanics, gasFeeToken: baseYield.token },
+      outputToken: usds,
+      token: usds,
+      tokens: [usds],
+    });
+
+    expect(
+      projectExitReceiveTokenOption({
+        option: { address: address("0x"), symbol: "ETH" },
+        positionToken: usds,
+        tokensByAddress: buildExitReceiveTokensByAddress(integration),
+      }).token
+    ).toEqual(nativeEth);
+
+    expect(
+      projectExitReceiveTokenOption({
+        option: { address: address("0x"), symbol: "ETH" },
+        positionToken: usds,
+        tokensByAddress: new Map(),
+      }).token
+    ).not.toHaveProperty("address");
+  });
+
+  const exitOutputTokenYield = ({
+    options,
+    tokens,
+  }: {
+    readonly options: ReadonlyArray<string>;
+    readonly tokens: ReadonlyArray<Token>;
+  }) => {
+    const baseYield = yieldApiYieldDtoFixture();
+    return yieldApiYieldFixture({
+      inputTokens: [...tokens],
+      mechanics: {
+        ...baseYield.mechanics,
+        arguments: {
+          enter: { fields: [] },
+          exit: {
+            fields: [
+              {
+                label: "Output Token",
+                name: "outputToken",
+                options: [...options],
+                required: true,
+                type: "string",
+              },
+            ],
+          },
+        },
+      },
+      providerId: "other",
+      token: tokens[0]!,
+      tokens: [...tokens],
+    });
+  };
+
+  it("keeps case-differing non-EVM receive options distinct", () => {
+    const lowerAddress = address("So1anaMintAddressAAAAAAAAAAAAAAAAAAAAAAAAAA");
+    const upperAddress = address("So1anaMintAddressaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    const lowerToken: Token = {
+      ...baseToken,
+      address: lowerAddress,
+      name: "First Mint",
+      network: "solana",
+      symbol: "FIRST",
+    };
+    const upperToken: Token = {
+      ...baseToken,
+      address: upperAddress,
+      name: "Second Mint",
+      network: "solana",
+      symbol: "SECOND",
+    };
+    const integration = exitOutputTokenYield({
+      options: [lowerAddress, upperAddress],
+      tokens: [lowerToken, upperToken],
+    });
+    const tokensByAddress = buildExitReceiveTokensByAddress(integration);
+
+    const selection = resolvePositionDetailsExitReceiveTokenSelection({
+      integration,
+      selectedAddress: upperAddress,
+    });
+
+    expect(selection?.options).toEqual([
+      { address: lowerAddress, symbol: "FIRST" },
+      { address: upperAddress, symbol: "SECOND" },
+    ]);
+    expect(selection?.selected).toEqual({
+      address: upperAddress,
+      symbol: "SECOND",
+    });
+    expect(
+      selection?.options.map(
+        (option) =>
+          projectExitReceiveTokenOption({
+            option,
+            positionToken: lowerToken,
+            tokensByAddress,
+          }).token
+      )
+    ).toEqual([lowerToken, upperToken]);
+    expect(equalExitReceiveTokenAddresses(lowerAddress, upperAddress)).toBe(
+      false
+    );
+  });
+
+  it("matches EVM receive options across checksum and lowercase forms", () => {
+    const checksumAddress = address(
+      "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    );
+    const checksumUsdc: Token = { ...usdc, address: checksumAddress };
+    const integration = exitOutputTokenYield({
+      options: [usdsAddress, otherUsdcAddress],
+      tokens: [usds, checksumUsdc],
+    });
+
+    const selection = resolvePositionDetailsExitReceiveTokenSelection({
+      integration,
+      selectedAddress: checksumAddress,
+    });
+
+    expect(selection?.selected).toEqual({
+      address: otherUsdcAddress,
+      symbol: "USDC",
+    });
+    expect(
+      projectExitReceiveTokenOption({
+        option: selection!.selected,
+        positionToken: usds,
+        tokensByAddress: buildExitReceiveTokensByAddress(integration),
+      }).token
+    ).toEqual(checksumUsdc);
+    expect(
+      equalExitReceiveTokenAddresses(checksumAddress, otherUsdcAddress)
+    ).toBe(true);
   });
 });

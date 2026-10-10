@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import type * as Atom from "effect/reactivity/Atom";
 import { makeScopedEffectAtom } from "../../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
 import {
@@ -11,14 +11,18 @@ import { classicTransactionFlowServiceAtom } from "./classic-flow";
 import { makeClassicFlowExecutionScopeAtom } from "./classic-flow-execution";
 import { makeClassicFlowReviewScopeAtom } from "./classic-flow-review";
 
-const makeClassicFlowSessionModule = (session: ClassicFlowSession) =>
+/**
+ * One mounted Flow Session. The flow route creates an instance per mount, so
+ * the Session's operations live exactly as long as that Atom's Scope.
+ */
+export const makeClassicFlowSessionModule = (session: ClassicFlowSession) =>
   makeScopedEffectAtom({
     acquire: (context) =>
       context
         .result(classicTransactionFlowServiceAtom)
-        .pipe(Effect.flatMap((service) => service.acquireSession(session))),
+        .pipe(Effect.flatMap((service) => service.openSession(session))),
     label: "classicFlowSessionScope",
-    makeValue: (sessionOutcomeAtom) => {
+    makeValue: (sessionAtom) => {
       const getIntake = <Variant extends ClassicTransactionFlowIntake["_tag"]>(
         variant: Variant
       ): Extract<ClassicTransactionFlowIntake, { readonly _tag: Variant }> => {
@@ -41,15 +45,9 @@ const makeClassicFlowSessionModule = (session: ClassicFlowSession) =>
         facade,
         ports: {
           makeExecutionScopeAtom: () =>
-            makeClassicFlowExecutionScopeAtom({
-              session,
-              sessionOutcomeAtom,
-            }),
+            makeClassicFlowExecutionScopeAtom({ session, sessionAtom }),
           makeReviewScopeAtom: () =>
-            makeClassicFlowReviewScopeAtom({
-              session,
-              sessionOutcomeAtom,
-            }),
+            makeClassicFlowReviewScopeAtom({ session, sessionAtom }),
         },
       } as const;
     },
@@ -78,7 +76,3 @@ type ClassicFlowExecutionModule = Atom.Type<
   ReturnType<typeof makeClassicFlowExecutionScope>
 >;
 export type ClassicFlowExecutionFacade = ClassicFlowExecutionModule["facade"];
-
-export const classicFlowSessionRootAtomFamily = Atom.family(
-  makeClassicFlowSessionModule
-);

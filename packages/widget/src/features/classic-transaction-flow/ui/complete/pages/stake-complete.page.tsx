@@ -1,5 +1,4 @@
 import { useAtomValue } from "@effect/atom-react";
-import { getActionProviderYieldId } from "../../../../../domain/action/rules";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import { defaultFormattedNumber } from "../../../../../shared/lib/number-format";
 import { useTrackPage } from "../../../../tracking/index";
@@ -21,7 +20,6 @@ export const StakeCompletePage = () => {
       new YieldSummaryKey({
         yield: selectedStake,
         validators: new Map(enterFlow.selectedValidators),
-        selectedProviderYieldId: getActionProviderYieldId(enterFlow.request),
       })
     )
   );

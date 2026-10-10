@@ -9,11 +9,7 @@ import {
   type Scope,
   Stream,
 } from "effect";
-import {
-  FetchHttpClient,
-  HttpClient,
-  HttpClientResponse,
-} from "effect/unstable/http";
+import { FetchHttpClient, HttpClient, HttpClientResponse } from "effect/http";
 import { createInstance } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";

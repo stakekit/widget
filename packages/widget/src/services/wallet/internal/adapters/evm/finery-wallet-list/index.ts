@@ -1,20 +1,17 @@
-import type { Chain, WalletList } from "@stakekit/rainbowkit";
-import {
-  coinbaseWallet,
-  injectedWallet,
-  ledgerWallet,
-  metaMaskWallet,
-  safeWallet,
-  walletConnectWallet,
-} from "@stakekit/rainbowkit/wallets";
 import { createStore } from "mipd";
 import type { EIP1193Provider } from "viem";
 import { injected } from "wagmi";
 import { evmChainGroup } from "../../../../../../services/wallet/evm-chain-group";
+import type { Chain, WalletList } from "../../../../wallet-descriptors";
+import safeWalletIcon from "../icons/safe-wallet.svg";
+import {
+  announcedWalletAvailability,
+  failWhenProviderMissing,
+} from "../injected-availability";
 import { passCorrectChainsToWallet } from "../utils";
+import { coinbaseWallet, type EvmWallets, injectedWallet } from "../wallets";
 import bitGoIcon from "./custom-wallet-icons/bitgo.svg";
 import { cactusIcon } from "./custom-wallet-icons/cactus-icon";
-// import { copperIcon } from "../../../../../hooks/custom-wallet-icons/copper-icon";
 import finoaIcon from "./custom-wallet-icons/finoa.svg";
 import { fireblocksIcon } from "./custom-wallet-icons/fireblocks-icon";
 import { mpcVaultIcon } from "./custom-wallet-icons/mpcvault-icon";
@@ -22,13 +19,7 @@ import utilIcon from "./custom-wallet-icons/utila.svg";
 
 type CommonWalletOptions = Pick<
   ReturnType<WalletList[number]["wallets"][number]>,
-  | "iconUrl"
-  | "id"
-  | "name"
-  | "rdns"
-  | "iconBackground"
-  | "downloadUrls"
-  | "chainGroup"
+  "iconUrl" | "id" | "name" | "rdns" | "iconBackground" | "chainGroup"
 >;
 
 const bitgoWallet: CommonWalletOptions = {
@@ -37,9 +28,6 @@ const bitgoWallet: CommonWalletOptions = {
   name: "BitGo",
   rdns: "com.bitgo.wallet",
   iconBackground: "#010E1B",
-  downloadUrls: {
-    qrCode: "https://www.bitgo.com/",
-  },
   chainGroup: evmChainGroup,
 };
 
@@ -49,16 +37,6 @@ const fireblocksWallet: CommonWalletOptions = {
   name: "Fireblocks",
   rdns: "com.fireblocks.wallet",
   iconBackground: "#131A2D",
-  downloadUrls: {
-    android:
-      "https://play.google.com/store/apps/details?id=com.fireblocks.client",
-    ios: "https://apps.apple.com/us/app/fireblocks/id1439296596",
-    qrCode: "https://fireblocks.com/",
-    browserExtension:
-      "https://chromewebstore.google.com/detail/fireblocks-defi-extension/mpmfkenmdhemcjnkfndoiagglhpenolg",
-    chrome:
-      "https://chromewebstore.google.com/detail/fireblocks-defi-extension/mpmfkenmdhemcjnkfndoiagglhpenolg",
-  },
   chainGroup: evmChainGroup,
 };
 
@@ -68,13 +46,6 @@ const cactusWallet: CommonWalletOptions = {
   name: "Cactus",
   rdns: "com.cactus.wallet",
   iconBackground: "#FFF",
-  downloadUrls: {
-    chrome:
-      "https://chromewebstore.google.com/detail/cactus-link/chiilpgkfmcopocdffapngjcbggdehmj",
-    browserExtension:
-      "https://chromewebstore.google.com/detail/cactus-link/chiilpgkfmcopocdffapngjcbggdehmj",
-    qrCode: "https://mycactus.com/",
-  },
   chainGroup: evmChainGroup,
 };
 
@@ -84,16 +55,6 @@ const mpcVaultWallet: CommonWalletOptions = {
   name: "MPC Vault",
   rdns: "com.mpcvault.wallet",
   iconBackground: "#1A1A1A",
-  downloadUrls: {
-    ios: "https://apps.apple.com/us/app/mpcvault-multisig-wallet/id1622756458",
-    android:
-      "https://play.google.com/store/apps/details?id=com.mpcvault.mobileapp.android",
-    chrome:
-      "https://chromewebstore.google.com/detail/mpcvault/jgfmfplofjigjfokigdiaiibhonfnedj",
-    browserExtension:
-      "https://chromewebstore.google.com/detail/mpcvault/jgfmfplofjigjfokigdiaiibhonfnedj",
-    qrCode: "https://mpcvault.com/",
-  },
   chainGroup: evmChainGroup,
 };
 
@@ -103,11 +64,6 @@ const utilaWallet: CommonWalletOptions = {
   name: "Utila",
   rdns: "com.utila.wallet",
   iconBackground: "#FFF",
-  downloadUrls: {
-    android: "https://play.google.com/store/apps/details?id=io.utila.app",
-    ios: "https://apps.apple.com/us/app/utila/id6443589681",
-    qrCode: "https://utila.io/",
-  },
   chainGroup: evmChainGroup,
 };
 
@@ -117,37 +73,15 @@ const finoaWallet: CommonWalletOptions = {
   name: "Finoa",
   rdns: "com.finoa.wallet",
   iconBackground: "#FFF",
-  downloadUrls: {
-    qrCode: "https://finoa.io/",
-  },
   chainGroup: evmChainGroup,
 };
 
-// const copperConnectWallet: CommonWalletOptions = {
-//   iconUrl: copperIcon,
-//   id: "copperConnect",
-//   name: "Copper Connect",
-//   rdns: "com.copper.wallet",
-//   iconBackground: "#1A1A1A",
-//   downloadUrls: {
-//     qrCode: "https://copper.co/",
-//     chrome:
-//       "https://chromewebstore.google.com/detail/copper-connect/pkklibkpnflbmahpcnpifnnooicnehnh",
-//     browserExtension:
-//       "https://chromewebstore.google.com/detail/copper-connect/pkklibkpnflbmahpcnpifnnooicnehnh",
-//   },
-// };
-
-const safeWalletOptions = safeWallet();
 const safeWalletWC: CommonWalletOptions = {
-  iconUrl: safeWalletOptions.iconUrl,
-  id: safeWalletOptions.id,
-  name: safeWalletOptions.name,
-  rdns: safeWalletOptions.rdns,
-  iconBackground: safeWalletOptions.iconBackground,
-  downloadUrls: {
-    qrCode: "https://app.safe.global/",
-  },
+  iconUrl: safeWalletIcon,
+  id: "safe",
+  name: "Safe",
+  rdns: "app.safe",
+  iconBackground: "#12FF80",
   chainGroup: evmChainGroup,
 };
 
@@ -155,114 +89,83 @@ const asEip1193Provider = (
   provider: Record<string, unknown> | undefined
 ): EIP1193Provider | undefined => provider as EIP1193Provider | undefined;
 
-export const createFineryWallets: (evmChains: Chain[]) => {
+export const createFineryWallets = (
+  evmChains: Chain[],
+  wallets: EvmWallets
+): {
   primaryWallets: WalletList[number]["wallets"];
   otherWallets: WalletList[number]["wallets"];
-} = (evmChains: Chain[]) => {
+} => {
+  // Institutional extensions announce themselves over EIP-6963; the store keeps
+  // listening, so detection sees extensions that appear after bootstrap.
   const store = createStore();
+  const announcedProvider = (rdns: string) =>
+    asEip1193Provider(store.findProvider({ rdns })?.provider);
 
-  const providers = store.getProviders();
+  const institutionalExtension =
+    ({
+      icon,
+      id,
+      installUrl,
+      name,
+      rdns,
+      wallet,
+    }: {
+      readonly icon: string;
+      readonly id: string;
+      readonly installUrl: string;
+      readonly name: string;
+      readonly rdns: string;
+      readonly wallet: CommonWalletOptions;
+    }): WalletList[number]["wallets"][number] =>
+    () => ({
+      ...wallet,
+      id,
+      name: store.findProvider({ rdns })?.info.name ?? name,
+      rdns,
+      availability: announcedWalletAvailability({ installUrl, rdns, store }),
+      createConnector: (walletDetails) => (config) => ({
+        ...walletDetails,
+        ...failWhenProviderMissing(
+          id,
+          injected({
+            target: {
+              id,
+              name,
+              provider: () => announcedProvider(rdns),
+              icon: store.findProvider({ rdns })?.info.icon ?? icon,
+            },
+          })
+        )(config),
+      }),
+    });
 
-  const {
-    fireblocksProvider,
-    // copperConnectProvider,
-    mpcVaultProvider,
-    cactusProvider,
-  } = providers.reduce(
-    (acc, p) => {
-      if (p.info.rdns === "com.fireblocks") acc.fireblocksProvider = p;
-      // if (p.info.rdns === "co.copper") acc.copperConnectProvider = p;
-      if (p.info.rdns === "com.mpcvault.console") acc.mpcVaultProvider = p;
-      if (p.info.rdns === "com.mycactus") acc.cactusProvider = p;
-      return acc;
-    },
-    {
-      fireblocksProvider: undefined,
-      // copperConnectProvider: undefined,
-      mpcVaultProvider: undefined,
-      cactusProvider: undefined,
-    } as {
-      fireblocksProvider: (typeof providers)[number] | undefined;
-      // copperConnectProvider: (typeof providers)[number] | undefined;
-      mpcVaultProvider: (typeof providers)[number] | undefined;
-      cactusProvider: (typeof providers)[number] | undefined;
-    }
-  );
-
-  const cactusLinkWallet: WalletList[number]["wallets"][number] = () => ({
-    ...cactusWallet,
-    id: "cactusLink",
-    name: cactusProvider?.info.name ?? "Cactus Link",
-    rdns: cactusProvider?.info.rdns ?? "com.mycactus",
-    installed: !!cactusProvider?.provider,
-    createConnector: (rkDetails) => (config) => ({
-      ...rkDetails,
-      ...injected({
-        target: {
-          id: "cactusLink",
-          name: "Cactus Link",
-          provider: () => asEip1193Provider(cactusProvider?.provider),
-          icon: cactusProvider?.info.icon ?? cactusIcon,
-        },
-      })(config),
-    }),
-  });
-
-  const mpcVaultExtWallet: WalletList[number]["wallets"][number] = () => ({
-    ...mpcVaultWallet,
-    id: "mpcvaultPlugin",
-    name: mpcVaultProvider?.info.name ?? "MPCVault",
-    rdns: mpcVaultProvider?.info.rdns ?? "com.mpcvault.console",
-    installed: !!mpcVaultProvider?.provider,
-    createConnector: (rkDetails) => (config) => ({
-      ...rkDetails,
-      ...injected({
-        target: {
-          id: "mpcvaultPlugin",
-          name: "MPC Vault",
-          provider: () => asEip1193Provider(mpcVaultProvider?.provider),
-          icon: mpcVaultProvider?.info.icon ?? mpcVaultIcon,
-        },
-      })(config),
-    }),
-  });
-
-  // const copperConnectExtWallet: WalletList[number]["wallets"][number] = () => ({
-  //   ...copperConnectWallet,
-  //   id: "copperConnect",
-  //   name: copperConnectProvider?.info.name ?? "Copper Connect",
-  //   rdns: copperConnectProvider?.info.rdns ?? "co.copper",
-  //   installed: !!copperConnectProvider?.provider,
-  //   createConnector: (rkDetails) => (config) => ({
-  //     ...rkDetails,
-  //     ...injected({
-  //       target: {
-  //         id: "copperConnect",
-  //         name: "Copper Connect",
-  //         provider: copperConnectProvider?.provider as typeof window.ethereum,
-  //         icon: copperConnectProvider?.info.icon ?? copperIcon,
-  //       },
-  //     })(config),
-  //   }),
-  // });
-
-  const fireblocksExtWallet: WalletList[number]["wallets"][number] = () => ({
-    ...fireblocksWallet,
+  const fireblocksExtWallet = institutionalExtension({
+    icon: fireblocksIcon,
     id: "fireblocks",
-    name: fireblocksProvider?.info.name ?? "Fireblocks",
-    rdns: fireblocksProvider?.info.rdns ?? "com.fireblocks",
-    installed: !!fireblocksProvider,
-    createConnector: (rkDetails) => (config) => ({
-      ...rkDetails,
-      ...injected({
-        target: {
-          id: "fireblocks",
-          name: "Fireblocks",
-          provider: () => asEip1193Provider(fireblocksProvider?.provider),
-          icon: fireblocksProvider?.info.icon ?? fireblocksIcon,
-        },
-      })(config),
-    }),
+    installUrl:
+      "https://chromewebstore.google.com/detail/fireblocks-defi-extension/mpmfkenmdhemcjnkfndoiagglhpenolg",
+    name: "Fireblocks",
+    rdns: "com.fireblocks",
+    wallet: fireblocksWallet,
+  });
+  const mpcVaultExtWallet = institutionalExtension({
+    icon: mpcVaultIcon,
+    id: "mpcvaultPlugin",
+    installUrl:
+      "https://chromewebstore.google.com/detail/mpcvault/jgfmfplofjigjfokigdiaiibhonfnedj",
+    name: "MPCVault",
+    rdns: "com.mpcvault.console",
+    wallet: mpcVaultWallet,
+  });
+  const cactusLinkWallet = institutionalExtension({
+    icon: cactusIcon,
+    id: "cactusLink",
+    installUrl:
+      "https://chromewebstore.google.com/detail/cactus-link/chiilpgkfmcopocdffapngjcbggdehmj",
+    name: "Cactus Link",
+    rdns: "com.mycactus",
+    wallet: cactusWallet,
   });
 
   const fineryWCWallets: WalletList[number]["wallets"] = [
@@ -273,7 +176,7 @@ export const createFineryWallets: (evmChains: Chain[]) => {
   ].map((w) =>
     passCorrectChainsToWallet(
       (props) => ({
-        ...walletConnectWallet(props),
+        ...wallets.walletConnectWallet(props),
         ...w,
         id: `${w.id}-wc`,
         rdns: `${w.rdns}-wc`,
@@ -285,17 +188,16 @@ export const createFineryWallets: (evmChains: Chain[]) => {
   const primaryWallets: WalletList[number]["wallets"] = [
     ...[
       fireblocksExtWallet,
-      // copperConnectExtWallet,
       mpcVaultExtWallet,
       cactusLinkWallet,
-      ledgerWallet,
+      wallets.ledgerWallet,
     ].map((w) => passCorrectChainsToWallet(w, evmChains)),
     ...fineryWCWallets,
   ];
 
   const otherWallets: WalletList[number]["wallets"] = [
-    metaMaskWallet,
-    walletConnectWallet,
+    wallets.metaMaskWallet,
+    wallets.walletConnectWallet,
     coinbaseWallet,
     injectedWallet,
   ].map((w) => passCorrectChainsToWallet(w, evmChains));

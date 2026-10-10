@@ -1,4 +1,4 @@
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import { tokenString } from "../../../domain/token/token";
 import { TrackingService } from "../../../services/tracking/tracking-service";

@@ -43,6 +43,26 @@ type EndpointDotProps = {
   index?: number;
 };
 
+const ChartDotGlyph = ({
+  cx,
+  cy,
+}: {
+  readonly cx: number;
+  readonly cy: number;
+}) => (
+  <>
+    <circle cx={cx} cy={cy} fill={accentColor} fillOpacity={0.25} r={6} />
+    <circle
+      cx={cx}
+      cy={cy}
+      fill={accentColor}
+      r={3.5}
+      stroke={vars.color.background}
+      strokeWidth={1.5}
+    />
+  </>
+);
+
 export type ChartTooltipProps = {
   active?: boolean;
   chartId?: string;
@@ -152,15 +172,7 @@ export const HistoryChart = ({
 
     return (
       <g key={`${chartId}-endpoint`}>
-        <circle cx={cx} cy={cy} fill={accentColor} fillOpacity={0.25} r={6} />
-        <circle
-          cx={cx}
-          cy={cy}
-          fill={accentColor}
-          r={3.5}
-          stroke={vars.color.background}
-          strokeWidth={1.5}
-        />
+        <ChartDotGlyph cx={cx} cy={cy} />
       </g>
     );
   };
@@ -172,15 +184,7 @@ export const HistoryChart = ({
 
     return (
       <g key={`${chartId}-active-dot`}>
-        <circle cx={cx} cy={cy} fill={accentColor} fillOpacity={0.25} r={6} />
-        <circle
-          cx={cx}
-          cy={cy}
-          fill={accentColor}
-          r={3.5}
-          stroke={vars.color.background}
-          strokeWidth={1.5}
-        />
+        <ChartDotGlyph cx={cx} cy={cy} />
       </g>
     );
   };

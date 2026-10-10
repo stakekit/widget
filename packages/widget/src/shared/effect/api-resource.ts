@@ -1,6 +1,6 @@
 import { Duration } from "effect";
-import type * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import type * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 
 type ApiResourcePolicy = {
   readonly staleTime: Duration.Input;

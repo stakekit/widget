@@ -23,7 +23,7 @@ const makeView = (overrides: Record<string, unknown> = {}) =>
     }),
     pendingActions: [],
     positionBalancesByType: new Map(),
-    reducedStakedOrLiquidBalance: {
+    exitBalance: {
       amount: new BigNumber(2),
       amountUsd: new BigNumber(5),
       token: balance.token,

@@ -4,8 +4,8 @@ import { WidgetTranslationProvider } from "../../../features/preferences/composi
 import { WagmiConfigProvider } from "../../../features/wallet/composition";
 import { MountAnimationEffects } from "./mount-animation";
 import { ThirdPartyQueryClientProvider } from "./query-client";
-import { RainbowProvider } from "./rainbow";
 import { ThemeWrapper } from "./theme-wrapper";
+import { WalletPresentationProvider } from "./wallet-modals";
 import { WidgetPresentationAdapter } from "./widget-presentation";
 
 export const Providers = ({
@@ -17,9 +17,9 @@ export const Providers = ({
         <ThirdPartyQueryClientProvider>
           <MountAnimationEffects />
           <WagmiConfigProvider>
-            <RainbowProvider>
+            <WalletPresentationProvider>
               <ThemeWrapper>{children}</ThemeWrapper>
-            </RainbowProvider>
+            </WalletPresentationProvider>
           </WagmiConfigProvider>
         </ThirdPartyQueryClientProvider>
       </WidgetPresentationAdapter>

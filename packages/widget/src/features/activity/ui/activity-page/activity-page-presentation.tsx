@@ -2,7 +2,6 @@ import { Match } from "effect";
 import { useTranslation } from "react-i18next";
 import { VirtualList } from "../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../shared/ui/primitives/box";
-import { Button } from "../../../../shared/ui/primitives/button";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { FallbackContent } from "../../../widget-shell/views";
@@ -12,6 +11,7 @@ import type {
   ActivityPagePagination,
   ActivityPageView,
 } from "../../state/page";
+import { ActivityRetryMessage } from "../components/activity-retry-message";
 import { ActionListItem } from "./components/action-list-item";
 import { ActivityFilters } from "./components/activity-filters";
 import { container } from "./style.css";
@@ -38,26 +38,19 @@ const ActivityPageError = ({
 }: {
   readonly dataRk: string;
   readonly onRetry: () => void;
-}) => {
-  const { t } = useTranslation();
-
-  return (
-    <Box
-      alignItems="center"
-      data-rk={dataRk}
-      display="flex"
-      flexDirection="column"
-      gap="2"
-      justifyContent="center"
-      my="4"
-    >
-      <Text variant={{ type: "danger" }} textAlign="center">
-        {t("shared.something_went_wrong")}
-      </Text>
-      <Button onClick={onRetry}>{t("shared.retry")}</Button>
-    </Box>
-  );
-};
+}) => (
+  <Box
+    alignItems="center"
+    data-rk={dataRk}
+    display="flex"
+    flexDirection="column"
+    gap="2"
+    justifyContent="center"
+    my="4"
+  >
+    <ActivityRetryMessage onRetry={onRetry} />
+  </Box>
+);
 
 const resolveInfiniteScroll = (
   pagination: ActivityPagePagination

@@ -14,6 +14,11 @@ import {
   type StellarWalletsKitPlatformService,
 } from "../../../src/services/wallet/internal/platform/stellar-wallets-kit-platform";
 import { WagmiOperations } from "../../../src/services/wallet/internal/platform/wagmi-operations";
+import {
+  type WalletConnectPresentation,
+  WalletConnectPresentationPlatform,
+} from "../../../src/services/wallet/internal/platform/wallet-connect-presentation";
+import { WalletConnectProtocolPlatform } from "../../../src/services/wallet/internal/platform/wallet-connect-protocol";
 import { buildsEcosystemConnectors } from "../../../src/services/wallet/internal/runtime/connector-mode";
 import { makeWagmiActions } from "../../../src/services/wallet/internal/runtime/wagmi-actions";
 import {
@@ -22,8 +27,15 @@ import {
 } from "../../../src/services/wallet/internal/runtime/wagmi-config";
 import { WalletIntegrationError } from "../../../src/services/wallet/wallet-errors";
 import { runWalletEffect } from "../../utils/run-wallet-effect";
+import { unusedWalletConnectProtocol } from "../../utils/wallet-connect";
+import { stubWalletModal } from "../../utils/wallet-modal";
 
 const browser = vi.hoisted(() => ({ isLedgerDappBrowser: false }));
+
+const unusedWalletConnectPresentation = {
+  connect: () =>
+    Effect.die(new Error("Connector construction must not open a QR dialog")),
+} satisfies WalletConnectPresentation;
 
 /**
  * Counts how often each connector chunk is evaluated. The gate exists so those
@@ -116,7 +128,10 @@ vi.mock(
 
         return {
           connector: { groupName: "Cosmos", wallets: [] },
-          walletManager: { onMounted: async () => undefined },
+          walletManager: {
+            onMounted: async () => undefined,
+            onUnmounted: () => undefined,
+          },
         };
       },
     };
@@ -178,9 +193,7 @@ const buildControllerEffect = (
         walletListFactory: undefined,
         disableInjectedProviderDiscovery: true,
         enabledNetworks: new Set(["ethereum", "cosmos", "polkadot", "tron"]),
-        forceWalletConnectOnly: false,
         institutionalWallets: false,
-        isMobileWallet: false,
         isLedgerLive: false,
         isSafe: false,
         mapWalletFn: undefined,
@@ -194,7 +207,14 @@ const buildControllerEffect = (
         ...overrides,
       },
       buildActions,
-      StellarWalletsKitPlatform.of({ load: Effect.succeed([]) })
+      StellarWalletsKitPlatform.of({ load: () => Effect.succeed([]) }),
+      WalletConnectPresentationPlatform.of({
+        make: Effect.succeed(unusedWalletConnectPresentation),
+      }),
+      WalletConnectProtocolPlatform.of({
+        make: Effect.succeed(unusedWalletConnectProtocol),
+      }),
+      stubWalletModal()
     );
   }).pipe(Effect.provide(WagmiOperations.layer));
 
@@ -266,7 +286,8 @@ describe("ecosystem connector gate", () => {
         const gated = yield* getSubstrateConfig({
           buildConnectors: false,
           enabledNetworks: substrateNetworks,
-          forceWalletConnectOnly: false,
+          walletConnectProtocol: unusedWalletConnectProtocol,
+          runWalletEffect,
         });
 
         expect(gated.connector).toBeNull();
@@ -277,7 +298,8 @@ describe("ecosystem connector gate", () => {
         const open = yield* getSubstrateConfig({
           buildConnectors: true,
           enabledNetworks: substrateNetworks,
-          forceWalletConnectOnly: false,
+          walletConnectProtocol: unusedWalletConnectProtocol,
+          runWalletEffect,
         });
 
         expect(open.connector).not.toBeNull();
@@ -297,15 +319,17 @@ describe("ecosystem connector gate", () => {
         };
         const miscOptions = {
           enabledNetworks: miscNetworks,
-          forceWalletConnectOnly: false,
           runWalletEffect,
+          walletConnectPresentation: unusedWalletConnectPresentation,
+          walletConnectProtocol: unusedWalletConnectProtocol,
           solanaConnection: {} as SolanaConnection,
           solanaWallets: [],
           tonConnectManifestUrl: undefined,
           variant: "default",
+          walletModal: stubWalletModal(),
         } as const;
         const stellarWalletsKitPlatform = StellarWalletsKitPlatform.of({
-          load: Effect.succeed([]),
+          load: () => Effect.succeed([]),
         });
         const gated = yield* Effect.scoped(
           getMiscConfig({
@@ -351,8 +375,9 @@ describe("ecosystem connector gate", () => {
         const before = evaluated.cosmosWalletManager;
         const cosmosOptions = {
           enabledNetworks: cosmosNetworks,
-          forceWalletConnectOnly: false,
           persistPublicKey: async () => undefined,
+          walletConnectProtocol: unusedWalletConnectProtocol,
+          runWalletEffect,
         } as const;
         const gated = yield* getCosmosConfig({
           ...cosmosOptions,
@@ -372,23 +397,25 @@ describe("ecosystem connector gate", () => {
         expect(open.connector).not.toBeNull();
         expect(open.cosmosChainsMap).toEqual(gated.cosmosChainsMap);
         expect(evaluated.cosmosWalletManager).toBe(before + 1);
-      })
+      }).pipe(Effect.scoped)
   );
 
   it.live("loads Stellar Wallets Kit only for enabled mainnet topology", () =>
     Effect.gen(function* () {
       const before = evaluated.stellarConnectorCalls;
       const stellarWalletsKitPlatform = StellarWalletsKitPlatform.of({
-        load: Effect.succeed([]),
+        load: () => Effect.succeed([]),
       });
       const miscOptions = {
         enabledNetworks: new Set<Network>(["stellar"]),
-        forceWalletConnectOnly: false,
         runWalletEffect,
+        walletConnectPresentation: unusedWalletConnectPresentation,
+        walletConnectProtocol: unusedWalletConnectProtocol,
         solanaConnection: {} as SolanaConnection,
         solanaWallets: [],
         tonConnectManifestUrl: undefined,
         variant: "default",
+        walletModal: stubWalletModal(),
       } as const;
 
       const gated = yield* Effect.scoped(
@@ -418,25 +445,27 @@ describe("ecosystem connector gate", () => {
     () =>
       Effect.gen(function* () {
         const stellarWalletsKitPlatform = StellarWalletsKitPlatform.of({
-          load: Effect.fail(
-            new WalletIntegrationError({
-              message: "Stellar Wallets Kit unavailable",
-              operation: "stellar-wallets-kit-load",
-            })
-          ),
+          load: () =>
+            Effect.fail(
+              new WalletIntegrationError({
+                message: "Stellar Wallets Kit unavailable",
+                operation: "stellar-wallets-kit-load",
+              })
+            ),
         } satisfies StellarWalletsKitPlatformService);
 
         const result = yield* Effect.scoped(
           getMiscConfig({
             buildConnectors: true,
             enabledNetworks: new Set<Network>(["stellar", "tron"]),
-            forceWalletConnectOnly: false,
             stellarWalletsKitPlatform,
             runWalletEffect,
+            walletConnectProtocol: unusedWalletConnectProtocol,
             solanaConnection: {} as SolanaConnection,
             solanaWallets: [],
             tonConnectManifestUrl: undefined,
             variant: "default",
+            walletModal: stubWalletModal(),
           })
         );
 
@@ -449,19 +478,6 @@ describe("ecosystem connector gate", () => {
       })
   );
 
-  it.effect("loads the generic Stellar connector in mobile environments", () =>
-    Effect.gen(function* () {
-      const before = evaluated.stellarConnectorCalls;
-      const controller = yield* buildController({
-        enabledNetworks: new Set(["ethereum", "stellar"]),
-        isMobileWallet: true,
-      });
-
-      expect(controller.miscConfig.miscChainsMap).toHaveProperty("stellar");
-      expect(evaluated.stellarConnectorCalls).toBe(before + 1);
-    })
-  );
-
   it.live(
     "keeps cosmos chains when the wallet manager fails to initialize",
     () =>
@@ -471,8 +487,9 @@ describe("ecosystem connector gate", () => {
         const result = yield* getCosmosConfig({
           buildConnectors: true,
           enabledNetworks: cosmosNetworks,
-          forceWalletConnectOnly: false,
           persistPublicKey: async () => undefined,
+          walletConnectProtocol: unusedWalletConnectProtocol,
+          runWalletEffect,
         }).pipe(
           Effect.ensuring(
             Effect.sync(() => {
@@ -483,7 +500,7 @@ describe("ecosystem connector gate", () => {
 
         expect(result.connector).toBeNull();
         expect(Object.keys(result.cosmosChainsMap)).toEqual(["cosmos"]);
-      })
+      }).pipe(Effect.scoped)
   );
 
   it.effect("skips ecosystem connectors in external provider mode", () =>
@@ -523,6 +540,7 @@ describe("ecosystem connector gate", () => {
               groupName: "Custom",
               wallets: [
                 () => ({
+                  availability: { _tag: "Remote" },
                   chainGroup: { iconUrl: "", id: "custom", title: "Custom" },
                   createConnector: (() => () => ({})) as never,
                   iconBackground: "#fff",

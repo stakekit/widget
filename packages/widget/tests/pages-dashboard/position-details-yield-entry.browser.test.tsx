@@ -1,9 +1,15 @@
 import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
-import { Effect, Layer, Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import { Effect, Layer, Option, Schema } from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useEffect } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { mainnet } from "viem/chains";
 import { describe, expect, it } from "vitest";
@@ -16,7 +22,7 @@ import { applicationRouterAtom } from "../../src/app/runtime/application-router"
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
-import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/index";
+import { decodeClassicFlowNavigationState } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { tokenBalancesScanAtom } from "../../src/features/portfolio/index";
 import {
   positionDetailsStakeViewAtom,
@@ -129,12 +135,16 @@ const PositionEntry = () => {
 };
 
 const ReviewGuard = () => {
-  const isActive = useAtomValue(
-    isActiveClassicTransactionFlowPathAtom(
-      `/positions/${selectedYield.id}/balance-1/stake/review`
-    )
+  const session = decodeClassicFlowNavigationState(useLocation().state);
+  const carriesPositionStake = Option.exists(
+    session,
+    ({ intake, mount }) =>
+      intake._tag === "Enter" &&
+      intake.selectedStake.id === selectedYield.id &&
+      mount._tag === "PositionStake" &&
+      mount.balanceId === "balance-1"
   );
-  return isActive ? (
+  return carriesPositionStake ? (
     <div>Position stake review</div>
   ) : (
     <Navigate to="/missing" />

@@ -1,5 +1,5 @@
 import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { exactZero } from "../../../../../domain/finance/exact";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";

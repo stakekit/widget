@@ -1,6 +1,6 @@
 import { Data, Array as EArray, Effect, Option, Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import { getActionValidatorAddresses } from "../../../domain/action/rules";
 import {
@@ -19,10 +19,6 @@ import {
 } from "../../../resources/validator-directory/index";
 import { enrichedYieldOpportunityResourceAtom } from "../../../resources/yield-opportunity/index";
 import { presentationClockAtom } from "../../../shared/effect/presentation-clock";
-import {
-  currentYieldActionContinuationIdAtom,
-  startYieldActionContinuationAtom,
-} from "../../classic-transaction-flow/index";
 import {
   YieldSummaryKey,
   type YieldSummaryProvider,
@@ -286,7 +282,6 @@ type ActivityDetailsView =
   | { readonly status: "failed" }
   | {
       readonly canContinue: boolean;
-      readonly continuationReady: boolean;
       readonly item: ActivityActionItem;
       readonly providersDetails: ReadonlyArray<YieldSummaryProvider>;
       readonly status: "ready";
@@ -304,16 +299,11 @@ export const activityDetailsViewAtom = Atom.family(
         context(
           yieldSummaryAtom(
             new YieldSummaryKey({
-              selectedProviderYieldId: null,
               validators: item.validatorsData,
               yield: item.yieldData,
             })
           )
         ).providers ?? [];
-      const continuationActionId = context(
-        currentYieldActionContinuationIdAtom
-      );
-      const matchingSession = continuationActionId === action.id;
       const presentationTime = context(presentationClockAtom);
       const selectedYield = item.yieldData;
       const canContinue =
@@ -323,35 +313,11 @@ export const activityDetailsViewAtom = Atom.family(
 
       return {
         canContinue: key.surface === "review" && canContinue,
-        continuationReady: matchingSession,
         item,
         providersDetails,
         status: "ready",
       };
     }).pipe(Atom.withLabel("activityDetailsViewAtom"))
-);
-
-export const activityActionContinuationMountAtom = Atom.family(
-  (key: ActivitySelectionKey) =>
-    Atom.make((context) => {
-      if (key.surface !== "review") return;
-
-      const view = context(activityDetailsViewAtom(key));
-      if (view.status !== "ready") return;
-      if (!view.canContinue || view.continuationReady) return;
-
-      const item = view.item;
-      const selectedYield = item.yieldData;
-      if (selectedYield === null) return;
-
-      context.set(startYieldActionContinuationAtom, {
-        action: item.actionData,
-        providersDetails: view.providersDetails,
-        selectedValidators: item.validatorsData,
-        selectedYield,
-        walletScope: item.walletScope,
-      });
-    }).pipe(Atom.withLabel("activityActionContinuationMountAtom"))
 );
 
 export const retryActivityActionRouteAtom = retryActivitySelectedActionAtom;

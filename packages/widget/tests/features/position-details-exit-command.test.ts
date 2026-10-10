@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import BigNumber from "bignumber.js";
-import { Deferred, Effect, Layer, Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
-import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
+import { Deferred, Effect, Layer, Option, Schema } from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
+import type { Mock } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { getPendingActionStateKey } from "../../src/domain/action/action-command";
@@ -13,8 +14,11 @@ import {
   WalletAddress,
 } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
-import { isActiveClassicTransactionFlowPathAtom } from "../../src/features/classic-transaction-flow/index";
-import { currentClassicFlowSessionAtom } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow";
+import {
+  type ClassicTransactionFlowIntake,
+  decodeClassicFlowNavigationState,
+} from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import { resolvePositionDetailsExitSubmission } from "../../src/features/position-details/model/classic-flow-actions";
 import { positionDetailsExitActions } from "../../src/features/position-details/state/classic-actions/exit";
 import { positionDetailsPendingActions } from "../../src/features/position-details/state/classic-actions/pending-action";
 import { positionDetailsClassicViewAtom } from "../../src/features/position-details/state/classic-facade";
@@ -34,6 +38,7 @@ import {
 } from "../../src/resources/yield-positions/yield-positions";
 import {
   makeWidgetNavigation,
+  type WidgetNavigationOptions,
   type WidgetPath,
 } from "../../src/services/navigation/widget-navigation";
 import type { TrackingService } from "../../src/services/tracking/tracking-service";
@@ -50,6 +55,20 @@ import {
 import { makeClassicFlowTestKit } from "../utils/classic-flow-test-kit";
 import { makeTestTracking } from "../utils/services/tracking-service";
 import { makeTestNavigation } from "../utils/services/widget-navigation";
+
+type Push = (path: WidgetPath, options?: WidgetNavigationOptions) => void;
+
+/** The intake of the Session the single Start navigation carried to Review. */
+const startedIntake = (
+  push: Mock<Push>,
+  reviewPath: string
+): ClassicTransactionFlowIntake => {
+  expect(push).toHaveBeenCalledOnce();
+  const [path, options] = push.mock.calls[0] ?? [];
+  expect(path).toBe(reviewPath);
+  return Option.getOrThrow(decodeClassicFlowNavigationState(options?.state))
+    .intake;
+};
 
 const {
   setMaxAmount: setPositionDetailsExitMaxAmountAtom,
@@ -104,10 +123,94 @@ const skySavingsRateFields = {
   token: usdsToken,
   tokens: [usdsToken],
 } as const;
+const positionYieldId =
+  "ethereum-usds-susds-0xa3931d71877c0e7a3148cb7eb4463524fec27fbd-4626-vault";
+const ethxAddress = "0xA35b1B31Ce002FBF2058D22F30f95D405200A15b";
+const stethAddress = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84";
+const psm3ShareAddress = "0x5555555555555555555555555555555555555555";
+const paxosShareAddress = "0x6666666666666666666666666666666666666666";
+const ethxToken = {
+  ...skyYieldDto.token,
+  address: ethxAddress,
+  name: "Stader ETHx",
+  symbol: "ETHx",
+};
+const stethToken = {
+  ...skyYieldDto.token,
+  address: stethAddress,
+  name: "Lido Staked ETH",
+  symbol: "stETH",
+};
+const rsethToken = {
+  ...skyYieldDto.token,
+  address: "0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7",
+  name: "KelpDAO Restaked ETH",
+  symbol: "rsETH",
+};
+/** Native ETH is advertised as `"0x"` and only described by the gas fee token. */
+const kelpRsethYield = yieldApiYieldFixture({
+  id: positionYieldId,
+  inputTokens: [ethxToken, stethToken],
+  mechanics: {
+    ...skyYieldDto.mechanics,
+    arguments: {
+      enter: { fields: [] },
+      exit: {
+        fields: [
+          {
+            label: "Output Token",
+            name: "outputToken",
+            options: ["0x", ethxAddress, stethAddress],
+            required: true,
+            type: "string",
+          },
+        ],
+      },
+    },
+  },
+  outputToken: rsethToken,
+  providerId: "kelpdao",
+  token: rsethToken,
+  tokens: [ethxToken, stethToken],
+});
+const optionalOutputTokenYield = ({
+  options,
+  outputToken,
+  providerId,
+}: {
+  readonly options: ReadonlyArray<string>;
+  readonly outputToken: typeof skyYieldDto.token;
+  readonly providerId: string;
+}) =>
+  yieldApiYieldFixture({
+    id: positionYieldId,
+    inputTokens: [usdcToken, usdsToken],
+    mechanics: {
+      ...skyYieldDto.mechanics,
+      arguments: {
+        enter: { fields: [] },
+        exit: {
+          fields: [
+            {
+              label: "Output Token",
+              name: "outputToken",
+              options: [...options],
+              required: false,
+              type: "string",
+            },
+          ],
+        },
+      },
+    },
+    outputToken,
+    providerId,
+    token: usdcToken,
+    tokens: [usdcToken],
+  });
 const baseYield = yieldApiYieldFixture();
 const selectedYield = yieldApiYieldFixture({
   ...skySavingsRateFields,
-  id: "ethereum-usds-susds-0xa3931d71877c0e7a3148cb7eb4463524fec27fbd-4626-vault",
+  id: positionYieldId,
   metadata: {
     ...baseYield.metadata,
     supportedStandards: ["ERC4626"],
@@ -148,6 +251,8 @@ const positionKey = new PositionBalancesKey({
   scope,
   yieldId: selectedYield.id,
 });
+const exitReviewPath = `/positions/${selectedYield.id}/balance-1/unstake/review`;
+const manageReviewPath = `/positions/${selectedYield.id}/balance-1/pending-action/review`;
 
 const makeConnectedWallet = (
   overrides: Partial<
@@ -175,7 +280,7 @@ const makeRegistry = ({
   yieldBalance = balance,
   yieldOpportunity = selectedYield,
 }: {
-  readonly push: ReturnType<typeof vi.fn<(path: WidgetPath) => void>>;
+  readonly push: Mock<Push>;
   readonly serviceWallet?: NormalizedWalletState;
   readonly trackEvent: TrackingService["Service"]["trackEvent"];
   readonly wallet?: NormalizedWalletState;
@@ -184,7 +289,7 @@ const makeRegistry = ({
 }) => {
   const navigation = makeWidgetNavigation({
     back: () => Effect.void,
-    push: (path) => Effect.sync(() => push(path)),
+    push: (path, options) => Effect.sync(() => push(path, options)),
     replace: () => Effect.void,
   });
   const walletState = {
@@ -341,7 +446,7 @@ describe("Position Details exit command", () => {
   ] as const)(
     "hands the $name Exit Receive Token to Classic Flow",
     async ({ expectedAddress, expectedSymbol, selectedAddress }) => {
-      const push = vi.fn<(path: WidgetPath) => void>();
+      const push = vi.fn<Push>();
       const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
         () => Effect.void
       );
@@ -349,7 +454,7 @@ describe("Position Details exit command", () => {
       const eligibleYield = yieldApiYieldFixture({
         ...skySavingsRateFields,
         id: selectedYield.id,
-        metadata: selectedYield.metadata,
+        metadata: { ...yieldDto.metadata, ...selectedYield.metadata },
         mechanics: {
           ...yieldDto.mechanics,
           arguments: {
@@ -407,10 +512,7 @@ describe("Position Details exit command", () => {
         expect(AsyncResult.getOrThrow(registry.get(commandAtom))).toEqual({
           _tag: "Started",
         });
-        expect(push).toHaveBeenCalledOnce();
-        expect(
-          registry.get(currentClassicFlowSessionAtom)?.intake
-        ).toMatchObject({
+        expect(startedIntake(push, exitReviewPath)).toMatchObject({
           _tag: "Exit",
           receiveToken: { address: expectedAddress, symbol: expectedSymbol },
           request: { arguments: { outputToken: expectedAddress } },
@@ -422,8 +524,191 @@ describe("Position Details exit command", () => {
     }
   );
 
+  it.each([
+    {
+      expectedAddress: "0x",
+      expectedSymbol: "ETH",
+      name: "default native ETH",
+      selectedAddress: null,
+    },
+    {
+      expectedAddress: ethxAddress,
+      expectedSymbol: "ETHx",
+      name: "selected ETHx",
+      selectedAddress: ethxAddress,
+    },
+    {
+      expectedAddress: stethAddress,
+      expectedSymbol: "stETH",
+      name: "selected stETH",
+      selectedAddress: stethAddress,
+    },
+  ] as const)(
+    "sends the $name receive token for a KelpDAO rsETH Exit",
+    async ({ expectedAddress, expectedSymbol, selectedAddress }) => {
+      const push = vi.fn<Push>();
+      const registry = makeRegistry({
+        push,
+        trackEvent: () => Effect.void,
+        yieldOpportunity: kelpRsethYield,
+      });
+      const viewAtom = positionDetailsClassicViewAtom(workflowKey);
+      const unmountView = registry.mount(viewAtom);
+
+      try {
+        registry.set(positionDetailsWorkflowAtom(workflowKey), {
+          exitReceiveTokenAddress: null,
+          pendingActions: new Map(),
+          unstakeAmount: new BigNumber("0.4"),
+          unstakeUseMaxAmount: false,
+        });
+        if (selectedAddress) {
+          registry.set(
+            setPositionDetailsExitReceiveTokenAtom(workflowKey),
+            Schema.decodeSync(TokenAddress)(selectedAddress)
+          );
+        }
+        expect(registry.get(viewAtom)).toMatchObject({
+          exitReceiveTokenSelection: {
+            options: [
+              { address: "0x", symbol: "ETH" },
+              { address: ethxAddress, symbol: "ETHx" },
+              { address: stethAddress, symbol: "stETH" },
+            ],
+            selected: { address: expectedAddress, symbol: expectedSymbol },
+          },
+        });
+        registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
+
+        await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
+        expect(startedIntake(push, exitReviewPath)).toMatchObject({
+          _tag: "Exit",
+          receiveToken: { address: expectedAddress, symbol: expectedSymbol },
+          request: { arguments: { outputToken: expectedAddress } },
+        });
+      } finally {
+        unmountView();
+        registry.dispose();
+      }
+    }
+  );
+
+  it.each([
+    {
+      expectedAddress: usdcAddress,
+      expectedSymbol: "USDC",
+      name: "Sky PSM3",
+      yieldOpportunity: optionalOutputTokenYield({
+        options: [usdcAddress, usdsAddress],
+        outputToken: {
+          ...usdcToken,
+          address: psm3ShareAddress,
+          symbol: "sUSDC",
+        },
+        providerId: "sky",
+      }),
+    },
+    {
+      expectedAddress: usdcAddress,
+      expectedSymbol: "USDC",
+      name: "Paxos",
+      yieldOpportunity: optionalOutputTokenYield({
+        options: [usdcAddress, usdsAddress],
+        outputToken: {
+          ...usdcToken,
+          address: paxosShareAddress,
+          symbol: "USDG",
+        },
+        providerId: "paxos",
+      }),
+    },
+  ] as const)(
+    "defaults the optional $name receive token to the first advertised option",
+    async ({ expectedAddress, expectedSymbol, yieldOpportunity }) => {
+      const push = vi.fn<Push>();
+      const registry = makeRegistry({
+        push,
+        trackEvent: () => Effect.void,
+        yieldOpportunity,
+      });
+
+      try {
+        registry.set(positionDetailsWorkflowAtom(workflowKey), {
+          exitReceiveTokenAddress: null,
+          pendingActions: new Map(),
+          unstakeAmount: new BigNumber("0.4"),
+          unstakeUseMaxAmount: false,
+        });
+        registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
+
+        await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
+        expect(startedIntake(push, exitReviewPath)).toMatchObject({
+          _tag: "Exit",
+          receiveToken: { address: expectedAddress, symbol: expectedSymbol },
+          request: { arguments: { outputToken: expectedAddress } },
+        });
+      } finally {
+        registry.dispose();
+      }
+    }
+  );
+
+  it("does not offer a receive token when the optional field advertises no options", async () => {
+    const push = vi.fn<Push>();
+    const registry = makeRegistry({
+      push,
+      trackEvent: () => Effect.void,
+      yieldOpportunity: optionalOutputTokenYield({
+        options: [],
+        outputToken: susdsToken,
+        providerId: "sky",
+      }),
+    });
+
+    try {
+      registry.set(positionDetailsWorkflowAtom(workflowKey), {
+        exitReceiveTokenAddress: null,
+        pendingActions: new Map(),
+        unstakeAmount: new BigNumber("0.4"),
+        unstakeUseMaxAmount: false,
+      });
+      registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
+
+      await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
+      const intake = startedIntake(push, exitReviewPath);
+      expect(intake).toMatchObject({ _tag: "Exit", receiveToken: null });
+      if (intake._tag !== "Exit") {
+        throw new Error("Expected an active Exit intake");
+      }
+      expect(intake.request.arguments).not.toHaveProperty("outputToken");
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("blocks an Exit whose required receive token is unresolved", () => {
+    expect(
+      resolvePositionDetailsExitSubmission({
+        amountValid: true,
+        canMount: true,
+        facts: {
+          additionalAddresses: null,
+          address,
+          amount: new BigNumber("0.4"),
+          integration: kelpRsethYield,
+          receiveToken: null,
+          stakedOrLiquidBalances: [],
+          token: kelpRsethYield.token,
+          useMaxAmount: false,
+        },
+        kycBlocking: false,
+        token: kelpRsethYield.token,
+      })
+    ).toEqual({ _tag: "Invalid" });
+  });
+
   it("preserves the closed Classic rejection for Exit", async () => {
-    const push = vi.fn<(path: WidgetPath) => void>();
+    const push = vi.fn<Push>();
     const registry = makeRegistry({
       push,
       serviceWallet: makeConnectedWallet({ address: otherAddress }),
@@ -454,7 +739,7 @@ describe("Position Details exit command", () => {
   });
 
   it("preserves the closed Classic rejection for a Pending Action", async () => {
-    const push = vi.fn<(path: WidgetPath) => void>();
+    const push = vi.fn<Push>();
     const registry = makeRegistry({
       push,
       serviceWallet: makeConnectedWallet({ address: otherAddress }),
@@ -485,7 +770,7 @@ describe("Position Details exit command", () => {
   });
 
   it("rejects a Pending Action that disappeared from current balances", async () => {
-    const push = vi.fn<(path: WidgetPath) => void>();
+    const push = vi.fn<Push>();
     const registry = makeRegistry({
       push,
       trackEvent: () => Effect.void,
@@ -506,7 +791,7 @@ describe("Position Details exit command", () => {
   });
 
   it("rejects a Pending Action amount invalidated by current constraints", async () => {
-    const push = vi.fn<(path: WidgetPath) => void>();
+    const push = vi.fn<Push>();
     const constrainedBalance = Schema.decodeSync(EarnBalance)(
       yieldBalanceFixture({
         address,
@@ -569,7 +854,7 @@ describe("Position Details exit command", () => {
 
   it.effect("does not order Pending Action start behind telemetry", () =>
     Effect.gen(function* () {
-      const push = vi.fn<(path: WidgetPath) => void>();
+      const push = vi.fn<Push>();
       const trackingRelease = yield* Deferred.make<void>();
       const registry = makeRegistry({
         push,
@@ -612,7 +897,7 @@ describe("Position Details exit command", () => {
   ] as const)(
     "does not start Exit without required $name mechanics",
     async ({ name, type }) => {
-      const push = vi.fn<(path: WidgetPath) => void>();
+      const push = vi.fn<Push>();
       const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
         () => Effect.void
       );
@@ -646,13 +931,6 @@ describe("Position Details exit command", () => {
         await Promise.resolve();
 
         expect(push).not.toHaveBeenCalled();
-        expect(
-          registry.get(
-            isActiveClassicTransactionFlowPathAtom(
-              `/positions/${selectedYield.id}/balance-1/unstake/review`
-            )
-          )
-        ).toBe(false);
       } finally {
         registry.dispose();
       }
@@ -660,7 +938,7 @@ describe("Position Details exit command", () => {
   );
 
   it("starts Exit from a valid displayed partial amount", async () => {
-    const push = vi.fn<(path: WidgetPath) => void>();
+    const push = vi.fn<Push>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
       () => Effect.void
     );
@@ -676,19 +954,9 @@ describe("Position Details exit command", () => {
       registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
-      expect(push).toHaveBeenCalledWith(
-        `/positions/${selectedYield.id}/balance-1/unstake/review`
-      );
-      expect(
-        registry.get(
-          isActiveClassicTransactionFlowPathAtom(
-            `/positions/${selectedYield.id}/balance-1/unstake/review`
-          )
-        )
-      ).toBe(true);
-      const intake = registry.get(currentClassicFlowSessionAtom)?.intake;
+      const intake = startedIntake(push, exitReviewPath);
       expect(intake).toMatchObject({ _tag: "Exit", receiveToken: null });
-      if (intake?._tag !== "Exit") {
+      if (intake._tag !== "Exit") {
         throw new Error("Expected an active Exit intake");
       }
       expect(intake.request.arguments).not.toHaveProperty("outputToken");
@@ -698,7 +966,7 @@ describe("Position Details exit command", () => {
   });
 
   it("forwards the receive token without enforcing an option count", async () => {
-    const push = vi.fn<(path: WidgetPath) => void>();
+    const push = vi.fn<Push>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
       () => Effect.void
     );
@@ -740,12 +1008,12 @@ describe("Position Details exit command", () => {
       registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
-      const intake = registry.get(currentClassicFlowSessionAtom)?.intake;
+      const intake = startedIntake(push, exitReviewPath);
       expect(intake).toMatchObject({
         _tag: "Exit",
         receiveToken: { address: usdsAddress, symbol: "USDS" },
       });
-      if (intake?._tag !== "Exit") {
+      if (intake._tag !== "Exit") {
         throw new Error("Expected an active Exit intake");
       }
       expect(intake.request.arguments).toHaveProperty(
@@ -758,7 +1026,7 @@ describe("Position Details exit command", () => {
   });
 
   it("marks an untouched forced full-balance Exit as useMaxAmount", async () => {
-    const push = vi.fn<(path: WidgetPath) => void>();
+    const push = vi.fn<Push>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
       () => Effect.void
     );
@@ -799,25 +1067,23 @@ describe("Position Details exit command", () => {
       registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
-      expect(registry.get(currentClassicFlowSessionAtom)?.intake).toMatchObject(
-        {
-          _tag: "Exit",
-          request: {
-            arguments: {
-              amount: "1",
-              useMaxAmount: true,
-            },
+      expect(startedIntake(push, exitReviewPath)).toMatchObject({
+        _tag: "Exit",
+        request: {
+          arguments: {
+            amount: "1",
+            useMaxAmount: true,
           },
-          unstakeAmount: new BigNumber(1),
-        }
-      );
+        },
+        unstakeAmount: new BigNumber(1),
+      });
     } finally {
       registry.dispose();
     }
   });
 
   it("includes every required option-backed Exit scalar", async () => {
-    const push = vi.fn<(path: WidgetPath) => void>();
+    const push = vi.fn<Push>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
       () => Effect.void
     );
@@ -883,18 +1149,16 @@ describe("Position Details exit command", () => {
       registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
-      expect(registry.get(currentClassicFlowSessionAtom)?.intake).toMatchObject(
-        {
-          _tag: "Exit",
-          request: {
-            arguments: {
-              providerId: "provider-a",
-              tronResource: "ENERGY",
-              validatorAddresses: ["validator-a"],
-            },
+      expect(startedIntake(push, exitReviewPath)).toMatchObject({
+        _tag: "Exit",
+        request: {
+          arguments: {
+            providerId: "provider-a",
+            tronResource: "ENERGY",
+            validatorAddresses: ["validator-a"],
           },
-        }
-      );
+        },
+      });
     } finally {
       registry.dispose();
     }
@@ -903,7 +1167,7 @@ describe("Position Details exit command", () => {
   it.each(["validatorAddress", "validatorAddresses"] as const)(
     "does not start Manage without required %s arguments",
     async (name) => {
-      const push = vi.fn<(path: WidgetPath) => void>();
+      const push = vi.fn<Push>();
       const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
         () => Effect.void
       );
@@ -964,7 +1228,7 @@ describe("Position Details exit command", () => {
   );
 
   it("closes only the validator modal attempt acknowledged by Started", async () => {
-    const push = vi.fn<(path: WidgetPath) => void>();
+    const push = vi.fn<Push>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
       () => Effect.void
     );
@@ -1030,7 +1294,7 @@ describe("Position Details exit command", () => {
   });
 
   it("sets the displayed maximum and tracks the user intent", async () => {
-    const push = vi.fn<(path: WidgetPath) => void>();
+    const push = vi.fn<Push>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
       () => Effect.void
     );
@@ -1095,7 +1359,7 @@ describe("Position Details exit command", () => {
     const partialExitYield = yieldApiYieldFixture({
       ...skySavingsRateFields,
       id: selectedYield.id,
-      metadata: selectedYield.metadata,
+      metadata: { ...yieldDto.metadata, ...selectedYield.metadata },
       mechanics: {
         ...yieldDto.mechanics,
         arguments: {
@@ -1150,7 +1414,7 @@ describe("Position Details exit command", () => {
   });
 
   it("rejects a stale Exit command after the Wallet Scope Owner changes", async () => {
-    const push = vi.fn<(path: WidgetPath) => void>();
+    const push = vi.fn<Push>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
       () => Effect.void
     );
@@ -1172,20 +1436,13 @@ describe("Position Details exit command", () => {
       await Promise.resolve();
 
       expect(push).not.toHaveBeenCalled();
-      expect(
-        registry.get(
-          isActiveClassicTransactionFlowPathAtom(
-            `/positions/${selectedYield.id}/balance-1/unstake/review`
-          )
-        )
-      ).toBe(false);
     } finally {
       registry.dispose();
     }
   });
 
   it("rejects a stale Manage command after the Wallet Scope Owner changes", async () => {
-    const push = vi.fn<(path: WidgetPath) => void>();
+    const push = vi.fn<Push>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
       () => Effect.void
     );
@@ -1205,20 +1462,13 @@ describe("Position Details exit command", () => {
       await Promise.resolve();
 
       expect(push).not.toHaveBeenCalled();
-      expect(
-        registry.get(
-          isActiveClassicTransactionFlowPathAtom(
-            `/positions/${selectedYield.id}/balance-1/unstake/review`
-          )
-        )
-      ).toBe(false);
     } finally {
       registry.dispose();
     }
   });
 
   it("starts Exit for a refreshed Wallet Scope with the same owner", async () => {
-    const push = vi.fn<(path: WidgetPath) => void>();
+    const push = vi.fn<Push>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
       () => Effect.void
     );
@@ -1241,20 +1491,16 @@ describe("Position Details exit command", () => {
       registry.set(submitPositionDetailsExitAtom(workflowKey), undefined);
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
-      expect(
-        registry.get(
-          isActiveClassicTransactionFlowPathAtom(
-            `/positions/${selectedYield.id}/balance-1/unstake/review`
-          )
-        )
-      ).toBe(true);
+      expect(startedIntake(push, exitReviewPath)).toMatchObject({
+        _tag: "Exit",
+      });
     } finally {
       registry.dispose();
     }
   });
 
   it("starts Manage for a refreshed Wallet Scope with the same owner", async () => {
-    const push = vi.fn<(path: WidgetPath) => void>();
+    const push = vi.fn<Push>();
     const trackEvent = vi.fn<TrackingService["Service"]["trackEvent"]>(
       () => Effect.void
     );
@@ -1276,13 +1522,9 @@ describe("Position Details exit command", () => {
       });
 
       await vi.waitFor(() => expect(push).toHaveBeenCalledOnce());
-      expect(
-        registry.get(
-          isActiveClassicTransactionFlowPathAtom(
-            `/positions/${selectedYield.id}/balance-1/pending-action/review`
-          )
-        )
-      ).toBe(true);
+      expect(startedIntake(push, manageReviewPath)).toMatchObject({
+        _tag: "Manage",
+      });
     } finally {
       registry.dispose();
     }

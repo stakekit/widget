@@ -1,5 +1,4 @@
 import { describe, expect, it } from "@effect/vitest";
-import { connectorsForWallets } from "@stakekit/rainbowkit";
 import { type Chain, createClient } from "viem";
 import { arbitrum, mainnet, polygon } from "viem/chains";
 import { createConfig, http } from "wagmi";
@@ -18,6 +17,7 @@ import {
   isExternalProviderConnector,
 } from "../../../src/services/wallet/internal/adapters/external-provider";
 import { normalizeWalletState } from "../../../src/services/wallet/internal/runtime/state-projection";
+import { connectorsForWallets } from "../../../src/services/wallet/wallet-descriptors";
 import { WalletRuntimeInvariantError } from "../../../src/services/wallet/wallet-errors";
 import { disconnectedLedgerConnectorState } from "../../../src/services/wallet/wallet-state";
 import { runWalletEffect } from "../../utils/run-wallet-effect";

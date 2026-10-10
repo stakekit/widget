@@ -33,6 +33,13 @@ export type CurrentWorkflow =
       readonly workflowId: string;
     };
 
+export const getCurrentWorkflowTrackingYieldId = (
+  current: CurrentWorkflow
+): string =>
+  current._tag === "Classic"
+    ? current.domain.yieldId
+    : current.domain.action.integrationId;
+
 export const requireCurrentWorkflow = Effect.fn(
   "TransactionWorkflow.requireCurrent"
 )(function* (context: TransactionWorkflowContext) {

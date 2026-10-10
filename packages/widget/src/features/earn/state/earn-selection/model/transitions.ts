@@ -3,7 +3,10 @@ import type {
   EarnValidator,
   EarnValidatorKey,
 } from "../../../../../domain/earn/models";
-import type { YieldId } from "../../../../../domain/identity/identifiers";
+import type {
+  ProviderOption,
+  YieldId,
+} from "../../../../../domain/identity/identifiers";
 import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import type { EarnEntryIntent, EarnTokenKey } from "../types";
 
@@ -13,7 +16,7 @@ const resetYieldIntent = (
 ): EarnEntryIntent => ({
   ...intent,
   amountInput: "untouched",
-  selectedProviderYieldId: null,
+  selectedProviderOption: null,
   selectedValidators: null,
   selectedYieldId,
   stakeAmount: "0",
@@ -90,10 +93,10 @@ export const removeValidator = ({
   };
 };
 
-export const selectProvider = (
+export const selectProviderOption = (
   intent: EarnEntryIntent,
-  selectedProviderYieldId: YieldId
-): EarnEntryIntent => ({ ...intent, selectedProviderYieldId });
+  selectedProviderOption: ProviderOption
+): EarnEntryIntent => ({ ...intent, selectedProviderOption });
 
 export const selectTronResource = (
   intent: EarnEntryIntent,

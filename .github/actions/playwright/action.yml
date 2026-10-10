@@ -1,0 +1,21 @@
+name: Playwright Chromium
+description: Installs Playwright's Chromium, from cache while the Playwright version is unchanged. Run after the setup action.
+
+runs:
+  using: composite
+  steps:
+    - id: playwright
+      shell: bash
+      run: echo "version=$(pnpm -F @stakekit/widget exec playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
+
+    # actions/cache@v6.1.0
+    - id: browsers
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright.outputs.version }}
+
+    # The ubuntu-24.04 image already ships Chromium's system libraries; add --with-deps if that changes.
+    - if: steps.browsers.outputs.cache-hit != 'true'
+      shell: bash
+      run: pnpm -F @stakekit/widget exec playwright install chromium

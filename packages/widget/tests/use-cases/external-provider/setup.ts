@@ -147,31 +147,34 @@ export const setup = (worker: TestWorker) => {
       ]);
     }),
 
-    http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-      await mockDelay();
-      return HttpResponse.json([
-        {
-          token: ether,
-          amount: "3",
-          availableYields: [etherNativeStaking.id],
-        },
-        {
-          token: avalancheCToken,
-          amount: "3",
-          availableYields: [avalancheAvaxNativeStaking.id],
-        },
-        {
-          token: solanaToken,
-          amount: "3",
-          availableYields: [solanaNativeStaking.id],
-        },
-        {
-          token: tonToken,
-          amount: "3",
-          availableYields: [tonNativeStaking.id],
-        },
-      ]);
-    }),
+    http.get(
+      legacyApiRoute("/v2/networks/:network/addresses/:address/tokens"),
+      async () => {
+        await mockDelay();
+        return HttpResponse.json([
+          {
+            token: ether,
+            amount: "3",
+            availableYields: [etherNativeStaking.id],
+          },
+          {
+            token: avalancheCToken,
+            amount: "3",
+            availableYields: [avalancheAvaxNativeStaking.id],
+          },
+          {
+            token: solanaToken,
+            amount: "3",
+            availableYields: [solanaNativeStaking.id],
+          },
+          {
+            token: tonToken,
+            amount: "3",
+            availableYields: [tonNativeStaking.id],
+          },
+        ]);
+      }
+    ),
 
     http.get(
       legacyApiRoute(`/v1/yields/${etherNativeStaking.id}`),

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { EarnYieldWithProvider } from "../../src/domain/earn/models";
 
-import type { useSelectValidator } from "../../src/features/earn/ui/classic/earn-page/components/select-validator-section/use-select-validator";
+import type { useSelectValidator } from "../../src/features/earn/react/use-select-validator";
 import { SelectYieldRewardDetails } from "../../src/features/earn/ui/classic/earn-page/components/select-yield-section/select-yield-reward-details";
 import { ProviderSelectionCard } from "../../src/features/earn/ui/dashboard/earn-details/components/provider-selection-card";
 import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
@@ -22,12 +22,9 @@ const hookState = vi.hoisted(() => ({
   >,
 }));
 
-vi.mock(
-  "../../src/features/earn/ui/classic/earn-page/components/select-validator-section/use-select-validator",
-  () => ({
-    useSelectValidator: () => hookState.selectValidator,
-  })
-);
+vi.mock("../../src/features/earn/react/use-select-validator", () => ({
+  useSelectValidator: () => hookState.selectValidator,
+}));
 
 vi.mock(
   "../../src/features/earn/react/use-earn-facades",

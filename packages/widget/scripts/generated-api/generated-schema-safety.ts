@@ -62,7 +62,7 @@ export const normalizeOpenApiUnionObjects = (document: unknown): number => {
 export const normalizeGeneratedTypeOnlySource = (sourceText: string): string =>
   sourceText.replaceAll("Schema.Json", "unknown");
 
-const schemaMemberName = (expression: ts.Expression): string | undefined => {
+const unwrapSchemaMember = (expression: ts.Expression): ts.Expression => {
   let current = expression;
 
   while (
@@ -73,6 +73,12 @@ const schemaMemberName = (expression: ts.Expression): string | undefined => {
   ) {
     current = current.expression.expression;
   }
+
+  return current;
+};
+
+const schemaMemberName = (expression: ts.Expression): string | undefined => {
+  const current = unwrapSchemaMember(expression);
 
   if (
     ts.isPropertyAccessExpression(current) &&
@@ -88,21 +94,6 @@ const schemaMemberName = (expression: ts.Expression): string | undefined => {
   ) {
     return current.expression.name.text;
   }
-};
-
-const unwrapSchemaMember = (expression: ts.Expression): ts.Expression => {
-  let current = expression;
-
-  while (
-    ts.isCallExpression(current) &&
-    ts.isPropertyAccessExpression(current.expression) &&
-    (current.expression.name.text === "annotate" ||
-      current.expression.name.text === "pipe")
-  ) {
-    current = current.expression.expression;
-  }
-
-  return current;
 };
 
 const isEmptyStruct = (expression: ts.Expression): boolean => {

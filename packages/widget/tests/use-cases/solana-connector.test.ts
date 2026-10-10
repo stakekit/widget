@@ -37,7 +37,6 @@ const createConnectorForTest = ({
   const walletFactory = EArray.getUnsafe(
     getSolanaConnectors({
       wallets: [wallet],
-      forceWalletConnectOnly: false,
       connection,
       variant: "default",
     }).wallets,

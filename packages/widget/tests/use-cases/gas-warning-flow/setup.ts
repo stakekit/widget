@@ -11,7 +11,7 @@ import {
 } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
-import { rkMockWallet } from "../../utils/mock-connector";
+import { mockWalletListFactory } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
 import { waitForMs } from "../../utils/wait";
 
@@ -172,21 +172,24 @@ export const setup = (worker: TestWorker) => {
       ]);
     }),
 
-    http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-      await mockDelay();
-      return HttpResponse.json([
-        {
-          token: avalancheCToken,
-          amount: avalancheCTokenAmount,
-          availableYields: [yieldWithSameGasAndStakeToken.yieldDto.id],
-        },
-        {
-          token: usdcToken,
-          amount: usdcTokenAmount,
-          availableYields: [yieldWithDifferentGasAndStakeToken.yieldDto.id],
-        },
-      ]);
-    }),
+    http.get(
+      legacyApiRoute("/v2/networks/:network/addresses/:address/tokens"),
+      async () => {
+        await mockDelay();
+        return HttpResponse.json([
+          {
+            token: avalancheCToken,
+            amount: avalancheCTokenAmount,
+            availableYields: [yieldWithSameGasAndStakeToken.yieldDto.id],
+          },
+          {
+            token: usdcToken,
+            amount: usdcTokenAmount,
+            availableYields: [yieldWithDifferentGasAndStakeToken.yieldDto.id],
+          },
+        ]);
+      }
+    ),
 
     http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
       await mockDelay();
@@ -331,7 +334,10 @@ export const setup = (worker: TestWorker) => {
         throw new Error("unhandled method");
     }
   });
-  const customConnectors = rkMockWallet({ accounts: [account], requestFn });
+  const customConnectors = mockWalletListFactory({
+    accounts: [account],
+    requestFn,
+  });
 
   return {
     customConnectors,

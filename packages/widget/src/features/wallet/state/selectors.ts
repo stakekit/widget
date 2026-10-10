@@ -1,6 +1,6 @@
 import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { walletScopeFromState } from "../../../services/wallet/wallet-scope-adapter";
 import {
   disconnectedNormalizedWalletState,
@@ -19,10 +19,6 @@ export const currentWalletStateAtom = Atom.make((get) =>
 export const selectCurrentWalletAtom = <A>(
   select: (state: NormalizedWalletState) => A
 ): Atom.Atom<A> => selectAtom(currentWalletStateAtom, select);
-
-export const currentWalletConnectedNetworkAtom = selectCurrentWalletAtom(
-  (state) => (state.status === "connected" ? state.network : null)
-).pipe(Atom.withLabel("currentWalletConnectedNetworkAtom"));
 
 export const currentWalletScopeAtom = selectCurrentWalletAtom(
   walletScopeFromState

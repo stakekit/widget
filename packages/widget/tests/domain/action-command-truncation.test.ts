@@ -55,7 +55,7 @@ describe("executable token amount truncation", () => {
         connected: true,
         entry: {
           amount: new BigNumber("1.5"),
-          selectedProviderYieldId: null,
+          selectedProviderOption: null,
           token: { ...selectedYield.token, decimals: 6 },
           tronResource: null,
           useMaxAmount: false,
@@ -95,7 +95,7 @@ describe("executable token amount truncation", () => {
         connected: true,
         entry: {
           amount: new BigNumber("1.123456789"),
-          selectedProviderYieldId: null,
+          selectedProviderOption: null,
           token,
           tronResource: null,
           useMaxAmount: false,
@@ -127,7 +127,7 @@ describe("executable token amount truncation", () => {
         connected: true,
         entry: {
           amount: new BigNumber("0.0000001"),
-          selectedProviderYieldId: null,
+          selectedProviderOption: null,
           token,
           tronResource: null,
           useMaxAmount: false,
@@ -184,7 +184,7 @@ describe("executable token amount truncation", () => {
         connected: true,
         entry: {
           amount: new BigNumber("1.123456789"),
-          selectedProviderYieldId: null,
+          selectedProviderOption: null,
           token: { ...selectedYield.token, decimals: 6 },
           tronResource: null,
           useMaxAmount: false,

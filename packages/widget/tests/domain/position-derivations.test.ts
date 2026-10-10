@@ -1,14 +1,17 @@
 import { Option, Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import type * as Atom from "effect/unstable/reactivity/Atom";
-import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import type * as Atom from "effect/reactivity/Atom";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
-import { EarnPosition } from "../../src/domain/earn/models";
+import { EarnBalance, EarnPosition } from "../../src/domain/earn/models";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import {
   getPositionBalances,
   getPositionData,
+  getSingleExitTokenSum,
+  groupPositionBalanceRows,
   hasActivePositionForYield,
+  sumBalancesByToken,
   toPositionBalancesByType,
   toPositionsData,
 } from "../../src/domain/portfolio/positions";
@@ -47,15 +50,173 @@ const makePosition = () => {
 };
 
 describe("position derivations", () => {
-  it("normalizes positions and selects a requested or fallback balance group", () => {
+  it("normalizes positions and selects the requested balance group", () => {
     const position = makePosition();
     const positions = toPositionsData([position]);
     const selected = getPositionData(positions, position.yieldId);
-    const balances = getPositionBalances(selected, "missing-balance-group");
+    const balances = getPositionBalances(selected, "default");
 
     expect(selected?.yieldId).toBe(position.yieldId);
     expect(balances?.balances).toHaveLength(2);
     expect(balances?.type).toBe("default");
+  });
+
+  it("does not substitute another balance group for an unknown balance id", () => {
+    const position = makePosition();
+    const positions = toPositionsData([position]);
+    const selected = getPositionData(positions, position.yieldId);
+
+    expect(getPositionBalances(selected, "missing-balance-group")).toBeNull();
+  });
+
+  it("sums balances per token identity without merging equal symbols on different addresses", () => {
+    const token = yieldApiYieldFixture().token;
+    const usdcA = {
+      ...token,
+      address: "0x00000000000000000000000000000000000000a1",
+      symbol: "USDC",
+    };
+    const usdcB = {
+      ...token,
+      address: "0x00000000000000000000000000000000000000b2",
+      symbol: "USDC",
+    };
+    const balances = [
+      yieldBalanceFixture({ amount: "1.1", amountUsd: "1.1", token: usdcA }),
+      yieldBalanceFixture({ amount: "3", amountUsd: "3.2", token: usdcB }),
+      yieldBalanceFixture({ amount: "2.2", amountUsd: "2.2", token: usdcA }),
+    ].map((balance) => Schema.decodeSync(EarnBalance)(balance));
+
+    const sums = sumBalancesByToken(balances);
+
+    expect(
+      sums.map((sum) => ({
+        address: sum.token.address,
+        amount: sum.amount.toFixed(),
+        amountUsd: sum.amountUsd.toFixed(),
+      }))
+    ).toEqual([
+      { address: usdcA.address, amount: "3.3", amountUsd: "3.3" },
+      { address: usdcB.address, amount: "3", amountUsd: "3.2" },
+    ]);
+  });
+
+  it("groups display rows by status, token identity, and date with exact sums", () => {
+    const token = yieldApiYieldFixture().token;
+    const usdcA = {
+      ...token,
+      address: "0x00000000000000000000000000000000000000a1",
+      symbol: "USDC",
+    };
+    const usdcB = {
+      ...usdcA,
+      address: "0x00000000000000000000000000000000000000b2",
+    };
+    const decode = (overrides: Parameters<typeof yieldBalanceFixture>[0]) =>
+      Schema.decodeSync(EarnBalance)(yieldBalanceFixture(overrides));
+    const balances = [
+      decode({ amount: "2", amountUsd: "2", token: usdcA, type: "active" }),
+      decode({ amount: "1", amountUsd: "1", token: usdcB, type: "active" }),
+      decode({ amount: "3", amountUsd: "3.1", token: usdcA, type: "active" }),
+      decode({
+        amount: "4",
+        amountUsd: "4",
+        date: "2026-11-01T00:00:00.000Z",
+        token: usdcA,
+        type: "exiting",
+      }),
+      decode({
+        amount: "5",
+        amountUsd: "5",
+        date: "2026-12-01T00:00:00.000Z",
+        token: usdcA,
+        type: "exiting",
+      }),
+      decode({
+        amount: "0.5",
+        amountUsd: null,
+        date: "2026-11-01T00:00:00.000Z",
+        token: usdcA,
+        type: "exiting",
+      }),
+    ];
+
+    const rows = groupPositionBalanceRows(balances);
+
+    expect(
+      rows.map((row) => ({
+        address: row.token.address,
+        amount: row.amount.toFixed(),
+        amountUsd: row.amountUsd.toFixed(),
+        date: row.date?.toJSON(),
+        type: row.type,
+      }))
+    ).toEqual([
+      {
+        address: usdcA.address,
+        amount: "5",
+        amountUsd: "5.1",
+        date: undefined,
+        type: "active",
+      },
+      {
+        address: usdcB.address,
+        amount: "1",
+        amountUsd: "1",
+        date: undefined,
+        type: "active",
+      },
+      {
+        address: usdcA.address,
+        amount: "4.5",
+        amountUsd: "4",
+        date: "2026-11-01T00:00:00.000Z",
+        type: "exiting",
+      },
+      {
+        address: usdcA.address,
+        amount: "5",
+        amountUsd: "5",
+        date: "2026-12-01T00:00:00.000Z",
+        type: "exiting",
+      },
+    ]);
+    expect(balances[0]?.amount.toFixed()).toBe("2");
+  });
+
+  it("exposes a scalar exit balance only for exactly one active token", () => {
+    const token = yieldApiYieldFixture().token;
+    const cake = { ...token, symbol: "CAKE" };
+    const usdt = { ...token, symbol: "USDT" };
+    const decode = (overrides: Parameters<typeof yieldBalanceFixture>[0]) =>
+      Schema.decodeSync(EarnBalance)(
+        yieldBalanceFixture({ type: "active", ...overrides })
+      );
+
+    const single = getSingleExitTokenSum([
+      decode({ amount: "1", amountUsd: "2", token: cake }),
+      decode({ amount: "0.5", amountUsd: "1", token: cake }),
+      decode({
+        amount: "100",
+        amountUsd: "0",
+        token: { ...token, isPoints: true, symbol: "PTS" },
+      }),
+    ]);
+
+    expect(single?.token.symbol).toBe("CAKE");
+    expect(single?.amount.toFixed()).toBe("1.5");
+    expect(
+      getSingleExitTokenSum([
+        decode({ amount: "1", amountUsd: "2", token: cake }),
+        decode({ amount: "3", amountUsd: "3", token: usdt }),
+      ])
+    ).toBeNull();
+  });
+
+  it("reports active positions per yield", () => {
+    const position = makePosition();
+    const positions = toPositionsData([position]);
+
     expect(hasActivePositionForYield(positions, position.yieldId)).toBe(true);
     expect(
       hasActivePositionForYield(

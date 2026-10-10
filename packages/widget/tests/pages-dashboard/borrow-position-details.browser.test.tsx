@@ -2,7 +2,7 @@ import { HttpResponse, http } from "msw";
 import { userEvent } from "vitest/browser";
 import type { BorrowAccountSnapshot } from "../../src/domain/borrow/positions/borrow-account-snapshot";
 import { borrowApiRoute } from "../mocks/api-routes";
-import { rkMockWallet } from "../utils/mock-connector";
+import { mockWalletListFactory } from "../utils/mock-connector";
 import { describe, expect, it } from "../utils/test-extend";
 import { renderApp } from "../utils/test-utils";
 
@@ -184,7 +184,7 @@ describe("Borrow position details", () => {
     );
 
     const app = await renderApp({
-      walletListFactory: rkMockWallet({ accounts: [account] }),
+      walletListFactory: mockWalletListFactory({ accounts: [account] }),
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
         borrowEnabled: true,
@@ -268,7 +268,7 @@ describe("Borrow position details", () => {
     );
 
     const app = await renderApp({
-      walletListFactory: rkMockWallet({ accounts: [account] }),
+      walletListFactory: mockWalletListFactory({ accounts: [account] }),
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
         borrowEnabled: true,
@@ -323,7 +323,7 @@ describe("Borrow position details", () => {
     );
 
     const app = await renderApp({
-      walletListFactory: rkMockWallet({ accounts: [account] }),
+      walletListFactory: mockWalletListFactory({ accounts: [account] }),
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
         borrowEnabled: true,
@@ -472,7 +472,7 @@ describe("Borrow position details", () => {
     );
 
     const app = await renderApp({
-      walletListFactory: rkMockWallet({ accounts: [account] }),
+      walletListFactory: mockWalletListFactory({ accounts: [account] }),
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
         borrowEnabled: true,

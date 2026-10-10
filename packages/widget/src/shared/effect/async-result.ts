@@ -1,6 +1,6 @@
 import { Cause, Option } from "effect";
 import { dual } from "effect/Function";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 
 /**
  * AsyncResult has no error-channel mapper. Map the typed failures inside Cause

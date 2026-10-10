@@ -254,6 +254,7 @@ export type TransactionDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -271,6 +272,7 @@ export type TransactionDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -348,7 +350,8 @@ export type TransactionDto = {
     | "WITHDRAW"
     | "ENABLE_COLLATERAL"
     | "DISABLE_COLLATERAL"
-    | "BUNDLE";
+    | "BUNDLE"
+    | "WRAP";
   readonly status:
     | "NOT_FOUND"
     | "CREATED"
@@ -396,6 +399,7 @@ export const TransactionDto = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -413,6 +417,7 @@ export const TransactionDto = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -492,6 +497,7 @@ export const TransactionDto = Schema.Struct({
     "ENABLE_COLLATERAL",
     "DISABLE_COLLATERAL",
     "BUNDLE",
+    "WRAP",
   ]).annotate({ description: "Transaction type", examples: ["SUPPLY"] }),
   status: Schema.Literals([
     "NOT_FOUND",
@@ -630,6 +636,31 @@ export const ActionMetadataDto = Schema.Struct({
     })
   ),
 }).annotate({ identifier: "ActionMetadataDto" });
+export type BorrowTransactionType =
+  | "APPROVAL"
+  | "AUTHORIZE"
+  | "DEAUTHORIZE"
+  | "SUPPLY"
+  | "BORROW"
+  | "REPAY"
+  | "WITHDRAW"
+  | "ENABLE_COLLATERAL"
+  | "DISABLE_COLLATERAL"
+  | "BUNDLE"
+  | "WRAP";
+export const BorrowTransactionType = Schema.Literals([
+  "APPROVAL",
+  "AUTHORIZE",
+  "DEAUTHORIZE",
+  "SUPPLY",
+  "BORROW",
+  "REPAY",
+  "WITHDRAW",
+  "ENABLE_COLLATERAL",
+  "DISABLE_COLLATERAL",
+  "BUNDLE",
+  "WRAP",
+]).annotate({ identifier: "BorrowTransactionType" });
 export type SubmitTransactionDto = {
   readonly signedPayload?: string;
   readonly transactionHash?: string;
@@ -940,6 +971,18 @@ export const ActionDto = Schema.Struct({
     format: "date-time",
   }),
 }).annotate({ identifier: "ActionDto" });
+export type TransactionGasEstimateDto = {
+  readonly amount: string;
+  readonly token: TokenDto;
+  readonly gasLimit?: string;
+  readonly type: BorrowTransactionType;
+};
+export const TransactionGasEstimateDto = Schema.Struct({
+  amount: Schema.String.annotate({ examples: ["0.0012"] }),
+  token: TokenDto,
+  gasLimit: Schema.optionalKey(Schema.String.annotate({ examples: ["21000"] })),
+  type: BorrowTransactionType,
+}).annotate({ identifier: "TransactionGasEstimateDto" });
 export type HealthStatusDto = {
   readonly status: HealthStatus;
   readonly timestamp: string;
@@ -984,6 +1027,7 @@ export type IntegrationDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -1001,6 +1045,7 @@ export type IntegrationDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1108,6 +1153,7 @@ export const IntegrationDto = Schema.Struct({
       "robinhood",
       "robinhood-testnet",
       "arc-testnet",
+      "arc",
       "avalanche-c",
       "avalanche-c-atomic",
       "avalanche-p",
@@ -1125,6 +1171,7 @@ export const IntegrationDto = Schema.Struct({
       "hyperevm",
       "tempo",
       "pharos",
+      "xlayer",
       "agoric",
       "akash",
       "axelar",
@@ -1231,6 +1278,7 @@ export type MarketDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -1248,6 +1296,7 @@ export type MarketDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1367,6 +1416,7 @@ export const MarketDto = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -1384,6 +1434,7 @@ export const MarketDto = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -1644,6 +1695,21 @@ export const DebtBalanceDto = Schema.Struct({
     description: "Available actions for this debt balance",
   }),
 }).annotate({ identifier: "DebtBalanceDto" });
+export type SimulationGasDto = {
+  readonly amount: string | null;
+  readonly token: TokenDto;
+  readonly transactions: ReadonlyArray<TransactionGasEstimateDto>;
+};
+export const SimulationGasDto = Schema.Struct({
+  amount: Schema.Union([Schema.String, Schema.Null]).annotate({
+    description:
+      "Native-token cost of the full action. Null unless every constructed transaction has a gasEstimate. Missing txs are omitted from `transactions` rather than treated as 0.",
+  }),
+  token: Schema.suspend((): Schema.Codec<TokenDto> => TokenDto).annotate({
+    description: "Native gas token for the market network.",
+  }),
+  transactions: Schema.Array(TransactionGasEstimateDto),
+}).annotate({ identifier: "SimulationGasDto" });
 export type PositionDto = {
   readonly address: string;
   readonly integrationId: string;
@@ -1670,6 +1736,7 @@ export type PositionDto = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -1687,6 +1754,7 @@ export type PositionDto = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1796,6 +1864,7 @@ export const PositionDto = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -1813,6 +1882,7 @@ export const PositionDto = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -1922,6 +1992,20 @@ export const PositionDto = Schema.Struct({
     description: "Debt positions",
   }),
 }).annotate({ identifier: "PositionDto" });
+export type ActionSimulationDto = {
+  readonly gas: SimulationGasDto;
+  readonly outcome: ActionMetadataDto;
+};
+export const ActionSimulationDto = Schema.Struct({
+  gas: Schema.suspend(
+    (): Schema.Codec<SimulationGasDto> => SimulationGasDto
+  ).annotate({
+    description: "Estimated gas cost, aggregated and per transaction",
+  }),
+  outcome: Schema.suspend(
+    (): Schema.Codec<ActionMetadataDto> => ActionMetadataDto
+  ).annotate({ description: "Predicted position impact after the action" }),
+}).annotate({ identifier: "ActionSimulationDto" });
 // schemas
 export type IntegrationsControllerGetIntegrationsV1200 =
   ReadonlyArray<IntegrationDto>;
@@ -2040,6 +2124,7 @@ export type MarketsControllerGetMarketsV1Params = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -2057,6 +2142,7 @@ export type MarketsControllerGetMarketsV1Params = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2176,6 +2262,7 @@ export const MarketsControllerGetMarketsV1Params = Schema.Struct({
       "robinhood",
       "robinhood-testnet",
       "arc-testnet",
+      "arc",
       "avalanche-c",
       "avalanche-c-atomic",
       "avalanche-p",
@@ -2193,6 +2280,7 @@ export const MarketsControllerGetMarketsV1Params = Schema.Struct({
       "hyperevm",
       "tempo",
       "pharos",
+      "xlayer",
       "agoric",
       "akash",
       "axelar",
@@ -2400,6 +2488,7 @@ export type PositionsControllerGetPositionsV1Params = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -2417,6 +2506,7 @@ export type PositionsControllerGetPositionsV1Params = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2510,6 +2600,7 @@ export const PositionsControllerGetPositionsV1Params = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -2527,6 +2618,7 @@ export const PositionsControllerGetPositionsV1Params = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -2669,6 +2761,7 @@ export type PositionsControllerGetLiquidationsV1Params = {
     | "robinhood"
     | "robinhood-testnet"
     | "arc-testnet"
+    | "arc"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -2686,6 +2779,7 @@ export type PositionsControllerGetLiquidationsV1Params = {
     | "hyperevm"
     | "tempo"
     | "pharos"
+    | "xlayer"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2803,6 +2897,7 @@ export const PositionsControllerGetLiquidationsV1Params = Schema.Struct({
     "robinhood",
     "robinhood-testnet",
     "arc-testnet",
+    "arc",
     "avalanche-c",
     "avalanche-c-atomic",
     "avalanche-p",
@@ -2820,6 +2915,7 @@ export const PositionsControllerGetLiquidationsV1Params = Schema.Struct({
     "hyperevm",
     "tempo",
     "pharos",
+    "xlayer",
     "agoric",
     "akash",
     "axelar",
@@ -3148,6 +3244,52 @@ export type ActionsControllerExecuteActionV1429 = {
   readonly retryAfter?: number;
 };
 export const ActionsControllerExecuteActionV1429 = Schema.Struct({
+  message: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Rate limit exceeded"] })
+  ),
+  error: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Too Many Requests"] })
+  ),
+  statusCode: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [429] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+  retryAfter: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [30] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+});
+export type ActionsControllerSimulateActionV1RequestJson = ActionRequestDto;
+export const ActionsControllerSimulateActionV1RequestJson = ActionRequestDto;
+export type ActionsControllerSimulateActionV1200 = ActionSimulationDto;
+export const ActionsControllerSimulateActionV1200 = ActionSimulationDto;
+export type ActionsControllerSimulateActionV1401 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export const ActionsControllerSimulateActionV1401 = Schema.Struct({
+  message: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Invalid API key"] })
+  ),
+  error: Schema.optionalKey(
+    Schema.String.annotate({ examples: ["Unauthorized"] })
+  ),
+  statusCode: Schema.optionalKey(
+    Schema.Number.annotate({ examples: [401] }).check(
+      Schema.isFinite().annotate({ expected: "a finite number" })
+    )
+  ),
+});
+export type ActionsControllerSimulateActionV1429 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+  readonly retryAfter?: number;
+};
+export const ActionsControllerSimulateActionV1429 = Schema.Struct({
   message: Schema.optionalKey(
     Schema.String.annotate({ examples: ["Rate limit exceeded"] })
   ),

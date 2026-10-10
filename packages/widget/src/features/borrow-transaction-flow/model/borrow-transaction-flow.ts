@@ -1,5 +1,8 @@
+import { Data, Option, Schema } from "effect";
+import type { ActionMetadata } from "../../../domain/borrow/execution/action";
 import type { ActionCommand } from "../../../domain/borrow/execution/action-command";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
+import { exactDecimal } from "../../../domain/finance/exact";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 import {
   toWidgetPath,
@@ -40,23 +43,32 @@ type OpenPositionReviewFinancials = {
   readonly projectedDebtUsd: string;
 };
 
+/** The requested borrow is net; debt opens at the gross principal. */
+type BorrowReviewOrigination = {
+  readonly debtPrincipalAmount: string;
+  readonly loanTokenPriceUsd: string;
+  readonly originationFeeAmount: string;
+};
+
 type BorrowTransactionFlowSummary = BorrowReviewCommon &
   BorrowReviewRisk &
   (
-    | (OpenPositionReviewFinancials & {
-        readonly action: "borrow";
-        readonly borrowAmount: string;
-        readonly loanTokenSymbol: string;
-      })
-    | (OpenPositionReviewFinancials & {
-        readonly action: "borrowAndSupply";
-        readonly borrowAmount: string;
-        readonly collateralAmount: string;
-        readonly collateralFeeAmount: string;
-        readonly collateralTokenSymbol: string;
-        readonly effectiveCollateralAmount: string;
-        readonly loanTokenSymbol: string;
-      })
+    | (OpenPositionReviewFinancials &
+        BorrowReviewOrigination & {
+          readonly action: "borrow";
+          readonly borrowAmount: string;
+          readonly loanTokenSymbol: string;
+        })
+    | (OpenPositionReviewFinancials &
+        BorrowReviewOrigination & {
+          readonly action: "borrowAndSupply";
+          readonly borrowAmount: string;
+          readonly collateralAmount: string;
+          readonly collateralFeeAmount: string;
+          readonly collateralTokenSymbol: string;
+          readonly effectiveCollateralAmount: string;
+          readonly loanTokenSymbol: string;
+        })
     | (OpenPositionReviewFinancials & {
         readonly action: "supply";
         readonly collateralAmount: string;
@@ -97,8 +109,59 @@ export const getBorrowTransactionFlowAmountLabelKey = (
     ? ("dashboard.borrow.review_page.repay_amount" as const)
     : ("dashboard.borrow.review_page.borrow_amount" as const);
 
+const projectOrigination = (
+  summary: BorrowReviewOrigination & { readonly loanTokenSymbol: string },
+  metadata: ActionMetadata | undefined
+) => {
+  const feeAmount =
+    metadata?.originationFeeAmount ??
+    exactDecimal(summary.originationFeeAmount);
+  if (!feeAmount.isGreaterThan(0)) return null;
+
+  const loanTokenPriceUsd = exactDecimal(summary.loanTokenPriceUsd);
+  const principalAmount =
+    metadata?.effectivePrincipalAmount ??
+    exactDecimal(summary.debtPrincipalAmount);
+
+  return {
+    feeAmount: feeAmount.toString(10),
+    feeUsd: loanTokenPriceUsd.isGreaterThan(0)
+      ? feeAmount.multipliedBy(loanTokenPriceUsd).toString(10)
+      : null,
+    principalAmount: principalAmount.toString(10),
+    symbol: summary.loanTokenSymbol,
+  };
+};
+
+const projectCollateralFee = (
+  summary: {
+    readonly collateralAmount: string;
+    readonly collateralFeeAmount: string;
+    readonly effectiveCollateralAmount: string;
+  },
+  metadata: ActionMetadata | undefined
+) => {
+  const feeAmount = metadata?.feeAmount;
+  const effectiveAmount =
+    metadata?.effectiveCollateralAmount ??
+    (feeAmount === undefined
+      ? undefined
+      : exactDecimal(summary.collateralAmount).minus(feeAmount));
+
+  return {
+    effectiveAmount:
+      effectiveAmount?.toString(10) ?? summary.effectiveCollateralAmount,
+    feeAmount: feeAmount?.toString(10) ?? summary.collateralFeeAmount,
+  };
+};
+
+/**
+ * Projects the review summary for display. Fee figures the created action
+ * reports win over the widget's pre-creation estimate.
+ */
 export const projectBorrowTransactionFlowSummary = (
-  summary: BorrowTransactionFlowSummary
+  summary: BorrowTransactionFlowSummary,
+  metadata?: ActionMetadata
 ) => {
   const risk =
     summary.riskStatus === "available"
@@ -115,55 +178,34 @@ export const projectBorrowTransactionFlowSummary = (
 
   switch (summary.action) {
     case "borrow":
-      return {
-        borrow: {
-          amount: summary.borrowAmount,
-          symbol: summary.loanTokenSymbol,
-        },
-        collateral: null,
-        financials: {
-          existingCollateralUsd: summary.existingCollateralUsd,
-          existingDebtUsd: summary.existingDebtUsd,
-          projectedCollateralUsd: summary.projectedCollateralUsd,
-          projectedDebtUsd: summary.projectedDebtUsd,
-        },
-        risk,
-      };
     case "borrowAndSupply":
-      return {
-        borrow: {
-          amount: summary.borrowAmount,
-          symbol: summary.loanTokenSymbol,
-        },
-        collateral: {
-          amount: summary.collateralAmount,
-          effectiveAmount: summary.effectiveCollateralAmount,
-          feeAmount: summary.collateralFeeAmount,
-          symbol: summary.collateralTokenSymbol,
-        },
-        financials: {
-          existingCollateralUsd: summary.existingCollateralUsd,
-          existingDebtUsd: summary.existingDebtUsd,
-          projectedCollateralUsd: summary.projectedCollateralUsd,
-          projectedDebtUsd: summary.projectedDebtUsd,
-        },
-        risk,
-      };
     case "supply":
       return {
-        borrow: null,
-        collateral: {
-          amount: summary.collateralAmount,
-          effectiveAmount: summary.effectiveCollateralAmount,
-          feeAmount: summary.collateralFeeAmount,
-          symbol: summary.collateralTokenSymbol,
-        },
+        borrow:
+          summary.action === "supply"
+            ? null
+            : {
+                amount: summary.borrowAmount,
+                symbol: summary.loanTokenSymbol,
+              },
+        collateral:
+          summary.action === "borrow"
+            ? null
+            : {
+                ...projectCollateralFee(summary, metadata),
+                amount: summary.collateralAmount,
+                symbol: summary.collateralTokenSymbol,
+              },
         financials: {
           existingCollateralUsd: summary.existingCollateralUsd,
           existingDebtUsd: summary.existingDebtUsd,
           projectedCollateralUsd: summary.projectedCollateralUsd,
           projectedDebtUsd: summary.projectedDebtUsd,
         },
+        origination:
+          summary.action === "supply"
+            ? null
+            : projectOrigination(summary, metadata),
         risk,
       };
     case "repay":
@@ -179,6 +221,7 @@ export const projectBorrowTransactionFlowSummary = (
           projectedCollateralUsd: null,
           projectedDebtUsd: summary.projectedDebtUsd,
         },
+        origination: null,
         risk,
       };
     case "withdraw":
@@ -194,6 +237,7 @@ export const projectBorrowTransactionFlowSummary = (
           projectedCollateralUsd: summary.projectedCollateralUsd,
           projectedDebtUsd: null,
         },
+        origination: null,
         risk,
       };
     case "disableCollateral":
@@ -207,6 +251,7 @@ export const projectBorrowTransactionFlowSummary = (
           projectedCollateralUsd: null,
           projectedDebtUsd: null,
         },
+        origination: null,
         risk,
       };
   }
@@ -220,11 +265,29 @@ export type BorrowTransactionFlowIntake = BorrowTransactionFlowReview & {
   readonly entry: BorrowTransactionFlowEntry;
 };
 
-export type BorrowFlowSession = Readonly<{
-  readonly epoch: number;
+/**
+ * A started Flow Session's immutable input. Start hands it to the flow route
+ * through Review navigation state; the route that mounts it owns its lifetime.
+ */
+export class BorrowFlowSession extends Data.Class<{
   readonly intake: BorrowTransactionFlowIntake;
   readonly walletScope: WalletScopeKey;
-}>;
+}> {}
+
+const BorrowFlowNavigationState = Schema.Struct({
+  borrowFlowSession: Schema.instanceOf(BorrowFlowSession),
+});
+
+export const makeBorrowFlowNavigationState = (
+  session: BorrowFlowSession
+): typeof BorrowFlowNavigationState.Type => ({ borrowFlowSession: session });
+
+export const decodeBorrowFlowNavigationState = (
+  state: unknown
+): Option.Option<BorrowFlowSession> =>
+  Schema.decodeUnknownOption(BorrowFlowNavigationState)(state).pipe(
+    Option.map((decoded) => decoded.borrowFlowSession)
+  );
 
 export const getBorrowReviewTrackingProperties = (
   intake: BorrowTransactionFlowIntake

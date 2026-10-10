@@ -1,6 +1,6 @@
 import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { pendingActionDeepLinkViewAtom } from "../../../features/earn/index";
 import { initParamsAtom } from "../../../features/init-params/index";
 import { mountAnimationStateAtom } from "../../../features/mount-animation/index";

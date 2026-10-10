@@ -1,6 +1,6 @@
 import type BigNumber from "bignumber.js";
 import { Effect } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
 import { getKycProviderName } from "../../../../domain/earn/kyc";
 import { walletCommandIdentity } from "../../../../services/wallet/wallet-command-identity";
@@ -44,7 +44,6 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
     Atom.make((get) => {
       const input = get(inputAtom);
       return {
-        selectedProviderYieldId: input.entry.selectedProviderYieldId,
         validators: input.entry.validators,
         yield: input.entry.yield,
       };

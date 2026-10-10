@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Layer, Schema, SubscriptionRef } from "effect";
-import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
+import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { appRuntime } from "../../../src/app/runtime/app-runtime";
 import { walletRuntime } from "../../../src/app/runtime/wallet-runtime";
 import { Integration } from "../../../src/domain/borrow/catalog/integration";
@@ -139,7 +139,7 @@ describe("Market Position action preparation atoms", () => {
         const integration =
           yield* Schema.decodeEffect(Integration)(integrationDto);
         const market = yield* Schema.decodeEffect(Market)(marketDto);
-        const accountSnapshot = yield* Schema.decodeUnknownEffect(
+        const accountSnapshot = yield* Schema.decodeEffect(
           BorrowAccountSnapshot
         )({
           ...positionDto,

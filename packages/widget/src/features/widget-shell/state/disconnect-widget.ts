@@ -1,4 +1,4 @@
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
 import { logoutAtom } from "../../wallet/index";
 

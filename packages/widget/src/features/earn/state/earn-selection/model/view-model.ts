@@ -10,7 +10,7 @@ import { disabledValidatorsViewResource } from "./view-inputs";
 export const makeEmptyPositionsData = (): PositionsData => new Map();
 
 const getIntentForm = (intent: EarnEntryIntent): EarnSelectionForm => ({
-  providerYieldId: intent.selectedProviderYieldId,
+  providerOption: intent.selectedProviderOption,
   stakeAmount: intent.stakeAmount,
   tronResource: intent.tronResource,
   useMaxAmount: intent.useMaxAmount,

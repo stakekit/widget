@@ -1,6 +1,10 @@
 import { Schema } from "effect";
 import * as BorrowApi from "../../../generated/api/borrow";
-import { ExactBaseUnitAmount, ExactDecimal } from "../../finance/scalars";
+import {
+  ExactBaseUnitAmount,
+  ExactDecimal,
+  NonNegativeExactDecimal,
+} from "../../finance/scalars";
 import {
   ActionId,
   IntegrationId,
@@ -22,6 +26,7 @@ const ActionRawArguments = Schema.Struct({
 });
 
 const ActionMetadata = Schema.Struct({
+  ...BorrowApi.ActionMetadataDto.fields,
   currentHealthFactor: Schema.NullOr(ExactDecimal),
   predictedHealthFactor: Schema.NullOr(ExactDecimal),
   currentLtv: ExactDecimal,
@@ -29,7 +34,12 @@ const ActionMetadata = Schema.Struct({
   liquidationThreshold: ExactDecimal,
   predictedTotalSupplyUsd: ExactDecimal,
   predictedTotalDebtUsd: ExactDecimal,
+  originationFeeAmount: Schema.optionalKey(NonNegativeExactDecimal),
+  effectivePrincipalAmount: Schema.optionalKey(NonNegativeExactDecimal),
+  feeAmount: Schema.optionalKey(NonNegativeExactDecimal),
+  effectiveCollateralAmount: Schema.optionalKey(NonNegativeExactDecimal),
 });
+export type ActionMetadata = typeof ActionMetadata.Type;
 
 export const Action = Schema.Struct({
   ...BorrowApi.ActionDto.fields,

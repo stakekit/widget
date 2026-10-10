@@ -246,6 +246,31 @@
     "connect_wallet": "Connect Wallet",
     "ledger_add_account": "Add account"
   },
+  "wallet_modal": {
+    "account": "Account",
+    "close": "Close",
+    "copy_address": "Copy Address",
+    "copied": "Copied!",
+    "connected": "Connected",
+    "confirm": "Confirm in Wallet",
+    "confirm_error": "Error switching chain",
+    "wrong_network": "Wrong network detected, switch or disconnect to continue.",
+    "chain_error": "Couldn't switch networks. Try again.",
+    "select_ecosystem": "Choose ecosystem",
+    "connect_wallet": "Connect wallet",
+    "change_ecosystem": "Choose another ecosystem",
+    "connection_error": "Couldn't connect to the wallet. Try again.",
+    "wallet_not_available": "This wallet is no longer available. Enable or install its extension and try again.",
+    "disconnect": "Disconnect",
+    "network": "Switch Networks",
+    "install": "Install",
+    "checking": "Checking",
+    "groups": {
+      "installed": "Installed",
+      "primary": "Primary",
+      "other": "Other"
+    }
+  },
   "activity": {
     "complete": {
       "continue": "Continue"
@@ -656,6 +681,8 @@
         "projected_health_factor": "Projected health factor",
         "estimated_fee": "Estimated fee",
         "estimated_fee_pending": "Shown in wallet",
+        "origination_fee": "Origination fee",
+        "debt_principal": "Debt principal",
         "confirmation_error_description": "We couldn't prepare your borrow transaction. Please try again.",
         "warning_title": "Review warning",
         "warnings": {
@@ -1008,6 +1035,10 @@
     "no_enabled_yields": {
       "title": "No yields enabled",
       "description": "There are no yields enabled for this API key. Enable at least one yield to start earning."
+    },
+    "widget_unavailable": {
+      "title": "Something went wrong",
+      "description": "The widget couldn't load. Please refresh the page or try again later."
     }
   },
   "positions": {

@@ -1,5 +1,5 @@
 import { Data, Duration, Effect, Option } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
 import type { EarnYieldWithProvider } from "../../domain/earn/models";
 import type { YieldId } from "../../domain/identity/identifiers";
@@ -47,9 +47,14 @@ const enrichedYieldOpportunityCanonicalAtom = Atom.family((yieldId: YieldId) =>
       const yieldModel = yield* get.result(
         yieldOpportunityResourceAtom.local(yieldId)
       );
+      // Provider details are optional enrichment; a failed lookup must not
+      // take the opportunity down with it.
       const provider = yield* get
         .result(yieldProviderResourceAtom.local(yieldModel.providerId))
-        .pipe(Effect.map(Option.getOrUndefined));
+        .pipe(
+          Effect.map(Option.getOrUndefined),
+          Effect.orElseSucceed(() => undefined)
+        );
 
       return {
         ...yieldModel,

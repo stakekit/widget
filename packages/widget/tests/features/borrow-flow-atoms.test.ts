@@ -1,27 +1,22 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Effect, Layer, Schema, Stream, SubscriptionRef } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
-import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
+import { Effect, Layer, Schema, Stream } from "effect";
+import * as Atom from "effect/reactivity/Atom";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { Action } from "../../src/domain/borrow/execution/action";
 import { Transaction } from "../../src/domain/borrow/execution/transaction";
 import { IntegrationId, MarketId } from "../../src/domain/borrow/ids";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
-import type {
+import {
   BorrowFlowSession,
-  BorrowTransactionFlowIntake,
+  type BorrowTransactionFlowIntake,
 } from "../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import {
-  currentBorrowFlowSessionAtom,
-  startBorrowTransactionFlowAtom,
-} from "../../src/features/borrow-transaction-flow/state/atoms/borrow-flow";
-import {
-  borrowFlowSessionRootAtomFamily,
   makeBorrowFlowExecutionScope,
   makeBorrowFlowReviewScope,
+  makeBorrowFlowSessionModule,
 } from "../../src/features/borrow-transaction-flow/state/atoms/borrow-flow-session";
-import type { BorrowFlowSessionHandle } from "../../src/features/borrow-transaction-flow/state/orchestration/borrow-flow-session";
 import { BorrowTransactionFlowService } from "../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
 import { initializeTransactionWorkflow } from "../../src/services/transaction-workflow/internal/model";
 import { BorrowTransactionWorkflowInput } from "../../src/services/transaction-workflow/transaction-workflow-model";
@@ -41,6 +36,9 @@ const intake: BorrowTransactionFlowIntake = {
   summary: {
     action: "borrow",
     borrowAmount: "1",
+    debtPrincipalAmount: "1",
+    loanTokenPriceUsd: "1",
+    originationFeeAmount: "0",
     existingCollateralUsd: "100",
     existingDebtUsd: "0",
     loanTokenSymbol: "USDC",
@@ -54,11 +52,7 @@ const intake: BorrowTransactionFlowIntake = {
   },
 };
 
-const makeSession = (epoch: number): BorrowFlowSession => ({
-  epoch,
-  intake,
-  walletScope,
-});
+const session = new BorrowFlowSession({ intake, walletScope });
 
 const transaction = Schema.decodeSync(Transaction)({
   address,
@@ -85,113 +79,26 @@ const action = Schema.decodeSync(Action)({
   transactions: [Schema.encodeSync(Transaction)(transaction)],
 });
 
-const makeSessionHandle = (): BorrowFlowSessionHandle => ({
-  acquireExecution: () =>
-    Effect.succeed({ _tag: "RejectedNoReservation" } as const),
-  acquireReview: () =>
-    Effect.succeed({
-      back: () => Effect.succeed({ _tag: "Accepted" } as const),
-      confirm: () => Effect.succeed({ _tag: "Confirmed" } as const),
-    }),
-  intake,
-});
-
 describe("Borrow Flow Atom bridge", () => {
-  it.effect(
-    "projects service state and binds Session acquisition to the root Atom lifetime",
-    () =>
-      Effect.gen(function* () {
-        const current = yield* SubscriptionRef.make<BorrowFlowSession | null>(
-          null
-        );
-        const probes = { acquired: 0, released: 0 };
-        const startInputs: Array<BorrowTransactionFlowIntake> = [];
-        const service = BorrowTransactionFlowService.of({
-          acquireSession: () =>
-            Effect.acquireRelease(
-              Effect.sync(() => {
-                probes.acquired += 1;
-                return {
-                  _tag: "Acquired",
-                  session: makeSessionHandle(),
-                } as const;
-              }),
-              () =>
-                Effect.sync(() => {
-                  probes.released += 1;
-                }).pipe(Effect.andThen(SubscriptionRef.set(current, null)))
-            ),
-          currentSession: SubscriptionRef.changes(current),
-          start: (input) =>
-            Effect.gen(function* () {
-              startInputs.push(input);
-              const session = makeSession(1);
-              yield* SubscriptionRef.set(current, session);
-              return { _tag: "Started", session } as const;
-            }),
-        });
-        const registry = AtomRegistry.make({
-          initialValues: [
-            Atom.initialValue(
-              walletRuntime.layer,
-              Layer.succeed(BorrowTransactionFlowService, service) as never
-            ),
-          ],
-        });
-
-        registry.set(startBorrowTransactionFlowAtom, intake);
-        yield* Effect.promise(() =>
-          vi.waitFor(() =>
-            expect(registry.get(currentBorrowFlowSessionAtom)?.epoch).toBe(1)
-          )
-        );
-        expect(startInputs).toEqual([intake]);
-
-        const session = registry.get(currentBorrowFlowSessionAtom);
-        if (!session) throw new Error("Expected a Borrow Flow Session");
-        const rootAtom = borrowFlowSessionRootAtomFamily(session);
-        const releaseRoot = registry.mount(rootAtom);
-        yield* Effect.promise(() =>
-          vi.waitFor(() => expect(probes.acquired).toBe(1))
-        );
-
-        releaseRoot();
-        yield* Effect.promise(() =>
-          vi.waitFor(() => expect(probes.released).toBe(1))
-        );
-        registry.dispose();
-      })
-  );
-
   it.effect(
     "binds Review and Execution handles to route scope and forwards their commands",
     () =>
       Effect.gen(function* () {
-        const session = makeSession(1);
-        const current = yield* SubscriptionRef.make<BorrowFlowSession | null>(
-          session
-        );
         const reviewProbes = { acquired: 0, released: 0 };
         const executionProbes = { acquired: 0, released: 0 };
-        const reviewBack = vi.fn(() =>
-          Effect.succeed({ _tag: "Accepted" } as const)
-        );
+        const reviewBack = vi.fn(() => Effect.void);
         const reviewConfirm = vi.fn(() =>
           Effect.succeed({ _tag: "Confirmed" } as const)
         );
-        const executionBack = vi.fn(() =>
-          Effect.succeed({ _tag: "Accepted" } as const)
-        );
+        const executionBack = vi.fn(() => Effect.void);
         const executionFinish = vi.fn(() =>
           Effect.succeed({ _tag: "Accepted" } as const)
         );
-        const workflowDispatch = vi.fn(() =>
-          Effect.succeed({ _tag: "Accepted" } as const)
-        );
+        const workflowDispatch = vi.fn(() => Effect.void);
         const workflowState = initializeTransactionWorkflow(
           new BorrowTransactionWorkflowInput({ action, walletScope })
         );
-        const sessionHandle: BorrowFlowSessionHandle = {
+        const sessionHandle = {
           acquireExecution: () =>
             Effect.acquireRelease(
               Effect.sync(() => {
@@ -225,16 +132,8 @@ describe("Borrow Flow Atom bridge", () => {
           intake,
         };
         const service = BorrowTransactionFlowService.of({
-          acquireSession: () =>
-            Effect.acquireRelease(
-              Effect.succeed({
-                _tag: "Acquired",
-                session: sessionHandle,
-              } as const),
-              () => Effect.void
-            ),
-          currentSession: SubscriptionRef.changes(current),
-          start: () => Effect.succeed({ _tag: "Started", session } as const),
+          openSession: () => Effect.succeed(sessionHandle),
+          start: () => Effect.die("Not used"),
         });
         const registry = AtomRegistry.make({
           initialValues: [
@@ -245,7 +144,7 @@ describe("Borrow Flow Atom bridge", () => {
           ],
         });
 
-        const sessionRootAtom = borrowFlowSessionRootAtomFamily(session);
+        const sessionRootAtom = makeBorrowFlowSessionModule(session);
         const releaseSession = registry.mount(sessionRootAtom);
         const sessionModule = registry.get(sessionRootAtom);
 

@@ -190,7 +190,6 @@ const hostConfigurationValueFields = {
   disableInjectedProviderDiscovery: optional(Schema.Boolean),
   disableResizingInputFontSize: optional(Schema.Boolean),
   externalProviders: optional(ExternalProviderValues),
-  forceWalletConnectOnly: optional(Schema.Boolean),
   hideAccountAndChainSelector: optional(Schema.Boolean),
   hideChainSelector: optional(Schema.Boolean),
   hideNetworkLogo: optional(Schema.Boolean),

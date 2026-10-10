@@ -1,13 +1,12 @@
 import {
   useAtom,
   useAtomInitialValues,
-  useAtomSet,
   useAtomValue,
 } from "@effect/atom-react";
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Deferred, Effect, Equal, Layer, Schema } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { act } from "react";
 import type { DataRouter } from "react-router";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
@@ -18,15 +17,14 @@ import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
-  isActiveClassicTransactionFlowPathAtom,
-  startClassicTransactionFlowAtom,
-} from "../../src/features/classic-transaction-flow/index";
-import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+  type ClassicTransactionFlowIntake,
+  makeYieldActionContinuationSession,
+} from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import { makeClassicFlowSessionModule } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow-session";
+import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import { walletScopeAtom } from "../../src/features/wallet/index";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
-import { makeConnectedWalletState } from "../fixtures/wallet-state";
-import { makeClassicFlowTestKit } from "../utils/classic-flow-test-kit";
 import { render } from "../utils/test-utils.dom.tsx";
 import { widgetConfigAtom } from "../utils/widget-config";
 
@@ -158,44 +156,48 @@ const activityIntake = (): Extract<
   };
 };
 
+const sessionLifetime = { closed: 0, opened: 0 };
+const continuationIntake = activityIntake();
+const continuationSession =
+  makeYieldActionContinuationSession(continuationIntake);
+const continuationSessionAtom =
+  makeClassicFlowSessionModule(continuationSession);
+
+/** Owns one Flow Session in the wallet runtime, recording its lifetime. */
 const ClassicFlowRuntimeHarness = () => {
-  const intake = activityIntake();
-  const walletState = makeConnectedWalletState(intake.walletScope);
   useAtomInitialValues([
-    [walletScopeAtom, intake.walletScope],
+    [walletScopeAtom, continuationSession.intake.walletScope],
     [
       walletRuntime.layer,
-      Layer.unwrap(
-        makeClassicFlowTestKit({
-          initialWalletState: walletState,
-        }).pipe(Effect.map((kit) => kit.layer))
+      Layer.succeed(
+        ClassicTransactionFlowService,
+        ClassicTransactionFlowService.of({
+          openSession: (session) =>
+            Effect.acquireRelease(
+              Effect.sync(() => {
+                sessionLifetime.opened += 1;
+                return {
+                  acquireExecution: () => Effect.die("Not used"),
+                  acquireReview: () => Effect.die("Not used"),
+                  intake: session.intake,
+                };
+              }),
+              () =>
+                Effect.sync(() => {
+                  sessionLifetime.closed += 1;
+                })
+            ),
+          start: () => Effect.die("Not used"),
+        })
       ) as never,
     ],
   ]);
-  const sessionPresent = useAtomValue(
-    isActiveClassicTransactionFlowPathAtom(`/activity/${intake.action.id}`)
-  );
-  const start = useAtomSet(startClassicTransactionFlowAtom);
+  const session = useAtomValue(continuationSessionAtom);
 
   return (
-    <>
-      <output data-testid="classic-flow-session">
-        {sessionPresent ? "present" : "none"}
-      </output>
-      <button
-        type="button"
-        onClick={() =>
-          start({
-            intake,
-            mount: {
-              _tag: "YieldActionContinuation",
-            },
-          })
-        }
-      >
-        Start classic flow
-      </button>
-    </>
+    <output data-testid="classic-flow-session">
+      {session.facade.getIntake("YieldActionContinuation").action.id}
+    </output>
   );
 };
 
@@ -366,9 +368,11 @@ describe("dynamic Widget Configuration", () => {
       })
   );
 
-  it("retains intake while live settings change", async () => {
+  it("keeps an open Flow Session while live settings change", async () => {
     const firstTrack = vi.fn();
     const secondTrack = vi.fn();
+    sessionLifetime.closed = 0;
+    sessionLifetime.opened = 0;
     const app = await render(
       <SKAtomRegistryProvider
         routes={applicationRoutes}
@@ -378,18 +382,11 @@ describe("dynamic Widget Configuration", () => {
       </SKAtomRegistryProvider>
     );
 
-    await act(async () =>
-      app.container.querySelector<HTMLButtonElement>("button")?.click()
-    );
-    await vi.waitFor(() =>
-      expect(
-        app.container.querySelector('[data-testid="classic-flow-session"]')
-          ?.textContent
-      ).not.toBe("none")
-    );
-    const sessionKey = app.container.querySelector(
-      '[data-testid="classic-flow-session"]'
-    )?.textContent;
+    await expect.poll(() => sessionLifetime.opened).toBe(1);
+    expect(
+      app.container.querySelector('[data-testid="classic-flow-session"]')
+        ?.textContent
+    ).toBe(continuationIntake.action.id);
 
     await app.rerender(
       <SKAtomRegistryProvider
@@ -399,10 +396,17 @@ describe("dynamic Widget Configuration", () => {
         <ClassicFlowRuntimeHarness />
       </SKAtomRegistryProvider>
     );
-    expect(
-      app.container.querySelector('[data-testid="classic-flow-session"]')
-        ?.textContent
-    ).toBe(sessionKey);
+    await act(async () => {
+      const settled = Promise.withResolvers<void>();
+      setTimeout(settled.resolve, 0);
+      await settled.promise;
+    });
+
+    expect(sessionLifetime).toEqual({ closed: 0, opened: 1 });
+
+    app.unmount();
+    await expect.poll(() => sessionLifetime.closed).toBe(1);
+    expect(sessionLifetime.opened).toBe(1);
   });
 
   it.live(

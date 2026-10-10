@@ -15,7 +15,11 @@ import {
 import { TestClock } from "effect/testing";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
-import type { ClassicTransactionFlowIntake } from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
+import {
+  type ClassicTransactionFlowIntake,
+  decodeClassicFlowNavigationState,
+  makeYieldActionContinuationSession,
+} from "../../src/features/classic-transaction-flow/model/classic-transaction-flow";
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
 import type { YieldOperations } from "../../src/services/api/operations";
 import {
@@ -170,19 +174,23 @@ const makeServiceLayer = (
 const startEnter = (service: ClassicTransactionFlowService["Service"]) =>
   service.start({ intake: makeEnterIntake(), mount: { _tag: "Earn" } });
 
+// The flow route opens the Session it was navigated to, in its own Scope.
 const acquireStartedSession = Effect.fn("test.acquireStartedSession")(
   function* (service: ClassicTransactionFlowService["Service"]) {
     const started = yield* startEnter(service);
     if (started._tag !== "Started") {
       return yield* Effect.die("Expected a started Classic Flow Session");
     }
-    const acquired = yield* service.acquireSession(started.session);
-    if (acquired._tag !== "Acquired") {
-      return yield* Effect.die("Expected an acquired Classic Flow Session");
-    }
-    return { captured: started.session, session: acquired.session } as const;
+    const session = yield* service.openSession(started.session);
+    return { session } as const;
   }
 );
+
+// Start's Review navigation carries the Session as state; flow assertions
+// compare routes only.
+const withoutNavigationState = (
+  commands: ReadonlyArray<WidgetNavigationCommand>
+) => commands.map(({ state: _state, ...command }) => command);
 
 const readyEligibility = Stream.succeed({
   activityExpired: false,
@@ -191,119 +199,7 @@ const readyEligibility = Stream.succeed({
 
 describe("ClassicTransactionFlowService", () => {
   it.effect(
-    "reserves a fresh Session before navigation and rolls it back when navigation fails",
-    () =>
-      Effect.gen(function* () {
-        const commands: Array<WidgetNavigationCommand> = [];
-        const execute = vi.fn<WidgetNavigation["Service"]["execute"]>(
-          (command) =>
-            Effect.sync(() => {
-              commands.push(command);
-            }).pipe(
-              Effect.andThen(
-                Effect.fail(new WidgetNavigationError({ cause: "blocked" }))
-              )
-            )
-        );
-        const walletState = yield* SubscriptionRef.make(
-          connectedWalletState(walletScope)
-        );
-        const observedSessions: Array<unknown> = [];
-
-        const exit = yield* Effect.exit(
-          Effect.scoped(
-            Effect.gen(function* () {
-              const service = yield* ClassicTransactionFlowService;
-              yield* service.currentSession.pipe(
-                Stream.tap((session) =>
-                  Effect.sync(() => {
-                    observedSessions.push(session);
-                  })
-                ),
-                Stream.take(3),
-                Stream.runDrain,
-                Effect.forkScoped({ startImmediately: true })
-              );
-
-              return yield* startEnter(service);
-            })
-          ).pipe(Effect.provide(makeServiceLayer(walletState, { execute })))
-        );
-
-        expect(exit._tag).toBe("Failure");
-        expect(commands).toEqual([
-          { _tag: "Push", path: toWidgetPath("/review") },
-        ]);
-        expect(observedSessions).toMatchObject([
-          null,
-          {
-            destination: {
-              completePath: "/complete",
-              reviewPath: "/review",
-              stepsPath: "/steps",
-            },
-            epoch: 1,
-          },
-          null,
-        ]);
-      })
-  );
-
-  it.effect(
-    "finishes a committed Start when its caller is interrupted during navigation",
-    () =>
-      Effect.gen(function* () {
-        const navigationStarted = yield* Deferred.make<void>();
-        const navigationRelease = yield* Deferred.make<void>();
-        const walletState = yield* SubscriptionRef.make(
-          connectedWalletState(walletScope)
-        );
-
-        const result = yield* Effect.scoped(
-          Effect.gen(function* () {
-            const service = yield* ClassicTransactionFlowService;
-            const start = yield* startEnter(service).pipe(
-              Effect.forkChild({ startImmediately: true })
-            );
-            yield* Deferred.await(navigationStarted);
-            const interrupt = yield* Fiber.interrupt(start).pipe(
-              Effect.forkChild({ startImmediately: true })
-            );
-            yield* Effect.yieldNow;
-            const duringInterrupt = yield* service.currentSession.pipe(
-              Stream.runHead
-            );
-            yield* Deferred.succeed(navigationRelease, undefined);
-            yield* Fiber.join(interrupt);
-            const afterNavigation = yield* service.currentSession.pipe(
-              Stream.runHead
-            );
-            return { afterNavigation, duringInterrupt };
-          })
-        ).pipe(
-          Effect.provide(
-            makeServiceLayer(walletState, {
-              execute: () =>
-                Deferred.succeed(navigationStarted, undefined).pipe(
-                  Effect.andThen(Deferred.await(navigationRelease))
-                ),
-            })
-          )
-        );
-
-        expect(result.duringInterrupt).toMatchObject({
-          _tag: "Some",
-          value: { epoch: 1 },
-        });
-        expect(result.afterNavigation).toMatchObject({
-          _tag: "Some",
-          value: { epoch: 1 },
-        });
-      })
-  );
-
-  it.effect(
-    "creates a fresh Session for every explicit Start with equal intake",
+    "navigates to Review carrying a fresh Flow Session with a copied intake",
     () =>
       Effect.gen(function* () {
         const commands: Array<WidgetNavigationCommand> = [];
@@ -333,121 +229,224 @@ describe("ClassicTransactionFlowService", () => {
           )
         );
 
-        expect(result.first).toMatchObject({
-          _tag: "Started",
-          session: { epoch: 1 },
+        if (
+          result.first._tag !== "Started" ||
+          result.second._tag !== "Started"
+        ) {
+          throw new Error("Expected started Classic Flow Sessions");
+        }
+        expect(result.first.session).not.toBe(result.second.session);
+        expect(result.second.session.intake).toEqual(input.intake);
+        expect(result.second.session.intake).not.toBe(input.intake);
+        expect(result.second.session.intake.walletScope).toEqual(walletScope);
+        expect(result.second.session.intake.walletScope).not.toBe(
+          input.intake.walletScope
+        );
+        expect(result.second.session.destination).toEqual({
+          completePath: toWidgetPath("/complete"),
+          reviewPath: toWidgetPath("/review"),
+          stepsPath: toWidgetPath("/steps"),
         });
-        expect(result.second).toMatchObject({
-          _tag: "Started",
-          session: { epoch: 2 },
-        });
-        expect(commands).toEqual([
-          { _tag: "Push", path: toWidgetPath("/review") },
-          { _tag: "Push", path: toWidgetPath("/review") },
+        expect(
+          commands.map((command) => ({
+            _tag: command._tag,
+            path: command._tag === "Back" ? null : command.path,
+            session: Option.getOrNull(
+              decodeClassicFlowNavigationState(command.state)
+            ),
+          }))
+        ).toEqual([
+          {
+            _tag: "Push",
+            path: toWidgetPath("/review"),
+            session: result.first.session,
+          },
+          {
+            _tag: "Push",
+            path: toWidgetPath("/review"),
+            session: result.second.session,
+          },
         ]);
       })
   );
 
+  it.effect("fails Start when its Review navigation fails", () =>
+    Effect.gen(function* () {
+      const commands: Array<WidgetNavigationCommand> = [];
+      const walletState = yield* SubscriptionRef.make(
+        connectedWalletState(walletScope)
+      );
+
+      const exit = yield* Effect.scoped(
+        Effect.gen(function* () {
+          const service = yield* ClassicTransactionFlowService;
+          return yield* Effect.exit(startEnter(service));
+        })
+      ).pipe(
+        Effect.provide(
+          makeServiceLayer(walletState, {
+            execute: (command) =>
+              Effect.sync(() => {
+                commands.push(command);
+              }).pipe(
+                Effect.andThen(
+                  Effect.fail(new WidgetNavigationError({ cause: "blocked" }))
+                )
+              ),
+          })
+        )
+      );
+
+      expect(exit._tag).toBe("Failure");
+      expect(withoutNavigationState(commands)).toEqual([
+        { _tag: "Push", path: toWidgetPath("/review") },
+      ]);
+    })
+  );
+
   it.effect(
-    "rejects a stale Wallet owner and autonomously clears ownership changes",
+    "finishes Review navigation before an interrupted Start completes",
     () =>
       Effect.gen(function* () {
-        const otherAddress = yield* Schema.decodeEffect(WalletAddress)(
-          "0x2234567890123456789012345678901234567890"
-        );
-        const otherScope = new WalletScopeKey({
-          address: otherAddress,
-          network: "ethereum",
-        });
-        const execute = vi.fn<WidgetNavigation["Service"]["execute"]>(
-          () => Effect.void
-        );
+        const navigationStarted = yield* Deferred.make<void>();
+        const navigationRelease = yield* Deferred.make<void>();
+        const navigated: Array<string> = [];
         const walletState = yield* SubscriptionRef.make(
-          connectedWalletState(otherScope)
+          connectedWalletState(walletScope)
         );
 
         const result = yield* Effect.scoped(
           Effect.gen(function* () {
             const service = yield* ClassicTransactionFlowService;
-            const rejected = yield* startEnter(service);
-            yield* SubscriptionRef.set(
-              walletState,
-              connectedWalletState(walletScope)
+            const start = yield* startEnter(service).pipe(
+              Effect.forkChild({ startImmediately: true })
             );
-            const started = yield* startEnter(service);
-            if (started._tag !== "Started") {
-              return yield* Effect.die("Expected a started Session");
-            }
-            yield* SubscriptionRef.set(
-              walletState,
-              connectingWalletState(walletScope)
+            yield* Deferred.await(navigationStarted);
+            const interrupt = yield* Fiber.interrupt(start).pipe(
+              Effect.forkChild({ startImmediately: true })
             );
-            const retained = yield* service.currentSession.pipe(Stream.runHead);
-            const invalidated = yield* service.currentSession.pipe(
-              Stream.filter((session) => session === null),
-              Stream.runHead,
-              Effect.forkScoped({ startImmediately: true })
-            );
-            yield* SubscriptionRef.set(
-              walletState,
-              connectedWalletState(otherScope)
-            );
-            return {
-              invalidated: yield* Fiber.join(invalidated),
-              rejected,
-              retained,
-            };
+            yield* Effect.yieldNow;
+            const interruptedBeforeNavigation = interrupt.pollUnsafe();
+            yield* Deferred.succeed(navigationRelease, undefined);
+            yield* Fiber.join(interrupt);
+            return { interruptedBeforeNavigation };
           })
-        ).pipe(Effect.provide(makeServiceLayer(walletState, { execute })));
+        ).pipe(
+          Effect.provide(
+            makeServiceLayer(walletState, {
+              execute: () =>
+                Deferred.succeed(navigationStarted, undefined).pipe(
+                  Effect.andThen(Deferred.await(navigationRelease)),
+                  Effect.andThen(
+                    Effect.sync(() => {
+                      navigated.push("review");
+                    })
+                  )
+                ),
+            })
+          )
+        );
 
-        expect(result).toMatchObject({
-          invalidated: Option.some(null),
-          rejected: { _tag: "RejectedOwner" },
-          retained: {
-            _tag: "Some",
-            value: { epoch: 1 },
-          },
-        });
-        expect(execute).toHaveBeenCalledOnce();
+        expect(result.interruptedBeforeNavigation).toBeUndefined();
+        expect(navigated).toEqual(["review"]);
       })
   );
 
-  it.effect("does not let a released stale Session clear its replacement", () =>
+  it.effect("rejects a Start for a non-owning Wallet without navigating", () =>
     Effect.gen(function* () {
+      const otherAddress = yield* Schema.decodeEffect(WalletAddress)(
+        "0x2234567890123456789012345678901234567890"
+      );
+      const otherScope = new WalletScopeKey({
+        address: otherAddress,
+        network: "ethereum",
+      });
+      const execute = vi.fn<WidgetNavigation["Service"]["execute"]>(
+        () => Effect.void
+      );
       const walletState = yield* SubscriptionRef.make(
-        connectedWalletState(walletScope)
+        connectedWalletState(otherScope)
       );
 
       const result = yield* Effect.scoped(
         Effect.gen(function* () {
           const service = yield* ClassicTransactionFlowService;
-          const first = yield* startEnter(service);
-          if (first._tag !== "Started") {
-            return yield* Effect.die("Expected the first Session");
-          }
-          const firstScope = yield* Scope.make();
-          const acquired = yield* service
-            .acquireSession(first.session)
-            .pipe(Effect.provideService(Scope.Scope, firstScope));
-          if (acquired._tag !== "Acquired") {
-            return yield* Effect.die("Expected the first Session acquisition");
-          }
-          const second = yield* startEnter(service);
-          if (second._tag !== "Started") {
-            return yield* Effect.die("Expected the replacement Session");
-          }
-
-          yield* Scope.close(firstScope, Exit.void);
-          const current = yield* service.currentSession.pipe(Stream.runHead);
-          return { current, second };
+          return yield* startEnter(service);
         })
-      ).pipe(Effect.provide(makeServiceLayer(walletState)));
+      ).pipe(Effect.provide(makeServiceLayer(walletState, { execute })));
 
-      expect(result.current).toMatchObject({
-        _tag: "Some",
-        value: { epoch: result.second.session.epoch },
-      });
+      expect(result).toEqual({ _tag: "RejectedOwner" });
+      expect(execute).not.toHaveBeenCalled();
     })
+  );
+
+  it.effect(
+    "interrupts opening a Flow Session for another Wallet Scope Owner",
+    () =>
+      Effect.gen(function* () {
+        const otherAddress = yield* Schema.decodeEffect(WalletAddress)(
+          "0x2234567890123456789012345678901234567890"
+        );
+        const walletState = yield* SubscriptionRef.make(
+          connectedWalletState(walletScope)
+        );
+
+        const exit = yield* Effect.scoped(
+          Effect.gen(function* () {
+            const service = yield* ClassicTransactionFlowService;
+            const started = yield* startEnter(service);
+            if (started._tag !== "Started") return yield* Effect.die("start");
+            yield* SubscriptionRef.set(
+              walletState,
+              connectedWalletState(
+                new WalletScopeKey({
+                  address: otherAddress,
+                  network: "ethereum",
+                })
+              )
+            );
+            return yield* Effect.exit(service.openSession(started.session));
+          })
+        ).pipe(Effect.provide(makeServiceLayer(walletState)));
+
+        expect(Exit.hasInterrupts(exit)).toBe(true);
+      })
+  );
+
+  it.effect(
+    "reopens a revisited Flow Session without its previous reservation",
+    () =>
+      Effect.gen(function* () {
+        const walletState = yield* SubscriptionRef.make(
+          connectedWalletState(walletScope)
+        );
+
+        const result = yield* Effect.scoped(
+          Effect.gen(function* () {
+            const service = yield* ClassicTransactionFlowService;
+            const started = yield* startEnter(service);
+            if (started._tag !== "Started") return yield* Effect.die("start");
+            const confirmed = yield* Effect.scoped(
+              Effect.gen(function* () {
+                const session = yield* service.openSession(started.session);
+                const review = yield* session.acquireReview(readyEligibility);
+                yield* review.states.pipe(
+                  Stream.filter((state) => state.preview._tag === "Success"),
+                  Stream.runHead
+                );
+                return yield* review.confirm();
+              })
+            );
+            const reopened = yield* service.openSession(started.session);
+            return { confirmed, execution: yield* reopened.acquireExecution() };
+          })
+        ).pipe(Effect.provide(makeServiceLayer(walletState)));
+
+        expect(result).toEqual({
+          confirmed: { _tag: "Confirmed" },
+          execution: { _tag: "RejectedNoReservation" },
+        });
+      })
   );
 
   it.effect("keeps an invalid Exit preview in Review", () =>
@@ -479,18 +478,14 @@ describe("ClassicTransactionFlowService", () => {
           if (started._tag !== "Started") {
             return yield* Effect.die("Expected an Exit Session");
           }
-          const acquired = yield* service.acquireSession(started.session);
-          if (acquired._tag !== "Acquired") {
-            return yield* Effect.die("Expected an acquired Exit Session");
-          }
-          const review =
-            yield* acquired.session.acquireReview(readyEligibility);
+          const session = yield* service.openSession(started.session);
+          const review = yield* session.acquireReview(readyEligibility);
           const state = yield* review.states.pipe(
             Stream.filter((current) => current.preview._tag === "Failure"),
             Stream.runHead
           );
           const confirmation = yield* review.confirm();
-          const execution = yield* acquired.session.acquireExecution();
+          const execution = yield* session.acquireExecution();
           return { confirmation, execution, state };
         })
       ).pipe(
@@ -602,12 +597,8 @@ describe("ClassicTransactionFlowService", () => {
           if (started._tag !== "Started") {
             return yield* Effect.die("Expected a Classic Flow Session");
           }
-          const acquired = yield* service.acquireSession(started.session);
-          if (acquired._tag !== "Acquired") {
-            return yield* Effect.die("Expected an acquired Session");
-          }
-          const review =
-            yield* acquired.session.acquireReview(readyEligibility);
+          const session = yield* service.openSession(started.session);
+          const review = yield* session.acquireReview(readyEligibility);
           const state = yield* review.states.pipe(
             Stream.filter((current) => current.preview._tag === "Failure"),
             Stream.runHead
@@ -638,69 +629,6 @@ describe("ClassicTransactionFlowService", () => {
     })
   );
 
-  it.effect("reuses an already-active Yield Action Continuation Session", () =>
-    Effect.gen(function* () {
-      const walletState = yield* SubscriptionRef.make(
-        connectedWalletState(walletScope)
-      );
-      const input = {
-        intake: makeContinuationIntake(
-          yieldApiActionFixture({ status: "WAITING_FOR_NEXT" })
-        ),
-        mount: { _tag: "YieldActionContinuation" as const },
-      };
-
-      const result = yield* Effect.gen(function* () {
-        const service = yield* ClassicTransactionFlowService;
-        const first = yield* service.start(input);
-        const second = yield* service.start(input);
-        return { first, second };
-      }).pipe(Effect.provide(makeServiceLayer(walletState)));
-
-      expect(result.first._tag).toBe("Started");
-      expect(result.second).toEqual(result.first);
-    })
-  );
-
-  it.effect(
-    "allows a continuation to start again after its Session is released",
-    () =>
-      Effect.gen(function* () {
-        const walletState = yield* SubscriptionRef.make(
-          connectedWalletState(walletScope)
-        );
-        const input = {
-          intake: makeContinuationIntake(
-            yieldApiActionFixture({ status: "WAITING_FOR_NEXT" })
-          ),
-          mount: { _tag: "YieldActionContinuation" as const },
-        };
-
-        const result = yield* Effect.scoped(
-          Effect.gen(function* () {
-            const service = yield* ClassicTransactionFlowService;
-            const first = yield* service.start(input);
-            if (first._tag !== "Started") {
-              return yield* Effect.die("Expected a Classic Flow Session");
-            }
-
-            yield* Effect.scoped(
-              Effect.gen(function* () {
-                const acquired = yield* service.acquireSession(first.session);
-                if (acquired._tag !== "Acquired") {
-                  return yield* Effect.die("Expected an acquired Session");
-                }
-              })
-            );
-
-            return yield* service.start(input);
-          })
-        ).pipe(Effect.provide(makeServiceLayer(walletState)));
-
-        expect(result._tag).toBe("Started");
-      })
-  );
-
   it.effect(
     "continues the existing waiting Activity action without previewing another action",
     () =>
@@ -727,27 +655,16 @@ describe("ClassicTransactionFlowService", () => {
         const result = yield* Effect.scoped(
           Effect.gen(function* () {
             const service = yield* ClassicTransactionFlowService;
-            const started = yield* service.start({
-              intake: makeContinuationIntake(action),
-              mount: {
-                _tag: "YieldActionContinuation",
-              },
-            });
-            if (started._tag !== "Started") {
-              return yield* Effect.die("Expected an Activity Session");
-            }
-            const acquired = yield* service.acquireSession(started.session);
-            if (acquired._tag !== "Acquired") {
-              return yield* Effect.die("Expected an acquired Activity Session");
-            }
-            const review =
-              yield* acquired.session.acquireReview(readyEligibility);
+            const session = yield* service.openSession(
+              makeYieldActionContinuationSession(makeContinuationIntake(action))
+            );
+            const review = yield* session.acquireReview(readyEligibility);
             const state = yield* review.states.pipe(
               Stream.filter((current) => current.preview._tag === "Success"),
               Stream.runHead
             );
             const confirmation = yield* review.confirm();
-            const execution = yield* acquired.session.acquireExecution();
+            const execution = yield* session.acquireExecution();
             if (execution._tag !== "Acquired") {
               return yield* Effect.die("Expected an Activity Execution");
             }
@@ -781,7 +698,7 @@ describe("ClassicTransactionFlowService", () => {
         });
         expect(result.confirmation).toEqual({ _tag: "Confirmed" });
         expect(result.execution._tag).toBe("Acquired");
-        expect(result.finish).toEqual({ _tag: "Accepted" });
+        expect(result.finish).toBeUndefined();
         expect(previewAction).not.toHaveBeenCalled();
         expect(inputs).toMatchObject([
           {
@@ -941,22 +858,14 @@ describe("ClassicTransactionFlowService", () => {
       const result = yield* Effect.scoped(
         Effect.gen(function* () {
           const service = yield* ClassicTransactionFlowService;
-          const started = yield* service.start({
-            intake: makeContinuationIntake(
-              yieldApiActionFixture({ status: "WAITING_FOR_NEXT" })
-            ),
-            mount: {
-              _tag: "YieldActionContinuation",
-            },
-          });
-          if (started._tag !== "Started") {
-            return yield* Effect.die("Expected an Activity Session");
-          }
-          const acquired = yield* service.acquireSession(started.session);
-          if (acquired._tag !== "Acquired") {
-            return yield* Effect.die("Expected an acquired Activity Session");
-          }
-          const review = yield* acquired.session.acquireReview(
+          const session = yield* service.openSession(
+            makeYieldActionContinuationSession(
+              makeContinuationIntake(
+                yieldApiActionFixture({ status: "WAITING_FOR_NEXT" })
+              )
+            )
+          );
+          const review = yield* session.acquireReview(
             Stream.succeed({
               activityExpired: true,
               kycBlocking: false,
@@ -967,7 +876,7 @@ describe("ClassicTransactionFlowService", () => {
             Stream.runHead
           );
           const confirmation = yield* review.confirm();
-          const execution = yield* acquired.session.acquireExecution();
+          const execution = yield* session.acquireExecution();
           return { confirmation, execution };
         })
       ).pipe(Effect.provide(makeServiceLayer(walletState)));
@@ -1042,19 +951,19 @@ describe("ClassicTransactionFlowService", () => {
         );
 
         expect(result).toMatchObject({
-          back: { _tag: "Accepted" },
+          back: undefined,
           confirmed: { _tag: "Confirmed" },
           duplicate: { _tag: "RejectedSession" },
           failed: {
             _tag: "Some",
             value: { preview: { _tag: "Failure" } },
           },
-          finish: { _tag: "Accepted" },
-          workflow: { _tag: "Accepted" },
+          finish: undefined,
+          workflow: undefined,
         });
         expect(previewAttempts).toBe(2);
         expect(workflowDispatch).toHaveBeenCalledWith({ _tag: "Retry" });
-        expect(commands).toEqual([
+        expect(withoutNavigationState(commands)).toEqual([
           { _tag: "Push", path: toWidgetPath("/review") },
           { _tag: "Push", path: toWidgetPath("/steps") },
           { _tag: "Replace", path: toWidgetPath("/review") },
@@ -1245,7 +1154,7 @@ describe("ClassicTransactionFlowService", () => {
         });
         expect(result.secondConfirmation).toEqual({ _tag: "Confirmed" });
         expect(result.afterRetry).toBe("Acquired");
-        expect(commands).toEqual([
+        expect(withoutNavigationState(commands)).toEqual([
           { _tag: "Push", path: toWidgetPath("/review") },
           { _tag: "Push", path: toWidgetPath("/steps") },
           { _tag: "Push", path: toWidgetPath("/steps") },
@@ -1254,7 +1163,7 @@ describe("ClassicTransactionFlowService", () => {
   );
 
   it.effect(
-    "suppresses stale Execution operations after a replacement Session starts",
+    "interrupts Execution operations after its Session Scope closes",
     () =>
       Effect.gen(function* () {
         const workflowDispatch = vi.fn(() => Effect.void);
@@ -1266,24 +1175,28 @@ describe("ClassicTransactionFlowService", () => {
         const result = yield* Effect.scoped(
           Effect.gen(function* () {
             const service = yield* ClassicTransactionFlowService;
-            const acquired = yield* acquireStartedSession(service);
-            const review =
-              yield* acquired.session.acquireReview(readyEligibility);
+            const started = yield* startEnter(service);
+            if (started._tag !== "Started") return yield* Effect.die("start");
+            const sessionScope = yield* Scope.make();
+            const session = yield* service
+              .openSession(started.session)
+              .pipe(Scope.provide(sessionScope));
+            const review = yield* session.acquireReview(readyEligibility);
             yield* review.states.pipe(
               Stream.filter((state) => state.preview._tag === "Success"),
               Stream.runHead
             );
             yield* review.confirm();
-            const execution = yield* acquired.session.acquireExecution();
+            const execution = yield* session.acquireExecution();
             if (execution._tag !== "Acquired") {
               return yield* Effect.die("Expected an Execution acquisition");
             }
-            yield* startEnter(service);
-            const workflow = yield* execution.execution.runWorkflow({
-              _tag: "Retry",
-            });
-            const back = yield* execution.execution.back();
-            const finish = yield* execution.execution.finish();
+            yield* Scope.close(sessionScope, Exit.void);
+            const workflow = yield* Effect.exit(
+              execution.execution.runWorkflow({ _tag: "Retry" })
+            );
+            const back = yield* Effect.exit(execution.execution.back());
+            const finish = yield* Effect.exit(execution.execution.finish());
             return { back, finish, workflow };
           })
         ).pipe(
@@ -1302,26 +1215,102 @@ describe("ClassicTransactionFlowService", () => {
           )
         );
 
-        expect(result).toEqual({
-          back: { _tag: "RejectedStale" },
-          finish: { _tag: "RejectedStale" },
-          workflow: { _tag: "RejectedStale" },
-        });
+        expect(Exit.hasInterrupts(result.back)).toBe(true);
+        expect(Exit.hasInterrupts(result.finish)).toBe(true);
+        expect(Exit.hasInterrupts(result.workflow)).toBe(true);
         expect(workflowDispatch).not.toHaveBeenCalled();
-        expect(commands).toEqual([
+        expect(withoutNavigationState(commands)).toEqual([
           { _tag: "Push", path: toWidgetPath("/review") },
           { _tag: "Push", path: toWidgetPath("/steps") },
+        ]);
+      })
+  );
+
+  it.effect(
+    "interrupts an in-flight Confirm before it reserves or navigates when its Session Scope closes",
+    () =>
+      Effect.gen(function* () {
+        const retryStarted = yield* Deferred.make<void>();
+        const retryRelease = yield* Deferred.make<void>();
+        const retryInterrupted = yield* Deferred.make<void>();
+        const commands: Array<WidgetNavigationCommand> = [];
+        const walletState = yield* SubscriptionRef.make(
+          connectedWalletState(walletScope)
+        );
+        let previewAttempts = 0;
+
+        const result = yield* Effect.scoped(
+          Effect.gen(function* () {
+            const service = yield* ClassicTransactionFlowService;
+            const started = yield* startEnter(service);
+            if (started._tag !== "Started") return yield* Effect.die("start");
+            const sessionScope = yield* Scope.make();
+            const session = yield* service
+              .openSession(started.session)
+              .pipe(Scope.provide(sessionScope));
+            const review = yield* session.acquireReview(readyEligibility);
+            yield* review.states.pipe(
+              Stream.filter((state) => state.preview._tag === "Failure"),
+              Stream.runHead
+            );
+            const confirmation = yield* review
+              .confirm()
+              .pipe(Effect.forkChild({ startImmediately: true }));
+            yield* Deferred.await(retryStarted);
+            const close = yield* Scope.close(sessionScope, Exit.void).pipe(
+              Effect.forkChild({ startImmediately: true })
+            );
+            yield* Effect.yieldNow;
+            yield* Deferred.succeed(retryRelease, undefined);
+            yield* Fiber.join(close);
+            return {
+              confirmation: yield* Fiber.await(confirmation),
+              retryInterrupted: yield* Deferred.isDone(retryInterrupted),
+            };
+          })
+        ).pipe(
+          Effect.provide(
+            makeServiceLayer(walletState, {
+              execute: (command) =>
+                Effect.sync(() => {
+                  commands.push(command);
+                }),
+              previewAction: () => {
+                previewAttempts += 1;
+                return previewAttempts === 1
+                  ? Effect.fail(
+                      new ApiRequestError({
+                        cause: new Error("temporarily unavailable"),
+                        operation: "previewAction",
+                      })
+                    )
+                  : Deferred.succeed(retryStarted, undefined).pipe(
+                      Effect.andThen(Deferred.await(retryRelease)),
+                      Effect.as(yieldApiActionFixture()),
+                      Effect.onInterrupt(() =>
+                        Deferred.succeed(retryInterrupted, undefined)
+                      )
+                    );
+              },
+            })
+          )
+        );
+
+        expect(Exit.hasInterrupts(result.confirmation)).toBe(true);
+        expect(result.retryInterrupted).toBe(true);
+        expect(withoutNavigationState(commands)).toEqual([
           { _tag: "Push", path: toWidgetPath("/review") },
         ]);
       })
   );
 
   it.effect(
-    "serializes Execution navigation with replacement Session ownership",
+    "interrupts in-flight Execution work when Review is acquired again",
     () =>
       Effect.gen(function* () {
-        const backStarted = yield* Deferred.make<void>();
-        const backRelease = yield* Deferred.make<void>();
+        const dispatchStarted = yield* Deferred.make<void>();
+        const dispatchRelease = yield* Deferred.make<void>();
+        const dispatched: Array<string> = [];
         const walletState = yield* SubscriptionRef.make(
           connectedWalletState(walletScope)
         );
@@ -1341,51 +1330,113 @@ describe("ClassicTransactionFlowService", () => {
             if (execution._tag !== "Acquired") {
               return yield* Effect.die("Expected an Execution acquisition");
             }
+            const command = yield* execution.execution
+              .runWorkflow({ _tag: "Retry" })
+              .pipe(Effect.forkChild({ startImmediately: true }));
+            yield* Deferred.await(dispatchStarted);
+            const reentered = yield* acquired.session
+              .acquireReview(readyEligibility)
+              .pipe(Effect.forkChild({ startImmediately: true }));
+            yield* Effect.yieldNow;
+            yield* Deferred.succeed(dispatchRelease, undefined);
+            yield* Fiber.join(reentered);
+            return { command: yield* Fiber.await(command) };
+          })
+        ).pipe(
+          Effect.provide(
+            makeServiceLayer(walletState, {
+              makeWorkflow: () =>
+                Effect.succeed({
+                  dispatch: () =>
+                    Deferred.succeed(dispatchStarted, undefined).pipe(
+                      Effect.andThen(Deferred.await(dispatchRelease)),
+                      Effect.andThen(
+                        Effect.sync(() => {
+                          dispatched.push("completed");
+                        })
+                      )
+                    ),
+                  states: Stream.never,
+                }),
+            })
+          )
+        );
 
-            const back = yield* execution.execution
-              .back()
-              .pipe(Effect.forkChild);
-            yield* Deferred.await(backStarted);
-            const replacement = yield* startEnter(service).pipe(
-              Effect.forkChild
-            );
-            yield* Effect.yieldNow;
-            yield* Effect.yieldNow;
-            const whileBackPending = yield* service.currentSession.pipe(
+        expect(Exit.hasInterrupts(result.command)).toBe(true);
+        expect(dispatched).toEqual([]);
+      })
+  );
+
+  it.effect(
+    "lets an in-flight Execution navigation finish before its Session Scope closes",
+    () =>
+      Effect.gen(function* () {
+        const backStarted = yield* Deferred.make<void>();
+        const backRelease = yield* Deferred.make<void>();
+        const commands: Array<WidgetNavigationCommand> = [];
+        const walletState = yield* SubscriptionRef.make(
+          connectedWalletState(walletScope)
+        );
+
+        const result = yield* Effect.scoped(
+          Effect.gen(function* () {
+            const service = yield* ClassicTransactionFlowService;
+            const started = yield* startEnter(service);
+            if (started._tag !== "Started") return yield* Effect.die("start");
+            const sessionScope = yield* Scope.make();
+            const session = yield* service
+              .openSession(started.session)
+              .pipe(Scope.provide(sessionScope));
+            const review = yield* session.acquireReview(readyEligibility);
+            yield* review.states.pipe(
+              Stream.filter((state) => state.preview._tag === "Success"),
               Stream.runHead
             );
-            const replacementWhileBackPending = replacement.pollUnsafe();
-            yield* Deferred.succeed(backRelease, undefined);
+            yield* review.confirm();
+            const execution = yield* session.acquireExecution();
+            if (execution._tag !== "Acquired") {
+              return yield* Effect.die("Expected an Execution acquisition");
+            }
 
-            return {
-              back: yield* Fiber.join(back),
-              originalEpoch: acquired.captured.epoch,
-              replacement: yield* Fiber.join(replacement),
-              replacementWhileBackPending,
-              whileBackPending,
-            };
+            yield* execution.execution
+              .back()
+              .pipe(Effect.forkChild({ startImmediately: true }));
+            yield* Deferred.await(backStarted);
+            const close = yield* Scope.close(sessionScope, Exit.void).pipe(
+              Effect.forkChild({ startImmediately: true })
+            );
+            yield* Effect.yieldNow;
+            const closedWhileBackPending = close.pollUnsafe();
+            yield* Deferred.succeed(backRelease, undefined);
+            yield* Fiber.join(close);
+            return { closedWhileBackPending };
           })
         ).pipe(
           Effect.provide(
             makeServiceLayer(walletState, {
               execute: (command) =>
-                command._tag === "Replace" &&
-                command.path === toWidgetPath("/review")
-                  ? Deferred.succeed(backStarted, undefined).pipe(
-                      Effect.andThen(Deferred.await(backRelease))
-                    )
-                  : Effect.void,
+                Effect.sync(() => {
+                  commands.push(command);
+                }).pipe(
+                  Effect.andThen(
+                    command._tag === "Replace" &&
+                      command.path === toWidgetPath("/review")
+                      ? Deferred.succeed(backStarted, undefined).pipe(
+                          Effect.andThen(Deferred.await(backRelease))
+                        )
+                      : Effect.void
+                  )
+                ),
             })
           )
         );
 
-        expect(result.back).toEqual({ _tag: "Accepted" });
-        expect(result.replacement).toMatchObject({ _tag: "Started" });
-        expect(result.replacementWhileBackPending).toBeUndefined();
-        expect(result.whileBackPending).toMatchObject({
-          _tag: "Some",
-          value: { epoch: result.originalEpoch },
-        });
+        expect(result.closedWhileBackPending).toBeUndefined();
+        expect(withoutNavigationState(commands)).toEqual([
+          { _tag: "Push", path: toWidgetPath("/review") },
+          { _tag: "Push", path: toWidgetPath("/steps") },
+          { _tag: "Replace", path: toWidgetPath("/review") },
+        ]);
       })
   );
 
@@ -1467,34 +1518,23 @@ describe("ClassicTransactionFlowService", () => {
         const command = yield* Effect.scoped(
           Effect.gen(function* () {
             const service = yield* ClassicTransactionFlowService;
-            const started = yield* service.start({
-              intake: {
+            const session = yield* service.openSession(
+              makeYieldActionContinuationSession({
                 _tag: "YieldActionContinuation",
                 action: historicalAction,
                 providersDetails: [],
                 selectedValidators: [],
                 selectedYield,
                 walletScope,
-              },
-              mount: {
-                _tag: "YieldActionContinuation",
-              },
-            });
-            if (started._tag !== "Started") {
-              return yield* Effect.die("Expected an Activity Session");
-            }
-            const acquired = yield* service.acquireSession(started.session);
-            if (acquired._tag !== "Acquired") {
-              return yield* Effect.die("Expected an acquired Activity Session");
-            }
-            const review =
-              yield* acquired.session.acquireReview(readyEligibility);
+              })
+            );
+            const review = yield* session.acquireReview(readyEligibility);
             yield* review.states.pipe(
               Stream.filter((state) => state.preview._tag === "Success"),
               Stream.runHead
             );
             yield* review.confirm();
-            const execution = yield* acquired.session.acquireExecution();
+            const execution = yield* session.acquireExecution();
             if (execution._tag !== "Acquired") {
               return yield* Effect.die("Expected an Activity Execution");
             }

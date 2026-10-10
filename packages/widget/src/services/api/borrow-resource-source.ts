@@ -1,5 +1,4 @@
 import { Effect, Schema } from "effect";
-import { BorrowFeatureDisabled } from "../../domain/borrow/availability";
 import type { Integration } from "../../domain/borrow/catalog/integration";
 import type { BorrowNetwork } from "../../domain/borrow/network";
 import {
@@ -14,7 +13,7 @@ import {
   withApiRequestError,
   withResponseDecodeError,
 } from "./api-operation";
-import { MissingBorrowApiConfig } from "./resource-sources";
+import { requireBorrowTransport } from "./borrow-transport";
 
 export const makeBorrowResourceSource = (
   borrow: BorrowApi.BorrowApi | null,
@@ -22,17 +21,7 @@ export const makeBorrowResourceSource = (
 ) => {
   const requireTransport = Effect.fn("BorrowResourceSource.requireTransport")(
     function* () {
-      if (!borrowEnabled) {
-        return yield* new BorrowFeatureDisabled({
-          message: "Borrow is disabled by Widget configuration.",
-        });
-      }
-
-      if (borrow) return borrow;
-
-      return yield* new MissingBorrowApiConfig({
-        message: "Borrow API URL must be configured before using Borrow.",
-      });
+      return yield* requireBorrowTransport(borrow, borrowEnabled);
     }
   );
 

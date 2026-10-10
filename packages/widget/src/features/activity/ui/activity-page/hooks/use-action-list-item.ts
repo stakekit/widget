@@ -29,7 +29,6 @@ export const useActionListItem = (action: ActivityActionItem) => {
       new YieldSummaryKey({
         yield: action.yieldData,
         validators: action.validatorsData,
-        selectedProviderYieldId: null,
       })
     )
   ).providers;

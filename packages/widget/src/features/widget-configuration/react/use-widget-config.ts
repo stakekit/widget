@@ -1,5 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
-import type * as Atom from "effect/unstable/reactivity/Atom";
+import type * as Atom from "effect/reactivity/Atom";
 import type { WidgetConfig } from "../../../services/config/widget-config-model";
 import { widgetConfigFieldAtom } from "../state/widget-config";
 

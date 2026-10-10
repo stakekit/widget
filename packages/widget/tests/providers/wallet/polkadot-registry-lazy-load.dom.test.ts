@@ -6,6 +6,8 @@ import type { Network } from "../../../src/domain/network/network";
 import type { SKTxMeta } from "../../../src/public-api/types";
 import { makePrepareLedgerLiveTransaction } from "../../../src/services/wallet/internal/adapters/ledger/prepare-ledger-live-transaction";
 import { getConfig as getSubstrateConfig } from "../../../src/services/wallet/internal/adapters/substrate/config";
+import { runWalletEffect } from "../../utils/run-wallet-effect";
+import { unusedWalletConnectProtocol } from "../../utils/wallet-connect";
 
 /**
  * `@polkadot/types` inflates a large network registry when it is evaluated, and
@@ -71,8 +73,6 @@ vi.mock("@luno-kit/core/connectors", () => {
   return {
     subwalletConnector: () => baseConnector("subwallet", "SubWallet"),
     talismanConnector: () => baseConnector("talisman", "Talisman"),
-    walletConnectConnector: () =>
-      baseConnector("walletConnect", "WalletConnect"),
   };
 });
 
@@ -99,7 +99,8 @@ const makeSubstrateConnector = () =>
     const { connector: group, substrateChains } = yield* getSubstrateConfig({
       buildConnectors: true,
       enabledNetworks: substrateNetworks,
-      forceWalletConnectOnly: false,
+      walletConnectProtocol: unusedWalletConnectProtocol,
+      runWalletEffect,
     });
 
     if (!group) throw new Error("Substrate connector group was not built");

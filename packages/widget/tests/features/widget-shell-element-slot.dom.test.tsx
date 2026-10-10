@@ -1,5 +1,5 @@
 import { RegistryContext } from "@effect/atom-react";
-import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
+import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { useElementAtomRef } from "../../src/features/widget-shell/react/use-element-atom-ref";

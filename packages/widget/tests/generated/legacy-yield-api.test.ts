@@ -1,6 +1,6 @@
 import { Effect } from "effect";
+import { HttpClient } from "effect/http";
 import * as Schema from "effect/Schema";
-import { HttpClient } from "effect/unstable/http";
 import { describe, expect, it } from "vitest";
 import * as LegacyClient from "../../src/generated/api/legacy";
 import * as LegacySchema from "../../src/generated/api/legacy-schema";

@@ -2,7 +2,8 @@
 
 This document records stable ownership and dependency boundaries. Behavior,
 route topology, failure presentation, and detailed workflows belong in code and
-tests. Executable policy lives in Biome, dependency-cruiser, Knip, and ast-grep.
+tests. Executable policy lives in Biome, dependency-cruiser, Knip, jscpd, and
+ast-grep.
 
 ## Ownership
 
@@ -123,6 +124,13 @@ Resource and workflow retention is an explicit ownership decision. Use the
 shared application-runtime lifecycle adapter for scoped handles rather than
 rebuilding mount graphs in Features.
 
+Relevance is a lifetime, not a counter. A Session, reservation, modal opening,
+or attempt owns a `Scope`; ending it closes the Scope and interrupts its work.
+Do not guard continuation with revision, epoch, or `isCurrent` checks. A
+lifetime consumed by a React subtree is owned by that subtree's scoped Atom
+instance, not by a service-held "current" slot. See
+[ADR 0011](../../docs/adr/0011-lifetimes-are-scopes-staleness-is-interruption.md).
+
 ## Trust boundaries
 
 The Module that owns a value-shaped input boundary owns its Effect Schema and
@@ -172,6 +180,8 @@ and Effect Atom registry.
   `Date`, global `fetch`, throws in Effect generators, and wildcard Module
   exports.
 - Knip checks ordinary and production reachability.
+- jscpd fails when duplicated source and tooling code (tests and generated API
+  clients excluded) exceeds 1% of lines.
 
 Run `mise exec -- pnpm check-hygiene` after changing the module graph. Change
 the implementation or the exact policy when the design changes; do not silence

@@ -1,7 +1,7 @@
 import type BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
+import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { TronResource } from "../../../domain/action/tron-resource";
 import type { EarnYieldWithProvider } from "../../../domain/earn/models";
@@ -11,8 +11,8 @@ import {
 } from "../../../domain/earn/stake";
 import {
   getYieldActionArg,
-  getYieldProviderYieldIds,
   isYieldValidatorSelectionRequired,
+  resolveYieldProviderOption,
 } from "../../../domain/earn/yield";
 import { exactDecimal, exactZero } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
@@ -49,20 +49,6 @@ import {
   type PositionDetailsStakeEntryKey,
   positionDetailsStakeAtom,
 } from "./dashboard-stake-machine";
-
-const resolveProviderYieldId = (
-  selectedYield: EarnYieldWithProvider | null
-) => {
-  const argument = selectedYield
-    ? getYieldActionArg(selectedYield, "enter", "providerId")
-    : null;
-  const providerYieldIds = selectedYield
-    ? getYieldProviderYieldIds(selectedYield)
-    : [];
-  return argument?.required && providerYieldIds.length > 0
-    ? EArray.head(providerYieldIds).pipe(Option.getOrNull)
-    : null;
-};
 
 const resolveTronResource = (selectedYield: EarnYieldWithProvider | null) => {
   const argument = selectedYield
@@ -204,7 +190,9 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         availableAmount,
         entry: {
           amount,
-          selectedProviderYieldId: resolveProviderYieldId(selectedYield),
+          selectedProviderOption: selectedYield
+            ? resolveYieldProviderOption(selectedYield, null)
+            : null,
           token: selectedToken,
           tronResource,
           useMaxAmount: intent.useMaxAmount,

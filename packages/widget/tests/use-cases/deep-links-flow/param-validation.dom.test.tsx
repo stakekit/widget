@@ -127,4 +127,34 @@ describe("Deep link param validation", () => {
       token: "ethereum-eth",
     });
   });
+
+  it("decodes position balance keys as balanceId", () => {
+    expect(
+      decodeHref("https://host.test/?balanceId=validator::abc").balanceId
+    ).toBe("validator::abc");
+    expect(
+      decodeHref("https://host.test/?balanceId=validator%3A%3Aabc%3A12")
+        .balanceId
+    ).toBe("validator::abc:12");
+    expect(decodeHref("https://host.test/?balanceId=default").balanceId).toBe(
+      "default"
+    );
+    expect(
+      decodeHref("https://host.test/?balanceId=validators").balanceId
+    ).toBe("validators");
+  });
+
+  it("rejects balanceId values unsafe for a route segment", () => {
+    for (const balanceId of [
+      "validator::..",
+      "validator::a/b",
+      "../positions",
+      "validator::a%2Fb",
+      "validator::a?b",
+    ]) {
+      const url = new URL("https://host.test/");
+      url.searchParams.set("balanceId", balanceId);
+      expect(decodeHref(url.href).balanceId).toBeNull();
+    }
+  });
 });

@@ -1,5 +1,5 @@
 import { Cause, Effect, Layer, Option, Schema } from "effect";
-import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
+import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import type { TokenBalanceScanCommand } from "../../src/domain/finance/models";
@@ -62,13 +62,7 @@ describe("Token Balances resource", () => {
     ).toEqual([]);
     expect(scanTokenBalances).toHaveBeenCalledOnce();
     expect(scanTokenBalances).toHaveBeenCalledWith({
-      addresses: {
-        additionalAddresses: {
-          lidoStakeAccounts: [],
-          stakeAccounts: ["stake-account"],
-        },
-        address,
-      },
+      address,
       network: "ethereum",
     });
   });
@@ -135,12 +129,7 @@ describe("Token Balances resource", () => {
     );
 
     expect(scanTokenBalances).toHaveBeenCalledTimes(2);
-    expect(
-      scanTokenBalances.mock.calls.map(([command]) => ({
-        address: command.addresses.address,
-        network: command.network,
-      }))
-    ).toEqual([
+    expect(scanTokenBalances.mock.calls.map(([command]) => command)).toEqual([
       { address, network: "ethereum" },
       { address: otherAddress, network: "base" },
     ]);

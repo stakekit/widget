@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { MemoryRouter } from "react-router";
+import { act, type ReactNode, useState } from "react";
+import { MemoryRouter, type NavigateFunction, useNavigate } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ActivityPageView } from "../../src/features/activity/state/page";
 import { ActivityTabPage } from "../../src/features/activity/ui/dashboard/activity";
@@ -11,10 +11,18 @@ const wallet = vi.hoisted(() => ({
 const pageView = vi.hoisted(() => ({
   current: { status: "empty" } as ActivityPageView,
 }));
+const outletMounts = vi.hoisted(() => ({ count: 0 }));
 
 vi.mock("react-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react-router")>()),
-  Outlet: () => <div data-rk="activity-details-outlet" />,
+  // Each mount gets a new id, so a remounted outlet subtree is observable.
+  Outlet: () => {
+    const [mount] = useState(() => {
+      outletMounts.count += 1;
+      return outletMounts.count;
+    });
+    return <div data-mount={mount} data-rk="activity-details-outlet" />;
+  },
 }));
 vi.mock(
   "../../src/features/activity/ui/activity-page/activity-page-content",
@@ -82,6 +90,34 @@ describe("Dashboard Activity split view", () => {
     ).not.toBe(null);
   });
 
+  it("keeps the action route mounted from Review into execution", async () => {
+    const navigation: { current: NavigateFunction | null } = { current: null };
+    const NavigationCapture = () => {
+      navigation.current = useNavigate();
+      return null;
+    };
+    const app = await render(
+      <MemoryRouter initialEntries={["/activity/a1"]}>
+        <NavigationCapture />
+        <ActivityTabPage />
+      </MemoryRouter>
+    );
+    const outletMount = () =>
+      app.container
+        .querySelector('[data-rk="activity-details-outlet"]')
+        ?.getAttribute("data-mount");
+    const reviewMount = outletMount();
+
+    await act(async () => {
+      await navigation.current?.("/activity/a1/steps");
+    });
+
+    expect(
+      app.container.querySelector('[data-rk="activity-execution-panel"]')
+    ).not.toBe(null);
+    // The action route below the outlet owns the continuation Session.
+    expect(outletMount()).toBe(reviewMount);
+  });
   it("shows the feed only when the wallet is not connected", async () => {
     wallet.current = { status: "disconnected" };
     const app = await renderTab();

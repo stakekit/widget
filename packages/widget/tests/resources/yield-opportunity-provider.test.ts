@@ -1,5 +1,5 @@
 import { Cause, Effect, Layer, Option, Schema } from "effect";
-import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
+import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { YieldId } from "../../src/domain/identity/identifiers";
@@ -64,7 +64,7 @@ describe("Yield opportunity and provider resources", () => {
     expect(getProvider).toHaveBeenCalledOnce();
   });
 
-  it("keeps provider failure typed in the enriched opportunity", () => {
+  it("keeps the enriched opportunity when its provider fails", () => {
     const requestError = new ApiRequestError({
       cause: new Error("missing provider"),
       operation: "yield-provider",
@@ -84,11 +84,9 @@ describe("Yield opportunity and provider resources", () => {
       yieldProviderResourceAtom(yieldModel.providerId)
     );
 
-    expect(AsyncResult.isFailure(enriched)).toBe(true);
-    if (!AsyncResult.isFailure(enriched)) throw new Error("Expected failure");
-    expect(
-      Option.getOrThrow(Cause.findErrorOption(enriched.cause))
-    ).toBeInstanceOf(YieldProviderError);
+    const opportunity = AsyncResult.getOrThrow(enriched);
+    expect(opportunity).toMatchObject({ id: yieldId });
+    expect(opportunity).not.toHaveProperty("provider");
     expect(AsyncResult.isFailure(provider)).toBe(true);
     if (!AsyncResult.isFailure(provider)) throw new Error("Expected failure");
     expect(
