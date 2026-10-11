@@ -9,6 +9,7 @@ import {
 } from "../../src/services/wallet/internal/adapters/configured-chains";
 import { worker } from "../mocks/worker";
 import { setup } from "../use-cases/external-provider/setup";
+import { mockWalletListFactory } from "../utils/mock-connector";
 import { describe, expect, it, vi } from "../utils/test-extend";
 import { render, renderApp } from "../utils/test-utils";
 import { makeWalletConnectPicker } from "../utils/wallet-connect-picker";
@@ -243,6 +244,39 @@ it("clears a failed network selection when the dialog is reopened", async ({
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await open.click();
   await expect.element(dialog.getByRole("status")).not.toBeInTheDocument();
+});
+
+it("keeps the header wallet summary mounted while switching networks", async ({
+  worker,
+}) => {
+  setup(worker);
+  const app = await renderApp({
+    walletListFactory: mockWalletListFactory({
+      accounts: ["0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7"],
+    }),
+    skProps: { apiKey: import.meta.env.VITE_API_KEY },
+  });
+  await app.getByRole("button", { name: "Ethereum", exact: true }).click();
+  const missingSummaries = new Set<string>();
+  const observer = new MutationObserver(() => {
+    const header = app.container.querySelector('[data-rk="header"]');
+    for (const summary of ["chain", "account"]) {
+      if (!header?.querySelector(`[data-rk="${summary}-modal-container"]`)) {
+        missingSummaries.add(summary);
+      }
+    }
+  });
+  observer.observe(app.container, { childList: true, subtree: true });
+
+  try {
+    await page.getByTestId(`wallet-chain-${avalanche.id}`).click();
+    await expect
+      .element(app.getByRole("button", { name: "Avalanche", exact: true }))
+      .toBeVisible();
+    expect([...missingSummaries]).toEqual([]);
+  } finally {
+    observer.disconnect();
+  }
 });
 
 it.for(["account", "chain"] as const)(

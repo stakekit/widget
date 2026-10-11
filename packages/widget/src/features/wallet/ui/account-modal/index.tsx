@@ -55,7 +55,8 @@ export const AccountModal = () => {
     () => false
   );
 
-  if (wallet?.status !== "connected") return null;
+  // A connecting wallet keeps its scope owner while a network switch settles.
+  if (!wallet?.network) return null;
 
   const otherAccounts = getOtherAccounts({
     accounts: wallet.ledgerAccounts,

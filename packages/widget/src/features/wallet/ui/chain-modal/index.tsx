@@ -69,7 +69,8 @@ export const ChainModal = () => {
   );
   const setChainOpen = useAtomSet(setWalletChainModalOpenAtom);
 
-  if (wallet?.status !== "connected") return null;
+  // A connecting wallet keeps its scope owner while a network switch settles.
+  if (!wallet?.network) return null;
 
   const disabledChainIds = new Set(disabledChains.map((chain) => chain.id));
   const chains = [
