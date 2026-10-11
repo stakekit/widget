@@ -113,7 +113,7 @@ const SelectModalWithoutState = ({
             className={clsx(content, contentSize[size])}
             aria-describedby={undefined}
           >
-            <Box display="flex" flexDirection="column" height="full">
+            <Box display="flex" flexDirection="column" height="full" gap="3">
               {showTopBar && (
                 <Box
                   display="flex"
@@ -177,7 +177,6 @@ const SelectModalWithoutState = ({
                 <Box
                   display="flex"
                   mx="4"
-                  my="2"
                   background="tokenSelectBackground"
                   borderRadius="xl"
                   alignItems="center"
@@ -205,12 +204,7 @@ const SelectModalWithoutState = ({
               )}
 
               {!!errorMessage && (
-                <Box
-                  display="flex"
-                  justifyContent="center"
-                  marginTop="4"
-                  marginBottom="2"
-                >
+                <Box display="flex" justifyContent="center">
                   <Text variant={{ type: "danger" }}>{errorMessage}</Text>
                 </Box>
               )}

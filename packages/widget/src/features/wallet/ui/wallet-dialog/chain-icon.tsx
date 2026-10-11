@@ -1,6 +1,8 @@
+import type { SyntheticEvent } from "react";
 import { walletChainIcon } from "../../../../services/wallet/wallet-chain-icons";
 import type { Chain } from "../../../../services/wallet/wallet-descriptors";
 import { Box } from "../../../../shared/ui/primitives/box";
+import { createMonogramImageSrc } from "../../../../shared/ui/primitives/image";
 import { useWalletIconUrl } from "./icon-url";
 
 export const WalletChainIcon = ({
@@ -13,13 +15,22 @@ export const WalletChainIcon = ({
   readonly size?: number;
 }) => {
   const icon = walletChainIcon(chain);
-  const src = useWalletIconUrl(icon.iconUrl);
+  const fallbackSrc = createMonogramImageSrc(chain.name);
+  const src = useWalletIconUrl(icon.iconUrl) ?? fallbackSrc;
   if (!src) return null;
+
+  const onError = (event: SyntheticEvent<HTMLImageElement>) => {
+    if (fallbackSrc && event.currentTarget.src !== fallbackSrc) {
+      event.currentTarget.src = fallbackSrc;
+    }
+  };
+
   return (
     <Box
       as="img"
       src={src}
       alt=""
+      onError={onError}
       className={className}
       style={{
         background: icon.iconBackground,

@@ -92,7 +92,7 @@ export const contentSize = styleVariants({
 export const noOutline = style({ outline: "none" });
 
 export const selectModalItemContainer = style({
-  padding: "2.5px 0",
+  padding: "2px 0",
 });
 
 export const selectModalGroupLabel = style({

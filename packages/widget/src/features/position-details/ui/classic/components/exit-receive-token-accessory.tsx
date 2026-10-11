@@ -120,40 +120,42 @@ export const ExitReceiveTokenAccessory = ({
       searchValue={search}
       onClose={() => setSearch("")}
     >
-      {filteredOptions.map((option) => (
-        <SelectModalItemContainer key={option.address}>
-          <SelectModalItem
-            selected={equalExitReceiveTokenAddresses(
-              option.address,
-              selection.selected.address
-            )}
-            onItemClick={({ closeModal }) => {
-              onSelect(option.address);
-              closeModal();
-            }}
-          >
-            <TokenIcon token={option.token} />
-            <Box
-              display="flex"
-              flex={1}
-              justifyContent="space-between"
-              alignItems="center"
-              marginLeft="2"
-              minWidth="0"
-              gap="2"
+      <Box>
+        {filteredOptions.map((option) => (
+          <SelectModalItemContainer key={option.address}>
+            <SelectModalItem
+              selected={equalExitReceiveTokenAddresses(
+                option.address,
+                selection.selected.address
+              )}
+              onItemClick={({ closeModal }) => {
+                onSelect(option.address);
+                closeModal();
+              }}
             >
-              <Box display="flex" flexDirection="column" minWidth="0" gap="1">
-                <Text variant={{ weight: "bold" }}>{option.symbol}</Text>
-                <Text
-                  variant={{ type: "muted", weight: "normal", size: "small" }}
-                >
-                  {option.formattedAddress}
-                </Text>
+              <TokenIcon token={option.token} />
+              <Box
+                display="flex"
+                flex={1}
+                justifyContent="space-between"
+                alignItems="center"
+                marginLeft="2"
+                minWidth="0"
+                gap="2"
+              >
+                <Box display="flex" flexDirection="column" minWidth="0" gap="1">
+                  <Text variant={{ weight: "bold" }}>{option.symbol}</Text>
+                  <Text
+                    variant={{ type: "muted", weight: "normal", size: "small" }}
+                  >
+                    {option.formattedAddress}
+                  </Text>
+                </Box>
               </Box>
-            </Box>
-          </SelectModalItem>
-        </SelectModalItemContainer>
-      ))}
+            </SelectModalItem>
+          </SelectModalItemContainer>
+        ))}
+      </Box>
     </SelectModal>
   );
 };

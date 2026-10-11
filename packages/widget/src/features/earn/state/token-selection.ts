@@ -3,6 +3,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import { exactDecimal } from "../../../domain/finance/exact";
+import { isFundedBalance } from "../../../domain/finance/funded-balance";
 import type { Prices } from "../../../domain/health/models";
 import { tokenString } from "../../../domain/token/token";
 import { PricesKey, pricesAtom } from "../../../resources/token-prices/index";
@@ -23,7 +24,7 @@ export type EarnTokenSelectionItem = EarnTokenOption & {
   readonly formattedUsd: string | null;
 };
 
-const fundedAmount = (option: EarnTokenOption) => {
+const positiveAmount = (option: EarnTokenOption) => {
   if (option.amount === null) return null;
   const amount = exactDecimal(option.amount);
   return amount.isGreaterThan(0) ? amount : null;
@@ -33,14 +34,18 @@ const toSelectionItem = (
   option: EarnTokenOption,
   prices: Prices | null
 ): EarnTokenSelectionItem => {
-  const amount = fundedAmount(option);
-  const price = amount ? prices?.getByToken(option.token)?.price : undefined;
+  const amount = positiveAmount(option);
+  const price = amount
+    ? (prices?.getByToken(option.token)?.price ?? null)
+    : null;
+  const funded =
+    amount !== null && isFundedBalance({ amount, priceUsd: price });
 
   return {
     ...option,
-    formattedAmount: amount ? defaultFormattedNumber(amount) : null,
+    formattedAmount: funded ? defaultFormattedNumber(amount) : null,
     formattedUsd:
-      amount && price?.isGreaterThan(0) ? formatUsd(amount.times(price)) : null,
+      funded && price?.isGreaterThan(0) ? formatUsd(amount.times(price)) : null,
   };
 };
 
@@ -48,17 +53,18 @@ export const earnTokenSelectionViewAtom = Atom.make((get) => {
   const options = get(earnSelectionTokenOptionsViewAtom);
   const status = get(earnSelectionStatusViewAtom);
   const search = get(earnPageSearchAtom).token;
-  const funded = options.items.filter(
-    (option) => fundedAmount(option) !== null
+  // Price every positive balance so the funded check can use its USD value.
+  const positive = options.items.filter(
+    (option) => positiveAmount(option) !== null
   );
   const prices = get(
     pricesAtom.foreground(
       new PricesKey({
         request:
-          funded.length > 0
+          positive.length > 0
             ? {
                 currency: config.currency,
-                tokenList: funded.map((option) => option.token),
+                tokenList: positive.map((option) => option.token),
               }
             : null,
       })

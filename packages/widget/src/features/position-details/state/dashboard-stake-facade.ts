@@ -114,14 +114,20 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         AsyncResult.value,
         Option.getOrNull
       );
-      const availableAmount = selectedToken
-        ? (() => {
-            const balance = tokenBalanceValues?.find((item) =>
-              equalTokens(item.token, selectedToken)
-            );
-            return balance ? exactDecimal(balance.amount) : null;
-          })()
-        : null;
+      const currentScope = get(walletScopeAtom);
+      const ownerCurrent =
+        currentScope !== null &&
+        sameWalletScopeOwner(currentScope, key.walletScope);
+      // The scan covers the current wallet, so a token missing from it means a
+      // zero balance only when that wallet owns this position.
+      const availableAmount = (() => {
+        if (!selectedToken || tokenBalanceValues === null) return null;
+        const balance = tokenBalanceValues.find((item) =>
+          equalTokens(item.token, selectedToken)
+        );
+        if (balance) return exactDecimal(balance.amount);
+        return ownerCurrent ? exactZero() : null;
+      })();
       const positionsByType = get(positionsByTypeAtom).pipe(
         AsyncResult.value,
         Option.getOrNull
@@ -166,10 +172,6 @@ const positionDetailsStakeFacadeAtom = Atom.family(
           AsyncResult.isInitial(tokenBalances.result)) ||
         AsyncResult.isInitial(validatorsResult);
       const symbol = selectedToken?.symbol ?? "";
-      const currentScope = get(walletScopeAtom);
-      const ownerCurrent =
-        currentScope !== null &&
-        sameWalletScopeOwner(currentScope, key.walletScope);
       const appLoading =
         AsyncResult.isInitial(
           get(
@@ -267,14 +269,15 @@ const positionDetailsStakeFacadeAtom = Atom.family(
         providers: entry.providers,
         selectedStake: selectedYield,
         selectedToken,
-        selectedTokenAvailableAmount: availableAmount
-          ? {
-              amount: availableAmount,
-              fullFormattedAmount: formatNumber(availableAmount),
-              shortFormattedAmount: defaultFormattedNumber(availableAmount),
-              symbol,
-            }
-          : null,
+        selectedTokenAvailableAmount:
+          availableAmount !== null
+            ? {
+                amount: availableAmount,
+                fullFormattedAmount: formatNumber(availableAmount),
+                shortFormattedAmount: defaultFormattedNumber(availableAmount),
+                symbol,
+              }
+            : null,
         selectedValidators: input.selectedValidators,
         stakeAmount: entry.amount,
         stakeMaxAmount:

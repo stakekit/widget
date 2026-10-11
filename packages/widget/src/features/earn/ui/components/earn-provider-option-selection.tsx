@@ -51,7 +51,7 @@ export const EarnProviderOptionSelection = ({
       title={title}
       trigger={renderTrigger({ canSelect: true, selectedOption, title })}
     >
-      <Box marginTop="4">
+      <Box>
         {view.items.map((option) => {
           const name = option.provider?.name ?? option.value;
 

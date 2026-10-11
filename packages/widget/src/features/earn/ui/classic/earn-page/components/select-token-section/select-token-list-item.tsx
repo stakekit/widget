@@ -30,6 +30,10 @@ export const SelectTokenListItem = ({
     closeModal();
   };
 
+  const yieldsCount = t("select_token.yields_count", {
+    count: item.availableYields.length,
+  });
+
   return (
     <SelectModalItemContainer>
       <SelectModalItem
@@ -65,28 +69,14 @@ export const SelectTokenListItem = ({
             flexShrink={0}
             gap="1"
           >
-            {item.formattedAmount ? (
-              <>
-                <Text variant={{ weight: "normal" }}>
-                  {item.formattedAmount}
-                </Text>
-                {item.formattedUsd && (
-                  <Text
-                    variant={{ type: "muted", weight: "normal", size: "small" }}
-                  >
-                    {item.formattedUsd}
-                  </Text>
-                )}
-              </>
-            ) : (
-              <Text
-                variant={{ type: "muted", weight: "normal", size: "small" }}
-              >
-                {t("select_token.yields_count", {
-                  count: item.availableYields.length,
-                })}
-              </Text>
+            {item.formattedAmount && (
+              <Text variant={{ weight: "normal" }}>{item.formattedAmount}</Text>
             )}
+            <Text variant={{ type: "muted", weight: "normal", size: "small" }}>
+              {item.formattedUsd
+                ? `${item.formattedUsd} · ${yieldsCount}`
+                : yieldsCount}
+            </Text>
           </Box>
         </Box>
       </SelectModalItem>

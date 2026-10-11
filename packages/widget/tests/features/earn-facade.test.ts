@@ -257,6 +257,86 @@ describe("Earn facade", () => {
     }
   });
 
+  it("hides wallet amount and USD value for dust balances", async () => {
+    const selectedYield = yieldApiYieldFixture();
+    const option = (
+      symbol: string,
+      address: string,
+      amount: string
+    ): EarnTokenOption => ({
+      amount,
+      availableYields: [selectedYield.id],
+      source: "balance",
+      token: {
+        ...selectedYield.token,
+        address: Schema.decodeSync(TokenAddress)(address),
+        symbol,
+      },
+    });
+    const funded = option("FND", "0xaaa", "0.002");
+    const pricedDust = option("PDU", "0xbbb", "0.001");
+    const weiDust = option("WEI", "0xccc", "0.000000000000000001");
+    const unpricedDust = option("UDU", "0xddd", "0.0000005");
+    const getPrices = vi.fn((_request: PriceRequest) =>
+      Effect.succeed(
+        new Prices(
+          new Map([
+            [
+              `${funded.token.network}-0xaaa`,
+              { price: new BigNumber(2500), price24H: undefined },
+            ],
+            [
+              `${funded.token.network}-0xbbb`,
+              { price: new BigNumber(1), price24H: undefined },
+            ],
+            [
+              `${funded.token.network}-0xccc`,
+              { price: new BigNumber(3000), price24H: undefined },
+            ],
+          ])
+        )
+      )
+    );
+    const registry = AtomRegistry.make({
+      initialValues: [
+        applicationRuntimeInitInitialValue(),
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.succeed(LegacyResourceSource, { getPrices } as never) as never
+        ),
+        ...tokenSelectionInitialValues([
+          funded,
+          pricedDust,
+          weiDust,
+          unpricedDust,
+        ]),
+      ],
+    });
+    const unmount = registry.mount(earnTokenSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(
+          registry
+            .get(earnTokenSelectionViewAtom)
+            .filtered.map(({ token, formattedAmount, formattedUsd }) => ({
+              symbol: token.symbol,
+              formattedAmount,
+              formattedUsd,
+            }))
+        ).toEqual([
+          { symbol: "FND", formattedAmount: "0.002", formattedUsd: "$5.00" },
+          { symbol: "PDU", formattedAmount: null, formattedUsd: null },
+          { symbol: "WEI", formattedAmount: null, formattedUsd: null },
+          { symbol: "UDU", formattedAmount: null, formattedUsd: null },
+        ])
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
   it("forwards validator search into the stable selection view", () => {
     const registry = AtomRegistry.make({
       initialValues: [applicationRuntimeInitInitialValue()],

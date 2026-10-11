@@ -1,5 +1,5 @@
 import { Option, Schema } from "effect";
-import { exactDecimal } from "../../../../../domain/finance/exact";
+import { isFundedBalance } from "../../../../../domain/finance/funded-balance";
 import { YieldId } from "../../../../../domain/identity/identifiers";
 import { tokenString } from "../../../../../domain/token/token";
 import type { EarnEntry, EarnTokenKey, EarnTokenOption } from "../types";
@@ -68,13 +68,13 @@ export const resolveToken = ({
     }
   }
 
-  const positiveBalanceToken = tokenOptions.find((option) =>
-    option.amount === null
-      ? false
-      : exactDecimal(option.amount).isGreaterThan(0)
+  const fundedToken = tokenOptions.find(
+    (option) =>
+      option.amount !== null &&
+      isFundedBalance({ amount: option.amount, priceUsd: null })
   );
-  if (positiveBalanceToken) {
-    return positiveBalanceToken;
+  if (fundedToken) {
+    return fundedToken;
   }
 
   return tokenOptions[0] ?? null;

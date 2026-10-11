@@ -40,7 +40,6 @@ export const assetSelectorList = style({
   maxHeight: "min(520px, calc(100vh - 220px))",
   overflowY: "auto",
   paddingBottom: "8px",
-  paddingTop: "8px",
   scrollbarGutter: "stable",
 });
 

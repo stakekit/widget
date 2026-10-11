@@ -20,7 +20,6 @@ import {
   useEarnEntry,
   useEarnTokenSelection,
 } from "../../../../../react/use-earn-facades";
-import { validatorVirtuosoContainer } from "../../styles.css";
 import { SelectTokenListItem } from "./select-token-list-item";
 
 export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
@@ -91,7 +90,6 @@ export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
         </Box>
       ) : (
         <VirtualList
-          className={validatorVirtuosoContainer}
           data={data.tokenBalances}
           estimateSize={() => 60}
           itemContent={(_index, item) => {

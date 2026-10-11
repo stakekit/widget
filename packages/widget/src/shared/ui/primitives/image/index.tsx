@@ -45,7 +45,7 @@ export const Image = ({
   );
 };
 
-const createMonogramImageSrc = (name?: string) => {
+export const createMonogramImageSrc = (name?: string) => {
   if (!name) return undefined;
 
   const [firstCharacter] = Array.from(name.trim());

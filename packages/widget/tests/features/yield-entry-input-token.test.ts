@@ -13,13 +13,13 @@ const address = Schema.decodeSync(WalletAddress)(
   "0x1234567890123456789012345678901234567890"
 );
 
-const projectEnterArguments = (token: Token) => {
+const projectEnter = (token: Token, availableAmount = new BigNumber("1")) => {
   const selectedYield = yieldApiYieldFixture();
-  const view = projectYieldEntry({
+  return projectYieldEntry({
     input: {
       additionalValidationErrors: undefined,
       amountInitialization: "PreserveIntent",
-      availableAmount: new BigNumber("1"),
+      availableAmount,
       connected: true,
       entry: {
         amount: new BigNumber("1"),
@@ -43,8 +43,6 @@ const projectEnterArguments = (token: Token) => {
     },
     submitted: false,
   });
-
-  return view.preparation?.command.arguments;
 };
 
 describe("Enter input token", () => {
@@ -56,7 +54,9 @@ describe("Enter input token", () => {
       network: "ethereum",
     };
 
-    expect(projectEnterArguments(native)?.inputToken).toBe("0x");
+    expect(
+      projectEnter(native).preparation?.command.arguments?.inputToken
+    ).toBe("0x");
   });
 
   it("sends the token address when the selected token has one", () => {
@@ -70,8 +70,24 @@ describe("Enter input token", () => {
       ),
     };
 
-    expect(projectEnterArguments(eEth)?.inputToken).toBe(
+    expect(projectEnter(eEth).preparation?.command.arguments?.inputToken).toBe(
       "0x35fA164735182de50811E8e2E824cFb9B6118ac2"
     );
+  });
+});
+
+describe("Enter available amount validation", () => {
+  it("flags a positive amount when the scanned balance is zero", () => {
+    const native: Token = {
+      name: "Ethereum",
+      symbol: "ETH",
+      decimals: 18,
+      network: "ethereum",
+    };
+
+    expect(
+      projectEnter(native, new BigNumber(0)).validation.errors
+        .stakeAmountGreaterThanAvailableAmount
+    ).toBe(true);
   });
 });

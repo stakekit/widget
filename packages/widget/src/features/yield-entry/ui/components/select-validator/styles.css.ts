@@ -2,8 +2,6 @@ import { style } from "@vanilla-extract/css";
 import { atoms } from "../../../../../shared/styles/theme/atoms.css";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
 
-export const validatorVirtuosoContainer = style([atoms({ marginTop: "2" })]);
-
 export const emptyState = style([
   atoms({
     display: "flex",

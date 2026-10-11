@@ -32,7 +32,6 @@ import {
   noWrap,
   rewardRateLabel,
   rewardRateText,
-  validatorVirtuosoContainer,
 } from "./styles.css";
 
 export type GroupedItem = { items: EarnValidator[]; label: string };
@@ -86,7 +85,6 @@ export const SelectValidatorList = ({
           </Box>
         );
       }}
-      className={validatorVirtuosoContainer}
       itemContent={(index, groupIndex) => {
         if (groupedItems[groupIndex]?.label === "view_more") {
           return (

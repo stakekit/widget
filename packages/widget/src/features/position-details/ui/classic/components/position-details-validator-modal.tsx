@@ -48,13 +48,7 @@ export const PositionDetailsValidatorModal = () => {
       state={validatorAddressesHandling.modalState}
     >
       {validatorAddressesHandling.multiSelect && (
-        <Box
-          px="4"
-          paddingTop="3"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
+        <Box px="4" display="flex" alignItems="center" justifyContent="center">
           <Button
             variant={{
               color: validatorAddressesHandling.submitDisabled

@@ -58,9 +58,10 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
   const selectedTokenOption = selection.token;
   const selectedToken = quote.selectedToken;
   const selectedValidators = get(selectedEarnValidatorsAtom);
-  const availableAmount = selectedTokenOption?.amount
-    ? exactDecimal(selectedTokenOption.amount)
-    : null;
+  const availableAmount =
+    selectedTokenOption && selectedTokenOption.amount !== null
+      ? exactDecimal(selectedTokenOption.amount)
+      : null;
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;
   const yieldLoading = status.loading.yields || yieldOptions.waiting;
@@ -116,14 +117,15 @@ export const earnEntryViewAtom = Atom.make((get) => {
   ).pipe(AsyncResult.value, Option.getOrNull);
   const availableAmount = input.availableAmount;
   const symbol = selectedToken?.symbol ?? "";
-  const selectedTokenAvailableAmount = availableAmount
-    ? {
-        amount: availableAmount,
-        fullFormattedAmount: formatNumber(availableAmount),
-        shortFormattedAmount: defaultFormattedNumber(availableAmount),
-        symbol,
-      }
-    : null;
+  const selectedTokenAvailableAmount =
+    availableAmount !== null
+      ? {
+          amount: availableAmount,
+          fullFormattedAmount: formatNumber(availableAmount),
+          shortFormattedAmount: defaultFormattedNumber(availableAmount),
+          symbol,
+        }
+      : null;
   const stakeMaxAmount =
     selectedYield && entry.constraints.maximum && !entry.constraints.forceMax
       ? entry.constraints.allowedMaximum

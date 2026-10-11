@@ -23,6 +23,7 @@ import {
 } from "../../src/features/earn/state/earn-selection";
 import { earnEntryAtom } from "../../src/features/earn/state/earn-selection/state/atoms";
 import type { EarnEntry } from "../../src/features/earn/state/earn-selection/types";
+import { earnEntryViewAtom } from "../../src/features/earn/state/entry";
 import {
   ApiRequestError,
   LegacyResourceSource,
@@ -587,6 +588,157 @@ describe("Earn Selection", () => {
       unmount();
       registry.dispose();
     }
+  });
+
+  it("does not sort or default to dust balances", async () => {
+    const { registry } = makeRegistry({
+      scanTokenBalances: () =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: "0.000000000000000001",
+              availableYields: [firstYield.id],
+              token: firstYield.token,
+            },
+            {
+              amount: "5",
+              availableYields: [secondYield.id],
+              token: secondYield.token,
+            },
+          ])
+        ),
+    });
+    const unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(
+          registry.get(earnSelectionViewAtom).selection.token?.token.symbol
+        ).toBe("USDC")
+      );
+      expect(
+        registry
+          .get(earnSelectionTokenOptionsViewAtom)
+          .items.map((option) => [option.token.symbol, option.amount])
+      ).toEqual([
+        ["USDC", "5"],
+        [firstYield.token.symbol, "0.000000000000000001"],
+      ]);
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("reports a zero balance for tokens missing from a successful scan", async () => {
+    const { registry } = makeRegistry({
+      scanTokenBalances: () =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: "5",
+              availableYields: [secondYield.id],
+              token: secondYield.token,
+            },
+          ])
+        ),
+    });
+    const unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(
+          registry.get(earnSelectionTokenOptionsViewAtom).items
+        ).toHaveLength(2)
+      );
+      expect(
+        registry
+          .get(earnSelectionTokenOptionsViewAtom)
+          .items.map(({ amount, source, token }) => ({
+            amount,
+            source,
+            symbol: token.symbol,
+          }))
+      ).toEqual([
+        { amount: "5", source: "balance", symbol: "USDC" },
+        { amount: "0", source: "balance", symbol: firstYield.token.symbol },
+      ]);
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  describe("entry view available amount", () => {
+    const selectFirstToken = async (
+      scanTokenBalances: LegacyResourceSource["Service"]["scanTokenBalances"]
+    ) => {
+      const { registry } = makeRegistry({ scanTokenBalances });
+      const unmount = registry.mount(earnEntryViewAtom);
+      await vi.waitFor(() =>
+        expect(
+          registry.get(earnSelectionTokenOptionsViewAtom).items
+        ).toHaveLength(2)
+      );
+      registry.set(selectEarnSelectionTokenAtom, tokenString(firstYield.token));
+      await vi.waitFor(() =>
+        expect(registry.get(earnEntryViewAtom).selectedToken).toEqual(
+          firstYield.token
+        )
+      );
+      return {
+        dispose: () => {
+          unmount();
+          registry.dispose();
+        },
+        registry,
+      };
+    };
+
+    it("shows a formatted zero when the scan succeeded without the token", async () => {
+      const { dispose, registry } = await selectFirstToken(() =>
+        Effect.succeed(
+          Schema.decodeSync(TokenBalancesResponse)([
+            {
+              amount: "5",
+              availableYields: [secondYield.id],
+              token: secondYield.token,
+            },
+          ])
+        )
+      );
+
+      try {
+        expect(
+          registry.get(earnEntryViewAtom).selectedTokenAvailableAmount
+        ).toMatchObject({
+          fullFormattedAmount: "0",
+          shortFormattedAmount: "0",
+          symbol: firstYield.token.symbol,
+        });
+      } finally {
+        dispose();
+      }
+    });
+
+    it("hides the available amount when the scan failed", async () => {
+      const { dispose, registry } = await selectFirstToken(() =>
+        Effect.fail(
+          new ApiRequestError({
+            cause: new Error("offline"),
+            operation: "token-balances-scan",
+          })
+        )
+      );
+
+      try {
+        expect(
+          registry.get(earnEntryViewAtom).selectedTokenAvailableAmount
+        ).toBeNull();
+      } finally {
+        dispose();
+      }
+    });
   });
 
   describe("provider options", () => {
