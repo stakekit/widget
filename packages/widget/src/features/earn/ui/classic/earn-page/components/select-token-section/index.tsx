@@ -4,14 +4,8 @@ import { useWidgetConfig } from "../../../../../../../features/widget-configurat
 import { formatNumber } from "../../../../../../../shared/lib/number-format";
 import { combineRecipeWithVariant } from "../../../../../../../shared/styles/recipe-variant";
 import * as AmountToggle from "../../../../../../../shared/ui/components/amount-toggle";
-import {
-  minMaxContainer,
-  priceTxt,
-  selectTokenBalance,
-  selectTokenSection,
-} from "../../../../../../../shared/ui/components/amount-token-section/styles.css";
-import { MaxButton } from "../../../../../../../shared/ui/components/max-button";
-import { NumberInput } from "../../../../../../../shared/ui/components/number-input";
+import { AmountTokenSection } from "../../../../../../../shared/ui/components/amount-token-section";
+import { minMaxContainer } from "../../../../../../../shared/ui/components/amount-token-section/styles.css";
 import {
   Box,
   type BoxProps,
@@ -68,8 +62,6 @@ export const SelectTokenSection = ({
     stakeAmountGreaterThanMax ||
     stakeAmountLessThanMin;
 
-  const errorBalance = stakeAmountGreaterThanAvailableAmount;
-
   const min =
     stakeMinAmount === null
       ? null
@@ -78,23 +70,7 @@ export const SelectTokenSection = ({
     stakeMaxAmount === null
       ? null
       : `${t("shared.max")} ${formatNumber(stakeMaxAmount)} ${symbol}`;
-  const minStakeAmount =
-    min || max ? (
-      <Box
-        className={combineRecipeWithVariant({
-          rec: minMaxContainer,
-          variant,
-        })}
-        data-rk="stake-token-section-min-max"
-      >
-        <Text
-          key="min"
-          variant={{ type: stakeAmountLessThanMin ? "danger" : "muted" }}
-        >
-          {min && max ? `${min} / ${max}` : (min ?? max)}
-        </Text>
-      </Box>
-    ) : null;
+  const minMaxLabel = min && max ? `${min} / ${max}` : (min ?? max);
   const getBalanceContent = (): ReactNode => {
     if (!selectedTokenAvailableAmount) return null;
     if (variant === "zerion") {
@@ -131,101 +107,55 @@ export const SelectTokenSection = ({
       </AmountToggle.Root>
     );
   };
-  const balanceContent = getBalanceContent();
 
-  return isLoading ? (
-    <Box marginTop={sectionMarginTop}>
-      <ContentLoaderSquare heightPx={112.5} />
-    </Box>
-  ) : (
-    <Box>
-      <Box
-        data-rk="stake-token-section"
-        background="stakeSectionBackground"
-        marginTop={sectionMarginTop}
-        py="4"
-        px="4"
-        borderStyle="solid"
-        borderWidth={1}
-        className={combineRecipeWithVariant({
-          rec: selectTokenSection,
-          variant,
-          state: submitted && stakeAmountIsZero ? "danger" : "default",
-        })}
-      >
-        {variant === "zerion" && (
-          <Box display="flex" justifyContent="space-between">
-            <SelectTokenTitle />
-            {minStakeAmount}
-          </Box>
-        )}
+  if (isLoading) {
+    return (
+      <Box marginTop={sectionMarginTop}>
+        <ContentLoaderSquare heightPx={112.5} />
+      </Box>
+    );
+  }
 
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box minWidth="0" display="flex" flex={1}>
-            <NumberInput
-              shakeOnInvalid
-              isInvalid={errorInput}
-              onChange={setAmount}
-              value={stakeAmount}
-            />
-          </Box>
-
-          <Box display="flex" justifyContent="center" alignItems="center">
-            <SelectToken canSelect={canSelectToken} />
-          </Box>
-        </Box>
-
-        {variant !== "zerion" && minStakeAmount}
-
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          marginTop="2"
-          flexWrap="wrap"
-          data-rk="stake-token-section-balance"
-          gap="1"
-        >
-          <Box className={priceTxt} display="flex">
+  // Zerion places the title and min/max in a header row above the input.
+  const zerionHeader =
+    variant === "zerion" ? (
+      <Box display="flex" justifyContent="space-between">
+        <SelectTokenTitle />
+        {minMaxLabel ? (
+          <Box
+            className={combineRecipeWithVariant({
+              rec: minMaxContainer,
+              variant,
+            })}
+            data-rk="stake-token-section-min-max"
+          >
             <Text
-              variant={{ type: "muted", weight: "normal" }}
-              className={combineRecipeWithVariant({
-                rec: selectTokenBalance,
-                variant,
-              })}
+              variant={{ type: stakeAmountLessThanMin ? "danger" : "muted" }}
             >
-              {formattedPrice}
+              {minMaxLabel}
             </Text>
           </Box>
-
-          <Box
-            flexGrow={1}
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Box display="flex">
-              <Text
-                variant={{
-                  weight: "normal",
-                  type: errorBalance ? "danger" : "muted",
-                }}
-                data-state={errorBalance ? "error" : "valid"}
-                className={combineRecipeWithVariant({
-                  rec: selectTokenBalance,
-                  variant,
-                })}
-              >
-                {balanceContent}
-              </Text>
-            </Box>
-
-            {!isStakeTokenSameAsGasToken && (
-              <MaxButton onMaxClick={() => setMaxAmount(undefined)} />
-            )}
-          </Box>
-        </Box>
+        ) : null}
       </Box>
-    </Box>
+    ) : null;
+
+  return (
+    <AmountTokenSection
+      value={stakeAmount}
+      onChange={setAmount}
+      isInvalid={errorInput}
+      accessory={<SelectToken canSelect={canSelectToken} />}
+      formattedPrice={formattedPrice}
+      balance={getBalanceContent()}
+      balanceError={stakeAmountGreaterThanAvailableAmount}
+      onMaxClick={
+        isStakeTokenSameAsGasToken ? null : () => setMaxAmount(undefined)
+      }
+      minMaxLabel={variant === "zerion" ? null : minMaxLabel}
+      minMaxError={stakeAmountLessThanMin}
+      state={submitted && stakeAmountIsZero ? "danger" : "default"}
+      marginTop={sectionMarginTop}
+      header={zerionHeader}
+    />
   );
 };

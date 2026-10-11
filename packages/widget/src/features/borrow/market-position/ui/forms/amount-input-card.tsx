@@ -1,11 +1,12 @@
 import type BigNumber from "bignumber.js";
-import { NumberInput } from "../../../../../shared/ui/components/number-input";
+import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
+import { selectTokenButton } from "../../../../../shared/ui/primitives/button/styles.css";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { WarningBox } from "../../../../../shared/ui/primitives/warning-box";
-import * as styles from "../../../amount-input/views";
-import { BorrowAmountCardFooter } from "../../../amount-input/views";
+import { useWidgetConfig } from "../../../../widget-configuration/index";
+import { BorrowAmountField } from "../../../amount-input/views";
 
+/** Position action amount card; balances carry only a symbol, not a token. */
 export const AmountInputCard = ({
   amount,
   balanceLabel,
@@ -26,29 +27,35 @@ export const AmountInputCard = ({
   readonly tokenSymbol: string;
   readonly usdValue?: BigNumber;
   readonly warning?: string | null;
-}) => (
-  <Box display="flex" flexDirection="column" gap="2">
-    <Text variant={{ weight: "bold" }}>{label}</Text>
-    <Box className={styles.amountCard}>
-      <Box className={styles.amountCardHeader}>
-        <NumberInput
-          disabled={disabled}
-          onChange={onAmountChange}
-          value={amount}
-        />
+}) => {
+  const variant = useWidgetConfig("variant");
 
-        <Box className={styles.amountTokenButton}>
+  return (
+    <BorrowAmountField
+      accessory={
+        <Box
+          alignItems="center"
+          borderRadius="2xl"
+          className={combineRecipeWithVariant({
+            rec: selectTokenButton,
+            variant,
+          })}
+          display="flex"
+          px="2"
+          py="1"
+        >
           <Text variant={{ weight: "bold" }}>{tokenSymbol}</Text>
         </Box>
-      </Box>
-
-      <BorrowAmountCardFooter
-        balanceLabel={balanceLabel}
-        onMaxClick={onMaxClick}
-        usdValue={usdValue}
-      />
-
-      {warning ? <WarningBox text={warning} /> : null}
-    </Box>
-  </Box>
-);
+      }
+      amount={amount}
+      balance={balanceLabel}
+      disabled={disabled}
+      label={label}
+      onAmountChange={onAmountChange}
+      onMaxClick={onMaxClick}
+      tone="action"
+      usdValue={usdValue}
+      warning={warning}
+    />
+  );
+};

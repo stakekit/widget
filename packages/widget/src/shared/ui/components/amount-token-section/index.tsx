@@ -1,16 +1,48 @@
 import type { ReactNode } from "react";
 import { combineRecipeWithVariant } from "../../../styles/recipe-variant";
 import { Box, type BoxProps } from "../../primitives/box";
+import { Spinner } from "../../primitives/spinner";
 import { Text } from "../../primitives/typography/text";
 import { useWidgetPresentation } from "../../widget-presentation";
 import { MaxButton } from "../max-button";
 import { NumberInput, type NumberInputProps } from "../number-input";
 import {
   amountTokenSection,
+  amountTokenSectionTitle,
   minMaxContainer,
   priceTxt,
   selectTokenBalance,
 } from "./styles.css";
+
+/** Label rendered above an amount card ("Borrow", "Collateral", yield type). */
+export const AmountTokenSectionTitle = ({
+  children,
+  isLoading = false,
+}: {
+  readonly children: ReactNode;
+  readonly isLoading?: boolean;
+}) => {
+  const { variant } = useWidgetPresentation();
+
+  return (
+    <Box display="flex" alignItems="center" my="1">
+      {isLoading ? (
+        <Box display="flex">
+          <Spinner />
+        </Box>
+      ) : (
+        <Text
+          className={combineRecipeWithVariant({
+            rec: amountTokenSectionTitle,
+            variant,
+          })}
+        >
+          {children}
+        </Text>
+      )}
+    </Box>
+  );
+};
 
 type AmountTokenSectionProps = {
   readonly value: NumberInputProps["value"];

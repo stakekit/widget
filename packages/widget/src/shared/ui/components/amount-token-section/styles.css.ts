@@ -105,7 +105,32 @@ export const amountTokenSection = recipe({
   ],
 });
 
-export const selectTokenSection = amountTokenSection;
+export const amountTokenSectionTitle = recipe({
+  variants: {
+    variant: {
+      default: {
+        fontSize: "14px",
+      },
+      utila: {
+        fontSize: "14px",
+      },
+      porto: {
+        fontSize: "14px",
+      },
+    },
+  },
+});
+
+/** Spacing between a standalone title and its amount card. */
+export const amountTokenSectionTitleContainer = recipe({
+  variants: {
+    variant: {
+      default: atoms({ marginBottom: "4" }),
+      utila: atoms({ marginBottom: "4" }),
+      porto: atoms({ marginBottom: "4" }),
+    },
+  },
+});
 
 export const selectTokenBalance = recipe({
   variants: {

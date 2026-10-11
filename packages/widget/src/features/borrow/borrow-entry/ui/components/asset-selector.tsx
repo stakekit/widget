@@ -1,95 +1,11 @@
-import { Trigger } from "@radix-ui/react-dialog";
 import clsx from "clsx";
 import type { ReactNode } from "react";
-import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
-import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
-import {
-  pressAnimation,
-  selectTokenButton,
-} from "../../../../../shared/ui/primitives/button/styles.css";
 import { CaretDownIcon } from "../../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import * as amountStyles from "../../../amount-input/views";
 import type { BorrowEntryToken } from "../../model/market-groups";
 import * as styles from "../styles.css";
-
-const AmountTokenButtonContent = ({
-  showCaret,
-  token,
-}: {
-  readonly showCaret: boolean;
-  readonly token: BorrowEntryToken;
-}) => (
-  <>
-    <TokenIcon token={token} />
-    <Text
-      className={amountStyles.amountTokenButtonText}
-      variant={{ weight: "bold" }}
-    >
-      {token.symbol}
-    </Text>
-    {showCaret ? (
-      <Box className={amountStyles.amountTokenButtonCaret}>
-        <CaretDownIcon />
-      </Box>
-    ) : null}
-  </>
-);
-
-export const StaticAmountTokenButton = ({
-  token,
-}: {
-  readonly token: BorrowEntryToken;
-}) => {
-  const variant = useWidgetConfig("variant");
-
-  return (
-    <Box
-      className={clsx(
-        amountStyles.amountTokenButton,
-        combineRecipeWithVariant({
-          rec: selectTokenButton,
-          variant,
-        })
-      )}
-    >
-      <AmountTokenButtonContent showCaret={false} token={token} />
-    </Box>
-  );
-};
-
-export const AmountTokenSelectTrigger = ({
-  testId,
-  token,
-}: {
-  readonly testId: string;
-  readonly token: BorrowEntryToken;
-}) => {
-  const variant = useWidgetConfig("variant");
-
-  return (
-    <Trigger asChild>
-      <Box
-        as="button"
-        className={clsx(
-          amountStyles.amountTokenButton,
-          amountStyles.amountTokenButtonSelectable,
-          pressAnimation,
-          combineRecipeWithVariant({
-            rec: selectTokenButton,
-            variant,
-          })
-        )}
-        data-testid={testId}
-        type="button"
-      >
-        <AmountTokenButtonContent showCaret token={token} />
-      </Box>
-    </Trigger>
-  );
-};
 
 export const BorrowAssetSelectorList = ({
   children,

@@ -7,6 +7,7 @@ import { useTrackPage } from "../../../tracking/index";
 import { ConnectButton } from "../../../wallet/views";
 import { PageCtaButton } from "../../../widget-shell/views";
 import { BorrowNotice } from "../../action-feedback/views";
+import { BorrowAmountField } from "../../amount-input/views";
 import type { BorrowWalletView } from "../../wallet/index";
 import { useBorrowWalletView } from "../../wallet/index";
 import type { BorrowEntryView } from "../model/borrow-entry";
@@ -17,7 +18,7 @@ import {
   setBorrowCollateralMaxAmountAtom,
   startBorrowEntryReviewAtom,
 } from "../state/borrow-entry";
-import { AmountField, BorrowBalanceLabel } from "./components/amount-field";
+import { BorrowBalanceLabel } from "./components/balance-label";
 import { CollateralSelectModal } from "./components/collateral-select-modal";
 import { BorrowFormDetails } from "./components/form-details";
 import { MarketSelectModal } from "./components/market-select-modal";
@@ -152,50 +153,50 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
 
     return (
       <>
-        <AmountField
-          amount={borrowAmount}
-          balanceLabel={null}
-          label={t("dashboard.borrow.form.borrow")}
-          highlight
-          onMaxClick={null}
-          onAmountChange={setBorrowAmount}
-          tokenSelector={
+        <BorrowAmountField
+          accessory={
             <MarketSelectModal
               integrations={integrations}
               markets={markets}
               selectedMarketId={selectedMarketId}
             />
           }
+          amount={borrowAmount}
+          dataRk="borrow-amount-section"
+          label={t("dashboard.borrow.form.borrow")}
+          onAmountChange={setBorrowAmount}
           usdValue={borrowAmount.multipliedBy(selectedMarket.loanTokenPriceUsd)}
-          warningText={borrowAmountWarningText}
+          warning={borrowAmountWarningText}
         />
 
-        <AmountField
-          amount={collateralAmount}
-          balanceLabel={
-            <BorrowBalanceLabel
-              amount={selectedCollateralBalance?.amount ?? "0"}
-              symbol={selectedCollateralToken.token.symbol}
-            />
-          }
-          label={t("dashboard.borrow.form.collateral")}
-          onMaxClick={
-            canSelectCollateralMaxAmount
-              ? () => setCollateralMaxAmount(undefined)
-              : null
-          }
-          onAmountChange={setCollateralAmount}
-          tokenSelector={
+        <BorrowAmountField
+          accessory={
             <CollateralSelectModal
               collateralTokens={selectedMarket.collateralTokens}
               marketNetwork={selectedMarket.network}
               selectedCollateralTokenId={selectedCollateralTokenId}
             />
           }
+          amount={collateralAmount}
+          balance={
+            <BorrowBalanceLabel
+              amount={selectedCollateralBalance?.amount ?? "0"}
+              symbol={selectedCollateralToken.token.symbol}
+            />
+          }
+          balanceError={collateralAmountGreaterThanBalance}
+          dataRk="borrow-amount-section"
+          label={t("dashboard.borrow.form.collateral")}
+          onAmountChange={setCollateralAmount}
+          onMaxClick={
+            canSelectCollateralMaxAmount
+              ? () => setCollateralMaxAmount(undefined)
+              : null
+          }
           usdValue={collateralAmount.multipliedBy(
             selectedCollateralToken.priceUsd
           )}
-          warningText={
+          warning={
             collateralAmountGreaterThanBalance
               ? t("dashboard.borrow.form.validation.wallet_balance")
               : null

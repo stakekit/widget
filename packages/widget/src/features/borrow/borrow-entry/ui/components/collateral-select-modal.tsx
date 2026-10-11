@@ -7,16 +7,18 @@ import type { BorrowNetwork } from "../../../../../domain/borrow/network";
 import { formatNumber } from "../../../../../shared/lib/number-format";
 import { SelectModal } from "../../../../../shared/ui/components/select-modal";
 import {
+  SelectedToken,
+  SelectTokenTrigger,
+} from "../../../../../shared/ui/components/selected-token";
+import {
   filterBorrowCollateralTokens,
   toBorrowEntryToken,
 } from "../../model/market-groups";
 import { selectBorrowCollateralTokenAtom } from "../../state/borrow-entry";
 import {
-  AmountTokenSelectTrigger,
   BorrowAssetSelectorList,
   BorrowAssetSelectorRow,
   BorrowSelectorEmpty,
-  StaticAmountTokenButton,
 } from "./asset-selector";
 
 export const CollateralSelectModal = ({
@@ -62,7 +64,7 @@ export const CollateralSelectModal = ({
   };
 
   if (collateralTokens.length <= 1) {
-    return <StaticAmountTokenButton token={token} />;
+    return <SelectedToken testId="borrow-collateral-select" token={token} />;
   }
 
   return (
@@ -73,10 +75,7 @@ export const CollateralSelectModal = ({
       state={{ isOpen, setOpen: onOpenChange }}
       title={t("dashboard.borrow.form.select_collateral")}
       trigger={
-        <AmountTokenSelectTrigger
-          testId="borrow-collateral-select"
-          token={token}
-        />
+        <SelectTokenTrigger testId="borrow-collateral-select" token={token} />
       }
     >
       <BorrowAssetSelectorList

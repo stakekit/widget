@@ -1,25 +1,19 @@
-import { Trigger } from "@radix-ui/react-dialog";
-import clsx from "clsx";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import type { TokenAddress } from "../../../../../domain/identity/identifiers";
 import type { Token } from "../../../../../domain/token/token";
-import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
-import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import {
   SelectModal,
   SelectModalItem,
   SelectModalItemContainer,
 } from "../../../../../shared/ui/components/select-modal";
-import { SelectedToken } from "../../../../../shared/ui/components/selected-token";
+import {
+  SelectedToken,
+  SelectTokenTrigger,
+} from "../../../../../shared/ui/components/selected-token";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
-import {
-  pressAnimation,
-  selectTokenButton,
-} from "../../../../../shared/ui/primitives/button/styles.css";
-import { CaretDownIcon } from "../../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useTrackEvent } from "../../../../tracking/index";
 import {
@@ -43,7 +37,6 @@ export const ExitReceiveTokenAccessory = ({
 }) => {
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
-  const variant = useWidgetConfig("variant");
   const [search, setSearch] = useState("");
 
   const tokensByAddress = buildExitReceiveTokensByAddress(integration);
@@ -55,9 +48,10 @@ export const ExitReceiveTokenAccessory = ({
 
   if (!selection || accessory._tag === "Static") {
     return (
-      <Box data-testid="position-details-exit-receive-token">
-        <SelectedToken token={accessory.token} />
-      </Box>
+      <SelectedToken
+        testId="position-details-exit-receive-token"
+        token={accessory.token}
+      />
     );
   }
 
@@ -83,38 +77,10 @@ export const ExitReceiveTokenAccessory = ({
       title={t("position_details.receive_token.select_title")}
       onOpen={() => trackEvent("exitReceiveTokenModalOpened")}
       trigger={
-        <Trigger asChild>
-          <Box
-            as="button"
-            type="button"
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            borderRadius="2xl"
-            px="2"
-            py="1"
-            data-testid="position-details-exit-receive-token"
-            className={clsx(
-              pressAnimation,
-              combineRecipeWithVariant({
-                variant,
-                rec: selectTokenButton,
-              })
-            )}
-          >
-            <Box
-              marginRight="2"
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              gap="2"
-            >
-              <TokenIcon token={accessory.token} />
-              <Text variant={{ weight: "bold" }}>{accessory.token.symbol}</Text>
-            </Box>
-            <CaretDownIcon />
-          </Box>
-        </Trigger>
+        <SelectTokenTrigger
+          testId="position-details-exit-receive-token"
+          token={accessory.token}
+        />
       }
       onSearch={setSearch}
       searchValue={search}

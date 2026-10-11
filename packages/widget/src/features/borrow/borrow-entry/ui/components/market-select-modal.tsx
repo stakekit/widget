@@ -9,6 +9,10 @@ import {
 import { formatBorrowProviderName } from "../../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../../shared/lib/number-format";
 import { SelectModal } from "../../../../../shared/ui/components/select-modal";
+import {
+  SelectedToken,
+  SelectTokenTrigger,
+} from "../../../../../shared/ui/components/selected-token";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import {
   filterBorrowMarketGroups,
@@ -17,11 +21,9 @@ import {
 import { selectBorrowMarketAtom } from "../../state/borrow-entry";
 import * as styles from "../styles.css";
 import {
-  AmountTokenSelectTrigger,
   BorrowAssetSelectorList,
   BorrowAssetSelectorRow,
   BorrowSelectorEmpty,
-  StaticAmountTokenButton,
 } from "./asset-selector";
 
 export const MarketSelectModal = ({
@@ -70,7 +72,7 @@ export const MarketSelectModal = ({
   };
 
   if (markets.length <= 1) {
-    return <StaticAmountTokenButton token={token} />;
+    return <SelectedToken testId="borrow-market-select" token={token} />;
   }
 
   return (
@@ -81,7 +83,7 @@ export const MarketSelectModal = ({
       state={{ isOpen, setOpen: onOpenChange }}
       title={t("dashboard.borrow.form.select_market")}
       trigger={
-        <AmountTokenSelectTrigger testId="borrow-market-select" token={token} />
+        <SelectTokenTrigger testId="borrow-market-select" token={token} />
       }
     >
       <BorrowAssetSelectorList
