@@ -46,8 +46,11 @@ export const Market = Schema.Struct({
 });
 export type Market = typeof Market.Type;
 
+// Only isolated markets have a single collateral; pool markets list every
+// eligible collateral, so naming one of them would invent a pair.
 export const getBorrowMarketPairLabel = (market: Market) => {
-  const collateralToken = market.collateralTokens[0];
+  const collateralToken =
+    market.type === "isolated" ? market.collateralTokens[0] : undefined;
 
   return collateralToken
     ? `${collateralToken.token.symbol} / ${market.loanToken.symbol}`

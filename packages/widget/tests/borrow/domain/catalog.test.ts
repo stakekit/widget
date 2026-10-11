@@ -1,7 +1,10 @@
 import BigNumber from "bignumber.js";
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
-import { Market } from "../../../src/domain/borrow/catalog/market";
+import {
+  getBorrowMarketPairLabel,
+  Market,
+} from "../../../src/domain/borrow/catalog/market";
 import {
   getBorrowNetworkForChainId,
   isBorrowNetwork,
@@ -85,6 +88,17 @@ describe("borrow domain", () => {
     expect(() =>
       Schema.decodeSync(Market)({ ...marketDto, minLoan: "Infinity" })
     ).toThrow();
+  });
+
+  it("names a collateral pair only for isolated markets", () => {
+    expect(getBorrowMarketPairLabel(Schema.decodeSync(Market)(marketDto))).toBe(
+      "USDC"
+    );
+    expect(
+      getBorrowMarketPairLabel(
+        Schema.decodeSync(Market)({ ...marketDto, type: "isolated" })
+      )
+    ).toBe("WETH / USDC");
   });
 
   it("supports initial borrow network scope", () => {
