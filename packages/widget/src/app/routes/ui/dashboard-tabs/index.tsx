@@ -25,7 +25,11 @@ const tabsMap: Record<RouteTab, string> = {
   manage: "/positions",
 };
 
-export const DashboardTabs = () => {
+export const DashboardTabs = ({
+  onYieldCategoryChange,
+}: {
+  readonly onYieldCategoryChange: () => void;
+}) => {
   const trackEvent = useTrackEvent();
   const navigate = useNavigate();
   const { selectCategory, view: yieldSelection } = useEarnYieldSelection();
@@ -52,6 +56,7 @@ export const DashboardTabs = () => {
     }
 
     trackEvent("tabClicked", { selected: category });
+    if (selectedDashboardYieldCategory !== category) onYieldCategoryChange();
     selectCategory(category);
     navigate("/");
   };

@@ -11,12 +11,16 @@ import {
   earnDetailsWrapper,
   overviewPageContainer,
 } from "./dashboard-overview.css";
+import { useDashboardCategoryTransition } from "./dashboard-shell";
 
 export const DashboardOverview = () => {
   const { t } = useTranslation();
+  const categoryTransition = useDashboardCategoryTransition();
 
   return (
-    <AnimationPage>
+    // Remount on category tab clicks so they get the same enter
+    // transition as switching route tabs.
+    <AnimationPage key={categoryTransition}>
       <Box display="flex" flexDirection="column" gap="4">
         <SplitView
           primaryBarLabel={t("dashboard.split_view.earn")}
