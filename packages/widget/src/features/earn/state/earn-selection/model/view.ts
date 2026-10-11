@@ -308,9 +308,14 @@ export const resolveEarnView = ({
           yieldId: selectedYield.id,
         })
       : null;
+  const requestedLookup =
+    validatorInput._tag === "enabled" ? validatorInput.requested : null;
   const selectedValidators = resolveValidators({
     complete: validatorInput._tag === "enabled" && validatorInput.complete,
-    entry,
+    requestedMatch: requestedLookup
+      ? getAvailableValue(requestedLookup, null)
+      : null,
+    requestedValidator: intent.requestedValidator,
     selectedValidators: selectedValidatorIntent,
     validatorOptions,
   });
@@ -336,6 +341,10 @@ export const resolveEarnView = ({
     },
     empty: { ...validatorFacts.empty, validators: validatorsEmpty },
     intent,
+    loading: {
+      ...validatorFacts.loading,
+      validators: requestedLookup !== null && isResolving(requestedLookup),
+    },
     selection: {
       category: category.category,
       token: selectedToken,

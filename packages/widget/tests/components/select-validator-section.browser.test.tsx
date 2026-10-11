@@ -213,4 +213,21 @@ describe("SelectValidatorSection", () => {
     );
     expect(dialog?.querySelectorAll("button button")).toHaveLength(0);
   });
+
+  it("loads the next page of search results when the list end is reached", async () => {
+    const onLoadMoreValidators = vi.fn();
+    hookState.current = createHookValue({
+      hasMoreValidators: true,
+      onLoadMoreValidators,
+      validatorSearch: "validator",
+    });
+
+    const app = await renderSection();
+    await userEvent.click(app.container.querySelector("button") as HTMLElement);
+    await expect
+      .element(app.getByText("StakeKit Validator"))
+      .toBeInTheDocument();
+
+    await expect.poll(() => onLoadMoreValidators.mock.calls.length).toBe(1);
+  });
 });

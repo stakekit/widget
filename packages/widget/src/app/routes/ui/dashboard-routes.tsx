@@ -84,7 +84,7 @@ export const DashboardRoutes = () => {
 
                 <Route
                   path="select-validator/:pendingActionType"
-                  element={<DashboardPositionDetailsPage />}
+                  element={<PositionDetailsHub />}
                 />
 
                 <Route path="unstake">

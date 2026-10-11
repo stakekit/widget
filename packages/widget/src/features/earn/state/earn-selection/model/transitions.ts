@@ -16,6 +16,7 @@ const resetYieldIntent = (
 ): EarnEntryIntent => ({
   ...intent,
   amountInput: "untouched",
+  requestedValidator: null,
   selectedProviderOption: null,
   selectedValidators: null,
   selectedYieldId,
@@ -54,11 +55,13 @@ export const selectYield = (
 export const selectValidator = ({
   fallbackSelection,
   intent,
+  maxSelected,
   multiselect,
   validator,
 }: {
   readonly fallbackSelection: ReadonlyArray<EarnValidator>;
   readonly intent: EarnEntryIntent;
+  readonly maxSelected: number | null;
   readonly multiselect: boolean;
   readonly validator: EarnValidator;
 }): EarnEntryIntent => {
@@ -68,6 +71,13 @@ export const selectValidator = ({
   const alreadySelected = selected.some(
     (candidate) => candidate.key === validator.key
   );
+  if (
+    !alreadySelected &&
+    maxSelected !== null &&
+    selected.length >= maxSelected
+  ) {
+    return intent;
+  }
   const next = alreadySelected
     ? selected.filter((candidate) => candidate.key !== validator.key)
     : [...selected, validator];

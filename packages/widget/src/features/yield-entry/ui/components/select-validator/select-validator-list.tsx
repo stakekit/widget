@@ -16,7 +16,10 @@ import {
   SelectModalItem,
   SelectModalItemContainer,
 } from "../../../../../shared/ui/components/select-modal";
-import { GroupedVirtualList } from "../../../../../shared/ui/components/virtual-list";
+import {
+  GroupedVirtualList,
+  type InfiniteScrollProps,
+} from "../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { CheckSteps } from "../../../../../shared/ui/primitives/icons/check-steps";
@@ -45,6 +48,7 @@ export const SelectValidatorList = ({
   groupCounts,
   groupedItems,
   tableData,
+  ...infiniteScroll
 }: {
   multiSelect: boolean;
   selectedValidators: Set<ValidatorKey>;
@@ -54,7 +58,7 @@ export const SelectValidatorList = ({
   tableData: EarnValidator[];
   groupedItems: GroupedItem[];
   groupCounts: number[];
-}) => {
+} & InfiniteScrollProps) => {
   const { t } = useTranslation();
 
   return (
@@ -62,6 +66,7 @@ export const SelectValidatorList = ({
       increaseViewportBy={{ bottom: 50, top: 0 }}
       estimateSize={() => 140}
       groupCounts={groupCounts}
+      {...infiniteScroll}
       data-rk="select-validator-list"
       groupContent={(index) => {
         const group = EArray.get(groupedItems, index);

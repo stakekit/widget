@@ -4,6 +4,7 @@ import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { TronResource } from "../../../domain/action/tron-resource";
 import type { EarnValidatorKey } from "../../../domain/earn/models";
+import { getMaxSelectedValidators } from "../../../domain/earn/validator";
 import {
   getYieldProviderOptions,
   isYieldActionArgRequired,
@@ -215,6 +216,7 @@ export const selectEarnSelectionValidatorAtom = Atom.fnSync(
       selectValidator({
         fallbackSelection: view.selected,
         intent: context(earnEntryIntentAtom),
+        maxSelected: getMaxSelectedValidators(selectedYield.token.network),
         multiselect: isYieldActionArgRequired(
           selectedYield,
           "enter",

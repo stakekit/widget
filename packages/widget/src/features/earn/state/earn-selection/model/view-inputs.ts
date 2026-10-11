@@ -35,6 +35,8 @@ export type ValidatorObservation =
       readonly _tag: "enabled";
       readonly complete: boolean;
       readonly options: ReadonlyArray<EarnValidator>;
+      /** Directory lookup for a requested validator missing from `options`; null when not needed. */
+      readonly requested: EarnResourceResult<EarnValidator | null> | null;
       readonly result: EarnResourceResult<ReadonlyArray<EarnValidator>>;
       readonly validatorsConfig: ValidatorsConfig;
     }>;

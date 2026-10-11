@@ -14,7 +14,7 @@ import {
 import { Spinner } from "../../primitives/spinner";
 import { absoluteWrapper, container, relativeWrapper } from "./style.css";
 
-type InfiniteScrollProps =
+export type InfiniteScrollProps =
   | {
       hasNextPage: boolean;
       isFetchingNextPage: boolean;

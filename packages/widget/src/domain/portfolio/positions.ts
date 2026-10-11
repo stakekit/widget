@@ -70,8 +70,10 @@ export const getPositionBalanceDataKey = (
   return "default";
 };
 
-const getBalanceValidators = (balance: EarnBalance) =>
-  balance.validators ?? (balance.validator ? [balance.validator] : []);
+export const getBalanceValidators = (balance: EarnBalance) => {
+  if (balance.validators?.length) return balance.validators;
+  return balance.validator ? [balance.validator] : [];
+};
 
 export const toPositionsData = (
   balancesData: ReadonlyArray<EarnPosition>

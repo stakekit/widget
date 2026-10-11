@@ -53,7 +53,9 @@ export const reconcileEarnEntryOwner = (
         ? "applying-init-params"
         : "waiting-for-wallet",
       initParams: applying ? initParams : null,
-      intent: makeDefaultEarnIntent(),
+      intent: makeDefaultEarnIntent(
+        applying ? (initParams?.validator ?? null) : null
+      ),
       owner,
     };
   }
@@ -80,7 +82,9 @@ export const reconcileEarnEntryOwner = (
     dashboardVariant,
     initializationPhase: applying ? "applying-init-params" : "complete",
     initParams: applying ? initParams : null,
-    intent: makeDefaultEarnIntent(),
+    intent: makeDefaultEarnIntent(
+      applying ? (initParams?.validator ?? null) : null
+    ),
     owner,
   };
 };

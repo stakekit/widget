@@ -95,4 +95,21 @@ describe("Yield Summary", () => {
       registry.dispose();
     }
   });
+
+  it("labels a validator's return with the validator's own rate type", () => {
+    const view = resolveYieldSummaryView({
+      validators: [
+        decodeValidator(
+          yieldApiValidatorFixture({
+            rewardRate: { components: [], rateType: "APR", total: 0.07 },
+          })
+        ),
+      ],
+      yield: yieldApiYieldFixture({
+        rewardRate: { components: [], rateType: "APY", total: 0.05 },
+      }),
+    });
+
+    expect(view.providers).toMatchObject([{ rewardType: "apr" }]);
+  });
 });

@@ -2,17 +2,9 @@ import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 import { EarnValidator } from "../../src/domain/earn/models";
 import { resolveValidators } from "../../src/features/earn/state/earn-selection/model/validators";
-import type { EarnEntry } from "../../src/features/earn/state/earn-selection/types";
 import { yieldApiValidatorFixture } from "../fixtures";
 
-const entry: EarnEntry = {
-  categoryOrder: ["stake", "defi", "rwa"],
-  dashboardVariant: false,
-  initParams: null,
-  preferredTokenYieldsPerNetwork: null,
-  walletResolution: "settled",
-  walletScope: null,
-};
+const noRequest = { requestedMatch: null, requestedValidator: null };
 
 describe("Earn validator reconciliation", () => {
   it("refreshes EVM validator snapshots by address identity", () => {
@@ -32,7 +24,7 @@ describe("Earn validator reconciliation", () => {
     expect(
       resolveValidators({
         complete: true,
-        entry,
+        ...noRequest,
         selectedValidators: [selected],
         validatorOptions: [current],
       })
@@ -47,7 +39,7 @@ describe("Earn validator reconciliation", () => {
     expect(
       resolveValidators({
         complete: false,
-        entry,
+        ...noRequest,
         selectedValidators: [selected],
         validatorOptions: [],
       })
@@ -55,7 +47,7 @@ describe("Earn validator reconciliation", () => {
     expect(
       resolveValidators({
         complete: true,
-        entry,
+        ...noRequest,
         selectedValidators: [selected],
         validatorOptions: [],
       })

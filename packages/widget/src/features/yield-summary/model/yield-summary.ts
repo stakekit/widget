@@ -40,7 +40,6 @@ export type YieldSummaryRewardToken = Readonly<{
 }>;
 
 const getValidatorProvider = (
-  selectedYield: EarnYieldWithProvider,
   validator: EarnValidator
 ): YieldSummaryProvider => {
   const rewardRate = validator.rewardRate?.total;
@@ -52,7 +51,7 @@ const getValidatorProvider = (
     preferred: validator.preferred,
     rewardRate,
     rewardRateFormatted: getRewardRateFormatted({ rewardRate }),
-    rewardType: selectedYield.rewardRate.rateType?.toLowerCase(),
+    rewardType: validator.rewardRate?.rateType?.toLowerCase(),
     stakedBalance: validator.tvl,
     status: validator.status,
     votingPower: validator.votingPower,
@@ -86,9 +85,7 @@ const getYieldSummaryProviders = ({
     : [...(validators as ReadonlyMap<ValidatorKey, EarnValidator>).values()];
   if (values.length === 0) return [getYieldProvider(selectedYield)];
 
-  return values.map((validator) =>
-    getValidatorProvider(selectedYield, validator)
-  );
+  return values.map(getValidatorProvider);
 };
 
 export const getYieldSummaryRewardToken = (

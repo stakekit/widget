@@ -4,11 +4,12 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { TronResource } from "../../../domain/action/tron-resource";
-import type { EarnYieldWithProvider } from "../../../domain/earn/models";
-import {
-  getInitSelectedValidators,
-  stakeTokenSameAsGasToken,
-} from "../../../domain/earn/stake";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../../domain/earn/models";
+import { stakeTokenSameAsGasToken } from "../../../domain/earn/stake";
+import type { ValidatorKey } from "../../../domain/earn/validator";
 import {
   getYieldActionArg,
   isYieldValidatorSelectionRequired,
@@ -16,6 +17,7 @@ import {
 } from "../../../domain/earn/yield";
 import { exactDecimal, exactZero } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
+import { getBalanceValidators } from "../../../domain/portfolio/positions";
 import { equalTokens } from "../../../domain/token/token";
 import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
 import {
@@ -29,6 +31,7 @@ import {
 } from "../../../resources/yield-opportunity/index";
 import {
   PositionBalancesKey,
+  positionBalancesAtom,
   positionBalancesByTypeAtom,
 } from "../../../resources/yield-positions/index";
 import { TrackingService } from "../../../services/tracking/tracking-service";
@@ -86,24 +89,37 @@ const positionDetailsStakeFacadeAtom = Atom.family(
       yieldId: key.integrationId,
     });
     const positionsByTypeAtom = positionBalancesByTypeAtom(positionKey);
+    const positionBalancesResultAtom = positionBalancesAtom(positionKey);
+    // Staking more must target the validators already holding this position;
+    // the catalog only refreshes their display details.
     const selectedValidatorsAtom = Atom.make((get) => {
       const selectedYield = get(selectedYieldAtom);
       if (!selectedYield || !isYieldValidatorSelectionRequired(selectedYield)) {
-        return new Map();
+        return new Map<ValidatorKey, EarnValidator>();
       }
-      const result = get(
-        yieldValidatorsPullAtom(
-          new YieldValidatorsKey({
-            network: selectedYield.token.network,
-            search: null,
-            yieldId: selectedYield.id,
-          })
+      const balances =
+        get(positionBalancesResultAtom).pipe(
+          AsyncResult.value,
+          Option.getOrNull
+        )?.balances ?? [];
+      const catalog = getPullResultItems(
+        get(
+          yieldValidatorsPullAtom(
+            new YieldValidatorsKey({
+              network: selectedYield.token.network,
+              search: null,
+              yieldId: selectedYield.id,
+            })
+          )
         )
+      ).flatMap((page) => page.items);
+      return new Map(
+        balances.flatMap(getBalanceValidators).map((validator) => {
+          const current =
+            catalog.find((item) => item.key === validator.key) ?? validator;
+          return [current.key, current] as const;
+        })
       );
-      return getInitSelectedValidators({
-        initQueryParams: null,
-        validators: getPullResultItems(result).flatMap((page) => page.items),
-      });
     }).pipe(Atom.withLabel("positionDetailsStakeSelectedValidatorsAtom"));
     const yieldEntryInputAtom = Atom.make((get) => {
       const intent = get(intentAtom);

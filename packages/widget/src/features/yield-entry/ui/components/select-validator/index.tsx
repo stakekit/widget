@@ -8,6 +8,7 @@ import type {
 import type { ValidatorKey } from "../../../../../domain/earn/validator";
 import type { SelectModalProps } from "../../../../../shared/ui/components/select-modal";
 import { SelectModal } from "../../../../../shared/ui/components/select-modal";
+import type { InfiniteScrollProps } from "../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import type { GroupedItem } from "./select-validator-list";
@@ -171,7 +172,7 @@ export const SelectValidator = ({
         searchValue: rest.searchValue,
       }
     : {};
-  const infiniteScrollProps =
+  const infiniteScrollProps: InfiniteScrollProps =
     hasRequestedMoreValidators && onLoadMore
       ? {
           hasNextPage: !!hasMore,

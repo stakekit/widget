@@ -19,6 +19,7 @@ import type {
   EarnValidator,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
+import { getMaxSelectedValidators } from "../../../domain/earn/validator";
 import { getYieldActionArg } from "../../../domain/earn/yield";
 import { truncateToTokenDecimals } from "../../../domain/finance/exact";
 import type { WalletAddress } from "../../../domain/identity/identifiers";
@@ -159,10 +160,15 @@ export const togglePendingActionValidator = ({
   if (store.state._tag !== "Open") return store;
 
   const selectedValidators = new Set(store.state.selectedValidators);
+  const maxSelected = getMaxSelectedValidators(
+    store.state.pendingAction.yieldBalance.token.network
+  );
   if (store.state.multiSelect && selectedValidators.has(validator)) {
     selectedValidators.delete(validator);
-  } else {
-    if (!store.state.multiSelect) selectedValidators.clear();
+  } else if (!store.state.multiSelect) {
+    selectedValidators.clear();
+    selectedValidators.add(validator);
+  } else if (maxSelected === null || selectedValidators.size < maxSelected) {
     selectedValidators.add(validator);
   }
   return selectedValidators.size > 0

@@ -19,7 +19,9 @@ import {
   TokenOptionsKey,
   YieldCatalogKey,
   YieldValidatorsKey,
+  YieldValidatorsPullKey,
 } from "../catalog/keys";
+import { matchesRequestedValidator } from "../model/validators";
 import { resolveEarnView } from "../model/view";
 import type {
   CategoryObservation,
@@ -28,7 +30,12 @@ import type {
   InitialViewObservations,
   ValidatorObservation,
 } from "../model/view-inputs";
-import type { EarnEntry, EarnSelectionView, EarnTokenOption } from "../types";
+import type {
+  EarnEntry,
+  EarnEntryIntent,
+  EarnSelectionView,
+  EarnTokenOption,
+} from "../types";
 
 type EarnViewResolutionInput = Omit<
   Parameters<typeof resolveEarnView>[0],
@@ -113,8 +120,10 @@ const readYieldCatalog = (
 const readValidators = (
   context: Atom.AtomContext,
   {
+    intent,
     selectedYield,
   }: {
+    readonly intent: EarnEntryIntent;
     readonly selectedYield: EarnYieldWithProvider;
   }
 ): {
@@ -133,12 +142,39 @@ const readValidators = (
   const initial = context.get(resource.initialValidatorsResultAtom);
   const initialValue = initial.pipe(AsyncResult.value, Option.getOrNull);
   const result = initial.pipe(AsyncResult.map(({ items }) => items));
+  const options = initialValue?.items ?? [];
+  const requestedValidator =
+    intent.selectedValidators === null ? intent.requestedValidator : null;
+  const requested =
+    initialValue &&
+    requestedValidator &&
+    !options.some((validator) =>
+      matchesRequestedValidator(validator, requestedValidator)
+    )
+      ? context
+          .get(
+            resource.validatorsPullAtom(
+              new YieldValidatorsPullKey({ search: requestedValidator })
+            )
+          )
+          .pipe(
+            AsyncResult.map(
+              ({ items }) =>
+                items
+                  .flatMap((page) => page.items)
+                  .find((validator) =>
+                    matchesRequestedValidator(validator, requestedValidator)
+                  ) ?? null
+            )
+          )
+      : null;
   return {
     key,
     observation: {
       _tag: "enabled",
       complete: initialValue?.complete ?? false,
-      options: initialValue?.items ?? [],
+      options,
+      requested,
       result,
       validatorsConfig: context.get(widgetConfigAtom).validatorsConfig,
     },
@@ -203,6 +239,7 @@ export const resolveEarnViewFromResources = (
   if (!view.selection.yield) return bindValidatorsKey(view, null);
 
   const validators = readValidators(context, {
+    intent,
     selectedYield: view.selection.yield,
   });
   observations = makeObservations({

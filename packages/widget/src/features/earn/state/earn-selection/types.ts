@@ -61,6 +61,8 @@ export type EarnEntryIntent = {
   selectedTokenKey: EarnTokenKey | null;
   selectedYieldId: YieldId | null;
   selectedValidators: ReadonlyArray<EarnValidator> | null;
+  /** Validator name or address requested by init params; resolved until the user picks one or changes yield. */
+  requestedValidator: string | null;
   selectedProviderOption: ProviderOption | null;
   selectedCategory: DashboardYieldCategory | null;
   stakeAmount: string;
@@ -155,8 +157,11 @@ export type EarnSelectionView = {
   };
 };
 
-export const makeDefaultEarnIntent = (): EarnEntryIntent => ({
+export const makeDefaultEarnIntent = (
+  requestedValidator: string | null = null
+): EarnEntryIntent => ({
   amountInput: "untouched",
+  requestedValidator,
   selectedProviderOption: null,
   selectedTokenKey: null,
   selectedValidators: null,
