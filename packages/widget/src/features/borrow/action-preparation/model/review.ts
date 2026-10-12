@@ -89,6 +89,7 @@ const getRiskSummary = (
   | {
       readonly currentHealthFactor?: string;
       readonly currentLtv?: string;
+      readonly maxLtv?: string;
       readonly projectedHealthFactor?: string;
       readonly projectedLtv: string;
       readonly riskStatus: "available";
@@ -105,6 +106,7 @@ const getRiskSummary = (
     ...(risk.currentLtv == null
       ? {}
       : { currentLtv: risk.currentLtv.toString(10) }),
+    ...(risk.maxLtv == null ? {} : { maxLtv: risk.maxLtv.toString(10) }),
     ...(risk.projectedHealthFactor == null
       ? {}
       : { projectedHealthFactor: risk.projectedHealthFactor.toString(10) }),

@@ -1,4 +1,4 @@
-import { globalStyle, style } from "@vanilla-extract/css";
+import { globalStyle, style, styleVariants } from "@vanilla-extract/css";
 import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
 
@@ -59,4 +59,10 @@ export const valueText = style({
   textAlign: "right",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
+});
+
+export const valueTone = styleVariants({
+  danger: {},
+  default: {},
+  warning: { color: vars.color.statusWarning },
 });

@@ -334,6 +334,61 @@ describe("borrow position items", () => {
     );
   });
 
+  it.each([
+    {
+      hf: "2",
+      ltv: "0.4",
+      expected: { hf: ["2", "default"], ltv: ["40%", "default"] },
+    },
+    {
+      hf: "1.05",
+      ltv: "0.7",
+      expected: { hf: ["1.05", "warning"], ltv: ["70%", "warning"] },
+    },
+    {
+      hf: "0.9",
+      ltv: "0.8",
+      expected: { hf: ["0.9", "danger"], ltv: ["80%", "danger"] },
+    },
+    {
+      hf: "0.0001",
+      ltv: "4116.78",
+      expected: { hf: ["<0.01", "danger"], ltv: [">100%", "danger"] },
+    },
+  ])(
+    "flags projected LTV $ltv and health factor $hf against a 75% max LTV",
+    ({ expected, hf, ltv }) => {
+      const model = getBorrowDetailsModel({
+        balances: null,
+        borrowAmount: new BigNumber(1),
+        collateralAmount: new BigNumber(1),
+        integration: null,
+        market: Schema.decodeSync(Market)(marketDto),
+        projection: {
+          borrowMaxAmount: new BigNumber(10),
+          borrowUsd: new BigNumber(1),
+          collateralMaxAmount: new BigNumber(10),
+          collateralUsd: new BigNumber(1),
+          existingCollateralUsd: new BigNumber(0),
+          existingDebtUsd: new BigNumber(0),
+          maxLtv: new BigNumber("0.75"),
+          projectedCollateralUsd: new BigNumber(1),
+          projectedDebtUsd: new BigNumber(1),
+          projectedHealthFactor: new BigNumber(hf),
+          projectedLtv: new BigNumber(ltv),
+          riskStatus: "available",
+        },
+        t,
+      });
+      const row = (id: string) => {
+        const found = model.formRows.find((candidate) => candidate.id === id);
+        return [found?.value, found?.tone ?? "default"];
+      };
+
+      expect(row("ltv")).toEqual(expected.ltv);
+      expect(row("health-factor")).toEqual(expected.hf);
+    }
+  );
   it("keeps same-token collateral isolated by market and preserves API risk state", () => {
     const collateralAddress = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
     const usdcMarketId = "morpho-blue-borrow-ethereum-cbbtc-usdc";

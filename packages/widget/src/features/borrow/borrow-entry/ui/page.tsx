@@ -218,7 +218,9 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
   const formContent = getFormContent();
 
   const getCtaLabel = () => {
-    if (isActionReady) return t("dashboard.borrow.review");
+    if (isActionReady || validation.ltvBlocksBorrow) {
+      return t("dashboard.borrow.review");
+    }
     return t("dashboard.borrow.enter_amounts");
   };
   const ctaLabel = getCtaLabel();

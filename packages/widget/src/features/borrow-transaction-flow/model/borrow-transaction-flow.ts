@@ -27,6 +27,7 @@ type BorrowReviewCommon = {
 type AvailableBorrowReviewRisk = {
   readonly currentHealthFactor?: string;
   readonly currentLtv?: string;
+  readonly maxLtv?: string;
   readonly projectedHealthFactor?: string;
   readonly projectedLtv: string;
   readonly riskStatus: "available";
@@ -193,6 +194,7 @@ export const projectBorrowTransactionFlowSummary = (
       ? {
           currentHealthFactor: summary.currentHealthFactor ?? null,
           currentLtv: summary.currentLtv ?? null,
+          maxLtv: summary.maxLtv ?? null,
           projectedHealthFactor: summary.projectedHealthFactor ?? null,
           projectedLtv: summary.projectedLtv,
           status: summary.riskStatus,
@@ -200,6 +202,7 @@ export const projectBorrowTransactionFlowSummary = (
       : {
           currentHealthFactor: null,
           currentLtv: null,
+          maxLtv: null,
           projectedHealthFactor: null,
           projectedLtv: null,
           status: summary.riskStatus,

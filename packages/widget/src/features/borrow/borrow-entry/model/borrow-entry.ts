@@ -16,6 +16,7 @@ import {
   emptyBorrowPositions,
 } from "../../../../domain/borrow/positions/borrow-positions";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
+import { exceedsBorrowableLtv } from "../../../../domain/borrow/risk/ltv-limits";
 import { exactDecimal, exactZero } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
 import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
@@ -65,6 +66,7 @@ type BorrowFormValidation = {
   readonly borrowAmountGreaterThanAvailable: boolean;
   readonly collateralAmountGreaterThanBalance: boolean;
   readonly hasAmounts: boolean;
+  readonly ltvBlocksBorrow: boolean;
   readonly ltvGreaterThanMax: boolean;
   readonly projectedDebtBelowMinimum: boolean;
 };
@@ -375,8 +377,18 @@ export const resolveBorrowEntryView = ({
   const projectedDebtBelowMinimum = warnings.includes(
     "ProjectedDebtBelowMarketMinimum"
   );
+  // Supplying collateral alone only lowers LTV, so only a borrow can block.
+  const ltvBlocksBorrow =
+    borrowAmount.gt(0) &&
+    availableRisk !== null &&
+    exceedsBorrowableLtv({
+      ltv: availableRisk.projectedLtv,
+      maxLtv: availableRisk.maxLtv,
+    });
   const isActionReady =
-    preparation?._tag === "Ready" && !AsyncResult.isFailure(marketsResult);
+    preparation?._tag === "Ready" &&
+    !AsyncResult.isFailure(marketsResult) &&
+    !ltvBlocksBorrow;
   const projection: BorrowFormProjection = {
     borrowMaxAmount: preparedProjection?.borrowMaxAmount ?? exactZero(),
     borrowUsd: preparedProjection?.borrowUsd ?? exactZero(),
@@ -416,6 +428,7 @@ export const resolveBorrowEntryView = ({
       borrowAmountGreaterThanAvailable,
       collateralAmountGreaterThanBalance,
       hasAmounts,
+      ltvBlocksBorrow,
       ltvGreaterThanMax,
       projectedDebtBelowMinimum,
     },

@@ -116,14 +116,21 @@ const isMissingNumericInput = (
   value: string | BigNumber | number | null | undefined
 ) => value == null || value === "";
 
-export const formatCompactNumber = (
-  value: string | number | null | undefined
-) => {
-  if (isMissingNumericInput(value)) return "-";
+const toFiniteDecimal = (
+  value: string | BigNumber | number | null | undefined
+): BigNumber | null => {
+  if (isMissingNumericInput(value)) return null;
 
   const amount = exactDecimal(value);
 
-  if (!amount.isFinite()) return "-";
+  return amount.isFinite() ? amount : null;
+};
+
+export const formatCompactNumber = (
+  value: string | number | null | undefined
+) => {
+  const amount = toFiniteDecimal(value);
+  if (!amount) return "-";
 
   return compactNumberFormatter.format(amount.toNumber());
 };
@@ -131,11 +138,8 @@ export const formatCompactNumber = (
 export const formatUsd = (
   value: string | BigNumber | number | null | undefined
 ) => {
-  if (isMissingNumericInput(value)) return "-";
-
-  const amount = exactDecimal(value);
-
-  if (!amount.isFinite()) return "-";
+  const amount = toFiniteDecimal(value);
+  if (!amount) return "-";
 
   if (amount.isZero()) return "$0.00";
 
@@ -152,14 +156,17 @@ export const formatUsd = (
   return formatter.format(amount.toNumber());
 };
 
+const minimumHealthFactor = exactDecimal("0.01");
+
 export const formatHealthFactor = (
   value: string | BigNumber | number | null | undefined
 ) => {
-  if (isMissingNumericInput(value)) return "-";
+  const amount = toFiniteDecimal(value);
+  if (!amount) return "-";
 
-  const amount = exactDecimal(value);
+  if (amount.gt(0) && amount.lt(minimumHealthFactor)) return "<0.01";
 
-  return amount.isFinite() ? formatNumber(amount, 4) : "-";
+  return formatNumber(amount, 4);
 };
 
 /** Formats a decimal ratio (e.g. 0.75) as a percent string (e.g. "75%"). */
@@ -171,6 +178,15 @@ export const formatPercent = (
   const amount = exactDecimal(value);
 
   return amount.isFinite() ? `${formatNumber(amount.times(100), 2)}%` : "-";
+};
+
+/** LTV past 100% means debt exceeds collateral; the exact figure adds nothing. */
+export const formatLtv = (
+  value: string | BigNumber | number | null | undefined
+) => {
+  if (isMissingNumericInput(value)) return "-";
+
+  return exactDecimal(value).gt(1) ? ">100%" : formatPercent(value);
 };
 
 export const formatNetworkName = (network: string) =>

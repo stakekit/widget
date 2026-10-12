@@ -5,24 +5,38 @@ import {
   getBorrowMarketPairLabel,
   type Market,
 } from "../../../../domain/borrow/catalog/market";
+import {
+  classifyHealthFactor,
+  classifyLtv,
+  type RiskLevel,
+} from "../../../../domain/borrow/risk/ltv-limits";
 import { deriveMarketRiskLimits } from "../../../../domain/borrow/risk/market-risk";
 import { exactDecimal, exactZero } from "../../../../domain/finance/exact";
 import {
   formatBorrowProviderName,
   formatHealthFactor,
+  formatLtv,
   formatNetworkName,
   formatPercent,
   formatUsd,
 } from "../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../shared/lib/number-format";
+import type { DetailRowTone } from "../../../../shared/ui/components/details-section";
 import type { BorrowMarketWalletBalances } from "../../action-preparation/index";
 import type { BorrowFormProjection } from "./borrow-entry";
 
 type BorrowDetailsRow = {
   readonly id: string;
   readonly label: string;
+  readonly tone?: DetailRowTone;
   readonly value: string;
 };
+
+const riskLevelTone = {
+  nearLimit: "warning",
+  overLimit: "danger",
+  safe: "default",
+} as const satisfies Record<RiskLevel, DetailRowTone>;
 
 type BorrowMetricCard = {
   readonly id: string;
@@ -141,11 +155,11 @@ export const getBorrowDetailsModel = ({
       return null;
     }
     if (!hasExistingPosition) {
-      return formatPercent(displayedProjectedLtv);
+      return formatLtv(displayedProjectedLtv);
     }
     return formatTransition({
-      current: formatPercent(existingLtv),
-      projected: formatPercent(displayedProjectedLtv),
+      current: formatLtv(existingLtv),
+      projected: formatLtv(displayedProjectedLtv),
     });
   };
   const ltvValue = getLtvValue();
@@ -170,6 +184,9 @@ export const getBorrowDetailsModel = ({
           {
             id: "ltv",
             label: t("dashboard.borrow.form.ltv_ratio"),
+            tone: riskLevelTone[
+              classifyLtv({ ltv: displayedProjectedLtv, maxLtv })
+            ],
             value: ltvValue,
           },
         ]),
@@ -204,6 +221,7 @@ export const getBorrowDetailsModel = ({
           {
             id: "health-factor",
             label: t("dashboard.borrow.form.health_factor"),
+            tone: riskLevelTone[classifyHealthFactor(healthFactor)],
             value: formatHealthFactor(healthFactor),
           },
         ]),

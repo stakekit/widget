@@ -382,6 +382,45 @@ describe("Borrow Entry atoms", () => {
     expect(view.markets.map((market) => market.id)).toEqual([enabledMarket.id]);
   });
 
+  const resolveWethCollateralView = ({
+    borrowAmount,
+    collateralAmount,
+    market,
+  }: {
+    readonly borrowAmount: string;
+    readonly collateralAmount: string;
+    readonly market: Market;
+  }) =>
+    resolveBorrowEntryView({
+      integrationsResult: AsyncResult.success([]),
+      intent: {
+        borrowAmount,
+        collateralAmount,
+        selectedCollateralTokenId: decodeTokenId(
+          market.collateralTokens[0]!.token
+        ),
+        selectedMarketId: market.id,
+      },
+      key: new BorrowEntryKey({
+        network: "ethereum",
+        scope: walletScope,
+      }),
+      marketsResult: AsyncResult.success([market]),
+      tokenBalances: Schema.decodeSync(TokenBalancesResponse)([
+        {
+          amount: "2",
+          availableYields: [],
+          token: {
+            address: marketDto.collateralTokens[0].token.address,
+            decimals: 18,
+            name: "Wrapped Ether",
+            network: "ethereum",
+            symbol: "WETH",
+          },
+        },
+      ]),
+    });
+
   it.each([
     { borrowAmount: "5", expectedWarning: false, minLoan: null },
     { borrowAmount: "5", expectedWarning: false, minLoan: "0" },
@@ -391,38 +430,10 @@ describe("Borrow Entry atoms", () => {
   ])(
     "warns on the projected debt floor for minLoan=$minLoan and borrowAmount=$borrowAmount",
     ({ borrowAmount, expectedWarning, minLoan }) => {
-      const market = Schema.decodeSync(Market)({
-        ...marketDto,
-        minLoan,
-      });
-      const view = resolveBorrowEntryView({
-        integrationsResult: AsyncResult.success([]),
-        intent: {
-          borrowAmount,
-          collateralAmount: "1",
-          selectedCollateralTokenId: decodeTokenId(
-            market.collateralTokens[0]!.token
-          ),
-          selectedMarketId: market.id,
-        },
-        key: new BorrowEntryKey({
-          network: "ethereum",
-          scope: walletScope,
-        }),
-        marketsResult: AsyncResult.success([market]),
-        tokenBalances: Schema.decodeSync(TokenBalancesResponse)([
-          {
-            amount: "2",
-            availableYields: [],
-            token: {
-              address: marketDto.collateralTokens[0].token.address,
-              decimals: 18,
-              name: "Wrapped Ether",
-              network: "ethereum",
-              symbol: "WETH",
-            },
-          },
-        ]),
+      const view = resolveWethCollateralView({
+        borrowAmount,
+        collateralAmount: "1",
+        market: Schema.decodeSync(Market)({ ...marketDto, minLoan }),
       });
 
       expect(view.isActionReady).toBe(true);
@@ -430,6 +441,46 @@ describe("Borrow Entry atoms", () => {
       expect(view.preparation?._tag).toBe("Ready");
     }
   );
+
+  // 1 WETH at $2,000 against an 80% max LTV: blocking starts past 84%.
+  it.each([
+    { borrowAmount: "1600", ready: true, warning: false },
+    { borrowAmount: "1680", ready: true, warning: true },
+    { borrowAmount: "1681", ready: false, warning: true },
+    { borrowAmount: "2000", ready: false, warning: true },
+  ])(
+    "blocks Review only once borrowing $borrowAmount USDC is clearly past max LTV",
+    ({ borrowAmount, ready, warning }) => {
+      const view = resolveWethCollateralView({
+        borrowAmount,
+        collateralAmount: "1",
+        market: Schema.decodeSync(Market)(marketDto),
+      });
+
+      expect(view.validation.ltvGreaterThanMax).toBe(warning);
+      expect(view.isActionReady).toBe(ready);
+    }
+  );
+
+  it("blocks Review at 100% LTV even when the max LTV margin reaches past it", () => {
+    const view = resolveWethCollateralView({
+      borrowAmount: "2000",
+      collateralAmount: "1",
+      market: Schema.decodeSync(Market)({
+        ...marketDto,
+        collateralTokens: [
+          {
+            ...marketDto.collateralTokens[0],
+            liquidationThreshold: "0.99",
+            maxLtv: "0.99",
+          },
+        ],
+      }),
+    });
+
+    expect(view.validation.ltvGreaterThanMax).toBe(true);
+    expect(view.isActionReady).toBe(false);
+  });
 
   it("resets persisted form intent when a successful refresh removes the selected market", () => {
     const selectedMarket = Schema.decodeSync(Market)(marketDto);
@@ -1034,7 +1085,8 @@ describe("Borrow Entry atoms", () => {
     expect(view.projection.maxLtv).toEqual(new BigNumber("0.5"));
     expect(view.projection.projectedHealthFactor).toEqual(new BigNumber(1));
     expect(view.validation.ltvGreaterThanMax).toBe(true);
-    expect(view.isActionReady).toBe(true);
+    // 60% projected LTV is past the 52.5% blocking margin over 50% max LTV.
+    expect(view.isActionReady).toBe(false);
   });
 
   it("allows review without presenting unavailable projected risk", () => {

@@ -3,6 +3,7 @@ import { exactDecimal } from "../../src/domain/finance/exact";
 import {
   formatBorrowProviderName,
   formatHealthFactor,
+  formatLtv,
   formatNetworkName,
   formatPercent,
   formatUsd,
@@ -51,6 +52,26 @@ describe("shared formatters", () => {
     expect(formatNetworkName("arbitrum-one")).toBe("Arbitrum One");
     expect(formatBorrowProviderName("Morpho Blue Borrow")).toBe("Morpho Blue");
     expect(formatBorrowProviderName("Aave V3")).toBe("Aave V3");
+  });
+
+  it.each([
+    [null, "-"],
+    [0.4132, "41.32%"],
+    [1, "100%"],
+    [1.0001, ">100%"],
+    [4116.7807, ">100%"],
+  ])("formats LTV %s as %s", (value, expected) => {
+    expect(formatLtv(value)).toBe(expected);
+  });
+
+  it.each([
+    [0, "0"],
+    [0.0001, "<0.01"],
+    [0.0099, "<0.01"],
+    [0.01, "0.01"],
+    [0.9876, "0.9876"],
+  ])("formats health factor %s as %s", (value, expected) => {
+    expect(formatHealthFactor(value)).toBe(expected);
   });
 
   it("treats a zero BigNumber reward rate as missing", () => {

@@ -1,7 +1,7 @@
 import type BigNumber from "bignumber.js";
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { formatPercent } from "../../../../../shared/lib/formatters";
+import { formatLtv } from "../../../../../shared/lib/formatters";
 import { DetailRow } from "../../../../../shared/ui/components/details-section";
 
 export const LtvTransitionRow = ({
@@ -17,8 +17,8 @@ export const LtvTransitionRow = ({
 
   const value =
     currentLtv === null
-      ? formatPercent(projectedLtv)
-      : `${formatPercent(currentLtv)} -> ${formatPercent(projectedLtv)}`;
+      ? formatLtv(projectedLtv)
+      : `${formatLtv(currentLtv)} -> ${formatLtv(projectedLtv)}`;
 
   return (
     <DetailRow

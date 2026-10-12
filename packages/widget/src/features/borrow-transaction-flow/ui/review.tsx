@@ -2,15 +2,21 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Cause, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
+import {
+  classifyHealthFactor,
+  classifyLtv,
+  type RiskLevel,
+} from "../../../domain/borrow/risk/ltv-limits";
 import { exactDecimal } from "../../../domain/finance/exact";
 import {
   formatHealthFactor,
-  formatPercent,
+  formatLtv,
   formatUsd,
 } from "../../../shared/lib/formatters";
 import {
   DetailRow,
   DetailRowList,
+  type DetailRowTone,
 } from "../../../shared/ui/components/details-section";
 import { Divider } from "../../../shared/ui/components/divider";
 import { Box } from "../../../shared/ui/primitives/box";
@@ -38,6 +44,12 @@ import {
   BorrowFlowOriginationRows,
 } from "./summary-rows";
 
+const riskLevelTone = {
+  nearLimit: "warning",
+  overLimit: "danger",
+  safe: "default",
+} as const satisfies Record<RiskLevel, DetailRowTone>;
+
 const formatOptionalSummary = (value: string | undefined) => {
   if (!value) return null;
 
@@ -46,10 +58,10 @@ const formatOptionalSummary = (value: string | undefined) => {
   return formatted === "-" ? null : formatted;
 };
 
-const formatOptionalPercentSummary = (value: string | undefined) => {
+const formatOptionalLtvSummary = (value: string | undefined) => {
   if (!value) return null;
 
-  const formatted = formatPercent(value);
+  const formatted = formatLtv(value);
 
   return formatted === "-" ? null : formatted;
 };
@@ -101,9 +113,22 @@ export const BorrowReviewPage = () => {
   })();
   const { risk } = projectedSummary;
   const ltv = formatTransition({
-    current: formatOptionalPercentSummary(risk.currentLtv ?? undefined),
-    projected: formatOptionalPercentSummary(risk.projectedLtv ?? undefined),
+    current: formatOptionalLtvSummary(risk.currentLtv ?? undefined),
+    projected: formatOptionalLtvSummary(risk.projectedLtv ?? undefined),
   });
+  const ltvTone = risk.projectedLtv
+    ? riskLevelTone[
+        classifyLtv({
+          ltv: exactDecimal(risk.projectedLtv),
+          maxLtv: risk.maxLtv ? exactDecimal(risk.maxLtv) : null,
+        })
+      ]
+    : "default";
+  const healthFactorTone = risk.projectedHealthFactor
+    ? riskLevelTone[
+        classifyHealthFactor(exactDecimal(risk.projectedHealthFactor))
+      ]
+    : "default";
   const healthFactor = risk.projectedHealthFactor
     ? formatTransition({
         current: risk.currentHealthFactor
@@ -164,6 +189,7 @@ export const BorrowReviewPage = () => {
       ? {
           id: "ltv",
           label: t("dashboard.borrow.review_page.ltv"),
+          tone: ltvTone,
           value: ltv,
         }
       : null,
@@ -171,6 +197,7 @@ export const BorrowReviewPage = () => {
       ? {
           id: "health-factor",
           label: t("dashboard.borrow.review_page.health_factor"),
+          tone: healthFactorTone,
           value: healthFactor,
         }
       : null,
