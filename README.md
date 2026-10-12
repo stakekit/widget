@@ -259,6 +259,12 @@ them; estimate them in the host wallet. `nonce` may be omitted.
 separate provider flag. Do not cast a staking-only adapter to `SKBorrowWallet`
 to satisfy a compiler error.
 
+`borrowMarketsScope` selects the market catalog offered for new borrows:
+`"all"` (default) lists every supported market, and `"enabled"` lists only the
+markets enabled for your API key's project. Existing positions stay visible and
+manageable in either mode. Live updates switch the listed catalog without a
+remount.
+
 ## Styling
 
 Import `@stakekit/widget/style.css` once. Start with `lightTheme` or `darkTheme`

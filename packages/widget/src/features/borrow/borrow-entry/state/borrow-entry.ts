@@ -102,7 +102,10 @@ const borrowFormStateAtom = Atom.writable<
         : makeDefaultBorrowFormState(owner);
     const marketsResult = context.get(
       borrowMarketsResourceAtom.foreground(
-        new BorrowMarketsKey({ network: owner.network })
+        new BorrowMarketsKey({
+          network: owner.network,
+          scope: context.get(widgetConfigAtom).borrowMarketsScope,
+        })
       )
     );
     const shouldReset =
@@ -136,7 +139,10 @@ const borrowFormStateAtom = Atom.writable<
         : makeDefaultBorrowFormState(owner);
     const marketsResult = context.get(
       borrowMarketsResourceAtom.foreground(
-        new BorrowMarketsKey({ network: owner.network })
+        new BorrowMarketsKey({
+          network: owner.network,
+          scope: context.get(widgetConfigAtom).borrowMarketsScope,
+        })
       )
     );
     const shouldPinDefaults = action.type !== "market/select";
@@ -182,7 +188,10 @@ export const currentBorrowEntryAtom = Atom.writable<
     if (!key || !state) return null;
     const marketsResult = context.get(
       borrowMarketsResourceAtom.foreground(
-        new BorrowMarketsKey({ network: key.network })
+        new BorrowMarketsKey({
+          network: key.network,
+          scope: context.get(widgetConfigAtom).borrowMarketsScope,
+        })
       )
     );
     const tokenBalancesResult = context.get(tokenBalancesScanAtom).result;
@@ -219,14 +228,18 @@ export const currentBorrowEntryAtom = Atom.writable<
 
 /** True once borrow markets for the current scope have succeeded (or borrow N/A). */
 export const borrowLandingPrimaryReadyAtom = Atom.make((get) => {
-  if (!get(widgetConfigAtom).borrowEnabled) return true;
+  const config = get(widgetConfigAtom);
+  if (!config.borrowEnabled) return true;
 
   const scope = get(walletScopeAtom);
   if (!scope || !isBorrowNetwork(scope.network)) return true;
 
   const marketsResult = get(
     borrowMarketsResourceAtom.foreground(
-      new BorrowMarketsKey({ network: scope.network })
+      new BorrowMarketsKey({
+        network: scope.network,
+        scope: config.borrowMarketsScope,
+      })
     )
   );
 

@@ -46,6 +46,9 @@ export const Market = Schema.Struct({
 });
 export type Market = typeof Market.Type;
 
+/** Which markets the catalog lists: every supported market or only project-enabled ones. */
+export type BorrowMarketsScope = "all" | "enabled";
+
 // Below this, a meaningful borrow would exhaust the market and its rate is noise.
 const MIN_LISTED_LIQUIDITY_USD = 10_000;
 // Rates above 100% come from markets pinned at full utilization.

@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect";
 import type { Integration } from "../../domain/borrow/catalog/integration";
+import type { BorrowMarketsScope } from "../../domain/borrow/catalog/market";
 import type { BorrowNetwork } from "../../domain/borrow/network";
 import {
   BorrowIntegrationPositionsResponse,
@@ -39,7 +40,7 @@ export const makeBorrowResourceSource = (
       readonly limit: number;
       readonly network: BorrowNetwork;
       readonly offset: number;
-      readonly scope: "all";
+      readonly scope: BorrowMarketsScope;
     }) {
       const client = yield* requireTransport();
       return yield* client

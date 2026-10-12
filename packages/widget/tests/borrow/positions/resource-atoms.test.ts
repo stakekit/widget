@@ -211,6 +211,44 @@ describe("Borrow Positions resource atoms", () => {
     ).toBe(market.id);
   });
 
+  it("keeps positions in markets outside the enabled catalog visible", () => {
+    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const market = Schema.decodeSync(Market)(marketDto);
+    const position = Schema.decodeSync(BorrowAccountSnapshot)(positionDto);
+    const registry = AtomRegistry.make({
+      initialValues: [
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.succeed(BorrowResourceSource, {
+            getIntegrations: Effect.succeed([integration]),
+            getMarkets: (request: { readonly scope: "all" | "enabled" }) => {
+              const items = request.scope === "all" ? [market] : [];
+              return Effect.succeed({
+                items,
+                limit: 100,
+                offset: 0,
+                total: items.length,
+              });
+            },
+            getPositionData: () => Effect.succeed([{ integration, position }]),
+          } as never)
+        ),
+        Atom.initialValue(walletScopeAtom, walletScope),
+        applicationRuntimeInitInitialValue({
+          apiKey: "api-key",
+          borrowEnabled: true,
+          borrowMarketsScope: "enabled",
+          dashboardVariant: true,
+          variant: "default",
+        }),
+      ],
+    });
+
+    expect(
+      AsyncResult.getOrThrow(registry.get(currentBorrowPositionsAtom))[0]?.id
+    ).toBe(market.id);
+  });
+
   it("returns inert resources without calling Borrow transport when disabled", () => {
     const getIntegrations = vi.fn();
     const getMarkets = vi.fn();
@@ -231,7 +269,9 @@ describe("Borrow Positions resource atoms", () => {
     expect(
       AsyncResult.getOrThrow(
         registry.get(
-          borrowMarketsAtom(new BorrowMarketsKey({ network: "ethereum" }))
+          borrowMarketsAtom(
+            new BorrowMarketsKey({ network: "ethereum", scope: "all" })
+          )
         )
       )
     ).toEqual([]);
@@ -275,7 +315,9 @@ describe("Borrow Positions resource atoms", () => {
     expect(
       AsyncResult.getOrThrow(
         registry.get(
-          borrowMarketsAtom(new BorrowMarketsKey({ network: "ethereum" }))
+          borrowMarketsAtom(
+            new BorrowMarketsKey({ network: "ethereum", scope: "all" })
+          )
         )
       )
     ).toHaveLength(1);
@@ -370,12 +412,14 @@ describe("Borrow Positions resource atoms", () => {
     );
     const registry = makeRegistry({ getMarkets });
     const ethereum = borrowMarketsAtom(
-      new BorrowMarketsKey({ network: "ethereum" })
+      new BorrowMarketsKey({ network: "ethereum", scope: "all" })
     );
     const equivalentEthereum = borrowMarketsAtom(
-      new BorrowMarketsKey({ network: "ethereum" })
+      new BorrowMarketsKey({ network: "ethereum", scope: "all" })
     );
-    const base = borrowMarketsAtom(new BorrowMarketsKey({ network: "base" }));
+    const base = borrowMarketsAtom(
+      new BorrowMarketsKey({ network: "base", scope: "all" })
+    );
 
     expect(AsyncResult.getOrThrow(registry.get(ethereum))).toHaveLength(2);
     expect(

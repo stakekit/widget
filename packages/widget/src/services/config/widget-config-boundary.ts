@@ -90,6 +90,9 @@ const hostYieldGroupingValues = exhaustiveLiterals<HostYieldGrouping>()([
   "flat",
   "category",
 ]);
+const borrowMarketsScopeValues = exhaustiveLiterals<
+  NonNullable<SettingsProps["borrowMarketsScope"]>
+>()(["all", "enabled"]);
 
 interface TranslationTree {
   readonly [key: string]: string | TranslationTree;
@@ -181,6 +184,7 @@ const hostConfigurationValueFields = {
   baseUrl: optional(Schema.String),
   borrowApiUrl: optional(Schema.String),
   borrowEnabled: optional(Schema.Boolean),
+  borrowMarketsScope: optional(Schema.Literals(borrowMarketsScopeValues)),
   chainIconMapping: optional(IconMapping),
   customTranslations: optional(CustomTranslations),
   dashboardVariant: optional(Schema.Boolean),

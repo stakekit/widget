@@ -1,3 +1,4 @@
+import type { BorrowMarketsScope } from "../../domain/borrow/catalog/market";
 import type { DashboardYieldCategory } from "../../domain/earn/contract";
 import type {
   PreferredTokenYieldsPerNetwork,
@@ -34,6 +35,7 @@ export type WidgetConfig = {
   readonly baseUrl: string;
   readonly borrowApiUrl: string;
   readonly borrowEnabled: boolean;
+  readonly borrowMarketsScope: BorrowMarketsScope;
   readonly chainIconMapping?: SettingsProps["chainIconMapping"];
   readonly chainModal?: ZerionChainModal;
   readonly customTranslations?: CustomTranslations;

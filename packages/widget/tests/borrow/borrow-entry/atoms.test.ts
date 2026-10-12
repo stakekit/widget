@@ -484,7 +484,7 @@ describe("Borrow Entry atoms", () => {
     catalog = [replacementMarket];
     registry.refresh(
       borrowMarketsAtom.foreground(
-        new BorrowMarketsKey({ network: "ethereum" })
+        new BorrowMarketsKey({ network: "ethereum", scope: "all" })
       )
     );
 
@@ -495,6 +495,59 @@ describe("Borrow Entry atoms", () => {
     expect(view?.collateralAmount.toString(10)).toBe("0");
     expect(view?.catalogResetNotice).toBe(true);
   });
+
+  it.each([
+    { configured: undefined, expected: "all" },
+    { configured: "enabled", expected: "enabled" },
+    { configured: "all", expected: "all" },
+  ] as const)(
+    "lists the $expected market catalog when the host sets borrowMarketsScope to $configured",
+    ({ configured, expected }) => {
+      const enabledMarket = Schema.decodeSync(Market)(marketDto);
+      const otherMarket = Schema.decodeSync(Market)({
+        ...marketDto,
+        id: "project-disabled-market",
+      });
+      const catalogs = {
+        all: [enabledMarket, otherMarket],
+        enabled: [enabledMarket],
+      };
+      const registry = AtomRegistry.make({
+        initialValues: [
+          Atom.initialValue(
+            appRuntime.layer,
+            Layer.succeed(BorrowResourceSource, {
+              getIntegrations: Effect.succeed([]),
+              getMarkets: (request: { readonly scope: "all" | "enabled" }) =>
+                Effect.succeed({
+                  items: catalogs[request.scope],
+                  limit: 100,
+                  offset: 0,
+                  total: catalogs[request.scope].length,
+                }),
+              getPositionData: () => Effect.succeed([]),
+            } as never)
+          ),
+          Atom.initialValue(walletScopeAtom, walletScope),
+          applicationRuntimeInitInitialValue({
+            apiKey: "api-key",
+            borrowEnabled: true,
+            borrowMarketsScope: configured,
+            dashboardVariant: true,
+            variant: "default",
+          }),
+          Atom.initialValue(tokenBalancesScanAtom, {
+            enabled: true,
+            result: AsyncResult.success([]),
+          }),
+        ],
+      });
+
+      expect(
+        registry.get(currentBorrowEntryAtom)?.markets.map(({ id }) => id)
+      ).toEqual(catalogs[expected].map(({ id }) => id));
+    }
+  );
 
   it("discards Entry Intent when its entry surface is released", async () => {
     const registry = AtomRegistry.make({

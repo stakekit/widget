@@ -21,6 +21,7 @@ export type {
   SKActionArguments,
   SKActionType,
   SKBorrowExternalProviders,
+  SKBorrowMarketsScope,
   SKBorrowSignatureResult,
   SKBorrowTx,
   SKBorrowTxMeta,

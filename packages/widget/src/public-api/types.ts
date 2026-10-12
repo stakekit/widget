@@ -451,6 +451,12 @@ export type SKTranslationTree = Readonly<{
 
 export type SKLanguage = "en" | "fr";
 
+/**
+ * Which Borrow markets the widget lists: `"enabled"` lists only markets
+ * enabled for the API key's project; `"all"` lists every supported market.
+ */
+export type SKBorrowMarketsScope = "all" | "enabled";
+
 export type SKCustomTranslations = Partial<
   Record<SKLanguage, { translation: SKTranslationTree }>
 >;
@@ -538,6 +544,8 @@ type SettingsPropsBase = {
   apiKey: string;
   baseUrl?: string;
   borrowApiUrl?: string;
+  /** Borrow market catalog listed for new borrows. Defaults to `"all"`. */
+  borrowMarketsScope?: SKBorrowMarketsScope;
   yieldsApiUrl?: string;
   theme?: SKTheme;
   tracking?: SKTrackingConfig;

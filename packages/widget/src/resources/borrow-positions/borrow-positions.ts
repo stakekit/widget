@@ -92,8 +92,10 @@ const borrowPositionsCanonicalAtom = Atom.family((key: BorrowPositionsKey) => {
     );
   }
   const positionDataAtom = borrowPositionDataResourceAtom(key);
+  // Positions resolve against every market so a holding stays manageable when
+  // the host lists only project-enabled markets for new borrows.
   const marketsAtom = borrowMarketsResourceAtom.local(
-    new BorrowMarketsKey({ network })
+    new BorrowMarketsKey({ network, scope: "all" })
   );
 
   return Atom.readable(

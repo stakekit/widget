@@ -153,6 +153,7 @@ const sharedEntryExports = [
   "SKActionArguments",
   "SKActionType",
   "SKBorrowExternalProviders",
+  "SKBorrowMarketsScope",
   "SKBorrowSignatureResult",
   "SKBorrowTx",
   "SKBorrowTxMeta",

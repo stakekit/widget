@@ -220,6 +220,7 @@ const normalizeWidgetConfig = (
       .trim()
       .replace(/\/+$/, ""),
     borrowEnabled,
+    borrowMarketsScope: hostConfiguration.borrowMarketsScope ?? "all",
     chainIconMapping: hostConfiguration.chainIconMapping,
     chainModal:
       hostConfiguration.variant === "zerion"

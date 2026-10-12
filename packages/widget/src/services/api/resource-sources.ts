@@ -4,6 +4,7 @@ import type { ActivityActionsPage } from "../../domain/activity/models";
 import type { ActivityActionsQuery } from "../../domain/activity/query";
 import type { BorrowFeatureDisabled } from "../../domain/borrow/availability";
 import type { Integration } from "../../domain/borrow/catalog/integration";
+import type { BorrowMarketsScope } from "../../domain/borrow/catalog/market";
 import type { BorrowNetwork } from "../../domain/borrow/network";
 import type {
   BorrowIntegrationPositionsResponse,
@@ -126,7 +127,7 @@ type BorrowResourceSourceService = {
     readonly limit: number;
     readonly network: BorrowNetwork;
     readonly offset: number;
-    readonly scope: "all";
+    readonly scope: BorrowMarketsScope;
   }) => Effect.Effect<typeof BorrowMarketsResponse.Type, BorrowReadFailure>;
   readonly getPositionData: (request: {
     readonly address: WalletAddress;
