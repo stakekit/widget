@@ -51,12 +51,18 @@ export class ExternalProvider {
         () => sendTransaction(tx, txMeta),
         TransactionResult
       ).pipe(
-        Effect.flatMap((result): HostOutcome => {
-          if (typeof result === "string") return Effect.succeed(result);
-          return result.type === "success"
-            ? Effect.succeed(result.txHash)
-            : failHost(result);
-        })
+        // A bare string is the legacy success shape.
+        Effect.map((result) =>
+          typeof result === "string"
+            ? { type: "success" as const, txHash: result }
+            : result
+        ),
+        Effect.flatMap(
+          (result): HostOutcome =>
+            result.type === "success"
+              ? Effect.succeed(result.txHash)
+              : failHost(result)
+        )
       );
     });
   }
@@ -115,12 +121,18 @@ export class ExternalProvider {
         () => this.variantProvider.current.provider.signMessage(messageHash),
         SignMessageResult
       ).pipe(
-        Effect.flatMap((result): HostOutcome => {
-          if (typeof result === "string") return Effect.succeed(result);
-          return result.type === "success"
-            ? Effect.succeed(result.signature)
-            : failHost(result);
-        })
+        // A bare string is the legacy success shape.
+        Effect.map((result) =>
+          typeof result === "string"
+            ? { type: "success" as const, signature: result }
+            : result
+        ),
+        Effect.flatMap(
+          (result): HostOutcome =>
+            result.type === "success"
+              ? Effect.succeed(result.signature)
+              : failHost(result)
+        )
       )
     );
   }
