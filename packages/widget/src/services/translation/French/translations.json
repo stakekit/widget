@@ -1098,6 +1098,11 @@
         "collateral_value": "Valeur de la garantie",
         "loan": "Prêt",
         "borrow_rate": "Taux d'emprunt",
+        "rate_from": "dès {{rate}}",
+        "liquidity_available": "{{amount}} disponibles",
+        "origination_fee_value": "frais de {{value}}",
+        "pooled_collaterals_one": "Groupé · {{count}} garantie",
+        "pooled_collaterals_other": "Groupé · {{count}} garanties",
         "health_factor": "Facteur de santé",
         "ltv_note": "La liquidation peut survenir si le LTV dépasse le seuil du marché sélectionné.",
         "validation": {

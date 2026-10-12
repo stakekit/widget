@@ -74,6 +74,10 @@ const resolveRoute = (
   return { feeBps: 0, route: "None" };
 };
 
+/** Origination fee a new borrow on this market pays, in basis points. */
+export const getBorrowOriginationFeeBps = (market: OriginationMarket) =>
+  resolveRoute(market).feeBps;
+
 /**
  * Estimates the origination fee the API charges on a requested net borrow,
  * mirroring its integer base-unit arithmetic. Per-market allocator overrides

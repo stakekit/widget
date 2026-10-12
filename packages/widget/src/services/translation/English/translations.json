@@ -618,6 +618,11 @@
         "collateral_value": "Collateral value",
         "loan": "Loan",
         "borrow_rate": "Borrow rate",
+        "rate_from": "from {{rate}}",
+        "liquidity_available": "{{amount}} available",
+        "origination_fee_value": "{{value}} fee",
+        "pooled_collaterals_one": "Pooled · {{count}} collateral",
+        "pooled_collaterals_other": "Pooled · {{count}} collaterals",
         "health_factor": "Health factor",
         "ltv_note": "Liquidation can occur if LTV crosses the selected market threshold.",
         "validation": {

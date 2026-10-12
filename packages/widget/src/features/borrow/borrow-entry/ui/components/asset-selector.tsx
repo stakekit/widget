@@ -9,18 +9,20 @@ import * as styles from "../styles.css";
 
 export const BorrowAssetSelectorList = ({
   children,
+  columnLabel,
   title,
 }: {
   readonly children: ReactNode;
+  readonly columnLabel?: string;
   readonly title: string;
 }) => (
   <Box className={styles.assetSelectorList} mx="4">
-    <Text
-      className={styles.assetSelectorSectionTitle}
-      variant={{ weight: "bold" }}
-    >
-      {title}
-    </Text>
+    <Box className={styles.assetSelectorSectionTitle}>
+      <Text variant={{ weight: "bold" }}>{title}</Text>
+      {columnLabel ? (
+        <Text variant={{ type: "muted", weight: "normal" }}>{columnLabel}</Text>
+      ) : null}
+    </Box>
     {children}
   </Box>
 );
@@ -43,6 +45,7 @@ export const BorrowAssetSelectorRow = ({
   meta,
   onClick,
   rate,
+  rateMeta,
   selected = false,
   testId,
   token,
@@ -54,6 +57,7 @@ export const BorrowAssetSelectorRow = ({
   readonly meta?: string;
   readonly onClick: () => void;
   readonly rate?: string;
+  readonly rateMeta?: string;
   readonly selected?: boolean;
   readonly testId?: string;
   readonly token: BorrowEntryToken;
@@ -93,6 +97,9 @@ export const BorrowAssetSelectorRow = ({
     {rate ? (
       <Box className={styles.assetSelectorRate}>
         <Text variant={{ weight: "normal" }}>{rate}</Text>
+        {rateMeta ? (
+          <Text variant={{ type: "muted", weight: "normal" }}>{rateMeta}</Text>
+        ) : null}
       </Box>
     ) : null}
   </Box>

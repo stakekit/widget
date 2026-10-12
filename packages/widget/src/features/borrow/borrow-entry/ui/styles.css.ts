@@ -44,7 +44,12 @@ export const assetSelectorList = style({
 });
 
 export const assetSelectorSectionTitle = style({
-  padding: "8px 5px",
+  alignItems: "baseline",
+  display: "flex",
+  gap: "8px",
+  justifyContent: "space-between",
+  // Right inset matches row padding + border so the label sits over the rates.
+  padding: "8px 13px 8px 5px",
 });
 
 export const assetSelectorGroup = style({

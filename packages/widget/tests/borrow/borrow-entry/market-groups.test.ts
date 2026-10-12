@@ -50,19 +50,23 @@ const wbtc = {
 } as const;
 
 const makeMarket = ({
+  availableLiquidity = "500000",
   borrowRate,
   collateralTokens,
   id,
   integrationId,
   isBorrowEnabled = true,
   loanToken,
+  loanTokenPriceUsd = "1",
 }: {
+  readonly availableLiquidity?: string;
   readonly borrowRate: string;
   readonly collateralTokens: ReadonlyArray<ReturnType<typeof collateralToken>>;
   readonly id: string;
   readonly integrationId: string;
   readonly isBorrowEnabled?: boolean;
   readonly loanToken: typeof usdc | typeof usdt;
+  readonly loanTokenPriceUsd?: string;
 }) =>
   Schema.decodeSync(Market)({
     id,
@@ -77,10 +81,10 @@ const makeMarket = ({
     totalSupplyRaw: "1000000000000",
     totalBorrow: "500000",
     totalBorrowRaw: "500000000000",
-    availableLiquidity: "500000",
+    availableLiquidity,
     availableLiquidityRaw: "500000000000",
     utilizationRate: "0.5",
-    loanTokenPriceUsd: "1",
+    loanTokenPriceUsd,
     isBorrowEnabled,
     supplyCollateralFeeBps: "0",
     feeWrapperAddress: null,
@@ -205,6 +209,91 @@ describe("borrow market groups", () => {
     expect(
       groups.flatMap((group) => group.marketItems.map((market) => market.id))
     ).toEqual([aaveUsdt.id]);
+  });
+
+  it("hides markets too thin, unpriced, or too expensive to borrow from", () => {
+    const listed = makeMarket({
+      availableLiquidity: "10000",
+      borrowRate: "0.05",
+      collateralTokens: [collateralToken(weth)],
+      id: "listed-usdc",
+      integrationId: "aave-borrow",
+      loanToken: usdc,
+    });
+    const thin = makeMarket({
+      availableLiquidity: "9999.99",
+      borrowRate: "0.001",
+      collateralTokens: [collateralToken(weth)],
+      id: "thin-usdc",
+      integrationId: "morpho-blue-borrow",
+      loanToken: usdc,
+    });
+    const unpriced = makeMarket({
+      borrowRate: "0.001",
+      collateralTokens: [collateralToken(weth)],
+      id: "unpriced-usdc",
+      integrationId: "morpho-blue-borrow",
+      loanToken: usdc,
+      loanTokenPriceUsd: "0",
+    });
+    const runaway = makeMarket({
+      borrowRate: "1.01",
+      collateralTokens: [collateralToken(weth)],
+      id: "runaway-usdc",
+      integrationId: "morpho-blue-borrow",
+      loanToken: usdc,
+    });
+
+    const groups = filterBorrowMarketGroups({
+      integrations,
+      markets: [thin, unpriced, runaway, listed],
+      search: "",
+    });
+
+    expect(
+      groups.map((group) => ({
+        bestRate: group.bestRate.toString(),
+        ids: group.marketItems.map((market) => market.id),
+      }))
+    ).toEqual([{ bestRate: "0.05", ids: [listed.id] }]);
+  });
+
+  it("orders groups and their markets by available USD liquidity", () => {
+    const shallowUsdc = makeMarket({
+      availableLiquidity: "20000",
+      borrowRate: "0.01",
+      collateralTokens: [collateralToken(wbtc)],
+      id: "shallow-usdc",
+      integrationId: "morpho-blue-borrow",
+      loanToken: usdc,
+    });
+    const deepUsdc = makeMarket({
+      availableLiquidity: "900000",
+      borrowRate: "0.05",
+      collateralTokens: [collateralToken(weth)],
+      id: "deep-usdc",
+      integrationId: "aave-borrow",
+      loanToken: usdc,
+    });
+    const deepUsdt = makeMarket({
+      availableLiquidity: "1000",
+      borrowRate: "0.07",
+      collateralTokens: [collateralToken(weth)],
+      id: "deep-usdt",
+      integrationId: "aave-borrow",
+      loanToken: usdt,
+      loanTokenPriceUsd: "1000",
+    });
+
+    const groups = filterBorrowMarketGroups({
+      integrations,
+      markets: [shallowUsdc, deepUsdc, deepUsdt],
+      search: "",
+    });
+
+    expect(
+      groups.map((group) => group.marketItems.map((market) => market.id))
+    ).toEqual([[deepUsdt.id], [deepUsdc.id, shallowUsdc.id]]);
   });
 });
 

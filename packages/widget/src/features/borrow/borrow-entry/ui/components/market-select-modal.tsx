@@ -4,10 +4,15 @@ import { useTranslation } from "react-i18next";
 import type { Integration } from "../../../../../domain/borrow/catalog/integration";
 import {
   getBorrowMarketPairLabel,
+  getMarketAvailableLiquidityUsd,
   type Market,
 } from "../../../../../domain/borrow/catalog/market";
-import { formatBorrowProviderName } from "../../../../../shared/lib/formatters";
-import { formatNumber } from "../../../../../shared/lib/number-format";
+import { getBorrowOriginationFeeBps } from "../../../../../domain/borrow/execution/origination-fee";
+import {
+  formatBorrowProviderName,
+  formatPercent,
+  formatUsd,
+} from "../../../../../shared/lib/formatters";
 import { SelectModal } from "../../../../../shared/ui/components/select-modal";
 import {
   SelectedToken,
@@ -87,6 +92,7 @@ export const MarketSelectModal = ({
       }
     >
       <BorrowAssetSelectorList
+        columnLabel={t("dashboard.borrow.form.borrow_rate")}
         title={t("dashboard.borrow.form.borrowable_assets")}
       >
         {marketGroups.length === 0 ? (
@@ -96,6 +102,7 @@ export const MarketSelectModal = ({
         ) : (
           marketGroups.map((group) => {
             const isExpanded = expandedGroupKey === group.key;
+            const bestRate = formatPercent(group.bestRate);
 
             return (
               <Box className={styles.assetSelectorGroup} key={group.key}>
@@ -108,7 +115,11 @@ export const MarketSelectModal = ({
                       previous === group.key ? null : group.key
                     )
                   }
-                  rate={`${formatNumber(group.bestRate.multipliedBy(100), 2)}%`}
+                  rate={
+                    group.marketItems.length > 1
+                      ? t("dashboard.borrow.form.rate_from", { rate: bestRate })
+                      : bestRate
+                  }
                   selected={isExpanded}
                   testId={`borrow-market-select__group_${group.loanToken.symbol.toLowerCase()}`}
                   token={toBorrowEntryToken({
@@ -118,28 +129,59 @@ export const MarketSelectModal = ({
                 />
 
                 {isExpanded
-                  ? group.marketItems.map((market) => (
-                      <BorrowAssetSelectorRow
-                        indented
-                        key={market.id}
-                        label={getBorrowMarketPairLabel(market)}
-                        meta={formatBorrowProviderName(
-                          integrationsById.get(market.integrationId)?.name ??
-                            market.integrationId
-                        )}
-                        onClick={() => {
-                          selectMarket(market.id);
-                          onOpenChange(false);
-                        }}
-                        rate={`${formatNumber(market.borrowRate.multipliedBy(100), 2)}%`}
-                        selected={market.id === selectedMarketId}
-                        testId={`borrow-market-select__item_${market.id}`}
-                        token={toBorrowEntryToken({
-                          network: market.network,
-                          token: market.loanToken,
-                        })}
-                      />
-                    ))
+                  ? group.marketItems.map((market) => {
+                      const providerName = formatBorrowProviderName(
+                        integrationsById.get(market.integrationId)?.name ??
+                          market.integrationId
+                      );
+                      const isPool = market.type === "pool";
+                      const feeBps = getBorrowOriginationFeeBps(market);
+
+                      return (
+                        <BorrowAssetSelectorRow
+                          indented
+                          key={market.id}
+                          label={
+                            isPool
+                              ? providerName
+                              : getBorrowMarketPairLabel(market)
+                          }
+                          meta={
+                            isPool
+                              ? t("dashboard.borrow.form.pooled_collaterals", {
+                                  count: market.collateralTokens.length,
+                                })
+                              : providerName
+                          }
+                          onClick={() => {
+                            selectMarket(market.id);
+                            onOpenChange(false);
+                          }}
+                          rate={formatPercent(market.borrowRate)}
+                          rateMeta={[
+                            t("dashboard.borrow.form.liquidity_available", {
+                              amount: formatUsd(
+                                getMarketAvailableLiquidityUsd(market)
+                              ),
+                            }),
+                            ...(feeBps > 0
+                              ? [
+                                  t(
+                                    "dashboard.borrow.form.origination_fee_value",
+                                    { value: formatPercent(feeBps / 10_000) }
+                                  ),
+                                ]
+                              : []),
+                          ].join(" · ")}
+                          selected={market.id === selectedMarketId}
+                          testId={`borrow-market-select__item_${market.id}`}
+                          token={toBorrowEntryToken({
+                            network: market.network,
+                            token: market.loanToken,
+                          })}
+                        />
+                      );
+                    })
                   : null}
               </Box>
             );

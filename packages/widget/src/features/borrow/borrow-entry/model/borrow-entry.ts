@@ -4,7 +4,10 @@ import type { AsyncResult as AtomAsyncResult } from "effect/reactivity/AsyncResu
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
 import type { Integration } from "../../../../domain/borrow/catalog/integration";
-import type { Market } from "../../../../domain/borrow/catalog/market";
+import {
+  isListedBorrowMarket,
+  type Market,
+} from "../../../../domain/borrow/catalog/market";
 import { decodeTokenId, type TokenId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
 import {
@@ -127,7 +130,7 @@ export const pinBorrowFormDefaults = ({
 }): BorrowFormIntent => {
   const selectedMarket =
     markets.find((market) => market.id === intent.selectedMarketId) ??
-    markets.find((market) => market.isBorrowEnabled) ??
+    markets.find(isListedBorrowMarket) ??
     null;
   const selectedCollateralToken =
     selectedMarket?.collateralTokens.find(
@@ -242,7 +245,7 @@ export const shouldResetBorrowFormForCatalog = ({
     (market) => market.id === intent.selectedMarketId
   );
 
-  if (!selectedMarket?.isBorrowEnabled) {
+  if (!selectedMarket || !isListedBorrowMarket(selectedMarket)) {
     return true;
   }
 
@@ -283,7 +286,7 @@ export const resolveBorrowEntryView = ({
   readonly tokenBalancesAvailable?: boolean;
 }): BorrowEntryView => {
   const markets = AsyncResult.getOrElse(marketsResult, () => []).filter(
-    (market) => market.isBorrowEnabled
+    isListedBorrowMarket
   );
   const integrations = AsyncResult.getOrElse(integrationsResult, () => []);
   const positions = positionsResult.pipe(AsyncResult.value, Option.getOrNull);

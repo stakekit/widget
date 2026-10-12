@@ -46,6 +46,20 @@ export const Market = Schema.Struct({
 });
 export type Market = typeof Market.Type;
 
+// Below this, a meaningful borrow would exhaust the market and its rate is noise.
+const MIN_LISTED_LIQUIDITY_USD = 10_000;
+// Rates above 100% come from markets pinned at full utilization.
+const MAX_LISTED_BORROW_RATE = 1;
+
+export const getMarketAvailableLiquidityUsd = (market: Market) =>
+  market.availableLiquidity.multipliedBy(market.loanTokenPriceUsd);
+
+/** Markets offered for new borrows. Unpriced loan tokens count as no liquidity. */
+export const isListedBorrowMarket = (market: Market) =>
+  market.isBorrowEnabled &&
+  getMarketAvailableLiquidityUsd(market).gte(MIN_LISTED_LIQUIDITY_USD) &&
+  market.borrowRate.lte(MAX_LISTED_BORROW_RATE);
+
 // Only isolated markets have a single collateral; pool markets list every
 // eligible collateral, so naming one of them would invent a pair.
 export const getBorrowMarketPairLabel = (market: Market) => {
