@@ -102,7 +102,7 @@ export const breakdownRow = style([
     py: "2",
   }),
   {
-    borderBottom: `1px solid ${vars.color.backgroundMuted}`,
+    borderBottom: `1px solid ${vars.color.tabBorder}`,
     minWidth: 0,
   },
 ]);
