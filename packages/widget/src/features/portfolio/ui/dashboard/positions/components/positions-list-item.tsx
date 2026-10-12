@@ -10,7 +10,6 @@ import { EarnPositionListItem } from "../../../components/earn-position-list-ite
 import {
   listItem,
   noWrap,
-  positionBadge,
   positionInfoColumn,
   positionName,
   rewardRateText,
@@ -48,14 +47,7 @@ const BorrowMarketPositionListItem = ({
               <TokenIcon token={model.headerToken} />
 
               <Box className={positionInfoColumn}>
-                <Box display="flex" alignItems="center" gap="1">
-                  <Text className={positionName}>{model.title}</Text>
-                  <Box className={positionBadge({ type: "pending" })}>
-                    <Text variant={{ type: "white" }} className={noWrap}>
-                      {t("dashboard.details.tabs.borrow")}
-                    </Text>
-                  </Box>
-                </Box>
+                <Text className={positionName}>{model.title}</Text>
 
                 <Text
                   className={viaText}
