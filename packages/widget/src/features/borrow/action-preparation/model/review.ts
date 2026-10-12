@@ -87,6 +87,8 @@ const getRiskSummary = (
   risk: BorrowRiskProjection
 ):
   | {
+      readonly currentHealthFactor?: string;
+      readonly currentLtv?: string;
       readonly projectedHealthFactor?: string;
       readonly projectedLtv: string;
       readonly riskStatus: "available";
@@ -97,10 +99,16 @@ const getRiskSummary = (
   }
 
   return {
+    ...(risk.currentHealthFactor == null
+      ? {}
+      : { currentHealthFactor: risk.currentHealthFactor.toString(10) }),
+    ...(risk.currentLtv == null
+      ? {}
+      : { currentLtv: risk.currentLtv.toString(10) }),
     ...(risk.projectedHealthFactor == null
       ? {}
-      : { projectedHealthFactor: risk.projectedHealthFactor.toString() }),
-    projectedLtv: risk.projectedLtv.toString(),
+      : { projectedHealthFactor: risk.projectedHealthFactor.toString(10) }),
+    projectedLtv: risk.projectedLtv.toString(10),
     riskStatus: risk.status,
   };
 };

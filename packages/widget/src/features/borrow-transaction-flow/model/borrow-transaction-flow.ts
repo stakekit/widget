@@ -25,6 +25,8 @@ type BorrowReviewCommon = {
 };
 
 type AvailableBorrowReviewRisk = {
+  readonly currentHealthFactor?: string;
+  readonly currentLtv?: string;
   readonly projectedHealthFactor?: string;
   readonly projectedLtv: string;
   readonly riskStatus: "available";
@@ -109,6 +111,29 @@ export const getBorrowTransactionFlowAmountLabelKey = (
     ? ("dashboard.borrow.review_page.repay_amount" as const)
     : ("dashboard.borrow.review_page.borrow_amount" as const);
 
+/** The asset an action is about: the loan for debt actions, else collateral. */
+export const getBorrowTransactionFlowTitle = (
+  summary: BorrowTransactionFlowSummary
+) => {
+  switch (summary.action) {
+    case "borrow":
+    case "borrowAndSupply":
+    case "repay":
+      return {
+        key: `dashboard.borrow.review_page.titles.${summary.action}`,
+        symbol: summary.loanTokenSymbol,
+      } as const;
+    case "supply":
+    case "withdraw":
+    case "disableCollateral":
+    case "enableCollateral":
+      return {
+        key: `dashboard.borrow.review_page.titles.${summary.action}`,
+        symbol: summary.collateralTokenSymbol,
+      } as const;
+  }
+};
+
 const projectOrigination = (
   summary: BorrowReviewOrigination & { readonly loanTokenSymbol: string },
   metadata: ActionMetadata | undefined
@@ -166,11 +191,15 @@ export const projectBorrowTransactionFlowSummary = (
   const risk =
     summary.riskStatus === "available"
       ? {
+          currentHealthFactor: summary.currentHealthFactor ?? null,
+          currentLtv: summary.currentLtv ?? null,
           projectedHealthFactor: summary.projectedHealthFactor ?? null,
           projectedLtv: summary.projectedLtv,
           status: summary.riskStatus,
         }
       : {
+          currentHealthFactor: null,
+          currentLtv: null,
           projectedHealthFactor: null,
           projectedLtv: null,
           status: summary.riskStatus,

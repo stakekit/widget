@@ -739,14 +739,10 @@ describe("Renders initial page", () => {
     await userEvent.keyboard("0.5");
     await app.getByRole("button", { name: "Review borrow" }).click();
 
-    await expect
-      .element(app.getByText("Borrow and supply collateral"))
-      .toBeInTheDocument();
+    await expect.element(app.getByText("Borrow USDC")).toBeInTheDocument();
     await expect.element(app.getByText("25 USDC")).toBeInTheDocument();
     await expect.element(app.getByText("0.5 WETH")).toBeInTheDocument();
-    await expect
-      .element(app.getByText("aave-v3-ethereum-usdc"))
-      .toBeInTheDocument();
+    expect(app.container.textContent).not.toContain("aave-v3-ethereum-usdc");
 
     await app.unmount();
   });

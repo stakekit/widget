@@ -26,6 +26,7 @@ export type BorrowConstraintWarning = BorrowFlowConstraintWarning;
 
 export type BorrowRiskProjection =
   | {
+      readonly currentHealthFactor: BigNumber | null;
       readonly currentLtv: BigNumber | null;
       readonly maxLtv: BigNumber | null;
       readonly projectedHealthFactor: BigNumber | null;

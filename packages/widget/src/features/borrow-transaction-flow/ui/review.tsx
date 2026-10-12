@@ -4,7 +4,9 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { exactDecimal } from "../../../domain/finance/exact";
 import {
+  formatBorrowProviderName,
   formatHealthFactor,
+  formatNetworkName,
   formatPercent,
   formatUsd,
 } from "../../../shared/lib/formatters";
@@ -19,7 +21,10 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/views";
-import { projectBorrowTransactionFlowSummary } from "../model/borrow-transaction-flow";
+import {
+  getBorrowTransactionFlowTitle,
+  projectBorrowTransactionFlowSummary,
+} from "../model/borrow-transaction-flow";
 import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowReview,
@@ -31,7 +36,6 @@ import {
 import * as styles from "./styles.css";
 import {
   BorrowFlowAmountRows,
-  BorrowFlowMarketRows,
   BorrowFlowOriginationRows,
 } from "./summary-rows";
 
@@ -63,7 +67,7 @@ const formatTransition = ({
   }
 
   return current && current !== projected
-    ? `${current} -> ${projected}`
+    ? `${current} → ${projected}`
     : projected;
 };
 
@@ -79,8 +83,9 @@ export const BorrowReviewPage = () => {
   const reviewState = flow.intake;
   const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
 
-  const { command, summary } = reviewState;
+  const { summary } = reviewState;
   const projectedSummary = projectBorrowTransactionFlowSummary(summary);
+  const title = getBorrowTransactionFlowTitle(summary);
   const createActionErrorCopy = (() => {
     if (
       !AsyncResult.isFailure(createActionResult) ||
@@ -96,14 +101,18 @@ export const BorrowReviewPage = () => {
       onSome: presentBorrowReviewConfirmationError,
     });
   })();
-  const projectedLtv = formatTransition({
-    current: null,
-    projected: formatOptionalPercentSummary(
-      projectedSummary.risk.projectedLtv ?? undefined
-    ),
+  const { risk } = projectedSummary;
+  const ltv = formatTransition({
+    current: formatOptionalPercentSummary(risk.currentLtv ?? undefined),
+    projected: formatOptionalPercentSummary(risk.projectedLtv ?? undefined),
   });
-  const projectedHealthFactor = projectedSummary.risk.projectedHealthFactor
-    ? formatHealthFactor(projectedSummary.risk.projectedHealthFactor)
+  const healthFactor = risk.projectedHealthFactor
+    ? formatTransition({
+        current: risk.currentHealthFactor
+          ? formatHealthFactor(risk.currentHealthFactor)
+          : null,
+        projected: formatHealthFactor(risk.projectedHealthFactor),
+      })
     : null;
   const collateralValue = formatTransition({
     current: formatOptionalSummary(
@@ -153,27 +162,27 @@ export const BorrowReviewPage = () => {
           value: debtValue,
         }
       : null,
-    projectedLtv
+    ltv
       ? {
-          id: "projected-ltv",
-          label: t("dashboard.borrow.review_page.projected_ltv"),
-          value: projectedLtv,
+          id: "ltv",
+          label: t("dashboard.borrow.review_page.ltv"),
+          value: ltv,
         }
       : null,
-    projectedHealthFactor
+    healthFactor
       ? {
-          id: "projected-health-factor",
-          label: t("dashboard.borrow.review_page.projected_health_factor"),
-          value: projectedHealthFactor,
+          id: "health-factor",
+          label: t("dashboard.borrow.review_page.health_factor"),
+          value: healthFactor,
         }
       : null,
-    {
-      id: "estimated-fee",
-      label: t("dashboard.borrow.review_page.estimated_fee"),
-      value:
-        (hasCollateralFee ? collateralFee : null) ??
-        t("dashboard.borrow.review_page.estimated_fee_pending"),
-    },
+    collateralFee
+      ? {
+          id: "collateral-fee",
+          label: t("dashboard.borrow.review_page.collateral_fee"),
+          value: collateralFee,
+        }
+      : null,
   ].filter((row): row is NonNullable<typeof row> => !!row);
 
   return (
@@ -196,10 +205,10 @@ export const BorrowReviewPage = () => {
             </Box>
 
             <Text variant={{ weight: "bold" }}>
-              {t("dashboard.borrow.review_page.title")}
+              {t(title.key, { symbol: title.symbol })}
             </Text>
             <Text variant={{ type: "muted", weight: "normal" }}>
-              {summary.marketLabel}
+              {`${formatBorrowProviderName(summary.providerName)} · ${formatNetworkName(summary.network)}`}
             </Text>
           </Box>
 
@@ -207,11 +216,9 @@ export const BorrowReviewPage = () => {
 
           <Box display="flex" flexDirection="column" gap="1">
             <DetailRow
-              id="action"
-              label={t("dashboard.borrow.review_page.action")}
-              value={t(
-                `dashboard.borrow.review_page.actions.${summary.action}`
-              )}
+              id="market"
+              label={t("dashboard.borrow.review_page.market")}
+              value={summary.marketLabel}
             />
             <BorrowFlowAmountRows
               action={summary.action}
@@ -224,7 +231,6 @@ export const BorrowReviewPage = () => {
                 value={effectiveCollateral}
               />
             ) : null}
-            <BorrowFlowMarketRows summary={summary} />
             {financialRows.map((row) => (
               <DetailRow key={row.id} {...row} />
             ))}
@@ -232,23 +238,6 @@ export const BorrowReviewPage = () => {
               origination={projectedSummary.origination}
             />
           </Box>
-
-          <Box display="flex" flexDirection="column" gap="1">
-            <DetailRow
-              id="requested-action"
-              label={t("dashboard.borrow.review_page.requested_action")}
-              value={command.action}
-            />
-            <DetailRow
-              id="market-id"
-              label={t("dashboard.borrow.review_page.market_id")}
-              value={command.args.marketId}
-            />
-          </Box>
-
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {t("dashboard.borrow.review_page.execution_pending")}
-          </Text>
 
           {createActionErrorCopy ? (
             <Box className={styles.executionError}>

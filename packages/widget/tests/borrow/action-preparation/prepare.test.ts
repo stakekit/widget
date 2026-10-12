@@ -358,6 +358,34 @@ describe("Borrow action preparation", () => {
     });
   });
 
+  it("reviews current and projected risk side by side", () => {
+    const result = prepareBorrowAction({
+      _tag: "OpenPositionDraft",
+      address,
+      borrowAmount: new BigNumber(100),
+      collateralAmount: new BigNumber(0),
+      collateralToken: market.collateralTokens[0]!,
+      integrations: [integration],
+      market,
+      positions,
+      tokenBalances,
+    });
+
+    // Collateral 1000 USD at a 0.85 threshold; debt 400 -> 500, HF 850 / 500.
+    expect(result).toMatchObject({
+      _tag: "Ready",
+      review: {
+        summary: {
+          currentHealthFactor: "2.125",
+          currentLtv: "0.4",
+          projectedHealthFactor: "1.7",
+          projectedLtv: "0.5",
+          riskStatus: "available",
+        },
+      },
+    });
+  });
+
   it("projects BlueBundle debt at the gross principal and supplies full collateral", () => {
     const blueBundleMarket = {
       ...market,

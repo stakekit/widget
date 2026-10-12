@@ -362,7 +362,9 @@ describe("Borrow position details", () => {
     await app
       .getByTestId("borrow-collateral-toggle__disableCollateral")
       .click();
-    await expect.element(app.getByText("Review borrow")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Disable WETH as collateral"))
+      .toBeInTheDocument();
     await app.getByRole("button", { name: "Back to position" }).click();
     await expect.element(app.getByText("Actions")).toBeInTheDocument();
 
@@ -377,7 +379,7 @@ describe("Borrow position details", () => {
     await userEvent.keyboard("0.1");
     await app.getByRole("button", { name: "Review borrow" }).click();
 
-    await expect.element(app.getByText("Review borrow")).toBeInTheDocument();
+    await expect.element(app.getByText("Withdraw WETH")).toBeInTheDocument();
     await expect
       .element(app.getByRole("button", { name: "Back to position" }))
       .toBeInTheDocument();
