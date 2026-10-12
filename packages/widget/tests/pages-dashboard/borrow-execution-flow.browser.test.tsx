@@ -869,6 +869,34 @@ describe("borrow execution flow component", () => {
     })
   );
 
+  it.live("shows that the next action step is being prepared", () =>
+    Effect.gen(function* () {
+      const borrow = makeBorrowApi({
+        getActions: [
+          action({
+            hasNextStep: true,
+            totalSteps: 2,
+            transactions: [transaction({ status: "CONFIRMED" })],
+          }),
+        ],
+      });
+      borrow.stepAction.mockImplementation(() => Effect.never);
+      const app = yield* renderExecution(borrow, {
+        action: decodedAction({ hasNextStep: true, totalSteps: 2 }),
+        stepsElement: <BorrowStepsPage />,
+      });
+
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByText("Preparing the next step"))
+          .toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("Step 1 of 2")).toBeInTheDocument()
+      );
+    })
+  );
+
   it.live("routes to success when execution completes", () =>
     Effect.gen(function* () {
       const app = yield* renderExecution(

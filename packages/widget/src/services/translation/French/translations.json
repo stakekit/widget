@@ -1199,6 +1199,7 @@
         "unavailable_description": "Revenez à Emprunter et vérifiez une action avant de confirmer.",
         "error_title": "La transaction d'emprunt a échoué",
         "batch_progress": "Étape {{current}} sur {{total}}",
+        "preparing_next_step": "Préparation de l'étape suivante",
         "tx_type": {
           "APPROVAL": "Approbation du jeton",
           "AUTHORIZE": "Autoriser",

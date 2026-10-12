@@ -718,6 +718,7 @@
         "unavailable_description": "Return to Borrow and review an action before confirming.",
         "error_title": "Borrow transaction failed",
         "batch_progress": "Step {{current}} of {{total}}",
+        "preparing_next_step": "Preparing the next step",
         "tx_type": {
           "APPROVAL": "Token approval",
           "AUTHORIZE": "Authorize",

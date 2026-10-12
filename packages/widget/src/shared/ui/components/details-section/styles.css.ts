@@ -41,7 +41,11 @@ export const addressValue = style([
   }),
 ]);
 
-export const detailRowLabel = style({ lineHeight: "20px" });
+export const detailRowLabel = style({
+  flexShrink: 0,
+  lineHeight: "20px",
+  whiteSpace: "nowrap",
+});
 
 export const valueText = style({
   lineHeight: "20px",

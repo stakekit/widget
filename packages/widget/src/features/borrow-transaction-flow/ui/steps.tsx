@@ -5,6 +5,7 @@ import { TransactionSteps } from "../../../shared/ui/components/transaction-step
 import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
+import { Spinner } from "../../../shared/ui/primitives/spinner";
 import { Text } from "../../../shared/ui/primitives/typography/text";
 import { useTrackPage } from "../../tracking/index";
 import {
@@ -73,6 +74,15 @@ export const BorrowStepsPage = () => {
                 type: t(`dashboard.borrow.execution_page.tx_type.${step.type}`),
               }))}
             />
+          ) : null}
+
+          {execution.phase === "advancing" && execution.isRunning ? (
+            <Box alignItems="center" display="flex" gap="3">
+              <Spinner />
+              <Text variant={{ type: "muted", weight: "normal" }}>
+                {t("dashboard.borrow.execution_page.preparing_next_step")}
+              </Text>
+            </Box>
           ) : null}
 
           {executionError && (
