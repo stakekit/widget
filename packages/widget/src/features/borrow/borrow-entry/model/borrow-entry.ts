@@ -5,6 +5,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
 import type { Integration } from "../../../../domain/borrow/catalog/integration";
 import {
+  getListedCollateralTokens,
   isListedBorrowMarket,
   type Market,
 } from "../../../../domain/borrow/catalog/market";
@@ -27,6 +28,10 @@ import {
   prepareBorrowAction,
 } from "../../action-preparation/index";
 import type { BorrowAtomResultError } from "./errors";
+import {
+  type BorrowCollateralOption,
+  rankBorrowCollateralOptions,
+} from "./market-groups";
 
 export type BorrowFormIntent = {
   readonly borrowAmount: string;
@@ -83,6 +88,8 @@ export type BorrowEntryView = {
   readonly borrowAmount: BigNumber;
   readonly canSelectCollateralMaxAmount: boolean;
   readonly catalogResetNotice: boolean;
+  /** Listed collateral for the selected market, default first. */
+  readonly collateralOptions: ReadonlyArray<BorrowCollateralOption>;
   readonly collateralAmount: BigNumber;
   readonly integrationsResult: AtomAsyncResult<
     ReadonlyArray<Integration>,
@@ -124,27 +131,29 @@ export const makeDefaultBorrowFormIntent = (): BorrowFormIntent => ({
 export const pinBorrowFormDefaults = ({
   intent,
   markets,
+  tokenBalances,
 }: {
   readonly intent: BorrowFormIntent;
   readonly markets: ReadonlyArray<Market>;
+  readonly tokenBalances: ReadonlyArray<TokenBalance> | null;
 }): BorrowFormIntent => {
   const selectedMarket =
     markets.find((market) => market.id === intent.selectedMarketId) ??
     markets.find(isListedBorrowMarket) ??
     null;
-  const selectedCollateralToken =
-    selectedMarket?.collateralTokens.find(
-      (token) => decodeTokenId(token.token) === intent.selectedCollateralTokenId
-    ) ??
-    selectedMarket?.collateralTokens[0] ??
-    null;
+  const defaultCollateralToken = selectedMarket
+    ? (rankBorrowCollateralOptions({
+        balances: tokenBalances,
+        market: selectedMarket,
+      })[0]?.collateralToken ?? null)
+    : null;
 
   return {
     ...intent,
     selectedCollateralTokenId:
       intent.selectedCollateralTokenId ??
-      (selectedCollateralToken
-        ? decodeTokenId(selectedCollateralToken.token)
+      (defaultCollateralToken
+        ? decodeTokenId(defaultCollateralToken.token)
         : null),
     selectedMarketId: intent.selectedMarketId ?? selectedMarket?.id ?? null,
   };
@@ -207,26 +216,22 @@ const getSelectedMarket = ({
 };
 
 const getSelectedCollateralToken = ({
+  collateralOptions,
   intent,
-  selectedMarket,
 }: {
+  readonly collateralOptions: ReadonlyArray<BorrowCollateralOption>;
   readonly intent: BorrowFormIntent;
-  readonly selectedMarket: Market | null;
 }) => {
-  if (!selectedMarket) {
-    return null;
-  }
-
   if (intent.selectedCollateralTokenId === null) {
-    return selectedMarket.collateralTokens[0] ?? null;
+    return collateralOptions[0]?.collateralToken ?? null;
   }
 
   return (
-    selectedMarket.collateralTokens.find(
-      (collateralToken) =>
+    collateralOptions.find(
+      ({ collateralToken }) =>
         decodeTokenId(collateralToken.token) ===
         intent.selectedCollateralTokenId
-    ) ?? null
+    )?.collateralToken ?? null
   );
 };
 
@@ -253,7 +258,7 @@ export const shouldResetBorrowFormForCatalog = ({
     return false;
   }
 
-  return !selectedMarket.collateralTokens.some(
+  return !getListedCollateralTokens(selectedMarket).some(
     (collateralToken) =>
       decodeTokenId(collateralToken.token) === intent.selectedCollateralTokenId
   );
@@ -298,9 +303,15 @@ export const resolveBorrowEntryView = ({
           (position) => position.id === selectedMarket.id
         ) ?? null)
       : null;
+  const collateralOptions = selectedMarket
+    ? rankBorrowCollateralOptions({
+        balances: tokenBalancesAvailable ? tokenBalances : null,
+        market: selectedMarket,
+      })
+    : [];
   const selectedCollateralToken = getSelectedCollateralToken({
+    collateralOptions,
     intent,
-    selectedMarket,
   });
   const selectedCollateralTokenId = selectedCollateralToken
     ? decodeTokenId(selectedCollateralToken.token)
@@ -387,6 +398,7 @@ export const resolveBorrowEntryView = ({
       !!selectedMarket && projection.collateralMaxAmount.gt(0),
     catalogResetNotice: false,
     collateralAmount,
+    collateralOptions,
     integrationsResult,
     isActionReady,
     markets,

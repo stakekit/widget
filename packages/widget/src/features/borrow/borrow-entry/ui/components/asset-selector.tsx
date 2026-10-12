@@ -42,6 +42,7 @@ export const BorrowAssetSelectorRow = ({
   expanded = false,
   indented = false,
   label,
+  labelMeta,
   meta,
   onClick,
   rate,
@@ -54,6 +55,8 @@ export const BorrowAssetSelectorRow = ({
   readonly expanded?: boolean;
   readonly indented?: boolean;
   readonly label: string;
+  /** Muted note on the label line, e.g. collateral yield. */
+  readonly labelMeta?: string;
   readonly meta?: string;
   readonly onClick: () => void;
   readonly rate?: string;
@@ -85,9 +88,22 @@ export const BorrowAssetSelectorRow = ({
     ) : null}
     <TokenIcon token={token} />
     <Box className={styles.assetSelectorText}>
-      <Text className={styles.assetSelectorLabel} variant={{ weight: "bold" }}>
-        {label}
-      </Text>
+      <Box className={styles.assetSelectorLabelLine}>
+        <Text
+          className={styles.assetSelectorLabel}
+          variant={{ weight: "bold" }}
+        >
+          {label}
+        </Text>
+        {labelMeta ? (
+          <Text
+            className={styles.assetSelectorMeta}
+            variant={{ type: "muted", weight: "normal" }}
+          >
+            {labelMeta}
+          </Text>
+        ) : null}
+      </Box>
       {meta ? (
         <Text className={styles.assetSelectorMeta} variant={{ type: "muted" }}>
           {meta}

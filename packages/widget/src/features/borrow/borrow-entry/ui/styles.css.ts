@@ -106,6 +106,13 @@ export const assetSelectorText = style({
   minWidth: 0,
 });
 
+export const assetSelectorLabelLine = style({
+  alignItems: "baseline",
+  display: "flex",
+  gap: "8px",
+  minWidth: 0,
+});
+
 export const assetSelectorLabel = style([
   atoms({
     color: "tokenSelect",

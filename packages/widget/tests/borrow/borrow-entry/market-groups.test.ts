@@ -1,9 +1,12 @@
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
 import { Market } from "../../../src/domain/borrow/catalog/market";
+import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import {
-  filterBorrowCollateralTokens,
+  type BorrowCollateralOption,
+  filterBorrowCollateralOptions,
   filterBorrowMarketGroups,
+  rankBorrowCollateralOptions,
   toBorrowEntryToken,
 } from "../../../src/features/borrow/borrow-entry/model/market-groups";
 
@@ -21,15 +24,18 @@ const usdt = {
   decimals: 6,
 } as const;
 
-const collateralToken = (token: {
-  readonly address: string;
-  readonly decimals: number;
-  readonly name: string;
-  readonly symbol: string;
-}) => ({
+const collateralToken = (
+  token: {
+    readonly address: string;
+    readonly decimals: number;
+    readonly name: string;
+    readonly symbol: string;
+  },
+  { maxLtv = "0.8", priceUsd = "2000" } = {}
+) => ({
   token,
-  priceUsd: "2000",
-  maxLtv: "0.8",
+  priceUsd,
+  maxLtv,
   liquidationThreshold: "0.85",
   liquidationPenalty: "0.05",
   supplyRate: "0.02",
@@ -297,32 +303,98 @@ describe("borrow market groups", () => {
   });
 });
 
-describe("borrow collateral token filter", () => {
-  it("returns every token for an empty search", () => {
+describe("borrow collateral options", () => {
+  const walletOf = (
+    holdings: ReadonlyArray<{
+      readonly amount: string;
+      readonly token: typeof weth | typeof wbtc | typeof usdc;
+    }>
+  ) =>
+    Schema.decodeSync(TokenBalancesResponse)(
+      holdings.map(({ amount, token }) => ({
+        amount,
+        availableYields: [],
+        token: { ...token, network: "ethereum" },
+      }))
+    );
+  const poolMarket = makeMarket({
+    borrowRate: "0.05",
+    collateralTokens: [
+      collateralToken(weth, { maxLtv: "0.8" }),
+      collateralToken(wbtc, { maxLtv: "0.7", priceUsd: "80000" }),
+      collateralToken(usdc, { maxLtv: "0.75", priceUsd: "1" }),
+      collateralToken(usdt, { maxLtv: "0.0005", priceUsd: "1" }),
+    ],
+    id: "aave-v3-ethereum-usdc-pool",
+    integrationId: "aave-borrow",
+    loanToken: usdc,
+  });
+  const symbolsOf = (options: readonly BorrowCollateralOption[]) =>
+    options.map((option) => option.collateralToken.token.symbol);
+
+  it("hides the loan token and near-zero LTV collateral, then ranks by max LTV", () => {
     expect(
-      filterBorrowCollateralTokens({
-        collateralTokens: aaveUsdc.collateralTokens,
-        search: "   ",
+      symbolsOf(
+        rankBorrowCollateralOptions({ balances: null, market: poolMarket })
+      )
+    ).toEqual(["WETH", "WBTC"]);
+  });
+
+  it("does not match markets by collateral they hide", () => {
+    expect(
+      filterBorrowMarketGroups({
+        integrations,
+        markets: [poolMarket],
+        search: "tether",
       })
-    ).toEqual(aaveUsdc.collateralTokens);
+    ).toEqual([]);
+  });
+
+  it("ranks held collateral first by wallet USD value", () => {
+    const options = rankBorrowCollateralOptions({
+      balances: walletOf([
+        { amount: "1", token: weth },
+        { amount: "0.1", token: wbtc },
+      ]),
+      market: poolMarket,
+    });
+
+    expect(symbolsOf(options)).toEqual(["WBTC", "WETH"]);
+    expect(options.map((option) => option.walletUsd?.toString())).toEqual([
+      "8000",
+      "2000",
+    ]);
+  });
+
+  it("reports zero for unheld collateral once balances load", () => {
+    const options = rankBorrowCollateralOptions({
+      balances: walletOf([]),
+      market: poolMarket,
+    });
+
+    expect(options.map((option) => option.walletAmount?.toString())).toEqual([
+      "0",
+      "0",
+    ]);
   });
 
   it("filters by symbol, name, and address", () => {
-    for (const search of ["weth", "Wrapped Ether", weth.address]) {
-      expect(
-        filterBorrowCollateralTokens({
-          collateralTokens: aaveUsdc.collateralTokens,
-          search,
-        })
-      ).toHaveLength(1);
-    }
+    const options = rankBorrowCollateralOptions({
+      balances: null,
+      market: aaveUsdc,
+    });
 
-    expect(
-      filterBorrowCollateralTokens({
-        collateralTokens: aaveUsdc.collateralTokens,
-        search: "wbtc",
-      })
-    ).toEqual([]);
+    expect(filterBorrowCollateralOptions({ options, search: "   " })).toEqual(
+      options
+    );
+    for (const search of ["weth", "Wrapped Ether", weth.address]) {
+      expect(filterBorrowCollateralOptions({ options, search })).toHaveLength(
+        1
+      );
+    }
+    expect(filterBorrowCollateralOptions({ options, search: "wbtc" })).toEqual(
+      []
+    );
   });
 });
 

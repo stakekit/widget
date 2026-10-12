@@ -295,10 +295,6 @@ describe("Borrow position details", () => {
       )
       .click();
 
-    await app.getByTestId("borrow-collateral-select").click();
-    expect(app.container.textContent).not.toContain("2%");
-    expect(app.container.textContent).not.toContain("3%");
-
     await app.unmount();
   });
 

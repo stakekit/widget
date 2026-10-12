@@ -96,6 +96,7 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
     canSelectCollateralMaxAmount,
     catalogResetNotice,
     collateralAmount,
+    collateralOptions,
     integrationsResult,
     isActionReady,
     markets,
@@ -172,7 +173,7 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
         <BorrowAmountField
           accessory={
             <CollateralSelectModal
-              collateralTokens={selectedMarket.collateralTokens}
+              collateralOptions={collateralOptions}
               marketNetwork={selectedMarket.network}
               selectedCollateralTokenId={selectedCollateralTokenId}
             />

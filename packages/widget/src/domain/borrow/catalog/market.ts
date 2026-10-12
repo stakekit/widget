@@ -5,7 +5,7 @@ import {
   ExactDecimal,
   NonNegativeExactDecimal,
 } from "../../finance/scalars";
-import { IntegrationId, MarketId } from "../ids";
+import { decodeTokenId, IntegrationId, MarketId } from "../ids";
 import { BorrowNetwork } from "../network";
 import { NonNegativeRiskValue, RiskRatio } from "../risk/risk-values";
 import { CollateralToken } from "./collateral-token";
@@ -50,15 +50,29 @@ export type Market = typeof Market.Type;
 const MIN_LISTED_LIQUIDITY_USD = 10_000;
 // Rates above 100% come from markets pinned at full utilization.
 const MAX_LISTED_BORROW_RATE = 1;
+// Below this, a collateral backs almost no debt (e.g. Aave's 0.05% syrupUSDT).
+const MIN_LISTED_COLLATERAL_MAX_LTV = 0.01;
 
 export const getMarketAvailableLiquidityUsd = (market: Market) =>
   market.availableLiquidity.multipliedBy(market.loanTokenPriceUsd);
+
+/** Collateral offered for new borrows: excludes near-zero LTV and the loan token itself. */
+export const getListedCollateralTokens = (market: Market) => {
+  const loanTokenId = decodeTokenId(market.loanToken);
+
+  return market.collateralTokens.filter(
+    (collateralToken) =>
+      collateralToken.maxLtv.gte(MIN_LISTED_COLLATERAL_MAX_LTV) &&
+      decodeTokenId(collateralToken.token) !== loanTokenId
+  );
+};
 
 /** Markets offered for new borrows. Unpriced loan tokens count as no liquidity. */
 export const isListedBorrowMarket = (market: Market) =>
   market.isBorrowEnabled &&
   getMarketAvailableLiquidityUsd(market).gte(MIN_LISTED_LIQUIDITY_USD) &&
-  market.borrowRate.lte(MAX_LISTED_BORROW_RATE);
+  market.borrowRate.lte(MAX_LISTED_BORROW_RATE) &&
+  getListedCollateralTokens(market).length > 0;
 
 // Only isolated markets have a single collateral; pool markets list every
 // eligible collateral, so naming one of them would invent a pair.

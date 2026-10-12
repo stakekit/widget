@@ -2,14 +2,25 @@ import BigNumber from "bignumber.js";
 import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
 import {
   getBorrowMarketPairLabel,
+  getListedCollateralTokens,
   getMarketAvailableLiquidityUsd,
   isListedBorrowMarket,
   type Market,
 } from "../../../../domain/borrow/catalog/market";
 import type { BorrowToken } from "../../../../domain/borrow/catalog/token";
+import { decodeTokenId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
-import { sumExact } from "../../../../domain/finance/exact";
+import { exactZero, sumExact } from "../../../../domain/finance/exact";
+import type { TokenBalance } from "../../../../domain/finance/models";
 import type { Token } from "../../../../domain/token/token";
+import { deriveBorrowMarketWalletBalances } from "../../action-preparation/index";
+
+export type BorrowCollateralOption = {
+  readonly collateralToken: CollateralToken;
+  /** Null until wallet balances load. */
+  readonly walletAmount: BigNumber | null;
+  readonly walletUsd: BigNumber | null;
+};
 
 export type BorrowEntryToken = Token & { network: BorrowNetwork };
 
@@ -68,7 +79,7 @@ const marketMatchesSearch = ({
     market.loanToken.address,
     market.loanToken.name,
     market.loanToken.symbol,
-    ...market.collateralTokens.flatMap((collateralToken) => [
+    ...getListedCollateralTokens(market).flatMap((collateralToken) => [
       collateralToken.token.address,
       collateralToken.token.name,
       collateralToken.token.symbol,
@@ -138,22 +149,68 @@ export const filterBorrowMarketGroups = ({
     .sort(byAvailableLiquidityDesc((group) => group.availableLiquidityUsd));
 };
 
-export const filterBorrowCollateralTokens = ({
-  collateralTokens,
+/**
+ * Listed collateral for the market, held tokens first by wallet USD value,
+ * then by max LTV. The first option is the default collateral.
+ */
+export const rankBorrowCollateralOptions = ({
+  balances,
+  market,
+}: {
+  readonly balances: ReadonlyArray<TokenBalance> | null;
+  readonly market: Market;
+}): readonly BorrowCollateralOption[] => {
+  const walletAmounts = new Map(
+    balances
+      ? deriveBorrowMarketWalletBalances({
+          balances,
+          market,
+        }).collateralTokens.map((balance) => [
+          decodeTokenId(balance.collateralToken.token),
+          balance.amountValue,
+        ])
+      : []
+  );
+
+  return getListedCollateralTokens(market)
+    .map((collateralToken): BorrowCollateralOption => {
+      const walletAmount = balances
+        ? (walletAmounts.get(decodeTokenId(collateralToken.token)) ??
+          exactZero())
+        : null;
+
+      return {
+        collateralToken,
+        walletAmount,
+        walletUsd: walletAmount?.multipliedBy(collateralToken.priceUsd) ?? null,
+      };
+    })
+    .sort(
+      (left, right) =>
+        (right.walletUsd ?? exactZero()).comparedTo(
+          left.walletUsd ?? exactZero()
+        ) ||
+        (right.collateralToken.maxLtv.comparedTo(left.collateralToken.maxLtv) ??
+          0)
+    );
+};
+
+export const filterBorrowCollateralOptions = ({
+  options,
   search,
 }: {
-  readonly collateralTokens: readonly CollateralToken[];
+  readonly options: readonly BorrowCollateralOption[];
   readonly search: string;
-}): readonly CollateralToken[] => {
+}): readonly BorrowCollateralOption[] => {
   const normalizedSearch = normalizeSearch(search);
 
   return normalizedSearch
-    ? collateralTokens.filter((collateralToken) =>
+    ? options.filter(({ collateralToken }) =>
         searchableText([
           collateralToken.token.address,
           collateralToken.token.name,
           collateralToken.token.symbol,
         ]).includes(normalizedSearch)
       )
-    : collateralTokens;
+    : options;
 };

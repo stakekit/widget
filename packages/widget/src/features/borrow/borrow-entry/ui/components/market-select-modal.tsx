@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { Integration } from "../../../../../domain/borrow/catalog/integration";
 import {
   getBorrowMarketPairLabel,
+  getListedCollateralTokens,
   getMarketAvailableLiquidityUsd,
   type Market,
 } from "../../../../../domain/borrow/catalog/market";
@@ -149,7 +150,8 @@ export const MarketSelectModal = ({
                           meta={
                             isPool
                               ? t("dashboard.borrow.form.pooled_collaterals", {
-                                  count: market.collateralTokens.length,
+                                  count:
+                                    getListedCollateralTokens(market).length,
                                 })
                               : providerName
                           }

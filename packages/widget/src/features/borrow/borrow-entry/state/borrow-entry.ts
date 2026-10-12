@@ -144,6 +144,9 @@ const borrowFormStateAtom = Atom.writable<
         ? pinBorrowFormDefaults({
             intent: current.intent,
             markets: marketsResult.value,
+            tokenBalances: context
+              .get(tokenBalancesScanAtom)
+              .result.pipe(AsyncResult.value, Option.getOrNull),
           })
         : current.intent;
 
