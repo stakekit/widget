@@ -8,8 +8,6 @@ files:
 ignores:
   - packages/widget/src/index.package.ts
   - packages/widget/src/index.bundle.ts
-  - packages/widget/src/public-api/index.package.ts
-  - packages/widget/src/public-api/index.bundle.ts
 rule:
   all:
     - kind: export_statement

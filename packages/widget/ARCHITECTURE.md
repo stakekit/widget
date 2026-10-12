@@ -72,6 +72,14 @@ composition and decoding in `services/config`, and the host wallet and tracking
 adapters. Every other Module uses Domain or owner types, so internal rules never
 depend on the shape hosts see. dependency-cruiser enforces this.
 
+`src/index.package.ts` and `src/index.bundle.ts` are both the runtime entries
+and the published declarations. Every exported value is annotated with a
+`public-api` type, and `build:types` transpiles each entry alone under
+`isolatedDeclarations`, so implementation types never reach hosts and `tsc`
+checks each implementation against its published signature. Every named type
+that appears in an entry's public signatures is exported by name from that
+entry.
+
 ## Module interfaces
 
 An Owned Module publishes only the finite interfaces its actual consumers need,

@@ -45,14 +45,14 @@ type Consumer = {
 const consumers = [
   {
     allowedExternalTypes: ["effect"],
-    declarationEntry: "dist/types/public-api/index.bundle.d.ts",
+    declarationEntry: "dist/types/index.bundle.d.ts",
     fixture: "bundle-consumer.ts",
     label: "standalone bundle",
     reactPeers: false,
   },
   {
     allowedExternalTypes: ["effect", "react"],
-    declarationEntry: "dist/types/public-api/index.package.d.ts",
+    declarationEntry: "dist/types/index.package.d.ts",
     fixture: "package-consumer.ts",
     label: "React package",
     reactPeers: true,
@@ -399,8 +399,8 @@ const main = async () => {
   const tarballPath = join(temporaryRoot, "stakekit-widget.tgz");
 
   try {
-    await access(join(widgetRoot, "dist/types/public-api/index.package.d.ts"));
-    await access(join(widgetRoot, "dist/types/public-api/index.bundle.d.ts"));
+    await access(join(widgetRoot, "dist/types/index.package.d.ts"));
+    await access(join(widgetRoot, "dist/types/index.bundle.d.ts"));
     await runPnpm("pack Widget", ["pack", "--out", tarballPath], widgetRoot, {
       quiet: true,
     });

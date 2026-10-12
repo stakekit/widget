@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import type { HostVariant, SettingsProps } from "./types.js";
+import type { SettingsProps, SKHostVariant } from "./types.js";
 
-type NonZerionVariant = Exclude<HostVariant, "zerion">;
+type NonZerionVariant = Exclude<SKHostVariant, "zerion">;
 
 /**
  * One constituent per shape rather than per variant. Expanding the non-zerion
@@ -33,17 +33,11 @@ export type SKAppProps = SKHostConfiguration & {
   children?: ReactNode;
 };
 
+/**
+ * Host-triggered help content. The geo-block notice is shown by the widget
+ * itself and is not part of the host contract.
+ */
 export type HelpModalProps = {
-  modal:
-    | {
-        type: "geoBlock";
-        onClose: () => void;
-        tags: Set<string>;
-        countryCode: string;
-        regionCode?: string;
-        regionCodeName: string | undefined;
-      }
-    | { type: "getInTouch" }
-    | { type: "whatIsStakeKit" };
+  modal: { type: "getInTouch" } | { type: "whatIsStakeKit" };
   customTrigger?: ReactNode;
 };

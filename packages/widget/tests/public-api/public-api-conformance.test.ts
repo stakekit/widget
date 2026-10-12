@@ -2,47 +2,40 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import ts from "typescript";
 import { describe, expect, expectTypeOf, it } from "vitest";
+import {
+  packageEntries,
+  transpileEntryDeclaration,
+} from "../../scripts/declarations/entry-declarations";
+import type {
+  HelpModalProps as PublicHelpModalProps,
+  SKAppProps as PublicSKAppProps,
+} from "../../src/public-api/react-types";
+import type {
+  BundledSKWidgetProps as PublicBundledSKWidgetProps,
+  SKBorrowTx,
+  SKBorrowTxMeta,
+  SKTx,
+  SKTxMeta,
+} from "../../src/public-api/types";
 
 /**
- * The published package declares its surface twice.
+ * `src/index.package.ts` and `src/index.bundle.ts` are both the runtime entries
+ * and the published contract: `build:types` transpiles each on its own, so the
+ * explicit annotations on their values are the declarations hosts compile
+ * against, and `tsc` checks the implementations against them.
  *
- * `src/public-api/index.package.ts` and `src/public-api/index.bundle.ts` are the
- * contract: `tsconfig.build.json` compiles `src/public-api` on its own and ships
- * the result as `dist/types`, which is where `package.json` points `types`.
- * `src/index.package.ts` and `src/index.bundle.ts` are the Vite library entries
- * that produce the shipped JavaScript.
- *
- * Hosts therefore take their types from one file and their runtime from another,
- * and nothing else in the repo relates the two. These assertions are that
- * missing relation:
- *
- * - `describe("declared value exports")` uses the type system, so `tsc` — and
- *   therefore `pnpm lint` — rejects a value the contract promises but the
- *   runtime entry does not ship, or ships with an incompatible type.
- * - `describe.each(entryPairs)` reads the entry files as source, because a
- *   type-only export is invisible to `keyof` and to assignability. It is the
- *   only thing here that can see a `SKTxMeta` that exists on one side only.
+ * - `describe("entry declarations")` keeps those declarations free of
+ *   implementation modules and removed exports.
  * - `describe("public API dependencies")` keeps host declarations on the
  *   deliberate Domain contract paths and rejects Domain implementation imports.
  */
-
-type PackageContract = typeof import("../../src/public-api/index.package.ts");
-type PackageRuntime = typeof import("../../src/index.package.ts");
-type BundleContract = typeof import("../../src/public-api/index.bundle.ts");
-type BundleRuntime = typeof import("../../src/index.bundle.ts");
-type PublicSKAppProps = import("../../src/public-api/react-types").SKAppProps;
-type PublicBundledSKWidgetProps =
-  import("../../src/public-api/types").BundledSKWidgetProps;
 
 type ClassicExternalProviderProps = {
   readonly apiKey: string;
   readonly externalProviders: {
     readonly currentAddress: string;
     readonly provider: {
-      readonly sendTransaction: (
-        tx: import("../../src/public-api/types").SKTx,
-        txMeta: import("../../src/public-api/types").SKTxMeta
-      ) => Promise<string>;
+      readonly sendTransaction: (tx: SKTx, txMeta: SKTxMeta) => Promise<string>;
       readonly signMessage: (message: string) => Promise<string>;
       readonly switchChain: (chainId: number) => Promise<void>;
     };
@@ -58,8 +51,8 @@ type BorrowExternalProviderProps = ClassicExternalProviderProps & {
   > & {
     readonly provider: ClassicExternalProviderProps["externalProviders"]["provider"] & {
       readonly sendBorrowTransaction: (
-        tx: import("../../src/public-api/types").SKBorrowTx,
-        txMeta: import("../../src/public-api/types").SKBorrowTxMeta
+        tx: SKBorrowTx,
+        txMeta: SKBorrowTxMeta
       ) => Promise<{ readonly txHash: string }>;
     };
   };
@@ -69,31 +62,6 @@ type DynamicBorrowProps = {
   readonly apiKey: string;
   readonly borrowEnabled: boolean;
 };
-
-/**
- * Fails to compile unless `Runtime` is assignable to `Contract`, reported as an
- * ordinary TypeScript assignability error naming the offending export.
- *
- * The direction is deliberate. The contract is allowed to be wider than the
- * implementation — `darkTheme` is published as `SKTheme` rather than as the
- * concrete token object — so demanding mutual assignability would reject the
- * surface the package intends to publish.
- */
-const assertRuntimeSatisfiesContract = <Contract, Runtime extends Contract>(
-  ..._runtime: ReadonlyArray<Runtime>
-) => {};
-
-describe("declared value exports", () => {
-  it("match the package contract", () => {
-    assertRuntimeSatisfiesContract<PackageContract, PackageRuntime>();
-    expectTypeOf<keyof PackageRuntime>().toEqualTypeOf<keyof PackageContract>();
-  });
-
-  it("match the bundle contract", () => {
-    assertRuntimeSatisfiesContract<BundleContract, BundleRuntime>();
-    expectTypeOf<keyof BundleRuntime>().toEqualTypeOf<keyof BundleContract>();
-  });
-});
 
 describe("public external-provider props", () => {
   it("preserves classic hosts and makes Borrow capability follow borrowEnabled", () => {
@@ -122,33 +90,22 @@ describe("removed public surface", () => {
       Extract<keyof PublicBundledSKWidgetProps, RemovedConfigurationKey>
     >().toEqualTypeOf<never>();
   });
+
+  it("keeps the widget-owned geo-block notice out of HelpModal", () => {
+    expectTypeOf<{
+      readonly modal: { readonly type: "getInTouch" };
+    }>().toMatchTypeOf<PublicHelpModalProps>();
+    expectTypeOf<{
+      readonly modal: {
+        readonly type: "geoBlock";
+        readonly countryCode: string;
+        readonly onClose: () => void;
+        readonly regionCodeName: string | undefined;
+        readonly tags: Set<string>;
+      };
+    }>().not.toMatchTypeOf<PublicHelpModalProps>();
+  });
 });
-
-const widgetRoot = path.resolve(import.meta.dirname, "..", "..");
-
-type ExportedSymbol = {
-  /**
-   * `"<path relative to packages/widget>#<name>"` for a re-export, so that two
-   * entries agree on the declaration and not merely on the name. `undefined`
-   * when the entry declares the symbol itself, which is how the contract states
-   * the type of every value it publishes.
-   */
-  readonly origin: string | undefined;
-  readonly typeOnly: boolean;
-};
-
-const entryPairs = [
-  {
-    label: "package entry",
-    contract: "src/public-api/index.package.ts",
-    runtime: "src/index.package.ts",
-  },
-  {
-    label: "bundle entry",
-    contract: "src/public-api/index.bundle.ts",
-    runtime: "src/index.bundle.ts",
-  },
-] as const;
 
 const removedEntryExports = [
   "SKBundleConfiguration",
@@ -156,13 +113,95 @@ const removedEntryExports = [
   "evmChainGroup",
 ] as const;
 
-const parse = (relativePath: string) =>
-  ts.createSourceFile(
-    relativePath,
-    readFileSync(path.join(widgetRoot, relativePath), "utf8"),
-    ts.ScriptTarget.ESNext,
-    true
-  );
+const sharedEntryExports = [
+  "ActionMeta",
+  "BittensorTx",
+  "DashboardYieldCategory",
+  "EvmChainIds",
+  "EvmTx",
+  "MiscChainIds",
+  "SKActionArguments",
+  "SKActionType",
+  "SKBorrowExternalProviders",
+  "SKBorrowTx",
+  "SKBorrowTxMeta",
+  "SKBorrowWallet",
+  "SKCustomTranslations",
+  "SKEip712TypedData",
+  "SKExternalProviders",
+  "SKHostVariant",
+  "SKLanguage",
+  "SKNetwork",
+  "SKPreferredTokenYieldsPerNetwork",
+  "SKTheme",
+  "SKToken",
+  "SKTrackEvent",
+  "SKTrackPage",
+  "SKTrackingConfig",
+  "SKTransactionResult",
+  "SKTransactionType",
+  "SKTranslationTree",
+  "SKTx",
+  "SKTxMeta",
+  "SKWallet",
+  "SKWalletPolicy",
+  "SolanaTx",
+  "SubstrateChainIds",
+  "SupportedSKChainIds",
+  "TonTx",
+  "TronTx",
+  "darkTheme",
+  "lightTheme",
+];
+
+// Hosts compile against these names; removing one is a breaking change.
+const publishedEntryExports = {
+  "index.package": [
+    ...sharedEntryExports,
+    "HelpModal",
+    "HelpModalProps",
+    "SKApp",
+    "SKAppProps",
+  ],
+  "index.bundle": [
+    ...sharedEntryExports,
+    "BundledSKWidgetProps",
+    "renderSKWidget",
+  ],
+} satisfies Record<(typeof packageEntries)[number], ReadonlyArray<string>>;
+
+describe.each(packageEntries)("entry declarations: %s", (entry) => {
+  it("reference only src/public-api and state every value type", async () => {
+    const { diagnostics, implementationImports } =
+      await transpileEntryDeclaration(entry);
+
+    expect(diagnostics).toStrictEqual([]);
+    expect(implementationImports).toStrictEqual([]);
+  });
+
+  it("export every published name explicitly", async () => {
+    const { exportedNames, unexportedSignatureTypes, wildcardExports } =
+      await transpileEntryDeclaration(entry);
+
+    expect(exportedNames).toStrictEqual(
+      [...publishedEntryExports[entry]].sort()
+    );
+    expect(unexportedSignatureTypes).toStrictEqual([]);
+    expect(wildcardExports).toStrictEqual([]);
+  });
+
+  it("do not restore removed implementation-shaped exports", async () => {
+    const { outputText } = await transpileEntryDeclaration(entry);
+
+    expect(
+      removedEntryExports.filter((name) =>
+        new RegExp(`\\b${name}\\b`, "u").test(outputText)
+      )
+    ).toStrictEqual([]);
+  });
+});
+
+const widgetRoot = path.resolve(import.meta.dirname, "..", "..");
 
 const resolveModuleSpecifier = (
   fromRelativePath: string,
@@ -182,160 +221,13 @@ const resolveModuleSpecifier = (
 
   if (!resolved) {
     throw new Error(
-      `Cannot resolve "${specifier}" from ${fromRelativePath}. Public entries ` +
-        "may only re-export relative paths inside packages/widget."
+      `Cannot resolve "${specifier}" from ${fromRelativePath}. Public API ` +
+        "files may only import relative paths inside packages/widget."
     );
   }
 
   return path.relative(widgetRoot, resolved);
 };
-
-const hasExportModifier = (node: ts.Node): boolean =>
-  ts.canHaveModifiers(node) &&
-  (ts.getModifiers(node) ?? []).some(
-    (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword
-  );
-
-const collectExports = (
-  relativePath: string
-): ReadonlyMap<string, ExportedSymbol> => {
-  const source = parse(relativePath);
-  const exports = new Map<string, ExportedSymbol>();
-
-  const declareLocal = (name: string, typeOnly: boolean) =>
-    exports.set(name, { origin: undefined, typeOnly });
-
-  for (const statement of source.statements) {
-    if (ts.isExportDeclaration(statement)) {
-      const clause = statement.exportClause;
-
-      if (!clause || !ts.isNamedExports(clause)) {
-        throw new Error(
-          `${relativePath} uses \`export *\`. Public entries must enumerate ` +
-            "their exports so that the contract and the runtime entry can be " +
-            "compared name by name."
-        );
-      }
-
-      for (const specifier of clause.elements) {
-        const localName = (specifier.propertyName ?? specifier.name).text;
-        const typeOnly = statement.isTypeOnly || specifier.isTypeOnly;
-
-        if (!statement.moduleSpecifier) {
-          declareLocal(specifier.name.text, typeOnly);
-          continue;
-        }
-
-        if (!ts.isStringLiteral(statement.moduleSpecifier)) {
-          throw new Error(`${relativePath} has a non-literal export source.`);
-        }
-
-        exports.set(specifier.name.text, {
-          origin: `${resolveModuleSpecifier(
-            relativePath,
-            statement.moduleSpecifier.text
-          )}#${localName}`,
-          typeOnly,
-        });
-      }
-
-      continue;
-    }
-
-    if (!hasExportModifier(statement)) continue;
-
-    if (ts.isVariableStatement(statement)) {
-      for (const declaration of statement.declarationList.declarations) {
-        if (!ts.isIdentifier(declaration.name)) {
-          throw new Error(`${relativePath} exports a destructured binding.`);
-        }
-
-        declareLocal(declaration.name.text, false);
-      }
-
-      continue;
-    }
-
-    if (
-      ts.isFunctionDeclaration(statement) ||
-      ts.isClassDeclaration(statement) ||
-      ts.isEnumDeclaration(statement)
-    ) {
-      if (!statement.name) {
-        throw new Error(`${relativePath} has a default or anonymous export.`);
-      }
-
-      declareLocal(statement.name.text, false);
-      continue;
-    }
-
-    if (
-      ts.isTypeAliasDeclaration(statement) ||
-      ts.isInterfaceDeclaration(statement)
-    ) {
-      declareLocal(statement.name.text, true);
-      continue;
-    }
-
-    throw new Error(
-      `${relativePath} has an export that the conformance check does not ` +
-        `understand (${ts.SyntaxKind[statement.kind]}).`
-    );
-  }
-
-  return exports;
-};
-
-const sortedNames = (exports: ReadonlyMap<string, ExportedSymbol>) =>
-  [...exports.keys()].sort();
-
-describe.each(entryPairs)("$label", ({ contract, runtime }) => {
-  const contractExports = collectExports(contract);
-  const runtimeExports = collectExports(runtime);
-
-  it("exports the same names as its contract", () => {
-    expect(sortedNames(runtimeExports)).toStrictEqual(
-      sortedNames(contractExports)
-    );
-  });
-
-  it("agrees with its contract on which exports are type-only", () => {
-    const typeOnlyNames = (exports: ReadonlyMap<string, ExportedSymbol>) =>
-      sortedNames(exports).filter((name) => exports.get(name)?.typeOnly);
-
-    expect(typeOnlyNames(runtimeExports)).toStrictEqual(
-      typeOnlyNames(contractExports)
-    );
-  });
-
-  it("re-exports every published type from the same declaration", () => {
-    // The contract cannot restate a type without becoming a second definition
-    // of it, so it re-exports types from `src/public-api/types.ts`. The runtime
-    // entry has to reach that same declaration: resolving `SupportedSKChainIds`
-    // through a structurally identical copy elsewhere in `src` type-checks and
-    // is still drift, so it is rejected here.
-    const typeOrigins = (exports: ReadonlyMap<string, ExportedSymbol>) =>
-      Object.fromEntries(
-        [...exports]
-          .filter(([, exported]) => exported.typeOnly)
-          .map(([name, exported]) => [name, exported.origin])
-      );
-
-    expect(typeOrigins(runtimeExports)).toStrictEqual(
-      typeOrigins(contractExports)
-    );
-  });
-
-  it("does not restore removed implementation-shaped exports", () => {
-    const restoredExports = (exports: ReadonlyMap<string, ExportedSymbol>) =>
-      sortedNames(exports).filter((name) =>
-        removedEntryExports.some((removed) => removed === name)
-      );
-
-    expect(restoredExports(contractExports)).toStrictEqual([]);
-    expect(restoredExports(runtimeExports)).toStrictEqual([]);
-  });
-});
 
 describe("public API dependencies", () => {
   it("imports Domain only through contract.ts files", () => {
@@ -344,7 +236,13 @@ describe("public API dependencies", () => {
       .map((file) => path.join("src/public-api", file));
 
     const disallowed = publicApiFiles.flatMap((publicApiFile) =>
-      parse(publicApiFile)
+      ts
+        .createSourceFile(
+          publicApiFile,
+          readFileSync(path.join(widgetRoot, publicApiFile), "utf8"),
+          ts.ScriptTarget.ESNext,
+          true
+        )
         .statements.flatMap((statement) =>
           (ts.isImportDeclaration(statement) ||
             ts.isExportDeclaration(statement)) &&

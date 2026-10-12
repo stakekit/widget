@@ -1,9 +1,9 @@
 import mixpanel from "mixpanel-browser";
-import type { TrackingConfig } from "../../public-api/types";
+import type { SKTrackingConfig } from "../../public-api/types";
 
 export const initMixpanel = (token: string) => mixpanel.init(token);
 
-export const tracking: TrackingConfig = {
+export const tracking: SKTrackingConfig = {
   trackEvent: (...args) => {
     mixpanel.track(...args);
   },

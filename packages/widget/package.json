@@ -3,17 +3,17 @@
   "version": "0.0.289",
   "type": "module",
   "main": "./dist/package/index.package.js",
-  "types": "./dist/types/public-api/index.package.d.ts",
+  "types": "./dist/types/index.package.d.ts",
   "workspaces": [
     "packages/*"
   ],
   "exports": {
     ".": {
-      "types": "./dist/types/public-api/index.package.d.ts",
+      "types": "./dist/types/index.package.d.ts",
       "default": "./dist/package/index.package.js"
     },
     "./bundle": {
-      "types": "./dist/types/public-api/index.bundle.d.ts",
+      "types": "./dist/types/index.bundle.d.ts",
       "default": "./dist/bundle/index.bundle.js"
     },
     "./style.css": {
@@ -64,7 +64,7 @@
     "build:package": "vite -c vite/vite.config.package.ts build",
     "build:package:watch": "vite -w -c vite/vite.config.package.ts build",
     "build:bundle": "vite -c vite/vite.config.bundle.ts build",
-    "build:types": "tsc --project tsconfig.build.json",
+    "build:types": "tsc --project tsconfig.build.json && tsx scripts/declarations/emit-entry-declarations.ts",
     "check:generated-schemas": "tsx scripts/generated-api/check-generated-schemas.ts",
     "check:package-types": "tsx scripts/declarations/check-package-types.ts",
     "check-hygiene": "pnpm check-hygiene:architecture && pnpm check-hygiene:unused && pnpm check-hygiene:production && pnpm check-hygiene:duplication",

@@ -9,12 +9,12 @@ import type {
   BundledSKWidgetProps,
   SKWallet as BundledWallet,
   SKWalletPolicy as BundledWalletPolicy,
-} from "../../src/public-api/index.bundle";
+} from "../../src/index.bundle";
 import type {
   SKAppProps as PackageSKAppProps,
   SKWallet as PackageWallet,
   SKWalletPolicy as PackageWalletPolicy,
-} from "../../src/public-api/index.package";
+} from "../../src/index.package";
 
 const genericWallet: PackageWallet = {
   signMessage: vi.fn(async () => "signed-message"),

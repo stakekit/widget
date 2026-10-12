@@ -26,7 +26,7 @@ export {
 
 type Hex = `0x${string}`;
 
-type SKEip712TypedData = {
+export type SKEip712TypedData = {
   readonly domain: {
     readonly chainId?: number;
     readonly name?: string;
@@ -120,9 +120,9 @@ type DecodedSubstrateTransaction = {
   readonly metadataRpc: Hex;
 };
 
-type EVMTx = { type: "evm"; tx: DecodedEVMTransaction };
-type SolanaTx = { type: "solana"; tx: DecodedSolanaTransaction };
-type TonTx = { type: "ton"; tx: DecodedTonTransaction };
+export type EvmTx = { type: "evm"; tx: DecodedEVMTransaction };
+export type SolanaTx = { type: "solana"; tx: DecodedSolanaTransaction };
+export type TonTx = { type: "ton"; tx: DecodedTonTransaction };
 
 export type TronTx = { type: "tron"; tx: DecodedTronTransaction };
 export type BittensorTx = {
@@ -130,13 +130,13 @@ export type BittensorTx = {
   tx: DecodedSubstrateTransaction;
 };
 
-export type SKTx = EVMTx | SolanaTx | TonTx | TronTx | BittensorTx;
+export type SKTx = EvmTx | SolanaTx | TonTx | TronTx | BittensorTx;
 
 export type SKBorrowTx = { type: "evm"; tx: DecodedBorrowEVMTransaction };
 
 export type SKNetwork = Network;
 
-type SKToken = {
+export type SKToken = {
   readonly symbol: string;
   readonly name: string;
   readonly decimals: number;
@@ -148,7 +148,7 @@ type SKToken = {
   readonly feeConfigurationId?: string;
 };
 
-type ActionArguments = {
+export type SKActionArguments = {
   readonly amount?: string;
   readonly amountRaw?: string;
   readonly amounts?: ReadonlyArray<string>;
@@ -184,7 +184,7 @@ type ActionArguments = {
   readonly tokenId?: string;
 };
 
-type ClassicActionType =
+export type SKActionType =
   | "STAKE"
   | "UNSTAKE"
   | "WITHDRAW_REQUEST"
@@ -208,7 +208,7 @@ type ClassicActionType =
   | "VERIFY_WITHDRAW_CREDENTIALS"
   | "DELEGATE";
 
-type ClassicTransactionType =
+export type SKTransactionType =
   | "SWAP"
   | "DEPOSIT"
   | "APPROVAL"
@@ -268,11 +268,11 @@ type ClassicTransactionType =
 
 export type ActionMeta = {
   actionId: string;
-  actionType: ClassicActionType;
+  actionType: SKActionType;
   address?: string;
   amount: string | null;
   amountRaw?: string | null;
-  rawArguments?: ActionArguments | null;
+  rawArguments?: SKActionArguments | null;
   yieldId?: string;
   inputToken: SKToken | undefined;
   providersDetails: Array<{
@@ -289,13 +289,13 @@ type NonNullishValue = NonNullable<unknown>;
 
 export type SKTxMeta = ActionMeta & {
   txId: string;
-  txType: ClassicTransactionType;
+  txType: SKTransactionType;
   structuredTransaction?: NonNullishValue | null;
   annotatedTransaction?: NonNullishValue | null;
   gasEstimate?: string;
 };
 
-type SKTransactionResult =
+export type SKTransactionResult =
   | string
   | { type: "success"; txHash: string }
   | { type: "error"; error: string };
@@ -376,15 +376,19 @@ export type SKBorrowExternalProviders = {
   readonly provider: SKBorrowWallet;
 };
 
-export type HostVariant = "zerion" | "utila" | "default" | "finery" | "porto";
+export type SKHostVariant = "zerion" | "utila" | "default" | "finery" | "porto";
 
-type TranslationTree = Readonly<{
-  [key: string]: string | TranslationTree;
+export type SKTranslationTree = Readonly<{
+  [key: string]: string | SKTranslationTree;
 }>;
 
-type Languages = "en" | "fr";
+export type SKLanguage = "en" | "fr";
 
-type TrackPage =
+export type SKCustomTranslations = Partial<
+  Record<SKLanguage, { translation: SKTranslationTree }>
+>;
+
+export type SKTrackPage =
   | "Earn"
   | "Borrow"
   | "Borrow review"
@@ -405,7 +409,7 @@ type TrackPage =
   | "Unstake complete"
   | "Pending action complete";
 
-type TrackEvent =
+export type SKTrackEvent =
   | "Tab clicked"
   | "Connect wallet clicked"
   | "Add ledger account clicked"
@@ -448,18 +452,18 @@ type TrackEvent =
   | "system/initYield"
   | "system/initToken";
 
-export type TrackingConfig = {
+export type SKTrackingConfig = {
   trackEvent?: (
-    event: TrackEvent,
+    event: SKTrackEvent,
     properties?: Record<string, unknown>
   ) => void;
   trackPageView?: (
-    page: TrackPage,
+    page: SKTrackPage,
     properties?: Record<string, unknown>
   ) => void;
 };
 
-type PreferredTokenYieldsPerNetwork = Readonly<
+export type SKPreferredTokenYieldsPerNetwork = Readonly<
   Record<string, Readonly<Record<`${string}-${string}`, string>>>
 >;
 
@@ -469,13 +473,13 @@ type SettingsPropsBase = {
   borrowApiUrl?: string;
   yieldsApiUrl?: string;
   theme?: SKTheme;
-  tracking?: TrackingConfig;
+  tracking?: SKTrackingConfig;
   onMountAnimationComplete?: () => void;
   hideNetworkLogo?: boolean;
   disableInitLayoutAnimation?: boolean;
   disableResizingInputFontSize?: boolean;
   disableAutoScrollToTop?: boolean;
-  language?: Languages;
+  language?: SKLanguage;
   isSafe?: boolean;
   disableInjectedProviderDiscovery?: boolean;
   mapWalletFn?: (props: {
@@ -489,9 +493,7 @@ type SettingsPropsBase = {
     iconBackground: string;
   };
   walletPolicy?: SKWalletPolicy;
-  customTranslations?: Partial<
-    Record<Languages, { translation: TranslationTree }>
-  >;
+  customTranslations?: SKCustomTranslations;
   /**
    * @deprecated Earn now always derives project-enabled, enterable options from
    * the canonical Earn Catalog. This setting has no effect.
@@ -516,7 +518,7 @@ type SettingsPropsBase = {
   institutionalWallets?: boolean;
   hideChainSelector?: boolean;
   hideAccountAndChainSelector?: boolean;
-  preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork;
+  preferredTokenYieldsPerNetwork?: SKPreferredTokenYieldsPerNetwork;
   portalContainer?: HTMLElement;
   tonConnectManifestUrl?: string;
   initialChain?: SupportedSKChainIds;
@@ -535,7 +537,7 @@ type BorrowProviderSettings =
 export type SettingsProps = SettingsPropsBase & BorrowProviderSettings;
 
 type SKBundleVariantProps = {
-  readonly variant: Exclude<HostVariant, "zerion">;
+  readonly variant: Exclude<SKHostVariant, "zerion">;
 };
 
 export type BundledSKWidgetProps = SettingsProps &

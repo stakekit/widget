@@ -1,12 +1,22 @@
 import {
   type ActionMeta,
+  type BittensorTx,
   type BundledSKWidgetProps,
   DashboardYieldCategory,
   EvmChainIds,
+  type EvmTx,
   MiscChainIds,
+  type SKBorrowExternalProviders,
+  type SKExternalProviders,
+  type SKToken,
+  type SKTrackingConfig,
+  type SKTx,
   type SKWalletPolicy,
+  type SolanaTx,
   SubstrateChainIds,
   type SupportedSKChainIds,
+  type TonTx,
+  type TronTx,
 } from "@stakekit/widget/bundle";
 
 type Equal<Left, Right> =
@@ -28,6 +38,17 @@ export type BundleTypeAssertions = [
   Assert<Equal<Extract<keyof typeof SubstrateChainIds, number>, never>>,
   Assert<Equal<Extract<keyof typeof MiscChainIds, number>, never>>,
   Assert<Equal<Extract<BundledSKWidgetProps, { variant: "zerion" }>, never>>,
+  Assert<
+    Equal<
+      NonNullable<BundledSKWidgetProps["externalProviders"]>,
+      SKExternalProviders | SKBorrowExternalProviders
+    >
+  >,
+  Assert<
+    Equal<NonNullable<BundledSKWidgetProps["tracking"]>, SKTrackingConfig>
+  >,
+  Assert<Equal<NonNullable<ActionMeta["inputToken"]>, SKToken>>,
+  Assert<Equal<SKTx, EvmTx | SolanaTx | TonTx | TronTx | BittensorTx>>,
 ];
 
 export const bundleValueAssertions = {
