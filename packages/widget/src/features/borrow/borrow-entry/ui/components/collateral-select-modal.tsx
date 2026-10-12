@@ -58,7 +58,9 @@ export const CollateralSelectModal = ({
     options: collateralOptions,
     search,
   });
-  const balancesAvailable = collateralOptions[0]?.walletAmount != null;
+  const holdsAnyCollateral = collateralOptions.some(({ walletAmount }) =>
+    walletAmount?.gt(0)
+  );
 
   const onOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -85,7 +87,7 @@ export const CollateralSelectModal = ({
     >
       <BorrowAssetSelectorList
         columnLabel={
-          balancesAvailable
+          holdsAnyCollateral
             ? t("dashboard.borrow.form.balance_column")
             : undefined
         }
@@ -121,7 +123,7 @@ export const CollateralSelectModal = ({
                   onOpenChange(false);
                 }}
                 rate={
-                  walletAmount
+                  walletAmount?.gt(0)
                     ? defaultFormattedNumber(walletAmount)
                     : undefined
                 }
