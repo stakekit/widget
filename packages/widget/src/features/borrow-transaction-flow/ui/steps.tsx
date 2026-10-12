@@ -1,10 +1,10 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../features/widget-configuration/index";
+import { TransactionSteps } from "../../../shared/ui/components/transaction-steps";
 import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
-import { Spinner } from "../../../shared/ui/primitives/spinner";
 import { Text } from "../../../shared/ui/primitives/typography/text";
 import { useTrackPage } from "../../tracking/index";
 import {
@@ -12,11 +12,11 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/views";
-import { formatBorrowTransactionTypeLabel } from "../model/borrow-transaction-workflow";
 import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowExecution,
 } from "../react/borrow-flow-route";
+import { BorrowFlowHeading } from "./flow-heading";
 import * as styles from "./styles.css";
 import { useBorrowExecution } from "./use-borrow-execution";
 
@@ -29,13 +29,8 @@ export const BorrowStepsPage = () => {
   const executionFlow = useBorrowTransactionFlowExecution();
   const back = useAtomSet(executionFlow.backAtom);
   const execution = useBorrowExecution();
-  const executionState = flow.intake;
   const executionError = execution.error ?? execution.setupError;
   const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
-  const transactionPosition =
-    execution.currentTransactionIndex == null
-      ? null
-      : execution.currentTransactionIndex + 1;
 
   return (
     <AnimationPage>
@@ -59,36 +54,26 @@ export const BorrowStepsPage = () => {
               </Box>
             ) : null}
 
-            <Text variant={{ weight: "bold" }}>
-              {t("dashboard.borrow.execution_page.title")}
-            </Text>
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {executionState.summary.marketLabel}
-            </Text>
+            <BorrowFlowHeading summary={flow.intake.summary} />
           </Box>
 
-          <Box
-            background="backgroundMuted"
-            borderRadius="xl"
-            display="flex"
-            flexDirection="column"
-            gap="3"
-            px="4"
-            py="4"
-          >
-            <Text variant={{ weight: "bold" }}>
-              {t("dashboard.borrow.execution_page.action_progress", {
+          {execution.totalSteps > 1 ? (
+            <Text variant={{ type: "muted", weight: "normal" }}>
+              {t("dashboard.borrow.execution_page.batch_progress", {
                 current: execution.currentStep,
                 total: execution.totalSteps,
               })}
             </Text>
-            <Box alignItems="center" display="flex" gap="3">
-              {execution.isRunning ? <Spinner /> : null}
-              <Text variant={{ type: "muted", weight: "normal" }}>
-                {t(`dashboard.borrow.execution_page.status.${execution.phase}`)}
-              </Text>
-            </Box>
-          </Box>
+          ) : null}
+
+          {execution.steps.length > 0 ? (
+            <TransactionSteps
+              steps={execution.steps.map((step) => ({
+                ...step,
+                type: t(`dashboard.borrow.execution_page.tx_type.${step.type}`),
+              }))}
+            />
+          ) : null}
 
           {executionError && (
             <Box className={styles.executionError}>
@@ -100,106 +85,6 @@ export const BorrowStepsPage = () => {
               </Text>
             </Box>
           )}
-
-          {(execution.currentTransaction ||
-            execution.submissions.length > 0) && (
-            <Box className={styles.formCard}>
-              {execution.currentTransaction && transactionPosition ? (
-                <>
-                  <Text variant={{ weight: "bold" }}>
-                    {t("dashboard.borrow.execution_page.current_transaction", {
-                      current: transactionPosition,
-                      total: execution.currentBatchTransactionCount,
-                    })}
-                  </Text>
-                  <Text variant={{ type: "muted", weight: "normal" }}>
-                    {formatBorrowTransactionTypeLabel(
-                      execution.currentTransaction.type,
-                      t
-                    )}
-                  </Text>
-                </>
-              ) : null}
-            </Box>
-          )}
-
-          {execution.batches.length > 0 ? (
-            <Box
-              className={styles.formCard}
-              display="flex"
-              flexDirection="column"
-              gap="3"
-            >
-              <Text variant={{ weight: "bold" }}>
-                {t("dashboard.borrow.execution_page.history_title")}
-              </Text>
-              {execution.batches.map((batch) => (
-                <Box
-                  data-rk="borrow-steps-batch"
-                  display="flex"
-                  flexDirection="column"
-                  gap="2"
-                  key={batch.id}
-                >
-                  <Text variant={{ type: "muted", weight: "normal" }}>
-                    {t("dashboard.borrow.execution_page.batch_progress", {
-                      current: batch.currentStep,
-                      total: batch.totalSteps,
-                    })}
-                  </Text>
-                  {batch.transactions.map((transaction) => {
-                    if (transaction.source._tag !== "Borrow") return null;
-
-                    const submission =
-                      transaction.meta.submissionIndex === null
-                        ? null
-                        : execution.submissions[
-                            transaction.meta.submissionIndex
-                          ];
-
-                    return (
-                      <Box
-                        alignItems="center"
-                        display="flex"
-                        justifyContent="space-between"
-                        key={transaction.source.transaction.id}
-                      >
-                        <Text variant={{ type: "muted", weight: "normal" }}>
-                          {formatBorrowTransactionTypeLabel(
-                            transaction.source.transaction.type,
-                            t
-                          )}
-                          {transaction.meta.done
-                            ? ` · ${t(
-                                "dashboard.borrow.execution_page.transaction_complete"
-                              )}`
-                            : null}
-                        </Text>
-                        {submission?.link ? (
-                          <Box
-                            as="button"
-                            background="transparent"
-                            data-rk="borrow-steps-transaction-link"
-                            onClick={() =>
-                              window.open(submission.link ?? "", "_blank")
-                            }
-                            style={{ border: 0 }}
-                            type="button"
-                          >
-                            <Text variant={{ type: "muted" }}>
-                              {t(
-                                "dashboard.borrow.execution_page.view_transaction"
-                              )}
-                            </Text>
-                          </Box>
-                        ) : null}
-                      </Box>
-                    );
-                  })}
-                </Box>
-              ))}
-            </Box>
-          ) : null}
 
           {executionError && (
             <Button

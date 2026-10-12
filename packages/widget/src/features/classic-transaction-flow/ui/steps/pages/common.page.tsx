@@ -1,6 +1,8 @@
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
+import { isEthenaUsdeStaking } from "../../../../../domain/earn/yield";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
+import { TransactionSteps } from "../../../../../shared/ui/components/transaction-steps";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { Heading } from "../../../../../shared/ui/primitives/typography/heading";
@@ -10,9 +12,9 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../../../widget-shell/views";
+import { formatTransactionTypeLabel } from "../../../model/classic-transaction-workflow";
 import { useSteps } from "../hooks/use-steps.hook";
 import { stepsErrorBanner, utilaPendingApprovalsBanner } from "./styles.css";
-import { TxState } from "./tx-state";
 
 export const StepsPage = () => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");
@@ -61,25 +63,18 @@ export const StepsPage = () => {
           )}
 
           <Box flex={1} display="flex">
-            <Box
-              background="backgroundMuted"
-              flexDirection="column"
-              display="flex"
-              px="4"
-              py="4"
-              borderRadius="xl"
-              flex={1}
-            >
-              {txStates.map((txState, i) => (
-                <TxState
-                  key={i}
-                  txState={txState}
-                  position={getPosition(txStates.length, i)}
-                  count={{ current: i + 1, total: txStates.length }}
-                  yieldId={yieldId}
-                />
-              ))}
-            </Box>
+            <TransactionSteps
+              steps={txStates.map((txState) => ({
+                done: txState.meta.done,
+                id: txState.tx.id,
+                state: txState.state,
+                type: formatTransactionTypeLabel(txState.tx.type, t, {
+                  context: isEthenaUsdeStaking(yieldId)
+                    ? "ETHENA_USDE"
+                    : undefined,
+                }),
+              }))}
+            />
           </Box>
 
           {retry && (
@@ -99,11 +94,4 @@ export const StepsPage = () => {
       </motion.div>
     </AnimationPage>
   );
-};
-
-const getPosition = (txStatesLength: number, currentIdx: number) => {
-  if (txStatesLength === 1) return "SINGLE";
-  if (currentIdx === 0) return "FIRST";
-  if (currentIdx === txStatesLength - 1) return "LAST";
-  return "ELSE";
 };

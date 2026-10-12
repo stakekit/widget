@@ -4,9 +4,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { exactDecimal } from "../../../domain/finance/exact";
 import {
-  formatBorrowProviderName,
   formatHealthFactor,
-  formatNetworkName,
   formatPercent,
   formatUsd,
 } from "../../../shared/lib/formatters";
@@ -21,10 +19,7 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/views";
-import {
-  getBorrowTransactionFlowTitle,
-  projectBorrowTransactionFlowSummary,
-} from "../model/borrow-transaction-flow";
+import { projectBorrowTransactionFlowSummary } from "../model/borrow-transaction-flow";
 import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowReview,
@@ -33,6 +28,7 @@ import {
   borrowReviewConfirmationErrorCopy,
   presentBorrowReviewConfirmationError,
 } from "./borrow-review-confirmation-error";
+import { BorrowFlowHeading } from "./flow-heading";
 import * as styles from "./styles.css";
 import {
   BorrowFlowAmountRows,
@@ -85,7 +81,6 @@ export const BorrowReviewPage = () => {
 
   const { summary } = reviewState;
   const projectedSummary = projectBorrowTransactionFlowSummary(summary);
-  const title = getBorrowTransactionFlowTitle(summary);
   const createActionErrorCopy = (() => {
     if (
       !AsyncResult.isFailure(createActionResult) ||
@@ -204,12 +199,7 @@ export const BorrowReviewPage = () => {
               <CaretLeftIcon />
             </Box>
 
-            <Text variant={{ weight: "bold" }}>
-              {t(title.key, { symbol: title.symbol })}
-            </Text>
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {`${formatBorrowProviderName(summary.providerName)} · ${formatNetworkName(summary.network)}`}
-            </Text>
+            <BorrowFlowHeading summary={summary} />
           </Box>
 
           <Divider />

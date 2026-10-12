@@ -537,6 +537,7 @@
     "pending_approvals": "Approbations en attente",
     "pending_approvals_desc": "Ouvrez votre portefeuille pour vérifier et signer la transaction en toute sécurité",
     "approve_error": "Une erreur s'est produite",
+    "view_transaction": "Voir la transaction",
     "tx_type": {
       "SWAP": "ÉCHANGE",
       "DEPOSIT": "DÉPÔT",
@@ -1194,18 +1195,12 @@
         }
       },
       "execution_page": {
-        "title": "Confirmer l'emprunt",
         "unavailable_title": "Exécution d'emprunt indisponible",
         "unavailable_description": "Revenez à Emprunter et vérifiez une action avant de confirmer.",
         "error_title": "La transaction d'emprunt a échoué",
-        "current_transaction": "Transaction {{current}} sur {{total}}",
-        "action_progress": "Étape d'action {{current}} sur {{total}}",
         "batch_progress": "Étape {{current}} sur {{total}}",
-        "history_title": "Historique des transactions",
-        "transaction_complete": "Terminée",
-        "view_transaction": "Voir la transaction",
         "tx_type": {
-          "APPROVAL": "Approuver",
+          "APPROVAL": "Approbation du jeton",
           "AUTHORIZE": "Autoriser",
           "DEAUTHORIZE": "Révoquer l'autorisation",
           "SUPPLY": "Fournir",
@@ -1216,14 +1211,6 @@
           "DISABLE_COLLATERAL": "Désactiver la garantie",
           "BUNDLE": "Transaction groupée",
           "WRAP": "Envelopper"
-        },
-        "status": {
-          "signing": "En attente de l'approbation du portefeuille",
-          "submitting": "Soumission de la transaction",
-          "confirming": "Confirmation de la transaction",
-          "advancing": "Préparation de l'étape d'action suivante",
-          "completed": "Action terminée",
-          "disabled": "Aucune transaction requise"
         }
       },
       "success_page": {

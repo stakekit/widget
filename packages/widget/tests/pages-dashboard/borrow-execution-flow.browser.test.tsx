@@ -819,10 +819,53 @@ describe("borrow execution flow component", () => {
 
       yield* Effect.promise(() =>
         expect
-          .element(app.getByText("Disable collateral").first())
+          .element(app.getByText("Transaction - Disable collateral"))
           .toBeInTheDocument()
       );
       expect(app.container.textContent).not.toContain("DISABLE_COLLATERAL");
+    })
+  );
+
+  it.live("renders each borrow transaction as a step in a timeline", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(makeBorrowApi({}), {
+        action: decodedAction({
+          transactions: [
+            transaction({ id: "tx-1", type: "APPROVAL" }),
+            transaction({ id: "tx-2", type: "SUPPLY" }),
+          ],
+        }),
+        stepsElement: <BorrowStepsPage />,
+        wallet: {
+          ...wallet,
+          signTransaction: () => Effect.never,
+        },
+      });
+
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByText("Transaction 1 / 2 - Token approval"))
+          .toBeInTheDocument()
+      );
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByText("Transaction 2 / 2 - Supply"))
+          .toBeInTheDocument()
+      );
+      // The signing step of the first transaction is active.
+      yield* Effect.promise(() =>
+        expect
+          .poll(() =>
+            Array.from(
+              app.container.querySelectorAll(
+                '[data-rk="tx-state-step-circle"]'
+              ),
+              (circle) => circle.getAttribute("data-state")
+            ).slice(0, 2)
+          )
+          .toEqual(["success", "pending"])
+      );
+      expect(app.container.textContent).not.toContain("Transaction history");
     })
   );
 

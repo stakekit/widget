@@ -1,17 +1,22 @@
 import { Option } from "effect";
-import type { TFunction } from "i18next";
 import type { Transaction } from "../../../domain/borrow/execution/transaction";
 import {
+  flattenTransactionWorkflowTransactions,
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
+  getTransactionWorkflowStepState,
   type TransactionWorkflowError,
   type TransactionWorkflowState,
 } from "../../../services/transaction-workflow/transaction-workflow-model";
+import type { TransactionStepState } from "../../../shared/lib/transaction-step-state";
 
-export const formatBorrowTransactionTypeLabel = (
-  type: Transaction["type"],
-  t: TFunction
-) => t(`dashboard.borrow.execution_page.tx_type.${type}`);
+type BorrowExecutionStep = {
+  readonly done: boolean;
+  readonly explorerUrl: string | null;
+  readonly id: string;
+  readonly state: TransactionStepState;
+  readonly type: Transaction["type"];
+};
 
 type BorrowExecutionPhase =
   | "advancing"
@@ -70,34 +75,51 @@ export const projectBorrowExecution = (state: TransactionWorkflowState) => {
     completionResult: completed
       ? { action, submissions: state.context.submissions }
       : null,
-    currentBatchTransactionCount: currentBatch?.transactions.length ?? 0,
     currentStep: currentBatch?.currentStep ?? action.currentStep,
     currentTransaction,
-    currentTransactionIndex: state.context.currentTransactionIndex,
     error: status.error,
     isDone: completed,
     isRunning: status.isRunning,
     phase: status.phase,
     state,
-    submissions: state.context.submissions,
+    steps: flattenTransactionWorkflowTransactions(state.context).flatMap(
+      (transaction): ReadonlyArray<BorrowExecutionStep> => {
+        if (transaction.source._tag !== "Borrow") return [];
+
+        const submission =
+          transaction.meta.submissionIndex === null
+            ? null
+            : state.context.submissions[transaction.meta.submissionIndex];
+
+        return [
+          {
+            done: transaction.meta.done,
+            explorerUrl: transaction.meta.url ?? submission?.link ?? null,
+            id: transaction.source.transaction.id,
+            state: getTransactionWorkflowStepState(state, transaction),
+            type: transaction.source.transaction.type,
+          },
+        ];
+      }
+    ),
     totalSteps: currentBatch?.totalSteps ?? action.totalSteps,
   } as const;
 };
+
+const noBorrowExecutionSteps: ReadonlyArray<BorrowExecutionStep> = [];
 
 export const emptyBorrowExecutionView = {
   action: null,
   batches: [],
   completionResult: null,
-  currentBatchTransactionCount: 0,
   currentStep: 0,
   currentTransaction: null,
-  currentTransactionIndex: null,
   error: null,
   isDone: false,
   isRunning: false,
   phase: "disabled" as const,
   state: null,
-  submissions: [],
+  steps: noBorrowExecutionSteps,
   totalSteps: 0,
 };
 

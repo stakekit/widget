@@ -9,6 +9,7 @@ import type { Transaction as BorrowTransaction } from "../../domain/borrow/execu
 import { WalletScopeKey } from "../../domain/wallet/wallet-scope";
 import type { ActionMeta } from "../../public-api/types";
 import { toRepresentationNumber } from "../../shared/lib/number-format";
+import { TransactionStepState } from "../../shared/lib/transaction-step-state";
 import { ExternalProviderError } from "../wallet/external-provider";
 import type {
   WalletBroadcastError,
@@ -285,7 +286,7 @@ export type TransactionWorkflowSubmission = {
   readonly transactionId: string;
 };
 
-export type TransactionWorkflowTransactionMeta = {
+type TransactionWorkflowTransactionMeta = {
   readonly broadcasted: boolean | null;
   readonly confirmationError: TransactionConfirmationError | null;
   readonly done: boolean;
@@ -384,3 +385,37 @@ export const flattenTransactionWorkflowTransactions = (
   context: TransactionWorkflowContext
 ): ReadonlyArray<TransactionWorkflowTransaction> =>
   context.batches.flatMap((batch) => batch.transactions);
+
+export const getTransactionWorkflowStepState = (
+  state: TransactionWorkflowState,
+  transaction: TransactionWorkflowTransaction
+): TransactionStepState => {
+  if (transaction.meta.done) {
+    return TransactionStepState.CHECK_TX_STATUS_SUCCESS;
+  }
+  const current = getCurrentTransactionWorkflowTransaction(state.context);
+  if (current?.source.transaction.id !== transaction.source.transaction.id) {
+    return TransactionStepState.SIGN_IDLE;
+  }
+
+  switch (state._tag) {
+    case "Signing":
+      return TransactionStepState.SIGN_LOADING;
+    case "SignFailed":
+      return TransactionStepState.SIGN_ERROR;
+    case "Submitting":
+      return TransactionStepState.BROADCAST_LOADING;
+    case "SubmissionFailed":
+      return TransactionStepState.BROADCAST_ERROR;
+    case "Confirming":
+    case "Advancing":
+      return TransactionStepState.CHECK_TX_STATUS_LOADING;
+    case "ConfirmationFailed":
+    case "AdvanceFailed":
+      return TransactionStepState.CHECK_TX_STATUS_ERROR;
+    case "Completed":
+      return TransactionStepState.CHECK_TX_STATUS_SUCCESS;
+    case "Disabled":
+      return TransactionStepState.SIGN_IDLE;
+  }
+};
