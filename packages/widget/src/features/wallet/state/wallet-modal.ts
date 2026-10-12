@@ -56,9 +56,8 @@ const noEcosystems: ReadonlyArray<ConnectPickerEcosystem> = [];
 /**
  * The picker's ecosystems. Each open renders from the wallet service's latest
  * detection results at once and asks it to detect injected wallets again;
- * rows update in place as results change. An open first clears the previous
- * open's rows, so a reopened picker never shows rows the new session would
- * then move.
+ * rows update in place as results change. A close clears the rows, so a
+ * reopened picker never shows rows the new session would then move.
  */
 export const connectPickerAtom = walletRuntime
   .atom(
@@ -72,11 +71,8 @@ export const connectPickerAtom = walletRuntime
                 availability: wallet.availability,
                 connectors: wallet.connectors,
                 isMobile: isMobileWalletEnvironment(),
-              }).pipe(
-                Stream.onStart(wallet.detectAvailability),
-                Stream.prepend([noEcosystems])
-              )
-            : Stream.empty
+              }).pipe(Stream.onStart(wallet.detectAvailability))
+            : Stream.make(noEcosystems)
         )
       );
     }).pipe(Stream.unwrap),
