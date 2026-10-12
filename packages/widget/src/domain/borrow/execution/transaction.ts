@@ -29,14 +29,24 @@ const Countish = Schema.Union([
   )
 );
 
+// The API quotes legacy (0) or EIP-1559 (2) transactions only.
+const BorrowEvmTransactionType = Countish.check(
+  Schema.makeFilter((value) =>
+    value === 0 || value === 2 ? true : "expected EVM transaction type 0 or 2"
+  )
+);
+
 const BorrowWalletEvmSignablePayload = Schema.Struct({
   chainId: Schema.optionalKey(Countish),
   data: HexString,
   from: HexString,
   gasLimit: ExactBaseUnitAmount,
+  gasPrice: Schema.optionalKey(ExactBaseUnitAmount),
+  maxFeePerGas: Schema.optionalKey(ExactBaseUnitAmount),
+  maxPriorityFeePerGas: Schema.optionalKey(ExactBaseUnitAmount),
   nonce: Schema.optionalKey(Countish),
   to: HexString,
-  type: Schema.optionalKey(Countish),
+  type: Schema.optionalKey(BorrowEvmTransactionType),
   value: Schema.optionalKey(ExactBaseUnitAmount),
 });
 
@@ -73,6 +83,11 @@ const BorrowEip712TypedDataInput = Schema.Union([
   Schema.fromJsonString(BorrowEip712TypedDataPayload),
 ]);
 
+const optionalBaseUnitAmount = <K extends string>(
+  key: K,
+  value: bigint | undefined
+) => (value === undefined ? {} : { [key]: value.toString() });
+
 export const decodeBorrowTransactionForWallet = (transaction: Transaction) =>
   Schema.decodeUnknownEffect(BorrowWalletEvmTransactionInput)(transaction).pipe(
     Effect.map(({ signablePayload: payload }) =>
@@ -81,6 +96,12 @@ export const decodeBorrowTransactionForWallet = (transaction: Transaction) =>
         data: payload.data,
         from: payload.from,
         gasLimit: payload.gasLimit.toString(),
+        ...optionalBaseUnitAmount("gasPrice", payload.gasPrice),
+        ...optionalBaseUnitAmount("maxFeePerGas", payload.maxFeePerGas),
+        ...optionalBaseUnitAmount(
+          "maxPriorityFeePerGas",
+          payload.maxPriorityFeePerGas
+        ),
         ...(payload.nonce === undefined ? {} : { nonce: payload.nonce }),
         to: payload.to,
         type: payload.type ?? 0,

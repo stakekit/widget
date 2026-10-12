@@ -39,8 +39,8 @@ import {
 } from "./wallet-command-identity";
 import type {
   WalletConnectInput,
+  WalletSignBorrowTypedDataInput,
   WalletSignMessageInput,
-  WalletSignTypedDataInput,
   WalletSwitchAccountInput,
   WalletSwitchChainInput,
 } from "./wallet-commands";
@@ -280,7 +280,7 @@ const makeWalletService = Effect.fn("makeWalletService")(function* () {
       );
     }),
     signTypedData: Effect.fn("signTypedData")(function* (
-      input: WalletSignTypedDataInput
+      input: WalletSignBorrowTypedDataInput
     ) {
       return yield* withContext((routing) =>
         routeWalletTypedData(routing, input)

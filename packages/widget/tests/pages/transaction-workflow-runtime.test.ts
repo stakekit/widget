@@ -594,7 +594,6 @@ describe("transaction workflow runtime", () => {
           _tag: "SignFailed",
           error: {
             _tag: "TransactionSignError",
-            message: "Message signing failed.",
             reason: {
               _tag: "WalletOperationFailed",
               operation: "typed-data",
@@ -604,16 +603,23 @@ describe("transaction workflow runtime", () => {
         });
         expect(signTransaction).not.toHaveBeenCalled();
         expect(signTypedData).toHaveBeenCalledWith({
-          domain: {
-            chainId: 8453,
-            name: "Borrow Authorization",
-            verifyingContract: "0x0000000000000000000000000000000000000002",
-            version: "1",
-          },
-          message: { owner: address },
-          primaryType: "Authorization",
-          types: {
-            Authorization: [{ name: "owner", type: "address" }],
+          txMeta: expect.objectContaining({
+            actionType: "borrow",
+            txId: "typed-data",
+            txType: "BORROW",
+          }),
+          typedData: {
+            domain: {
+              chainId: 8453,
+              name: "Borrow Authorization",
+              verifyingContract: "0x0000000000000000000000000000000000000002",
+              version: "1",
+            },
+            message: { owner: address },
+            primaryType: "Authorization",
+            types: {
+              Authorization: [{ name: "owner", type: "address" }],
+            },
           },
         });
       })

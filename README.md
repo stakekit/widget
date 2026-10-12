@@ -132,10 +132,13 @@ Implement `wallet` using your wallet SDK:
 
 | Method | Contract |
 | --- | --- |
-| `signMessage(message)` | Return a promise resolving to the signature string. |
+| `signMessage(message)` | Return the signature string, `{ type: "success", signature }`, `{ type: "cancelled" }` when the user declines, or `{ type: "error", error }`. |
 | `switchChain(chainId)` | Switch the host wallet and resolve when the switch completes. Publish the new `currentChain` through props. |
-| `sendTransaction(tx, txMeta)` | Sign and broadcast the transaction. Return its hash, `{ type: "success", txHash }`, or `{ type: "error", error }`. |
-| `signTypedData(typedData)` | Optional EIP-712 signing callback. Required by flows that request typed-data signatures. |
+| `sendTransaction(tx, txMeta)` | Sign and broadcast the transaction. Return its hash, `{ type: "success", txHash }`, `{ type: "cancelled" }` when the user declines, or `{ type: "error", error }`. |
+
+`{ type: "cancelled" }` shows a cancellation notice with a retry instead of an
+error. `error` text, and the message of a rejected Promise, is shown to the
+user.
 
 Use `SKWallet` to type the adapter. Transaction inputs are the widget's `SKTx`
 and `SKTxMeta`, not a wallet SDK's transaction types. Narrow `tx.type` before
@@ -221,16 +224,40 @@ do not need a remount. Unmount the previous instance before mounting another.
 ### Borrow support
 
 For staking without Borrow, use `SKWallet` and `borrowEnabled: false`.
-`sendBorrowTransaction` is not required.
+The Borrow callbacks are not required.
 
 To enable Borrow with an external provider, set `borrowEnabled: true` and pass
-an `SKBorrowWallet`, which adds `sendBorrowTransaction(tx, txMeta)` to
-`SKWallet`. `borrowEnabled` alone decides whether Borrow can use the provider;
-there is no separate provider flag.
+an `SKBorrowWallet`. It extends `SKWallet` with two required callbacks, and the
+widget rejects the configuration when either is missing:
 
-The Borrow callback receives `SKBorrowTx` and `SKBorrowTxMeta`. It resolves with
-`{ txHash }` once the transaction is broadcast and rejects when it fails. Do not
-cast a staking-only adapter to `SKBorrowWallet` to satisfy a compiler error.
+- `sendBorrowTransaction(tx, txMeta)` receives `SKBorrowTx` and
+  `SKBorrowTxMeta` and resolves with an `SKBorrowTxResult`.
+- `signTypedData(typedData, txMeta)` receives an `SKEip712TypedData` Borrow
+  authorization and the same `SKBorrowTxMeta`, and resolves with an
+  `SKBorrowSignatureResult`.
+
+Both results are discriminated by `type`:
+
+| Result | Meaning | Widget behavior |
+|---|---|---|
+| `{ type: "success", txHash }` / `{ type: "success", signature }` | Broadcast or signed. Resolve as soon as the transaction is broadcast; do not wait for confirmation. | Continues the flow. |
+| `{ type: "cancelled" }` | The user declined in the wallet. | Shows a cancellation notice and lets the user try again. |
+| `{ type: "error", error }` | Failed; nothing was broadcast. | Shows `error` and lets the user retry the step. |
+| `{ type: "error", error, txHash }` | Broadcast, then failed (for example a receipt timeout). Transactions only. | Tracks `txHash` instead of asking to sign again. |
+
+Always include `txHash` once a transaction was broadcast; omitting it lets the
+user sign the same step again, which can send it twice. A rejected Promise is
+treated as an `error` without `txHash`, using the `Error` message or rejected
+string.
+
+The EVM `SKBorrowTx` keeps the API's transaction type: `"0x0"` (legacy, with
+`gasPrice`) or `"0x2"` (EIP-1559, with `maxFeePerGas` and
+`maxPriorityFeePerGas`). Fee fields are `undefined` when the API does not quote
+them; estimate them in the host wallet. `nonce` may be omitted.
+
+`borrowEnabled` alone decides whether Borrow can use the provider; there is no
+separate provider flag. Do not cast a staking-only adapter to `SKBorrowWallet`
+to satisfy a compiler error.
 
 ## Styling
 

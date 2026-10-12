@@ -30,7 +30,8 @@ export const BorrowStepsPage = () => {
   const executionFlow = useBorrowTransactionFlowExecution();
   const back = useAtomSet(executionFlow.backAtom);
   const execution = useBorrowExecution();
-  const executionError = execution.error ?? execution.setupError;
+  const executionErrorMessage =
+    execution.errorMessage ?? execution.setupError?.message ?? null;
   const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
 
   return (
@@ -48,6 +49,7 @@ export const BorrowStepsPage = () => {
                 aria-label={t("dashboard.borrow.review_page.back_to_position")}
                 as="button"
                 className={styles.flowBackButton}
+                disabled={!execution.canLeave}
                 onClick={() => back(undefined)}
                 type="button"
               >
@@ -85,18 +87,24 @@ export const BorrowStepsPage = () => {
             </Box>
           ) : null}
 
-          {executionError && (
+          {executionErrorMessage && (
             <Box className={styles.executionError}>
               <Text variant={{ type: "danger" }}>
                 {t("dashboard.borrow.execution_page.error_title")}
               </Text>
               <Text variant={{ type: "muted", weight: "normal" }}>
-                {executionError.message}
+                {executionErrorMessage}
               </Text>
             </Box>
           )}
 
-          {executionError && (
+          {execution.cancelled && (
+            <Text variant={{ type: "muted", weight: "normal" }}>
+              {t("dashboard.borrow.execution_page.cancelled")}
+            </Text>
+          )}
+
+          {(executionErrorMessage || execution.cancelled) && (
             <Button
               data-rk="borrow-steps-retry"
               onClick={execution.retry}
@@ -108,7 +116,7 @@ export const BorrowStepsPage = () => {
 
           <PageCtaButton
             cta={{
-              disabled: execution.isRunning,
+              disabled: execution.isRunning || !execution.canLeave,
               isLoading: false,
               label: t("shared.cancel"),
               onClick: () => back(undefined),

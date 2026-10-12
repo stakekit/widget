@@ -717,6 +717,7 @@
         "unavailable_title": "Borrow execution unavailable",
         "unavailable_description": "Return to Borrow and review an action before confirming.",
         "error_title": "Borrow transaction failed",
+        "cancelled": "You cancelled this request in your wallet.",
         "batch_progress": "Step {{current}} of {{total}}",
         "preparing_next_step": "Preparing the next step",
         "tx_type": {
@@ -881,6 +882,7 @@
     "skipped": "Skipped",
     "pending_approvals": "Pending approvals",
     "pending_approvals_desc": "Please open your wallet to review and securely sign the transaction",
+    "cancelled": "You cancelled this request in your wallet.",
     "approve_error": "Something went wrong",
     "view_transaction": "View transaction",
     "tx_type": {

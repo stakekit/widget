@@ -13,15 +13,17 @@ import {
   YieldId,
 } from "../../src/domain/identity/identifiers";
 import type {
+  SKBorrowSignatureResult,
   SKBorrowTx,
+  SKBorrowTxResult,
   SKBorrowWallet,
-  SKExternalProviders,
   SKTx,
+  SKWallet,
 } from "../../src/public-api/types";
 import type { ExternalProviderSnapshot } from "../../src/services/config/external-provider-snapshot";
 import {
   ExternalProvider,
-  ExternalProviderError,
+  ExternalProviderCancelled,
 } from "../../src/services/wallet/external-provider";
 import type {
   BorrowTransactionMeta,
@@ -46,7 +48,7 @@ const borrowTransaction = {
     gas: "0x5208",
     gasPrice: "0x1",
     to: "0x0000000000000000000000000000000000000002",
-    type: "0x1",
+    type: "0x0",
     value: undefined,
   },
 } satisfies SKBorrowTx;
@@ -91,7 +93,7 @@ const borrowTransactionMeta = {
 } satisfies BorrowTransactionMeta;
 
 const makeProviderRef = (
-  provider: SKExternalProviders["provider"]
+  provider: Extract<ExternalProviderSnapshot, { borrow: false }>["provider"]
 ): RefObject<ExternalProviderSnapshot> => ({
   current: {
     type: "generic",
@@ -121,10 +123,16 @@ describe("generic external provider callback contract", () => {
     Effect.gen(function* () {
       const oldWallet: SKBorrowWallet = {
         signMessage: async () => "old-message",
-        signTypedData: async () => "old-typed",
+        signTypedData: async () => ({
+          type: "success",
+          signature: "old-typed",
+        }),
         switchChain: async () => undefined,
         sendTransaction: async () => "old-transaction",
-        sendBorrowTransaction: async () => ({ txHash: "old-borrow" }),
+        sendBorrowTransaction: async () => ({
+          type: "success",
+          txHash: "old-borrow",
+        }),
       };
       const ref = makeBorrowProviderRef(oldWallet);
       const provider = new ExternalProvider(ref);
@@ -133,15 +141,21 @@ describe("generic external provider callback contract", () => {
         borrowTransaction,
         borrowTransactionMeta
       );
-      const sign = provider.signTypedData(typedData);
+      const sign = provider.signTypedData(typedData, borrowTransactionMeta);
       ref.current = {
         ...ref.current,
         borrow: true,
         provider: {
           ...oldWallet,
-          signTypedData: async () => "new-typed",
+          signTypedData: async () => ({
+            type: "success",
+            signature: "new-typed",
+          }),
           sendTransaction: async () => "new-transaction",
-          sendBorrowTransaction: async () => ({ txHash: "new-borrow" }),
+          sendBorrowTransaction: async () => ({
+            type: "success",
+            txHash: "new-borrow",
+          }),
         },
       };
       expect(yield* send).toBe("new-transaction");
@@ -154,7 +168,6 @@ describe("generic external provider callback contract", () => {
     () =>
       Effect.gen(function* () {
         const signMessage = vi.fn(async () => "signed-message");
-        const signTypedData = vi.fn(async () => "typed-signature");
         const switchChain = vi.fn(async () => undefined);
         const sendTransaction = vi.fn(async () => ({
           type: "success" as const,
@@ -163,7 +176,6 @@ describe("generic external provider callback contract", () => {
         const provider = new ExternalProvider(
           makeProviderRef({
             signMessage,
-            signTypedData,
             switchChain,
             sendTransaction,
           })
@@ -172,16 +184,12 @@ describe("generic external provider callback contract", () => {
         expect(yield* provider.signMessage("message-hash")).toBe(
           "signed-message"
         );
-        expect(yield* provider.signTypedData(typedData)).toBe(
-          "typed-signature"
-        );
         expect(yield* provider.switchChain({ chainId: 501 })).toBeUndefined();
         expect(
           yield* provider.sendTransaction(transaction, transactionMeta)
         ).toBe("broadcast-hash");
 
         expect(signMessage).toHaveBeenCalledWith("message-hash");
-        expect(signTypedData).toHaveBeenCalledWith(typedData);
         expect(switchChain).toHaveBeenCalledWith(501);
         expect(sendTransaction).toHaveBeenCalledWith(
           transaction,
@@ -219,23 +227,91 @@ describe("generic external provider callback contract", () => {
         const error = yield* Effect.flip(
           errorProvider.sendTransaction(transaction, transactionMeta)
         );
-        expect(error).toBeInstanceOf(ExternalProviderError);
-        expect((error as ExternalProviderError).customMessage).toBe(
-          "Transaction blocked by host policy"
+        expect(error).toMatchObject({
+          _tag: "ExternalProviderError",
+          customMessage: "Transaction blocked by host policy",
+        });
+      })
+  );
+
+  it.effect("reports wallet cancellations from transactions and messages", () =>
+    Effect.gen(function* () {
+      const provider = new ExternalProvider(
+        makeProviderRef({
+          signMessage: async () => ({ type: "cancelled" }),
+          switchChain: async () => undefined,
+          sendTransaction: async () => ({ type: "cancelled" }),
+        })
+      );
+
+      expect(
+        yield* Effect.flip(
+          provider.sendTransaction(transaction, transactionMeta)
+        )
+      ).toBeInstanceOf(ExternalProviderCancelled);
+      expect(
+        yield* Effect.flip(provider.signMessage("message-hash"))
+      ).toBeInstanceOf(ExternalProviderCancelled);
+    })
+  );
+
+  it.effect(
+    "accepts plain and typed message signatures and host message errors",
+    () =>
+      Effect.gen(function* () {
+        const signWith = (signMessage: SKWallet["signMessage"]) =>
+          new ExternalProvider(
+            makeProviderRef({
+              signMessage,
+              switchChain: async () => undefined,
+              sendTransaction: async () => "hash",
+            })
+          ).signMessage("message-hash");
+
+        expect(yield* signWith(async () => "plain-signature")).toBe(
+          "plain-signature"
         );
+        expect(
+          yield* signWith(async () => ({
+            type: "success",
+            signature: "typed-signature",
+          }))
+        ).toBe("typed-signature");
+        expect(
+          yield* Effect.flip(
+            signWith(async () => ({ type: "error", error: "Wallet locked" }))
+          )
+        ).toMatchObject({
+          _tag: "ExternalProviderError",
+          customMessage: "Wallet locked",
+        });
+        expect(yield* Effect.flip(signWith(async () => ""))).toMatchObject({
+          _tag: "ExternalProviderError",
+          message: "Invalid external provider result",
+        });
       })
   );
 
   it.effect(
-    "sends Borrow transactions through the Borrow host capability",
+    "sends Borrow transactions and typed data with Borrow metadata",
     () =>
       Effect.gen(function* () {
         const sendTransaction = vi.fn(async () => "classic-hash");
-        const sendBorrowTransaction = vi.fn(async () => ({
-          txHash: "borrow-hash",
-        }));
+        const sendBorrowTransaction = vi.fn(
+          async (): Promise<SKBorrowTxResult> => ({
+            type: "success",
+            txHash: "borrow-hash",
+          })
+        );
+        const signTypedData = vi.fn(
+          async (): Promise<SKBorrowSignatureResult> => ({
+            type: "success",
+            signature: "typed-signature",
+          })
+        );
         const wallet = {
           signMessage: async () => "signed-message",
+          signTypedData,
           switchChain: async () => undefined,
           sendBorrowTransaction,
           sendTransaction,
@@ -248,9 +324,16 @@ describe("generic external provider callback contract", () => {
             borrowTransactionMeta
           )
         ).toBe("borrow-hash");
+        expect(
+          yield* provider.signTypedData(typedData, borrowTransactionMeta)
+        ).toBe("typed-signature");
 
         expect(sendBorrowTransaction).toHaveBeenCalledWith(
           borrowTransaction,
+          borrowTransactionMeta
+        );
+        expect(signTypedData).toHaveBeenCalledWith(
+          typedData,
           borrowTransactionMeta
         );
         expect(sendTransaction).not.toHaveBeenCalled();
@@ -263,9 +346,18 @@ describe("generic external provider callback contract", () => {
       Effect.gen(function* () {
         const wallet: SKBorrowWallet = {
           signMessage: async () => "signed-message",
+          signTypedData: async () => ({
+            type: "success",
+            signature: "typed-signature",
+          }),
           switchChain: async () => undefined,
           sendTransaction: async () => "classic-hash",
-          sendBorrowTransaction: vi.fn(async () => ({ txHash: "borrow-hash" })),
+          sendBorrowTransaction: vi.fn(
+            async (): Promise<SKBorrowTxResult> => ({
+              type: "success",
+              txHash: "borrow-hash",
+            })
+          ),
         };
         const ref = makeBorrowProviderRef(wallet);
         const provider = new ExternalProvider(ref);
@@ -276,7 +368,7 @@ describe("generic external provider callback contract", () => {
         ref.current = makeProviderRef(wallet).current;
         const error = yield* Effect.flip(pending);
 
-        expect(error).toBeInstanceOf(ExternalProviderError);
+        expect(error).toMatchObject({ _tag: "ExternalProviderError" });
         expect(wallet.sendBorrowTransaction).not.toHaveBeenCalled();
       })
   );
@@ -289,6 +381,10 @@ describe("generic external provider callback contract", () => {
           sendBorrowTransaction: SKBorrowWallet["sendBorrowTransaction"]
         ): SKBorrowWallet => ({
           signMessage: async () => "signed-message",
+          signTypedData: async () => ({
+            type: "success",
+            signature: "typed-signature",
+          }),
           switchChain: async () => undefined,
           sendTransaction: async () => "classic-hash",
           sendBorrowTransaction,
@@ -301,7 +397,9 @@ describe("generic external provider callback contract", () => {
           )
         );
         const malformed = new ExternalProvider(
-          makeBorrowProviderRef(wallet(async () => ({ txHash: "" })))
+          makeBorrowProviderRef(
+            wallet(async () => ({ type: "success", txHash: "" }))
+          )
         );
 
         const rejection = yield* Effect.flip(
@@ -310,7 +408,10 @@ describe("generic external provider callback contract", () => {
             borrowTransactionMeta
           )
         );
-        expect(rejection.customMessage).toBe("Borrow blocked by host policy");
+        expect(rejection).toMatchObject({
+          _tag: "ExternalProviderError",
+          customMessage: "Borrow blocked by host policy",
+        });
 
         const invalid = yield* Effect.flip(
           malformed.sendBorrowTransaction(
@@ -318,8 +419,10 @@ describe("generic external provider callback contract", () => {
             borrowTransactionMeta
           )
         );
-        expect(invalid).toBeInstanceOf(ExternalProviderError);
-        expect(invalid.message).toBe("Invalid Borrow transaction result");
+        expect(invalid).toMatchObject({
+          _tag: "ExternalProviderError",
+          message: "Invalid external provider result",
+        });
       })
   );
 });

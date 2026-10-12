@@ -47,6 +47,10 @@ const walletSignFailureReason = (
       cause,
       operation,
     }),
+    WalletRequestCancelledError: ({ operation }) => ({
+      _tag: "WalletRequestCancelled" as const,
+      operation,
+    }),
     WalletRuntimeInvariantError: (cause) => ({
       _tag: "WalletUnavailable" as const,
       cause,
@@ -252,26 +256,10 @@ export const makePrepareAndSign = Effect.gen(function* () {
       Match.tag("Borrow", ({ domain, transaction }) => {
         const { source } = transaction;
         const signingFormat = source.transaction.signingFormat;
-        if (signingFormat === "EIP712_TYPED_DATA") {
-          return decodeBorrowTypedDataForWallet(source.transaction).pipe(
-            Effect.mapError((cause) => fail({ _tag: "DecodeFailed", cause })),
-            Effect.flatMap((typedData) =>
-              wallet.signTypedData(typedData).pipe(
-                Effect.map((signedTx) => ({
-                  broadcasted: false as const,
-                  signedTx,
-                })),
-                Effect.mapError((cause) =>
-                  fail(walletSignFailureReason(cause, "typed-data"))
-                )
-              )
-            )
-          );
-        }
-
         if (
           signingFormat !== undefined &&
-          signingFormat !== "EVM_TRANSACTION"
+          signingFormat !== "EVM_TRANSACTION" &&
+          signingFormat !== "EIP712_TYPED_DATA"
         ) {
           return Effect.fail(
             fail({ _tag: "UnsupportedBorrowSigningFormat", signingFormat })
@@ -285,6 +273,23 @@ export const makePrepareAndSign = Effect.gen(function* () {
 
         if (!txMeta) {
           return Effect.fail(fail({ _tag: "MissingBorrowMeta" }));
+        }
+
+        if (signingFormat === "EIP712_TYPED_DATA") {
+          return decodeBorrowTypedDataForWallet(source.transaction).pipe(
+            Effect.mapError((cause) => fail({ _tag: "DecodeFailed", cause })),
+            Effect.flatMap((typedData) =>
+              wallet.signTypedData({ txMeta, typedData }).pipe(
+                Effect.map((signedTx) => ({
+                  broadcasted: false as const,
+                  signedTx,
+                })),
+                Effect.mapError((cause) =>
+                  fail(walletSignFailureReason(cause, "typed-data"))
+                )
+              )
+            )
+          );
         }
 
         return decodeBorrowTransactionForWallet(source.transaction).pipe(

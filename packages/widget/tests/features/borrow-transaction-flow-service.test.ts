@@ -781,6 +781,15 @@ describe("BorrowTransactionFlowService", () => {
                     : Effect.void
                 )
               ),
+            // Leaving is allowed once the wallet no longer holds a transaction.
+            makeWorkflow: (input) =>
+              Effect.succeed({
+                dispatch: () => Effect.void,
+                states: Stream.succeed({
+                  _tag: "Disabled" as const,
+                  context: initializeTransactionWorkflow(input).context,
+                }),
+              }),
           }
         );
         const result = yield* Effect.scoped(

@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Effect, Schema } from "effect";
+import { Effect, Exit, Schema } from "effect";
 import { zeroAddress } from "viem";
 import type { Connector } from "wagmi";
+import {
+  decodeBorrowTransactionForWallet,
+  Transaction,
+} from "../../../src/domain/borrow/execution/transaction";
 import {
   ActionId as BorrowActionId,
   IntegrationId as BorrowIntegrationId,
@@ -65,21 +69,24 @@ const borrowTxMeta = {
 } satisfies BorrowTransactionMeta;
 
 describe("external-provider wallet driver", () => {
-  it.effect("routes typed data through the host signing capability", () =>
-    Effect.gen(function* () {
-      const signTypedData = vi.fn(() => Effect.succeed("typed-signature"));
-      const connector = {
-        id: "externalProviderConnector",
-        signTypedData,
-      } as unknown as Connector;
+  it.effect(
+    "routes typed data and Borrow metadata through the host signing capability",
+    () =>
+      Effect.gen(function* () {
+        const signTypedData = vi.fn(() => Effect.succeed("typed-signature"));
+        const connector = {
+          id: "externalProviderConnector",
+          signTypedData,
+        } as unknown as Connector;
 
-      expect(
-        yield* makeExternalProviderWalletDriver({ connector }).signTypedData(
-          typedData
-        )
-      ).toBe("typed-signature");
-      expect(signTypedData).toHaveBeenCalledWith(typedData);
-    })
+        expect(
+          yield* makeExternalProviderWalletDriver({ connector }).signTypedData({
+            txMeta: borrowTxMeta,
+            typedData,
+          })
+        ).toBe("typed-signature");
+        expect(signTypedData).toHaveBeenCalledWith(typedData, borrowTxMeta);
+      })
   );
 
   it.effect(
@@ -218,10 +225,103 @@ describe("external-provider wallet driver", () => {
             gas: "0x5208",
             gasPrice: "0x1",
             to: zeroAddress,
-            type: "0x1",
+            type: "0x0",
           },
         });
       })
+  );
+
+  const borrowApiTransaction = (signablePayload: Record<string, unknown>) =>
+    Schema.decodeSync(Transaction)({
+      address: zeroAddress,
+      chainId: "8453",
+      id: "borrow-transaction-id",
+      network: "base",
+      signablePayload: JSON.stringify({
+        data: "0x1234",
+        from: zeroAddress,
+        gasLimit: "21000",
+        to: zeroAddress,
+        ...signablePayload,
+      }),
+      signingFormat: "EVM_TRANSACTION",
+      status: "WAITING_FOR_SIGNATURE",
+      type: "BORROW",
+    });
+
+  it.effect.each([
+    {
+      expected: {
+        maxFeePerGas: "0x9",
+        maxPriorityFeePerGas: "0x2",
+        type: "0x2",
+      },
+      name: "an EIP-1559 payload with its fees",
+      payload: { maxFeePerGas: "9", maxPriorityFeePerGas: "2", type: 2 },
+    },
+    {
+      expected: {
+        maxFeePerGas: undefined,
+        maxPriorityFeePerGas: undefined,
+        type: "0x2",
+      },
+      name: "an EIP-1559 payload without fees",
+      payload: { type: 2 },
+    },
+    {
+      expected: { gasPrice: "0x7", type: "0x0" },
+      name: "a legacy payload with its gas price",
+      payload: { gasPrice: "7", type: 0 },
+    },
+    {
+      expected: { gasPrice: undefined, type: "0x0" },
+      name: "an untyped payload as legacy",
+      payload: {},
+    },
+  ])("hands the host $name", ({ expected, payload }) =>
+    Effect.gen(function* () {
+      let received: unknown;
+      const connector = {
+        id: "externalProviderConnector",
+        sendBorrowTransaction: (input: unknown) => {
+          received = input;
+          return Effect.succeed("borrow-hash");
+        },
+      } as unknown as Connector;
+      const walletPayload = yield* decodeBorrowTransactionForWallet(
+        borrowApiTransaction(payload)
+      );
+
+      yield* makeExternalProviderWalletDriver({ connector }).signTransaction({
+        address: zeroAddress,
+        family: "borrow",
+        network: "base",
+        tx: walletPayload,
+        txMeta: borrowTxMeta,
+      });
+
+      expect(received).toEqual({
+        type: "evm",
+        tx: {
+          chainId: "0x2105",
+          data: "0x1234",
+          from: zeroAddress,
+          gas: "0x5208",
+          to: zeroAddress,
+          ...expected,
+        },
+      });
+    })
+  );
+
+  it.effect("rejects a Borrow payload with an unsupported type", () =>
+    Effect.gen(function* () {
+      const exit = yield* Effect.exit(
+        decodeBorrowTransactionForWallet(borrowApiTransaction({ type: 1 }))
+      );
+
+      expect(Exit.isFailure(exit)).toBe(true);
+    })
   );
 
   it.effect(

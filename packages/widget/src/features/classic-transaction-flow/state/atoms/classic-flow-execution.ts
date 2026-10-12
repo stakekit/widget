@@ -75,6 +75,7 @@ export const makeClassicFlowExecutionScopeAtom = <E>({
                 yieldId: getIntakeYieldId(session),
               })
             : {
+                cancelled: false,
                 customSignErrorMessage: null,
                 retryable: false,
                 txStates: [],

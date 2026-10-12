@@ -14,6 +14,7 @@ import type {
   WalletBroadcastError,
   WalletCapabilityUnavailableError,
   WalletDecodeError,
+  WalletRequestCancelledError,
   WalletRuntimeInvariantError,
   WalletSigningError,
 } from "../wallet/wallet-errors";
@@ -139,6 +140,7 @@ export type TransactionSignWalletOperationCause =
   | WalletBroadcastError
   | WalletCapabilityUnavailableError
   | WalletDecodeError
+  | WalletRequestCancelledError
   | WalletSigningError;
 
 export type TransactionSignFailureReason =
@@ -162,6 +164,11 @@ export type TransactionSignFailureReason =
       >;
     }
   | { readonly _tag: "DecodeFailed"; readonly cause: Schema.SchemaError }
+  /** The user declined in the wallet; nothing was signed or sent. */
+  | {
+      readonly _tag: "WalletRequestCancelled";
+      readonly operation: "message" | "transaction" | "typed-data";
+    }
   | {
       readonly _tag: "WalletOperationFailed";
       readonly cause: TransactionSignWalletOperationCause;
@@ -202,10 +209,14 @@ const transactionSignFailureMessage = (
     UnsupportedBorrowSigningFormat: () =>
       "This borrow transaction requires an unsupported signing method.",
     DecodeFailed: () => "Borrow transaction payload could not be decoded.",
+    WalletRequestCancelled: () => "The request was cancelled in the wallet.",
     WalletOperationFailed: ({ operation }) =>
-      operation === "transaction"
-        ? "Transaction signing failed."
-        : "Message signing failed.",
+      Match.value(operation).pipe(
+        Match.when("transaction", () => "Transaction signing failed."),
+        Match.when("typed-data", () => "Typed data signing failed."),
+        Match.when("message", () => "Message signing failed."),
+        Match.exhaustive
+      ),
   });
 
 export class TransactionSignError extends Data.TaggedError(

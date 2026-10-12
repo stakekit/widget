@@ -20,7 +20,8 @@ export const StepsPage = () => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");
   const variant = useWidgetConfig("variant");
 
-  const { retry, txStates, cta, customSignErrorMessage, yieldId } = useSteps();
+  const { cancelled, retry, txStates, cta, customSignErrorMessage, yieldId } =
+    useSteps();
 
   const { t } = useTranslation();
   const showUtilaPendingApprovals = variant === "utila";
@@ -42,6 +43,14 @@ export const StepsPage = () => {
             >
               <Text variant={{ weight: "normal", type: "inverted" }}>
                 {customSignErrorMessage}
+              </Text>
+            </Box>
+          )}
+
+          {cancelled && (
+            <Box data-rk="steps-cancelled" marginBottom="2">
+              <Text variant={{ type: "muted", weight: "normal" }}>
+                {t("steps.cancelled")}
               </Text>
             </Box>
           )}

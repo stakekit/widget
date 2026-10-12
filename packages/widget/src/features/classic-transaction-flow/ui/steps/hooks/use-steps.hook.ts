@@ -36,6 +36,7 @@ export const useSteps = () => {
       : null;
 
   return {
+    cancelled: steps.cancelled,
     retry,
     txStates: steps.txStates,
     cta: resolveCta(),

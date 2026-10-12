@@ -3,8 +3,8 @@ import type { Address } from "viem";
 import type { Connector } from "wagmi";
 import { isEvmWalletNetwork } from "../../../../domain/wallet/network";
 import type {
+  WalletSignBorrowTypedDataInput,
   WalletSignMessageInput,
-  WalletSignTypedDataInput,
   WalletSwitchAccountInput,
 } from "../../wallet-commands";
 import type { Chain } from "../../wallet-descriptors";
@@ -90,7 +90,10 @@ export const routeWalletMessage = Effect.fn("routeWalletMessage")(function* (
 });
 
 export const routeWalletTypedData = Effect.fn("routeWalletTypedData")(
-  function* (routing: WalletRoutingContext, input: WalletSignTypedDataInput) {
+  function* (
+    routing: WalletRoutingContext,
+    input: WalletSignBorrowTypedDataInput
+  ) {
     const { actions, state } = routing;
     if (state.status !== "connected") {
       return yield* unavailable("typed-data", state);
@@ -107,7 +110,7 @@ export const routeWalletTypedData = Effect.fn("routeWalletTypedData")(
       return yield* unavailable("typed-data", state);
     }
 
-    return yield* actions.signTypedData({ ...input, connector });
+    return yield* actions.signTypedData({ ...input.typedData, connector });
   }
 );
 

@@ -399,14 +399,15 @@ const combineExternalProvider = (
     });
   }
 
-  // Bundle hosts are untyped: confirm the declared Borrow callback exists
-  // before Borrow can depend on it.
-  return typeof capability.settings.provider.sendBorrowTransaction ===
-    "function"
+  // Bundle hosts are untyped: confirm the declared Borrow callbacks exist
+  // before Borrow can depend on them.
+  const { provider } = capability.settings;
+  return typeof provider.sendBorrowTransaction === "function" &&
+    typeof provider.signTypedData === "function"
     ? Result.succeed({
         ...common,
         borrow: true,
-        provider: capability.settings.provider,
+        provider,
       })
     : missingBorrowProviderCapability();
 };

@@ -536,6 +536,7 @@
     "skipped": "Ignorée",
     "pending_approvals": "Approbations en attente",
     "pending_approvals_desc": "Ouvrez votre portefeuille pour vérifier et signer la transaction en toute sécurité",
+    "cancelled": "Vous avez annulé cette demande dans votre portefeuille.",
     "approve_error": "Une erreur s'est produite",
     "view_transaction": "Voir la transaction",
     "tx_type": {
@@ -1198,6 +1199,7 @@
         "unavailable_title": "Exécution d'emprunt indisponible",
         "unavailable_description": "Revenez à Emprunter et vérifiez une action avant de confirmer.",
         "error_title": "La transaction d'emprunt a échoué",
+        "cancelled": "Vous avez annulé cette demande dans votre portefeuille.",
         "batch_progress": "Étape {{current}} sur {{total}}",
         "preparing_next_step": "Préparation de l'étape suivante",
         "tx_type": {

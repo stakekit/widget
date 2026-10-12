@@ -8,7 +8,10 @@ import type {
  * decided there from `borrowEnabled`, never from host-provided flags.
  */
 export type ExternalProviderSnapshot =
-  | (Readonly<Omit<SKExternalProviders, "supportsBorrow">> & {
+  | (Readonly<Omit<SKExternalProviders, "provider" | "supportsBorrow">> & {
       readonly borrow: false;
+      readonly provider:
+        | SKExternalProviders["provider"]
+        | SKBorrowExternalProviders["provider"];
     })
   | (Readonly<SKBorrowExternalProviders> & { readonly borrow: true });

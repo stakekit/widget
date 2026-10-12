@@ -14,6 +14,7 @@ import type {
   BundledSKWidgetProps as PublicBundledSKWidgetProps,
   SKBorrowTx,
   SKBorrowTxMeta,
+  SKEip712TypedData,
   SKTx,
   SKTxMeta,
 } from "../../src/public-api/types";
@@ -43,20 +44,44 @@ type ClassicExternalProviderProps = {
   };
 };
 
-type BorrowExternalProviderProps = ClassicExternalProviderProps & {
+type BorrowProviderCallbacks = {
+  readonly sendBorrowTransaction: (
+    tx: SKBorrowTx,
+    txMeta: SKBorrowTxMeta
+  ) => Promise<
+    | { readonly type: "success"; readonly txHash: string }
+    | { readonly type: "cancelled" }
+    | {
+        readonly type: "error";
+        readonly error: string;
+        readonly txHash?: string;
+      }
+  >;
+  readonly signTypedData: (
+    typedData: SKEip712TypedData,
+    txMeta: SKBorrowTxMeta
+  ) => Promise<
+    | { readonly type: "success"; readonly signature: string }
+    | { readonly type: "cancelled" }
+    | { readonly type: "error"; readonly error: string }
+  >;
+};
+
+type BorrowExternalProviderPropsWith<
+  Callbacks extends Partial<BorrowProviderCallbacks>,
+> = ClassicExternalProviderProps & {
   readonly borrowEnabled: true;
   readonly externalProviders: Omit<
     ClassicExternalProviderProps["externalProviders"],
     "provider"
   > & {
-    readonly provider: ClassicExternalProviderProps["externalProviders"]["provider"] & {
-      readonly sendBorrowTransaction: (
-        tx: SKBorrowTx,
-        txMeta: SKBorrowTxMeta
-      ) => Promise<{ readonly txHash: string }>;
-    };
+    readonly provider: ClassicExternalProviderProps["externalProviders"]["provider"] &
+      Callbacks;
   };
 };
+
+type BorrowExternalProviderProps =
+  BorrowExternalProviderPropsWith<BorrowProviderCallbacks>;
 
 type DynamicBorrowProps = {
   readonly apiKey: string;
@@ -75,6 +100,11 @@ describe("public external-provider props", () => {
     expectTypeOf<DynamicBorrowProps>().toMatchTypeOf<PublicSKAppProps>();
     expectTypeOf<
       ClassicExternalProviderProps & { readonly borrowEnabled: true }
+    >().not.toMatchTypeOf<PublicSKAppProps>();
+    expectTypeOf<
+      BorrowExternalProviderPropsWith<
+        Omit<BorrowProviderCallbacks, "signTypedData">
+      >
     >().not.toMatchTypeOf<PublicSKAppProps>();
   });
 });
@@ -123,8 +153,10 @@ const sharedEntryExports = [
   "SKActionArguments",
   "SKActionType",
   "SKBorrowExternalProviders",
+  "SKBorrowSignatureResult",
   "SKBorrowTx",
   "SKBorrowTxMeta",
+  "SKBorrowTxResult",
   "SKBorrowWallet",
   "SKCustomTranslations",
   "SKEip712TypedData",
@@ -138,6 +170,7 @@ const sharedEntryExports = [
   "SKTrackEvent",
   "SKTrackPage",
   "SKTrackingConfig",
+  "SKSignMessageResult",
   "SKTransactionResult",
   "SKTransactionType",
   "SKTranslationTree",

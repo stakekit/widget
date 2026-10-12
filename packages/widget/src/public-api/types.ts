@@ -67,9 +67,26 @@ type DecodedEVMTransaction = DecodedEVMTransactionFields & {
   nonce: Hex;
 };
 
-type DecodedBorrowEVMTransaction = DecodedEVMTransactionFields & {
+/** Borrow EVM transaction. `type` follows the API; fee fields are `undefined` unless the API quotes them. */
+type DecodedBorrowEVMTransaction = {
+  to: Hex;
+  from: Hex;
+  data: Hex;
+  value: Hex | undefined;
+  gas: Hex;
+  chainId: Hex;
   nonce?: Hex;
-};
+} & (
+  | {
+      type: "0x0";
+      gasPrice: Hex | undefined;
+    }
+  | {
+      type: "0x2";
+      maxFeePerGas: Hex | undefined;
+      maxPriorityFeePerGas: Hex | undefined;
+    }
+);
 
 type DecodedSolanaTransaction = string;
 
@@ -295,14 +312,28 @@ export type SKTxMeta = ActionMeta & {
   gasEstimate?: string;
 };
 
+/**
+ * Outcome of `SKWallet.sendTransaction`. A bare string is the broadcast hash.
+ * `cancelled` means the user declined in the wallet and nothing was broadcast.
+ */
 export type SKTransactionResult =
   | string
   | { type: "success"; txHash: string }
+  | { type: "cancelled" }
+  | { type: "error"; error: string };
+
+/**
+ * Outcome of `SKWallet.signMessage`. A bare string is the signature.
+ * `cancelled` means the user declined in the wallet.
+ */
+export type SKSignMessageResult =
+  | string
+  | { type: "success"; signature: string }
+  | { type: "cancelled" }
   | { type: "error"; error: string };
 
 export type SKWallet = {
-  signMessage: (message: string) => Promise<string>;
-  signTypedData?: (typedData: SKEip712TypedData) => Promise<string>;
+  signMessage: (message: string) => Promise<SKSignMessageResult>;
   switchChain: (chainId: number) => Promise<void>;
   getTransactionReceipt?(txHash: string): Promise<{ transactionHash?: string }>;
   sendTransaction(tx: SKTx, txMeta: SKTxMeta): Promise<SKTransactionResult>;
@@ -347,12 +378,48 @@ export type SKBorrowTxMeta = {
     | "WRAP";
 };
 
+/**
+ * Outcome of `SKBorrowWallet.sendBorrowTransaction`.
+ *
+ * - `success`: the transaction was broadcast. Resolve as soon as it is
+ *   broadcast; do not wait for confirmation.
+ * - `cancelled`: the user declined in the wallet. Nothing was broadcast.
+ * - `error`: the request failed. Include `txHash` whenever the transaction
+ *   was broadcast before the failure (for example a receipt timeout): the
+ *   Widget then tracks that transaction instead of asking to sign it again.
+ *   Without `txHash`, the Widget treats the step as not broadcast and lets the
+ *   user retry it.
+ */
+export type SKBorrowTxResult =
+  | { readonly type: "success"; readonly txHash: string }
+  | { readonly type: "cancelled" }
+  | {
+      readonly type: "error";
+      readonly error: string;
+      readonly txHash?: string;
+    };
+
+/** Outcome of `SKBorrowWallet.signTypedData`. */
+export type SKBorrowSignatureResult =
+  | { readonly type: "success"; readonly signature: string }
+  | { readonly type: "cancelled" }
+  | { readonly type: "error"; readonly error: string };
+
+/**
+ * External provider wallet for Borrow. Report outcomes through the returned
+ * result; a rejected Promise is treated as an `error` without `txHash`.
+ */
 export type SKBorrowWallet = SKWallet & {
-  /** Resolves with the broadcast hash; rejects when the transaction fails. */
+  /** Signs a Borrow EIP-712 payload. */
+  readonly signTypedData: (
+    typedData: SKEip712TypedData,
+    txMeta: SKBorrowTxMeta
+  ) => Promise<SKBorrowSignatureResult>;
+  /** Broadcasts a Borrow transaction. */
   readonly sendBorrowTransaction: (
     tx: SKBorrowTx,
     txMeta: SKBorrowTxMeta
-  ) => Promise<{ readonly txHash: string }>;
+  ) => Promise<SKBorrowTxResult>;
 };
 
 export type SKExternalProviders = {

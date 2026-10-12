@@ -64,6 +64,9 @@ export const getClassicTransactionStepsView = (
     ? getTransactionSignCustomMessage(signError)
     : null;
   return {
+    cancelled:
+      machineState._tag === "SignFailed" &&
+      machineState.error.reason._tag === "WalletRequestCancelled",
     customSignErrorMessage,
     retryable:
       machineState._tag === "SignFailed" ||

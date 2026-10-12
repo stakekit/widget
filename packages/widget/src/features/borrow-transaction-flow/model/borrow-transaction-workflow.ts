@@ -4,6 +4,7 @@ import {
   flattenTransactionWorkflowTransactions,
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
+  getTransactionSignCustomMessage,
   getTransactionWorkflowStepState,
   type TransactionWorkflowError,
   type TransactionWorkflowState,
@@ -57,6 +58,40 @@ const getExecutionStatus = (
   }
 };
 
+/**
+ * Leaving drops the reserved action. While the wallet holds the current
+ * transaction, or its broadcast hash has not reached the API, the transaction
+ * may land on-chain with no record, so the flow must stay open.
+ */
+export const canLeaveBorrowExecution = (state: TransactionWorkflowState) => {
+  switch (state._tag) {
+    case "Signing":
+    case "Submitting":
+      return false;
+    case "SubmissionFailed":
+      return (
+        getCurrentTransactionWorkflowTransaction(state.context)?.meta
+          .broadcasted !== true
+      );
+    default:
+      return true;
+  }
+};
+
+const isWalletCancellation = (error: TransactionWorkflowError | null) =>
+  error?._tag === "TransactionSignError" &&
+  error.reason._tag === "WalletRequestCancelled";
+
+// A wallet cancellation is not a failure; the flow shows it as a notice.
+const getExecutionErrorMessage = (error: TransactionWorkflowError | null) => {
+  if (!error || isWalletCancellation(error)) return null;
+  const customMessage =
+    error._tag === "TransactionSignError"
+      ? getTransactionSignCustomMessage(error)
+      : null;
+  return customMessage ?? error.message;
+};
+
 export const projectBorrowExecution = (state: TransactionWorkflowState) => {
   const currentBatch = getCurrentTransactionWorkflowBatch(state.context);
   const current = getCurrentTransactionWorkflowTransaction(state.context);
@@ -72,12 +107,15 @@ export const projectBorrowExecution = (state: TransactionWorkflowState) => {
   return {
     action,
     batches: state.context.batches,
+    canLeave: canLeaveBorrowExecution(state),
+    cancelled: isWalletCancellation(status.error),
     completionResult: completed
       ? { action, submissions: state.context.submissions }
       : null,
     currentStep: currentBatch?.currentStep ?? action.currentStep,
     currentTransaction,
     error: status.error,
+    errorMessage: getExecutionErrorMessage(status.error),
     isDone: completed,
     isRunning: status.isRunning,
     phase: status.phase,
@@ -111,10 +149,13 @@ const noBorrowExecutionSteps: ReadonlyArray<BorrowExecutionStep> = [];
 export const emptyBorrowExecutionView = {
   action: null,
   batches: [],
+  canLeave: true,
+  cancelled: false,
   completionResult: null,
   currentStep: 0,
   currentTransaction: null,
   error: null,
+  errorMessage: null,
   isDone: false,
   isRunning: false,
   phase: "disabled" as const,

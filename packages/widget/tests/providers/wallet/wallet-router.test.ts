@@ -36,7 +36,7 @@ const transactionInput = {
   txMeta: {} as never,
 };
 
-const typedDataInput = {
+const typedData = {
   domain: { chainId: 1, name: "Borrow Authorization" },
   message: { owner: zeroAddress },
   primaryType: "Authorization",
@@ -44,6 +44,8 @@ const typedDataInput = {
     Authorization: [{ name: "owner", type: "address" }],
   },
 } as const;
+
+const typedDataInput = { txMeta: {} as never, typedData };
 
 const makeConnector = (uid: string) =>
   ({ id: uid, uid }) as unknown as Connector;
@@ -166,7 +168,7 @@ describe("wallet router", () => {
         )
       ).toBe("0xtyped");
       expect(walletActions.signTypedData).toHaveBeenCalledWith({
-        ...typedDataInput,
+        ...typedData,
         connector,
       });
     })

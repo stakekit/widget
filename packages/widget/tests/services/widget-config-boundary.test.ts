@@ -1,7 +1,7 @@
 import { Result } from "effect";
 import { describe, expect, it } from "vitest";
 import type { SKHostConfiguration } from "../../src/public-api/react-types";
-import type { SettingsProps } from "../../src/public-api/types";
+import type { SettingsProps, SKBorrowWallet } from "../../src/public-api/types";
 import {
   decodeHostConfiguration,
   InvalidHostConfiguration,
@@ -74,37 +74,61 @@ describe("decodeHostConfiguration", () => {
     }
   });
 
-  it("rejects Borrow when the external provider has no Borrow callback", () => {
-    const result = decodeHostConfiguration({
-      apiKey: "api-key",
-      borrowEnabled: true,
-      dashboardVariant: true,
-      externalProviders: {
-        currentAddress: "0xWallet",
-        provider: {
-          sendTransaction: async () => "hash",
-          signMessage: async () => "signature",
-          switchChain: async () => {},
-        },
-        type: "generic",
+  it.each([
+    {
+      missing: "sendBorrowTransaction",
+      provider: {
+        sendTransaction: async () => "hash",
+        signMessage: async () => "signature",
+        signTypedData: async () => "typed-signature",
+        switchChain: async () => {},
       },
-      variant: "default",
-    } as unknown as SKHostConfiguration);
+    },
+    {
+      missing: "signTypedData",
+      provider: {
+        sendBorrowTransaction: async () => ({ txHash: "hash" }),
+        sendTransaction: async () => "hash",
+        signMessage: async () => "signature",
+        switchChain: async () => {},
+      },
+    },
+  ])(
+    "rejects Borrow when the external provider has no $missing",
+    ({ provider }) => {
+      const result = decodeHostConfiguration({
+        apiKey: "api-key",
+        borrowEnabled: true,
+        dashboardVariant: true,
+        externalProviders: {
+          currentAddress: "0xWallet",
+          provider,
+          type: "generic",
+        },
+        variant: "default",
+      } as unknown as SKHostConfiguration);
 
-    expect(Result.isFailure(result)).toBe(true);
-    if (Result.isFailure(result)) {
-      expect(result.failure.issues).toEqual([
-        "borrow-provider-capability-missing",
-      ]);
-      expect(result.failure.issuePaths).toEqual(["externalProviders.provider"]);
+      expect(Result.isFailure(result)).toBe(true);
+      if (Result.isFailure(result)) {
+        expect(result.failure.issues).toEqual([
+          "borrow-provider-capability-missing",
+        ]);
+        expect(result.failure.issuePaths).toEqual([
+          "externalProviders.provider",
+        ]);
+      }
     }
-  });
+  );
 
   it("captures Borrow capability from borrowEnabled, not provider flags", () => {
-    const provider = {
-      sendBorrowTransaction: async () => ({ txHash: "hash" }),
+    const provider: SKBorrowWallet = {
+      sendBorrowTransaction: async () => ({ type: "success", txHash: "hash" }),
       sendTransaction: async () => "hash",
       signMessage: async () => "signature",
+      signTypedData: async () => ({
+        type: "success",
+        signature: "typed-signature",
+      }),
       switchChain: async () => {},
     };
     const decode = (borrowEnabled: boolean) =>

@@ -1,6 +1,7 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
 import type { Address, Hex } from "viem";
 import type { Connector } from "wagmi";
+import type { BorrowTransactionMeta } from "./wallet-transactions";
 
 export type Eip712TypedData = {
   readonly domain: {
@@ -52,4 +53,9 @@ export type WalletSignMessageInput = {
 export type WalletSignTypedDataInput = Eip712TypedData & {
   readonly account?: Address;
   readonly connector?: Connector;
+};
+
+export type WalletSignBorrowTypedDataInput = {
+  readonly txMeta: BorrowTransactionMeta;
+  readonly typedData: Eip712TypedData;
 };

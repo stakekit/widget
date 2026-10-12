@@ -41,6 +41,13 @@ export class WalletBroadcastError extends Data.TaggedError(
   readonly customMessage: string | null;
 }> {}
 
+/** The user declined the request in the wallet; nothing was signed or sent. */
+export class WalletRequestCancelledError extends Data.TaggedError(
+  "WalletRequestCancelledError"
+)<{
+  readonly operation: WalletSigningCommand;
+}> {}
+
 export class WalletCapabilityUnavailableError extends Data.TaggedError(
   "WalletCapabilityUnavailableError"
 )<{

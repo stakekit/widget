@@ -44,16 +44,22 @@ describe("package and bundled wallet entry contracts", () => {
 
   it("keeps generic wallet callbacks Promise-based in both entry modes", () => {
     expectTypeOf<PackageWallet>().toEqualTypeOf<BundledWallet>();
-    expectTypeOf(genericWallet.signMessage).returns.toEqualTypeOf<
-      Promise<string>
+    expectTypeOf<PackageWallet["signMessage"]>().returns.toEqualTypeOf<
+      Promise<
+        | string
+        | { type: "success"; signature: string }
+        | { type: "cancelled" }
+        | { type: "error"; error: string }
+      >
     >();
     expectTypeOf(genericWallet.switchChain).returns.toEqualTypeOf<
       Promise<void>
     >();
-    expectTypeOf(genericWallet.sendTransaction).returns.toMatchTypeOf<
+    expectTypeOf<PackageWallet["sendTransaction"]>().returns.toEqualTypeOf<
       Promise<
         | string
         | { type: "success"; txHash: string }
+        | { type: "cancelled" }
         | { type: "error"; error: string }
       >
     >();
