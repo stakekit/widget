@@ -1,7 +1,10 @@
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import type { Market } from "../../../../../domain/borrow/catalog/market";
-import { DetailRow } from "../../../../../shared/ui/components/details-section";
+import {
+  DetailRow,
+  DetailRowList,
+} from "../../../../../shared/ui/components/details-section";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { WarningBox } from "../../../../../shared/ui/primitives/warning-box";
@@ -43,9 +46,11 @@ export const BorrowFormDetails = ({
         {t("dashboard.borrow.form.details")}
       </Text>
       <Box className={styles.detailCard}>
-        {model.formRows.map((row) => (
-          <DetailRow key={row.id} {...row} />
-        ))}
+        <DetailRowList>
+          {model.formRows.map((row) => (
+            <DetailRow key={row.id} {...row} />
+          ))}
+        </DetailRowList>
       </Box>
       {ltvGreaterThanMax ? (
         <WarningBox text={t("dashboard.borrow.form.validation.ltv")} />

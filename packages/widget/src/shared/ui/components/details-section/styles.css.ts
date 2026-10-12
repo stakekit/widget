@@ -19,6 +19,11 @@ globalStyle(`${detailRow}:last-child`, {
   borderBottom: "none",
 });
 
+export const detailRowList = style({
+  display: "flex",
+  flexDirection: "column",
+});
+
 export const addressBox = style([
   atoms({
     background: "stakeSectionBackground",

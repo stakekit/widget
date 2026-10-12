@@ -5,6 +5,7 @@ import { formatUsd } from "../../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../../shared/lib/number-format";
 import {
   DetailRow,
+  DetailRowList,
   DetailsSection,
 } from "../../../../../shared/ui/components/details-section";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
@@ -144,17 +145,19 @@ export const WithdrawActionForm = ({
       />
 
       <Box className={styles.formCard}>
-        <LtvTransitionRow
-          currentLtv={view.currentLtv}
-          projectedLtv={view.projectedLtv}
-        />
-        <DetailRow
-          id="collateral"
-          label={t("dashboard.borrow.form.collateral_value")}
-          value={`${formatUsd(
-            view.currentCollateralUsd.toString()
-          )} -> ${formatUsd(view.projectedCollateralUsd.toString())}`}
-        />
+        <DetailRowList>
+          <LtvTransitionRow
+            currentLtv={view.currentLtv}
+            projectedLtv={view.projectedLtv}
+          />
+          <DetailRow
+            id="collateral"
+            label={t("dashboard.borrow.form.collateral_value")}
+            value={`${formatUsd(
+              view.currentCollateralUsd.toString()
+            )} -> ${formatUsd(view.projectedCollateralUsd.toString())}`}
+          />
+        </DetailRowList>
       </Box>
 
       <PageCtaButton

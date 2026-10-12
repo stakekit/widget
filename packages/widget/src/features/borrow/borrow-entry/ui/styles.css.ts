@@ -1,4 +1,4 @@
-import { globalStyle, style } from "@vanilla-extract/css";
+import { style } from "@vanilla-extract/css";
 import { atoms } from "../../../../shared/styles/theme/atoms.css";
 import { vars } from "../../../../shared/styles/theme/contract.css";
 import { splitExpandedContainerQuery } from "../../../../shared/styles/tokens/breakpoints";
@@ -156,17 +156,10 @@ export const detailCard = style([
   atoms({
     background: "stakeSectionBackground",
     borderRadius: "xl",
-    display: "flex",
-    flexDirection: "column",
-    gap: "1",
     px: "4",
     py: "4",
   }),
 ]);
-
-globalStyle(`${detailCard} > *:last-child`, {
-  borderBottom: 0,
-});
 
 export const infoNote = style([
   atoms({

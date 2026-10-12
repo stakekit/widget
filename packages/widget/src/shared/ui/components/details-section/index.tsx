@@ -48,6 +48,14 @@ export const DetailsSection = ({
   </CollapsibleRoot>
 );
 
+/**
+ * Stacks Detail Rows without a flex gap: a gap would sit on one side of each
+ * row separator only, pushing the separator off-centre between rows.
+ */
+export const DetailRowList = ({ children }: { children: ReactNode }) => (
+  <Box className={styles.detailRowList}>{children}</Box>
+);
+
 export const DetailRow = ({ label, value }: DetailRowProps) => (
   <Box className={styles.detailRow}>
     <Text

@@ -1,6 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { formatNumber } from "../../../../../shared/lib/number-format";
-import { DetailRow } from "../../../../../shared/ui/components/details-section";
+import {
+  DetailRow,
+  DetailRowList,
+} from "../../../../../shared/ui/components/details-section";
 import { Divider } from "../../../../../shared/ui/components/divider";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
@@ -76,18 +79,20 @@ export const RepayActionForm = ({
 
         <Divider />
 
-        <LtvTransitionRow
-          currentLtv={view.currentLtv}
-          projectedLtv={view.projectedLtv}
-        />
-        <DetailRow
-          id="loan"
-          label={t("dashboard.borrow.form.loan")}
-          value={`${formatNumber(debtBalance.balance, 6)} -> ${formatNumber(
-            view.remainingDebt,
-            6
-          )} ${debtBalance.tokenSymbol}`}
-        />
+        <DetailRowList>
+          <LtvTransitionRow
+            currentLtv={view.currentLtv}
+            projectedLtv={view.projectedLtv}
+          />
+          <DetailRow
+            id="loan"
+            label={t("dashboard.borrow.form.loan")}
+            value={`${formatNumber(debtBalance.balance, 6)} -> ${formatNumber(
+              view.remainingDebt,
+              6
+            )} ${debtBalance.tokenSymbol}`}
+          />
+        </DetailRowList>
       </Box>
 
       <PageCtaButton

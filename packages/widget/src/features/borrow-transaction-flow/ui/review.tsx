@@ -8,7 +8,10 @@ import {
   formatPercent,
   formatUsd,
 } from "../../../shared/lib/formatters";
-import { DetailRow } from "../../../shared/ui/components/details-section";
+import {
+  DetailRow,
+  DetailRowList,
+} from "../../../shared/ui/components/details-section";
 import { Divider } from "../../../shared/ui/components/divider";
 import { Box } from "../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
@@ -204,7 +207,7 @@ export const BorrowReviewPage = () => {
 
           <Divider />
 
-          <Box display="flex" flexDirection="column" gap="1">
+          <DetailRowList>
             <DetailRow
               id="market"
               label={t("dashboard.borrow.review_page.market")}
@@ -227,7 +230,7 @@ export const BorrowReviewPage = () => {
             <BorrowFlowOriginationRows
               origination={projectedSummary.origination}
             />
-          </Box>
+          </DetailRowList>
 
           {createActionErrorCopy ? (
             <Box className={styles.executionError}>
