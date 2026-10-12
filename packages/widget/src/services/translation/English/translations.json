@@ -721,6 +721,19 @@
         "history_title": "Transaction history",
         "transaction_complete": "Complete",
         "view_transaction": "View transaction",
+        "tx_type": {
+          "APPROVAL": "Approve",
+          "AUTHORIZE": "Authorize",
+          "DEAUTHORIZE": "Revoke authorization",
+          "SUPPLY": "Supply",
+          "BORROW": "Borrow",
+          "REPAY": "Repay",
+          "WITHDRAW": "Withdraw",
+          "ENABLE_COLLATERAL": "Enable collateral",
+          "DISABLE_COLLATERAL": "Disable collateral",
+          "BUNDLE": "Batch transaction",
+          "WRAP": "Wrap"
+        },
         "status": {
           "signing": "Waiting for wallet approval",
           "submitting": "Submitting transaction",

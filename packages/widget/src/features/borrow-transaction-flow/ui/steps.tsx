@@ -12,6 +12,7 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/views";
+import { formatBorrowTransactionTypeLabel } from "../model/borrow-transaction-workflow";
 import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowExecution,
@@ -112,9 +113,10 @@ export const BorrowStepsPage = () => {
                     })}
                   </Text>
                   <Text variant={{ type: "muted", weight: "normal" }}>
-                    {execution.currentTransaction.type}
-                    {" · "}
-                    {execution.currentTransaction.status}
+                    {formatBorrowTransactionTypeLabel(
+                      execution.currentTransaction.type,
+                      t
+                    )}
                   </Text>
                 </>
               ) : null}
@@ -146,6 +148,8 @@ export const BorrowStepsPage = () => {
                     })}
                   </Text>
                   {batch.transactions.map((transaction) => {
+                    if (transaction.source._tag !== "Borrow") return null;
+
                     const submission =
                       transaction.meta.submissionIndex === null
                         ? null
@@ -161,13 +165,15 @@ export const BorrowStepsPage = () => {
                         key={transaction.source.transaction.id}
                       >
                         <Text variant={{ type: "muted", weight: "normal" }}>
-                          {transaction.source.transaction.type}
-                          {" · "}
+                          {formatBorrowTransactionTypeLabel(
+                            transaction.source.transaction.type,
+                            t
+                          )}
                           {transaction.meta.done
-                            ? t(
+                            ? ` · ${t(
                                 "dashboard.borrow.execution_page.transaction_complete"
-                              )
-                            : transaction.source.transaction.status}
+                              )}`
+                            : null}
                         </Text>
                         {submission?.link ? (
                           <Box

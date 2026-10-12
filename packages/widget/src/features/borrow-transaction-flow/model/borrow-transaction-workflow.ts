@@ -1,4 +1,5 @@
 import { Option } from "effect";
+import type { TFunction } from "i18next";
 import type { Transaction } from "../../../domain/borrow/execution/transaction";
 import {
   getCurrentTransactionWorkflowBatch,
@@ -6,6 +7,11 @@ import {
   type TransactionWorkflowError,
   type TransactionWorkflowState,
 } from "../../../services/transaction-workflow/transaction-workflow-model";
+
+export const formatBorrowTransactionTypeLabel = (
+  type: Transaction["type"],
+  t: TFunction
+) => t(`dashboard.borrow.execution_page.tx_type.${type}`);
 
 type BorrowExecutionPhase =
   | "advancing"

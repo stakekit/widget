@@ -713,6 +713,29 @@ describe("borrow execution flow component", () => {
       })
   );
 
+  it.live("labels steps with human-readable transaction types", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(makeBorrowApi({}), {
+        action: decodedAction({
+          action: "disableCollateral",
+          transactions: [transaction({ type: "DISABLE_COLLATERAL" })],
+        }),
+        stepsElement: <BorrowStepsPage />,
+        wallet: {
+          ...wallet,
+          signTransaction: () => Effect.never,
+        },
+      });
+
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByText("Disable collateral").first())
+          .toBeInTheDocument()
+      );
+      expect(app.container.textContent).not.toContain("DISABLE_COLLATERAL");
+    })
+  );
+
   it.live("routes to success when execution completes", () =>
     Effect.gen(function* () {
       const app = yield* renderExecution(

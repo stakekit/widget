@@ -1201,6 +1201,19 @@
         "history_title": "Historique des transactions",
         "transaction_complete": "Terminée",
         "view_transaction": "Voir la transaction",
+        "tx_type": {
+          "APPROVAL": "Approuver",
+          "AUTHORIZE": "Autoriser",
+          "DEAUTHORIZE": "Révoquer l'autorisation",
+          "SUPPLY": "Fournir",
+          "BORROW": "Emprunter",
+          "REPAY": "Rembourser",
+          "WITHDRAW": "Retirer",
+          "ENABLE_COLLATERAL": "Activer la garantie",
+          "DISABLE_COLLATERAL": "Désactiver la garantie",
+          "BUNDLE": "Transaction groupée",
+          "WRAP": "Envelopper"
+        },
         "status": {
           "signing": "En attente de l'approbation du portefeuille",
           "submitting": "Soumission de la transaction",
