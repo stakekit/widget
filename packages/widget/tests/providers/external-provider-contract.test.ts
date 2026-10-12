@@ -99,6 +99,7 @@ const makeProviderRef = (
     currentChain: 501,
     supportedChainIds: [501],
     provider,
+    borrow: false,
   },
 });
 
@@ -110,7 +111,7 @@ const makeBorrowProviderRef = (
     currentAddress: "solana-address",
     currentChain: 501,
     supportedChainIds: [501],
-    supportsBorrow: true,
+    borrow: true,
     provider,
   },
 });
@@ -123,7 +124,7 @@ describe("generic external provider callback contract", () => {
         signTypedData: async () => "old-typed",
         switchChain: async () => undefined,
         sendTransaction: async () => "old-transaction",
-        sendBorrowTransaction: async () => "old-borrow",
+        sendBorrowTransaction: async () => ({ txHash: "old-borrow" }),
       };
       const ref = makeBorrowProviderRef(oldWallet);
       const provider = new ExternalProvider(ref);
@@ -135,12 +136,12 @@ describe("generic external provider callback contract", () => {
       const sign = provider.signTypedData(typedData);
       ref.current = {
         ...ref.current,
-        supportsBorrow: true,
+        borrow: true,
         provider: {
           ...oldWallet,
           signTypedData: async () => "new-typed",
           sendTransaction: async () => "new-transaction",
-          sendBorrowTransaction: async () => "new-borrow",
+          sendBorrowTransaction: async () => ({ txHash: "new-borrow" }),
         },
       };
       expect(yield* send).toBe("new-transaction");
@@ -230,7 +231,9 @@ describe("generic external provider callback contract", () => {
     () =>
       Effect.gen(function* () {
         const sendTransaction = vi.fn(async () => "classic-hash");
-        const sendBorrowTransaction = vi.fn(async () => "borrow-hash");
+        const sendBorrowTransaction = vi.fn(async () => ({
+          txHash: "borrow-hash",
+        }));
         const wallet = {
           signMessage: async () => "signed-message",
           switchChain: async () => undefined,
@@ -262,7 +265,7 @@ describe("generic external provider callback contract", () => {
           signMessage: async () => "signed-message",
           switchChain: async () => undefined,
           sendTransaction: async () => "classic-hash",
-          sendBorrowTransaction: vi.fn(async () => "borrow-hash"),
+          sendBorrowTransaction: vi.fn(async () => ({ txHash: "borrow-hash" })),
         };
         const ref = makeBorrowProviderRef(wallet);
         const provider = new ExternalProvider(ref);
@@ -275,6 +278,48 @@ describe("generic external provider callback contract", () => {
 
         expect(error).toBeInstanceOf(ExternalProviderError);
         expect(wallet.sendBorrowTransaction).not.toHaveBeenCalled();
+      })
+  );
+
+  it.effect(
+    "fails Borrow sends on host rejection or a result without a hash",
+    () =>
+      Effect.gen(function* () {
+        const wallet = (
+          sendBorrowTransaction: SKBorrowWallet["sendBorrowTransaction"]
+        ): SKBorrowWallet => ({
+          signMessage: async () => "signed-message",
+          switchChain: async () => undefined,
+          sendTransaction: async () => "classic-hash",
+          sendBorrowTransaction,
+        });
+        const rejected = new ExternalProvider(
+          makeBorrowProviderRef(
+            wallet(async () => {
+              throw new Error("Borrow blocked by host policy");
+            })
+          )
+        );
+        const malformed = new ExternalProvider(
+          makeBorrowProviderRef(wallet(async () => ({ txHash: "" })))
+        );
+
+        const rejection = yield* Effect.flip(
+          rejected.sendBorrowTransaction(
+            borrowTransaction,
+            borrowTransactionMeta
+          )
+        );
+        expect(rejection.customMessage).toBe("Borrow blocked by host policy");
+
+        const invalid = yield* Effect.flip(
+          malformed.sendBorrowTransaction(
+            borrowTransaction,
+            borrowTransactionMeta
+          )
+        );
+        expect(invalid).toBeInstanceOf(ExternalProviderError);
+        expect(invalid.message).toBe("Invalid Borrow transaction result");
       })
   );
 });

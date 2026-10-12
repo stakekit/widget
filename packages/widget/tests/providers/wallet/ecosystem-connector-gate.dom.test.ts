@@ -3,7 +3,7 @@ import type { Connection as SolanaConnection } from "@solana/web3.js";
 import { Effect, Schema } from "effect";
 import { vi } from "vitest";
 import type { Network } from "../../../src/domain/network/network";
-import type { SKExternalProviders } from "../../../src/public-api/types";
+import type { ExternalProviderSnapshot } from "../../../src/services/config/external-provider-snapshot";
 import type { CurrentRef } from "../../../src/services/wallet/external-provider";
 import { InitParams } from "../../../src/services/wallet/init-params";
 import { getConfig as getMiscConfig } from "../../../src/services/wallet/internal/adapters/config";
@@ -167,7 +167,7 @@ const emptyInitParams = {
   yieldId: null,
 } as const;
 
-const externalProviders: CurrentRef<SKExternalProviders> = {
+const externalProviders: CurrentRef<ExternalProviderSnapshot> = {
   current: {
     currentAddress: "0x0000000000000000000000000000000000000001",
     currentChain: 1,
@@ -178,6 +178,7 @@ const externalProviders: CurrentRef<SKExternalProviders> = {
     },
     supportedChainIds: [1],
     type: "generic",
+    borrow: false,
   },
 };
 

@@ -223,16 +223,14 @@ do not need a remount. Unmount the previous instance before mounting another.
 For staking without Borrow, use `SKWallet` and `borrowEnabled: false`.
 `sendBorrowTransaction` is not required.
 
-To enable Borrow with an external provider:
+To enable Borrow with an external provider, set `borrowEnabled: true` and pass
+an `SKBorrowWallet`, which adds `sendBorrowTransaction(tx, txMeta)` to
+`SKWallet`. `borrowEnabled` alone decides whether Borrow can use the provider;
+there is no separate provider flag.
 
-- Set `borrowEnabled: true`.
-- Set `externalProviders.supportsBorrow: true`.
-- Implement `SKBorrowWallet`, which adds
-  `sendBorrowTransaction(tx, txMeta)` to `SKWallet`.
-
-The Borrow callback receives `SKBorrowTx` and `SKBorrowTxMeta` and returns the
-same success or error shapes as `sendTransaction`. Do not cast a staking-only
-adapter to `SKBorrowWallet` to satisfy a compiler error.
+The Borrow callback receives `SKBorrowTx` and `SKBorrowTxMeta`. It resolves with
+`{ txHash }` once the transaction is broadcast and rejects when it fails. Do not
+cast a staking-only adapter to `SKBorrowWallet` to satisfy a compiler error.
 
 ## Styling
 

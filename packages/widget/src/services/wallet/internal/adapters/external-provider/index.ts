@@ -29,7 +29,7 @@ type ExtraProps = ConnectorWithFilteredChains &
     | "signTypedData"
   > & {
     onSupportedChainsChanged: (args: {
-      supportedChainIds: number[] | undefined;
+      supportedChainIds: ReadonlyArray<number> | undefined;
       currentChainId: number;
     }) => void;
   };
@@ -61,7 +61,7 @@ export const externalProviderConnector = (
       createConnector: () =>
         createConnector<unknown, ExtraProps>((connectorConfig) => {
           const resolveSupportedChains = (
-            supportedChainIds: number[] | undefined
+            supportedChainIds: ReadonlyArray<number> | undefined
           ) => {
             const supported =
               supportedChainIds === undefined

@@ -11,7 +11,11 @@ import type {
   VariantProps,
 } from "../../public-api/react-types";
 import type { SKTheme } from "../../public-api/theme";
-import type { SettingsProps } from "../../public-api/types";
+import type {
+  SettingsProps,
+  SKBorrowExternalProviders,
+  SKExternalProviders,
+} from "../../public-api/types";
 import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
 import { decodeTheme, type ThemeDecodeWarning } from "./theme-decoder";
 
@@ -144,7 +148,6 @@ const externalProviderValueFields = {
     Schema.TemplateLiteral([Schema.String, Schema.Literal("-"), Schema.String])
   ),
   supportedChainIds: optional(Schema.Array(SupportedChainId)),
-  supportsBorrow: optional(Schema.Boolean),
   type: Schema.Literals(externalProviderTypeValues),
 } satisfies Record<ExternalProviderValueKey, Schema.Constraint>;
 
@@ -224,10 +227,17 @@ type TokenIconMapper = Extract<
   (...args: never[]) => unknown
 >;
 
+type ExternalProviderCapability =
+  | Readonly<{
+      borrow: false;
+      settings: SKExternalProviders | SKBorrowExternalProviders | undefined;
+    }>
+  | Readonly<{ borrow: true; settings: SKBorrowExternalProviders | undefined }>;
+
 type HostCapabilities = Readonly<{
   chainIconMapper: ChainIconMapper | undefined;
   chainModal: ChainModal | undefined;
-  externalProviders: SKHostConfiguration["externalProviders"];
+  externalProviders: ExternalProviderCapability;
   mapWalletFn: SettingsProps["mapWalletFn"];
   onMountAnimationComplete: SettingsProps["onMountAnimationComplete"];
   portalContainer: SettingsProps["portalContainer"];
@@ -299,7 +309,10 @@ const makeCapabilities = (
     hostConfiguration.variant === "zerion"
       ? hostConfiguration.chainModal
       : undefined,
-  externalProviders: hostConfiguration.externalProviders,
+  externalProviders:
+    hostConfiguration.borrowEnabled === true
+      ? { borrow: true, settings: hostConfiguration.externalProviders }
+      : { borrow: false, settings: hostConfiguration.externalProviders },
   mapWalletFn: hostConfiguration.mapWalletFn,
   onMountAnimationComplete: hostConfiguration.onMountAnimationComplete,
   portalContainer: hostConfiguration.portalContainer,
@@ -348,15 +361,25 @@ const missingExternalProviderCapability = () =>
     })
   );
 
+const missingBorrowProviderCapability = () =>
+  Result.fail(
+    new InvalidHostConfiguration({
+      issuePaths: [semanticIssuePath["borrow-provider-capability-missing"]],
+      issues: ["borrow-provider-capability-missing"],
+    })
+  );
+
 const combineExternalProvider = (
   values: HostConfigurationValueData["externalProviders"],
-  capability: HostCapabilities["externalProviders"]
+  capability: ExternalProviderCapability
 ): Result.Result<
   ExternalProviderSnapshot | undefined,
   InvalidHostConfiguration
 > => {
   if (!values) return Result.succeed(undefined);
-  if (!capability?.provider) return missingExternalProviderCapability();
+  if (!capability.settings?.provider) {
+    return missingExternalProviderCapability();
+  }
 
   const common = {
     currentAddress: values.currentAddress,
@@ -368,23 +391,24 @@ const combineExternalProvider = (
     type: values.type,
   };
 
-  if (values.supportsBorrow === true) {
-    return capability.supportsBorrow === true
-      ? Result.succeed({
-          ...common,
-          provider: capability.provider,
-          supportsBorrow: true,
-        })
-      : missingExternalProviderCapability();
+  if (!capability.borrow) {
+    return Result.succeed({
+      ...common,
+      borrow: false,
+      provider: capability.settings.provider,
+    });
   }
 
-  return capability.supportsBorrow !== true
+  // Bundle hosts are untyped: confirm the declared Borrow callback exists
+  // before Borrow can depend on it.
+  return typeof capability.settings.provider.sendBorrowTransaction ===
+    "function"
     ? Result.succeed({
         ...common,
-        provider: capability.provider,
-        supportsBorrow: values.supportsBorrow,
+        borrow: true,
+        provider: capability.settings.provider,
       })
-    : missingExternalProviderCapability();
+    : missingBorrowProviderCapability();
 };
 
 type SemanticHostConfigurationIssue = Exclude<
@@ -408,13 +432,6 @@ const semanticIssues = (
     hostConfiguration.yieldGrouping === "flat"
   ) {
     issues.push("borrow-requires-category-grouping");
-  }
-  if (
-    hostConfiguration.borrowEnabled === true &&
-    hostConfiguration.externalProviders &&
-    hostConfiguration.externalProviders.supportsBorrow !== true
-  ) {
-    issues.push("borrow-provider-capability-missing");
   }
   if (hostConfiguration.variant === "zerion" && !hostConfiguration.chainModal) {
     issues.push("zerion-chain-modal-missing");

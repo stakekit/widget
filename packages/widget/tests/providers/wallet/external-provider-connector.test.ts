@@ -26,7 +26,7 @@ const firstAddress = "0x0000000000000000000000000000000000000001";
 const secondAddress = "0x0000000000000000000000000000000000000002";
 
 const makeHarness = (
-  snapshot: Partial<SKExternalProviders> = {},
+  snapshot: Partial<Omit<SKExternalProviders, "supportsBorrow">> = {},
   chains: readonly [Chain, ...Chain[]] = [mainnet, arbitrum, polygon, solana]
 ) => {
   const variant: { current: ExternalProviderSnapshot } = {
@@ -38,6 +38,7 @@ const makeHarness = (
         switchChain: async () => undefined,
       },
       type: "generic",
+      borrow: false,
       ...snapshot,
     },
   };

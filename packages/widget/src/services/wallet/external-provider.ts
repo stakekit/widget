@@ -1,13 +1,10 @@
-import { Data, Effect } from "effect";
+import { Data, Effect, Schema } from "effect";
 import type {
   SKBorrowTx,
   SKExternalProviders,
   SKTx,
 } from "../../public-api/types";
-import {
-  type ExternalProviderSnapshot,
-  isBorrowExternalProvider,
-} from "../config/external-provider-snapshot";
+import type { ExternalProviderSnapshot } from "../config/external-provider-snapshot";
 import type { Eip712TypedData } from "./wallet-commands";
 import type {
   BorrowTransactionMeta,
@@ -50,7 +47,7 @@ export class ExternalProvider {
   sendBorrowTransaction(tx: SKBorrowTx, txMeta: BorrowTransactionMeta) {
     return Effect.suspend(() => {
       const config = this.variantProvider.current;
-      if (!isBorrowExternalProvider(config)) {
+      if (!config.borrow) {
         return Effect.fail(
           new ExternalProviderError({
             customMessage: null,
@@ -59,8 +56,23 @@ export class ExternalProvider {
         );
       }
 
-      return sendExternalTransaction(() =>
-        config.provider.sendBorrowTransaction(tx, txMeta)
+      return Effect.tryPromise({
+        try: () => config.provider.sendBorrowTransaction(tx, txMeta),
+        catch: toExternalProviderError,
+      }).pipe(
+        Effect.flatMap((result) =>
+          Schema.decodeEffect(BorrowTransactionResult)(result).pipe(
+            Effect.mapError(
+              (cause) =>
+                new ExternalProviderError({
+                  cause,
+                  customMessage: null,
+                  message: "Invalid Borrow transaction result",
+                })
+            )
+          )
+        ),
+        Effect.map(({ txHash }) => txHash)
       );
     });
   }
@@ -103,6 +115,10 @@ export class ExternalProvider {
     });
   }
 }
+
+const BorrowTransactionResult = Schema.Struct({
+  txHash: Schema.NonEmptyString,
+});
 
 const getExternalProviderErrorMessage = (error: unknown) => {
   if (error instanceof Error && error.message) return error.message;

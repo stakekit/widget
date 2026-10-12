@@ -56,12 +56,11 @@ type BorrowExternalProviderProps = ClassicExternalProviderProps & {
     ClassicExternalProviderProps["externalProviders"],
     "provider"
   > & {
-    readonly supportsBorrow: true;
     readonly provider: ClassicExternalProviderProps["externalProviders"]["provider"] & {
       readonly sendBorrowTransaction: (
         tx: import("../../src/public-api/types").SKBorrowTx,
         txMeta: import("../../src/public-api/types").SKBorrowTxMeta
-      ) => Promise<string>;
+      ) => Promise<{ readonly txHash: string }>;
     };
   };
 };
@@ -97,8 +96,13 @@ describe("declared value exports", () => {
 });
 
 describe("public external-provider props", () => {
-  it("preserves classic hosts and makes Borrow capability explicit", () => {
+  it("preserves classic hosts and makes Borrow capability follow borrowEnabled", () => {
     expectTypeOf<ClassicExternalProviderProps>().toMatchTypeOf<PublicSKAppProps>();
+    expectTypeOf<
+      ClassicExternalProviderProps & {
+        readonly externalProviders: { readonly supportsBorrow: false };
+      }
+    >().toMatchTypeOf<PublicSKAppProps>();
     expectTypeOf<BorrowExternalProviderProps>().toMatchTypeOf<PublicSKAppProps>();
     expectTypeOf<DynamicBorrowProps>().toMatchTypeOf<PublicSKAppProps>();
     expectTypeOf<

@@ -348,27 +348,31 @@ export type SKBorrowTxMeta = {
 };
 
 export type SKBorrowWallet = SKWallet & {
-  sendBorrowTransaction(
+  /** Resolves with the broadcast hash; rejects when the transaction fails. */
+  readonly sendBorrowTransaction: (
     tx: SKBorrowTx,
     txMeta: SKBorrowTxMeta
-  ): Promise<SKTransactionResult>;
+  ) => Promise<{ readonly txHash: string }>;
 };
 
 export type SKExternalProviders = {
   currentChain?: SupportedSKChainIds;
   currentAddress: string;
   initToken?: `${string}-${string}`;
+  /** @deprecated No effect. Borrow capability follows `borrowEnabled`. */
   readonly supportsBorrow?: false;
   supportedChainIds?: SupportedSKChainIds[];
   type: "generic";
   provider: SKWallet;
 };
 
-export type SKBorrowExternalProviders = Omit<
-  SKExternalProviders,
-  "provider" | "supportsBorrow"
-> & {
-  readonly supportsBorrow: true;
+/** External provider for hosts that set `borrowEnabled`. */
+export type SKBorrowExternalProviders = {
+  readonly currentChain?: SupportedSKChainIds;
+  readonly currentAddress: string;
+  readonly initToken?: `${string}-${string}`;
+  readonly supportedChainIds?: ReadonlyArray<SupportedSKChainIds>;
+  readonly type: "generic";
   readonly provider: SKBorrowWallet;
 };
 

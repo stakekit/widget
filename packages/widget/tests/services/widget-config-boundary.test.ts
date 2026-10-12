@@ -74,7 +74,7 @@ describe("decodeHostConfiguration", () => {
     }
   });
 
-  it("rejects Borrow with a non-Borrow external-provider discriminant", () => {
+  it("rejects Borrow when the external provider has no Borrow callback", () => {
     const result = decodeHostConfiguration({
       apiKey: "api-key",
       borrowEnabled: true,
@@ -100,31 +100,39 @@ describe("decodeHostConfiguration", () => {
     }
   });
 
-  it("preserves a typed opaque Borrow provider without inspecting its shape", () => {
+  it("captures Borrow capability from borrowEnabled, not provider flags", () => {
     const provider = {
-      sendBorrowTransaction: async () => "hash",
+      sendBorrowTransaction: async () => ({ txHash: "hash" }),
       sendTransaction: async () => "hash",
       signMessage: async () => "signature",
       switchChain: async () => {},
     };
-    const result = decodeHostConfiguration({
-      apiKey: "api-key",
-      borrowEnabled: true,
-      dashboardVariant: true,
-      externalProviders: {
-        currentAddress: "0xWallet",
-        provider,
-        supportsBorrow: true,
-        type: "generic",
-      },
-      variant: "default",
-    });
+    const decode = (borrowEnabled: boolean) =>
+      decodeHostConfiguration({
+        apiKey: "api-key",
+        borrowEnabled,
+        dashboardVariant: true,
+        externalProviders: {
+          currentAddress: "0xWallet",
+          provider,
+          type: "generic",
+        },
+        variant: "default",
+      });
 
-    expect(Result.isSuccess(result)).toBe(true);
-    if (Result.isSuccess(result)) {
-      expect(result.success.configuration.externalProviders?.provider).toBe(
-        provider
-      );
+    const enabled = decode(true);
+    const disabled = decode(false);
+
+    expect(Result.isSuccess(enabled) && Result.isSuccess(disabled)).toBe(true);
+    if (Result.isSuccess(enabled) && Result.isSuccess(disabled)) {
+      expect(enabled.success.configuration.externalProviders).toMatchObject({
+        borrow: true,
+        provider,
+      });
+      expect(disabled.success.configuration.externalProviders).toMatchObject({
+        borrow: false,
+        provider,
+      });
     }
   });
 
