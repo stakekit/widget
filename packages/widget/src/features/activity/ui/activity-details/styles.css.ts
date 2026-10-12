@@ -89,9 +89,8 @@ export const explorerButton = style({
 });
 
 export const unavailable = style([
-  atoms({ background: "background" }),
+  atoms({ background: "background", borderRadius: "xl" }),
   {
-    borderRadius: "10px",
     marginTop: "16px",
     padding: "12px",
   },

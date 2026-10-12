@@ -172,7 +172,7 @@ export const infoNote = style([
   atoms({
     background: "stakeSectionBackground",
     borderColor: "backgroundMuted",
-    borderRadius: "base",
+    borderRadius: "xl",
     px: "3",
     py: "3",
   }),

@@ -22,7 +22,7 @@ globalStyle(`${detailRow}:last-child`, {
 export const addressBox = style([
   atoms({
     background: "stakeSectionBackground",
-    borderRadius: "base",
+    borderRadius: "xl",
     display: "flex",
     justifyContent: "space-between",
     gap: "2",

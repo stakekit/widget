@@ -81,7 +81,7 @@ export const collateralListButton = style({
 export const collateralRow = style([
   atoms({
     background: "stakeSectionBackground",
-    borderRadius: "base",
+    borderRadius: "xl",
     px: "3",
     py: "3",
   }),

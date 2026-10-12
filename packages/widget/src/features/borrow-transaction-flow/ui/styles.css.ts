@@ -6,7 +6,7 @@ export const executionError = style([
   atoms({
     background: "stakeSectionBackground",
     borderColor: "backgroundMuted",
-    borderRadius: "base",
+    borderRadius: "xl",
     px: "3",
     py: "3",
   }),

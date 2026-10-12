@@ -24,7 +24,7 @@ export const dashboardMetricGrid = style({
 export const dashboardMetricCard = style([
   atoms({
     background: "stakeSectionBackground",
-    borderRadius: "base",
+    borderRadius: "xl",
     px: "3",
     py: "3",
   }),
