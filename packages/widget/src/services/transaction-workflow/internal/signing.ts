@@ -6,10 +6,10 @@ import {
 } from "../../../domain/borrow/execution/transaction";
 import type { Network } from "../../../domain/network/network";
 import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
-import type { SKBorrowTxMeta } from "../../../public-api/types";
 import { TrackingService } from "../../tracking/tracking-service";
 import type { WalletRuntimeInvariantError } from "../../wallet/wallet-errors";
 import { WalletService } from "../../wallet/wallet-service";
+import type { BorrowTransactionMeta } from "../../wallet/wallet-transactions";
 import {
   makeTransactionSignError,
   type TransactionSignFailureReason,
@@ -138,7 +138,7 @@ export const makePrepareAndSign = Effect.gen(function* () {
   }: {
     readonly action: BorrowAction;
     readonly transaction: BorrowAction["transactions"][number];
-  }): SKBorrowTxMeta | null => {
+  }): BorrowTransactionMeta | null => {
     const rawArguments = action.rawArguments;
     if (!rawArguments) return null;
 

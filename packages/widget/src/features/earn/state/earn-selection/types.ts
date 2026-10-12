@@ -2,11 +2,13 @@ import { Data } from "effect";
 import type { AsyncResult } from "effect/reactivity/AsyncResult";
 import type { Atom, PullResult, Writable } from "effect/reactivity/Atom";
 import type { TronResource } from "../../../../domain/action/tron-resource";
+import type { DashboardYieldCategory } from "../../../../domain/earn/contract";
 import type {
   EarnProvider,
   EarnValidator,
   EarnYieldWithProvider,
 } from "../../../../domain/earn/models";
+import type { PreferredTokenYieldsPerNetwork } from "../../../../domain/earn/yield";
 import type {
   ProviderOption,
   YieldId,
@@ -14,10 +16,6 @@ import type {
 import type { PositionsData } from "../../../../domain/portfolio/positions";
 import type { Token } from "../../../../domain/token/token";
 import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
-import type {
-  DashboardYieldCategory,
-  PreferredTokenYieldsPerNetwork,
-} from "../../../../public-api/types";
 import type { InitParams } from "../../../../services/wallet/init-params";
 import type { PullPage } from "../../../../shared/effect/pagination";
 import type {

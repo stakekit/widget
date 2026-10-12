@@ -3,9 +3,9 @@ import type { RawTransaction } from "@ledgerhq/wallet-api-core";
 import { Effect, Result } from "effect";
 import { vi } from "vitest";
 import type { Network } from "../../../src/domain/network/network";
-import type { SKTxMeta } from "../../../src/public-api/types";
 import { makePrepareLedgerLiveTransaction } from "../../../src/services/wallet/internal/adapters/ledger/prepare-ledger-live-transaction";
 import { getConfig as getSubstrateConfig } from "../../../src/services/wallet/internal/adapters/substrate/config";
+import type { ClassicTransactionMeta } from "../../../src/services/wallet/wallet-transactions";
 import { runWalletEffect } from "../../utils/run-wallet-effect";
 import { unusedWalletConnectProtocol } from "../../utils/wallet-connect";
 
@@ -158,7 +158,7 @@ const txMeta = {
   structuredTransaction: null,
   txId: "tx-id",
   txType: "STAKE",
-} as unknown as SKTxMeta;
+} as unknown as ClassicTransactionMeta;
 
 describe("Polkadot registry lazy load", () => {
   it.live(
@@ -221,7 +221,7 @@ describe("Polkadot registry lazy load", () => {
           txMeta: {
             ...txMeta,
             rawArguments: { validatorAddress: "cosmosvaloper1validator" },
-          } as SKTxMeta,
+          } as ClassicTransactionMeta,
         });
 
         expect(evaluated.polkadotLedgerTransaction).toBe(0);

@@ -20,7 +20,7 @@ import {
   isCosmosWalletNetwork,
   isEvmWalletNetwork,
 } from "../../../../../domain/wallet/network";
-import type { SKTxMeta } from "../../../../../public-api/types";
+import type { ClassicTransactionMeta } from "../../../wallet-transactions";
 import { decodeWalletPayload } from "../decode-wallet-payload";
 import {
   unsignedBorrowEVMTransactionCodec,
@@ -35,7 +35,7 @@ type PrepareLedgerLiveTransactionParams = {
   family: "borrow" | "classic";
   tx: string;
   network: string;
-  txMeta?: SKTxMeta;
+  txMeta?: ClassicTransactionMeta;
 };
 
 const GasEstimate = Schema.NullOr(
@@ -138,7 +138,7 @@ const preparePolkadotTransaction = ({
     LedgerTransactionPreparationError
   >;
   payload: unknown;
-  txMeta: SKTxMeta;
+  txMeta: ClassicTransactionMeta;
 }): Effect.Effect<RawTransaction, LedgerTransactionPreparationError> =>
   Effect.fromResult(decodeWalletPayload(substratePayloadCodec, payload)).pipe(
     Effect.mapError(transactionPreparationError),
@@ -168,7 +168,7 @@ const prepareSynchronousTransaction = ({
   family: "borrow" | "classic";
   network: string;
   payload: unknown;
-  txMeta?: SKTxMeta;
+  txMeta?: ClassicTransactionMeta;
 }): Result.Result<RawTransaction, string> => {
   if (isEvmWalletNetwork(network)) {
     const codec =
@@ -249,7 +249,7 @@ const buildEthereumLedgerTransaction = ({
 };
 
 const buildCosmosLedgerTransaction = (
-  txMeta: SKTxMeta
+  txMeta: ClassicTransactionMeta
 ): Result.Result<RawTransaction, string> => {
   const validatorAddress = txMeta.rawArguments?.validatorAddress;
   const mode = getCosmosMode(txMeta.txType);
@@ -276,13 +276,14 @@ const buildCosmosLedgerTransaction = (
 };
 
 const buildTronLedgerTransaction = (
-  txMeta: SKTxMeta
+  txMeta: ClassicTransactionMeta
 ): Result.Result<RawTronTransaction, string> => {
   const amount = getActionAmountInBaseUnits(txMeta);
   const resource = txMeta.rawArguments?.tronResource;
   const validatorAddress =
     txMeta.rawArguments?.validatorAddress ??
     txMeta.rawArguments?.validatorAddresses?.[0];
+  const recipient: string = txMeta.address;
 
   const tronLedgerTx = (() => {
     switch (txMeta.txType) {
@@ -292,7 +293,7 @@ const buildTronLedgerTransaction = (
           return Result.fail("Missing Tron freeze arguments");
         return Result.succeed({
           amount: amount.toString(),
-          recipient: txMeta.address ?? "",
+          recipient,
           family: "tron",
           mode: "freeze",
           resource,
@@ -312,7 +313,7 @@ const buildTronLedgerTransaction = (
             (votes) =>
               ({
                 amount: amount.toString(),
-                recipient: txMeta.address ?? "",
+                recipient,
                 family: "tron",
                 mode: "vote",
                 votes,
@@ -347,7 +348,7 @@ const buildTronLedgerTransaction = (
           return Result.fail("Missing Tron unfreeze arguments");
         return Result.succeed({
           amount: amount.toString(),
-          recipient: txMeta.address ?? "",
+          recipient,
           family: "tron",
           mode: "unfreeze",
           resource,
@@ -355,7 +356,7 @@ const buildTronLedgerTransaction = (
       case "CLAIM_REWARDS":
         return Result.succeed({
           amount: "0",
-          recipient: txMeta.address ?? "",
+          recipient,
           family: "tron",
           mode: "claimReward",
         } as RawTronTransaction);
@@ -372,7 +373,7 @@ const buildTronLedgerTransaction = (
 };
 
 const buildNearLedgerTransaction = (
-  txMeta: SKTxMeta
+  txMeta: ClassicTransactionMeta
 ): Result.Result<RawTransaction, string> => {
   const validatorAddress = txMeta.rawArguments?.validatorAddress;
   const amount = getActionAmountInBaseUnits(txMeta);
@@ -391,7 +392,7 @@ const buildNearLedgerTransaction = (
 };
 
 const buildTezosLedgerTransaction = (
-  txMeta: SKTxMeta
+  txMeta: ClassicTransactionMeta
 ): Result.Result<RawTransaction, string> => {
   const gasEstimate = parseGasEstimate(txMeta.gasEstimate);
   const isUnstake = txMeta.txType === "UNSTAKE";
@@ -413,7 +414,7 @@ const buildTezosLedgerTransaction = (
 
 const buildTonLedgerTransaction = (
   tx: typeof unsignedTonTransactionCodec.Type,
-  txMeta: SKTxMeta
+  txMeta: ClassicTransactionMeta
 ): Result.Result<RawTransaction, string> => {
   const gasEstimate = parseGasEstimate(txMeta.gasEstimate);
 
@@ -458,7 +459,7 @@ const buildTonLedgerTransaction = (
 };
 
 const parseGasEstimate = (
-  gasEstimate: SKTxMeta["gasEstimate"]
+  gasEstimate: ClassicTransactionMeta["gasEstimate"]
 ): GasEstimate => {
   if (!gasEstimate) return null;
 
@@ -467,7 +468,9 @@ const parseGasEstimate = (
   );
 };
 
-const getActionAmountInBaseUnits = (txMeta: SKTxMeta): BigNumber | null => {
+const getActionAmountInBaseUnits = (
+  txMeta: ClassicTransactionMeta
+): BigNumber | null => {
   if (txMeta.amountRaw) {
     return exactDecimal(txMeta.amountRaw);
   }
@@ -492,7 +495,7 @@ const getFeeInBaseUnits = (gasEstimate: GasEstimate): BigNumber => {
   );
 };
 
-const getCosmosMode = (txType: SKTxMeta["txType"]): string => {
+const getCosmosMode = (txType: ClassicTransactionMeta["txType"]): string => {
   switch (txType) {
     case "STAKE":
       return "delegate";
@@ -513,7 +516,7 @@ const getCosmosMode = (txType: SKTxMeta["txType"]): string => {
 const isCosmosClaimMode = (mode: string): boolean =>
   mode === "claimReward" || mode === "claimRewardCompound";
 
-const getNearMode = (txType: SKTxMeta["txType"]): string => {
+const getNearMode = (txType: ClassicTransactionMeta["txType"]): string => {
   switch (txType) {
     case "STAKE":
       return "stake";
@@ -527,7 +530,9 @@ const getNearMode = (txType: SKTxMeta["txType"]): string => {
   }
 };
 
-const getActionAmountInTokenUnits = (txMeta: SKTxMeta): BigNumber | null => {
+const getActionAmountInTokenUnits = (
+  txMeta: ClassicTransactionMeta
+): BigNumber | null => {
   const amount = txMeta.rawArguments?.amount ?? txMeta.amount;
 
   if (amount) {
@@ -549,7 +554,7 @@ const getTronVotes = ({
   txMeta,
   validatorAddresses,
 }: {
-  txMeta: SKTxMeta;
+  txMeta: ClassicTransactionMeta;
   validatorAddresses: ReadonlyArray<string>;
 }): Result.Result<{ address: string; voteCount: number }[], string> => {
   const amount = getActionAmountInTokenUnits(txMeta);

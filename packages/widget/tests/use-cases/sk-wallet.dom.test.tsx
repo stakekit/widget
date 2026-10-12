@@ -10,16 +10,24 @@ import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
-import { ActionId, TransactionId } from "../../src/domain/identity/identifiers";
+import {
+  ActionId,
+  TransactionId,
+  WalletAddress,
+  YieldId,
+} from "../../src/domain/identity/identifiers";
 import { WagmiConfigProvider } from "../../src/features/wallet/composition";
 import { useSKWallet } from "../../src/features/wallet/index";
-import type { SKExternalProviders, SKTxMeta } from "../../src/public-api/types";
+import type { SKExternalProviders } from "../../src/public-api/types";
 import {
   solana,
   ton,
 } from "../../src/services/wallet/internal/adapters/configured-chains";
 import { WalletService } from "../../src/services/wallet/wallet-service";
-import type { WalletSignTransactionInput } from "../../src/services/wallet/wallet-transactions";
+import type {
+  ClassicTransactionMeta,
+  WalletSignTransactionInput,
+} from "../../src/services/wallet/wallet-transactions";
 import { yieldApiRoute } from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
@@ -77,39 +85,52 @@ const waitForWalletConnection = (
       .toBe(true);
   });
 
-const createSolanaTxMeta = (): SKTxMeta => ({
+const solanaAddress = "9TCnDo7Txc5bC9SnE9iKsU5CyffLfeK4nrv1BFUmxkiJ";
+const tonAddress = "UQDyiNAyPy8QRQy45-SjxzrbKVOTOVyXaVGPZSLI9jxHF_Sy";
+
+const createClassicTxMeta = ({
+  address,
+  network,
+  yieldId,
+}: {
+  readonly address: string;
+  readonly network: "solana" | "ton";
+  readonly yieldId: string;
+}): ClassicTransactionMeta => ({
   txId: Schema.decodeSync(TransactionId)("transaction-id"),
   actionId: Schema.decodeSync(ActionId)("action-id"),
   actionType: "STAKE",
   txType: "APPROVAL",
+  address: Schema.decodeSync(WalletAddress)(address),
   amount: "100",
+  amountRaw: "100",
   inputToken: {
     decimals: 0,
     symbol: "",
     name: "",
-    network: "solana",
+    network,
   },
+  rawArguments: null,
   structuredTransaction: null,
   annotatedTransaction: null,
+  gasEstimate: undefined,
   providersDetails: [],
+  yieldId: Schema.decodeSync(YieldId)(yieldId),
 });
 
-const createTonTxMeta = (): SKTxMeta => ({
-  txId: Schema.decodeSync(TransactionId)("transaction-id"),
-  actionId: Schema.decodeSync(ActionId)("action-id"),
-  actionType: "STAKE",
-  txType: "APPROVAL",
-  amount: "100",
-  inputToken: {
-    decimals: 0,
-    symbol: "",
-    name: "",
+const createSolanaTxMeta = () =>
+  createClassicTxMeta({
+    address: solanaAddress,
+    network: "solana",
+    yieldId: "solana-sol-native-multivalidator-staking",
+  });
+
+const createTonTxMeta = () =>
+  createClassicTxMeta({
+    address: tonAddress,
     network: "ton",
-  },
-  structuredTransaction: null,
-  annotatedTransaction: null,
-  providersDetails: [],
-});
+    yieldId: "ton-ton-chorus-one-pools-staking",
+  });
 
 const createDefaultTonTransactionFixture = () => {
   const message = internal({
@@ -154,7 +175,7 @@ describe("SK Wallet", () => {
 
     const solanaWallet = await renderHookWithExternalProvider({
       type: "generic",
-      currentAddress: "9TCnDo7Txc5bC9SnE9iKsU5CyffLfeK4nrv1BFUmxkiJ",
+      currentAddress: solanaAddress,
       currentChain: solana.id,
       supportedChainIds: [solana.id],
       provider: {
@@ -202,7 +223,7 @@ describe("SK Wallet", () => {
 
     const solanaWallet = await renderHookWithExternalProvider({
       type: "generic",
-      currentAddress: "9TCnDo7Txc5bC9SnE9iKsU5CyffLfeK4nrv1BFUmxkiJ",
+      currentAddress: solanaAddress,
       currentChain: solana.id,
       supportedChainIds: [solana.id],
       provider: {
@@ -254,7 +275,7 @@ describe("SK Wallet", () => {
 
     const solanaWallet = await renderHookWithExternalProvider({
       type: "generic",
-      currentAddress: "9TCnDo7Txc5bC9SnE9iKsU5CyffLfeK4nrv1BFUmxkiJ",
+      currentAddress: solanaAddress,
       currentChain: solana.id,
       supportedChainIds: [solana.id],
       provider: {
@@ -270,22 +291,7 @@ describe("SK Wallet", () => {
       family: "classic",
       network: "solana",
       tx: "12345",
-      txMeta: {
-        txId: Schema.decodeSync(TransactionId)("transaction-id"),
-        actionId: Schema.decodeSync(ActionId)("action-id"),
-        actionType: "STAKE",
-        txType: "APPROVAL",
-        amount: "100",
-        inputToken: {
-          decimals: 0,
-          symbol: "",
-          name: "",
-          network: "solana",
-        },
-        structuredTransaction: null,
-        annotatedTransaction: null,
-        providersDetails: [],
-      },
+      txMeta: createSolanaTxMeta(),
       ledgerHwAppId: null,
     });
 
@@ -308,7 +314,7 @@ describe("SK Wallet", () => {
 
     const tonWallet = await renderHookWithExternalProvider({
       type: "generic",
-      currentAddress: "UQDyiNAyPy8QRQy45-SjxzrbKVOTOVyXaVGPZSLI9jxHF_Sy",
+      currentAddress: tonAddress,
       currentChain: ton.id,
       supportedChainIds: [ton.id],
       provider: {
@@ -363,7 +369,7 @@ describe("SK Wallet", () => {
 
     const tonWallet = await renderHookWithExternalProvider({
       type: "generic",
-      currentAddress: "UQDyiNAyPy8QRQy45-SjxzrbKVOTOVyXaVGPZSLI9jxHF_Sy",
+      currentAddress: tonAddress,
       currentChain: ton.id,
       supportedChainIds: [ton.id],
       provider: {

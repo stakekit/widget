@@ -1,4 +1,5 @@
 import type { TronResource } from "../../../../../domain/action/tron-resource";
+import type { DashboardYieldCategory } from "../../../../../domain/earn/contract";
 import type {
   EarnValidator,
   EarnValidatorKey,
@@ -7,7 +8,6 @@ import type {
   ProviderOption,
   YieldId,
 } from "../../../../../domain/identity/identifiers";
-import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import type { EarnEntryIntent, EarnTokenKey } from "../types";
 
 const resetYieldIntent = (

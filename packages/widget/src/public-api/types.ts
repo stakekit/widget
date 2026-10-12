@@ -26,7 +26,7 @@ export {
 
 type Hex = `0x${string}`;
 
-export type SKEip712TypedData = {
+type SKEip712TypedData = {
   readonly domain: {
     readonly chainId?: number;
     readonly name?: string;
@@ -455,7 +455,7 @@ export type TrackingConfig = {
   ) => void;
 };
 
-export type PreferredTokenYieldsPerNetwork = Readonly<
+type PreferredTokenYieldsPerNetwork = Readonly<
   Record<string, Readonly<Record<`${string}-${string}`, string>>>
 >;
 

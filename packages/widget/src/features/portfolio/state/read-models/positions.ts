@@ -2,6 +2,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
 import type { MarketPosition } from "../../../../domain/borrow/positions/market-position";
+import type { DashboardYieldCategory } from "../../../../domain/earn/contract";
 import type { EarnBalance } from "../../../../domain/earn/models";
 import { getDashboardYieldCategory } from "../../../../domain/earn/yield";
 import { exactDecimal } from "../../../../domain/finance/exact";
@@ -16,7 +17,6 @@ import {
   widgetBootstrapSnapshotAtom,
   widgetConfigAtom,
 } from "../../../../features/widget-configuration/index";
-import type { DashboardYieldCategory } from "../../../../public-api/types";
 import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom,

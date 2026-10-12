@@ -70,6 +70,11 @@ type YieldTypeLabelsMap = {
   };
 };
 
+/** Preferred yield ID per lowercase `network-address` token key, per network. */
+export type PreferredTokenYieldsPerNetwork = Readonly<
+  Record<string, Readonly<Record<`${string}-${string}`, string>>>
+>;
+
 export type ValidatorsConfig = ReadonlyMap<
   Network | "*",
   Readonly<{

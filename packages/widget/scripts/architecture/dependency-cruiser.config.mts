@@ -466,6 +466,25 @@ const configuration: IConfiguration = {
       },
     },
     {
+      name: "public-api-host-boundaries-only",
+      severity: "error",
+      comment:
+        "Host-facing types enter only at host boundaries: raw Host Configuration composition and decoding, host wallet and tracking callbacks. Everything else uses Domain or owner types.",
+      from: {
+        path: "^src/(?:app|features|resources|services)/",
+        pathNot: [
+          "^src/app/composition/providers/(?:atom-runtime/index\\.tsx|widget-config-binding\\.tsx)$",
+          "^src/app/runtime/application-runtime-init\\.ts$",
+          "^src/features/widget-configuration/state/widget-config\\.ts$",
+          "^src/services/config/",
+          "^src/services/tracking/tracking-variants\\.ts$",
+          "^src/services/wallet/external-provider\\.ts$",
+          "^src/services/wallet/internal/adapters/external-provider/driver\\.ts$",
+        ],
+      },
+      to: { path: "^src/public-api/" },
+    },
+    {
       name: "shared-public-theme-contract-only",
       severity: "error",
       comment:

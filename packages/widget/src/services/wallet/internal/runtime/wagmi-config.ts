@@ -10,12 +10,14 @@ import {
   applyWalletPolicy,
   type WalletPolicy,
 } from "../../../../domain/wallet/wallet-policy";
-import type { ExternalProviderSnapshot } from "../../../../public-api/external-provider-contract";
-import type { VariantProps } from "../../../../public-api/react-types";
-import type { SettingsProps } from "../../../../public-api/types";
 import { evmChainGroup } from "../../../../services/wallet/evm-chain-group";
 import type { InitParams } from "../../../../services/wallet/init-params";
 import { config } from "../../../../shared/config/widget-defaults";
+import type { ExternalProviderSnapshot } from "../../../config/external-provider-snapshot";
+import type {
+  WidgetConfig,
+  WidgetVariant,
+} from "../../../config/widget-config-model";
 import type { WidgetPersistence } from "../../../persistence/widget-persistence";
 import { omitEnsUniversalResolver } from "../../default-wagmi-config";
 import type { CurrentRef } from "../../external-provider";
@@ -113,18 +115,18 @@ export const scopedMipdSubscription = ({
 
 export type BuildWagmiConfigOptions = {
   disableInjectedProviderDiscovery: boolean;
-  mapWalletFn?: SettingsProps["mapWalletFn"];
+  mapWalletFn?: WidgetConfig["mapWalletFn"];
   externalProviders?: CurrentRef<ExternalProviderSnapshot>;
   enabledNetworks: EnabledWalletNetworks;
   walletListFactory?: (chains: Chain[]) => WalletList;
   isLedgerLive: boolean;
   isSafe: boolean;
-  chainIconMapping: SettingsProps["chainIconMapping"];
+  chainIconMapping: WidgetConfig["chainIconMapping"];
   institutionalWallets: boolean;
-  variant: VariantProps["variant"];
+  variant: WidgetVariant;
   solanaWallets: ReadonlyArray<SolanaWalletDescriptor>;
   solanaConnection: Connection;
-  walletPolicy?: SettingsProps["walletPolicy"];
+  walletPolicy?: WalletPolicy;
   persistPublicKey: WidgetPersistence["Service"]["upsertStoredPublicKey"];
   queryParams: InitParams;
   tonConnectManifestUrl: string | undefined;

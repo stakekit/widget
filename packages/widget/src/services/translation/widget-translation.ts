@@ -46,14 +46,7 @@ declare module "i18next" {
 const ApiErrorTranslations = Schema.Record(Schema.String, Schema.Unknown);
 type ApiErrorTranslations = typeof ApiErrorTranslations.Type;
 type SupportedLanguage = keyof typeof localResources;
-type TranslationTree = Readonly<{
-  [key: string]: string | TranslationTree;
-}>;
-type CustomTranslations =
-  | Partial<
-      Record<SupportedLanguage, { readonly translation: TranslationTree }>
-    >
-  | undefined;
+type CustomTranslations = WidgetConfig["customTranslations"];
 type WidgetTranslationSettings = Pick<
   WidgetConfig,
   "customTranslations" | "language" | "variant"

@@ -1,16 +1,18 @@
 import { Data, Effect } from "effect";
+import type {
+  SKBorrowTx,
+  SKExternalProviders,
+  SKTx,
+} from "../../public-api/types";
 import {
   type ExternalProviderSnapshot,
   isBorrowExternalProvider,
-} from "../../public-api/external-provider-contract";
+} from "../config/external-provider-snapshot";
+import type { Eip712TypedData } from "./wallet-commands";
 import type {
-  SKBorrowTx,
-  SKBorrowTxMeta,
-  SKEip712TypedData,
-  SKExternalProviders,
-  SKTx,
-  SKTxMeta,
-} from "../../public-api/types";
+  BorrowTransactionMeta,
+  ClassicTransactionMeta,
+} from "./wallet-transactions";
 
 export class ExternalProviderError extends Data.TaggedError(
   "ExternalProviderError"
@@ -27,7 +29,7 @@ export type CurrentRef<A> = {
 export class ExternalProvider {
   constructor(private variantProvider: CurrentRef<ExternalProviderSnapshot>) {}
 
-  sendTransaction(tx: SKTx, txMeta: SKTxMeta) {
+  sendTransaction(tx: SKTx, txMeta: ClassicTransactionMeta) {
     return Effect.suspend(() => {
       const sendTransaction =
         this.variantProvider.current.provider.sendTransaction;
@@ -45,7 +47,7 @@ export class ExternalProvider {
     });
   }
 
-  sendBorrowTransaction(tx: SKBorrowTx, txMeta: SKBorrowTxMeta) {
+  sendBorrowTransaction(tx: SKBorrowTx, txMeta: BorrowTransactionMeta) {
     return Effect.suspend(() => {
       const config = this.variantProvider.current;
       if (!isBorrowExternalProvider(config)) {
@@ -82,7 +84,7 @@ export class ExternalProvider {
     });
   }
 
-  signTypedData(typedData: SKEip712TypedData) {
+  signTypedData(typedData: Eip712TypedData) {
     return Effect.suspend(() => {
       const signTypedData = this.variantProvider.current.provider.signTypedData;
       if (!signTypedData) {

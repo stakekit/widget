@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from "react";
 import { useWidgetConfig } from "../../../../features/widget-configuration/index";
-import type { VariantProps } from "../../../../public-api/react-types";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { useSKWallet } from "../../react/use-wallet";
 
@@ -20,11 +19,10 @@ export const ZerionChainModal = () => {
 
   const switchChain = connector?.switchChain;
 
-  const onSwitchChain = useCallback<
-    Parameters<
-      Extract<VariantProps, { variant: "zerion" }>["chainModal"]
-    >[0]["onSwitchChain"]
-  >((chainId) => switchChain?.({ chainId }), [switchChain]);
+  const onSwitchChain = useCallback(
+    (chainId: number) => switchChain?.({ chainId }),
+    [switchChain]
+  );
 
   if (
     variant !== "zerion" ||

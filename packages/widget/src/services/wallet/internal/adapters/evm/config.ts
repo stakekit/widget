@@ -1,8 +1,8 @@
 import { Effect, Record } from "effect";
 import type { Network } from "../../../../../domain/network/network";
-import type { VariantProps } from "../../../../../public-api/react-types";
 import { evmChainGroup } from "../../../../../services/wallet/evm-chain-group";
 import portoIcon from "../../../../../shared/assets/images/porto.svg";
+import type { WidgetVariant } from "../../../../config/widget-config-model";
 import type { Chain, WalletList } from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";
 import { type EvmChainsMap, evmChainsMap } from "./chains";
@@ -24,7 +24,7 @@ const queryFn = async ({
 }: {
   enabledNetworks: ReadonlySet<Network>;
   institutionalWallets: boolean;
-  variant: VariantProps["variant"];
+  variant: WidgetVariant;
 } & EvmWalletPresentationOptions): Promise<{
   evmChainsMap: Partial<EvmChainsMap>;
   evmChains: Chain[];

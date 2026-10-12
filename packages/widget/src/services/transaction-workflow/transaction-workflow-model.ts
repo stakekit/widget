@@ -7,7 +7,6 @@ import type {
 import type { Action as BorrowAction } from "../../domain/borrow/execution/action";
 import type { Transaction as BorrowTransaction } from "../../domain/borrow/execution/transaction";
 import { WalletScopeKey } from "../../domain/wallet/wallet-scope";
-import type { ActionMeta } from "../../public-api/types";
 import { toRepresentationNumber } from "../../shared/lib/number-format";
 import { TransactionStepState } from "../../shared/lib/transaction-step-state";
 import { ExternalProviderError } from "../wallet/external-provider";
@@ -18,9 +17,10 @@ import type {
   WalletRuntimeInvariantError,
   WalletSigningError,
 } from "../wallet/wallet-errors";
+import type { ClassicActionMeta } from "../wallet/wallet-transactions";
 
 type ClassicTransactionWorkflowInputFields = {
-  readonly actionMeta: ActionMeta;
+  readonly actionMeta: ClassicActionMeta;
   readonly transactions: YieldAction["transactions"];
   readonly walletScope: WalletScopeKey;
   readonly yieldId: YieldAction["yieldId"];
@@ -55,7 +55,7 @@ export const makeClassicTransactionWorkflowInput = ({
   walletScope,
 }: {
   readonly action: YieldAction;
-  readonly inputToken: ActionMeta["inputToken"];
+  readonly inputToken: ClassicActionMeta["inputToken"];
   readonly providersDetails:
     | ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
     | null
@@ -317,7 +317,7 @@ type TransactionWorkflowBatch = {
 type TransactionWorkflowDomainContext =
   | {
       readonly _tag: "Classic";
-      readonly actionMeta: ActionMeta;
+      readonly actionMeta: ClassicActionMeta;
       readonly yieldId: YieldAction["yieldId"];
     }
   | {

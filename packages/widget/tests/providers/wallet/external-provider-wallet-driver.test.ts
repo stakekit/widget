@@ -1,9 +1,16 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Effect } from "effect";
+import { Effect, Schema } from "effect";
 import { zeroAddress } from "viem";
 import type { Connector } from "wagmi";
+import {
+  ActionId as BorrowActionId,
+  IntegrationId as BorrowIntegrationId,
+  TransactionId as BorrowTransactionId,
+} from "../../../src/domain/borrow/ids";
+import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { ExternalProviderError } from "../../../src/services/wallet/external-provider";
 import { makeExternalProviderWalletDriver } from "../../../src/services/wallet/internal/adapters/external-provider/driver";
+import type { BorrowTransactionMeta } from "../../../src/services/wallet/wallet-transactions";
 
 const tx = JSON.stringify({
   chainId: 1,
@@ -43,6 +50,19 @@ const txMeta = {} as Extract<
   ExternalProviderTransactionInput,
   { readonly family: "classic" }
 >["txMeta"];
+
+const borrowTxMeta = {
+  actionId: Schema.decodeSync(BorrowActionId)("borrow-action-id"),
+  actionType: "borrow",
+  address: Schema.decodeSync(WalletAddress)(zeroAddress),
+  integrationId: Schema.decodeSync(BorrowIntegrationId)("aave-v3"),
+  rawArguments: {
+    amount: "1",
+    marketId: "aave-v3-ethereum-usdc",
+  },
+  txId: Schema.decodeSync(BorrowTransactionId)("borrow-transaction-id"),
+  txType: "BORROW",
+} satisfies BorrowTransactionMeta;
 
 describe("external-provider wallet driver", () => {
   it.effect("routes typed data through the host signing capability", () =>
@@ -159,18 +179,7 @@ describe("external-provider wallet driver", () => {
             family: "borrow",
             network: "ethereum",
             tx,
-            txMeta: {
-              actionId: "borrow-action-id",
-              actionType: "borrow",
-              address: zeroAddress,
-              integrationId: "aave-v3",
-              rawArguments: {
-                amount: "1",
-                marketId: "aave-v3-ethereum-usdc",
-              },
-              txId: "borrow-transaction-id",
-              txType: "BORROW",
-            },
+            txMeta: borrowTxMeta,
           })
         ).toEqual({ broadcasted: true, signedTx: "borrow-hash" });
 
@@ -197,18 +206,7 @@ describe("external-provider wallet driver", () => {
           family: "borrow",
           network: "ethereum",
           tx: txWithoutNonce,
-          txMeta: {
-            actionId: "borrow-action-id",
-            actionType: "borrow",
-            address: zeroAddress,
-            integrationId: "aave-v3",
-            rawArguments: {
-              amount: "1",
-              marketId: "aave-v3-ethereum-usdc",
-            },
-            txId: "borrow-transaction-id",
-            txType: "BORROW",
-          },
+          txMeta: borrowTxMeta,
         });
 
         expect(received).toEqual({

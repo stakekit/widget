@@ -52,6 +52,26 @@ files stay private.
 `src/index.package.ts` and `src/index.bundle.ts` are outbound-only package
 entries. Nothing under `src` imports them.
 
+## Public API
+
+Public types are a semver contract with host applications, not the
+application's model. They are hand-written in `public-api`, never aliased from
+generated API clients or internal implementation types, so a backend or
+refactoring change cannot silently alter what hosts compile against. The only
+derived exceptions are stable Domain contract re-exports and the theme token
+contract, which `public-api` owns.
+
+Every hand-written public type has a compile-time conformance site where an
+internal value crosses into or out of it: internal producers assign into the
+public type before handing it to a host callback, and host inputs are decoded at
+the configuration boundary with exhaustive literal lists. A new public type
+without such a site is incomplete.
+
+Host-facing types are imported only at host boundaries: raw Host Configuration
+composition and decoding in `services/config`, and the host wallet and tracking
+adapters. Every other Module uses Domain or owner types, so internal rules never
+depend on the shape hosts see. dependency-cruiser enforces this.
+
 ## Module interfaces
 
 An Owned Module publishes only the finite interfaces its actual consumers need,

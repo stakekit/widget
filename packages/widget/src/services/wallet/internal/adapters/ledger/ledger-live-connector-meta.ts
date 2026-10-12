@@ -7,10 +7,10 @@ import type { RawTransaction } from "@ledgerhq/wallet-api-core";
 import type { Effect, Stream } from "effect";
 import type { Address } from "viem";
 import type { Connector } from "wagmi";
-import type { SKTxMeta } from "../../../../../public-api/types";
 import type { ConnectorWithFilteredChains } from "../../../wallet-connectors";
 import type { Chain } from "../../../wallet-descriptors";
 import type { WalletIntegrationError } from "../../../wallet-errors";
+import type { ClassicTransactionMeta } from "../../../wallet-transactions";
 import type { LedgerTransactionPreparationError } from "./prepare-ledger-live-transaction";
 
 export const configMeta = {
@@ -39,7 +39,7 @@ export type ExtraProps = ConnectorWithFilteredChains & {
     family: "borrow" | "classic";
     network: string;
     tx: string;
-    txMeta?: SKTxMeta;
+    txMeta?: ClassicTransactionMeta;
   }) => Effect.Effect<RawTransaction, LedgerTransactionPreparationError>;
 };
 

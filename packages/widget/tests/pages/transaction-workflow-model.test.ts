@@ -5,7 +5,6 @@ import { Action } from "../../src/domain/borrow/execution/action";
 import { Transaction } from "../../src/domain/borrow/execution/transaction";
 import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
-import type { ActionMeta } from "../../src/public-api/types";
 import {
   appendTransactionWorkflowBatch,
   getTransactionWorkflowAction,
@@ -30,6 +29,7 @@ import {
   WalletBroadcastError,
   WalletSigningError,
 } from "../../src/services/wallet/wallet-errors";
+import type { ClassicActionMeta } from "../../src/services/wallet/wallet-transactions";
 import { yieldApiTransactionFixture } from "../fixtures";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -44,7 +44,7 @@ const borrowWalletScope = new WalletScopeKey({ address, network: "base" });
 const actionMeta = {
   actionId: "action-1",
   address,
-} as unknown as ActionMeta;
+} as unknown as ClassicActionMeta;
 
 const classicTransaction = (
   id: string,

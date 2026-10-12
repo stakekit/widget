@@ -2,8 +2,8 @@ import { describe, expect, it } from "@effect/vitest";
 import { Effect, Schema } from "effect";
 import { vi } from "vitest";
 import { ValidatorAddress } from "../../src/domain/identity/identifiers";
-import type { SKTxMeta } from "../../src/public-api/types";
 import { makePrepareLedgerLiveTransaction } from "../../src/services/wallet/internal/adapters/ledger/prepare-ledger-live-transaction";
+import type { ClassicTransactionMeta } from "../../src/services/wallet/wallet-transactions";
 
 const substrateMethod = vi.hoisted(() => ({
   current: {
@@ -35,7 +35,7 @@ type PrepareParams = {
   family?: "borrow" | "classic";
   network: string;
   tx: string;
-  txMeta?: SKTxMeta;
+  txMeta?: ClassicTransactionMeta;
 };
 
 const prepared = (params: PrepareParams) =>
@@ -49,7 +49,9 @@ const prepare = (params: PrepareParams) => prepared(params);
 
 const prepareFailure = (params: PrepareParams) => Effect.flip(prepared(params));
 
-const createTxMeta = (overrides: Partial<SKTxMeta>): SKTxMeta =>
+const createTxMeta = (
+  overrides: Partial<ClassicTransactionMeta>
+): ClassicTransactionMeta =>
   ({
     actionId: "action-id",
     actionType: "STAKE",
@@ -70,7 +72,7 @@ const createTxMeta = (overrides: Partial<SKTxMeta>): SKTxMeta =>
     txId: "tx-id",
     txType: "STAKE",
     ...overrides,
-  }) as SKTxMeta;
+  }) as ClassicTransactionMeta;
 
 const validatorAddress = Schema.decodeSync(ValidatorAddress);
 

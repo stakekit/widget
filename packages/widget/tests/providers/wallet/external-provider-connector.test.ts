@@ -9,8 +9,8 @@ import {
   reconnect,
   watchConnection,
 } from "wagmi/actions";
-import type { ExternalProviderSnapshot } from "../../../src/public-api/external-provider-contract";
 import type { SKExternalProviders } from "../../../src/public-api/types";
+import type { ExternalProviderSnapshot } from "../../../src/services/config/external-provider-snapshot";
 import { solana } from "../../../src/services/wallet/internal/adapters/configured-chains";
 import {
   externalProviderConnector,

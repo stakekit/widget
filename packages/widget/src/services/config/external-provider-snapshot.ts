@@ -1,7 +1,7 @@
 import type {
   SKBorrowExternalProviders,
   SKExternalProviders,
-} from "./types.js";
+} from "../../public-api/types";
 
 export type ExternalProviderSnapshot =
   | Readonly<SKExternalProviders>

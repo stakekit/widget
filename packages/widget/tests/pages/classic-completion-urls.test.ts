@@ -4,10 +4,10 @@ import type { TransactionType } from "../../src/domain/action/rules";
 import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { getClassicTransactionCompletionUrls } from "../../src/features/classic-transaction-flow/model/classic-transaction-workflow";
-import type { ActionMeta } from "../../src/public-api/types";
 import type { YieldOperations } from "../../src/services/api/operations";
 import { ClassicTransactionWorkflowInput } from "../../src/services/transaction-workflow/transaction-workflow-model";
 import { TransactionWorkflowService } from "../../src/services/transaction-workflow/transaction-workflow-service";
+import type { ClassicActionMeta } from "../../src/services/wallet/wallet-transactions";
 import { yieldApiTransactionFixture } from "../fixtures";
 import { makeConnectedWalletState } from "../fixtures/wallet-state";
 import { makeTransactionWorkflowTestKit } from "../utils/transaction-workflow-test-kit";
@@ -28,7 +28,7 @@ const actionMeta = {
   inputToken: undefined,
   providersDetails: [],
   yieldId,
-} as unknown as ActionMeta;
+} as unknown as ClassicActionMeta;
 
 const runClassicToCompletion = (
   transactionId: string,

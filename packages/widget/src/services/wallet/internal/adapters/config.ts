@@ -1,8 +1,8 @@
 import type { Connection } from "@solana/web3.js";
 import { Effect, Record } from "effect";
 import type { Network } from "../../../../domain/network/network";
-import type { VariantProps } from "../../../../public-api/react-types";
 import { config } from "../../../../shared/config/widget-defaults";
+import type { WidgetVariant } from "../../../config/widget-config-model";
 import type { Chain, WalletList } from "../../wallet-descriptors";
 import { WalletIntegrationError } from "../../wallet-errors";
 import type { WalletModal } from "../../wallet-modal";
@@ -29,7 +29,7 @@ const queryFn = async ({
   enabledNetworks: ReadonlySet<Network>;
   solanaWallets: ReadonlyArray<SolanaWalletDescriptor>;
   solanaConnection: Connection;
-  variant: VariantProps["variant"];
+  variant: WidgetVariant;
   tonConnectManifestUrl: string | undefined;
   stellarConnector: WalletList[number] | null;
   readonly walletConnectProtocol: WalletConnectProtocol;

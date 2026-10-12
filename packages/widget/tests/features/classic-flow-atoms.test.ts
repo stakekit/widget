@@ -16,9 +16,9 @@ import {
 } from "../../src/features/classic-transaction-flow/state/atoms/classic-flow-session";
 import type { ClassicFlowSessionHandle } from "../../src/features/classic-transaction-flow/state/orchestration/classic-flow-session";
 import { ClassicTransactionFlowService } from "../../src/features/classic-transaction-flow/state/orchestration/classic-transaction-flow-service";
-import type { ActionMeta } from "../../src/public-api/types";
 import { initializeTransactionWorkflow } from "../../src/services/transaction-workflow/internal/model";
 import { ClassicTransactionWorkflowInput } from "../../src/services/transaction-workflow/transaction-workflow-model";
+import type { ClassicActionMeta } from "../../src/services/wallet/wallet-transactions";
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,
@@ -70,7 +70,7 @@ const actionMeta = {
   inputToken: undefined,
   providersDetails: [],
   yieldId: selectedStake.id,
-} as unknown as ActionMeta;
+} as unknown as ClassicActionMeta;
 
 describe("Classic Flow Atom bridge", () => {
   it.effect(

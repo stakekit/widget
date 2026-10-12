@@ -8,23 +8,17 @@ import {
   Stream,
   SubscriptionRef,
 } from "effect";
+import type { DashboardYieldCategory } from "../../domain/earn/contract";
 import { validatorAddressIdentities } from "../../domain/earn/validator";
 import {
   dashboardYieldCategories,
+  type PreferredTokenYieldsPerNetwork,
   type ValidatorsConfig,
 } from "../../domain/earn/yield";
 import type { Network } from "../../domain/network/network";
-import type { ExternalProviderSnapshot } from "../../public-api/external-provider-contract";
-import type {
-  SKHostConfiguration,
-  VariantProps,
-} from "../../public-api/react-types";
-import type {
-  DashboardYieldCategory,
-  PreferredTokenYieldsPerNetwork,
-  SettingsProps,
-} from "../../public-api/types";
+import type { SKHostConfiguration } from "../../public-api/react-types";
 import { config } from "../../shared/config/widget-defaults";
+import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
 import {
   type DecodedHostConfiguration,
   decodeHostConfiguration,
@@ -49,22 +43,22 @@ export type ApplicationApiIdentity = {
 };
 
 type WidgetTrackingSnapshot = {
-  readonly tracking: SettingsProps["tracking"];
-  readonly variant: VariantProps["variant"];
+  readonly tracking: WidgetConfig["tracking"];
+  readonly variant: WidgetConfig["variant"];
 };
 
 type WidgetWalletSnapshot = {
-  readonly chainIconMapping: SettingsProps["chainIconMapping"];
+  readonly chainIconMapping: WidgetConfig["chainIconMapping"];
   readonly disableInjectedProviderDiscovery: boolean;
   readonly externalProviderInitToken: ExternalProviderSnapshot["initToken"];
   readonly hasExternalProvider: boolean;
   readonly institutionalWallets: boolean;
   readonly isLedgerLive: boolean;
   readonly isSafe: boolean;
-  readonly mapWalletFn: SettingsProps["mapWalletFn"];
+  readonly mapWalletFn: WidgetConfig["mapWalletFn"];
   readonly tonConnectManifestUrl: string | undefined;
-  readonly variant: VariantProps["variant"];
-  readonly walletPolicy: SettingsProps["walletPolicy"];
+  readonly variant: WidgetConfig["variant"];
+  readonly walletPolicy: WidgetConfig["walletPolicy"];
 };
 
 export type WidgetBootstrapSnapshot = {

@@ -6,9 +6,7 @@ import { isEvmWalletNetwork } from "../../../../../domain/wallet/network";
 import type {
   BittensorTx,
   SKBorrowTx,
-  SKBorrowTxMeta,
   SKTx,
-  SKTxMeta,
   TronTx,
 } from "../../../../../public-api/types";
 import type { ExternalProviderError } from "../../../external-provider";
@@ -19,7 +17,11 @@ import {
   WalletDecodeError,
   WalletSigningError,
 } from "../../../wallet-errors";
-import type { WalletBroadcastResult } from "../../../wallet-transactions";
+import type {
+  BorrowTransactionMeta,
+  ClassicTransactionMeta,
+  WalletBroadcastResult,
+} from "../../../wallet-transactions";
 import { decodeWalletPayload } from "../decode-wallet-payload";
 import {
   decodeAndPrepareBorrowEvmTransaction,
@@ -151,11 +153,11 @@ type ExternalProviderTransactionInput = {
 } & (
   | {
       readonly family: "classic";
-      readonly txMeta: SKTxMeta;
+      readonly txMeta: ClassicTransactionMeta;
     }
   | {
       readonly family: "borrow";
-      readonly txMeta: SKBorrowTxMeta;
+      readonly txMeta: BorrowTransactionMeta;
     }
 );
 

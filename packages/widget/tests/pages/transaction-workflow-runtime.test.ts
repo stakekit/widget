@@ -18,7 +18,6 @@ import {
   WalletScopeKey,
   walletScopeOwnerKey,
 } from "../../src/domain/wallet/wallet-scope";
-import type { ActionMeta } from "../../src/public-api/types";
 import type {
   BorrowOperations,
   YieldOperations,
@@ -35,6 +34,7 @@ import {
 } from "../../src/services/transaction-workflow/transaction-workflow-service";
 import { WalletSigningError } from "../../src/services/wallet/wallet-errors";
 import type { WalletState } from "../../src/services/wallet/wallet-state";
+import type { ClassicActionMeta } from "../../src/services/wallet/wallet-transactions";
 import { yieldApiTransactionFixture } from "../fixtures";
 import { makeConnectedWalletState } from "../fixtures/wallet-state";
 import type { TestWalletBehaviorOptions } from "../utils/services/wallet-service";
@@ -66,7 +66,7 @@ const actionMeta = {
   inputToken: undefined,
   providersDetails: [],
   yieldId,
-} as unknown as ActionMeta;
+} as unknown as ClassicActionMeta;
 
 type WorkflowTestCapabilityOverrides = {
   readonly borrow?: Partial<BorrowOperations["Service"]>;

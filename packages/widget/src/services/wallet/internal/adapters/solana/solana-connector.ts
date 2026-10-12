@@ -10,8 +10,8 @@ import {
 import { Effect, Stream } from "effect";
 import type { Address } from "viem";
 import { createConnector } from "wagmi";
-import type { VariantProps } from "../../../../../public-api/react-types";
 import portoIcon from "../../../../../shared/assets/images/porto.svg";
+import type { WidgetVariant } from "../../../../config/widget-config-model";
 import type {
   Chain,
   WalletAvailability,
@@ -188,7 +188,7 @@ export const getSolanaConnectors = ({
 }: {
   wallets: ReadonlyArray<SolanaWalletDescriptor>;
   connection: Connection;
-  variant: VariantProps["variant"];
+  variant: WidgetVariant;
 }): WalletList[number] => {
   return {
     groupName: "Solana",

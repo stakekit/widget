@@ -1,5 +1,5 @@
 import { Match } from "effect";
-import type { VariantProps } from "../../../../public-api/react-types";
+import type { WidgetVariant } from "../../../config/widget-config-model";
 
 type ConnectorMode =
   | "institutional"
@@ -15,7 +15,7 @@ type ConnectorModeInput = {
   readonly institutionalWallets: boolean;
   readonly isLedgerDappBrowser: boolean;
   readonly isSafe: boolean;
-  readonly variant: VariantProps["variant"];
+  readonly variant: WidgetVariant;
 };
 
 const resolveConnectorMode = (input: ConnectorModeInput): ConnectorMode =>

@@ -1,23 +1,19 @@
 import { Data, Result, Schema, SchemaIssue } from "effect";
-import type { ExternalProviderSnapshot } from "../../public-api/external-provider-contract";
+import { DashboardYieldCategory } from "../../domain/earn/contract";
+import {
+  EvmChainIds,
+  MiscChainIds,
+  SubstrateChainIds,
+  type SupportedSKChainIds,
+} from "../../domain/wallet/chain-ids";
 import type {
   SKHostConfiguration,
   VariantProps,
 } from "../../public-api/react-types";
-import {
-  decodeTheme,
-  type SKTheme,
-  type ThemeDecodeWarning,
-} from "../../public-api/theme";
-import {
-  DashboardYieldCategory,
-  EvmChainIds,
-  MiscChainIds,
-  type SettingsProps,
-  type SKWalletPolicy,
-  SubstrateChainIds,
-  type SupportedSKChainIds,
-} from "../../public-api/types";
+import type { SKTheme } from "../../public-api/theme";
+import type { SettingsProps } from "../../public-api/types";
+import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
+import { decodeTheme, type ThemeDecodeWarning } from "./theme-decoder";
 
 const optional = <S extends Schema.Constraint>(schema: S) =>
   Schema.optionalKey(Schema.UndefinedOr(schema));
@@ -160,7 +156,10 @@ const walletPolicyFields = {
   groupOrder: optional(Schema.Array(Schema.String)),
   groups: optional(Schema.Record(Schema.String, Schema.String)),
   order: optional(Schema.Array(Schema.String)),
-} satisfies Record<keyof SKWalletPolicy, Schema.Constraint>;
+} satisfies Record<
+  keyof NonNullable<SettingsProps["walletPolicy"]>,
+  Schema.Constraint
+>;
 
 const WalletPolicy = Schema.Struct(walletPolicyFields);
 

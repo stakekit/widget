@@ -1,20 +1,36 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Schema } from "effect";
 import type { RefObject } from "react";
-import { ActionId, TransactionId } from "../../src/domain/identity/identifiers";
-import type { ExternalProviderSnapshot } from "../../src/public-api/external-provider-contract";
+import {
+  ActionId as BorrowActionId,
+  IntegrationId as BorrowIntegrationId,
+  TransactionId as BorrowTransactionId,
+} from "../../src/domain/borrow/ids";
+import {
+  ActionId,
+  TransactionId,
+  WalletAddress,
+  YieldId,
+} from "../../src/domain/identity/identifiers";
 import type {
   SKBorrowTx,
-  SKBorrowTxMeta,
   SKBorrowWallet,
   SKExternalProviders,
   SKTx,
-  SKTxMeta,
 } from "../../src/public-api/types";
+import type { ExternalProviderSnapshot } from "../../src/services/config/external-provider-snapshot";
 import {
   ExternalProvider,
   ExternalProviderError,
 } from "../../src/services/wallet/external-provider";
+import type {
+  BorrowTransactionMeta,
+  ClassicTransactionMeta,
+} from "../../src/services/wallet/wallet-transactions";
+
+const address = Schema.decodeSync(WalletAddress)(
+  "0x0000000000000000000000000000000000000001"
+);
 
 const transaction = {
   type: "solana",
@@ -47,27 +63,32 @@ const typedData = {
 const transactionMeta = {
   actionId: Schema.decodeSync(ActionId)("action-id"),
   actionType: "STAKE",
+  address,
   amount: "1",
+  amountRaw: "1000000000",
   annotatedTransaction: null,
+  gasEstimate: undefined,
   inputToken: undefined,
   providersDetails: [],
+  rawArguments: null,
   structuredTransaction: null,
   txId: Schema.decodeSync(TransactionId)("transaction-id"),
   txType: "STAKE",
-} satisfies SKTxMeta;
+  yieldId: Schema.decodeSync(YieldId)("solana-sol-native-staking"),
+} satisfies ClassicTransactionMeta;
 
 const borrowTransactionMeta = {
-  actionId: "borrow-action-id",
+  actionId: Schema.decodeSync(BorrowActionId)("borrow-action-id"),
   actionType: "borrow",
-  address: "0x0000000000000000000000000000000000000001",
-  integrationId: "aave-v3",
+  address,
+  integrationId: Schema.decodeSync(BorrowIntegrationId)("aave-v3"),
   rawArguments: {
     amount: "1",
     marketId: "aave-v3-ethereum-usdc",
   },
-  txId: "borrow-transaction-id",
+  txId: Schema.decodeSync(BorrowTransactionId)("borrow-transaction-id"),
   txType: "BORROW",
-} satisfies SKBorrowTxMeta;
+} satisfies BorrowTransactionMeta;
 
 const makeProviderRef = (
   provider: SKExternalProviders["provider"]

@@ -1,12 +1,12 @@
 import { Duration, Effect, Schedule, Schema } from "effect";
 import type { EarnYield } from "../../../../domain/earn/models";
 import type { EnabledWalletNetworks } from "../../../../domain/wallet/models";
-import type { ExternalProviderSnapshot } from "../../../../public-api/external-provider-contract";
 import {
   decodeInitParams,
   type InitParams,
   InitParams as InitParamsSchema,
 } from "../../../../services/wallet/init-params";
+import type { ExternalProviderSnapshot } from "../../../config/external-provider-snapshot";
 import {
   selectWidgetBootstrapSnapshot,
   type WidgetBootstrapSnapshot as WidgetConfigBootstrapSnapshot,

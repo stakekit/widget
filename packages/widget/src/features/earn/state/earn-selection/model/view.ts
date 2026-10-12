@@ -1,12 +1,12 @@
 import { Option, Schema } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
-import { filterValidators } from "../../../../../domain/earn/yield";
+import type { DashboardYieldCategory } from "../../../../../domain/earn/contract";
+import {
+  filterValidators,
+  type PreferredTokenYieldsPerNetwork,
+} from "../../../../../domain/earn/yield";
 import { YieldId } from "../../../../../domain/identity/identifiers";
 import { tokenString } from "../../../../../domain/token/token";
-import type {
-  DashboardYieldCategory,
-  PreferredTokenYieldsPerNetwork,
-} from "../../../../../public-api/types";
 import type { EarnEntry, EarnEntryIntent, EarnSelectionView } from "../types";
 import { canSubmitEarnForm, resolveForm } from "./form";
 import { resolveToken } from "./token";

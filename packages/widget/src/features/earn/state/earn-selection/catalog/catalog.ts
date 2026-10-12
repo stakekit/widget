@@ -1,6 +1,7 @@
 import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
+import type { DashboardYieldCategory } from "../../../../../domain/earn/contract";
 import type { EarnValidator } from "../../../../../domain/earn/models";
 import { filterValidators } from "../../../../../domain/earn/yield";
 import { isFundedBalance } from "../../../../../domain/finance/funded-balance";
@@ -8,7 +9,6 @@ import type { PositionsData } from "../../../../../domain/portfolio/positions";
 import { toPositionsData } from "../../../../../domain/portfolio/positions";
 import { tokenString } from "../../../../../domain/token/token";
 import { widgetConfigAtom } from "../../../../../features/widget-configuration/index";
-import type { DashboardYieldCategory } from "../../../../../public-api/types";
 import {
   EarnTokenCatalogKey,
   earnTokenCatalogResourceAtom,

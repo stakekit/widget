@@ -3,6 +3,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime/app-runtime";
 import type { TronResource } from "../../../domain/action/tron-resource";
+import type { DashboardYieldCategory } from "../../../domain/earn/contract";
 import type { EarnValidatorKey } from "../../../domain/earn/models";
 import { getMaxSelectedValidators } from "../../../domain/earn/validator";
 import {
@@ -15,7 +16,6 @@ import {
   type YieldId,
 } from "../../../domain/identity/identifiers";
 import { widgetConfigAtom } from "../../../features/widget-configuration/index";
-import type { DashboardYieldCategory } from "../../../public-api/types";
 import { yieldProviderResourceAtom } from "../../../resources/yield-provider/index";
 import {
   removeValidator,

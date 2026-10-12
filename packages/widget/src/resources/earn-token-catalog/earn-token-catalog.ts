@@ -1,13 +1,13 @@
 import { Data, Duration, Effect } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
+import type { DashboardYieldCategory } from "../../domain/earn/contract";
 import {
   getApiYieldTypesForDashboardCategory,
   getDisplayOnlyYieldTypes,
   withDisplayOnlyYields,
 } from "../../domain/earn/yield";
 import type { Network } from "../../domain/network/network";
-import type { DashboardYieldCategory } from "../../public-api/types";
 import type {
   ApiRequestError,
   ResponseDecodeError,
