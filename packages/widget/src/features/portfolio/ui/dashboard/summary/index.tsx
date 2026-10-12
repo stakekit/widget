@@ -1,6 +1,7 @@
 import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
+import { emptyBorrowPositions } from "../../../../../domain/borrow/positions/borrow-positions";
 import { exactZero } from "../../../../../domain/finance/exact";
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
@@ -36,36 +37,20 @@ export const Summary = () => {
     AsyncResult.isInitial(borrowPositions.positionsResult);
   const hasBorrowPositions =
     borrowPositions.enabled && borrowPositionItems.length > 0;
-  const borrowTotalSupplied = borrowPositionItems.reduce(
-    (acc, position) => acc.plus(position.metrics.totalSuppliedUsd),
-    exactZero()
+  const borrowTotals = AsyncResult.getOrElse(
+    borrowPositions.totalsResult,
+    () => emptyBorrowPositions.totals
   );
-  const borrowNetWorth = borrowPositionItems.reduce(
-    (acc, position) => acc.plus(position.metrics.netWorthUsd),
-    exactZero()
-  );
-  const borrowApySummary = borrowPositionItems.reduce(
-    (acc, position) => {
-      const netWorth = position.metrics.netWorthUsd;
-
-      if (!netWorth.isGreaterThan(0)) {
-        return acc;
-      }
-
-      return {
-        totalValue: acc.totalValue.plus(netWorth),
-        weightedApy: acc.weightedApy.plus(
-          position.metrics.netApy.multipliedBy(100).multipliedBy(netWorth)
-        ),
-      };
-    },
-    {
-      totalValue: exactZero(),
-      weightedApy: exactZero(),
-    }
-  );
+  const borrowApySummary = {
+    totalValue: borrowTotals.netApyWeightUsd,
+    weightedApy: borrowTotals.netApy
+      .multipliedBy(100)
+      .multipliedBy(borrowTotals.netApyWeightUsd),
+  };
   const totalPositionsValue = hasBorrowPositions
-    ? (allPositions?.allPositionsSum ?? exactZero()).plus(borrowTotalSupplied)
+    ? (allPositions?.allPositionsSum ?? exactZero()).plus(
+        borrowTotals.totalSuppliedUsd
+      )
     : allPositions?.allPositionsSum;
   const averageApyValue = (() => {
     if (!hasBorrowPositions) {
@@ -85,7 +70,9 @@ export const Summary = () => {
     return earnWeightedApy.plus(borrowApySummary.weightedApy).div(totalValue);
   })();
   const availableOrNetWorthValue = hasBorrowPositions
-    ? (allPositions?.allPositionsSum ?? exactZero()).plus(borrowNetWorth)
+    ? (allPositions?.allPositionsSum ?? exactZero()).plus(
+        borrowTotals.netWorthUsd
+      )
     : availableBalance;
 
   const { t } = useTranslation();

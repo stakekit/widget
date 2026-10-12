@@ -112,12 +112,12 @@ const positionDto = Schema.decodeSync(BorrowAccountSnapshot)({
       balanceRaw: "500000000000000000",
       balanceUsd: "1000",
       isCollateral: true,
-      marketId: marketDto.id,
+      marketId: "aave-v3-ethereum-weth",
       pendingActions: [
         {
           args: {
             amountRaw: "500000000000000000",
-            marketId: marketDto.id,
+            marketId: "aave-v3-ethereum-weth",
             tokenAddress: marketDto.collateralTokens[0].token.address,
           },
           label: "Withdraw",
@@ -125,7 +125,7 @@ const positionDto = Schema.decodeSync(BorrowAccountSnapshot)({
         },
         {
           args: {
-            marketId: marketDto.id,
+            marketId: "aave-v3-ethereum-weth",
             tokenAddress: marketDto.collateralTokens[0].token.address,
           },
           label: "Disable collateral",
@@ -498,5 +498,171 @@ describe("borrow position items", () => {
         expect.objectContaining({ id: "borrow-apy", value: "3.85%" }),
       ])
     );
+  });
+
+  describe("pooled markets (Aave)", () => {
+    const usdcAddress = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
+    const ghoAddress = "0x7dfF72693f6A4149b17e7C6314655f6A9F7c8B33";
+    const usdcMarketId = `aave-borrow-arbitrum-${usdcAddress.toLowerCase()}`;
+    const ghoMarketId = `aave-borrow-arbitrum-${ghoAddress.toLowerCase()}`;
+    const integration = Schema.decodeSync(Integration)({
+      ...integrationDto,
+      networks: ["arbitrum"],
+    });
+    const usdcCollateral = {
+      ...marketDto.collateralTokens[0],
+      liquidationThreshold: "0.78",
+      maxLtv: "0.75",
+      priceUsd: "1",
+      token: {
+        address: usdcAddress,
+        decimals: 6,
+        name: "USDC",
+        symbol: "USDC",
+      },
+    };
+    const makePoolMarket = (
+      id: string,
+      loanToken: {
+        readonly address: string;
+        readonly decimals: number;
+        readonly name: string;
+        readonly symbol: string;
+      }
+    ) =>
+      Schema.decodeSync(Market)({
+        ...marketDto,
+        collateralTokens: [usdcCollateral],
+        id,
+        loanToken,
+        network: "arbitrum",
+      });
+    const usdcMarket = makePoolMarket(usdcMarketId, usdcCollateral.token);
+    const ghoMarket = makePoolMarket(ghoMarketId, {
+      address: ghoAddress,
+      decimals: 18,
+      name: "GHO",
+      symbol: "GHO",
+    });
+    const usdcSupply = {
+      apy: "0.030709571250634451039671411",
+      balance: "0.039999000000000000",
+      balanceRaw: "39999",
+      balanceUsd: "0.04",
+      isCollateral: true,
+      marketId: usdcMarketId,
+      pendingActions: [],
+      tokenAddress: usdcAddress,
+      tokenSymbol: "USDC",
+    };
+    const ghoDebt = {
+      apy: "0.043041185958700091913825920",
+      balance: "0.010000000000000000",
+      balanceRaw: "10000000000000000",
+      balanceUsd: "0.01",
+      marketId: ghoMarketId,
+      pendingActions: [],
+      tokenAddress: ghoAddress,
+      tokenSymbol: "GHO",
+    };
+    // Shape returned by the borrow API for ENG-5161: every Aave balance is
+    // keyed by its own reserve, so collateral never shares the debt marketId.
+    const accountSnapshotDto = {
+      address,
+      availableToBorrowUsd: "0.01",
+      currentLtv: "0.2500",
+      debtBalances: [ghoDebt],
+      healthFactor: "3.119555400444599555",
+      integrationId: integration.id,
+      netApy: "0.026599",
+      netWorthUsd: "0.03",
+      network: "arbitrum" as const,
+      supplyBalances: [usdcSupply],
+      totalBorrowedUsd: "0.01",
+      totalCollateralUsd: "0.03",
+      totalSuppliedUsd: "0.04",
+    };
+    const accountSnapshot = Schema.decodeSync(BorrowAccountSnapshot)(
+      accountSnapshotDto
+    );
+
+    it("attaches pool collateral from other reserves and reports account net worth", () => {
+      const positions = deriveItems({
+        integrationAccountSnapshots: [{ accountSnapshot, integration }],
+        markets: [usdcMarket, ghoMarket],
+      });
+
+      expect(positions.map((position) => position.id)).toEqual([ghoMarketId]);
+
+      const [ghoPosition] = positions;
+      if (!ghoPosition) {
+        throw new Error("Expected GHO position");
+      }
+
+      expect(ghoPosition.balances.supply).toEqual([
+        expect.objectContaining({ marketId: usdcMarketId }),
+      ]);
+      expect(ghoPosition.metrics.netWorthUsd).toEqual(new BigNumber("0.03"));
+      expect(ghoPosition.metrics.netApy).toEqual(new BigNumber("0.026599"));
+
+      const model = getBorrowPositionDetailsModel({ position: ghoPosition, t });
+      expect(model.title).toBe("USDC/GHO");
+      expect(
+        model.metricCards.find((card) => card.id === "net-worth")?.value
+      ).toBe("$0.03");
+    });
+
+    it("shares pool collateral across debts without double-counting account totals", () => {
+      const daiAddress = "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1";
+      const daiMarketId = `aave-borrow-arbitrum-${daiAddress.toLowerCase()}`;
+      const daiMarket = makePoolMarket(daiMarketId, {
+        address: daiAddress,
+        decimals: 18,
+        name: "DAI",
+        symbol: "DAI",
+      });
+      const positions = deriveBorrowPositions({
+        integrationAccountSnapshots: [
+          {
+            accountSnapshot: Schema.decodeSync(BorrowAccountSnapshot)({
+              ...accountSnapshotDto,
+              debtBalances: [
+                ghoDebt,
+                {
+                  ...ghoDebt,
+                  marketId: daiMarketId,
+                  tokenAddress: daiAddress,
+                  tokenSymbol: "DAI",
+                },
+              ],
+              netApy: "0.018",
+              netWorthUsd: "0.02",
+              totalBorrowedUsd: "0.02",
+            }),
+            integration,
+          },
+        ],
+        markets: [usdcMarket, ghoMarket, daiMarket],
+      });
+
+      expect(
+        positions.items.map((position) => ({
+          collateral: position.balances.supply.map(
+            (balance) => balance.marketId
+          ),
+          id: position.id,
+          netWorthUsd: position.metrics.netWorthUsd.toString(),
+        }))
+      ).toEqual([
+        { collateral: [usdcMarketId], id: ghoMarketId, netWorthUsd: "0.02" },
+        { collateral: [usdcMarketId], id: daiMarketId, netWorthUsd: "0.02" },
+      ]);
+      expect(positions.totals).toEqual({
+        netApy: new BigNumber("0.018"),
+        netApyWeightUsd: new BigNumber("0.02"),
+        netWorthUsd: new BigNumber("0.02"),
+        totalSuppliedUsd: new BigNumber("0.04"),
+      });
+    });
   });
 });

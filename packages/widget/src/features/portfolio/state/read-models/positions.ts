@@ -142,20 +142,25 @@ export const currentPortfolioBorrowPositionsAtom = Atom.make((get) => {
   const enabled = get(widgetConfigAtom).borrowEnabled;
   const scope = get(walletScopeAtom);
   const connected = enabled && scope !== null && isBorrowNetwork(scope.network);
-  const positionsResult = get(
+  const borrowPositionsResult = get(
     borrowPositionsResourceAtom.foreground(
       new BorrowPositionsKey({
         scope: connected ? scope : null,
       })
     )
-  ).pipe(AsyncResult.map((positions) => positions.items));
+  );
 
   return {
     connectionStatus: connected
       ? ("connected" as const)
       : ("inactive" as const),
     enabled,
-    positionsResult,
+    positionsResult: borrowPositionsResult.pipe(
+      AsyncResult.map((positions) => positions.items)
+    ),
+    totalsResult: borrowPositionsResult.pipe(
+      AsyncResult.map((positions) => positions.totals)
+    ),
   };
 }).pipe(Atom.withLabel("currentPortfolioBorrowPositionsAtom"));
 
