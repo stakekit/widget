@@ -92,15 +92,20 @@ export const getCollateralState = ({
 
     if (
       supplyBalance.balance.isGreaterThan(0) &&
-      (definition.priceUsd.isLessThanOrEqualTo(0) ||
-        supplyBalance.balanceUsd.isLessThanOrEqualTo(0))
+      definition.priceUsd.isLessThanOrEqualTo(0)
     ) {
       return { reason: "missingPrice", status: "unavailable" };
     }
 
+    // The API rounds balanceUsd to cents, so dust reads "0.00"; value it at
+    // the catalog price instead of treating it as unpriced.
+    const collateralUsd = supplyBalance.balanceUsd.isGreaterThan(0)
+      ? supplyBalance.balanceUsd
+      : supplyBalance.balance.multipliedBy(definition.priceUsd);
+
     collateral.push({
       ...definition,
-      collateralUsd: supplyBalance.balanceUsd,
+      collateralUsd,
       enabled: supplyBalance.isCollateral,
     });
   }

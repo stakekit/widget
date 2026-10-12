@@ -4,6 +4,7 @@ import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
 import { Integration } from "../../../src/domain/borrow/catalog/integration";
 import { Market } from "../../../src/domain/borrow/catalog/market";
+import { decodeTokenId } from "../../../src/domain/borrow/ids";
 import { BorrowAccountSnapshot } from "../../../src/domain/borrow/positions/borrow-account-snapshot";
 import { deriveBorrowPositions } from "../../../src/domain/borrow/positions/borrow-positions";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
@@ -663,6 +664,53 @@ describe("borrow position items", () => {
         netWorthUsd: new BigNumber("0.02"),
         totalSuppliedUsd: new BigNumber("0.04"),
       });
+    });
+
+    it("projects new borrows over dust collateral whose USD value rounds to zero", () => {
+      // Live Aave Ethereum response shape: 103 raw USDC units, priced "0.00".
+      const dustSnapshot = Schema.decodeSync(BorrowAccountSnapshot)({
+        ...accountSnapshotDto,
+        availableToBorrowUsd: "0.00",
+        currentLtv: "0.0000",
+        debtBalances: [],
+        healthFactor: null,
+        netApy: "0",
+        netWorthUsd: "0.00",
+        supplyBalances: [
+          {
+            ...usdcSupply,
+            balance: "0.000103000000000000",
+            balanceRaw: "103",
+            balanceUsd: "0.00",
+          },
+        ],
+        totalBorrowedUsd: "0.00",
+        totalCollateralUsd: "0.00",
+        totalSuppliedUsd: "0.00",
+      });
+      const positions = deriveBorrowPositions({
+        integrationAccountSnapshots: [
+          { accountSnapshot: dustSnapshot, integration },
+        ],
+        markets: [usdcMarket, ghoMarket],
+      });
+
+      const assessment = positions.riskFor(ghoMarket).assess([
+        { amount: new BigNumber("10"), marketId: ghoMarket.id, type: "borrow" },
+        {
+          amount: new BigNumber("20"),
+          tokenId: decodeTokenId(ghoMarket.collateralTokens[0]!.token),
+          type: "supply",
+        },
+      ]);
+
+      expect(assessment.decision).toBe("allow");
+      expect(assessment.projection.status).toBe("available");
+      if (assessment.projection.status !== "available") return;
+      expect(assessment.projection.totalCollateralUsd.toFixed(6)).toBe(
+        "20.000103"
+      );
+      expect(assessment.projection.ltv.toFixed(4)).toBe("0.5000");
     });
   });
 });
