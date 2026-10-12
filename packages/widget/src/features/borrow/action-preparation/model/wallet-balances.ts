@@ -6,6 +6,7 @@ import { decodeTokenId, type TokenId } from "../../../../domain/borrow/ids";
 import type { BorrowNetwork } from "../../../../domain/borrow/network";
 import { exactZero } from "../../../../domain/finance/exact";
 import type { TokenBalance } from "../../../../domain/finance/models";
+import { addressIdentity } from "../../../../domain/identity/identifiers";
 import { equalTokens } from "../../../../domain/token/token";
 
 type BorrowBalanceToken = Pick<
@@ -31,6 +32,12 @@ export type BorrowMarketWalletBalances = {
   readonly selectedCollateralToken: BorrowCollateralWalletBalance | null;
 };
 
+/**
+ * The Borrow API and the token balance scan label some contracts differently
+ * (`WETH`/`wETH`, `USDT0`/`USDT`), so addressed tokens match on network and
+ * contract address alone. Native tokens have no address and keep Token
+ * Identity matching.
+ */
 const isBorrowTokenBalanceMatch = ({
   balance,
   network,
@@ -39,7 +46,15 @@ const isBorrowTokenBalanceMatch = ({
   readonly balance: TokenBalance;
   readonly network: BorrowNetwork;
   readonly token: BorrowBalanceToken;
-}) => equalTokens({ ...token, network }, balance.token);
+}) => {
+  if (token.address === undefined || balance.token.address === undefined) {
+    return equalTokens({ ...token, network }, balance.token);
+  }
+  return (
+    balance.token.network === network &&
+    addressIdentity(token.address) === addressIdentity(balance.token.address)
+  );
+};
 
 export const deriveBorrowTokenWalletBalance = ({
   balances,
