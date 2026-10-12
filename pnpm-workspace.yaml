@@ -31,13 +31,13 @@ catalog:
   "@cosmos-kit/keplr-extension": 2.17.1
   "@cosmos-kit/leap-extension": 2.17.1
   "@cosmos-kit/leap-metamask-cosmos-snap": 0.17.1
-  "@creit-tech/stellar-wallets-kit": jsr:2.7.0
-  "@effect/atom-react": 4.0.2
-  "@effect/openapi-generator": 4.0.2
-  "@effect/platform-browser": 4.0.2
-  "@effect/platform-node": 4.0.2
+  "@creit-tech/stellar-wallets-kit": jsr:2.7.1
+  "@effect/atom-react": 4.0.3
+  "@effect/openapi-generator": 4.0.3
+  "@effect/platform-browser": 4.0.3
+  "@effect/platform-node": 4.0.3
   "@effect/tsgo": 0.51.1
-  "@effect/vitest": 4.0.2
+  "@effect/vitest": 4.0.3
   "@ledgerhq/wallet-api-client": ^1.16.0
   "@ledgerhq/wallet-api-core": ^2.1.0
   "@luno-kit/core": ^0.0.13
@@ -54,7 +54,7 @@ catalog:
   "@reown/appkit": 1.8.24
   "@safe-global/safe-apps-provider": ^0.18.6
   "@safe-global/safe-apps-sdk": ^9.1.0
-  "@solana-mobile/wallet-adapter-mobile": ^2.3.0
+  "@solana-mobile/wallet-adapter-mobile": ^3.0.0
   "@solana/wallet-adapter-base": ^0.9.28
   "@solana/wallet-adapter-wallets": ^0.19.40
   "@solana/wallet-standard-wallet-adapter-base": ^1.1.7
@@ -72,7 +72,7 @@ catalog:
   "@types/react-dom": 19.3.0
   "@types/react-is": ^19.2.0
   "@typescript/native": npm:typescript@7.0.2
-  "@vanilla-extract/css": ^1.21.2
+  "@vanilla-extract/css": ^1.21.3
   "@vanilla-extract/dynamic": ^2.1.5
   "@vanilla-extract/recipes": ^0.5.7
   "@vanilla-extract/sprinkles": ^1.7.1
@@ -82,7 +82,8 @@ catalog:
   "@vitest/ui": 5.0.3
   "@wallet-standard/app": ^1.1.1
   "@wallet-standard/base": ^1.1.1
-  "@walletconnect/sign-client": 2.23.9
+  "@walletconnect/sign-client": 2.26.0
+  # Must equal the exact version @reown/appkit depends on: createAppKit types its universalProvider option against it.
   "@walletconnect/universal-provider": 2.23.7
   aria-hidden: ^1.2.6
   autoprefixer: ^10.6.1
@@ -92,20 +93,20 @@ catalog:
   clsx: ^2.1.1
   cosmjs-types: ^0.10.1
   dependency-cruiser: ^18.5.0
-  effect: 4.0.2
+  effect: 4.0.3
   husky: ^9.1.7
   i18next: ^26.4.2
   i18next-browser-languagedetector: ^8.2.1
   jscpd: 5.4.0
   jsdom: ^30.1.2
-  knip: ^6.39.0
+  knip: ^6.41.0
   mipd: ^0.0.7
-  mixpanel-browser: ^2.83.0
+  mixpanel-browser: ^2.84.0
   motion: 14.0.0
   msw: ^3.0.2
-  next: ^16.3.8
+  next: ^16.4.0
   oxc-transform-react: ^0.152.0
-  playwright: ^1.63.0
+  playwright: ^1.64.0
   postcss: ^8.5.29
   react: ^19.3.0
   react-dom: ^19.3.0
@@ -113,15 +114,15 @@ catalog:
   react-is: ^19.2.0
   react-loading-skeleton: ^3.5.0
   react-remove-scroll: ^2.7.2
-  react-router: ^7.15.0
+  react-router: ^8.4.0
   recharts: ^3.10.1
   scheduler: ">=0.25.0 <0.29.0"
   serve: ^14.2.6
   tsx: ^4.23.15
   typescript: ^6.0.3
   unplugin-macros: ^0.23.2
-  viem: ^2.57.3
-  vite: ^8.3.3
+  viem: ^2.57.4
+  vite: ^8.3.4
   vite-plugin-node-polyfills: ^0.28.0
   vitest: 5.0.3
   vitest-browser-react: ^2.3.0
@@ -148,8 +149,6 @@ peerDependencyRules:
   allowedVersions:
     "i18next>typescript": "7"
     "react-i18next>typescript": "7"
-    # Upstream widened this peer to scheduler 0.28 after 4.0.2 (Effect-TS/effect#8954).
-    "@effect/atom-react>scheduler": "0.28"
     # Only the MSW module-mock interceptor needs msw 2; the Playwright provider
     # mocks modules through page routing.
     "@vitest/mocker>msw": "3"
