@@ -58,7 +58,7 @@ export type BorrowFormAction =
       readonly marketId: string;
     }
   | {
-      readonly type: "reset";
+      readonly type: "amounts/clear";
     };
 
 type BorrowFormValidation = {
@@ -194,8 +194,8 @@ export const applyBorrowFormAction = ({
         selectedCollateralTokenId: null,
         selectedMarketId: action.marketId,
       };
-    case "reset":
-      return makeDefaultBorrowFormIntent();
+    case "amounts/clear":
+      return { ...intent, borrowAmount: "0", collateralAmount: "0" };
   }
 };
 

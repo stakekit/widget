@@ -67,7 +67,12 @@ const getBorrowFormOwner = (
     ? { address: scope.address, network: scope.network }
     : null;
 
-export const resetBorrowEntryIntentForOwnerAtom = Atom.fnSync(
+/**
+ * A started Transaction Workflow consumes the entered amounts. The market and
+ * collateral stay selected so the details pane keeps describing the market the
+ * workflow executes against.
+ */
+export const clearBorrowEntryAmountsForOwnerAtom = Atom.fnSync(
   (owner: WalletScopeOwnerKey, context) => {
     const scope = context(walletScopeAtom);
     const currentOwner = getBorrowFormOwner(
@@ -75,9 +80,9 @@ export const resetBorrowEntryIntentForOwnerAtom = Atom.fnSync(
     );
     if (!currentOwner || !sameWalletScopeOwner(currentOwner, owner)) return;
 
-    context.set(borrowFormStateAtom, { type: "reset" });
+    context.set(borrowFormStateAtom, { type: "amounts/clear" });
   }
-).pipe(Atom.withLabel("resetBorrowEntryIntentForOwnerAtom"));
+).pipe(Atom.withLabel("clearBorrowEntryAmountsForOwnerAtom"));
 
 const borrowFormStateAtom = Atom.writable<
   BorrowFormState | null,
@@ -121,10 +126,6 @@ const borrowFormStateAtom = Atom.writable<
     const owner = getBorrowFormOwner(scope ? walletScopeOwnerKey(scope) : null);
     if (!owner) {
       context.setSelf(null);
-      return;
-    }
-    if (action.type === "reset") {
-      context.setSelf(makeDefaultBorrowFormState(owner));
       return;
     }
 
