@@ -145,6 +145,9 @@ packageExtensions:
     peerDependencies:
       "@solana/web3.js": ^1.98.4
 
+patchedDependencies:
+  effect@4.0.3: patches/effect@4.0.3.patch
+
 peerDependencyRules:
   allowedVersions:
     "i18next>typescript": "7"

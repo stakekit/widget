@@ -516,4 +516,42 @@ describe("Borrow Positions resource atoms", () => {
       }
     }
   });
+
+  it("keeps the last positions when a positions refetch fails", () => {
+    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const market = Schema.decodeSync(Market)(marketDto);
+    const position = Schema.decodeSync(BorrowAccountSnapshot)(positionDto);
+    let offline = false;
+    const registry = makeRegistry({
+      getIntegrations: Effect.succeed([integration]),
+      getMarkets: () =>
+        Effect.succeed({ items: [market], limit: 100, offset: 0, total: 1 }),
+      getPositionData: () =>
+        offline
+          ? Effect.fail(new Cause.UnknownError("borrow unavailable"))
+          : Effect.succeed([{ integration, position }]),
+    });
+    const positions = borrowPositionsAtom(
+      new BorrowPositionsKey({ scope: walletScope })
+    );
+    const unmount = registry.mount(positions);
+
+    try {
+      expect(
+        AsyncResult.getOrThrow(registry.get(positions)).items
+      ).toHaveLength(1);
+
+      offline = true;
+      registry.refresh(positions);
+      const refetched = registry.get(positions);
+
+      expect(AsyncResult.isFailure(refetched)).toBe(true);
+      expect(
+        refetched.pipe(AsyncResult.value, Option.getOrThrow).items[0]?.id
+      ).toBe(market.id);
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
 });

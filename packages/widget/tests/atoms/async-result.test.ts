@@ -103,3 +103,48 @@ describe("toPresentable", () => {
     });
   });
 });
+
+// Pins patches/effect@4.0.3.patch: upstream `all` returned the failing input
+// unchanged, so its previous value had that input's shape.
+describe("AsyncResult.all after a failed refetch", () => {
+  const offline = Cause.fail("offline");
+  const failedRefetch = AsyncResult.failure<number, string>(offline, {
+    previousSuccess: Option.some(AsyncResult.success<number, string>(1)),
+  });
+
+  it("keeps every input's previous value in the combined shape", () => {
+    expect(
+      toPresentable(
+        AsyncResult.all({
+          left: failedRefetch,
+          right: AsyncResult.success<string, string>("b"),
+        })
+      )
+    ).toEqual({
+      _tag: "Ready",
+      refreshFailure: Option.some(offline),
+      refreshing: false,
+      value: { left: 1, right: "b" },
+    });
+  });
+
+  it("lets map transform the combined previous value", () => {
+    const mapped = AsyncResult.all({
+      left: failedRefetch,
+      right: AsyncResult.success<string, string>("b"),
+    }).pipe(AsyncResult.map(({ left, right }) => `${left}${right}`));
+
+    expect(AsyncResult.value(mapped)).toEqual(Option.some("1b"));
+  });
+
+  it("drops the previous value when another input has none", () => {
+    expect(
+      toPresentable(
+        AsyncResult.all({
+          left: failedRefetch,
+          right: AsyncResult.initial<string, string>(),
+        })
+      )
+    ).toEqual({ _tag: "Failed", cause: offline });
+  });
+});

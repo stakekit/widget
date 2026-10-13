@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { Effect, Layer, Option, Schema } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
@@ -7,7 +8,11 @@ import { appRuntime } from "../../src/app/runtime/app-runtime";
 import { EarnPosition } from "../../src/domain/earn/models";
 import { getDashboardYieldCategory } from "../../src/domain/earn/yield";
 import type { exactDecimal } from "../../src/domain/finance/exact";
+import { TokenBalancesResponse } from "../../src/domain/finance/models";
+import { Prices } from "../../src/domain/health/models";
+import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { toPositionsData } from "../../src/domain/portfolio/positions";
+import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import {
   currentGroupedPositionsAtom,
   positionsTableDataAtom,
@@ -15,14 +20,29 @@ import {
 } from "../../src/features/portfolio/state/read-models/positions";
 import {
   allPositionsSummaryAtom,
+  availableBalanceSummaryAtom,
+  averageApySummaryAtom,
   getPositionsAverageApy,
   getPositionsTotal,
 } from "../../src/features/portfolio/state/read-models/summary";
+import { walletScopeAtom } from "../../src/features/wallet/index";
 import {
   MultiYieldsKey,
   multiYieldsByIdAtom,
 } from "../../src/features/yield-summary/state/multi-yields";
-import { YieldResourceSource } from "../../src/services/api/resource-sources";
+import {
+  TokenPricesKey,
+  tokenPricesResourceAtom,
+} from "../../src/resources/token-prices/token-prices";
+import {
+  YieldDirectoryKey,
+  yieldDirectoryResourceAtom,
+} from "../../src/resources/yield-directory/index";
+import {
+  ApiRequestError,
+  LegacyResourceSource,
+  YieldResourceSource,
+} from "../../src/services/api/resource-sources";
 import {
   yieldApiProviderFixture,
   yieldApiYieldFixture,
@@ -204,6 +224,162 @@ describe("summary atom derivations", () => {
 
     successfulRegistry.dispose();
     failedRegistry.dispose();
+  });
+
+  it("keeps the last positions total and average APY when a Yield directory refetch fails", () => {
+    const position = makePosition({
+      amountUsd: "5",
+      rewardRate: 0.05,
+      yieldId: "yield-1",
+    });
+    let offline = false;
+    const registry = AtomRegistry.make({
+      initialValues: [
+        applicationRuntimeInitInitialValue(),
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.succeed(YieldResourceSource, {
+            getProvider: () => Effect.succeedNone,
+            listYields: () =>
+              offline
+                ? Effect.fail(
+                    new ApiRequestError({
+                      cause: new Error("offline"),
+                      operation: "yields",
+                    })
+                  )
+                : Effect.succeed({
+                    items: [position.yieldDto],
+                    limit: 100,
+                    offset: 0,
+                    total: 1,
+                  }),
+          } as never)
+        ),
+        [positionsTableDataAtom, AsyncResult.success([position.item])],
+      ],
+    });
+    const unmountTotal = registry.mount(allPositionsSummaryAtom);
+    const unmountApy = registry.mount(averageApySummaryAtom);
+
+    try {
+      expect(
+        AsyncResult.getOrThrow(
+          registry.get(allPositionsSummaryAtom)
+        ).allPositionsSum.toFixed()
+      ).toBe("5");
+      expect(
+        AsyncResult.getOrThrow(registry.get(averageApySummaryAtom)).toFixed()
+      ).toBe("5");
+
+      offline = true;
+      registry.refresh(
+        yieldDirectoryResourceAtom.local(
+          new YieldDirectoryKey({ yieldIds: [position.yieldDto.id] })
+        )
+      );
+      const refetched = registry.get(allPositionsSummaryAtom);
+
+      expect(AsyncResult.isFailure(refetched)).toBe(true);
+      expect(
+        refetched
+          .pipe(AsyncResult.value, Option.getOrThrow)
+          .allPositionsSum.toFixed()
+      ).toBe("5");
+      const refetchedApy = registry.get(averageApySummaryAtom);
+
+      expect(AsyncResult.isFailure(refetchedApy)).toBe(true);
+      expect(
+        refetchedApy.pipe(AsyncResult.value, Option.getOrThrow).toFixed()
+      ).toBe("5");
+    } finally {
+      unmountApy();
+      unmountTotal();
+      registry.dispose();
+    }
+  });
+
+  it("keeps the last available balance total when a prices refetch fails", () => {
+    const eth = yieldApiYieldFixture().token;
+    const usdc = {
+      ...eth,
+      address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      name: "USD Coin",
+      symbol: "USDC",
+    };
+    const walletScope = new WalletScopeKey({
+      address: Schema.decodeSync(WalletAddress)(
+        "0x9999999999999999999999999999999999999999"
+      ),
+      network: "ethereum",
+    });
+    const tokenBalances = Schema.decodeSync(TokenBalancesResponse)([
+      { amount: "2", availableYields: [], token: eth },
+      { amount: "10", availableYields: [], token: usdc },
+    ]);
+    let offline = false;
+    const registry = AtomRegistry.make({
+      initialValues: [
+        applicationRuntimeInitInitialValue(),
+        Atom.initialValue(walletScopeAtom, walletScope),
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.succeed(LegacyResourceSource, {
+            getPrices: () =>
+              offline
+                ? Effect.fail(
+                    new ApiRequestError({
+                      cause: new Error("offline"),
+                      operation: "prices",
+                    })
+                  )
+                : Effect.succeed(
+                    new Prices(
+                      new Map([
+                        [
+                          `ethereum-${eth.address?.toLowerCase() ?? ""}`,
+                          { price: new BigNumber(2000), price24H: undefined },
+                        ],
+                        [
+                          `ethereum-${usdc.address}`,
+                          { price: new BigNumber(1), price24H: undefined },
+                        ],
+                      ])
+                    )
+                  ),
+            scanTokenBalances: () => Effect.succeed(tokenBalances),
+          } as never)
+        ),
+      ],
+    });
+    const unmount = registry.mount(availableBalanceSummaryAtom);
+
+    try {
+      expect(
+        AsyncResult.getOrThrow(
+          registry.get(availableBalanceSummaryAtom)
+        )?.toFixed()
+      ).toBe("4010");
+
+      offline = true;
+      registry.refresh(
+        tokenPricesResourceAtom.local(
+          new TokenPricesKey({
+            currency: "USD",
+            tokenList: tokenBalances.map((balance) => balance.token),
+          })
+        )
+      );
+      const refetched = registry.get(availableBalanceSummaryAtom);
+
+      expect(AsyncResult.isFailure(refetched)).toBe(true);
+      expect(
+        refetched.pipe(AsyncResult.value, Option.getOrThrow)?.toFixed()
+      ).toBe("4010");
+    } finally {
+      unmount();
+      registry.dispose();
+    }
   });
 
   it("publishes category-grouped position rows from the Portfolio atom", async () => {
