@@ -695,22 +695,11 @@
         "unavailable_title": "Borrow review unavailable",
         "unavailable_description": "Return to Borrow and enter amounts to review this action.",
         "back": "Back to Borrow",
-        "actions": {
-          "borrow": "Borrow",
-          "borrowAndSupply": "Borrow and supply collateral",
-          "disableCollateral": "Disable collateral",
-          "enableCollateral": "Enable collateral",
-          "repay": "Repay debt",
-          "supply": "Supply collateral",
-          "withdraw": "Withdraw collateral"
-        },
         "borrow_amount": "Borrow amount",
         "repay_amount": "Repay amount",
         "collateral_amount": "Collateral amount",
         "effective_collateral": "Effective collateral",
         "market": "Market",
-        "provider": "Provider",
-        "network": "Network",
         "confirm": "Confirm",
         "back_to_position": "Back to position",
         "ltv": "LTV",
@@ -786,6 +775,12 @@
         "unavailable_description": "Return to Borrow to start a new action.",
         "transactions": "Transactions",
         "view_transaction": "View {{type}} transaction",
+        "view_on_explorer": "View on explorer",
+        "collateral_supplied": "Collateral supplied",
+        "position": {
+          "estimated": "Estimated position",
+          "settled": "Updated position"
+        },
         "done": "Done"
       },
       "position_details": {

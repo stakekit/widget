@@ -1,9 +1,11 @@
 import { vars } from "../../../styles/theme/contract.css";
 
 export const CheckCircleIcon = ({
+  color = vars.color.text,
   height,
   width,
 }: {
+  color?: string;
   width?: number;
   height?: number;
 }) => (
@@ -16,14 +18,14 @@ export const CheckCircleIcon = ({
   >
     <path
       d="M10.75 6.5 7.081 10 5.25 8.25"
-      stroke={vars.color.text}
+      stroke={color}
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <path
       d="M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12Z"
-      stroke={vars.color.text}
+      stroke={color}
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"

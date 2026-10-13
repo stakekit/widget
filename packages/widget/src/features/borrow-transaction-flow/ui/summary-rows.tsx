@@ -1,10 +1,6 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  formatBorrowProviderName,
-  formatNetworkName,
-  formatUsd,
-} from "../../../shared/lib/formatters";
+import { formatUsd } from "../../../shared/lib/formatters";
 import { DetailRow } from "../../../shared/ui/components/details-section";
 import {
   type BorrowTransactionFlowReview,
@@ -76,37 +72,6 @@ export const BorrowFlowOriginationRows = ({
         id="debt-principal"
         label={t("dashboard.borrow.review_page.debt_principal")}
         value={`${origination.principalAmount} ${origination.symbol}`}
-      />
-    </>
-  );
-};
-
-export const BorrowFlowMarketRows = ({
-  summary,
-}: {
-  readonly summary: Pick<
-    BorrowTransactionFlowReview["summary"],
-    "marketLabel" | "providerName" | "network"
-  >;
-}): ReactElement => {
-  const { t } = useTranslation();
-
-  return (
-    <>
-      <DetailRow
-        id="market"
-        label={t("dashboard.borrow.review_page.market")}
-        value={summary.marketLabel}
-      />
-      <DetailRow
-        id="provider"
-        label={t("dashboard.borrow.review_page.provider")}
-        value={formatBorrowProviderName(summary.providerName)}
-      />
-      <DetailRow
-        id="network"
-        label={t("dashboard.borrow.review_page.network")}
-        value={formatNetworkName(summary.network)}
       />
     </>
   );

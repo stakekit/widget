@@ -2,21 +2,10 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Cause, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
-import {
-  classifyHealthFactor,
-  classifyLtv,
-  type RiskLevel,
-} from "../../../domain/borrow/risk/ltv-limits";
 import { exactDecimal } from "../../../domain/finance/exact";
-import {
-  formatHealthFactor,
-  formatLtv,
-  formatUsd,
-} from "../../../shared/lib/formatters";
 import {
   DetailRow,
   DetailRowList,
-  type DetailRowTone,
 } from "../../../shared/ui/components/details-section";
 import { Divider } from "../../../shared/ui/components/divider";
 import { Box } from "../../../shared/ui/primitives/box";
@@ -28,6 +17,7 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/views";
+import { estimateBorrowPositionChange } from "../model/borrow-completion";
 import {
   getBorrowReviewRiskBlock,
   projectBorrowTransactionFlowSummary,
@@ -41,49 +31,12 @@ import {
   presentBorrowReviewConfirmationError,
 } from "./borrow-review-confirmation-error";
 import { BorrowFlowHeading } from "./flow-heading";
+import { BorrowFlowPositionChangeRows } from "./position-change-rows";
 import * as styles from "./styles.css";
 import {
   BorrowFlowAmountRows,
   BorrowFlowOriginationRows,
 } from "./summary-rows";
-
-const riskLevelTone = {
-  nearLimit: "warning",
-  overLimit: "danger",
-  safe: "default",
-} as const satisfies Record<RiskLevel, DetailRowTone>;
-
-const formatOptionalSummary = (value: string | undefined) => {
-  if (!value) return null;
-
-  const formatted = formatUsd(value);
-
-  return formatted === "-" ? null : formatted;
-};
-
-const formatOptionalLtvSummary = (value: string | undefined) => {
-  if (!value) return null;
-
-  const formatted = formatLtv(value);
-
-  return formatted === "-" ? null : formatted;
-};
-
-const formatTransition = ({
-  current,
-  projected,
-}: {
-  readonly current: string | null;
-  readonly projected: string | null;
-}) => {
-  if (!projected) {
-    return null;
-  }
-
-  return current && current !== projected
-    ? `${current} → ${projected}`
-    : projected;
-};
 
 export const BorrowReviewPage = () => {
   useTrackPage("borrowReview");
@@ -115,48 +68,6 @@ export const BorrowReviewPage = () => {
       onSome: presentBorrowReviewConfirmationError,
     });
   })();
-  const { risk } = projectedSummary;
-  const ltv = formatTransition({
-    current: formatOptionalLtvSummary(risk.currentLtv ?? undefined),
-    projected: formatOptionalLtvSummary(risk.projectedLtv ?? undefined),
-  });
-  const ltvTone = risk.projectedLtv
-    ? riskLevelTone[
-        classifyLtv({
-          ltv: exactDecimal(risk.projectedLtv),
-          maxLtv: risk.maxLtv ? exactDecimal(risk.maxLtv) : null,
-        })
-      ]
-    : "default";
-  const healthFactorTone = risk.projectedHealthFactor
-    ? riskLevelTone[
-        classifyHealthFactor(exactDecimal(risk.projectedHealthFactor))
-      ]
-    : "default";
-  const healthFactor = risk.projectedHealthFactor
-    ? formatTransition({
-        current: risk.currentHealthFactor
-          ? formatHealthFactor(risk.currentHealthFactor)
-          : null,
-        projected: formatHealthFactor(risk.projectedHealthFactor),
-      })
-    : null;
-  const collateralValue = formatTransition({
-    current: formatOptionalSummary(
-      projectedSummary.financials.existingCollateralUsd ?? undefined
-    ),
-    projected: formatOptionalSummary(
-      projectedSummary.financials.projectedCollateralUsd ?? undefined
-    ),
-  });
-  const debtValue = formatTransition({
-    current: formatOptionalSummary(
-      projectedSummary.financials.existingDebtUsd ?? undefined
-    ),
-    projected: formatOptionalSummary(
-      projectedSummary.financials.projectedDebtUsd ?? undefined
-    ),
-  });
   const collateralFeeAmount =
     projectedSummary.collateral && "feeAmount" in projectedSummary.collateral
       ? projectedSummary.collateral.feeAmount
@@ -174,45 +85,6 @@ export const BorrowReviewPage = () => {
     "effectiveAmount" in projectedSummary.collateral
       ? `${projectedSummary.collateral.effectiveAmount} ${projectedSummary.collateral.symbol}`
       : null;
-  const financialRows = [
-    collateralValue
-      ? {
-          id: "collateral-value",
-          label: t("dashboard.borrow.form.collateral_value"),
-          value: collateralValue,
-        }
-      : null,
-    debtValue
-      ? {
-          id: "debt-value",
-          label: t("dashboard.borrow.position_details.debt"),
-          value: debtValue,
-        }
-      : null,
-    ltv
-      ? {
-          id: "ltv",
-          label: t("dashboard.borrow.review_page.ltv"),
-          tone: ltvTone,
-          value: ltv,
-        }
-      : null,
-    healthFactor
-      ? {
-          id: "health-factor",
-          label: t("dashboard.borrow.review_page.health_factor"),
-          tone: healthFactorTone,
-          value: healthFactor,
-        }
-      : null,
-    collateralFee
-      ? {
-          id: "collateral-fee",
-          label: t("dashboard.borrow.review_page.collateral_fee"),
-          value: collateralFee,
-        }
-      : null,
-  ].filter((row): row is NonNullable<typeof row> => !!row);
 
   return (
     <AnimationPage>
@@ -255,9 +127,16 @@ export const BorrowReviewPage = () => {
                 value={effectiveCollateral}
               />
             ) : null}
-            {financialRows.map((row) => (
-              <DetailRow key={row.id} {...row} />
-            ))}
+            <BorrowFlowPositionChangeRows
+              change={estimateBorrowPositionChange(projectedSummary)}
+            />
+            {collateralFee ? (
+              <DetailRow
+                id="collateral-fee"
+                label={t("dashboard.borrow.review_page.collateral_fee")}
+                value={collateralFee}
+              />
+            ) : null}
             <BorrowFlowOriginationRows
               origination={projectedSummary.origination}
             />

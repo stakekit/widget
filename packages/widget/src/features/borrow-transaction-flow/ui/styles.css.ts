@@ -71,3 +71,36 @@ export const transactionRow = style([
     },
   },
 ]);
+
+export const successBadge = style([
+  atoms({
+    alignItems: "center",
+    alignSelf: "center",
+    borderRadius: "full",
+    display: "flex",
+    justifyContent: "center",
+  }),
+  {
+    background: `color-mix(in oklab, ${vars.color.statusSuccess} 14%, transparent)`,
+    height: "56px",
+    width: "56px",
+  },
+]);
+
+export const explorerLink = style([
+  atoms({
+    alignItems: "center",
+    alignSelf: "center",
+    display: "flex",
+    gap: "1",
+  }),
+  {
+    background: "transparent",
+    border: 0,
+    cursor: "pointer",
+    padding: 0,
+    selectors: {
+      "&:hover": { opacity: 0.8 },
+    },
+  },
+]);

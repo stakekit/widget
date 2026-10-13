@@ -1177,22 +1177,11 @@
         "unavailable_title": "Vérification d'emprunt indisponible",
         "unavailable_description": "Revenez à Emprunter et saisissez les montants pour vérifier cette action.",
         "back": "Retour à Emprunter",
-        "actions": {
-          "borrow": "Emprunter",
-          "borrowAndSupply": "Emprunter et fournir une garantie",
-          "disableCollateral": "Désactiver la garantie",
-          "enableCollateral": "Activer la garantie",
-          "repay": "Rembourser la dette",
-          "supply": "Fournir une garantie",
-          "withdraw": "Retirer la garantie"
-        },
         "borrow_amount": "Montant emprunté",
         "repay_amount": "Montant remboursé",
         "collateral_amount": "Montant de garantie",
         "effective_collateral": "Garantie effective",
         "market": "Marché",
-        "provider": "Fournisseur",
-        "network": "Réseau",
         "confirm": "Confirmer",
         "back_to_position": "Retour à la position",
         "ltv": "LTV",
@@ -1268,6 +1257,12 @@
         "unavailable_description": "Revenez à Emprunter pour lancer une nouvelle action.",
         "transactions": "Transactions",
         "view_transaction": "Voir la transaction : {{type}}",
+        "view_on_explorer": "Voir dans l'explorateur",
+        "collateral_supplied": "Garantie fournie",
+        "position": {
+          "estimated": "Position estimée",
+          "settled": "Position mise à jour"
+        },
         "done": "Terminé"
       },
       "position_details": {

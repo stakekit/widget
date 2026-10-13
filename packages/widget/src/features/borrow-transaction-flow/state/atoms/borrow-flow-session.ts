@@ -5,6 +5,7 @@ import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
 import type { BorrowFlowSession } from "../../model/borrow-transaction-flow";
 import { borrowTransactionFlowServiceAtom } from "./borrow-flow";
 import { makeBorrowFlowExecutionScopeAtom } from "./borrow-flow-execution";
+import { makeBorrowFlowSettledPositionAtom } from "./borrow-flow-position";
 import { makeBorrowFlowReviewScopeAtom } from "./borrow-flow-review";
 
 /**
@@ -19,7 +20,10 @@ export const makeBorrowFlowSessionModule = (session: BorrowFlowSession) =>
         .pipe(Effect.flatMap((service) => service.openSession(session))),
     label: "borrowFlowSessionScope",
     makeValue: (sessionAtom) => ({
-      facade: { intake: session.intake },
+      facade: {
+        intake: session.intake,
+        settledPositionAtom: makeBorrowFlowSettledPositionAtom(session),
+      },
       ports: {
         makeExecutionScopeAtom: () =>
           makeBorrowFlowExecutionScopeAtom(sessionAtom),

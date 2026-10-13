@@ -224,6 +224,43 @@ const projectCollateralFee = (
   };
 };
 
+type ProjectedAmount = {
+  readonly amount: string;
+  readonly symbol: string;
+};
+
+/** Review's summary in display form: amounts, fees, financials, and risk. */
+export type ProjectedBorrowTransactionFlowSummary = {
+  readonly borrow: ProjectedAmount | null;
+  readonly collateral:
+    | ProjectedAmount
+    | (ProjectedAmount & {
+        readonly effectiveAmount: string;
+        readonly feeAmount: string;
+      })
+    | null;
+  readonly financials: {
+    readonly existingCollateralUsd: string | null;
+    readonly existingDebtUsd: string | null;
+    readonly projectedCollateralUsd: string | null;
+    readonly projectedDebtUsd: string | null;
+  };
+  readonly origination: {
+    readonly feeAmount: string;
+    readonly feeUsd: string | null;
+    readonly principalAmount: string;
+    readonly symbol: string;
+  } | null;
+  readonly risk: {
+    readonly currentHealthFactor: string | null;
+    readonly currentLtv: string | null;
+    readonly maxLtv: string | null;
+    readonly projectedHealthFactor: string | null;
+    readonly projectedLtv: string | null;
+    readonly status: BorrowTransactionFlowSummary["riskStatus"];
+  };
+};
+
 /**
  * Projects the review summary for display. Fee figures the created action
  * reports win over the widget's pre-creation estimate.
@@ -231,7 +268,7 @@ const projectCollateralFee = (
 export const projectBorrowTransactionFlowSummary = (
   summary: BorrowTransactionFlowSummary,
   metadata?: ActionMetadata
-) => {
+): ProjectedBorrowTransactionFlowSummary => {
   const risk =
     summary.riskStatus === "available"
       ? {
