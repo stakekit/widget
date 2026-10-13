@@ -80,7 +80,7 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
   );
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;
-  const yieldLoading = status.loading.yields || yieldOptions.waiting;
+  const yieldLoading = status.loading.yields;
 
   return {
     all,

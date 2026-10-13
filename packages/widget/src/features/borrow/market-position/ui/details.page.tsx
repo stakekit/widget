@@ -1,5 +1,4 @@
 import { useAtomSet } from "@effect/atom-react";
-import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, Outlet, useLocation, useParams } from "react-router";
@@ -33,13 +32,6 @@ import {
   getBorrowPositionBasePath,
 } from "./context";
 
-const getPositionFromResult = (
-  borrowPosition: ReturnType<typeof useBorrowPosition>
-) =>
-  AsyncResult.isSuccess(borrowPosition.positionResult)
-    ? borrowPosition.positionResult.value
-    : null;
-
 export const BorrowPositionDetailsPage = () => {
   useTrackPage("positionDetails");
 
@@ -52,7 +44,10 @@ export const BorrowPositionDetailsPage = () => {
   // position restores the side the user last chose, e.g. Details after a
   // collateral toggle review.
   const [baseSide, setBaseSide] = useState<SplitViewSide>("primary");
-  const position = getPositionFromResult(borrowPosition);
+  // A failed or in-flight refetch keeps the last known position on screen.
+  const presentablePosition = toPresentable(borrowPosition.positionResult);
+  const position =
+    presentablePosition._tag === "Ready" ? presentablePosition.value : null;
   const model = position
     ? getBorrowPositionDetailsModel({ position, t })
     : null;
@@ -62,8 +57,7 @@ export const BorrowPositionDetailsPage = () => {
         t,
       })
     : [];
-  const isPositionLoading =
-    toPresentable(borrowPosition.positionResult)._tag === "Loading";
+  const isPositionLoading = presentablePosition._tag === "Loading";
   const positionBasePath = getBorrowPositionBasePath(marketId);
   const normalizedPathname = location.pathname.replace(/\/+$/u, "");
   const hasNestedRoute = normalizedPathname !== positionBasePath;
@@ -102,11 +96,7 @@ export const BorrowPositionDetailsPage = () => {
 
   // A closed position (e.g. after a full repay) has nothing to manage; nested
   // flow routes still render so Complete can show the settled result.
-  if (
-    !hasNestedRoute &&
-    AsyncResult.isSuccess(borrowPosition.positionResult) &&
-    !position
-  ) {
+  if (!hasNestedRoute && presentablePosition._tag === "Ready" && !position) {
     return <Navigate replace to="/positions" />;
   }
 
@@ -115,7 +105,7 @@ export const BorrowPositionDetailsPage = () => {
       return <BorrowPositionInfoSkeleton />;
     }
 
-    if (AsyncResult.isFailure(borrowPosition.positionResult)) {
+    if (presentablePosition._tag === "Failed") {
       return (
         <Text variant={{ type: "danger", weight: "normal" }}>
           {t("shared.something_went_wrong")}

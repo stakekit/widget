@@ -1,4 +1,4 @@
-import { Data, Duration, Effect, Option } from "effect";
+import { Data, Duration, Effect } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../../app/runtime/app-runtime";
@@ -8,6 +8,7 @@ import type {
 } from "../../services/api/resource-sources";
 import { YieldResourceSource } from "../../services/api/resource-sources";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { toPresentable } from "../../shared/effect/async-result";
 import { makePresentableResource } from "../resource-failure-presentation";
 
 export class WidgetHealthError extends Data.TaggedError("WidgetHealthError")<{
@@ -36,12 +37,16 @@ export const widgetHealthResourceAtom = makePresentableResource(
   widgetHealthCanonicalAtom
 );
 
+/**
+ * Maintenance follows the last known health: a failed poll after a healthy
+ * one is a transient fact about the refetch, not an outage. A check that has
+ * never succeeded fails closed, including while it retries.
+ */
 export const underMaintenanceAtom = Atom.make((get) => {
   const result = get(widgetHealthResourceAtom.local);
-  const health = result.pipe(AsyncResult.value, Option.getOrUndefined);
+  const health = toPresentable(result);
 
-  return (
-    AsyncResult.isFailure(result) ||
-    (health !== undefined && health.status !== "OK")
-  );
+  return health._tag === "Ready"
+    ? health.value.status !== "OK"
+    : AsyncResult.isFailure(result);
 }).pipe(Atom.withLabel("underMaintenanceAtom"));

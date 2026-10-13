@@ -136,16 +136,12 @@ export const currentYieldKycGateAtom = Atom.family(
       const resourceKey = getCurrentYieldKycKey(key);
       const queryEnabled = get(currentYieldKycQueryEnabledAtom(resourceKey));
       const result = get(currentYieldKycStatusAtom(resourceKey));
-      const status = result.pipe(AsyncResult.value, Option.getOrUndefined);
+      // A failed refresh keeps the last known status; only a failure with no
+      // status ever read leaves the gate unknown.
+      const status = result.pipe(AsyncResult.value, Option.getOrNull);
       const isFetching = queryEnabled && result.waiting;
       const getGate = () => {
         if (!queryEnabled) return { state: "pass" } as const;
-        if (AsyncResult.isFailure(result)) {
-          return mapKycStatusToGate({
-            status: null,
-            yieldDto: key.yieldDto,
-          });
-        }
         return mapKycStatusToGate({ status, yieldDto: key.yieldDto });
       };
       const gate = getGate();

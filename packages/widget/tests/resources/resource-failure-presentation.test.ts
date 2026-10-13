@@ -1,4 +1,4 @@
-import { Layer } from "effect";
+import { Cause, Layer, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
@@ -145,6 +145,34 @@ describe("resource failure presentation", () => {
       expect(attempts).toBe(2);
     } finally {
       unmountSecond();
+      registry.dispose();
+    }
+  });
+
+  it("keeps a failed refetch silent while the previous value is shown", () => {
+    const registry = makeRegistry();
+    let attempts = 0;
+    const canonical = Atom.make(() => {
+      attempts += 1;
+      const previous = AsyncResult.success<string, { cause: ApiRequestError }>(
+        "loaded"
+      );
+      return attempts === 1
+        ? previous
+        : AsyncResult.failure(
+            Cause.fail({ cause: makeRequestError("Refetch failure") }),
+            { previousSuccess: Option.some(previous) }
+          );
+    });
+    const resource = makePresentableResource(canonical);
+    const unmount = registry.mount(resource.foreground);
+
+    try {
+      registry.refresh(resource.local);
+      expect(attempts).toBe(2);
+      expect(AsyncResult.getOrThrow(registry.get(richErrorAtom))).toBeNull();
+    } finally {
+      unmount();
       registry.dispose();
     }
   });

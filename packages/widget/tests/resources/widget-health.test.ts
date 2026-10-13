@@ -69,6 +69,61 @@ describe("Widget Health resource", () => {
     expect(registry.get(underMaintenanceAtom)).toBe(false);
   });
 
+  it("keeps the last known health when a later poll fails", () => {
+    let offline = false;
+    const getHealth = Effect.suspend(() =>
+      offline
+        ? Effect.fail(
+            new ApiRequestError({
+              cause: new Error("offline"),
+              operation: "yield-api-health",
+            })
+          )
+        : Effect.succeed({
+            status: "OK" as const,
+            timestamp: DateTime.makeUnsafe(0),
+          })
+    );
+    const registry = makeRegistry(getHealth);
+
+    try {
+      expect(registry.get(underMaintenanceAtom)).toBe(false);
+      offline = true;
+      registry.refresh(widgetHealthResourceAtom);
+      expect(
+        AsyncResult.isFailure(registry.get(widgetHealthResourceAtom))
+      ).toBe(true);
+      expect(registry.get(underMaintenanceAtom)).toBe(false);
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("stays under maintenance while retrying a check that never succeeded", () => {
+    let attempts = 0;
+    const getHealth = Effect.suspend(() => {
+      attempts += 1;
+      return attempts === 1
+        ? Effect.fail(
+            new ApiRequestError({
+              cause: new Error("offline"),
+              operation: "yield-api-health",
+            })
+          )
+        : Effect.never;
+    });
+    const registry = makeRegistry(getHealth);
+
+    try {
+      expect(registry.get(underMaintenanceAtom)).toBe(true);
+      registry.refresh(widgetHealthResourceAtom);
+      expect(registry.get(widgetHealthResourceAtom).waiting).toBe(true);
+      expect(registry.get(underMaintenanceAtom)).toBe(true);
+    } finally {
+      registry.dispose();
+    }
+  });
+
   it("polls while mounted and stops after Widget Instance disposal", async () => {
     vi.useFakeTimers();
     try {

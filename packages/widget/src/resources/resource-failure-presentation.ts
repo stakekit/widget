@@ -1,5 +1,5 @@
-import { type Cause, Effect, Option, Schema } from "effect";
-import * as AsyncResult from "effect/reactivity/AsyncResult";
+import { Cause, Effect, Option, Schema } from "effect";
+import type * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { appRuntime } from "../app/runtime/app-runtime";
 import type { BorrowFeatureDisabled } from "../domain/borrow/availability";
@@ -10,6 +10,7 @@ import {
   type ResponseDecodeError,
 } from "../services/api/resource-sources";
 import { RichErrorService } from "../services/errors/rich-error-service";
+import { toPresentable } from "../shared/effect/async-result";
 
 type ResourceCause =
   | ApiRequestError
@@ -78,10 +79,16 @@ export const makePresentableResource = <
 >(
   local: PresentableAtom<ResourceAtom>
 ): PresentableResource<ResourceAtom> => {
+  // A failed refetch over a value is background state; only a failure with
+  // nothing to show interrupts the user.
   const reporterAtom = appRuntime.atom((get) => {
-    const requestError = requestErrorFrom(
-      get(local).pipe(AsyncResult.error, Option.getOrNull)
-    );
+    const presentable = toPresentable(get(local));
+    const requestError =
+      presentable._tag === "Failed"
+        ? requestErrorFrom(
+            Cause.findErrorOption(presentable.cause).pipe(Option.getOrNull)
+          )
+        : null;
 
     return requestError
       ? RichErrorService.use((service) => service.present(requestError))

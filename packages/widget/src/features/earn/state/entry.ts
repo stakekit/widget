@@ -31,7 +31,6 @@ import {
   earnSelectionStatusViewAtom,
   earnSelectionTokenOptionsViewAtom,
   earnSelectionViewAtom,
-  earnSelectionYieldOptionsViewAtom,
   selectEarnSelectionProviderAtom,
   selectEarnSelectionTronResourceAtom,
   setEarnSelectionAmountAtom,
@@ -50,7 +49,6 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
   const earnSelection = get(earnSelectionViewAtom);
   const status = get(earnSelectionStatusViewAtom);
   const tokenOptions = get(earnSelectionTokenOptionsViewAtom);
-  const yieldOptions = get(earnSelectionYieldOptionsViewAtom);
   const input = get(earnPageInputAtom);
   const quote = get(earnPageQuoteAtom);
   const selection = get(earnPageSelectionAtom);
@@ -64,13 +62,16 @@ const earnYieldEntryInputAtom = Atom.make((get) => {
       : null;
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;
-  const yieldLoading = status.loading.yields || yieldOptions.waiting;
-  const appLoading = get(earnAppLoadingAtom).isLoading;
+  const yieldLoading = status.loading.yields;
+  const appStatus = get(earnAppLoadingAtom);
+  const appLoading = appStatus.isLoading;
   const hasNoYields = status.empty.yields;
   const readiness = (() => {
     if (hasNoYields) return { _tag: "Blocked" } as const;
     if (appLoading) return { _tag: "Loading" } as const;
-    if (status.isFetching) return { _tag: "Refreshing" } as const;
+    if (status.isFetching || appStatus.isRefreshing) {
+      return { _tag: "Refreshing" } as const;
+    }
     if (!earnSelection.canSubmit) return { _tag: "Blocked" } as const;
     return { _tag: "Ready" } as const;
   })();
