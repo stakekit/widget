@@ -71,7 +71,7 @@ describe("borrow transaction wallet normalization", () => {
       })
   );
 
-  it.effect("preserves an explicit zero nonce", () =>
+  it.effect("drops a quoted nonce so the wallet selects it", () =>
     Effect.gen(function* () {
       const serialized = yield* decodeBorrowTransactionForWallet(
         transaction(
@@ -85,7 +85,7 @@ describe("borrow transaction wallet normalization", () => {
         )
       );
 
-      expect(JSON.parse(serialized)).toMatchObject({ nonce: 0 });
+      expect(JSON.parse(serialized)).not.toHaveProperty("nonce");
     })
   );
 

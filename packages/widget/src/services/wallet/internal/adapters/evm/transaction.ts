@@ -33,7 +33,8 @@ const HexQuantity = Schema.String.check(
 );
 const EvmBaseUnitQuantity = Schema.Union([ExactBaseUnitAmount, HexQuantity]);
 
-const unsignedEvmTransactionFields = {
+/** The wallet always selects the nonce, so a quoted `nonce` is ignored. */
+const UnsignedEvmTransaction = Schema.Struct({
   data: HexString,
   to: EvmAddress,
   gasLimit: EvmBaseUnitQuantity,
@@ -44,39 +45,22 @@ const unsignedEvmTransactionFields = {
   maxFeePerGas: Schema.optionalKey(EvmBaseUnitQuantity),
   maxPriorityFeePerGas: Schema.optionalKey(EvmBaseUnitQuantity),
   chainId: Schema.Finite,
-};
-
-const UnsignedEvmTransaction = Schema.Struct({
-  ...unsignedEvmTransactionFields,
-  nonce: Schema.Finite,
-});
-
-const UnsignedBorrowEvmTransaction = Schema.Struct({
-  ...unsignedEvmTransactionFields,
-  nonce: Schema.optionalKey(Schema.Finite),
 });
 
 export const unsignedEVMTransactionCodec = UnsignedEvmTransaction;
-export const unsignedBorrowEVMTransactionCodec = UnsignedBorrowEvmTransaction;
 
 const UnsignedEvmTransactionFromJson = Schema.fromJsonString(
   UnsignedEvmTransaction
-);
-const UnsignedBorrowEvmTransactionFromJson = Schema.fromJsonString(
-  UnsignedBorrowEvmTransaction
 );
 
 export const decodeUnsignedEvmTransactionJson = (tx: string) =>
   Schema.decodeEffect(UnsignedEvmTransactionFromJson)(tx);
 
-export const decodeUnsignedBorrowEvmTransactionJson = (tx: string) =>
-  Schema.decodeEffect(UnsignedBorrowEvmTransactionFromJson)(tx);
-
 const optionalHex = (value: bigint | undefined) =>
   value === undefined ? undefined : numberToHex(value);
 
 const prepareDecodedEvmTransactionBase = (
-  decodedTx: typeof UnsignedBorrowEvmTransaction.Type,
+  decodedTx: typeof UnsignedEvmTransaction.Type,
   address: Address
 ) => ({
   to: decodedTx.to,
@@ -87,57 +71,47 @@ const prepareDecodedEvmTransactionBase = (
   chainId: numberToHex(decodedTx.chainId),
 });
 
-export const decodeAndPrepareEvmTransaction = ({
-  address,
-  tx,
-}: {
-  address: Address;
-  tx: string;
-}) =>
-  decodeUnsignedEvmTransactionJson(tx).pipe(
-    Effect.map((decodedTx) => ({
-      ...prepareDecodedEvmTransactionBase(decodedTx, address),
-      ...(decodedTx.maxFeePerGas
-        ? {
-            type: "0x2" as const,
-            maxFeePerGas: numberToHex(decodedTx.maxFeePerGas),
-            maxPriorityFeePerGas: decodedTx.maxPriorityFeePerGas
-              ? numberToHex(decodedTx.maxPriorityFeePerGas)
-              : undefined,
-          }
-        : {
-            type: "0x1" as const,
-            gasPrice: decodedTx.gasPrice
-              ? numberToHex(decodedTx.gasPrice)
-              : undefined,
-          }),
-      nonce: numberToHex(decodedTx.nonce),
-    }))
-  );
+type DecodedEvmTransaction = typeof UnsignedEvmTransaction.Type;
+
+const decodeAndPrepareWith =
+  <Fees>(prepareFees: (decodedTx: DecodedEvmTransaction) => Fees) =>
+  ({ address, tx }: { address: Address; tx: string }) =>
+    decodeUnsignedEvmTransactionJson(tx).pipe(
+      Effect.map((decodedTx) => ({
+        ...prepareDecodedEvmTransactionBase(decodedTx, address),
+        ...prepareFees(decodedTx),
+      }))
+    );
+
+export const decodeAndPrepareEvmTransaction = decodeAndPrepareWith(
+  (decodedTx) =>
+    decodedTx.maxFeePerGas
+      ? {
+          type: "0x2" as const,
+          maxFeePerGas: numberToHex(decodedTx.maxFeePerGas),
+          maxPriorityFeePerGas: decodedTx.maxPriorityFeePerGas
+            ? numberToHex(decodedTx.maxPriorityFeePerGas)
+            : undefined,
+        }
+      : {
+          type: "0x1" as const,
+          gasPrice: decodedTx.gasPrice
+            ? numberToHex(decodedTx.gasPrice)
+            : undefined,
+        }
+);
 
 /** Borrow keeps the API's transaction type and passes quoted fees through. */
-export const decodeAndPrepareBorrowEvmTransaction = ({
-  address,
-  tx,
-}: {
-  address: Address;
-  tx: string;
-}) =>
-  decodeUnsignedBorrowEvmTransactionJson(tx).pipe(
-    Effect.map((decodedTx) => ({
-      ...prepareDecodedEvmTransactionBase(decodedTx, address),
-      ...(decodedTx.type === 2
-        ? {
-            type: "0x2" as const,
-            maxFeePerGas: optionalHex(decodedTx.maxFeePerGas),
-            maxPriorityFeePerGas: optionalHex(decodedTx.maxPriorityFeePerGas),
-          }
-        : {
-            type: "0x0" as const,
-            gasPrice: optionalHex(decodedTx.gasPrice),
-          }),
-      ...(decodedTx.nonce === undefined
-        ? {}
-        : { nonce: numberToHex(decodedTx.nonce) }),
-    }))
-  );
+export const decodeAndPrepareBorrowEvmTransaction = decodeAndPrepareWith(
+  (decodedTx) =>
+    decodedTx.type === 2
+      ? {
+          type: "0x2" as const,
+          maxFeePerGas: optionalHex(decodedTx.maxFeePerGas),
+          maxPriorityFeePerGas: optionalHex(decodedTx.maxPriorityFeePerGas),
+        }
+      : {
+          type: "0x0" as const,
+          gasPrice: optionalHex(decodedTx.gasPrice),
+        }
+);

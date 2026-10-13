@@ -253,7 +253,10 @@ string.
 The EVM `SKBorrowTx` keeps the API's transaction type: `"0x0"` (legacy, with
 `gasPrice`) or `"0x2"` (EIP-1559, with `maxFeePerGas` and
 `maxPriorityFeePerGas`). Fee fields are `undefined` when the API does not quote
-them; estimate them in the host wallet. `nonce` may be omitted.
+them; estimate them in the host wallet.
+
+EVM transactions (`SKTx` and `SKBorrowTx`) carry no `nonce`; the host wallet
+selects it when signing.
 
 `borrowEnabled` alone decides whether Borrow can use the provider; there is no
 separate provider flag. Do not cast a staking-only adapter to `SKBorrowWallet`

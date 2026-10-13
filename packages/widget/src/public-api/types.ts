@@ -44,7 +44,8 @@ export type SKEip712TypedData = {
   >;
 };
 
-type DecodedEVMTransactionFields = {
+/** EVM transaction. The host wallet selects the nonce. */
+type DecodedEVMTransaction = {
   to: Hex;
   from: Hex;
   data: Hex;
@@ -63,11 +64,7 @@ type DecodedEVMTransactionFields = {
     }
 );
 
-type DecodedEVMTransaction = DecodedEVMTransactionFields & {
-  nonce: Hex;
-};
-
-/** Borrow EVM transaction. `type` follows the API; fee fields are `undefined` unless the API quotes them. */
+/** Borrow EVM transaction. `type` follows the API; fee fields are `undefined` unless the API quotes them. The host wallet selects the nonce. */
 type DecodedBorrowEVMTransaction = {
   to: Hex;
   from: Hex;
@@ -75,7 +72,6 @@ type DecodedBorrowEVMTransaction = {
   value: Hex | undefined;
   gas: Hex;
   chainId: Hex;
-  nonce?: Hex;
 } & (
   | {
       type: "0x0";

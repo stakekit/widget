@@ -124,46 +124,40 @@ const polkadotBondParams = {
   }),
 };
 
-const evmTxWithoutNonce = JSON.stringify({
+const evmTx = JSON.stringify({
   chainId: 1,
   data: "0x1234",
   from: "0x0000000000000000000000000000000000000001",
   gasLimit: "21000",
   gasPrice: "1",
+  nonce: 7,
   to: "0x0000000000000000000000000000000000000002",
   type: 0,
   value: "0",
 });
 
 describe("prepareLedgerLiveTransaction", () => {
-  it.effect("leaves an omitted EVM nonce for Ledger Live to select", () =>
+  it.effect("leaves the EVM nonce for Ledger Live to select", () =>
     Effect.gen(function* () {
-      expect(
-        yield* prepare({
-          family: "borrow",
-          network: "ethereum",
-          tx: evmTxWithoutNonce,
-        })
-      ).toEqual({
+      const expected = {
         amount: "0",
         data: "1234",
         family: "ethereum",
         gasLimit: "21000",
         gasPrice: "1",
         recipient: "0x0000000000000000000000000000000000000002",
-      });
-    })
-  );
+      };
 
-  it.effect("requires an EVM nonce for classic Ledger transactions", () =>
-    Effect.gen(function* () {
-      const failure = yield* prepareFailure({
-        network: "ethereum",
-        tx: evmTxWithoutNonce,
-        txMeta: createTxMeta({}),
-      });
-
-      expect(failure._tag).toBe("LedgerTransactionPreparationError");
+      expect(
+        yield* prepare({ family: "borrow", network: "ethereum", tx: evmTx })
+      ).toEqual(expected);
+      expect(
+        yield* prepare({
+          network: "ethereum",
+          tx: evmTx,
+          txMeta: createTxMeta({}),
+        })
+      ).toEqual(expected);
     })
   );
 

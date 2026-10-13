@@ -44,7 +44,6 @@ const BorrowWalletEvmSignablePayload = Schema.Struct({
   gasPrice: Schema.optionalKey(ExactBaseUnitAmount),
   maxFeePerGas: Schema.optionalKey(ExactBaseUnitAmount),
   maxPriorityFeePerGas: Schema.optionalKey(ExactBaseUnitAmount),
-  nonce: Schema.optionalKey(Countish),
   to: HexString,
   type: Schema.optionalKey(BorrowEvmTransactionType),
   value: Schema.optionalKey(ExactBaseUnitAmount),
@@ -102,7 +101,6 @@ export const decodeBorrowTransactionForWallet = (transaction: Transaction) =>
           "maxPriorityFeePerGas",
           payload.maxPriorityFeePerGas
         ),
-        ...(payload.nonce === undefined ? {} : { nonce: payload.nonce }),
         to: payload.to,
         type: payload.type ?? 0,
         value: (payload.value ?? 0n).toString(),

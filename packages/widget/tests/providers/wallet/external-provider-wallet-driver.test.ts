@@ -27,16 +27,6 @@ const tx = JSON.stringify({
   type: 0,
 });
 
-const txWithoutNonce = JSON.stringify({
-  chainId: 1,
-  data: "0x1234",
-  from: zeroAddress,
-  gasLimit: "21000",
-  gasPrice: "1",
-  to: zeroAddress,
-  type: 0,
-});
-
 const typedData = {
   domain: { chainId: 1, name: "Borrow Authorization" },
   message: { owner: zeroAddress },
@@ -195,28 +185,52 @@ describe("external-provider wallet driver", () => {
       })
   );
 
-  it.effect(
-    "leaves an omitted Borrow nonce for the host wallet to select",
-    () =>
-      Effect.gen(function* () {
-        let received: unknown;
-        const connector = {
-          id: "externalProviderConnector",
-          sendBorrowTransaction: (input: unknown) => {
-            received = input;
-            return Effect.succeed("borrow-hash");
+  it.effect("never passes a quoted nonce to the host wallet", () =>
+    Effect.gen(function* () {
+      const received: Array<unknown> = [];
+      const connector = {
+        id: "externalProviderConnector",
+        sendBorrowTransaction: (input: unknown) => {
+          received.push(input);
+          return Effect.succeed("borrow-hash");
+        },
+        sendTransaction: (input: unknown) => {
+          received.push(input);
+          return Effect.succeed("classic-hash");
+        },
+      } as unknown as Connector;
+      const driver = makeExternalProviderWalletDriver({ connector });
+
+      yield* driver.signTransaction({
+        address: zeroAddress,
+        family: "classic",
+        network: "ethereum",
+        tx,
+        txMeta,
+      });
+      yield* driver.signTransaction({
+        address: zeroAddress,
+        family: "borrow",
+        network: "ethereum",
+        tx,
+        txMeta: borrowTxMeta,
+      });
+
+      expect(received).toEqual([
+        {
+          type: "evm",
+          tx: {
+            chainId: "0x1",
+            data: "0x1234",
+            from: zeroAddress,
+            gas: "0x5208",
+            gasPrice: "0x1",
+            to: zeroAddress,
+            type: "0x1",
+            value: undefined,
           },
-        } as unknown as Connector;
-
-        yield* makeExternalProviderWalletDriver({ connector }).signTransaction({
-          address: zeroAddress,
-          family: "borrow",
-          network: "ethereum",
-          tx: txWithoutNonce,
-          txMeta: borrowTxMeta,
-        });
-
-        expect(received).toEqual({
+        },
+        {
           type: "evm",
           tx: {
             chainId: "0x1",
@@ -226,9 +240,11 @@ describe("external-provider wallet driver", () => {
             gasPrice: "0x1",
             to: zeroAddress,
             type: "0x0",
+            value: undefined,
           },
-        });
-      })
+        },
+      ]);
+    })
   );
 
   const borrowApiTransaction = (signablePayload: Record<string, unknown>) =>
@@ -341,7 +357,7 @@ describe("external-provider wallet driver", () => {
             address: zeroAddress,
             family: "classic",
             network: "ethereum",
-            tx: txWithoutNonce,
+            tx: JSON.stringify({ ...JSON.parse(tx), to: undefined }),
             txMeta,
           })
         );

@@ -22,10 +22,7 @@ import {
 } from "../../../../../domain/wallet/network";
 import type { ClassicTransactionMeta } from "../../../wallet-transactions";
 import { decodeWalletPayload } from "../decode-wallet-payload";
-import {
-  unsignedBorrowEVMTransactionCodec,
-  unsignedEVMTransactionCodec,
-} from "../evm/transaction";
+import { unsignedEVMTransactionCodec } from "../evm/transaction";
 import { substratePayloadCodec } from "../substrate/transaction";
 import { unsignedTonTransactionCodec } from "../ton/transaction";
 import { unsignedTronTransactionCodec } from "../tron/transaction";
@@ -171,12 +168,7 @@ const prepareSynchronousTransaction = ({
   txMeta?: ClassicTransactionMeta;
 }): Result.Result<RawTransaction, string> => {
   if (isEvmWalletNetwork(network)) {
-    const codec =
-      family === "borrow"
-        ? unsignedBorrowEVMTransactionCodec
-        : unsignedEVMTransactionCodec;
-
-    return decodeWalletPayload(codec, payload).pipe(
+    return decodeWalletPayload(unsignedEVMTransactionCodec, payload).pipe(
       Result.map((decodedTx) =>
         buildEthereumLedgerTransaction({
           network,
@@ -223,13 +215,12 @@ const buildEthereumLedgerTransaction = ({
   tx,
 }: {
   network: string;
-  tx: typeof unsignedBorrowEVMTransactionCodec.Type;
+  tx: typeof unsignedEVMTransactionCodec.Type;
 }): RawTransaction => {
   const ledgerTx: RawEthereumTransaction = {
     amount: (tx.value ?? 0n).toString(),
     recipient: tx.to,
     family: "ethereum",
-    ...(tx.nonce === undefined ? {} : { nonce: tx.nonce }),
     gasLimit: tx.gasLimit.toString(),
     data: Buffer.from(hexToBytes(tx.data)).toString("hex"),
   };

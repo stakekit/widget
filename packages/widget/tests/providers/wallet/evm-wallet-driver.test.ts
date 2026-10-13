@@ -22,7 +22,7 @@ const transaction = (fees: object) =>
     ...fees,
   });
 
-const borrowTransactionWithoutNonce = JSON.stringify({
+const borrowTransaction = JSON.stringify({
   chainId: 1,
   data: "0x1234",
   from: zeroAddress,
@@ -74,16 +74,16 @@ describe("EVM wallet driver", () => {
     })
   );
 
-  it.effect("accepts an omitted nonce only for Borrow transactions", () =>
+  it.effect("leaves the gas limit of Borrow transactions to the wallet", () =>
     Effect.gen(function* () {
-      expect(
-        yield* decodeBorrowEvmTransaction(borrowTransactionWithoutNonce)
-      ).toMatchObject({ gasPrice: 7n, type: "legacy" });
-
-      const failure = yield* Effect.flip(
-        decodeEvmTransaction(borrowTransactionWithoutNonce)
-      );
-      expect(failure._tag).toBe("WalletDecodeError");
+      expect(yield* decodeBorrowEvmTransaction(borrowTransaction)).toEqual({
+        chainId: 1,
+        data: "0x1234",
+        gasPrice: 7n,
+        to: zeroAddress,
+        type: "legacy",
+        value: 12n,
+      });
     })
   );
 
