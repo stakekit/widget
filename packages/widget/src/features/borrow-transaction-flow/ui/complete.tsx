@@ -57,6 +57,14 @@ export const BorrowCompletePage = () => {
     ltv
   );
   const isPositionFlow = flow.intake.entry._tag === "MarketPosition";
+  // A closed position redirects to the list, so the CTA names where it lands.
+  const ctaLabel = (() => {
+    if (!isPositionFlow) return t("dashboard.borrow.success_page.done");
+    if (settled && !settled.positionOpen) {
+      return t("dashboard.borrow.success_page.back_to_positions");
+    }
+    return t("dashboard.borrow.review_page.back_to_position");
+  })();
   const [singleTransaction] = result?.transactions ?? [];
 
   if (!result) return null;
@@ -195,9 +203,7 @@ export const BorrowCompletePage = () => {
             cta={{
               disabled: false,
               isLoading: false,
-              label: isPositionFlow
-                ? t("dashboard.borrow.review_page.back_to_position")
-                : t("dashboard.borrow.success_page.done"),
+              label: ctaLabel,
               onClick: () => done(undefined),
             }}
           />

@@ -1,4 +1,5 @@
 import type BigNumber from "bignumber.js";
+import type { ReactNode } from "react";
 import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { selectTokenButton } from "../../../../../shared/ui/primitives/button/styles.css";
@@ -6,7 +7,10 @@ import { Text } from "../../../../../shared/ui/primitives/typography/text";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import { BorrowAmountField } from "../../../amount-input/views";
 
-/** Position action amount card; balances carry only a symbol, not a token. */
+/**
+ * Position action amount card; balances carry only a symbol, not a token, so
+ * the accessory is a symbol chip unless the form supplies a token selector.
+ */
 export const AmountInputCard = ({
   amount,
   balanceLabel,
@@ -14,6 +18,7 @@ export const AmountInputCard = ({
   label,
   onAmountChange,
   onMaxClick,
+  tokenSelector,
   tokenSymbol,
   usdValue,
   warning,
@@ -24,6 +29,7 @@ export const AmountInputCard = ({
   readonly label: string;
   readonly onAmountChange: (amount: BigNumber) => void;
   readonly onMaxClick?: (() => void) | null;
+  readonly tokenSelector?: ReactNode;
   readonly tokenSymbol: string;
   readonly usdValue?: BigNumber;
   readonly warning?: string | null;
@@ -33,19 +39,21 @@ export const AmountInputCard = ({
   return (
     <BorrowAmountField
       accessory={
-        <Box
-          alignItems="center"
-          borderRadius="2xl"
-          className={combineRecipeWithVariant({
-            rec: selectTokenButton,
-            variant,
-          })}
-          display="flex"
-          px="2"
-          py="1"
-        >
-          <Text variant={{ weight: "bold" }}>{tokenSymbol}</Text>
-        </Box>
+        tokenSelector ?? (
+          <Box
+            alignItems="center"
+            borderRadius="2xl"
+            className={combineRecipeWithVariant({
+              rec: selectTokenButton,
+              variant,
+            })}
+            display="flex"
+            px="2"
+            py="1"
+          >
+            <Text variant={{ weight: "bold" }}>{tokenSymbol}</Text>
+          </Box>
+        )
       }
       amount={amount}
       balance={balanceLabel}

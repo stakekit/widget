@@ -89,6 +89,7 @@ describe("Borrow completion", () => {
           healthFactor: "1.73",
           ltv: "0.482",
           maxLtv: "0.75",
+          positionOpen: true,
         },
         summary: withdraw,
       }).position
@@ -113,6 +114,7 @@ describe("Borrow completion", () => {
           healthFactor: null,
           ltv: "0",
           maxLtv: null,
+          positionOpen: false,
         },
         summary: {
           ...common,

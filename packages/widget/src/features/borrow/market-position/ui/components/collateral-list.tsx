@@ -1,5 +1,4 @@
 import clsx from "clsx";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   CollapsibleArrow,
@@ -30,7 +29,6 @@ export const CollateralList = ({
   readonly totalCollateralUsd: string;
 }) => {
   const { t } = useTranslation();
-  const [expanded, setExpanded] = useState(items.length <= 1);
 
   if (items.length === 0) {
     return null;
@@ -38,10 +36,7 @@ export const CollateralList = ({
 
   return (
     <Box className={styles.collateralList}>
-      <CollapsibleRoot
-        collapsed={!expanded}
-        onClick={() => setExpanded((value) => !value)}
-      >
+      <CollapsibleRoot initial={false}>
         <CollapsibleTrigger
           as="button"
           className={styles.collateralListButton}

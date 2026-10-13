@@ -1263,7 +1263,8 @@
           "estimated": "Position estimée",
           "settled": "Position mise à jour"
         },
-        "done": "Terminé"
+        "done": "Terminé",
+        "back_to_positions": "Retour aux positions"
       },
       "position_details": {
         "actions_title": "Actions",
@@ -1286,7 +1287,6 @@
         "unsupported_network": "Les positions d'emprunt ne sont pas disponibles sur ce réseau.",
         "collateral_list": "Valeur de la garantie",
         "configure_action": "Gérer",
-        "selected": "Sélectionné",
         "select_withdraw_token": "Sélectionner la garantie à retirer",
         "outstanding_debt": "{{amount}} {{symbol}} dus",
         "withdrawable": "{{amount}} {{symbol}} retirable",

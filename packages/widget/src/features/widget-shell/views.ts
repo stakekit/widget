@@ -8,7 +8,10 @@ export {
   BackButton,
   BackButtonProvider,
 } from "./dashboard/components/back-button";
-export { SplitView } from "./dashboard/components/split-view";
+export {
+  SplitView,
+  type SplitViewSide,
+} from "./dashboard/components/split-view";
 export {
   outletWrapper as dashboardOutletWrapper,
   wrapper as dashboardWrapper,

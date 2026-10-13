@@ -32,7 +32,7 @@ export const makeBorrowFlowSettledPositionAtom = (
         new BorrowMarketsKey({ network, scope: "all" })
       )
     : null;
-  const { command, summary } = session.intake;
+  const { command, entry, summary } = session.intake;
   // Reads positions only once, so later results never retrigger the refresh.
   const refreshedAtom = Atom.make((get) => {
     get.refresh(positionsAtom);
@@ -55,6 +55,10 @@ export const makeBorrowFlowSettledPositionAtom = (
       action: summary.action,
       marketId: command.args.marketId,
       markets: markets.value,
+      positionMarketId:
+        entry._tag === "MarketPosition"
+          ? entry.marketId
+          : command.args.marketId,
       positions: positions.value,
     });
   }).pipe(Atom.withLabel("borrowFlowSettledPosition"));

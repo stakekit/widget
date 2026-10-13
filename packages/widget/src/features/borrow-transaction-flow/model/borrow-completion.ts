@@ -31,6 +31,8 @@ export type BorrowSettledPosition = {
   readonly healthFactor: string | null;
   readonly ltv: string | null;
   readonly maxLtv: string | null;
+  /** Whether the position the flow returns to still has balances. */
+  readonly positionOpen: boolean;
 };
 
 /**
@@ -44,11 +46,14 @@ export const settleBorrowPosition = ({
   action,
   marketId,
   markets,
+  positionMarketId,
   positions,
 }: {
   readonly action: Summary["action"];
   readonly marketId: string;
   readonly markets: ReadonlyArray<Market>;
+  /** The position page's market; a pool collateral action targets another. */
+  readonly positionMarketId: string;
   readonly positions: BorrowPositions;
 }): BorrowSettledPosition | null => {
   const market = markets.find((candidate) => candidate.id === marketId);
@@ -67,6 +72,9 @@ export const settleBorrowPosition = ({
     healthFactor: available?.healthFactor?.toString(10) ?? null,
     ltv: available?.ltv.toString(10) ?? null,
     maxLtv: available?.maxLtv?.toString(10) ?? null,
+    positionOpen: positions.items.some(
+      (position) => position.id === positionMarketId
+    ),
   };
 };
 

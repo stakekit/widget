@@ -1,11 +1,16 @@
 import { useAtomSet } from "@effect/atom-react";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Outlet, useLocation, useParams } from "react-router";
+import { Navigate, Outlet, useLocation, useParams } from "react-router";
 import { PositionDetailsPane } from "../../../../shared/ui/components/position-details";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { useTrackPage } from "../../../tracking/index";
-import { AnimationPage, SplitView } from "../../../widget-shell/views";
+import {
+  AnimationPage,
+  SplitView,
+  type SplitViewSide,
+} from "../../../widget-shell/views";
 import { useBorrowPosition } from "../../positions/index";
 import {
   type BorrowPositionAction,
@@ -42,6 +47,10 @@ export const BorrowPositionDetailsPage = () => {
   const { t } = useTranslation();
   const startPositionReview = useAtomSet(startBorrowPositionActionReviewAtom);
   const borrowPosition = useBorrowPosition(marketId);
+  // Nested routes remount the split on the Actions side; returning to the
+  // position restores the side the user last chose, e.g. Details after a
+  // collateral toggle review.
+  const [baseSide, setBaseSide] = useState<SplitViewSide>("primary");
   const position = getPositionFromResult(borrowPosition);
   const model = position
     ? getBorrowPositionDetailsModel({ position, t })
@@ -91,6 +100,16 @@ export const BorrowPositionDetailsPage = () => {
     );
   }
 
+  // A closed position (e.g. after a full repay) has nothing to manage; nested
+  // flow routes still render so Complete can show the settled result.
+  if (
+    !hasNestedRoute &&
+    AsyncResult.isSuccess(borrowPosition.positionResult) &&
+    !position
+  ) {
+    return <Navigate replace to="/positions" />;
+  }
+
   const rightContent = (() => {
     if (isPositionLoading) {
       return <BorrowPositionInfoSkeleton />;
@@ -119,6 +138,9 @@ export const BorrowPositionDetailsPage = () => {
     <AnimationPage>
       <SplitView
         key={hasNestedRoute ? "nested" : "base"}
+        {...(hasNestedRoute
+          ? {}
+          : { activeSide: baseSide, onActiveSideChange: setBaseSide })}
         primaryBarLabel={t("dashboard.split_view.actions")}
         secondaryBarLabel={t("dashboard.split_view.details")}
         primary={

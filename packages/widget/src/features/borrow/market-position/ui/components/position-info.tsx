@@ -38,9 +38,17 @@ export const BorrowPositionInfo = ({
 
   if (content === "fallback" || !position || !model) {
     return (
-      <Text variant={{ type: "muted", weight: "normal" }}>
-        {t("dashboard.borrow.position_details.empty")}
-      </Text>
+      <Box
+        alignItems="center"
+        display="flex"
+        flex={1}
+        justifyContent="center"
+        textAlign="center"
+      >
+        <Text variant={{ type: "muted", weight: "normal" }}>
+          {t("dashboard.borrow.position_details.empty")}
+        </Text>
+      </Box>
     );
   }
 

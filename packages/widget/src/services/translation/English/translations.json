@@ -781,7 +781,8 @@
           "estimated": "Estimated position",
           "settled": "Updated position"
         },
-        "done": "Done"
+        "done": "Done",
+        "back_to_positions": "Back to positions"
       },
       "position_details": {
         "actions_title": "Actions",
@@ -804,7 +805,6 @@
         "unsupported_network": "Borrow positions are not available on this network.",
         "collateral_list": "Collateral value",
         "configure_action": "Manage",
-        "selected": "Selected",
         "select_withdraw_token": "Select collateral to withdraw",
         "outstanding_debt": "{{amount}} {{symbol}} outstanding",
         "withdrawable": "{{amount}} {{symbol}} withdrawable",

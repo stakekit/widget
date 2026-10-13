@@ -238,6 +238,7 @@ describe("Borrow flow settled position", () => {
             debtUsd: "400",
           })
         );
+        expect(settled()?.positionOpen).toBe(true);
       })
   );
 
@@ -256,6 +257,26 @@ describe("Borrow flow settled position", () => {
             collateralUsd: "1000",
             debtUsd: "400",
           })
+        );
+      })
+  );
+
+  it.effect(
+    "reports the returned-to position closed once its balances are gone",
+    () =>
+      Effect.gen(function* () {
+        const settled = mountSettled(
+          makeRegistry({
+            current: {
+              ...snapshot({ collateralUsd: "0", debtUsd: "0" }),
+              debtBalances: [],
+              supplyBalances: [],
+            },
+          })
+        );
+
+        yield* eventually(() =>
+          expect(settled()).toMatchObject({ positionOpen: false })
         );
       })
   );

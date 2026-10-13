@@ -1,10 +1,10 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
+import type { Token } from "../../../../../domain/token/token";
 import { TokenIcon } from "../../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { CaretDownIcon } from "../../../../../shared/ui/primitives/icons/caret-down";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import type { BorrowEntryToken } from "../../model/market-groups";
 import * as styles from "../styles.css";
 
 export const BorrowAssetSelectorList = ({
@@ -63,9 +63,11 @@ export const BorrowAssetSelectorRow = ({
   readonly rateMeta?: string;
   readonly selected?: boolean;
   readonly testId?: string;
-  readonly token: BorrowEntryToken;
+  readonly token: Token;
 }) => (
   <Box
+    aria-expanded={expandable ? expanded : undefined}
+    aria-pressed={expandable ? undefined : selected}
     as="button"
     className={clsx(
       styles.assetSelectorRow,

@@ -7,13 +7,16 @@ import { CaretLeftIcon } from "../../../../../shared/ui/primitives/icons/caret-l
 import { appContainerSplitCollapsedAtom } from "../../../state/app-container";
 import * as styles from "./styles.css";
 
-type Side = "primary" | "secondary";
+export type SplitViewSide = "primary" | "secondary";
 
 type SplitViewProps = {
   primary: ReactNode;
   secondary: ReactNode;
   primaryBarLabel: string;
   secondaryBarLabel: string;
+  /** Side shown while collapsed; omit to let SplitView own it. */
+  activeSide?: SplitViewSide;
+  onActiveSideChange?: (side: SplitViewSide) => void;
 };
 
 const resolvePanelClass = ({
@@ -35,9 +38,12 @@ export const SplitView = ({
   secondary,
   primaryBarLabel,
   secondaryBarLabel,
+  activeSide: controlledSide,
+  onActiveSideChange,
 }: SplitViewProps) => {
   const isCollapsed = useAtomValue(appContainerSplitCollapsedAtom);
-  const [activeSide, setActiveSide] = useState<Side>("primary");
+  const [ownSide, setOwnSide] = useState<SplitViewSide>("primary");
+  const activeSide = controlledSide ?? ownSide;
 
   if (!primary || !secondary) {
     return <Box className={styles.container}>{primary || secondary}</Box>;
@@ -74,11 +80,11 @@ export const SplitView = ({
               ? styles.barBleedRight
               : styles.barBleedLeft
           )}
-          onClick={() =>
-            setActiveSide((side) =>
-              side === "primary" ? "secondary" : "primary"
-            )
-          }
+          onClick={() => {
+            const nextSide = activeSide === "primary" ? "secondary" : "primary";
+            setOwnSide(nextSide);
+            onActiveSideChange?.(nextSide);
+          }}
         >
           <Box
             as="span"

@@ -387,10 +387,9 @@ export const startBorrowPositionActionReviewAtom = appRuntime
         return { _tag: "Unavailable" } as const;
       }
 
-      const entry = {
-        _tag: "MarketPosition" as const,
-        marketId: preparation.review.command.args.marketId,
-      };
+      // The page's market, not the command's: a pool collateral action
+      // targets its own reserve, which has no position page of its own.
+      const entry = { _tag: "MarketPosition" as const, marketId: key.marketId };
       return yield* context.setResult(startBorrowTransactionFlowAtom, {
         ...preparation.review,
         entry,

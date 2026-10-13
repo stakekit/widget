@@ -68,6 +68,42 @@ const market = {
   minLoan: null,
 } as const;
 
+const wethSupplyBalance = {
+  apy: "0.02",
+  balance: "0.5",
+  balanceRaw: "500000000000000000",
+  balanceUsd: "1000",
+  isCollateral: true,
+  marketId: market.id,
+  pendingActions: [
+    {
+      args: {
+        amountRaw: "500000000000000000",
+        marketId: market.id,
+        tokenAddress: market.collateralTokens[0].token.address,
+      },
+      label: "Withdraw",
+      type: "withdraw",
+    },
+    {
+      args: {
+        marketId: market.id,
+        tokenAddress: market.collateralTokens[0].token.address,
+      },
+      label: "Disable collateral",
+      type: "disableCollateral",
+    },
+  ],
+  positionState: {
+    availableToBorrowUsd: "450",
+    currentLtv: "0.4",
+    healthFactor: "2.125",
+    liquidationThreshold: "0.85",
+  },
+  tokenAddress: market.collateralTokens[0].token.address,
+  tokenSymbol: "WETH",
+} satisfies PositionDto["supplyBalances"][number];
+
 const position: PositionDto = {
   address: account,
   availableToBorrowUsd: "450",
@@ -98,43 +134,7 @@ const position: PositionDto = {
   netApy: "-0.006",
   netWorthUsd: "600",
   network: "ethereum",
-  supplyBalances: [
-    {
-      apy: "0.02",
-      balance: "0.5",
-      balanceRaw: "500000000000000000",
-      balanceUsd: "1000",
-      isCollateral: true,
-      marketId: market.id,
-      pendingActions: [
-        {
-          args: {
-            amountRaw: "500000000000000000",
-            marketId: market.id,
-            tokenAddress: market.collateralTokens[0].token.address,
-          },
-          label: "Withdraw",
-          type: "withdraw",
-        },
-        {
-          args: {
-            marketId: market.id,
-            tokenAddress: market.collateralTokens[0].token.address,
-          },
-          label: "Disable collateral",
-          type: "disableCollateral",
-        },
-      ],
-      positionState: {
-        availableToBorrowUsd: "450",
-        currentLtv: "0.4",
-        healthFactor: "2.125",
-        liquidationThreshold: "0.85",
-      },
-      tokenAddress: market.collateralTokens[0].token.address,
-      tokenSymbol: "WETH",
-    },
-  ],
+  supplyBalances: [wethSupplyBalance],
   totalBorrowedUsd: "400",
   totalCollateralUsd: "1000",
   totalSuppliedUsd: "1000",
@@ -366,7 +366,10 @@ describe("Borrow position details", () => {
       .element(app.getByText("Disable WETH as collateral"))
       .toBeInTheDocument();
     await app.getByRole("button", { name: "Back to position" }).click();
-    await expect.element(app.getByText("Actions")).toBeInTheDocument();
+    await expect
+      .element(app.getByTestId("borrow-collateral-toggle__disableCollateral"))
+      .toBeVisible();
+    await app.getByRole("button", { name: "Actions" }).click();
 
     await app.getByTestId("borrow-position-action__withdraw").click();
 
@@ -399,6 +402,185 @@ describe("Borrow position details", () => {
 
     await expect.element(app.getByText("My positions")).toBeInTheDocument();
     await expect.element(app.getByText("Total supplied")).toBeInTheDocument();
+
+    await app.unmount();
+  });
+
+  it("keeps a pool collateral toggle review on the debt position its reserve backs", async ({
+    worker,
+  }) => {
+    // Aave keys each balance by its own reserve, so the collateral toggle
+    // targets the WETH reserve while the position lives under the USDC market.
+    const collateralReserve = {
+      ...market,
+      id: "aave-v3-ethereum-weth",
+      loanToken: market.collateralTokens[0].token,
+    };
+    worker.use(
+      http.get(borrowApiRoute("/v1/integrations"), () =>
+        HttpResponse.json([integration])
+      ),
+      http.get(borrowApiRoute("/v1/markets"), () =>
+        HttpResponse.json({
+          items: [market, collateralReserve],
+          limit: 100,
+          offset: 0,
+          total: 2,
+        })
+      ),
+      http.get(borrowApiRoute("/v1/positions"), () =>
+        HttpResponse.json({
+          ...position,
+          supplyBalances: [
+            {
+              ...wethSupplyBalance,
+              marketId: collateralReserve.id,
+              pendingActions: wethSupplyBalance.pendingActions.map(
+                (pendingAction) => ({
+                  ...pendingAction,
+                  args: {
+                    ...pendingAction.args,
+                    marketId: collateralReserve.id,
+                  },
+                })
+              ),
+            },
+          ],
+        })
+      )
+    );
+
+    const app = await renderApp({
+      walletListFactory: mockWalletListFactory({ accounts: [account] }),
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        borrowEnabled: true,
+        dashboardVariant: true,
+      },
+    });
+
+    await userEvent.click(app.getByText("Manage"));
+    await userEvent.click(app.getByText("WETH/USDC"));
+    await app.getByRole("button", { name: "Details" }).click();
+    await app
+      .getByTestId("borrow-collateral-toggle__disableCollateral")
+      .click();
+
+    await expect
+      .element(app.getByText("Disable WETH as collateral"))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByText("No open position in this market."))
+      .not.toBeInTheDocument();
+
+    await app.getByRole("button", { name: "Back to position" }).click();
+    await expect
+      .element(app.getByTestId("borrow-collateral-toggle__disableCollateral"))
+      .toBeVisible();
+    await expect
+      .element(app.getByText("No open position in this market."))
+      .not.toBeInTheDocument();
+
+    await app.unmount();
+  });
+
+  it("lists every collateral and switches the withdrawal token from the amount field", async ({
+    worker,
+  }) => {
+    const wbtc = {
+      address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      decimals: 8,
+      name: "Wrapped Bitcoin",
+      symbol: "WBTC",
+    } as const;
+    const twoCollateralMarket = {
+      ...market,
+      collateralTokens: [
+        market.collateralTokens[0],
+        { ...market.collateralTokens[0], priceUsd: "50000", token: wbtc },
+      ],
+    };
+    const wbtcBalance = {
+      ...wethSupplyBalance,
+      balance: "0.04",
+      balanceRaw: "4000000",
+      balanceUsd: "2000",
+      pendingActions: wethSupplyBalance.pendingActions.map((pendingAction) => ({
+        ...pendingAction,
+        args: {
+          ...pendingAction.args,
+          ...(pendingAction.type === "withdraw"
+            ? { amountRaw: "4000000" }
+            : {}),
+          tokenAddress: wbtc.address,
+        },
+      })),
+      tokenAddress: wbtc.address,
+      tokenSymbol: wbtc.symbol,
+    };
+
+    worker.use(
+      http.get(borrowApiRoute("/v1/integrations"), () =>
+        HttpResponse.json([integration])
+      ),
+      http.get(borrowApiRoute("/v1/markets"), () =>
+        HttpResponse.json({
+          items: [twoCollateralMarket],
+          limit: 100,
+          offset: 0,
+          total: 1,
+        })
+      ),
+      http.get(borrowApiRoute("/v1/positions"), () =>
+        HttpResponse.json({
+          ...position,
+          supplyBalances: [wethSupplyBalance, wbtcBalance],
+          totalCollateralUsd: "3000",
+          totalSuppliedUsd: "3000",
+        })
+      )
+    );
+
+    const app = await renderApp({
+      walletListFactory: mockWalletListFactory({ accounts: [account] }),
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        borrowEnabled: true,
+        dashboardVariant: true,
+      },
+    });
+
+    await userEvent.click(app.getByText("Manage"));
+    await userEvent.click(app.getByText("USDC", { exact: true }).first());
+    await app.getByRole("button", { name: "Details" }).click();
+    await expect
+      .poll(
+        () =>
+          app.getByTestId("borrow-collateral-toggle__disableCollateral").all()
+            .length
+      )
+      .toBe(2);
+
+    await app.getByRole("button", { name: "Actions" }).click();
+    await app.getByTestId("borrow-position-action__withdraw").click();
+    await expect
+      .element(app.getByText("0.5 WETH withdrawable"))
+      .toBeInTheDocument();
+
+    await app.getByTestId("borrow-withdraw-token-select").click();
+    const dialog = app.getByRole("dialog");
+    await expect
+      .element(dialog.getByRole("button", { name: /WETH/ }))
+      .toHaveAttribute("aria-pressed", "true");
+    await dialog.getByRole("button", { name: /WBTC/ }).click();
+
+    await expect
+      .element(app.getByText("0.04 WBTC withdrawable"))
+      .toBeInTheDocument();
+    await app.getByTestId("borrow-withdraw-token-select").click();
+    await expect
+      .element(app.getByRole("dialog").getByRole("button", { name: /WBTC/ }))
+      .toHaveAttribute("aria-pressed", "true");
 
     await app.unmount();
   });
@@ -506,7 +688,7 @@ describe("Borrow position details", () => {
       .toBeGreaterThanOrEqual(2);
     releasePositionRefresh();
     await expect
-      .element(app.getByRole("button", { name: "Back to position" }))
+      .element(app.getByRole("button", { name: "Back to positions" }))
       .toBeVisible();
 
     await expect
@@ -519,10 +701,11 @@ describe("Borrow position details", () => {
       .element(app.getByText("Something went wrong"))
       .not.toBeInTheDocument();
 
-    await app.getByRole("button", { name: "Back to position" }).click();
+    await app.getByRole("button", { name: "Back to positions" }).click();
+    await expect.element(app.getByText("My positions")).toBeVisible();
     await expect
       .element(app.getByText("No open position in this market."))
-      .toBeVisible();
+      .not.toBeInTheDocument();
 
     await app.unmount();
   });
