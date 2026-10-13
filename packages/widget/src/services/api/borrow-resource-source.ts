@@ -3,6 +3,7 @@ import type { Integration } from "../../domain/borrow/catalog/integration";
 import type { BorrowMarketsScope } from "../../domain/borrow/catalog/market";
 import type { BorrowNetwork } from "../../domain/borrow/network";
 import {
+  BorrowActionsPage,
   BorrowIntegrationPositionsResponse,
   BorrowIntegrationsResponse,
   BorrowMarketsResponse,
@@ -15,6 +16,7 @@ import {
   withResponseDecodeError,
 } from "./api-operation";
 import { requireBorrowTransport } from "./borrow-transport";
+import type { BorrowActionsRequest } from "./resource-sources";
 
 export const makeBorrowResourceSource = (
   borrow: BorrowApi.BorrowApi | null,
@@ -80,5 +82,19 @@ export const makeBorrowResourceSource = (
     }
   );
 
-  return { getIntegrations, getMarkets, getPositionData } as const;
+  const listActions = Effect.fn("BorrowResourceSource.listActions")(function* (
+    request: BorrowActionsRequest
+  ) {
+    const client = yield* requireTransport();
+    return yield* client
+      .ActionsControllerGetActionsV1({ params: request })
+      .pipe(decodeApiResponse("borrow-actions", BorrowActionsPage));
+  });
+
+  return {
+    getIntegrations,
+    getMarkets,
+    getPositionData,
+    listActions,
+  } as const;
 };

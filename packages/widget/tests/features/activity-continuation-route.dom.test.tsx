@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 import { walletRuntime } from "../../src/app/runtime/wallet-runtime";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
-import type { ActivityActionItem } from "../../src/features/activity/model/activity-action";
+import type { YieldActivityItem } from "../../src/features/activity/model/activity-action";
 import { ActivityActionRoute } from "../../src/features/activity/react/activity-action-route";
 import {
   ActivityDefaultIntent,
@@ -32,7 +32,8 @@ const walletScope = new WalletScopeKey({
   network: "ethereum",
 });
 const selectedYield = yieldApiYieldFixture();
-const item: ActivityActionItem = {
+const item: YieldActivityItem = {
+  _tag: "yield",
   actionData: yieldApiActionFixture({
     status: "WAITING_FOR_NEXT",
     yieldId: selectedYield.id,
@@ -43,7 +44,7 @@ const item: ActivityActionItem = {
 };
 const actionId = item.actionData.id;
 const reviewPath = `/activity/${encodeURIComponent(actionId)}`;
-const otherItem: ActivityActionItem = {
+const otherItem: YieldActivityItem = {
   ...item,
   actionData: yieldApiActionFixture({
     id: "action-other",
@@ -54,7 +55,7 @@ const otherItem: ActivityActionItem = {
 const detailsView = (
   intent: ActivityDefaultIntent | ActivityExplicitIntent,
   surface: "execution" | "review",
-  details: ActivityActionItem,
+  details: YieldActivityItem,
   canContinue: boolean
 ) =>
   [

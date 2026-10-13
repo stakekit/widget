@@ -304,7 +304,23 @@
       "withdrew_without_token": "Retrait",
       "rewards": "Récompenses",
       "generic": "{{action}} {{token}}",
-      "generic_without_token": "{{action}}"
+      "generic_without_token": "{{action}}",
+      "borrow": {
+        "supply": "Fourniture de {{token}}",
+        "supply_without_token": "Fourniture",
+        "borrow": "Emprunt de {{token}}",
+        "borrow_without_token": "Emprunt",
+        "supplyAndBorrow": "Fourniture et emprunt de {{token}}",
+        "supplyAndBorrow_without_token": "Fourniture et emprunt",
+        "repay": "Remboursement de {{token}}",
+        "repay_without_token": "Remboursement",
+        "withdraw": "Retrait de {{token}}",
+        "withdraw_without_token": "Retrait",
+        "enableCollateral": "{{token}} activé comme garantie",
+        "enableCollateral_without_token": "Garantie activée",
+        "disableCollateral": "{{token}} désactivé comme garantie",
+        "disableCollateral_without_token": "Garantie désactivée"
+      }
     },
     "time": {
       "now": "à l'instant",
@@ -1074,6 +1090,10 @@
       "connect_description": "Connectez un portefeuille pour consulter les marchés d'emprunt et démarrer une action d'emprunt.",
       "unsupported_network": "Réseau non pris en charge",
       "unsupported_network_description": "Passez à un réseau pris en charge pour consulter les marchés d'emprunt et les positions.",
+      "switch_network": "Changer de réseau",
+      "switch_network_error": "Le réseau n'a pas été changé. Réessayez ou changez de réseau dans votre portefeuille.",
+      "switch_network_manually": "Basculez votre portefeuille sur {{networks}} pour consulter les marchés d'emprunt et les positions.",
+      "network_unavailable": "L'emprunt n'est disponible sur aucun réseau pris en charge par ce portefeuille.",
       "empty_title": "Aucun marché d'emprunt",
       "empty_description": "Les marchés d'emprunt ne sont pas encore disponibles pour ce réseau.",
       "error_title": "Emprunt indisponible",

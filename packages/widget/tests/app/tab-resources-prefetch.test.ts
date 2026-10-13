@@ -16,6 +16,7 @@ import {
   LegacyResourceSource,
   YieldResourceSource,
 } from "../../src/services/api/resource-sources";
+import { unconfiguredBorrowResourceSourceLayer } from "../utils/services/borrow-resource-source";
 import { applicationRuntimeInitInitialValue } from "../utils/widget-config";
 
 const address = Schema.decodeSync(
@@ -85,7 +86,8 @@ const makeRegistry = ({
             LegacyResourceSource.of({
               scanTokenBalances: () => Effect.succeed([]),
             } as never)
-          )
+          ),
+          unconfiguredBorrowResourceSourceLayer
         )
       ),
       Atom.initialValue(

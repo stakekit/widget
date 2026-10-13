@@ -62,13 +62,19 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
           )
         );
 
+        const owner = walletScopeOwnerKey(input.walletScope);
+
         yield* process({
           input,
           queue,
+          resourcesChanged: events.publish({
+            _tag: "TransactionWorkflowResourcesChanged",
+            owner,
+            workflowKind: input._tag,
+          }),
           stateRef,
         }).pipe(Effect.forkScoped);
 
-        const owner = walletScopeOwnerKey(input.walletScope);
         yield* Effect.addFinalizer(() =>
           events.publish({
             _tag: "TransactionWorkflowEnded",

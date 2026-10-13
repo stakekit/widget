@@ -17,6 +17,7 @@ import {
   yieldApiValidatorFixture,
   yieldApiYieldFixture,
 } from "../fixtures";
+import { unconfiguredBorrowResourceSourceLayer } from "../utils/services/borrow-resource-source";
 
 const address = Schema.decodeSync(
   Schema.NonEmptyString.pipe(Schema.brand("WalletAddress"))
@@ -139,7 +140,7 @@ describe("activity action atom boundary", () => {
               getProvider: () => Effect.succeedNone,
               listActivity,
             } as never)
-          )
+          ).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
         ),
       ],
     });
@@ -167,7 +168,8 @@ describe("activity action atom boundary", () => {
     expect(getOpportunity).toHaveBeenCalledOnce();
     expect(
       getActivityActions(registry.get(resource)).every(
-        (action) => action.yieldData?.id === yieldModel.id
+        (action) =>
+          action._tag === "yield" && action.yieldData?.id === yieldModel.id
       )
     ).toBe(true);
 
@@ -245,7 +247,7 @@ describe("activity action atom boundary", () => {
               listActivity,
               listValidators,
             } as never)
-          )
+          ).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
         ),
       ],
     });
@@ -293,7 +295,7 @@ describe("activity action atom boundary", () => {
                 Effect.fail(new Cause.UnknownError("unavailable")),
               listActivity,
             } as never)
-          )
+          ).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
         ),
       ],
     });
@@ -349,7 +351,7 @@ describe("activity action atom boundary", () => {
                   total: 1,
                 }),
             } as never)
-          )
+          ).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
         ),
       ],
     });

@@ -10,6 +10,16 @@ export type WidgetDomainEvent =
       readonly _tag: "TransactionWorkflowEnded";
       readonly owner: WalletScopeOwnerKey;
       readonly workflowKind: "Borrow" | "Classic";
+    }>
+  /**
+   * On-chain state owned by `owner` changed while the workflow is still open:
+   * a transaction confirmed, or the action settled (completed, or failed after
+   * confirming at least one transaction).
+   */
+  | Readonly<{
+      readonly _tag: "TransactionWorkflowResourcesChanged";
+      readonly owner: WalletScopeOwnerKey;
+      readonly workflowKind: "Borrow" | "Classic";
     }>;
 
 type WidgetDomainEventsApi = Readonly<{

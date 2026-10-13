@@ -15,19 +15,27 @@ import { WalletService } from "../../services/wallet/wallet-service";
 import type { WalletState } from "../../services/wallet/wallet-state";
 import { walletRuntime } from "./wallet-runtime";
 
-type TransactionWorkflowEnded = Extract<
+/**
+ * Workflow facts after which wallet-owned resources may differ on-chain:
+ * confirmations and settlement while the workflow is open, and disposal.
+ */
+type TransactionWorkflowResourceEvent = Extract<
   WidgetDomainEvent,
-  { readonly _tag: "TransactionWorkflowEnded" }
+  {
+    readonly _tag:
+      | "TransactionWorkflowEnded"
+      | "TransactionWorkflowResourcesChanged";
+  }
 >;
 
 type TransactionWorkflowResourceInvalidation =
   | {
-      readonly _tag: "Ended";
-      readonly event: TransactionWorkflowEnded;
+      readonly _tag: "Immediate";
+      readonly event: TransactionWorkflowResourceEvent;
     }
   | {
       readonly _tag: "Reconciliation";
-      readonly event: TransactionWorkflowEnded;
+      readonly event: TransactionWorkflowResourceEvent;
     };
 
 const keysFor = (
@@ -35,7 +43,7 @@ const keysFor = (
 ): ReadonlyArray<unknown> => {
   const owner = request.event.owner;
   return Match.valueTags(request, {
-    Ended: ({ event }) => {
+    Immediate: ({ event }) => {
       if (event.workflowKind === "Classic") {
         return [
           ...resourceInvalidationKeys.walletBalances(owner),
@@ -53,6 +61,7 @@ const keysFor = (
               ...resourceInvalidationKeys.borrowMarkets(owner.network),
             ]
           : []),
+        ...resourceInvalidationKeys.activity(owner),
       ];
     },
     Reconciliation: ({ event }) => {
@@ -105,10 +114,11 @@ export const transactionWorkflowResourceEventProjection = Stream.unwrap(
 
     return domainEvents.events.pipe(
       Stream.filter(
-        (event): event is TransactionWorkflowEnded =>
-          event._tag === "TransactionWorkflowEnded"
+        (event): event is TransactionWorkflowResourceEvent =>
+          event._tag === "TransactionWorkflowEnded" ||
+          event._tag === "TransactionWorkflowResourcesChanged"
       ),
-      Stream.tap((event) => invalidate({ _tag: "Ended", event })),
+      Stream.tap((event) => invalidate({ _tag: "Immediate", event })),
       Stream.filterEffect((event) =>
         wallet.state.pipe(
           Effect.map((state) => isCurrentWalletScopeOwner(state, event.owner)),

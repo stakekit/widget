@@ -5,20 +5,53 @@ import {
   isActivityActionOwnedByScope,
   isContinuableYieldAction,
 } from "../../src/domain/activity/action-capabilities";
+import { BorrowActivityAction } from "../../src/domain/borrow/responses";
 import { WalletAddress } from "../../src/domain/identity/identifiers";
 import { WalletScopeOwnerKey } from "../../src/domain/wallet/wallet-scope";
-import type { ActivityActionItem } from "../../src/features/activity/model/activity-action";
+import type {
+  BorrowActivityItem,
+  YieldActivityItem,
+} from "../../src/features/activity/model/activity-action";
 import { projectActivityActionListItem } from "../../src/features/activity/model/activity-action-list-item";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
 
 const makeItem = (
-  actionData: ActivityActionItem["actionData"],
-  yieldData: ActivityActionItem["yieldData"]
-): ActivityActionItem => ({
+  actionData: YieldActivityItem["actionData"],
+  yieldData: YieldActivityItem["yieldData"]
+): YieldActivityItem => ({
+  _tag: "yield",
   actionData,
   validatorsData: [],
   walletScope: {} as never,
   yieldData,
+});
+
+const makeBorrowItem = ({
+  action,
+  amount,
+  amountRaw,
+  status,
+}: {
+  readonly action: BorrowActivityItem["actionData"]["action"];
+  readonly amount?: string;
+  readonly amountRaw?: string;
+  readonly status: BorrowActivityItem["actionData"]["status"];
+}): BorrowActivityItem => ({
+  _tag: "borrow",
+  actionData: Schema.decodeSync(BorrowActivityAction)({
+    action,
+    createdAt: "2026-07-28T08:00:00.000Z",
+    id: "borrow-action",
+    rawArguments: {
+      ...(amount === undefined ? {} : { amount }),
+      ...(amountRaw === undefined ? {} : { amountRaw }),
+      marketId: "aave-ethereum-usdc",
+    },
+    status,
+    transactions: [],
+  }),
+  token: { decimals: 6, symbol: "USDC" } as BorrowActivityItem["token"],
+  walletScope: {} as never,
 });
 
 describe("Activity action list item projection", () => {
@@ -276,4 +309,67 @@ describe("Activity action list item projection", () => {
       isPositive: false,
     });
   });
+
+  it("projects a Borrow action with its title, amount and status", () => {
+    const projection = projectActivityActionListItem({
+      action: makeBorrowItem({
+        action: "supply",
+        amount: "1.5",
+        status: "SUCCESS",
+      }),
+      locale: "en-US",
+      presentationTime: {
+        now: DateTime.makeUnsafe("2026-07-28T10:00:00.000Z"),
+        timeZone: DateTime.zoneMakeNamedUnsafe("UTC"),
+      },
+    });
+
+    expect(projection).toMatchObject({
+      amount: "1.5",
+      amountSign: "+",
+      canOpenDetails: false,
+      statusLabel: "completed",
+      timestamp: { dayKind: "today", relative: { unit: "hours", value: 2 } },
+      title: { _tag: "borrow", action: "supply", tokenSymbol: "USDC" },
+      tokenSymbol: "USDC",
+    });
+  });
+
+  it("projects a Borrow amount given only in base units with the token decimals", () => {
+    const projection = projectActivityActionListItem({
+      action: makeBorrowItem({
+        action: "borrow",
+        amountRaw: "1500000",
+        status: "SUCCESS",
+      }),
+      locale: "en-US",
+      presentationTime: null,
+    });
+
+    expect(projection).toMatchObject({ amount: "1.5", tokenSymbol: "USDC" });
+  });
+
+  it.each([
+    ["borrow", "FAILED", "neutral", "failed"],
+    ["repay", "PROCESSING", "neutral", "processing"],
+    ["withdraw", "SUCCESS", "withdraw", "completed"],
+    ["disableCollateral", "CANCELED", "neutral", "canceled"],
+  ] as const)(
+    "projects a Borrow %s action as %s",
+    (action, status, direction, statusLabel) => {
+      const projection = projectActivityActionListItem({
+        action: makeBorrowItem({ action, status }),
+        locale: "en-US",
+        presentationTime: null,
+      });
+
+      expect(projection).toMatchObject({
+        amount: null,
+        canOpenDetails: false,
+        direction,
+        statusLabel,
+        title: { _tag: "borrow", action },
+      });
+    }
+  );
 });

@@ -1,7 +1,7 @@
 import { DateTime } from "effect";
 import type { ActionTransaction } from "../../../domain/action/models";
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
-import type { ActivityActionItem } from "./activity-action";
+import type { YieldActivityItem } from "./activity-action";
 import {
   type ActivityActionTitle,
   type ActivityPresentationTime,
@@ -50,7 +50,7 @@ export const projectActivityActionDetails = ({
   locale,
   presentationTime,
 }: {
-  readonly item: ActivityActionItem;
+  readonly item: YieldActivityItem;
   readonly locale: string;
   readonly presentationTime: ActivityPresentationTime;
 }): ActivityActionDetailsProjection => {

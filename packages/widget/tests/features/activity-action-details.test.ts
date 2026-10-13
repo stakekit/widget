@@ -1,6 +1,6 @@
 import { DateTime } from "effect";
 import { describe, expect, it } from "vitest";
-import type { ActivityActionItem } from "../../src/features/activity/model/activity-action";
+import type { YieldActivityItem } from "../../src/features/activity/model/activity-action";
 import { projectActivityActionDetails } from "../../src/features/activity/model/activity-action-details";
 import {
   yieldApiActionFixture,
@@ -11,9 +11,10 @@ import {
 const makeItem = (
   overrides: Parameters<typeof yieldApiActionFixture>[0] = {},
   withYield = true
-): ActivityActionItem => {
+): YieldActivityItem => {
   const yieldData = yieldApiYieldFixture();
   return {
+    _tag: "yield",
     actionData: yieldApiActionFixture({
       yieldId: yieldData.id,
       ...overrides,

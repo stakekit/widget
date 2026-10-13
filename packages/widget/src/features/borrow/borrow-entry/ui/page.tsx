@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
 import { useTrackPage } from "../../../tracking/index";
-import { ConnectButton } from "../../../wallet/views";
 import { PageCtaButton } from "../../../widget-shell/views";
 import { BorrowNotice } from "../../action-feedback/views";
 import { BorrowAmountField } from "../../amount-input/views";
@@ -22,6 +21,10 @@ import { BorrowBalanceLabel } from "./components/balance-label";
 import { CollateralSelectModal } from "./components/collateral-select-modal";
 import { BorrowFormDetails } from "./components/form-details";
 import { MarketSelectModal } from "./components/market-select-modal";
+import {
+  BorrowConnectCta,
+  BorrowNetworkRecoveryPanel,
+} from "./components/network-recovery";
 
 type BorrowEntryWalletView = Exclude<
   BorrowWalletView,
@@ -59,29 +62,10 @@ const BorrowEntryFormPage = ({
         {t("dashboard.borrow.connect_description")}
       </BorrowNotice>
 
-      <ConnectButton
-        variant={{
-          animation: "press",
-          color: "primary",
-          size: "compact",
-        }}
-      />
+      <BorrowConnectCta />
     </>
   ) : (
-    <>
-      <BorrowNotice title={t("dashboard.borrow.unsupported_network")}>
-        {t("dashboard.borrow.unsupported_network_description")}
-      </BorrowNotice>
-
-      <PageCtaButton
-        cta={{
-          disabled: true,
-          isLoading: false,
-          label: t("dashboard.borrow.unsupported_network"),
-          onClick: () => undefined,
-        }}
-      />
-    </>
+    <BorrowNetworkRecoveryPanel recovery={walletView.recovery} />
   );
 };
 

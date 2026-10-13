@@ -1,4 +1,7 @@
-export type { ActivityHistoryBatch } from "./activity-history";
+export type {
+  ActivityHistoryBatch,
+  ActivityHistoryEntry,
+} from "./activity-history";
 export {
   ActivityActionKey,
   ActivityHistoryError,

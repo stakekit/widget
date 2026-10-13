@@ -35,6 +35,7 @@ const makeActionItem = (id: string): ActivityActionItem => {
   const yieldModel = yieldApiYieldFixture();
 
   return {
+    _tag: "yield",
     actionData: yieldApiActionFixture({ id, yieldId: yieldModel.id }),
     validatorsData: [],
     walletScope,
@@ -43,6 +44,7 @@ const makeActionItem = (id: string): ActivityActionItem => {
 };
 
 const makeUnavailableActionItem = (id: string): ActivityActionItem => ({
+  _tag: "yield",
   actionData: yieldApiActionFixture({ id, type: "VOTE" }),
   validatorsData: [],
   walletScope,

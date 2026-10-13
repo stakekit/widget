@@ -13,6 +13,7 @@ import type { ActivityPageView } from "../../src/features/activity/state/page";
 import { yieldApiActionFixture } from "../fixtures";
 
 const feedItem = (id: string) => ({
+  _tag: "yield" as const,
   actionData: yieldApiActionFixture({ id }),
   validatorsData: [],
   walletScope: {} as never,

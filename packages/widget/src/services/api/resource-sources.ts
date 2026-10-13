@@ -7,6 +7,7 @@ import type { Integration } from "../../domain/borrow/catalog/integration";
 import type { BorrowMarketsScope } from "../../domain/borrow/catalog/market";
 import type { BorrowNetwork } from "../../domain/borrow/network";
 import type {
+  BorrowActionsPage,
   BorrowIntegrationPositionsResponse,
   BorrowIntegrationsResponse,
   BorrowMarketsResponse,
@@ -49,6 +50,7 @@ import type {
   TvlHistoryResponse,
 } from "../../domain/portfolio/models";
 import type { EnabledWalletNetworks } from "../../domain/wallet/models";
+import type * as BorrowApi from "../../generated/api/borrow";
 import { RichError } from "../errors/rich-error";
 
 export type YieldDirectoryRequest = {
@@ -75,6 +77,15 @@ export type EarnTokenCatalogRequest = {
   /** Omit to include yields closed to deposits. */
   readonly enter?: true;
   readonly yieldTypes?: ReadonlyArray<KnownApiYieldType>;
+};
+
+/** No network filter exists: callers scope listed actions by transaction network. */
+export type BorrowActionsRequest = {
+  readonly address: WalletAddress;
+  readonly integrationId?: string;
+  readonly limit: number;
+  readonly offset: number;
+  readonly statuses?: BorrowApi.ActionsControllerGetActionsV1Params["statuses"];
 };
 
 export class MissingBorrowApiConfig extends Data.TaggedError(
@@ -137,6 +148,9 @@ type BorrowResourceSourceService = {
     typeof BorrowIntegrationPositionsResponse.Type,
     BorrowReadFailure
   >;
+  readonly listActions: (
+    request: BorrowActionsRequest
+  ) => Effect.Effect<BorrowActionsPage, BorrowReadFailure>;
 };
 
 type LegacyResourceSourceService = {

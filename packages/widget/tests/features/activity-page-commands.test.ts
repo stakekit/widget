@@ -27,6 +27,7 @@ import {
 } from "../../src/features/wallet/index";
 import { YieldResourceSource } from "../../src/services/api/resource-sources";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
+import { unconfiguredBorrowResourceSourceLayer } from "../utils/services/borrow-resource-source";
 
 const address = Schema.decodeSync(
   Schema.NonEmptyString.pipe(Schema.brand("WalletAddress"))
@@ -61,13 +62,16 @@ const makeRegistry = (
     initialValues: [
       Atom.initialValue(
         appRuntime.layer,
-        Layer.succeed(
-          YieldResourceSource,
-          YieldResourceSource.of({
-            getOpportunity: () => Effect.succeed(yieldApiYieldFixture()),
-            getProvider: () => Effect.succeedNone,
-            listActivity,
-          } as never)
+        Layer.merge(
+          Layer.succeed(
+            YieldResourceSource,
+            YieldResourceSource.of({
+              getOpportunity: () => Effect.succeed(yieldApiYieldFixture()),
+              getProvider: () => Effect.succeedNone,
+              listActivity,
+            } as never)
+          ),
+          unconfiguredBorrowResourceSourceLayer
         )
       ),
       Atom.initialValue(filterOptionsAtom, AsyncResult.success(filterOptions)),

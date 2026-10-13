@@ -1,5 +1,4 @@
 import { useAtomValue } from "@effect/atom-react";
-import { Match } from "effect";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
@@ -19,6 +18,7 @@ import {
 } from "../../model/activity-action-details";
 import { useActivityActionRoute } from "../../react/activity-action-route";
 import { ActivityIcon } from "../activity-page/components/activity-icon";
+import { useActivityActionTitle } from "../activity-page/hooks/use-activity-action-title";
 import * as styles from "./styles.css";
 
 const reviewPageByIntent = {
@@ -26,34 +26,6 @@ const reviewPageByIntent = {
   exit: "unstakeReview",
   manage: "pendingActionReview",
 } as const;
-
-const useActivityDetailsTitle = (
-  title: ActivityActionDetailsProjection["title"]
-) => {
-  const { t } = useTranslation();
-  return Match.value(title).pipe(
-    Match.when({ _tag: "deposited" }, ({ tokenSymbol }) =>
-      tokenSymbol
-        ? t("activity.item.deposited", { token: tokenSymbol })
-        : t("activity.item.deposited_without_token")
-    ),
-    Match.when({ _tag: "withdrew" }, ({ tokenSymbol }) =>
-      tokenSymbol
-        ? t("activity.item.withdrew", { token: tokenSymbol })
-        : t("activity.item.withdrew_without_token")
-    ),
-    Match.when({ _tag: "rewards" }, () => t("activity.item.rewards")),
-    Match.when({ _tag: "generic" }, ({ actionLabel, tokenSymbol }) =>
-      tokenSymbol
-        ? t("activity.item.generic", {
-            action: actionLabel,
-            token: tokenSymbol,
-          })
-        : t("activity.item.generic_without_token", { action: actionLabel })
-    ),
-    Match.exhaustive
-  );
-};
 
 const ContinuationControls = () => {
   const { t } = useTranslation();
@@ -120,7 +92,7 @@ const Receipt = ({
   const { continuationReady, item, presentation, providersDetails } =
     useActivityActionRoute();
   const navigate = useNavigate();
-  const title = useActivityDetailsTitle(view.title);
+  const title = useActivityActionTitle(view.title);
   const firstProvider = providersDetails[0];
   const providerName = firstProvider?.name ?? firstProvider?.address ?? null;
   const token = item.yieldData?.token ?? null;

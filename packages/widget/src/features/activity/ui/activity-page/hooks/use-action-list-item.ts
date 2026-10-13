@@ -12,6 +12,7 @@ import {
   projectActivityActionListItem,
 } from "../../../model/activity-action-list-item";
 import type { ActivityIconType } from "../components/activity-icon";
+import { useActivityActionTitle } from "./use-activity-action-title";
 
 const ICON_TYPE_MAP: Record<ActivityDirection, ActivityIconType> = {
   deposit: "in",
@@ -24,11 +25,12 @@ export const useActionListItem = (action: ActivityActionItem) => {
   const { t, i18n } = useTranslation();
   const presentationTime = useAtomValue(presentationClockAtom);
   const locale = i18n.language;
+  const yieldItem = action._tag === "yield" ? action : null;
   const providersDetails = useAtomValue(
     yieldSummaryAtom(
       new YieldSummaryKey({
-        yield: action.yieldData,
-        validators: action.validatorsData,
+        yield: yieldItem?.yieldData ?? null,
+        validators: yieldItem?.validatorsData ?? [],
       })
     )
   ).providers;
@@ -37,29 +39,7 @@ export const useActionListItem = (action: ActivityActionItem) => {
     locale,
     presentationTime,
   });
-
-  const title = Match.value(projection.title).pipe(
-    Match.when({ _tag: "deposited" }, ({ tokenSymbol }) =>
-      tokenSymbol
-        ? t("activity.item.deposited", { token: tokenSymbol })
-        : t("activity.item.deposited_without_token")
-    ),
-    Match.when({ _tag: "withdrew" }, ({ tokenSymbol }) =>
-      tokenSymbol
-        ? t("activity.item.withdrew", { token: tokenSymbol })
-        : t("activity.item.withdrew_without_token")
-    ),
-    Match.when({ _tag: "rewards" }, () => t("activity.item.rewards")),
-    Match.when({ _tag: "generic" }, ({ actionLabel, tokenSymbol }) =>
-      tokenSymbol
-        ? t("activity.item.generic", {
-            action: actionLabel,
-            token: tokenSymbol,
-          })
-        : t("activity.item.generic_without_token", { action: actionLabel })
-    ),
-    Match.exhaustive
-  );
+  const title = useActivityActionTitle(projection.title);
   const timestamp = projection.timestamp;
   const timestampAbsolute = timestamp
     ? Match.value(timestamp.dayKind).pipe(

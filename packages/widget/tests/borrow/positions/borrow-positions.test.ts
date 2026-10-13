@@ -762,8 +762,9 @@ describe("borrow position items", () => {
       expect(assessment.decision).toBe("allow");
       expect(assessment.projection.status).toBe("available");
       if (assessment.projection.status !== "available") return;
+      // Displayed totals move from the authoritative $0.00 by the supplied value.
       expect(assessment.projection.totalCollateralUsd.toFixed(6)).toBe(
-        "20.000103"
+        "20.000000"
       );
       expect(assessment.projection.ltv.toFixed(4)).toBe("0.5000");
     });

@@ -1,5 +1,5 @@
 import { Schema } from "effect";
-import { base, mainnet } from "viem/chains";
+import { base, mainnet, polygon } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
@@ -17,7 +17,9 @@ const address = Schema.decodeSync(WalletAddress)(
 );
 
 describe("Borrow wallet view", () => {
-  const connector = {} as Connector;
+  const connector = {
+    switchChain: async () => mainnet,
+  } as unknown as Connector;
   const connectedWallet = {
     additionalAddresses: null,
     address,
@@ -29,6 +31,12 @@ describe("Borrow wallet view", () => {
     ledgerAccounts: [],
     network: "ethereum",
     status: "connected",
+  } satisfies NormalizedWalletState;
+  const polygonWallet = {
+    ...connectedWallet,
+    chain: polygon,
+    connectorChains: [polygon, mainnet, base],
+    network: "polygon",
   } satisfies NormalizedWalletState;
 
   const expectStatus = (
@@ -56,21 +64,69 @@ describe("Borrow wallet view", () => {
     }
   );
 
-  it("reports an authoritative unsupported wallet as unsupported", () => {
-    expectStatus(
-      {
+  it("offers the wallet's Borrow chains to an unsupported wallet that can switch", () => {
+    expect(
+      projectBorrowWalletView({
         ...disconnectedNormalizedWalletState,
-        connectorChains: [mainnet, base],
+        address,
+        chain: polygon,
+        connector,
+        connectorChains: [polygon, mainnet, base],
         status: "unsupported",
-      },
-      "unsupported-network"
-    );
+      })
+    ).toEqual({
+      recovery: { _tag: "SwitchChain", chains: [mainnet, base] },
+      status: "unsupported-network",
+    });
+  });
+
+  it("offers the host's initial chain first when it is a Borrow chain", () => {
+    expect(projectBorrowWalletView(polygonWallet, base.id)).toEqual({
+      recovery: { _tag: "SwitchChain", chains: [base, mainnet] },
+      status: "unsupported-network",
+    });
   });
 
   it("reports a connected wallet whose network and chain disagree as unsupported", () => {
-    expectStatus(
-      { ...connectedWallet, network: "base" },
-      "unsupported-network"
-    );
+    expect(
+      projectBorrowWalletView({ ...connectedWallet, network: "base" })
+    ).toEqual({
+      recovery: { _tag: "SwitchChain", chains: [mainnet, base] },
+      status: "unsupported-network",
+    });
+  });
+
+  it("asks for a manual switch when the wallet connector cannot switch chains", () => {
+    expect(
+      projectBorrowWalletView({
+        ...polygonWallet,
+        connector: {} as Connector,
+      })
+    ).toEqual({
+      recovery: { _tag: "SwitchManually", chains: [mainnet, base] },
+      status: "unsupported-network",
+    });
+  });
+
+  it("reports Borrow as unavailable when the wallet has no Borrow chain", () => {
+    expect(
+      projectBorrowWalletView({ ...polygonWallet, connectorChains: [polygon] })
+    ).toEqual({
+      recovery: { _tag: "Unavailable" },
+      status: "unsupported-network",
+    });
+  });
+
+  it("asks an unsupported wallet without a connector to connect again", () => {
+    expect(
+      projectBorrowWalletView({
+        ...disconnectedNormalizedWalletState,
+        connectorChains: [mainnet, base],
+        status: "unsupported",
+      })
+    ).toEqual({
+      recovery: { _tag: "Connect" },
+      status: "unsupported-network",
+    });
   });
 });

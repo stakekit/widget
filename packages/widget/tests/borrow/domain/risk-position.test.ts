@@ -385,6 +385,56 @@ describe("BorrowPositions", () => {
     });
   });
 
+  it("assesses no changes as the current account totals, even when the aggregate differs from summed balances by a cent", () => {
+    const usdcMarket = makeMarket({
+      id: "aave-v3-ethereum-usdc",
+      loanTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      loanTokenSymbol: "USDC",
+    });
+    const integration = Schema.decodeSync(Integration)(integrationDto);
+    const snapshot = Schema.decodeSync(BorrowAccountSnapshot)({
+      address,
+      availableToBorrowUsd: "1.072",
+      currentLtv: "0",
+      debtBalances: [],
+      healthFactor: null,
+      integrationId: integration.id,
+      netApy: "0.02",
+      netWorthUsd: "1.34",
+      network: "ethereum",
+      supplyBalances: [
+        {
+          apy: "0.02",
+          balance: "0.000675",
+          balanceRaw: "675000000000000",
+          balanceUsd: "1.35",
+          isCollateral: true,
+          marketId: usdcMarket.id,
+          pendingActions: [],
+          tokenAddress: collateralToken.token.address,
+          tokenSymbol: collateralToken.token.symbol,
+        },
+      ],
+      totalBorrowedUsd: "0",
+      totalCollateralUsd: "1.34",
+      totalSuppliedUsd: "1.34",
+    });
+    const risk = deriveBorrowPositions({
+      integrationAccountSnapshots: [{ accountSnapshot: snapshot, integration }],
+      markets: [usdcMarket],
+    }).riskFor(usdcMarket);
+
+    expect(risk.current).toMatchObject({
+      status: "available",
+      totalCollateralUsd: new BigNumber("1.34"),
+      totalDebtUsd: new BigNumber(0),
+    });
+    expect(risk.assess([])).toEqual({
+      decision: "allow",
+      projection: risk.current,
+    });
+  });
+
   it("keeps isolated market risk independent from account totals", () => {
     const usdcMarket = makeMarket({
       id: "morpho-blue-ethereum-weth-usdc",

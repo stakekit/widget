@@ -403,7 +403,7 @@ describe("Borrow position details", () => {
     await app.unmount();
   });
 
-  it("refreshes the position after leaving the immutable Complete snapshot", async ({
+  it("refreshes the position on confirmation while Complete stays an immutable snapshot", async ({
     worker,
   }) => {
     let positionRequests = 0;
@@ -501,14 +501,15 @@ describe("Borrow position details", () => {
           null
       )
       .toBe(true);
-    expect(positionRequests).toBe(1);
-
-    await app.getByRole("button", { name: "Back to position" }).click();
     await expect
       .poll(() => positionRequests, { timeout: 5_000 })
       .toBeGreaterThanOrEqual(2);
-
     releasePositionRefresh();
+    await expect
+      .element(app.getByRole("button", { name: "Back to position" }))
+      .toBeVisible();
+
+    await app.getByRole("button", { name: "Back to position" }).click();
     await expect.element(app.getByText("Something went wrong")).toBeVisible();
 
     await app.unmount();

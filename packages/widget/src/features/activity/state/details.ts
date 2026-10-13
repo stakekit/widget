@@ -24,7 +24,10 @@ import {
   type YieldSummaryProvider,
   yieldSummaryAtom,
 } from "../../yield-summary/index";
-import type { ActivityActionItem } from "../model/activity-action";
+import type {
+  ActivityActionItem,
+  YieldActivityItem,
+} from "../model/activity-action";
 import { type ActivityPageView, activityPageViewAtom } from "./page";
 
 class ActivityDetailsKey extends Data.Class<{
@@ -78,11 +81,12 @@ const activityActionDetailsAtom = Atom.family((key: ActivityDetailsKey) =>
         );
 
         return {
+          _tag: "yield",
           actionData: action,
           validatorsData,
           walletScope: key.scope,
           yieldData,
-        } satisfies ActivityActionItem;
+        } satisfies YieldActivityItem;
       })
     )
     .pipe(Atom.withLabel("activityActionDetailsAtom"))
@@ -132,10 +136,11 @@ type ActivitySelectedActionView =
   | { readonly status: "unavailable" }
   | { readonly status: "failed" }
   | {
-      readonly item: ActivityActionItem;
+      readonly item: YieldActivityItem;
       readonly status: "ready";
     };
 
+/** Borrow rows have no details, so Default selects the first Yield row. */
 export const resolveDefaultSelectedActionId = (
   view: Atom.Type<typeof activityPageViewAtom>
 ): ActionId | "loading" | null => {
@@ -144,7 +149,11 @@ export const resolveDefaultSelectedActionId = (
     return "loading";
   }
   if (view.refreshStatus !== "fresh") return "loading";
-  return view.actions[0]?.actionData.id ?? null;
+  return (
+    view.actions.find(
+      (item): item is YieldActivityItem => item._tag === "yield"
+    )?.actionData.id ?? null
+  );
 };
 
 /** URL intent wins; Default waits for a fresh feed and takes the first row. */
@@ -222,7 +231,7 @@ const projectDetailsResult = (
 
 /** Prefer the enriched feed row so selection does not wait on GET-by-id. */
 export const findActivityActionInFeed = (
-  actionId: ActionId,
+  actionId: string,
   view: ActivityPageView
 ): ActivityActionItem | null => {
   if (view.status !== "ready") return null;
@@ -244,6 +253,8 @@ const activitySelectedActionAtom = Atom.family((key: ActivitySelectionKey) =>
     if (actionId === null) return { status: "unavailable" };
 
     const fromFeed = findActivityActionInFeed(actionId, view);
+    // Borrow ids never reach the Yield GET-by-id endpoint.
+    if (fromFeed?._tag === "borrow") return { status: "unavailable" };
     if (fromFeed) {
       return { item: fromFeed, status: "ready" };
     }
@@ -282,7 +293,7 @@ type ActivityDetailsView =
   | { readonly status: "failed" }
   | {
       readonly canContinue: boolean;
-      readonly item: ActivityActionItem;
+      readonly item: YieldActivityItem;
       readonly providersDetails: ReadonlyArray<YieldSummaryProvider>;
       readonly status: "ready";
     };

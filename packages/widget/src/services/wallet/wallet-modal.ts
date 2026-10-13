@@ -68,6 +68,17 @@ const makeOpening = (scope: Scope.Scope): WalletModalOpening => ({
   onEnd: (finalizer) => Scope.addFinalizer(scope, finalizer),
 });
 
+/**
+ * An opening owned by the caller's Scope instead of a `WalletModal` dialog,
+ * for a surface outside it such as a feature's own network picker. Closing
+ * that Scope ends the opening.
+ */
+export const makeScopedWalletModalOpening: Effect.Effect<
+  WalletModalOpening,
+  never,
+  Scope.Scope
+> = Effect.map(Effect.scope, makeOpening);
+
 const makeOpenState = Effect.gen(function* () {
   // Openings are children of the modal's Scope, so tearing the modal down ends
   // the current opening and its work too.

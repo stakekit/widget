@@ -3,7 +3,7 @@ import { act } from "react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
-import type { ActivityActionItem } from "../../src/features/activity/model/activity-action";
+import type { YieldActivityItem } from "../../src/features/activity/model/activity-action";
 import { ActivityDetailsPage } from "../../src/features/activity/ui/activity-details/activity-details.page";
 import { ActivityDetailsFailure } from "../../src/features/activity/ui/activity-details/activity-details-status";
 import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
@@ -43,9 +43,10 @@ const makeItem = ({
 }: {
   readonly status?: "FAILED" | "WAITING_FOR_NEXT";
   readonly withYield?: boolean;
-} = {}): ActivityActionItem => {
+} = {}): YieldActivityItem => {
   const yieldData = yieldApiYieldFixture();
   return {
+    _tag: "yield",
     actionData: yieldApiActionFixture({
       amount: "1000000000000000.123456789",
       createdAt: DateTime.makeUnsafe("2026-08-26T10:00:00.000Z"),

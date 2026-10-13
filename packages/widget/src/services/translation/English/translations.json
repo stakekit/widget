@@ -305,7 +305,23 @@
       "withdrew_without_token": "Withdrew",
       "rewards": "Rewards",
       "generic": "{{action}} {{token}}",
-      "generic_without_token": "{{action}}"
+      "generic_without_token": "{{action}}",
+      "borrow": {
+        "supply": "Supplied {{token}}",
+        "supply_without_token": "Supplied",
+        "borrow": "Borrowed {{token}}",
+        "borrow_without_token": "Borrowed",
+        "supplyAndBorrow": "Supplied and borrowed {{token}}",
+        "supplyAndBorrow_without_token": "Supplied and borrowed",
+        "repay": "Repaid {{token}}",
+        "repay_without_token": "Repaid",
+        "withdraw": "Withdrew {{token}}",
+        "withdraw_without_token": "Withdrew",
+        "enableCollateral": "Enabled {{token}} as collateral",
+        "enableCollateral_without_token": "Enabled collateral",
+        "disableCollateral": "Disabled {{token}} as collateral",
+        "disableCollateral_without_token": "Disabled collateral"
+      }
     },
     "time": {
       "now": "just now",
@@ -592,6 +608,10 @@
       "connect_description": "Connect a wallet to view borrow markets and start a borrow action.",
       "unsupported_network": "Unsupported network",
       "unsupported_network_description": "Switch to a supported network to view borrow markets and positions.",
+      "switch_network": "Switch network",
+      "switch_network_error": "The network was not switched. Try again or switch networks in your wallet.",
+      "switch_network_manually": "Switch your wallet to {{networks}} to view borrow markets and positions.",
+      "network_unavailable": "Borrow is not available on any network this wallet supports.",
       "empty_title": "No borrow markets",
       "empty_description": "Borrow markets are not available for this network yet.",
       "error_title": "Borrow unavailable",

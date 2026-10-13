@@ -1,6 +1,8 @@
 import { HttpResponse, http } from "msw";
-import { mainnet } from "viem/chains";
+import { base, mainnet, polygon } from "viem/chains";
 import { userEvent } from "vitest/browser";
+import { SKApp } from "../../src/App";
+import type { SKAppProps } from "../../src/public-api/react-types";
 import type {
   SKBorrowSignatureResult,
   SKBorrowTx,
@@ -9,9 +11,9 @@ import type {
   SKBorrowWallet,
   SKEip712TypedData,
 } from "../../src/public-api/types";
-import { borrowApiRoute } from "../mocks/api-routes";
+import { borrowApiRoute, yieldApiRoute } from "../mocks/api-routes";
 import { describe, expect, it, vi } from "../utils/test-extend";
-import { type RenderResult, renderApp } from "../utils/test-utils";
+import { type RenderResult, render, renderApp } from "../utils/test-utils";
 
 const account = "0x0000000000000000000000000000000000000001";
 const transactionHash =
@@ -463,6 +465,83 @@ describe("Borrow with an external provider", () => {
     expect(api.submitted.get(withdrawTransaction.id)).toEqual({
       transactionHash,
     });
+
+    await app.unmount();
+  });
+});
+
+describe("Borrow on a network outside Borrow", () => {
+  it("switches the host wallet to a chosen Borrow chain and loads its markets", async ({
+    worker,
+  }) => {
+    const marketNetworks: Array<string | null> = [];
+    const baseIntegration = { ...integration, networks: ["base"] };
+    const baseMarket = { ...market, id: "aave-v3-base-usdc", network: "base" };
+    worker.use(
+      http.get(yieldApiRoute("/v1/networks"), () =>
+        HttpResponse.json([
+          { id: "ethereum" },
+          { id: "base" },
+          { id: "polygon" },
+        ])
+      ),
+      http.get(borrowApiRoute("/v1/integrations"), () =>
+        HttpResponse.json([baseIntegration])
+      ),
+      http.get(borrowApiRoute("/v1/markets"), ({ request }) => {
+        marketNetworks.push(new URL(request.url).searchParams.get("network"));
+        return HttpResponse.json({
+          items: [baseMarket],
+          limit: 100,
+          offset: 0,
+          total: 1,
+        });
+      }),
+      http.get(borrowApiRoute("/v1/positions"), () =>
+        HttpResponse.json({ ...position, network: "base" })
+      )
+    );
+    const switchChain = vi.fn(async (_chainId: number) => {});
+    const props = (
+      currentChain: typeof polygon.id | typeof base.id
+    ): SKAppProps => ({
+      apiKey: import.meta.env.VITE_API_KEY,
+      borrowEnabled: true,
+      dashboardVariant: true,
+      externalProviders: {
+        currentAddress: account,
+        currentChain,
+        provider: {
+          ...makeWallet({ sendBorrowTransaction: vi.fn() }),
+          switchChain,
+        },
+        supportedChainIds: [mainnet.id, base.id],
+        type: "generic",
+      },
+    });
+
+    const app = await render(<SKApp {...props(polygon.id)} />);
+    await userEvent.click(app.getByText("Borrow", { exact: true }));
+
+    await expect
+      .element(app.getByText("Unsupported network"))
+      .toBeInTheDocument();
+    await app.getByRole("button", { name: "Switch network" }).click();
+    await expect
+      .element(app.getByTestId(`wallet-chain-${polygon.id}`))
+      .not.toBeInTheDocument();
+    await app.getByTestId(`wallet-chain-${base.id}`).click();
+
+    await expect.poll(() => switchChain).toHaveBeenCalledWith(base.id);
+    // The host reports the chain its wallet switched to.
+    await app.rerender(<SKApp {...props(base.id)} />);
+    await expect.poll(() => marketNetworks).toContain("base");
+    await expect
+      .element(app.getByText("Collateral", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByRole("button", { name: "Enter amounts" }))
+      .toBeInTheDocument();
 
     await app.unmount();
   });

@@ -1,6 +1,12 @@
 import { Effect, Stream } from "effect";
+import * as Atom from "effect/reactivity/Atom";
+import { makeScopedEffectAtom } from "../../../app/runtime/scoped-effect-atom";
 import { walletRuntime } from "../../../app/runtime/wallet-runtime";
 import { WalletPresentationService } from "./orchestration/wallet-presentation-service";
+
+type WalletChainSelectionInput = Parameters<
+  WalletPresentationService["Service"]["selectChain"]
+>[0];
 
 export const walletChainSelectionAtom = walletRuntime.atom(
   WalletPresentationService.use((service) =>
@@ -9,11 +15,35 @@ export const walletChainSelectionAtom = walletRuntime.atom(
 );
 
 export const selectWalletChainAtom = walletRuntime.fn(
-  (input: Parameters<WalletPresentationService["Service"]["selectChain"]>[0]) =>
+  (input: WalletChainSelectionInput) =>
     WalletPresentationService.use((service) => service.selectChain(input)),
   // The chain switch permit decides whether a repeated selection switches.
   { concurrent: true }
 );
+
+/**
+ * Chain selection owned by one mounted surface outside the header network
+ * dialog. The surface creates an instance per mount; unmounting it ends the
+ * Atom's Scope, which interrupts a pending selection and clears its state.
+ */
+export const makeWalletChainSelectionScopeAtom = () =>
+  makeScopedEffectAtom({
+    acquire: () =>
+      WalletPresentationService.use((service) => service.openChainSelection),
+    label: "walletChainSelectionScope",
+    makeValue: (handleAtom) =>
+      walletRuntime
+        .fn(
+          (input: WalletChainSelectionInput, context) =>
+            context
+              .result(handleAtom)
+              .pipe(Effect.flatMap((handle) => handle.select(input))),
+          // The chain switch permit decides whether a repeated selection switches.
+          { concurrent: true }
+        )
+        .pipe(Atom.withLabel("selectScopedWalletChain")),
+    runtime: walletRuntime,
+  });
 
 export const walletAddressCopiedAtom = walletRuntime.atom(
   WalletPresentationService.use((service) =>

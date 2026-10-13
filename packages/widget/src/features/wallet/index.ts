@@ -17,6 +17,11 @@ export const walletStateResultAtom = currentWalletStateResultAtom;
 
 export { useSKWallet } from "./react/use-wallet";
 export { useWalletConfig } from "./react/use-wallet-config";
+export {
+  useScopedWalletChainSelection,
+  WalletChainSelectionScope,
+} from "./react/wallet-chain-selection-scope";
 export { useWalletScopeRoute } from "./react/wallet-scope-route";
+export { walletChainSelectionAtom } from "./state/account-presentation";
 export { selectCurrentWalletAtom } from "./state/selectors";
 export { logoutAtom } from "./state/workflows";

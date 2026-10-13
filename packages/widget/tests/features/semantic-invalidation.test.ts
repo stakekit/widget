@@ -51,6 +51,7 @@ import {
 } from "../../src/services/resource-invalidation";
 import { getPullResultItems } from "../../src/shared/effect/pagination";
 import { yieldApiActionFixture, yieldApiYieldFixture } from "../fixtures";
+import { unconfiguredBorrowResourceSourceLayer } from "../utils/services/borrow-resource-source";
 
 const address = (suffix: string) =>
   Schema.decodeSync(WalletAddress)(`0x${suffix.padStart(40, "0")}`);
@@ -65,7 +66,10 @@ const scopeB = new WalletScopeKey({
 
 const getActivityActionViews = (
   result: Atom.Type<ReturnType<typeof activityHistoryPullAtom>>
-) => getPullResultItems(result).flatMap((batch) => batch.actions);
+) =>
+  getPullResultItems(result).flatMap((batch) =>
+    batch.actions.map((entry) => entry.action)
+  );
 const sameWalletCachedScope = new WalletScopeKey({
   additionalAddresses: {
     lidoStakeAccounts: ["cached-lido-account"],
@@ -397,7 +401,8 @@ describe("semantic resource invalidation", () => {
                       offset,
                       total: 1,
                     }),
-                } as never)
+                } as never),
+                unconfiguredBorrowResourceSourceLayer
               ) as never
             ),
           ],

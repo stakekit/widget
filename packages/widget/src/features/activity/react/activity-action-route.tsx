@@ -6,7 +6,7 @@ import { ContentLoaderSquare } from "../../../shared/ui/primitives/content-loade
 import { YieldActionContinuationSessionRoute } from "../../classic-transaction-flow/views";
 import { walletScopeAtom } from "../../wallet/index";
 import type { YieldSummaryProvider } from "../../yield-summary/index";
-import type { ActivityActionItem } from "../model/activity-action";
+import type { YieldActivityItem } from "../model/activity-action";
 import {
   ActivitySelectionKey,
   activityDetailsViewAtom,
@@ -23,7 +23,7 @@ export type ActivityPresentation = "Classic" | "Dashboard";
 
 type ActivityActionRouteValue = Readonly<{
   readonly continuationReady: boolean;
-  readonly item: ActivityActionItem;
+  readonly item: YieldActivityItem;
   readonly presentation: ActivityPresentation;
   readonly providersDetails: ReadonlyArray<YieldSummaryProvider>;
 }>;

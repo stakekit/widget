@@ -313,11 +313,11 @@ const oracleCollateralValue = ({
 const assessOracle = ({
   anchor,
   changes,
-  displayState,
+  displayTotals,
 }: {
   readonly anchor: OracleRiskAnchor;
   readonly changes: ReadonlyArray<RiskChange>;
-  readonly displayState: RiskState;
+  readonly displayTotals: DisplayTotals;
 }): RiskAssessment => {
   const baseline: OracleRiskState = {
     collateralAmount: anchor.collateralAmount,
@@ -370,8 +370,8 @@ const assessOracle = ({
     ltv,
     maxLtv: anchor.liquidationThreshold,
     status: "available",
-    totalCollateralUsd: projectExactRiskTotals(displayState).totalCollateralUsd,
-    totalDebtUsd: displayState.debtUsd,
+    totalCollateralUsd: displayTotals.totalCollateralUsd,
+    totalDebtUsd: displayTotals.totalDebtUsd,
   };
   const riskIncreasing =
     debtAmount.isGreaterThan(baseline.debtAmount) ||
@@ -382,6 +382,11 @@ const assessOracle = ({
   return riskIncreasing && debtAmount.isGreaterThan(liquidationCapacity)
     ? { decision: "block", projection, reason: "borrowCapacityExceeded" }
     : { decision: "allow", projection };
+};
+
+type DisplayTotals = {
+  readonly totalCollateralUsd: BigNumber;
+  readonly totalDebtUsd: BigNumber;
 };
 
 export type RiskPositionContract = {
@@ -418,7 +423,9 @@ export const makeRiskPosition = ({
       };
     }
 
-    if (current.status === "unavailable") {
+    // No changes means nothing to project: the current (authoritative)
+    // projection is the answer, not a recomputation from component balances.
+    if (changes.length === 0 || current.status === "unavailable") {
       return {
         decision: "allow",
         projection: current,
@@ -442,25 +449,39 @@ export const makeRiskPosition = ({
       };
     }
 
+    const baseline = projectExactRiskTotals(state);
+    const projectedTotals = projectExactRiskTotals(changed.state);
+    // Displayed totals move from the authoritative current totals by the
+    // action's delta, so they share a baseline with `current`.
+    const displayTotals: DisplayTotals = {
+      totalCollateralUsd: BigNumber.maximum(
+        current.totalCollateralUsd.plus(
+          projectedTotals.totalCollateralUsd.minus(baseline.totalCollateralUsd)
+        ),
+        0
+      ),
+      totalDebtUsd: BigNumber.maximum(
+        current.totalDebtUsd.plus(changed.state.debtUsd.minus(state.debtUsd)),
+        0
+      ),
+    };
+
     if (valuation.type === "oracle") {
       return assessOracle({
         anchor: valuation.anchor,
         changes,
-        displayState: changed.state,
+        displayTotals,
       });
     }
 
-    const baseline = projectExactRiskTotals(state);
-    const projectedTotals = projectExactRiskTotals(changed.state);
     // Without an oracle anchor, display prices only guard capacity; they
     // never stand in for the protocol's projected LTV or health factor.
     const projection =
       valuation.type === "display"
-        ? projectState(changed.state)
+        ? { ...projectState(changed.state), ...displayTotals }
         : unavailable({
             reason: "missingRiskAnchor",
-            totalCollateralUsd: projectedTotals.totalCollateralUsd,
-            totalDebtUsd: changed.state.debtUsd,
+            ...displayTotals,
           });
     const riskIncreasing =
       changed.state.debtUsd.isGreaterThan(state.debtUsd) ||

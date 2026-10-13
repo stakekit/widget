@@ -20,6 +20,7 @@ import type {
   WalletSwitchError,
 } from "../../../../services/wallet/wallet-errors";
 import {
+  makeScopedWalletModalOpening,
   WalletModal,
   type WalletModalOpening,
 } from "../../../../services/wallet/wallet-modal";
@@ -29,6 +30,11 @@ import { makeScopedSerialOperations } from "../../../../shared/effect/scoped-ser
 type WalletChainSelection = Readonly<{
   readonly pendingChainId?: number;
   readonly failedChainId?: number;
+}>;
+
+type WalletChainSelectionInput = Readonly<{
+  readonly chain: Chain;
+  readonly addLedgerAccount: boolean;
 }>;
 
 const makeWalletPresentationService = Effect.fn(
@@ -52,7 +58,7 @@ const makeWalletPresentationService = Effect.fn(
     );
   });
   const chainSelection = yield* SubscriptionRef.make<{
-    /** The network dialog opening this selection reports for while it lasts. */
+    /** The opening this selection reports for while it lasts. */
     readonly opening: WalletModalOpening;
     readonly owner: WalletCommandIdentity;
     readonly selection: WalletChainSelection;
@@ -90,6 +96,87 @@ const makeWalletPresentationService = Effect.fn(
     );
   });
 
+  /**
+   * Runs one selection within `opening`: ending the opening interrupts it and
+   * clears its pending or failed state. `onSwitched` runs once the same
+   * connected wallet has landed on the selected chain.
+   */
+  const selectChainIn = (
+    opening: WalletModalOpening,
+    input: WalletChainSelectionInput,
+    onSwitched: Effect.Effect<void>
+  ) =>
+    operations
+      .run(
+        opening.run(
+          Effect.gen(function* () {
+            const state = yield* wallet.state;
+            const connection = state.connection;
+            // An unsupported wallet keeps its connector so it can switch
+            // back; only a connected one can add Ledger accounts.
+            const canSwitch =
+              connection.status === "connected" ||
+              (connection.status === "unsupported" && !input.addLedgerAccount);
+            if (!canSwitch || !connection.connector) return;
+            const connector = connection.connector;
+            const owner = walletCommandIdentity(connection);
+            yield* SubscriptionRef.set(chainSelection, {
+              opening,
+              owner,
+              selection: { pendingChainId: input.chain.id },
+            });
+            yield* opening.onEnd(
+              SubscriptionRef.update(chainSelection, (current) =>
+                current?.opening === opening ? null : current
+              )
+            );
+            const operation: Effect.Effect<
+              boolean,
+              | WalletIntegrationError
+              | WalletRuntimeInvariantError
+              | WalletSwitchError
+            > = input.addLedgerAccount
+              ? wallet
+                  .addLedgerAccount({
+                    expected: owner,
+                    targetChain: input.chain,
+                  })
+                  .pipe(Effect.map((outcome) => outcome._tag === "Added"))
+              : wallet
+                  .switchChain({
+                    chainId: input.chain.id,
+                    connector,
+                  })
+                  .pipe(Effect.as(true));
+            yield* operation.pipe(
+              Effect.matchEffect({
+                onFailure: () =>
+                  SubscriptionRef.set(chainSelection, {
+                    opening,
+                    owner,
+                    selection: { failedChainId: input.chain.id },
+                  }),
+                onSuccess: (changed) =>
+                  Effect.gen(function* () {
+                    yield* SubscriptionRef.set(chainSelection, null);
+                    const after = walletCommandIdentity(
+                      (yield* wallet.state).connection
+                    );
+                    if (
+                      changed &&
+                      after.status === "connected" &&
+                      after.address === owner.address &&
+                      after.connectorUid === owner.connectorUid
+                    )
+                      yield* onSwitched;
+                  }),
+              })
+            );
+          })
+        )
+      )
+      .pipe(chainPermit.withPermitsIfAvailable(1));
+
   return {
     addressCopied: Stream.merge(
       SubscriptionRef.changes(copied),
@@ -100,75 +187,25 @@ const makeWalletPresentationService = Effect.fn(
       wallet.states
     ).pipe(Stream.mapEffect(() => currentChainSelection)),
     copyAddress: copyOperations.run(copyAddress()),
-    selectChain: Effect.fn("selectChain")(function* (input: {
-      readonly chain: Chain;
-      readonly addLedgerAccount: boolean;
-    }) {
+    /**
+     * Opens chain selection for a surface outside the header network dialog.
+     * Selections made through the handle belong to the caller's Scope: closing
+     * it interrupts a pending selection and clears its state.
+     */
+    openChainSelection: Effect.map(makeScopedWalletModalOpening, (opening) => ({
+      select: (input: WalletChainSelectionInput) =>
+        selectChainIn(opening, input, Effect.void),
+    })),
+    /**
+     * Selects a chain in the header network dialog. Closing the dialog
+     * interrupts the selection; a selection that lands closes the dialog.
+     */
+    selectChain: Effect.fn("selectChain")(function* (
+      input: WalletChainSelectionInput
+    ) {
       // Closing the network dialog interrupts the selection made in it.
       const opening = yield* modal.chainOpen.opening;
-      yield* operations
-        .run(
-          opening.run(
-            Effect.gen(function* () {
-              const state = yield* wallet.state;
-              if (state.connection.status !== "connected") return;
-              const owner = walletCommandIdentity(state.connection);
-              yield* SubscriptionRef.set(chainSelection, {
-                opening,
-                owner,
-                selection: { pendingChainId: input.chain.id },
-              });
-              yield* opening.onEnd(
-                SubscriptionRef.update(chainSelection, (current) =>
-                  current?.opening === opening ? null : current
-                )
-              );
-              const operation: Effect.Effect<
-                boolean,
-                | WalletIntegrationError
-                | WalletRuntimeInvariantError
-                | WalletSwitchError
-              > = input.addLedgerAccount
-                ? wallet
-                    .addLedgerAccount({
-                      expected: walletCommandIdentity(state.connection),
-                      targetChain: input.chain,
-                    })
-                    .pipe(Effect.map((outcome) => outcome._tag === "Added"))
-                : wallet
-                    .switchChain({
-                      chainId: input.chain.id,
-                      connector: state.connection.connector,
-                    })
-                    .pipe(Effect.as(true));
-              yield* operation.pipe(
-                Effect.matchEffect({
-                  onFailure: () =>
-                    SubscriptionRef.set(chainSelection, {
-                      opening,
-                      owner,
-                      selection: { failedChainId: input.chain.id },
-                    }),
-                  onSuccess: (changed) =>
-                    Effect.gen(function* () {
-                      yield* SubscriptionRef.set(chainSelection, null);
-                      const after = walletCommandIdentity(
-                        (yield* wallet.state).connection
-                      );
-                      if (
-                        changed &&
-                        after.status === "connected" &&
-                        after.address === owner.address &&
-                        after.connectorUid === owner.connectorUid
-                      )
-                        yield* modal.closeChain;
-                    }),
-                })
-              );
-            })
-          )
-        )
-        .pipe(chainPermit.withPermitsIfAvailable(1));
+      yield* selectChainIn(opening, input, modal.closeChain);
     }),
   };
 });

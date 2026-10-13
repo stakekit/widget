@@ -110,6 +110,7 @@ describe("activity and completion workflows", () => {
 
     const yieldModel = yieldApiYieldFixture();
     const item: ActivityActionItem = {
+      _tag: "yield",
       actionData: yieldApiActionFixture({
         id: "retained-action",
         yieldId: yieldModel.id,

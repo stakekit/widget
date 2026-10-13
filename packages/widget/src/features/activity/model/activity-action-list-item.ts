@@ -5,13 +5,18 @@ import {
   getActionInputToken,
 } from "../../../domain/action/rules";
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
+import { exactDecimal } from "../../../domain/finance/exact";
 import {
   getActivityDayKind,
   getActivityRelativeTime,
 } from "../../../shared/lib/date";
 import { capitalizeFirstLetters } from "../../../shared/lib/formatters";
 import { defaultFormattedNumber } from "../../../shared/lib/number-format";
-import type { ActivityActionItem } from "./activity-action";
+import type {
+  ActivityActionItem,
+  BorrowActivityItem,
+  YieldActivityItem,
+} from "./activity-action";
 
 export type ActivityDirection = "deposit" | "withdraw" | "rewards" | "neutral";
 
@@ -24,6 +29,8 @@ export type ActivityStatusLabel =
   | "processing"
   | "stale";
 
+type BorrowActivityActionType = BorrowActivityItem["actionData"]["action"];
+
 export type ActivityActionTitle =
   | { readonly _tag: "deposited"; readonly tokenSymbol: string | null }
   | { readonly _tag: "withdrew"; readonly tokenSymbol: string | null }
@@ -31,6 +38,11 @@ export type ActivityActionTitle =
   | {
       readonly _tag: "generic";
       readonly actionLabel: string;
+      readonly tokenSymbol: string | null;
+    }
+  | {
+      readonly _tag: "borrow";
+      readonly action: BorrowActivityActionType;
       readonly tokenSymbol: string | null;
     };
 
@@ -89,9 +101,36 @@ const getActivityDirection = (type: ActionType): ActivityDirection => {
   }
 };
 
+const BORROW_ACTIVITY_DIRECTION: Record<
+  BorrowActivityActionType,
+  ActivityDirection
+> = {
+  borrow: "neutral",
+  disableCollateral: "neutral",
+  enableCollateral: "neutral",
+  repay: "neutral",
+  supply: "deposit",
+  supplyAndBorrow: "deposit",
+  withdraw: "withdraw",
+};
+
+// Borrow rows cannot be continued from Activity, so waiting reads as processing.
+const BORROW_ACTIVITY_STATUS_LABEL: Record<
+  BorrowActivityItem["actionData"]["status"],
+  ActivityStatusLabel
+> = {
+  CANCELED: "canceled",
+  CREATED: "created",
+  FAILED: "failed",
+  PROCESSING: "processing",
+  STALE: "stale",
+  SUCCESS: "completed",
+  WAITING_FOR_NEXT: "processing",
+};
+
 /** Waiting actions show no badge: the user may have continued elsewhere. */
 export const projectActivityStatusLabel = (
-  action: ActivityActionItem["actionData"],
+  action: YieldActivityItem["actionData"],
   presentationTime: ActivityPresentationTime | null
 ): ActivityStatusLabel | null => {
   switch (action.status) {
@@ -137,7 +176,7 @@ const resolveTokenSymbol = ({
   action,
   direction,
 }: {
-  readonly action: ActivityActionItem;
+  readonly action: YieldActivityItem;
   readonly direction: ActivityDirection;
 }): string | null => {
   const yieldData = action.yieldData;
@@ -183,7 +222,7 @@ const resolveTitle = ({
   direction,
   tokenSymbol,
 }: {
-  readonly action: ActivityActionItem;
+  readonly action: YieldActivityItem;
   readonly direction: ActivityDirection;
   readonly tokenSymbol: string | null;
 }): ActivityActionTitle => {
@@ -206,15 +245,14 @@ const resolveTitle = ({
 };
 
 const resolveTimestamp = ({
-  action,
+  createdAt,
   locale,
   presentationTime,
 }: {
-  readonly action: ActivityActionItem;
+  readonly createdAt: DateTime.Utc | null | undefined;
   readonly locale: string;
   readonly presentationTime: ActivityPresentationTime | null;
 }): ActivityActionTimestamp | null => {
-  const createdAt = action.actionData.createdAt;
   if (!createdAt || !presentationTime) return null;
 
   return {
@@ -239,6 +277,50 @@ const resolveTimestamp = ({
   };
 };
 
+// Borrow actions carry either a decimal amount or base units in the token's decimals.
+const resolveBorrowActivityAmount = ({
+  actionData,
+  token,
+}: BorrowActivityItem) => {
+  const { amount, amountRaw } = actionData.rawArguments ?? {};
+  if (amount) return amount;
+  if (amountRaw === undefined || !token) return null;
+
+  return exactDecimal(amountRaw.toString()).shiftedBy(-token.decimals);
+};
+
+const projectBorrowActivityListItem = ({
+  action,
+  locale,
+  presentationTime,
+}: {
+  readonly action: BorrowActivityItem;
+  readonly locale: string;
+  readonly presentationTime: ActivityPresentationTime | null;
+}): ActivityActionListItemProjection => {
+  const borrowAction = action.actionData;
+  const direction = BORROW_ACTIVITY_DIRECTION[borrowAction.action];
+  const tokenSymbol = getReadableRawTokenSymbol(action.token?.symbol);
+  const exactAmount = resolveBorrowActivityAmount(action);
+  const amount = exactAmount ? defaultFormattedNumber(exactAmount) : null;
+
+  return {
+    amount,
+    amountSign: resolveAmountSign({ amount, direction }),
+    canOpenDetails: false,
+    direction,
+    isPositive: direction === "deposit",
+    statusLabel: BORROW_ACTIVITY_STATUS_LABEL[borrowAction.status],
+    timestamp: resolveTimestamp({
+      createdAt: borrowAction.createdAt,
+      locale,
+      presentationTime,
+    }),
+    title: { _tag: "borrow", action: borrowAction.action, tokenSymbol },
+    tokenSymbol,
+  };
+};
+
 export const projectActivityActionListItem = ({
   action,
   locale,
@@ -248,6 +330,10 @@ export const projectActivityActionListItem = ({
   readonly locale: string;
   readonly presentationTime: ActivityPresentationTime | null;
 }): ActivityActionListItemProjection => {
+  if (action._tag === "borrow") {
+    return projectBorrowActivityListItem({ action, locale, presentationTime });
+  }
+
   const direction = getActivityDirection(action.actionData.type);
   const tokenSymbol = resolveTokenSymbol({
     action,
@@ -268,7 +354,11 @@ export const projectActivityActionListItem = ({
       action.actionData,
       presentationTime
     ),
-    timestamp: resolveTimestamp({ action, locale, presentationTime }),
+    timestamp: resolveTimestamp({
+      createdAt: action.actionData.createdAt,
+      locale,
+      presentationTime,
+    }),
     title: resolveTitle({ action, direction, tokenSymbol }),
     tokenSymbol,
   };
