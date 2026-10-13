@@ -214,7 +214,7 @@ describe("Borrow position details", () => {
       .element(app.getByTestId("number-input"))
       .not.toHaveAttribute("aria-invalid", "true");
     await expect
-      .element(app.getByRole("button", { name: "Review borrow" }))
+      .element(app.getByRole("button", { name: "Review withdrawal" }))
       .toBeEnabled();
 
     await app.unmount();
@@ -377,7 +377,7 @@ describe("Borrow position details", () => {
 
     await userEvent.click(app.getByTestId("number-input"));
     await userEvent.keyboard("0.1");
-    await app.getByRole("button", { name: "Review borrow" }).click();
+    await app.getByRole("button", { name: "Review withdrawal" }).click();
 
     await expect.element(app.getByText("Withdraw WETH")).toBeInTheDocument();
     await expect
@@ -483,7 +483,7 @@ describe("Borrow position details", () => {
     await app.getByTestId("borrow-position-action__withdraw").click();
     await userEvent.click(app.getByTestId("number-input"));
     await userEvent.keyboard("0.1");
-    await app.getByRole("button", { name: "Review borrow" }).click();
+    await app.getByRole("button", { name: "Review withdrawal" }).click();
     await app.getByRole("button", { name: "Confirm" }).click();
 
     await expect
@@ -509,8 +509,20 @@ describe("Borrow position details", () => {
       .element(app.getByRole("button", { name: "Back to position" }))
       .toBeVisible();
 
+    await expect
+      .element(app.getByText("Withdrawal complete"))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByText("No open position in this market."))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByText("Something went wrong"))
+      .not.toBeInTheDocument();
+
     await app.getByRole("button", { name: "Back to position" }).click();
-    await expect.element(app.getByText("Something went wrong")).toBeVisible();
+    await expect
+      .element(app.getByText("No open position in this market."))
+      .toBeVisible();
 
     await app.unmount();
   });

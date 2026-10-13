@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
+import type { CollateralToken } from "../../../../domain/borrow/catalog/collateral-token";
 import type { Integration } from "../../../../domain/borrow/catalog/integration";
 import {
   getBorrowMarketPairLabel,
@@ -22,7 +23,6 @@ import {
 } from "../../../../shared/lib/formatters";
 import { formatNumber } from "../../../../shared/lib/number-format";
 import type { DetailRowTone } from "../../../../shared/ui/components/details-section";
-import type { BorrowMarketWalletBalances } from "../../action-preparation/index";
 import type { BorrowFormProjection } from "./borrow-entry";
 
 type BorrowDetailsRow = {
@@ -76,23 +76,22 @@ const deriveLtv = ({
 };
 
 export const getBorrowDetailsModel = ({
-  balances,
   borrowAmount,
   collateralAmount,
+  collateralToken,
   integration,
   market,
   projection,
   t,
 }: {
-  readonly balances: BorrowMarketWalletBalances | null;
   readonly borrowAmount: BigNumber;
   readonly collateralAmount: BigNumber;
+  readonly collateralToken: CollateralToken | null;
   readonly integration: Integration | null;
   readonly market: Market;
   readonly projection?: BorrowFormProjection;
   readonly t: TFunction;
 }) => {
-  const collateralToken = balances?.selectedCollateralToken?.collateralToken;
   const borrowUsd = getTokenUsdValue({
     amount: borrowAmount,
     price: market.loanTokenPriceUsd,

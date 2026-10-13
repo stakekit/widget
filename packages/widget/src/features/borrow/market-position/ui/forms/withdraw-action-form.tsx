@@ -164,7 +164,7 @@ export const WithdrawActionForm = ({
         cta={{
           disabled: !view.canSubmit,
           isLoading: false,
-          label: t("dashboard.borrow.review"),
+          label: t("dashboard.borrow.review_actions.withdraw"),
           onClick: startReview,
         }}
       />

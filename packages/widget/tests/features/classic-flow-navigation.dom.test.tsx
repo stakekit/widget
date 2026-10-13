@@ -123,6 +123,7 @@ const intake: ClassicTransactionFlowIntake = {
   gasFeeToken: selectedStake.mechanics.gasFeeToken,
   providersDetails: [],
   request: command,
+  selectedProviderOption: null,
   selectedStake,
   selectedToken: selectedStake.token,
   selectedValidators: new Map(),

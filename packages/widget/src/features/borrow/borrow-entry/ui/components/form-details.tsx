@@ -31,7 +31,8 @@ export const BorrowFormDetails = ({
 }) => {
   const { t } = useTranslation();
   const model = getBorrowDetailsModel({
-    balances: walletBalances,
+    collateralToken:
+      walletBalances?.selectedCollateralToken?.collateralToken ?? null,
     borrowAmount,
     collateralAmount,
     integration: null,

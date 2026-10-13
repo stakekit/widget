@@ -1,5 +1,5 @@
 import { Match } from "effect";
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { Route } from "react-router";
 import {
   ClassicFlowExecutionScope,
@@ -16,9 +16,14 @@ import { PendingStepsPage } from "./steps/pages/pending-steps.page.tsx";
 import { StakeStepsPage } from "./steps/pages/stake-steps.page.tsx";
 import { UnstakeStepsPage } from "./steps/pages/unstake-steps.page.tsx";
 
-type ClassicFlowRouteMount = { readonly journey: "Enter" | "Exit" | "Manage" };
-
-type StandardClassicFlowJourney = "Enter" | "Exit" | "Manage";
+type ClassicFlowRouteMount = {
+  readonly journey: "Enter" | "Exit" | "Manage";
+  /**
+   * Layout rendered inside the Session (it may read the Session intake) around
+   * Review, Steps, and Complete; it renders their `<Outlet />`.
+   */
+  readonly layout?: ReactNode;
+};
 
 type StandardClassicFlowPages = Readonly<{
   CompletePage: ComponentType;
@@ -27,43 +32,51 @@ type StandardClassicFlowPages = Readonly<{
 }>;
 
 const createStandardClassicFlowRoutes = (
-  journey: StandardClassicFlowJourney,
+  { journey, layout }: ClassicFlowRouteMount,
   { CompletePage, ReviewPage, StepsPage }: StandardClassicFlowPages
-) => (
-  <Route element={<ClassicFlowRoute expected={journey} />}>
-    <Route
-      path="review"
-      element={
-        <ClassicFlowReviewScope>
-          <ReviewPage />
-        </ClassicFlowReviewScope>
-      }
-    />
-    <Route element={<ClassicFlowExecutionScope />}>
-      <Route path="steps" element={<StepsPage />} />
-      <Route path="complete" element={<CompletePage />} />
+) => {
+  const pages = (
+    <>
+      <Route
+        path="review"
+        element={
+          <ClassicFlowReviewScope>
+            <ReviewPage />
+          </ClassicFlowReviewScope>
+        }
+      />
+      <Route element={<ClassicFlowExecutionScope />}>
+        <Route path="steps" element={<StepsPage />} />
+        <Route path="complete" element={<CompletePage />} />
+      </Route>
+    </>
+  );
+
+  return (
+    <Route element={<ClassicFlowRoute expected={journey} />}>
+      {layout ? <Route element={layout}>{pages}</Route> : pages}
     </Route>
-  </Route>
-);
+  );
+};
 
 export const createClassicFlowRoutes = (mount: ClassicFlowRouteMount) =>
-  Match.value(mount).pipe(
-    Match.when({ journey: "Enter" }, () =>
-      createStandardClassicFlowRoutes("Enter", {
+  Match.value(mount.journey).pipe(
+    Match.when("Enter", () =>
+      createStandardClassicFlowRoutes(mount, {
         CompletePage: StakeCompletePage,
         ReviewPage: StakeReviewPage,
         StepsPage: StakeStepsPage,
       })
     ),
-    Match.when({ journey: "Exit" }, () =>
-      createStandardClassicFlowRoutes("Exit", {
+    Match.when("Exit", () =>
+      createStandardClassicFlowRoutes(mount, {
         CompletePage: UnstakeCompletePage,
         ReviewPage: UnstakeReviewPage,
         StepsPage: UnstakeStepsPage,
       })
     ),
-    Match.when({ journey: "Manage" }, () =>
-      createStandardClassicFlowRoutes("Manage", {
+    Match.when("Manage", () =>
+      createStandardClassicFlowRoutes(mount, {
         CompletePage: PendingCompletePage,
         ReviewPage: PendingReviewPage,
         StepsPage: PendingStepsPage,

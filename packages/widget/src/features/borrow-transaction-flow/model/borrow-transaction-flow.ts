@@ -1,7 +1,14 @@
 import { Data, Option, Schema } from "effect";
+import type { CollateralToken } from "../../../domain/borrow/catalog/collateral-token";
+import type { Integration } from "../../../domain/borrow/catalog/integration";
+import type { Market } from "../../../domain/borrow/catalog/market";
 import type { ActionMetadata } from "../../../domain/borrow/execution/action";
 import type { ActionCommand } from "../../../domain/borrow/execution/action-command";
 import type { BorrowNetwork } from "../../../domain/borrow/network";
+import {
+  exceedsBorrowableLtv,
+  fallsClearlyBelowLiquidation,
+} from "../../../domain/borrow/risk/ltv-limits";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
 import {
@@ -133,6 +140,42 @@ export const getBorrowTransactionFlowTitle = (
         symbol: summary.collateralTokenSymbol,
       } as const;
   }
+};
+
+/**
+ * A risk-raising action Review must refuse because the protocol would reject
+ * it: the projected health factor or LTV is past its limit by more than
+ * display prices can differ from protocol oracles. Missing or borderline risk
+ * figures never block.
+ */
+export const getBorrowReviewRiskBlock = (
+  summary: BorrowTransactionFlowSummary
+): "healthFactor" | "ltv" | null => {
+  if (summary.riskStatus !== "available") return null;
+  if (
+    summary.action !== "borrow" &&
+    summary.action !== "borrowAndSupply" &&
+    summary.action !== "withdraw" &&
+    summary.action !== "disableCollateral"
+  ) {
+    return null;
+  }
+  if (
+    summary.projectedHealthFactor !== undefined &&
+    fallsClearlyBelowLiquidation(exactDecimal(summary.projectedHealthFactor))
+  ) {
+    return "healthFactor";
+  }
+  if (
+    exceedsBorrowableLtv({
+      ltv: exactDecimal(summary.projectedLtv),
+      maxLtv:
+        summary.maxLtv === undefined ? null : exactDecimal(summary.maxLtv),
+    })
+  ) {
+    return "ltv";
+  }
+  return null;
 };
 
 const projectOrigination = (
@@ -289,8 +332,19 @@ export const projectBorrowTransactionFlowSummary = (
   }
 };
 
+/**
+ * What the Borrow Entry details pane described when the flow started. The
+ * flow's details pane keeps describing this market even if the catalog later
+ * drops it or the entry form resets its selection.
+ */
+export type BorrowEntryFlowDetails = {
+  readonly collateralToken: CollateralToken | null;
+  readonly integration: Integration | null;
+  readonly market: Market;
+};
+
 export type BorrowTransactionFlowEntry =
-  | { readonly _tag: "BorrowEntry" }
+  | { readonly _tag: "BorrowEntry"; readonly details: BorrowEntryFlowDetails }
   | { readonly _tag: "MarketPosition"; readonly marketId: string };
 
 export type BorrowTransactionFlowIntake = BorrowTransactionFlowReview & {

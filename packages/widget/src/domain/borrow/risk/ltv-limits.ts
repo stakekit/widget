@@ -45,3 +45,10 @@ export const exceedsBorrowableLtv = ({
 }) =>
   ltv.gte(1) ||
   (maxLtv !== null && ltv.gt(maxLtv.multipliedBy(BLOCKING_MAX_LTV_RATIO)));
+
+/**
+ * A projected health factor clearly below 1, by the same display-price margin
+ * as `exceedsBorrowableLtv`, cannot open.
+ */
+export const fallsClearlyBelowLiquidation = (healthFactor: BigNumber) =>
+  healthFactor.multipliedBy(BLOCKING_MAX_LTV_RATIO).lt(1);

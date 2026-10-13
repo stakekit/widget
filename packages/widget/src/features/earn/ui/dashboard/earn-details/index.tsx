@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/models";
 import type { SelectedValidators } from "../../../../../domain/earn/reward-rate";
@@ -12,9 +13,11 @@ import {
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import { useClassicFlowIntake } from "../../../../classic-transaction-flow/index";
 import { YieldDetailsHeader } from "../../../../yield-summary/views";
 import {
   useEarnEntry,
+  useEarnFlowYield,
   useEarnRewardRateHistoryChart,
   useEarnTvlHistoryChart,
   useEarnYieldSelection,
@@ -22,33 +25,66 @@ import {
 import { EarnDetailsMetrics } from "./components/earn-details-metrics";
 import { HistoryChartSection } from "./components/history-chart-section";
 import { IntegrationDocsLink } from "./components/integration-docs-link";
-import { ProviderSelectionCard } from "./components/provider-selection-card";
+import {
+  ProviderSelectionCard,
+  ProviderSummary,
+} from "./components/provider-selection-card";
 import {
   canPresentRewardRateHistory,
   getEarnDetailsModel,
 } from "./earn-details-model";
 
+/** Details of the Earn form's live selection; its selection controls edit it. */
 export const EarnDetails = () => {
   const { view: entry } = useEarnEntry();
   const { view: yieldSelection } = useEarnYieldSelection();
 
   return (
-    <EarnDetailsView
+    <EarnDetailsPanel
       isLoading={entry.appLoading || yieldSelection.isLoading}
+      providers={<ProviderSelectionCard />}
       selectedValidators={entry.selectedValidators}
       yieldDto={entry.selectedStake}
     />
   );
 };
 
-const EarnDetailsView = ({
+/**
+ * Details of the target a started Enter flow executes against, captured in its
+ * Session intake. It never follows the Earn form's live selection.
+ */
+export const EarnFlowDetails = () => {
+  const intake = useClassicFlowIntake("Enter");
+  const yieldDto = useEarnFlowYield(intake.selectedStake);
+  const selectedValidators = [...intake.selectedValidators.values()];
+
+  return (
+    <EarnDetailsPanel
+      isLoading={false}
+      providers={
+        <ProviderSummary
+          providerOption={intake.selectedProviderOption}
+          selectedValidators={selectedValidators}
+          yieldDto={yieldDto}
+        />
+      }
+      selectedValidators={selectedValidators}
+      yieldDto={yieldDto}
+    />
+  );
+};
+
+const EarnDetailsPanel = ({
   isLoading,
+  providers,
   selectedValidators,
   yieldDto,
 }: {
-  isLoading: boolean;
-  selectedValidators?: SelectedValidators | null;
-  yieldDto: EarnYieldWithProvider | null;
+  readonly isLoading: boolean;
+  /** The provider and validator section for `yieldDto`. */
+  readonly providers: ReactNode;
+  readonly selectedValidators: SelectedValidators | null;
+  readonly yieldDto: EarnYieldWithProvider | null;
 }) => {
   const { t } = useTranslation();
   const presentsRewardRateHistory = yieldDto
@@ -109,7 +145,7 @@ const EarnDetailsView = ({
 
       <EarnDetailsMetrics cards={metricCards} />
 
-      <ProviderSelectionCard />
+      {providers}
 
       {presentsRewardRateHistory && rewardRateChart.view.canRender && (
         <HistoryChartSection

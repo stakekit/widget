@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from "react";
+import type { ComponentType, ReactElement, ReactNode } from "react";
 import { createBorrowEntryRoutes as createEntryRoutes } from "./borrow-entry/composition";
 import { createBorrowMarketPositionRoutes as createMarketPositionRoutes } from "./market-position/composition";
 import { BorrowConnectedWalletRoute } from "./wallet/composition";
@@ -7,6 +7,7 @@ type BorrowRouteComposition = Readonly<{
   WalletScopeRouteGuard: ComponentType<{ readonly fallbackPath: string }>;
   createBorrowTransactionFlowRoutes: (input: {
     readonly entry: "BorrowEntry" | "MarketPosition";
+    readonly layout?: ReactElement;
   }) => ReactNode;
 }>;
 

@@ -6,7 +6,10 @@ import type { EarnYieldWithProvider } from "../../src/domain/earn/models";
 
 import type { useSelectValidator } from "../../src/features/earn/react/use-select-validator";
 import { SelectYieldRewardDetails } from "../../src/features/earn/ui/classic/earn-page/components/select-yield-section/select-yield-reward-details";
-import { ProviderSelectionCard } from "../../src/features/earn/ui/dashboard/earn-details/components/provider-selection-card";
+import {
+  ProviderSelectionCard,
+  ProviderSummary,
+} from "../../src/features/earn/ui/dashboard/earn-details/components/provider-selection-card";
 import { createWidgetI18nInstance } from "../../src/services/translation/widget-translation";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 import { render } from "../utils/test-utils";
@@ -268,5 +271,64 @@ describe("SelectYieldRewardDetails", () => {
     await expect
       .element(app.getByText("EarnYieldWithProvider strategy"))
       .not.toBeInTheDocument();
+  });
+});
+
+describe("ProviderSummary", () => {
+  it("shows a started flow's validators without selection controls", async () => {
+    const firstValidator = decodeValidator(
+      yieldApiValidatorFixture({ address: "validator-1", name: "Kiln" })
+    );
+    const secondValidator = decodeValidator(
+      yieldApiValidatorFixture({ address: "validator-2", name: "P2P" })
+    );
+
+    const app = await render(
+      <I18nextProvider i18n={i18nInstance}>
+        <TestWidgetConfigProvider
+          apiKey="test-key"
+          baseUrl="https://api.example.com"
+          dashboardVariant
+          variant="default"
+          yieldsApiUrl="https://yield.example.com"
+        >
+          <ProviderSummary
+            providerOption={null}
+            selectedValidators={[firstValidator, secondValidator]}
+            yieldDto={multiSelectStake}
+          />
+        </TestWidgetConfigProvider>
+      </I18nextProvider>
+    );
+
+    await expect.element(app.getByText("Kiln")).toBeInTheDocument();
+    await expect.element(app.getByText("P2P")).toBeInTheDocument();
+    expect(app.container.querySelector("button")).toBeNull();
+  });
+
+  it("keeps showing captured validators when the live yield stops requiring selection", async () => {
+    const validator = decodeValidator(
+      yieldApiValidatorFixture({ address: "validator-1", name: "Kiln" })
+    );
+
+    const app = await render(
+      <I18nextProvider i18n={i18nInstance}>
+        <TestWidgetConfigProvider
+          apiKey="test-key"
+          baseUrl="https://api.example.com"
+          dashboardVariant
+          variant="default"
+          yieldsApiUrl="https://yield.example.com"
+        >
+          <ProviderSummary
+            providerOption={null}
+            selectedValidators={[validator]}
+            yieldDto={baseYield}
+          />
+        </TestWidgetConfigProvider>
+      </I18nextProvider>
+    );
+
+    await expect.element(app.getByText("Kiln")).toBeInTheDocument();
   });
 });

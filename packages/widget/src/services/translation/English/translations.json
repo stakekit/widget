@@ -602,7 +602,12 @@
     },
     "borrow": {
       "title": "Borrow",
-      "review": "Review borrow",
+      "review_actions": {
+        "borrow": "Review borrow",
+        "repay": "Review repayment",
+        "supply": "Review supply",
+        "withdraw": "Review withdrawal"
+      },
       "enter_amounts": "Enter amounts",
       "connect_title": "Connect wallet",
       "connect_description": "Connect a wallet to view borrow markets and start a borrow action.",
@@ -713,7 +718,7 @@
         "collateral_fee": "Collateral fee",
         "origination_fee": "Origination fee",
         "debt_principal": "Debt principal",
-        "confirmation_error_description": "We couldn't prepare your borrow transaction. Please try again.",
+        "confirmation_error_description": "We couldn't prepare this transaction. Please try again.",
         "warning_title": "Review warning",
         "warnings": {
           "AmountExceedsAvailableLiquidity": "The amount exceeds the currently available market liquidity. The provider or blockchain may reject this action.",
@@ -722,6 +727,11 @@
           "ProjectedDebtBelowMarketMinimum": "The resulting debt is below the current market minimum. The provider or blockchain may reject this action.",
           "RemainingDebtBelowMarketMinimum": "The remaining debt is below the current market minimum. The provider or blockchain may reject this action.",
           "RiskCapacityExceeded": "This action exceeds the currently known borrow capacity. The provider or blockchain may reject this action."
+        },
+        "risk_block": {
+          "title": "This action can't be confirmed",
+          "healthFactor": "The projected health factor would fall below 1, so the protocol would reject this action or the position could be liquidated. Reduce the amount or add collateral.",
+          "ltv": "The projected LTV would exceed the market's max LTV, so the protocol would reject this action. Reduce the amount or add collateral."
         },
         "risk_disclosures": {
           "borrow": "Borrowing increases debt and liquidation risk if collateral value falls.",
@@ -736,7 +746,15 @@
       "execution_page": {
         "unavailable_title": "Borrow execution unavailable",
         "unavailable_description": "Return to Borrow and review an action before confirming.",
-        "error_title": "Borrow transaction failed",
+        "error_titles": {
+          "borrow": "Borrow failed",
+          "borrowAndSupply": "Borrow failed",
+          "disableCollateral": "Disabling collateral failed",
+          "enableCollateral": "Enabling collateral failed",
+          "repay": "Repayment failed",
+          "supply": "Supply failed",
+          "withdraw": "Withdrawal failed"
+        },
         "cancelled": "You cancelled this request in your wallet.",
         "batch_progress": "Step {{current}} of {{total}}",
         "preparing_next_step": "Preparing the next step",
@@ -755,10 +773,19 @@
         }
       },
       "success_page": {
-        "title": "Borrow complete",
+        "titles": {
+          "borrow": "Borrow complete",
+          "borrowAndSupply": "Borrow complete",
+          "disableCollateral": "Collateral disabled",
+          "enableCollateral": "Collateral enabled",
+          "repay": "Repayment complete",
+          "supply": "Supply complete",
+          "withdraw": "Withdrawal complete"
+        },
         "unavailable_title": "Borrow result unavailable",
         "unavailable_description": "Return to Borrow to start a new action.",
-        "view_transaction": "View transaction",
+        "transactions": "Transactions",
+        "view_transaction": "View {{type}} transaction",
         "done": "Done"
       },
       "position_details": {
@@ -767,7 +794,7 @@
         "collateral": "Collateral",
         "debt": "Debt",
         "details": "Borrow details",
-        "empty": "Borrow position unavailable",
+        "empty": "No open position in this market.",
         "health_factor": "Health factor",
         "liquidation_penalty": "Liquidation penalty",
         "liquidation_threshold": "Liquidation threshold",

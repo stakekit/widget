@@ -1,8 +1,11 @@
 import type BigNumber from "bignumber.js";
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import { walletRuntime } from "../../../../app/runtime/wallet-runtime";
 import { getKycProviderName } from "../../../../domain/earn/kyc";
+import { ProviderId } from "../../../../domain/identity/identifiers";
+import { yieldProviderResourceAtom } from "../../../../resources/yield-provider/index";
 import { walletCommandIdentity } from "../../../../services/wallet/wallet-command-identity";
 import {
   type ClassicTransactionFlowEnterMount,
@@ -199,6 +202,7 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
                   "Yield Entry submission invariant violated"
                 );
               }
+              const providerOption = view.preparation.selectedProviderOption;
               const outcome = yield* context.setResult(
                 startClassicTransactionFlowAtom,
                 {
@@ -208,6 +212,22 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
                     selectedToken: view.preparation.selectedToken,
                     gasFeeToken: view.preparation.gasFeeToken,
                     providersDetails: input.projection.providers ?? [],
+                    // The details pane shows this if the provider lookup
+                    // later fails during the flow.
+                    selectedProviderOption: providerOption
+                      ? {
+                          provider: context(
+                            yieldProviderResourceAtom.local(
+                              ProviderId.make(providerOption)
+                            )
+                          ).pipe(
+                            AsyncResult.value,
+                            Option.flatten,
+                            Option.getOrNull
+                          ),
+                          value: providerOption,
+                        }
+                      : null,
                     selectedStake: view.preparation.selectedYield,
                     selectedValidators: view.preparation.selectedValidators,
                     walletScope: input.walletScope,

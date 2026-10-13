@@ -19,6 +19,14 @@ type BorrowExecutionStep = {
   readonly type: Transaction["type"];
 };
 
+/** A submitted transaction of a completed action, for the completion page. */
+type BorrowCompletedTransaction = {
+  readonly explorerUrl: string;
+  readonly hash: string | null;
+  readonly id: string;
+  readonly type: Transaction["type"];
+};
+
 type BorrowExecutionPhase =
   | "advancing"
   | "completed"
@@ -110,7 +118,22 @@ export const projectBorrowExecution = (state: TransactionWorkflowState) => {
     canLeave: canLeaveBorrowExecution(state),
     cancelled: isWalletCancellation(status.error),
     completionResult: completed
-      ? { action, submissions: state.context.submissions }
+      ? {
+          action,
+          transactions: state.context.submissions.flatMap(
+            (submission): ReadonlyArray<BorrowCompletedTransaction> =>
+              submission.source._tag === "Borrow" && submission.link
+                ? [
+                    {
+                      explorerUrl: submission.link,
+                      hash: submission.hash,
+                      id: submission.transactionId,
+                      type: submission.source.transaction.type,
+                    },
+                  ]
+                : []
+          ),
+        }
       : null,
     currentStep: currentBatch?.currentStep ?? action.currentStep,
     currentTransaction,

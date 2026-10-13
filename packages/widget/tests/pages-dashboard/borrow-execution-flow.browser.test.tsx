@@ -37,6 +37,7 @@ import {
   useBorrowTransactionFlowReview,
 } from "../../src/features/borrow-transaction-flow/react/borrow-flow-route";
 import { BorrowTransactionFlowService } from "../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
+import { BorrowCompletePage } from "../../src/features/borrow-transaction-flow/ui/complete";
 import { BorrowReviewPage } from "../../src/features/borrow-transaction-flow/ui/review";
 import { BorrowStepsPage } from "../../src/features/borrow-transaction-flow/ui/steps";
 import { useBorrowExecution } from "../../src/features/borrow-transaction-flow/ui/use-borrow-execution";
@@ -51,6 +52,10 @@ import {
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
 } from "../../src/services/wallet/wallet-state";
+import {
+  borrowEntryFlowEntry,
+  withUnserializedState,
+} from "../utils/borrow-flow-entry";
 import { makeTestTracking } from "../utils/services/tracking-service";
 import { makeTestWallet } from "../utils/services/wallet-service";
 import { makeTestNavigation } from "../utils/services/widget-navigation";
@@ -106,10 +111,38 @@ const reviewState: BorrowTransactionFlowReview = {
     warnings: [],
   },
 };
+const withdrawSession = new BorrowFlowSession({
+  intake: {
+    command: Schema.decodeSync(ActionCommand)({
+      action: "withdraw",
+      address,
+      args: {
+        amount: "2",
+        marketId: command.args.marketId,
+        tokenAddress: "0x0000000000000000000000000000000000000003",
+      },
+      integrationId: "morpho-blue",
+    }),
+    entry: borrowEntryFlowEntry,
+    summary: {
+      action: "withdraw",
+      collateralAmount: "2",
+      collateralTokenSymbol: "USDC",
+      existingCollateralUsd: "2",
+      marketLabel: "USDC",
+      network: "base",
+      projectedCollateralUsd: "0",
+      providerName: "Aave V3",
+      riskStatus: "unavailable",
+      warnings: [],
+    },
+  },
+  walletScope,
+});
 const session = new BorrowFlowSession({
   intake: {
     ...reviewState,
-    entry: { _tag: "BorrowEntry" },
+    entry: borrowEntryFlowEntry,
   },
   walletScope,
 });
@@ -312,6 +345,7 @@ const renderExecution = (
   options: {
     readonly action?: BorrowAction;
     readonly autoStart?: boolean;
+    readonly completeElement?: ReactNode;
     readonly historyControls?: boolean;
     readonly initialEntries?: ReadonlyArray<string>;
     readonly initialIndex?: number;
@@ -400,7 +434,9 @@ const renderExecution = (
     const initialEntries = (
       options.initialEntries ?? [options.initialPath ?? "/borrow/review"]
     ).map((pathname) =>
-      pathname === "/borrow" ? pathname : { pathname, state: flowState }
+      pathname === "/borrow"
+        ? pathname
+        : withUnserializedState({ pathname }, flowState)
     );
 
     const app = yield* Effect.acquireRelease(
@@ -480,7 +516,9 @@ const renderExecution = (
                         >
                           <Route
                             path="/borrow/complete"
-                            element={<CompleteProbe />}
+                            element={
+                              options.completeElement ?? <CompleteProbe />
+                            }
                           />
                         </Route>
                       </Route>
@@ -523,15 +561,13 @@ describe("borrow execution flow component", () => {
         );
 
         yield* Effect.promise(() =>
-          expect
-            .element(app.getByText("Borrow transaction failed"))
-            .toBeInTheDocument()
+          expect.element(app.getByText("Borrow failed")).toBeInTheDocument()
         );
         yield* Effect.promise(() =>
           expect
             .element(
               app.getByText(
-                "We couldn't prepare your borrow transaction. Please try again."
+                "We couldn't prepare this transaction. Please try again."
               )
             )
             .toBeInTheDocument()
@@ -750,6 +786,165 @@ describe("borrow execution flow component", () => {
     })
   );
 
+  it.live("blocks Confirm when projected health factor is below 1", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(makeBorrowApi({}), {
+        autoStart: false,
+        reviewElement: <BorrowReviewPage />,
+        session: new BorrowFlowSession({
+          ...session,
+          intake: {
+            ...session.intake,
+            summary: {
+              ...session.intake.summary,
+              maxLtv: "0.75",
+              projectedHealthFactor: "0.8",
+              projectedLtv: "0.7",
+              riskStatus: "available",
+            },
+          },
+        }),
+      });
+
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByRole("button", { name: "Confirm" }))
+          .toBeDisabled()
+      );
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByText(/health factor would fall below 1/))
+          .toBeInTheDocument()
+      );
+    })
+  );
+
+  it.live("blocks Confirm when projected LTV exceeds max LTV", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(makeBorrowApi({}), {
+        autoStart: false,
+        reviewElement: <BorrowReviewPage />,
+        session: new BorrowFlowSession({
+          ...session,
+          intake: {
+            ...session.intake,
+            summary: {
+              ...session.intake.summary,
+              maxLtv: "0.75",
+              projectedLtv: "0.8",
+              riskStatus: "available",
+            },
+          },
+        }),
+      });
+
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByRole("button", { name: "Confirm" }))
+          .toBeDisabled()
+      );
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByText(/LTV would exceed the market's max LTV/))
+          .toBeInTheDocument()
+      );
+    })
+  );
+
+  it.live(
+    "keeps Confirm enabled when LTV is only within display-price error of max LTV",
+    () =>
+      Effect.gen(function* () {
+        const app = yield* renderExecution(makeBorrowApi({}), {
+          autoStart: false,
+          reviewElement: <BorrowReviewPage />,
+          session: new BorrowFlowSession({
+            ...session,
+            intake: {
+              ...session.intake,
+              summary: {
+                ...session.intake.summary,
+                maxLtv: "0.75",
+                projectedHealthFactor: "1.02",
+                projectedLtv: "0.76",
+                riskStatus: "available",
+              },
+            },
+          }),
+        });
+
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByRole("button", { name: "Confirm" }))
+            .toBeEnabled()
+        );
+      })
+  );
+
+  it.live("keeps Confirm enabled when max LTV is unknown", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(makeBorrowApi({}), {
+        autoStart: false,
+        reviewElement: <BorrowReviewPage />,
+        session: new BorrowFlowSession({
+          ...session,
+          intake: {
+            ...session.intake,
+            summary: {
+              ...session.intake.summary,
+              projectedLtv: "0.9",
+              riskStatus: "available",
+            },
+          },
+        }),
+      });
+
+      yield* Effect.promise(() =>
+        expect
+          .element(app.getByRole("button", { name: "Confirm" }))
+          .toBeEnabled()
+      );
+    })
+  );
+
+  it.live(
+    "keeps Confirm enabled for a repayment of an unhealthy position",
+    () =>
+      Effect.gen(function* () {
+        const app = yield* renderExecution(makeBorrowApi({}), {
+          autoStart: false,
+          reviewElement: <BorrowReviewPage />,
+          session: new BorrowFlowSession({
+            ...session,
+            intake: {
+              ...session.intake,
+              summary: {
+                action: "repay",
+                borrowAmount: "25",
+                existingDebtUsd: "400",
+                loanTokenSymbol: "USDC",
+                marketLabel: "cbBTC / USDC",
+                maxLtv: "0.75",
+                network: "base",
+                projectedDebtUsd: "375",
+                projectedHealthFactor: "0.9",
+                projectedLtv: "0.8",
+                providerName: "Morpho Blue",
+                riskStatus: "available",
+                warnings: [],
+              },
+            },
+          }),
+        });
+
+        yield* Effect.promise(() =>
+          expect
+            .element(app.getByRole("button", { name: "Confirm" }))
+            .toBeEnabled()
+        );
+      })
+  );
+
   it.live("routes an incomplete direct completion page back to Borrow", () =>
     Effect.gen(function* () {
       const app = yield* renderExecution(makeBorrowApi({}), {
@@ -914,6 +1109,111 @@ describe("borrow execution flow component", () => {
         expect
           .element(app.getByTestId("complete"))
           .toHaveTextContent("/borrow/complete action-1")
+      );
+    })
+  );
+
+  it.live("labels every completed transaction with its type", () =>
+    Effect.gen(function* () {
+      const transactions = [
+        transaction({ id: "tx-1", type: "APPROVAL" }),
+        transaction({ id: "tx-2", type: "SUPPLY" }),
+        transaction({ id: "tx-3", type: "BORROW" }),
+      ];
+      const app = yield* renderExecution(
+        makeBorrowApi({
+          getActions: [
+            action({
+              status: "SUCCESS",
+              transactions: transactions.map((tx) => ({
+                ...tx,
+                status: "CONFIRMED" as const,
+              })),
+            }),
+          ],
+        }),
+        {
+          action: decodedAction({ transactions }),
+          completeElement: <BorrowCompletePage />,
+        }
+      );
+
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("Borrow complete")).toBeInTheDocument()
+      );
+      for (const label of ["Token approval", "Supply", "Borrow"]) {
+        yield* Effect.promise(() =>
+          expect
+            .element(
+              app.getByRole("button", { name: `View ${label} transaction` })
+            )
+            .toBeInTheDocument()
+        );
+      }
+      expect(app.container.textContent).not.toContain("View transaction");
+    })
+  );
+
+  it.live("titles completion with the action that ran", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(
+        makeBorrowApi({
+          getActions: [
+            action({
+              action: "withdraw",
+              status: "SUCCESS",
+              transactions: [
+                transaction({ status: "CONFIRMED", type: "WITHDRAW" }),
+              ],
+            }),
+          ],
+        }),
+        {
+          action: decodedAction({
+            action: "withdraw",
+            transactions: [transaction({ type: "WITHDRAW" })],
+          }),
+          completeElement: <BorrowCompletePage />,
+          session: withdrawSession,
+        }
+      );
+
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("Withdrawal complete")).toBeInTheDocument()
+      );
+      expect(app.container.textContent).not.toContain("Borrow complete");
+    })
+  );
+
+  it.live("titles an execution failure with the action that ran", () =>
+    Effect.gen(function* () {
+      const app = yield* renderExecution(
+        makeBorrowApi({
+          getActions: [
+            action({
+              action: "withdraw",
+              status: "PROCESSING",
+              transactions: [
+                transaction({ status: "FAILED", type: "WITHDRAW" }),
+              ],
+            }),
+          ],
+        }),
+        {
+          action: decodedAction({
+            action: "withdraw",
+            transactions: [transaction({ type: "WITHDRAW" })],
+          }),
+          session: withdrawSession,
+          stepsElement: <BorrowStepsPage />,
+        }
+      );
+
+      yield* Effect.promise(() =>
+        expect.element(app.getByText("Withdrawal failed")).toBeInTheDocument()
+      );
+      expect(app.container.textContent).not.toContain(
+        "Borrow transaction failed"
       );
     })
   );

@@ -39,3 +39,35 @@ export const formCard = style([
     py: "4",
   }),
 ]);
+
+export const transactionList = style([
+  atoms({
+    background: "stakeSectionBackground",
+    borderRadius: "xl",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1",
+    px: "4",
+    py: "3",
+  }),
+]);
+
+export const transactionRow = style([
+  atoms({
+    alignItems: "center",
+    display: "flex",
+    gap: "3",
+    justifyContent: "space-between",
+    py: "2",
+  }),
+  {
+    background: "transparent",
+    border: 0,
+    borderTop: `1px solid ${vars.color.tabBorder}`,
+    cursor: "pointer",
+    width: "100%",
+    selectors: {
+      "&:hover": { opacity: 0.8 },
+    },
+  },
+]);

@@ -21,6 +21,10 @@ import {
 } from "../../src/features/borrow-transaction-flow/model/borrow-transaction-flow";
 import { BorrowTransactionFlowRoute } from "../../src/features/borrow-transaction-flow/react/borrow-flow-route";
 import { BorrowTransactionFlowService } from "../../src/features/borrow-transaction-flow/state/orchestration/borrow-transaction-flow-service";
+import {
+  borrowEntryFlowEntry,
+  withUnserializedState,
+} from "../utils/borrow-flow-entry";
 import { render } from "../utils/test-utils.dom.tsx";
 
 const address = Schema.decodeSync(WalletAddress)("0xWallet");
@@ -106,7 +110,9 @@ const renderFlow = async ({
           ],
         ]}
       >
-        <MemoryRouter initialEntries={[entry]}>
+        <MemoryRouter
+          initialEntries={[withUnserializedState(entry, entry.state)]}
+        >
           <NavigationCapture
             capture={(navigate) => {
               navigation.current = navigate;
@@ -167,7 +173,7 @@ describe("Borrow Flow route", () => {
   });
 
   it("owns the navigated Session from Review through Steps and ends it on leave", async () => {
-    const session = makeSession({ _tag: "BorrowEntry" });
+    const session = makeSession(borrowEntryFlowEntry);
     const flow = await renderFlow({
       entry: {
         pathname: "/borrow/review",
@@ -188,8 +194,8 @@ describe("Borrow Flow route", () => {
   });
 
   it("replaces its Session when a new Start navigates to it while mounted", async () => {
-    const first = makeSession({ _tag: "BorrowEntry" });
-    const second = makeSession({ _tag: "BorrowEntry" });
+    const first = makeSession(borrowEntryFlowEntry);
+    const second = makeSession(borrowEntryFlowEntry);
     const flow = await renderFlow({
       entry: {
         pathname: "/borrow/review",

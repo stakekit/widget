@@ -152,6 +152,7 @@ const makeYieldEntryActionCommand = ({
       },
     }),
     gasFeeToken: selectedYield.mechanics.gasFeeToken,
+    selectedProviderOption: entry.selectedProviderOption,
     selectedToken: entry.token,
     selectedValidators: entry.validators,
     selectedYield,

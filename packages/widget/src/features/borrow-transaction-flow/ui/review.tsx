@@ -28,7 +28,10 @@ import {
   PageContainer,
   PageCtaButton,
 } from "../../widget-shell/views";
-import { projectBorrowTransactionFlowSummary } from "../model/borrow-transaction-flow";
+import {
+  getBorrowReviewRiskBlock,
+  projectBorrowTransactionFlowSummary,
+} from "../model/borrow-transaction-flow";
 import {
   useBorrowTransactionFlow,
   useBorrowTransactionFlowReview,
@@ -96,6 +99,7 @@ export const BorrowReviewPage = () => {
 
   const { summary } = reviewState;
   const projectedSummary = projectBorrowTransactionFlowSummary(summary);
+  const riskBlock = getBorrowReviewRiskBlock(summary);
   const createActionErrorCopy = (() => {
     if (
       !AsyncResult.isFailure(createActionResult) ||
@@ -262,7 +266,9 @@ export const BorrowReviewPage = () => {
           {createActionErrorCopy ? (
             <Box className={styles.executionError}>
               <Text variant={{ type: "danger" }}>
-                {t(createActionErrorCopy.titleKey)}
+                {t(
+                  `dashboard.borrow.execution_page.error_titles.${summary.action}`
+                )}
               </Text>
               <Text variant={{ type: "muted", weight: "normal" }}>
                 {t(createActionErrorCopy.descriptionKey)}
@@ -281,6 +287,17 @@ export const BorrowReviewPage = () => {
             </Box>
           ))}
 
+          {riskBlock ? (
+            <Box className={styles.executionError}>
+              <Text variant={{ type: "danger" }}>
+                {t("dashboard.borrow.review_page.risk_block.title")}
+              </Text>
+              <Text variant={{ type: "muted", weight: "normal" }}>
+                {t(`dashboard.borrow.review_page.risk_block.${riskBlock}`)}
+              </Text>
+            </Box>
+          ) : null}
+
           <Text variant={{ type: "muted", weight: "normal" }}>
             {t(
               `dashboard.borrow.review_page.risk_disclosures.${summary.action}`
@@ -289,7 +306,7 @@ export const BorrowReviewPage = () => {
 
           <PageCtaButton
             cta={{
-              disabled: createActionResult.waiting,
+              disabled: createActionResult.waiting || riskBlock !== null,
               isLoading: createActionResult.waiting,
               label: t("dashboard.borrow.review_page.confirm"),
               onClick: () => confirm(undefined),

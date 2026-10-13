@@ -14,9 +14,9 @@ import { walletStateResultAtom } from "../../../../wallet/index";
 import { makeResolvingWalletView } from "../model/view-model";
 import type { EarnEntry, EarnEntryIntent, EarnSelectionView } from "../types";
 import {
+  clearEarnEntryAmounts,
   type EarnEntryState,
   reconcileEarnEntryOwner,
-  resetEarnEntryIntent,
 } from "./owner";
 import { resolveEarnViewFromResources } from "./resource-observations";
 
@@ -126,17 +126,17 @@ export const earnEntryIntentAtom = Atom.writable<
   }
 ).pipe(Atom.withLabel("earnEntryIntentAtom"));
 
-export const resetEarnEntryIntentForOwnerAtom = Atom.fnSync(
+export const clearEarnEntryAmountsForOwnerAtom = Atom.fnSync(
   (owner: WalletScopeOwnerKey, context) => {
     const state = context(earnEntryStateAtom);
     if (!state.owner || !sameWalletScopeOwner(state.owner, owner)) return;
 
-    const reset = resetEarnEntryIntent(state);
-    if (reset === state) return;
+    const cleared = clearEarnEntryAmounts(state);
+    if (cleared === state) return;
 
-    context.set(earnEntryStateAtom, reset);
+    context.set(earnEntryStateAtom, cleared);
   }
-).pipe(Atom.withLabel("resetEarnEntryIntentForOwnerAtom"));
+).pipe(Atom.withLabel("clearEarnEntryAmountsForOwnerAtom"));
 
 export const earnSelectionViewAtom = Atom.make(
   (context) => context.get(earnSelectionProjectionAtom).view

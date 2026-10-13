@@ -10,13 +10,11 @@ import {
   getYieldProviderOptions,
   isYieldActionArgRequired,
 } from "../../../domain/earn/yield";
-import {
-  ProviderId,
-  type ProviderOption,
-  type YieldId,
+import type {
+  ProviderOption,
+  YieldId,
 } from "../../../domain/identity/identifiers";
 import { widgetConfigAtom } from "../../../features/widget-configuration/index";
-import { yieldProviderResourceAtom } from "../../../resources/yield-provider/index";
 import {
   removeValidator,
   selectCategory,
@@ -36,7 +34,8 @@ import {
   earnValidatorsPageAtom,
   loadMoreEarnValidatorsPageAtom,
 } from "./earn-selection/state/view-resources";
-import type { EarnProviderOption, EarnTokenKey } from "./earn-selection/types";
+import type { EarnTokenKey } from "./earn-selection/types";
+import { earnProviderOptionAtom } from "./flow-target";
 
 export type { EarnSelection, EarnTokenOption } from "./earn-selection/types";
 
@@ -150,14 +149,7 @@ export const earnSelectionProviderOptionsViewAtom = Atom.make((get) => {
   const options = view.selection.yield
     ? getYieldProviderOptions(view.selection.yield)
     : [];
-  const items = options.map(
-    (value): EarnProviderOption => ({
-      provider: get(
-        yieldProviderResourceAtom.local(ProviderId.make(value))
-      ).pipe(AsyncResult.value, Option.flatten, Option.getOrNull),
-      value,
-    })
-  );
+  const items = options.map((value) => get(earnProviderOptionAtom(value)));
 
   return {
     canSelect: items.length > 1,

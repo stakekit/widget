@@ -1,5 +1,7 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import type { EarnYieldWithProvider } from "../../../domain/earn/models";
 import type { YieldId } from "../../../domain/identity/identifiers";
+import type { EarnProviderOption } from "../state/earn-selection/types";
 import {
   earnEntryViewAtom,
   earnProviderOptionsViewAtom,
@@ -10,6 +12,10 @@ import {
   setEarnAmountAtom,
   setEarnMaxAmountAtom,
 } from "../state/entry";
+import {
+  earnFlowProviderOptionAtom,
+  earnFlowYieldAtom,
+} from "../state/flow-target";
 import { earnPageStatusViewAtom } from "../state/page-status";
 import {
   earnTokenSelectionViewAtom,
@@ -84,3 +90,9 @@ export const useEarnTvlHistoryChart = (yieldId: YieldId | null) => ({
   selectPeriod: useAtomSet(earnTvlHistoryChart.selectPeriodAtom),
   view: useAtomValue(earnTvlHistoryChart.viewAtom(yieldId)),
 });
+
+export const useEarnFlowYield = (captured: EarnYieldWithProvider) =>
+  useAtomValue(earnFlowYieldAtom(captured));
+
+export const useEarnFlowProviderOption = (captured: EarnProviderOption) =>
+  useAtomValue(earnFlowProviderOptionAtom(captured));

@@ -9,11 +9,13 @@ import type { YieldPendingActionType } from "../../../domain/action/pending-acti
 import type { ExitReceiveToken } from "../../../domain/action/rules";
 import { getActionInputToken } from "../../../domain/action/rules";
 import type {
+  EarnProvider,
   EarnValidator,
   EarnYieldWithProvider,
 } from "../../../domain/earn/models";
 import type { ValidatorKey } from "../../../domain/earn/validator";
 import { exactDecimal } from "../../../domain/finance/exact";
+import type { ProviderOption } from "../../../domain/identity/identifiers";
 import type { Token } from "../../../domain/token/token";
 import {
   sameWalletScopeOwner,
@@ -32,11 +34,18 @@ import {
 
 type ClassicFlowProviderDetail = ClassicTransactionWorkflowProviderDetail;
 
+/** The provider option an Enter executes with, and its details at start. */
+type ClassicFlowProviderOption = {
+  readonly provider: EarnProvider | null;
+  readonly value: ProviderOption;
+};
+
 type EnterClassicTransactionFlowIntake = {
   readonly _tag: "Enter";
   readonly gasFeeToken: EarnYieldWithProvider["token"];
   readonly providersDetails: ReadonlyArray<ClassicFlowProviderDetail>;
   readonly request: ActionCommand;
+  readonly selectedProviderOption: ClassicFlowProviderOption | null;
   readonly selectedStake: EarnYieldWithProvider;
   readonly selectedToken: Token;
   readonly selectedValidators: ReadonlyMap<ValidatorKey, EarnValidator>;

@@ -282,7 +282,7 @@ describe("borrow position items", () => {
     const market = Schema.decodeSync(Market)(marketDto);
     const integration = Schema.decodeSync(Integration)(integrationDto);
     const model = getBorrowDetailsModel({
-      balances: null,
+      collateralToken: null,
       borrowAmount: new BigNumber(0),
       collateralAmount: new BigNumber(0),
       integration,
@@ -305,7 +305,7 @@ describe("borrow position items", () => {
   it("omits unavailable entry risk facts without placeholder values", () => {
     const market = Schema.decodeSync(Market)(marketDto);
     const model = getBorrowDetailsModel({
-      balances: null,
+      collateralToken: null,
       borrowAmount: new BigNumber(1),
       collateralAmount: new BigNumber(1),
       integration: Schema.decodeSync(Integration)(integrationDto),
@@ -359,7 +359,7 @@ describe("borrow position items", () => {
     "flags projected LTV $ltv and health factor $hf against a 75% max LTV",
     ({ expected, hf, ltv }) => {
       const model = getBorrowDetailsModel({
-        balances: null,
+        collateralToken: null,
         borrowAmount: new BigNumber(1),
         collateralAmount: new BigNumber(1),
         integration: null,

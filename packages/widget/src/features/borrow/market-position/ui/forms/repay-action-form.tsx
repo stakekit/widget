@@ -99,7 +99,7 @@ export const RepayActionForm = ({
         cta={{
           disabled: !view.canSubmit,
           isLoading: false,
-          label: t("dashboard.borrow.review"),
+          label: t("dashboard.borrow.review_actions.repay"),
           onClick: startReview,
         }}
       />

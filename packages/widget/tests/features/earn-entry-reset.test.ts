@@ -1,8 +1,8 @@
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { WalletAddress } from "../../src/domain/identity/identifiers";
+import { WalletAddress, YieldId } from "../../src/domain/identity/identifiers";
 import type { EarnEntryState } from "../../src/features/earn/state/earn-selection/state/owner";
-import { resetEarnEntryIntent } from "../../src/features/earn/state/earn-selection/state/owner";
+import { clearEarnEntryAmounts } from "../../src/features/earn/state/earn-selection/state/owner";
 import { makeDefaultEarnIntent } from "../../src/features/earn/state/earn-selection/types";
 
 const owner = {
@@ -20,26 +20,57 @@ const settledEntry: EarnEntryState = {
   owner,
 };
 
-describe("Earn Entry reset", () => {
-  it("returns the previous state when there is nothing left to reset", () => {
-    expect(resetEarnEntryIntent(settledEntry)).toBe(settledEntry);
+describe("Earn Entry amount clearing on workflow start", () => {
+  it("returns the previous state when there is nothing left to clear", () => {
+    expect(clearEarnEntryAmounts(settledEntry)).toBe(settledEntry);
   });
 
-  it("clears a touched intent", () => {
+  it("clears the entered amount but keeps what the workflow executes against", () => {
+    const selection = {
+      ...settledEntry.intent,
+      selectedProviderOption: null,
+      selectedTokenKey: "ethereum-eth",
+      selectedYieldId: Schema.decodeSync(YieldId)("ethereum-eth-lido-staking"),
+    };
     const touched: EarnEntryState = {
       ...settledEntry,
-      intent: { ...settledEntry.intent, stakeAmount: "12", useMaxAmount: true },
+      intent: {
+        ...selection,
+        amountInput: "manual",
+        stakeAmount: "12",
+        useMaxAmount: true,
+      },
     };
 
-    expect(resetEarnEntryIntent(touched)).toStrictEqual(settledEntry);
+    expect(clearEarnEntryAmounts(touched)).toStrictEqual({
+      ...settledEntry,
+      intent: selection,
+    });
   });
 
-  it("completes an entry that is still applying its initialization seed", () => {
-    const initializing: EarnEntryState = {
+  it("keeps the initialization seed the selection was resolved from", () => {
+    const seeded: EarnEntryState = {
       ...settledEntry,
-      initializationPhase: "applying-init-params",
+      initParams: {
+        accountId: null,
+        balanceId: null,
+        network: null,
+        pendingaction: null,
+        tab: null,
+        token: null,
+        validator: "validator-a",
+        yieldId: Schema.decodeSync(YieldId)("seeded-yield"),
+      },
+      intent: {
+        ...settledEntry.intent,
+        requestedValidator: "validator-a",
+        stakeAmount: "5",
+      },
     };
 
-    expect(resetEarnEntryIntent(initializing)).toStrictEqual(settledEntry);
+    expect(clearEarnEntryAmounts(seeded)).toStrictEqual({
+      ...seeded,
+      intent: { ...seeded.intent, stakeAmount: "0" },
+    });
   });
 });

@@ -14,7 +14,13 @@ const routeComposition = {
 };
 
 vi.mock("../../src/features/borrow/borrow-entry/ui/layout", () => ({
-  BorrowLayout: function BorrowLayout() {
+  BorrowEntryLayout: function BorrowEntryLayout() {
+    return null;
+  },
+  BorrowFlowLayout: function BorrowFlowLayout() {
+    return null;
+  },
+  BorrowShell: function BorrowShell() {
     return null;
   },
 }));
@@ -96,9 +102,16 @@ describe("Borrow routes", () => {
       {
         children: [
           {
-            children: [],
-            element: "BorrowFormPage",
-            index: true,
+            children: [
+              {
+                children: [],
+                element: "BorrowFormPage",
+                index: true,
+                path: null,
+              },
+            ],
+            element: "BorrowEntryLayout",
+            index: false,
             path: null,
           },
           {
@@ -122,7 +135,7 @@ describe("Borrow routes", () => {
             path: null,
           },
         ],
-        element: "BorrowLayout",
+        element: "BorrowShell",
         index: false,
         path: "borrow",
       },

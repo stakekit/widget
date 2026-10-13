@@ -295,7 +295,7 @@ const confirmWithdraw = async (app: RenderResult) => {
   await app.getByTestId("borrow-position-action__withdraw").click();
   await userEvent.click(app.getByTestId("number-input"));
   await userEvent.keyboard("0.1");
-  await app.getByRole("button", { name: "Review borrow" }).click();
+  await app.getByRole("button", { name: "Review withdrawal" }).click();
   await app.getByRole("button", { name: "Confirm" }).click();
 };
 
@@ -431,7 +431,7 @@ describe("Borrow with an external provider", () => {
       .element(app.getByText("You cancelled this request in your wallet."))
       .toBeInTheDocument();
     await expect
-      .element(app.getByText("Borrow transaction failed"))
+      .element(app.getByText("Withdrawal failed"))
       .not.toBeInTheDocument();
     await expect
       .element(app.getByRole("button", { name: "Cancel" }))

@@ -90,7 +90,9 @@ export const BorrowStepsPage = () => {
           {executionErrorMessage && (
             <Box className={styles.executionError}>
               <Text variant={{ type: "danger" }}>
-                {t("dashboard.borrow.execution_page.error_title")}
+                {t(
+                  `dashboard.borrow.execution_page.error_titles.${flow.intake.summary.action}`
+                )}
               </Text>
               <Text variant={{ type: "muted", weight: "normal" }}>
                 {executionErrorMessage}

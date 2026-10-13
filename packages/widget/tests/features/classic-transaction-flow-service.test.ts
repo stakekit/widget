@@ -74,6 +74,7 @@ const makeEnterIntake = (): Extract<
       arguments: { amount: "1" },
       yieldId: selectedStake.id,
     },
+    selectedProviderOption: null,
     selectedStake,
     selectedToken: selectedStake.token,
     selectedValidators: new Map(),

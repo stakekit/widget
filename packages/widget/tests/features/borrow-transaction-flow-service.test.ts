@@ -43,6 +43,7 @@ import {
   makeConnectedWalletState,
   makeConnectingWalletState,
 } from "../fixtures/wallet-state";
+import { borrowEntryFlowEntry } from "../utils/borrow-flow-entry";
 import { makeTestTracking } from "../utils/services/tracking-service";
 import { makeTestWallet } from "../utils/services/wallet-service";
 import { makeTestNavigation } from "../utils/services/widget-navigation";
@@ -68,7 +69,7 @@ const intake: BorrowTransactionFlowIntake = {
     args: { marketId: Schema.decodeSync(MarketId)("market-1") },
     integrationId: Schema.decodeSync(IntegrationId)("provider-1"),
   },
-  entry: { _tag: "BorrowEntry" },
+  entry: borrowEntryFlowEntry,
   summary: {
     action: "borrow",
     borrowAmount: "1",

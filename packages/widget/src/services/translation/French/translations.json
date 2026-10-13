@@ -1084,7 +1084,12 @@
     },
     "borrow": {
       "title": "Emprunter",
-      "review": "Vérifier l'emprunt",
+      "review_actions": {
+        "borrow": "Vérifier l'emprunt",
+        "repay": "Vérifier le remboursement",
+        "supply": "Vérifier l'apport",
+        "withdraw": "Vérifier le retrait"
+      },
       "enter_amounts": "Saisissez les montants",
       "connect_title": "Connecter un portefeuille",
       "connect_description": "Connectez un portefeuille pour consulter les marchés d'emprunt et démarrer une action d'emprunt.",
@@ -1195,7 +1200,7 @@
         "collateral_fee": "Frais de garantie",
         "origination_fee": "Frais d'ouverture",
         "debt_principal": "Principal de la dette",
-        "confirmation_error_description": "Nous n'avons pas pu préparer votre transaction d'emprunt. Veuillez réessayer.",
+        "confirmation_error_description": "Nous n'avons pas pu préparer cette transaction. Veuillez réessayer.",
         "warning_title": "Avertissement avant confirmation",
         "warnings": {
           "AmountExceedsAvailableLiquidity": "Le montant dépasse la liquidité actuellement disponible sur le marché. Le fournisseur ou la blockchain peut rejeter cette action.",
@@ -1204,6 +1209,11 @@
           "ProjectedDebtBelowMarketMinimum": "La dette résultante est inférieure au minimum actuel du marché. Le fournisseur ou la blockchain peut rejeter cette action.",
           "RemainingDebtBelowMarketMinimum": "La dette restante est inférieure au minimum actuel du marché. Le fournisseur ou la blockchain peut rejeter cette action.",
           "RiskCapacityExceeded": "Cette action dépasse la capacité d'emprunt actuellement connue. Le fournisseur ou la blockchain peut rejeter cette action."
+        },
+        "risk_block": {
+          "title": "Cette action ne peut pas être confirmée",
+          "healthFactor": "Le facteur de santé projeté passerait sous 1 : le protocole rejetterait cette action ou la position pourrait être liquidée. Réduisez le montant ou ajoutez une garantie.",
+          "ltv": "Le LTV projeté dépasserait le LTV maximal du marché : le protocole rejetterait cette action. Réduisez le montant ou ajoutez une garantie."
         },
         "risk_disclosures": {
           "borrow": "L'emprunt augmente la dette et le risque de liquidation si la valeur de la garantie baisse.",
@@ -1218,7 +1228,15 @@
       "execution_page": {
         "unavailable_title": "Exécution d'emprunt indisponible",
         "unavailable_description": "Revenez à Emprunter et vérifiez une action avant de confirmer.",
-        "error_title": "La transaction d'emprunt a échoué",
+        "error_titles": {
+          "borrow": "L'emprunt a échoué",
+          "borrowAndSupply": "L'emprunt a échoué",
+          "disableCollateral": "La désactivation de la garantie a échoué",
+          "enableCollateral": "L'activation de la garantie a échoué",
+          "repay": "Le remboursement a échoué",
+          "supply": "L'apport a échoué",
+          "withdraw": "Le retrait a échoué"
+        },
         "cancelled": "Vous avez annulé cette demande dans votre portefeuille.",
         "batch_progress": "Étape {{current}} sur {{total}}",
         "preparing_next_step": "Préparation de l'étape suivante",
@@ -1237,10 +1255,19 @@
         }
       },
       "success_page": {
-        "title": "Emprunt terminé",
+        "titles": {
+          "borrow": "Emprunt terminé",
+          "borrowAndSupply": "Emprunt terminé",
+          "disableCollateral": "Garantie désactivée",
+          "enableCollateral": "Garantie activée",
+          "repay": "Remboursement terminé",
+          "supply": "Apport terminé",
+          "withdraw": "Retrait terminé"
+        },
         "unavailable_title": "Résultat d'emprunt indisponible",
         "unavailable_description": "Revenez à Emprunter pour lancer une nouvelle action.",
-        "view_transaction": "Voir la transaction",
+        "transactions": "Transactions",
+        "view_transaction": "Voir la transaction : {{type}}",
         "done": "Terminé"
       },
       "position_details": {
@@ -1249,7 +1276,7 @@
         "collateral": "Garantie",
         "debt": "Dette",
         "details": "Détails de l'emprunt",
-        "empty": "Position d'emprunt indisponible",
+        "empty": "Aucune position ouverte sur ce marché.",
         "health_factor": "Facteur de santé",
         "liquidation_penalty": "Pénalité de liquidation",
         "liquidation_threshold": "Seuil de liquidation",

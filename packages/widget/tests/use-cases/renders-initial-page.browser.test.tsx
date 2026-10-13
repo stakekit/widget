@@ -733,10 +733,15 @@ describe("Renders initial page", () => {
     await userEvent.click(app.getByText("Borrow"));
     await expect.element(app.getByText("Borrow APY")).toBeInTheDocument();
 
-    await userEvent.click(app.getByTestId("number-input").first());
-    await userEvent.keyboard("25");
     await userEvent.click(app.getByTestId("number-input").last());
     await userEvent.keyboard("0.5");
+    // Collateral alone opens a supply-only action.
+    await expect
+      .element(app.getByRole("button", { name: "Review supply" }))
+      .toBeEnabled();
+
+    await userEvent.click(app.getByTestId("number-input").first());
+    await userEvent.keyboard("25");
     await app.getByRole("button", { name: "Review borrow" }).click();
 
     await expect.element(app.getByText("Borrow USDC")).toBeInTheDocument();

@@ -32,6 +32,10 @@ import {
   BorrowTransactionWorkflowInput,
   type TransactionWorkflowState,
 } from "../../src/services/transaction-workflow/transaction-workflow-model";
+import {
+  borrowEntryFlowEntry,
+  withUnserializedState,
+} from "../utils/borrow-flow-entry";
 import { render } from "../utils/test-utils.dom.tsx";
 
 const address = Schema.decodeSync(WalletAddress)("0xWallet");
@@ -45,7 +49,7 @@ const borrowSession = new BorrowFlowSession({
       args: { marketId: Schema.decodeSync(MarketId)("market-1") },
       integrationId: Schema.decodeSync(IntegrationId)("provider-1"),
     },
-    entry: { _tag: "BorrowEntry" },
+    entry: borrowEntryFlowEntry,
     summary: {
       action: "borrow",
       borrowAmount: "1",
@@ -185,10 +189,10 @@ describe("Borrow completion admission", () => {
           ],
           {
             initialEntries: [
-              {
-                pathname: "/borrow/steps",
-                state: makeBorrowFlowNavigationState(borrowSession),
-              },
+              withUnserializedState(
+                { pathname: "/borrow/steps" },
+                makeBorrowFlowNavigationState(borrowSession)
+              ),
             ],
           }
         );

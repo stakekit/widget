@@ -5,6 +5,7 @@ import type {
   EarnValidator,
   EarnYieldWithProvider,
 } from "../../../../../../domain/earn/models";
+import { isYieldValidatorSelectionRequired } from "../../../../../../domain/earn/yield";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { CaretDownIcon } from "../../../../../../shared/ui/primitives/icons/caret-down";
 import { PlusIcon } from "../../../../../../shared/ui/primitives/icons/plus";
@@ -19,7 +20,10 @@ import {
   formatProviderWebsite,
   formatProviderWebsiteHref,
 } from "../../../../../yield-summary/index";
-import { useEarnEntry } from "../../../../react/use-earn-facades";
+import {
+  useEarnEntry,
+  useEarnFlowProviderOption,
+} from "../../../../react/use-earn-facades";
 import type { EarnProviderOption } from "../../../../state/earn-selection/types";
 import { EarnProviderOptionSelection } from "../../../components/earn-provider-option-selection";
 import { EarnValidatorSelection } from "../../../components/earn-validator-selection";
@@ -78,6 +82,73 @@ export const ProviderSelectionCard = () => {
         )}
       />
     </>
+  );
+};
+
+/**
+ * The provider option and validators a started flow executes against. Nothing
+ * here is selectable: the flow owns its target until it ends.
+ */
+export const ProviderSummary = ({
+  providerOption,
+  selectedValidators,
+  yieldDto,
+}: {
+  readonly providerOption: EarnProviderOption | null;
+  readonly selectedValidators: ReadonlyArray<EarnValidator>;
+  readonly yieldDto: EarnYieldWithProvider;
+}) => (
+  <>
+    {providerOption ? (
+      <ProviderOptionSummary providerOption={providerOption} />
+    ) : null}
+
+    {/* Captured validators are what executes, whatever the live Yield now
+        advertises about validator selection. */}
+    {selectedValidators.length > 0 ||
+    isYieldValidatorSelectionRequired(yieldDto) ? (
+      <Box className={styles.providerCardList}>
+        {getProviderCardItems({
+          providerDetailsArr: [],
+          selectedValidatorsArr: [...selectedValidators],
+          yieldDto,
+        }).map((item) => (
+          <ProviderCard
+            action={null}
+            item={item}
+            key={item.key}
+            meta={
+              <ProviderMetaLine
+                item={item}
+                tokenSymbol={yieldDto.token.symbol}
+              />
+            }
+          />
+        ))}
+      </Box>
+    ) : null}
+  </>
+);
+
+const ProviderOptionSummary = ({
+  providerOption,
+}: {
+  readonly providerOption: EarnProviderOption;
+}) => {
+  const { t } = useTranslation();
+  const option = useEarnFlowProviderOption(providerOption);
+
+  return (
+    <Box className={styles.providerCardList}>
+      <ProviderCard
+        action={null}
+        item={getProviderOptionCardItem(
+          option,
+          t("details.provider_search_title")
+        )}
+        meta={null}
+      />
+    </Box>
   );
 };
 

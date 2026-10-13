@@ -2,7 +2,6 @@ import type { BorrowReviewConfirmationError } from "../state/borrow-review-confi
 
 export const borrowReviewConfirmationErrorCopy = {
   descriptionKey: "dashboard.borrow.review_page.confirmation_error_description",
-  titleKey: "dashboard.borrow.execution_page.error_title",
 } as const;
 
 export const presentBorrowReviewConfirmationError = (

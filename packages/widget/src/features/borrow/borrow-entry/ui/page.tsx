@@ -202,10 +202,14 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
   const formContent = getFormContent();
 
   const getCtaLabel = () => {
-    if (isActionReady || validation.ltvBlocksBorrow) {
-      return t("dashboard.borrow.review");
+    if (!isActionReady && !validation.ltvBlocksBorrow) {
+      return t("dashboard.borrow.enter_amounts");
     }
-    return t("dashboard.borrow.enter_amounts");
+    // Collateral without a borrow amount opens a supply-only action.
+    if (borrowAmount.isZero()) {
+      return t("dashboard.borrow.review_actions.supply");
+    }
+    return t("dashboard.borrow.review_actions.borrow");
   };
   const ctaLabel = getCtaLabel();
 

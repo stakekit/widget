@@ -14,7 +14,6 @@ import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
   BorrowPositionKey,
-  BorrowPositionNotFound,
   borrowPositionAtom,
   currentBorrowPositionsAtom,
 } from "../../../src/features/borrow/positions/state/positions";
@@ -331,7 +330,7 @@ describe("Borrow Positions resource atoms", () => {
     );
 
     expect(AsyncResult.getOrThrow(list).items[0]?.id).toBe(market.id);
-    expect(AsyncResult.getOrThrow(detail).id).toBe(market.id);
+    expect(AsyncResult.getOrThrow(detail)?.id).toBe(market.id);
     expect(getIntegrations).toHaveBeenCalledOnce();
     expect(getMarkets).toHaveBeenCalledOnce();
     expect(getPositionData).toHaveBeenCalledOnce();
@@ -459,7 +458,7 @@ describe("Borrow Positions resource atoms", () => {
     const waiting = waitingRegistry.get(detail);
 
     expect(waiting.waiting).toBe(true);
-    expect(AsyncResult.getOrThrow(waiting).id).toBe(market.id);
+    expect(AsyncResult.getOrThrow(waiting)?.id).toBe(market.id);
 
     const error = new BorrowAtomError({
       cause: new ApiRequestError({
@@ -482,7 +481,7 @@ describe("Borrow Positions resource atoms", () => {
     const failure = failureRegistry.get(detail);
 
     expect(AsyncResult.isFailure(failure)).toBe(true);
-    expect(Option.getOrThrow(AsyncResult.value(failure)).id).toBe(market.id);
+    expect(Option.getOrThrow(AsyncResult.value(failure))?.id).toBe(market.id);
     if (!AsyncResult.isFailure(failure)) throw new Error("Expected failure");
     expect(Option.getOrThrow(Cause.findErrorOption(failure.cause))).toBe(error);
 
@@ -491,11 +490,8 @@ describe("Borrow Positions resource atoms", () => {
     });
     const absent = absentRegistry.get(detail);
 
-    expect(AsyncResult.isFailure(absent)).toBe(true);
-    if (!AsyncResult.isFailure(absent)) throw new Error("Expected failure");
-    expect(Option.getOrThrow(Cause.findErrorOption(absent.cause))).toEqual(
-      new BorrowPositionNotFound({ marketId: market.id })
-    );
+    expect(AsyncResult.isSuccess(absent)).toBe(true);
+    expect(AsyncResult.getOrThrow(absent)).toBeNull();
   });
 
   it("wraps borrow API failures in AsyncResult failure state", () => {

@@ -585,8 +585,8 @@ describe("semantic resource invalidation", () => {
         yield* Effect.promise(() =>
           vi.waitFor(() => {
             const value = AsyncResult.getOrThrow(registry.get(detail));
-            expect(value.balances.debt?.balance).toEqual(new BigNumber(400));
-            expect(value.balances.debt?.pendingActions).toHaveLength(1);
+            expect(value?.balances.debt?.balance).toEqual(new BigNumber(400));
+            expect(value?.balances.debt?.pendingActions).toHaveLength(1);
           })
         );
         updated = true;
@@ -607,8 +607,8 @@ describe("semantic resource invalidation", () => {
         yield* Effect.promise(() =>
           vi.waitFor(() => {
             const value = AsyncResult.getOrThrow(registry.get(detail));
-            expect(value.balances.debt?.balance).toEqual(new BigNumber(100));
-            expect(value.balances.debt?.pendingActions).toHaveLength(0);
+            expect(value?.balances.debt?.balance).toEqual(new BigNumber(100));
+            expect(value?.balances.debt?.pendingActions).toHaveLength(0);
           })
         );
         expect(getIntegrations).toHaveBeenCalledOnce();

@@ -337,7 +337,14 @@ export const startBorrowEntryReviewAtom = appRuntime
         return { _tag: "Unavailable" } as const;
       }
 
-      const entry = { _tag: "BorrowEntry" as const };
+      const entry = {
+        _tag: "BorrowEntry" as const,
+        details: {
+          collateralToken: view.selectedCollateralToken,
+          integration: view.selectedIntegration,
+          market: view.selectedMarket,
+        },
+      };
       const intake = {
         ...preparation.review,
         entry,
