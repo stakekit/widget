@@ -295,7 +295,15 @@
       "unknown_error": "Unknown error",
       "terms_of_use": "By clicking {{action}} you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
       "in_progress": "In Progress",
-      "view_transaction": "View transaction"
+      "confirmed": "Confirmed",
+      "not_submitted": "Not submitted",
+      "transactions_all_confirmed_one": "{{count}} · confirmed",
+      "transactions_all_confirmed_other": "{{count}} · all confirmed",
+      "transactions_failed_one": "{{count}} failed",
+      "transactions_failed_other": "{{count}} failed",
+      "transactions_in_progress_one": "{{count}} in progress",
+      "transactions_in_progress_other": "{{count}} in progress",
+      "view_transaction": "View {{type}} transaction"
     },
     "no_previous_activity": "No previous activity",
     "item": {

@@ -1,14 +1,27 @@
 import { useAtomValue } from "@effect/atom-react";
+import clsx from "clsx";
+import { capitalize, toLowerCase } from "effect/String";
+import { useId } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import { isEthenaUsdeStaking } from "../../../../domain/earn/yield";
 import { presentationClockAtom } from "../../../../shared/effect/presentation-clock";
 import { capitalizeFirstLetters } from "../../../../shared/lib/formatters";
+import { formatAddress } from "../../../../shared/lib/general";
+import { vars } from "../../../../shared/styles/theme/contract.css";
 import { Divider } from "../../../../shared/ui/components/divider";
 import { TokenIcon } from "../../../../shared/ui/components/token-icon";
 import { Box } from "../../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../../shared/ui/primitives/icons/caret-left";
+import { CheckCircleIcon } from "../../../../shared/ui/primitives/icons/check-circle";
+import { ClockClockWiseIcon } from "../../../../shared/ui/primitives/icons/clock-clock-wise";
+import { ExternalLinkIcon } from "../../../../shared/ui/primitives/icons/external-link";
+import { XIcon } from "../../../../shared/ui/primitives/icons/x-icon";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
-import { useYieldActionContinuationReview } from "../../../classic-transaction-flow/index";
+import {
+  formatTransactionTypeLabel,
+  useYieldActionContinuationReview,
+} from "../../../classic-transaction-flow/index";
 import { YieldActionContinuationReviewScope } from "../../../classic-transaction-flow/views";
 import { useTrackEvent, useTrackPage } from "../../../tracking/index";
 import { PageCtaButton } from "../../../widget-shell/views";
@@ -52,7 +65,7 @@ const ContinuationControls = () => {
               underline0: (
                 // biome-ignore lint: third-party terms link
                 <a
-                  className={styles.explorerButton}
+                  className={styles.termsLink}
                   href="https://docs.yield.xyz/docs/terms-of-use"
                   onClick={() => trackEvent("termsClicked")}
                   rel="noreferrer"
@@ -78,6 +91,160 @@ const StatusBadge = ({
       <Text variant={{ size: "small", type: "muted", weight: "medium" }}>
         {t(`activity.status.${status}`)}
       </Text>
+    </Box>
+  );
+};
+
+const TransactionsSummary = ({
+  summary,
+}: {
+  readonly summary: ActivityActionDetailsProjection["transactionsSummary"];
+}) => {
+  const { t } = useTranslation();
+
+  switch (summary._tag) {
+    case "allConfirmed":
+      return (
+        <Text variant={{ type: "muted", weight: "normal" }}>
+          {t("activity.review.transactions_all_confirmed", {
+            count: summary.count,
+          })}
+        </Text>
+      );
+    case "failed":
+      return (
+        <Text variant={{ type: "danger", weight: "normal" }}>
+          {t("activity.review.transactions_failed", { count: summary.count })}
+        </Text>
+      );
+    case "inProgress":
+      return (
+        <Text variant={{ type: "muted", weight: "normal" }}>
+          {t("activity.review.transactions_in_progress", {
+            count: summary.count,
+          })}
+        </Text>
+      );
+    case "total":
+      return (
+        <Text variant={{ type: "muted", weight: "normal" }}>
+          {summary.count}
+        </Text>
+      );
+  }
+};
+
+type ActivityDetailsTransaction =
+  ActivityActionDetailsProjection["transactions"][number];
+
+const TransactionStatusIcon = ({
+  status,
+}: {
+  readonly status: ActivityDetailsTransaction["status"];
+}) => {
+  switch (status) {
+    case "confirmed":
+      return <CheckCircleIcon color={vars.color.statusSuccess} />;
+    case "failed":
+      return <XIcon color="textDanger" hw={16} strokeWidth={2.5} />;
+    case "skipped":
+      return <XIcon color="textMuted" hw={16} strokeWidth={2.5} />;
+    case "in_progress":
+    case "not_submitted":
+      return <ClockClockWiseIcon />;
+  }
+};
+
+const statusLabelKey = {
+  confirmed: "activity.review.confirmed",
+  failed: "steps.failed",
+  in_progress: "activity.review.in_progress",
+  not_submitted: "activity.review.not_submitted",
+  skipped: "steps.skipped",
+} as const satisfies Record<ActivityDetailsTransaction["status"], string>;
+
+const TransactionRow = ({
+  onOpen,
+  position,
+  transaction,
+  typeContext,
+}: {
+  readonly onOpen: (url: string) => void;
+  readonly position: number;
+  readonly transaction: ActivityDetailsTransaction;
+  readonly typeContext: "ETHENA_USDE" | undefined;
+}) => {
+  const { t } = useTranslation();
+  const id = useId();
+  const statusId = `${id}-status`;
+  const detailsId = `${id}-details`;
+  const type = capitalize(
+    toLowerCase(
+      formatTransactionTypeLabel(transaction.type, t, { context: typeContext })
+    )
+  );
+  const statusLabel = t(statusLabelKey[transaction.status]);
+  const details = [
+    transaction.status === "confirmed"
+      ? (transaction.broadcastedAt ?? statusLabel)
+      : statusLabel,
+    transaction.error,
+  ]
+    .filter((part) => part !== null)
+    .join(" · ");
+  const content = (
+    <>
+      <Box aria-label={statusLabel} display="flex" id={statusId} role="img">
+        <TransactionStatusIcon status={transaction.status} />
+      </Box>
+      <Box className={styles.transactionText}>
+        <Text variant={{ weight: "normal" }}>{`${position}. ${type}`}</Text>
+        <Text
+          id={detailsId}
+          variant={{
+            size: "small",
+            type:
+              transaction.status === "failed" || transaction.error
+                ? "danger"
+                : "muted",
+            weight: "normal",
+          }}
+        >
+          {details}
+        </Text>
+      </Box>
+      {transaction.explorerUrl ? (
+        <Box className={styles.transactionExplorer}>
+          {transaction.hash ? (
+            <Text variant={{ type: "muted", weight: "normal" }}>
+              {formatAddress(transaction.hash, {
+                leadingChars: 6,
+                trailingChars: 4,
+              })}
+            </Text>
+          ) : null}
+          <ExternalLinkIcon />
+        </Box>
+      ) : null}
+    </>
+  );
+  const { explorerUrl } = transaction;
+
+  return explorerUrl ? (
+    <Box
+      aria-describedby={`${statusId} ${detailsId}`}
+      aria-label={t("activity.review.view_transaction", { type })}
+      as="button"
+      className={clsx(styles.transaction, styles.transactionLink)}
+      data-rk="activity-details-transaction"
+      onClick={() => onOpen(explorerUrl)}
+      type="button"
+    >
+      {content}
+    </Box>
+  ) : (
+    <Box className={styles.transaction} data-rk="activity-details-transaction">
+      {content}
     </Box>
   );
 };
@@ -180,44 +347,24 @@ const Receipt = ({
         <>
           <Divider />
           <Box className={styles.transactions}>
-            <Text variant={{ weight: "medium" }}>
-              {t("activity.review.transactions")}
-            </Text>
-            {view.transactions.map((transaction) => (
-              <Box className={styles.transaction} key={transaction.id}>
-                <Box className={styles.transactionTop}>
-                  <Text variant={{ weight: "normal" }}>
-                    {transaction.title}
-                  </Text>
-                  <Text variant={{ type: "muted", weight: "normal" }}>
-                    {capitalizeFirstLetters(
-                      transaction.status.replaceAll("_", " ").toLowerCase()
-                    )}
-                  </Text>
-                </Box>
-                {transaction.error ? (
-                  <Text
-                    variant={{
-                      type: "danger",
-                      weight: "normal",
-                      size: "small",
-                    }}
-                  >
-                    {transaction.error}
-                  </Text>
-                ) : null}
-                {transaction.explorerUrl ? (
-                  <Box
-                    as="button"
-                    className={styles.explorerButton}
-                    onClick={() =>
-                      openTransaction(transaction.explorerUrl ?? "")
-                    }
-                  >
-                    {t("activity.review.view_transaction")}
-                  </Box>
-                ) : null}
-              </Box>
+            <Box className={styles.transactionsHeader}>
+              <Text variant={{ weight: "medium" }}>
+                {t("activity.review.transactions")}
+              </Text>
+              <TransactionsSummary summary={view.transactionsSummary} />
+            </Box>
+            {view.transactions.map((transaction, index) => (
+              <TransactionRow
+                key={transaction.id}
+                onOpen={openTransaction}
+                position={index + 1}
+                transaction={transaction}
+                typeContext={
+                  isEthenaUsdeStaking(item.actionData.yieldId)
+                    ? "ETHENA_USDE"
+                    : undefined
+                }
+              />
             ))}
           </Box>
         </>

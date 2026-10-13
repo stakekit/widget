@@ -1,5 +1,19 @@
 import { DateTime, Duration } from "effect";
 
+type DateTimeFormatOptions = Omit<Intl.DateTimeFormatOptions, "timeZone"> & {
+  readonly locale: string;
+  readonly timeZone: DateTime.TimeZone;
+};
+
+/**
+ * The only display formatter for dates. The zone is required so a caller can
+ * never fall back to the runtime's zone implicitly.
+ */
+export const formatDateTime = (
+  value: DateTime.Utc,
+  { timeZone, ...options }: DateTimeFormatOptions
+) => DateTime.format(DateTime.setZone(value, timeZone), options);
+
 type ActivityDayKind = "today" | "yesterday" | "other";
 
 const isSameCalendarDay = (

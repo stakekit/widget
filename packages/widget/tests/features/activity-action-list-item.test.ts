@@ -108,6 +108,28 @@ describe("Activity action list item projection", () => {
     });
   });
 
+  it("formats the date and time in the presentation time zone", () => {
+    const projection = projectActivityActionListItem({
+      action: makeItem(
+        yieldApiActionFixture({
+          createdAt: DateTime.makeUnsafe("2026-07-28T12:00:00.000Z"),
+        }),
+        null
+      ),
+      locale: "en-US",
+      presentationTime: {
+        now: DateTime.makeUnsafe("2026-07-28T13:00:00.000Z"),
+        timeZone: DateTime.zoneMakeNamedUnsafe("Pacific/Kiritimati"),
+      },
+    });
+
+    expect(projection.timestamp).toMatchObject({
+      date: "Jul 29, 2026",
+      dayKind: "today",
+      time: "02:00",
+    });
+  });
+
   it("allows continuation before, but not at, the 168 hour cutoff", () => {
     const action = yieldApiActionFixture({
       createdAt: DateTime.makeUnsafe("2026-08-20T10:00:00.000Z"),

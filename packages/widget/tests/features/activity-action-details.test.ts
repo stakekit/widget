@@ -1,5 +1,6 @@
 import { DateTime } from "effect";
 import { describe, expect, it } from "vitest";
+import type { ActionTransaction } from "../../src/domain/action/models";
 import type { YieldActivityItem } from "../../src/features/activity/model/activity-action";
 import { projectActivityActionDetails } from "../../src/features/activity/model/activity-action-details";
 import {
@@ -31,23 +32,27 @@ const presentationTime = {
 };
 
 describe("Activity action details projection", () => {
-  it("projects an exact receipt and keeps backend transaction order", () => {
-    const first = yieldApiTransactionFixture({
-      id: "transaction-b",
+  it("projects an exact receipt with transactions in step order", () => {
+    const supply = yieldApiTransactionFixture({
+      id: "supply",
       status: "FAILED",
-      title: "Stake",
+      stepIndex: 1,
+      type: "SUPPLY",
     });
-    const second = yieldApiTransactionFixture({
-      id: "transaction-a",
-      status: "SKIPPED",
-      title: "Approval",
+    const approval = yieldApiTransactionFixture({
+      broadcastedAt: DateTime.makeUnsafe("2026-08-26T10:05:00.000Z"),
+      hash: "0xabc",
+      id: "approval",
+      status: "CONFIRMED",
+      stepIndex: 0,
+      type: "APPROVAL",
     });
     const view = projectActivityActionDetails({
       item: makeItem({
         amount: "1000000000000000.123456789",
         createdAt: DateTime.makeUnsafe("2026-08-26T10:00:00.000Z"),
         status: "FAILED",
-        transactions: [first, second],
+        transactions: [supply, approval],
         type: "UNSTAKE",
       }),
       locale: "en-US",
@@ -59,10 +64,69 @@ describe("Activity action details projection", () => {
       canContinue: false,
       statusLabel: "failed",
       transactions: [
-        { id: "transaction-b", title: "Stake" },
-        { id: "transaction-a", title: "Approval" },
+        {
+          broadcastedAt: "Aug 26, 2026, 10:05 AM",
+          hash: "0xabc",
+          id: "approval",
+          status: "confirmed",
+          type: "APPROVAL",
+        },
+        { broadcastedAt: null, id: "supply", status: "failed", type: "SUPPLY" },
       ],
+      transactionsSummary: { _tag: "failed", count: 1 },
     });
+  });
+
+  it("orders steps without a step index last, then by creation time", () => {
+    const withoutStepIndex = ({
+      stepIndex: _stepIndex,
+      ...transaction
+    }: ActionTransaction): ActionTransaction => transaction;
+    const later = withoutStepIndex(
+      yieldApiTransactionFixture({
+        createdAt: DateTime.makeUnsafe("2026-08-26T10:02:00.000Z"),
+        id: "later",
+      })
+    );
+    const earlier = withoutStepIndex(
+      yieldApiTransactionFixture({
+        createdAt: DateTime.makeUnsafe("2026-08-26T10:01:00.000Z"),
+        id: "earlier",
+      })
+    );
+    const indexed = yieldApiTransactionFixture({ id: "indexed", stepIndex: 3 });
+    const view = projectActivityActionDetails({
+      item: makeItem({ transactions: [later, indexed, earlier] }),
+      locale: "en-US",
+      presentationTime,
+    });
+
+    expect(view.transactions.map(({ id }) => id)).toEqual([
+      "indexed",
+      "earlier",
+      "later",
+    ]);
+  });
+
+  it.each([
+    [["CONFIRMED", "CONFIRMED"], { _tag: "allConfirmed", count: 2 }],
+    [["CONFIRMED", "BROADCASTED", "FAILED"], { _tag: "failed", count: 1 }],
+    [["CONFIRMED", "BLOCKED"], { _tag: "failed", count: 1 }],
+    [["CONFIRMED", "BROADCASTED"], { _tag: "inProgress", count: 1 }],
+    [["CONFIRMED", "SKIPPED"], { _tag: "total", count: 2 }],
+    [["CONFIRMED", "CREATED"], { _tag: "total", count: 2 }],
+  ] as const)("summarizes %j as %j", (statuses, summary) => {
+    const view = projectActivityActionDetails({
+      item: makeItem({
+        transactions: statuses.map((status) =>
+          yieldApiTransactionFixture({ status })
+        ),
+      }),
+      locale: "en-US",
+      presentationTime,
+    });
+
+    expect(view.transactionsSummary).toEqual(summary);
   });
 
   it("presents an expired waiting action without Continue", () => {

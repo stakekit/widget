@@ -55,8 +55,17 @@ const makeItem = ({
         yieldApiTransactionFixture({
           error: "Execution reverted",
           explorerUrl: "https://explorer.test/failed",
+          hash: "0x1234567890abcdef1234",
+          id: "stake",
           status: "FAILED",
-          title: "Stake",
+          stepIndex: 1,
+          type: "STAKE",
+        }),
+        yieldApiTransactionFixture({
+          id: "approval",
+          status: "CONFIRMED",
+          stepIndex: 0,
+          type: "APPROVAL",
         }),
       ],
       type: "UNSTAKE",
@@ -90,14 +99,31 @@ describe("Activity details receipt", () => {
     };
 
     const app = await renderDetails();
-    const explorer = Array.from(app.container.querySelectorAll("button")).find(
-      (button) => button.textContent?.includes("View transaction")
+    const rows = Array.from(
+      app.container.querySelectorAll('[data-rk="activity-details-transaction"]')
+    );
+    const explorer = app.container.querySelector<HTMLButtonElement>(
+      'button[aria-label="View Stake transaction"]'
     );
 
     expect(app.container.textContent).toContain("-1000000000000000.123456789");
-    expect(app.container.textContent).toContain("Failed");
-    expect(app.container.textContent).toContain("Execution reverted");
+    expect(app.container.textContent).toContain("1 failed");
     expect(app.container.textContent).not.toContain("Continue");
+    expect(rows.map((row) => row.textContent)).toEqual([
+      "1. ApprovalConfirmed",
+      "2. StakeFailed · Execution reverted0x1234…1234",
+    ]);
+    expect(rows[0]?.tagName).not.toBe("BUTTON");
+    expect(
+      explorer
+        ?.getAttribute("aria-describedby")
+        ?.split(" ")
+        .map(
+          (id) =>
+            document.getElementById(id)?.getAttribute("aria-label") ??
+            document.getElementById(id)?.textContent
+        )
+    ).toEqual(["Failed", "Failed · Execution reverted"]);
 
     await act(async () => explorer?.click());
     expect(open).toHaveBeenCalledWith("https://explorer.test/failed", "_blank");

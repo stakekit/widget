@@ -6,6 +6,7 @@ import type {
   HistoryPeriod,
   HistoryPoint,
 } from "../../../../../domain/portfolio/models";
+import { formatDateTime } from "../../../../../shared/lib/date";
 import { useDelayedBusy } from "../../../../../shared/react/use-delayed-busy";
 import { vars } from "../../../../../shared/styles/theme/contract.css";
 import { Box } from "../../../../../shared/ui/primitives/box";
@@ -32,6 +33,10 @@ type Props = {
   tickFormatter: (value: number) => string;
   valueFormatter?: (value: number) => string;
 };
+
+// History is sampled per day, week, or month at UTC midnight; formatting in
+// any other zone would show the neighbouring calendar day.
+const historyTimeZone = DateTime.zoneMakeNamedUnsafe("UTC");
 
 const height = 150;
 
@@ -97,7 +102,8 @@ export const ChartTooltip = ({
   const formattedValue = formatValue
     ? formatValue(point.value)
     : `${point.value}`;
-  const formattedDate = DateTime.formatUtc(point.timestamp, {
+  const formattedDate = formatDateTime(point.timestamp, {
+    timeZone: historyTimeZone,
     locale,
     month: "short",
     day: "numeric",

@@ -294,7 +294,15 @@
       "unknown_error": "Erreur inconnue",
       "terms_of_use": "En cliquant sur {{action}} vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
       "in_progress": "En cours",
-      "view_transaction": "Voir la transaction"
+      "confirmed": "Confirmée",
+      "not_submitted": "Non soumise",
+      "transactions_all_confirmed_one": "{{count}} · confirmée",
+      "transactions_all_confirmed_other": "{{count}} · toutes confirmées",
+      "transactions_failed_one": "{{count}} échouée",
+      "transactions_failed_other": "{{count}} échouées",
+      "transactions_in_progress_one": "{{count}} en cours",
+      "transactions_in_progress_other": "{{count}} en cours",
+      "view_transaction": "Voir la transaction {{type}}"
     },
     "no_previous_activity": "Aucune activité précédente",
     "item": {

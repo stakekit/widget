@@ -1,6 +1,7 @@
 import { DateTime, Duration } from "effect";
 import { describe, expect, it } from "vitest";
 import {
+  formatDateTime,
   getActivityDayKind,
   getActivityRelativeTime,
   getDisplayDurationUntil,
@@ -23,6 +24,25 @@ describe("date presentation helpers", () => {
     expect(
       getActivityDayKind(earlier, now, DateTime.zoneMakeNamedUnsafe("UTC"))
     ).toBe("today");
+  });
+
+  it.each([
+    ["UTC", "Jul 28, 2026, 23:30"],
+    ["Pacific/Kiritimati", "Jul 29, 2026, 13:30"],
+    ["America/New_York", "Jul 28, 2026, 19:30"],
+  ] as const)("formats a timestamp in the %s time zone", (zone, expected) => {
+    expect(
+      formatDateTime(utc("2026-07-28T23:30:00.000Z"), {
+        day: "numeric",
+        hour: "2-digit",
+        hour12: false,
+        locale: "en-US",
+        minute: "2-digit",
+        month: "short",
+        timeZone: DateTime.zoneMakeNamedUnsafe(zone),
+        year: "numeric",
+      })
+    ).toBe(expected);
   });
 
   it.each([

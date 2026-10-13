@@ -1,4 +1,4 @@
-import { DateTime } from "effect";
+import type { DateTime } from "effect";
 import {
   ActionStatus,
   type ActionType,
@@ -7,6 +7,7 @@ import {
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
 import { exactDecimal } from "../../../domain/finance/exact";
 import {
+  formatDateTime,
   getActivityDayKind,
   getActivityRelativeTime,
 } from "../../../shared/lib/date";
@@ -256,8 +257,9 @@ const resolveTimestamp = ({
   if (!createdAt || !presentationTime) return null;
 
   return {
-    date: DateTime.formatLocal(createdAt, {
+    date: formatDateTime(createdAt, {
       locale,
+      timeZone: presentationTime.timeZone,
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -268,8 +270,9 @@ const resolveTimestamp = ({
       presentationTime.timeZone
     ),
     relative: getActivityRelativeTime(createdAt, presentationTime.now),
-    time: DateTime.formatLocal(createdAt, {
+    time: formatDateTime(createdAt, {
       locale,
+      timeZone: presentationTime.timeZone,
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,

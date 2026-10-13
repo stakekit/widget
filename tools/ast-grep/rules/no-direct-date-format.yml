@@ -1,0 +1,20 @@
+id: no-direct-date-format
+language: Tsx
+severity: error
+message: Format dates for display with formatDateTime from shared/lib/date, which requires an explicit time zone.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+  - packages/widget/tests/**/*.ts
+  - packages/widget/tests/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+  - packages/widget/tests/generated/**
+  - packages/widget/src/shared/lib/date.ts
+rule:
+  any:
+    - pattern: DateTime.format
+    - pattern: DateTime.formatLocal
+    - pattern: DateTime.formatUtc
+    - pattern: DateTime.formatIntl
+    - pattern: Intl.DateTimeFormat

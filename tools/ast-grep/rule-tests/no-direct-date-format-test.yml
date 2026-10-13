@@ -1,0 +1,12 @@
+id: no-direct-date-format
+valid:
+  - 'const label = formatDateTime(value, { locale, timeZone })'
+  - 'const wire = DateTime.formatIso(value)'
+  - 'const parts = DateTime.toParts(value)'
+invalid:
+  - 'const label = DateTime.format(value, { locale })'
+  - 'const label = DateTime.formatLocal(value, { locale })'
+  - 'const label = DateTime.formatUtc(value, { locale })'
+  - 'const label = DateTime.formatIntl(value, formatter)'
+  - 'const formatter = new Intl.DateTimeFormat(locale, options)'
+  - 'const label = Intl.DateTimeFormat(locale).format(value)'
