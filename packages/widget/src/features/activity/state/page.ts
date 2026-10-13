@@ -31,7 +31,6 @@ type ActivityPageReadyView = {
   readonly actions: Array<ActivityActionItem>;
   readonly filterOptions: Array<ActivityFilterOption>;
   readonly pagination: ActivityPagePagination;
-  readonly refreshStatus: "failed" | "fresh" | "refreshing";
   readonly selectedFilter: ActivityFilter;
   readonly showingCount: number;
   readonly status: "ready";
@@ -130,14 +129,6 @@ const projectPagination = ({
   return hasNextPage ? { status: "idle" } : { status: "complete" };
 };
 
-const projectRefreshStatus = (
-  result: ActivityActionsResult
-): ActivityPageReadyView["refreshStatus"] => {
-  if (result.waiting) return "refreshing";
-  if (AsyncResult.isFailure(result)) return "failed";
-  return "fresh";
-};
-
 export const projectActivityPageView = ({
   actionsResult,
   filterOptionsResult,
@@ -208,7 +199,6 @@ export const projectActivityPageView = ({
       hasActions: actions.length > 0,
       hasNextPage,
     }),
-    refreshStatus: projectRefreshStatus(actionsResult),
     selectedFilter,
     showingCount: actions.length,
     status: "ready",

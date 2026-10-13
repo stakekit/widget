@@ -635,9 +635,9 @@ describe("Borrow position details", () => {
         if (positionRequests === 1) {
           return HttpResponse.json(position);
         }
-        if (positionRequests === 2) {
-          await positionRefresh;
-        }
+        // Every refetch after the first waits, so the test can observe the
+        // details pane while the refresh is in flight.
+        await positionRefresh;
         return HttpResponse.json(emptyPosition);
       }),
       http.post(borrowApiRoute("/v1/actions"), () => HttpResponse.json(action)),
@@ -686,6 +686,9 @@ describe("Borrow position details", () => {
     await expect
       .poll(() => positionRequests, { timeout: 5_000 })
       .toBeGreaterThanOrEqual(2);
+    // The refetch is background work: the details pane keeps the position it
+    // already has instead of falling back to its skeleton.
+    await expect.element(app.getByText("Net worth")).toBeInTheDocument();
     releasePositionRefresh();
     await expect
       .element(app.getByRole("button", { name: "Back to positions" }))

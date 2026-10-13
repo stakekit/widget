@@ -43,3 +43,39 @@ export const mapAsyncResultError: {
     }
   }
 );
+
+/**
+ * What a view can present from a result. A view blocks only while there is
+ * nothing to show: once a value exists, revalidation and failed refetches are
+ * background facts about that value, never a loader or an error screen.
+ */
+export type Presentable<A, E> =
+  | { readonly _tag: "Loading" }
+  | { readonly _tag: "Failed"; readonly cause: Cause.Cause<E> }
+  | {
+      readonly _tag: "Ready";
+      /** Why the latest refetch failed, while `value` is the last success. */
+      readonly refreshFailure: Option.Option<Cause.Cause<E>>;
+      readonly refreshing: boolean;
+      readonly value: A;
+    };
+
+export const toPresentable = <A, E>(
+  result: AsyncResult.AsyncResult<A, E>
+): Presentable<A, E> => {
+  const value = AsyncResult.value(result);
+  if (Option.isSome(value)) {
+    return {
+      _tag: "Ready",
+      refreshFailure: AsyncResult.isFailure(result)
+        ? Option.some(result.cause)
+        : Option.none(),
+      refreshing: result.waiting,
+      value: value.value,
+    };
+  }
+  if (AsyncResult.isFailure(result) && !result.waiting) {
+    return { _tag: "Failed", cause: result.cause };
+  }
+  return { _tag: "Loading" };
+};

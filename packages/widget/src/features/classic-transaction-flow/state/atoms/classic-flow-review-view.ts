@@ -15,6 +15,7 @@ import {
   PricesKey,
   pricesAtom,
 } from "../../../../resources/token-prices/index";
+import { toPresentable } from "../../../../shared/effect/async-result";
 import type { CurrentYieldKycGate } from "../../../yield-summary/index";
 import {
   type ClassicTransactionFlowIntake,
@@ -131,9 +132,7 @@ export const makeClassicFlowSessionReviewResources = ({
       confirmLoading: actionPreviewLoading || kyc.isLoading,
       gasAmount: get(gasAmountAtom),
       gasCheckLoading:
-        actionPreviewLoading ||
-        AsyncResult.isInitial(gasWarning) ||
-        gasWarning.waiting,
+        actionPreviewLoading || toPresentable(gasWarning)._tag === "Loading",
       isGasCheckWarning: gasWarning.pipe(
         AsyncResult.value,
         Option.match({ onNone: () => false, onSome: Boolean })

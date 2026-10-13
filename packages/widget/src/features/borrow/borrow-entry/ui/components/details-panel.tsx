@@ -4,6 +4,7 @@ import type { CollateralToken } from "../../../../../domain/borrow/catalog/colla
 import type { Integration } from "../../../../../domain/borrow/catalog/integration";
 import type { Market } from "../../../../../domain/borrow/catalog/market";
 import { exactZero } from "../../../../../domain/finance/exact";
+import { toPresentable } from "../../../../../shared/effect/async-result";
 import {
   formatBorrowProviderName,
   formatNetworkName,
@@ -77,10 +78,8 @@ export const BorrowEntryDetailsPanel = ({
 
   if (
     (view.markets.length === 0 &&
-      (AsyncResult.isInitial(marketsResult) ||
-        AsyncResult.isWaiting(marketsResult))) ||
-    AsyncResult.isInitial(integrationsResult) ||
-    AsyncResult.isWaiting(integrationsResult)
+      toPresentable(marketsResult)._tag === "Loading") ||
+    toPresentable(integrationsResult)._tag === "Loading"
   ) {
     return <ContentLoaderSquare heightPx={430} />;
   }

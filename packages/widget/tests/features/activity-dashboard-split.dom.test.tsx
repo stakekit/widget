@@ -57,7 +57,6 @@ describe("Dashboard Activity split view", () => {
       actions: [{ actionData: { id: "a1" } } as never],
       filterOptions: [{ count: 1, filter: "all" }],
       pagination: { status: "complete" },
-      refreshStatus: "fresh",
       selectedFilter: "all",
       showingCount: 1,
       status: "ready",

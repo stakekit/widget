@@ -233,7 +233,6 @@ describe("Activity page projection", () => {
     ).toMatchObject({
       actions: [first, second],
       pagination: { status: "idle" },
-      refreshStatus: "fresh",
       showingCount: 2,
       status: "ready",
       total: 3,
@@ -284,7 +283,6 @@ describe("Activity page projection", () => {
     ).toMatchObject({
       actions: [action],
       pagination: { status: "loading-more" },
-      refreshStatus: "refreshing",
       status: "ready",
     });
     expect(
@@ -297,7 +295,6 @@ describe("Activity page projection", () => {
     ).toMatchObject({
       actions: [action],
       pagination: { status: "load-more-failed" },
-      refreshStatus: "failed",
       status: "ready",
     });
   });
@@ -324,7 +321,6 @@ describe("Activity page projection", () => {
     ).toMatchObject({
       actions: [action],
       pagination: { status: "complete" },
-      refreshStatus: "failed",
       status: "ready",
     });
   });
@@ -412,7 +408,6 @@ describe("Activity dashboard split", () => {
         actions: [],
         filterOptions: [{ count: 0, filter: "all" }],
         pagination: { status: "complete" },
-        refreshStatus: "fresh",
         selectedFilter: "all",
         showingCount: 0,
         status: "ready",
@@ -424,7 +419,6 @@ describe("Activity dashboard split", () => {
         actions: [makeActionItem("a1")],
         filterOptions: [{ count: 1, filter: "all" }],
         pagination: { status: "complete" },
-        refreshStatus: "fresh",
         selectedFilter: "all",
         showingCount: 1,
         status: "ready",

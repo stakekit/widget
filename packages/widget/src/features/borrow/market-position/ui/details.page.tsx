@@ -3,6 +3,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, Outlet, useLocation, useParams } from "react-router";
+import { toPresentable } from "../../../../shared/effect/async-result";
 import { PositionDetailsPane } from "../../../../shared/ui/components/position-details";
 import { Text } from "../../../../shared/ui/primitives/typography/text";
 import { useTrackPage } from "../../../tracking/index";
@@ -62,8 +63,7 @@ export const BorrowPositionDetailsPage = () => {
       })
     : [];
   const isPositionLoading =
-    AsyncResult.isInitial(borrowPosition.positionResult) ||
-    AsyncResult.isWaiting(borrowPosition.positionResult);
+    toPresentable(borrowPosition.positionResult)._tag === "Loading";
   const positionBasePath = getBorrowPositionBasePath(marketId);
   const normalizedPathname = location.pathname.replace(/\/+$/u, "");
   const hasNestedRoute = normalizedPathname !== positionBasePath;

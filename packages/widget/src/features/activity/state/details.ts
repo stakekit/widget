@@ -148,7 +148,6 @@ export const resolveDefaultSelectedActionId = (
     if (view.status === "empty") return null;
     return "loading";
   }
-  if (view.refreshStatus !== "fresh") return "loading";
   return (
     view.actions.find(
       (item): item is YieldActivityItem => item._tag === "yield"
@@ -156,7 +155,10 @@ export const resolveDefaultSelectedActionId = (
   );
 };
 
-/** URL intent wins; Default waits for a fresh feed and takes the first row. */
+/**
+ * URL intent wins; Default takes the first row of the feed on screen, so a
+ * background refetch never blanks the selection.
+ */
 export const resolveActivitySelection = (
   intent: ActivitySelectionIntent,
   view: Atom.Type<typeof activityPageViewAtom>
