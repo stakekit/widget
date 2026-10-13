@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
 import { Box } from "../../../../shared/ui/primitives/box";
+import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
 import {
   type BorrowEntryFlowDetails,
   useBorrowTransactionFlow,
@@ -58,19 +59,19 @@ export const BorrowEntryLayout = () => {
   const { t } = useTranslation();
   const walletView = useBorrowWalletView();
 
-  return (
-    <BorrowSplitView
-      details={
-        walletView.status === "ready" ? (
-          <BorrowConnectedEntryDetails />
-        ) : (
-          <BorrowDetailsEmpty title={t("dashboard.borrow.details.empty_title")}>
-            {t("dashboard.borrow.details.empty_description")}
-          </BorrowDetailsEmpty>
-        )
-      }
-    />
-  );
+  const getDetails = (): ReactNode => {
+    if (walletView.status === "ready") return <BorrowConnectedEntryDetails />;
+    if (walletView.status === "connecting") {
+      return <ContentLoaderSquare heightPx={430} />;
+    }
+    return (
+      <BorrowDetailsEmpty title={t("dashboard.borrow.details.empty_title")}>
+        {t("dashboard.borrow.details.empty_description")}
+      </BorrowDetailsEmpty>
+    );
+  };
+
+  return <BorrowSplitView details={getDetails()} />;
 };
 
 const BorrowFlowDetails = ({

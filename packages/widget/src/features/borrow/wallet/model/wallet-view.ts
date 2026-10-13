@@ -24,6 +24,8 @@ export type BorrowNetworkRecovery =
 
 export type BorrowWalletView =
   | { readonly status: "ready" }
+  /** The wallet is mid-connection or mid-chain-switch; its outcome is pending. */
+  | { readonly status: "connecting" }
   | { readonly status: "connection-required" }
   | {
       readonly recovery: BorrowNetworkRecovery;
@@ -59,6 +61,8 @@ export const projectBorrowWalletView = (
       status: "unsupported-network",
     };
   }
+
+  if (wallet.status === "connecting") return { status: "connecting" };
 
   if (wallet.status !== "connected") {
     return { status: "connection-required" };

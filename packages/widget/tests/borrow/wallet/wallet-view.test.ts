@@ -50,19 +50,27 @@ describe("Borrow wallet view", () => {
     expectStatus(connectedWallet, "ready");
   });
 
-  it.each(["disconnected", "connecting"] as const)(
-    "requires a connection while the wallet is %s",
-    (status) => {
-      expectStatus(
-        {
-          ...disconnectedNormalizedWalletState,
-          connectorChains: [mainnet, base],
-          status,
-        },
-        "connection-required"
-      );
-    }
-  );
+  it("requires a connection while the wallet is disconnected", () => {
+    expectStatus(
+      {
+        ...disconnectedNormalizedWalletState,
+        connectorChains: [mainnet, base],
+      },
+      "connection-required"
+    );
+  });
+
+  it("waits instead of asking for a connection while the wallet switches chains", () => {
+    expectStatus({ ...polygonWallet, status: "connecting" }, "connecting");
+    expectStatus(
+      {
+        ...disconnectedNormalizedWalletState,
+        connectorChains: [mainnet, base],
+        status: "connecting",
+      },
+      "connecting"
+    );
+  });
 
   it("offers the wallet's Borrow chains to an unsupported wallet that can switch", () => {
     expect(

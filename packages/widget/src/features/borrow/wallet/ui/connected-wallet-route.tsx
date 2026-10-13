@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
 import { Navigate, Outlet } from "react-router";
+import { ContentLoaderSquare } from "../../../../shared/ui/primitives/content-loader";
 import { useBorrowWalletView } from "../react/use-borrow-wallet";
 
 export const BorrowConnectedWalletRoute = (): ReactNode => {
   const walletView = useBorrowWalletView();
 
-  return walletView.status === "ready" ? (
-    <Outlet />
-  ) : (
-    <Navigate to="/borrow" replace />
-  );
+  if (walletView.status === "ready") return <Outlet />;
+  // A chain switch passes through connecting; keep the route until it settles.
+  if (walletView.status === "connecting") {
+    return <ContentLoaderSquare heightPx={340} />;
+  }
+  return <Navigate to="/borrow" replace />;
 };

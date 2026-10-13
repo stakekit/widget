@@ -56,17 +56,23 @@ const BorrowEntryFormPage = ({
 }) => {
   const { t } = useTranslation();
 
-  return walletView.status === "connection-required" ? (
-    <>
-      <BorrowNotice title={t("dashboard.borrow.connect_title")}>
-        {t("dashboard.borrow.connect_description")}
-      </BorrowNotice>
+  if (walletView.status === "connecting") {
+    return <ContentLoaderSquare heightPx={340} />;
+  }
 
-      <BorrowConnectCta />
-    </>
-  ) : (
-    <BorrowNetworkRecoveryPanel recovery={walletView.recovery} />
-  );
+  if (walletView.status === "connection-required") {
+    return (
+      <>
+        <BorrowNotice title={t("dashboard.borrow.connect_title")}>
+          {t("dashboard.borrow.connect_description")}
+        </BorrowNotice>
+
+        <BorrowConnectCta />
+      </>
+    );
+  }
+
+  return <BorrowNetworkRecoveryPanel recovery={walletView.recovery} />;
 };
 
 const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {

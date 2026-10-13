@@ -16,7 +16,11 @@ export const Header = () => {
     hideAccountAndChainSelector,
   } = useHeader();
 
-  if (!walletConfigReady || hideAccountAndChainSelector || !isConnected) {
+  if (
+    !walletConfigReady ||
+    hideAccountAndChainSelector ||
+    (!isConnected && !isConnecting)
+  ) {
     return null;
   }
 
@@ -29,12 +33,8 @@ export const Header = () => {
         justifyContent="center"
         gap="2"
       >
-        {isConnected || isConnecting ? (
-          <>
-            {!hideChainSelector && <ChainModal />}
-            <AccountModal />
-          </>
-        ) : null}
+        {!hideChainSelector && <ChainModal />}
+        <AccountModal />
       </Box>
 
       {showDisconnect && (
